@@ -10,3 +10,8 @@ language: en
 tags:
   - Audio
   - Video
+description: >
+  This is the same as the regular "xml" producer except it takes a pointer to
+  a string as the constructor argument. That means it can only be used
+  by applications and not directly exposed to users of those applications.
+  See ProducerXml for more information.

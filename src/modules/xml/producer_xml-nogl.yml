@@ -1,0 +1,17 @@
+schema_version: 0.1
+type: producer
+identifier: xml-nogl
+title: XML without OpenGL
+version: 1
+copyright: Ushodaya Enterprises Limited
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+  - Video
+description: >
+  This is the same as the regular "xml" producer except it prevents
+  automatically creating the qglsl consumer when it detects the usage of
+  OpenGL-based services within the XML.
+  See ProducerXml for more information.

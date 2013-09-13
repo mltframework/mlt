@@ -37,8 +37,10 @@ MLT_REPOSITORY
 	MLT_REGISTER( consumer_type, "xml", consumer_xml_init );
 	MLT_REGISTER( producer_type, "xml", producer_xml_init );
 	MLT_REGISTER( producer_type, "xml-string", producer_xml_init );
+    MLT_REGISTER( producer_type, "xml-nogl", producer_xml_init );
 
 	MLT_REGISTER_METADATA( consumer_type, "xml", metadata, "consumer_xml.yml" );
 	MLT_REGISTER_METADATA( producer_type, "xml", metadata, "producer_xml.yml" );
 	MLT_REGISTER_METADATA( producer_type, "xml-string", metadata, "producer_xml-string.yml" );
+    MLT_REGISTER_METADATA( producer_type, "xml-nogl", metadata, "producer_xml-nogl.yml" );
 }
