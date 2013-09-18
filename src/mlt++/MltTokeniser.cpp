@@ -26,7 +26,7 @@ Tokeniser::Tokeniser( char *text, char *delimiter )
 {
 	tokens = mlt_tokeniser_init( );
 	if ( text != NULL )
-		mlt_tokeniser_parse_new( tokens, text, delimiter );
+		mlt_tokeniser_parse_new( tokens, text, delimiter? delimiter : " " );
 }
 
 Tokeniser::~Tokeniser( )
@@ -36,7 +36,7 @@ Tokeniser::~Tokeniser( )
 
 int Tokeniser::parse( char *text, char *delimiter )
 {
-	return mlt_tokeniser_parse_new( tokens, text, delimiter );
+	return mlt_tokeniser_parse_new( tokens, text, delimiter? delimiter : " " );
 }
 
 int Tokeniser::count( )

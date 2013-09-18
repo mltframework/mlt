@@ -32,9 +32,9 @@ namespace Mlt
 		private:
 			mlt_tokeniser tokens;
 		public:
-			Tokeniser( char *text = NULL, char *delimiter = " " );
+			Tokeniser( char *text = NULL, char *delimiter = NULL );
 			~Tokeniser( );
-			int parse( char *text, char *delimiter = " " );
+			int parse( char *text, char *delimiter = NULL );
 			int count( );
 			char *get( int index );
 			char *input( );
