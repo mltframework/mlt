@@ -909,7 +909,6 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Remove the last frame
 	mlt_frame_close( frame );
-	mlt_events_fire( properties, "consumer-thread-stopped", NULL );
 
 	return NULL;
 }
@@ -1025,7 +1024,6 @@ static void *consumer_worker_thread( void *arg )
 		pthread_cond_broadcast( &priv->done_cond );
 		pthread_mutex_unlock( &priv->done_mutex );
 	}
-	mlt_events_fire( properties, "consumer-thread-stopped", NULL );
 
 	return NULL;
 }
@@ -1196,6 +1194,8 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 
 		// Close the queue
 		mlt_deque_close( priv->queue );
+
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", NULL );
 	}
 }
 
@@ -1261,6 +1261,8 @@ static void consumer_work_stop( mlt_consumer self )
 		// Close the queues
 		mlt_deque_close( priv->queue );
 		mlt_deque_close( priv->worker_threads );
+
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", NULL );
 	}
 }
 
@@ -1284,17 +1286,18 @@ void mlt_consumer_purge( mlt_consumer self )
 		pthread_cond_broadcast( &priv->put_cond );
 		pthread_mutex_unlock( &priv->put_mutex );
 
-		if ( priv->started && priv->real_time )
-			pthread_mutex_lock( &priv->queue_mutex );
-
 		if ( self->purge )
 			self->purge( self );
 
+		pthread_mutex_lock( &priv->queue_mutex );
 		while ( priv->started && mlt_deque_count( priv->queue ) )
 			mlt_frame_close( mlt_deque_pop_back( priv->queue ) );
+		pthread_mutex_unlock( &priv->queue_mutex );
+
 		if ( priv->started && priv->real_time )
 		{
 			priv->is_purge = 1;
+			pthread_mutex_lock( &priv->queue_mutex );
 			pthread_cond_broadcast( &priv->queue_cond );
 			pthread_mutex_unlock( &priv->queue_mutex );
 			if ( abs( priv->real_time ) > 1 )
