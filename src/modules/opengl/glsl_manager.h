@@ -20,7 +20,7 @@
 #ifndef GLSL_MANAGER_H
 #define GLSL_MANAGER_H
 
-#include <GL/glew.h>
+#include <glew.h>
 #include <mlt++/MltFilter.h>
 #include <mlt++/MltDeque.h>
 
