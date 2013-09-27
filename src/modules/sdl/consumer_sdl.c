@@ -256,9 +256,7 @@ int consumer_start( mlt_consumer parent )
 			if ( mlt_properties_get_int( self->properties, "fullscreen" ) )
 			{
 				const SDL_VideoInfo *vi;
-				pthread_mutex_lock( &mlt_sdl_mutex );
 				vi = SDL_GetVideoInfo();
-				pthread_mutex_unlock( &mlt_sdl_mutex );
 				self->window_width = vi->current_w;
 				self->window_height = vi->current_h;
 				self->sdl_flags |= SDL_FULLSCREEN;
