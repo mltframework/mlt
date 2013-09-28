@@ -807,6 +807,9 @@ static void *consumer_read_ahead_thread( void *arg )
 			continue;
 		pos = mlt_frame_get_position( frame );
 
+		// WebVfx uses this to setup a consumer-stopping event handler.
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "consumer", self, 0, NULL, NULL );
+
 		// Increment the counter used for averaging processing cost
 		count ++;
 
@@ -1000,6 +1003,9 @@ static void *consumer_worker_thread( void *arg )
 		// If there's no frame, we're probably stopped...
 		if ( frame == NULL )
 			continue;
+
+		// WebVfx uses this to setup a consumer-stopping event handler.
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "consumer", self, 0, NULL, NULL );
 
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
 		// All non normal playback frames should be shown
@@ -1514,7 +1520,12 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 
 		// This isn't true, but from the consumers perspective it is
 		if ( frame != NULL )
+		{
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
+
+			// WebVfx uses this to setup a consumer-stopping event handler.
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "consumer", self, 0, NULL, NULL );
+		}
 	}
 
 	return frame;
