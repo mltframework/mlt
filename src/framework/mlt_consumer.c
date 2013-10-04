@@ -1295,15 +1295,15 @@ void mlt_consumer_purge( mlt_consumer self )
 		if ( self->purge )
 			self->purge( self );
 
-		pthread_mutex_lock( &priv->queue_mutex );
+		if ( priv->started && priv->real_time )
+			pthread_mutex_lock( &priv->queue_mutex );
+
 		while ( priv->started && mlt_deque_count( priv->queue ) )
 			mlt_frame_close( mlt_deque_pop_back( priv->queue ) );
-		pthread_mutex_unlock( &priv->queue_mutex );
 
 		if ( priv->started && priv->real_time )
 		{
 			priv->is_purge = 1;
-			pthread_mutex_lock( &priv->queue_mutex );
 			pthread_cond_broadcast( &priv->queue_cond );
 			pthread_mutex_unlock( &priv->queue_mutex );
 			if ( abs( priv->real_time ) > 1 )
