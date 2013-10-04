@@ -2611,7 +2611,8 @@ static void producer_avformat_close( producer_avformat self )
 	av_free_packet( &self->pkt );
 	av_free( self->video_frame );
 	av_free( self->audio_frame );
-	pthread_mutex_lock( &self->open_mutex );
+	if ( self->is_mutex_init )
+		pthread_mutex_lock( &self->open_mutex );
 	int i;
 	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
 	{
@@ -2640,7 +2641,8 @@ static void producer_avformat_close( producer_avformat self )
 	if ( self->video_format )
 		av_close_input_file( self->video_format );
 #endif
-	pthread_mutex_unlock( &self->open_mutex );
+	if ( self->is_mutex_init )
+		pthread_mutex_unlock( &self->open_mutex );
 #ifdef VDPAU
 	vdpau_producer_close( self );
 #endif
