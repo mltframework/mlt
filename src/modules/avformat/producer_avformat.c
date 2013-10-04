@@ -660,17 +660,18 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 	int error = 0;
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 
+	if ( !self->is_mutex_init )
+	{
+		pthread_mutex_init( &self->audio_mutex, NULL );
+		pthread_mutex_init( &self->video_mutex, NULL );
+		pthread_mutex_init( &self->packets_mutex, NULL );
+		pthread_mutex_init( &self->open_mutex, NULL );
+		self->is_mutex_init = 1;
+	}
+
 	// Lock the service
 	if ( take_lock )
 	{
-		if ( !self->is_mutex_init )
-		{
-			pthread_mutex_init( &self->audio_mutex, NULL );
-			pthread_mutex_init( &self->video_mutex, NULL );
-			pthread_mutex_init( &self->packets_mutex, NULL );
-			pthread_mutex_init( &self->open_mutex, NULL );
-			self->is_mutex_init = 1;
-		}
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_mutex_lock( &self->video_mutex );
 	}
