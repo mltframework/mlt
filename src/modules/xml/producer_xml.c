@@ -590,7 +590,8 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( producer ), context->lc_numeric );
-		context->seekable &= mlt_properties_get_int( MLT_SERVICE_PROPERTIES( producer ), "seekable" );
+		if ( mlt_properties_get( MLT_SERVICE_PROPERTIES( producer ), "seekable" ) )
+			context->seekable &= mlt_properties_get_int( MLT_SERVICE_PROPERTIES( producer ), "seekable" );
 
 		// Propagate the properties
 		qualify_property( context, properties, "resource" );
