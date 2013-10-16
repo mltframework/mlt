@@ -665,6 +665,8 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			else
 			{
 				serialise_producer( context, service, node );
+				if ( mlt_properties_get( properties, "xml" ) != NULL )
+					break;
 			}
 		}
 
