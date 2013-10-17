@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.2
 type: filter
 identifier: channelcopy
 title: Copy Channels
@@ -11,15 +11,10 @@ tags:
   - Audio
 description: Copy one audio channel to another.
 parameters:
-  - identifier: argument
-    title: To
-    type: integer
-    minimum: 0
-    maximum: 15
-    default: 1
   - identifier: to
     title: To
     type: integer
+    argument: true
     minimum: 0
     maximum: 15
     default: 1

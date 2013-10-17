@@ -1,5 +1,5 @@
 --- # A metadata schema in Kwalify: http://www.kuwata-lab.com/kwalify/
-# Version: 0.1 
+# Version: 0.2
 type: map
 mapping:
   "schema_version": # This should match the version comment above
@@ -69,18 +69,22 @@ mapping:
           "type": # An mlt_property_type
             type: str
             enum:
+              - boolean # 0 or 1; not 'true', 'false', 'yes', or 'no' strings at this time
               - float
               - geometry
               - integer
               - properties # for passing options to encapsulated services
               - string
-              - time # currently, mlt_position (frame), soon to be a time value
+              - time # time string values (clock, SMPTE) can be acccepted in addition to frames
           "service-name": # for type: properties, a reference to another service
             type: str     # format: type.service, e.g. transition.composite
           "title": # A UI can use this for a field label
             type: str
           "description": # A UI can use this for a tool tip or what's-this
             type: str
+          "argument": # If this is also the service constructor argument.
+            type: bool
+            default: no
           "readonly": # If you set this property, it will be ignored
             type: bool
             default: no
