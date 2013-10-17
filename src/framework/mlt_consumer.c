@@ -1044,6 +1044,9 @@ static void consumer_read_ahead_start( mlt_consumer self )
 {
 	consumer_private *priv = self->local;
 
+	if ( priv->started )
+		return;
+
 	// We're running now
 	priv->ahead = 1;
 
@@ -1088,7 +1091,12 @@ static void consumer_work_start( mlt_consumer self )
 {
 	consumer_private *priv = self->local;
 	int n = abs( priv->real_time );
-	pthread_t *thread = calloc( 1, sizeof( pthread_t ) * n );
+	pthread_t *thread;
+
+	if ( priv->started )
+		return;
+
+	thread = calloc( 1, sizeof( pthread_t ) * n );
 
 	// We're running now
 	priv->ahead = 1;
@@ -1568,7 +1576,6 @@ int mlt_consumer_stop( mlt_consumer self )
 	mlt_log( MLT_CONSUMER_SERVICE( self ), MLT_LOG_DEBUG, "stopping consumer\n" );
 	
 	// Cancel the read ahead threads
-	priv->ahead = 0;
 	if ( priv->started )
 	{
 		// Unblock the consumer calling mlt_consumer_rt_frame
