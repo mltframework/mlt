@@ -2150,7 +2150,10 @@ static void *consumer_thread( void *arg )
 	}
 
 on_fatal_error:
-	
+
+	if ( frame )
+		mlt_frame_close( frame );
+
 	// Write the trailer, if any
 	if ( frames )
 		av_write_trailer( oc );
