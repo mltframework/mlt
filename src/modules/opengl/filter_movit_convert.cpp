@@ -131,9 +131,10 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 					chain->add_effect( new Mlt::VerticalFlip() );
 					finalize_chain = true;
 					producer.set( "movit.convert.chain", chain, 0, (mlt_destructor) delete_chain );
+					producer.set( "movit.convert.input", input, 0 );
 					producer.set( "movit.convert.width", width );
 					producer.set( "movit.convert.height", height );
-					producer.set( "movit.convert.width", output_format );
+					producer.set( "movit.convert.format", output_format );
 				}
 			}
 		}
