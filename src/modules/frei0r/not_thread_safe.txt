@@ -12,6 +12,7 @@ baltan
 cartoon
 edgeglow
 equaliz0r
+glow
 lightgraffiti
 mask0mate
 tehRoxx0r
