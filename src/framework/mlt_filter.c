@@ -301,19 +301,30 @@ mlt_frame mlt_filter_process( mlt_filter self, mlt_frame frame )
 	int disable = mlt_properties_get_int( properties, "disable" );
 	const char *unique_id = mlt_properties_get( properties, "_unique_id" );
 	mlt_position position = mlt_frame_get_position( frame );
-	char name[20];
+	char name[30];
 
 	// Make the properties key from unique id
-	snprintf( name, 20, "pos.%s", unique_id );
-	name[20 -1] = '\0';
+	snprintf( name, sizeof(name), "pos.%s", unique_id );
+	name[sizeof(name) -1] = '\0';
 
 	// Save the position on the frame
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( frame ), name, position );
 
 	if ( disable || self->process == NULL )
+	{
 		return frame;
+	}
 	else
+	{
+		// Add a reference to this filter on the frame
+		mlt_properties_inc_ref( MLT_FILTER_PROPERTIES(self) );
+		snprintf( name, sizeof(name), "filter.%s", unique_id );
+		name[sizeof(name) -1] = '\0';
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), name, self, 0,
+			(mlt_destructor) mlt_filter_close, NULL );
+
 		return self->process( self, frame );
+	}
 }
 
 /** Get a frame from this filter.
