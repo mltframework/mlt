@@ -172,7 +172,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					// Load analysis results from property
 					data->initialized = 2;
 
-					int interp = 2;
+					int interp = 2; // default to bilinear
 					float scale_zoom=1.0;
 					if ( *width != mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.media.width" ) )
 						scale_zoom = (float) *width / (float) mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.media.width" );
@@ -180,12 +180,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						interp = 0;
 					else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
 						interp = 1;
-					else if ( strcmp( interps, "bilinear" ) == 0 )
-						interp = 2;
-					else if ( strcmp( interps, "bicubic" ) == 0 )
-						interp = 3;
-					else if ( strcmp( interps, "bicublin" ) == 0 )
-						interp = 4;
 
 					data->trans->interpoltype = interp;
 					data->trans->smoothing = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "smoothing" );

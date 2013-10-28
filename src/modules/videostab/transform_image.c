@@ -74,7 +74,7 @@ void interpolateBiLinBorder(unsigned char *rv, float x, float y,
                  |-1, 3,-3, 1 |  |a3|
 */
 static short bicub_kernel(float t, short a0, short a1, short a2, short a3){
-    return (2*a1 + t*((-a0+a2) + t*((2*a0-5*a1+4*a2-a3) + t*(-a0+3*a1-3*a2+a3) )) ) / 2;
+  return (2*a1 + t*((-a0+a2) + t*((2*a0-5*a1+4*a2-a3) + t*(-a0+3*a1-3*a2+a3) )) ) / 2;
 }
 
 /** interpolateBiCub: bi-cubic interpolation function using 4x4 pixel, see interpolate */
@@ -266,7 +266,7 @@ int transformRGB(TransformData* td)
                     + zcos_a * y_d1 + c_s_y -t.y;
                 for (z = 0; z < 3; z++) { // iterate over colors
                     unsigned char* dest = &D_2[(x + y * td->width_dest)*3+z];
-                    interpolate(dest, myfloor(x_s), myfloor(y_s), D_1,
+                    interpolate(dest, x_s, y_s, D_1,
                                  td->width_src, td->height_src,
                                  td->crop ? 16 : *dest,3,z);
                 }
