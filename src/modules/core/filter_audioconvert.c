@@ -25,6 +25,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef CLAMP
+#define CLAMP( x, min, max ) (x) < (min) ? (min) : (x) > (max) ? (max) : (x)
+#endif
+
 static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *format, mlt_audio_format requested_format )
 {
 	int error = 1;
@@ -102,8 +106,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				while ( --i )
 				{
 					float f = (float)( *q++ ) / 32768.0;
-					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
-					*p++ = f;
+					*p++ = CLAMP( f, -1.0f, 1.0f );
 				}
 				*audio = buffer;
 				error = 0;
@@ -176,8 +179,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 					for ( c = 0; c < channels; c++ )
 					{
 						float f = (float)( *( q + c * samples + s ) ) / 2147483648.0;
-						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
-						*p++ = f;
+						*p++ = CLAMP( f, -1.0f, 1.0f );
 					}
 				*audio = buffer;
 				error = 0;
@@ -213,7 +215,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 					for ( c = 0; c < channels; c++ )
 					{
 						float f = *( q + c * samples + s );
-						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+						f = CLAMP( f, -1.0f, 1.0f );
 						*p++ = 32767 * f;
 					}
 				*audio = buffer;
@@ -229,8 +231,9 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				while ( --i )
 				{
 					float f = *q++;
-					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
-					*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
+					f = CLAMP( f, -1.0f, 1.0f );
+					int64_t pcm = ( f > 0.0f ? 2147483647LL : 2147483648LL ) * f;
+					*p++ = CLAMP( pcm, -2147483648LL, 2147483647LL );
 				}
 				*audio = buffer;
 				error = 0;
@@ -246,8 +249,9 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 					for ( c = 0; c < channels; c++ )
 					{
 						float f = *( q + c * samples + s );
-						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
-						*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
+						f = CLAMP( f, -1.0f, 1.0f );
+						int64_t pcm = ( f > 0.0f ? 2147483647LL : 2147483648LL ) * f;
+						*p++ = CLAMP( pcm, -2147483648LL, 2147483647LL );
 					}
 				*audio = buffer;
 				error = 0;
@@ -276,7 +280,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 					for ( c = 0; c < channels; c++ )
 					{
 						float f = *( q + c * samples + s );
-						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+						f = CLAMP( f, -1.0f, 1.0f );
 						*p++ = ( 127 * f ) + 128;
 					}
 				*audio = buffer;
@@ -380,7 +384,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				while ( --i )
 				{
 					float f = *q++;
-					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+					f = CLAMP( f, -1.0f , 1.0f );
 					*p++ = 32767 * f;
 				}
 				*audio = buffer;
@@ -418,8 +422,9 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 					while ( --i )
 					{
 						float f = *q;
-						f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
-						*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
+						f = CLAMP( f, -1.0f , 1.0f );
+						int64_t pcm = ( f > 0.0f ? 2147483647LL : 2147483648LL ) * f;
+						*p++ = CLAMP( pcm, -2147483648LL, 2147483647LL );
 						q += channels;
 					}
 				}
@@ -436,8 +441,9 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				while ( --i )
 				{
 					float f = *q++;
-					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
-					*p++ = ( f > 0 ? 2147483647LL : 2147483648LL ) * f;
+					f = CLAMP( f, -1.0f , 1.0f );
+					int64_t pcm = ( f > 0.0f ? 2147483647LL : 2147483648LL ) * f;
+					*p++ = CLAMP( pcm, -2147483648LL, 2147483647LL );
 				}
 				*audio = buffer;
 				error = 0;
@@ -452,7 +458,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				while ( --i )
 				{
 					float f = *q++;
-					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
+					f = CLAMP( f, -1.0f , 1.0f );
 					*p++ = ( 127 * f ) + 128;
 				}
 				*audio = buffer;
@@ -537,8 +543,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 				while ( --i )
 				{
 					float f = ( (float) *q++ - 128 ) / 256.0f;
-					f = f > 1.0 ? 1.0 : f < -1.0 ? -1.0 : f;
-					*p++ = f;
+					*p++ = CLAMP( f, -1.0f, 1.0f );
 				}
 				*audio = buffer;
 				error = 0;
