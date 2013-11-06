@@ -57,6 +57,7 @@
 #define BUFFER_LEN 8192
 #define AMPLITUDE_NORM 0.2511886431509580 /* -12dBFS */
 #define AMPLITUDE_MIN 0.00001
+#define DBFSTOAMP(x) pow(10,(x)/20.0)
 
 /** Compute the mean of a set of doubles skipping unset values flagged as -1
 */
@@ -311,7 +312,17 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 					if ( use_peak )
 						normalised_gain = ST_SSIZE_MIN / -peak;
 					else
-						normalised_gain = AMPLITUDE_NORM / rms;
+					{
+						double gain = DBFSTOAMP(-12); // default -12 dBFS
+						char *p = mlt_properties_get( filter_properties, "analysis_level" );
+						if (p)
+						{
+							gain = mlt_properties_get_double( filter_properties, "analysis_level" );
+							if ( strstr( p, "dB" ) )
+								gain = DBFSTOAMP( gain );
+						}
+						normalised_gain = gain / rms;
+					}
 
 					// Set properties for serialization
 					snprintf( effect, sizeof(effect), "vol %f", normalised_gain );

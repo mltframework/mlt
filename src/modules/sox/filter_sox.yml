@@ -16,7 +16,8 @@ bugs:
   - Some effects have a temporal side-effect that do not work well.
 
 parameters:
-  - identifier: argument
+  - identifier: effect
+    argument: yes
     title: Effect name and options
     type: string
     format: effect [options]
@@ -25,6 +26,17 @@ parameters:
       Instead, it analyzes the audio to determine a normalized gain level.
       The results are put into the level, peak, and gain properties as well
       as this effect property as the parameter to the vol effect.
+
+  - identifier: analysis_level
+    title: Normalization level
+    type: string
+    default: -12dBFS
+    description: >
+      Normalize the volume to the specified amplitude.
+      The normalization may be indicated as a floating point value of the
+      relative volume with 1.0 being maximum.
+      The normalization may also be indicated as a numeric value with the
+      suffix "dB" to set the amplitude in decibels.
 
   - identifier: level
     title: Signal power level (RMS)
