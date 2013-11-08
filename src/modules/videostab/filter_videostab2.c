@@ -134,6 +134,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Service locks are for concurrency control
 		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
+		// Handle signal from app to re-init data
+		if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter) , "refresh" ) )
+		{
+			mlt_properties_set( MLT_FILTER_PROPERTIES(filter) , "refresh", NULL );
+			data->initialized = 0;
+		}
+
 		if ( !vectors) {
 			if ( !data->initialized )
 			{
