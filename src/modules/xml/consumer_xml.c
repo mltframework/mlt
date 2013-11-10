@@ -920,6 +920,9 @@ static void *consumer_thread( void *arg )
 	// Frame and size
 	mlt_frame frame = NULL;
 
+	int video_off = mlt_properties_get_int( properties, "video_off" );
+	int audio_off = mlt_properties_get_int( properties, "audio_off" );
+
 	// Loop while running
 	while( !terminated && mlt_properties_get_int( properties, "running" ) )
 	{
@@ -941,8 +944,10 @@ static void *consumer_thread( void *arg )
 			mlt_audio_format aformat = mlt_audio_s16;
 			uint8_t *buffer;
 
-			mlt_frame_get_image( frame, &buffer, &iformat, &width, &height, 0 );
-			mlt_frame_get_audio( frame, (void**) &buffer, &aformat, &frequency, &channels, &samples );
+			if ( !video_off )
+				mlt_frame_get_image( frame, &buffer, &iformat, &width, &height, 0 );
+			if ( !audio_off )
+				mlt_frame_get_audio( frame, (void**) &buffer, &aformat, &frequency, &channels, &samples );
 
 			// Close the frame
 			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
