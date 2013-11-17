@@ -9,3 +9,19 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: >
+  Apply a color tint. Default values give a sepia tone like an old photograph.
+parameters:
+  - identifier: u
+    type: integer
+    title: Yellow-Blue
+    minimum: 0
+    maximum: 255
+    default: 75
+
+  - identifier: v
+    type: integer
+    title: Cyan-Red
+    minimum: 0
+    maximum: 255
+    default: 150
