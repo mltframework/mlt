@@ -408,8 +408,12 @@ void mlt_factory_close( )
 	{
 		mlt_properties_close( event_object );
 		event_object = NULL;
+#if !defined(WIN32)
+		// XXX something in here is causing Shotcut/Win32 to not exit completely
+		// under certain conditions: e.g. play a playlist.
 		mlt_properties_close( global_properties );
 		global_properties = NULL;
+#endif
 		if ( repository )
 		{
 			mlt_repository_close( repository );
