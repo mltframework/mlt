@@ -63,6 +63,9 @@ typedef struct playlist_entry_s playlist_entry;
  * which is a way to add filters as a playlist entry - useful only in a multitrack. See FxCut on the wiki.
  * \properties \em mix_in
  * \properties \em mix_out
+ * \properties \em hide Set to 1 to hide the video (make it an audio-only track),
+ * 2 to hide the audio (make it a video-only track), or 3 to hide audio and video (hidden track).
+ * This property only applies when using a multitrack or transition.
  * \event \em playlist-next The playlist fires this when it moves to the next item in the list.
  * The listener receives one argument that is the index of the entry that just completed.
  */
