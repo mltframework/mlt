@@ -1,0 +1,193 @@
+schema_version: 0.1
+type: producer
+identifier: qtext
+title: QT Titler
+version: 1
+copyright: Brian Matherly
+creator: Brian Matherly
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  A title generator that uses the Qt framework to render text.
+notes: >
+  qtext accepts a file name with at ".txt" extension. If the filename begins 
+  with "+" the qtext producer interprets the filename as text. This is a 
+  shortcut to embed titles in melt commands. For MLT XML, it is recommended that
+  you embed the title text in the "text" property value.
+  
+  qtext has builtin scaling. It will rescale the originally rendered title to
+  whatever the consumer requests. Therefore, it will lose its aspect ratio if 
+  so requested, and it is up to the consumer to request a proper width and 
+  height that maintains the image aspect.
+
+parameters:
+  - identifier: argument
+    title: File
+    type: string
+    description: |
+      A text file containing text to be rendered.
+      The text file contents initialize the value of the "text" parameter.
+    readonly: no
+    required: no
+    mutable: no
+    widget: fileopen
+    
+  - identifier: text
+    title: Text
+    type: string
+    description: |
+      A text string to be rendered.
+    readonly: no
+    mutable: yes
+    widget: textbox
+    
+  - identifier: fgcolour
+    title: Foreground color
+    type: string
+    description: >
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+    
+  - identifier: bgcolour
+    title: Background color
+    type: string
+    description: >
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+    
+  - identifier: olcolour
+    title: Outline color
+    type: string
+    description: >
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+    
+  - identifier: outline
+    title: Outline Width
+    type: string
+    description: >
+      The width of the outline in pixels.
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 3
+    mutable: yes
+    widget: spinner
+    
+  - identifier: align
+    title: Paragraph alignment
+    type: string
+    description: >
+      left, center, right
+    readonly: no
+    default: left
+    mutable: yes
+    widget: combo
+
+  - identifier: pad
+    title: Padding
+    type: integer
+    description: >
+      The number of pixels to pad the background rectangle beyond edges of text.
+    readonly: no
+    default: 0
+    mutable: yes
+    widget: spinner
+    
+  - identifier: family
+    title: Font family
+    type: string
+    description: >
+      The font typeface. 
+    default: Sans
+    readonly: no
+    mutable: yes
+    widget: combo
+    
+  - identifier: size
+    title: Font size
+    type: integer
+    description: >
+      The size in pixels of the font. 
+    default: 48
+    readonly: no
+    mutable: yes
+    widget: spinner
+    
+  - identifier: style
+    title: Font style
+    type: string
+    description: >
+      The style of the font.
+    values:
+      - normal
+      - italic
+    default: normal
+    readonly: no
+    mutable: yes
+    widget: combo
+    
+  - identifier: weight
+    title: Font weight
+    type: integer
+    description: The weight of the font.
+    minimum: 100
+    maximum: 1000
+    default: 400
+    readonly: no
+    mutable: yes
+    widget: spinner
+    
+  - identifier: encoding
+    title: Encoding
+    type: string
+    description: >
+      The text encoding type of the "text" parameter.
+    default: UTF-8
+    readonly: no
+    mutable: yes
+    widget: combo
+    
+  - identifier: force_aspect_ratio
+    title: Sample aspect ratio
+    type: float
+    description: Optionally override a (mis)detected aspect ratio
+    mutable: yes
+    
+  - identifier: meta.media.width
+    title: Real width
+    type: integer
+    description: The original, unscaled width of the rendered image.
+    readonly: yes
+    
+  - identifier: meta.media.height
+    title: Real height
+    type: integer
+    description: The original, unscaled height of the rendered image.
+    readonly: yes
+    
+  - identifier: width
+    title: Width
+    type: integer
+    description: The last requested scaled image width.
+    readonly: yes
+    
+  - identifier: height
+    title: Height
+    type: integer
+    description: The last requested scaled image height.
+    readonly: yes

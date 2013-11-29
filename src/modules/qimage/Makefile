@@ -10,7 +10,8 @@ TARGET = ../libmltqimage$(LIBSUF)
 OBJS = factory.o producer_qimage.o producer_kdenlivetitle.o
 CPPOBJS = qimage_wrapper.o \
 	kdenlivetitle_wrapper.o \
-	consumer_qglsl.o
+	consumer_qglsl.o \
+	producer_qtext.o
 
 ifdef GPL3
 	CPPOBJS += transition_vqm.o
