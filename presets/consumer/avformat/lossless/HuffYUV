@@ -1,4 +1,4 @@
-f=mkv
+f=matroska
 acodec=flac
 vcodec=huffyuv
 
