@@ -2092,6 +2092,38 @@ char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_f
 	return NULL;
 }
 
+/** Convert a frame count to a time string.
+ *
+ * Do not free the returned string. It's lifetime is controlled by the property.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param frames the frame count to convert
+ * \param format the time format that you want
+ * \return the time string or NULL if error, e.g. there is no profile
+ */
+
+char *mlt_properties_frames_to_time( mlt_properties self, mlt_position frames, mlt_time_format format )
+{
+	const char *name = "_mlt_properties_time";
+	mlt_properties_set_position( self, name, frames );
+	return mlt_properties_get_time( self, name, format );
+}
+
+/** Convert a time string to a frame count.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param time the time string to convert
+ * \return a frame count or a negative value if error, e.g. there is no profile
+ */
+
+mlt_position mlt_properties_time_to_frames( mlt_properties self, const char *time )
+{
+	const char *name = "_mlt_properties_time";
+	mlt_properties_set( self, name, time );
+	return mlt_properties_get_position( self, name );
+}
+
 /** Convert a numeric property to a tuple of color components.
  *
  * If the property's string is red, green, blue, white, or black, then it

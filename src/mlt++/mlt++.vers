@@ -457,3 +457,11 @@ MLTPP_0.9.0 {
       "Mlt::Service::move_filter(int, int)";
     };
 } MLTPP_0.8.8;
+
+MLTPP_0.9.2 {
+  global:
+    extern "C++" {
+      "Mlt::Properties::frames_to_time(int, mlt_time_format)";
+      "Mlt::Properties::time_to_frames(char const*)";
+    };
+} MLTPP_0.9.0;

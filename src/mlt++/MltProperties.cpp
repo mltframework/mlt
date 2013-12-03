@@ -337,6 +337,16 @@ char *Properties::get_time( const char *name, mlt_time_format format )
 	return mlt_properties_get_time( get_properties(), name, format );
 }
 
+char *Properties::frames_to_time( int frames, mlt_time_format format )
+{
+	return mlt_properties_frames_to_time( get_properties(), frames, format );
+}
+
+int Properties::time_to_frames( const char *time )
+{
+	return mlt_properties_time_to_frames( get_properties(), time );
+}
+
 mlt_color Properties::get_color( const char *name )
 {
 	return mlt_properties_get_color( get_properties(), name );

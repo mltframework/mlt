@@ -97,6 +97,9 @@ namespace Mlt
 			int set_lcnumeric( const char *locale );
 			const char *get_lcnumeric( );
 			char *get_time( const char *name, mlt_time_format = mlt_time_smpte );
+			char *frames_to_time( int, mlt_time_format = mlt_time_smpte );
+			int time_to_frames( const char* time );
+
 			mlt_color get_color( const char *name );
 			int set( const char *name , mlt_color value );
 

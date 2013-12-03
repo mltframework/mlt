@@ -88,7 +88,11 @@ extern mlt_properties mlt_properties_parse_yaml( const char *file );
 extern char *mlt_properties_serialise_yaml( mlt_properties self );
 extern void mlt_properties_lock( mlt_properties self );
 extern void mlt_properties_unlock( mlt_properties self );
+
 extern char *mlt_properties_get_time( mlt_properties, const char* name, mlt_time_format );
+extern char *mlt_properties_frames_to_time( mlt_properties, mlt_position, mlt_time_format );
+extern mlt_position mlt_properties_time_to_frames( mlt_properties, const char* time );
+
 extern mlt_color mlt_properties_get_color( mlt_properties, const char* name );
 extern int mlt_properties_set_color( mlt_properties, const char* name, mlt_color value );
 
