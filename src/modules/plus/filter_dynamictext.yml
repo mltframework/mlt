@@ -3,7 +3,7 @@ type: filter
 identifier: dynamictext
 title: Dynamic text
 version: 1
-copyright: Ushodaya Enterprises Limited
+copyright: Brian Matherly
 creator: Brian Matherly
 license: LGPLv2.1
 language: en

@@ -1,16 +1,20 @@
 CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt -lm
+LDFLAGS += -L../../framework -lmlt -lm -lpthread
 
 include ../../../config.mak
 
 TARGET = ../libmltplus$(LIBSUF)
 
-OBJS = factory.o \
+OBJS = consumer_blipflash.o \
+	   factory.o \
 	   filter_affine.o \
 	   filter_charcoal.o \
+	   filter_dynamictext.o \
 	   filter_invert.o \
 	   filter_sepia.o \
+	   producer_blipflash.o \
+	   producer_count.o \
 	   transition_affine.o
 
 SRCS := $(OBJS:.o=.c)
