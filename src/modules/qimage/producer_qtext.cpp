@@ -57,26 +57,60 @@ static bool init_qt( mlt_producer producer )
 	return true;
 }
 
-/** Check for change to property. Copy to private if changed. Return true if private changed.
-*/
-
-static bool update_private_property( mlt_properties producer_properties, const char* pub, const char* priv )
+static void close_qimg( void* qimg )
 {
-	char* pub_val = mlt_properties_get( producer_properties, pub );
-	char* priv_val = mlt_properties_get( producer_properties, priv );
+	delete static_cast<QImage*>( qimg );
+}
 
-	if( pub_val == NULL )
-	{
-		// Can't use public value
-		return false;
-	}
-	else if( priv_val == NULL || strcmp( pub_val, priv_val ) )
-	{
-		mlt_properties_set( producer_properties, priv, pub_val );
-		return true;
-	}
+static void close_qpath( void* qpath )
+{
+	delete static_cast<QPainterPath*>( qpath );
+}
 
-	return false;
+static void copy_qimage_to_mlt_image( QImage* qImg, uint8_t* mImg )
+{
+	int height = qImg->height();
+	int width = qImg->width();
+	int y = 0;
+
+	// convert qimage to mlt
+	y = height + 1;
+	while ( --y )
+	{
+		QRgb* src = (QRgb*) qImg->scanLine( height - y );
+		int x = width + 1;
+		while ( --x )
+		{
+			*mImg++ = qRed( *src );
+			*mImg++ = qGreen( *src );
+			*mImg++ = qBlue( *src );
+			*mImg++ = qAlpha( *src );
+			src++;
+		}
+	}
+}
+
+static void copy_image_to_alpha( uint8_t* image, uint8_t* alpha, int width, int height )
+{
+	register int len = width * height;
+	// Extract the alpha mask from the RGBA image using Duff's Device
+	register uint8_t *s = image + 3; // start on the alpha component
+	register uint8_t *d = alpha;
+	register int n = ( len + 7 ) / 8;
+
+	switch ( len % 8 )
+	{
+		case 0:	do { *d++ = *s; s += 4;
+		case 7:		 *d++ = *s; s += 4;
+		case 6:		 *d++ = *s; s += 4;
+		case 5:		 *d++ = *s; s += 4;
+		case 4:		 *d++ = *s; s += 4;
+		case 3:		 *d++ = *s; s += 4;
+		case 2:		 *d++ = *s; s += 4;
+		case 1:		 *d++ = *s; s += 4;
+				}
+				while ( --n > 0 );
+	}
 }
 
 /** Check if the qpath needs to be regenerated. Return true if regeneration is required.
@@ -84,44 +118,49 @@ static bool update_private_property( mlt_properties producer_properties, const c
 
 static bool check_qpath( mlt_properties producer_properties )
 {
-	bool stale = false;
-	QPainterPath* qPath = static_cast<QPainterPath*>( mlt_properties_get_data( producer_properties, "_qpath", NULL ) );
+	#define MAX_SIG 500
+	char new_path_sig[MAX_SIG];
 
-	// Check if any properties changed.
-	stale |= update_private_property( producer_properties, "text",     "_text" );
-	stale |= update_private_property( producer_properties, "fgcolour", "_fgcolour" );
-	stale |= update_private_property( producer_properties, "bgcolour", "_bgcolour" );
-	stale |= update_private_property( producer_properties, "olcolour", "_olcolour" );
-	stale |= update_private_property( producer_properties, "outline",  "_outline" );
-	stale |= update_private_property( producer_properties, "align",    "_align" );
-	stale |= update_private_property( producer_properties, "pad",      "_pad" );
-	stale |= update_private_property( producer_properties, "size",     "_size" );
-	stale |= update_private_property( producer_properties, "style",    "_style" );
-	stale |= update_private_property( producer_properties, "weight",   "_weight" );
-	stale |= update_private_property( producer_properties, "encoding", "_encoding" );
+	// Generate a signature that represents the current properties
+	snprintf( new_path_sig, MAX_SIG, "%s%s%s%s%s%s%s%s%s%s%s",
+			mlt_properties_get( producer_properties, "text" ),
+			mlt_properties_get( producer_properties, "fgcolour" ),
+			mlt_properties_get( producer_properties, "bgcolour" ),
+			mlt_properties_get( producer_properties, "olcolour" ),
+			mlt_properties_get( producer_properties, "outline" ),
+			mlt_properties_get( producer_properties, "align" ),
+			mlt_properties_get( producer_properties, "pad" ),
+			mlt_properties_get( producer_properties, "size" ),
+			mlt_properties_get( producer_properties, "style" ),
+			mlt_properties_get( producer_properties, "weight" ),
+			mlt_properties_get( producer_properties, "encoding" ) );
+	new_path_sig[ MAX_SIG - 1 ] = '\0';
 
-	// Make sure qPath is valid.
-	stale |= qPath->isEmpty();
+	// Check if the properties have changed by comparing this signature with the
+	// last one.
+	char* last_path_sig = mlt_properties_get( producer_properties, "_path_sig" );
 
-	return stale;
+	if( !last_path_sig || strcmp( new_path_sig, last_path_sig ) )
+	{
+		mlt_properties_set( producer_properties, "_path_sig", new_path_sig );
+		return true;
+	}
+	return false;
 }
 
 static void generate_qpath( mlt_properties producer_properties )
 {
-	QImage* qImg = static_cast<QImage*>( mlt_properties_get_data( producer_properties, "_qimg", NULL ) );
 	QPainterPath* qPath = static_cast<QPainterPath*>( mlt_properties_get_data( producer_properties, "_qpath", NULL ) );
-	int outline = mlt_properties_get_int( producer_properties, "_outline" );
-	char* align = mlt_properties_get( producer_properties, "_align" );
-	char* style = mlt_properties_get( producer_properties, "_style" );
-	char* text = mlt_properties_get( producer_properties, "_text" );
-	char* encoding = mlt_properties_get( producer_properties, "_encoding" );
-	int pad = mlt_properties_get_int( producer_properties, "_pad" );
+	int outline = mlt_properties_get_int( producer_properties, "outline" );
+	char* align = mlt_properties_get( producer_properties, "align" );
+	char* style = mlt_properties_get( producer_properties, "style" );
+	char* text = mlt_properties_get( producer_properties, "text" );
+	char* encoding = mlt_properties_get( producer_properties, "encoding" );
+	int pad = mlt_properties_get_int( producer_properties, "pad" );
 	int offset = pad + ( outline / 2 );
 	int width = 0;
 	int height = 0;
 
-	// Make the image invalid. It must be regenerated from the new path.
-	*qImg = QImage();
 	// Make the path empty
 	*qPath = QPainterPath();
 
@@ -134,9 +173,9 @@ static void generate_qpath( mlt_properties producer_properties )
 
 	// Configure the font
 	QFont font;
-	font.setPixelSize( mlt_properties_get_int( producer_properties, "_size" ) );
-	font.setFamily( mlt_properties_get( producer_properties, "_family" ) );
-	font.setWeight( ( mlt_properties_get_int( producer_properties, "_weight" ) / 10 ) -1 );
+	font.setPixelSize( mlt_properties_get_int( producer_properties, "size" ) );
+	font.setFamily( mlt_properties_get( producer_properties, "family" ) );
+	font.setWeight( ( mlt_properties_get_int( producer_properties, "weight" ) / 10 ) -1 );
 	switch( style[0] )
 	{
 	case 'i':
@@ -190,16 +229,55 @@ static void generate_qpath( mlt_properties producer_properties )
 	mlt_properties_set_int( producer_properties, "meta.media.height", height );
 }
 
-static void generate_qimage( mlt_properties producer_properties, QSize target_size )
+static bool check_qimage( mlt_properties frame_properties )
 {
+	mlt_producer producer = static_cast<mlt_producer>( mlt_properties_get_data( frame_properties, "_producer_qtext", NULL ) );
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	QImage* qImg = static_cast<QImage*>( mlt_properties_get_data( producer_properties, "_qimg", NULL ) );
-	QPainterPath* qPath = static_cast<QPainterPath*>( mlt_properties_get_data( producer_properties, "_qpath", NULL ) );
-	mlt_color bg_color = mlt_properties_get_color( producer_properties, "_bgcolour" );
-	mlt_color fg_color = mlt_properties_get_color( producer_properties, "_fgcolour" );
-	mlt_color ol_color = mlt_properties_get_color( producer_properties, "_olcolour" );
-	int outline = mlt_properties_get_int( producer_properties, "_outline" );
-	QSize native_size( mlt_properties_get_int( producer_properties, "meta.media.width" ),
-					   mlt_properties_get_int( producer_properties, "meta.media.height" ) );
+	QSize target_size( mlt_properties_get_int( frame_properties, "rescale_width" ),
+					   mlt_properties_get_int( frame_properties, "rescale_height" ) );
+	QSize native_size( mlt_properties_get_int( frame_properties, "meta.media.width" ),
+					   mlt_properties_get_int( frame_properties, "meta.media.height" ) );
+
+	// Check if the last image signature is different from the path signature
+	// for this frame.
+	char* last_img_sig = mlt_properties_get( producer_properties, "_img_sig" );
+	char* path_sig = mlt_properties_get( frame_properties, "_path_sig" );
+
+	if( !last_img_sig || strcmp( path_sig, last_img_sig ) )
+	{
+		mlt_properties_set( producer_properties, "_img_sig", path_sig );
+		return true;
+	}
+
+	// Check if the last image size matches the requested image size
+	QSize output_size = target_size;
+	if( output_size.isEmpty() )
+	{
+		output_size = native_size;
+	}
+	if( output_size != qImg->size() )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+static void generate_qimage( mlt_properties frame_properties )
+{
+	mlt_producer producer = static_cast<mlt_producer>( mlt_properties_get_data( frame_properties, "_producer_qtext", NULL ) );
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+	QImage* qImg = static_cast<QImage*>( mlt_properties_get_data( producer_properties, "_qimg", NULL ) );
+	QSize target_size( mlt_properties_get_int( frame_properties, "rescale_width" ),
+					   mlt_properties_get_int( frame_properties, "rescale_height" ) );
+	QSize native_size( mlt_properties_get_int( frame_properties, "meta.media.width" ),
+					   mlt_properties_get_int( frame_properties, "meta.media.height" ) );
+	QPainterPath* qPath = static_cast<QPainterPath*>( mlt_properties_get_data( frame_properties, "_qpath", NULL ) );
+	mlt_color bg_color = mlt_properties_get_color( frame_properties, "_bgcolour" );
+	mlt_color fg_color = mlt_properties_get_color( frame_properties, "_fgcolour" );
+	mlt_color ol_color = mlt_properties_get_color( frame_properties, "_olcolour" );
+	int outline = mlt_properties_get_int( frame_properties, "_outline" );
 	qreal sx = 1.0;
 	qreal sy = 1.0;
 
@@ -214,13 +292,14 @@ static void generate_qimage( mlt_properties producer_properties, QSize target_si
 	{
 		*qImg = QImage( native_size, QImage::Format_ARGB32 );
 	}
+	qImg->fill( QColor( bg_color.r, bg_color.g, bg_color.b, bg_color.a ).rgba() );
 
 	// Draw the text
 	QPainter painter( qImg );
 	// Scale the painter rather than the image for better looking results.
 	painter.scale( sx, sy );
 	painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
-	painter.fillRect ( 0, 0, qImg->width(), qImg->height(), QColor( bg_color.r, bg_color.g, bg_color.b, bg_color.a ) );
+
 	QPen pen;
 	pen.setWidth( outline );
 	if( outline )
@@ -237,76 +316,6 @@ static void generate_qimage( mlt_properties producer_properties, QSize target_si
 	painter.drawPath( *qPath );
 }
 
-static void copy_qimage_to_mlt_image( QImage* qImg, uint8_t* mImg )
-{
-	int height = qImg->height();
-	int width = qImg->width();
-	int y = 0;
-
-	// convert qimage to mlt
-	y = height + 1;
-	while ( --y )
-	{
-		QRgb* src = (QRgb*) qImg->scanLine( height - y );
-		int x = width + 1;
-		while ( --x )
-		{
-			*mImg++ = qRed( *src );
-			*mImg++ = qGreen( *src );
-			*mImg++ = qBlue( *src );
-			*mImg++ = qAlpha( *src );
-			src++;
-		}
-	}
-}
-
-static void copy_image_to_alpha( uint8_t* image, uint8_t* alpha, int width, int height )
-{
-	register int len = width * height;
-	// Extract the alpha mask from the RGBA image using Duff's Device
-	register uint8_t *s = image + 3; // start on the alpha component
-	register uint8_t *d = alpha;
-	register int n = ( len + 7 ) / 8;
-
-	switch ( len % 8 )
-	{
-		case 0:	do { *d++ = *s; s += 4;
-		case 7:		 *d++ = *s; s += 4;
-		case 6:		 *d++ = *s; s += 4;
-		case 5:		 *d++ = *s; s += 4;
-		case 4:		 *d++ = *s; s += 4;
-		case 3:		 *d++ = *s; s += 4;
-		case 2:		 *d++ = *s; s += 4;
-		case 1:		 *d++ = *s; s += 4;
-				}
-				while ( --n > 0 );
-	}
-}
-
-static bool check_qimage( mlt_properties producer_properties, QSize target_size )
-{
-	QImage* qImg = static_cast<QImage*>( mlt_properties_get_data( producer_properties, "_qimg", NULL ) );
-
-	if( qImg->isNull() )
-	{
-		return true;
-	}
-
-	QSize output_size = target_size;
-	if( output_size.isEmpty() )
-	{
-		output_size.setWidth( mlt_properties_get_int( producer_properties, "meta.media.width" ) );
-		output_size.setHeight( mlt_properties_get_int( producer_properties, "meta.media.height" ) );
-	}
-
-	if( output_size != qImg->size() )
-	{
-		return true;
-	}
-
-	return false;
-}
-
 static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_format* format, int* width, int* height, int writable )
 {
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -315,21 +324,15 @@ static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_form
 	int img_size = 0;
 	int alpha_size = 0;
 	uint8_t* alpha = NULL;
-	QImage* qImg = NULL;
+	QImage* qImg = static_cast<QImage*>( mlt_properties_get_data( producer_properties, "_qimg", NULL ) );
 
-	// Detect rescale request
-	QSize target_size( mlt_properties_get_int( frame_properties, "rescale_width" ),
-					   mlt_properties_get_int( frame_properties, "rescale_height" ) );
-
-	// Regenerate the qimage if necessary
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 
-	if( check_qimage( producer_properties, target_size ) == true )
+	// Regenerate the qimage if necessary
+	if( check_qimage( frame_properties ) == true )
 	{
-		generate_qimage( producer_properties, target_size );
+		generate_qimage( frame_properties );
 	}
-
-	qImg = static_cast<QImage*>( mlt_properties_get_data( producer_properties, "_qimg", NULL ) );
 
 	*format = mlt_image_rgb24a;
 	*width = qImg->width();
@@ -363,16 +366,26 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	if ( *frame != NULL )
 	{
-		// Obtain properties of frame
 		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( *frame );
 		mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
+		// Regenerate the QPainterPath if necessary
 		if( check_qpath( producer_properties ) )
 		{
 			generate_qpath( producer_properties );
 		}
 
-		// Save the producer to be used later
+		// Give the frame a copy of the painter path
+		QPainterPath* prodPath = static_cast<QPainterPath*>( mlt_properties_get_data( producer_properties, "_qpath", NULL ) );
+		QPainterPath* framePath = new QPainterPath( *prodPath );
+		mlt_properties_set_data( frame_properties, "_qpath", static_cast<void*>( framePath ), 0, close_qpath, NULL );
+
+		// Pass properties to the frame that will be needed to render the path
+		mlt_properties_set( frame_properties, "_path_sig", mlt_properties_get( producer_properties, "_path_sig" ) );
+		mlt_properties_set( frame_properties, "_bgcolour", mlt_properties_get( producer_properties, "bgcolour" ) );
+		mlt_properties_set( frame_properties, "_fgcolour", mlt_properties_get( producer_properties, "fgcolour" ) );
+		mlt_properties_set( frame_properties, "_olcolour", mlt_properties_get( producer_properties, "olcolour" ) );
+		mlt_properties_set( frame_properties, "_outline", mlt_properties_get( producer_properties, "outline" ) );
 		mlt_properties_set_data( frame_properties, "_producer_qtext", static_cast<void*>( producer ), 0, NULL, NULL );
 
 		// Set frame properties
@@ -398,16 +411,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_close( mlt_producer producer )
 {
-	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
-
-	QImage* qImg = static_cast<QImage*>( mlt_properties_get_data( producer_properties, "_qimg", NULL ) );
-	delete qImg;
-
-	QPainterPath* qPath = static_cast<QPainterPath*>( mlt_properties_get_data( producer_properties, "_qpath", NULL ) );
-	delete qPath;
-
 	producer->close = NULL;
-
 	mlt_producer_close( producer );
 	free( producer );
 }
@@ -501,10 +505,8 @@ mlt_producer producer_qtext_init( mlt_profile profile, mlt_service_type type, co
 		}
 
 		// Create QT objects to be reused.
-		QImage* qImg = new QImage();
-		mlt_properties_set_data( producer_properties, "_qimg", static_cast<void*>( qImg ), 0, NULL, NULL );
-		QPainterPath* qPath = new QPainterPath();
-		mlt_properties_set_data( producer_properties, "_qpath", static_cast<void*>( qPath ), 0, NULL, NULL );
+		mlt_properties_set_data( producer_properties, "_qimg", static_cast<void*>( new QImage() ), 0, close_qimg, NULL );
+		mlt_properties_set_data( producer_properties, "_qpath", static_cast<void*>( new QPainterPath() ), 0, close_qpath, NULL );
 
 		// Callback registration
 		producer->get_frame = producer_get_frame;
