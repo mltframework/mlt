@@ -174,35 +174,35 @@ static mlt_frame get_background_frame( mlt_producer producer )
 static mlt_frame get_text_frame( mlt_producer producer, mlt_position position )
 {
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
-	mlt_producer pango_producer = mlt_properties_get_data( producer_properties, "_pango_producer", NULL );
+	mlt_producer text_producer = mlt_properties_get_data( producer_properties, "_text_producer", NULL );
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_frame text_frame = NULL;
 
-	if( !pango_producer )
+	if( !text_producer )
 	{
-		pango_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "pango:" );
+		text_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "qtext:" );
 
 		// Save the producer for future use.
-		mlt_properties_set_data( producer_properties, "_pango_producer", pango_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
+		mlt_properties_set_data( producer_properties, "_text_producer", text_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 		// Calculate the font size.
 		char font_size[MAX_TEXT_LEN];
 		snprintf( font_size, MAX_TEXT_LEN - 1, "%dpx", profile->height * TEXT_SIZE_RATIO / 100 );
 
 		// Configure the producer.
-		mlt_properties pango_properties = MLT_PRODUCER_PROPERTIES( pango_producer );
-		mlt_properties_set( pango_properties, "size", font_size );
-		mlt_properties_set( pango_properties, "weight", "400" );
-		mlt_properties_set( pango_properties, "fgcolour", TEXT_FOREGROUND_COLOR );
-		mlt_properties_set( pango_properties, "bgcolour", TEXT_BACKGROUND_COLOR );
-		mlt_properties_set( pango_properties, "pad", "0" );
-		mlt_properties_set( pango_properties, "outline", "0" );
-		mlt_properties_set( pango_properties, "align", "center" );
+		mlt_properties text_properties = MLT_PRODUCER_PROPERTIES( text_producer );
+		mlt_properties_set( text_properties, "size", font_size );
+		mlt_properties_set( text_properties, "weight", "400" );
+		mlt_properties_set( text_properties, "fgcolour", TEXT_FOREGROUND_COLOR );
+		mlt_properties_set( text_properties, "bgcolour", TEXT_BACKGROUND_COLOR );
+		mlt_properties_set( text_properties, "pad", "0" );
+		mlt_properties_set( text_properties, "outline", "0" );
+		mlt_properties_set( text_properties, "align", "center" );
 	}
 
-	if( pango_producer )
+	if( text_producer )
 	{
-		mlt_properties pango_properties = MLT_PRODUCER_PROPERTIES( pango_producer );
+		mlt_properties text_properties = MLT_PRODUCER_PROPERTIES( text_producer );
 		char* direction = mlt_properties_get( producer_properties, "direction" );
 		char* style = mlt_properties_get( producer_properties, "style" );
 		char text[MAX_TEXT_LEN] = "";
@@ -245,10 +245,10 @@ static mlt_frame get_text_frame( mlt_producer producer, mlt_position position )
 			snprintf( text, MAX_TEXT_LEN - 1, "%d", seconds );
 		}
 
-		mlt_properties_set( pango_properties, "markup", text );
+		mlt_properties_set( text_properties, "text", text );
 
 		// Get the frame.
-		mlt_service_get_frame( MLT_PRODUCER_SERVICE( pango_producer ), &text_frame, 0 );
+		mlt_service_get_frame( MLT_PRODUCER_SERVICE( text_producer ), &text_frame, 0 );
 	}
 
 	return text_frame;
