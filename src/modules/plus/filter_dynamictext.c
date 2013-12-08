@@ -211,7 +211,7 @@ static void setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame 
 		// Apply keyword substitution before passing the text to the filter.
 		char result[MAX_TEXT_LEN] = "";
 		substitute_keywords( filter, result, dynamic_text, frame );
-		mlt_properties_set( producer_properties, "markup", (char*)result );
+		mlt_properties_set( producer_properties, "text", (char*)result );
 	}
 
 	// Pass the properties to the pango producer
@@ -315,7 +315,11 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 {
 	mlt_filter filter = mlt_filter_new();
 	mlt_transition transition = mlt_factory_transition( profile, "composite", NULL );
-	mlt_producer producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "pango:" );
+	mlt_producer producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "qtext:" );
+
+	// Use pango if qtext is not available.
+	if( !producer )
+		producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "pango:" );
 
 	if ( filter && transition && producer )
 	{
