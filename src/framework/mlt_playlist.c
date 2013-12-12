@@ -1169,6 +1169,11 @@ int mlt_playlist_mix( mlt_playlist self, int clip, int length, mlt_transition tr
 		mlt_producer track_a = NULL;
 		mlt_producer track_b = NULL;
 		mlt_tractor tractor = mlt_tractor_new( );
+
+		mlt_service_set_profile( MLT_TRACTOR_SERVICE( tractor ),
+			mlt_service_profile( MLT_PLAYLIST_SERVICE( self ) ) );
+		mlt_properties_set_lcnumeric( MLT_TRACTOR_PROPERTIES( tractor ),
+			mlt_properties_get_lcnumeric( MLT_PLAYLIST_PROPERTIES( self ) ) );
 		mlt_events_block( MLT_PLAYLIST_PROPERTIES( self ), self );
 
 		// Check length is valid for both clips and resize if necessary.
