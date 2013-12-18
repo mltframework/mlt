@@ -3,10 +3,10 @@
 if [ "$help" = "1" ]
 then
 	cat << EOF
-QT options:
+Qt options:
 
-  --qt-libdir         - Location of QT lib directory [/usr/lib/qt4]
-  --qt-includedir     - Location of QT include directory [/usr/include/qt4]
+  --qt-libdir             - Location of Qt lib directory [/usr/lib/qt4]
+  --qt-includedir         - Location of Qt include directory [/usr/include/qt4]
   --kde-libdir            - Location of KDE lib directory [/usr/lib]
   --kde-includedir        - Location of KDE include directory [/usr/include/kde]
   --exif-libdir           - Location of libexif lib directory [/usr/lib]
@@ -151,7 +151,7 @@ else
 		kde4-config
 		if [ $? -eq 0 ] && [ "$qt4_found" != "" ]
 		then
-			# test if we have KDE4, required on some systems to get QT extra formats (xcf, ...)
+			# test if we have KDE4, required on some systems to get Qt extra formats (xcf, ...)
 			if [ "$kde_includedir" = "" ]
 			then
 				  kde_includedir=`kde4-config --install include`
