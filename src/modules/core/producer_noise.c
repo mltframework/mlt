@@ -29,15 +29,26 @@
 /** Random number generator
 */
 
-static unsigned int seed_x = 521288629;
-static unsigned int seed_y = 362436069;
-
-static inline unsigned int fast_rand( )
+typedef struct
 {
-   static unsigned int a = 18000, b = 30903;
-   seed_x = a * ( seed_x & 65535 ) + ( seed_x >> 16 );
-   seed_y = b * ( seed_y & 65535 ) + ( seed_y >> 16 );
-   return ( ( seed_x << 16 ) + ( seed_y & 65535 ) );
+	unsigned int x;
+	unsigned int y;
+} rand_seed;
+
+static void init_seed( rand_seed* seed, int init )
+{
+	// Use the initial value to initialize the seed to arbitrary values.
+	// This causes the algorithm to produce consistent results each time for the same frame number.
+	seed->x = 521288629 + init - ( init << 16 );
+	seed->y = 362436069 - init + ( init << 16 );
+}
+
+static inline unsigned int fast_rand( rand_seed* seed )
+{
+	static unsigned int a = 18000, b = 30903;
+	seed->x = a * ( seed->x & 65535 ) + ( seed->x >> 16 );
+	seed->y = b * ( seed->y & 65535 ) + ( seed->y >> 16 );
+	return ( ( seed->x << 16 ) + ( seed->y & 65535 ) );
 }
 
 // Foward declarations
@@ -92,10 +103,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Value to hold a random number
 		uint32_t value;
 
+		// Initialize seed from the frame number.
+		rand_seed seed;
+		init_seed( &seed, mlt_frame_get_position( frame ) );
+
 		// Generate random noise
 		while ( p != *buffer )
 		{
-			value = fast_rand( ) & 0xff;
+			value = fast_rand( &seed ) & 0xff;
 			*( -- p ) = 128;
 			*( -- p ) = value < 16 ? 16 : value > 240 ? 240 : value;
 		}
@@ -124,8 +139,10 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 	if ( *buffer != NULL )
 	{
 		int16_t *p = *buffer + size / 2;
-		while ( p != *buffer ) 
-			*( -- p ) = fast_rand( ) & 0x0f00;
+		rand_seed seed;
+		init_seed( &seed, mlt_frame_get_position( frame ) );
+		while ( p != *buffer )
+			*( -- p ) = fast_rand( &seed ) & 0x0f00;
 	}
 
 	// Set the buffer for destruction
