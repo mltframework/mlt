@@ -19,7 +19,8 @@ bugs:
      Property "id" is generated as service type followed by number if no
      property named "id" exists, but it fails to guarantee uniqueness.
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: File
     type: string
     description: >
@@ -83,3 +84,10 @@ parameters:
       - clock # or CLOCK
     default: frames
     widget: dropdown
+
+  - identififer: store
+    title: Include property prefix
+    type: string
+    description: >
+      To save additional properties that MLT does not know about, supply an
+      application-specific property name prefix that you are using.
