@@ -249,15 +249,9 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 	// If we have a qimage and need a new scaled image
 	if ( self->qimage && ( !self->current_image || ( format != mlt_image_none  && format != self->format ) ) )
 	{
-		char *interps = mlt_properties_get( properties, "rescale.interp" );
-		int interp = 0;
+		QString interps = mlt_properties_get( properties, "rescale.interp" );
+		bool interp = ( interps != "nearest" ) && ( interps != "none" );
 		QImage *qimage = static_cast<QImage*>( self->qimage );
-
-		// QImage has two scaling modes - we'll toggle between them here
-		if ( strcmp( interps, "tiles" ) == 0
-			|| strcmp( interps, "hyper" ) == 0
-			|| strcmp( interps, "bicubic" ) == 0 )
-			interp = 1;
 
 		// Note - the original qimage is already safe and ready for destruction
 		if ( qimage->depth() == 1 )
@@ -267,7 +261,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			qimage = new QImage( temp );
 			self->qimage = qimage;
 		}
-		QImage scaled = interp == 0 ? qimage->scaled( QSize( width, height ) ) :
+		QImage scaled = interp? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
 		int has_alpha = scaled.hasAlphaChannel();
 

@@ -92,7 +92,7 @@ mlt_producer producer_pixbuf_init( char *filename )
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
 		mlt_properties_set_int( properties, "seekable", 1 );
-                mlt_properties_set_int( properties, "loop", 1 );
+		mlt_properties_set_int( properties, "loop", 1 );
 
 		// Validate the resource
 		if ( filename )
@@ -372,13 +372,13 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 	position += mlt_producer_get_in( producer );
 
 	// Image index
-        int loop = mlt_properties_get_int( producer_props, "loop" );
-        int current_idx;
-        if (loop) {
+	int loop = mlt_properties_get_int( producer_props, "loop" );
+	int current_idx;
+	if (loop) {
 		current_idx = ( int )floor( ( double )position / ttl ) % self->count;
-        } else {
+	} else {
 		current_idx = MIN(( double )position / ttl, self->count - 1);
-        }
+	}
 
 	// Key for the cache
 	char image_key[ 10 ];
@@ -447,6 +447,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 	if ( self->pixbuf && ( !self->image || ( format != mlt_image_none && format != self->format ) ) )
 	{
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
+		if ( interps ) interps = strdup( interps );
 		int interp = GDK_INTERP_BILINEAR;
 
 		if ( !interps ) {
@@ -458,6 +459,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 			interp = GDK_INTERP_TILES;
 		else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "bicubic" ) == 0 )
 			interp = GDK_INTERP_HYPER;
+		if ( interps ) free( interps );
 
 		// Note - the original pixbuf is already safe and ready for destruction
 		pthread_mutex_lock( &g_mutex );
@@ -553,8 +555,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_producer producer = &self->parent;
 
 	// Use the width and height suggested by the rescale filter because we can do our own scaling.
-	*width = mlt_properties_get_int( properties, "rescale_width" );
-	*height = mlt_properties_get_int( properties, "rescale_height" );
+	if ( mlt_properties_get_int( properties, "rescale_width" ) > 0 )
+		*width = mlt_properties_get_int( properties, "rescale_width" );
+	if ( mlt_properties_get_int( properties, "rescale_height" ) > 0 )
+		*height = mlt_properties_get_int( properties, "rescale_height" );
 
 	// Restore pixbuf and image
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );

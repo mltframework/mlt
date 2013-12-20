@@ -237,8 +237,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	producer_qimage self = mlt_properties_get_data( properties, "producer_qimage", NULL );
 	mlt_producer producer = &self->parent;
 
-	*width = mlt_properties_get_int( properties, "rescale_width" );
-	*height = mlt_properties_get_int( properties, "rescale_height" );
+	// Use the width and height suggested by the rescale filter because we can do our own scaling.
+	if ( mlt_properties_get_int( properties, "rescale_width" ) > 0 )
+		*width = mlt_properties_get_int( properties, "rescale_width" );
+	if ( mlt_properties_get_int( properties, "rescale_height" ) > 0 )
+		*height = mlt_properties_get_int( properties, "rescale_height" );
 
 	mlt_service_lock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
