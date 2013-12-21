@@ -774,10 +774,10 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 		self->destructor = free;
 		self->serialiser = that->serialiser;
 	}
-	else if ( self->types & mlt_prop_data && self->serialiser != NULL )
+	else if ( self->types & mlt_prop_data && that->serialiser != NULL )
 	{
 		self->types = mlt_prop_string;
-		self->prop_string = self->serialiser( self->data, self->length );
+		self->prop_string = that->serialiser( that->data, that->length );
 	}
 	pthread_mutex_unlock( &self->mutex );
 }
