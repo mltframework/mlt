@@ -49,7 +49,6 @@
  * \properties \em out when to stop
  * \properties \em _filter_private Set this on a service to ensure that attached filters are handled privately.
  * See modules/core/filter_region.c and modules/core/filter_watermark.c for examples.
- * \properties \em disable Set this on a filter to disable it while keeping it in the object model.
  * \properties \em _profile stores the mlt_profile for a service
  * \properties \em _unique_id is a unique identifier
  * \properties \em _need_previous_next boolean that instructs producers to get

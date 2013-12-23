@@ -33,6 +33,7 @@
  * \extends mlt_service_s
  * \properties \em track the index of the track of a multitrack on which the filter is applied
  * \properties \em service a reference to the service to which this filter is attached.
+ * \properties \em disable Set this to disable the filter while keeping it in the object model.
  * Currently this is not cleared when the filter is detached.
  */
 
