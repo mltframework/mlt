@@ -36,6 +36,7 @@
  * \properties \em accepts_blanks a flag to indicate if the transition should accept blank frames
  * \properties \em always_active a flag to indicate that the in and out points do not apply
  * \properties \em _transition_type 1 for video, 2 for audio
+ * \properties \em disable Set this to disable the transition while keeping it in the object model.
  */
 
 struct mlt_transition_s

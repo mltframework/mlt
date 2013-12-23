@@ -471,7 +471,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		}
 
 		// Finally, process the a and b frames
-		if ( active )
+		if ( active && !mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( self ), "disable" ) )
 		{
 			mlt_frame a_frame_ptr = self->frames[ !reverse_order ? a_frame : b_frame ];
 			mlt_frame b_frame_ptr = self->frames[ !reverse_order ? b_frame : a_frame ];
