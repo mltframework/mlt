@@ -527,8 +527,10 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 		if ( mlt_properties_get( properties, "global_feed" ) )
 			xmlNewProp( child, _x("global_feed"), _x(mlt_properties_get( properties, "global_feed" )) );
-		xmlNewProp( child, _x("in"), _x(mlt_properties_get_time( properties, "in", context->time_format )) );
-		xmlNewProp( child, _x("out"), _x(mlt_properties_get_time( properties, "out", context->time_format )) );
+		if ( mlt_properties_get_position( properties, "in" ) >= 0 )
+			xmlNewProp( child, _x("in"), _x(mlt_properties_get_time( properties, "in", context->time_format )) );
+		if ( mlt_properties_get_position( properties, "out" ) >= 0 )
+			xmlNewProp( child, _x("out"), _x(mlt_properties_get_time( properties, "out", context->time_format )) );
 
 		// Store application specific properties
 		serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, context->store );
