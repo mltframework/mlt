@@ -196,6 +196,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			}
 			break;
 		default:
+			*format = mlt_image_rgb24a;
 			while ( --i )
 			{
 				*p ++ = color.r;
