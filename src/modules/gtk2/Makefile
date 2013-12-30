@@ -35,6 +35,7 @@ endif
 ifdef USE_PANGO
 OBJS += producer_pango.o
 CFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --cflags pangoft2`
+CFLAGS += `pkg-config --cflags-only-I freetype2 | sed 's/ *$$//g')`/freetype
 LDFLAGS += `pkg-config $(PKGCONFIG_PREFIX) --libs pangoft2`
 ifeq ($(targetos),Darwin)
 LDFLAGS += -liconv

@@ -25,7 +25,7 @@
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <pango/pangoft2.h>
-#include <freetype/freetype.h>
+#include <freetype.h>
 #include <iconv.h>
 #include <pthread.h>
 #include <ctype.h>
