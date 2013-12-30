@@ -1152,6 +1152,7 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 
 double mlt_property_anim_get_double( mlt_property self, double fps, locale_t locale, int position, int length )
 {
+	pthread_mutex_lock( &self->mutex );
 	double result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
@@ -1168,6 +1169,7 @@ double mlt_property_anim_get_double( mlt_property self, double fps, locale_t loc
 	{
 		result = mlt_property_get_double( self, fps, locale );
 	}
+	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
 
@@ -1185,6 +1187,7 @@ double mlt_property_anim_get_double( mlt_property self, double fps, locale_t loc
 
 int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, int position, int length )
 {
+	pthread_mutex_lock( &self->mutex );
 	int result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
@@ -1201,6 +1204,7 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 	{
 		result = mlt_property_get_int( self, fps, locale );
 	}
+	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
 
@@ -1218,6 +1222,7 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 
 char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t locale, int position, int length )
 {
+	pthread_mutex_lock( &self->mutex );
 	char *result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
@@ -1228,14 +1233,12 @@ char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t loca
 			refresh_animation( self, fps, locale, length );
 		mlt_animation_get_item( self->animation, &item, position );
 
-		pthread_mutex_lock( &self->mutex );
 		if ( self->prop_string )
 			free( self->prop_string );
 		self->prop_string = mlt_property_get_string_l( item.property, locale );
 		if ( self->prop_string )
 			self->prop_string = strdup( self->prop_string );
 		self->types |= mlt_prop_string;
-		pthread_mutex_unlock( &self->mutex );
 
 		result = self->prop_string;
 		mlt_property_close( item.property );
@@ -1244,6 +1247,7 @@ char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t loca
 	{
 		result = mlt_property_get_string_l( self, locale );
 	}
+	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
 
@@ -1521,6 +1525,7 @@ int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, l
 
 mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t locale, int position, int length )
 {
+	pthread_mutex_lock( &self->mutex );
 	mlt_rect result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
@@ -1538,5 +1543,6 @@ mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t loc
 	{
 		result = mlt_property_get_rect( self, locale );
 	}
+	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
