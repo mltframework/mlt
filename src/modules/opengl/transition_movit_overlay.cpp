@@ -151,7 +151,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		}
 	}
 	if ( fbo ) GlslManager::release_fbo( fbo );
-	mlt_service_lock( service );
+	mlt_service_unlock( service );
 
 	return error;
 }
