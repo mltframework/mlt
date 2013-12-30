@@ -19,10 +19,21 @@
 
 #include <framework/mlt.h>
 #include <string.h>
+#include <math.h>
 #include <assert.h>
 
 #include "glsl_manager.h"
 #include <movit/white_balance_effect.h>
+
+static double srgb8_to_linear(int c)
+{
+	double x = c / 255.0f;
+	if (x < 0.04045f) {
+		return (1.0/12.92f) * x;
+	} else {
+		return pow((x + 0.055) * (1.0/1.055f), 2.4);
+	}
+}
 
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -35,9 +46,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_position length = mlt_filter_get_length2( filter, frame );
 		int color_int = mlt_properties_anim_get_int( properties, "neutral_color", position, length );
 		RGBTriplet color(
-			float((color_int >> 24) & 0xff) / 255.0f,
-			float((color_int >> 16) & 0xff) / 255.0f,
-			float((color_int >> 8) & 0xff) / 255.0f
+			srgb8_to_linear((color_int >> 24) & 0xff),
+			srgb8_to_linear((color_int >> 16) & 0xff),
+			srgb8_to_linear((color_int >> 8) & 0xff)
 		);
 		bool ok = effect->set_vec3( "neutral_color", (float*) &color );
 		ok |= effect->set_float( "output_color_temperature",
