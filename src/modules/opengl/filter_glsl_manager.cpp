@@ -161,6 +161,7 @@ glsl_pbo GlslManager::get_pbo(int size)
 			return NULL;
 		}
 		pbo->pbo = pb;
+		pbo->size = 0;
 	}
 	if (size > pbo->size) {
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo->pbo);
