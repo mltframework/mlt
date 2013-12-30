@@ -195,6 +195,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				*p ++ = color.b;
 			}
 			break;
+		case mlt_image_glsl:
+		case mlt_image_glsl_texture:
+			memset(p, 0, size);
+			break;
 		default:
 			*format = mlt_image_rgb24a;
 			while ( --i )
