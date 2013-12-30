@@ -437,6 +437,10 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 		case mlt_image_yuv420p:
 			if ( bpp ) *bpp = 3 / 2;
 			return width * height * 3 / 2;
+		case mlt_image_glsl:
+		case mlt_image_glsl_texture:
+			if ( bpp ) *bpp = 0;
+			return 4;
 		default:
 			if ( bpp ) *bpp = 0;
 			return 0;
