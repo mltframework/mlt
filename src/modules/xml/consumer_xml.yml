@@ -85,7 +85,7 @@ parameters:
     default: frames
     widget: dropdown
 
-  - identififer: store
+  - identifier: store
     title: Include property prefix
     type: string
     description: >
