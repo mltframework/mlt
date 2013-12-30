@@ -571,6 +571,9 @@ int mlt_service_attach( mlt_service self, mlt_filter filter )
 				mlt_properties_set_data( props, "service", self, 0, NULL, NULL );
 				mlt_events_fire( properties, "service-changed", NULL );
 				mlt_events_fire( props, "service-changed", NULL );
+				mlt_service cp = mlt_properties_get_data( properties, "_cut_parent", NULL );
+				if ( cp )
+					mlt_events_fire( MLT_SERVICE_PROPERTIES(cp), "service-changed", NULL );
 				mlt_events_listen( props, self, "service-changed", ( mlt_listener )mlt_service_filter_changed );
 				mlt_events_listen( props, self, "property-changed", ( mlt_listener )mlt_service_filter_property_changed );
 			}
