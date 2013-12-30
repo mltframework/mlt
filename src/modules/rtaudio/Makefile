@@ -24,8 +24,8 @@ LDFLAGS += -lole32 -ldsound -lwinmm
 #CXXFLAGS +=-D__WINDOWS_ASIO__
 else ifeq ($(targetos), Linux)
 CXXFLAGS += -D__LINUX_ALSA__
-CXXFLAGS += `pkg-config --cflags alsa`
-LDFLAGS += `pkg-config --libs alsa`
+CXXFLAGS += $(shell pkg-config --cflags alsa)
+LDFLAGS += $(shell pkg-config --libs alsa)
 else ifeq ($(targetos), NetBSD)
 CXXFLAGS += -D__LINUX_OSS__
 LDFLAGS += -lossaudio

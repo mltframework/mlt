@@ -12,10 +12,10 @@ OBJS = factory.o \
 	   transition_frei0r.o \
 	   frei0r_helper.o
 
-CFLAGS += `pkg-config --cflags frei0r 2> /dev/null`
+CFLAGS += $(shell pkg-config --cflags frei0r 2> /dev/null)
 
 LDFLAGS += -lm $(LIBDL)
-LDFLAGS += `pkg-config --libs frei0r 2> /dev/null`
+LDFLAGS += $(shell pkg-config --libs frei0r 2> /dev/null)
 
 SRCS := $(OBJS:.o=.c)
 

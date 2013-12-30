@@ -9,9 +9,9 @@ TARGET = ../libmltresample$(LIBSUF)
 OBJS = factory.o \
 	   filter_resample.o 
 
-CFLAGS += `pkg-config --cflags samplerate`
+CFLAGS += $(shell pkg-config --cflags samplerate)
 
-LDFLAGS += `pkg-config --libs samplerate`
+LDFLAGS += $(shell pkg-config --libs samplerate)
 
 SRCS := $(OBJS:.o=.c)
 

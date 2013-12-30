@@ -9,11 +9,11 @@ TARGET = ../libmltvorbis$(LIBSUF)
 OBJS = factory.o \
 	   producer_vorbis.o
 
-CFLAGS += `pkg-config --cflags vorbis`
-CFLAGS += `pkg-config --cflags vorbisfile`
+CFLAGS += $(shell pkg-config --cflags vorbis)
+CFLAGS += $(shell pkg-config --cflags vorbisfile)
 
-LDFLAGS += `pkg-config --libs vorbis`
-LDFLAGS += `pkg-config --libs vorbisfile`
+LDFLAGS += $(shell pkg-config --libs vorbis)
+LDFLAGS += $(shell pkg-config --libs vorbisfile)
 
 SRCS := $(OBJS:.o=.c)
 

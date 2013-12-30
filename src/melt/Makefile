@@ -11,8 +11,8 @@ SRCS := $(OBJS:.o=.c)
 
 ifeq ($(targetos), MinGW)
 ifeq (, $(findstring MELT_NOSDL, $(CFLAGS)))
-CFLAGS += `sdl-config --cflags`
-LDFLAGS += `sdl-config --libs`
+CFLAGS += $(shell sdl-config --cflags)
+LDFLAGS += $(shell sdl-config --libs)
 endif
 bindir = $(prefix)
 endif

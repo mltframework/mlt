@@ -10,9 +10,9 @@ OBJS = factory.o \
 	   consumer_xml.o \
 	   producer_xml.o
 
-CFLAGS += `pkg-config libxml-2.0 --cflags`
+CFLAGS += $(shell pkg-config libxml-2.0 --cflags)
 
-LDFLAGS += `pkg-config libxml-2.0 --libs`
+LDFLAGS += $(shell pkg-config libxml-2.0 --libs)
 
 SRCS := $(OBJS:.o=.c)
 
