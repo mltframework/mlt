@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [ "$help" != "1" ]
+then
+	if ! $(pkg-config vidstab)
+	then
+		echo "- vid.stab not found: disabling"
+		touch ../disable-vidstab
+		exit 0
+	fi
+
+	echo > config.mak
+	case $targetos in
+	Darwin)
+		;;
+	MinGW)
+		;;
+	*)
+		;;
+	esac
+	exit 0
+fi

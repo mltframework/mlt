@@ -1,0 +1,172 @@
+schema_version: 0.1
+type: filter
+identifier: vid.stab.deshake
+title: Vid.Stab Deshake
+copyright: Jakub Ksiezniak
+creator: Georg Martius
+version: 1
+license: GPLv2
+language: en
+url: http://public.hronopik.de/vid.stab/
+tags:
+  - Video
+description: Stabilize Video (for wiggly/rolling video)
+notes: >
+    Deshakes a video clip by extracting relative transformations
+    of subsequent frames and transforms the high-frequency away.
+    This is a single pass verion of stabilize and transform plugin.
+
+parameters:
+  - identifier: shakiness
+    title: Shakiness
+    type: integer
+    description: How shaky is the video and how quick is the camera? (analysis)
+    readonly: no
+    required: no
+    minimum: 1
+    maximum: 10
+    default: 4
+    mutable: yes
+    widget: spinner
+
+  - identifier: accuracy
+    title: Accuracy
+    type: integer
+    description: Accuracy of shakiness detection (analysis)
+    readonly: no
+    required: no
+    minimum: 1
+    maximum: 15
+    default: 4
+    mutable: yes
+    widget: spinner
+
+  - identifier: stepsize
+    title: Stepsize
+    type: integer
+    description: Step size of search process, region around minimum is scanned with 1 pixel resolution (analysis)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 100
+    default: 6
+    mutable: yes
+    widget: spinner
+
+  - identifier: algo
+    title: Algorithm
+    type: integer
+    description: 0 = brute force (translation only), 1 = small measurement fields (analysis)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 1
+    mutable: yes
+    widget: spinner
+
+  - identifier: mincontrast
+    title: Minimum Contrast
+    type: float
+    description: Below this contrast a field is discarded (analysis)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 0.3
+    mutable: yes
+    widget: spinner
+
+  - identifier: smoothing
+    title: Smoothing
+    type: integer
+    description: number of frames for lowpass filtering (2N + 1 frames) (transform)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 100
+    default: 10
+    mutable: yes
+    widget: spinner
+
+  - identifier: maxshift
+    title: Maxshift
+    type: integer
+    description: maximum translation, -1 = no limit (transform)
+    unit: pixels
+    readonly: no
+    required: no
+    minimum: -1
+    maximum: 1000
+    default: -1
+    mutable: yes
+    widget: spinner
+
+  - identifier: maxangle
+    title: Maxangle
+    type: float
+    description: max angle to rotate, -1 = no limit (transform)
+    unit: radians
+    readonly: no
+    required: no
+    minimum: -1
+    maximum: 3.142
+    default: -1
+    mutable: yes
+    widget: spinner
+
+  - identifier: crop
+    title: Crop
+    type: integer
+    description: 0 = keep border, 1 = black background (transform)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+    widget: spinner
+
+  - identifier: zoom
+    title: Zoom
+    type: integer
+    description: additional zoom amount (transform)
+    unit: percent
+    readonly: no
+    required: no
+    minimum: -500
+    maximum: 500
+    default: 0
+    mutable: yes
+    widget: spinner
+
+  - identifier: optzoom
+    title: Optimal Zoom
+    type: integer
+    description: automatically determine optimal zoom (transform)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 1
+    default: 1
+    mutable: yes
+    widget: spinner
+
+  - identifier: sharpen
+    title: Sharpen Image
+    type: float
+    description: amount of sharpening (transform)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 10
+    default: 0.8
+    mutable: yes
+    widget: spinner
+
+  - identifier: refresh
+    description: >
+      Applications should set this when it updates a transform parameter.
+    type: integer
+    minimum: 0
+    maximum: 1
