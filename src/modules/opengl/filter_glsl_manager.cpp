@@ -72,13 +72,17 @@ GlslManager* GlslManager::get_instance()
 
 glsl_fbo GlslManager::get_fbo(int width, int height)
 {
+	lock();
 	for (int i = 0; i < fbo_list.count(); ++i) {
 		glsl_fbo fbo = (glsl_fbo) fbo_list.peek(i);
 		if (!fbo->used && (fbo->width == width) && (fbo->height == height)) {
 			fbo->used = 1;
+			unlock();
 			return fbo;
 		}
 	}
+	unlock();
+
 	GLuint fb = 0;
 	glGenFramebuffers(1, &fb);
 	if (!fb)
@@ -93,7 +97,9 @@ glsl_fbo GlslManager::get_fbo(int width, int height)
 	fbo->width = width;
 	fbo->height = height;
 	fbo->used = 1;
+	lock();
 	fbo_list.push_back(fbo);
+	unlock();
 	return fbo;
 }
 
@@ -104,6 +110,7 @@ void GlslManager::release_fbo(glsl_fbo fbo)
 
 glsl_texture GlslManager::get_texture(int width, int height, GLint internal_format)
 {
+	lock();
 	for (int i = 0; i < texture_list.count(); ++i) {
 		glsl_texture tex = (glsl_texture) texture_list.peek(i);
 		if (!tex->used && (tex->width == width) && (tex->height == height) && (tex->internal_format == internal_format)) {
@@ -112,9 +119,12 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glBindTexture( GL_TEXTURE_2D, 0);
 			tex->used = 1;
+			unlock();
 			return tex;
 		}
 	}
+	unlock();
+
 	GLuint tex = 0;
 	glGenTextures(1, &tex);
 	if (!tex)
@@ -138,7 +148,9 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 	gtex->height = height;
 	gtex->internal_format = internal_format;
 	gtex->used = 1;
+	lock();
 	texture_list.push_back(gtex);
+	unlock();
 	return gtex;
 }
 
@@ -149,15 +161,19 @@ void GlslManager::release_texture(glsl_texture texture)
 
 glsl_pbo GlslManager::get_pbo(int size)
 {
+	lock();
 	if (!pbo) {
 		GLuint pb = 0;
 		glGenBuffers(1, &pb);
-		if (!pb)
+		if (!pb) {
+			unlock();
 			return NULL;
+		}
 
 		pbo = new glsl_pbo_s;
 		if (!pbo) {
 			glDeleteBuffers(1, &pb);
+			unlock();
 			return NULL;
 		}
 		pbo->pbo = pb;
@@ -169,11 +185,13 @@ glsl_pbo GlslManager::get_pbo(int size)
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 		pbo->size = size;
 	}
+	unlock();
 	return pbo;
 }
 
 void GlslManager::cleanupContext()
 {
+	lock();
 	while (fbo_list.peek_back()) {
 		glsl_fbo fbo = (glsl_fbo) fbo_list.pop_back();
 		glDeleteFramebuffers(1, &fbo->fbo);
@@ -189,6 +207,7 @@ void GlslManager::cleanupContext()
 		delete pbo;
 		pbo = 0;
 	}
+	unlock();
 }
 
 void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
