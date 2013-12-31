@@ -22,6 +22,7 @@
 #include <string>
 #include "glsl_manager.h"
 #include <movit/init.h>
+#include <movit/util.h>
 #include <movit/effect_chain.h>
 #include "mlt_movit_input.h"
 #include "mlt_flip_effect.h"
@@ -340,7 +341,7 @@ Effect* GlslManager::add_effect( mlt_filter filter, mlt_frame frame, Effect* eff
 	return effect;
 }
 
-void GlslManager::render( mlt_service service, void* chain, GLuint fbo, int width, int height )
+void GlslManager::render_fbo( mlt_service service, void* chain, GLuint fbo, int width, int height )
 {
 	EffectChain* effect_chain = (EffectChain*) chain;
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
@@ -350,6 +351,114 @@ void GlslManager::render( mlt_service service, void* chain, GLuint fbo, int widt
 		effect_chain->finalize();
 	}
 	effect_chain->render_to_fbo( fbo, width, height );
+}
+
+int GlslManager::render_frame_texture(mlt_service service, mlt_frame frame, int width, int height, uint8_t **image)
+{
+	EffectChain* chain = get_chain( service );
+	if (!chain) return 1;
+	glsl_fbo fbo = get_fbo( width, height );
+	if (!fbo) return 1;
+	glsl_texture texture = get_texture( width, height, GL_RGBA );
+	if (!texture) {
+		release_fbo( fbo );
+		return 1;
+	}
+
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
+	check_error();
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
+	check_error();
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	check_error();
+
+	render_fbo( service, chain, fbo->fbo, width, height );
+
+	glFinish();
+	check_error();
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	check_error();
+	release_fbo( fbo );
+
+	*image = (uint8_t*) &texture->texture;
+	mlt_frame_set_image( frame, *image, 0, NULL );
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.texture", texture, 0,
+		(mlt_destructor) GlslManager::release_texture, NULL );
+
+	return 0;
+}
+
+int GlslManager::render_frame_rgba(mlt_service service, mlt_frame frame, int width, int height, uint8_t **image)
+{
+	EffectChain* chain = get_chain( service );
+	if (!chain) return 1;
+	glsl_fbo fbo = get_fbo( width, height );
+	if (!fbo) return 1;
+	glsl_texture texture = get_texture( width, height, GL_RGBA );
+	if (!texture) {
+		release_fbo( fbo );
+		return 1;
+	}
+
+	// Use a PBO to hold the data we read back with glReadPixels().
+	// (Intel/DRI goes into a slow path if we don't read to PBO.)
+	int img_size = width * height * 4;
+	glsl_pbo pbo = get_pbo( img_size );
+	if (!pbo) {
+		release_fbo( fbo );
+		release_texture(texture);
+		return 1;
+	}
+
+	// Set the FBO
+	check_error();
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
+	check_error();
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
+	check_error();
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	check_error();
+
+	render_fbo( service, chain, fbo->fbo, width, height );
+
+	// Read FBO into PBO
+	glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo );
+	check_error();
+	glBufferData( GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ );
+	check_error();
+	glReadPixels( 0, 0, width, height, GL_BGRA, GL_UNSIGNED_BYTE, BUFFER_OFFSET(0) );
+	check_error();
+
+	// Copy from PBO
+	uint8_t* buf = (uint8_t*) glMapBuffer( GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY );
+	check_error();
+	*image = (uint8_t*) mlt_pool_alloc( img_size );
+	mlt_frame_set_image( frame, *image, img_size, mlt_pool_release );
+	memcpy( *image, buf, img_size );
+
+	// Convert BGRA to RGBA
+	register uint8_t *p = *image;
+	register int n = width * height + 1;
+	while ( --n ) {
+		uint8_t b = p[0];
+		*p = p[2]; p += 2;
+		*p = b; p += 2;
+	}
+
+	// Release PBO and FBO
+	glUnmapBuffer( GL_PIXEL_PACK_BUFFER_ARB );
+	check_error();
+	glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, 0 );
+	check_error();
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	check_error();
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	check_error();
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.texture", texture, 0,
+		(mlt_destructor) GlslManager::release_texture, NULL);
+	release_fbo( fbo );
+
+	return 0;
 }
 
 void GlslManager::lock_service( mlt_frame frame )

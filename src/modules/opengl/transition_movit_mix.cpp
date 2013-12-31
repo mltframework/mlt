@@ -89,83 +89,14 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// Setup rendering to an FBO
 	GlslManager* glsl = GlslManager::get_instance();
-	glsl_fbo fbo = glsl->get_fbo( *width, *height );
 	if ( output_format == mlt_image_glsl_texture ) {
-		glsl_texture texture = glsl->get_texture( *width, *height, GL_RGBA );
-
-		glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
-		check_error();
-		glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
-		check_error();
-		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-		check_error();
-
-		GlslManager::render( service, chain, fbo->fbo, *width, *height );
-
-		glFinish();
-		check_error();
-		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-		check_error();
-
-		*image = (uint8_t*) &texture->texture;
-		mlt_frame_set_image( a_frame, *image, 0, NULL );
-		mlt_properties_set_data( properties, "movit.convert", texture, 0,
-			(mlt_destructor) GlslManager::release_texture, NULL );
+		error = glsl->render_frame_texture( service, a_frame, *width, *height, image );
 		*format = output_format;
 	}
 	else {
-		// Use a PBO to hold the data we read back with glReadPixels()
-		// (Intel/DRI goes into a slow path if we don't read to PBO)
-		GLenum gl_format = ( output_format == mlt_image_rgb24a || output_format == mlt_image_opengl )?
-			GL_RGBA : GL_RGB;
-		int img_size = *width * *height * ( gl_format == GL_RGB? 3 : 4 );
-		glsl_pbo pbo = glsl->get_pbo( img_size );
-		glsl_texture texture = glsl->get_texture( *width, *height, gl_format );
-
-		if ( fbo && pbo && texture ) {
-			// Set the FBO
-			glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
-			check_error();
-			glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
-			check_error();
-			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-			check_error();
-
-			GlslManager::render( service, chain, fbo->fbo, *width, *height );
-
-			// Read FBO into PBO
-			glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo );
-			check_error();
-			glBufferData( GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ );
-			check_error();
-			glReadPixels( 0, 0, *width, *height, gl_format, GL_UNSIGNED_BYTE, BUFFER_OFFSET(0) );
-			check_error();
-
-			// Copy from PBO
-			uint8_t* buf = (uint8_t*) glMapBuffer( GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY );
-			check_error();
-
-			*format = gl_format == GL_RGBA ? mlt_image_rgb24a : mlt_image_rgb24;
-			*image = (uint8_t*) mlt_pool_alloc( img_size );
-			mlt_frame_set_image( a_frame, *image, img_size, mlt_pool_release );
-			memcpy( *image, buf, img_size );
-
-			// Release PBO and FBO
-			glUnmapBuffer( GL_PIXEL_PACK_BUFFER_ARB );
-			check_error();
-			glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, 0 );
-			check_error();
-			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-			check_error();
-			glBindTexture( GL_TEXTURE_2D, 0 );
-			check_error();
-			GlslManager::release_texture( texture );
-		}
-		else {
-			error = 1;
-		}
+		error = glsl->render_frame_rgba( service, a_frame, *width, *height, image );
+		*format = mlt_image_rgb24a;
 	}
-	if ( fbo ) GlslManager::release_fbo( fbo );
 	mlt_service_unlock( service );
 
 	return error;

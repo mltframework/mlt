@@ -73,8 +73,9 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
-	mlt_log_debug( NULL, "filter_movit_convert: %s -> %s\n",
-		mlt_image_format_name( *format ), mlt_image_format_name( output_format ) );
+	mlt_log_debug( NULL, "filter_movit_convert: %s -> %s (%d)\n",
+		mlt_image_format_name( *format ), mlt_image_format_name( output_format ),
+		mlt_frame_get_position( frame ) );
 
 	// Use CPU if glsl not initialized or not supported.
 	GlslManager* glsl = GlslManager::get_instance();
@@ -206,92 +207,19 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	}
 
 	if ( output_format != mlt_image_glsl ) {
-		glsl_fbo fbo = glsl->get_fbo( width, height );
 
 		if ( output_format == mlt_image_glsl_texture ) {
-			glsl_texture texture = glsl->get_texture( width, height, GL_RGBA );
-
-			glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
-			check_error();
-			glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
-			check_error();
-			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-			check_error();
-
-			GlslManager::render( service, chain, fbo->fbo, width, height );
-
-			glFinish();
-			check_error();
-			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-			check_error();
-
-			*image = (uint8_t*) &texture->texture;
-			mlt_frame_set_image( frame, *image, 0, NULL );
-			mlt_properties_set_data( properties, "movit.convert.texture", texture, 0,
-				(mlt_destructor) GlslManager::release_texture, NULL );
-			mlt_properties_set_int( properties, "format", output_format );
-			*format = output_format;
+			error = glsl->render_frame_texture( service, frame, width, height, image );
 		}
 		else {
-			// Use a PBO to hold the data we read back with glReadPixels()
-			// (Intel/DRI goes into a slow path if we don't read to PBO)
-			GLenum gl_format = ( output_format == mlt_image_rgb24a || output_format == mlt_image_opengl )?
-				GL_RGBA : GL_RGB;
-			img_size = width * height * ( gl_format == GL_RGB? 3 : 4 );
-			glsl_pbo pbo = glsl->get_pbo( img_size );
-			glsl_texture texture = glsl->get_texture( width, height, gl_format );
-
-			if ( fbo && pbo && texture ) {
-				// Set the FBO
-				glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
-				check_error();
-				glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
-				check_error();
-				glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-				check_error();
-
-				GlslManager::render( service, chain, fbo->fbo, width, height );
-	
-				// Read FBO into PBO
-				glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo );
-				check_error();
-				glBufferData( GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ );
-				check_error();
-				glReadPixels( 0, 0, width, height, gl_format, GL_UNSIGNED_BYTE, BUFFER_OFFSET(0) );
-				check_error();
-	
-				// Copy from PBO
-				uint8_t* buf = (uint8_t*) glMapBuffer( GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY );
-				check_error();
-				*image = (uint8_t*) mlt_pool_alloc( img_size );
-				mlt_frame_set_image( frame, *image, img_size, mlt_pool_release );
-				memcpy( *image, buf, img_size );
-
-				if ( output_format == mlt_image_yuv422 || output_format == mlt_image_yuv420p ) {
-					*format = mlt_image_rgb24;
-					error = convert_on_cpu( frame, image, format, output_format );
-				}
-	
-				// Release PBO and FBO
-				glUnmapBuffer( GL_PIXEL_PACK_BUFFER_ARB );
-				check_error();
-				glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, 0 );
-				check_error();
-				glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-				check_error();
-				glBindTexture( GL_TEXTURE_2D, 0 );
-				check_error();
-				mlt_properties_set_data( properties, "movit.convert.texture", texture, 0,
-					(mlt_destructor) GlslManager::release_texture, NULL);
-	
-				mlt_properties_set_int( properties, "format", output_format );
-				*format = output_format;
-			}
-			else {
-				error = 1;
+			error = glsl->render_frame_rgba( service, frame, width, height, image );
+			if ( !error && output_format != mlt_image_rgb24a ) {
+				*format = mlt_image_rgb24a;
+				error = convert_on_cpu( frame, image, format, output_format );
 			}
 		}
-		if ( fbo ) GlslManager::release_fbo( fbo );
+		mlt_properties_set_int( properties, "format", output_format );
+		*format = output_format;
 	}
 	else {
 		mlt_properties_set_int( properties, "format", output_format );
@@ -321,7 +249,7 @@ static mlt_frame process( mlt_filter filter, mlt_frame frame )
 	return frame;
 }
 
-static mlt_filter create_filter( mlt_profile profile, char *effect )
+static mlt_filter create_filter( mlt_profile profile, const char *effect )
 {
 	mlt_filter filter;
 	char *id = strdup( effect );

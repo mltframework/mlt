@@ -89,7 +89,9 @@ public:
 	static Effect* get_effect(mlt_filter, mlt_frame);
 	static Effect* add_effect(mlt_filter, mlt_frame, Effect*);
 	static Effect* add_effect(mlt_filter, mlt_frame, Effect*, Effect* input_b);
-	static void render(mlt_service, void *chain, GLuint fbo, int width, int height);
+	static void render_fbo(mlt_service, void *chain, GLuint fbo, int width, int height);
+	int render_frame_texture(mlt_service, mlt_frame, int width, int height, uint8_t **image);
+	int render_frame_rgba(mlt_service, mlt_frame, int width, int height, uint8_t **image);
 	static void lock_service(mlt_frame frame);
 	static void unlock_service(mlt_frame frame);
 
