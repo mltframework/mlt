@@ -913,6 +913,18 @@ static void *consumer_read_ahead_thread( void *arg )
 	// Remove the last frame
 	mlt_frame_close( frame );
 
+	// Wipe the queue
+	pthread_mutex_lock( &priv->queue_mutex );
+	while ( mlt_deque_count( priv->queue ) )
+		mlt_frame_close( mlt_deque_pop_back( priv->queue ) );
+
+	// Close the queue
+	mlt_deque_close( priv->queue );
+	priv->queue = NULL;
+	pthread_mutex_unlock( &priv->queue_mutex );
+
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", NULL );
+
 	return NULL;
 }
 
@@ -1201,15 +1213,6 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 
 		// Destroy the condition
 		pthread_cond_destroy( &priv->queue_cond );
-
-		// Wipe the queue
-		while ( mlt_deque_count( priv->queue ) )
-			mlt_frame_close( mlt_deque_pop_back( priv->queue ) );
-
-		// Close the queue
-		mlt_deque_close( priv->queue );
-
-		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", NULL );
 	}
 }
 
