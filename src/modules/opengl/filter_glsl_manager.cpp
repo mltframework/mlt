@@ -422,6 +422,8 @@ int GlslManager::render_frame_rgba(mlt_service service, mlt_frame frame, int wid
 	render_fbo( service, chain, fbo->fbo, width, height );
 
 	// Read FBO into PBO
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
+	check_error();
 	glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo );
 	check_error();
 	glBufferData( GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ );
