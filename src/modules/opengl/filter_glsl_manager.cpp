@@ -70,6 +70,10 @@ GlslManager::~GlslManager()
 {
 	mlt_log_debug(get_service(), "%s\n", __FUNCTION__);
 	cleanupContext();
+// XXX If there is still a frame holding a reference to a texture after this
+// destructor is called, then it will crash in release_texture().
+//	while (texture_list.peek_back())
+//		delete (glsl_texture) texture_list.pop_back();
 	delete initEvent;
 	delete closeEvent;
 }
@@ -141,18 +145,31 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 			return tex;
 		}
 	}
+
+	// Recycle a glsl_texture with deleted glTexture.
+	glsl_texture gtex = 0;
+	for (int i = 0; i < texture_list.count(); ++i) {
+		glsl_texture tex = (glsl_texture) texture_list.peek(i);
+		if (!tex->used && !tex->width && !tex->height) {
+			gtex = tex;
+			break;
+		}
+	}
 	unlock();
 
 	GLuint tex = 0;
 	glGenTextures(1, &tex);
-	if (!tex)
-		return NULL;
-
-	glsl_texture gtex = new glsl_texture_s;
-	if (!gtex) {
+	if (!tex) {
 		glDeleteTextures(1, &tex);
 		return NULL;
 	}
+
+	if (!gtex) {
+		gtex = new glsl_texture_s;
+		if (!gtex)
+			return NULL;
+	}
+
 	glBindTexture( GL_TEXTURE_2D, tex );
 	glTexImage2D( GL_TEXTURE_2D, 0, internal_format, width, height, 0, internal_format, GL_UNSIGNED_BYTE, NULL );
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -215,10 +232,12 @@ void GlslManager::cleanupContext()
 		glDeleteFramebuffers(1, &fbo->fbo);
 		delete fbo;
 	}
-	while (texture_list.peek_back()) {
-		glsl_texture texture = (glsl_texture) texture_list.pop_back();
+	for (int i = 0; i < texture_list.count(); ++i) {
+		glsl_texture texture = (glsl_texture) texture_list.peek(i);
 		glDeleteTextures(1, &texture->texture);
-		delete texture;
+		texture->used = 0;
+		texture->width = 0;
+		texture->height = 0;
 	}
 	if (pbo) {
 		glDeleteBuffers(1, &pbo->pbo);
