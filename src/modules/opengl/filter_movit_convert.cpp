@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string>
 
 #include "filter_glsl_manager.h"
 #include <movit/effect_chain.h>
@@ -103,6 +104,277 @@ static void get_format_from_properties( mlt_properties properties, ImageFormat* 
 	ycbcr_format->cb_y_position = ycbcr_format->cr_y_position = 0.5f;
 }
 
+static void build_fingerprint( mlt_service service, mlt_frame frame, std::string *fingerprint )
+{
+	if ( service == (mlt_service) -1 ) {
+		fingerprint->append( "input" );
+		return;
+	}
+
+	Effect* effect = GlslManager::get_effect( service, frame );
+	assert( effect );
+	mlt_service input_a = GlslManager::get_effect_input( service, frame );
+	fingerprint->push_back( '(' );
+	build_fingerprint( input_a, frame, fingerprint );
+	fingerprint->push_back( ')' );
+
+	mlt_frame frame_b;
+	mlt_service input_b;
+	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
+	if ( input_b ) {
+		fingerprint->push_back( '(' );
+		build_fingerprint( input_b, frame_b, fingerprint );
+		fingerprint->push_back( ')' );
+	}
+
+	fingerprint->push_back( '(' );
+	fingerprint->append( mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "_unique_id" ) );
+	bool disable = mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "movit.disable" );
+	if ( disable ) {
+		fingerprint->push_back( 'd' );
+		bool ok = effect->set_int( "disable", 1 );
+		assert(ok);
+	}
+	fingerprint->push_back( ')' );
+}
+
+static Effect* build_movit_chain( mlt_service service, mlt_frame frame, GlslChain *chain )
+{
+	if ( service == (mlt_service) -1 ) {
+		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+		MltInput* input = GlslManager::get_input( producer, frame );
+		GlslManager::set_input( producer, frame, NULL );
+		chain->effect_chain->add_input( input );
+		chain->effects.insert(std::make_pair( MLT_SERVICE( producer ), input ) );
+		return input;
+	}
+
+	Effect* effect = GlslManager::get_effect( service, frame );
+	assert( effect );
+	GlslManager::set_effect( service, frame, NULL );
+
+	mlt_service input_a = GlslManager::get_effect_input( service, frame );
+	mlt_service input_b;
+	mlt_frame frame_b;
+	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
+	Effect *effect_a = build_movit_chain( input_a, frame, chain );
+
+	if ( input_b ) {
+		Effect *effect_b = build_movit_chain( input_b, frame_b, chain );
+		chain->effect_chain->add_effect( effect, effect_a, effect_b );
+	} else {
+		chain->effect_chain->add_effect( effect, effect_a );
+	}
+		
+	chain->effects.insert(std::make_pair( service, effect ) );
+	return effect;
+}
+
+static void dispose_movit_effects( mlt_service service, mlt_frame frame )
+{
+	if ( service == (mlt_service) -1 ) {
+		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+		delete GlslManager::get_input( producer, frame );
+		GlslManager::set_input( producer, frame, NULL );
+		return;
+	}
+
+	delete GlslManager::get_effect( service, frame );
+	GlslManager::set_effect( service, frame, NULL );
+
+	mlt_service input_a = GlslManager::get_effect_input( service, frame );
+	mlt_service input_b;
+	mlt_frame frame_b;
+	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
+	dispose_movit_effects( input_a, frame );
+
+	if ( input_b ) {
+		dispose_movit_effects( input_b, frame_b );
+	}
+}
+
+static void finalize_movit_chain( mlt_service leaf_service, mlt_frame frame )
+{
+	GlslChain* chain = GlslManager::get_chain( leaf_service );
+
+	std::string new_fingerprint;
+	build_fingerprint( leaf_service, frame, &new_fingerprint );
+
+	// Build the chain if needed.
+	if ( !chain || new_fingerprint != chain->fingerprint ) {
+		printf("=== CREATING NEW CHAIN (old chain=%p, leaf=%p, fingerprint=%s) ===\n", chain, leaf_service, new_fingerprint.c_str());
+		mlt_profile profile = mlt_service_profile( leaf_service );
+		chain = new GlslChain;
+		chain->effect_chain = new EffectChain( profile->display_aspect_num, profile->display_aspect_den );
+		chain->fingerprint = new_fingerprint;
+
+		build_movit_chain( leaf_service, frame, chain );
+		chain->effect_chain->add_effect( new Mlt::VerticalFlip );
+
+		ImageFormat output_format;
+		output_format.color_space = COLORSPACE_sRGB;
+		output_format.gamma_curve = GAMMA_sRGB;
+		chain->effect_chain->add_output(output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
+		chain->effect_chain->set_dither_bits(8);
+		chain->effect_chain->finalize();
+
+		GlslManager::set_chain( leaf_service, chain );
+	} else {
+		// Delete all the created Effect instances to avoid memory leaks.
+		dispose_movit_effects( leaf_service, frame );
+	}
+}
+
+static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_frame frame )
+{
+	if ( service == (mlt_service) -1 ) {
+		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+		MltInput* input = (MltInput *) chain->effects[ MLT_PRODUCER_SERVICE( producer ) ];
+		input->set_pixel_data( GlslManager::get_input_pixel_pointer( producer, frame ) );
+		return;
+	}
+
+	Effect* effect = chain->effects[ service ];
+	mlt_service input_a = GlslManager::get_effect_input( service, frame );
+	set_movit_parameters( chain, input_a, frame );
+
+	mlt_service input_b;
+	mlt_frame frame_b;
+	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
+	if ( input_b ) {
+		set_movit_parameters( chain, input_b, frame_b );
+	}
+		
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+	int count = mlt_properties_count( properties );
+	for (int i = 0; i < count; ++i) {
+		const char *name = mlt_properties_get_name( properties, i );
+		if (strncmp(name, "movit.parms.float.", strlen("movit.parms.float.")) == 0) {
+			bool ok = effect->set_float(name + strlen("movit.parms.float."),
+				mlt_properties_get_double( properties, name ));
+			assert(ok);
+		}
+		if (strncmp(name, "movit.parms.int.", strlen("movit.parms.int.")) == 0) {
+			bool ok = effect->set_int(name + strlen("movit.parms.int."),
+				mlt_properties_get_int( properties, name ));
+			assert(ok);
+		}
+		if (strncmp(name, "movit.parms.vec3.", strlen("movit.parms.vec3.")) == 0 &&
+		    strcmp(name + strlen(name) - 3, "[0]") == 0) {
+			float val[3];
+			char *name_copy = strdup(name);
+			char *index_char = name_copy + strlen(name_copy) - 2;
+			val[0] = mlt_properties_get_double( properties, name_copy );
+			*index_char = '1';
+			val[1] = mlt_properties_get_double( properties, name_copy );
+			*index_char = '2';
+			val[2] = mlt_properties_get_double( properties, name_copy );
+			index_char[-1] = '\0';
+			bool ok = effect->set_vec3(name_copy + strlen("movit.parms.vec3."), val);
+			assert(ok);
+			free(name_copy);
+		}
+		if (strncmp(name, "movit.parms.vec4.", strlen("movit.parms.vec4.")) == 0 &&
+		    strcmp(name + strlen(name) - 3, "[0]") == 0) {
+			float val[4];
+			char *name_copy = strdup(name);
+			char *index_char = name_copy + strlen(name_copy) - 2;
+			val[0] = mlt_properties_get_double( properties, name_copy );
+			*index_char = '1';
+			val[1] = mlt_properties_get_double( properties, name_copy );
+			*index_char = '2';
+			val[2] = mlt_properties_get_double( properties, name_copy );
+			*index_char = '3';
+			val[3] = mlt_properties_get_double( properties, name_copy );
+			index_char[-1] = '\0';
+			bool ok = effect->set_vec4(name_copy + strlen("movit.parms.vec4."), val);
+			assert(ok);
+			free(name_copy);
+		}
+	}
+}
+
+static void dispose_pixel_pointers( mlt_service service, mlt_frame frame )
+{
+	if ( service == (mlt_service) -1 ) {
+		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+		mlt_pool_release( GlslManager::get_input_pixel_pointer( producer, frame ) );
+		return;
+	}
+
+	mlt_service input_a = GlslManager::get_effect_input( service, frame );
+	dispose_pixel_pointers( input_a, frame );
+
+	mlt_service input_b;
+	mlt_frame frame_b;
+	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
+	if ( input_b ) {
+		dispose_pixel_pointers( input_b, frame_b );
+	}
+}
+
+static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *format, mlt_image_format output_format, int width, int height, uint8_t **image )
+{
+	GlslManager* glsl = GlslManager::get_instance();
+	int error;
+	if ( output_format == mlt_image_glsl_texture ) {
+		error = glsl->render_frame_texture( chain, frame, width, height, image );
+	}
+	else {
+		error = glsl->render_frame_rgba( chain, frame, width, height, image );
+		if ( !error && output_format != mlt_image_rgb24a ) {
+			*format = mlt_image_rgb24a;
+			error = convert_on_cpu( frame, image, format, output_format );
+		}
+	}
+	return error;
+}
+
+// Create an MltInput for an image with the given format and dimensions.
+static MltInput* create_input( mlt_properties properties, mlt_image_format format, int aspect_width, int aspect_height, int width, int height )
+{
+	MltInput* input = new MltInput( aspect_width, aspect_height );
+	if ( format == mlt_image_rgb24a || format == mlt_image_opengl ) {
+		// TODO: Get the color space if available.
+		input->useFlatInput( FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
+	}
+	else if ( format == mlt_image_rgb24 ) {
+		// TODO: Get the color space if available.
+		input->useFlatInput( FORMAT_RGB, width, height );
+	}
+	else if ( format == mlt_image_yuv420p ) {
+		ImageFormat image_format;
+		YCbCrFormat ycbcr_format;
+		get_format_from_properties( properties, &image_format, &ycbcr_format );
+		ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 2;
+		input->useYCbCrInput( image_format, ycbcr_format, width, height );
+	}
+	else if ( format == mlt_image_yuv422 ) {
+		ImageFormat image_format;
+		YCbCrFormat ycbcr_format;
+		get_format_from_properties( properties, &image_format, &ycbcr_format );
+		ycbcr_format.chroma_subsampling_x = 2;
+		ycbcr_format.chroma_subsampling_y = 1;
+		input->useYCbCrInput( image_format, ycbcr_format, width, height );
+	}
+	return input;
+}
+
+// Make a copy of the given image (allocated using mlt_pool_alloc) suitable
+// to pass as pixel pointer to an MltInput (created using create_input
+// with the same parameters), and return that pointer.
+static uint8_t* make_input_copy( mlt_image_format format, uint8_t *image, int width, int height )
+{
+	int img_size = mlt_image_format_size( format, width, height, NULL );
+	uint8_t* img_copy = (uint8_t*) mlt_pool_alloc( img_size );
+	if ( format == mlt_image_yuv422 ) {
+		yuv422_to_yuv422p( image, img_copy, width, height );
+	} else {
+		memcpy( img_copy, image, img_size );
+	}
+	return img_copy;
+}
+
 static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, mlt_image_format output_format )
 {
 	// Nothing to do!
@@ -127,113 +399,93 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	int error = 0;
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
-	int img_size = mlt_image_format_size( *format, width, height, NULL );
-	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-	mlt_service service = MLT_PRODUCER_SERVICE(producer);
 	GlslManager::get_instance()->lock_service( frame );
-	EffectChain* chain = GlslManager::get_chain( service );
-	MltInput* input = GlslManager::get_input( service );
+	
+	// If we're at the beginning of a series of Movit effects, store the input
+	// sent into the chain.
+	if ( output_format == mlt_image_glsl ) {
+		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
+		MltInput *input = create_input( properties, *format, profile->width, profile->height, width, height );
+		GlslManager::set_input( producer, frame, input );
+		uint8_t *img_copy = make_input_copy( *format, *image, width, height );
+		GlslManager::set_input_pixel_pointer( producer, frame, img_copy );
 
-	if ( !chain || !input ) {
-		GlslManager::get_instance()->unlock_service( frame );
-		return 2;
+		*image = (uint8_t *) -1;
+		mlt_frame_set_image( frame, *image, 0, NULL );
 	}
 
-	if ( *format != mlt_image_glsl ) {
-		bool finalize_chain = false;
-		if ( output_format == mlt_image_glsl_texture ) {
-			// We might already have a texture from a previous conversion from mlt_image_glsl.
-			glsl_texture texture = (glsl_texture) mlt_properties_get_data( properties, "movit.convert.texture", NULL );
-			// XXX: requires a special property set on the frame by the app for now
-			// because we do not have reliable way to clear the texture property
-			// when a downstream filter has changed image.
-			if ( texture && mlt_properties_get_int( properties, "movit.convert.use_texture") ) {
-				*image = (uint8_t*) &texture->texture;
-				mlt_frame_set_image( frame, *image, 0, NULL );
-				mlt_properties_set_int( properties, "format", output_format );
-				*format = output_format;
-				GlslManager::get_instance()->unlock_service( frame );
-				return error;
+	// If we're at the _end_ of a series of Movit effects, render the chain.
+	if ( *format == mlt_image_glsl ) {
+		mlt_service leaf_service = (mlt_service) *image;
+
+		// Construct the chain unless we already have a good one.
+		finalize_movit_chain( leaf_service, frame );
+
+		// Set per-frame parameters now that we know which Effect instances to set them on.
+		GlslChain *chain = GlslManager::get_chain( leaf_service );
+		set_movit_parameters( chain, leaf_service, frame );
+
+		error = movit_render( chain->effect_chain, frame, format, output_format, width, height, image );
+
+		dispose_pixel_pointers( leaf_service, frame );
+	}
+
+	// If we've been asked to render some frame directly to a texture (without any
+	// effects in-between), we create a new mini-chain to do so.
+	if ( *format != mlt_image_glsl && output_format == mlt_image_glsl_texture ) {
+		// We might already have a texture from a previous conversion from mlt_image_glsl.
+		glsl_texture texture = (glsl_texture) mlt_properties_get_data( properties, "movit.convert.texture", NULL );
+		// XXX: requires a special property set on the frame by the app for now
+		// because we do not have reliable way to clear the texture property
+		// when a downstream filter has changed image.
+		if ( texture && mlt_properties_get_int( properties, "movit.convert.use_texture") ) {
+			*image = (uint8_t*) &texture->texture;
+			mlt_frame_set_image( frame, *image, 0, NULL );
+		} else {
+			// Use a separate chain to convert image in RAM to OpenGL texture.
+			// Use cached chain if available and compatible.
+			Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
+			EffectChain *chain = (EffectChain*) producer.get_data( "movit.convert.chain" );
+			MltInput *input = (MltInput*) producer.get_data( "movit.convert.input" );
+			int w = producer.get_int( "movit.convert.width" );
+			int h = producer.get_int( "movit.convert.height" );
+			mlt_image_format f = (mlt_image_format) producer.get_int( "movit.convert.format" );
+			if ( !chain || !input || width != w || height != h || *format != f ) {
+				chain = new EffectChain( width, height );
+				input = create_input( properties, *format, width, height, width, height );
+				chain->add_input( input );
+				chain->add_effect( new Mlt::VerticalFlip() );
+				ImageFormat movit_output_format;
+				movit_output_format.color_space = COLORSPACE_sRGB;
+				movit_output_format.gamma_curve = GAMMA_sRGB;
+				chain->add_output(movit_output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
+				chain->set_dither_bits(8);
+				chain->finalize();
+				producer.set( "movit.convert.chain", chain, 0, (mlt_destructor) delete_chain );
+				producer.set( "movit.convert.input", input, 0, NULL );
+				producer.set( "movit.convert.width", width );
+				producer.set( "movit.convert.height", height );
+				producer.set( "movit.convert.format", *format );
+			}
+
+			if ( *format == mlt_image_yuv422 ) {
+				// We need to convert to planar, which make_input_copy() will do for us.
+				uint8_t *planar = make_input_copy( *format, *image, width, height );
+				input->set_pixel_data( planar );
+				error = movit_render( chain, frame, format, output_format, width, height, image );
+				mlt_pool_release( planar );
 			} else {
-				// Use a separate chain to convert image in RAM to OpenGL texture.
-				// Use cached chain if available and compatible.
-				Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
-				chain = (EffectChain*) producer.get_data( "movit.convert.chain" );
-				input = (MltInput*) producer.get_data( "movit.convert.input" );
-				int w = producer.get_int( "movit.convert.width" );
-				int h = producer.get_int( "movit.convert.height" );
-				mlt_image_format f = (mlt_image_format) producer.get_int( "movit.convert.format" );
-				if ( !chain || width != w || height != h || output_format != f ) {
-					chain = new EffectChain( width, height );
-					input = new MltInput( width, height );
-					chain->add_input( input );
-					chain->add_effect( new Mlt::VerticalFlip() );
-					finalize_chain = true;
-					producer.set( "movit.convert.chain", chain, 0, (mlt_destructor) delete_chain );
-					producer.set( "movit.convert.input", input, 0 );
-					producer.set( "movit.convert.width", width );
-					producer.set( "movit.convert.height", height );
-					producer.set( "movit.convert.format", output_format );
-				}
+				input->set_pixel_data( *image );
+				error = movit_render( chain, frame, format, output_format, width, height, image );
 			}
 		}
-		if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) { 
-			// TODO: Get the color space if available.
-			input->useFlatInput( chain, FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
-			input->set_pixel_data( *image );
-		}
-		else if ( *format == mlt_image_rgb24 ) {
-			// TODO: Get the color space if available.
-			input->useFlatInput( chain, FORMAT_RGB, width, height );
-			input->set_pixel_data( *image );
-		}
-		else if ( *format == mlt_image_yuv420p ) {
-			ImageFormat image_format;
-			YCbCrFormat ycbcr_format;
-			get_format_from_properties( properties, &image_format, &ycbcr_format );
-			ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 2;
-			input->useYCbCrInput( chain, image_format, ycbcr_format, width, height );
-			input->set_pixel_data( *image );
-		}
-		else if ( *format == mlt_image_yuv422 ) {
-			ImageFormat image_format;
-			YCbCrFormat ycbcr_format;
-			get_format_from_properties( properties, &image_format, &ycbcr_format );
-			ycbcr_format.chroma_subsampling_x = 2;
-			ycbcr_format.chroma_subsampling_y = 1;
-			input->useYCbCrInput( chain, image_format, ycbcr_format, width, height );
-			
-			// convert chunky to planar
-			uint8_t* planar = (uint8_t*) mlt_pool_alloc( img_size );
-			yuv422_to_yuv422p( *image, planar, width, height );
-			input->set_pixel_data( planar );
-			mlt_frame_set_image( frame, planar, img_size, mlt_pool_release );
-		}
-		// Finalize the separate conversion chain if needed.
-		if ( finalize_chain )
-			chain->finalize();
 	}
 
-	if ( output_format != mlt_image_glsl ) {
-
-		if ( output_format == mlt_image_glsl_texture ) {
-			error = glsl->render_frame_texture( service, frame, width, height, image );
-		}
-		else {
-			error = glsl->render_frame_rgba( service, frame, width, height, image );
-			if ( !error && output_format != mlt_image_rgb24a ) {
-				*format = mlt_image_rgb24a;
-				error = convert_on_cpu( frame, image, format, output_format );
-			}
-		}
-		mlt_properties_set_int( properties, "format", output_format );
-		*format = output_format;
-	}
-	else {
-		mlt_properties_set_int( properties, "format", output_format );
-		*format = output_format;
-	}
 	GlslManager::get_instance()->unlock_service( frame );
+
+	mlt_properties_set_int( properties, "format", output_format );
+	*format = output_format;
 
 	return error;
 }

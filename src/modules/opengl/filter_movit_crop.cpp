@@ -23,6 +23,7 @@
 
 #include "filter_glsl_manager.h"
 #include <movit/padding_effect.h>
+#include "optional_effect.h"
 
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -76,32 +77,31 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 		mlt_log_debug( MLT_FILTER_SERVICE(filter), "%dx%d -> %dx%d\n", *width, *height, owidth, oheight);
 
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		GlslManager::get_instance()->lock_service( frame );
-		Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
-		if ( effect ) {
-			bool ok = effect->set_int( "width", owidth );
-			ok |= effect->set_int( "height", oheight );
-			ok |= effect->set_float( "left", -left );
-			ok |= effect->set_float( "top", -top );
-			assert(ok);
-			*width = owidth;
-			*height = oheight;
-		}
+		mlt_properties_set_int( properties, "movit.parms.int.width", owidth );
+		mlt_properties_set_int( properties, "movit.parms.int.height", oheight );
+		mlt_properties_set_double( properties, "movit.parms.float.left", -left );
+		mlt_properties_set_double( properties, "movit.parms.float.top", -top );
+
+		bool disable = ( *width == owidth && *height == oheight );
+		mlt_properties_set_int( properties, "movit.disable", disable );
+
 		GlslManager::get_instance()->unlock_service( frame );
 	}
 
+        GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
+	Effect* effect = GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new OptionalEffect<PaddingEffect> );
+	assert(effect);
+	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );
+	RGBATuple border_color( 0.0f, 0.0f, 0.0f, 1.0f );
+	bool ok = effect->set_vec4( "border_color", (float*) &border_color );
+	assert(ok);
 	return error;
 }
 
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-	if ( !GlslManager::init_chain( MLT_PRODUCER_SERVICE(producer) ) ) {
-		Effect* effect = GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new PaddingEffect );
-		RGBATuple border_color( 0.0f, 0.0f, 0.0f, 1.0f );
-		bool ok = effect->set_vec4( "border_color", (float*) &border_color );
-		assert(ok);
-	}
 	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, get_image );
 	return frame;

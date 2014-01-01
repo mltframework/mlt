@@ -83,7 +83,7 @@ GammaCurve MltInput::get_gamma_curve() const
 	return input->get_gamma_curve();
 }
 
-void MltInput::useFlatInput(EffectChain* chain, MovitPixelFormat pix_fmt, unsigned width, unsigned height)
+void MltInput::useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned height)
 {
 	if (!input) {
 		m_width = width;
@@ -92,28 +92,21 @@ void MltInput::useFlatInput(EffectChain* chain, MovitPixelFormat pix_fmt, unsign
 		image_format.color_space = COLORSPACE_sRGB;
 		image_format.gamma_curve = GAMMA_sRGB;
 		input = new FlatInput(image_format, pix_fmt, GL_UNSIGNED_BYTE, width, height);
-		chain->add_output(image_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
-		chain->set_dither_bits(8);
 	}
 }
 
-void MltInput::useYCbCrInput(EffectChain* chain, const ImageFormat& image_format, const YCbCrFormat& ycbcr_format, unsigned width, unsigned height)
+void MltInput::useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat& ycbcr_format, unsigned width, unsigned height)
 {
 	if (!input) {
 		m_width = width;
 		m_height = height;
 		input = new YCbCrInput(image_format, ycbcr_format, width, height);
-		ImageFormat output_format;
-		output_format.color_space = COLORSPACE_sRGB;
-		output_format.gamma_curve = GAMMA_sRGB;
-		chain->add_output(output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
-		chain->set_dither_bits(8);
 		isRGB = false;
 		m_ycbcr_format = ycbcr_format;
 	}
 }
 
-void MltInput::useFBOInput(EffectChain *chain, GLuint texture)
+void MltInput::useFBOInput(GLuint texture)
 {
 	if (!input) {
 		FBOInput* fboInput = new FBOInput(m_width, m_height);

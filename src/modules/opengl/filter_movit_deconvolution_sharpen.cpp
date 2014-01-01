@@ -29,33 +29,29 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	GlslManager::get_instance()->lock_service( frame );
-	Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
-	if ( effect ) {
-		mlt_position position = mlt_filter_get_position( filter, frame );
-		mlt_position length = mlt_filter_get_length2( filter, frame );
-		bool ok = effect->set_int( "matrix_size",
-			mlt_properties_anim_get_int( properties, "matrix_size", position, length ) );
-		ok |= effect->set_float( "cirlce_radius",
-			mlt_properties_anim_get_double( properties, "circle_radius", position, length ) );
-		ok |= effect->set_float( "gaussian_radius",
-			mlt_properties_anim_get_double( properties, "gaussian_radius", position, length ) );
-		ok |= effect->set_float( "correlation",
-			mlt_properties_anim_get_double( properties, "correlation", position, length ) );
-		ok |= effect->set_float( "noise",
-			mlt_properties_anim_get_double( properties, "noise", position, length ) );
-		assert(ok);
-	}
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
+	mlt_properties_set_int( properties, "movit.parms.int.matrix_size",
+		mlt_properties_anim_get_int( properties, "matrix_size", position, length ) );
+	mlt_properties_set_double( properties, "movit.parms.float.circle_radius",
+		mlt_properties_anim_get_double( properties, "circle_radius", position, length ) );
+	mlt_properties_set_double( properties, "movit.parms.float.gaussian_radius",
+		mlt_properties_anim_get_double( properties, "gaussian_radius", position, length ) );
+	mlt_properties_set_double( properties, "movit.parms.float.correlation",
+		mlt_properties_anim_get_double( properties, "correlation", position, length ) );
+	mlt_properties_set_double( properties, "movit.parms.float.noise",
+		mlt_properties_anim_get_double( properties, "noise", position, length ) );
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;
-	return mlt_frame_get_image( frame, image, format, width, height, writable );
+	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
+	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
+	GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new DeconvolutionSharpenEffect );
+	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );
+	return error;
 }
 
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
-	if ( !mlt_frame_is_test_card( frame ) ) {
-		if ( !GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame ) )
-			GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new DeconvolutionSharpenEffect() );
-	}
 	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, get_image );
 	return frame;

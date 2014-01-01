@@ -24,13 +24,21 @@
 #include "filter_glsl_manager.h"
 #include <movit/mirror_effect.h>
 
+static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+{
+	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
+	*format = mlt_image_glsl;
+	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
+	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
+	GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new MirrorEffect );
+	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );
+	return error;
+}
+
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
-	if ( !mlt_frame_is_test_card( frame ) ) {
-		Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
-		if ( !effect )
-			GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new MirrorEffect() );
-	}
+	mlt_frame_push_service( frame, filter );
+	mlt_frame_push_get_image( frame, get_image );
 	return frame;
 }
 

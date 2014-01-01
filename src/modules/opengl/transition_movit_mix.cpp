@@ -32,33 +32,18 @@
 
 static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	int error = 0;
+	int error;
 
 	// Get the b frame from the stack
 	mlt_frame b_frame = (mlt_frame) mlt_frame_pop_frame( a_frame );
 
 	// Get the transition object
 	mlt_transition transition = (mlt_transition) mlt_frame_pop_service( a_frame );
+	mlt_service service = MLT_TRANSITION_SERVICE( transition );
+	mlt_service_lock( service );
 
 	// Get the properties of the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
-
-	// Get the properties of the a frame
-	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
-
-	// Get the movit objects
-	mlt_service service = MLT_TRANSITION_SERVICE( transition );
-	mlt_service_lock( service );
-	EffectChain* chain = GlslManager::get_chain( service );
-	Effect* effect = (Effect*) mlt_properties_get_data( properties, "movit effect", NULL );
-	MltInput* a_input = GlslManager::get_input( service );
-	MltInput* b_input = (MltInput*) mlt_properties_get_data( properties, "movit input B", NULL );
-	mlt_image_format output_format = *format;
-
-	if ( !chain || !a_input ) {
-		mlt_service_unlock( service );
-		return 2;
-	}
 
 	// Get the transition parameters
 	mlt_position position = mlt_transition_get_position( transition, a_frame );
@@ -69,71 +54,30 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		mlt_transition_get_progress( transition, a_frame );
 	double inverse = 1.0 - mix;
 
-	// Set the movit parameters
-	bool ok = effect->set_float( "strength_first",  reverse ? mix : inverse );
-	ok     |= effect->set_float( "strength_second", reverse ? inverse : mix );
-	assert( ok );
+	// Set the Movit parameters.
+        mlt_properties_set_double( properties, "movit.parms.float.strength_first", reverse ? mix : inverse );
+        mlt_properties_set_double( properties, "movit.parms.float.strength_second", reverse ? inverse : mix );
 
-	// Get the frames' textures
-	GLuint* texture_id[2] = {0, 0};
-	*format = mlt_image_glsl_texture;
-	mlt_frame_get_image( a_frame, (uint8_t**) &texture_id[0], format, width, height, 0 );
-	a_input->useFBOInput( chain, *texture_id[0] );
-	*format = mlt_image_glsl_texture;
-	mlt_frame_get_image( b_frame, (uint8_t**) &texture_id[1], format, width, height, 0 );
-	b_input->useFBOInput( chain, *texture_id[1] );
+	uint8_t *a_image, *b_image;
 
-	// Set resolution to that of the a_frame
-	*width = mlt_properties_get_int( a_props, "width" );
-	*height = mlt_properties_get_int( a_props, "height" );
+	// Get the two images.
+	*format = mlt_image_glsl;
+	error = mlt_frame_get_image( a_frame, &a_image, format, width, height, writable );
+	error = mlt_frame_get_image( b_frame, &b_image, format, width, height, writable );
 
-	// Setup rendering to an FBO
-	GlslManager* glsl = GlslManager::get_instance();
-	if ( output_format == mlt_image_glsl_texture ) {
-		error = glsl->render_frame_texture( service, a_frame, *width, *height, image );
-		*format = output_format;
-	}
-	else {
-		error = glsl->render_frame_rgba( service, a_frame, *width, *height, image );
-		*format = mlt_image_rgb24a;
-	}
+	GlslManager::set_effect_input( service, a_frame, (mlt_service) a_image );
+	GlslManager::set_effect_secondary_input( service, a_frame, (mlt_service) b_image, b_frame );
+	GlslManager::set_effect( service, a_frame, new MixEffect() );
+	*image = (uint8_t *) service;
+
 	mlt_service_unlock( service );
-
 	return error;
 }
 
 static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
-	mlt_service service = MLT_TRANSITION_SERVICE(transition);
-
-	if ( !GlslManager::init_chain( service ) ) {
-		// Create the Movit effect chain
-		EffectChain* chain = GlslManager::get_chain( service );
-		mlt_profile profile = mlt_service_profile( service );
-		Input* b_input = new MltInput( profile->width, profile->height );
-		ImageFormat output_format;
-		output_format.color_space = COLORSPACE_sRGB;
-		output_format.gamma_curve = GAMMA_sRGB;
-		chain->add_input( b_input );
-		chain->add_output( output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED );
-		chain->set_dither_bits( 8 );
-
-		Effect* effect = chain->add_effect( new MixEffect(),
-			GlslManager::get_input( service ), b_input );
-
-		// Save these new effects on properties for get_image
-		mlt_properties properties = MLT_TRANSITION_PROPERTIES(transition);
-		mlt_properties_set_data( properties, "movit effect", effect, 0, NULL, NULL );
-		mlt_properties_set_data( properties, "movit input B", b_input, 0, NULL, NULL );
-	}
-
-	// Push the transition on to the frame
 	mlt_frame_push_service( a_frame, transition );
-
-	// Push the b_frame on to the stack
 	mlt_frame_push_frame( a_frame, b_frame );
-
-	// Push the transition method
 	mlt_frame_push_get_image( a_frame, get_image );
 
 	return a_frame;

@@ -23,10 +23,10 @@
 
 #include "filter_glsl_manager.h"
 #include <movit/resample_effect.h>
+#include "optional_effect.h"
 
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	int error = 0;
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
@@ -60,30 +60,34 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	if ( iheight != oheight )
 		mlt_properties_set_int( properties, "consumer_deinterlace", 1 );
 
+	GlslManager::get_instance()->lock_service( frame );
+	mlt_properties_set_int( filter_properties, "movit.parms.int.width", owidth );
+	mlt_properties_set_int( filter_properties, "movit.parms.int.height", oheight );
+
+	bool disable = ( iwidth == owidth && iheight == oheight );
+	mlt_properties_set_int( filter_properties, "movit.disable", disable );
+
+	*width = owidth;
+	*height = oheight;
+
+	GlslManager::get_instance()->unlock_service( frame );
+
 	// Get the image as requested
 	if ( *format != mlt_image_none )
 		*format = mlt_image_glsl;
-	error = mlt_frame_get_image( frame, image, format, &iwidth, &iheight, writable );
-	if ( !error ) {
-		GlslManager::get_instance()->lock_service( frame );
-		Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
-		if ( effect ) {
-			bool ok = effect->set_int( "width", owidth );
-			ok |= effect->set_int( "height", oheight );
-			assert(ok);
-			*width = owidth;
-			*height = oheight;
-		}
-		GlslManager::get_instance()->unlock_service( frame );
-	}
-
-	return error;
+	int error = mlt_frame_get_image( frame, image, format, &iwidth, &iheight, writable );
+	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
+	Effect *effect = GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new OptionalEffect<ResampleEffect> );
+	// This needs to be something else than 0x0 at chain finalization time.
+	bool ok = effect->set_int("width", owidth);
+	ok |= effect->set_int("height", oheight);
+	assert( ok );
+	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );
+        return error;
 }
 
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
-	if ( !GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame ) )
-		GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new ResampleEffect );
 	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, get_image );
 	return frame;
