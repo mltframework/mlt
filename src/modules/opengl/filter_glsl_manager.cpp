@@ -33,6 +33,14 @@ extern "C" {
 #include <framework/mlt_factory.h>
 }
 
+#if defined(__DARWIN__)
+#include <OpenGL/OpenGL.h>
+#elif defined(WIN32)
+#include <wingdi.h>
+#else
+#include <GL/glx.h>
+#endif
+
 void deleteManager(GlslManager *p)
 {
 	delete p;
@@ -73,10 +81,18 @@ GlslManager* GlslManager::get_instance()
 
 glsl_fbo GlslManager::get_fbo(int width, int height)
 {
+#if defined(__DARWIN__)
+	CGLContextObj context = CGLGetCurrentContext();
+#elif defined(WIN32)
+	HGLRC context = wglGetCurrentContext();
+#else
+	GLXContext context = glXGetCurrentContext();
+#endif
+
 	lock();
 	for (int i = 0; i < fbo_list.count(); ++i) {
 		glsl_fbo fbo = (glsl_fbo) fbo_list.peek(i);
-		if (!fbo->used && (fbo->width == width) && (fbo->height == height)) {
+		if (!fbo->used && (fbo->width == width) && (fbo->height == height) && (fbo->context == context)) {
 			fbo->used = 1;
 			unlock();
 			return fbo;
@@ -98,6 +114,7 @@ glsl_fbo GlslManager::get_fbo(int width, int height)
 	fbo->width = width;
 	fbo->height = height;
 	fbo->used = 1;
+	fbo->context = context;
 	lock();
 	fbo_list.push_back(fbo);
 	unlock();

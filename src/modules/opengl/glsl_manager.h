@@ -53,6 +53,7 @@ struct glsl_fbo_s
 	int width;
 	int height;
 	GLuint fbo;
+	void* context;
 };
 typedef struct glsl_fbo_s *glsl_fbo;
 
