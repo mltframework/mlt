@@ -53,7 +53,7 @@ namespace Mlt
 			void unlock( );
 			void block( void *object = NULL );
 			void unblock( void *object = NULL );
-			void fire_event( const char *event );
+			int fire_event( const char *event );
 			bool is_valid( );
 			int count( );
 			char *get( const char *name );

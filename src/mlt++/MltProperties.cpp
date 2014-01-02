@@ -102,9 +102,9 @@ void Properties::unblock( void *object )
 	mlt_events_unblock( get_properties( ), object != NULL ? object : get_properties( ) );
 }
 
-void Properties::fire_event( const char *event )
+int Properties::fire_event( const char *event )
 {
-	mlt_events_fire( get_properties( ), event, NULL );
+	return mlt_events_fire( get_properties( ), event, NULL );
 }
 
 bool Properties::is_valid( )

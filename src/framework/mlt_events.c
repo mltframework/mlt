@@ -181,10 +181,12 @@ int mlt_events_register( mlt_properties self, const char *id, mlt_transmitter tr
  * \public \memberof mlt_events_struct
  * \param self a properties list
  * \param id the name of an event
+ * \return the number of listeners
  */
 
-void mlt_events_fire( mlt_properties self, const char *id, ... )
+int mlt_events_fire( mlt_properties self, const char *id, ... )
 {
+	int result = 0;
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
@@ -215,10 +217,12 @@ void mlt_events_fire( mlt_properties self, const char *id, ... )
 						transmitter( event->listener, event->owner, event->service, args );
 					else
 						event->listener( event->owner, event->service );
+					++result;
 				}
 			}
 		}
 	}
+	return result;
 }
 
 /** Register a listener.
