@@ -1,5 +1,5 @@
 /*
- * glsl_manager.h
+ * filter_glsl_manager.h
  * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify

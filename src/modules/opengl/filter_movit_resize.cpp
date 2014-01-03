@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "glsl_manager.h"
+#include "filter_glsl_manager.h"
 #include <movit/init.h>
 #include <movit/padding_effect.h>
 

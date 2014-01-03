@@ -21,7 +21,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "glsl_manager.h"
+#include "filter_glsl_manager.h"
 #include <movit/padding_effect.h>
 
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )

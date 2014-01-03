@@ -18,7 +18,7 @@
  */
 
 #include <framework/mlt.h>
-#include "glsl_manager.h"
+#include "filter_glsl_manager.h"
 
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {

@@ -22,7 +22,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "glsl_manager.h"
+#include "filter_glsl_manager.h"
 #include <movit/white_balance_effect.h>
 
 static double srgb8_to_linear(int c)

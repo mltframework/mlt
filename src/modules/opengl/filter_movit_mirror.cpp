@@ -21,7 +21,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "glsl_manager.h"
+#include "filter_glsl_manager.h"
 #include <movit/mirror_effect.h>
 
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
