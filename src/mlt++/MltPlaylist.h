@@ -96,7 +96,7 @@ namespace Mlt
 			bool is_blank_at( int position );
 			void consolidate_blanks( int keep_length = 0 );
 			Producer *replace_with_blank( int clip );
-			void insert_blank( int clip, int length );
+			void insert_blank( int clip, int out );
 			void pad_blanks( int position, int length, int find = 0 );
 			int insert_at( int position, Producer *producer, int mode = 0 );
 			int insert_at( int position, Producer &producer, int mode = 0 );

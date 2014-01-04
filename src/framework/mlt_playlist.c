@@ -1556,10 +1556,10 @@ mlt_producer mlt_playlist_replace_with_blank( mlt_playlist self, int clip )
  * \public \memberof mlt_playlist_s
  * \param self a playlist
  * \param clip the index of the new blank section
- * \param length the ending time of the new blank section (duration - 1)
+ * \param out the ending time of the new blank section (duration - 1)
  */
 
-void mlt_playlist_insert_blank( mlt_playlist self, int clip, int length )
+void mlt_playlist_insert_blank( mlt_playlist self, int clip, int out )
 {
 	if ( self != NULL && length >= 0 )
 	{

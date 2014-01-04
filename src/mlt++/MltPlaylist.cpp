@@ -281,9 +281,9 @@ void Playlist::consolidate_blanks( int keep_length )
 	return mlt_playlist_consolidate_blanks( get_playlist( ), keep_length );
 }
 
-void Playlist::insert_blank( int clip, int length )
+void Playlist::insert_blank(int clip, int out )
 {
-	mlt_playlist_insert_blank( get_playlist( ), clip, length );
+	mlt_playlist_insert_blank( get_playlist( ), clip, out );
 }
 
 void Playlist::pad_blanks( int position, int length, int find )
