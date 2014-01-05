@@ -157,7 +157,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	if ( !error ) {
 		GlslManager::get_instance()->lock_service( frame );
-		Effect* effect = GlslManager::get_effect( filter, frame );
+		Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
 		if ( effect ) {
 			bool ok = effect->set_int( "width", *width );
 			ok |= effect->set_int( "height", *height );
@@ -173,8 +173,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
-	if ( !GlslManager::get_effect( filter, frame ) )
-		GlslManager::add_effect( filter, frame, new PaddingEffect );
+	if ( !GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame ) )
+		GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new PaddingEffect );
 	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, get_image );
 	return frame;

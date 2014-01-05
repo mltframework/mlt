@@ -77,7 +77,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_log_debug( MLT_FILTER_SERVICE(filter), "%dx%d -> %dx%d\n", *width, *height, owidth, oheight);
 
 		GlslManager::get_instance()->lock_service( frame );
-		Effect* effect = GlslManager::get_effect( filter, frame );
+		Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
 		if ( effect ) {
 			bool ok = effect->set_int( "width", owidth );
 			ok |= effect->set_int( "height", oheight );
@@ -97,7 +97,7 @@ static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 	if ( !GlslManager::init_chain( MLT_PRODUCER_SERVICE(producer) ) ) {
-		Effect* effect = GlslManager::add_effect( filter, frame, new PaddingEffect );
+		Effect* effect = GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new PaddingEffect );
 		RGBATuple border_color( 0.0f, 0.0f, 0.0f, 1.0f );
 		bool ok = effect->set_vec4( "border_color", (float*) &border_color );
 		assert(ok);

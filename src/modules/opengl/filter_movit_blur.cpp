@@ -29,7 +29,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	GlslManager::get_instance()->lock_service( frame );
-	Effect* effect = GlslManager::get_effect( filter, frame );
+	Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
 	if ( effect ) {
 		double radius = mlt_properties_anim_get_double( properties, "radius",
 			mlt_filter_get_position( filter, frame ),
@@ -45,9 +45,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	if ( !mlt_frame_is_test_card( frame ) ) {
-		Effect* effect = GlslManager::get_effect( filter, frame );
+		Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
 		if ( !effect ) {
-			effect = GlslManager::add_effect( filter, frame, new BlurEffect() );
+			effect = GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new BlurEffect() );
 			assert(effect);
 		}
 	}

@@ -349,30 +349,30 @@ void GlslManager::reset_finalized( mlt_service service )
 	mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_movit finalized", 0 );
 }
 
-Effect* GlslManager::get_effect( mlt_filter filter, mlt_frame frame )
+Effect* GlslManager::get_effect( mlt_service service, mlt_frame frame )
 {
 	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
-	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
+	char *unique_id = mlt_properties_get( MLT_SERVICE_PROPERTIES(service), "_unique_id" );
 	return (Effect*) GlslManager::get_instance()->effect_list( producer ).get_data( unique_id );
 }
 
-Effect* GlslManager::add_effect( mlt_filter filter, mlt_frame frame, Effect* effect )
+Effect* GlslManager::add_effect( mlt_service service, mlt_frame frame, Effect* effect )
 {
 	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
 	EffectChain* chain = (EffectChain*) producer.get_data( "movit chain" );
 	chain->add_effect( effect );
-	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
+	char *unique_id = mlt_properties_get( MLT_SERVICE_PROPERTIES(service), "_unique_id" );
 	GlslManager::get_instance()->effect_list( producer ).set( unique_id, effect, 0 );
 	return effect;
 }
 
-Effect* GlslManager::add_effect( mlt_filter filter, mlt_frame frame, Effect* effect, Effect* input_b )
+Effect* GlslManager::add_effect( mlt_service service, mlt_frame frame, Effect* effect, Effect* input_b )
 {
 	Mlt::Producer producer( mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) ) );
 	EffectChain* chain = (EffectChain*) producer.get_data( "movit chain" );
 	chain->add_effect( effect, chain->last_added_effect(),
 		input_b? input_b : chain->last_added_effect() );
-	char *unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "_unique_id" );
+	char *unique_id = mlt_properties_get( MLT_SERVICE_PROPERTIES(service), "_unique_id" );
 	GlslManager::get_instance()->effect_list( producer ).set( unique_id, effect, 0 );
 	return effect;
 }

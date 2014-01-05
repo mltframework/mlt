@@ -29,7 +29,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	GlslManager::get_instance()->lock_service( frame );
-	Effect* effect = GlslManager::get_effect( filter, frame );
+	Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
 	if ( effect ) {
 		mlt_position position = mlt_filter_get_position( filter, frame );
 		mlt_position length = mlt_filter_get_length2( filter, frame );
@@ -45,9 +45,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	if ( !mlt_frame_is_test_card( frame ) ) {
-		Effect* effect = GlslManager::get_effect( filter, frame );
+		Effect* effect = GlslManager::get_effect( MLT_FILTER_SERVICE( filter ), frame );
 		if ( !effect ) {
-			effect = GlslManager::add_effect( filter, frame, new MixEffect, 0 );
+			effect = GlslManager::add_effect( MLT_FILTER_SERVICE( filter ), frame, new MixEffect, 0 );
 			assert(effect);
 			bool ok = effect->set_float( "strength_first", 1.0f );
 			ok |= effect->set_float( "strength_second", 0.0f );
