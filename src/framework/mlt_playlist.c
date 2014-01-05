@@ -1561,11 +1561,11 @@ mlt_producer mlt_playlist_replace_with_blank( mlt_playlist self, int clip )
 
 void mlt_playlist_insert_blank( mlt_playlist self, int clip, int out )
 {
-	if ( self != NULL && length >= 0 )
+	if ( self != NULL && out >= 0 )
 	{
 		mlt_properties properties = MLT_PLAYLIST_PROPERTIES( self );
 		mlt_events_block( properties, properties );
-		mlt_playlist_blank( self, length );
+		mlt_playlist_blank( self, out );
 		mlt_playlist_move( self, self->count - 1, clip );
 		mlt_events_unblock( properties, properties );
 		mlt_playlist_virtual_refresh( self );
