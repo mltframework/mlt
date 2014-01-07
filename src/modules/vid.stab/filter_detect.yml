@@ -201,12 +201,24 @@ parameters:
   - identifier: optzoom
     title: Optimal Zoom
     type: integer
-    description: automatically determine optimal zoom (transform)
+    description: automatically determine optimal zoom. 1 - static zoom, 2 - adaptive zoom (transform)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 2
+    default: 1
+    mutable: yes
+    widget: spinner
+
+  - identifier: zoomspeed
+    title: Optimal Zoom Speed
+    type: float
+    description: zoom per frame in percent, (used when optzoom = 2) (transform)
     readonly: no
     required: no
     minimum: 0
     maximum: 1
-    default: 1
+    default: 0.25
     mutable: yes
     widget: spinner
 

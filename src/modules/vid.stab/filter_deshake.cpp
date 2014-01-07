@@ -66,6 +66,7 @@ int init_deshake(DeshakeData *data, mlt_properties properties,
 	tdconf.crop = (VSBorderType) mlt_properties_get_int(properties, "crop");
 	tdconf.zoom = mlt_properties_get_int(properties, "zoom");
 	tdconf.optZoom = mlt_properties_get_int(properties, "optzoom");
+	tdconf.zoomSpeed = mlt_properties_get_double(properties, "zoomspeed");
 	tdconf.relative = 1;
 	tdconf.invert = 0;
 
@@ -131,7 +132,7 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 		vsFrameFillFromBuffer(&vsFrame, *image, &md->fi);
 		vsMotionDetection(md, &localmotions, &vsFrame);
 
-		motion = vsSimpleMotionsToTransform(td, &localmotions);
+		motion = vsSimpleMotionsToTransform(md->fi, FILTER_NAME, &localmotions);
 		vs_vector_del(&localmotions);
 
 		vsTransformPrepare(td, &vsFrame, &vsFrame);
@@ -200,7 +201,7 @@ mlt_filter filter_deshake_init(mlt_profile profile, mlt_service_type type,
 		mlt_properties_set(properties, "crop", "0");
 		mlt_properties_set(properties, "zoom", "0");
 		mlt_properties_set(properties, "optzoom", "1");
-		mlt_properties_set(properties, "sharpen", "0.8");
+		mlt_properties_set(properties, "zoomspeed", "0.25");
 
 		return filter;
 	}

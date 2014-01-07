@@ -204,7 +204,7 @@ mlt_filter filter_detect_init(mlt_profile profile, mlt_service_type type, const 
 		mlt_properties_set(properties, "relative", "1");
 		mlt_properties_set(properties, "zoom", "0");
 		mlt_properties_set(properties, "optzoom", "1");
-		mlt_properties_set(properties, "sharpen", "0.8");
+		mlt_properties_set(properties, "zoomspeed", "0.25");
 
 		mlt_properties_set(properties, "vid.stab.version", LIBVIDSTAB_VERSION);
 		mlt_properties_set_data(properties, "vectors", data->animation, 1, (mlt_destructor) mlt_animation_close,

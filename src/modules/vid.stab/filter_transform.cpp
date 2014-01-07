@@ -102,6 +102,7 @@ inline int initialize_transforms(TransformData *data, int *width, int *height, m
 	conf.crop = (VSBorderType) mlt_properties_get_int(properties, "crop");
 	conf.zoom = mlt_properties_get_int(properties, "zoom");
 	conf.optZoom = mlt_properties_get_int(properties, "optzoom");
+	conf.zoomSpeed = mlt_properties_get_double(properties, "zoomspeed");
 	conf.relative = mlt_properties_get_int(properties, "relative");
 	conf.invert = mlt_properties_get_int(properties, "invert");
 	if (mlt_properties_get_int(properties, "tripod") != 0)
@@ -247,6 +248,7 @@ mlt_filter filter_transform_init(mlt_profile profile, mlt_service_type type, con
 		mlt_properties_set(properties, "relative", "1");
 		mlt_properties_set(properties, "zoom", "0");
 		mlt_properties_set(properties, "optzoom", "1");
+		mlt_properties_set(properties, "zoomspeed", "0.25");
 
 		return filter;
 	}
