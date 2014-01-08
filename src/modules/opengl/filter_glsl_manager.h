@@ -79,6 +79,7 @@ public:
 	static void release_fbo(glsl_fbo);
 	glsl_texture get_texture(int width, int height, GLint internal_format);
 	static void release_texture(glsl_texture);
+	static void delete_sync(GLsync sync);
 	glsl_pbo get_pbo(int size);
 	void cleanupContext();
 
@@ -106,6 +107,7 @@ private:
 	glsl_pbo  pbo;
 	Mlt::Event* initEvent;
 	Mlt::Event* closeEvent;
+	GLsync prev_sync;
 };
 
 #endif // GLSL_MANAGER_H

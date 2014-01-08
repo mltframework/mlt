@@ -51,6 +51,7 @@ GlslManager::GlslManager()
 	, pbo(0)
 	, initEvent(0)
 	, closeEvent(0)
+	, prev_sync(NULL)
 {
 	mlt_filter filter = get_filter();
 	if ( filter ) {
@@ -76,6 +77,9 @@ GlslManager::~GlslManager()
 //		delete (glsl_texture) texture_list.pop_back();
 	delete initEvent;
 	delete closeEvent;
+	if (prev_sync != NULL) {
+		glDeleteSync( prev_sync );
+	}
 }
 
 GlslManager* GlslManager::get_instance()
@@ -192,6 +196,11 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 void GlslManager::release_texture(glsl_texture texture)
 {
 	texture->used = 0;
+}
+
+void GlslManager::delete_sync(GLsync sync)
+{
+	glDeleteSync(sync);
 }
 
 glsl_pbo GlslManager::get_pbo(int size)
@@ -408,9 +417,18 @@ int GlslManager::render_frame_texture(mlt_service service, mlt_frame frame, int 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	check_error();
 
+	// Make sure we never have more than one frame pending at any time.
+	// This ensures we do not swamp the GPU with so much work
+	// that we cannot actually display the frames we generate.
+	if (prev_sync != NULL) {
+		glFlush();
+		glClientWaitSync( prev_sync, 0, GL_TIMEOUT_IGNORED );
+		glDeleteSync( prev_sync );
+	}
 	render_fbo( service, chain, fbo->fbo, width, height );
+	prev_sync = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
+	GLsync sync = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
 
-	glFinish();
 	check_error();
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	check_error();
@@ -420,6 +438,8 @@ int GlslManager::render_frame_texture(mlt_service service, mlt_frame frame, int 
 	mlt_frame_set_image( frame, *image, 0, NULL );
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.texture", texture, 0,
 		(mlt_destructor) GlslManager::release_texture, NULL );
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.fence", sync, 0,
+		(mlt_destructor) GlslManager::delete_sync, NULL );
 
 	return 0;
 }
