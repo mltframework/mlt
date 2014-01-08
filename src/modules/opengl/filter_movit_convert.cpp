@@ -65,6 +65,44 @@ static void delete_chain( EffectChain* chain )
 	delete chain;
 }
 
+static void get_format_from_properties( mlt_properties properties, ImageFormat* image_format, YCbCrFormat* ycbcr_format )
+{
+	switch ( mlt_properties_get_int( properties, "colorspace" ) ) {
+	case 601:
+		ycbcr_format->luma_coefficients = YCBCR_REC_601;
+		break;
+	case 709:
+	default:
+		ycbcr_format->luma_coefficients = YCBCR_REC_709;
+		break;
+	}
+
+	switch ( mlt_properties_get_int( properties, "color_primaries" ) ) {
+	case 601625:
+		image_format->color_space = COLORSPACE_REC_601_625;
+		break;
+	case 601525:
+		image_format->color_space = COLORSPACE_REC_601_525;
+		break;
+	case 709:
+	default:
+		image_format->color_space = COLORSPACE_REC_709;
+		break;
+	}
+
+	image_format->gamma_curve = GAMMA_REC_709;
+
+	if ( mlt_properties_get_int( properties, "force_full_luma" ) ) {
+		ycbcr_format->full_range = true;
+	} else {
+		ycbcr_format->full_range = ( mlt_properties_get_int( properties, "full_luma" ) == 1 );
+	}
+
+	// TODO: make new frame properties set by producers
+	ycbcr_format->cb_x_position = ycbcr_format->cr_x_position = 0.0f;
+	ycbcr_format->cb_y_position = ycbcr_format->cr_y_position = 0.5f;
+}
+
 static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, mlt_image_format output_format )
 {
 	// Nothing to do!
@@ -140,59 +178,29 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			}
 		}
 		if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) { 
+			// TODO: Get the color space if available.
 			input->useFlatInput( chain, FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
 			input->set_pixel_data( *image );
 		}
 		else if ( *format == mlt_image_rgb24 ) {
+			// TODO: Get the color space if available.
 			input->useFlatInput( chain, FORMAT_RGB, width, height );
 			input->set_pixel_data( *image );
 		}
 		else if ( *format == mlt_image_yuv420p ) {
 			ImageFormat image_format;
 			YCbCrFormat ycbcr_format;
-			if ( 709 == mlt_properties_get_int( properties, "colorspace" ) ) {
-				image_format.color_space = COLORSPACE_REC_709;
-				image_format.gamma_curve = GAMMA_REC_709;
-				ycbcr_format.luma_coefficients = YCBCR_REC_709;
-			} else if ( 576 == mlt_properties_get_int( properties, "height" ) ) {
-				image_format.color_space = COLORSPACE_REC_601_625;
-				image_format.gamma_curve = GAMMA_REC_601;
-				ycbcr_format.luma_coefficients = YCBCR_REC_601;
-			} else {
-				image_format.color_space = COLORSPACE_REC_601_525;
-				image_format.gamma_curve = GAMMA_REC_601;
-				ycbcr_format.luma_coefficients = YCBCR_REC_601;
-			}
-			ycbcr_format.full_range = mlt_properties_get_int( properties, "force_full_luma" );
+			get_format_from_properties( properties, &image_format, &ycbcr_format );
 			ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 2;
-			// TODO: make new frame properties set by producers
-			ycbcr_format.cb_x_position = ycbcr_format.cr_x_position = 0.0f;
-			ycbcr_format.cb_y_position = ycbcr_format.cr_y_position = 0.5f;
 			input->useYCbCrInput( chain, image_format, ycbcr_format, width, height );
 			input->set_pixel_data( *image );
 		}
 		else if ( *format == mlt_image_yuv422 ) {
 			ImageFormat image_format;
 			YCbCrFormat ycbcr_format;
-			if ( 709 == mlt_properties_get_int( properties, "colorspace" ) ) {
-				image_format.color_space = COLORSPACE_REC_709;
-				image_format.gamma_curve = GAMMA_REC_709;
-				ycbcr_format.luma_coefficients = YCBCR_REC_709;
-			} else if ( 576 == height ) {
-				image_format.color_space = COLORSPACE_REC_601_625;
-				image_format.gamma_curve = GAMMA_REC_601;
-				ycbcr_format.luma_coefficients = YCBCR_REC_601;
-			} else {
-				image_format.color_space = COLORSPACE_REC_601_525;
-				image_format.gamma_curve = GAMMA_REC_601;
-				ycbcr_format.luma_coefficients = YCBCR_REC_601;
-			}
-			ycbcr_format.full_range = mlt_properties_get_int( properties, "force_full_luma" );
+			get_format_from_properties( properties, &image_format, &ycbcr_format );
 			ycbcr_format.chroma_subsampling_x = 2;
 			ycbcr_format.chroma_subsampling_y = 1;
-			// TODO: make new frame properties set by producers
-			ycbcr_format.cb_x_position = ycbcr_format.cr_x_position = 0.0f;
-			ycbcr_format.cb_y_position = ycbcr_format.cr_y_position = 0.5f;
 			input->useYCbCrInput( chain, image_format, ycbcr_format, width, height );
 			
 			// convert chunky to planar

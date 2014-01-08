@@ -102,7 +102,7 @@ struct producer_avformat_s
 	unsigned int invalid_pts_counter;
 	unsigned int invalid_dts_counter;
 	mlt_cache image_cache;
-	int colorspace;
+	int yuv_colorspace, color_primaries;
 	int full_luma;
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
@@ -1026,7 +1026,7 @@ static void get_audio_streams_info( producer_avformat self )
 		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
 }
 
-static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
+static void set_luma_transfer( struct SwsContext *context, int yuv_colorspace, int use_full_range )
 {
 	int *coefficients;
 	const int *new_coefficients;
@@ -1039,7 +1039,7 @@ static void set_luma_transfer( struct SwsContext *context, int colorspace, int u
 		// Don't change these from defaults unless explicitly told to.
 		if ( use_full_range >= 0 )
 			full_range = use_full_range;
-		switch ( colorspace )
+		switch ( yuv_colorspace )
 		{
 		case 170:
 		case 470:
@@ -1159,7 +1159,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		set_luma_transfer( context, self->colorspace, -1 );
+		set_luma_transfer( context, self->yuv_colorspace, -1 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1170,7 +1170,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
-		set_luma_transfer( context, self->colorspace, self->full_luma );
+		set_luma_transfer( context, self->yuv_colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1181,7 +1181,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		set_luma_transfer( context, self->colorspace, self->full_luma );
+		set_luma_transfer( context, self->yuv_colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1192,7 +1192,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		set_luma_transfer( context, self->colorspace, -1 );
+		set_luma_transfer( context, self->yuv_colorspace, -1 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1822,31 +1822,47 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 
 		// Set the YUV colorspace from override or detect
-		self->colorspace = mlt_properties_get_int( properties, "force_colorspace" );
+		self->yuv_colorspace = mlt_properties_get_int( properties, "force_colorspace" );
 #if LIBAVCODEC_VERSION_INT > ((52<<16)+(28<<8)+0)
-		if ( ! self->colorspace )
+		if ( ! self->yuv_colorspace )
 		{
 			switch ( self->video_codec->colorspace )
 			{
 			case AVCOL_SPC_SMPTE240M:
-				self->colorspace = 240;
+				self->yuv_colorspace = 240;
 				break;
 			case AVCOL_SPC_BT470BG:
 			case AVCOL_SPC_SMPTE170M:
-				self->colorspace = 601;
+				self->yuv_colorspace = 601;
 				break;
 			case AVCOL_SPC_BT709:
-				self->colorspace = 709;
+				self->yuv_colorspace = 709;
 				break;
 			default:
 				// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
-				self->colorspace = self->video_codec->width * self->video_codec->height > 750000 ? 709 : 601;
+				self->yuv_colorspace = self->video_codec->width * self->video_codec->height > 750000 ? 709 : 601;
 				break;
 			}
 		}
 #endif
 		// Let apps get chosen colorspace
-		mlt_properties_set_int( properties, "meta.media.colorspace", self->colorspace );
+		mlt_properties_set_int( properties, "meta.media.colorspace", self->yuv_colorspace );
+
+		switch ( self->video_codec->color_primaries )
+		{
+		case AVCOL_PRI_BT470BG:
+			self->color_primaries = 601625;
+			break;
+		case AVCOL_PRI_SMPTE170M:
+		case AVCOL_PRI_SMPTE240M:
+			self->color_primaries = 601525;
+			break;
+		case AVCOL_PRI_BT709:
+		case AVCOL_PRI_UNSPECIFIED:
+		default:
+			self->color_primaries = 709;
+			break;
+		}
 
 		self->full_luma = -1;
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(72<<8)+2)
@@ -1934,7 +1950,9 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		mlt_properties_set_int( properties, "meta.media.width", self->video_codec->width );
 		mlt_properties_set_int( properties, "meta.media.height", self->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
-		mlt_properties_set_int( frame_properties, "colorspace", self->colorspace );
+		mlt_properties_set_int( frame_properties, "colorspace", self->yuv_colorspace );
+		mlt_properties_set_int( frame_properties, "color_primaries", self->color_primaries );
+		mlt_properties_set_int( frame_properties, "full_luma", self->full_luma );
 
 		// Workaround 1088 encodings missing cropping info.
 		if ( self->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
