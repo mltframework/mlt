@@ -8,6 +8,15 @@ then
 		touch ../disable-vidstab
 		exit 0
 	fi
+	
+	minver="0.98"
+	modver=$(pkg-config --modversion vidstab)
+	if [ 0 == $(expr $modver \>= $minver) ]
+	then
+		echo "- vid.stab $modver found, but $minver or newer is required: disabling"
+		touch ../disable-opencv
+		exit 0
+	fi
 
 	echo > config.mak
 	case $targetos in

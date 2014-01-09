@@ -1,10 +1,10 @@
 schema_version: 0.1
 type: filter
-identifier: videostab2
-title: Videostab2
-copyright: Copyright (C) 2011 Marco Gittler
+identifier: vid.stab
+title: Vid.Stab Detect and Transform
+copyright: Jakub Ksiezniak
 creator: Marco Gittler <g.marco@freenet.de>
-version: 0.1
+version: 1
 license: GPL
 language: en
 url: http://public.hronopik.de/vid.stab/
@@ -95,6 +95,18 @@ parameters:
     required: no
     minimum: 0
     maximum: 2
+    default: 0
+    mutable: yes
+    widget: spinner
+
+  - identifier: tripod
+    title: Tripod
+    type: integer
+    description: virtual tripod mode (if >0): motion is compared to a reference frame (frame N is the value)
+    readonly: no
+    required: no
+    minimum: 0
+    maximum: 100000
     default: 0
     mutable: yes
     widget: spinner

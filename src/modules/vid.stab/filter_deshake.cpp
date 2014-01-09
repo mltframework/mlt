@@ -38,7 +38,7 @@ typedef struct _deshake_data
 	VSTransformData td;
 	VSSlidingAvgTrans avg;
 
-	void *parent;
+	mlt_position lastFrame;
 } DeshakeData;
 
 int init_deshake(DeshakeData *data, mlt_properties properties,
@@ -115,6 +115,14 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 			data->initialized = false;
 		}
 
+		// clear deshake data, when seeking or dropping frames
+		mlt_position pos = mlt_filter_get_position(filter, frame);
+		if(pos != data->lastFrame+1) {
+			clear_deshake(data);
+			data->initialized = false;
+		}
+		data->lastFrame = pos;
+
 		if (!data->initialized)
 		{
 			char *interps = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "rescale.interp");
@@ -184,7 +192,6 @@ mlt_filter filter_deshake_init(mlt_profile profile, mlt_service_type type,
 		filter->process = process_filter;
 		filter->close = close_filter;
 		filter->child = data;
-		data->parent = filter;
 
 		mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
 		//properties for stabilize
@@ -195,7 +202,7 @@ mlt_filter filter_deshake_init(mlt_profile profile, mlt_service_type type,
 		mlt_properties_set(properties, "mincontrast", "0.3");
 
 		//properties for transform
-		mlt_properties_set(properties, "smoothing", "10");
+		mlt_properties_set(properties, "smoothing", "15");
 		mlt_properties_set(properties, "maxshift", "-1");
 		mlt_properties_set(properties, "maxangle", "-1");
 		mlt_properties_set(properties, "crop", "0");

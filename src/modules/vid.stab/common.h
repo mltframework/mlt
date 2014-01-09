@@ -26,4 +26,7 @@ inline VSPixelFormat convertImageFormat(mlt_image_format &format) {
 	}
 }
 
+int get_image_and_detect(mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable);
+int get_image_and_transform(mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable);
+
 #endif /* VIDSTAB_COMMON_H_ */
