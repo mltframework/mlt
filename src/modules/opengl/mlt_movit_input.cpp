@@ -18,7 +18,6 @@
  */
 
 #include "mlt_movit_input.h"
-#include "fbo_input.h"
 
 MltInput::MltInput(unsigned width, unsigned height)
 	: m_width(width)
@@ -103,15 +102,6 @@ void MltInput::useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat&
 		input = new YCbCrInput(image_format, ycbcr_format, width, height);
 		isRGB = false;
 		m_ycbcr_format = ycbcr_format;
-	}
-}
-
-void MltInput::useFBOInput(GLuint texture)
-{
-	if (!input) {
-		FBOInput* fboInput = new FBOInput(m_width, m_height);
-		input = fboInput;
-		fboInput->set_texture(texture);
 	}
 }
 
