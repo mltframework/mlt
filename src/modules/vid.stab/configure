@@ -5,7 +5,7 @@ then
 	if ! $(pkg-config vidstab)
 	then
 		echo "- vid.stab not found: disabling"
-		touch ../disable-vidstab
+		touch ../disable-vid.stab
 		exit 0
 	fi
 	
@@ -14,7 +14,7 @@ then
 	if [ 0 == $(expr $modver \>= $minver) ]
 	then
 		echo "- vid.stab $modver found, but $minver or newer is required: disabling"
-		touch ../disable-opencv
+		touch ../disable-vid.stab
 		exit 0
 	fi
 
