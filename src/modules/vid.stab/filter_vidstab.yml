@@ -102,7 +102,7 @@ parameters:
   - identifier: tripod
     title: Tripod
     type: integer
-    description: virtual tripod mode (if >0): motion is compared to a reference frame (frame N is the value)
+    description: virtual tripod mode (if >0) motion is compared to a reference frame (frame N is the value)
     readonly: no
     required: no
     minimum: 0
