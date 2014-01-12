@@ -1,8 +1,7 @@
 /*
  * filter_deshake.cpp
- * Copyright (C) 2013
- * Marco Gittler <g.marco@freenet.de>
- * Jakub Ksiezniak <j.ksiezniak@gmail.com>
+ * Copyright (C) 2013 Marco Gittler <g.marco@freenet.de>
+ * Copyright (C) 2013 Jakub Ksiezniak <j.ksiezniak@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
