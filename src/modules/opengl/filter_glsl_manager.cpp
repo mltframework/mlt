@@ -198,11 +198,6 @@ void GlslManager::release_texture(glsl_texture texture)
 	texture->used = 0;
 }
 
-void GlslManager::delete_sync(GLsync sync)
-{
-	glDeleteSync(sync);
-}
-
 glsl_pbo GlslManager::get_pbo(int size)
 {
 	lock();
@@ -438,8 +433,7 @@ int GlslManager::render_frame_texture(mlt_service service, mlt_frame frame, int 
 	mlt_frame_set_image( frame, *image, 0, NULL );
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.texture", texture, 0,
 		(mlt_destructor) GlslManager::release_texture, NULL );
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.fence", sync, 0,
-		(mlt_destructor) GlslManager::delete_sync, NULL );
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.fence", sync, 0, NULL, NULL );
 
 	return 0;
 }
