@@ -104,6 +104,7 @@ private:
 	static void onPropertyChanged( mlt_properties owner, mlt_service service, const char* property );
 	Mlt::Deque fbo_list;
 	Mlt::Deque texture_list;
+	Mlt::Deque syncs_to_delete;
 	glsl_pbo  pbo;
 	Mlt::Event* initEvent;
 	Mlt::Event* closeEvent;

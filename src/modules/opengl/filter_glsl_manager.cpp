@@ -80,6 +80,10 @@ GlslManager::~GlslManager()
 	if (prev_sync != NULL) {
 		glDeleteSync( prev_sync );
 	}
+	while (syncs_to_delete.count() > 0) {
+		GLsync sync = (GLsync) syncs_to_delete.pop_front();
+		glDeleteSync( sync );
+	}
 }
 
 GlslManager* GlslManager::get_instance()
@@ -196,6 +200,17 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 void GlslManager::release_texture(glsl_texture texture)
 {
 	texture->used = 0;
+}
+
+void GlslManager::delete_sync(GLsync sync)
+{
+	// We do not know which thread we are called from, and we can only
+	// delete this if we are in one with a valid OpenGL context.
+	// Thus, store it for later deletion in render_frame_texture().
+	GlslManager* g = GlslManager::get_instance();
+	g->lock();
+	g->syncs_to_delete.push_back(sync);
+	g->unlock();
 }
 
 glsl_pbo GlslManager::get_pbo(int size)
@@ -412,6 +427,13 @@ int GlslManager::render_frame_texture(mlt_service service, mlt_frame frame, int 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	check_error();
 
+	lock();
+	while (syncs_to_delete.count() > 0) {
+		GLsync sync = (GLsync) syncs_to_delete.pop_front();
+		glDeleteSync( sync );
+	}
+	unlock();
+
 	// Make sure we never have more than one frame pending at any time.
 	// This ensures we do not swamp the GPU with so much work
 	// that we cannot actually display the frames we generate.
@@ -433,7 +455,8 @@ int GlslManager::render_frame_texture(mlt_service service, mlt_frame frame, int 
 	mlt_frame_set_image( frame, *image, 0, NULL );
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.texture", texture, 0,
 		(mlt_destructor) GlslManager::release_texture, NULL );
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.fence", sync, 0, NULL, NULL );
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.fence", sync, 0,
+		(mlt_destructor) GlslManager::delete_sync, NULL );
 
 	return 0;
 }
