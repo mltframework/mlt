@@ -22,8 +22,6 @@
 #include <framework/mlt.h>
 
 extern mlt_filter filter_deshake_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_detect_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_transform_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_vidstab_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
@@ -35,13 +33,9 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "vid.stab.deshake", filter_deshake_init );
-	MLT_REGISTER( filter_type, "vid.stab.detect", filter_detect_init );
-	MLT_REGISTER( filter_type, "vid.stab.transform", filter_transform_init );
-	MLT_REGISTER( filter_type, "vid.stab", filter_vidstab_init );
+	MLT_REGISTER( filter_type, "deshake", filter_deshake_init );
+	MLT_REGISTER( filter_type, "vidstab", filter_vidstab_init );
 	
-	MLT_REGISTER_METADATA( filter_type, "vid.stab.deshake", metadata, "filter_deshake.yml" );
-	MLT_REGISTER_METADATA( filter_type, "vid.stab.detect", metadata, "filter_detect.yml" );
-	MLT_REGISTER_METADATA( filter_type, "vid.stab.transform", metadata, "filter_transform.yml" );
-	MLT_REGISTER_METADATA( filter_type, "vid.stab", metadata, "filter_vidstab.yml" );
+	MLT_REGISTER_METADATA( filter_type, "deshake", metadata, "filter_deshake.yml" );
+	MLT_REGISTER_METADATA( filter_type, "vidstab", metadata, "filter_vidstab.yml" );
 }

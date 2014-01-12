@@ -9,8 +9,6 @@ TARGET = ../libmltvidstab$(LIBSUF)
 OBJS = factory.o
 
 CPPOBJS = filter_deshake.o
-CPPOBJS += filter_detect.o
-CPPOBJS += filter_transform.o
 CPPOBJS += filter_vidstab.o
 
 CXXFLAGS += -Wno-deprecated $(CFLAGS)
