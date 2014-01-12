@@ -11,7 +11,8 @@ then
 	
 	minver="0.98"
 	modver=$(pkg-config --modversion vidstab)
-	if [ 0 == $(expr $modver \>= $minver) ]
+	pkg-config --exists 'vidstab >= $minver'
+	if [ $? -ne 0 ]
 	then
 		echo "- vid.stab $modver found, but $minver or newer is required: disabling"
 		touch ../disable-vid.stab
@@ -29,3 +30,4 @@ then
 	esac
 	exit 0
 fi
+
