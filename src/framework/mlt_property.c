@@ -1456,8 +1456,15 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 			if ( p != value )
 			{
 				if ( p[0] == '%' )
+				{
 					temp /= 100.0;
+					p ++;
+				}
+
+				// Chomp the delimiter.
 				if ( *p ) p ++;
+
+				// Assign the value to appropriate field.
 				switch( count )
 				{
 					case 0: rect.x = temp; break;
