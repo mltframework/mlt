@@ -613,7 +613,7 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 				item.is_key = 1;
 			}
 			// Typically, we move from keyframe to keyframe
-			else if ( item.frame < out )
+			else if ( item.frame <= out )
 			{
 				if ( mlt_animation_next_key( self, &item, item.frame ) )
 					break;

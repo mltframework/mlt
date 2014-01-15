@@ -325,6 +325,39 @@ private Q_SLOTS:
         QCOMPARE(p.get_double("key"), double(1) / double(8));
     }
 
+    void AnimationInsert()
+    {
+        double fps = 25.0;
+        mlt_animation a = mlt_animation_new();
+        struct mlt_animation_item_s item;
+
+        item.is_key = 1;
+        item.keyframe_type = mlt_keyframe_discrete;
+        item.property = mlt_property_init();
+
+        item.frame = 0;
+        mlt_property_set_string(item.property, "0");
+        mlt_animation_insert(a, &item);
+
+        item.frame = 1;
+        mlt_property_set_string(item.property, "1");
+        mlt_animation_insert(a, &item);
+
+        item.frame = 2;
+        mlt_property_set_string(item.property, "2");
+        mlt_animation_insert(a, &item);
+
+        QCOMPARE(mlt_animation_get_length(a), 2);
+
+        char *a_serialized = mlt_animation_serialize(a);
+        mlt_animation_parse(a, a_serialized, 0, fps, locale);
+        QCOMPARE(a_serialized, "0|=0;1|=1;2|=2");
+        if (a_serialized) free(a_serialized);
+
+        mlt_property_close(item.property);
+        mlt_animation_close(a);
+    }
+
     void DoubleAnimation()
     {
         double fps = 25.0;
@@ -912,3 +945,4 @@ private Q_SLOTS:
 QTEST_APPLESS_MAIN(TestProperties)
 
 #include "test_properties.moc"
+
