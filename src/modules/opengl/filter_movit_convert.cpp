@@ -202,7 +202,7 @@ static void finalize_movit_chain( mlt_service leaf_service, mlt_frame frame )
 
 	// Build the chain if needed.
 	if ( !chain || new_fingerprint != chain->fingerprint ) {
-		printf("=== CREATING NEW CHAIN (old chain=%p, leaf=%p, fingerprint=%s) ===\n", chain, leaf_service, new_fingerprint.c_str());
+		mlt_log_debug( leaf_service, "=== CREATING NEW CHAIN (old chain=%p, leaf=%p, fingerprint=%s) ===\n", chain, leaf_service, new_fingerprint.c_str() );
 		mlt_profile profile = mlt_service_profile( leaf_service );
 		chain = new GlslChain;
 		chain->effect_chain = new EffectChain( profile->display_aspect_num, profile->display_aspect_den );
