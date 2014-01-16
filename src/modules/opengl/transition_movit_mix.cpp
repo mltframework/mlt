@@ -49,7 +49,8 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	mlt_position position = mlt_transition_get_position( transition, a_frame );
 	mlt_position length = mlt_transition_get_length( transition );
 	int reverse = mlt_properties_get_int( properties, "reverse" );
-	double mix = mlt_properties_get( properties, "mix" ) ?
+	const char* mix_str = mlt_properties_get( properties, "mix" );
+	double mix = ( mix_str && strlen( mix_str ) > 0 ) ?
 		mlt_properties_anim_get_double( properties, "mix", position, length ) :
 		mlt_transition_get_progress( transition, a_frame );
 	double inverse = 1.0 - mix;
