@@ -24,7 +24,7 @@ parameters:
     title: Matrix Size
     type: integer
     minimum: 0
-    maximum: 10
+    maximum: 25
     default: 5
     mutable: yes
 
