@@ -30,6 +30,8 @@
 #include <mlt++/MltProducer.h>
 #include "mlt_flip_effect.h"
 
+static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_frame frame );
+
 static void yuv422_to_yuv422p( uint8_t *yuv422, uint8_t *yuv422p, int width, int height )
 {
 	uint8_t *Y = yuv422p;
@@ -129,11 +131,9 @@ static void build_fingerprint( mlt_service service, mlt_frame frame, std::string
 
 	fingerprint->push_back( '(' );
 	fingerprint->append( mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "_unique_id" ) );
-	bool disable = mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "movit.disable" );
+	bool disable = mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "movit.parms.int.disable" );
 	if ( disable ) {
 		fingerprint->push_back( 'd' );
-		bool ok = effect->set_int( "disable", 1 );
-		assert(ok);
 	}
 	fingerprint->push_back( ')' );
 }
@@ -209,6 +209,7 @@ static void finalize_movit_chain( mlt_service leaf_service, mlt_frame frame )
 		chain->fingerprint = new_fingerprint;
 
 		build_movit_chain( leaf_service, frame, chain );
+		set_movit_parameters( chain, leaf_service, frame );
 		chain->effect_chain->add_effect( new Mlt::VerticalFlip );
 
 		ImageFormat output_format;
@@ -423,6 +424,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		finalize_movit_chain( leaf_service, frame );
 
 		// Set per-frame parameters now that we know which Effect instances to set them on.
+		// (finalize_movit_chain may already have done this, though, but twice doesn't hurt.)
 		GlslChain *chain = GlslManager::get_chain( leaf_service );
 		set_movit_parameters( chain, leaf_service, frame );
 
