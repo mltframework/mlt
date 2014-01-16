@@ -131,6 +131,14 @@ static void build_fingerprint( mlt_service service, mlt_frame frame, std::string
 
 	fingerprint->push_back( '(' );
 	fingerprint->append( mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "_unique_id" ) );
+
+	const char* effect_fingerprint = mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "_movit fingerprint" );
+	if ( effect_fingerprint ) {
+		fingerprint->push_back( '[' );
+		fingerprint->append( effect_fingerprint );
+		fingerprint->push_back( ']' );
+	}
+
 	bool disable = mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "movit.parms.int.disable" );
 	if ( disable ) {
 		fingerprint->push_back( 'd' );

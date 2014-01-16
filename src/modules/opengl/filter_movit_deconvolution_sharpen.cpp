@@ -31,8 +31,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	GlslManager::get_instance()->lock_service( frame );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
-	mlt_properties_set_int( properties, "movit.parms.int.matrix_size",
-		mlt_properties_anim_get_int( properties, "matrix_size", position, length ) );
+	int matrix_size = mlt_properties_anim_get_int( properties, "matrix_size", position, length );
+	mlt_properties_set_int( properties, "movit.parms.int.matrix_size", matrix_size );
 	mlt_properties_set_double( properties, "movit.parms.float.circle_radius",
 		mlt_properties_anim_get_double( properties, "circle_radius", position, length ) );
 	mlt_properties_set_double( properties, "movit.parms.float.gaussian_radius",
@@ -41,6 +41,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_properties_anim_get_double( properties, "correlation", position, length ) );
 	mlt_properties_set_double( properties, "movit.parms.float.noise",
 		mlt_properties_anim_get_double( properties, "noise", position, length ) );
+
+	// DeconvolutionSharpenEffect compiles the matrix size into the shader,
+	// so we need to regenerate the chain if this changes.
+	char fingerprint[256];
+	snprintf( fingerprint, sizeof( fingerprint ), "s=%d", matrix_size );
+	mlt_properties_set( properties, "_movit fingerprint", fingerprint );
+
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
