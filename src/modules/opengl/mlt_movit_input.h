@@ -35,6 +35,7 @@ public:
 	Effect::AlphaHandling alpha_handling() const;
 	std::string output_fragment_shader();
 	void set_gl_state(GLuint glsl_program_num, const std::string& prefix, unsigned *sampler_num);
+	void inform_added(EffectChain *chain) { m_chain = chain; }
 
 	// Input ovverrides
 	void finalize();
@@ -55,6 +56,7 @@ private:
 	Input *input;
 	bool isRGB;
 	YCbCrFormat m_ycbcr_format;
+	EffectChain *m_chain;
 };
 
 #endif // MLT_MOVIT_INPUT_H

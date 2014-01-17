@@ -69,6 +69,7 @@ typedef struct glsl_pbo_s *glsl_pbo;
 class Effect;
 class EffectChain;
 class MltInput;
+class ResourcePool;
 
 struct GlslChain
 {
@@ -99,6 +100,8 @@ public:
 	glsl_pbo get_pbo(int size);
 	void cleanupContext();
 
+	ResourcePool* get_resource_pool() { return resource_pool; }
+
 	static void set_chain(mlt_service, GlslChain*);
 	static GlslChain* get_chain(mlt_service);
 
@@ -127,6 +130,7 @@ private:
 	static void onClose( mlt_properties owner, GlslManager* filter );
 	static void onServiceChanged( mlt_properties owner, mlt_service service );
 	static void onPropertyChanged( mlt_properties owner, mlt_service service, const char* property );
+	ResourcePool* resource_pool;
 	Mlt::Deque fbo_list;
 	Mlt::Deque texture_list;
 	Mlt::Deque syncs_to_delete;

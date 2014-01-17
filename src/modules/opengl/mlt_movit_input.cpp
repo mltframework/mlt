@@ -26,6 +26,7 @@ MltInput::MltInput(unsigned width, unsigned height)
 	, needs_mipmaps(false)
 	, input(0)
 	, isRGB(true)
+	, m_chain(NULL)
 {
 	register_int("output_linear_gamma", &output_linear_gamma);
 	register_int("needs_mipmaps", &needs_mipmaps);
@@ -62,6 +63,7 @@ void MltInput::finalize()
 	bool ok = input->set_int("output_linear_gamma", output_linear_gamma);
 	ok |= input->set_int("needs_mipmaps", needs_mipmaps);
 	assert(ok);
+	input->inform_added(m_chain);
 	input->finalize();
 }
 

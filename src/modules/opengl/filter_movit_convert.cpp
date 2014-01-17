@@ -213,7 +213,11 @@ static void finalize_movit_chain( mlt_service leaf_service, mlt_frame frame )
 		mlt_log_debug( leaf_service, "=== CREATING NEW CHAIN (old chain=%p, leaf=%p, fingerprint=%s) ===\n", chain, leaf_service, new_fingerprint.c_str() );
 		mlt_profile profile = mlt_service_profile( leaf_service );
 		chain = new GlslChain;
-		chain->effect_chain = new EffectChain( profile->display_aspect_num, profile->display_aspect_den );
+		chain->effect_chain = new EffectChain(
+			profile->display_aspect_num,
+			profile->display_aspect_den,
+			GlslManager::get_instance()->get_resource_pool()
+		);
 		chain->fingerprint = new_fingerprint;
 
 		build_movit_chain( leaf_service, frame, chain );

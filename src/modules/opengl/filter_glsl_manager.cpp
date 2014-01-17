@@ -24,6 +24,7 @@
 #include <movit/init.h>
 #include <movit/util.h>
 #include <movit/effect_chain.h>
+#include <movit/resource_pool.h>
 #include "mlt_movit_input.h"
 #include "mlt_flip_effect.h"
 #include <mlt++/MltEvent.h>
@@ -50,6 +51,7 @@ void dec_ref_and_delete(GlslManager *p)
 
 GlslManager::GlslManager()
 	: Mlt::Filter( mlt_filter_new() )
+	, resource_pool(new ResourcePool())
 	, pbo(0)
 	, initEvent(0)
 	, closeEvent(0)
@@ -85,6 +87,7 @@ GlslManager::~GlslManager()
 		GLsync sync = (GLsync) syncs_to_delete.pop_front();
 		glDeleteSync( sync );
 	}
+	delete resource_pool;
 }
 
 void GlslManager::add_ref(mlt_properties properties)
