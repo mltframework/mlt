@@ -328,11 +328,10 @@ int mlt_properties_preset( mlt_properties self, const char *name )
 
 static inline int generate_hash( const char *name )
 {
-	int hash = 0;
-	int i = 1;
+	unsigned int hash = 5381;
 	while ( *name )
-		hash = ( hash + ( i ++ * ( *name ++ & 31 ) ) ) % 199;
-	return hash;
+		hash = hash * 33 + (unsigned int) ( *name ++ );
+	return hash % 199;
 }
 
 /** Copy a serializable property to a properties list that is mirroring this one.
