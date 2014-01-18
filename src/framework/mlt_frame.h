@@ -157,4 +157,13 @@ extern void mlt_frame_write_ppm( mlt_frame frame );
   u = ((-152*r - 300*g + 450*b) >> 10) + 128;\
   v = ((450*r - 377*g - 73*b) >> 10) + 128;
 
+/** This macro scales YUV up into the full gamut of the RGB color space. */
+#define YUV2RGB_601_SCALED( y, u, v, r, g, b ) \
+  r = ((1192 * ( y - 16 ) + 1634 * ( v - 128 ) ) >> 10 ); \
+  g = ((1192 * ( y - 16 ) - 832 * ( v - 128 ) - 401 * ( u - 128 ) ) >> 10 ); \
+  b = ((1192 * ( y - 16 ) + 2066 * ( u - 128 ) ) >> 10 ); \
+  r = r < 0 ? 0 : r > 255 ? 255 : r; \
+  g = g < 0 ? 0 : g > 255 ? 255 : g; \
+  b = b < 0 ? 0 : b > 255 ? 255 : b;
+
 #endif

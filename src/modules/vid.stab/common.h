@@ -1,6 +1,7 @@
 /*
  * common.h
  * Copyright (C) 2013 Jakub Ksiezniak <j.ksiezniak@gmail.com>
+ * Copyright (C) 2014 Brian Matherly <pez4brian@yahoo.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,22 +21,12 @@
 #ifndef VIDSTAB_COMMON_H_
 #define VIDSTAB_COMMON_H_
 
-extern "C" {
 #include <vid.stab/libvidstab.h>
 #include <framework/mlt.h>
-}
 
-inline VSPixelFormat convertImageFormat(mlt_image_format &format) {
-	switch (format) {
-	case mlt_image_rgb24:
-		return PF_RGB24;
-	case mlt_image_rgb24a:
-		return PF_RGBA;
-	case mlt_image_yuv420p:
-		return PF_YUV420P;
-	default:
-		return PF_NONE;
-	}
-}
+mlt_image_format validate_format( mlt_image_format format );
+VSPixelFormat mltimage_to_vsimage( mlt_image_format mlt_format, int width, int height, uint8_t* mlt_img, uint8_t** vs_img );
+void vsimage_to_mltimage( uint8_t* vs_img, uint8_t* mlt_img, mlt_image_format mlt_format, int width, int height );
+void free_vsimage( uint8_t* vs_img, VSPixelFormat format );
 
 #endif /* VIDSTAB_COMMON_H_ */

@@ -37,15 +37,6 @@
   u = u > 240 ? 240 : u;\
   v = v > 240 ? 240 : v
 
-/** This macro scales YUV up into the full gamut of the RGB color space. */
-#define YUV2RGB_601_SCALED( y, u, v, r, g, b ) \
-  r = ((1192 * ( y - 16 ) + 1634 * ( v - 128 ) ) >> 10 ); \
-  g = ((1192 * ( y - 16 ) - 832 * ( v - 128 ) - 401 * ( u - 128 ) ) >> 10 ); \
-  b = ((1192 * ( y - 16 ) + 2066 * ( u - 128 ) ) >> 10 ); \
-  r = r < 0 ? 0 : r > 255 ? 255 : r; \
-  g = g < 0 ? 0 : g > 255 ? 255 : g; \
-  b = b < 0 ? 0 : b > 255 ? 255 : b;
-
 /** This macro converts a YUV value to the RGB color space. */
 #define YUV2RGB_601_UNSCALED( y, u, v, r, g, b ) \
   r = ((1024 * y + 1404 * ( v - 128 ) ) >> 10 ); \

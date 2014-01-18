@@ -2,6 +2,7 @@
  * filter_vidstab.cpp
  * Copyright (C) 2013 Marco Gittler <g.marco@freenet.de>
  * Copyright (C) 2013 Jakub Ksiezniak <j.ksiezniak@gmail.com>
+ * Copyright (C) 2014 Brian Matherly <pez4brian@yahoo.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +24,12 @@ extern "C"
 #include <vid.stab/libvidstab.h>
 #include <framework/mlt.h>
 #include <framework/mlt_animation.h>
+#include "common.h"
 }
 
 #include <sstream>
 #include <string.h>
 #include <assert.h>
-#include "common.h"
 
 typedef struct
 {
@@ -56,7 +57,11 @@ static void free_manylocalmotions( VSManyLocalMotions* mlms )
 	for( int i = 0; i < vs_vector_size( mlms ); i++ )
 	{
 		LocalMotions* lms = (LocalMotions*)vs_vector_get( mlms, i );
-		vs_vector_del( lms );
+
+		if( lms )
+		{
+			vs_vector_del( lms );
+		}
 	}
 	vs_vector_del( mlms );
 }
@@ -159,12 +164,11 @@ static void read_manylocalmotions( mlt_properties properties, VSManyLocalMotions
 	mlt_animation_close( animation );
 }
 
-static vs_apply* init_apply_data( mlt_filter filter, mlt_frame frame, int width, int height, mlt_image_format format )
+static vs_apply* init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat vs_format, int width, int height )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	vs_apply* apply_data = (vs_apply*)calloc( 1, sizeof(vs_apply) );
 	memset( apply_data, 0, sizeof( vs_apply ) );
-	VSPixelFormat pf = convertImageFormat( format );
 
 	const char* filterName = mlt_properties_get( properties, "mlt_service" );
 	VSTransformConfig conf = vsTransformGetDefaultConfig( filterName );
@@ -201,8 +205,8 @@ static vs_apply* init_apply_data( mlt_filter filter, mlt_frame frame, int width,
 	VSTransformData* td = &apply_data->td;
 	VSTransformations* trans = &apply_data->trans;
 	VSFrameInfo fi_src, fi_dst;
-	vsFrameInfoInit( &fi_src, width, height, pf );
-	vsFrameInfoInit( &fi_dst, width, height, pf );
+	vsFrameInfoInit( &fi_src, width, height, vs_format );
+	vsFrameInfoInit( &fi_dst, width, height, vs_format );
 	vsTransformDataInit( td, &conf, &fi_src, &fi_dst );
 	vsTransformationsInit( trans );
 	vsLocalmotions2Transforms( td, &mlms, trans );
@@ -223,7 +227,7 @@ static void destory_apply_data( vs_apply* apply_data )
 	}
 }
 
-static vs_analyze* init_analyze_data( mlt_filter filter, mlt_frame frame, mlt_image_format format, int width, int height )
+static vs_analyze* init_analyze_data( mlt_filter filter, mlt_frame frame, VSPixelFormat vs_format, int width, int height )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	vs_analyze* analyze_data = (vs_analyze*)calloc( 1, sizeof(vs_analyze) );
@@ -234,9 +238,8 @@ static vs_analyze* init_analyze_data( mlt_filter filter, mlt_frame frame, mlt_im
 	vs_vector_init( &analyze_data->mlms, mlt_filter_get_length2( filter, frame ) );
 
 	// Initialize a VSFrameInfo to be used below
-	VSPixelFormat pf = convertImageFormat( format );
 	VSFrameInfo fi;
-	vsFrameInfoInit( &fi, width, height, pf );
+	vsFrameInfoInit( &fi, width, height, vs_format );
 
 	// Initialize a VSMotionDetect
 	const char* filterName = mlt_properties_get( properties, "mlt_service" );
@@ -263,106 +266,112 @@ void destory_analyze_data( vs_analyze* analyze_data )
 	}
 }
 
-static int get_image_and_apply( mlt_filter filter, mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int transform_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image, VSPixelFormat vs_format, int width, int height )
 {
 	int error = 0;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	vs_data* data = (vs_data*)filter->child;
 
-	*format = mlt_image_yuv420p;
-
-	error = mlt_frame_get_image( frame, image, format, width, height, 1 );
-	if ( !error )
+	// Handle signal from app to re-init data
+	if ( mlt_properties_get_int(properties, "refresh") )
 	{
-		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-
-		// Handle signal from app to re-init data
-		if ( mlt_properties_get_int(properties, "refresh") )
-		{
-			mlt_properties_set(properties, "refresh", NULL);
-			destory_apply_data( data->apply_data );
-			data->apply_data = NULL;
-		}
-
-		// Init transform data if necessary (first time)
-		if ( !data->apply_data )
-		{
-			data->apply_data = init_apply_data( filter, frame, *width, *height, *format );
-		}
-
-		// Apply transformations to this image
-		VSTransformData* td = &data->apply_data->td;
-		VSTransformations* trans = &data->apply_data->trans;
-		VSFrame vsFrame;
-		vsFrameFillFromBuffer( &vsFrame, *image, vsTransformGetSrcFrameInfo( td ) );
-		trans->current = mlt_filter_get_position( filter, frame );
-		vsTransformPrepare( td, &vsFrame, &vsFrame );
-		VSTransform t = vsGetNextTransform( td, trans );
-		vsDoTransform( td, t );
-		vsTransformFinish( td );
-
-		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+		mlt_properties_set(properties, "refresh", NULL);
+		destory_apply_data( data->apply_data );
+		data->apply_data = NULL;
 	}
+
+	// Init transform data if necessary (first time)
+	if ( !data->apply_data )
+	{
+		data->apply_data = init_apply_data( filter, frame, vs_format, width, height );
+	}
+
+	// Apply transformations to this image
+	VSTransformData* td = &data->apply_data->td;
+	VSTransformations* trans = &data->apply_data->trans;
+	VSFrame vsFrame;
+	vsFrameFillFromBuffer( &vsFrame, vs_image, vsTransformGetSrcFrameInfo( td ) );
+	trans->current = mlt_filter_get_position( filter, frame );
+	vsTransformPrepare( td, &vsFrame, &vsFrame );
+	VSTransform t = vsGetNextTransform( td, trans );
+	vsDoTransform( td, t );
+	vsTransformFinish( td );
 
 	return error;
 }
 
-
-static int get_image_and_analyze( mlt_filter filter, mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image, VSPixelFormat vs_format, int width, int height )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	vs_data* data = (vs_data*)filter->child;
 	mlt_position pos = mlt_filter_get_position( filter, frame );
 
-	*format = mlt_image_yuv420p;
-
-	writable = writable || mlt_properties_get_int( properties, "show" ) ? 1 : 0;
-
-	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
-	if ( !error )
+	if ( !data->analyze_data )
 	{
-		// Service locks are for concurrency control
-		mlt_service_lock( MLT_FILTER_SERVICE(filter) );
-
-		if ( !data->analyze_data )
-		{
-			data->analyze_data = init_analyze_data( filter, frame, *format, *width, *height );
-		}
-
-		// Initialize the VSFrame to be analyzed.
-		VSMotionDetect* md = &data->analyze_data->md;
-		LocalMotions localmotions;
-		VSFrame vsFrame;
-		vsFrameFillFromBuffer( &vsFrame, *image, &md->fi );
-
-		// Detect and save motions.
-		vsMotionDetection( md, &localmotions, &vsFrame );
-		vs_vector_set_dup( &data->analyze_data->mlms, pos, &localmotions, sizeof(LocalMotions) );
-
-		// Publish the motions if this is the last frame.
-		if ( pos + 1 == mlt_filter_get_length2( filter, frame ) )
-		{
-			publish_manylocalmotions( properties, &data->analyze_data->mlms );
-		}
-
-		mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
+		data->analyze_data = init_analyze_data( filter, frame, vs_format, width, height );
 	}
-	return error;
+
+	// Initialize the VSFrame to be analyzed.
+	VSMotionDetect* md = &data->analyze_data->md;
+	LocalMotions localmotions;
+	VSFrame vsFrame;
+	vsFrameFillFromBuffer( &vsFrame, vs_image, &md->fi );
+
+	// Detect and save motions.
+	vsMotionDetection( md, &localmotions, &vsFrame );
+	vs_vector_set_dup( &data->analyze_data->mlms, pos, &localmotions, sizeof(LocalMotions) );
+
+	// Publish the motions if this is the last frame.
+	if ( pos + 1 == mlt_filter_get_length2( filter, frame ) )
+	{
+		publish_manylocalmotions( properties, &data->analyze_data->mlms );
+	}
 }
 
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	uint8_t* vs_image = NULL;
+	VSPixelFormat vs_format = PF_NONE;
 
-	if( mlt_properties_get( properties, "results" ) )
+	// VS only works on progressive frames
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
+
+	*format = validate_format( *format );
+
+	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+
+	// Convert the received image to a format vid.stab can handle
+	if ( !error )
 	{
-		return get_image_and_apply( filter, frame, image, format, width, height, writable );
+		vs_format = mltimage_to_vsimage( *format, *width, *height, *image, &vs_image );
 	}
-	else
+
+	if( vs_image )
 	{
-		return get_image_and_analyze( filter, frame, image, format, width, height, writable );
+		mlt_service_lock( MLT_FILTER_SERVICE(filter) );
+
+		if( mlt_properties_get( properties, "results" ) )
+		{
+			transform_image( filter, frame, vs_image, vs_format, *width, *height );
+			vsimage_to_mltimage( vs_image, *image, *format, *width, *height );
+		}
+		else
+		{
+			analyze_image( filter, frame, vs_image, vs_format, *width, *height );
+			if( mlt_properties_get_int( properties, "show" ) == 1 )
+			{
+				vsimage_to_mltimage( vs_image, *image, *format, *width, *height );
+			}
+		}
+
+		mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
+
+		free_vsimage( vs_image, vs_format );
 	}
+
+	return error;
 }
 
 static mlt_frame process_filter( mlt_filter filter, mlt_frame frame )

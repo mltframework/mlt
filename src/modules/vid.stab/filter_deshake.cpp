@@ -2,6 +2,7 @@
  * filter_deshake.cpp
  * Copyright (C) 2013 Marco Gittler <g.marco@freenet.de>
  * Copyright (C) 2013 Jakub Ksiezniak <j.ksiezniak@gmail.com>
+ * Copyright (C) 2014 Brian Matherly <pez4brian@yahoo.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,12 +22,12 @@
 extern "C"
 {
 #include <vid.stab/libvidstab.h>
+#include "common.h"
 }
 
 #include <framework/mlt.h>
 #include <string.h>
 #include <assert.h>
-#include "common.h"
 
 #define FILTER_NAME "vid.stab.deshake"
 
@@ -41,12 +42,11 @@ typedef struct _deshake_data
 } DeshakeData;
 
 int init_deshake(DeshakeData *data, mlt_properties properties,
-		mlt_image_format *format, int *width, int *height, char* interps)
+		VSPixelFormat vs_format, int *width, int *height, char* interps)
 {
-	VSPixelFormat pf = convertImageFormat(*format);
 	VSFrameInfo fiIn, fiOut;
-	vsFrameInfoInit(&fiIn, *width, *height, pf);
-	vsFrameInfoInit(&fiOut, *width, *height, pf);
+	vsFrameInfoInit(&fiIn, *width, *height, vs_format);
+	vsFrameInfoInit(&fiOut, *width, *height, vs_format);
 
 	VSMotionDetectConfig conf = vsMotionDetectGetDefaultConfig(FILTER_NAME);
 	conf.shakiness = mlt_properties_get_int(properties, "shakiness");
@@ -96,12 +96,24 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 {
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
 	mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
+	uint8_t* vs_image = NULL;
+	VSPixelFormat vs_format = PF_NONE;
 
-	*format = mlt_image_yuv420p;
+	// VS only works on progressive frames
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
+
+	*format = validate_format( *format );
 	DeshakeData *data = static_cast<DeshakeData*>(filter->child);
 
 	int error = mlt_frame_get_image(frame, image, format, width, height, 1);
-	if (!error)
+
+	// Convert the received image to a format vid.stab can handle
+	if ( !error )
+	{
+		vs_format = mltimage_to_vsimage( *format, *width, *height, *image, &vs_image );
+	}
+
+	if ( vs_image )
 	{
 		// Service locks are for concurrency control
 		mlt_service_lock(MLT_FILTER_SERVICE(filter));
@@ -125,7 +137,7 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 		if (!data->initialized)
 		{
 			char *interps = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "rescale.interp");
-			init_deshake(data, properties, format, width, height,
+			init_deshake(data, properties, vs_format, width, height,
 					interps);
 			data->initialized = true;
 		}
@@ -136,7 +148,7 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 		VSTransform motion;
 		VSFrame vsFrame;
 
-		vsFrameFillFromBuffer(&vsFrame, *image, &md->fi);
+		vsFrameFillFromBuffer(&vsFrame, vs_image, &md->fi);
 		vsMotionDetection(md, &localmotions, &vsFrame);
 
 		motion = vsSimpleMotionsToTransform(md->fi, FILTER_NAME, &localmotions);
@@ -151,7 +163,11 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 		vsDoTransform(td, t);
 		vsTransformFinish(td);
 
+		vsimage_to_mltimage( vs_image, *image, *format, *width, *height );
+
 		mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+
+		free_vsimage( vs_image, vs_format );
 	}
 
 	return error;

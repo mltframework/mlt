@@ -6,7 +6,8 @@ include ../../../config.mak
 
 TARGET = ../libmltvidstab$(LIBSUF)
 
-OBJS = factory.o
+OBJS = factory.o \
+	common.o
 
 CPPOBJS = filter_deshake.o
 CPPOBJS += filter_vidstab.o
