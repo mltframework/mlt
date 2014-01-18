@@ -507,13 +507,12 @@ static inline mlt_property mlt_properties_find( mlt_properties self, const char 
 	{
 		// Check if we're hashed
 		if ( list->count > 0 &&
-		 	name[ 0 ] == list->name[ i ][ 0 ] &&
 		 	!strcmp( list->name[ i ], name ) )
 			value = list->value[ i ];
 
 		// Locate the item
 		for ( i = list->count - 1; value == NULL && i >= 0; i -- )
-			if ( name[ 0 ] == list->name[ i ][ 0 ] && !strcmp( list->name[ i ], name ) )
+			if ( !strcmp( list->name[ i ], name ) )
 				value = list->value[ i ];
 	}
 	mlt_properties_unlock( self );
