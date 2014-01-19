@@ -613,7 +613,7 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 		clone = clone == NULL ? self : clone;
 
 		// A properly instatiated producer will have a get_frame method...
-		if ( self->get_frame == NULL || ( !strcmp( eof, "continue" ) && mlt_producer_position( self ) > mlt_producer_get_out( self ) ) )
+		if ( self->get_frame == NULL || ( eof && !strcmp( eof, "continue" ) && mlt_producer_position( self ) > mlt_producer_get_out( self ) ) )
 		{
 			// Generate a test frame
 			*frame = mlt_frame_init( service );
