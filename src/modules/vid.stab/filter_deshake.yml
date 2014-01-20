@@ -14,13 +14,13 @@ description: Stabilize Video (for wiggly/rolling video)
 notes: >
     Deshakes a video clip by extracting relative transformations
     of subsequent frames and transforms the high-frequency away.
-    This is a single pass verion of stabilize and transform plugin.
+    This is a single pass version of the vidstab filter.
 
 parameters:
   - identifier: shakiness
     title: Shakiness
     type: integer
-    description: How shaky is the video and how quick is the camera? (analysis)
+    description: How shaky the video is.
     readonly: no
     required: no
     minimum: 1
@@ -32,7 +32,7 @@ parameters:
   - identifier: accuracy
     title: Accuracy
     type: integer
-    description: Accuracy of shakiness detection (analysis)
+    description: The accuracy of shakiness detection.
     readonly: no
     required: no
     minimum: 1
@@ -44,7 +44,7 @@ parameters:
   - identifier: stepsize
     title: Stepsize
     type: integer
-    description: Step size of search process, region around minimum is scanned with 1 pixel resolution (analysis)
+    description: The step size of the search process.
     readonly: no
     required: no
     minimum: 0
@@ -53,22 +53,10 @@ parameters:
     mutable: yes
     widget: spinner
 
-  - identifier: algo
-    title: Algorithm
-    type: integer
-    description: 0 = brute force (translation only), 1 = small measurement fields (analysis)
-    readonly: no
-    required: no
-    minimum: 0
-    maximum: 1
-    default: 1
-    mutable: yes
-    widget: spinner
-
   - identifier: mincontrast
     title: Minimum Contrast
     type: float
-    description: Below this contrast a field is discarded (analysis)
+    description: Below this contrast, a field is discarded.
     readonly: no
     required: no
     minimum: 0
@@ -80,7 +68,7 @@ parameters:
   - identifier: smoothing
     title: Smoothing
     type: integer
-    description: number of frames for lowpass filtering (2N + 1 frames) (transform)
+    description: Number of frames for lowpass filtering (2N + 1 frames)
     readonly: no
     required: no
     minimum: 0
@@ -92,7 +80,7 @@ parameters:
   - identifier: maxshift
     title: Maxshift
     type: integer
-    description: maximum translation, -1 = no limit (transform)
+    description: Maximum number of pixels to transform the image. -1 = no limit
     unit: pixels
     readonly: no
     required: no
@@ -105,7 +93,7 @@ parameters:
   - identifier: maxangle
     title: Maxangle
     type: float
-    description: max angle to rotate, -1 = no limit (transform)
+    description: Maximum angle to rotate, -1 = no limit
     unit: radians
     readonly: no
     required: no
@@ -118,7 +106,7 @@ parameters:
   - identifier: crop
     title: Crop
     type: integer
-    description: 0 = keep border, 1 = black background (transform)
+    description: 0 = keep border, 1 = black background
     readonly: no
     required: no
     minimum: 0
@@ -130,7 +118,7 @@ parameters:
   - identifier: zoom
     title: Zoom
     type: integer
-    description: additional zoom amount (transform)
+    description: Additional zoom amount
     unit: percent
     readonly: no
     required: no
@@ -143,7 +131,7 @@ parameters:
   - identifier: optzoom
     title: Optimal Zoom
     type: integer
-    description: automatically determine optimal zoom. 1 - static zoom, 2 - adaptive zoom (transform)
+    description: Automatically determine optimal zoom. 1 - static zoom, 2 - adaptive zoom
     readonly: no
     required: no
     minimum: 0
@@ -155,7 +143,8 @@ parameters:
   - identifier: zoomspeed
     title: Optimal Zoom Speed
     type: float
-    description: zoom per frame in percent, (used when optzoom = 2) (transform)
+    description: Zoom per frame (used when optzoom = 2)
+    unit: percent
     readonly: no
     required: no
     minimum: 0
@@ -163,10 +152,3 @@ parameters:
     default: 0.25
     mutable: yes
     widget: spinner
-
-  - identifier: refresh
-    description: >
-      Applications should set this when it updates a transform parameter.
-    type: integer
-    minimum: 0
-    maximum: 1

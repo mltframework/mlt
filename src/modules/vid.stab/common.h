@@ -29,4 +29,7 @@ VSPixelFormat mltimage_to_vsimage( mlt_image_format mlt_format, int width, int h
 void vsimage_to_mltimage( uint8_t* vs_img, uint8_t* mlt_img, mlt_image_format mlt_format, int width, int height );
 void free_vsimage( uint8_t* vs_img, VSPixelFormat format );
 
+int compare_motion_config( VSMotionDetectConfig* a, VSMotionDetectConfig* b );
+int compare_transform_config( VSTransformConfig* a, VSTransformConfig* b );
+
 #endif /* VIDSTAB_COMMON_H_ */

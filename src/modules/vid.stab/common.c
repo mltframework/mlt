@@ -39,6 +39,10 @@ mlt_image_format validate_format( mlt_image_format format )
 	}
 }
 
+/** Convert an MLT image to one that can be used by VS.
+ * Use free_vsimage() when done with the resulting image.
+ */
+
 VSPixelFormat mltimage_to_vsimage( mlt_image_format mlt_format, int width, int height, uint8_t* mlt_img, uint8_t** vs_img )
 {
 	switch( mlt_format )
@@ -97,6 +101,9 @@ VSPixelFormat mltimage_to_vsimage( mlt_image_format mlt_format, int width, int h
 	}
 }
 
+/** Convert a VS image back to the MLT image it originally came from in mltimage_to_vsimage().
+ */
+
 void vsimage_to_mltimage( uint8_t* vs_img, uint8_t* mlt_img, mlt_image_format mlt_format, int width, int height )
 {
 	switch( mlt_format )
@@ -143,9 +150,12 @@ void vsimage_to_mltimage( uint8_t* vs_img, uint8_t* mlt_img, mlt_image_format ml
 		}
 		break;
 	default:
-		return PF_NONE;
+		break;
 	}
 }
+
+/** Free an image allocated by mltimage_to_vsimage().
+ */
 
 void free_vsimage( uint8_t* vs_img, VSPixelFormat format )
 {
@@ -153,4 +163,57 @@ void free_vsimage( uint8_t* vs_img, VSPixelFormat format )
 	{
 		mlt_pool_release( vs_img );
 	}
+}
+
+/** Compare two VSMotionDetectConfig structures.
+ * Return 1 if they are different. 0 if they are the same.
+ */
+
+int compare_motion_config( VSMotionDetectConfig* a, VSMotionDetectConfig* b )
+{
+	if( a->shakiness != b->shakiness ||
+		a->accuracy != b->accuracy ||
+		a->stepSize != b->stepSize ||
+		// Skip: Deprecated
+		// a->algo != b->algo ||
+		a->virtualTripod != b->virtualTripod ||
+		a->show != b->show ||
+		// Skip: inconsequential?
+		// a->modName != b->modName ||
+		a->contrastThreshold != b->contrastThreshold )
+	{
+		return 1;
+	}
+	return 0;
+}
+
+/** Compare two VSTransformConfig structures.
+ * Return 1 if they are different. 0 if they are the same.
+ */
+
+int compare_transform_config( VSTransformConfig* a, VSTransformConfig* b )
+{
+	if( a->relative != b->relative ||
+		a->smoothing != b->smoothing ||
+		a->crop != b->crop ||
+		a->invert != b->invert ||
+		a->zoom != b->zoom ||
+		a->optZoom != b->optZoom ||
+		a->zoomSpeed != b->zoomSpeed ||
+		a->interpolType != b->interpolType ||
+		a->maxShift != b->maxShift ||
+		a->maxAngle != b->maxAngle ||
+		// Skip: inconsequential?
+		// a->modName != b->modName ||
+		// Skip: unused?
+		// a->verbose != b->verbose ||
+		a->simpleMotionCalculation != b->simpleMotionCalculation ||
+		// Skip: unused?
+		// a->storeTransforms != b->storeTransforms ||
+		a->smoothZoom != b->smoothZoom ||
+		a->camPathAlgo != b->camPathAlgo )
+	{
+		return 1;
+	}
+	return 0;
 }

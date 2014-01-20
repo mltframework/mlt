@@ -35,11 +35,13 @@ typedef struct
 {
 	VSMotionDetect md;
 	VSManyLocalMotions mlms;
+	mlt_position last_position;
 } vs_analyze;
 
 typedef struct
 {
 	VSTransformData td;
+	VSTransformConfig conf;
 	VSTransformations trans;
 } vs_apply;
 
@@ -164,57 +166,81 @@ static void read_manylocalmotions( mlt_properties properties, VSManyLocalMotions
 	mlt_animation_close( animation );
 }
 
-static vs_apply* init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat vs_format, int width, int height )
+static void get_transform_config( VSTransformConfig* conf, mlt_filter filter, mlt_frame frame )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	vs_apply* apply_data = (vs_apply*)calloc( 1, sizeof(vs_apply) );
-	memset( apply_data, 0, sizeof( vs_apply ) );
-
 	const char* filterName = mlt_properties_get( properties, "mlt_service" );
-	VSTransformConfig conf = vsTransformGetDefaultConfig( filterName );
-	conf.smoothing = mlt_properties_get_int( properties, "smoothing" );
-	conf.maxShift = mlt_properties_get_int( properties, "maxshift" );
-	conf.maxAngle = mlt_properties_get_double( properties, "maxangle" );
-	conf.crop = (VSBorderType)mlt_properties_get_int( properties, "crop" );
-	conf.zoom = mlt_properties_get_int( properties, "zoom" );
-	conf.optZoom = mlt_properties_get_int( properties, "optzoom" );
-	conf.zoomSpeed = mlt_properties_get_double( properties, "zoomspeed" );
-	conf.relative = mlt_properties_get_int( properties, "relative" );
-	conf.invert = mlt_properties_get_int( properties, "invert" );
+
+	*conf = vsTransformGetDefaultConfig( filterName );
+	conf->smoothing = mlt_properties_get_int( properties, "smoothing" );
+	conf->maxShift = mlt_properties_get_int( properties, "maxshift" );
+	conf->maxAngle = mlt_properties_get_double( properties, "maxangle" );
+	conf->crop = (VSBorderType)mlt_properties_get_int( properties, "crop" );
+	conf->zoom = mlt_properties_get_int( properties, "zoom" );
+	conf->optZoom = mlt_properties_get_int( properties, "optzoom" );
+	conf->zoomSpeed = mlt_properties_get_double( properties, "zoomspeed" );
+	conf->relative = mlt_properties_get_int( properties, "relative" );
+	conf->invert = mlt_properties_get_int( properties, "invert" );
 	if ( mlt_properties_get_int( properties, "tripod" ) != 0 )
 	{
 		// Virtual tripod mode: relative=False, smoothing=0
-		conf.relative = 0;
-		conf.smoothing = 0;
+		conf->relative = 0;
+		conf->smoothing = 0;
 	}
 
-	// by default a bilinear interpolation is selected
+	// by default a bicubic interpolation is selected
 	const char *interps = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "rescale.interp" );
-	conf.interpolType = VS_BiLinear;
-	if (strcmp(interps, "nearest") == 0 || strcmp(interps, "neighbor") == 0)
-		conf.interpolType = VS_Zero;
-	else if (strcmp(interps, "tiles") == 0 || strcmp(interps, "fast_bilinear") == 0)
-		conf.interpolType = VS_Linear;
+	conf->interpolType = VS_BiCubic;
+	if ( strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
+		conf->interpolType = VS_Zero;
+	else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
+		conf->interpolType = VS_Linear;
+	else if ( strcmp( interps, "bilinear" ) == 0 )
+		conf->interpolType = VS_BiLinear;
+}
 
-	// load motions
-	VSManyLocalMotions mlms;
-	vs_vector_init( &mlms, mlt_filter_get_length2( filter, frame ) );
-	read_manylocalmotions( properties, &mlms );
+static int check_apply_config( mlt_filter filter, mlt_frame frame )
+{
+	vs_apply* apply_data = ((vs_data*)filter->child)->apply_data;
 
-	// Convert motions to VSTransformations
-	VSTransformData* td = &apply_data->td;
-	VSTransformations* trans = &apply_data->trans;
+	if( apply_data )
+	{
+		VSTransformConfig new_conf;
+		memset( &new_conf, 0, sizeof(VSTransformConfig) );
+		get_transform_config( &new_conf, filter, frame );
+		return compare_transform_config( &apply_data->conf, &new_conf );
+	}
+
+	return 0;
+}
+
+static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat vs_format, int width, int height )
+{
+	vs_data* data = (vs_data*)filter->child;
+	vs_apply* apply_data = (vs_apply*)calloc( 1, sizeof(vs_apply) );
+	memset( apply_data, 0, sizeof( vs_apply ) );
+
+	// Initialize the VSTransformConfig
+	get_transform_config( &apply_data->conf, filter, frame );
+
+	// Initialize VSTransformData
 	VSFrameInfo fi_src, fi_dst;
 	vsFrameInfoInit( &fi_src, width, height, vs_format );
 	vsFrameInfoInit( &fi_dst, width, height, vs_format );
-	vsTransformDataInit( td, &conf, &fi_src, &fi_dst );
-	vsTransformationsInit( trans );
-	vsLocalmotions2Transforms( td, &mlms, trans );
-	vsPreprocessTransforms( td, trans );
+	vsTransformDataInit( &apply_data->td, &apply_data->conf, &fi_src, &fi_dst );
 
+	// Initialize VSTransformations
+	vsTransformationsInit( &apply_data->trans );
+
+	// Load the motions from the analyze step and convert them to VSTransformations
+	VSManyLocalMotions mlms;
+	vs_vector_init( &mlms, mlt_filter_get_length2( filter, frame ) );
+	read_manylocalmotions( MLT_FILTER_PROPERTIES( filter ), &mlms );
+	vsLocalmotions2Transforms( &apply_data->td, &mlms, &apply_data->trans );
+	vsPreprocessTransforms( &apply_data->td, &apply_data->trans );
 	free_manylocalmotions( &mlms );
 
-	return apply_data;
+	data->apply_data = apply_data;
 }
 
 static void destory_apply_data( vs_apply* apply_data )
@@ -227,33 +253,35 @@ static void destory_apply_data( vs_apply* apply_data )
 	}
 }
 
-static vs_analyze* init_analyze_data( mlt_filter filter, mlt_frame frame, VSPixelFormat vs_format, int width, int height )
+static void init_analyze_data( mlt_filter filter, mlt_frame frame, VSPixelFormat vs_format, int width, int height )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	vs_data* data = (vs_data*)filter->child;
 	vs_analyze* analyze_data = (vs_analyze*)calloc( 1, sizeof(vs_analyze) );
 	memset( analyze_data, 0, sizeof(vs_analyze) );
 
-	// Initialize the VSManyLocalMotions vector where motion data will be
+	// Initialize the saved VSManyLocalMotions vector where motion data will be
 	// stored for each frame.
 	vs_vector_init( &analyze_data->mlms, mlt_filter_get_length2( filter, frame ) );
 
-	// Initialize a VSFrameInfo to be used below
-	VSFrameInfo fi;
-	vsFrameInfoInit( &fi, width, height, vs_format );
-
-	// Initialize a VSMotionDetect
+	// Initialize a VSMotionDetectConfig
 	const char* filterName = mlt_properties_get( properties, "mlt_service" );
 	VSMotionDetectConfig conf = vsMotionDetectGetDefaultConfig( filterName );
 	conf.shakiness = mlt_properties_get_int( properties, "shakiness" );
 	conf.accuracy = mlt_properties_get_int( properties, "accuracy" );
 	conf.stepSize = mlt_properties_get_int( properties, "stepsize" );
-	conf.algo = mlt_properties_get_int( properties, "algo" );
 	conf.contrastThreshold = mlt_properties_get_double( properties, "mincontrast" );
 	conf.show = mlt_properties_get_int( properties, "show" );
 	conf.virtualTripod = mlt_properties_get_int( properties, "tripod" );
+
+	// Initialize a VSFrameInfo
+	VSFrameInfo fi;
+	vsFrameInfoInit( &fi, width, height, vs_format );
+
+	// Initialize the saved VSMotionDetect
 	vsMotionDetectInit( &analyze_data->md, &conf, &fi );
 
-	return analyze_data;
+	data->analyze_data = analyze_data;
 }
 
 void destory_analyze_data( vs_analyze* analyze_data )
@@ -266,16 +294,16 @@ void destory_analyze_data( vs_analyze* analyze_data )
 	}
 }
 
-static int transform_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image, VSPixelFormat vs_format, int width, int height )
+static int apply_results( mlt_filter filter, mlt_frame frame, uint8_t* vs_image, VSPixelFormat vs_format, int width, int height )
 {
 	int error = 0;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	vs_data* data = (vs_data*)filter->child;
 
-	// Handle signal from app to re-init data
-	if ( mlt_properties_get_int(properties, "refresh") )
+	if ( check_apply_config( filter, frame ) ||
+		mlt_properties_get_int( properties, "reload" ) )
 	{
-		mlt_properties_set(properties, "refresh", NULL);
+		mlt_properties_set_int( properties, "reload", 0 );
 		destory_apply_data( data->apply_data );
 		data->apply_data = NULL;
 	}
@@ -283,7 +311,7 @@ static int transform_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_imag
 	// Init transform data if necessary (first time)
 	if ( !data->apply_data )
 	{
-		data->apply_data = init_apply_data( filter, frame, vs_format, width, height );
+		init_apply_data( filter, frame, vs_format, width, height );
 	}
 
 	// Apply transformations to this image
@@ -306,25 +334,38 @@ static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image
 	vs_data* data = (vs_data*)filter->child;
 	mlt_position pos = mlt_filter_get_position( filter, frame );
 
-	if ( !data->analyze_data )
+	// If any frames are skipped, analysis data will be incomplete.
+	if( data->analyze_data && pos != data->analyze_data->last_position + 1 )
 	{
-		data->analyze_data = init_analyze_data( filter, frame, vs_format, width, height );
+		destory_analyze_data( data->analyze_data );
+		data->analyze_data = NULL;
 	}
 
-	// Initialize the VSFrame to be analyzed.
-	VSMotionDetect* md = &data->analyze_data->md;
-	LocalMotions localmotions;
-	VSFrame vsFrame;
-	vsFrameFillFromBuffer( &vsFrame, vs_image, &md->fi );
-
-	// Detect and save motions.
-	vsMotionDetection( md, &localmotions, &vsFrame );
-	vs_vector_set_dup( &data->analyze_data->mlms, pos, &localmotions, sizeof(LocalMotions) );
-
-	// Publish the motions if this is the last frame.
-	if ( pos + 1 == mlt_filter_get_length2( filter, frame ) )
+	if ( !data->analyze_data && pos == 0 )
 	{
-		publish_manylocalmotions( properties, &data->analyze_data->mlms );
+		// Analysis must start on the first frame
+		init_analyze_data( filter, frame, vs_format, width, height );
+	}
+
+	if( data->analyze_data )
+	{
+		// Initialize the VSFrame to be analyzed.
+		VSMotionDetect* md = &data->analyze_data->md;
+		LocalMotions localmotions;
+		VSFrame vsFrame;
+		vsFrameFillFromBuffer( &vsFrame, vs_image, &md->fi );
+
+		// Detect and save motions.
+		vsMotionDetection( md, &localmotions, &vsFrame );
+		vs_vector_set_dup( &data->analyze_data->mlms, pos, &localmotions, sizeof(LocalMotions) );
+
+		// Publish the motions if this is the last frame.
+		if ( pos + 1 == mlt_filter_get_length2( filter, frame ) )
+		{
+			publish_manylocalmotions( properties, &data->analyze_data->mlms );
+		}
+
+		data->analyze_data->last_position = pos;
 	}
 }
 
@@ -352,9 +393,10 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	{
 		mlt_service_lock( MLT_FILTER_SERVICE(filter) );
 
-		if( mlt_properties_get( properties, "results" ) )
+		char* results = mlt_properties_get( properties, "results" );
+		if( results && strcmp( results, "" ) )
 		{
-			transform_image( filter, frame, vs_image, vs_format, *width, *height );
+			apply_results( filter, frame, vs_image, vs_format, *width, *height );
 			vsimage_to_mltimage( vs_image, *image, *format, *width, *height );
 		}
 		else
@@ -434,6 +476,7 @@ mlt_filter filter_vidstab_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set(properties, "zoom", "0");
 		mlt_properties_set(properties, "optzoom", "1");
 		mlt_properties_set(properties, "zoomspeed", "0.25");
+		mlt_properties_set( properties, "reload", "0" );
 
 		mlt_properties_set(properties, "vid.stab.version", LIBVIDSTAB_VERSION);
 	}

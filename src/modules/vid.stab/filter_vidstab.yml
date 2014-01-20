@@ -13,108 +13,115 @@ tags:
 description: Stabilize Video (for wiggly/rolling video)
 notes: >
   This filter requires two passes. The first pass performs analysis and stores
-  the result in the vectors property. The second pass applies the vectors to
+  the result in the "results" property. The second pass applies the results to
   the image.
   To use with melt, use 'melt ... -consumer xml:output.mlt all=1' for the
   first pass. For the second pass, use output.mlt as the input.
 
 parameters:
-  - identifier: vectors (transform)
-    title: Vectors
-    type: geometry
+  - identifier: results
+    title: Analysis Results
+    type: string
     description: >
-      A set of X/Y coordinates by which to adjust the image.
-      When this is not supplied, the filter computes the vectors and stores
+      Set after analysis. Used during application.
+      A set of image motion information that describes the analyzed clip.
+      When results are not supplied, the filter computes the results and stores
       them in this property when the last frame has been processed.
+    mutable: no
 
   - identifier: shakiness
     title: Shakiness
     type: integer
-    description: How shaky is the video (analysis)
+    description: >
+      Used during analysis.
+      How shaky the video is.
     readonly: no
     required: no
     minimum: 1
     maximum: 10
     default: 4
-    mutable: yes
+    mutable: no
     widget: spinner
 
   - identifier: accuracy
     title: Accuracy
     type: integer
-    description: Accuracy of shakiness detection (analysis)
+    description: >
+      Used during analysis.
+      The accuracy of shakiness detection.
     readonly: no
     required: no
     minimum: 1
     maximum: 15
     default: 4
-    mutable: yes
+    mutable: no
     widget: spinner
 
   - identifier: stepsize
     title: Stepsize
     type: integer
-    description: Step size of search process (analysis)
+    description: >
+      Used during analysis.
+      The step size of the search process.
     readonly: no
     required: no
     minimum: 0
     maximum: 100
     default: 6
-    mutable: yes
-    widget: spinner
-
-  - identifier: algo
-    title: Algorithm
-    type: integer
-    description: 0 = brute force (translation only), 1 = small measurement fields (analysis)
-    readonly: no
-    required: no
-    minimum: 0
-    maximum: 1
-    default: 1
-    mutable: yes
+    mutable: no
     widget: spinner
 
   - identifier: mincontrast
     title: Minimum Contrast
     type: float
-    description: Below this contrast, a field is discarded (analysis)
+    description: >
+      Used during analysis. 
+      Below this contrast, a field is discarded.
     readonly: no
     required: no
     minimum: 0
     maximum: 1
     default: 0.3
-    mutable: yes
+    mutable: no
     widget: spinner
 
   - identifier: show
     title: Show
     type: integer
-    description: 0 = draw nothing, 1 or 2 = show fields and transforms (analysis)
+    description: >
+      Used during analysis.
+      0 = draw nothing
+      1 or 2 = show fields and transforms
     readonly: no
     required: no
     minimum: 0
     maximum: 2
     default: 0
-    mutable: yes
+    mutable: no
     widget: spinner
 
   - identifier: tripod
     title: Tripod
     type: integer
-    description: virtual tripod mode (if >0) motion is compared to a reference frame (frame N is the value)
+    description: >
+      Used during analysis and application.
+      if 0, tripod mode is disabled.
+      if > 0, specifies the frame to be used as a reference frame for tripod mode
+      During application, relative and smoothing properties are both ignored if tripod mode is in use.
     readonly: no
     required: no
     minimum: 0
     maximum: 100000
     default: 0
-    mutable: yes
+    mutable: no
     widget: spinner
 
   - identifier: smoothing
     title: Smoothing
     type: integer
-    description: number of frames for lowpass filtering (2N + 1 frames) (transform)
+    description: >
+      Used during application.
+      Number of frames for lowpass filtering (2N + 1 frames)
     readonly: no
     required: no
     minimum: 0
@@ -126,7 +133,9 @@ parameters:
   - identifier: maxshift
     title: Maxshift
     type: integer
-    description: maximum translation, -1 = no limit (transform)
+    description: >
+      Used during application.
+      Maximum number of pixels to transform the image. -1 = no limit
     unit: pixels
     readonly: no
     required: no
@@ -139,7 +148,9 @@ parameters:
   - identifier: maxangle
     title: Maxangle
     type: float
-    description: max angle to rotate, -1 = no limit (transform)
+    description: >
+      Used during application.
+      Maximum angle to rotate, -1 = no limit
     unit: radians
     readonly: no
     required: no
@@ -152,7 +163,9 @@ parameters:
   - identifier: crop
     title: Crop
     type: integer
-    description: 0 = keep border, 1 = black background (transform)
+    description: >
+      Used during application.
+      0 = keep border, 1 = black background
     readonly: no
     required: no
     minimum: 0
@@ -164,7 +177,9 @@ parameters:
   - identifier: invert
     title: Invert
     type: integer
-    description: Invert transforms (transform)
+    description: >
+      Used during application.
+      Invert transforms
     readonly: no
     required: no
     minimum: 0
@@ -174,9 +189,11 @@ parameters:
     widget: spinner
 
   - identifier: relative
-    title: Relative Transform
+    title: Relative
     type: integer
-    description: 0 = absolute, 1 = relative (transform)
+    description: >
+      Used during application.
+      Consider transforms as absolute (0) or relative (1)
     readonly: no
     required: no
     minimum: 0
@@ -188,7 +205,9 @@ parameters:
   - identifier: zoom
     title: Zoom
     type: integer
-    description: additional zoom amount (transform)
+    description: >
+      Used during application.
+      Additional zoom amount
     unit: percent
     readonly: no
     required: no
@@ -201,7 +220,9 @@ parameters:
   - identifier: optzoom
     title: Optimal Zoom
     type: integer
-    description: automatically determine optimal zoom. 1 - static zoom, 2 - adaptive zoom (transform)
+    description: >
+      Used during application.
+      Automatically determine optimal zoom. 1 - static zoom, 2 - adaptive zoom
     readonly: no
     required: no
     minimum: 0
@@ -213,7 +234,10 @@ parameters:
   - identifier: zoomspeed
     title: Optimal Zoom Speed
     type: float
-    description: zoom per frame in percent, (used when optzoom = 2) (transform)
+    description: >
+      Used during application.
+      Zoom per frame (used when optzoom = 2)
+    unit: percent
     readonly: no
     required: no
     minimum: 0
@@ -222,9 +246,11 @@ parameters:
     mutable: yes
     widget: spinner
 
-  - identifier: refresh
+  - identifier: reload
+    title: Reload Results
     description: >
-      Applications should set this when it updates a transform parameter.
+      The application should set this to 1 when it updates the results property to indicate that the results should be reloaded.
     type: integer
     minimum: 0
     maximum: 1
+    mutable: yes
