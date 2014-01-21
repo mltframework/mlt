@@ -49,6 +49,7 @@ public:
 	void useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned height);
 	void useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat& ycbcr_format, unsigned width, unsigned height);
 	void set_pixel_data(const unsigned char* data);
+	void invalidate_pixel_data();
 
 private:
 	unsigned m_width, m_height;

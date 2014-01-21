@@ -307,22 +307,24 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 	}
 }
 
-static void dispose_pixel_pointers( mlt_service service, mlt_frame frame )
+static void dispose_pixel_pointers( GlslChain *chain, mlt_service service, mlt_frame frame )
 {
 	if ( service == (mlt_service) -1 ) {
 		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+		MltInput* input = (MltInput *) chain->effects[ MLT_PRODUCER_SERVICE( producer ) ];
+		input->invalidate_pixel_data();
 		mlt_pool_release( GlslManager::get_input_pixel_pointer( producer, frame ) );
 		return;
 	}
 
 	mlt_service input_a = GlslManager::get_effect_input( service, frame );
-	dispose_pixel_pointers( input_a, frame );
+	dispose_pixel_pointers( chain, input_a, frame );
 
 	mlt_service input_b;
 	mlt_frame frame_b;
 	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
 	if ( input_b ) {
-		dispose_pixel_pointers( input_b, frame_b );
+		dispose_pixel_pointers( chain, input_b, frame_b );
 	}
 }
 
@@ -442,7 +444,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 		error = movit_render( chain->effect_chain, frame, format, output_format, width, height, image );
 
-		dispose_pixel_pointers( leaf_service, frame );
+		dispose_pixel_pointers( chain, leaf_service, frame );
 	}
 
 	// If we've been asked to render some frame directly to a texture (without any

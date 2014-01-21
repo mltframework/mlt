@@ -120,3 +120,15 @@ void MltInput::set_pixel_data(const unsigned char* data)
 		ycbcr->set_pixel_data(2, &data[m_width * m_height + (m_width / m_ycbcr_format.chroma_subsampling_x * m_height / m_ycbcr_format.chroma_subsampling_y)]);
 	}
 }
+
+void MltInput::invalidate_pixel_data()
+{
+	assert(input);
+	if (isRGB) {
+		FlatInput* flat = (FlatInput*) input;
+		flat->invalidate_pixel_data();
+	} else {
+		YCbCrInput* ycbcr = (YCbCrInput*) input;
+		ycbcr->invalidate_pixel_data();
+	}
+}
