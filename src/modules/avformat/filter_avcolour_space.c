@@ -22,6 +22,7 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_producer.h>
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
@@ -68,48 +69,60 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	return value;
 }
 
-static void set_luma_transfer( struct SwsContext *context, int colorspace, int use_full_range )
+static int set_luma_transfer( struct SwsContext *context, int src_colorspace, int dst_colorspace, int full_range )
 {
-	int *coefficients;
-	const int *new_coefficients;
-	int full_range;
-	int brightness, contrast, saturation;
+	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+	const int *dst_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+	int brightness = 0;
+	int contrast = 1 << 16;
+	int saturation = 1  << 16;
 
-	if ( sws_getColorspaceDetails( context, &coefficients, &full_range, &coefficients, &full_range,
-			&brightness, &contrast, &saturation ) != -1 )
+	switch ( src_colorspace )
 	{
-		// Don't change these from defaults unless explicitly told to.
-		if ( use_full_range >= 0 )
-			full_range = use_full_range;
-		switch ( colorspace )
-		{
-		case 170:
-		case 470:
-		case 601:
-		case 624:
-			new_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-			break;
-		case 240:
-			new_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-			break;
-		case 709:
-			new_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-			break;
-		default:
-			new_coefficients = coefficients;
-			break;
-		}
-		sws_setColorspaceDetails( context, new_coefficients, full_range, new_coefficients, full_range,
-			brightness, contrast, saturation );
+	case 170:
+	case 470:
+	case 601:
+	case 624:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+		break;
+	case 240:
+		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+		break;
+	case 709:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		break;
+	default:
+		break;
 	}
+	switch ( dst_colorspace )
+	{
+	case 170:
+	case 470:
+	case 601:
+	case 624:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+		break;
+	case 240:
+		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+		break;
+	case 709:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		break;
+	default:
+		break;
+	}
+	return sws_setColorspaceDetails( context, src_coefficients, full_range, dst_coefficients, full_range,
+		brightness, contrast, saturation );
 }
 
-static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
-	int width, int height, int colorspace, int use_full_range )
+// returns set_lumage_transfer result
+static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
+	int width, int height, int src_colorspace, int dst_colorspace, int use_full_range )
 {
 	AVPicture input;
 	AVPicture output;
 	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
+	int error = -1;
 
 	if ( out_fmt == PIX_FMT_YUYV422 )
 		flags |= SWS_FULL_CHR_H_INP;
@@ -121,6 +134,8 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 #ifdef USE_SSE
 	flags |= SWS_CPU_CAPS_MMX2;
 #endif
+	if ( out_fmt == PIX_FMT_YUV420P && use_full_range )
+		out_fmt = PIX_FMT_YUVJ420P;
 
 	avpicture_fill( &input, in, in_fmt, width, height );
 	avpicture_fill( &output, out, out_fmt, width, height );
@@ -128,11 +143,12 @@ static void av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt
 		width, height, out_fmt, flags, NULL, NULL, NULL);
 	if ( context )
 	{
-		set_luma_transfer( context, colorspace, use_full_range );
+		error = set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range );
 		sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
+	return error;
 }
 
 /** Do it :-).
@@ -147,12 +163,14 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	if ( *format != output_format )
 	{
+		mlt_profile profile = mlt_service_profile(
+			MLT_PRODUCER_SERVICE( mlt_frame_get_original_producer( frame ) ) );
 		int colorspace = mlt_properties_get_int( properties, "colorspace" );
 		int force_full_luma = -1;
 		
-		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s @ %dx%d space %d\n",
+		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s @ %dx%d space %d->%d\n",
 			mlt_image_format_name( *format ), mlt_image_format_name( output_format ),
-			width, height, colorspace );
+			width, height, colorspace, profile->colorspace );
 
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
@@ -196,10 +214,16 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			// By removing the frame property we only permit the luma to skip scaling once.
 			// Thereafter, we let swscale scale the luma range as it pleases since it seems
 			// we do not have control over the RGB to YUV conversion.
-			force_full_luma = mlt_properties_get_int( properties, "force_full_luma" );			
+			force_full_luma = mlt_properties_get_int( properties, "force_full_luma" );
 			mlt_properties_set( properties, "force_full_luma", NULL );
 		}
-		av_convert_image( output, *image, out_fmt, in_fmt, width, height, colorspace, force_full_luma );
+		if ( !av_convert_image( output, *image, out_fmt, in_fmt, width, height,
+		                        colorspace, profile->colorspace, force_full_luma ) )
+		{
+			// The new colorspace is only valid if destination is YUV.
+			if ( output_format == mlt_image_yuv422 || output_format == mlt_image_yuv420p )
+				mlt_properties_set_int( properties, "colorspace", profile->colorspace );
+		}
 		*image = output;
 		*format = output_format;
 		mlt_frame_set_image( frame, output, size, mlt_pool_release );
@@ -238,8 +262,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	return error;
 }
 
-/* TODO: The below is not working because swscale does not have
- * adjustable coefficients yet for RGB->YUV */
+/* TODO: Enable this to force colorspace conversion. Cost is heavy due to RGB conversions. */
 #if 0
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {

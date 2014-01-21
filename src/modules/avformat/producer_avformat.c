@@ -1026,40 +1026,50 @@ static void get_audio_streams_info( producer_avformat self )
 		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
 }
 
-static void set_luma_transfer( struct SwsContext *context, int yuv_colorspace, int use_full_range )
+static int set_luma_transfer( struct SwsContext *context, int src_colorspace, int dst_colorspace, int full_range )
 {
-	int *coefficients;
-	const int *new_coefficients;
-	int full_range;
-	int brightness, contrast, saturation;
+	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+	const int *dst_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+	int brightness = 0;
+	int contrast = 1 << 16;
+	int saturation = 1  << 16;
 
-	if ( sws_getColorspaceDetails( context, &coefficients, &full_range, &coefficients, &full_range,
-			&brightness, &contrast, &saturation ) != -1 )
+	switch ( src_colorspace )
 	{
-		// Don't change these from defaults unless explicitly told to.
-		if ( use_full_range >= 0 )
-			full_range = use_full_range;
-		switch ( yuv_colorspace )
-		{
-		case 170:
-		case 470:
-		case 601:
-		case 624:
-			new_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-			break;
-		case 240:
-			new_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-			break;
-		case 709:
-			new_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-			break;
-		default:
-			new_coefficients = coefficients;
-			break;
-		}
-		sws_setColorspaceDetails( context, new_coefficients, full_range, new_coefficients, full_range,
-			brightness, contrast, saturation );
+	case 170:
+	case 470:
+	case 601:
+	case 624:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+		break;
+	case 240:
+		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+		break;
+	case 709:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		break;
+	default:
+		break;
 	}
+	switch ( dst_colorspace )
+	{
+	case 170:
+	case 470:
+	case 601:
+	case 624:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+		break;
+	case 240:
+		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+		break;
+	case 709:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		break;
+	default:
+		break;
+	}
+	return sws_setColorspaceDetails( context, src_coefficients, full_range, dst_coefficients, full_range,
+		brightness, contrast, saturation );
 }
 
 static mlt_image_format pick_pix_format( enum PixelFormat pix_fmt )
@@ -1117,10 +1127,13 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
 	}
 }
 
-static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
+// returns resulting YUV colorspace
+static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
 {
 	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
+	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
+	int result = self->yuv_colorspace;
 
 #ifdef USE_MMX
 	flags |= SWS_CPU_CAPS_MMX;
@@ -1128,6 +1141,10 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 #ifdef USE_SSE
 	flags |= SWS_CPU_CAPS_MMX2;
 #endif
+
+	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "%s @ %dx%d space %d->%d\n",
+		mlt_image_format_name( *format ),
+		width, height, self->yuv_colorspace, profile->colorspace );
 
 	// extract alpha from planar formats
 	if ( ( pix_fmt == PIX_FMT_YUVA420P
@@ -1151,7 +1168,8 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 	if ( *format == mlt_image_yuv420p )
 	{
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
+			width, height, self->full_luma ? PIX_FMT_YUVJ420P : PIX_FMT_YUV420P,
+			flags, NULL, NULL, NULL);
 		AVPicture output;
 		output.data[0] = buffer;
 		output.data[1] = buffer + width * height;
@@ -1159,7 +1177,8 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		set_luma_transfer( context, self->yuv_colorspace, -1 );
+		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma ) )
+			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1170,7 +1189,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
-		set_luma_transfer( context, self->yuv_colorspace, self->full_luma );
+		set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1181,7 +1200,7 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
-		set_luma_transfer( context, self->yuv_colorspace, self->full_luma );
+		set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
@@ -1192,11 +1211,13 @@ static void convert_image( producer_avformat self, AVFrame *frame, uint8_t *buff
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		set_luma_transfer( context, self->yuv_colorspace, -1 );
+		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma ) )
+			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
+	return result;
 }
 
 /** Allocate the image buffer and set it on the frame.
@@ -1369,13 +1390,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
-				convert_image( self, (AVFrame*) &picture, *buffer,
+				int yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
 					PIX_FMT_YUV420P, format, *width, *height, &alpha );
+				mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			}
 			else
 #endif
-			convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+			int yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 				format, *width, *height, &alpha );
+			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			got_picture = 1;
 		}
 	}
@@ -1551,8 +1574,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
 							if ( status == VDP_STATUS_OK )
 							{
-								convert_image( self, self->video_frame, *buffer, PIX_FMT_YUV420P,
+								int yuv_colorspace = convert_image( self, self->video_frame, *buffer, PIX_FMT_YUV420P,
 									format, *width, *height, &alpha );
+								mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 							}
 							else
 							{
@@ -1568,8 +1592,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 #endif
-					convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+					int yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 						format, *width, *height, &alpha );
+					mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 					self->top_field_first |= self->video_frame->top_field_first;
 					self->current_position = int_position;
 				}
@@ -1617,13 +1642,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
-				convert_image( self, (AVFrame*) &picture, *buffer,
+				int yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
 					PIX_FMT_YUV420P, format, *width, *height, &alpha );
+				mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			}
 			else
 #endif
-			convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+			int yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 				format, *width, *height, &alpha );
+			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			got_picture = 1;
 		}
 	}
@@ -1864,7 +1891,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			break;
 		}
 
-		self->full_luma = -1;
+		self->full_luma = 0;
 #if LIBAVCODEC_VERSION_INT >= ((52<<16)+(72<<8)+2)
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );
 		if ( codec_context->color_range == AVCOL_RANGE_JPEG )
