@@ -48,8 +48,8 @@ VSPixelFormat mltimage_to_vsimage( mlt_image_format mlt_format, int width, int h
 	switch( mlt_format )
 	{
 	case mlt_image_rgb24:
-		// Convert RGB24 to YUV444 because it is the only planar
-		// format with comparable bit depth.
+		// Convert packed RGB24 to planar YUV444
+		// Note: vid.stab 0.98 does not seem to support PF_RGB24
 		{
 			*vs_img = mlt_pool_alloc( width * height * 3 );
 			int y, u, v, r, g, b;
@@ -78,23 +78,39 @@ VSPixelFormat mltimage_to_vsimage( mlt_image_format mlt_format, int width, int h
 			return PF_YUV420P;
 		}
 	case mlt_image_yuv422:
-		// Convert packed to planar
+		// Convert packed YUV422 to planar YUV444
+		// Note: vid.stab 0.98 seems to suffer chroma bleeding
+		// when using PF_YUV422P - which is why PF_YUV444P is used.
 		{
-			*vs_img = mlt_pool_alloc( width * height * 2 );
+			*vs_img = mlt_pool_alloc( width * height * 3 );
 			uint8_t* yp = *vs_img;
 			uint8_t* up = yp + ( width * height );
-			uint8_t* vp = up + ( width * height / 2 );
-			int total = ( width * height / 2 ) + 1;
+			uint8_t* vp = up + ( width * height );
+			int i, j, n = width / 2 + 1;
 
-			while( --total )
+			for ( i = 0; i < height; i++ )
 			{
-				*yp++ = *mlt_img++;
-				*up++ = *mlt_img++;
-				*yp++ = *mlt_img++;
-				*vp++ = *mlt_img++;
+				j = n;
+				while ( --j )
+				{
+					*yp++ = mlt_img[0];
+					*up++ = mlt_img[1];
+					*vp++ = mlt_img[3];
+					*yp++ = mlt_img[2];
+					*up++ = mlt_img[1];
+					*vp++ = mlt_img[3];
+					mlt_img += 4;
+				}
+				if ( width % 2 )
+				{
+					*yp++ = mlt_img[0];
+					*up++ = mlt_img[1];
+					*vp++ = (mlt_img - 4)[3];
+					mlt_img += 2;
+				}
 			}
 
-			return PF_YUV422P;
+			return PF_YUV444P;
 		}
 	default:
 		return PF_NONE;
@@ -109,7 +125,7 @@ void vsimage_to_mltimage( uint8_t* vs_img, uint8_t* mlt_img, mlt_image_format ml
 	switch( mlt_format )
 	{
 	case mlt_image_rgb24:
-		// Convert YUV444 to RGB24.
+		// Convert packet YUV444 to packed RGB24.
 		{
 			int y, u, v, r, g, b;
 			int total = width * height + 1;
@@ -133,19 +149,34 @@ void vsimage_to_mltimage( uint8_t* vs_img, uint8_t* mlt_img, mlt_image_format ml
 		// This format was never converted
 		break;
 	case mlt_image_yuv422:
-		// Convert planar to packed
+		// Convert planar YUV444 to packed YUV422
 		{
 			uint8_t* yp = vs_img;
 			uint8_t* up = yp + ( width * height );
-			uint8_t* vp = up + ( width * height / 2 );
-			int total = ( width * height / 2 ) + 1;
+			uint8_t* vp = up + ( width * height );
+			int i, j, n = width / 2 + 1;
 
-			while( --total )
+			for ( i = 0; i < height; i++ )
 			{
-				*mlt_img++ = *yp++;
-				*mlt_img++ = *up++;
-				*mlt_img++ = *yp++;
-				*mlt_img++ = *vp++;
+				j = n;
+				while ( --j )
+				{
+					*mlt_img++ = yp[0];
+					*mlt_img++ = ( up[0] + up[1] ) >> 1;
+					*mlt_img++ = yp[1];
+					*mlt_img++ = ( vp[0] + vp[1] ) >> 1;
+					yp += 2;
+					up += 2;
+					vp += 2;
+				}
+				if ( width % 2 )
+				{
+					*mlt_img++ = yp[0];
+					*mlt_img++ = up[0];
+					yp += 1;
+					up += 1;
+					vp += 1;
+				}
 			}
 		}
 		break;
@@ -217,3 +248,4 @@ int compare_transform_config( VSTransformConfig* a, VSTransformConfig* b )
 	}
 	return 0;
 }
+
