@@ -741,26 +741,11 @@ int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format
 		mlt_properties_set_int( properties, "audio_samples", *samples );
 		mlt_properties_set_int( properties, "audio_format", *format );
 
-		switch( *format )
-		{
-			case mlt_image_none:
-				size = 0;
-				*buffer = NULL;
-				break;
-			case mlt_audio_s16:
-				size = *samples * *channels * sizeof( int16_t );
-				break;
-			case mlt_audio_s32:
-				size = *samples * *channels * sizeof( int32_t );
-				break;
-			case mlt_audio_float:
-				size = *samples * *channels * sizeof( float );
-				break;
-			default:
-				break;
-		}
+		size = mlt_audio_format_size( *format, *samples, *channels );
 		if ( size )
 			*buffer = mlt_pool_alloc( size );
+		else
+			*buffer = NULL;
 		if ( *buffer )
 			memset( *buffer, 0, size );
 		mlt_properties_set_data( properties, "audio", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
