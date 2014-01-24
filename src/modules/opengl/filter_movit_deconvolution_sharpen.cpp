@@ -73,6 +73,7 @@ mlt_filter filter_deconvolution_sharpen_init( mlt_profile profile, mlt_service_t
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		mlt_properties_set_int( properties, "matrix_size", 5 );
 		mlt_properties_set_double( properties, "circle_radius", 2.0 );
 		mlt_properties_set_double( properties, "gaussian_radius", 0.0 );

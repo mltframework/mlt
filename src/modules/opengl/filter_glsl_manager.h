@@ -88,6 +88,7 @@ class GlslManager : public Mlt::Filter
 public:
 	GlslManager();
 	~GlslManager();
+	void add_ref(mlt_properties properties);
 	static GlslManager* get_instance();
 
 	glsl_fbo get_fbo(int width, int height);

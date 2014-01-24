@@ -62,6 +62,7 @@ mlt_filter filter_movit_glow_init( mlt_profile profile, mlt_service_type type, c
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		mlt_properties_set_double( properties, "radius", 20.0 );
 		mlt_properties_set_double( properties, "blur_mix", 1.0 );
 		mlt_properties_set_double( properties, "highlight_cutoff", 0.2 );

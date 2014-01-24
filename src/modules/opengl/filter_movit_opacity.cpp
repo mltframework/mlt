@@ -60,6 +60,7 @@ mlt_filter filter_movit_opacity_init( mlt_profile profile, mlt_service_type type
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		mlt_properties_set( properties, "opacity", arg? arg : "1" );
 		filter->process = process;
 	}

@@ -100,6 +100,8 @@ mlt_filter filter_movit_resample_init( mlt_profile profile, mlt_service_type typ
 	GlslManager* glsl = GlslManager::get_instance();
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		filter->process = process;
 	}
 	return filter;

@@ -80,6 +80,7 @@ mlt_filter filter_white_balance_init( mlt_profile profile, mlt_service_type type
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		mlt_properties_set( properties, "neutral_color", arg? arg : "#7f7f7f" );
 		mlt_properties_set_double( properties, "color_temperature", 6500.0 );
 		filter->process = process;

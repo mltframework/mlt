@@ -74,6 +74,7 @@ mlt_filter filter_lift_gamma_gain_init( mlt_profile profile, mlt_service_type ty
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		mlt_properties_set_double( properties, "lift_r", 0.0 );
 		mlt_properties_set_double( properties, "lift_g", 0.0 );
 		mlt_properties_set_double( properties, "lift_b", 0.0 );

@@ -39,6 +39,8 @@ mlt_filter filter_movit_rect_init( mlt_profile profile, mlt_service_type type, c
 	GlslManager* glsl = GlslManager::get_instance();
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		mlt_properties_set( MLT_FILTER_PROPERTIES(filter), "rect", arg );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES(filter), "fill", 1 );
 		filter->process = process;

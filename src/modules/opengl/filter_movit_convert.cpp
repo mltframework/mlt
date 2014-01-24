@@ -547,6 +547,8 @@ mlt_filter filter_movit_convert_init( mlt_profile profile, mlt_service_type type
 
 	if ( glsl && ( filter = mlt_filter_new() ) )
 	{
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 #ifdef WIN32
 		// XXX avcolor_space is crashing on Windows in this context!
 		mlt_filter cpu_csc = NULL;

@@ -41,9 +41,11 @@ extern "C" {
 #include <GL/glx.h>
 #endif
 
-void deleteManager(GlslManager *p)
+void dec_ref_and_delete(GlslManager *p)
 {
-	delete p;
+	if (p->dec_ref() == 0) {
+		delete p;
+	}
 }
 
 GlslManager::GlslManager()
@@ -57,8 +59,7 @@ GlslManager::GlslManager()
 	if ( filter ) {
 		// Set the mlt_filter child in case we choose to override virtual functions.
 		filter->child = this;
-		mlt_properties_set_data(mlt_global_properties(), "glslManager", this, 0,
-			(mlt_destructor) deleteManager, NULL);
+		add_ref(mlt_global_properties());
 
 		mlt_events_register( get_properties(), "init glsl", NULL );
 		mlt_events_register( get_properties(), "close glsl", NULL );
@@ -84,6 +85,13 @@ GlslManager::~GlslManager()
 		GLsync sync = (GLsync) syncs_to_delete.pop_front();
 		glDeleteSync( sync );
 	}
+}
+
+void GlslManager::add_ref(mlt_properties properties)
+{
+	inc_ref();
+	mlt_properties_set_data(properties, "glslManager", this, 0,
+	    (mlt_destructor) dec_ref_and_delete, NULL);
 }
 
 GlslManager* GlslManager::get_instance()

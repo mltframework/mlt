@@ -58,6 +58,7 @@ mlt_filter filter_movit_saturation_init( mlt_profile profile, mlt_service_type t
 
 	if ( glsl && ( filter = mlt_filter_new() ) ) {
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		glsl->add_ref( properties );
 		mlt_properties_set( properties, "saturation", arg? arg : "1.0" );
 		filter->process = process;
 	}
