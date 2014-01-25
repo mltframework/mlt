@@ -190,7 +190,7 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 	}
 
 	glBindTexture( GL_TEXTURE_2D, tex );
-	glTexImage2D( GL_TEXTURE_2D, 0, internal_format, width, height, 0, internal_format, GL_UNSIGNED_BYTE, NULL );
+	glTexImage2D( GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
@@ -415,7 +415,7 @@ int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int w
 {
 	glsl_fbo fbo = get_fbo( width, height );
 	if (!fbo) return 1;
-	glsl_texture texture = get_texture( width, height, GL_RGBA );
+	glsl_texture texture = get_texture( width, height, GL_RGBA8 );
 	if (!texture) {
 		release_fbo( fbo );
 		return 1;
@@ -466,7 +466,7 @@ int GlslManager::render_frame_rgba(EffectChain *chain, mlt_frame frame, int widt
 {
 	glsl_fbo fbo = get_fbo( width, height );
 	if (!fbo) return 1;
-	glsl_texture texture = get_texture( width, height, GL_RGBA );
+	glsl_texture texture = get_texture( width, height, GL_RGBA8 );
 	if (!texture) {
 		release_fbo( fbo );
 		return 1;
