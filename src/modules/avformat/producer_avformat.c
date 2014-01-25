@@ -1949,7 +1949,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	}
 
 	// Update the video properties if the index changed
-	if ( index != self->video_index )
+	if ( context && index > -1 && index != self->video_index )
 	{
 		// Reset the video properties if the index changed
 		self->video_index = index;
