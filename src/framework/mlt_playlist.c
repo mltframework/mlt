@@ -1500,7 +1500,7 @@ void mlt_playlist_consolidate_blanks( mlt_playlist self, int keep_length )
  * \public \memberof mlt_playlist_s
  * \param self a playlist
  * \param clip the index of the playlist entry
- * \return true if there was an error
+ * \return true if \p clip is a "blank" producer
  */
 
 int mlt_playlist_is_blank( mlt_playlist self, int clip )
