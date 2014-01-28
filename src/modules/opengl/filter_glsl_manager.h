@@ -49,16 +49,6 @@ struct glsl_texture_s
 };
 typedef struct glsl_texture_s *glsl_texture;
 
-struct glsl_fbo_s
-{
-	int used;
-	int width;
-	int height;
-	GLuint fbo;
-	void* context;
-};
-typedef struct glsl_fbo_s *glsl_fbo;
-
 struct glsl_pbo_s
 {
 	int size;
@@ -96,8 +86,6 @@ public:
 	void add_ref(mlt_properties properties);
 	static GlslManager* get_instance();
 
-	glsl_fbo get_fbo(int width, int height);
-	static void release_fbo(glsl_fbo);
 	glsl_texture get_texture(int width, int height, GLint internal_format);
 	static void release_texture(glsl_texture);
 	static void delete_sync(GLsync sync);
@@ -135,7 +123,6 @@ private:
 	static void onServiceChanged( mlt_properties owner, mlt_service service );
 	static void onPropertyChanged( mlt_properties owner, mlt_service service, const char* property );
 	ResourcePool* resource_pool;
-	Mlt::Deque fbo_list;
 	Mlt::Deque texture_list;
 	Mlt::Deque syncs_to_delete;
 	glsl_pbo  pbo;

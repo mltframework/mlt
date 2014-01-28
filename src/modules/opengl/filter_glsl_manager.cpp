@@ -102,53 +102,6 @@ GlslManager* GlslManager::get_instance()
 	return (GlslManager*) mlt_properties_get_data(mlt_global_properties(), "glslManager", 0);
 }
 
-glsl_fbo GlslManager::get_fbo(int width, int height)
-{
-#if defined(__DARWIN__)
-	CGLContextObj context = CGLGetCurrentContext();
-#elif defined(WIN32)
-	HGLRC context = wglGetCurrentContext();
-#else
-	GLXContext context = glXGetCurrentContext();
-#endif
-
-	lock();
-	for (int i = 0; i < fbo_list.count(); ++i) {
-		glsl_fbo fbo = (glsl_fbo) fbo_list.peek(i);
-		if (!fbo->used && (fbo->width == width) && (fbo->height == height) && (fbo->context == context)) {
-			fbo->used = 1;
-			unlock();
-			return fbo;
-		}
-	}
-	unlock();
-
-	GLuint fb = 0;
-	glGenFramebuffers(1, &fb);
-	if (!fb)
-		return NULL;
-
-	glsl_fbo fbo = new glsl_fbo_s;
-	if (!fbo) {
-		glDeleteFramebuffers(1, &fb);
-		return NULL;
-	}
-	fbo->fbo = fb;
-	fbo->width = width;
-	fbo->height = height;
-	fbo->used = 1;
-	fbo->context = context;
-	lock();
-	fbo_list.push_back(fbo);
-	unlock();
-	return fbo;
-}
-
-void GlslManager::release_fbo(glsl_fbo fbo)
-{
-	fbo->used = 0;
-}
-
 glsl_texture GlslManager::get_texture(int width, int height, GLint internal_format)
 {
 	lock();
@@ -257,11 +210,6 @@ glsl_pbo GlslManager::get_pbo(int size)
 void GlslManager::cleanupContext()
 {
 	lock();
-	while (fbo_list.peek_back()) {
-		glsl_fbo fbo = (glsl_fbo) fbo_list.pop_back();
-		glDeleteFramebuffers(1, &fbo->fbo);
-		delete fbo;
-	}
 	for (int i = 0; i < texture_list.count(); ++i) {
 		glsl_texture texture = (glsl_texture) texture_list.peek(i);
 		glDeleteTextures(1, &texture->texture);
@@ -420,15 +368,15 @@ void GlslManager::set_effect_secondary_input( mlt_service service, mlt_frame fra
 
 int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
 {
-	glsl_fbo fbo = get_fbo( width, height );
-	if (!fbo) return 1;
 	glsl_texture texture = get_texture( width, height, GL_RGBA8 );
 	if (!texture) {
-		release_fbo( fbo );
 		return 1;
 	}
 
-	glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
+	GLuint fbo;
+	glGenFramebuffers( 1, &fbo );
+	check_error();
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo );
 	check_error();
 	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
 	check_error();
@@ -450,14 +398,15 @@ int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int w
 		glClientWaitSync( prev_sync, 0, GL_TIMEOUT_IGNORED );
 		glDeleteSync( prev_sync );
 	}
-	chain->render_to_fbo( fbo->fbo, width, height );
+	chain->render_to_fbo( fbo, width, height );
 	prev_sync = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
 	GLsync sync = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
 
 	check_error();
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	check_error();
-	release_fbo( fbo );
+	glDeleteFramebuffers( 1, &fbo );
+	check_error();
 
 	*image = (uint8_t*) &texture->texture;
 	mlt_frame_set_image( frame, *image, 0, NULL );
@@ -471,11 +420,8 @@ int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int w
 
 int GlslManager::render_frame_rgba(EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
 {
-	glsl_fbo fbo = get_fbo( width, height );
-	if (!fbo) return 1;
 	glsl_texture texture = get_texture( width, height, GL_RGBA8 );
 	if (!texture) {
-		release_fbo( fbo );
 		return 1;
 	}
 
@@ -484,24 +430,25 @@ int GlslManager::render_frame_rgba(EffectChain *chain, mlt_frame frame, int widt
 	int img_size = width * height * 4;
 	glsl_pbo pbo = get_pbo( img_size );
 	if (!pbo) {
-		release_fbo( fbo );
 		release_texture(texture);
 		return 1;
 	}
 
 	// Set the FBO
+	GLuint fbo;
+	glGenFramebuffers( 1, &fbo );
 	check_error();
-	glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo );
 	check_error();
 	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0 );
 	check_error();
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	check_error();
 
-	chain->render_to_fbo( fbo->fbo, width, height );
+	chain->render_to_fbo( fbo, width, height );
 
 	// Read FBO into PBO
-	glBindFramebuffer( GL_FRAMEBUFFER, fbo->fbo );
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo );
 	check_error();
 	glBindBuffer( GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo );
 	check_error();
@@ -537,7 +484,8 @@ int GlslManager::render_frame_rgba(EffectChain *chain, mlt_frame frame, int widt
 	check_error();
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), "movit.convert.texture", texture, 0,
 		(mlt_destructor) GlslManager::release_texture, NULL);
-	release_fbo( fbo );
+	glDeleteFramebuffers( 1, &fbo );
+	check_error();
 
 	return 0;
 }
