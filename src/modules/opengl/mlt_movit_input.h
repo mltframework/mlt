@@ -24,40 +24,24 @@
 #include <movit/ycbcr_input.h>
 #include <movit/effect_chain.h>
 
-class MltInput : public Input
+class MltInput
 {
 public:
-	MltInput(unsigned width, unsigned height);
+	MltInput();
 	~MltInput();
 
-	// Effect overrides
-	std::string effect_type_id() const { return "MltInput"; }
-	Effect::AlphaHandling alpha_handling() const;
-	std::string output_fragment_shader();
-	void set_gl_state(GLuint glsl_program_num, const std::string& prefix, unsigned *sampler_num);
-	void inform_added(EffectChain *chain) { m_chain = chain; }
-
-	// Input ovverrides
-	void finalize();
-	bool can_output_linear_gamma() const;
-	unsigned get_width() const { return m_width; }
-	unsigned get_height() const { return m_height; }
-	Colorspace get_color_space() const;
-	GammaCurve get_gamma_curve() const;
-
-	// Custom methods
 	void useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned height);
 	void useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat& ycbcr_format, unsigned width, unsigned height);
 	void set_pixel_data(const unsigned char* data);
 	void invalidate_pixel_data();
+	Input *get_input() { return input; }
 
 private:
 	unsigned m_width, m_height;
-	int output_linear_gamma, needs_mipmaps;
+	// Note: Owned by the EffectChain, so should not be deleted by us.
 	Input *input;
 	bool isRGB;
 	YCbCrFormat m_ycbcr_format;
-	EffectChain *m_chain;
 };
 
 #endif // MLT_MOVIT_INPUT_H

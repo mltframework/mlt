@@ -152,9 +152,9 @@ static Effect* build_movit_chain( mlt_service service, mlt_frame frame, GlslChai
 		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 		MltInput* input = GlslManager::get_input( producer, frame );
 		GlslManager::set_input( producer, frame, NULL );
-		chain->effect_chain->add_input( input );
-		chain->effects.insert(std::make_pair( MLT_SERVICE( producer ), input ) );
-		return input;
+		chain->effect_chain->add_input( input->get_input() );
+		chain->inputs.insert(std::make_pair( producer, input ) );
+		return input->get_input();
 	}
 
 	Effect* effect = GlslManager::get_effect( service, frame );
@@ -242,7 +242,7 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 {
 	if ( service == (mlt_service) -1 ) {
 		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-		MltInput* input = (MltInput *) chain->effects[ MLT_PRODUCER_SERVICE( producer ) ];
+		MltInput* input = chain->inputs[ producer ];
 		input->set_pixel_data( GlslManager::get_input_pixel_pointer( producer, frame ) );
 		return;
 	}
@@ -311,7 +311,7 @@ static void dispose_pixel_pointers( GlslChain *chain, mlt_service service, mlt_f
 {
 	if ( service == (mlt_service) -1 ) {
 		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-		MltInput* input = (MltInput *) chain->effects[ MLT_PRODUCER_SERVICE( producer ) ];
+		MltInput* input = chain->inputs[ producer ];
 		input->invalidate_pixel_data();
 		mlt_pool_release( GlslManager::get_input_pixel_pointer( producer, frame ) );
 		return;
@@ -348,7 +348,7 @@ static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *
 // Create an MltInput for an image with the given format and dimensions.
 static MltInput* create_input( mlt_properties properties, mlt_image_format format, int aspect_width, int aspect_height, int width, int height )
 {
-	MltInput* input = new MltInput( aspect_width, aspect_height );
+	MltInput* input = new MltInput();
 	if ( format == mlt_image_rgb24a || format == mlt_image_opengl ) {
 		// TODO: Get the color space if available.
 		input->useFlatInput( FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
@@ -470,7 +470,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			if ( !chain || !input || width != w || height != h || *format != f ) {
 				chain = new EffectChain( width, height );
 				input = create_input( properties, *format, width, height, width, height );
-				chain->add_input( input );
+				chain->add_input( input->get_input() );
 				chain->add_effect( new Mlt::VerticalFlip() );
 				ImageFormat movit_output_format;
 				movit_output_format.color_space = COLORSPACE_sRGB;

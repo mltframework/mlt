@@ -75,6 +75,10 @@ struct GlslChain
 {
 	EffectChain *effect_chain;
 
+	// All MltInputs in the effect chain. These are not owned by the
+	// EffectChain (although the contained Input* is).
+	std::map<mlt_producer, MltInput*> inputs;
+
 	// All services owned by the effect chain and their associated Movit effect.
 	std::map<mlt_service, Effect*> effects;
 

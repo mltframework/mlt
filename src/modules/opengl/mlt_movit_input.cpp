@@ -19,69 +19,14 @@
 
 #include "mlt_movit_input.h"
 
-MltInput::MltInput(unsigned width, unsigned height)
-	: m_width(width)
-	, m_height(height)
-	, output_linear_gamma(false)
-	, needs_mipmaps(false)
-	, input(0)
+MltInput::MltInput()
+	: input(0)
 	, isRGB(true)
-	, m_chain(NULL)
 {
-	register_int("output_linear_gamma", &output_linear_gamma);
-	register_int("needs_mipmaps", &needs_mipmaps);
 }
 
 MltInput::~MltInput()
 {
-	// XXX: this is crashing when a producer is closed
-	// on Windows when using melt with qglsl.
-//	delete input;
-}
-
-std::string MltInput::output_fragment_shader()
-{
-	assert(input);
-	return input->output_fragment_shader();
-}
-
-void MltInput::set_gl_state(GLuint glsl_program_num, const std::string& prefix, unsigned *sampler_num)
-{
-	assert(input);
-	input->set_gl_state(glsl_program_num, prefix, sampler_num);
-}
-
-Effect::AlphaHandling MltInput::alpha_handling() const
-{
-	assert(input);
-	return input->alpha_handling();
-}
-
-void MltInput::finalize()
-{
-	assert(input);
-	bool ok = input->set_int("output_linear_gamma", output_linear_gamma);
-	ok |= input->set_int("needs_mipmaps", needs_mipmaps);
-	assert(ok);
-	input->inform_added(m_chain);
-	input->finalize();
-}
-
-bool MltInput::can_output_linear_gamma() const
-{
-	assert(input);
-	return input->can_output_linear_gamma();
-}
-
-Colorspace MltInput::get_color_space() const
-{
-	assert(input);
-	return input->get_color_space();
-}
-GammaCurve MltInput::get_gamma_curve() const
-{
-	assert(input);
-	return input->get_gamma_curve();
 }
 
 void MltInput::useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned height)

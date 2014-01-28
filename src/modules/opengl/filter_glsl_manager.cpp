@@ -326,6 +326,13 @@ mlt_filter filter_glsl_manager_init( mlt_profile profile, mlt_service_type type,
 
 static void deleteChain( GlslChain* chain )
 {
+	// The Input* is owned by the EffectChain, but the MltInput* is not.
+	// Thus, we have to delete it here.
+	for (std::map<mlt_producer, MltInput*>::iterator input_it = chain->inputs.begin();
+	     input_it != chain->inputs.end();
+	     ++input_it) {
+		delete input_it->second;
+	}
 	delete chain->effect_chain;
 	delete chain;
 }
