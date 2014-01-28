@@ -1,6 +1,6 @@
 CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt -lm -lpthread
+LDFLAGS += -L../../framework -lmlt -lm
 
 include ../../../config.mak
 
@@ -38,12 +38,12 @@ LDFLAGS += -L../../mlt++ -lmlt++
 
 ifeq ($(targetos), MinGW)
 	CXXFLAGS += $(shell pkg-config --cflags glew)
-	LDFLAGS += -lmovit $(shell pkg-config --libs-only-L glew) -lglew32 -lopengl32
+	LDFLAGS += -lmovit $(shell pkg-config --libs-only-L glew) -lglew32 -lopengl32 -lpthread
 else
 	LDFLAGS += $(shell pkg-config --libs movit 2> /dev/null)
 ifeq ($(targetos), Darwin)
 	CXXFLAGS += -FOpenGL
-	LDFLAGS += -framework OpenGL
+	LDFLAGS += -lpthread -framework OpenGL
 else
 	OBJS += consumer_xgl.o
 	LDFLAGS += -lpthread -lGL -lX11
