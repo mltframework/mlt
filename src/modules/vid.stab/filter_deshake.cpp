@@ -238,6 +238,8 @@ mlt_filter filter_deshake_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set(properties, "optzoom", "1");
 		mlt_properties_set(properties, "zoomspeed", "0.25");
 
+		init_vslog();
+
 		return filter;
 	}
 

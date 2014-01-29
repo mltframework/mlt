@@ -32,4 +32,6 @@ void free_vsimage( uint8_t* vs_img, VSPixelFormat format );
 int compare_motion_config( VSMotionDetectConfig* a, VSMotionDetectConfig* b );
 int compare_transform_config( VSTransformConfig* a, VSTransformConfig* b );
 
+void init_vslog();
+
 #endif /* VIDSTAB_COMMON_H_ */

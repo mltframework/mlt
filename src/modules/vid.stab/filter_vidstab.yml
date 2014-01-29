@@ -13,8 +13,10 @@ tags:
 description: Stabilize Video (for wiggly/rolling video)
 notes: >
   This filter requires two passes. The first pass performs analysis and stores
-  the result in the "results" property. The second pass applies the results to
-  the image.
+  the result in a file. Upon successful completion of the analysis, the 
+  "results" property is updated with the name of the file storing the results.
+  The second pass applies the results to the image.
+  
   To use with melt, use 'melt ... -consumer xml:output.mlt all=1' for the
   first pass. For the second pass, use output.mlt as the input.
 
@@ -26,8 +28,20 @@ parameters:
       Set after analysis. Used during application.
       A set of image motion information that describes the analyzed clip.
       When results are not supplied, the filter computes the results and stores
-      them in this property when the last frame has been processed.
+      them in a file. This property is updated with the name of that file when 
+      the last frame has been processed.
     mutable: no
+
+  - identifier: filename
+    title: Target File Name
+    type: string
+    description: >
+      Used during analysis.
+      The name of the file to store the analysis results in.
+    required: no
+    readonly: no
+    default: vidstab.trf
+    widget: fileopen
 
   - identifier: shakiness
     title: Shakiness

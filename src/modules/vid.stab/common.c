@@ -249,3 +249,26 @@ int compare_transform_config( VSTransformConfig* a, VSTransformConfig* b )
 	return 0;
 }
 
+static int vs_log_wrapper( int type, const char *tag, const char *format, ... )
+{
+	va_list vl;
+
+	if ( type > mlt_log_get_level() )
+		return VS_OK;
+
+	va_start( vl, format );
+	fprintf( stderr, "[%s] ", tag );
+	vfprintf( stderr, format, vl );
+	va_end( vl );
+
+	return VS_OK;
+}
+
+void init_vslog()
+{
+	VS_ERROR_TYPE = MLT_LOG_ERROR;
+	VS_WARN_TYPE  = MLT_LOG_WARNING;
+	VS_INFO_TYPE  = MLT_LOG_INFO;
+	VS_MSG_TYPE   = MLT_LOG_VERBOSE;
+	vs_log = vs_log_wrapper;
+}
