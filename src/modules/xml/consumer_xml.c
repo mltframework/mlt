@@ -698,7 +698,6 @@ static void serialise_service( serialise_context context, mlt_service service, x
 static void serialise_other( mlt_properties properties, struct serialise_context_s *context, xmlNodePtr root )
 {
 	int i;
-	mlt_properties_debug( properties, __FUNCTION__, stderr );
 	for ( i = 0; i < mlt_properties_count( properties ); i++ )
 	{
 		const char* name = mlt_properties_get_name( properties, i );
