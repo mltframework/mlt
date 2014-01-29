@@ -392,6 +392,7 @@ static void serialise_multitrack( serialise_context context, mlt_service service
 				xmlNewProp( track, _x("in"), _x( mlt_properties_get_time( properties, "in", context->time_format ) ) );
 				xmlNewProp( track, _x("out"), _x( mlt_properties_get_time( properties, "out", context->time_format ) ) );
 				serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, context->store );
+				serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, "xml_" );
 				if ( !context->no_meta )
 					serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( producer ), track, "meta." );
 				serialise_service_filters( context, MLT_PRODUCER_SERVICE( producer ), track );
@@ -446,6 +447,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 
 		// Store application specific properties
 		serialise_store_properties( context, properties, child, context->store );
+		serialise_store_properties( context, properties, child, "xml_" );
 		if ( !context->no_meta )
 			serialise_store_properties( context, properties, child, "meta." );
 
@@ -485,6 +487,7 @@ static void serialise_playlist( serialise_context context, mlt_service service, 
 					if ( mlt_producer_is_cut( info.cut ) )
 					{
 						serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( info.cut ), entry, context->store );
+						serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( info.cut ), entry, "xml_" );
 						if ( !context->no_meta )
 							serialise_store_properties( context, MLT_PRODUCER_PROPERTIES( info.cut ), entry, "meta." );
 						serialise_service_filters( context, MLT_PRODUCER_SERVICE( info.cut ), entry );
@@ -534,6 +537,7 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 
 		// Store application specific properties
 		serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, context->store );
+		serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, "xml_" );
 		if ( !context->no_meta )
 			serialise_store_properties( context, MLT_SERVICE_PROPERTIES( service ), child, "meta." );
 
@@ -691,6 +695,25 @@ static void serialise_service( serialise_context context, mlt_service service, x
 	}
 }
 
+static void serialise_other( mlt_properties properties, struct serialise_context_s *context, xmlNodePtr root )
+{
+	int i;
+	mlt_properties_debug( properties, __FUNCTION__, stderr );
+	for ( i = 0; i < mlt_properties_count( properties ); i++ )
+	{
+		const char* name = mlt_properties_get_name( properties, i );
+		if ( strlen(name) > 10 && !strncmp( name, "xml_retain", 10 ) )
+		{
+			mlt_service service = mlt_properties_get_data_at( properties, i, NULL );
+			if ( service )
+			{
+				mlt_properties_set_int( MLT_SERVICE_PROPERTIES( service ), "xml_retain", 1 );
+				serialise_service( context, service, root );
+			}
+		}
+	}
+}
+
 xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 {
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
@@ -772,11 +795,13 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 
 	// In pass one, we serialise the end producers and playlists,
 	// adding them to a map keyed by address.
+	serialise_other( MLT_SERVICE_PROPERTIES( service ), context, root );
 	serialise_service( context, service, root );
 
 	// In pass two, we serialise the tractor and reference the
 	// producers and playlists
 	context->pass++;
+	serialise_other( MLT_SERVICE_PROPERTIES( service ), context, root );
 	serialise_service( context, service, root );
 
 	// Cleanup resource

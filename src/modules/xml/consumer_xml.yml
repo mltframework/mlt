@@ -13,11 +13,22 @@ tags:
 description: >
   Serialise the service network to XML.
   See docs/mlt-xml.txt for more information.
+
+notes: >
+  If you set a data property beginning with (and longer than) "xml_retain" on
+  the service connected to this consumer where the data is a mlt_service
+  pointer, then the pointed at service will also be serialized before the
+  connected service. This can be useful, for example, to save a playlist as
+  a media bin along with a multitrack. You can serialize more than one of these
+  additional services by setting more than property, each with a unique key
+  beginning with "xml_retain".
+
 bugs:
    - Untested arbitrary nesting of multitracks and playlists.
    - >
      Property "id" is generated as service type followed by number if no
      property named "id" exists, but it fails to guarantee uniqueness.
+
 parameters:
   - identifier: resource
     argument: yes
