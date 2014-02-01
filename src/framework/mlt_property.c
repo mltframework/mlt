@@ -648,7 +648,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		const char *localename = locale->__names[ LC_NUMERIC ];
 #else
 		// TODO: not yet sure what to do on other platforms
-		const char *localename = "";
+		const char *localename = NULL;
 #endif
 		// Protect damaging the global locale from a temporary locale on another thread.
 		pthread_mutex_lock( &self->mutex );
@@ -857,7 +857,7 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 char *mlt_property_get_time( mlt_property self, mlt_time_format format, double fps, locale_t locale )
 {
 	char *orig_localename = NULL;
-	const char *localename = "";
+	const char *localename = NULL;
 
 	// Optimization for mlt_time_frames
 	if ( format == mlt_time_frames )
