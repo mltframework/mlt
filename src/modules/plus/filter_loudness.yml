@@ -1,0 +1,41 @@
+schema_version: 0.1
+type: filter
+identifier: loudness
+title: Loudness
+version: 1
+copyright: Brian Matherly <pez4brian@yahoo.com>
+creator: Brian Matherly <pez4brian@yahoo.com>
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+description: Correct audio loudness as recommended by EBU R128.
+notes: >
+  This filter requires two passes. The first pass performs analysis and stores
+  the result in the "results" property. The second pass applies the results to
+  the audio in order to achieve the desired loudness over the range of the 
+  filter.
+  
+parameters:
+  - identifier: results
+    title: Analysis Results
+    type: string
+    description: >
+      Set after analysis. Used during application.
+      Loudness information about the original audio.
+      When results are not supplied, the filter computes the results and stores
+      them in this property when the last frame has been processed.
+    mutable: no
+    
+  - identifier: program
+    title: Target Program Loudness
+    type: float
+    description: >
+      Used during application.
+      The target program loudness in LUFS (Loudness Units Full Scale).
+    readonly: no
+    mutable: no
+    default: -23.0
+    minimum: -50.0
+    maximum: -10.0
+    unit: LUFS
