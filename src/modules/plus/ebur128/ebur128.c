@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 /* This can be replaced by any BSD-like queue implementation. */
-#include <sys/queue.h>
+#include "queue.h"
 
 #ifdef USE_SPEEX_RESAMPLER
   #include <speex/speex_resampler.h>
