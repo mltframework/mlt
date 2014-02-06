@@ -1238,7 +1238,7 @@ static void *consumer_thread( void *arg )
 	if ( filename == NULL || !strcmp( filename, "" ) )
 		filename = "pipe:";
 
-#if LIBAVUTIL_VERSION_INT >= ((53<<16)+(2<<8)+0)
+#if defined(FFUDIV) && LIBAVUTIL_VERSION_INT >= ((53<<16)+(2<<8)+0)
 	avformat_alloc_output_context2( &oc, fmt, format, filename );
 #else
 	oc = avformat_alloc_context( );
