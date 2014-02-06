@@ -36,7 +36,6 @@ typedef struct
 	double in_loudness;
 	double in_range;
 	double in_peak;
-	double coeff;
 } apply_data;
 
 typedef struct
@@ -78,7 +77,7 @@ static void init_apply_data( mlt_filter filter )
 
 	private->apply = (apply_data*)calloc( 1, sizeof(apply_data) );
 
-	scan_return = sscanf( results,"L: %lf\tR: %lf\tP %lf\n", &private->apply->in_loudness, &private->apply->in_range, &private->apply->in_peak );
+	scan_return = sscanf( results,"L: %lf\tR: %lf\tP %lf", &private->apply->in_loudness, &private->apply->in_range, &private->apply->in_peak );
 	if( scan_return != 3 )
 	{
 		mlt_log_error( MLT_FILTER_SERVICE( filter ), "Unable to load results: %s\n", results );
@@ -87,11 +86,7 @@ static void init_apply_data( mlt_filter filter )
 	}
 	else
 	{
-		double target_db = mlt_properties_get_double( properties, "program" );
-		double delta_db = target_db - private->apply->in_loudness;
-		private->apply->coeff = delta_db > -90.0f ? powf(10.0f, delta_db * 0.05f) : 0.0f;
 		mlt_log_info( MLT_FILTER_SERVICE( filter ), "Loaded Results: L: %lf\tR: %lf\tP %lf\n", private->apply->in_loudness, private->apply->in_range, private->apply->in_peak );
-		mlt_log_info( MLT_FILTER_SERVICE( filter ), "Coefficient: %lf\n", private->apply->coeff );
 	}
 }
 
@@ -138,7 +133,7 @@ static void analyze( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audi
 				}
 			}
 
-			snprintf( result, MAX_RESULT_SIZE, "L: %lf\tR: %lf\tP %lf\n", loudness, range, peak );
+			snprintf( result, MAX_RESULT_SIZE, "L: %lf\tR: %lf\tP %lf", loudness, range, peak );
 			result[ MAX_RESULT_SIZE - 1 ] = '\0';
 			mlt_log_info( MLT_FILTER_SERVICE( filter ), "Stored results: %s", result );
 			mlt_properties_set( properties, "results", result );
@@ -152,6 +147,7 @@ static void analyze( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audi
 static void apply( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	private_data* private = (private_data*)filter->child;
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Analyze Audio
 	if( !private->apply )
@@ -161,11 +157,14 @@ static void apply( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audio_
 
 	if( private->apply )
 	{
+		double target_db = mlt_properties_get_double( properties, "program" );
+		double delta_db = target_db - private->apply->in_loudness;
+		double coeff = delta_db > -90.0f ? powf(10.0f, delta_db * 0.05f) : 0.0f;
 		float* p = *buffer;
 		int count = *samples * *channels;
 		while( count-- )
 		{
-			*p = *p * private->apply->coeff;
+			*p = *p * coeff;
 			p++;
 		}
 	}

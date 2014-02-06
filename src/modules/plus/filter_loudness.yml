@@ -34,7 +34,7 @@ parameters:
       Used during application.
       The target program loudness in LUFS (Loudness Units Full Scale).
     readonly: no
-    mutable: no
+    mutable: yes
     default: -23.0
     minimum: -50.0
     maximum: -10.0
