@@ -1,0 +1,47 @@
+schema_version: 0.1
+type: filter
+identifier: rgblut
+title: RGBLUT
+version: 1
+copyright: Janne Liljeblad
+creator: Janne Liljeblad
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description:
+  Converts input strings with exactly 256 half-comma separated integer values in 
+  range 0 - 255 to look-up tables that then used to modify R, G, B values. 
+  
+  This creates a generic string interface for color correction.
+
+parameters:
+  - identifier: R_table
+    title: Red channel look-up table
+    type: string
+    default: unset
+    description: >
+      Value is tokenised using half-comma separator into exactly 256 integer 
+      values in range 0 - 255 and a loop-up table for red channel values is 
+      created and applied to image. If tokenising of value fails a linear table 
+      that returns input values unchanged is used instead.
+
+  - identifier: G_table
+    title: Green channel look-up table
+    type: string
+    default: unset
+    description: >
+      Value is tokenised using half-comma separator into exactly 256 integer 
+      values in range 0 - 255 and a loop-up table for green channel values is 
+      created and applied to image. If tokenising of value fails a linear table 
+      that returns input values unchanged is used instead.
+
+  - identifier: B_table
+    title: Blue channel look-up table
+    type: string
+    default: unset
+    description: >
+      Value is tokenised using half-comma separator into exactly 256 integer 
+      values in range 0 - 255 and a loop-up table for green channel values is 
+      created and applied to image. If tokenising of value fails a linear table 
+      that returns input values unchanged is used instead.
