@@ -71,16 +71,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 )
 	{
+
 		// Create lut tables from properties for each RGB channel
-		char* r_str = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "R_table" );
+		char* r_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "R_table" );
 		int r_lut[256];
 		fill_channel_lut( r_lut, r_str );
 
-		char* g_str = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "G_table" );
+		char* g_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "G_table" );
 		int g_lut[256];
 		fill_channel_lut( g_lut, g_str );
 
-		char* b_str = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "B_table" );
+		char* b_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "B_table" );
 		int b_lut[256];
 		fill_channel_lut( b_lut, b_str );
 
@@ -104,14 +105,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	char* r_table = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "R_table" );
-	char* g_table = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "G_table" );
-	char* b_table = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "B_table" );
-
-	mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "R_table", r_table );
-	mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "G_table", g_table );
-	mlt_properties_set( MLT_FRAME_PROPERTIES( frame ), "B_table", b_table );
-
 	// Push the frame filter
 	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
