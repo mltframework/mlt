@@ -49,6 +49,7 @@ typedef struct
 {
 	int real_time;
 	int ahead;
+	int preroll;
 	mlt_image_format format;
 	mlt_deque queue;
 	void *ahead_thread;
@@ -85,6 +86,7 @@ static void transmit_thread_create( mlt_listener listener, mlt_properties owner,
 static void mlt_thread_create( mlt_consumer self, thread_function_t function );
 static void transmit_thread_join( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 static void mlt_thread_join( mlt_consumer self );
+static void consumer_read_ahead_start( mlt_consumer self );
 
 /** Initialize a consumer service.
  *
@@ -540,6 +542,12 @@ int mlt_consumer_start( mlt_consumer self )
 		else
 			priv->format = mlt_image_yuv422;
 	}
+
+	priv->preroll = 1;
+#ifdef WIN32
+	if ( priv->real_time == 1 || priv->real_time == -1 )
+		consumer_read_ahead_start( self );
+#endif
 
 	// Start the service
 	if ( self->start != NULL )
@@ -1492,14 +1500,16 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 	{
 		int size = 1;
 
-		// Is the read ahead running?
-		if ( priv->ahead == 0 )
+		if ( priv->preroll )
 		{
 			int buffer = mlt_properties_get_int( properties, "buffer" );
 			int prefill = mlt_properties_get_int( properties, "prefill" );
+#ifndef WIN32
 			consumer_read_ahead_start( self );
+#endif
 			if ( buffer > 1 )
 				size = prefill > 0 && prefill < buffer ? prefill : buffer;
+			priv->preroll = 0;
 		}
 
 		// Get frame from queue
