@@ -1,5 +1,0 @@
-melt clip1.dv \
--track txtField.swf variables="title=My Title&subtitle=The Subtitle" out=120 \
--transition composite geometry="0/0:100%x100%:80%;100=0/0:100%x100%:80%;119=0/0:100%x100%:0" \
-a_track=0 b_track=1 out=120 progressive=1 \
-$*
