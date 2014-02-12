@@ -28,6 +28,8 @@
 #include <movit/padding_effect.h>
 #include "optional_effect.h"
 
+using namespace movit;
+
 static float alignment_parse( char* align )
 {
 	int ret = 0.0f;

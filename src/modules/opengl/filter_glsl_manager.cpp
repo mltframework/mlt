@@ -42,6 +42,8 @@ extern "C" {
 #include <GL/glx.h>
 #endif
 
+using namespace movit;
+
 void dec_ref_and_delete(GlslManager *p)
 {
 	if (p->dec_ref() == 0) {

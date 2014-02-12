@@ -23,7 +23,7 @@
 namespace Mlt
 {
 
-class VerticalFlip : public Effect {
+class VerticalFlip : public movit::Effect {
 public:
 	VerticalFlip() {}
 	virtual std::string effect_type_id() const { return "MltVerticalFlip"; }

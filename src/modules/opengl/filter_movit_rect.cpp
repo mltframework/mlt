@@ -20,6 +20,8 @@
 #include <framework/mlt.h>
 #include "filter_glsl_manager.h"
 
+using namespace movit;
+
 static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	// Drive the resize and resample filters on the b_frame for these composite parameters

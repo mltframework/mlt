@@ -19,6 +19,8 @@
 
 #include "mlt_movit_input.h"
 
+using namespace movit;
+
 MltInput::MltInput()
 	: input(0)
 	, isRGB(true)

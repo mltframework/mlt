@@ -30,6 +30,8 @@
 #include <mlt++/MltProducer.h>
 #include "mlt_flip_effect.h"
 
+using namespace movit;
+
 static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_frame frame );
 
 static void yuv422_to_yuv422p( uint8_t *yuv422, uint8_t *yuv422p, int width, int height )

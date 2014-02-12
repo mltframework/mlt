@@ -28,6 +28,8 @@
 #include <movit/util.h>
 #include <movit/overlay_effect.h>
 
+using namespace movit;
+
 static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error;

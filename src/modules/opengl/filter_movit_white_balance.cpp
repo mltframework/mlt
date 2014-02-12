@@ -25,6 +25,8 @@
 #include "filter_glsl_manager.h"
 #include <movit/white_balance_effect.h>
 
+using namespace movit;
+
 static double srgb8_to_linear(int c)
 {
 	double x = c / 255.0f;

@@ -25,6 +25,8 @@
 #include <movit/padding_effect.h>
 #include "optional_effect.h"
 
+using namespace movit;
+
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;

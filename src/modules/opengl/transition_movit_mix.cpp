@@ -30,6 +30,8 @@
 #include "mlt_movit_input.h"
 #include "mlt_flip_effect.h"
 
+using namespace movit;
+
 static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error;

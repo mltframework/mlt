@@ -12,7 +12,7 @@ class OptionalEffect : public T {
 public:
 	OptionalEffect() : disable(0) { this->register_int("disable", &disable); }
 	virtual std::string effect_type_id() const { return "OptionalEffect[" + T::effect_type_id() + "]"; }
-	virtual void rewrite_graph(EffectChain *graph, Node *self) {
+	virtual void rewrite_graph(movit::EffectChain *graph, movit::Node *self) {
 		if (disable) {
 			assert(self->incoming_links.size() == 1);
 			graph->replace_sender(self, self->incoming_links[0]);

@@ -30,18 +30,18 @@ public:
 	MltInput();
 	~MltInput();
 
-	void useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned height);
-	void useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat& ycbcr_format, unsigned width, unsigned height);
+	void useFlatInput(movit::MovitPixelFormat pix_fmt, unsigned width, unsigned height);
+	void useYCbCrInput(const movit::ImageFormat& image_format, const movit::YCbCrFormat& ycbcr_format, unsigned width, unsigned height);
 	void set_pixel_data(const unsigned char* data);
 	void invalidate_pixel_data();
-	Input *get_input() { return input; }
+	movit::Input *get_input() { return input; }
 
 private:
 	unsigned m_width, m_height;
 	// Note: Owned by the EffectChain, so should not be deleted by us.
-	Input *input;
+	movit::Input *input;
 	bool isRGB;
-	YCbCrFormat m_ycbcr_format;
+	movit::YCbCrFormat m_ycbcr_format;
 };
 
 #endif // MLT_MOVIT_INPUT_H

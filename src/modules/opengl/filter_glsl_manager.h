@@ -56,21 +56,26 @@ struct glsl_pbo_s
 };
 typedef struct glsl_pbo_s *glsl_pbo;
 
+namespace movit {
+
 class Effect;
 class EffectChain;
-class MltInput;
 class ResourcePool;
+
+}  // namespace movit
+
+class MltInput;
 
 struct GlslChain
 {
-	EffectChain *effect_chain;
+	movit::EffectChain *effect_chain;
 
 	// All MltInputs in the effect chain. These are not owned by the
 	// EffectChain (although the contained Input* is).
 	std::map<mlt_producer, MltInput*> inputs;
 
 	// All services owned by the effect chain and their associated Movit effect.
-	std::map<mlt_service, Effect*> effects;
+	std::map<mlt_service, movit::Effect*> effects;
 
 	// For each effect in the Movit graph, a unique identifier for the service
 	// and whether it's disabled or not, using post-order traversal.
@@ -92,13 +97,13 @@ public:
 	glsl_pbo get_pbo(int size);
 	void cleanupContext();
 
-	ResourcePool* get_resource_pool() { return resource_pool; }
+	movit::ResourcePool* get_resource_pool() { return resource_pool; }
 
 	static void set_chain(mlt_service, GlslChain*);
 	static GlslChain* get_chain(mlt_service);
 
-	static Effect* get_effect(mlt_service, mlt_frame);
-	static Effect* set_effect(mlt_service, mlt_frame, Effect*);
+	static movit::Effect* get_effect(mlt_service, mlt_frame);
+	static movit::Effect* set_effect(mlt_service, mlt_frame, movit::Effect*);
 	static MltInput* get_input(mlt_producer, mlt_frame);
 	static MltInput* set_input(mlt_producer, mlt_frame, MltInput*);
 	static uint8_t* get_input_pixel_pointer(mlt_producer, mlt_frame);
@@ -109,8 +114,8 @@ public:
 	static void get_effect_secondary_input(mlt_service, mlt_frame, mlt_service*, mlt_frame*);
 	static void set_effect_secondary_input(mlt_service, mlt_frame, mlt_service, mlt_frame);
 
-	int render_frame_texture(EffectChain*, mlt_frame, int width, int height, uint8_t **image);
-	int render_frame_rgba(EffectChain*, mlt_frame, int width, int height, uint8_t **image);
+	int render_frame_texture(movit::EffectChain*, mlt_frame, int width, int height, uint8_t **image);
+	int render_frame_rgba(movit::EffectChain*, mlt_frame, int width, int height, uint8_t **image);
 	static void lock_service(mlt_frame frame);
 	static void unlock_service(mlt_frame frame);
 
@@ -122,7 +127,7 @@ private:
 	static void onClose( mlt_properties owner, GlslManager* filter );
 	static void onServiceChanged( mlt_properties owner, mlt_service service );
 	static void onPropertyChanged( mlt_properties owner, mlt_service service, const char* property );
-	ResourcePool* resource_pool;
+	movit::ResourcePool* resource_pool;
 	Mlt::Deque texture_list;
 	Mlt::Deque syncs_to_delete;
 	glsl_pbo  pbo;
