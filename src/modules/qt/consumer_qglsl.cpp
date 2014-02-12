@@ -105,10 +105,8 @@ public:
 	}
 	~RenderThread()
 	{
-#ifndef Q_OS_WIN
 		m_surface->destroy();
 		delete m_surface;
-#endif
 	}
 
 protected:
@@ -142,6 +140,7 @@ static void onThreadJoin(mlt_properties owner, mlt_consumer self, RenderThread* 
 	Q_UNUSED(owner)
 	Q_UNUSED(self)
 	if (thread) {
+		thread->quit();
 		thread->wait();
 		qApp->processEvents();
 		delete thread;
