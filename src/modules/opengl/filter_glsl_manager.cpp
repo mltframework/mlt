@@ -225,8 +225,8 @@ void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 #else
 	std::string path = std::string(getenv("MLT_MOVIT_PATH") ? getenv("MLT_MOVIT_PATH") : SHADERDIR);
 #endif
-	::init_movit( path, mlt_log_get_level() == MLT_LOG_DEBUG? MOVIT_DEBUG_ON : MOVIT_DEBUG_OFF );
-	filter->set( "glsl_supported", movit_initialized );
+	bool success = init_movit( path, mlt_log_get_level() == MLT_LOG_DEBUG? MOVIT_DEBUG_ON : MOVIT_DEBUG_OFF );
+	filter->set( "glsl_supported", success );
 }
 
 void GlslManager::onClose( mlt_properties owner, GlslManager *filter )
