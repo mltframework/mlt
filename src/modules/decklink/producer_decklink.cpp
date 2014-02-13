@@ -432,7 +432,7 @@ public:
 						for ( int i = 1; i < m_vancLines + 1; i++ )
 						{
 							if ( vanc->GetBufferForVerticalBlankingLine( i, &buffer ) == S_OK )
-								swab( (char*) buffer, (char*) image + ( i - 1 ) * video->GetRowBytes(), video->GetRowBytes() );
+								swab2( (char*) buffer, (char*) image + ( i - 1 ) * video->GetRowBytes(), video->GetRowBytes() );
 							else
 								mlt_log_debug( getProducer(), "failed capture vanc line %d\n", i );
 						}
@@ -445,7 +445,7 @@ public:
 				if ( image && buffer )
 				{
 					size =  video->GetRowBytes() * video->GetHeight();
-					swab( (char*) buffer, (char*) image + m_vancLines * video->GetRowBytes(), size );
+					swab2( (char*) buffer, (char*) image + m_vancLines * video->GetRowBytes(), size );
 					mlt_frame_set_image( frame, (uint8_t*) image, size, mlt_pool_release );
 				}
 				else if ( image )

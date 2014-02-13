@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifdef __DARWIN__
 
@@ -89,3 +90,46 @@ void freeDLString( DLString aDLString )
 
 #endif
 
+
+void swab2( const void *from, void *to, int n )
+{
+#if defined(USE_SSE)
+#define SWAB_STEP 16
+	__asm__ volatile
+	(
+		"loop_start:                            \n\t"
+
+		/* load */
+		"movdqa         0(%[from]), %%xmm0      \n\t"
+		"add            $0x10, %[from]          \n\t"
+
+		/* duplicate to temp registers */
+		"movdqa         %%xmm0, %%xmm1          \n\t"
+
+		/* shift right temp register */
+		"psrlw          $8, %%xmm1              \n\t"
+
+		/* shift left main register */
+		"psllw          $8, %%xmm0              \n\t"
+
+		/* compose them back */
+		"por           %%xmm0, %%xmm1           \n\t"
+
+		/* save */
+		"movdqa         %%xmm1, 0(%[to])        \n\t"
+		"add            $0x10, %[to]            \n\t"
+
+		"dec            %[cnt]                  \n\t"
+		"jnz            loop_start              \n\t"
+
+		:
+		: [from]"r"(from), [to]"r"(to), [cnt]"r"(n / SWAB_STEP)
+		: "xmm0", "xmm1"
+	);
+
+	from = (unsigned char*) from + n - (n % SWAB_STEP);
+	to = (unsigned char*) to + n - (n % SWAB_STEP);
+	n = (n % SWAB_STEP);
+#endif
+	swab(from, to, n);
+};

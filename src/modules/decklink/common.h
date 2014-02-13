@@ -38,5 +38,6 @@
 char* getCString( DLString aDLString );
 void freeCString( char* aCString );
 void freeDLString( DLString aDLString );
+void swab2( const void *from, void *to, int n );
 
 #endif // DECKLINK_COMMON_H

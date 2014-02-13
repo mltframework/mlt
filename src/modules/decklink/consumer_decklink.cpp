@@ -416,9 +416,9 @@ public:
 					// Normal non-keyer playout - needs byte swapping
 					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
 						// convert lower field first to top field first
-						swab( (char*) image, (char*) buffer + stride, stride * ( height - 1 ) );
+						swab2( (char*) image, (char*) buffer + stride, stride * ( height - 1 ) );
 					else
-						swab( (char*) image, (char*) buffer, stride * height );
+						swab2( (char*) image, (char*) buffer, stride * height );
 				}
 				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "test_image" ) )
 				{
