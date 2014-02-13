@@ -526,7 +526,7 @@ public:
 			{
 				mlt_frame_close( frame );
 				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "dropped", ++m_dropped );
-				mlt_log_warning( getProducer(), "frame dropped %d\n", m_dropped );
+				mlt_log_warning( getProducer(), "buffer overrun, frame dropped %d\n", m_dropped );
 			}
 			pthread_mutex_unlock( &m_mutex );
 		}
