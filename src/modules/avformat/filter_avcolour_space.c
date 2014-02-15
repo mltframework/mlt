@@ -166,7 +166,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		mlt_profile profile = mlt_service_profile(
 			MLT_PRODUCER_SERVICE( mlt_frame_get_original_producer( frame ) ) );
 		int colorspace = mlt_properties_get_int( properties, "colorspace" );
-		int force_full_luma = -1;
+		int force_full_luma = 0;
 		
 		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s @ %dx%d space %d->%d\n",
 			mlt_image_format_name( *format ), mlt_image_format_name( output_format ),
