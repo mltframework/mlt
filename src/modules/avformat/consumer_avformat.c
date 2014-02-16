@@ -1474,10 +1474,15 @@ static void *consumer_thread( void *arg )
 		// Write the stream header.
 		if ( mlt_properties_get_int( properties, "running" ) )
 #if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(2<<8)+0)
-			avformat_write_header( oc, NULL );
+			if ( avformat_write_header( oc, NULL ) < 0 )
 #else
-			av_write_header( oc );
+			if ( av_write_header( oc ) < 0 )
 #endif
+			{
+				mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not write header '%s'\n", filename );
+				mlt_events_fire( properties, "consumer-fatal-error", NULL );
+				goto on_fatal_error;
+			}
 	}
 #if LIBAVFORMAT_VERSION_INT < ((53<<16)+(2<<8)+0)
 	else
