@@ -124,7 +124,7 @@ void swab2( const void *from, void *to, int n )
 
 		:
 		: [from]"r"(from), [to]"r"(to), [cnt]"r"(n / SWAB_STEP)
-		: "xmm0", "xmm1"
+		//: "xmm0", "xmm1"
 	);
 
 	from = (unsigned char*) from + n - (n % SWAB_STEP);
