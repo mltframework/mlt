@@ -4,7 +4,7 @@ LDFLAGS += -L../../framework -lmlt
 
 include ../../../config.mak
 
-TARGET = ../libmltdgraft$(LIBSUF)
+TARGET = ../libmltplusgpl$(LIBSUF)
 
 OBJS = factory.o \
 	   filter_telecide.o
