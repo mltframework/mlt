@@ -7,10 +7,12 @@ include ../../../config.mak
 TARGET = ../libmltplusgpl$(LIBSUF)
 
 OBJS = factory.o \
-	   filter_telecide.o \
 	   filter_burn.o \
 	   image.o \
-	   utils.o
+	   utils.o \
+	   filter_rotoscoping.o \
+	   cJSON.o \
+	   filter_telecide.o
 
 SRCS := $(OBJS:.o=.c)
 
@@ -30,6 +32,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d $(DESTDIR)$(mltdatadir)/plusgpl
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/plusgpl"
 
 ifneq ($(wildcard .depend),)
 include .depend
