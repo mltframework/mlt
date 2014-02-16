@@ -1,13 +1,16 @@
 CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS += -L../../framework -lmlt -lm
 
 include ../../../config.mak
 
 TARGET = ../libmltplusgpl$(LIBSUF)
 
 OBJS = factory.o \
-	   filter_telecide.o
+	   filter_telecide.o \
+	   filter_burn.o \
+	   image.o \
+	   utils.o
 
 SRCS := $(OBJS:.o=.c)
 
