@@ -93,7 +93,7 @@ public:
 		m_decklinkInput = NULL;
 	}
 
-	~DeckLinkProducer()
+	virtual ~DeckLinkProducer()
 	{
 		if ( m_queue )
 		{

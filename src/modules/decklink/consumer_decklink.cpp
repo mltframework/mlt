@@ -100,7 +100,7 @@ public:
 		m_decklinkFrame = NULL;
 	}
 
-	~DeckLinkConsumer()
+	virtual ~DeckLinkConsumer()
 	{
 		SAFE_RELEASE( m_displayMode );
 		SAFE_RELEASE( m_deckLinkKeyer );
