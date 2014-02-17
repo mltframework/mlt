@@ -709,6 +709,20 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 				case AV_CODEC_ID_PCM_U16BE:
 					audio_input_frame_size >>= 1;
 					break;
+#if LIBAVCODEC_VERSION_INT >= ((54<<16)+(59<<8)+0)
+				case AV_CODEC_ID_PCM_S24LE:
+				case AV_CODEC_ID_PCM_S24BE:
+				case AV_CODEC_ID_PCM_U24LE:
+				case AV_CODEC_ID_PCM_U24BE:
+					audio_input_frame_size /= 3;
+					break;
+				case AV_CODEC_ID_PCM_S32LE:
+				case AV_CODEC_ID_PCM_S32BE:
+				case AV_CODEC_ID_PCM_U32LE:
+				case AV_CODEC_ID_PCM_U32BE:
+					audio_input_frame_size >>= 2;
+					break;
+#endif
 				default:
 					break;
 			}
