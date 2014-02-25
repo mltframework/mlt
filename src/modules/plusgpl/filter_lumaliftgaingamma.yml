@@ -9,7 +9,7 @@ license: GPL
 language: en
 tags:
   - Video
-description:
+description: >
   Filter can be used to apply lift, gain and gamma correction to
   luma values of image.
 
@@ -24,7 +24,6 @@ parameters:
       Adds a value computed using parameter value 
       to color channel values.
 
-parameters:
   - identifier: gain
     title: Gain
     type: double
@@ -33,9 +32,8 @@ parameters:
     default: 0
     description: >
       Multiplies color channel values by value
-      computed using paramter value.
+      computed using parameter value.
 
-parameters:
   - identifier: gamma
     title: Gamma
     type: double
