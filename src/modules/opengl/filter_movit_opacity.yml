@@ -15,6 +15,7 @@ notes: >
   the other video. If the video this is applied to already has an alpha channel,
   then this preserves that by multiplying the opacity level with the alpha channel.
   This filter is especially handy when used in conjunction with movit.overlay.
+  You can also use this to fade a clip from and to black.
 
 parameters:
   - identifier: opacity
@@ -23,4 +24,17 @@ parameters:
     minimum: 0
     maximum: 1
     default: 1
+    mutable: yes
+
+  - identifier: alpha
+    title: Alpha
+    description: >
+      When this is less than zero, the alpha component of the Movit mutliply
+      effect follows opacity. Otherwise, you can set this to another value to
+      control the alpha component independently. If you set this to 1, then
+      the opacity parameter can be used to fade to and from black.
+    type: float
+    minimum: -1
+    maximum: 1
+    default: -1
     mutable: yes

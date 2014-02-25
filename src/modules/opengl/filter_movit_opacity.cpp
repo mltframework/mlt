@@ -34,10 +34,11 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	double opacity = mlt_properties_anim_get_double( properties, "opacity", position, length );
+	double alpha = mlt_properties_anim_get_double( properties, "alpha", position, length );
 	mlt_properties_set_double( properties, "movit.parms.vec4.factor[0]", opacity );
 	mlt_properties_set_double( properties, "movit.parms.vec4.factor[1]", opacity );
 	mlt_properties_set_double( properties, "movit.parms.vec4.factor[2]", opacity );
-	mlt_properties_set_double( properties, "movit.parms.vec4.factor[3]", opacity );
+	mlt_properties_set_double( properties, "movit.parms.vec4.factor[3]", alpha >= 0 ? alpha : opacity );
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
@@ -64,6 +65,7 @@ mlt_filter filter_movit_opacity_init( mlt_profile profile, mlt_service_type type
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		glsl->add_ref( properties );
 		mlt_properties_set( properties, "opacity", arg? arg : "1" );
+		mlt_properties_set_double( properties, "alpha", -1.0 );
 		filter->process = process;
 	}
 	return filter;
