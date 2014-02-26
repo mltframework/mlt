@@ -144,7 +144,7 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 	{
 		property_list *list = self->local;
 
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__DARWIN__)
 		if ( list->locale )
 			freelocale( list->locale );
 		list->locale = newlocale( LC_NUMERIC_MASK, locale, NULL );
@@ -174,7 +174,7 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 	{
 #if defined(__DARWIN__)
 		result = querylocale( LC_NUMERIC, list->locale );
-#elif defined(__linux__)
+#elif defined(__GLIBC__)
 		result = list->locale->__names[ LC_NUMERIC ];
 #else
 		// TODO: not yet sure what to do on other platforms
@@ -1394,7 +1394,7 @@ void mlt_properties_close( mlt_properties self )
 				free( list->name[ index ] );
 			}
 
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__DARWIN__)
 			// Cleanup locale
 			if ( list->locale )
 				freelocale( list->locale );
