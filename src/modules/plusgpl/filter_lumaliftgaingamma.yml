@@ -1,0 +1,45 @@
+schema_version: 0.1
+type: filter
+identifier: lumaliftgaingamma
+title: LumaLiftGainGamma
+version: 1
+copyright: Janne Liljeblad
+creator: Janne Liljeblad
+license: GPL
+language: en
+tags:
+  - Video
+description: >
+  Filter can be used to apply lift, gain and gamma correction to
+  luma values of image.
+
+parameters:
+  - identifier: lift
+    title: Lift
+    type: double
+    minimum: -0.5
+    maximum: 0.5
+    default: 0
+    description: >
+      Adds a value computed using parameter value 
+      to color channel values.
+
+  - identifier: gain
+    title: Gain
+    type: double
+    minimum: -0.5
+    maximum: 0.5
+    default: 0
+    description: >
+      Multiplies color channel values by value
+      computed using parameter value.
+
+  - identifier: gamma
+    title: Gamma
+    type: double
+    minimum: -1.0
+    maximum: 1.0
+    default: 0
+    description: >
+      Applies a gamma correction to all 
+      color channel values.

@@ -22,6 +22,7 @@
 #include <limits.h>
 
 extern mlt_filter filter_burn_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_lumaliftgaingamma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_telecide_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
@@ -36,10 +37,12 @@ MLT_REPOSITORY
 {
 	MLT_REGISTER( filter_type, "BurningTV", filter_burn_init );
 	MLT_REGISTER( filter_type, "burningtv", filter_burn_init );
+	MLT_REGISTER( filter_type, "lumaliftgaingamma", filter_lumaliftgaingamma_init );
 	MLT_REGISTER( filter_type, "rotoscoping", filter_rotoscoping_init );
 	MLT_REGISTER( filter_type, "telecide", filter_telecide_init );
 
 	MLT_REGISTER_METADATA( filter_type, "BurningTV", metadata, "filter_burningtv.yml" );
 	MLT_REGISTER_METADATA( filter_type, "burningtv", metadata, "filter_burningtv.yml" );
+	MLT_REGISTER_METADATA( filter_type, "lumaliftgaingamma", metadata, "filter_lumaliftgaingamma.yml" );
 	MLT_REGISTER_METADATA( filter_type, "rotoscoping", metadata, "filter_rotoscoping.yml" );
 }

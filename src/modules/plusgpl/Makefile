@@ -8,6 +8,7 @@ TARGET = ../libmltplusgpl$(LIBSUF)
 
 OBJS = factory.o \
 	   filter_burn.o \
+	   filter_lumaliftgaingamma.o \
 	   image.o \
 	   utils.o \
 	   filter_rotoscoping.o \
