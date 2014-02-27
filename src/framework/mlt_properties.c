@@ -148,8 +148,11 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 		if ( list->locale )
 			freelocale( list->locale );
 		list->locale = newlocale( LC_NUMERIC_MASK, locale, NULL );
+#else
+		if ( list->locale )
+			free( list->locale );
+		list->locale = strdup( locale );
 #endif
-		error = list->locale == NULL;
 	}
 	else
 		error = 1;
@@ -173,13 +176,13 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 	if ( list->locale )
 	{
 #if defined(__DARWIN__)
-		result = querylocale( LC_NUMERIC, list->locale );
+        result = querylocale( LC_NUMERIC, list->locale );
 #elif defined(__GLIBC__)
-		result = list->locale->__names[ LC_NUMERIC ];
+        result = list->locale->__names[ LC_NUMERIC ];
 #else
-		// TODO: not yet sure what to do on other platforms
+		result = list->locale;
 #endif
-	}
+    }
 	return result;
 }
 
@@ -1398,6 +1401,9 @@ void mlt_properties_close( mlt_properties self )
 			// Cleanup locale
 			if ( list->locale )
 				freelocale( list->locale );
+#else
+			if ( list->locale )
+				free( list->locale );
 #endif
 
 			// Clear up the list

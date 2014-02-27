@@ -265,13 +265,14 @@ int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destr
 /** Parse a SMIL clock value.
  *
  * \private \memberof mlt_property_s
+ * \param self a property
  * \param s the string to parse
  * \param fps frames per second
  * \param locale the locale to use for parsing a real number value
  * \return position in frames
  */
 
-static int time_clock_to_frames( const char *s, double fps, locale_t locale )
+static int time_clock_to_frames( mlt_property self, const char *s, double fps, locale_t locale )
 {
 	char *pos, *copy = strdup( s );
 	int hours = 0, minutes = 0;
@@ -279,6 +280,22 @@ static int time_clock_to_frames( const char *s, double fps, locale_t locale )
 
 	s = copy;
 	pos = strrchr( s, ':' );
+
+#if !defined(__GLIBC__) && !defined(__DARWIN__)
+	char *orig_localename = NULL;
+	if ( locale )
+	{
+		// Protect damaging the global locale from a temporary locale on another thread.
+		pthread_mutex_lock( &self->mutex );
+		
+		// Get the current locale
+		orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
+		
+		// Set the new locale
+		setlocale( LC_NUMERIC, locale );
+	}
+#endif
+
 	if ( pos ) {
 #if defined(__GLIBC__) || defined(__DARWIN__)
 		if ( locale )
@@ -305,6 +322,16 @@ static int time_clock_to_frames( const char *s, double fps, locale_t locale )
 #endif
 			seconds = strtod( s, NULL );
 	}
+
+#if !defined(__GLIBC__) && !defined(__DARWIN__)
+	if ( locale ) {
+		// Restore the current locale
+		setlocale( LC_NUMERIC, orig_localename );
+		free( orig_localename );
+		pthread_mutex_unlock( &self->mutex );
+	}
+#endif
+
 	free( copy );
 
 	return lrint( fps * ( (hours * 3600) + (minutes * 60) + seconds ) );
@@ -313,12 +340,13 @@ static int time_clock_to_frames( const char *s, double fps, locale_t locale )
 /** Parse a SMPTE timecode string.
  *
  * \private \memberof mlt_property_s
+ * \param self a property
  * \param s the string to parse
  * \param fps frames per second
  * \return position in frames
  */
 
-static int time_code_to_frames( const char *s, double fps )
+static int time_code_to_frames( mlt_property self, const char *s, double fps )
 {
 	char *pos, *copy = strdup( s );
 	int hours = 0, minutes = 0, seconds = 0, frames;
@@ -374,13 +402,15 @@ static int time_code_to_frames( const char *s, double fps )
  * contains a period or comma character, the string is parsed as a clock value:
  * HH:MM:SS. Otherwise, the time value is parsed as a SMPTE timecode: HH:MM:SS:FF.
  * \private \memberof mlt_property_s
- * \param value a string to convert
+ * \param self a property
  * \param fps frames per second, used when converting from time value
  * \param locale the locale to use when converting from time clock value
  * \return the resultant integer
  */
-static int mlt_property_atoi( const char *value, double fps, locale_t locale )
+static int mlt_property_atoi( mlt_property self, double fps, locale_t locale )
 {
+	const char *value = self->prop_string;
+	
 	// Parse a hex color value as #RRGGBB or #AARRGGBB.
 	if ( value[0] == '#' )
 	{
@@ -397,9 +427,9 @@ static int mlt_property_atoi( const char *value, double fps, locale_t locale )
 	else if ( fps > 0 && strchr( value, ':' ) )
 	{
 		if ( strchr( value, '.' ) || strchr( value, ',' ) )
-			return time_clock_to_frames( value, fps, locale );
+			return time_clock_to_frames( self, value, fps, locale );
 		else
-			return time_code_to_frames( value, fps );
+			return time_code_to_frames( self, value, fps );
 	}
 	else
 	{
@@ -429,7 +459,7 @@ int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
 	else if ( self->types & mlt_prop_rect && self->data )
 		return ( int ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return mlt_property_atoi( self->prop_string, fps, locale );
+		return mlt_property_atoi( self, fps, locale );
 	return 0;
 }
 
@@ -441,32 +471,58 @@ int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
  * If the numeric string ends with '%' then the value is divided by 100 to convert
  * it into a ratio.
  * \private \memberof mlt_property_s
- * \param value the string to convert
+ * \param self a property
  * \param fps frames per second, used when converting from time value
  * \param locale the locale to use when converting from time clock value
  * \return the resultant real number
  */
-static double mlt_property_atof( const char *value, double fps, locale_t locale )
+static double mlt_property_atof( mlt_property self, double fps, locale_t locale )
 {
-	if ( fps > 0 && strchr( value, ':' ) )
+	const char *value = self->prop_string;
+
+    if ( fps > 0 && strchr( value, ':' ) )
 	{
 		if ( strchr( value, '.' ) || strchr( value, ',' ) )
-			return time_clock_to_frames( value, fps, locale );
+			return time_clock_to_frames( self, value, fps, locale );
 		else
-			return time_code_to_frames( value, fps );
+			return time_code_to_frames( self, value, fps );
 	}
 	else
 	{
 		char *end = NULL;
 		double result;
+
 #if defined(__GLIBC__) || defined(__DARWIN__)
 		if ( locale )
 			result = strtod_l( value, &end, locale );
-        else
+		else
+#else
+		char *orig_localename = NULL;
+		if ( locale ) {
+			// Protect damaging the global locale from a temporary locale on another thread.
+			pthread_mutex_lock( &self->mutex );
+			
+			// Get the current locale
+			orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
+			
+			// Set the new locale
+			setlocale( LC_NUMERIC, locale );
+		}
 #endif
+
 			result = strtod( value, &end );
 		if ( end && end[0] == '%' )
 			result /= 100.0;
+
+#if !defined(__GLIBC__) && !defined(__DARWIN__)
+		if ( locale ) {
+			// Restore the current locale
+			setlocale( LC_NUMERIC, orig_localename );
+			free( orig_localename );
+			pthread_mutex_unlock( &self->mutex );
+		}
+#endif
+
 		return result;
 	}
 }
@@ -493,7 +549,7 @@ double mlt_property_get_double( mlt_property self, double fps, locale_t locale )
 	else if ( self->types & mlt_prop_rect && self->data )
 		return ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return mlt_property_atof( self->prop_string, fps, locale );
+		return mlt_property_atof( self, fps, locale );
 	return 0;
 }
 
@@ -520,7 +576,7 @@ mlt_position mlt_property_get_position( mlt_property self, double fps, locale_t 
 	else if ( self->types & mlt_prop_rect && self->data )
 		return ( mlt_position ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return ( mlt_position )mlt_property_atoi( self->prop_string, fps, locale );
+		return ( mlt_position )mlt_property_atoi( self, fps, locale );
 	return 0;
 }
 
@@ -647,8 +703,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 #elif defined(__GLIBC__)
 		const char *localename = locale->__names[ LC_NUMERIC ];
 #else
-		// TODO: not yet sure what to do on other platforms
-		const char *localename = NULL;
+		const char *localename = locale;
 #endif
 		// Protect damaging the global locale from a temporary locale on another thread.
 		pthread_mutex_lock( &self->mutex );
@@ -857,7 +912,7 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 char *mlt_property_get_time( mlt_property self, mlt_time_format format, double fps, locale_t locale )
 {
 	char *orig_localename = NULL;
-	const char *localename = NULL;
+	const char *localename = "C";
 
 	// Optimization for mlt_time_frames
 	if ( format == mlt_time_frames )
@@ -970,12 +1025,36 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 	{
 		double temp;
 		char *p = NULL;
+		
 #if defined(__GLIBC__) || defined(__DARWIN__)
 		if ( locale )
 			temp = strtod_l( self->prop_string, &p, locale );
 		else
+#else
+		char *orig_localename = NULL;
+		if ( locale ) {
+			// Protect damaging the global locale from a temporary locale on another thread.
+			pthread_mutex_lock( &self->mutex );
+			
+			// Get the current locale
+			orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
+			
+			// Set the new locale
+			setlocale( LC_NUMERIC, locale );
+		}
 #endif
+
 		temp = strtod( self->prop_string, &p );
+
+#if !defined(__GLIBC__) && !defined(__DARWIN__)
+		if ( locale ) {
+			// Restore the current locale
+			setlocale( LC_NUMERIC, orig_localename );
+			free( orig_localename );
+			pthread_mutex_unlock( &self->mutex );
+		}
+#endif
+
 		result = ( p != self->prop_string );
 	}
 	return result;
@@ -1076,7 +1155,7 @@ int mlt_property_interpolate( mlt_property self, mlt_property p[],
 		}
 		else
 		{
-			double value;
+			double value = 0.0;
 			if ( interp == mlt_keyframe_linear )
 			{
 				double points[2];
@@ -1440,10 +1519,24 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		rect.x = ( double )self->prop_int64;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 	{
-		//return mlt_property_atof( self->prop_string, fps, locale );
 		char *value = self->prop_string;
 		char *p = NULL;
 		int count = 0;
+
+#if !defined(__GLIBC__) && !defined(__DARWIN__)
+		char *orig_localename = NULL;
+		if ( locale ) {
+			// Protect damaging the global locale from a temporary locale on another thread.
+			pthread_mutex_lock( &self->mutex );
+			
+			// Get the current locale
+			orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
+			
+			// Set the new locale
+			setlocale( LC_NUMERIC, locale );
+		}
+#endif
+
 		while ( *value )
 		{
 			double temp;
@@ -1481,7 +1574,16 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 			value = p;
 			count ++;
 		}
-	}
+
+#if !defined(__GLIBC__) && !defined(__DARWIN__)
+		if ( locale ) {
+			// Restore the current locale
+			setlocale( LC_NUMERIC, orig_localename );
+			free( orig_localename );
+			pthread_mutex_unlock( &self->mutex );
+		}
+#endif
+    }
 	return rect;
 }
 

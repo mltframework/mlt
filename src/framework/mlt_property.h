@@ -35,7 +35,7 @@
 #if defined(__GLIBC__) || defined(__DARWIN__) || (__FreeBSD_version >= 900506)
 #include <xlocale.h>
 #else
-typedef void* locale_t;
+typedef char* locale_t;
 #endif
 
 extern mlt_property mlt_property_init( );
