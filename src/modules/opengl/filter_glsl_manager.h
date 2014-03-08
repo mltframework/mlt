@@ -20,7 +20,11 @@
 #ifndef GLSL_MANAGER_H
 #define GLSL_MANAGER_H
 
-#include <glew.h>
+// Include a random Movit header file to get in GL.h, without including it
+// ourselves (which might interfere with whatever OpenGL extension library
+// Movit has chosen to use).
+#include <movit/resource_pool.h>
+
 #include <mlt++/MltFilter.h>
 #include <mlt++/MltDeque.h>
 #include <map>
