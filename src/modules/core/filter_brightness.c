@@ -27,7 +27,6 @@
 #include <string.h>
 
 #define CLAMP( x, min, max ) (x) < (min) ? (min) : (x) > (max) ? (max) : (x)
-#define UNSET "unset"
 
 /** Do it :-).
 */
@@ -50,7 +49,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Use animated "level" property only if it has been set since init
 		char* level_property = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "level" );
-		if ( strcmp( level_property, UNSET ) != 0 )
+		if ( level_property != NULL )
 		{
 			level = mlt_properties_anim_get_double( properties, "level", position, length );
 		}
@@ -110,7 +109,7 @@ mlt_filter filter_brightness_init( mlt_profile profile, mlt_service_type type, c
 	{
 		filter->process = filter_process;
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "start", arg == NULL ? "1" : arg );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "level", UNSET );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "level", NULL );
 	}
 	return filter;
 }
