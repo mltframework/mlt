@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter
 identifier: brightness
 title: Brightness
-version: 1
+version: 2
 copyright: Ushodaya Enterprises Limited
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -29,3 +29,9 @@ parameters:
     minimum: 0.0
     maximum: 15.0
     default: 1.0
+  - identifier: level
+    title: Level
+    type: double
+    minimum: 0.0
+    maximum: 15.0
+    default: unset
