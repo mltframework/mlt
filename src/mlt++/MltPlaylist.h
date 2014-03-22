@@ -86,6 +86,8 @@ namespace Mlt
 			int split_at( int position, bool left = true );
 			int join( int clip, int count = 1, int merge = 1 );
 			int mix( int clip, int length, Transition *transition = NULL );
+			int mix_in( int clip, int length );
+			int mix_out( int clip, int length );
 			int mix_add( int clip, Transition *transition );
 			int repeat( int clip, int count );
 			Producer *get_clip( int clip );

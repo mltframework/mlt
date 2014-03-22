@@ -1151,6 +1151,10 @@ int mlt_playlist_join( mlt_playlist self, int clip, int count, int merge )
 
 /** Mix consecutive clips for a specified length and apply transition if specified.
  *
+ * This version of the mix function does not utilize any frames beyond the out of
+ * clip A or before the in point of clip B. It takes the frames needed for the length
+ * of the transition by adjusting the duration of both clips - the out point for clip A
+ * and the in point for clip B.
  * \public \memberof mlt_playlist_s
  * \param self a playlist
  * \param clip the index of the playlist entry
@@ -1238,6 +1242,210 @@ int mlt_playlist_mix( mlt_playlist self, int clip, int length, mlt_transition tr
 			mlt_playlist_remove( self, clip );
 		}
 		else if ( clip_a->frame_out - clip_a->frame_in > length )
+		{
+			mlt_playlist_resize_clip( self, clip, clip_a->frame_in, clip_a->frame_out - length );
+			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( clip_a->producer ), "mix_out", tractor, 0, NULL, NULL );
+			mlt_properties_set_data( MLT_TRACTOR_PROPERTIES( tractor ), "mix_in", clip_a->producer, 0, NULL, NULL );
+		}
+		else
+		{
+			mlt_producer_clear( clip_a->producer );
+			mlt_playlist_remove( self, clip );
+		}
+
+		// Unblock and force a fire off of change events to listeners
+		mlt_events_unblock( MLT_PLAYLIST_PROPERTIES( self ), self );
+		mlt_playlist_virtual_refresh( self );
+		mlt_tractor_close( tractor );
+	}
+	return error;
+}
+
+/** Mix consecutive clips for a specified length.
+ *
+ * This version of the mix function maintains the out point of the clip A by occupying the
+ * beginning of clip B before its current in point. Therefore, it ends up adjusting the in
+ * point and duration of clip B without affecting the duration of clip A.
+ * Also, therefore, there must be enough frames after the out point of clip A.
+ * \public \memberof mlt_playlist_s
+ * \param self a playlist
+ * \param clip the index of the playlist entry
+ * \param length the number of frames over which to create the mix
+ * \return true if there was an error
+ */
+
+int mlt_playlist_mix_in( mlt_playlist self, int clip, int length )
+{
+	int error = ( clip < 0 || clip + 1 >= self->count );
+	if ( error == 0 )
+	{
+		playlist_entry *clip_a = self->list[ clip ];
+		playlist_entry *clip_b = self->list[ clip + 1 ];
+		mlt_producer track_a = NULL;
+		mlt_producer track_b = NULL;
+		mlt_tractor tractor = mlt_tractor_new( );
+
+		mlt_service_set_profile( MLT_TRACTOR_SERVICE( tractor ),
+			mlt_service_profile( MLT_PLAYLIST_SERVICE( self ) ) );
+		mlt_properties_set_lcnumeric( MLT_TRACTOR_PROPERTIES( tractor ),
+			mlt_properties_get_lcnumeric( MLT_PLAYLIST_PROPERTIES( self ) ) );
+		mlt_events_block( MLT_PLAYLIST_PROPERTIES( self ), self );
+
+		// Check length is valid for both clips and resize if necessary.
+		int max_size = ( clip_a->frame_out + 1 ) > clip_b->frame_count ? ( clip_a->frame_out +  1 ) : clip_b->frame_count;
+		length = length > max_size ? max_size : length;
+
+		// Create the a and b tracks/cuts if necessary - note that no cuts are required if the length matches
+		if ( length != clip_a->frame_out + 1 )
+			track_a = mlt_producer_cut( clip_a->producer, clip_a->frame_out + 1, clip_a->frame_out + length );
+		else
+			track_a = clip_a->producer;
+
+		if ( length != clip_b->frame_count )
+			track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in, clip_b->frame_in + length - 1 );
+		else
+			track_b = clip_b->producer;
+
+		// Set the tracks on the tractor
+		mlt_tractor_set_track( tractor, track_a, 0 );
+		mlt_tractor_set_track( tractor, track_b, 1 );
+
+		// Insert the mix object into the playlist
+		mlt_playlist_insert( self, MLT_TRACTOR_PRODUCER( tractor ), clip + 1, -1, -1 );
+		mlt_properties_set_data( MLT_TRACTOR_PROPERTIES( tractor ), "mlt_mix", tractor, 0, NULL, NULL );
+
+		// Close our references to the tracks if we created new cuts above (the tracks can still be used here)
+		if ( track_a != clip_a->producer )
+			mlt_producer_close( track_a );
+		if ( track_b != clip_b->producer )
+			mlt_producer_close( track_b );
+
+		// Check if we have anything left on the right hand clip
+		if ( track_b == clip_b->producer )
+		{
+			clip_b->preservation_hack = 1;
+			mlt_playlist_remove( self, clip + 2 );
+		}
+		else if ( clip_b->frame_out - clip_b->frame_in >= length )
+		{
+			mlt_playlist_resize_clip( self, clip + 2, clip_b->frame_in + length, clip_b->frame_out );
+			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( clip_b->producer ), "mix_in", tractor, 0, NULL, NULL );
+			mlt_properties_set_data( MLT_TRACTOR_PROPERTIES( tractor ), "mix_out", clip_b->producer, 0, NULL, NULL );
+		}
+		else
+		{
+			mlt_producer_clear( clip_b->producer );
+			mlt_playlist_remove( self, clip + 2 );
+		}
+
+		// Check if we have anything left on the left hand clip
+		if ( track_a == clip_a->producer )
+		{
+			clip_a->preservation_hack = 1;
+			mlt_playlist_remove( self, clip );
+		}
+		else if ( clip_a->frame_out - clip_a->frame_in > 0 )
+		{
+			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( clip_a->producer ), "mix_out", tractor, 0, NULL, NULL );
+			mlt_properties_set_data( MLT_TRACTOR_PROPERTIES( tractor ), "mix_in", clip_a->producer, 0, NULL, NULL );
+		}
+		else
+		{
+			mlt_producer_clear( clip_a->producer );
+			mlt_playlist_remove( self, clip );
+		}
+
+		// Unblock and force a fire off of change events to listeners
+		mlt_events_unblock( MLT_PLAYLIST_PROPERTIES( self ), self );
+		mlt_playlist_virtual_refresh( self );
+		mlt_tractor_close( tractor );
+	}
+	return error;
+}
+
+/** Mix consecutive clips for a specified length.
+ *
+ * This version of the mix function maintains the in point of the B clip by occupying the
+ * end of clip A before its current out point. Therefore, it ends up adjusting the out
+ * point and duration of clip A without affecting the duration or starting frame of clip B.
+ * Also, therefore, there must be enough frames before the in point of clip B.
+ * \public \memberof mlt_playlist_s
+ * \param self a playlist
+ * \param clip the index of the playlist entry
+ * \param length the number of frames over which to create the mix
+ * \return true if there was an error
+ */
+
+int mlt_playlist_mix_out( mlt_playlist self, int clip, int length )
+{
+	int error = ( clip < 0 || clip + 1 >= self->count );
+	if ( error == 0 )
+	{
+		playlist_entry *clip_a = self->list[ clip ];
+		playlist_entry *clip_b = self->list[ clip + 1 ];
+		mlt_producer track_a = NULL;
+		mlt_producer track_b = NULL;
+		mlt_tractor tractor = mlt_tractor_new( );
+
+		mlt_service_set_profile( MLT_TRACTOR_SERVICE( tractor ),
+			mlt_service_profile( MLT_PLAYLIST_SERVICE( self ) ) );
+		mlt_properties_set_lcnumeric( MLT_TRACTOR_PROPERTIES( tractor ),
+			mlt_properties_get_lcnumeric( MLT_PLAYLIST_PROPERTIES( self ) ) );
+		mlt_events_block( MLT_PLAYLIST_PROPERTIES( self ), self );
+
+		// Check length is valid for both clips and resize if necessary.
+		int max_size = clip_a->frame_count > clip_b->frame_in ? clip_a->frame_count : clip_b->frame_in;
+		length = length > max_size ? max_size : length;
+
+		// Create the a and b tracks/cuts if necessary - note that no cuts are required if the length matches
+		if ( length != clip_a->frame_count )
+			track_a = mlt_producer_cut( clip_a->producer, clip_a->frame_out - length + 1, clip_a->frame_out );
+		else
+			track_a = clip_a->producer;
+
+		if ( length != clip_b->frame_in )
+			track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in - length + 1, clip_b->frame_in );
+		else
+			track_b = clip_b->producer;
+
+		// Set the tracks on the tractor
+		mlt_tractor_set_track( tractor, track_a, 0 );
+		mlt_tractor_set_track( tractor, track_b, 1 );
+
+		// Insert the mix object into the playlist
+		mlt_playlist_insert( self, MLT_TRACTOR_PRODUCER( tractor ), clip + 1, -1, -1 );
+		mlt_properties_set_data( MLT_TRACTOR_PROPERTIES( tractor ), "mlt_mix", tractor, 0, NULL, NULL );
+
+		// Close our references to the tracks if we created new cuts above (the tracks can still be used here)
+		if ( track_a != clip_a->producer )
+			mlt_producer_close( track_a );
+		if ( track_b != clip_b->producer )
+			mlt_producer_close( track_b );
+
+		// Check if we have anything left on the right hand clip
+		if ( track_b == clip_b->producer )
+		{
+			clip_b->preservation_hack = 1;
+			mlt_playlist_remove( self, clip + 2 );
+		}
+		else if ( clip_b->frame_out - clip_b->frame_in > 0 )
+		{
+			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( clip_b->producer ), "mix_in", tractor, 0, NULL, NULL );
+			mlt_properties_set_data( MLT_TRACTOR_PROPERTIES( tractor ), "mix_out", clip_b->producer, 0, NULL, NULL );
+		}
+		else
+		{
+			mlt_producer_clear( clip_b->producer );
+			mlt_playlist_remove( self, clip + 2 );
+		}
+
+		// Check if we have anything left on the left hand clip
+		if ( track_a == clip_a->producer )
+		{
+			clip_a->preservation_hack = 1;
+			mlt_playlist_remove( self, clip );
+		}
+		else if ( clip_a->frame_out - clip_a->frame_in >= length )
 		{
 			mlt_playlist_resize_clip( self, clip, clip_a->frame_in, clip_a->frame_out - length );
 			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( clip_a->producer ), "mix_out", tractor, 0, NULL, NULL );

@@ -108,6 +108,8 @@ extern int mlt_playlist_split( mlt_playlist self, int clip, mlt_position positio
 extern int mlt_playlist_split_at( mlt_playlist self, mlt_position position, int left );
 extern int mlt_playlist_join( mlt_playlist self, int clip, int count, int merge );
 extern int mlt_playlist_mix( mlt_playlist self, int clip, int length, mlt_transition transition );
+extern int mlt_playlist_mix_in( mlt_playlist self, int clip, int length );
+extern int mlt_playlist_mix_out( mlt_playlist self, int clip, int length );
 extern int mlt_playlist_mix_add( mlt_playlist self, int clip, mlt_transition transition );
 extern mlt_producer mlt_playlist_get_clip( mlt_playlist self, int clip );
 extern mlt_producer mlt_playlist_get_clip_at( mlt_playlist self, mlt_position position );

@@ -226,6 +226,16 @@ int Playlist::mix( int clip, int length, Transition *transition )
 	return mlt_playlist_mix( get_playlist( ), clip, length, transition == NULL ? NULL : transition->get_transition( ) );
 }
 
+int Playlist::mix_in(int clip, int length)
+{
+	return mlt_playlist_mix_in( get_playlist( ), clip, length );
+}
+
+int Playlist::mix_out(int clip, int length)
+{
+	return mlt_playlist_mix_out( get_playlist( ), clip, length );
+}
+
 int Playlist::mix_add( int clip, Transition *transition )
 {
 	return mlt_playlist_mix_add( get_playlist( ), clip, transition == NULL ? NULL : transition->get_transition( ) );
