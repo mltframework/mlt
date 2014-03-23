@@ -5,6 +5,12 @@ all:	luma create_lumas
 	@./create_lumas 
 
 luma:	luma.c
+# When cross-compiling, use the host OS compiler to build the luma
+# binary because the files are generated at build time.
+# Strips the CROSS prefix from the C compiler variable.
+ifdef CROSS
+	$(subst $(CROSS),,$(CC)) -o $@ luma.c
+endif
 
 create_lumas:
 
