@@ -26,6 +26,7 @@ extern mlt_consumer consumer_blipflash_init( mlt_profile profile, mlt_service_ty
 extern mlt_filter filter_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_charcoal_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_lift_gamma_gain_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_loudness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_invert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_rgblut_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -48,6 +49,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "charcoal", filter_charcoal_init );
 	MLT_REGISTER( filter_type, "dynamictext", filter_dynamictext_init );
 	MLT_REGISTER( filter_type, "invert", filter_invert_init );
+	MLT_REGISTER( filter_type, "lift_gamma_gain", filter_lift_gamma_gain_init );
 	MLT_REGISTER( filter_type, "loudness", filter_loudness_init );
 	MLT_REGISTER( filter_type, "rgblut", filter_rgblut_init );
 	MLT_REGISTER( filter_type, "sepia", filter_sepia_init );
@@ -60,6 +62,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "charcoal", metadata, "filter_charcoal.yml" );
 	MLT_REGISTER_METADATA( filter_type, "dynamictext", metadata, "filter_dynamictext.yml" );
 	MLT_REGISTER_METADATA( filter_type, "invert", metadata, "filter_invert.yml" );
+	MLT_REGISTER_METADATA( filter_type, "lift_gamma_gain", metadata, "filter_lift_gamma_gain.yml" );
 	MLT_REGISTER_METADATA( filter_type, "loudness", metadata, "filter_loudness.yml" );
 	MLT_REGISTER_METADATA( filter_type, "rgblut", metadata, "filter_rgblut.yml" );
 	MLT_REGISTER_METADATA( filter_type, "sepia", metadata, "filter_sepia.yml" );
