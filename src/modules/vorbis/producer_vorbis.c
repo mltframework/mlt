@@ -124,7 +124,7 @@ static void producer_file_close( void *file )
 static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 {
 	// FILE pointer for file
-	FILE *input = fopen( file, "r" );
+	FILE *input = fopen( file, "rb" );
 
 	// Error code to return
 	int error = input == NULL;

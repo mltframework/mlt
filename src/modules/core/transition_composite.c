@@ -674,7 +674,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 			if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 			{
 				// Open PGM
-				FILE *f = fopen( resource, "r" );
+				FILE *f = fopen( resource, "rb" );
 				if ( f != NULL )
 				{
 					// Load from PGM

@@ -66,7 +66,7 @@ static int read_pgm( char *name, uint8_t **image, int *width, int *height, int *
 {
 	uint8_t *input = NULL;
 	int error = 0;
-	FILE *f = fopen( name, "r" );
+	FILE *f = fopen( name, "rb" );
 	char data[ 512 ];
 
 	// Initialise

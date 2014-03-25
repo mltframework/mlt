@@ -343,7 +343,7 @@ static void consumer_output( mlt_consumer this, uint8_t *dv_frame, int size, mlt
 		output = mlt_properties_get_data( properties, "output_file", NULL );
 		if ( output == NULL )
 		{
-			output = fopen( target, "w" );
+			output = fopen( target, "wb" );
 			if ( output != NULL )
 				mlt_properties_set_data( properties, "output_file", output, 0, ( mlt_destructor )fclose, 0 );
 		}

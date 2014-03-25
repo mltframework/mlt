@@ -367,7 +367,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 		{
 			// Open PGM
-			FILE *f = fopen( resource, "r" );
+			FILE *f = fopen( resource, "rb" );
 			if ( f != NULL )
 			{
 				// Load from PGM
