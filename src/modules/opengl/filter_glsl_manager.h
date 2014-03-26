@@ -117,6 +117,8 @@ public:
 	static void set_effect_input(mlt_service, mlt_frame, mlt_service);
 	static void get_effect_secondary_input(mlt_service, mlt_frame, mlt_service*, mlt_frame*);
 	static void set_effect_secondary_input(mlt_service, mlt_frame, mlt_service, mlt_frame);
+	static void get_effect_third_input(mlt_service, mlt_frame, mlt_service*, mlt_frame*);
+	static void set_effect_third_input(mlt_service, mlt_frame, mlt_service, mlt_frame);
 
 	int render_frame_texture(movit::EffectChain*, mlt_frame, int width, int height, uint8_t **image);
 	int render_frame_rgba(movit::EffectChain*, mlt_frame, int width, int height, uint8_t **image);

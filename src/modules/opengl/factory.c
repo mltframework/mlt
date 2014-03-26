@@ -40,6 +40,7 @@ extern mlt_filter filter_movit_resize_init( mlt_profile profile, mlt_service_typ
 extern mlt_filter filter_movit_saturation_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_movit_vignette_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_white_balance_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_transition transition_movit_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_movit_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_movit_overlay_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
@@ -71,6 +72,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "movit.sharpen", filter_deconvolution_sharpen_init );
 	MLT_REGISTER( filter_type, "movit.vignette", filter_movit_vignette_init );
 	MLT_REGISTER( filter_type, "movit.white_balance", filter_white_balance_init );
+	MLT_REGISTER( transition_type, "movit.luma_mix", transition_movit_luma_init );
 	MLT_REGISTER( transition_type, "movit.mix", transition_movit_mix_init );
 	MLT_REGISTER( transition_type, "movit.overlay", transition_movit_overlay_init );
 
@@ -85,6 +87,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "movit.sharpen", metadata, "filter_movit_deconvolution_sharpen.yml" );
 	MLT_REGISTER_METADATA( filter_type, "movit.vignette", metadata, "filter_movit_vignette.yml" );
 	MLT_REGISTER_METADATA( filter_type, "movit.white_balance", metadata, "filter_movit_white_balance.yml" );
+	MLT_REGISTER_METADATA( transition_type, "movit.luma_mix", metadata, "transition_movit_luma.yml" );
 	MLT_REGISTER_METADATA( transition_type, "movit.mix", metadata, "transition_movit_mix.yml" );
 	MLT_REGISTER_METADATA( transition_type, "movit.overlay", metadata, "transition_movit_overlay.yml" );
 }

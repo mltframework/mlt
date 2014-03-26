@@ -131,6 +131,13 @@ static void build_fingerprint( mlt_service service, mlt_frame frame, std::string
 		fingerprint->push_back( ')' );
 	}
 
+	GlslManager::get_effect_third_input( service, frame, &input_b, &frame_b );
+	if ( input_b ) {
+		fingerprint->push_back( '(' );
+		build_fingerprint( input_b, frame_b, fingerprint );
+		fingerprint->push_back( ')' );
+	}
+
 	fingerprint->push_back( '(' );
 	fingerprint->append( mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "_unique_id" ) );
 
@@ -164,12 +171,17 @@ static Effect* build_movit_chain( mlt_service service, mlt_frame frame, GlslChai
 	GlslManager::set_effect( service, frame, NULL );
 
 	mlt_service input_a = GlslManager::get_effect_input( service, frame );
-	mlt_service input_b;
-	mlt_frame frame_b;
+	mlt_service input_b, input_c;
+	mlt_frame frame_b, frame_c;
 	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
+	GlslManager::get_effect_third_input( service, frame, &input_c, &frame_c );
 	Effect *effect_a = build_movit_chain( input_a, frame, chain );
 
-	if ( input_b ) {
+	if ( input_c && input_b ) {
+		Effect *effect_b = build_movit_chain( input_b, frame_b, chain );
+		Effect *effect_c = build_movit_chain( input_c, frame_c, chain );
+		chain->effect_chain->add_effect( effect, effect_a, effect_b, effect_c );
+	} else 	if ( input_b ) {
 		Effect *effect_b = build_movit_chain( input_b, frame_b, chain );
 		chain->effect_chain->add_effect( effect, effect_a, effect_b );
 	} else {
@@ -198,6 +210,10 @@ static void dispose_movit_effects( mlt_service service, mlt_frame frame )
 	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
 	dispose_movit_effects( input_a, frame );
 
+	if ( input_b ) {
+		dispose_movit_effects( input_b, frame_b );
+	}
+	GlslManager::get_effect_third_input( service, frame, &input_b, &frame_b );
 	if ( input_b ) {
 		dispose_movit_effects( input_b, frame_b );
 	}
@@ -259,23 +275,30 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 	if ( input_b ) {
 		set_movit_parameters( chain, input_b, frame_b );
 	}
-		
+	GlslManager::get_effect_third_input( service, frame, &input_b, &frame_b );
+	if ( input_b ) {
+		set_movit_parameters( chain, input_b, frame_b );
+	}
+
 	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 	int count = mlt_properties_count( properties );
 	for (int i = 0; i < count; ++i) {
 		const char *name = mlt_properties_get_name( properties, i );
-		if (strncmp(name, "movit.parms.float.", strlen("movit.parms.float.")) == 0) {
+		if (strncmp(name, "movit.parms.float.", strlen("movit.parms.float.")) == 0 &&
+			mlt_properties_get_value( properties, i )) {
 			bool ok = effect->set_float(name + strlen("movit.parms.float."),
 				mlt_properties_get_double( properties, name ));
 			assert(ok);
 		}
-		if (strncmp(name, "movit.parms.int.", strlen("movit.parms.int.")) == 0) {
+		if (strncmp(name, "movit.parms.int.", strlen("movit.parms.int.")) == 0 &&
+			mlt_properties_get_value( properties, i )) {
 			bool ok = effect->set_int(name + strlen("movit.parms.int."),
 				mlt_properties_get_int( properties, name ));
 			assert(ok);
 		}
 		if (strncmp(name, "movit.parms.vec3.", strlen("movit.parms.vec3.")) == 0 &&
-		    strcmp(name + strlen(name) - 3, "[0]") == 0) {
+		    strcmp(name + strlen(name) - 3, "[0]") == 0 &&
+		    mlt_properties_get_value( properties, i )) {
 			float val[3];
 			char *name_copy = strdup(name);
 			char *index_char = name_copy + strlen(name_copy) - 2;
@@ -290,7 +313,8 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 			free(name_copy);
 		}
 		if (strncmp(name, "movit.parms.vec4.", strlen("movit.parms.vec4.")) == 0 &&
-		    strcmp(name + strlen(name) - 3, "[0]") == 0) {
+		    strcmp(name + strlen(name) - 3, "[0]") == 0 &&
+		    mlt_properties_get_value( properties, i )) {
 			float val[4];
 			char *name_copy = strdup(name);
 			char *index_char = name_copy + strlen(name_copy) - 2;
@@ -325,6 +349,10 @@ static void dispose_pixel_pointers( GlslChain *chain, mlt_service service, mlt_f
 	mlt_service input_b;
 	mlt_frame frame_b;
 	GlslManager::get_effect_secondary_input( service, frame, &input_b, &frame_b );
+	if ( input_b ) {
+		dispose_pixel_pointers( chain, input_b, frame_b );
+	}
+	GlslManager::get_effect_third_input( service, frame, &input_b, &frame_b );
 	if ( input_b ) {
 		dispose_pixel_pointers( chain, input_b, frame_b );
 	}

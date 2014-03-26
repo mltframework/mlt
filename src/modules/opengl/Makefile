@@ -25,6 +25,7 @@ CPPOBJS += filter_movit_saturation.o
 CPPOBJS += filter_movit_vignette.o
 CPPOBJS += filter_movit_white_balance.o
 CPPOBJS += mlt_movit_input.o
+CPPOBJS += transition_movit_luma.o
 CPPOBJS += transition_movit_mix.o
 CPPOBJS += transition_movit_overlay.o
 

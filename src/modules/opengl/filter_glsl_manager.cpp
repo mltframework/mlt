@@ -356,6 +356,18 @@ void GlslManager::set_effect_secondary_input( mlt_service service, mlt_frame fra
 	set_frame_specific_data( service, frame, "_movit effect secondary input frame", input_frame, 0, NULL, NULL );
 }
 
+void GlslManager::get_effect_third_input( mlt_service service, mlt_frame frame, mlt_service *input_service, mlt_frame *input_frame)
+{
+	*input_service = (mlt_service) get_frame_specific_data( service, frame, "_movit effect third input", NULL );
+	*input_frame = (mlt_frame) get_frame_specific_data( service, frame, "_movit effect third input frame", NULL );
+}
+
+void GlslManager::set_effect_third_input( mlt_service service, mlt_frame frame, mlt_service input_service, mlt_frame input_frame )
+{
+	set_frame_specific_data( service, frame, "_movit effect third input", input_service, 0, NULL, NULL );
+	set_frame_specific_data( service, frame, "_movit effect third input frame", input_frame, 0, NULL, NULL );
+}
+
 int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
 {
 	glsl_texture texture = get_texture( width, height, GL_RGBA8 );

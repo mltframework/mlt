@@ -1,0 +1,56 @@
+schema_version: 0.2
+type: transition
+identifier: movit.luma_mix
+title: Wipe (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+tags:
+  - Video
+description: A generic dissolve and wipe transition processor.
+
+parameters:
+  - identifier: resource
+    argument: yes
+    title: Wipe File
+    description: Gradient image or dissolve if not supplied.
+    type: string
+    mutable: yes
+
+  - identifier: softness
+    title: Softness
+    description: The blurriness of the edges of the transition.
+    type: float
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+
+  - identifier: reverse
+    title: Reverse
+    type: integer
+    mutable: yes
+    description: Reverse the direction of the transition.
+    default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+
+  - identifier: invert
+    title: Invert
+    type: integer
+    mutable: yes
+    description: Invert the wipe.
+    default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+
+  - identifier: producer.*
+    title: Producer
+    mutable: yes
+    description: >
+      Properties may be set on the encapsulated producer that reads resource.
+    readonly: no
