@@ -64,7 +64,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		mlt_properties_set( properties, "movit.parms.float.strength_second", NULL );
 		mlt_properties_set_double( properties, "movit.parms.float.progress", reverse ? inverse : mix );
 		mlt_properties_set_double( properties, "movit.parms.float.transition_width", 1.0 / (softness + 1.0e-4) );
-	
+		mlt_properties_set_int( properties, "movit.parms.int.inverse",
+			!mlt_properties_get_int( properties, "invert" ) );
+
 		uint8_t *a_image, *b_image, *c_image;
 	
 		// Get the images.
@@ -81,6 +83,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	else
 	{
 		// Set the Movit parameters.
+		mlt_properties_set( properties, "movit.parms.int.inverse", NULL );
 		mlt_properties_set( properties, "movit.parms.float.progress", NULL );
 		mlt_properties_set( properties, "movit.parms.float.transition_width", NULL );
 		mlt_properties_set_double( properties, "movit.parms.float.strength_first", reverse ? mix : inverse );
@@ -110,19 +113,16 @@ static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_fram
 	// Obtain the wipe producer.
 	char *resource = mlt_properties_get( properties, "resource" );
 	char *last_resource = mlt_properties_get( properties, "_resource" );
-	int invert = mlt_properties_get_int( properties, "invert" );
-	int last_invert = mlt_properties_get_int( properties, "_invert" );
 	mlt_producer producer = (mlt_producer) mlt_properties_get_data( properties, "instance", NULL );
 
 	// If we haven't created the wipe producer or it has changed
 	if ( resource )
-	if ( ( !producer || strcmp( resource, last_resource ) ) || ( invert != last_invert ) ) {
+	if ( !producer || strcmp( resource, last_resource ) ) {
 		char temp[ 512 ];
 		char *extension = strrchr( resource, '.' );
 
 		// Store the last resource now
 		mlt_properties_set( properties, "_resource", resource );
-		mlt_properties_set_int( properties, "_invert", invert );
 
 		// This is a hack - the idea is that we can indirectly reference the
 		// luma modules pgm or png images by a short cut like %luma01.pgm - we then replace
@@ -152,11 +152,6 @@ static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_fram
 		producer = mlt_factory_producer( profile, NULL, resource );
 		if ( producer != NULL ) {
 			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
-			if ( invert ) {
-				mlt_filter filter = mlt_factory_filter( profile, "invert", NULL );
-				if ( filter )
-					mlt_producer_attach( producer, filter );
-			}
 		}
 		mlt_properties_set_data( properties, "instance", producer, 0, (mlt_destructor) mlt_producer_close, NULL );
 	}
