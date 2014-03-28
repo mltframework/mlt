@@ -55,16 +55,15 @@ else
 		esac
 	done
 
-	echo > config.h
 	echo > config.mak
 
 	pkg-config --exists 'libexif'
 	if [ $? -eq 0 ]
 	then
 		echo "- Libexif found, enabling auto rotate"
-		echo "#define USE_EXIF" >> config.h
 		echo "USE_EXIF=1" >> config.mak
 		echo EXIFCXXFLAGS=$(pkg-config --cflags libexif ) >> config.mak
+		echo EXIFCXXFLAGS += -DUSE_EXIF >> config.mak
 		echo EXIFLIBS=$(pkg-config --libs libexif) >> config.mak
 	elif [ -d "$exif_libdir" -a -d "$exif_includedir" ]
 	then
@@ -72,9 +71,9 @@ else
 		if [ -f "$exif_libdir/exif-data.h" ]
 		then
 			echo "- Libexif found, enabling auto rotate"
-			echo "#define USE_EXIF" >> config.h
 			echo "USE_EXIF=1" >> config.mak
 			echo EXIFCXXFLAGS=-I$exif_includedir >> config.mak
+			echo EXIFCXXFLAGS += -DUSE_EXIF >> config.mak
 			echo EXIFLIBS=-L$exif_libdir lexif >> config.mak
 		else
 			echo "- Libexif not found, disabling exif features (auto rotate)"

@@ -25,8 +25,6 @@
 #include <framework/mlt_tokeniser.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "config.h"
-
 #ifdef USE_EXIF
 #include <libexif/exif-data.h>
 #endif

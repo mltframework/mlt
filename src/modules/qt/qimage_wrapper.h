@@ -26,7 +26,6 @@
 
 #include <framework/mlt.h>
 
-#include "config.h"
 #include <pthread.h>
 
 #ifdef __cplusplus

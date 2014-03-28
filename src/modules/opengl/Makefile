@@ -1,4 +1,4 @@
-CFLAGS += -I../..
+CFLAGS := -I../.. $(CFLAGS)
 
 LDFLAGS += -L../../framework -lmlt -lm
 
@@ -29,7 +29,7 @@ CPPOBJS += transition_movit_luma.o
 CPPOBJS += transition_movit_mix.o
 CPPOBJS += transition_movit_overlay.o
 
-CXXFLAGS += -Wno-deprecated $(CFLAGS)
+CXXFLAGS := -Wno-deprecated $(CFLAGS) $(CXXFLAGS)
 CXXFLAGS += $(shell pkg-config --cflags movit 2> /dev/null)
 
 SHADERDIR = $(shell pkg-config --variable=shaderdir movit)

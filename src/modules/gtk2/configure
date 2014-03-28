@@ -35,42 +35,54 @@ else
 		exit 0
 	fi
 
-	[ "$disable_gtk2" != "0" ] && echo "- gtk2 not found: gtk2 preview disabled"
-	[ "$disable_pixbuf" != "0" ] && echo "- pixbuf not found: pixbuf loader and rescaler disabled"
-	[ "$disable_pango" != "0" ] && echo "- pango not found: pango titler disabled"
-
-	echo > config.h
-	[ "$disable_gtk2" = "0" ] && echo "#define USE_GTK2" >> config.h
-	[ "$disable_pixbuf" = "0" ] && echo "#define USE_PIXBUF" >> config.h
-	[ "$disable_pango" = "0" ] && echo "#define USE_PANGO" >> config.h
-
 	echo > config.mak
-	[ "$disable_gtk2" = "0" ] && echo "USE_GTK2=1" >> config.mak
-	[ "$disable_pixbuf" = "0" ] && echo "USE_PIXBUF=1" >> config.mak
-	[ "$disable_pango" = "0" ] && echo "USE_PANGO=1" >> config.mak
+	
+	if [ "$disable_gtk2" = "0" ]
+	then
+		echo "CFLAGS += -DUSE_GTK2" >> config.mak
+		echo "USE_GTK2=1" >> config.mak
+	else
+		echo "- gtk2 not found: gtk2 preview disabled"
+	fi
+	
+	if [ "$disable_pixbuf" = "0" ]
+	then
+		echo "CFLAGS += -DUSE_PIXBUF" >> config.mak
+		echo "USE_PIXBUF=1" >> config.mak
+	else
+		echo "- pixbuf not found: pixbuf loader and rescaler disabled"
+	fi
+
+	if [ "$disable_pango" = "0" ]
+	then
+		echo "CFLAGS += -DUSE_PANGO" >> config.mak
+			echo "USE_PANGO=1" >> config.mak
+	else
+		echo "- pango not found: pango titler disabled"
+	fi
 
 	[ "$pkgconfig_prefix" != "" ] && echo "PKGCONFIG_PREFIX=$pkgconfig_prefix" >> config.mak
 
 	pkg-config --exists 'libexif'
 	if [ $? -eq 0 ]
 	then
-	    echo "Libexif found, enabling auto rotate"
-	    echo "#define USE_EXIF" >> config.h
-	    echo "USE_EXIF=1" >> config.mak
-	    echo EXIFCXXFLAGS=$(pkg-config --cflags libexif ) >> config.mak
-	    echo EXIFLIBS=$(pkg-config --libs libexif) >> config.mak
+		echo "- Libexif found, enabling auto rotate"
+		echo "USE_EXIF=1" >> config.mak
+		echo EXIFCXXFLAGS=$(pkg-config --cflags libexif ) >> config.mak
+		echo EXIFCXXFLAGS += -DUSE_EXIF >> config.mak
+		echo EXIFLIBS=$(pkg-config --libs libexif) >> config.mak
 	elif [ -d "$exif_libdir" -a -d "$exif_includedir" ]
 	then
 		# test if we have a libexif
 		if [ -f "$exif_libdir/exif-data.h" ]
 		then
-			echo "Libexif found, enabling auto rotate"
-			echo "#define USE_EXIF" >> config.h
+			echo "- Libexif found, enabling auto rotate"
 			echo "USE_EXIF=1" >> config.mak
 			echo EXIFCXXFLAGS=-I$exif_includedir >> config.mak
-                        echo EXIFLIBS=-L$exif_libdir lexif >> config.mak
+			echo EXIFCXXFLAGS += -DUSE_EXIF >> config.mak
+			echo EXIFLIBS=-L$exif_libdir lexif >> config.mak
 		else
-			echo "Libexif not found, disabling exif features (auto rotate)"
+			echo "- Libexif not found, disabling exif features (auto rotate)"
 		fi
 	fi
 

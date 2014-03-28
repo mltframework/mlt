@@ -1,4 +1,4 @@
-CFLAGS += -I../..
+CFLAGS := -I../.. $(CFLAGS)
 
 LDFLAGS += -L../../framework -lmlt -lpthread -lm -L../../mlt++ -lmlt++
 

@@ -1,5 +1,5 @@
-CFLAGS += -I../../
-CXXFLAGS += $(CFLAGS) -Wno-deprecated
+CFLAGS := -I../../ $(CFLAGS)
+CXXFLAGS := $(CFLAGS) -Wno-deprecated $(CXXFLAGS)
 
 LDFLAGS += -L../../framework -lmlt -lpthread
 
