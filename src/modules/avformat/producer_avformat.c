@@ -1379,6 +1379,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Duplicate it
 		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
 		{
+			int yuv_colorspace;
 			// Workaround 1088 encodings missing cropping info.
 			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 				*height = 1080;
@@ -1392,13 +1393,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
-				int yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
+				yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
 					PIX_FMT_YUV420P, format, *width, *height, &alpha );
-				mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			}
 			else
 #endif
-			int yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+			yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 				format, *width, *height, &alpha );
 			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			got_picture = 1;
@@ -1551,6 +1551,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
 				{
+					int yuv_colorspace;
 					// Workaround 1088 encodings missing cropping info.
 					if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 						*height = 1080;
@@ -1576,7 +1577,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
 							if ( status == VDP_STATUS_OK )
 							{
-								int yuv_colorspace = convert_image( self, self->video_frame, *buffer, PIX_FMT_YUV420P,
+								yuv_colorspace = convert_image( self, self->video_frame, *buffer, PIX_FMT_YUV420P,
 									format, *width, *height, &alpha );
 								mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 							}
@@ -1594,7 +1595,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 #endif
-					int yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+					yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 						format, *width, *height, &alpha );
 					mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 					self->top_field_first |= self->video_frame->top_field_first;
@@ -1631,6 +1632,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Duplicate it
 		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
 		{
+			int yuv_colorspace;
 			// Workaround 1088 encodings missing cropping info.
 			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
 				*height = 1080;
@@ -1644,13 +1646,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[0] = codec_context->width;
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
-				int yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
+				yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
 					PIX_FMT_YUV420P, format, *width, *height, &alpha );
 				mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			}
 			else
 #endif
-			int yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+			yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 				format, *width, *height, &alpha );
 			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			got_picture = 1;
