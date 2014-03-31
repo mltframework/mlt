@@ -1751,7 +1751,9 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// may exist when trying to load glsl. or movit. services.
 	// The "if requested" part can come from query string qglsl=1 or when
 	// a service beginning with glsl. or movit. appears in the XML.
-	if ( mlt_properties_get_int( context->params, "qglsl" ) && strcmp( id, "xml-nogl" ) )
+	if ( mlt_properties_get_int( context->params, "qglsl" ) && strcmp( id, "xml-nogl" )
+		// Only if glslManager does not yet exist.
+		&& !mlt_properties_get_data( mlt_global_properties(), "glslManager", NULL ) )
 		context->qglsl = mlt_factory_consumer( profile, "qglsl", NULL );
 
 	// Setup SAX callbacks for second pass
