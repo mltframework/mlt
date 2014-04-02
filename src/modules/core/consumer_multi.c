@@ -259,12 +259,23 @@ static void foreach_consumer_init( mlt_consumer consumer )
 			if ( ( s = mlt_properties_get( properties, key ) ) )
 			{
 				mlt_properties p = mlt_properties_new();
-				int i, count;
-
 				if ( !p ) break;
-				mlt_properties_set( p, "mlt_service", mlt_properties_get( properties, key ) );
+
+				// Terminate mlt_service value at the argument delimiter if supplied.
+				// Needed here instead of just relying upon create_consumer() so that
+				// a properties preset is picked up correctly.
+				char *service = strdup( mlt_properties_get( properties, key ) );
+				char *arg = strchr( service, ':' );
+				if ( arg ) {
+					*arg ++ = '\0';
+					mlt_properties_set( p, "target", arg );
+				}
+				mlt_properties_set( p, "mlt_service", service );
+				free( service );
+
 				snprintf( key, sizeof(key), "%d.", index );
 
+				int i, count;
 				count = mlt_properties_count( properties );
 				for ( i = 0; i < count; i++ )
 				{
