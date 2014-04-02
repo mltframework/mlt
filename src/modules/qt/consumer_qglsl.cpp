@@ -17,17 +17,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "common.h"
 #include <framework/mlt.h>
 #include <QApplication>
-#include <QLocale>
 #include <QGLWidget>
 #include <QMutex>
 #include <QWaitCondition>
 #include <QtGlobal>
-
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
-#include <X11/Xlib.h>
-#endif
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 
@@ -203,19 +199,10 @@ mlt_consumer consumer_qglsl_init( mlt_profile profile, mlt_service_type type, co
 			mlt_events_listen(properties, consumer, "consumer-thread-started", (mlt_listener) onThreadStarted);
 			mlt_events_listen(properties, consumer, "consumer-thread-stopped", (mlt_listener) onThreadStopped);
 			mlt_events_listen(properties, consumer, "consumer-cleanup", (mlt_listener) onCleanup);
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
-			XInitThreads();
-			if ( getenv("DISPLAY") == 0 ) {
-				mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "The qglsl consumer requires a X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
-			} else
-#endif
-			if (!qApp) {
-				int argc = 1;
-				char* argv[1];
-				argv[0] = (char*) "MLT qglsl consumer";
-				new QApplication(argc, argv);
-				const char *localename = mlt_properties_get_lcnumeric(properties);
-				QLocale::setDefault(QLocale(localename));
+			if (!createQApplicationIfNeeded(MLT_CONSUMER_SERVICE(consumer))) {
+				mlt_filter_close(filter);
+				mlt_consumer_close(consumer);
+				return NULL;
 			}
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 			mlt_properties_set_data(properties, "GLWidget", new GLWidget, 0, NULL, NULL);

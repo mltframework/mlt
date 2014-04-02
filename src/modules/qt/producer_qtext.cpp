@@ -18,44 +18,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "common.h"
 #include <framework/mlt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <QApplication>
 #include <QImage>
 #include <QColor>
-#include <QLocale>
 #include <QPainter>
 #include <QFont>
 #include <QString>
 #include <QTextCodec>
 #include <QTextDecoder>
-
-/** Init QT (if necessary)
-*/
-
-static bool init_qt( mlt_producer producer )
-{
-	int argc = 1;
-	char* argv[1];
-	argv[0] = (char*) "xxx";
-
-	if ( !qApp )
-	{
-#ifdef linux
-		if ( getenv("DISPLAY") == 0 )
-		{
-			mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
-			return false;
-		}
-#endif
-		new QApplication( argc, argv );
-		const char *localename = mlt_properties_get_lcnumeric( MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) ) );
-		QLocale::setDefault( QLocale( localename ) );
-	}
-	return true;
-}
 
 static void close_qimg( void* qimg )
 {
@@ -429,7 +403,7 @@ mlt_producer producer_qtext_init( mlt_profile profile, mlt_service_type type, co
 	// Initialize the producer
 	if ( producer )
 	{
-		if( init_qt( producer ) == false )
+		if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) )
 		{
 			mlt_producer_close( producer );
 			return NULL;

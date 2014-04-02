@@ -18,20 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>
  */
 
+#include "common.h"
 #include <framework/mlt.h>
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
-#include <QApplication>
 #include <QImage>
 #include <QColor>
-#include <QLocale>
 #include <QPainter>
 #include <QPalette>
 #include <QFont>
 #include <QString>
-
-static QApplication *app = 0;
 
 static double calc_psnr( const uint8_t *a, const uint8_t *b, int size, int bpp )
 {
@@ -160,25 +157,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		}
 	}
 
-	// create QApplication, if needed
-	if ( !app )
-	{
-		if ( qApp )
-		{
-			app = qApp;
-		}
-		else
-		{
-			int argc = 1;
-			char* argv[] = { strdup( "unknown" ) };
-
-			app = new QApplication( argc, argv );
-			const char *localename = mlt_properties_get_lcnumeric( MLT_TRANSITION_PROPERTIES(transition) );
-			QLocale::setDefault( QLocale( localename ) );
-			free( argv[0] );
-		}
-	}
-
 	// setup Qt drawing
 	QPainter painter;
 	painter.begin( &img );
@@ -248,6 +226,11 @@ mlt_transition transition_vqm_init( mlt_profile profile, mlt_service_type type, 
 	{
 		mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 
+		if ( !createQApplicationIfNeeded( MLT_TRANSITION_SERVICE(transition) ) )
+		{
+			mlt_transition_close( transition );
+			return NULL;
+		}
 		transition->process = process;
 		mlt_properties_set_int( properties, "_transition_type", 1 ); // video only
 		mlt_properties_set_int( properties, "window_size", 8 );

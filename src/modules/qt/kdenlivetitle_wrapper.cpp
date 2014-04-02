@@ -19,11 +19,11 @@
  */
 
 #include "kdenlivetitle_wrapper.h"
+#include "common.h"
 
 #include <QImage>
 #include <QPainter>
 #include <QDebug>
-#include <QApplication>
 #include <QMutex>
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
@@ -47,7 +47,6 @@
 #include <QGraphicsDropShadowEffect>
 #endif
 
-static QApplication *app = NULL;
 Q_DECLARE_METATYPE(QTextCursor);
 
 class ImageItem: public QGraphicsItem
@@ -380,32 +379,10 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 
 		if ( scene == NULL )
 		{
-			int argc = 1;
-			char* argv[1];
-			argv[0] = (char*) "xxx";
-			
-			// Warning: all Qt graphic objects (QRect, ...) must be initialized AFTER 
-			// the QApplication is created, otherwise their will be NULL
-			
-			if ( app == NULL ) {
-				if ( qApp ) {
-					app = qApp;
-				}
-				else {
-#ifdef linux
-					if ( getenv("DISPLAY") == 0 )
-					{
-						mlt_log_panic( MLT_PRODUCER_SERVICE( producer ), "Error, cannot render titles without an X11 environment.\nPlease either run melt from an X session or use a fake X server like xvfb:\nxvfb-run -a melt (...)\n" );
-						pthread_mutex_unlock( &self->mutex );
-						return;
-					}
-#endif
-					app = new QApplication( argc, argv );				
-					const char *localename = mlt_properties_get_lcnumeric( MLT_SERVICE_PROPERTIES( MLT_PRODUCER_SERVICE( producer ) ) );
-					QLocale::setDefault( QLocale( localename ) );
-				}
+			if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) )
+				return;
+			if ( QMetaType::UnknownType == QMetaType::type("QTextCursor") )
 				qRegisterMetaType<QTextCursor>( "QTextCursor" );
-			}
 			scene = new QGraphicsScene();
 			scene->setItemIndexMethod( QGraphicsScene::NoIndex );
                         scene->setSceneRect(0, 0, mlt_properties_get_int( properties, "width" ), mlt_properties_get_int( properties, "height" ));
