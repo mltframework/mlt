@@ -381,7 +381,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		{
 			if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) )
 				return;
-			if ( QMetaType::UnknownType == QMetaType::type("QTextCursor") )
+			if ( !QMetaType::type("QTextCursor") )
 				qRegisterMetaType<QTextCursor>( "QTextCursor" );
 			scene = new QGraphicsScene();
 			scene->setItemIndexMethod( QGraphicsScene::NoIndex );
