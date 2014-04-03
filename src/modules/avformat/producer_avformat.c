@@ -1806,7 +1806,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #endif
 		double fps = av_q2d( frame_rate );
 
-#if LIBAVFORMAT_VERSION_MAJOR < 55
+#if LIBAVFORMAT_VERSION_MAJOR < 55 || defined(FFUDIV)
 		// Verify and sanitize the muxer frame rate.
 		if ( isnan( fps ) || isinf( fps ) || fps == 0 )
 		{
@@ -1814,7 +1814,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			fps = av_q2d( frame_rate );
 		}
 #endif
-#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0) && LIBAVFORMAT_VERSION_MAJOR < 55
+#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0) && ( LIBAVFORMAT_VERSION_MAJOR < 55 || defined(FFUDIV) )
 		// With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
 		// avg_frame_rate gives some approximate value that does not well match the media.
 		// Also, on my sample where r_frame_rate = 1000, using avg_frame_rate directly
