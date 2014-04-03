@@ -498,7 +498,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			int h = producer.get_int( "movit.convert.height" );
 			mlt_image_format f = (mlt_image_format) producer.get_int( "movit.convert.format" );
 			if ( !chain || !input || width != w || height != h || *format != f ) {
-				chain = new EffectChain( width, height );
+				chain = new EffectChain( width, height, GlslManager::get_instance()->get_resource_pool() );
 				input = create_input( properties, *format, width, height, width, height );
 				chain->add_input( input->get_input() );
 				chain->add_effect( new Mlt::VerticalFlip() );
