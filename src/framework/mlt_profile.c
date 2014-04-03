@@ -424,8 +424,15 @@ void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer )
 				profile->width = mlt_properties_get_int( p, "meta.media.width" );
 				profile->height = mlt_properties_get_int( p, "meta.media.height" );
 				profile->progressive = mlt_properties_get_int( p, "meta.media.progressive" );
-				profile->frame_rate_num = mlt_properties_get_int( p, "meta.media.frame_rate_num" );
-				profile->frame_rate_den = mlt_properties_get_int( p, "meta.media.frame_rate_den" );
+				if ( 1000 > mlt_properties_get_double( p, "meta.media.frame_rate_num" )
+				          / mlt_properties_get_double( p, "meta.media.frame_rate_den" ) )
+				{
+					profile->frame_rate_num = mlt_properties_get_int( p, "meta.media.frame_rate_num" );
+					profile->frame_rate_den = mlt_properties_get_int( p, "meta.media.frame_rate_den" );
+				} else {
+					profile->frame_rate_num = 60;
+					profile->frame_rate_den = 1;
+				}
 				// AVCHD is mis-reported as double frame rate.
 				if ( profile->progressive == 0 && (
 				     profile->frame_rate_num / profile->frame_rate_den == 50 ||
