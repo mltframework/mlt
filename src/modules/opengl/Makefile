@@ -41,7 +41,7 @@ ifeq ($(targetos), MinGW)
 	CXXFLAGS += $(shell pkg-config --cflags glew)
 	LDFLAGS += -lmovit $(shell pkg-config --libs-only-L glew) -lglew32 -lopengl32 -lpthread
 else
-	LDFLAGS += $(shell pkg-config --libs movit 2> /dev/null)
+	LDFLAGS += $(shell pkg-config --static --libs movit 2> /dev/null)
 ifeq ($(targetos), Darwin)
 	CXXFLAGS += -FOpenGL
 	LDFLAGS += -lpthread -framework OpenGL
