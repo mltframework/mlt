@@ -56,25 +56,30 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 		for( i = 0; i < 256; i++ )
 		{
 			// Convert to gamma 2.2
-			double gamma22 = pow( (double)i / 255.0, 1.0f / 2.2f );
+			double gamma22 = pow( (double)i / 255.0, 1.0 / 2.2 );
 			double r = gamma22;
 			double g = gamma22;
 			double b = gamma22;
 
 			// Apply lift
-			r += rlift * ( 1 - r );
-			g += glift * ( 1 - g );
-			b += blift * ( 1 - b );
+			r += rlift * ( 1.0 - r );
+			g += glift * ( 1.0 - g );
+			b += blift * ( 1.0 - b );
 
 			// Apply gamma
-			r = pow( r, 2.2f / rgamma );
-			g = pow( g, 2.2f / ggamma );
-			b = pow( b, 2.2f / bgamma );
+			r = pow( r, 2.2 / rgamma );
+			g = pow( g, 2.2 / ggamma );
+			b = pow( b, 2.2 / bgamma );
 
 			// Apply gain
-			r *= pow( rgain, 1.0f / rgamma );
-			g *= pow( ggain, 1.0f / ggamma );
-			b *= pow( bgain, 1.0f / bgamma );
+			r *= pow( rgain, 1.0 / rgamma );
+			g *= pow( ggain, 1.0 / ggamma );
+			b *= pow( bgain, 1.0 / bgamma );
+
+			// Clamp values
+			r = r < 0.0 ? 0.0 : r > 1.0 ? 1.0 : r;
+			g = g < 0.0 ? 0.0 : g > 1.0 ? 1.0 : g;
+			b = b < 0.0 ? 0.0 : b > 1.0 ? 1.0 : b;
 
 			// Update LUT
 			private->rlut[ i ] = (int)(r * 255.0);
