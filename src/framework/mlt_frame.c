@@ -509,6 +509,9 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 				if ( *buffer )
 					memset( *buffer, 255, size );
 				break;
+			case mlt_image_glsl:
+			case mlt_image_glsl_texture:
+				*format = mlt_image_yuv422;
 			case mlt_image_yuv422:
 				size *= 2;
 				size += *width * 2;

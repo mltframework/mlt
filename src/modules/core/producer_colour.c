@@ -88,7 +88,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_color color = mlt_properties_get_color( producer_props, "resource" );
 
 	// Choose suitable out values if nothing specific requested
-	if ( *format == mlt_image_none )
+	if ( *format == mlt_image_none || *format == mlt_image_glsl )
 		*format = mlt_image_rgb24a;
 	if ( *width <= 0 )
 		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;

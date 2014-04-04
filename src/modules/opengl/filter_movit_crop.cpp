@@ -53,9 +53,6 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	// Get the image as requested
 //	*format = (mlt_image_format) mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(producer), "_movit image_format" );
-	*format = mlt_image_none;
-	if ( mlt_properties_get_int( properties, "test_image" ) )
-		*format = mlt_image_yuv422;
 	error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 	// Skip processing if requested.

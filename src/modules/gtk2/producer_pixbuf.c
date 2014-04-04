@@ -442,7 +442,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		self->image, self->pixbuf, current_idx, self->image_idx, self->pixbuf_idx, width );
 
 	// If we have a pixbuf and we need an image
-	if ( self->pixbuf && ( !self->image || ( format != mlt_image_none && format != self->format ) ) )
+	if ( self->pixbuf && ( !self->image || ( format != mlt_image_none && format != mlt_image_glsl && format != self->format ) ) )
 	{
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 		if ( interps ) interps = strdup( interps );
@@ -495,7 +495,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		pthread_mutex_unlock( &g_mutex );
 
 		// Convert image to requested format
-		if ( format != mlt_image_none && format != self->format )
+		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format )
 		{
 			uint8_t *buffer = NULL;
 
