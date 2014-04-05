@@ -58,8 +58,8 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	double inverse = 1.0 - mix;
 
 	// Set the Movit parameters.
-        mlt_properties_set_double( properties, "movit.parms.float.strength_first", reverse ? mix : inverse );
-        mlt_properties_set_double( properties, "movit.parms.float.strength_second", reverse ? inverse : mix );
+        mlt_properties_set_double( properties, "_movit.parms.float.strength_first", reverse ? mix : inverse );
+        mlt_properties_set_double( properties, "_movit.parms.float.strength_second", reverse ? inverse : mix );
 
 	uint8_t *a_image, *b_image;
 

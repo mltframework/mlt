@@ -50,12 +50,12 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		srgb8_to_linear((color_int >> 16) & 0xff),
 		srgb8_to_linear((color_int >> 8) & 0xff)
 	);
-	mlt_properties_set_double( properties, "movit.parms.vec3.neutral_color[0]", color.r );
-	mlt_properties_set_double( properties, "movit.parms.vec3.neutral_color[1]", color.g );
-	mlt_properties_set_double( properties, "movit.parms.vec3.neutral_color[2]", color.b );
+	mlt_properties_set_double( properties, "_movit.parms.vec3.neutral_color[0]", color.r );
+	mlt_properties_set_double( properties, "_movit.parms.vec3.neutral_color[1]", color.g );
+	mlt_properties_set_double( properties, "_movit.parms.vec3.neutral_color[2]", color.b );
 	double output_color_temperature =
 		mlt_properties_anim_get_double( properties, "color_temperature", position, length );
-	mlt_properties_set_double( properties, "movit.parms.float.output_color_temperature",
+	mlt_properties_set_double( properties, "_movit.parms.float.output_color_temperature",
                 output_color_temperature );
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;

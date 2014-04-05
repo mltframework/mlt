@@ -78,13 +78,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		GlslManager::get_instance()->lock_service( frame );
-		mlt_properties_set_int( properties, "movit.parms.int.width", owidth );
-		mlt_properties_set_int( properties, "movit.parms.int.height", oheight );
-		mlt_properties_set_double( properties, "movit.parms.float.left", -left );
-		mlt_properties_set_double( properties, "movit.parms.float.top", -top );
+		mlt_properties_set_int( properties, "_movit.parms.int.width", owidth );
+		mlt_properties_set_int( properties, "_movit.parms.int.height", oheight );
+		mlt_properties_set_double( properties, "_movit.parms.float.left", -left );
+		mlt_properties_set_double( properties, "_movit.parms.float.top", -top );
 
 		bool disable = ( *width == owidth && *height == oheight );
-		mlt_properties_set_int( properties, "movit.parms.int.disable", disable );
+		mlt_properties_set_int( properties, "_movit.parms.int.disable", disable );
 
 		GlslManager::get_instance()->unlock_service( frame );
 	}

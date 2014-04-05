@@ -33,11 +33,11 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	GlslManager::get_instance()->lock_service( frame );
-	mlt_properties_set_double( properties, "movit.parms.float.radius",
+	mlt_properties_set_double( properties, "_movit.parms.float.radius",
 		mlt_properties_anim_get_double( properties, "radius", position, length ) );
-	mlt_properties_set_double( properties, "movit.parms.float.blurred_mix_amount",
+	mlt_properties_set_double( properties, "_movit.parms.float.blurred_mix_amount",
 		mlt_properties_anim_get_double( properties, "blur_mix", position, length ) );
-	mlt_properties_set_double( properties, "movit.parms.float.highlight_cutoff",
+	mlt_properties_set_double( properties, "_movit.parms.float.highlight_cutoff",
 		mlt_properties_anim_get_double( properties, "highlight_cutoff", position, length ) );
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;

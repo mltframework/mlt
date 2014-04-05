@@ -34,14 +34,14 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	int matrix_size = mlt_properties_anim_get_int( properties, "matrix_size", position, length );
-	mlt_properties_set_int( properties, "movit.parms.int.matrix_size", matrix_size );
-	mlt_properties_set_double( properties, "movit.parms.float.circle_radius",
+	mlt_properties_set_int( properties, "_movit.parms.int.matrix_size", matrix_size );
+	mlt_properties_set_double( properties, "_movit.parms.float.circle_radius",
 		mlt_properties_anim_get_double( properties, "circle_radius", position, length ) );
-	mlt_properties_set_double( properties, "movit.parms.float.gaussian_radius",
+	mlt_properties_set_double( properties, "_movit.parms.float.gaussian_radius",
 		mlt_properties_anim_get_double( properties, "gaussian_radius", position, length ) );
-	mlt_properties_set_double( properties, "movit.parms.float.correlation",
+	mlt_properties_set_double( properties, "_movit.parms.float.correlation",
 		mlt_properties_anim_get_double( properties, "correlation", position, length ) );
-	mlt_properties_set_double( properties, "movit.parms.float.noise",
+	mlt_properties_set_double( properties, "_movit.parms.float.noise",
 		mlt_properties_anim_get_double( properties, "noise", position, length ) );
 
 	// DeconvolutionSharpenEffect compiles the matrix size into the shader,

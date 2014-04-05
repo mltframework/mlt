@@ -33,9 +33,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	GlslManager::get_instance()->lock_service( frame );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
-	mlt_properties_set_double( properties, "movit.parms.float.radius",
+	mlt_properties_set_double( properties, "_movit.parms.float.radius",
 		mlt_properties_anim_get_double( properties, "radius", position, length ) );
-	mlt_properties_set_double( properties, "movit.parms.float.inner_radius",
+	mlt_properties_set_double( properties, "_movit.parms.float.inner_radius",
 		mlt_properties_anim_get_double( properties, "inner_radius", position, length ) );
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;

@@ -60,11 +60,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	if ( c_frame )
 	{
 		// Set the Movit parameters.
-		mlt_properties_set( properties, "movit.parms.float.strength_first", NULL );
-		mlt_properties_set( properties, "movit.parms.float.strength_second", NULL );
-		mlt_properties_set_double( properties, "movit.parms.float.progress", reverse ? inverse : mix );
-		mlt_properties_set_double( properties, "movit.parms.float.transition_width", 1.0 / (softness + 1.0e-4) );
-		mlt_properties_set_int( properties, "movit.parms.int.inverse",
+		mlt_properties_set( properties, "_movit.parms.float.strength_first", NULL );
+		mlt_properties_set( properties, "_movit.parms.float.strength_second", NULL );
+		mlt_properties_set_double( properties, "_movit.parms.float.progress", reverse ? inverse : mix );
+		mlt_properties_set_double( properties, "_movit.parms.float.transition_width", 1.0 / (softness + 1.0e-4) );
+		mlt_properties_set_int( properties, "_movit.parms.int.inverse",
 			!mlt_properties_get_int( properties, "invert" ) );
 
 		uint8_t *a_image, *b_image, *c_image;
@@ -83,11 +83,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	else
 	{
 		// Set the Movit parameters.
-		mlt_properties_set( properties, "movit.parms.int.inverse", NULL );
-		mlt_properties_set( properties, "movit.parms.float.progress", NULL );
-		mlt_properties_set( properties, "movit.parms.float.transition_width", NULL );
-		mlt_properties_set_double( properties, "movit.parms.float.strength_first", reverse ? mix : inverse );
-		mlt_properties_set_double( properties, "movit.parms.float.strength_second", reverse ? inverse : mix );
+		mlt_properties_set( properties, "_movit.parms.int.inverse", NULL );
+		mlt_properties_set( properties, "_movit.parms.float.progress", NULL );
+		mlt_properties_set( properties, "_movit.parms.float.transition_width", NULL );
+		mlt_properties_set_double( properties, "_movit.parms.float.strength_first", reverse ? mix : inverse );
+		mlt_properties_set_double( properties, "_movit.parms.float.strength_second", reverse ? inverse : mix );
 	
 		uint8_t *a_image, *b_image;
 	

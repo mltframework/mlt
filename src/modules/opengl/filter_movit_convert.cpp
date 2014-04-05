@@ -148,7 +148,7 @@ static void build_fingerprint( mlt_service service, mlt_frame frame, std::string
 		fingerprint->push_back( ']' );
 	}
 
-	bool disable = mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "movit.parms.int.disable" );
+	bool disable = mlt_properties_get_int( MLT_SERVICE_PROPERTIES( service ), "_movit.parms.int.disable" );
 	if ( disable ) {
 		fingerprint->push_back( 'd' );
 	}
@@ -284,19 +284,19 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 	int count = mlt_properties_count( properties );
 	for (int i = 0; i < count; ++i) {
 		const char *name = mlt_properties_get_name( properties, i );
-		if (strncmp(name, "movit.parms.float.", strlen("movit.parms.float.")) == 0 &&
+		if (strncmp(name, "_movit.parms.float.", strlen("_movit.parms.float.")) == 0 &&
 			mlt_properties_get_value( properties, i )) {
-			bool ok = effect->set_float(name + strlen("movit.parms.float."),
+			bool ok = effect->set_float(name + strlen("_movit.parms.float."),
 				mlt_properties_get_double( properties, name ));
 			assert(ok);
 		}
-		if (strncmp(name, "movit.parms.int.", strlen("movit.parms.int.")) == 0 &&
+		if (strncmp(name, "_movit.parms.int.", strlen("_movit.parms.int.")) == 0 &&
 			mlt_properties_get_value( properties, i )) {
-			bool ok = effect->set_int(name + strlen("movit.parms.int."),
+			bool ok = effect->set_int(name + strlen("_movit.parms.int."),
 				mlt_properties_get_int( properties, name ));
 			assert(ok);
 		}
-		if (strncmp(name, "movit.parms.vec3.", strlen("movit.parms.vec3.")) == 0 &&
+		if (strncmp(name, "_movit.parms.vec3.", strlen("_movit.parms.vec3.")) == 0 &&
 		    strcmp(name + strlen(name) - 3, "[0]") == 0 &&
 		    mlt_properties_get_value( properties, i )) {
 			float val[3];
@@ -308,11 +308,11 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 			*index_char = '2';
 			val[2] = mlt_properties_get_double( properties, name_copy );
 			index_char[-1] = '\0';
-			bool ok = effect->set_vec3(name_copy + strlen("movit.parms.vec3."), val);
+			bool ok = effect->set_vec3(name_copy + strlen("_movit.parms.vec3."), val);
 			assert(ok);
 			free(name_copy);
 		}
-		if (strncmp(name, "movit.parms.vec4.", strlen("movit.parms.vec4.")) == 0 &&
+		if (strncmp(name, "_movit.parms.vec4.", strlen("_movit.parms.vec4.")) == 0 &&
 		    strcmp(name + strlen(name) - 3, "[0]") == 0 &&
 		    mlt_properties_get_value( properties, i )) {
 			float val[4];
@@ -326,7 +326,7 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 			*index_char = '3';
 			val[3] = mlt_properties_get_double( properties, name_copy );
 			index_char[-1] = '\0';
-			bool ok = effect->set_vec4(name_copy + strlen("movit.parms.vec4."), val);
+			bool ok = effect->set_vec4(name_copy + strlen("_movit.parms.vec4."), val);
 			assert(ok);
 			free(name_copy);
 		}
