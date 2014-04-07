@@ -21,8 +21,9 @@
 
 using namespace movit;
 
-MltInput::MltInput()
-	: input(0)
+MltInput::MltInput( mlt_image_format format )
+	: m_format(format)
+	, input(0)
 	, isRGB(true)
 {
 }

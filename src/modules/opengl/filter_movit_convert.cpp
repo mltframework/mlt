@@ -378,7 +378,7 @@ static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *
 // Create an MltInput for an image with the given format and dimensions.
 static MltInput* create_input( mlt_properties properties, mlt_image_format format, int aspect_width, int aspect_height, int width, int height )
 {
-	MltInput* input = new MltInput();
+	MltInput* input = new MltInput( format );
 	if ( format == mlt_image_rgb24a || format == mlt_image_opengl ) {
 		// TODO: Get the color space if available.
 		input->useFlatInput( FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
@@ -463,6 +463,19 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	// If we're at the _end_ of a series of Movit effects, render the chain.
 	if ( *format == mlt_image_glsl ) {
 		mlt_service leaf_service = (mlt_service) *image;
+
+		if ( leaf_service == (mlt_service) -1 ) {
+			// Something on the way requested conversion to mlt_glsl,
+			// but never added an effect. Don't build a Movit chain;
+			// just do the conversion and we're done.
+			mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
+			MltInput *input = GlslManager::get_input( producer, frame );
+			*image = GlslManager::get_input_pixel_pointer( producer, frame );
+			*format = input->get_format();
+			delete input;
+			GlslManager::get_instance()->unlock_service( frame );
+			return convert_on_cpu( frame, image, format, output_format );
+		}
 
 		// Construct the chain unless we already have a good one.
 		finalize_movit_chain( leaf_service, frame );

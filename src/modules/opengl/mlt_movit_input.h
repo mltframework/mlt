@@ -20,6 +20,8 @@
 #ifndef MLT_MOVIT_INPUT_H
 #define MLT_MOVIT_INPUT_H
 
+#include <framework/mlt_types.h>
+
 #include <movit/flat_input.h>
 #include <movit/ycbcr_input.h>
 #include <movit/effect_chain.h>
@@ -27,7 +29,7 @@
 class MltInput
 {
 public:
-	MltInput();
+	MltInput( mlt_image_format format );
 	~MltInput();
 
 	void useFlatInput(movit::MovitPixelFormat pix_fmt, unsigned width, unsigned height);
@@ -36,7 +38,12 @@ public:
 	void invalidate_pixel_data();
 	movit::Input *get_input() { return input; }
 
+	// The original pixel format that was used to create this MltInput,
+	// in case we change our mind later and want to convert on the CPU instead.
+	mlt_image_format get_format() const { return m_format; }
+
 private:
+	mlt_image_format m_format;
 	unsigned m_width, m_height;
 	// Note: Owned by the EffectChain, so should not be deleted by us.
 	movit::Input *input;
