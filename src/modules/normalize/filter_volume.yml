@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter
 identifier: volume
 title: Volume
-version: 1
+version: 2
 copyright: Ushodaya Enterprises Limited
 creator: Dan Denneedy
 license: GPLv2
@@ -25,6 +25,8 @@ parameters:
        
       The gain may also be set to "normalise" to normalise the volume to the
       target amplitude -12dBFS.
+      
+      This value is discarded if value for property "level" is set.
   - identifier: window
     title: Window
     type: integer
@@ -72,4 +74,21 @@ parameters:
     description: >
       A gain value just like the Gain property. This causes the gain to be
       interpolated from 'gain' to 'end' over the duration.
+       
+      This value is discarded if value for property "level" is set.
+    mutable: yes
+  - identifier: max_gain
+    title: Max gain
+    type: string
+    description: >
+      A floating point or decibel value of the maximum gain that can be
+      applied during normalisation.
+    default: 20dB
+    mutable: yes
+  - identifier: level
+    title: Level
+    type: double
+    description: >
+      The animated floating point value of the gain
+      adjustment. Properties "gain" and "end" are discarded if this is set.
     mutable: yes
