@@ -87,7 +87,7 @@ parameters:
     mutable: yes
   - identifier: level
     title: Level
-    type: double
+    type: float
     description: >
       The animated floating point value of the gain
       adjustment. Properties "gain" and "end" are discarded if this is set.

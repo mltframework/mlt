@@ -31,7 +31,7 @@ parameters:
     default: 1.0
   - identifier: level
     title: Level
-    type: double
+    type: float
     minimum: 0.0
     maximum: 15.0
     default: unset

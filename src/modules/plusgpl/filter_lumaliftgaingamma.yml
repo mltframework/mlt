@@ -16,7 +16,7 @@ description: >
 parameters:
   - identifier: lift
     title: Lift
-    type: double
+    type: float
     minimum: -0.5
     maximum: 0.5
     default: 0
@@ -26,7 +26,7 @@ parameters:
 
   - identifier: gain
     title: Gain
-    type: double
+    type: float
     minimum: -0.5
     maximum: 0.5
     default: 0
@@ -36,7 +36,7 @@ parameters:
 
   - identifier: gamma
     title: Gamma
-    type: double
+    type: float
     minimum: -1.0
     maximum: 1.0
     default: 0
