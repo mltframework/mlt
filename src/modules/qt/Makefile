@@ -1,9 +1,9 @@
-CFLAGS := -I../.. $(CFLAGS)
-
-LDFLAGS += -L../../framework -lmlt -lpthread -lm -L../../mlt++ -lmlt++
-
 include ../../../config.mak
 include config.mak
+
+CFLAGS := -I../.. $(CFLAGS)
+
+LDFLAGS := -L../../framework -lmlt -lpthread -lm -L../../mlt++ -lmlt++ $(LDFLAGS)
 
 TARGET = ../libmltqt$(LIBSUF)
 

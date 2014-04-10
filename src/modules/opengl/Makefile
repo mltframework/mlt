@@ -1,8 +1,8 @@
+include ../../../config.mak
+
 CFLAGS := -I../.. $(CFLAGS)
 
-LDFLAGS += -L../../framework -lmlt -lm
-
-include ../../../config.mak
+LDFLAGS := -L../../framework -lmlt -lm $(LDFLAGS)
 
 TARGET = ../libmltopengl$(LIBSUF)
 
