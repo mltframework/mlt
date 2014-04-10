@@ -168,12 +168,13 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	{
 		mlt_profile profile = mlt_service_profile(
 			MLT_PRODUCER_SERVICE( mlt_frame_get_original_producer( frame ) ) );
+		int profile_colorspace = profile ? profile->colorspace : 601;
 		int colorspace = mlt_properties_get_int( properties, "colorspace" );
 		int force_full_luma = 0;
 		
 		mlt_log_debug( NULL, "[filter avcolor_space] %s -> %s @ %dx%d space %d->%d\n",
 			mlt_image_format_name( *format ), mlt_image_format_name( output_format ),
-			width, height, colorspace, profile->colorspace );
+			width, height, colorspace, profile_colorspace );
 
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
@@ -221,11 +222,11 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			mlt_properties_set( properties, "force_full_luma", NULL );
 		}
 		if ( !av_convert_image( output, *image, out_fmt, in_fmt, width, height,
-		                        colorspace, profile->colorspace, force_full_luma ) )
+		                        colorspace, profile_colorspace, force_full_luma ) )
 		{
 			// The new colorspace is only valid if destination is YUV.
 			if ( output_format == mlt_image_yuv422 || output_format == mlt_image_yuv420p )
-				mlt_properties_set_int( properties, "colorspace", profile->colorspace );
+				mlt_properties_set_int( properties, "colorspace", profile_colorspace );
 		}
 		*image = output;
 		*format = output_format;
