@@ -24,24 +24,32 @@
 
 #include <framework/mlt.h>
 
+#define MELT_FILE_MAX_LINES (100000)
+#define MELT_FILE_MAX_LENGTH (2048)
+
 mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 
 mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
 {
 	FILE *input = fopen( file, "r" );
-	char **args = calloc( sizeof( char * ), 1000 );
+	char **args = calloc( sizeof( char * ), MELT_FILE_MAX_LINES );
 	int count = 0;
-	char temp[ 2048 ];
+	char temp[ MELT_FILE_MAX_LENGTH ];
 
 	if ( input != NULL )
 	{
-		while( fgets( temp, 2048, input ) )
+		while( fgets( temp, MELT_FILE_MAX_LENGTH, input ) && count < MELT_FILE_MAX_LINES )
 		{
+			if ( temp[ strlen( temp ) - 1 ] != '\n' )
+				mlt_log_warning( NULL, "Exceeded maximum line length (%d) while reading a melt file.\n", MELT_FILE_MAX_LENGTH );
 			temp[ strlen( temp ) - 1 ] = '\0';
 			if ( strcmp( temp, "" ) )
 				args[ count ++ ] = strdup( temp );
 		}
 		fclose( input );
+		if ( count == MELT_FILE_MAX_LINES )
+			mlt_log_warning( NULL, "Reached the maximum number of lines (%d) while reading a melt file.\n"
+			"Consider using MLT XML.\n", MELT_FILE_MAX_LINES );
 	}
 
 	mlt_producer result = producer_melt_init( profile, type, id, args );
