@@ -184,7 +184,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			v = 0;
 			for ( in = 0; in < *channels && in < 6; in++ )
 				v += factors[in][out] * src[ i * *channels + in ];
-//			dest[ i * *channels + out ] = (int16_t) ( v < -32767 ? -32767 : v > 32768 ? 32768 : v );
+
 			v = v < -32767 ? -32767 : v > 32768 ? 32768 : v;
 			vp[out] = dest[ i * *channels + out ] = (int16_t) ( v * A + vp[ out ] * B );
 		}
@@ -228,7 +228,16 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			// Use constant mix level if only start
 			else if ( mlt_properties_get( properties, "start" ) != NULL )
 			{
-		    	mix = mlt_properties_get_double( properties, "start" );
+				mix = mlt_properties_get_double( properties, "start" );
+			}
+
+			// Use animated property "split" to get mix level if property is set
+			char* split_property = mlt_properties_get( properties, "split" );
+			if ( split_property )
+			{
+				mlt_position pos = mlt_filter_get_position( filter, frame );
+				mlt_position len = mlt_filter_get_length2( filter, frame );
+				mix = mlt_properties_anim_get_double( properties, "split", pos, len );
 			}
 
 			// Convert it from [0, 1] to [-1, 1]
@@ -299,6 +308,7 @@ mlt_filter filter_panner_init( mlt_profile profile, mlt_service_type type, const
 		if ( arg != NULL )
 			mlt_properties_set_double( MLT_FILTER_PROPERTIES( filter ), "start", atof( arg ) );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "channel", -1 );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "split", NULL );
 	}
 	return filter;
 }
