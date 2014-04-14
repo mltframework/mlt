@@ -53,6 +53,12 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	// Get the image as requested
 //	*format = (mlt_image_format) mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(producer), "_movit image_format" );
+
+	// This is needed to prevent conversion to mlt_image_glsl after producer,
+	// deinterlace, or fieldorder, The latter two can force output of
+	// an image after it had already been converted to glsl.
+	*format = mlt_image_none;
+
 	error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 	// Skip processing if requested.
@@ -89,7 +95,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		GlslManager::get_instance()->unlock_service( frame );
 	}
 
-        GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
+	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
 	Effect* effect = GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new OptionalEffect<PaddingEffect> );
 	assert(effect);
 	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );
