@@ -83,6 +83,11 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		}
 	}
 	
+	if ( *format == mlt_image_none )
+	{
+		// set format to the original's producer format
+		*format = (mlt_image_format) mlt_properties_get_int( properties, "_original_format" );
+	}
 	// Determine output buffer size
 	*width = mlt_properties_get_int( frame_properties, "width" );
 	*height = mlt_properties_get_int( frame_properties, "height" );
@@ -226,8 +231,21 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		    // Get the frame
 		    mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
+
 		    // Cache the frame
 		    mlt_properties_set_data( properties, "first_frame", first_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+
+		    // Find the original producer's format
+		    int width = 0;
+		    int height = 0;
+		    mlt_image_format format = mlt_image_none;
+		    uint8_t *image = NULL;
+		    int error = mlt_frame_get_image( first_frame, &image, &format, &width, &height, 0 );
+		    if ( !error )
+		    {
+			// cache the original producer's pixel format
+			mlt_properties_set_int( properties, "_original_format", (int) format );
+		    }
 		}
 
 		mlt_properties_inherit( frame_properties, MLT_FRAME_PROPERTIES(first_frame) );
