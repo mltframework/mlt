@@ -1232,9 +1232,6 @@ static int allocate_buffer( mlt_frame frame, AVCodecContext *codec_context, uint
 	if ( codec_context->width == 0 || codec_context->height == 0 )
 		return size;
 
-	if ( *format == mlt_image_glsl )
-		*format = pick_pix_format( codec_context->pix_fmt );
-
 	*width = codec_context->width;
 	*height = codec_context->height;
 	size = mlt_image_format_size( *format, *width, *height, NULL );
@@ -1365,7 +1362,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	context = self->video_format;
 	stream = context->streams[ self->video_index ];
 	codec_context = stream->codec;
-	if ( *format == mlt_image_none ||
+	if ( *format == mlt_image_none || *format == mlt_image_glsl ||
 			codec_context->pix_fmt == PIX_FMT_ARGB ||
 			codec_context->pix_fmt == PIX_FMT_RGBA ||
 			codec_context->pix_fmt == PIX_FMT_ABGR ||
