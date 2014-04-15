@@ -44,7 +44,7 @@ static void PreCompute(uint8_t *image, int32_t *rgb, int width, int height)
 				if (y > 0) pts[z] += rgb[width * -3];
 				if (x>0 && y>0) pts[z] -= rgb[(width + 1) * -3];
 				*rgb++ = pts[z];
-            }
+			}
 			image += 3;
 		}
 	}
@@ -84,18 +84,38 @@ static void DoBoxBlur(uint8_t *image, int32_t *rgb, unsigned int width, unsigned
 	}
 }
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	mlt_filter filter =  (mlt_filter) mlt_frame_pop_service( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+
 	// Get the image
 	*format = mlt_image_rgb24;
-	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
-	short hori = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "hori" );
-	short vert = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "vert" );
+	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 )
 	{
-		double factor = mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "boxblur" );
+		short hori = mlt_properties_get_int( properties, "hori" );
+		short vert = mlt_properties_get_int( properties, "vert" );
+
+		// Get blur factor
+		double factor = mlt_properties_get_int( properties, "start" );
+		if ( mlt_properties_get( properties, "end" ) )
+		{
+			double end = (double) mlt_properties_get_int( properties, "end" );
+			factor += ( end - factor ) * mlt_filter_get_progress( filter, frame );
+		}
+
+		// If animated property "blur" is set, use its value. 
+		char* blur_property = mlt_properties_get( properties, "blur" );
+		if ( blur_property )
+		{
+			mlt_position position = mlt_filter_get_position( filter, frame );
+			mlt_position length = mlt_filter_get_length2( filter, frame );
+			factor = mlt_properties_anim_get_double( properties, "blur", position, length );
+		}
+
 		if ( factor != 0)
 		{
 			int h = *height + 1;
@@ -111,25 +131,9 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	// Get the starting blur level
-	double blur = (double) mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "start" );
-	short hori = mlt_properties_get_int(MLT_FILTER_PROPERTIES( this ), "hori" );
-	short vert = mlt_properties_get_int(MLT_FILTER_PROPERTIES( this ), "vert" );
-
-	// If there is an end adjust gain to the range
-	if ( mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "end" ) != NULL )
-	{
-		// Determine the time position of this frame in the transition duration
-		double end = (double) mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "end" );
-		blur += ( end - blur ) * mlt_filter_get_progress( this, frame );
-	}
-
-	// Push the frame filter
-	mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), "boxblur", blur );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "hori", hori );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "vert", vert );
+	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
 
 	return frame;
@@ -140,15 +144,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_boxblur_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		this->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "start", arg == NULL ? "2" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "hori", arg == NULL ? "1" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "vert", arg == NULL ? "1" : arg);
+		filter->process = filter_process;
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "start", arg == NULL ? "2" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "hori", arg == NULL ? "1" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "vert", arg == NULL ? "1" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "blur", NULL );
 	}
-	return this;
+	return filter;
 }
 
 
