@@ -85,7 +85,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			factor += ( end - factor ) * mlt_filter_get_progress( filter, frame );
 		}
 
-		// If animated property "blur" is set, use its value. 
+		// If animated property "wave" is set, use its value. 
 		char* wave_property = mlt_properties_get( properties, "wave" );
 		if ( wave_property )
 		{
