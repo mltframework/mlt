@@ -13,7 +13,7 @@ parameters:
   - identifier: start
     title: Amplitude
     argument: yes
-    type: float
+    type: integer
     description: >
       If an end amplitude is provided, then this is the starting amplitude, and
       amplitude is interpolated over the duration of the filter from start
@@ -27,15 +27,15 @@ parameters:
 
   - identifier: end
     title: End amplitude
-    type: float
+    type: integer
     mutable: yes
     minimum: 1
 
   - identifier: wave
     title: Amplitude
-    type: float
-    description:
-      If this value is set, values for properties "start" and "end" are ignored.
+    type: integer
+    description: >
+      If this value is set the start and end parameters are ignored.
     mutable: yes
     minimum: 1
 

@@ -9,3 +9,53 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+parameters:
+  - identifier: start
+    title: Size
+    argument: yes
+    type: integer
+    description: >
+      If an end size is provided, then this is the starting size, and
+      size is interpolated over the duration of the filter from start
+      to end size.
+      If the keyframable property "blur" is provided, then this is ignored, and
+      "blur" is used instead.
+      This parameter also affects the size both horizontally and vertically
+      simultaneously, in amounts proportional to the horizontal size and
+      vertical size parameters.
+    unit: pixels
+    mutable: yes
+    default: 2
+    minimum: 1
+
+  - identifier: end
+    title: End size
+    type: integer
+    unit: pixels
+    mutable: yes
+    minimum: 1
+
+  - identifier: blur
+    title: Size
+    type: integer
+    description: >
+      If this value is set the start and end parameters are ignored.
+    unit: pixels
+    mutable: yes
+    minimum: 1
+
+  - identifier: hori
+    title: Horizontal size
+    type: integer
+    unit: pixels
+    mutable: yes
+    minimum: 1
+    default: 1
+
+  - identifier: vert
+    title: Vertical size
+    type: integer
+    unit: pixels
+    mutable: yes
+    minimum: 1
+    default: 1
