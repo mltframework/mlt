@@ -1,11 +1,58 @@
-schema_version: 0.1
+schema_version: 0.2
 type: filter
 identifier: wave
 title: Wave
-version: 1
+version: 2
 copyright: Leny Grisel, Jean-Baptiste Mardelle
 creator: Leny Grisel, Jean-Baptiste Mardelle
 license: LGPLv2.1
 language: en
 tags:
   - Video
+parameters:
+  - identifier: start
+    title: Amplitude
+    argument: yes
+    type: float
+    description: >
+      If an end amplitude is provided, then this is the starting amplitude, and
+      amplitude is interpolated over the duration of the filter from start
+      to end amplitude.
+      If the keyframable property "wave" is provided, then this is ignored, and
+      "wave" is used instead.
+      This parameter also affects the pulsation period and the phase length.
+    mutable: yes
+    default: 10
+    minimum: 1
+
+  - identifier: end
+    title: End amplitude
+    type: float
+    mutable: yes
+    minimum: 1
+
+  - identifier: wave
+    title: Amplitude
+    type: float
+    description:
+      If this value is set, values for properties "start" and "end" are ignored.
+    mutable: yes
+    minimum: 1
+
+  - identifier: speed
+    title: Speed
+    type: integer
+    mutable: yes
+    default: 5
+
+  - identifier: deformX
+    title: Deform horizontally?
+    type: boolean
+    mutable: yes
+    default: 1
+
+  - identifier: deformY
+    title: Deform vertically?
+    type: boolean
+    mutable: yes
+    default: 1
