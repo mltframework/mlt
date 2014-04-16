@@ -149,8 +149,8 @@ mlt_filter filter_boxblur_init( mlt_profile profile, mlt_service_type type, cons
 	{
 		filter->process = filter_process;
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "start", arg == NULL ? "2" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "hori", arg == NULL ? "1" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "vert", arg == NULL ? "1" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "hori", "1" );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "vert", "1" );
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "blur", NULL );
 	}
 	return filter;
