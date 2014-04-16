@@ -128,9 +128,9 @@ mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const c
 	{
 		filter->process = filter_process;
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "start", arg == NULL ? "10" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "speed", arg == NULL ? "5" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "deformX", arg == NULL ? "1" : arg);
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "deformY", arg == NULL ? "1" : arg);
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "speed", "5");
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "deformX", "1");
+		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "deformY", "1");
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "wave", NULL);
 	}
 	return filter;
