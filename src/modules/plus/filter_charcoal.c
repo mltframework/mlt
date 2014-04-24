@@ -66,24 +66,27 @@ static inline int sqrti( int n )
 /** Do it :-).
 */
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the filter
-	mlt_filter filter = mlt_frame_pop_service( this );
+	mlt_filter filter = mlt_frame_pop_service( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 
 	// Get the image
 	*format = mlt_image_yuv422;
-	int error = mlt_frame_get_image( this, image, format, width, height, 1 );
+	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 )
 	{
 		// Get the charcoal scatter value
-		int x_scatter = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "x_scatter" );
-		int y_scatter = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "y_scatter" );
-		float scale = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "scale" );
-		float mix = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "mix" );
-		int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" );
+		int x_scatter = mlt_properties_anim_get_double( properties, "x_scatter", position, length );
+		int y_scatter = mlt_properties_anim_get_double( properties, "y_scatter", position, length );
+		float scale = mlt_properties_anim_get_double( properties, "scale" ,position, length);
+		float mix = mlt_properties_anim_get_double( properties, "mix", position, length);
+		int invert = mlt_properties_anim_get_int( properties, "invert", position, length);
 
 		// We'll process pixel by pixel
 		int x = 0;
@@ -138,7 +141,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		*image = temp;
 
 		// Store new and destroy old
-		mlt_frame_set_image( this, *image, *width * *height * 2, mlt_pool_release );
+		mlt_frame_set_image( frame, *image, *width * *height * 2, mlt_pool_release );
 	}
 
 	return error;
@@ -147,10 +150,10 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	// Push the frame filter
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
 
 	return frame;
@@ -161,15 +164,15 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_charcoal_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		this->process = filter_process;
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "x_scatter", 1 );
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "y_scatter", 1 );
-		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "scale", 1.5 );
-		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "mix", 0.0 );
+		filter->process = filter_process;
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "x_scatter", 1 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "y_scatter", 1 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( filter ), "scale", 1.5 );
+		mlt_properties_set_double( MLT_FILTER_PROPERTIES( filter ), "mix", 0.0 );
 	}
-	return this;
+	return filter;
 }
 
