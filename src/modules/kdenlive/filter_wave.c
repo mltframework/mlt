@@ -74,9 +74,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( error == 0 )
 	{
 		double factor = mlt_properties_get_double( properties, "start" );
-		int speed = mlt_properties_get_int( properties, "speed" );
-		int deformX = mlt_properties_get_int( properties, "deformX" );
-		int deformY = mlt_properties_get_int( properties, "deformY" );
+
+		mlt_position f_pos = mlt_filter_get_position( filter, frame );
+		mlt_position f_len = mlt_filter_get_length2( filter, frame );
+		int speed = mlt_properties_anim_get_int( properties, "speed", f_pos, f_len );
+		int deformX = mlt_properties_anim_get_int( properties, "deformX", f_pos, f_len );
+		int deformY = mlt_properties_anim_get_int( properties, "deformY", f_pos, f_len );
 
 		if ( mlt_properties_get( properties, "end" ) )
 		{
@@ -89,9 +92,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		char* wave_property = mlt_properties_get( properties, "wave" );
 		if ( wave_property )
 		{
-			mlt_position pos = mlt_filter_get_position( filter, frame );
-			mlt_position len = mlt_filter_get_length2( filter, frame );
-			factor = mlt_properties_anim_get_double( properties, "wave", pos, len );
+			factor = mlt_properties_anim_get_double( properties, "wave", f_pos, f_len );
 		}
 
 		if (factor != 0) 
