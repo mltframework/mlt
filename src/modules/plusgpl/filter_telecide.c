@@ -1168,10 +1168,10 @@ final:
 /** Process the frame object.
 */
 
-static mlt_frame process( mlt_filter this, mlt_frame frame )
+static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	// Push the filter on to the stack
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 
 	// Push the frame filter
 	mlt_frame_push_get_image( frame, get_image );
@@ -1184,15 +1184,15 @@ static mlt_frame process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_telecide_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		this->process = process;
+		filter->process = process;
 
 		// Allocate the context and set up for garbage collection		
 		context cx = (context) mlt_pool_alloc( sizeof(struct context_s) );
 		memset( cx, 0, sizeof( struct context_s ) );
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		mlt_properties_set_data( properties, "context", cx, sizeof(struct context_s), (mlt_destructor)mlt_pool_release, NULL );
 
 		// Allocate the metrics cache and set up for garbage collection
@@ -1224,6 +1224,6 @@ mlt_filter filter_telecide_init( mlt_profile profile, mlt_service_type type, con
 		mlt_properties_set_int( properties, "y1", 0 );
 		mlt_properties_set_int( properties, "hints", 1 );
 	}
-	return this;
+	return filter;
 }
 
