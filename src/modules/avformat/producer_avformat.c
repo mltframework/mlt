@@ -566,6 +566,24 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	return result;
 }
 
+static mlt_image_format pick_pix_fmt( enum PixelFormat pix_fmt )
+{
+	switch ( pix_fmt )
+	{
+	case PIX_FMT_ARGB:
+	case PIX_FMT_RGBA:
+	case PIX_FMT_ABGR:
+	case PIX_FMT_BGRA:
+		return PIX_FMT_RGBA;
+#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
+	case AV_PIX_FMT_BAYER_RGGB16LE:
+		return PIX_FMT_RGB24;
+#endif
+	default:
+		return PIX_FMT_YUV422P;
+	}
+}
+
 static int get_basic_info( producer_avformat self, mlt_profile profile, const char *filename )
 {
 	int error = 0;
@@ -640,9 +658,8 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 		get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context );
 
 		// Verify that we can convert this to YUV 4:2:2
-		// TODO: we can now also return RGB and RGBA and quite possibly more in the future.
 		struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
-			codec_context->width, codec_context->height, PIX_FMT_YUYV422, SWS_BILINEAR, NULL, NULL, NULL);
+			codec_context->width, codec_context->height, pick_pix_fmt( codec_context->pix_fmt ), SWS_BILINEAR, NULL, NULL, NULL);
 		if ( context )
 			sws_freeContext( context );
 		else
@@ -1072,7 +1089,7 @@ static int set_luma_transfer( struct SwsContext *context, int src_colorspace, in
 		brightness, contrast, saturation );
 }
 
-static mlt_image_format pick_pix_format( enum PixelFormat pix_fmt )
+static mlt_image_format pick_image_format( enum PixelFormat pix_fmt )
 {
 	switch ( pix_fmt )
 	{
@@ -1092,7 +1109,10 @@ static mlt_image_format pick_pix_format( enum PixelFormat pix_fmt )
 	case PIX_FMT_MONOBLACK:
 	case PIX_FMT_RGB8:
 	case PIX_FMT_BGR8:
+#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
+	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return mlt_image_rgb24;
+#endif
 	default:
 		return mlt_image_yuv422;
 	}
@@ -1367,7 +1387,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			codec_context->pix_fmt == PIX_FMT_RGBA ||
 			codec_context->pix_fmt == PIX_FMT_ABGR ||
 			codec_context->pix_fmt == PIX_FMT_BGRA )
-		*format = pick_pix_format( codec_context->pix_fmt );
+		*format = pick_image_format( codec_context->pix_fmt );
+#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
+	else if ( codec_context->pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE ) {
+		if ( *format == mlt_image_yuv422 )
+			*format = mlt_image_yuv420p;
+		else if ( *format == mlt_image_rgb24a )
+			*format = mlt_image_rgb24;
+	}
+#endif
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
