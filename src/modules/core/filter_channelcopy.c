@@ -155,9 +155,9 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties frame_props = MLT_FRAME_PROPERTIES( frame );
 
 	// Propogate the parameters
@@ -166,7 +166,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	mlt_properties_set_int( frame_props, "channelcopy.swap", mlt_properties_get_int( properties, "swap" ) );
 
 	// Override the get_audio method
-	mlt_frame_push_audio( frame, this );
+	mlt_frame_push_audio( frame, filter );
 	mlt_frame_push_audio( frame, filter_get_audio );
 
 	return frame;
@@ -177,16 +177,17 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_channelcopy_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		this->process = filter_process;
+		filter->process = filter_process;
 		if ( arg != NULL )
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "to", atoi( arg ) );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "to", atoi( arg ) );
 		else
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "to", 1 );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "to", 1 );
 		if ( strcmp(id, "channelswap") == 0 )
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "swap", 1 );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "swap", 1 );
 	}
-	return this;
+	return filter;
 }
+

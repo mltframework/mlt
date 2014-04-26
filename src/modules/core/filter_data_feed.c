@@ -51,10 +51,10 @@ static void destroy_data_queue( void *arg )
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	// Get the filter properties
-	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( this );
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the frame properties
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -66,8 +66,8 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	char *type = mlt_properties_get( filter_properties, "type" );
 
 	// Get the in and out points of this filter
-	int in = mlt_filter_get_in( this );
-	int out = mlt_filter_get_out( this );
+	int in = mlt_filter_get_in( filter );
+	int out = mlt_filter_get_out( filter );
 
 	// Create the data queue if it doesn't exist
 	if ( data_queue == NULL )
@@ -157,21 +157,21 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 mlt_filter filter_data_feed_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the filter
-	mlt_filter this = mlt_filter_new( );
+	mlt_filter filter = mlt_filter_new( );
 
 	// Initialise it
-	if ( this != NULL )
+	if ( filter != NULL )
 	{
 		// Get the properties
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 		// Assign the argument (default to titles)
 		mlt_properties_set( properties, "type", arg == NULL ? "titles" : arg );
 
 		// Specify the processing method
-		this->process = filter_process;
+		filter->process = filter_process;
 	}
 
-	return this;
+	return filter;
 }
 
