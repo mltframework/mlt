@@ -20,12 +20,9 @@
  */
 
 #include <framework/mlt.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-//#define DEBUG_PATTERN_GUIDANCE
 
 #define MAX_CYCLE 6
 #define BLKSIZE 24
@@ -46,7 +43,6 @@
 #define N 2
 #define PBLOCK 3
 #define CBLOCK 4
-
 #define NO_BACK 0
 #define BACK_ON_COMBED 1
 #define ALWAYS_BACK 2
@@ -88,10 +84,7 @@ struct context_s {
 
 	// Used by field matching.
 	unsigned char *fprp, *fcrp, *fcrp_saved, *fnrp;
-//	unsigned char *fprpU, *fcrpU, *fcrp_savedU, *fnrpU;
-//	unsigned char *fprpV, *fcrpV, *fcrp_savedV, *fnrpV;
 	unsigned char *dstp, *finalp;
-//	unsigned char *dstpU, *dstpV;
 	int chosen;
 	unsigned int p, c, pblock, cblock, lowest, predicted, predicted_metric;
 	unsigned int np, nc, npblock, ncblock, nframe;
@@ -452,8 +445,6 @@ void CalculateMetrics(context cx, int frame, unsigned char *fcrp, unsigned char 
 	p = c = 0;
 
 	// Calculate the field match and film/video metrics.
-//	if (vi.IsYV12()) skip = 1;
-//	else 
 	skip = 1 + ( !cx->chroma );
 	for (y = 0, index = 0; y < cx->h - 4; y+=4)
 	{
@@ -462,14 +453,10 @@ void CalculateMetrics(context cx, int frame, unsigned char *fcrp, unsigned char 
 		{
 			for (x = 0; x < cx->w;)
 			{
-//				if (vi.IsYV12())
-//					index = (y/BLKSIZE)*xblocks + x/BLKSIZE;
-//				else
-					index = (y/BLKSIZE) * cx->xblocks + x/BLKSIZE_TIMES2;
+				index = (y/BLKSIZE) * cx->xblocks + x/BLKSIZE_TIMES2;
 
 				// Test combination with current frame.
 				tmp1 = ((long)currbot0[x] + (long)currbot2[x]);
-//				diff = abs((long)currtop0[x] - (tmp1 >> 1));
 				diff = abs((((long)currtop0[x] + (long)currtop2[x] + (long)currtop4[x])) - (tmp1 >> 1) - tmp1);
 				if (diff > cx->nt)
 				{
@@ -524,161 +511,7 @@ void CalculateMetrics(context cx, int frame, unsigned char *fcrp, unsigned char 
 		b4		 += cx->pitchtimes4;
 	}
 
-//	if (vi.IsYV12() && chroma == true)
-//	{
-//		int z;
-//
-//		for (z = 0; z < 2; z++)
-//		{
-//			// Do the same for the U plane.
-//			if (z == 0)
-//			{
-//				currbot0  = fcrpU + pitchover2;
-//				currbot2  = fcrpU + 3 * pitchover2;
-//				currtop0 = fcrpU;
-//				currtop2 = fcrpU + 2 * pitchover2;
-//				currtop4 = fcrpU + 4 * pitchover2;
-//				prevbot0  = fprpU + pitchover2;
-//				prevbot2  = fprpU + 3 * pitchover2;
-//				prevtop0 = fprpU;
-//				prevtop2 = fprpU + 2 * pitchover2;
-//				prevtop4 = fprpU + 4 * pitchover2;
-//			}
-//			else
-//			{
-//				currbot0  = fcrpV + pitchover2;
-//				currbot2  = fcrpV + 3 * pitchover2;
-//				currtop0 = fcrpV;
-//				currtop2 = fcrpV + 2 * pitchover2;
-//				currtop4 = fcrpV + 4 * pitchover2;
-//				prevbot0  = fprpV + pitchover2;
-//				prevbot2  = fprpV + 3 * pitchover2;
-//				prevtop0 = fprpV;
-//				prevtop2 = fprpV + 2 * pitchover2;
-//				prevtop4 = fprpV + 4 * pitchover2;
-//			}
-//			if (tff == true)
-//			{
-//				a0 = prevbot0;
-//				a2 = prevbot2;
-//				b0 = currtop0;
-//				b2 = currtop2;
-//				b4 = currtop4;
-//			}
-//			else
-//			{
-//				a0 = currbot0;
-//				a2 = currbot2;
-//				b0 = prevtop0;
-//				b2 = prevtop2;
-//				b4 = prevtop4;
-//			}
-//
-//			for (y = 0, index = 0; y < hover2 - 4; y+=4)
-//			{
-//				/* Exclusion band. Good for ignoring subtitles. */
-//				if (y0 == y1 || y < y0/2 || y > y1/2)
-//				{
-//					for (x = 0; x < wover2;)
-//					{
-//						if (vi.IsYV12())
-//							index = (y/BLKSIZE)*xblocks + x/BLKSIZE;
-//						else
-//							index = (y/BLKSIZE)*xblocks + x/BLKSIZE_TIMES2;
-//
-//						// Test combination with current frame.
-//						tmp1 = ((long)currbot0[x] + (long)currbot2[x]);
-//						diff = abs((((long)currtop0[x] + (long)currtop2[x] + (long)currtop4[x])) - (tmp1 >> 1) - tmp1);
-//						if (diff > nt)
-//						{
-//							c += diff;
-//#ifdef WINDOWED_MATCH
-//							matchc[index] += diff;
-//#endif
-//						}
-//
-//						tmp1 = currbot0[x] + T;
-//						tmp2 = currbot0[x] - T;
-//						vc = (tmp1 < currtop0[x] && tmp1 < currtop2[x]) ||
-//							 (tmp2 > currtop0[x] && tmp2 > currtop2[x]);
-//						if (vc)
-//						{
-//							sumc[index]++;
-//						}
-//
-//						// Test combination with previous frame.
-//						tmp1 = ((long)a0[x] + (long)a2[x]);
-//						diff = abs((((long)b0[x] + (long)b2[x] + (long)b4[x])) - (tmp1 >> 1) - tmp1);
-//						if (diff > nt)
-//						{
-//							p += diff;
-//#ifdef WINDOWED_MATCH
-//							matchp[index] += diff;
-//#endif
-//						}
-//
-//						tmp1 = a0[x] + T;
-//						tmp2 = a0[x] - T;
-//						vc = (tmp1 < b0[x] && tmp1 < b2[x]) ||
-//							 (tmp2 > b0[x] && tmp2 > b2[x]);
-//						if (vc)
-//						{
-//							sump[index]++;
-//						}
-//
-//						x ++;
-//						if (!(x&3)) x += 4;
-//					}
-//				}
-//				currbot0 += 4*pitchover2;
-//				currbot2 += 4*pitchover2;
-//				currtop0 += 4*pitchover2;
-//				currtop2 += 4*pitchover2;
-//				currtop4 += 4*pitchover2;
-//				a0		 += 4*pitchover2;
-//				a2		 += 4*pitchover2;
-//				b0		 += 4*pitchover2;
-//				b2		 += 4*pitchover2;
-//				b4		 += 4*pitchover2;
-//			}
-//		}
-//	}
-//
-//	// Now find the blocks that have the greatest differences.
-//#ifdef WINDOWED_MATCH
-//	highest_matchp = 0;
-//	for (y = 0; y < yblocks; y++)
-//	{
-//		for (x = 0; x < xblocks; x++)
-//		{
-//if (frame == 45 && matchp[y * xblocks + x] > 2500)
-//{
-//	sprintf(buf, "%d/%d = %d\n", x, y, matchp[y * xblocks + x]);
-//	OutputDebugString(buf);
-//}
-//			if (matchp[y * xblocks + x] > highest_matchp)
-//			{
-//				highest_matchp = matchp[y * xblocks + x];
-//			}
-//		}
-//	}
-//	highest_matchc = 0;
-//	for (y = 0; y < yblocks; y++)
-//	{
-//		for (x = 0; x < xblocks; x++)
-//		{
-//if (frame == 44 && matchc[y * xblocks + x] > 2500)
-//{
-//	sprintf(buf, "%d/%d = %d\n", x, y, matchc[y * xblocks + x]);
-//	OutputDebugString(buf);
-//}
-//			if (matchc[y * xblocks + x] > highest_matchc)
-//			{
-//				highest_matchc = matchc[y * xblocks + x];
-//			}
-//		}
-//	}
-//#endif
+
 	if ( cx->post )
 	{
 		cx->highest_sump = 0;
@@ -710,7 +543,6 @@ void CalculateMetrics(context cx, int frame, unsigned char *fcrp, unsigned char 
 	CacheInsert( cx, frame, p, cx->highest_sump, c, cx->highest_sumc);
 #endif
 }
-
 
 /** Process the image.
 */
@@ -774,7 +606,6 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_properties_set_data( properties, "sump", cx->sump, cx->xblocks * cx->yblocks * sizeof(unsigned int), (mlt_destructor)mlt_pool_release, NULL );
 		mlt_properties_set_data( properties, "sumc", cx->sumc, cx->xblocks * cx->yblocks * sizeof(unsigned int), (mlt_destructor)mlt_pool_release, NULL );
 		cx->tff = mlt_properties_get_int( frame_properties, "top_field_first" );
-	//	fprintf(stderr, "%s: TOP FIELD FIRST %d\n", __FUNCTION__, cx->tff );
 	}
 
 	// Only process if we have no error and a valid colour space
@@ -838,7 +669,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 						cx->crp = (unsigned char *) mlt_properties_get_data( cx->image_cache, key, NULL );
 						sprintf( key, "%d", cx->y ? cx->y - 1 : 1 );
 						cx->prp = (unsigned char *) mlt_properties_get_data( cx->image_cache, key, NULL );
-						CalculateMetrics( cx, cx->y, cx->crp, NULL, NULL, cx->prp, NULL, NULL );					}
+						CalculateMetrics( cx, cx->y, cx->crp, NULL, NULL, cx->prp, NULL, NULL );
+					}
 				}
 			}
 			
@@ -1168,10 +1000,10 @@ final:
 /** Process the frame object.
 */
 
-static mlt_frame process( mlt_filter this, mlt_frame frame )
+static mlt_frame process( mlt_filter filter, mlt_frame frame )
 {
 	// Push the filter on to the stack
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 
 	// Push the frame filter
 	mlt_frame_push_get_image( frame, get_image );
@@ -1184,15 +1016,15 @@ static mlt_frame process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_telecide_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		this->process = process;
+		filter->process = process;
 
 		// Allocate the context and set up for garbage collection		
 		context cx = (context) mlt_pool_alloc( sizeof(struct context_s) );
 		memset( cx, 0, sizeof( struct context_s ) );
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		mlt_properties_set_data( properties, "context", cx, sizeof(struct context_s), (mlt_destructor)mlt_pool_release, NULL );
 
 		// Allocate the metrics cache and set up for garbage collection
@@ -1224,6 +1056,6 @@ mlt_filter filter_telecide_init( mlt_profile profile, mlt_service_type type, con
 		mlt_properties_set_int( properties, "y1", 0 );
 		mlt_properties_set_int( properties, "hints", 1 );
 	}
-	return this;
+	return filter;
 }
 
