@@ -38,8 +38,8 @@ CXXFLAGS += -DSHADERDIR=\"$(SHADERDIR)\"
 LDFLAGS += -L../../mlt++ -lmlt++
 
 ifeq ($(targetos), MinGW)
-	CXXFLAGS += $(shell pkg-config --cflags glew)
-	LDFLAGS += -lmovit $(shell pkg-config --libs-only-L glew) -lglew32 -lopengl32 -lpthread
+	CXXFLAGS += $(shell pkg-config --cflags movit)
+	LDFLAGS += $(shell pkg-config --libs movit) -lopengl32 -lpthread
 else
 	LDFLAGS += $(shell pkg-config --libs movit 2> /dev/null)
 ifeq ($(targetos), Darwin)
