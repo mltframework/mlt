@@ -144,9 +144,9 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties frame_props = MLT_FRAME_PROPERTIES( frame );
 
 	// Propogate the parameters
@@ -163,14 +163,15 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		this->process = filter_process;
+		filter->process = filter_process;
 		if ( arg != NULL )
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "channels", atoi( arg ) );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "channels", atoi( arg ) );
 		else
-			mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "channels", -1 );
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "channels", -1 );
 	}
-	return this;
+	return filter;
 }
+
