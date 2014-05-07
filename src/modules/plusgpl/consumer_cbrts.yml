@@ -1,0 +1,37 @@
+schema_version: 0.1
+type: consumer
+identifier: cbrts
+title: CBR MPEG2-TS
+version: 1
+copyright: Copyright (C) 2010-2014 Broadcasting Center Europe S.A. http://www.bce.lu
+license: GPLv2
+language: en
+creator: Dan Dennedy
+tags:
+  - Audio
+  - Video
+description: Constant bit-rate MPEG-2 Transport Stream
+notes: |
+  All properties, except some key operational properties such as real_time and
+  terminate_on_pause, set on the this consumer are passed onto an encapsulated
+  avformat consumer - no special prefix required. While some avformat
+  properties can accept a "k" suffix, this consumer requires "muxrate" but does
+  not understand the "k" suffix; so, specify the value in bytes per second.
+  The stream is always output to STDOUT at this time.
+  
+  You can rewrite and insert table sections into the transport stream. If you
+  choose to rewrite the PMT sections, then you need to know how libavformat
+  sets the PIDs on the elementary streams. Currently, the video stream is 256
+  (0x100) and audio streams start at 257, incrementing from there. There are
+  conventions for property names to pass the .sec files to the consumer.
+
+  The conventions are:
+    si.<section>.file=<filename.sec>
+    si.<section>.pid=<number>
+    si.<section>.time=<milliseconds>
+  <section> is really anything, but typically: pat, sdt, nit, eit, etc.
+  "pat," "pmt," and "sdt" are special such that when supplied, they cause
+  libavformat's corresponding sections to be filtered out and replaced with
+  yours. You should always use PID 16 for NIT, 17 for SDT, and of course,
+  0 for PAT; PMT may be anything, but libavformat uses 4095 (0xfff).
+  The time property indicates the frequency to insert the section - every N milliseconds.
