@@ -16,6 +16,10 @@ OBJS = factory.o \
 	   cJSON.o \
 	   filter_telecide.o
 
+ifeq ($(targetos), MinGW)
+LDFLAGS += -lws2_32
+endif
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

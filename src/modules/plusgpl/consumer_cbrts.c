@@ -27,13 +27,14 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#include <poll.h>
+#ifdef WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
+#endif
 #include <strings.h>
 
 #define TSP_BYTES     (188)
@@ -165,7 +166,8 @@ static ts_section* load_section( const char *filename )
 	if ( read( fd, section->data, 3 ) )
 	{
 		// get the size
-		section->size = *( uint16_t* )( section->data + 1 );
+		uint16_t *p = (uint16_t*) &section->data[1];
+		section->size = p[0];
 		section->size = ntohs( section->size ) & 0x0FFF;
 
 		// read the data
@@ -364,7 +366,7 @@ static double measure_bitrate( consumer_cbrts self, uint64_t pcr, int drop )
 			muxrate /= (double) ( pcr - self->previous_pcr ) / SCR_HZ;
 		else
 			muxrate /= ( ( (double) ( 1ULL << 33 ) - 1 ) * 300 - self->previous_pcr + pcr ) / SCR_HZ;
-		mlt_log_debug( NULL, "measured TS bitrate %.1f bits/sec PCR %lu\n", muxrate, pcr );
+		mlt_log_debug( NULL, "measured TS bitrate %.1f bits/sec PCR %"PRIu64"\n", muxrate, pcr );
 	}
 
 	return muxrate;
@@ -420,7 +422,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 	uint64_t input_counter = 0;
 	uint64_t last_input_counter;
 
-	mlt_log_debug( NULL, "%s: n %i output_counter %lu input_rate %lu\n", __FUNCTION__, n, self->output_counter, input_rate );
+	mlt_log_debug( NULL, "%s: n %i output_counter %"PRIu64" input_rate %"PRIu64"\n", __FUNCTION__, n, self->output_counter, input_rate );
 	while ( n-- && result >= 0 )
 	{
 		uint8_t *packet = mlt_deque_pop_front( self->packets2 );
@@ -432,7 +434,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 		{
 			if ( !warned )
 			{
-				mlt_log_warning( MLT_CONSUMER_SERVICE( &self->parent ), "muxrate too low %lu > %lu\n", input_rate, output_rate );
+				mlt_log_warning( MLT_CONSUMER_SERVICE( &self->parent ), "muxrate too low %"PRIu64" > %"PRIu64"\n", input_rate, output_rate );
 				warned = 1;
 			}
 
@@ -830,7 +832,9 @@ static int consumer_stop( mlt_consumer parent )
 
 		// Kill the threads and clean up
 		self->running = 0;
+#ifndef WIN32
 		if ( self->thread )
+#endif
 			pthread_join( self->thread, NULL );
 		self->joined = 1;
 
