@@ -361,7 +361,7 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	if ( !frame->convert_image )
 		frame->convert_image = convert_image;
@@ -373,10 +373,11 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_imageconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = calloc( 1, sizeof( struct mlt_filter_s ) );
-	if ( mlt_filter_init( this, this ) == 0 )
+	mlt_filter filter = calloc( 1, sizeof( struct mlt_filter_s ) );
+	if ( mlt_filter_init( filter, filter ) == 0 )
 	{
-		this->process = filter_process;
+		filter->process = filter_process;
 	}
-	return this;
+	return filter;
 }
+

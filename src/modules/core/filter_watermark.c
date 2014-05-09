@@ -37,12 +37,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int error = 0;
 
 	// Get the watermark filter object
-	mlt_filter this = mlt_frame_pop_service( frame );
+	mlt_filter filter = mlt_frame_pop_service( frame );
 
 	// Get the properties of the filter
-	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
-	mlt_service_lock( MLT_FILTER_SERVICE( this ) );
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
 	// Get the producer from the filter
 	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
@@ -60,7 +60,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( composite == NULL )
 	{
 		// Create composite via the factory
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		composite = mlt_factory_transition( profile, "composite", NULL );
 
 		// Register the composite for reuse/destruction
@@ -91,7 +91,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		char *factory = mlt_properties_get( properties, "factory" );
 
 		// Create the producer
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		producer = mlt_factory_producer( profile, factory, resource );
 
 		// If we have one
@@ -117,7 +117,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties_pass( producer_properties, properties, "producer." );
 	}
 
-	mlt_service_unlock( MLT_FILTER_SERVICE( this ) );
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	// Only continue if we have both producer and composite
 	if ( composite != NULL && producer != NULL )
@@ -129,7 +129,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_frame b_frame = NULL;
 
 		// Get the original producer position
-		mlt_position position = mlt_filter_get_position( this, frame );
+		mlt_position position = mlt_filter_get_position( filter, frame );
 
 		// Make sure the producer is in the correct position
 		mlt_producer_seek( producer, position );
@@ -166,7 +166,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			if ( mlt_properties_get_int( properties, "reverse" ) == 0 )
 			{
 				// Apply all filters that are attached to this filter to the b frame
-				mlt_service_apply_filters( MLT_FILTER_SERVICE( this ), b_frame, 0 );
+				mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), b_frame, 0 );
 
 				// Process the frame
 				mlt_transition_process( composite, frame, b_frame );
@@ -187,7 +187,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 				mlt_properties_set( a_props, "rescale.interp", rescale );
 				mlt_properties_set( b_props, "rescale.interp", rescale );
-				mlt_service_apply_filters( MLT_FILTER_SERVICE( this ), b_frame, 0 );
+				mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), b_frame, 0 );
 				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
 				alpha = mlt_frame_get_alpha_mask( b_frame );
 				mlt_frame_set_image( frame, *image, *width * *height * 2, NULL );
@@ -218,16 +218,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	// Get the properties of the frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Assign the frame out point to the filter (just in case we need it later)
-	mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "_out", mlt_properties_get_int( properties, "out" ) );
+	mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_out", mlt_properties_get_int( properties, "out" ) );
 
 	// Push the filter on to the stack
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 
 	// Push the get_image on to the stack
 	mlt_frame_push_get_image( frame, filter_get_image );
@@ -240,17 +240,17 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_watermark_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
-		this->process = filter_process;
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		filter->process = filter_process;
 		mlt_properties_set( properties, "factory", mlt_environment( "MLT_PRODUCER" ) );
 		if ( arg != NULL )
 			mlt_properties_set( properties, "resource", arg );
 		// Ensure that attached filters are handled privately
 		mlt_properties_set_int( properties, "_filter_private", 1 );
 	}
-	return this;
+	return filter;
 }
 
