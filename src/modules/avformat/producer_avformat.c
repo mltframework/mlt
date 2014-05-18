@@ -28,6 +28,7 @@
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_cache.h>
+#include <framework/mlt_util.h>
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
@@ -186,7 +187,8 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			if ( strcmp( service, "avformat-novalidate" ) )
 			{
 				// Open the file
-				if ( producer_open( self, profile, file, 1 ) != 0 )
+				mlt_util_from_utf8( properties, "resource", "_resource" );
+				if ( producer_open( self, profile, mlt_properties_get( properties, "_resource" ), 1 ) != 0 )
 				{
 					// Clean up
 					mlt_producer_close( producer );
@@ -1956,8 +1958,9 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	{
 		unlock_needed = 1;
 		pthread_mutex_lock( &self->video_mutex );
+		mlt_util_from_utf8( properties, "resource", "_resource" );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "resource" ), 0 );
+			mlt_properties_get( properties, "_resource" ), 0 );
 		context = self->video_format;
 	}
 
@@ -2562,8 +2565,9 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	// Reopen the file if necessary
 	if ( !context && self->audio_index > -1 && index > -1 )
 	{
+		mlt_util_from_utf8( properties, "resource", "_resource" );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "resource" ), 1 );
+			mlt_properties_get( properties, "_resource" ), 1 );
 		context = self->audio_format;
 	}
 
