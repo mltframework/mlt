@@ -4,6 +4,11 @@
 #include <windows.h>
 #include <pthread.h>
 
+#include <iconv.h>
+#include <locale.h>
+#include <ctype.h>
+#include "../framework/mlt_properties.h"
+
 int usleep(unsigned int useconds)
 {
 	HANDLE timer;
@@ -41,3 +46,55 @@ int setenv(const char *name, const char *value, int overwrite)
 	return result; 
 } 
 
+static int iconv_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out, const char* encoding )
+{
+	const char *text = mlt_properties_get( properties, prop_name );
+	int result = -1;
+
+	iconv_t cd = iconv_open( encoding, "UTF-8" );
+	if ( text && ( cd != ( iconv_t )-1 ) ) {
+		size_t inbuf_n = strlen( text );
+		size_t outbuf_n = inbuf_n * 6;
+		char *outbuf = mlt_pool_alloc( outbuf_n );
+		char *outbuf_p = outbuf;
+
+		memset( outbuf, 0, outbuf_n );
+
+		if ( text != NULL && strcmp( text, "" ) && iconv( cd, &text, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
+			mlt_properties_set( properties, prop_name_out, outbuf );
+		else
+			mlt_properties_set( properties, prop_name_out, "" );
+
+		mlt_pool_release( outbuf );
+		result = 0;
+	}
+	iconv_close( cd );
+	return result;
+}
+
+int mlt_util_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
+{
+	int result = -1;
+	// Get the locale name.
+	const char *locale = setlocale( LC_CTYPE, NULL );
+	if ( locale && strchr( locale, '.' ) ) {
+		// Check for a code page in locale format = language_country.codepage.
+		locale = strchr( locale, '.' ) + 1;
+		if ( isdigit( locale[0] ) ) {
+			// numeric code page
+			char codepage[10];
+			snprintf( codepage, sizeof(codepage), "CP%s", locale );
+			result = iconv_from_utf8( properties, prop_name, prop_name_out, codepage );
+		} else {
+			// non-numeric code page possible on Windows?
+			// TODO: some code pages may require conversion from numeric to iconv
+			// compatible name. For example, maybe Shift-JIS or KOI8-R.
+			result = iconv_from_utf8( properties, prop_name, prop_name_out, locale );
+		}
+	}
+	if ( result < 0 ) {
+		result = mlt_properties_set( properties, prop_name_out,
+									 mlt_properties_get( properties, prop_name ) );
+	}
+	return result;
+}
