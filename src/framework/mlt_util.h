@@ -23,6 +23,8 @@
 #ifndef MLT_UTIL_H
 #define MLT_UTIL_H
 
+#include "mlt_types.h"
+
 /** Convert UTF-8 string to the locale-defined encoding.
  *
  * MLT uses UTF-8 for strings, but Windows cannot accept UTF-8 for a filename.

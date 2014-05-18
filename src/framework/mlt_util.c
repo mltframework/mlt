@@ -29,7 +29,7 @@
 // This was largely chosen to prevent adding a libiconv dependency to the framework per policy.
 // However, for file open operations on Windows, especially when processing XML, a text codec
 // dependency is hardly avoidable.
-void mlt_util_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
+int mlt_util_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
 {
 	return mlt_properties_set( properties, prop_name_out, mlt_properties_get( properties, prop_name ) );
 }
