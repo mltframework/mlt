@@ -72,7 +72,7 @@ static int iconv_from_utf8( mlt_properties properties, const char *prop_name, co
 	return result;
 }
 
-int mlt_util_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
+int mlt_properties_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
 {
 	int result = -1;
 	// Get the locale name.
