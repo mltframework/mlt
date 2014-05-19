@@ -2513,3 +2513,30 @@ extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *n
 	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
 	return value == NULL ? rect : mlt_property_anim_get_rect( value, fps, list->locale, position, length );
 }
+
+#ifndef WIN32
+
+// See win32/win32.c for win32 implementation.
+
+/** Convert UTF-8 property to the locale-defined encoding.
+ *
+ * MLT uses UTF-8 for strings, but Windows cannot accept UTF-8 for a filename.
+ * Windows uses code pages for the locale encoding.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to set
+ * \param value the property's new value
+ * \return true if error
+ */
+
+int mlt_properties_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
+{
+	// On non-Windows platforms, assume UTF-8 will always work and does not need conversion.
+	// This function just becomes a pass-through operation.
+	// This was largely chosen to prevent adding a libiconv dependency to the framework per policy.
+	// However, for file open operations on Windows, especially when processing XML, a text codec
+	// dependency is hardly avoidable.
+	return mlt_properties_set( properties, prop_name_out, mlt_properties_get( properties, prop_name ) );
+}
+
+#endif

@@ -109,4 +109,5 @@ extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char *name )
 extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, mlt_rect value, int position, int length, mlt_keyframe_type keyframe_type );
 extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *name, int position, int length );
 
+extern int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, const char *name_to );
 #endif
