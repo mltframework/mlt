@@ -242,22 +242,7 @@ void Properties::load( const char *file )
 
 int Properties::save( const char *file )
 {
-#ifdef WIN32
 	return mlt_properties_save( get_properties( ), file );
-#else
-	int error = 0;
-	FILE *f = fopen( file, "w" );
-	if ( f != NULL )
-	{
-		dump( f );
-		fclose( f );
-	}
-	else
-	{
-		error = 1;
-	}
-	return error;
-#endif
 }
 
 #if defined( __DARWIN__ ) && GCC_VERSION < 40000

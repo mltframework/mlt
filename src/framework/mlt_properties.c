@@ -188,6 +188,11 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 
 static int load_properties( mlt_properties self, const char *filename )
 {
+	// Convert filename string encoding.
+	mlt_properties_set( self, "_mlt_properties_load", filename );
+	mlt_properties_from_utf8( self, "_mlt_properties_load", "__mlt_properties_load" );
+	filename = mlt_properties_get( self, "__mlt_properties_load" );
+
 	// Open the file
 	FILE *file = fopen( filename, "r" );
 
@@ -1242,6 +1247,12 @@ int mlt_properties_save( mlt_properties self, const char *filename )
 {
 	int error = 1;
 	if ( !self || !filename ) return error;
+
+	// Convert filename string encoding.
+	mlt_properties_set( self, "_mlt_properties_save", filename );
+	mlt_properties_from_utf8( self, "_mlt_properties_save", "__mlt_properties_save" );
+	filename = mlt_properties_get( self, "__mlt_properties_save" );
+
 	FILE *f = fopen( filename, "w" );
 	if ( f != NULL )
 	{
@@ -1740,6 +1751,11 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 
 	if ( self )
 	{
+		// Convert filename string encoding.
+		mlt_properties_set( self, "_mlt_properties_parse_yaml", filename );
+		mlt_properties_from_utf8( self, "_mlt_properties_parse_yaml", "__mlt_properties_parse_yaml" );
+		filename = mlt_properties_get( self, "__mlt_properties_parse_yaml" );
+	
 		// Open the file
 		FILE *file = fopen( filename, "r" );
 
@@ -2524,19 +2540,19 @@ extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *n
  * Windows uses code pages for the locale encoding.
  * \public \memberof mlt_properties_s
  * \param self a properties list
- * \param name the property to set
- * \param value the property's new value
+ * \param name_from the property to read whose value is a UTF-8 string
+ * \param name_to the name of the new property that will contain converted string
  * \return true if error
  */
 
-int mlt_properties_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
+int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, const char *name_to )
 {
 	// On non-Windows platforms, assume UTF-8 will always work and does not need conversion.
 	// This function just becomes a pass-through operation.
 	// This was largely chosen to prevent adding a libiconv dependency to the framework per policy.
 	// However, for file open operations on Windows, especially when processing XML, a text codec
 	// dependency is hardly avoidable.
-	return mlt_properties_set( properties, prop_name_out, mlt_properties_get( properties, prop_name ) );
+	return mlt_properties_set( properties, name_to, mlt_properties_get( properties, name_from ) );
 }
 
 #endif
