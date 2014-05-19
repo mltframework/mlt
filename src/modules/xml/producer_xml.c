@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -1552,19 +1552,15 @@ static void parse_url( mlt_properties properties, char *url )
 }
 
 // Quick workaround to avoid unecessary libxml2 warnings
-static int file_exists( char *file )
+static int file_exists( char *name )
 {
-	char *name = strdup( file );
 	int exists = 0;
-	if ( name != NULL && strchr( name, '?' ) )
-		*( strchr( name, '?' ) ) = '\0';
 	if ( name != NULL )
 	{
 		FILE *f = fopen( name, "r" );
 		exists = f != NULL;
 		if ( exists ) fclose( f );
 	}
-	free( name );
 	return exists;
 }
 
@@ -1624,7 +1620,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	if ( data && strlen( data ) >= 7 && strncmp( data, "file://", 7 ) == 0 )
 		data += 7;
 
-	if ( data == NULL || !strcmp( data, "" ) || ( is_filename && !file_exists( data ) ) )
+	if ( data == NULL || !strcmp( data, "" ) )
 		return NULL;
 
 	context = calloc( 1, sizeof( struct deserialise_context_s ) );
@@ -1641,7 +1637,8 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	mlt_properties_set( context->producer_map, "root", "" );
 	if ( is_filename )
 	{
-		filename = strdup( data );
+		mlt_properties_set( context->params, "_mlt_xml_resource", data );
+		filename = mlt_properties_get( context->params, "_mlt_xml_resource" );
 		parse_url( context->params, url_decode( filename, data ) );
 
 		// We need the directory prefix which was used for the xml
@@ -1662,6 +1659,19 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 				free( real );
 				free( cwd );
 			}
+		}
+
+		// Convert file name string encoding.
+		mlt_properties_from_utf8( context->params, "_mlt_xml_resource", "__mlt_xml_resource" );
+		filename = mlt_properties_get( context->params, "__mlt_xml_resource" );
+
+		if ( !file_exists( filename ) )
+		{
+			mlt_properties_close( context->producer_map );
+			mlt_properties_close( context->destructors );
+			mlt_properties_close( context->params );
+			free( context );
+			return NULL;
 		}
 	}
 
@@ -1694,7 +1704,6 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		mlt_properties_close( context->params );
 		free( context );
 		free( sax );
-		free( filename );
 		return NULL;
 	}
 
@@ -1723,7 +1732,6 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		xmlFreeDoc( context->entity_doc );
 		free( context );
 		free( sax );
-		free( filename );
 		return NULL;
 	}
 
@@ -1743,7 +1751,6 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		xmlFreeDoc( context->entity_doc );
 		free( context );
 		free( sax );
-		free( filename );
 		return NULL;
 	}
 
@@ -1878,7 +1885,6 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	if ( context->lc_numeric )
 		free( context->lc_numeric );
 	free( context );
-	free( filename );
 
 	return MLT_PRODUCER( service );
 }

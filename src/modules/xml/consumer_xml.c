@@ -1,6 +1,6 @@
 /*
  * consumer_xml.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -870,6 +870,10 @@ static void output_xml( mlt_consumer this )
 	}
 	else
 	{
+		// Convert file name string encoding.
+		mlt_properties_from_utf8( properties, "resource", "_resource" );
+		resource = mlt_properties_get( properties, "_resource" );
+
 		xmlSaveFormatFileEnc( resource, doc, "utf-8", 1 );
 	}
 
