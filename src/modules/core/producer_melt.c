@@ -33,7 +33,7 @@ mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type
 {
 	// Convert file name string encoding.
 	mlt_properties properties = mlt_properties_new();
-	mlt_properties_set( properties, "filename", filename );
+	mlt_properties_set( properties, "filename", file );
 	mlt_properties_from_utf8( properties, "filename", "_filename" );
 	file = mlt_properties_get( properties, "_filename" );
 	mlt_properties_close( properties );
