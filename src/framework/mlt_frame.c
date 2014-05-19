@@ -977,6 +977,12 @@ void mlt_frame_write_ppm( mlt_frame frame )
 		char filename[16];
 		
 		sprintf( filename, "frame-%05d.ppm", (int)mlt_frame_get_position( frame ) );
+
+		// Convert filename string encoding.
+		mlt_properties_set( self, "_mlt_frame_write_ppm", filename );
+		mlt_properties_from_utf8( self, "_mlt_frame_write_ppm", "__mlt_frame_write_ppm" );
+		filename = mlt_properties_get( self, "__mlt_frame_write_ppm" );
+
 		file = fopen( filename, "wb" );
 		if ( !file )
 			return;
