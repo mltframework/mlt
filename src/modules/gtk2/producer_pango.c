@@ -204,6 +204,11 @@ mlt_producer producer_pango_init( const char *filename )
 		}
 		else
 		{
+			// Convert file name string encoding.
+			mlt_properties_set( properties, "resource", filename );
+			mlt_properties_from_utf8( properties, "resource", "_resource" );
+			filename = mlt_properties_get( properties, "_resource" );
+
 			FILE *f = fopen( filename, "r" );
 			if ( f != NULL )
 			{
@@ -231,7 +236,6 @@ mlt_producer producer_pango_init( const char *filename )
 				if ( markup && markup[ strlen( markup ) - 1 ] == '\n' )
 					markup[ strlen( markup ) - 1 ] = '\0';
 
-				mlt_properties_set( properties, "resource", filename );
 				if ( markup )
 					mlt_properties_set( properties, "markup", markup );
 				else

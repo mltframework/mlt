@@ -27,7 +27,13 @@
 
 void read_xml(mlt_properties properties)
 {
-	FILE *f = fopen( mlt_properties_get( properties, "resource" ), "r");
+	// Convert file name string encoding.
+	const char *resource = mlt_properties_get( properties, "resource" );
+	mlt_properties_set( properties, "_resource_utf8", resource );
+	mlt_properties_from_utf8( properties, "_resource_utf8", "_resource_local8" );
+	resource = mlt_properties_get( properties, "_resource_local8" );
+
+	FILE *f = fopen( resource, "r" );
 	if ( f != NULL )
 	{
 		int size = 0;

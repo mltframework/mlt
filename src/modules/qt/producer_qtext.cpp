@@ -444,6 +444,11 @@ mlt_producer producer_qtext_init( mlt_profile profile, mlt_service_type type, co
 		}
 		else
 		{
+			// Convert file name string encoding.
+			mlt_properties_set( producer_properties, "resource", filename );
+			mlt_properties_from_utf8( producer_properties, "resource", "_resource" );
+			filename = mlt_properties_get( producer_properties, "_resource" );
+
 			FILE *f = fopen( filename, "r" );
 			if ( f != NULL )
 			{
@@ -473,7 +478,6 @@ mlt_producer producer_qtext_init( mlt_profile profile, mlt_service_type type, co
 
 				if ( tmp )
 					mlt_properties_set( producer_properties, "text", tmp );
-				mlt_properties_set( producer_properties, "resource", filename );
 				free( tmp );
 			}
 		}
