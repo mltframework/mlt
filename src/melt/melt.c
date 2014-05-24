@@ -896,7 +896,7 @@ query_all:
 		// Parse the arguments
 		for ( i = 1; i < argc; i ++ )
 		{
-			if ( !strcmp( argv[ i ], "-jack" ) )
+			if ( !strcmp( argv[ i ], "-jack" ) && consumer )
 			{
 				setup_jack_transport( consumer, profile );
 			}
