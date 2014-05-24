@@ -673,8 +673,12 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 			// See if it is a PGM
 			if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 			{
+				// Convert file name string encoding.
+				mlt_properties_set( properties, "_luma_utf8", resource );
+				mlt_properties_from_utf8( properties, "_luma_utf8", "_luma_local8" );
+
 				// Open PGM
-				FILE *f = fopen( resource, "rb" );
+				FILE *f = fopen( mlt_properties_get( properties, "_luma_local8" ), "rb" );
 				if ( f != NULL )
 				{
 					// Load from PGM

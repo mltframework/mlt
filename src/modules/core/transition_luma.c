@@ -366,8 +366,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// See if it is a PGM
 		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 		{
+			// Convert file name string encoding.
+			mlt_properties_set( properties, "_resource_utf8", resource );
+			mlt_properties_from_utf8( properties, "_resource_utf8", "_resource_local8" );
+
 			// Open PGM
-			FILE *f = fopen( resource, "rb" );
+			FILE *f = fopen( mlt_properties_get( properties, "_resource_local8" ), "rb" );
 			if ( f != NULL )
 			{
 				// Load from PGM
