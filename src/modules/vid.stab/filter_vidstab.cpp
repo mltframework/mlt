@@ -131,8 +131,11 @@ static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat v
 	// Initialize VSTransformations
 	vsTransformationsInit( &apply_data->trans );
 
-	// Load the motions from the analyze step and convert them to VSTransformations
+	// Convert file name string encoding.
+	mlt_properties_from_utf8( properties, "results", "_results" );
+	filename = mlt_properties_get( properties, "_results" );
 
+	// Load the motions from the analyze step and convert them to VSTransformations
 	FILE* f = fopen( filename, "r" );
 	VSManyLocalMotions mlms;
 
