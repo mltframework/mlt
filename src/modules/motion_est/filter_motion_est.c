@@ -904,6 +904,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				bounds = calloc( 1, sizeof(*bounds) );
 				mlt_properties_set_data( MLT_FILTER_PROPERTIES(filter), "bounds", bounds, sizeof(*bounds), free, NULL );
 				mlt_geometry_fetch( geometry, bounds, 0 );
+				mlt_geometry_close( geometry );
 			}
 		}
 	}
