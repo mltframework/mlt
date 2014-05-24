@@ -264,7 +264,7 @@ ebur128_state* ebur128_init(unsigned int channels,
   } else if ((mode & EBUR128_MODE_M) == EBUR128_MODE_M) {
     st->d->audio_data_frames = st->d->samples_in_100ms * 4;
   } else {
-    return NULL;
+    goto free_true_peak;
   }
   st->d->audio_data = (double*) malloc(st->d->audio_data_frames *
                                        st->channels *
