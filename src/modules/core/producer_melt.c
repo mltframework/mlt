@@ -36,7 +36,6 @@ mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type
 	mlt_properties_set( properties, "filename", file );
 	mlt_properties_from_utf8( properties, "filename", "_filename" );
 	file = mlt_properties_get( properties, "_filename" );
-	mlt_properties_close( properties );
 
 	FILE *input = fopen( file, "r" );
 	char **args = calloc( sizeof( char * ), MELT_FILE_MAX_LINES );
@@ -63,10 +62,10 @@ mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type
 
 	if ( result != NULL )
 	{
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( result );
-		mlt_properties_set( properties, "resource", file );
+		mlt_properties_set( MLT_PRODUCER_PROPERTIES( result ), "resource", file );
 	}
 
+	mlt_properties_close( properties );
 	while( count -- )
 		free( args[ count ] );
 	free( args );
