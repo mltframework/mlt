@@ -428,7 +428,7 @@ static void *consumer_thread(void *arg) {
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-fatal-error", NULL );
 	}
 
-	uint8_t *video_buffer;
+	uint8_t *video_buffer = NULL;
 	int16_t *audio_buffer_tmp; // the upstream audio buffer
 
 	// Loop until told not to
