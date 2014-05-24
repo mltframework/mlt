@@ -757,7 +757,7 @@ int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format
 	}
 
 	// TODO: This does not belong here
-	if ( *format == mlt_audio_s16 && mlt_properties_get( properties, "meta.volume" ) )
+	if ( *format == mlt_audio_s16 && mlt_properties_get( properties, "meta.volume" ) && *buffer )
 	{
 		double value = mlt_properties_get_double( properties, "meta.volume" );
 
