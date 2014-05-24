@@ -426,7 +426,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 
 		// Initialise temporary store
 		if ( self->frames == NULL )
-			self->frames = calloc( sizeof( mlt_frame ), b_track + 1 );
+			self->frames = calloc( b_track + 1, sizeof( mlt_frame ) );
 
 		// Get all frames between a and b
 		for( i = a_track; i <= b_track; i ++ )
@@ -461,7 +461,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		}
 
 		// Now handle the non-always active case
-		if ( active && !always_active )
+		if ( active && !always_active && a_frame <= b_track )
 		{
 			// For non-always-active transitions, we need the current position of the a frame
 			position = mlt_frame_get_position( self->frames[ a_frame ] );
@@ -473,8 +473,10 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		// Finally, process the a and b frames
 		if ( active && !mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( self ), "disable" ) )
 		{
-			mlt_frame a_frame_ptr = self->frames[ !reverse_order ? a_frame : b_frame ];
-			mlt_frame b_frame_ptr = self->frames[ !reverse_order ? b_frame : a_frame ];
+			int frame_nb = ( !reverse_order && a_frame <= b_track )? a_frame : b_frame;
+			mlt_frame a_frame_ptr = self->frames[ frame_nb ];
+			frame_nb = ( !reverse_order || a_frame > b_track )? b_frame : a_frame;
+			mlt_frame b_frame_ptr = self->frames[ frame_nb ];
 			int a_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide" );
 			int b_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide" );
 			if ( !( a_hide & type ) && !( b_hide & type ) )
