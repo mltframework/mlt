@@ -1604,6 +1604,10 @@ static void retain_services( struct deserialise_context_s *context, mlt_service 
 		mlt_properties_set_data( MLT_SERVICE_PROPERTIES(service), "xml_retain", retain_list, 0,
 			(mlt_destructor) mlt_properties_close, NULL );
 	}
+	else
+	{
+		mlt_properties_close( retain_list );
+	}
 }
 
 mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
