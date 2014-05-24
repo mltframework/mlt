@@ -355,8 +355,8 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-        
-        pthread_mutex_lock( &self->mutex );
+	
+	pthread_mutex_lock( &self->mutex );
 	
 	// Check if user wants us to reload the image
 	if ( mlt_properties_get( producer_props, "_animated" ) != NULL || force_refresh == 1 || width != self->current_width || height != self->current_height || mlt_properties_get( producer_props, "_endrect" ) != NULL )
@@ -379,8 +379,10 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 
 		if ( scene == NULL )
 		{
-			if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) )
+			if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) ) {
+				pthread_mutex_unlock( &self->mutex );
 				return;
+			}
 			if ( !QMetaType::type("QTextCursor") )
 				qRegisterMetaType<QTextCursor>( "QTextCursor" );
 			scene = new QGraphicsScene();
