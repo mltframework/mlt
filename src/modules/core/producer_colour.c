@@ -96,7 +96,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
 
 	// See if we need to regenerate
-	if ( strcmp( now, then ) || *width != current_width || *height != current_height || *format != current_format )
+	if ( !now || ( then && strcmp( now, then ) ) || *width != current_width || *height != current_height || *format != current_format )
 	{
 		// Color the image
 		int i = *width * *height + 1;
