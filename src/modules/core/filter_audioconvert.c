@@ -568,7 +568,7 @@ static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *forma
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	frame->convert_audio = convert_audio;
 	return frame;
@@ -579,8 +579,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_audioconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = calloc( 1, sizeof( struct mlt_filter_s ) );
-	if ( mlt_filter_init( this, this ) == 0 )
-		this->process = filter_process;
-	return this;
+	mlt_filter filter = calloc( 1, sizeof( struct mlt_filter_s ) );
+	if ( mlt_filter_init( filter, filter ) == 0 )
+		filter->process = filter_process;
+	return filter;
 }
+

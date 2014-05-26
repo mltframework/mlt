@@ -71,9 +71,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	return mlt_frame_get_image( frame, image, format, width, height, writable );
 }
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
 
 	return frame;
@@ -85,16 +85,16 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 mlt_filter filter_region_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new filter
-	mlt_filter this = mlt_filter_new( );
+	mlt_filter filter = mlt_filter_new( );
 
 	// Further initialisation
-	if ( this != NULL )
+	if ( filter != NULL )
 	{
 		// Get the properties from the filter
-		mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 		// Assign the filter process method
-		this->process = filter_process;
+		filter->process = filter_process;
 
 		// Resource defines the shape of the region
 		mlt_properties_set( properties, "resource", arg == NULL ? "rectangle" : arg );
@@ -104,5 +104,6 @@ mlt_filter filter_region_init( mlt_profile profile, mlt_service_type type, const
 	}
 
 	// Return the filter
-	return this;
+	return filter;
 }
+
