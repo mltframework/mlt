@@ -81,6 +81,16 @@ mlt_repository mlt_repository_init( const char *directory )
 	mlt_properties dir = mlt_properties_new();
 	int count = mlt_properties_dir_list( dir, directory, NULL, 0 );
 	int i;
+	
+	char *syspath = getenv("PATH");
+	char *exedir = mlt_environment( "MLT_APPDIR" );
+	char *newpath = "PATH=";
+	newpath = calloc( 1, strlen( newpath )+ strlen( exedir ) + 1 + strlen( syspath ) + 1 );
+	strcat( newpath, "PATH=" );
+	strcat( newpath, exedir );
+	strcat( newpath, ";" );
+	strcat( newpath, syspath );
+	putenv(newpath);
 
 	// Iterate over files
 	for ( i = 0; i < count; i++ )
@@ -92,7 +102,7 @@ mlt_repository mlt_repository_init( const char *directory )
 		// TODO: extend repository to allow this to be used on a case by case basis
 		if ( strstr( object_name, "libmltkino" ) )
 			flags |= RTLD_GLOBAL;
-
+	
 		// Open the shared object
 		void *object = dlopen( object_name, flags );
 		if ( object != NULL )
