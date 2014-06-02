@@ -81,7 +81,8 @@ mlt_repository mlt_repository_init( const char *directory )
 	mlt_properties dir = mlt_properties_new();
 	int count = mlt_properties_dir_list( dir, directory, NULL, 0 );
 	int i;
-	
+
+#ifdef WIN32
 	char *syspath = getenv("PATH");
 	char *exedir = mlt_environment( "MLT_APPDIR" );
 	char *newpath = "PATH=";
@@ -91,6 +92,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	strcat( newpath, ";" );
 	strcat( newpath, syspath );
 	putenv(newpath);
+#endif
 
 	// Iterate over files
 	for ( i = 0; i < count; i++ )
