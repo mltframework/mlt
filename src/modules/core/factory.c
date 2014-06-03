@@ -53,7 +53,6 @@ extern mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type 
 extern mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
 extern mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #include "transition_composite.h"
 extern mlt_transition transition_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -103,7 +102,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "melt", producer_melt_init );
 	MLT_REGISTER( producer_type, "melt_file", producer_melt_file_init );
 	MLT_REGISTER( producer_type, "noise", producer_noise_init );
-	MLT_REGISTER( producer_type, "ppm", producer_ppm_init );
 	MLT_REGISTER( transition_type, "composite", transition_composite_init );
 	MLT_REGISTER( transition_type, "luma", transition_luma_init );
 	MLT_REGISTER( transition_type, "mix", transition_mix_init );
