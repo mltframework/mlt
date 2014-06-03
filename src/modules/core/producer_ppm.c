@@ -1,6 +1,6 @@
 /*
  * producer_ppm.c -- simple ppm test case
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -40,10 +40,10 @@ static void producer_close( mlt_producer parent );
 
 mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, const char *id, char *command )
 {
-	producer_ppm this = calloc( 1, sizeof( struct producer_ppm_s ) );
-	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	producer_ppm self = calloc( 1, sizeof( struct producer_ppm_s ) );
+	if ( self != NULL && mlt_producer_init( &self->parent, self ) == 0 )
 	{
-		mlt_producer producer = &this->parent;
+		mlt_producer producer = &self->parent;
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 		producer->get_frame = producer_get_frame;
@@ -52,7 +52,7 @@ mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, cons
 		if ( command != NULL )
 		{
 			mlt_properties_set( properties, "resource", command );
-			this->command = strdup( command );
+			self->command = strdup( command );
 		}
 		else
 		{
@@ -61,14 +61,14 @@ mlt_producer producer_ppm_init( mlt_profile profile, mlt_service_type type, cons
 
 		return producer;
 	}
-	free( this );
+	free( self );
 	return NULL;
 }
 
-static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the frames properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	if ( mlt_properties_get_int( properties, "has_image" ) )
 	{
@@ -80,74 +80,74 @@ static int producer_get_image( mlt_frame this, uint8_t **buffer, mlt_image_forma
 	}
 	else
 	{
-		mlt_frame_get_image( this, buffer, format, width, height, writable );
+		mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	}
 
 	return 0;
 }
 
-FILE *producer_ppm_run_video( producer_ppm this )
+FILE *producer_ppm_run_video( producer_ppm self )
 {
-	if ( this->video == NULL )
+	if ( self->video == NULL )
 	{
-		if ( this->command == NULL )
+		if ( self->command == NULL )
 		{
-			this->video = popen( "image2raw -k -r 25 -ppm /usr/share/pixmaps/*.png", "r" );
+			self->video = popen( "image2raw -k -r 25 -ppm /usr/share/pixmaps/*.png", "r" );
 		}
 		else
 		{
 			char command[ 1024 ];
-			float fps = mlt_producer_get_fps( &this->parent );
-			float position = mlt_producer_position( &this->parent );
-			sprintf( command, "ffmpeg -i \"%s\" -ss %f -f image2pipe -r %f -vcodec ppm - 2>/dev/null", this->command, position, fps );
-			this->video = popen( command, "r" );
+			float fps = mlt_producer_get_fps( &self->parent );
+			float position = mlt_producer_position( &self->parent );
+			sprintf( command, "ffmpeg -i \"%s\" -ss %f -f image2pipe -r %f -vcodec ppm - 2>/dev/null", self->command, position, fps );
+			self->video = popen( command, "r" );
 		}
 	}
-	return this->video;
+	return self->video;
 }
 
-FILE *producer_ppm_run_audio( producer_ppm this )
+FILE *producer_ppm_run_audio( producer_ppm self )
 {
-	if ( this->audio == NULL )
+	if ( self->audio == NULL )
 	{
-		if ( this->command != NULL )
+		if ( self->command != NULL )
 		{
 			char command[ 1024 ];
-			float position = mlt_producer_position( &this->parent );
-			sprintf( command, "ffmpeg -i \"%s\" -ss %f -f s16le -ar 48000 -ac 2 - 2>/dev/null", this->command, position );
-			this->audio = popen( command, "r" );
+			float position = mlt_producer_position( &self->parent );
+			sprintf( command, "ffmpeg -i \"%s\" -ss %f -f s16le -ar 48000 -ac 2 - 2>/dev/null", self->command, position );
+			self->audio = popen( command, "r" );
 		}
 	}
-	return this->audio;
+	return self->audio;
 }
 
-static void producer_ppm_position( producer_ppm this, uint64_t requested )
+static void producer_ppm_position( producer_ppm self, uint64_t requested )
 {
-	if ( requested != this->expected )
+	if ( requested != self->expected )
 	{
-		if ( this->video != NULL )
-			pclose( this->video );
-		this->video = NULL;
-		if ( this->audio != NULL )
-			pclose( this->audio );
-		this->audio = NULL;
+		if ( self->video != NULL )
+			pclose( self->video );
+		self->video = NULL;
+		if ( self->audio != NULL )
+			pclose( self->audio );
+		self->audio = NULL;
 	}
 
 	// This is the next frame we expect
-	this->expected = mlt_producer_frame( &this->parent ) + 1;
+	self->expected = mlt_producer_frame( &self->parent ) + 1;
 
 	// Open the pipe
-	this->video = producer_ppm_run_video( this );
+	self->video = producer_ppm_run_video( self );
 
 	// Open the audio pipe
-	this->audio = producer_ppm_run_audio( this );
+	self->audio = producer_ppm_run_audio( self );
 
 }
 
-static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	// Get the frames properties
-	mlt_properties properties = MLT_FRAME_PROPERTIES( this );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	FILE *pipe = mlt_properties_get_data( properties, "audio.pipe", NULL );
 
@@ -168,7 +168,7 @@ static int producer_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_forma
 		memset( *buffer, 0, size );
 
 	// Pass the data on the frame properties
-	mlt_frame_set_audio( this, *buffer, *format, size, free );
+	mlt_frame_set_audio( frame, *buffer, *format, size, free );
 
 	return 0;
 }
@@ -188,7 +188,7 @@ static int read_ppm_header( FILE *video, int *width, int *height )
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
-	producer_ppm this = producer->child;
+	producer_ppm self = producer->child;
 	int width;
 	int height;
 
@@ -196,13 +196,13 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Are we at the position expected?
-	producer_ppm_position( this, mlt_producer_frame( producer ) );
+	producer_ppm_position( self, mlt_producer_frame( producer ) );
 
 	// Get the frames properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
-	FILE *video = this->video;
-	FILE *audio = this->audio;
+	FILE *video = self->video;
+	FILE *audio = self->audio;
 
 	// Read the video
 	if ( video != NULL && read_ppm_header( video, &width, &height ) == 2 )
@@ -248,13 +248,13 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_close( mlt_producer parent )
 {
-	producer_ppm this = parent->child;
-	if ( this->video )
-		pclose( this->video );
-	if ( this->audio )
-		pclose( this->audio );
-	free( this->command );
+	producer_ppm self = parent->child;
+	if ( self->video )
+		pclose( self->video );
+	if ( self->audio )
+		pclose( self->audio );
+	free( self->command );
 	parent->close = NULL;
 	mlt_producer_close( parent );
-	free( this );
+	free( self );
 }

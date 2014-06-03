@@ -1,6 +1,6 @@
 /*
  * filter_mirror.c -- mirror filter
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -31,10 +31,10 @@
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Pop the mirror filter from the stack
-	mlt_filter this = mlt_frame_pop_service( frame );
+	mlt_filter filter = mlt_frame_pop_service( frame );
 
 	// Get the mirror type
-	mlt_properties properties = MLT_FILTER_PROPERTIES( this );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
 	// Get the properties
 	char *mirror = mlt_properties_get( properties, "mirror" );

@@ -1,6 +1,6 @@
 /*
  * consumer_null.c -- a null consumer
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -29,11 +29,11 @@
 #include <pthread.h>
 
 // Forward references.
-static int consumer_start( mlt_consumer this );
-static int consumer_stop( mlt_consumer this );
-static int consumer_is_stopped( mlt_consumer this );
+static int consumer_start( mlt_consumer consumer );
+static int consumer_stop( mlt_consumer consumer );
+static int consumer_is_stopped( mlt_consumer consumer );
 static void *consumer_thread( void *arg );
-static void consumer_close( mlt_consumer this );
+static void consumer_close( mlt_consumer consumer );
 
 /** Initialise the dv consumer.
 */
@@ -41,31 +41,31 @@ static void consumer_close( mlt_consumer this );
 mlt_consumer consumer_null_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Allocate the consumer
-	mlt_consumer this = mlt_consumer_new( profile );
+	mlt_consumer consumer = mlt_consumer_new( profile );
 
 	// If memory allocated and initialises without error
-	if ( this != NULL )
+	if ( consumer != NULL )
 	{
 		// Assign close callback
-		this->close = consumer_close;
+		consumer->close = consumer_close;
 
 		// Set up start/stop/terminated callbacks
-		this->start = consumer_start;
-		this->stop = consumer_stop;
-		this->is_stopped = consumer_is_stopped;
+		consumer->start = consumer_start;
+		consumer->stop = consumer_stop;
+		consumer->is_stopped = consumer_is_stopped;
 	}
 
-	// Return this
-	return this;
+	// Return consumer
+	return consumer;
 }
 
 /** Start the consumer.
 */
 
-static int consumer_start( mlt_consumer this )
+static int consumer_start( mlt_consumer consumer )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Check that we're not already running
 	if ( !mlt_properties_get_int( properties, "running" ) )
@@ -81,7 +81,7 @@ static int consumer_start( mlt_consumer this )
 		mlt_properties_set_int( properties, "joined", 0 );
 
 		// Create the thread
-		pthread_create( thread, NULL, consumer_thread, this );
+		pthread_create( thread, NULL, consumer_thread, consumer );
 	}
 	return 0;
 }
@@ -89,10 +89,10 @@ static int consumer_start( mlt_consumer this )
 /** Stop the consumer.
 */
 
-static int consumer_stop( mlt_consumer this )
+static int consumer_stop( mlt_consumer consumer )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Check that we're running
 	if ( !mlt_properties_get_int( properties, "joined" ) )
@@ -115,10 +115,10 @@ static int consumer_stop( mlt_consumer this )
 /** Determine if the consumer is stopped.
 */
 
-static int consumer_is_stopped( mlt_consumer this )
+static int consumer_is_stopped( mlt_consumer consumer )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 	return !mlt_properties_get_int( properties, "running" );
 }
 
@@ -128,10 +128,10 @@ static int consumer_is_stopped( mlt_consumer this )
 static void *consumer_thread( void *arg )
 {
 	// Map the argument to the object
-	mlt_consumer this = arg;
+	mlt_consumer consumer = arg;
 
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Convenience functionality
 	int terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
@@ -144,7 +144,7 @@ static void *consumer_thread( void *arg )
 	while( !terminated && mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
-		frame = mlt_consumer_rt_frame( this );
+		frame = mlt_consumer_rt_frame( consumer );
 
 		// Check for termination
 		if ( terminate_on_pause && frame != NULL )
@@ -161,7 +161,7 @@ static void *consumer_thread( void *arg )
 
 	// Indicate that the consumer is stopped
 	mlt_properties_set_int( properties, "running", 0 );
-	mlt_consumer_stopped( this );
+	mlt_consumer_stopped( consumer );
 
 	return NULL;
 }
@@ -169,14 +169,14 @@ static void *consumer_thread( void *arg )
 /** Close the consumer.
 */
 
-static void consumer_close( mlt_consumer this )
+static void consumer_close( mlt_consumer consumer )
 {
 	// Stop the consumer
-	mlt_consumer_stop( this );
+	mlt_consumer_stop( consumer );
 
 	// Close the parent
-	mlt_consumer_close( this );
+	mlt_consumer_close( consumer );
 
 	// Free the memory
-	free( this );
+	free( consumer );
 }

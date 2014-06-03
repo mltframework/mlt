@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * Adapted from Kino Plugin Timfx, which is
@@ -30,7 +30,7 @@
 #include <math.h>
 #include "transition_composite.h"
 
-static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, int width, int height )
+static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height )
 {
 	int ret = 0;
 	int i = height + 1;
@@ -41,10 +41,10 @@ static inline int dissolve_yuv( mlt_frame this, mlt_frame that, float weight, in
 	uint8_t *alpha_dst;
 	int mix = weight * ( 1 << 16 );
 
-	if ( mlt_properties_get( &this->parent, "distort" ) )
-		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &this->parent, "distort" ) );
-	mlt_frame_get_image( this, &p_dest, &format, &width, &height, 1 );
-	alpha_dst = mlt_frame_get_alpha_mask( this );
+	if ( mlt_properties_get( &frame->parent, "distort" ) )
+		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &frame->parent, "distort" ) );
+	mlt_frame_get_image( frame, &p_dest, &format, &width, &height, 1 );
+	alpha_dst = mlt_frame_get_alpha_mask( frame );
 	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
 	alpha_src = mlt_frame_get_alpha_mask( that );
 

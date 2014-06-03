@@ -1,6 +1,6 @@
 /*
  * producer_hold.c -- frame holding producer
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -25,8 +25,8 @@
 #include <framework/mlt.h>
 
 // Forward references
-static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index );
-static void producer_close( mlt_producer this );
+static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
+static void producer_close( mlt_producer producer );
 
 /** Constructor for the frame holding producer. Basically, all this producer does is
 	provide a producer wrapper for the requested producer, allows the specifcation of
@@ -37,16 +37,16 @@ static void producer_close( mlt_producer this );
 mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Construct a new holding producer
-	mlt_producer this = mlt_producer_new( profile );
+	mlt_producer self = mlt_producer_new( profile );
 
 	// Construct the requested producer via loader
 	mlt_producer producer = mlt_factory_producer( profile, NULL, arg );
 
 	// Initialise the frame holding capabilities
-	if ( this != NULL && producer != NULL )
+	if ( self != NULL && producer != NULL )
 	{
 		// Get the properties of this producer
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
 
 		// Store the producer
 		mlt_properties_set_data( properties, "producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
@@ -60,23 +60,23 @@ mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, con
 		mlt_properties_set( properties, "method", "onefield" );
 
 		// Override the get_frame method
-		this->get_frame = producer_get_frame;
-		this->close = ( mlt_destructor )producer_close;
+		self->get_frame = producer_get_frame;
+		self->close = ( mlt_destructor )producer_close;
 	}
 	else
 	{
 		// Clean up (not sure which one failed, can't be bothered to find out, so close both)
-		if ( this )
-			mlt_producer_close( this );
+		if ( self )
+			mlt_producer_close( self );
 		if ( producer )
 			mlt_producer_close( producer );
 
 		// Make sure we return NULL
-		this = NULL;
+		self = NULL;
 	}
 
 	// Return this producer
-	return this;
+	return self;
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
@@ -135,16 +135,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	return 0;
 }
 
-static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
+static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Get the properties of this producer
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Construct a new frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
 
 	// If we have a frame, then stack the producer itself and the get_image method
-	if ( *frame != NULL )
+	if ( *frame )
 	{
 		// Define the real frame
 		mlt_frame real_frame = mlt_properties_get_data( properties, "real_frame", NULL );
@@ -187,15 +187,15 @@ static int producer_get_frame( mlt_producer this, mlt_frame_ptr frame, int index
 	}
 
 	// Move to the next position
-	mlt_producer_prepare_next( this );
+	mlt_producer_prepare_next( producer );
 
 	return 0;
 }
 
-static void producer_close( mlt_producer this )
+static void producer_close( mlt_producer producer )
 {
-	this->close = NULL;
-	mlt_producer_close( this );
-	free( this );
+	producer->close = NULL;
+	mlt_producer_close( producer );
+	free( producer );
 }
 

@@ -1,6 +1,6 @@
 /*
  * producer_consumer.c -- produce as a consumer of an encapsulated producer
- * Copyright (C) 2008 Ushodaya Enterprises Limited
+ * Copyright (C) 2008-2014 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
 #include <string.h>
 
 struct context_s {
-	mlt_producer this;
+	mlt_producer self;
 	mlt_producer producer;
 	mlt_consumer consumer;
 	mlt_profile profile;
@@ -79,8 +79,8 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 	if ( mlt_frame_get_position( nested_frame ) != cx->audio_position )
 	{
 		double fps = mlt_profile_fps( cx->profile );
-		if ( mlt_producer_get_fps( cx->this ) < fps )
-			fps = mlt_producer_get_fps( cx->this );
+		if ( mlt_producer_get_fps( cx->self ) < fps )
+			fps = mlt_producer_get_fps( cx->self );
 		*samples = mlt_sample_calculator( fps, *frequency, cx->audio_counter++ );
 		result = mlt_frame_get_audio( nested_frame, buffer, format, frequency, channels, samples );
 		int size = mlt_audio_format_size( *format, *samples, *channels );
@@ -101,9 +101,9 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 	return result;
 }
 
-static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
+static int get_frame( mlt_producer self, mlt_frame_ptr frame, int index )
 {
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES(this);
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
 	context cx = mlt_properties_get_data( properties, "context", NULL );
 
 	if ( !cx )
@@ -112,11 +112,11 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		cx = mlt_pool_alloc( sizeof( struct context_s ) );
 		memset( cx, 0, sizeof( *cx ) );
 		mlt_properties_set_data( properties, "context", cx, 0, mlt_pool_release, NULL );
-		cx->this = this;
+		cx->self = self;
 		char *profile_name = mlt_properties_get( properties, "profile" );
 		if ( !profile_name )
 			profile_name = mlt_properties_get( properties, "mlt_profile" );
-		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( this ) );
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self ) );
 
 		if ( profile_name )
 		{
@@ -159,17 +159,17 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 	}
 
 	// Generate a frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( this ) );
+	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( self ) );
 	if ( *frame )
 	{
 		// Seek the producer to the correct place
 		// Calculate our positions
-		double actual_position = (double) mlt_producer_frame( this );
-		if ( mlt_producer_get_speed( this ) != 0 )
-			actual_position *= mlt_producer_get_speed( this );
+		double actual_position = (double) mlt_producer_frame( self );
+		if ( mlt_producer_get_speed( self ) != 0 )
+			actual_position *= mlt_producer_get_speed( self );
 		mlt_position need_first = floor( actual_position );
 		mlt_producer_seek( cx->producer,
-			lrint( need_first * mlt_profile_fps( cx->profile ) / mlt_producer_get_fps( this ) ) );
+			lrint( need_first * mlt_profile_fps( cx->profile ) / mlt_producer_get_fps( self ) ) );
 
 		// Get the nested frame
 		mlt_frame nested_frame = mlt_consumer_rt_frame( cx->consumer );
@@ -183,7 +183,7 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 		mlt_frame_push_audio( *frame, get_audio );
 		
 		// Give the returned frame temporal identity
-		mlt_frame_set_position( *frame, mlt_producer_position( this ) );
+		mlt_frame_set_position( *frame, mlt_producer_position( self ) );
 		
 		// Store the nested frame on the produced frame for destruction
 		mlt_properties frame_props = MLT_FRAME_PROPERTIES( *frame );
@@ -199,14 +199,14 @@ static int get_frame( mlt_producer this, mlt_frame_ptr frame, int index )
 	}
 
 	// Calculate the next timecode
-	mlt_producer_prepare_next( this );
+	mlt_producer_prepare_next( self );
 
 	return 0;
 }
 
-static void producer_close( mlt_producer this )
+static void producer_close( mlt_producer self )
 {
-	context cx = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES( this ), "context", NULL );
+	context cx = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES( self ), "context", NULL );
 	
 	// Shut down all the encapsulated services
 	if ( cx )
@@ -217,28 +217,28 @@ static void producer_close( mlt_producer this )
 		mlt_profile_close( cx->profile );
 	}
 	
-	this->close = NULL;
-	mlt_producer_close( this );
-	free( this );
+	self->close = NULL;
+	mlt_producer_close( self );
+	free( self );
 }
 
 mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_producer this = mlt_producer_new( profile );
+	mlt_producer self = mlt_producer_new( profile );
 
 	// Encapsulate the real producer
 	mlt_profile temp_profile = mlt_profile_clone( profile );
 	temp_profile->is_explicit = 0;
 	mlt_producer real_producer = mlt_factory_producer( temp_profile, NULL, arg );
 
-	if ( this && real_producer )
+	if ( self && real_producer )
 	{
 		// Override some producer methods
-		this->close = ( mlt_destructor )producer_close;
-		this->get_frame = get_frame;
+		self->close = ( mlt_destructor )producer_close;
+		self->get_frame = get_frame;
 		
 		// Get the properties of this producer
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( this );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
 		mlt_properties_set( properties, "resource", arg );
 		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "out, length" );
 
@@ -247,13 +247,13 @@ mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type,
 	}
 	else
 	{
-		if ( this )
-			mlt_producer_close( this );
+		if ( self )
+			mlt_producer_close( self );
 		if ( real_producer )
 			mlt_producer_close( real_producer );
 
-		this = NULL;
+		self = NULL;
 	}
 	mlt_profile_close( temp_profile );
-	return this;
+	return self;
 }

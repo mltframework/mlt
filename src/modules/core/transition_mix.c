@@ -1,6 +1,6 @@
 /*
  * transition_mix.c -- mix two audio streams
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@
 #include <math.h>
 
 
-static int mix_audio( mlt_frame this, mlt_frame that, float weight_start, float weight_end, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int mix_audio( mlt_frame frame, mlt_frame that, float weight_start, float weight_end, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	int ret = 0;
 	int16_t *src, *dest;
@@ -38,10 +38,10 @@ static int mix_audio( mlt_frame this, mlt_frame that, float weight_start, float 
 	double d = 0, s = 0;
 
 	mlt_frame_get_audio( that, (void**) &src, format, &frequency_src, &channels_src, &samples_src );
-	mlt_frame_get_audio( this, (void**) &dest, format, &frequency_dest, &channels_dest, &samples_dest );
+	mlt_frame_get_audio( frame, (void**) &dest, format, &frequency_dest, &channels_dest, &samples_dest );
 
-	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "silent_audio" );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "silent_audio", 0 );
+	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio", 0 );
 	if ( silent )
 		memset( dest, 0, samples_dest * channels_dest * sizeof( int16_t ) );
 
@@ -97,7 +97,7 @@ static int mix_audio( mlt_frame this, mlt_frame that, float weight_start, float 
 
 // Replacement for broken mlt_frame_audio_mix - this filter uses an inline low pass filter
 // to allow mixing without volume hacking
-static int combine_audio( mlt_frame this, mlt_frame that, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int combine_audio( mlt_frame frame, mlt_frame that, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	int ret = 0;
 	int16_t *src, *dest;
@@ -108,14 +108,14 @@ static int combine_audio( mlt_frame this, mlt_frame that, void **buffer, mlt_aud
 	double vp[ 6 ];
 	double b_weight = 1.0;
 
-	if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "meta.mixdown" ) )
-		b_weight = 1.0 - mlt_properties_get_double( MLT_FRAME_PROPERTIES( this ), "meta.volume" );
+	if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.mixdown" ) )
+		b_weight = 1.0 - mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "meta.volume" );
 
 	mlt_frame_get_audio( that, (void**) &src, format, &frequency_src, &channels_src, &samples_src );
-	mlt_frame_get_audio( this, (void**) &dest, format, &frequency_dest, &channels_dest, &samples_dest );
+	mlt_frame_get_audio( frame, (void**) &dest, format, &frequency_dest, &channels_dest, &samples_dest );
 
-	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( this ), "silent_audio" );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( this ), "silent_audio", 0 );
+	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio", 0 );
 	if ( silent )
 		memset( dest, 0, samples_dest * channels_dest * sizeof( int16_t ) );
 
@@ -204,9 +204,9 @@ static int transition_get_audio( mlt_frame frame, void **buffer, mlt_audio_forma
 /** Mix transition processing.
 */
 
-static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt_frame b_frame )
+static mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
 {
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( this );
+	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// Only if mix is specified, otherwise a producer may set the mix
@@ -216,9 +216,9 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 		mlt_properties props = mlt_properties_get_data( MLT_FRAME_PROPERTIES( b_frame ), "_producer", NULL );
 		mlt_position in = mlt_properties_get_int( props, "in" );
 		mlt_position out = mlt_properties_get_int( props, "out" );
-		int length = mlt_properties_get_int(  MLT_TRANSITION_PROPERTIES( this ), "length" );
+		int length = mlt_properties_get_int( properties, "length" );
 		mlt_position time = mlt_properties_get_int( props, "_frame" );
-		double mix = mlt_transition_get_progress( this, b_frame );
+		double mix = mlt_transition_get_progress( transition, b_frame );
 		if ( mlt_properties_get_int(  properties, "always_active" ) )
 			mix = ( double ) ( time - in ) / ( double ) ( out - in + 1 );
 
@@ -283,7 +283,7 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 	}
 
 	// Override the get_audio method
-	mlt_frame_push_audio( a_frame, this );
+	mlt_frame_push_audio( a_frame, transition );
 	mlt_frame_push_audio( a_frame, b_frame );
 	mlt_frame_push_audio( a_frame, transition_get_audio );
 	
@@ -295,15 +295,15 @@ static mlt_frame transition_process( mlt_transition this, mlt_frame a_frame, mlt
 
 mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_transition this = calloc( 1, sizeof( struct mlt_transition_s ) );
-	if ( this != NULL && mlt_transition_init( this, NULL ) == 0 )
+	mlt_transition transition = calloc( 1, sizeof( struct mlt_transition_s ) );
+	if ( transition != NULL && mlt_transition_init( transition, NULL ) == 0 )
 	{
-		this->process = transition_process;
+		transition->process = transition_process;
 		if ( arg != NULL )
-			mlt_properties_set_double( MLT_TRANSITION_PROPERTIES( this ), "start", atof( arg ) );
+			mlt_properties_set_double( MLT_TRANSITION_PROPERTIES( transition ), "start", atof( arg ) );
 		// Inform apps and framework that this is an audio only transition
-		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( this ), "_transition_type", 2 );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 2 );
 	}
-	return this;
+	return transition;
 }
 
