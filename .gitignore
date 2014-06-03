@@ -16,3 +16,7 @@ src/swig/perl/blib/*
 *.dylib
 src/swig/java/src_swig
 disable-*
+mlt.config
+mlt.creator
+mlt.files
+mlt.includes
