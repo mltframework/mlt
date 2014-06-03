@@ -4,7 +4,7 @@ include make.inc
 all clean depend:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
-		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir ] ; \
+		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir -a ! -f $$subdir/deprecated ] ; \
 		then $(MAKE) -C $$subdir $@ || exit 1; \
 		fi \
 	done
@@ -13,7 +13,7 @@ distclean:
 	rm -f consumers.dat filters.dat producers.dat transitions.dat make.inc; \
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
-		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir ] ; \
+		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir -a ! -f $$subdir/deprecated ] ; \
 		then $(MAKE) -C $$subdir $@ || exit 1; \
 		fi \
 	done
@@ -21,7 +21,7 @@ distclean:
 install:
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
-		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir ] ; \
+		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir -a ! -f $$subdir/deprecated ] ; \
 		then $(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
 		fi \
 	done

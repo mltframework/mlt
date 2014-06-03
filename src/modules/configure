@@ -17,7 +17,7 @@ done
 # Iterate through each of the components
 for i in *
 do
-	if [ -d $i -a \( "$help" = "1" -o ! -f disable-$i \) ]
+	if [ -d $i -a \( "$help" = "1" -o \( ! -f disable-$i -a ! -f $i/deprecated \) \) ]
 	then
 		if [ "$gpl" = "true" -o ! -f $i/gpl -o "$help" = "1" ]
 		then

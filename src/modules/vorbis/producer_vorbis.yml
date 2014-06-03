@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: producer
 identifier: vorbis
-title: Ogg Vorbis
+title: Ogg Vorbis (*deprecated*)
 version: 1
 copyright: Visual Media FX ?
 creator: Charles Yates
