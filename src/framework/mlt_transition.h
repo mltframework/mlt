@@ -35,7 +35,7 @@
  * \properties \em b_track the track index (0-based) of a multitrack of the second producer
  * \properties \em accepts_blanks a flag to indicate if the transition should accept blank frames
  * \properties \em always_active a flag to indicate that the in and out points do not apply
- * \properties \em _transition_type 1 for video, 2 for audio
+ * \properties \em _transition_type 1 for video, 2 for audio, 3 for both audio and video
  * \properties \em disable Set this to disable the transition while keeping it in the object model.
  */
 
