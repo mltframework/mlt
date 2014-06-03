@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
 identifier: videostab2
-title: Videostab2
+title: Videostab2 (*deprecated*)
 copyright: Copyright (C) 2011 Marco Gittler
 creator: Marco Gittler <g.marco@freenet.de>
 version: 0.1
@@ -12,6 +12,8 @@ tags:
   - Video
 description: Stabilize Video (for wiggly/rolling video)
 notes: >
+  This filter is deprecated and will eventually be removed; use the vidstab
+  filter instead.
   This filter requires two passes. The first pass performs analysis and stores
   the result in the vectors property. The second pass applies the vectors to
   the image.
