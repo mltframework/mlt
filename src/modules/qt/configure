@@ -107,8 +107,16 @@ else
 		# Qt5 on OS X
 		elif [ -d "$qt_libdir/QtWidgets.framework" ]
 		then
-				echo QTCXXFLAGS=-I$qt_includedir -I$qt_includedir/QtCore -I$qt_includedir/QtGui -I$qt_includedir/QtXml -I$qt_includedir/QtSvg -I$qt_includedir/QtOpenGL -I$qt_includedir/QtWidgets >> config.mak
-				echo QTLIBS=-F"$qt_libdir" -framework QtCore -framework QtGui -framework QtXml -framework QtSvg -framework QtOpenGL -framework QtWidgets >> config.mak
+			echo QTCXXFLAGS=-I$qt_includedir -F$qt_libdir \
+				-I$qt_includedir/QtCore -I$qt_libdir/QtCore.framework/Headers \
+				-I$qt_includedir/QtGui -I$qt_libdir/QtGui.framework/Headers \
+				-I$qt_includedir/QtXml -I$qt_libdir/QtXml.framework/Headers \
+				-I$qt_includedir/QtSvg -I$qt_libdir/QtSvg.framework/Headers \
+				-I$qt_includedir/QtOpenGL -I$qt_libdir/QtOpenGL.framework/Headers \
+				-I$qt_includedir/QtWidgets -I$qt_libdir/QtWidgets.framework/Headers \
+				>> config.mak
+			echo QTLIBS=-F"$qt_libdir" -framework QtCore -framework QtGui -framework \
+				QtXml -framework QtSvg -framework QtOpenGL -framework QtWidgets >> config.mak
 		# Qt4 on OS X
 		elif [ -d "$qt_libdir/QtGui.framework" ]
 		then
