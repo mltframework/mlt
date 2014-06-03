@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.2
 type: filter
 identifier: transition
 title: Transition as Filter
@@ -8,4 +8,22 @@ creator: Charles Yates
 license: LGPLv2.1
 language: en
 tags:
+  - Audio
   - Video
+description: >
+  Use a transition as a filter. The filters supplies the same frame as
+  both the A and B clip to the transition.
+
+parameters:
+  - identifier: transition
+    argument: yes
+    type: string
+    title: Transition
+    description: The MLT name of a transition.
+    required: yes
+
+  - identifier: transition.*
+    type: properties
+    description: >
+      Properties may be set on the encapsulated composite transition.
+      e.g.: transition.valign=c

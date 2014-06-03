@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.2
 type: producer
 identifier: melt_file
 title: Melt
@@ -11,3 +11,11 @@ language: en
 tags:
   - Audio
   - Video
+notes: Limited to files with 100000 or less lines and maximum line size of 2048 bytes.
+
+parameters:
+  - identifier: resource
+    argument: yes
+    title: File
+    description: The name of the melt text file.
+    required: yes

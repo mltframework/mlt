@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.2
 type: producer
 identifier: hold
 title: Still
@@ -9,3 +9,19 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: Repeat the same frame for the entirety of the clip.
+
+parameters:
+  - identifier: resource
+    argument: yes
+    type: string
+    title: File/URL
+    description: A file name specification, URL, or producer name:argument.
+    required: yes
+
+  - identifier: frame
+    type: integer
+    title: Frame number
+    description: The frame number of the frame to repeat
+    default: 0
+    minimum: 0
