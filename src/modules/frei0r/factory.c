@@ -305,6 +305,7 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 			{
 				transition->process = transition_process;
 				transition->close = transition_close;
+				f0r_init();
 				properties=MLT_TRANSITION_PROPERTIES( transition );
 				mlt_properties_set_int(properties, "_transition_type", 1 );
 
