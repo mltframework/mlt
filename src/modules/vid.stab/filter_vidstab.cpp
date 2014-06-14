@@ -310,6 +310,9 @@ static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image
 			destory_analyze_data( data->analyze_data );
 			data->analyze_data = NULL;
 			mlt_properties_set( properties, "results", mlt_properties_get( properties, "filename" ) );
+#ifdef WIN32
+			mlt_properties_set_int( properties, "_ignore_results", 1 );
+#endif
 		}
 		else
 		{
@@ -343,6 +346,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_service_lock( MLT_FILTER_SERVICE(filter) );
 
 		char* results = mlt_properties_get( properties, "results" );
+#ifdef WIN32
+		if( !mlt_properties_get_int( properties, "_ignore_results" ) )
+#endif
 		if( results && strcmp( results, "" ) )
 		{
 			apply_results( filter, frame, vs_image, vs_format, *width, *height );
