@@ -122,6 +122,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "mirror", metadata, "filter_mirror.yml" );
 	MLT_REGISTER_METADATA( filter_type, "mono", metadata, "filter_mono.yml" );
 	MLT_REGISTER_METADATA( filter_type, "obscure", metadata, "filter_obscure.yml" );
+	MLT_REGISTER_METADATA( filter_type, "panner", metadata, "filter_panner.yml" );
 	MLT_REGISTER_METADATA( filter_type, "region", metadata, "filter_region.yml" );
 	MLT_REGISTER_METADATA( filter_type, "rescale", metadata, "filter_rescale.yml" );
 	MLT_REGISTER_METADATA( filter_type, "resize", metadata, "filter_resize.yml" );
