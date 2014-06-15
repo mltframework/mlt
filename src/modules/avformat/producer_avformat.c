@@ -112,6 +112,8 @@ struct producer_avformat_s
 	pthread_mutex_t open_mutex;
 	int is_mutex_init;
 	AVRational video_time_base;
+	mlt_frame last_good_frame; // for video error concealment
+	int last_good_position;    // for video error concealment
 #ifdef VDPAU
 	struct
 	{
@@ -1481,12 +1483,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						mlt_log_fatal( MLT_PRODUCER_SERVICE(producer), "Exiting with error due to disconnected source.\n" );
 						exit( EXIT_FAILURE );
 					}
+					// Send null packets to drain decoder.
+					self->pkt.size = 0;
+					self->pkt.data = NULL;
 				}
 			}
 			pthread_mutex_unlock( &self->packets_mutex );
 
 			// We only deal with video from the selected video_index
-			if ( ret >= 0 && self->pkt.stream_index == self->video_index && self->pkt.size > 0 )
+			if ( self->pkt.stream_index == self->video_index )
 			{
 				int64_t pts = best_pts( self, self->pkt.pts, self->pkt.dts );
 				if ( pts != AV_NOPTS_VALUE )
@@ -1514,7 +1519,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				self->last_position = int_position;
 
 				// Decode the image
-				if ( must_decode || int_position >= req_position )
+				if ( must_decode || int_position >= req_position || !self->pkt.data )
 				{
 #ifdef VDPAU
 					if ( self->vdpau )
@@ -1534,13 +1539,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 #else
 					ret = avcodec_decode_video( codec_context, self->video_frame, &got_picture, self->pkt.data, self->pkt.size );
 #endif
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "decoded packet with size %d => %d\n", self->pkt.size, ret );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
 					if ( ret < 0 )
 					{
-						if ( ++decode_errors <= 10 )
+						if ( ++decode_errors <= 10 ) {
 							ret = 0;
-						else
+						} else {
 							mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "video decoding error %d\n", ret );
+							self->last_good_position = POSITION_INVALID;
+						}
 					}
 					else
 					{
@@ -1569,7 +1577,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					else if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
 				}
-				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d\n", got_picture, self->pkt.flags & PKT_FLAG_KEY );
+				else if ( !self->pkt.data ) // draining decoder with null packets
+				{
+					ret = -1;
+				}
+				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d ret %d pkt_pos %d\n", got_picture, self->pkt.flags & PKT_FLAG_KEY, ret, int_position );
 			}
 
 			// Now handle the picture if we have one
@@ -1617,6 +1629,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						{
 							mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU error in VdpDecoderRender\n" );
 							image_size = got_picture = 0;
+							self->last_good_position = POSITION_INVALID;
 						}
 					}
 					else
@@ -1644,45 +1657,45 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( alpha )
 		mlt_frame_set_alpha( frame, alpha, (*width) * (*height), mlt_pool_release );
 
-	if ( image_size > 0 && self->image_cache )
+	if ( image_size > 0 )
 	{
 		mlt_properties_set_int( frame_properties, "format", *format );
-		mlt_cache_put_frame( self->image_cache, frame );
-	}
-
-	// Try to duplicate last image if there was a decoding failure
-	// TODO: with multithread decoding a partial frame decoding resulting
-	// in failure also resets av_frame making test below fail.
-	if ( !image_size && self->video_frame && self->video_frame->linesize[0] )
-	{
-		// Duplicate it
-		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
-		{
-			int yuv_colorspace;
-			// Workaround 1088 encodings missing cropping info.
-			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
-				*height = 1080;
-#ifdef VDPAU
-			if ( self->vdpau && self->vdpau->buffer )
-			{
-				AVPicture picture;
-				picture.data[0] = self->vdpau->buffer;
-				picture.data[2] = self->vdpau->buffer + codec_context->width * codec_context->height;
-				picture.data[1] = self->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
-				picture.linesize[0] = codec_context->width;
-				picture.linesize[1] = codec_context->width / 2;
-				picture.linesize[2] = codec_context->width / 2;
-				yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, &alpha );
-				mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
-			}
-			else
-#endif
-			yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
-				format, *width, *height, &alpha );
-			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
-			got_picture = 1;
+		// Cache the image for rapid repeated access.
+		if ( self->image_cache ) {
+			mlt_cache_put_frame( self->image_cache, frame );
 		}
+		// Clone frame for error concealment.
+		if ( self->current_position >= self->last_good_position ) {
+			self->last_good_position = self->current_position;
+			if ( self->last_good_frame )
+				mlt_frame_close( self->last_good_frame );
+			self->last_good_frame = mlt_frame_clone( frame, 1 );
+		}
+	}
+	else if ( self->last_good_frame )
+	{
+		// Use last known good frame if there was a decoding failure.
+		mlt_frame original = mlt_frame_clone( self->last_good_frame, 1 );
+		mlt_properties orig_props = MLT_FRAME_PROPERTIES( original );
+		int size = 0;
+
+		*buffer = mlt_properties_get_data( orig_props, "alpha", &size );
+		if (*buffer)
+			mlt_frame_set_alpha( frame, *buffer, size, NULL );
+		*buffer = mlt_properties_get_data( orig_props, "image", &size );
+		mlt_frame_set_image( frame, *buffer, size, NULL );
+		mlt_properties_set_data( frame_properties, "avformat.conceal_error", original, 0, (mlt_destructor) mlt_frame_close, NULL );
+		*format = mlt_properties_get_int( orig_props, "format" );
+
+		// Set the resolution
+		*width = codec_context->width;
+		*height = codec_context->height;
+
+		// Workaround 1088 encodings missing cropping info.
+		if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
+			*height = 1080;
+
+		got_picture = 1;
 	}
 
 	// Regardless of speed, we expect to get the next frame (cos we ain't too bright)
@@ -2129,11 +2142,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	uint8_t *decode_buffer = self->decode_buffer[ index ];
 
 	int audio_used = self->audio_used[ index ];
-	uint8_t *ptr = pkt.data;
-	int len = pkt.size;
 	int ret = 0;
 
-	while ( ptr && ret >= 0 && len > 0 )
+	while ( pkt.data && pkt.size > 0 )
 	{
 		int sizeof_sample = sample_bytes( codec_context );
 		int data_size = self->audio_buffer_size[ index ];
@@ -2159,8 +2170,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			break;
 		}
 
-		pkt.size = len -= ret;
-		pkt.data = ptr += ret;
+		// Consume (sometimes partial) data in the packet.
+		pkt.size -= ret;
+		pkt.data += ret;
 
 		// If decoded successfully
 		if ( data_size > 0 )
@@ -2726,6 +2738,8 @@ static void producer_avformat_close( producer_avformat self )
 #endif
 	if ( self->image_cache )
 		mlt_cache_close( self->image_cache );
+	if ( self->last_good_frame )
+		mlt_frame_close( self->last_good_frame );
 
 	// Cleanup the mutexes
 	if ( self->is_mutex_init )
