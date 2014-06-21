@@ -79,6 +79,8 @@
  *   Set this to -1 if the consumer does not care about the field order.
  * \properties \em mlt_image_format the image format to request in rendering threads, defaults to yuv422
  * \properties \em mlt_audio_format the audio format to request in rendering threads, defaults to S16
+ * \properties \em audio_off set non-zero to disable audio processing
+ * \properties \em video_off set non-zero to disable video processing
  */
 
 struct mlt_consumer_s
