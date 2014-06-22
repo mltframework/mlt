@@ -415,7 +415,7 @@ public:
 				void* buffer = 0;
 				unsigned char* p = (unsigned char*) image;
 				int n = size / 2;
-\
+
 				// Initialize VANC lines to nominal black
 				while ( --n )
 				{
