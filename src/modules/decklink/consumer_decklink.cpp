@@ -454,7 +454,28 @@ public:
 			}
 		}
 		if ( m_decklinkFrame )
+		{
+			char* vitc;
+
+			// set timecode
+			vitc = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.markup" );
+			if( vitc )
+			{
+				int h, m, s, f;
+				if ( 4 == sscanf( vitc, "%d:%d:%d:%d", &h, &m, &s, &f ) )
+					m_decklinkFrame->SetTimecodeFromComponents(bmdTimecodeVITC,
+						h, m, s, f, bmdTimecodeFlagDefault);
+			}
+
+			// set userbits
+			vitc = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.userbits" );
+			if( vitc )
+				m_decklinkFrame->SetTimecodeUserBits(bmdTimecodeVITC,
+					mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.userbits" ));
+
+
 			m_deckLinkOutput->ScheduleVideoFrame( m_decklinkFrame, m_count * m_duration, m_duration, m_timescale );
+		}
 
 		if ( !rendered )
 			mlt_log_verbose( getConsumer(), "dropped video frame %u\n", ++m_dropped );
