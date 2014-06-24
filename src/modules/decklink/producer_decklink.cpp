@@ -358,6 +358,8 @@ public:
 			IDeckLinkVideoInputFrame* video,
 			IDeckLinkAudioInputPacket* audio )
 	{
+		mlt_frame frame = NULL;
+
 		if( !m_reprio )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( getProducer() );
@@ -402,8 +404,6 @@ public:
 			return S_OK;
 		}
 
-		// Create mlt_frame
-		mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( getProducer() ) );
 
 		// Copy video
 		if ( video )
@@ -446,6 +446,7 @@ public:
 				{
 					size =  video->GetRowBytes() * video->GetHeight();
 					swab2( (char*) buffer, (char*) image + m_vancLines * video->GetRowBytes(), size );
+					frame = mlt_frame_init( MLT_PRODUCER_SERVICE( getProducer() ) );
 					mlt_frame_set_image( frame, (uint8_t*) image, size, mlt_pool_release );
 				}
 				else if ( image )
@@ -457,8 +458,6 @@ public:
 			else
 			{
 				mlt_log_verbose( getProducer(), "no signal\n" );
-				mlt_frame_close( frame );
-				frame = 0;
 			}
 
 			// Get timecode
@@ -481,8 +480,6 @@ public:
 		else
 		{
 			mlt_log_verbose( getProducer(), "no video\n" );
-			mlt_frame_close( frame );
-			frame = 0;
 		}
 
 		// Copy audio
