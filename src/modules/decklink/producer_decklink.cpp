@@ -408,8 +408,29 @@ public:
 		// Copy video
 		if ( video )
 		{
+			IDeckLinkTimecode* timecode = 0;
+
 			if ( !( video->GetFlags() & bmdFrameHasNoInputSource ) )
 			{
+				int vitc_in = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "vitc_in" );
+				if ( vitc_in && ( S_OK == video->GetTimecode( bmdTimecodeRP188, &timecode ) ||
+					S_OK == video->GetTimecode( bmdTimecodeVITC, &timecode ))  && timecode )
+				{
+					int vitc = timecode->GetBCD();
+					SAFE_RELEASE( timecode );
+
+					mlt_log_verbose( getProducer(),
+						"VideoInputFrameArrived: vitc=%.8X vitc_in=%.8X\n", vitc, vitc_in);
+
+					if ( vitc < vitc_in )
+					{
+						pthread_cond_broadcast( &m_condition );
+						return S_OK;
+					}
+
+					mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "vitc_in", 0 );
+				}
+
 				int size = video->GetRowBytes() * ( video->GetHeight() + m_vancLines );
 				void* image = mlt_pool_alloc( size );
 				void* buffer = 0;
@@ -461,7 +482,6 @@ public:
 			}
 
 			// Get timecode
-			IDeckLinkTimecode* timecode = 0;
 			if ( video->GetTimecode( bmdTimecodeVITC, &timecode ) == S_OK && timecode )
 			{
 				DLString timecodeString = 0;
