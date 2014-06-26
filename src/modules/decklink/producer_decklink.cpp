@@ -472,7 +472,7 @@ public:
 				}
 				else if ( image )
 				{
-					mlt_log_verbose( getProducer(), "no video\n" );
+					mlt_log_verbose( getProducer(), "no video image\n" );
 					mlt_pool_release( image );
 				}
 			}
@@ -520,7 +520,7 @@ public:
 			}
 			else
 			{
-				mlt_log_verbose( getProducer(), "no audio\n" );
+				mlt_log_verbose( getProducer(), "no audio samples\n" );
 				mlt_pool_release( pcm );
 			}
 		}
