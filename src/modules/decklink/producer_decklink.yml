@@ -104,3 +104,12 @@ parameters:
     minimum: 1
     maximum: 99
     default: 20
+
+  - identifier: vitc_in
+    title: Start timecode
+    type: integer
+    description: >
+      The vertical interval timecode (VITC) in binary-coded decimal (BCD) format.
+      It skips frames that has VITC timecode less then specified.
+      After reaching first frame with timecode greater or equal then specified this
+      property is reset to zero.
