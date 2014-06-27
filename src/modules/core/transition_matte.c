@@ -29,18 +29,157 @@
 
 typedef void ( *copy_luma_fn )(uint8_t* alpha_a, int stride_a, uint8_t* image_b, int stride_b, int width, int height);
 
+#if defined(USE_SSE)
+static void __attribute__((noinline)) copy_Y_to_A_full_luma_sse(uint8_t* alpha_a, uint8_t* image_b, int cnt)
+{
+	const static unsigned char const4[] =
+	{
+		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0
+	};
+
+	__asm__ volatile
+	(
+		"movdqu         (%[equ255]), %%xmm4     \n\t"   /* load bottom value 0xff */
+
+		"loop_start1:                           \n\t"
+
+		/* load pixels block 1 */
+		"movdqu         0(%[image_b]), %%xmm0   \n\t"
+		"add            $0x10, %[image_b]       \n\t"
+
+		/* load pixels block 2 */
+		"movdqu         0(%[image_b]), %%xmm1   \n\t"
+		"add            $0x10, %[image_b]       \n\t"
+
+		/* leave only Y */
+		"pand           %%xmm4, %%xmm0          \n\t"
+		"pand           %%xmm4, %%xmm1          \n\t"
+
+		/* pack to 8 bit value */
+		"packuswb       %%xmm1, %%xmm0          \n\t"
+
+		/* store */
+		"movdqu         %%xmm0, (%[alpha_a])    \n\t"
+		"add            $0x10, %[alpha_a]       \n\t"
+
+		/* loop if we done */
+		"dec            %[cnt]                  \n\t"
+		"jnz            loop_start1             \n\t"
+		:
+		: [cnt]"r" (cnt), [alpha_a]"r"(alpha_a), [image_b]"r"(image_b), [equ255]"r"(const4)
+	);
+};
+#endif
+
 static void copy_Y_to_A_full_luma(uint8_t* alpha_a, int stride_a, uint8_t* image_b, int stride_b, int width, int height)
 {
 	int i, j;
 
 	for(j = 0; j < height; j++)
 	{
-		for(i = 0; i < width; i++)
+		i = 0;
+#if defined(USE_SSE)
+		if(width >= 16)
+		{
+			copy_Y_to_A_full_luma_sse(alpha_a, image_b, width >> 4);
+			i = (width >> 4) << 4;
+		}
+#endif
+		for(; i < width; i++)
 			alpha_a[i] = image_b[2*i];
 		alpha_a += stride_a;
 		image_b += stride_b;
 	};
 };
+
+#if defined(USE_SSE)
+static void __attribute__((noinline)) copy_Y_to_A_scaled_luma_sse(uint8_t* alpha_a, uint8_t* image_b, int cnt)
+{
+	const static unsigned char const1[] =
+	{
+		43, 0, 43, 0, 43, 0, 43, 0, 43, 0, 43, 0, 43, 0, 43, 0
+	};
+	const static unsigned char const2[] =
+	{
+		16, 0, 16, 0, 16, 0, 16, 0, 16, 0, 16, 0, 16, 0, 16, 0
+	};
+	const static unsigned char const3[] =
+	{
+		235, 0, 235, 0, 235, 0, 235, 0, 235, 0, 235, 0, 235, 0, 235, 0
+	};
+	const static unsigned char const4[] =
+	{
+		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0
+	};
+
+	__asm__ volatile
+	(
+		"movdqu         (%[equ43]), %%xmm7      \n\t"   /* load multiplier 43 */
+		"movdqu         (%[equ16]), %%xmm6      \n\t"   /* load bottom value 16 */
+		"movdqu         (%[equ235]), %%xmm5     \n\t"   /* load bottom value 235 */
+		"movdqu         (%[equ255]), %%xmm4     \n\t"   /* load bottom value 0xff */
+
+		"loop_start:                            \n\t"
+
+		/* load pixels block 1 */
+		"movdqu         0(%[image_b]), %%xmm0   \n\t"
+		"add            $0x10, %[image_b]       \n\t"
+
+		/* load pixels block 2 */
+		"movdqu         0(%[image_b]), %%xmm1   \n\t"
+		"add            $0x10, %[image_b]       \n\t"
+
+		/* leave only Y */
+		"pand           %%xmm4, %%xmm0          \n\t"
+		"pand           %%xmm4, %%xmm1          \n\t"
+
+		/* upper range clip */
+		"pminsw         %%xmm5, %%xmm0          \n\t"
+		"pminsw         %%xmm5, %%xmm1          \n\t"
+
+		/* upper range clip */
+		"pmaxsw         %%xmm6, %%xmm0          \n\t"
+		"pmaxsw         %%xmm6, %%xmm1          \n\t"
+
+		/* upper range clip */
+		"psubw          %%xmm6, %%xmm0          \n\t"
+		"psubw          %%xmm6, %%xmm1          \n\t"
+
+		/* duplicate values */
+		"movdqa         %%xmm0,%%xmm2           \n\t"
+		"movdqa         %%xmm1,%%xmm3           \n\t"
+
+		/* regA = regA << 8 */
+		"psllw          $8, %%xmm0              \n\t"
+		"psllw          $8, %%xmm1              \n\t"
+
+		/* regB = regB * 47 */
+		"pmullw         %%xmm7, %%xmm2          \n\t"
+		"pmullw         %%xmm7, %%xmm3          \n\t"
+
+		/* regA = regA + regB */
+		"paddw          %%xmm2, %%xmm0          \n\t"
+		"paddw          %%xmm3, %%xmm1          \n\t"
+
+		/* regA = regA >> 8 */
+		"psrlw          $8, %%xmm0              \n\t"
+		"psrlw          $8, %%xmm1              \n\t"
+
+		/* pack to 8 bit value */
+		"packuswb       %%xmm1, %%xmm0          \n\t"
+
+		/* store */
+		"movdqu         %%xmm0, (%[alpha_a])    \n\t"
+		"add            $0x10, %[alpha_a]       \n\t"
+
+		/* loop if we done */
+		"dec            %[cnt]                  \n\t"
+		"jnz            loop_start              \n\t"
+		:
+		: [cnt]"r" (cnt), [alpha_a]"r"(alpha_a), [image_b]"r"(image_b), [equ43]"r"(const1), [equ16]"r"(const2), [equ235]"r"(const3), [equ255]"r"(const4)
+	);
+};
+#endif
 
 static void copy_Y_to_A_scaled_luma(uint8_t* alpha_a, int stride_a, uint8_t* image_b, int stride_b, int width, int height)
 {
@@ -48,7 +187,15 @@ static void copy_Y_to_A_scaled_luma(uint8_t* alpha_a, int stride_a, uint8_t* ima
 
 	for(j = 0; j < height; j++)
 	{
-		for(i = 0; i < width; i++)
+		i = 0;
+#if defined(USE_SSE)
+		if(width >= 16)
+		{
+			copy_Y_to_A_scaled_luma_sse(alpha_a, image_b, width >> 4);
+			i = (width >> 4) << 4;
+		}
+#endif
+		for(; i < width; i++)
 		{
 			unsigned int p = image_b[2*i];
 
