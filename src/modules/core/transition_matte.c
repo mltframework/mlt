@@ -56,7 +56,9 @@ static void copy_Y_to_A_scaled_luma(uint8_t* alpha_a, int stride_a, uint8_t* ima
 				p = 16;
 			if(p > 235)
 				p = 235;
-			p = (p - 16) * 255 / 219;
+			/* p = (p - 16) * 255 / 219; */
+			p -= 16;
+			p = ((p << 8) + (p * 43)) >> 8;
 
 			alpha_a[i] = p;
 		};
