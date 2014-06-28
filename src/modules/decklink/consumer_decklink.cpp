@@ -247,7 +247,7 @@ public:
 
 		// Set the video output mode
 		if ( S_OK != m_deckLinkOutput->EnableVideoOutput( m_displayMode->GetDisplayMode(),
-			bmdVideoOutputFlagDefault | bmdVideoOutputRP188 | bmdVideoOutputVITC) )
+			(BMDVideoOutputFlags) (bmdVideoOutputFlagDefault | bmdVideoOutputRP188 | bmdVideoOutputVITC) ) )
 		{
 			mlt_log_error( getConsumer(), "Failed to enable video output\n" );
 			return false;
