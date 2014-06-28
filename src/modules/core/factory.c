@@ -56,6 +56,7 @@ extern mlt_producer producer_noise_init( mlt_profile profile, mlt_service_type t
 #include "transition_composite.h"
 extern mlt_transition transition_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_transition transition_matte_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 #include "transition_region.h"
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
@@ -105,6 +106,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( transition_type, "composite", transition_composite_init );
 	MLT_REGISTER( transition_type, "luma", transition_luma_init );
 	MLT_REGISTER( transition_type, "mix", transition_mix_init );
+	MLT_REGISTER( transition_type, "matte", transition_matte_init );
 	MLT_REGISTER( transition_type, "region", transition_region_init );
 
 	MLT_REGISTER_METADATA( consumer_type, "multi", metadata, "consumer_multi.yml" );
@@ -139,5 +141,6 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( transition_type, "composite", metadata, "transition_composite.yml" );
 	MLT_REGISTER_METADATA( transition_type, "luma", metadata, "transition_luma.yml" );
 	MLT_REGISTER_METADATA( transition_type, "mix", metadata, "transition_mix.yml" );
+	MLT_REGISTER_METADATA( transition_type, "matte", metadata, "transition_matte.yml" );
 	MLT_REGISTER_METADATA( transition_type, "region", metadata, "transition_region.yml" );
 }

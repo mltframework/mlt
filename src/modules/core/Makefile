@@ -39,6 +39,7 @@ OBJS = factory.o \
 	   transition_luma.o \
 	   transition_mix.o \
 	   transition_region.o \
+	   transition_matte.o \
 	   consumer_multi.o \
 	   consumer_null.o
 
