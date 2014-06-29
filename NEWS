@@ -1,6 +1,51 @@
 MLT Release Notes
 -----------------
 
+Version 0.9.2 - June 29, 2014
+
+This is a bugfix and minor enhancement release.
+
+Framework
+  * Added "boolean" parameter type and "argument" parameter attribute to
+    service metadata schema.
+  * Added mlt_properties_frames_to_time().
+  * Added mlt_properties_time_to_frames().
+  * Changed mlt_events_fire() to return the number of listeners.
+  * Added consumer-thread-create and consumer-thread-join events.
+  * Added LC_NUMERIC handling for Windows.
+  * Added mlt_playlist_mix_out() and mlt_playlist_mix_in() 
+  * Added mlt_properties_from_utf8()
+
+Modules
+  * Renamed "qimage" module to "qt".
+  * Added support for Qt 5.
+  * Added qtext producer, which is now prefered by dynamictext filter over pango.
+  * Added xml-nogl consumer.
+  * Consolidated dgraft, burningtv, and rotoscoping into new plusgpl module.
+  * Added vid.stab module with vidstab and deshake filters.
+    This depends on external vid.stab library unlike its predecessors.
+  * Rewrote opengl module.
+  * Added loudness filter based on EBU R128.
+  * Added rgblut filter to plus module.
+  * Added luma-only liftgammagain filter to plusgpl module.
+  * Added lift_gamma_gain filter to plus module.
+  * Added support new keyframable animated properties to brightness, volume,
+    panner, boxblur, wave, sepia, charcoal, burn, gamma, grain, dust, lines,
+    tcolor, oldfilm, 
+  * Added movit.luma transition to opengl module.
+  * Added cbrts consumer to plusgpl module.
+  * Removed the "ppm" PPM-pipe producer.
+  * Added more VITC functionality to decklink module.
+  * Added matte transition to core module.
+
+DEPRECATION WARNINGS
+  * Deprecate videostab module with videostab and videostab filters.
+    This will not be removed soon in order to keep old scripts and projects
+    functional.
+  * Deprecate the dv (libdv), kino, and vorbis modules. These are scheduled
+    to be removed in next release.
+
+
 Version 0.9.0 - June 2, 2013
 
 This is a significant enhancement release.
