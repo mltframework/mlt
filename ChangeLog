@@ -1,3 +1,950 @@
+2014-06-29  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 0.9.2.
+
+2014-06-27  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/transition_matte.c, src/modules/core/transition_matte.yml:
+  Add matte transition.
+
+2014-06-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/videostab/filter_videostab.yml,
+  src/modules/videostab/filter_videostab2.yml: Document the videostab module as
+  deprecated.  This does not remove from the build process because we want to
+  continue to support legacy projects especially Kdenlive. However, now
+  documentation lets people know to use vidstab instead.
+
+  * src/modules/Makefile, src/modules/configure,
+  src/modules/dv/consumer_libdv.yml, src/modules/dv/producer_libdv.yml,
+  src/modules/vorbis/producer_vorbis.yml: Deprecate the dv, kino, and vorbis
+  modules.  They are removed from the normal configure & make build process,
+  but they are still easy to build manually if needed, e.g.: make -C src/
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/producer_ppm.c: Remove the ppm pipe producer.  No one uses
+  this, and it is problematic to support. It was mainly used in very early
+  development before avformat module was any good and smilutils was still
+  maintained and in use.
+
+  * src/modules/core/filter_transition.yml, src/modules/core/producer_hold.yml,
+  src/modules/core/producer_melt_file.yml: Finish documenting transition filter
+  and hold and melt file producers.
+
+  * src/modules/core/consumer_null.c, src/modules/core/filter_mirror.c,
+  src/modules/core/producer_consumer.c, src/modules/core/producer_hold.c,
+  src/modules/core/producer_noise.c, src/modules/core/producer_ppm.c,
+  src/modules/core/transition_luma.c, src/modules/core/transition_mix.c: Remove
+  usage of "this" as a variable name in core module.
+
+2014-05-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pango.c, src/modules/qt/producer_kdenlivetitle.c,
+  src/modules/qt/producer_qtext.cpp: Fix file names with ext. chars on Windows
+  for text producers.
+
+  * src/modules/core/transition_composite.c,
+  src/modules/core/transition_luma.c: Fix file names with ext. chars on Windows
+  for luma files.
+
+2014-05-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/producer_xml.c: Fix file
+  names with ext. chars on Windows for xml module.
+
+  * src/framework/mlt_properties.c, src/mlt++/MltProperties.cpp: Fix file names
+  with exts chars on Windows for mlt_properties.
+
+  * src/framework/Makefile, src/framework/mlt.vers,
+  src/framework/mlt_properties.c, src/framework/mlt_properties.h,
+  src/framework/mlt_util.c, src/framework/mlt_util.h,
+  src/modules/avformat/producer_avformat.c: Move from_utf8 function into
+  mlt_properties; remove mlt_util.
+
+  * src/framework/Makefile, src/framework/mlt.vers, src/framework/mlt_util.c,
+  src/framework/mlt_util.h, src/win32/win32.c: Add mlt_util API with
+  mlt_util_from_utf8().  This will be used for converting a text encoding from
+  a standard MLT internal string encoding of UTF-8 into other encodings - on
+  Windows only initially.
+
+2014-05-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/Makefile, src/modules/plusgpl/consumer_cbrts.c: Fix
+  cbrts build on Windows.
+
+2014-05-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/Makefile, src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml, src/modules/plusgpl/factory.c: Add
+  cbrts consumer.  See
+  http://www.mltframework.org/bin/view/MLT/ConsumerCbrtsMore
+
+2014-04-26  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/core/filter_channelcopy.c, src/modules/core/filter_data_feed.c,
+  src/modules/core/filter_data_show.c: Clean up channel_copy, data_feed and
+  data_show
+
+2014-04-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/filter_boxblur.yml,
+  src/modules/kdenlive/filter_wave.yml: Improve service metadata/documentation
+  for boxblur filter.
+
+2014-04-15  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/kdenlive/filter_boxblur.c, src/modules/kdenlive/filter_wave.c:
+  Add animated property wave to filter wave, minor boxblur cleanups
+
+  * src/modules/kdenlive/filter_boxblur.c,
+  src/modules/kdenlive/filter_boxblur.yml: Add animated property blur to
+  boxblur
+
+  * src/modules/core/filter_panner.c, src/modules/core/filter_panner.yml: Add
+  animated property split to panner
+
+2014-04-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_brightness.yml,
+  src/modules/normalize/filter_volume.yml,
+  src/modules/plusgpl/filter_lumaliftgaingamma.yml: Fix YAML validation errors:
+  double => float.
+
+2014-04-08  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/normalize/filter_volume.c,
+  src/modules/normalize/filter_volume.yml: Add animated property level to
+  filter volume
+
+2014-04-08  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/mlt_movit_input.cpp, src/modules/opengl/mlt_movit_input.h:
+  Convert on CPU if we are asked to finalize an empty Movit chain.  This fixes
+  an issue with interlaced content and no resize or other normalizers in actual
+  use.
+
+2014-04-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_movit_white_balance.cpp,
+  src/modules/opengl/transition_movit_luma.cpp,
+  src/modules/opengl/transition_movit_mix.cpp: Hide the movit.parms properties
+  from serialization.  These properties were adding unncessary noise in the XML
+  output.
+
+2014-04-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.c, src/modules/core/producer_colour.c,
+  src/modules/gtk2/producer_pixbuf.c, src/modules/opengl/filter_movit_crop.cpp,
+  src/modules/qt/qimage_wrapper.cpp: Fix crashing when using opengl services
+  with wrapper producers.  Steinar reported crashing in Kdenlive when using the
+  framebuffer producer due to movit.crop changing the format to mlt_image_none.
+  Removing that required making other components handle requests with format =
+  mlt_image_none.
+
+2014-04-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qt/Makefile, src/modules/qt/common.cpp,
+  src/modules/qt/common.h, src/modules/qt/consumer_qglsl.cpp,
+  src/modules/qt/kdenlivetitle_wrapper.cpp, src/modules/qt/producer_qtext.cpp,
+  src/modules/qt/qimage_wrapper.cpp, src/modules/qt/transition_vqm.cpp:
+  Refactor QApplication creation and fix lifetime of its args.
+
+2014-03-27  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/gtk2/Makefile, src/modules/gtk2/configure,
+  src/modules/gtk2/factory.c, src/modules/gtk2/producer_pixbuf.c,
+  src/modules/kino/Makefile, src/modules/kino/avi.cc,
+  src/modules/kino/configure, src/modules/kino/filehandler.cc,
+  src/modules/kino/kino_wrapper.cc, src/modules/kino/riff.cc,
+  src/modules/opengl/Makefile, src/modules/qt/Makefile,
+  src/modules/qt/configure, src/modules/qt/qimage_wrapper.h: Avoid unnecessary
+  compilation when running "./configure; make; make install" multiple times.
+
+2014-03-25  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/plus/Makefile, src/modules/plus/factory.c,
+  src/modules/plus/filter_lift_gamma_gain.c,
+  src/modules/plus/filter_lift_gamma_gain.yml: Add lift_gamma_gain filter. 
+  This filter is equivalent to the movit.lift_gamma_gain filter but does not
+  depend on opengl/movit.
+
+2014-03-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/opengl/Makefile, src/modules/opengl/factory.c,
+  src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/transition_movit_luma.cpp,
+  src/modules/opengl/transition_movit_luma.yml: Add movit.luma transition. 
+  This can be improved by adding an invert parameter to the Movit effect and by
+  supplying full 16-bit PGM to the Movit input, but it is a start.
+
+2014-03-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_composite.c,
+  src/modules/core/transition_luma.c, src/modules/dv/consumer_libdv.c,
+  src/modules/vmfx/producer_pgm.c, src/modules/vorbis/producer_vorbis.c: Fix
+  reading binary files on Windows.
+
+2014-03-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_playlist.c,
+  src/framework/mlt_playlist.h, src/mlt++/MltPlaylist.cpp,
+  src/mlt++/MltPlaylist.h, src/mlt++/mlt++.vers: Add mlt_playlist_mix_in() and
+  mlt_playlist_mix_out().  These are new alternatives to mlt_playlist_mix()
+  that Shotcut is using.
+
+2014-03-17  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/core/filter_brightness.c,
+  src/modules/core/filter_brightness.yml: Add animated level parameter to
+  brightness
+
+2014-02-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_property.c,
+  src/framework/mlt_property.h: Implement LC_NUMERIC handling for non-glibc and
+  non-Darwin OS.
+
+2014-02-24  Dan Dennedy <dan@dennedy.org>
+
+  * presets/filter/movit.opacity/fade_in,
+  presets/filter/movit.opacity/fade_in_out,
+  presets/filter/movit.opacity/fade_out: Add some movit.opacity presets for
+  fading.
+
+  * src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_opacity.yml: Add alpha property to
+  movit.opacity filter.
+
+2014-02-24  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/plusgpl/Makefile, src/modules/plusgpl/factory.c,
+  src/modules/plusgpl/filter_lumaliftgaingamma.c,
+  src/modules/plusgpl/filter_lumaliftgaingamma.yml: Add lumaliftgaingamma
+  filter to plusgpl
+
+2014-02-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: Fix YUV to RGB conversion when
+  profile colorspace not 601.  The non-default coefficients for RGB cause
+  incorrect conversion.  Reported by Claus R. F. Overbeck on the kdenlive-devel
+  mailing list.
+
+2014-02-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: Fix compiler warnings due to
+  non-virtual destructors.
+
+2014-02-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/Makefile, src/modules/plusgpl/cJSON.c,
+  src/modules/plusgpl/cJSON.h, src/modules/plusgpl/factory.c,
+  src/modules/plusgpl/filter_rotoscoping.c,
+  src/modules/plusgpl/filter_rotoscoping.yml, src/modules/rotoscoping/Makefile,
+  src/modules/rotoscoping/cJSON.c, src/modules/rotoscoping/cJSON.h,
+  src/modules/rotoscoping/factory.c,
+  src/modules/rotoscoping/filter_rotoscoping.c,
+  src/modules/rotoscoping/filter_rotoscoping.yml: Move rotoscoping filter into
+  plusgpl module.
+
+  * src/modules/effectv/Makefile, src/modules/effectv/factory.c,
+  src/modules/effectv/filter_burn.c, src/modules/effectv/filter_burningtv.yml,
+  src/modules/effectv/image.c, src/modules/effectv/utils.c,
+  src/modules/effectv/utils.h, src/modules/plusgpl/Makefile,
+  src/modules/plusgpl/factory.c, src/modules/plusgpl/filter_burn.c,
+  src/modules/plusgpl/filter_burningtv.yml, src/modules/plusgpl/image.c,
+  src/modules/plusgpl/utils.c, src/modules/plusgpl/utils.h: Move burningtv into
+  plusgpl module.
+
+  * src/modules/dgraft/Makefile, src/modules/dgraft/factory.c,
+  src/modules/dgraft/filter_telecide.c, src/modules/plusgpl/Makefile,
+  src/modules/plusgpl/factory.c, src/modules/plusgpl/filter_telecide.c: Start
+  new plusgpl module from dgraft.
+
+2014-02-13  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/decklink/common.cpp, src/modules/decklink/common.h,
+  src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: implement SSE optimized swab
+  function
+
+2014-02-12  Dan Dennedy <dan@dennedy.org>
+
+  * demo/mlt_swf_variables, demo/txtField.swf: Remove Flash binary.
+
+2014-02-12  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_mirror.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_rect.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_movit_white_balance.cpp,
+  src/modules/opengl/mlt_flip_effect.h, src/modules/opengl/mlt_movit_input.cpp,
+  src/modules/opengl/mlt_movit_input.h, src/modules/opengl/optional_effect.h,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_overlay.cpp: Adjust for Movit moving into
+  namespace movit.
+
+2014-02-11  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/plus/filter_rgblut.c, src/modules/plus/filter_rgblut.yml:
+  Change this to frame or filter as appropriate
+
+2014-02-10  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/plus/Makefile, src/modules/plus/factory.c,
+  src/modules/plus/filter_rgblut.c, src/modules/plus/filter_rgblut.yml: Add
+  rgblut filter
+
+2014-02-05  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/plus/filter_loudness.c, src/modules/plus/filter_loudness.yml:
+  Make program property mutable
+
+2014-02-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/ebur128/ebur128.c, src/modules/plus/ebur128/queue.h: Fix
+  build on Windows due to missing queue macros.
+
+2014-02-04  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/plus/Makefile, src/modules/plus/ebur128/COPYING,
+  src/modules/plus/ebur128/ebur128.c, src/modules/plus/ebur128/ebur128.h,
+  src/modules/plus/factory.c, src/modules/plus/filter_loudness.c,
+  src/modules/plus/filter_loudness.yml: Add new audio loudness filter based on
+  EBU R128
+
+2014-01-28  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h: Remove the FBO freelist.  FBOs are
+  cheap to construct and delete (they carry almost no state), so it is less
+  complex just to do it on the fly. It also gives less leakage, as we use new
+  contexts all the time.
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/mlt_movit_input.cpp, src/modules/opengl/mlt_movit_input.h:
+  Take MltInput out of the EffectChain.  Having the MltInput be an Input which
+  forwards down to the real implementation has been a source of multiple
+  headaches, and now lastly, when finalize() disappeared, source of a broken
+  build. We still need the unified set_pixel_pointer() etc., but the class is
+  now simply a holder of the Input*, not a forwarder as viewed from the
+  EffectChain.
+
+2014-01-29  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/vid.stab/common.c, src/modules/vid.stab/common.h,
+  src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_vidstab.cpp,
+  src/modules/vid.stab/filter_vidstab.yml: Save vidstab results to file. 
+  Rather than save vidstab results (which can get quite large) in the
+  properties, save them in a separate file. Also redirect vid.stab log messages
+  through the MLT logging system (sort of).
+
+2014-01-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/consumer_xml.yml,
+  src/modules/xml/producer_xml.c, src/modules/xml/producer_xml.yml: Add
+  xml_retain property support to xml module.  This is used to serialize and
+  deserialize extra services that are not part of the lastmost service's graph.
+  This is useful, for example, to save and load a media bin as a playlist in
+  addition to the main multitrack graph. Or, it can be used for compound
+  documents.
+
+2014-01-21  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/mlt_movit_input.cpp, src/modules/opengl/mlt_movit_input.h:
+  Call invalidate_pixel_data() after frame rendering.  This helps the input
+  return its values back to the ResourcePool, which means we won't be
+  allocating ever more textures as we get more clips on the timeline.
+
+2014-01-17  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/mlt_movit_input.cpp, src/modules/opengl/mlt_movit_input.h:
+  Use the new ResourcePool Movit functionality.
+
+2014-01-25  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_mirror.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_rect.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_movit_white_balance.cpp: Propertly refcount the
+  GlslManager.  Makes sure it is not deleted before all the associated services
+  connected to it are.
+
+2014-01-20  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/dv_ntsc/DV,
+  presets/consumer/avformat/dv_ntsc/DVCPRO50,
+  presets/consumer/avformat/dv_ntsc_wide/DV,
+  presets/consumer/avformat/dv_ntsc_wide/DVCPRO50,
+  presets/consumer/avformat/dv_pal/DV,
+  presets/consumer/avformat/dv_pal/DVCPRO50,
+  presets/consumer/avformat/dv_pal_wide/DV,
+  presets/consumer/avformat/dv_pal_wide/DVCPRO50: Add default format and
+  extension to all DV presets.
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: Fix a few problems with YCbCr
+  colorspace conversion.  In avformat producer on libav (and FFmpeg < v2.1)
+  conversion from RGB to YCbCr would not use the destination colorspace because
+  sws_getColorspaceDetails() fails. Switch to calling only
+  sws_setColorspaceDetails().  In full luma yuvj420p->mlt_image_yuv420p
+  conversion, the luma range was always scaled down to MPEG range. The swscale
+  implementation does not let one override the range as the conversion routines
+  are initialized at the time a swscale context is allocated and initialized.
+  Any changes in sws_setColorspaceChanges() are mute.  In RGB->YCbCr
+  conversion, the existing (source) colorspace was used instead of the profile
+  colorspace. Also, we need to set the new colorspace as a property of the
+  frame.
+
+2014-01-19  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/vid.stab/common.c, src/modules/vid.stab/common.h,
+  src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_deshake.yml,
+  src/modules/vid.stab/filter_vidstab.cpp,
+  src/modules/vid.stab/filter_vidstab.yml: Updates to vid.stab module.  *
+  Correct some metadata * Remove "reset" property by making deshake properties
+  mutable. * Implement "reload" for vidstab for reloading results. * Misc.
+  changes for MLT consistency.
+
+2014-01-17  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/framework/mlt_frame.h, src/modules/core/filter_imageconvert.c,
+  src/modules/vid.stab/Makefile, src/modules/vid.stab/common.c,
+  src/modules/vid.stab/common.h, src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_vidstab.cpp: Add support for more image formats
+  to vid.stab
+
+2014-01-16  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_movit_convert.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp: Let Movit effects supply
+  their own fingerprint.  This allows effects to signal that some sort of
+  change means the chain needs to be regenerated. In particular, this unbreaks
+  changing the matrix_size parameter of DeconvolutionSharpenEffect; if you
+  change it, the entire chain will now be regenerated, instead of getting an
+  assertion failure.
+
+  * src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp: Stop special-casing the disable
+  parameter for setting.  There are more parameters then just 'disable' that
+  should be set before chain finalization; in particular,
+  DeconvolutionSharpenEffect compiles the matrix size into the shader. Instead,
+  just set all the parameters once right after the chain has been built, which
+  includes the disable parameter.
+
+2014-01-15  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/framework/mlt_animation.c,
+  src/tests/test_properties/test_properties.cpp: Fix animation serialization
+  when length is not specified
+
+2014-01-11  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/Makefile, src/modules/opengl/fbo_input.cpp,
+  src/modules/opengl/fbo_input.h, src/modules/opengl/mlt_movit_input.cpp,
+  src/modules/opengl/mlt_movit_input.h: Remove now unused FBOInput.
+
+2014-01-01  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_mirror.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_movit_white_balance.cpp,
+  src/modules/opengl/mlt_movit_input.cpp, src/modules/opengl/mlt_movit_input.h,
+  src/modules/opengl/optional_effect.h,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_overlay.cpp: Change how the Movit chain
+  is built.  * Build the chain in GlslManager.  This allows us to get rid of
+  effects that don't actually do anything (like all the normalizers in the
+  common case); in Movit, they tend to burn a lot of memory bandwidth. We solve
+  this by a new OptionalEffect template, that can rewrite itself out of the
+  graph if it sees it is a no-op. We need to recreate the chain from scratch if
+  this status should change (e.g. the input resolution changed from one frame
+  to the next, and we thus suddenly need resizing after all), so we keep a
+  "fingerprint" string that contains all the unique IDs of the services in use,
+  as well as their disabled status, and compare against this frame.  Building
+  the chain in one piece also opens up for transitions to be more efficient;
+  they are now built as part of one big Movit chain, instead of bouncing to an
+  8-bit sRGB buffer and back.  * Change the mlt_glsl type.  Now, the mlt_glsl
+  image type has a defined value, which is the mlt_service pointer. Each filter
+  is responsible for storing this input service. This, together with the
+  mlt_frame, enables us to actually build the Movit chain based on the MLT
+  relations, instead of just relying in the order in which they are called and
+  assuming everything has a single input.  As a special case, the value
+  (mlt_service) -1 (which should never be a valid pointer) means that we read
+  the information from an input rather than an effect. In this case, we take a
+  copy of the pixel data we get in (since it will soon be garbage collected),
+  store it in an MltInput and then store that MltInput for later use. This
+  could probably be further simplified in the future to get completely rid of
+  MltInput and just use the regular FlatInput/YCbCrInput instead.  This also
+  requires us to change so that the chain is built and finalized at the _end_
+  of the conversion steps (where it's logically needed), instead of at the
+  beginning as before. The beginning (conversion from * -> mlt_glsl) now only
+  stores the input as described below.  * Change Effect and EffectChain
+  storage.  This changes the storage of Movit stuff as follows:  - The
+  EffectChain (along with some associated information to be able to more easily
+  locate the services and Effect pointers; together, called a GlslChain) is now
+  stored on the output service, not on the input producer. This allows us to
+  have multiple EffectChains floating around. - The Effect pointers no longer
+  live permanently on the MLT graph, since each MLT service can have more than
+  one Effect. Instead, they live temporarily on the frame (because the frame is
+  not shared between threads, giving us a poor man's version of thread-local
+  storage), until they reach the point where we decide if we need to rebuild
+  the EffectChain or not. At this point, they are either made part of the chain
+  (and owned by it), or disposed as unneeded. - The MltInput also lives on the
+  frame. (If we have multiple inputs, we also have multiple frames.) As
+  mentioned above, its use is signaled by an mlt_service of -1.  * Change how
+  Movit parameter setting works.  Services no longer set parameters directly on
+  the Movit filters, since they cannot know before the graph construction time
+  whether the correct destination is the newly created Effect, or a similar one
+  in the EffectChain. Instead, they set special properties
+  (movit.parms.<type>.<name>[<index>]), and then the convert filter uses these
+  to set Movit parameters on the right Effects.
+
+2014-01-13  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/Makefile, .../opengl/filter_deconvolution_sharpen.cpp,
+  .../opengl/filter_deconvolution_sharpen.yml,
+  src/modules/opengl/filter_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_lift_gamma_gain.yml,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.yml,
+  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  .../opengl/filter_movit_lift_gamma_gain.yml,
+  src/modules/opengl/filter_movit_white_balance.cpp,
+  src/modules/opengl/filter_movit_white_balance.yml,
+  src/modules/opengl/filter_white_balance.cpp,
+  src/modules/opengl/filter_white_balance.yml: Rename some Movit filter
+  filenames, for consistency.
+
+2014-01-12  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h: Add back automatic cleanup of
+  OpenGL fences.  Instead of having the client do deletion of fences, work
+  around the problem with missing contexts by adding them to a list in the
+  GlslManager, which then it garbage-collected before creating more fences.
+
+2014-01-08  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h: Replace glFinish with OpenGL
+  fences.  The glFinish after rendering to a texture serves two purposes: 
+  First, and maybe most importantly, it makes sure that if we send the texture
+  ID to another thread and try to draw it there, it is actually valid in that
+  context. (If not, the command to allocate it could still be stuck in the
+  queue, or the command to draw the quad to the screen could be queued before
+  the command to actually render the image to the texture.)  Second, it makes
+  sure we don't overwhelm the GPU with rendering commands, especially in the
+  readahead thread. GPUs have a long pipeline, and our commands buffers are
+  typically very short (we render only one or a few quads per frame), which
+  means that we could queue so much rendering that we couldn't actually get to
+  display the frames, or do compositing and other normal UI tasks. (GPUs are
+  not all that good at scheduling.)  However, glFinish() also has an unwanted
+  side effect: Since the CPU waits for the GPU to finish, it means it cannot do
+  anything useful in that period; in particular, it cannot start decoding input
+  video for the next frame, which is very frequently a win.  Thus, we replace
+  glFinish() with fences: One that we store on the frame and that the client
+  can wait for, and one that we wait for ourselves before we render the next
+  frame. The first fulfills purpose #1 above (although a client that doesn't
+  render in a different thread can just ignore it), while the second fulfills
+  purpose #2. #2 does reduce the possible pipelining somewhat (compared to not
+  having any fence at all), but it seems that the actual performance lost is
+  very small in practice. In any case, this is markedly faster than glFinish --
+  on my Intel HD 3000, it increases GPU utilization from ~40% to over 80% in a
+  typical transition.  Note that this is an API change; a client that wants to
+  send the OpenGL texture number on to a different thread for display, will now
+  need to wait for the fence before it can actually draw using it.
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/opengl/filter_movit_convert.cpp: Make the Movit converter use the
+  correct color primaries.  We need to distinguish between the YUV primaries
+  and the color space; for instance, my camera outputs Rec. 601/525 YUV but
+  uses Rec. 709 color primaries. Also fix so that we read the correct full_luma
+  flag, not just check force_full_luma. (Again, my camera outputs this.)  Movit
+  doesn't support all the exotic color spaces ffmpeg/libav does, but this
+  should cover most of the common ones.
+
+2014-01-11  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/vid.stab/common.h, src/modules/vid.stab/factory.c,
+  src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_vidstab.cpp: File header consistency
+
+  * src/modules/vid.stab/Makefile, src/modules/vid.stab/common.h,
+  src/modules/vid.stab/factory.c, src/modules/vid.stab/filter_detect.cpp,
+  src/modules/vid.stab/filter_detect.yml,
+  src/modules/vid.stab/filter_transform.cpp,
+  src/modules/vid.stab/filter_transform.yml,
+  src/modules/vid.stab/filter_vidstab.cpp,
+  src/modules/vid.stab/filter_vidstab.yml: Merge filter_detect and
+  filter_transform into filter_vidstab
+
+2014-01-09  Jakub Ksiezniak <jksiezniak@gmail.com>
+
+  * src/modules/vid.stab/Makefile, src/modules/vid.stab/common.h,
+  src/modules/vid.stab/configure, src/modules/vid.stab/factory.c,
+  src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_deshake.yml,
+  src/modules/vid.stab/filter_detect.cpp,
+  src/modules/vid.stab/filter_detect.yml,
+  src/modules/vid.stab/filter_transform.cpp,
+  src/modules/vid.stab/filter_transform.yml,
+  src/modules/vid.stab/filter_vidstab.cpp,
+  src/modules/vid.stab/filter_vidstab.yml: Added a fourth filter, that combines
+  both detect and transform passes.  * Increased a default smoothing factor,
+  according to the original vid.stab default settings. * Added a deshake data
+  clear when seeking is performed. * Added a version check in configure script.
+
+2014-01-07  Brian Matherly <pez4brian@yahoo.com>
+
+  * : Mark vid.stab module as GPL
+
+2014-01-07  Jakub Ksiezniak <jksiezniak@gmail.com>
+
+  * src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_deshake.yml,
+  src/modules/vid.stab/filter_detect.cpp,
+  src/modules/vid.stab/filter_detect.yml,
+  src/modules/vid.stab/filter_transform.cpp,
+  src/modules/vid.stab/filter_transform.yml: Update module to work with the
+  latest vid.stab version 0.98.  * Added a new property "zoomspeed" for
+  adaptive zooming feature. * Removed a no longer used "sharpen" property.
+
+2013-12-31  Jakub Ksiezniak <jksiezniak@gmail.com>
+
+  * src/modules/vid.stab/Makefile, src/modules/vid.stab/common.h,
+  src/modules/vid.stab/configure, src/modules/vid.stab/factory.c,
+  src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_deshake.yml,
+  src/modules/vid.stab/filter_detect.cpp,
+  src/modules/vid.stab/filter_detect.yml,
+  src/modules/vid.stab/filter_transform.cpp,
+  src/modules/vid.stab/filter_transform.yml: Created a new module to support
+  vid.stab library.
+
+2014-01-05  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * .../opengl/filter_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  src/modules/opengl/filter_movit_mirror.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_white_balance.cpp: Change get_effect/add_effect to
+  take in mlt_service.  We want to be able to set effects on transitions as
+  well, but in MLT, transitions are not filters, only services.
+
+2014-01-03  Steinar H. Gunderson <sgunderson@bigfoot.com>
+
+  * .../opengl/filter_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  src/modules/opengl/filter_movit_mirror.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_rect.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_white_balance.cpp,
+  src/modules/opengl/glsl_manager.h,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_overlay.cpp: Rename glsl_manager.h to
+  filter_glsl_manager.h, to be consistent with the .cpp file.
+
+2014-01-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_playlist.c, src/framework/mlt_playlist.h,
+  src/mlt++/MltPlaylist.cpp, src/mlt++/MltPlaylist.h: Change param name
+  "length" to "out" in mlt_playlist_insert_blank.
+
+2014-01-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h: Add
+  consumer-thread-create and consumer-thread-join events.  If an app listens to
+  these, it can override the implementation of thread creation and joining.
+  Otherwise, if no listeners, it falls back to pthread_create() and
+  pthread_join() as usual. At this time, only the base mlt_consumer uses this
+  for  real_time=1 or -1 only.
+
+  * src/framework/mlt_events.c, src/framework/mlt_events.h,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h: Let mlt_events_fire()
+  return the number of listeners.  Callers can determine if there is a listener
+  that overrides some behavior.
+
+2013-12-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/glsl_manager.h: Prevent sharing FBOs between contexts. 
+  Based on patch by Steinar Gunderson.
+
+2013-12-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/glsl_manager.h,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_overlay.cpp: Refactor movit.convert,
+  movit.mix, and movit.overlay.  To use new methods on GlslManager:
+  render_frame_texture() and render_frame_rgba(). The latter routine was
+  changed to use GL_BGRA in glReadPixels() to improve performance on more
+  OpenGL implementation (per Steinar Gunderson's recommendation).
+
+  * Makefile, src/examples/Makefile, src/melt/Makefile,
+  src/modules/avformat/Makefile, src/modules/frei0r/Makefile,
+  src/modules/gtk2/Makefile, src/modules/jackrack/Makefile,
+  src/modules/opengl/Makefile, src/modules/resample/Makefile,
+  src/modules/rtaudio/Makefile, src/modules/sdl/Makefile,
+  src/modules/vorbis/Makefile, src/modules/xml/Makefile, src/swig/Makefile:
+  Convert backtick to $(shell) in Makefiles.
+
+  * src/modules/gtk2/Makefile, src/modules/gtk2/producer_pango.c: Fix build on
+  Freetype 2.5.  Reported by Patrick Matthhai/Debian.
+
+2013-12-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_transition.c, src/framework/mlt_transition.h: Add disable
+  property to mlt_transition.
+
+  * src/framework/mlt_filter.h, src/framework/mlt_service.h: Move "disable"
+  property doc from service to filter.
+
+2013-12-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qt/producer_qimage.c,
+  src/modules/qt/qimage_wrapper.cpp: Fix concurrency bug in image producers. 
+  Reported by Michael Marina.
+
+2013-12-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/mlt++.vers: Add
+  mlt_properties_frames_to_time() and mlt_properties_time_to_frames().  Handy
+  conversion functions for apps.
+
+2013-12-17  Brian Matherly <pez4brian@yahoo.com>
+
+  * docs/install.txt, src/modules/qt/Makefile, src/modules/qt/configure,
+  src/modules/qt/factory.c: Finalize qimage->qt rename
+
+  * src/modules/qimage/Makefile, src/modules/qimage/configure,
+  src/modules/qimage/consumer_qglsl.cpp, src/modules/qimage/factory.c,
+  src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.h,
+  src/modules/qimage/producer_kdenlivetitle.c,
+  src/modules/qimage/producer_kdenlivetitle.yml,
+  src/modules/qimage/producer_qimage.c, src/modules/qimage/producer_qimage.yml,
+  src/modules/qimage/producer_qtext.cpp, src/modules/qimage/producer_qtext.yml,
+  src/modules/qimage/qimage_wrapper.cpp, src/modules/qimage/qimage_wrapper.h,
+  src/modules/qimage/transition_vqm.cpp, src/modules/qimage/transition_vqm.yml,
+  src/modules/qt/Makefile, src/modules/qt/configure,
+  src/modules/qt/consumer_qglsl.cpp, src/modules/qt/factory.c,
+  src/modules/qt/kdenlivetitle_wrapper.cpp,
+  src/modules/qt/kdenlivetitle_wrapper.h,
+  src/modules/qt/producer_kdenlivetitle.c,
+  src/modules/qt/producer_kdenlivetitle.yml, src/modules/qt/producer_qimage.c,
+  src/modules/qt/producer_qimage.yml, src/modules/qt/producer_qtext.cpp,
+  src/modules/qt/producer_qtext.yml, src/modules/qt/qimage_wrapper.cpp,
+  src/modules/qt/qimage_wrapper.h, src/modules/qt/transition_vqm.cpp,
+  src/modules/qt/transition_vqm.yml: Rename 'qimage' module to 'qt'
+
+2013-12-04  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/avsync/Makefile, src/modules/avsync/consumer_blipflash.c,
+  src/modules/avsync/consumer_blipflash.yml, src/modules/avsync/factory.c,
+  src/modules/avsync/producer_blipflash.c,
+  src/modules/avsync/producer_blipflash.yml, src/modules/gtk2/Makefile,
+  src/modules/gtk2/factory.c, src/modules/gtk2/filter_dynamictext.c,
+  src/modules/gtk2/filter_dynamictext.yml, src/modules/gtk2/producer_count.c,
+  src/modules/gtk2/producer_count.yml, src/modules/plus/Makefile,
+  src/modules/plus/consumer_blipflash.c,
+  src/modules/plus/consumer_blipflash.yml, src/modules/plus/factory.c,
+  src/modules/plus/filter_dynamictext.c,
+  src/modules/plus/filter_dynamictext.yml,
+  src/modules/plus/producer_blipflash.c,
+  src/modules/plus/producer_blipflash.yml, src/modules/plus/producer_count.c,
+  src/modules/plus/producer_count.yml: Move blipflash, dynamictext and count
+  into plus module
+
+2013-11-28  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/qimage/Makefile, src/modules/qimage/factory.c,
+  src/modules/qimage/producer_qtext.cpp, src/modules/qimage/producer_qtext.yml:
+  Initial implementation of producer_qtext
+
+2013-12-03  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/lossless/FFV1,
+  presets/consumer/avformat/lossless/HuffYUV: Fix matroska avformat presets.
+
+2013-11-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/videostab/filter_videostab2.c,
+  src/modules/videostab/filter_videostab2.yml: Add a refresh property to
+  videostab2 filter.
+
+2013-11-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sox/filter_sox.c, src/modules/sox/filter_sox.yml: Add
+  analysis_level property to sox filter.  For normalization analysis when not
+  use_peak, sets the target amplitude.
+
+2013-10-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/videostab/filter_videostab2.c,
+  src/modules/videostab/transform_image.c: Fix videostab2 interpolation.  This
+  filter uses RGB mode, for which bicubic is broken. vid.stab still to this day
+  uses bilinear with packed pixel formats. In order to fix bilinear, needed to
+  remove extra calls to floor function.
+
+2013-10-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/metaschema.yaml, src/modules/core/filter_channelcopy.yml: Add
+  'boolean' and 'argument' to service metadata schema.
+
+2013-09-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltTokeniser.cpp, src/mlt++/MltTokeniser.h: Fix compile warnings
+  on string literal for default parameter.
+
+2013-09-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/factory.c, src/modules/xml/producer_xml-nogl.yml,
+  src/modules/xml/producer_xml-string.yml, src/modules/xml/producer_xml.c: Add
+  producer xml-nogl to disable auto-qglsl creation.  Sometimes you want to load
+  MLT XML while ignoring the presence of OpenGL filters and transitions.
+
+2013-08-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/configure, src/modules/qimage/consumer_qglsl.cpp: Fix
+  qglsl on Qt 5 for OS X.
+
+  * src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/glsl_manager.h: Add "close glsl" event to glsl.manager
+  service.  Qt 5 apps (and possibly others) must use this because the OpenGL
+  context for rendering needs to be created and destroyed on the thread on
+  which it is actually used. This should be fired on the glsl.manager filter
+  instance inside of a consumer-thread-stopped mlt_event listener.
+
+  * src/modules/qimage/Makefile, src/modules/qimage/consumer_qglsl.cpp: Fix
+  qglsl consumer for Qt 5.
+
+2013-08-18  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/MPEG-4, presets/consumer/avformat/MPEG-4-ASP,
+  presets/consumer/avformat/x264-medium,
+  presets/consumer/avformat/x264-medium-baseline,
+  presets/consumer/avformat/x264-medium-main,
+  presets/consumer/avformat/x264-medium-pass1: Add faststart muxing flag to MP4
+  presets.
+
+2013-08-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qimage/Makefile, src/modules/qimage/configure,
+  src/modules/qimage/consumer_qglsl.cpp,
+  src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/qimage_wrapper.cpp, src/modules/qimage/transition_vqm.cpp:
+  Add support for Qt 5, drop support for Qt 3 and KDE 3.
+
+  * src/framework/mlt_frame.c, src/modules/core/consumer_multi.c: Move the
+  aspect ratio for multi consumer from mlt_frame.
+
+2013-06-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h: Add
+  consumer-stopping event fired before joining threads.
+
+2013-06-19  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set to interim version 0.9.1.
+
+2013-06-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/ruby/build, src/swig/ruby/metadata.rb: Add exception handling
+  around YAML parsing in metadata.rb.
+
 2013-06-02  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
