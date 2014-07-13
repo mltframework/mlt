@@ -22,6 +22,7 @@
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
 #include <X11/Xlib.h>
+#include <cstdlib>
 #endif
 
 bool createQApplicationIfNeeded(mlt_service service)
