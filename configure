@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export version=0.9.2
+export version=0.9.3
 export soversion=6
 
 show_help()
