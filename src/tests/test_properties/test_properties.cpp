@@ -39,6 +39,7 @@ public:
 #if defined(__linux__) || defined(__DARWIN__)
         locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
 #endif
+        Factory::init();
     }
 
     ~TestProperties() {
