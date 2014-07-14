@@ -29,7 +29,7 @@
 
 typedef void ( *copy_luma_fn )(uint8_t* alpha_a, int stride_a, uint8_t* image_b, int stride_b, int width, int height);
 
-#if defined(USE_SSE)
+#if defined(USE_SSE) && defined(ARCH_X86_64)
 static void __attribute__((noinline)) copy_Y_to_A_full_luma_sse(uint8_t* alpha_a, uint8_t* image_b, int cnt)
 {
 	const static unsigned char const4[] =
@@ -78,7 +78,7 @@ static void copy_Y_to_A_full_luma(uint8_t* alpha_a, int stride_a, uint8_t* image
 	for(j = 0; j < height; j++)
 	{
 		i = 0;
-#if defined(USE_SSE)
+#if defined(USE_SSE) && defined(ARCH_X86_64)
 		if(width >= 16)
 		{
 			copy_Y_to_A_full_luma_sse(alpha_a, image_b, width >> 4);
@@ -92,7 +92,7 @@ static void copy_Y_to_A_full_luma(uint8_t* alpha_a, int stride_a, uint8_t* image
 	};
 };
 
-#if defined(USE_SSE)
+#if defined(USE_SSE) && defined(ARCH_X86_64)
 static void __attribute__((noinline)) copy_Y_to_A_scaled_luma_sse(uint8_t* alpha_a, uint8_t* image_b, int cnt)
 {
 	const static unsigned char const1[] =
@@ -188,7 +188,7 @@ static void copy_Y_to_A_scaled_luma(uint8_t* alpha_a, int stride_a, uint8_t* ima
 	for(j = 0; j < height; j++)
 	{
 		i = 0;
-#if defined(USE_SSE)
+#if defined(USE_SSE) && defined(ARCH_X86_64)
 		if(width >= 16)
 		{
 			copy_Y_to_A_scaled_luma_sse(alpha_a, image_b, width >> 4);
