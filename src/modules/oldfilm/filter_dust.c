@@ -147,8 +147,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						memcpy( savealpha, alpha , luma_width * luma_height );
 						memcpy( savepic, luma_image , luma_width * luma_height * 2 );
 						
-						mlt_properties_set_data( properties, savename, savepic, sizeof(savepic), mlt_pool_release, NULL );
-						mlt_properties_set_data( properties, savename1, savealpha, sizeof(savealpha),  mlt_pool_release, NULL );
+						mlt_properties_set_data( properties, savename, savepic, luma_width * luma_height * 2, mlt_pool_release, NULL );
+						mlt_properties_set_data( properties, savename1, savealpha, luma_width * luma_height,  mlt_pool_release, NULL );
 						mlt_properties_set_int( properties, cachedy, luma_height );
 						
 						overlay_image( *image, *width, *height, luma_image, luma_width, luma_height, alpha, x1, y1, updown, mirror );
