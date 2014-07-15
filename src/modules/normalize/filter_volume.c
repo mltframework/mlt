@@ -328,7 +328,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 				/* check if "dB" is given after number */
 				if ( strncaseeq( p, "db", 2 ) )
-					end = DBFSTOAMP( gain );
+					end = DBFSTOAMP( end );
 				else
 					end = fabs( end );
 
