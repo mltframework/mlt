@@ -314,7 +314,7 @@ static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image
 			mlt_properties_set_int( properties, "_ignore_results", 1 );
 #endif
 		}
-		else
+		else if ( data->analyze_data )
 		{
 			data->analyze_data->last_position = pos;
 		}
