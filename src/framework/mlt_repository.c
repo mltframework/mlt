@@ -81,6 +81,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	mlt_properties dir = mlt_properties_new();
 	int count = mlt_properties_dir_list( dir, directory, NULL, 0 );
 	int i;
+	int plugin_count = 0;
 
 #ifdef WIN32
 	char *syspath = getenv("PATH");
@@ -119,6 +120,7 @@ mlt_repository mlt_repository_init( const char *directory )
 
 				// Register the object file for closure
 				mlt_properties_set_data( &self->parent, object_name, object, 0, ( mlt_destructor )dlclose, NULL );
+				++plugin_count;
 			}
 			else
 			{
@@ -127,9 +129,12 @@ mlt_repository mlt_repository_init( const char *directory )
 		}
 		else if ( strstr( object_name, "libmlt" ) )
 		{
-			mlt_log( NULL, MLT_LOG_WARNING, "%s: failed to dlopen %s\n  (%s)\n", __FUNCTION__, object_name, dlerror() );
+			mlt_log_warning( NULL, "%s: failed to dlopen %s\n  (%s)\n", __FUNCTION__, object_name, dlerror() );
 		}
 	}
+
+	if ( !plugin_count )
+		mlt_log_error( NULL, "%s: no plugins found in \"%s\"\n", __FUNCTION__, directory );
 
 	mlt_properties_close( dir );
 
