@@ -153,6 +153,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						
 						overlay_image( *image, *width, *height, luma_image, luma_width, luma_height, alpha, x1, y1, updown, mirror );
 					}
+					else
+					{
+						if ( savealpha )
+							mlt_pool_release( savealpha );
+						if ( savepic )
+							mlt_pool_release( savepic );
+					}
 					mlt_frame_close( luma_frame );	
 				}
 				mlt_producer_close( producer );	
