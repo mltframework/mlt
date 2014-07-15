@@ -2621,7 +2621,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	{
 		mlt_properties_set_int( frame_properties, "audio_frequency", self->max_frequency );
 		mlt_properties_set_int( frame_properties, "audio_channels", self->total_channels );
-		for ( index = 0; index < context->nb_streams; index++ )
+		for ( index = 0; index < context->nb_streams && index < MAX_AUDIO_STREAMS; index++ )
 		{
 			if ( context->streams[ index ]->codec->codec_type == CODEC_TYPE_AUDIO )
 				audio_codec_init( self, index, properties );
