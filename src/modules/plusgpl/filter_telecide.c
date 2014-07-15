@@ -679,7 +679,6 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			cx->film = 1;
 			cx->override = 0;
 			cx->inpattern = 0;
-			cx->vthresh = cx->vthresh;
 			cx->back = cx->back_saved;
 			
 			// Get the metrics for the current-previous (p), current-current (c), and current-next (n) match candidates.
