@@ -65,6 +65,7 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 	f0r_instance_t inst;
 	f0r_plugin_info_t info;
 	char ctorname[1024]="";
+	memset( &info, 0, sizeof(info) );
 	sprintf(ctorname,"ctor-%dx%d",*width,*height);
 
 	mlt_service_lock( service );
