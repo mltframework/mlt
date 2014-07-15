@@ -1830,12 +1830,9 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #endif
 
 		// Reset some image properties
-		if ( self->video_codec )
-		{
-			mlt_properties_set_int( properties, "width", self->video_codec->width );
-			mlt_properties_set_int( properties, "height", self->video_codec->height );
-			get_aspect_ratio( properties, stream, self->video_codec );
-		}
+		mlt_properties_set_int( properties, "width", self->video_codec->width );
+		mlt_properties_set_int( properties, "height", self->video_codec->height );
+		get_aspect_ratio( properties, stream, self->video_codec );
 
 		// Start with the muxer frame rate.
 #if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(42<<8)+0)
@@ -1943,7 +1940,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		if ( mlt_properties_get( properties, "set.force_full_luma" ) )
 			self->full_luma = mlt_properties_get_int( properties, "set.force_full_luma" );
 	}
-	return self->video_codec && self->video_index > -1;
+	return self->video_index > -1;
 }
 
 /** Set up video handling.
