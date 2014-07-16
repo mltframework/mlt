@@ -1165,8 +1165,7 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
  */
 static int pick_av_pixel_format(int *pix_fmt, int *full_range)
 {
-// TODO set the correct versions to test
-#if (LIBSWSCALE_VERSION_INT >= ((2<<16)+(1<<8)+0)) && (LIBAVUTIL_VERSION_INT >= ((51<<16)+(17<<8)+0))
+#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))&& (LIBAVUTIL_VERSION_INT >= ((52<<16)+(66<<8)+100))
 	switch (*pix_fmt)
 	{
 	case AV_PIX_FMT_YUVJ420P:
@@ -1242,8 +1241,15 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	pick_av_pixel_format(&src_pix_fmt, &src_full_range);
 	if ( *format == mlt_image_yuv420p )
 	{
+#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))&& (LIBAVUTIL_VERSION_INT >= ((52<<16)+(66<<8)+100))
 		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
 			width, height, PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
+#else
+		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+					width, height, self->full_luma ? PIX_FMT_YUVJ420P : PIX_FMT_YUV420P,
+					flags, NULL, NULL, NULL);
+#endif
+
 		AVPicture output;
 		output.data[0] = buffer;
 		output.data[1] = buffer + width * height;
