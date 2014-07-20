@@ -134,8 +134,6 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 #ifdef USE_SSE
 	flags |= SWS_CPU_CAPS_MMX2;
 #endif
-	if ( out_fmt == PIX_FMT_YUV420P && use_full_range )
-		out_fmt = PIX_FMT_YUVJ420P;
 
 	avpicture_fill( &input, in, in_fmt, width, height );
 	avpicture_fill( &output, out, out_fmt, width, height );
@@ -212,17 +210,8 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		}
 
 		// Update the output
-		if ( *format == mlt_image_yuv422 && mlt_properties_get( properties, "force_full_luma" )
-		     && ( output_format == mlt_image_rgb24 || output_format == mlt_image_rgb24a ) )
-		{
-			// By removing the frame property we only permit the luma to skip scaling once.
-			// Thereafter, we let swscale scale the luma range as it pleases since it seems
-			// we do not have control over the RGB to YUV conversion.
-			force_full_luma = mlt_properties_get_int( properties, "force_full_luma" );
-			mlt_properties_set( properties, "force_full_luma", NULL );
-		}
 		if ( !av_convert_image( output, *image, out_fmt, in_fmt, width, height,
-		                        colorspace, profile_colorspace, force_full_luma ) )
+								colorspace, profile_colorspace, force_full_luma ) )
 		{
 			// The new colorspace is only valid if destination is YUV.
 			if ( output_format == mlt_image_yuv422 || output_format == mlt_image_yuv420p )

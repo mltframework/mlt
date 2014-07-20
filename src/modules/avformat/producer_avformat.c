@@ -146,6 +146,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags );
 static int video_codec_init( producer_avformat self, int index, mlt_properties properties );
 static void get_audio_streams_info( producer_avformat self );
 static mlt_audio_format pick_audio_format( int sample_fmt );
+static int pick_av_pixel_format( int *pix_fmt );
 
 #ifdef VDPAU
 #include "vdpau.c"
@@ -660,8 +661,10 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 		mlt_properties_set_int( properties, "height", codec_context->height );
 		get_aspect_ratio( properties, format->streams[ self->video_index ], codec_context );
 
+		int pix_fmt = codec_context->pix_fmt;
+		pick_av_pixel_format( &pix_fmt );
 		// Verify that we can convert this to YUV 4:2:2
-		struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, codec_context->pix_fmt,
+		struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, pix_fmt,
 			codec_context->width, codec_context->height, pick_pix_fmt( codec_context->pix_fmt ), SWS_BILINEAR, NULL, NULL, NULL);
 		if ( context )
 			sws_freeContext( context );
@@ -1046,13 +1049,16 @@ static void get_audio_streams_info( producer_avformat self )
 		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
 }
 
-static int set_luma_transfer( struct SwsContext *context, int src_colorspace, int dst_colorspace, int full_range )
+static int set_luma_transfer( struct SwsContext *context, int src_colorspace,
+	int dst_colorspace, int src_full_range, int dst_full_range )
 {
 	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
 	const int *dst_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
 	int brightness = 0;
 	int contrast = 1 << 16;
 	int saturation = 1  << 16;
+	int src_range = src_full_range ? 1 : 0;
+	int dst_range = dst_full_range ? 1 : 0;
 
 	switch ( src_colorspace )
 	{
@@ -1088,7 +1094,7 @@ static int set_luma_transfer( struct SwsContext *context, int src_colorspace, in
 	default:
 		break;
 	}
-	return sws_setColorspaceDetails( context, src_coefficients, full_range, dst_coefficients, full_range,
+	return sws_setColorspaceDetails( context, src_coefficients, src_range, dst_coefficients, dst_range,
 		brightness, contrast, saturation );
 }
 
@@ -1150,6 +1156,37 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
 	}
 }
 
+/**
+ * Handle deprecated pixel format (JPEG range in YUV420P for exemple).
+ *
+ * Replace pix_fmt with the official pixel format to use.
+ * @return 0 if no pix_fmt replacement, 1 otherwise
+ */
+static int pick_av_pixel_format( int *pix_fmt )
+{
+#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+	switch (*pix_fmt)
+	{
+	case AV_PIX_FMT_YUVJ420P:
+		*pix_fmt = AV_PIX_FMT_YUV420P;
+		return 1;
+	case AV_PIX_FMT_YUVJ411P:
+		*pix_fmt = AV_PIX_FMT_YUV411P;
+		return 1;
+	case AV_PIX_FMT_YUVJ422P:
+		*pix_fmt = AV_PIX_FMT_YUV422P;
+		return 1;
+	case AV_PIX_FMT_YUVJ444P:
+		*pix_fmt = AV_PIX_FMT_YUV444P;
+		return 1;
+	case AV_PIX_FMT_YUVJ440P:
+		*pix_fmt = AV_PIX_FMT_YUV440P;
+		return 1;
+	}
+#endif
+	return 0;
+}
+
 // returns resulting YUV colorspace
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
@@ -1188,11 +1225,22 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			memcpy( dst, src, FFMIN( width, frame->linesize[3] ) );
 	}
 
+	int src_pix_fmt = pix_fmt;
+	pick_av_pixel_format( &src_pix_fmt );
 	if ( *format == mlt_image_yuv420p )
 	{
+		// This is a special case. Movit wants the full range, if available.
+		// Thankfully, there is not much other use of yuv420p except consumer
+		// avformat with no filters and explicitly requested.
+#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
+			width, height, PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
+#else
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, self->full_luma ? PIX_FMT_YUVJ420P : PIX_FMT_YUV420P,
-			flags, NULL, NULL, NULL);
+					width, height, self->full_luma ? PIX_FMT_YUVJ420P : PIX_FMT_YUV420P,
+					flags, NULL, NULL, NULL);
+#endif
+
 		AVPicture output;
 		output.data[0] = buffer;
 		output.data[1] = buffer + width * height;
@@ -1200,7 +1248,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		output.linesize[0] = width;
 		output.linesize[1] = width >> 1;
 		output.linesize[2] = width >> 1;
-		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma ) )
+		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, self->full_luma ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
@@ -1208,35 +1256,40 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	}
 	else if ( *format == mlt_image_rgb24 )
 	{
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma );
+		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
+		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma );
+		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
 	else
 	{
+#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
+			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+#else
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
 			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+#endif
 		AVPicture output;
 		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
-		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma ) )
+		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, 0 ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
@@ -1722,11 +1775,6 @@ exit_get_image:
 	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
-
-	// If we already have RGB, then the full range processing either happened already
-	// or does not apply (RGB source).
-	if ( *format == mlt_image_rgb24 || *format == mlt_image_rgb24a || *format == mlt_image_opengl )
-		mlt_properties_set( frame_properties, "force_full_luma", NULL );
 
 	return !got_picture;
 }
