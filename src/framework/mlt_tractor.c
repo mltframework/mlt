@@ -270,6 +270,7 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "consumer_deinterlace" ) );
 	mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
 	mlt_properties_set_int( frame_properties, "consumer_tff", mlt_properties_get_int( properties, "consumer_tff" ) );
+	mlt_properties_set( frame_properties, "consumer_color_trc", mlt_properties_get( properties, "consumer_color_trc" ) );
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_frame_set_image( self, *buffer, 0, NULL );
 	mlt_properties_set_int( properties, "width", *width );
@@ -281,6 +282,7 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_int( properties, "colorspace", mlt_properties_get_int( frame_properties, "colorspace" ) );
 	mlt_properties_set_int( properties, "force_full_luma", mlt_properties_get_int( frame_properties, "force_full_luma" ) );
 	mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( frame_properties, "top_field_first" ) );
+	mlt_properties_set( properties, "color_trc", mlt_properties_get( frame_properties, "color_trc" ) );
 	mlt_properties_set_data( properties, "movit.convert.fence",
 		mlt_properties_get_data( frame_properties, "movit.convert.fence", NULL ),
 		0, NULL, NULL );

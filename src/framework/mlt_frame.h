@@ -58,8 +58,9 @@ typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format 
  * (no speed factor applied, only available when \em _need_previous_next is set on the producer)
  * \properties \em next \em frame a reference to the unfiltered following frame
  * (no speed factor applied, only available when \em _need_previous_next is set on the producer)
- * \properties \em colorspace the standard for luma coefficients
+ * \properties \em colorspace the standard for the YUV coefficients
  * \properties \em force_full_luma luma range handling, set to -1 for pass-through, 1 for full range, 0 for scaling
+ * \properties \em color_trc the color transfer characteristic (gamma)
  * \properties \em audio_frequency the sample rate of the audio
  * \properties \em audio_channels the number of audio channels
  * \properties \em audio_samples the number of audio samples
