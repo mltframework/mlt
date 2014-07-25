@@ -102,7 +102,7 @@ struct producer_avformat_s
 	unsigned int invalid_pts_counter;
 	unsigned int invalid_dts_counter;
 	mlt_cache image_cache;
-	int yuv_colorspace, color_primaries;
+	int yuv_colorspace, color_primaries, color_trc;
 	int full_luma;
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
@@ -369,6 +369,11 @@ static mlt_properties find_default_streams( producer_avformat self )
 					// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
 					mlt_properties_set_int( meta_media, key, codec_context->width * codec_context->height > 750000 ? 709 : 601 );
 					break;
+				}
+				if ( codec_context->color_trc && codec_context->color_trc != 2 )
+				{
+					snprintf( key, sizeof(key), "meta.media.%d.codec.color_trc", i );
+					mlt_properties_set_double( meta_media, key, codec_context->color_trc );
 				}
 				break;
 			case CODEC_TYPE_AUDIO:
@@ -1963,6 +1968,13 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		// Let apps get chosen colorspace
 		mlt_properties_set_int( properties, "meta.media.colorspace", self->yuv_colorspace );
 
+		// Get the color transfer characteristic (gamma).
+		self->color_trc = mlt_properties_get_int( properties, "force_color_trc" );
+		if ( !self->color_trc )
+			self->color_trc = self->video_codec->color_trc;
+		mlt_properties_set_int( properties, "meta.media.color_trc", self->color_trc );
+
+		// Get the RGB color primaries.
 		switch ( self->video_codec->color_primaries )
 		{
 		case AVCOL_PRI_BT470BG:
@@ -2067,6 +2079,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		mlt_properties_set_int( properties, "meta.media.height", self->video_codec->height );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
 		mlt_properties_set_int( frame_properties, "colorspace", self->yuv_colorspace );
+		mlt_properties_set_int( frame_properties, "color_trc", self->color_trc );
 		mlt_properties_set_int( frame_properties, "color_primaries", self->color_primaries );
 		mlt_properties_set_int( frame_properties, "full_luma", self->full_luma );
 

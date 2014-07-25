@@ -166,6 +166,13 @@ parameters:
       - 601 # ITU-R BT.601
       - 709 # ITU-R BT.709
 
+  - identifier: force_color_trc
+    title: Force transfer characteristic
+    description: >
+      When provided, this overrides the detected gamma transfer of the video.
+      See libavcodec AVColorTransferCharacteristic for values.
+    type: integer
+
   - identifier: video_delay
     title: Video delay
     description: >

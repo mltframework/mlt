@@ -170,7 +170,7 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		
 		// Video options not fully handled by AVOptions
 		mlt_properties_set_int( properties, "dc", 8 );
-		
+
 		// Muxer options not fully handled by AVOptions
 		mlt_properties_set_double( properties, "muxdelay", 0.7 );
 		mlt_properties_set_double( properties, "muxpreload", 0.5 );
@@ -215,6 +215,36 @@ static void recompute_aspect_ratio( mlt_properties properties )
 	// for mlt properties that correspond to profile settings
 	mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
 	mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+}
+
+static void color_trc_from_colorspace( mlt_properties properties )
+{
+	// Default color transfer characteristic from colorspace.
+	switch ( mlt_properties_get_int( properties, "colorspace" ) )
+	{
+	case 709:
+		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_BT709 );
+		break;
+	case 470:
+		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_GAMMA28 );
+		break;
+#if LIBAVCODEC_VERSION_INT >= ((54<<16)+(35<<8)+0)
+	case 240:
+		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_SMPTE240M );
+		break;
+#endif
+#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(52<<8)+0)
+	case 0: // sRGB
+		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_IEC61966_2_1 );
+		break;
+	case 601:
+	case 170:
+		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_SMPTE170M );
+		break;
+#endif
+	default:
+		break;
+	}
 }
 
 static void property_changed( mlt_properties owner, mlt_consumer self, char *name )
@@ -1348,6 +1378,11 @@ static void *consumer_thread( void *arg )
 			free( key );
 		}
 	}
+
+	// Because Movit only reads this on the first frame,
+	// we must do this after properties have been set but before first frame request.
+	if ( !mlt_properties_get( properties, "color_trc") )
+		color_trc_from_colorspace( properties );
 
 	// Get a frame now, so we can set some AVOptions from properties.
 	frame = mlt_consumer_rt_frame( consumer );
