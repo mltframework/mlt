@@ -82,12 +82,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		}
 		if ( !mlt_properties_get_int( properties, "resize.fill" ) ) {
 			int x = mlt_properties_get_int( properties, "meta.media.width" );
-			rect.w = rect.w > x ? x : rect.w;
+			owidth = lrintf( rect.w > x ? x : rect.w );
 			x = mlt_properties_get_int( properties, "meta.media.height" );
-			rect.h = rect.h > x ? x : rect.h;
+			oheight = lrintf( rect.h > x ? x : rect.h );
+		} else {
+			owidth = lrintf( rect.w );
+			oheight = lrintf( rect.h );
 		}
-		owidth = lrintf( rect.w );
-		oheight = lrintf( rect.h );
 	}
 
 	// Check for the special case - no aspect ratio means no problem :-)
@@ -146,14 +147,16 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	error = mlt_frame_get_image( frame, image, format, &owidth, &oheight, writable );
 
 	// Offset the position according to alignment
-	float w = float( *width - owidth );
-	float h = float( *height - oheight );
 	if ( mlt_properties_get( properties, "resize.rect" ) ) {
-		// default left if rect supplied
+		// default top left if rect supplied
+		float w = float( rect.w - owidth );
+		float h = float( rect.h - oheight );
 		rect.x += w * alignment_parse( mlt_properties_get( properties, "resize.halign" ) ) / 2.0f;
 		rect.y += h * alignment_parse( mlt_properties_get( properties, "resize.valign" ) ) / 2.0f;
 	} else {
 		// default center if no rect
+		float w = float( *width - owidth );
+		float h = float( *height - oheight );
 		rect.x = w * 0.5f;
 		rect.y = h * 0.5f;
 	}
