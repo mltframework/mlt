@@ -240,3 +240,17 @@ parameters:
     type: boolean
     default: 0
     mutable: yes
+
+  - identifier: fill
+    title: Fill geometry
+    description: >
+      Determines whether the image will be scaled up to fill the geometry.
+      Otherwise, if the B frame image fits within the geometry, it will not
+      be scaled. If 0, and the B frame image exceeds the geometry, then it is
+      scaled down to fit within the geometry.
+    type: integer
+    default: 1
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox

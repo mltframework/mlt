@@ -413,6 +413,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 	composite_calculate( transition, &result, normalised_width, normalised_height, ( float )position );
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
+	if ( !mlt_properties_get_int( properties, "fill" ) )
+	{
+		int z = mlt_properties_get_int( b_props, "meta.media.width" );
+		result.w = result.w > z ? z : result.w;
+		z = mlt_properties_get_int( b_props, "meta.media.height" );
+		result.h = result.h > z ? z : result.h;
+	}
 
 	// Fetch the b frame image
 	result.w = ( result.w * *width / normalised_width );
@@ -574,6 +581,7 @@ mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type typ
 		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "geometry", "0/0:100%x100%" );
 		// Inform apps and framework that this is a video only transition
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 1 );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "fill", 1 );
 		transition->process = transition_process;
 	}
 	return transition;
