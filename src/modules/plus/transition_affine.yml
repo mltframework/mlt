@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.2
 type: transition
 identifier: affine
 title: Transform
@@ -11,3 +11,232 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+parameters:
+  - identifier: geometry
+    title: Rectangle
+    type: geometry
+
+  - identifier: distort
+    title: Ignore aspect ratio
+    description: >
+      Determines whether the image aspect ratio will be distorted while scaling
+      to completely fill the geometry rectangle.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
+
+  - identifier: fill
+    title: Upscale to fill
+    description: >
+      Determines whether the image will be scaled up to fill the rectangle
+      or whether the size will be constrained to 100% of the profile
+      resolution.
+    type: boolean
+    default: 1
+    mutable: yes
+    widget: checkbox
+
+  - identifier: repeat_off
+    title: Disable looping
+    description: >
+      When animating properties with keyframes, whether to repeat the animation
+      after it reaches the last key frame.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
+
+  - identifier: mirror_off
+    title: Disable ping-pong
+    description: >
+      When animating properties with keyframes and repeat_off=0, whether
+      the animation alternates between reverses and forwards for each
+      repetition.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
+
+  - identifier: cycle
+    title: Period
+    description: >
+      The duration to use when interpreting key frames for animation.
+      If 0, the default, the transition length is used.
+      If in range (0, 1), a percentage of transition length; otherwise,
+      the number of frames.
+    type: float
+    default: 0
+    mutable: yes
+
+  - identifier: keyed
+    title: Key-framed
+    description: Whether rotate, shear, and offset are key-framed or not.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
+
+  - identifier: ox
+    title: Horizontal offset
+    type: float
+    minimum: 0
+    default: 0
+    mutable: yes
+
+  - identifier: oy
+    title: Vertical offset
+    type: float
+    minimum: 0
+    default: 0
+    mutable: yes
+
+  - identifier: rotate_x
+    title: Rotate on X axis
+    description: >
+      Animate rotation around the X axis. If keyed=0, the amount to rotate per
+      frame.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: rotate_y
+    title: Rotate on Y axis
+    description: >
+      Animate rotation around the Y axis. If keyed=0, the amount to rotate per
+      frame.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: rotate_z
+    title: Rotate on Z axis
+    description: >
+      Animate rotation around the Z axis. If keyed=0, the amount to rotate per
+      frame.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: fix_rotate_x
+    title: X axis rotation
+    description: Fixed amount of rotation around the X axis.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: fix_rotate_y
+    title: Y axis rotation
+    description: Fixed amount of rotation around the Y axis.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: fix_rotate_z
+    title: Z axis rotation
+    description: Fixed amount of rotation around the Z axis.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: shear_x
+    title: Shear along X axis
+    description: >
+      Animate shear along the X axis. If keyed=0, the shear angle increment per
+      frame.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: shear_y
+    title: Shear along Y axis
+    description: >
+      Animate shear along the Y axis. If keyed=0, the shear angle increment per
+      frame.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: shear_z
+    title: Shear along Z axis
+    description: >
+      Animate shear along the Z axis. If keyed=0, the shear angle increment per
+      frame.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: fix_shear_x
+    title: X axis shear
+    description: Fixed amount of shear along the X axis.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: fix_shear_y
+    title: Y axis shear
+    description: Fixed amount of shear along the Y axis.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: fix_shear_z
+    title: Z axis shear
+    description: Fixed amount of shear along the Z axis.
+    type: float
+    unit: degrees
+    default: 0
+    mutable: yes
+
+  - identifier: mirror
+    title: Ping-pong
+    description: >
+      When animating properties with key frames, whether the animation should
+      behave with a ping-pong effect once over the duration of the transition.
+      It will run in the forward direction over the first half the transition
+      and in the reverse direction over the second half.
+    type: boolean
+
+  - identifier: scale
+    title: Scale
+    description: >
+      Whether to automatic upscale B frame image to ensure the geometry area
+      is filled.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
+
+  - identifier: scale_x
+    title: Horizontal scale
+    description: A scale factor applied along the X axis.
+    type: float
+    default: 0
+    mutable: yes
+
+  - identifier: scale_y
+    title: Vertical scale
+    description: A scale factor applied along the Y axis.
+    type: float
+    default: 0
+    mutable: yes
+
+  - identifier: b_alpha
+    title: Affect alpha channel
+    description: >
+      Whether to use the B frame's alpha channel in transformations for the
+      output, The affine filter sets this to 1 by default.
+    type: boolean
+    default: 0
+    mutable: yes

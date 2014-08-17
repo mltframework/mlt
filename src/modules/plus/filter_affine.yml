@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.2
 type: filter
 identifier: affine
 title: Transform
@@ -9,3 +9,35 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+parameters:
+  - identifier: background
+    argument: yes
+    title: Background
+    description: >
+      The specification for a producer to act as the background image.
+    type: string
+    default: colour:0
+
+  - identifier: producer.*
+    title: Producer properties
+    description: A property and its value to apply to the producer.
+    type: properties
+    mutable: yes
+
+  - identifier: transition.*
+    title: Transition properties
+    description: >
+      A property and its value to apply to the transition. This is the primary
+      means to use this filter. See the "affine" transition for details.
+    type: properties
+    service-name: transition.affine
+    mutable: yes
+
+  - identifier: use_normalised
+    title: Use normalized
+    description: >
+      Use the profile's video resolution when requesting the image from the
+      filter's producer instead of the resolution requested by the consumer.
+    type: boolean
+    default: 0
+    mutable: yes
