@@ -376,8 +376,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Image, format, width, height and image for the b frame
 	uint8_t *b_image = NULL;
 	mlt_image_format b_format = mlt_image_rgb24a;
-	int b_width;
-	int b_height;
+	int b_width = mlt_properties_get_int( b_props, "meta.media.width" );
+	int b_height = mlt_properties_get_int( b_props, "meta.media.height" );
+	double b_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
+	double b_dar = b_ar * b_width / b_height;
 
 	// Assign the current position
 	mlt_position position =  mlt_transition_get_position( transition, a_frame );
@@ -413,12 +415,20 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 	composite_calculate( transition, &result, normalised_width, normalised_height, ( float )position );
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
+
 	if ( !mlt_properties_get_int( properties, "fill" ) )
 	{
-		int z = mlt_properties_get_int( b_props, "meta.media.width" );
-		result.w = result.w > z ? z : result.w;
-		z = mlt_properties_get_int( b_props, "meta.media.height" );
-		result.h = result.h > z ? z : result.h;
+		double geometry_dar = result.w / result.h;
+		if ( b_dar > geometry_dar )
+		{
+			result.w = MIN( result.w, b_width );
+			result.h = result.w / b_dar;
+		}
+		else
+		{
+			result.h = MIN( result.h, b_height );
+			result.w = result.h * b_dar;
+		}
 	}
 
 	// Fetch the b frame image
@@ -428,8 +438,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	result.y = ( result.y * *height / normalised_height );
 
 	// Request full resolution of b frame image.
-	b_width = mlt_properties_get_int( b_props, "meta.media.width" );
-	b_height = mlt_properties_get_int( b_props, "meta.media.height" );
 	mlt_properties_set_int( b_props, "rescale_width", b_width );
 	mlt_properties_set_int( b_props, "rescale_height", b_height );
 
@@ -492,8 +500,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			// Determine scale with respect to aspect ratio.
 			double consumer_dar = consumer_ar * normalised_width / normalised_height;
-			double b_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
-			double b_dar = b_ar * b_width / b_height;
 			
 			if ( b_dar > consumer_dar )
 			{
