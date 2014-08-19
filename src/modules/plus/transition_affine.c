@@ -30,6 +30,21 @@
 
 #include "interp.h"
 
+static float alignment_parse( char* align )
+{
+	int ret = 0.0f;
+
+	if ( align == NULL );
+	else if ( isdigit( align[ 0 ] ) )
+		ret = atoi( align );
+	else if ( align[ 0 ] == 'c' || align[ 0 ] == 'm' )
+		ret = 1.0f;
+	else if ( align[ 0 ] == 'r' || align[ 0 ] == 'b' )
+		ret = 2.0f;
+
+	return ret;
+}
+
 /** Calculate real geometry.
 */
 
@@ -416,6 +431,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	composite_calculate( transition, &result, normalised_width, normalised_height, ( float )position );
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
+	float geometry_w = result.w;
+	float geometry_h = result.h;
+
 	if ( !mlt_properties_get_int( properties, "fill" ) )
 	{
 		double geometry_dar = result.w / result.h;
@@ -477,6 +495,19 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		affine_t affine;
 		interpp interp = interpBL_b32;
 		int i, j; // loop counters
+
+		// Recalculate vars if alignment supplied.
+		if ( mlt_properties_get( properties, "halign" ) || mlt_properties_get( properties, "valign" ) )
+		{
+			float halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
+			float valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
+			x_offset = halign * b_width / 2.0f;
+			y_offset = valign * b_height / 2.0f;
+			cx = result.x + geometry_w * halign / 2.0f;
+			cy = result.y + geometry_h * valign / 2.0f;
+			lower_x = -cx;
+			lower_y = -cy;
+		}
 
 		affine_init( affine.matrix );
 

@@ -254,3 +254,29 @@ parameters:
     maximum: 1
     mutable: yes
     widget: checkbox
+
+  - identifier: halign
+    title: Horizontal alignment
+    description: >
+      Set the horizontal alignment within the geometry rectangle.
+    type: string
+    default: left
+    values:
+      - left
+      - center
+      - right
+    mutable: yes
+    widget: combo
+
+  - identifier: valign
+    title: Vertical alignment
+    description: >
+      Set the vertical alignment within the geometry rectangle.
+    type: string
+    default: top
+    values:
+      - top
+      - middle
+      - bottom
+    mutable: yes
+    widget: combo
