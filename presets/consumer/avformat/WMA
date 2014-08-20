@@ -1,0 +1,8 @@
+f=asf
+acodec=wmav2
+ab=256k
+vn=1
+video_off=1
+
+meta.preset.extension=wma
+meta.preset.note=Windows Media Audio
