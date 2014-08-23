@@ -36,39 +36,41 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
+	double level = 1.0;
+
+	// Use animated "level" property only if it has been set since init
+	char* level_property = mlt_properties_get( properties, "level" );
+	if ( level_property != NULL )
+	{
+		level = mlt_properties_anim_get_double( properties, "level", position, length );
+	}
+	else
+	{
+		// Get level using old "start,"end" mechanics
+		// Get the starting brightness level
+		level = fabs( mlt_properties_get_double( properties, "start" ) );
+
+		// If there is an end adjust gain to the range
+		if ( mlt_properties_get( properties, "end" ) != NULL )
+		{
+			// Determine the time position of this frame in the transition duration
+			double end = fabs( mlt_properties_get_double( properties, "end" ) );
+			level += ( end - level ) * mlt_filter_get_progress( filter, frame );
+		}
+	}
+
+	// Do not cause an image conversion unless there is real work to do.
+	if ( level != 1.0 )
+		*format = mlt_image_yuv422;
 
 	// Get the image
-	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
-	// Only process if we have no error and a valid colour space
+	// Only process if we have no error.
 	if ( error == 0 )
 	{
-		double level = 1.0;
-
-		// Use animated "level" property only if it has been set since init
-		char* level_property = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "level" );
-		if ( level_property != NULL )
-		{
-			level = mlt_properties_anim_get_double( properties, "level", position, length );
-		}
-		else
-		{
-			// Get level using old "start,"end" mechanics
-			// Get the starting brightness level
-			level = fabs( mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "start" ) );
-
-			// If there is an end adjust gain to the range
-			if ( mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "end" ) != NULL )
-			{
-				// Determine the time position of this frame in the transition duration
-				double end = fabs( mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "end" ) );
-				level += ( end - level ) * mlt_filter_get_progress( filter, frame );
-			}
-		}
-
 		// Only process if level is something other than 1
-		if ( level != 1.0 )
+		if ( level != 1.0 && *format == mlt_image_yuv422 )
 		{
 			int i = *width * *height + 1;
 			uint8_t *p = *image;
