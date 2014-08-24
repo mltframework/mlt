@@ -1,7 +1,8 @@
 /*
- * filter_brightness.c -- gamma filter
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
+ * filter_brightness.c -- brightness, fade, and opacity filter
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
+ * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -82,6 +83,28 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				p[0] = CLAMP( (p[0] * m) >> 16, 16, 235 );
 				p[1] = CLAMP( (p[1] * m + n) >> 16, 16, 240 );
 				p += 2;
+			}
+		}
+
+		// Process the alpha channel if requested.
+		if ( mlt_properties_get( properties, "alpha" ) )
+		{
+			double alpha = mlt_properties_anim_get_double( properties, "alpha", position, length );
+			alpha = alpha >= 0.0 ? alpha : level;
+			if ( alpha != 1.0 )
+			{
+				int32_t m = alpha * ( 1 << 16 );
+				int i = *width * *height + 1;
+
+				if ( *format == mlt_image_rgb24a ) {
+					uint8_t *p = *image + 3;
+					for ( ; --i; p += 4 )
+						p[0] = ( p[0] * m ) >> 16;
+				} else {
+					uint8_t *p = mlt_frame_get_alpha_mask( frame );
+					for ( ; --i; ++p )
+						p[0] = ( p[0] * m ) >> 16;
+				}
 			}
 		}
 	}

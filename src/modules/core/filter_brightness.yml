@@ -2,12 +2,12 @@ schema_version: 0.1
 type: filter
 identifier: brightness
 title: Brightness
-version: 2
+version: 3
 copyright: Ushodaya Enterprises Limited
 creator: Dan Dennedy
 license: LGPLv2.1
 language: en
-description: Adjust the brightness value of the image.
+description: Adjust the brightness and opacity of the image.
 tags:
   - Video
 parameters:
@@ -17,21 +17,36 @@ parameters:
     minimum: 0.0
     maximum: 15.0
     default: 1.0
+
   - identifier: start
     title: Start level
     type: float
     minimum: 0.0
     maximum: 15.0
     default: 1.0
+
   - identifier: end
     title: End level
     type: float
     minimum: 0.0
     maximum: 15.0
     default: 1.0
+
   - identifier: level
     title: Level
     type: float
     minimum: 0.0
     maximum: 15.0
     default: unset
+
+  - identifier: alpha
+    title: Alpha factor
+    description: >
+      When this is less than zero, the alpha factor follows the level property.
+      Otherwise, you can set this to another value to adjust the alpha component
+      independently. No alpha channel adjustment occurs if this is not set or
+      it equals 1.
+    type: float
+    minimum: -1
+    maximum: 1
+    mutable: yes
