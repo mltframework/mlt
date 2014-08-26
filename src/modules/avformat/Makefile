@@ -4,10 +4,6 @@ LDFLAGS += -L../../framework -lmlt -lpthread
 include ../../../config.mak
 include config.mak
 
-LDFLAGS += -lavformat$(AVFORMAT_SUFFIX)
-LDFLAGS += -lavcodec$(AVFORMAT_SUFFIX)
-LDFLAGS += -lavutil$(AVFORMAT_SUFFIX)
-LDFLAGS += -lswscale$(AVFORMAT_SUFFIX)
 LDFLAGS += $(EXTRA_LIBS)
 
 ifndef CODECS
@@ -39,7 +35,6 @@ endif
 
 ifdef DEVICES
 CFLAGS += -DAVDEVICE
-LDFLAGS += -lavdevice$(AVFORMAT_SUFFIX)
 endif
 
 SRCS := $(OBJS:.o=.c)
