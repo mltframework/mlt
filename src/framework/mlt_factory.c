@@ -282,13 +282,13 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, con
 		service = mlt_environment( "MLT_PRODUCER" );
 
 	// Offer the application the chance to 'create'
-	mlt_events_fire( event_object, "producer-create-request", service, input, &obj, NULL );
+	mlt_events_fire( event_object, "producer-create-request", service, resource, &obj, NULL );
 
 	// Try to instantiate via the specified service
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_create( repository, profile, producer_type, service, input );
-		mlt_events_fire( event_object, "producer-create-done", service, input, obj, NULL );
+		obj = mlt_repository_create( repository, profile, producer_type, service, resource );
+		mlt_events_fire( event_object, "producer-create-done", service, resource, obj, NULL );
 		if ( obj != NULL )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( obj );
