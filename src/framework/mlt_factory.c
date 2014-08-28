@@ -263,13 +263,17 @@ static void set_common_properties( mlt_properties properties, mlt_profile profil
 
 /** Fetch a producer from the repository.
  *
+ * If you give NULL to \p service, then it will use core module's special
+ * "loader"producer to load \p resource. One can override this default producer
+ * by setting the environment variable MLT_PRODUCER.
+ *
  * \param profile the \p mlt_profile to use
  * \param service the name of the producer (optional, defaults to MLT_PRODUCER)
- * \param input an optional argument to the producer constructor, typically a string
+ * \param resource an optional argument to the producer constructor, typically a string
  * \return a new producer
  */
 
-mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, const void *input )
+mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, const void *resource )
 {
 	mlt_producer obj = NULL;
 

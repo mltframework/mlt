@@ -43,7 +43,7 @@ extern const char *mlt_factory_directory( );
 extern char *mlt_environment( const char *name );
 extern int mlt_environment_set( const char *name, const char *value );
 extern mlt_properties mlt_factory_event_object( );
-extern mlt_producer mlt_factory_producer( mlt_profile profile, const char *name, const void *input );
+extern mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, const void *resource );
 extern mlt_filter mlt_factory_filter( mlt_profile profile, const char *name, const void *input );
 extern mlt_transition mlt_factory_transition( mlt_profile profile, const char *name, const void *input );
 extern mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *name, const void *input );
