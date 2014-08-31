@@ -871,7 +871,8 @@ static void time_smpte_from_frames( int frames, double fps, char *s )
 	secs = frames / fps;
 	frames -= secs * fps;
 
-	sprintf( s, "%02d:%02d:%02d%c%02d", hours, mins, secs, frame_sep, frames );
+	sprintf( s, "%02d:%02d:%02d%c%0*d", hours, mins, secs, frame_sep,
+			 ( fps > 999? 4 : fps > 99? 3 : 2 ), frames );
 }
 
 /** Convert frame count to a SMIL clock value string.
