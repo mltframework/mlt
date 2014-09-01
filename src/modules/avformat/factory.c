@@ -109,6 +109,11 @@ static void avformat_init( )
 		avformat_network_init();
 #endif
 		av_log_set_level( mlt_log_get_level() );
+		if ( getenv("MLT_AVFORMAT_PRODUCER_CACHE") )
+		{
+			int n = atoi( getenv("MLT_AVFORMAT_PRODUCER_CACHE" )  );
+			mlt_service_cache_set_size( NULL, "producer_avformat", n );
+		}
 	}
 }
 
