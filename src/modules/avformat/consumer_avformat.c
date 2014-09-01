@@ -869,7 +869,8 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
 		if ( st->time_base.den == 0 )
 			st->time_base = c->time_base;
-		c->pix_fmt = pix_fmt ? av_get_pix_fmt( pix_fmt ) : PIX_FMT_YUV420P;
+		// Default to the codec's first pix_fmt if possible.
+		c->pix_fmt = pix_fmt? av_get_pix_fmt( pix_fmt ) : codec? codec->pix_fmts[0] : PIX_FMT_YUV420P;
 		
 		switch ( colorspace )
 		{
@@ -1199,30 +1200,11 @@ static void *consumer_thread( void *arg )
 	// For receiving images from an mlt_frame
 	uint8_t *image;
 	mlt_image_format img_fmt = mlt_image_yuv422;
-	// Get the image format to use for rendering threads
-	const char* img_fmt_name = mlt_properties_get( properties, "mlt_image_format" );
-	if ( img_fmt_name )
-	{
-		if ( !strcmp( img_fmt_name, "rgb24" ) )
-			img_fmt = mlt_image_rgb24;
-		else if ( !strcmp( img_fmt_name, "rgb24a" ) )
-			img_fmt = mlt_image_rgb24a;
-		else if ( !strcmp( img_fmt_name, "yuv420p" ) )
-			img_fmt = mlt_image_yuv420p;
-	}
-	else if ( mlt_properties_get( properties, "pix_fmt" ) )
-	{
-		img_fmt_name = mlt_properties_get( properties, "pix_fmt" );
-		if ( !strcmp( img_fmt_name, "rgba" ) ||
-		     !strcmp( img_fmt_name, "argb" ) ||
-		     !strcmp( img_fmt_name, "bgra" ) )
-			img_fmt = mlt_image_rgb24a;
-	}
 
 	// Need two av pictures for converting
 	AVFrame *converted_avframe = NULL;
 	AVFrame *audio_avframe = NULL;
-	AVFrame *video_avframe = alloc_picture( pick_pix_fmt( img_fmt ), width, height );
+	AVFrame *video_avframe = NULL;
 
 	// For receiving audio samples back from the fifo
 	uint8_t *audio_buf_1 = av_malloc( AUDIO_ENCODE_BUFFER_SIZE );
@@ -1384,24 +1366,40 @@ static void *consumer_thread( void *arg )
 	if ( !mlt_properties_get( properties, "color_trc") )
 		color_trc_from_colorspace( properties );
 
-	// Get a frame now, so we can set some AVOptions from properties.
-	frame = mlt_consumer_rt_frame( consumer );
-
-	// Set the timecode from the MLT metadata if available.
-    if ( frame )
-    {
-        const char *timecode = mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "meta.attr.vitc.markup" );
-        if ( timecode && strcmp( timecode, "" ) )
-        {
-            mlt_properties_set( properties, "timecode", timecode );
-            if ( strchr( timecode, ';' ) )
-                mlt_properties_set_int( properties, "drop_frame_timecode", 1 );
-        }
-    }
-
 	// Add audio and video streams
 	if ( video_codec_id != AV_CODEC_ID_NONE )
-		video_st = add_video_stream( consumer, oc, video_codec );
+	{
+		if ( video_st = add_video_stream( consumer, oc, video_codec ) )
+		{
+			const char* img_fmt_name = mlt_properties_get( properties, "mlt_image_format" );
+			if ( img_fmt_name )
+			{
+				// Set the mlt_image_format from explicit property.
+				if ( !strcmp( img_fmt_name, "rgb24" ) )
+					img_fmt = mlt_image_rgb24;
+				else if ( !strcmp( img_fmt_name, "rgb24a" ) )
+					img_fmt = mlt_image_rgb24a;
+				else if ( !strcmp( img_fmt_name, "yuv420p" ) )
+					img_fmt = mlt_image_yuv420p;
+			}
+			else
+			{
+				// Set the mlt_image_format from the selected pix_fmt.
+				const char *pix_fmt_name = av_get_pix_fmt_name( video_st->codec->pix_fmt );
+				if ( !strcmp( pix_fmt_name, "rgba" ) ||
+					 !strcmp( pix_fmt_name, "argb" ) ||
+					 !strcmp( pix_fmt_name, "bgra" ) ) {
+					mlt_properties_set( properties, "mlt_image_format", "rgb24a" );
+					img_fmt = mlt_image_rgb24a;
+				} else if ( strstr( pix_fmt_name, "rgb" ) ||
+							strstr( pix_fmt_name, "bgr" ) ) {
+					mlt_properties_set( properties, "mlt_image_format", "rgb24" );
+					img_fmt = mlt_image_rgb24;
+				}
+			}
+			video_avframe = alloc_picture( pick_pix_fmt( img_fmt ), width, height );
+		}
+	}
 	if ( audio_codec_id != AV_CODEC_ID_NONE )
 	{
 		int is_multi = 0;
@@ -2246,7 +2244,8 @@ on_fatal_error:
 	if ( converted_avframe )
 		av_free( converted_avframe->data[0] );
 	av_free( converted_avframe );
-	av_free( video_avframe->data[0] );
+	if ( video_avframe )
+		av_free( video_avframe->data[0] );
 	av_free( video_avframe );
 	av_free( video_outbuf );
 	av_free( audio_avframe );
