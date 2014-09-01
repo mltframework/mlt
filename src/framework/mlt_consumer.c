@@ -50,7 +50,8 @@ typedef struct
 	int real_time;
 	int ahead;
 	int preroll;
-	mlt_image_format format;
+	mlt_image_format image_format;
+	mlt_audio_format audio_format;
 	mlt_deque queue;
 	void *ahead_thread;
 	pthread_mutex_t queue_mutex;
@@ -139,10 +140,9 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 		// Default to environment test card
 		mlt_properties_set( properties, "test_card", mlt_environment( "MLT_TEST_CARD" ) );
 
-		// Hmm - default all consumers to yuv422 :-/
-		priv->format = mlt_image_yuv422;
-		mlt_properties_set( properties, "mlt_image_format", mlt_image_format_name( priv->format ) );
-		mlt_properties_set( properties, "mlt_audio_format", mlt_audio_format_name( mlt_audio_s16 ) );
+		// Hmm - default all consumers to yuv422 with s16 :-/
+		priv->image_format = mlt_image_yuv422;
+		priv->audio_format = mlt_audio_s16;
 
 		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
 		mlt_events_register( properties, "consumer-frame-render", ( mlt_transmitter )mlt_consumer_frame_render );
@@ -441,6 +441,64 @@ int mlt_consumer_connect( mlt_consumer self, mlt_service producer )
 	return mlt_service_connect_producer( &self->parent, producer, 0 );
 }
 
+/** Set the audio format to use in the render thread.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param self a consumer
+ */
+
+static void set_audio_format( mlt_consumer self )
+{
+	// Get the audio format to use for rendering threads.
+	consumer_private *priv = self->local;
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
+	const char *format = mlt_properties_get( properties, "mlt_audio_format" );
+	if ( format )
+	{
+		if ( !strcmp( format, "none" ) )
+			priv->audio_format = mlt_audio_none;
+		else if ( !strcmp( format, "s32" ) )
+			priv->audio_format = mlt_audio_s32;
+		else if ( !strcmp( format, "s32le" ) )
+			priv->audio_format = mlt_audio_s32le;
+		else if ( !strcmp( format, "float" ) )
+			priv->audio_format = mlt_audio_float;
+		else if ( !strcmp( format, "f32le" ) )
+			priv->audio_format = mlt_audio_f32le;
+		else if ( !strcmp( format, "u8" ) )
+			priv->audio_format = mlt_audio_u8;
+	}
+}
+
+/** Set the image format to use in render threads.
+ *
+ * \private \memberof mlt_consumer_s
+ * \param self a consumer
+ */
+
+static void set_image_format( mlt_consumer self )
+{
+	// Get the image format to use for rendering threads.
+	consumer_private *priv = self->local;
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
+	const char* format = mlt_properties_get( properties, "mlt_image_format" );
+	if ( format )
+	{
+		if ( !strcmp( format, "rgb24" ) )
+			priv->image_format = mlt_image_rgb24;
+		else if ( !strcmp( format, "rgb24a" ) )
+			priv->image_format = mlt_image_rgb24a;
+		else if ( !strcmp( format, "yuv420p" ) )
+			priv->image_format = mlt_image_yuv420p;
+		else if ( !strcmp( format, "none" ) )
+			priv->image_format = mlt_image_none;
+		else if ( !strcmp( format, "glsl" ) )
+			priv->image_format = mlt_image_glsl_texture;
+		else
+			priv->image_format = mlt_image_yuv422;
+	}
+}
+
 /** Start the consumer.
  *
  * \public \memberof mlt_consumer_s
@@ -524,24 +582,6 @@ int mlt_consumer_start( mlt_consumer self )
 	// For worker threads implementation, buffer must be at least # threads
 	if ( abs( priv->real_time ) > 1 && mlt_properties_get_int( properties, "buffer" ) <= abs( priv->real_time ) )
 		mlt_properties_set_int( properties, "_buffer", abs( priv->real_time ) + 1 );
-
-	// Get the image format to use for rendering threads
-	const char* format = mlt_properties_get( properties, "mlt_image_format" );
-	if ( format )
-	{
-		if ( !strcmp( format, "rgb24" ) )
-			priv->format = mlt_image_rgb24;
-		else if ( !strcmp( format, "rgb24a" ) )
-			priv->format = mlt_image_rgb24a;
-		else if ( !strcmp( format, "yuv420p" ) )
-			priv->format = mlt_image_yuv420p;
-		else if ( !strcmp( format, "none" ) )
-			priv->format = mlt_image_none;
-		else if ( !strcmp( format, "glsl" ) )
-			priv->format = mlt_image_glsl_texture;
-		else
-			priv->format = mlt_image_yuv422;
-	}
 
 	priv->preroll = 1;
 #ifdef WIN32
@@ -718,23 +758,6 @@ static void *consumer_read_ahead_thread( void *arg )
 	int preview_format = mlt_properties_get_int( properties, "preview_format" );
 
 	// Get the audio settings
-	mlt_audio_format afmt = mlt_audio_s16;
-	const char *format = mlt_properties_get( properties, "mlt_audio_format" );
-	if ( format )
-	{
-		if ( !strcmp( format, "none" ) )
-			afmt = mlt_audio_none;
-		else if ( !strcmp( format, "s32" ) )
-			afmt = mlt_audio_s32;
-		else if ( !strcmp( format, "s32le" ) )
-			afmt = mlt_audio_s32le;
-		else if ( !strcmp( format, "float" ) )
-			afmt = mlt_audio_float;
-		else if ( !strcmp( format, "f32le" ) )
-			afmt = mlt_audio_f32le;
-		else if ( !strcmp( format, "u8" ) )
-			afmt = mlt_audio_u8;
-	}
 	int counter = 0;
 	double fps = mlt_properties_get_double( properties, "fps" );
 	int channels = mlt_properties_get_int( properties, "channels" );
@@ -767,7 +790,10 @@ static void *consumer_read_ahead_thread( void *arg )
 	int drop_max = mlt_properties_get_int( properties, "drop_max" );
 
 	if ( preview_off && preview_format != 0 )
-		priv->format = preview_format;
+		priv->image_format = preview_format;
+
+	set_audio_format( self );
+	set_image_format( self );
 
 	mlt_events_fire( properties, "consumer-thread-started", NULL );
 
@@ -780,13 +806,13 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( !video_off )
 		{
 			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
-			mlt_frame_get_image( frame, &image, &priv->format, &width, &height, 0 );
+			mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 		}
 
 		if ( !audio_off )
 		{
 			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
+			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
 		}
 
 		// Mark as rendered
@@ -851,7 +877,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 				// Get the image
 				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
-				mlt_frame_get_image( frame, &image, &priv->format, &width, &height, 0 );
+				mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 			}
 
 			// Indicate the rendered image is available.
@@ -879,7 +905,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( !audio_off )
 		{
 			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &audio, &afmt, &frequency, &channels, &samples );
+			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
 		}
 
 		// Get the time to process this frame
@@ -988,7 +1014,7 @@ static void *consumer_worker_thread( void *arg )
 	// Get the width and height
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
-	mlt_image_format format = priv->format;
+	mlt_image_format format = priv->image_format;
 
 	// See if video is turned off
 	int video_off = mlt_properties_get_int( properties, "video_off" );
@@ -1357,6 +1383,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 		int prefill = mlt_properties_get_int( properties, "prefill" );
 		prefill = prefill > 0 && prefill < buffer ? prefill : buffer;
 
+		set_audio_format( self );
+		set_image_format( self );
 		consumer_work_start( self );
 
 		// Fill the work queue.
