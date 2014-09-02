@@ -89,6 +89,8 @@ parameters:
     title: Level
     type: float
     description: >
-      The animated floating point value of the gain
-      adjustment. Properties "gain" and "end" are discarded if this is set.
+      The animated value of the gain adjustment in dB.
+      Properties "gain" and "end" are ignored if this is set.
+    unit: dB
+    default: unset
     mutable: yes

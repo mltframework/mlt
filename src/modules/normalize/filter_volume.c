@@ -187,6 +187,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		mlt_position position = mlt_filter_get_position( filter, frame );
 		mlt_position length = mlt_filter_get_length2( filter, frame );
 		gain = mlt_properties_anim_get_double( filter_props, "level", position, length );
+		gain = DBFSTOAMP( gain );
 	}
 
 	if ( mlt_properties_get( instance_props, "limiter" ) != NULL )
