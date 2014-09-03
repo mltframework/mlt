@@ -92,5 +92,4 @@ parameters:
       The animated value of the gain adjustment in dB.
       Properties "gain" and "end" are ignored if this is set.
     unit: dB
-    default: unset
     mutable: yes

@@ -87,7 +87,6 @@ parameters:
     description: >
       The luma map file name. If not supplied, a dissolve.
     type: string
-    default: unset
     mutable: yes
     widget: fileopen
   - identifier: softness

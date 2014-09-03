@@ -37,7 +37,6 @@ parameters:
     type: float
     minimum: 0.0
     maximum: 15.0
-    default: unset
 
   - identifier: alpha
     title: Alpha factor

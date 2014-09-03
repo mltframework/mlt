@@ -19,7 +19,6 @@ parameters:
   - identifier: R_table
     title: Red channel look-up table
     type: string
-    default: unset
     description: >
       Value is tokenised using semicolon separator into exactly 256 integer 
       values in range 0 - 255 and a look-up table for red channel values is 
@@ -29,7 +28,6 @@ parameters:
   - identifier: G_table
     title: Green channel look-up table
     type: string
-    default: unset
     description: >
       Value is tokenised using semicolon separator into exactly 256 integer 
       values in range 0 - 255 and a look-up table for green channel values is 
@@ -39,7 +37,6 @@ parameters:
   - identifier: B_table
     title: Blue channel look-up table
     type: string
-    default: unset
     description: >
       Value is tokenised using semicolon separator into exactly 256 integer 
       values in range 0 - 255 and a look-up table for green channel values is 

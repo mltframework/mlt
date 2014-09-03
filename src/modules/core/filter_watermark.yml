@@ -35,7 +35,6 @@ parameters:
     description: The file to overlay.
     required: no
     readonly: no
-    default: unset
     widget: fileopen
     
   - identifier: distort

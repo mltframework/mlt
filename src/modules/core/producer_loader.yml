@@ -28,5 +28,4 @@ parameters:
     description: The file for the producer to be based on.
     required: no
     readonly: no
-    default: unset
     widget: fileopen

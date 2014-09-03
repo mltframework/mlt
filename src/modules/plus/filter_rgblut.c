@@ -120,9 +120,6 @@ mlt_filter filter_rgblut_init( mlt_profile profile, mlt_service_type type, const
 	if ( filter != NULL )
 	{
 		filter->process = filter_process;
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "R_table", "unset" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "G_table", "unset" );
-		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "B_table", "unset" );
 	}
 	return filter;
 }
