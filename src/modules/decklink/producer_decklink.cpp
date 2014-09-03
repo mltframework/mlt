@@ -79,6 +79,7 @@ private:
 	}
 
 public:
+	mlt_profile      m_new_input;
 
 	void setProducer( mlt_producer producer )
 		{ m_producer = producer; }
@@ -91,6 +92,7 @@ public:
 		m_producer = NULL;
 		m_decklink = NULL;
 		m_decklinkInput = NULL;
+		m_new_input = NULL;
 	}
 
 	virtual ~DeckLinkProducer()
@@ -592,6 +594,7 @@ public:
 			profile->description = strdup( "decklink" );
 			mlt_log_verbose( getProducer(), "format changed %dx%d %.3f fps\n",
 				profile->width, profile->height, (double) profile->frame_rate_num / profile->frame_rate_den );
+			m_new_input = profile;
 		}
 		if ( events & bmdVideoInputFieldDominanceChanged )
 		{
@@ -626,6 +629,13 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 	mlt_position pos = mlt_producer_position( producer );
 	mlt_position end = mlt_producer_get_playtime( producer );
 	end = ( mlt_producer_get_length( producer ) < end ? mlt_producer_get_length( producer ) : end ) - 1;
+
+	if ( decklink && decklink->m_new_input )
+	{
+		decklink->m_new_input = NULL;
+		decklink->stop();
+		decklink->start( decklink->m_new_input );
+	}
 
 	// Re-open if needed
 	if ( !decklink && pos < end )
