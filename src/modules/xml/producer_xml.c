@@ -1516,6 +1516,7 @@ static void parse_url( mlt_properties properties, char *url )
 	int n = strlen( url );
 	char *name = NULL;
 	char *value = NULL;
+	int is_query = 0;
 	
 	for ( i = 0; i < n; i++ )
 	{
@@ -1524,27 +1525,30 @@ static void parse_url( mlt_properties properties, char *url )
 			case '?':
 				url[ i++ ] = '\0';
 				name = &url[ i ];
+				is_query = 1;
 				break;
 			
 			case ':':
 			case '=':
 #ifdef WIN32
 				if ( url[i] == ':' && url[i + 1] != '/' )
-				{
 #endif
+				if ( is_query )
+				{
 					url[ i++ ] = '\0';
 					value = &url[ i ];
-#ifdef WIN32
 				}
-#endif
 				break;
 			
 			case '&':
-				url[ i++ ] = '\0';
-				if ( name != NULL && value != NULL )
-					mlt_properties_set( properties, name, value );
-				name = &url[ i ];
-				value = NULL;
+				if ( is_query )
+				{
+					url[ i++ ] = '\0';
+					if ( name != NULL && value != NULL )
+						mlt_properties_set( properties, name, value );
+					name = &url[ i ];
+					value = NULL;
+				}
 				break;
 		}
 	}
