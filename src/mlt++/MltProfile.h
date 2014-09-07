@@ -65,6 +65,7 @@ namespace Mlt
 			void set_width( int width );
 			void set_height( int height );
 			void set_sample_aspect( int numerator, int denominator );
+			void set_display_aspect( int numerator, int denominator );
 			void set_progressive( int progressive );
 			void set_colorspace( int colorspace );
 			void set_frame_rate( int numerator, int denominator );

@@ -159,6 +159,12 @@ void Profile::set_sample_aspect( int numerator, int denominator )
 	instance->sample_aspect_den = denominator;
 }
 
+void Profile::set_display_aspect(int numerator, int denominator)
+{
+	instance->display_aspect_num = numerator;
+	instance->display_aspect_den = denominator;
+}
+
 void Profile::set_progressive( int progressive )
 {
 	instance->progressive = progressive;
