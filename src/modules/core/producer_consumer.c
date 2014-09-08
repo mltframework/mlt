@@ -20,6 +20,9 @@
 
 #include <framework/mlt.h>
 
+#define CONSUMER_PROPERTIES_PREFIX "consumer."
+#define PRODUCER_PROPERTIES_PREFIX "producer."
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -101,6 +104,23 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 	return result;
 }
 
+static void property_changed( mlt_properties owner, mlt_consumer self, char *name )
+{
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
+	context cx = mlt_properties_get_data( properties, "context", NULL );
+
+	if ( !cx )
+		return;
+
+	if ( name == strstr( name, CONSUMER_PROPERTIES_PREFIX ) )
+		mlt_properties_set(MLT_CONSUMER_PROPERTIES( cx->consumer ), name + strlen( CONSUMER_PROPERTIES_PREFIX ),
+			mlt_properties_get( properties, name ));
+
+	if ( name == strstr( name, PRODUCER_PROPERTIES_PREFIX ) )
+		mlt_properties_set(MLT_PRODUCER_PROPERTIES( cx->producer ), name + strlen( PRODUCER_PROPERTIES_PREFIX ),
+			mlt_properties_get( properties, name ));
+}
+
 static int get_frame( mlt_producer self, mlt_frame_ptr frame, int index )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
@@ -152,7 +172,11 @@ static int get_frame( mlt_producer self, mlt_frame_ptr frame, int index )
 			mlt_properties_get_int( properties, "real_time" ) );
 		mlt_properties_pass_list( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties,
 			"buffer, prefill, deinterlace_method, rescale" );
-	
+
+		mlt_properties_pass( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties, CONSUMER_PROPERTIES_PREFIX );
+		mlt_properties_pass( MLT_PRODUCER_PROPERTIES( cx->producer ), properties, PRODUCER_PROPERTIES_PREFIX );
+		mlt_events_listen( properties, self, "property-changed", ( mlt_listener )property_changed );
+
 		// Connect it all together
 		mlt_consumer_connect( cx->consumer, MLT_PRODUCER_SERVICE( cx->producer ) );
 		mlt_consumer_start( cx->consumer );
