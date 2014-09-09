@@ -32,3 +32,15 @@ parameters:
     minimum: 0
     maximum: 1
     default: 0
+
+  - identifier: producer.*
+    title: Producer properties
+    description: A property and its value to apply to the encapsulated producer.
+    type: properties
+    mutable: yes
+
+  - identifier: consumer.*
+    title: Consumer properties
+    description: A property and its value to apply to the encapsulated consumer.
+    type: properties
+    mutable: yes
