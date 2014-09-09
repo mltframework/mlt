@@ -1133,6 +1133,8 @@ int mlt_playlist_join( mlt_playlist self, int clip, int count, int merge )
 	{
 		int i = clip;
 		mlt_playlist new_clip = mlt_playlist_new( mlt_service_profile( MLT_PLAYLIST_SERVICE(self) ) );
+		mlt_properties_set_lcnumeric( MLT_PLAYLIST_PROPERTIES( new_clip ),
+			mlt_properties_get_lcnumeric( MLT_PLAYLIST_PROPERTIES( self ) ) );
 		mlt_events_block( MLT_PLAYLIST_PROPERTIES( self ), self );
 		if ( clip + count >= self->count )
 			count = self->count - clip - 1;

@@ -242,6 +242,9 @@ mlt_producer mlt_producer_cut( mlt_producer self, int in, int out )
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( result );
 	mlt_properties parent_props = MLT_PRODUCER_PROPERTIES( parent );
 
+	mlt_properties_set_lcnumeric( properties,
+		mlt_properties_get_lcnumeric( MLT_PRODUCER_PROPERTIES( self ) ) );
+
 	mlt_events_block( MLT_PRODUCER_PROPERTIES( result ), MLT_PRODUCER_PROPERTIES( result ) );
 	// Special case - allow for a cut of the entire producer (this will squeeze all other cuts to 0)
 	if ( in <= 0 )
