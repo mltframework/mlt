@@ -393,7 +393,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_image_format b_format = mlt_image_rgb24a;
 	int b_width = mlt_properties_get_int( b_props, "meta.media.width" );
 	int b_height = mlt_properties_get_int( b_props, "meta.media.height" );
-	double b_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
+	double b_ar = mlt_frame_get_aspect_ratio( b_frame );
 	double b_dar = b_ar * b_width / b_height;
 
 	// Assign the current position
@@ -414,7 +414,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int normalised_width = profile->width;
 	int normalised_height = profile->height;
 
-	double consumer_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(transition) ) );
+	double consumer_ar = mlt_profile_sar( profile );
 
 	// Structures for geometry
 	struct mlt_geometry_item_s result;
@@ -436,16 +436,17 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	if ( !mlt_properties_get_int( properties, "fill" ) )
 	{
-		double geometry_dar = result.w / result.h;
+		double geometry_dar = result.w * consumer_ar / result.h;
+
 		if ( b_dar > geometry_dar )
 		{
-			result.w = MIN( result.w, b_width );
-			result.h = result.w / b_dar;
+			result.w = MIN( result.w, b_width * b_ar / consumer_ar );
+			result.h = result.w * consumer_ar / b_dar;
 		}
 		else
 		{
 			result.h = MIN( result.h, b_height );
-			result.w = result.h * b_dar;
+			result.w = result.h * b_dar / consumer_ar;
 		}
 	}
 
