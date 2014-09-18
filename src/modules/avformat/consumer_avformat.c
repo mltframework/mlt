@@ -1245,6 +1245,7 @@ static void *consumer_thread( void *arg )
 	mlt_properties frame_meta_properties = mlt_properties_new();
 	int error_count = 0;
 	int64_t synth_audio_pts = 0;
+	int header_written = 0;
 
 	// Initialize audio_st
 	int i = MAX_AUDIO_STREAMS;
@@ -1521,18 +1522,6 @@ static void *consumer_thread( void *arg )
 			}
 		}
 	
-		// Write the stream header.
-		if ( mlt_properties_get_int( properties, "running" ) )
-#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(2<<8)+0)
-			if ( avformat_write_header( oc, NULL ) < 0 )
-#else
-			if ( av_write_header( oc ) < 0 )
-#endif
-			{
-				mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not write header '%s'\n", filename );
-				mlt_events_fire( properties, "consumer-fatal-error", NULL );
-				goto on_fatal_error;
-			}
 	}
 #if LIBAVFORMAT_VERSION_INT < ((53<<16)+(2<<8)+0)
 	else
@@ -1585,11 +1574,28 @@ static void *consumer_thread( void *arg )
 		// Check that we have a frame to work with
 		if ( frame != NULL )
 		{
-			// Increment frames dispatched
-			frames ++;
-
 			// Default audio args
 			frame_properties = MLT_FRAME_PROPERTIES( frame );
+
+			// Write the stream header.
+			if ( !header_written )
+			{
+#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(2<<8)+0)
+				if ( avformat_write_header( oc, NULL ) < 0 )
+#else
+				if ( av_write_header( oc ) < 0 )
+#endif
+				{
+					mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not write header '%s'\n", filename );
+					mlt_events_fire( properties, "consumer-fatal-error", NULL );
+					goto on_fatal_error;
+				}
+
+				header_written = 1;
+			}
+
+			// Increment frames dispatched
+			frames ++;
 
 			// Check for the terminated condition
 			terminated = terminate_on_pause && mlt_properties_get_double( frame_properties, "_speed" ) == 0.0;
