@@ -114,8 +114,7 @@ static inline void mlt_property_clear( mlt_property self )
 	if ( self->types & mlt_prop_string )
 		free( self->prop_string );
 
-	if ( self->animation )
-		mlt_animation_close( self->animation );
+	mlt_animation_close( self->animation );
 
 	// Wipe stuff
 	self->types = 0;
@@ -1313,8 +1312,7 @@ char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t loca
 			refresh_animation( self, fps, locale, length );
 		mlt_animation_get_item( self->animation, &item, position );
 
-		if ( self->prop_string )
-			free( self->prop_string );
+		free( self->prop_string );
 		self->prop_string = mlt_property_get_string_l( item.property, locale );
 		if ( self->prop_string )
 			self->prop_string = strdup( self->prop_string );

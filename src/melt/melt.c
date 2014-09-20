@@ -276,8 +276,7 @@ static mlt_consumer create_consumer( mlt_profile profile, char *id )
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 		mlt_properties_set_data( properties, "transport_callback", transport_action, 0, NULL, NULL );
 	}
-	if ( myid )
-		free( myid );
+	free( myid );
 	return consumer;
 }
 

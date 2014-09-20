@@ -149,8 +149,8 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 			freelocale( list->locale );
 		list->locale = newlocale( LC_NUMERIC_MASK, locale, NULL );
 #else
-		if ( list->locale )
-			free( list->locale );
+
+		free( list->locale );
 		list->locale = strdup( locale );
 #endif
 	}
@@ -1413,8 +1413,8 @@ void mlt_properties_close( mlt_properties self )
 			if ( list->locale )
 				freelocale( list->locale );
 #else
-			if ( list->locale )
-				free( list->locale );
+
+			free( list->locale );
 #endif
 
 			// Clear up the list
@@ -1796,8 +1796,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 			fclose( file );
 			mlt_deque_close( context->stack );
 			mlt_deque_close( context->index_stack );
-			if ( context->block_name )
-				free( context->block_name );
+			free( context->block_name );
 			free( context );
 		}
 	}
@@ -1849,8 +1848,7 @@ static void strbuf_close( strbuf buffer )
 {
 	// We do not free buffer->string; strbuf user must save that pointer
 	// and free it.
-	if ( buffer )
-		free( buffer );
+	free( buffer );
 }
 
 /** Format a string into a string buffer

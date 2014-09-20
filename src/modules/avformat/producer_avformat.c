@@ -561,8 +561,8 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 				av_dict_set( params, "video_size", s, 0 );
 				free( s );
 			}
-			if ( width ) free( width );
-			if ( height ) free ( height );
+			free( width );
+			free ( height );
 #endif
 		}
 		result = strdup( result );
@@ -812,8 +812,7 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 			}
 		}
 	}
-	if ( filename )
-		free( filename );
+	free( filename );
 	if ( !error )
 	{
 		self->apackets = mlt_deque_init();
@@ -2794,8 +2793,7 @@ static void producer_avformat_close( producer_avformat self )
 #ifdef VDPAU
 	vdpau_producer_close( self );
 #endif
-	if ( self->image_cache )
-		mlt_cache_close( self->image_cache );
+	mlt_cache_close( self->image_cache );
 	if ( self->last_good_frame )
 		mlt_frame_close( self->last_good_frame );
 

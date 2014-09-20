@@ -49,7 +49,7 @@ void* tlist_pop(tlist* t,int at){
 void tlist_fini(tlist* list){
 	tlist* head=list;
 	while (head){
-		if (head->data) free(head->data);
+		free(head->data);
 		tlist *del=head;
 		head=head->next;
 		free(del);
