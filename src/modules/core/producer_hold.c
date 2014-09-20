@@ -53,9 +53,7 @@ mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, con
 
 		// Set frame, in, out and length for this producer
 		mlt_properties_set_position( properties, "frame", 0 );
-		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 25 );
-		mlt_properties_set_position( properties, "length", 15000 );
 		mlt_properties_set( properties, "resource", arg );
 		mlt_properties_set( properties, "method", "onefield" );
 
