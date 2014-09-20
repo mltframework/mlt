@@ -179,7 +179,9 @@ TAB_SIZE = 4
 # will result in a user-defined paragraph with heading "Side Effects:". 
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES = "properties=\xrefitem properties \"Property\" \"Properties Dictionary\"" "event=\xrefitem event \"Event\" \"Events Dictionary\""
+ALIASES  = "properties=\xrefitem properties \"Property\" \"Properties Dictionary\""
+ALIASES += "event=\xrefitem event \"Event\" \"Events Dictionary\""
+ALIASES += "envvar=\xrefitem envvars \"Environment Variable\" \"Environment Variables\""
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C 
 # sources only. Doxygen will then generate output that is more tailored for C. 

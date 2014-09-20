@@ -28,6 +28,13 @@
 #include "mlt_repository.h"
 
 /**
+ * \envvar \em MLT_PRODUCER the name of a default producer often used by other services, defaults to "loader"
+ * \envvar \em MLT_CONSUMER the name of a default consumer, defaults to "sdl"
+ * \envvar \em MLT_TEST_CARD the name of a producer or file to be played when nothing is available (all tracks blank)
+ * \envvar \em MLT_DATA overrides the default full path to the MLT and module supplemental data files, defaults to \p PREFIX_DATA
+ * \envvar \em MLT_PROFILE selects the default mlt_profile_s, defaults to "dv_pal"
+ * \envvar \em MLT_REPOSITORY overrides the default location of the plugin modules, defaults to \p PREFIX_LIB
+ * \envvar \em MLT_PRESETS_PATH overrides the default full path to the properties preset files, defaults to \p MLT_DATA/presets
  * \event \em producer-create-request fired when mlt_factory_producer is called
  * \event \em producer-create-done fired when a producer registers itself
  * \event \em filter-create-request fired when mlt_factory_filter is called

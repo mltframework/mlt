@@ -89,18 +89,6 @@ static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner
 
 /** Construct the repository and factories.
  *
- * The environment variable MLT_PRODUCER is the name of a default producer often used by other services, defaults to "loader".
- *
- * The environment variable MLT_CONSUMER is the name of a default consumer, defaults to "sdl".
- *
- * The environment variable MLT_TEST_CARD is the name of a producer or file to be played when nothing is available (all tracks blank).
- *
- * The environment variable MLT_DATA overrides the default full path to the MLT and module supplemental data files, defaults to \p PREFIX_DATA.
- *
- * The environment variable MLT_PROFILE defaults to "dv_pal."
- *
- * The environment variable MLT_REPOSITORY overrides the default location of the plugin modules, defaults to \p PREFIX_LIB.
- *
  * \param directory an optional full path to a directory containing the modules that overrides the default and
  * the MLT_REPOSITORY environment variable
  * \return the repository

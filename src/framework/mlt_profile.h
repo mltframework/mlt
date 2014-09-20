@@ -28,6 +28,8 @@
 
 /** \brief Profile class
  *
+ * \envvar \em MLT_PROFILES_PATH overrides the default full path to the profile preset files, defaults to \p MLT_DATA/profiles
+ * \envvar \em MLT_PROFILE the profile preset to use, defaults to "dv_pal"
  */
 
 struct mlt_profile_s
