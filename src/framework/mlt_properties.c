@@ -46,8 +46,6 @@
 #include <locale.h>
 #include <float.h>
 
-#define PRESETS_DIR "/presets"
-
 /** \brief private implementation of the property list */
 
 typedef struct
@@ -291,22 +289,12 @@ int mlt_properties_preset( mlt_properties self, const char *name )
 	else
 	{
 		// Look for profile-specific preset before a generic one.
-		char *data          = getenv( "MLT_PRESETS_PATH" );
+		const char *data    = mlt_environment( "MLT_PRESETS_PATH" );
 		const char *type    = mlt_properties_get( self, "mlt_type" );
 		const char *service = mlt_properties_get( self, "mlt_service" );
 		const char *profile = mlt_environment( "MLT_PROFILE" );
 		int error = 0;
 
-		if ( data )
-		{
-			data = strdup( data );
-		}
-		else
-		{
-			data = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + strlen( PRESETS_DIR ) + 1 );
-			strcpy( data, mlt_environment( "MLT_DATA" ) );
-			strcat( data, PRESETS_DIR );
-		}
 		if ( data && type && service )
 		{
 			char *path = malloc( 5 + strlen(name) + strlen(data) + strlen(type) + strlen(service) + ( profile? strlen(profile) : 0 ) );
@@ -322,7 +310,6 @@ int mlt_properties_preset( mlt_properties self, const char *name )
 		{
 			error = 1;
 		}
-		free( data );
 		return error;
 	}
 }

@@ -29,6 +29,9 @@
 #include <locale.h>
 #include <libgen.h>
 
+/** the default subdirectory of the datadir for holding presets */
+#define PRESETS_DIR "/presets"
+
 #ifdef WIN32
 #include <windows.h>
 /** the default subdirectory of the libdir for holding modules (plugins) */
@@ -120,6 +123,7 @@ mlt_repository mlt_factory_init( const char *directory )
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
 		mlt_properties_set_or_default( global_properties, "MLT_DATA", getenv( "MLT_DATA" ), PREFIX_DATA );
+
 #if defined(WIN32)
 		char path[1024];
 		DWORD size = sizeof( path );
@@ -187,6 +191,23 @@ mlt_repository mlt_factory_init( const char *directory )
 
 		// Force a clean up when app closes
 		atexit( mlt_factory_close );
+	}
+
+	if ( global_properties )
+	{
+		char *path = getenv( "MLT_PRESETS_PATH" );
+		if ( path )
+		{
+			mlt_properties_set( global_properties, "MLT_PRESETS_PATH", path );
+		}
+		else
+		{
+			path = malloc( strlen( mlt_environment( "MLT_DATA" ) ) + strlen( PRESETS_DIR ) + 1 );
+			strcpy( path, mlt_environment( "MLT_DATA" ) );
+			strcat( path, PRESETS_DIR );
+			mlt_properties_set( global_properties, "MLT_PRESETS_PATH", path );
+			free( path );
+		}
 	}
 
 	return repository;
