@@ -183,9 +183,9 @@ void filter_close( mlt_filter parent )
 {
 	videostab self = parent->child;
 	if ( self->es ) es_free( self->es );
-	if ( self->pos_i ) free( self->pos_i );
-	if ( self->pos_h ) free( self->pos_h );
-	if ( self->pos_y ) free( self->pos_y );
+	free( self->pos_i );
+	free( self->pos_h );
+	free( self->pos_y );
 	if ( self->rs ) rs_free( self->rs );
 	if ( self->lanc_kernels) free_lanc_kernels(self->lanc_kernels);
 	free( self );

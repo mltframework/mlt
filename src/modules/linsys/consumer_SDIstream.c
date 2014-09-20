@@ -363,8 +363,7 @@ static void *consumer_thread(void *arg) {
 	if (this->device_file_video)
 		fd = stat(this->device_file_video, &st);
 	if (fd == -1) {
-		if (this->device_file_video)
-			free(this->device_file_video);
+		free(this->device_file_video);
 		this->device_file_video = strdup("/dev/sdivideotx0");
 	} else {
 		close(fd);
@@ -372,16 +371,14 @@ static void *consumer_thread(void *arg) {
 	if (this->device_file_audio) {
 		fd = stat(this->device_file_audio, &st);
 		if (fd == -1) {
-			if (this->device_file_audio)
-				free(this->device_file_audio);
+			free(this->device_file_audio);
 			this->device_file_audio = strdup("/dev/sdiaudiotx0");
 		} else {
 			close(fd);
 		}
 	} else if (this->device_file_video &&
 			strstr(this->device_file_video, "sdivideotx")) {
-		if (this->device_file_audio)
-			free(this->device_file_audio);
+		free(this->device_file_audio);
 		this->device_file_audio = strdup("/dev/sdiaudiotx0");
 	}
 

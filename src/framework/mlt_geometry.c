@@ -202,8 +202,7 @@ static int mlt_geometry_drop( mlt_geometry self, geometry_item item )
 static void mlt_geometry_clean( mlt_geometry self )
 {
 	geometry g = self->local;
-	if ( g->data )
-		free( g->data );
+	free( g->data );
 	g->data = NULL;
 	while( g->item )
 		mlt_geometry_drop( self, g->item );
@@ -696,8 +695,7 @@ char *mlt_geometry_serialise( mlt_geometry self )
 	char *ret = mlt_geometry_serialise_cut( self, 0, g->length );
 	if ( ret )
 	{
-		if ( g->data )
-			free( g->data );
+		free( g->data );
 		g->data = ret;
 	}
 	return strdup( ret );

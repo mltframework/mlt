@@ -130,8 +130,7 @@ static int vdpau_init( producer_avformat self )
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "VDPAU failed to initialize device\n" );
 		if ( object )
 			dlclose( object );
-		if ( self->vdpau )
-			free( self->vdpau );
+		free( self->vdpau );
 		self->vdpau = NULL;
 	}
 

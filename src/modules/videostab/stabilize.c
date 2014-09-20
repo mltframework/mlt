@@ -943,15 +943,10 @@ int stabilize_filter_video(StabData* instance,
 int stabilize_stop(StabData* instance)
 {
     StabData *sd = instance;
-    if (sd->prev) {
-        free(sd->prev);
-        sd->prev = NULL;
-    }
-    if (sd->grayimage){
-			free(sd->grayimage);
-			sd->grayimage=NULL;
-
-		}
+    free(sd->prev);
+    sd->prev = NULL;
+    free(sd->grayimage);
+    sd->grayimage=NULL;
     return 0;
 }
 

@@ -154,10 +154,8 @@ static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 				metadata = vorbis_metadata_from_str (*ptr);
 				if (metadata != NULL) {
 					mlt_properties_set(properties, metadata->name, metadata->content);
-					if (metadata->name)
-						free(metadata->name);
-					if (metadata->content)
-						free(metadata->content);
+					free(metadata->name);
+					free(metadata->content);
 					free(metadata);
 				}
 				++ptr;
