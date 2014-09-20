@@ -158,8 +158,7 @@ static int mlt_animation_drop( mlt_animation self, animation_node node )
 
 static void mlt_animation_clean( mlt_animation self )
 {
-	if ( self->data )
-		free( self->data );
+	free( self->data );
 	self->data = NULL;
 	while ( self->nodes )
 		mlt_animation_drop( self, self->nodes );
@@ -690,8 +689,7 @@ char *mlt_animation_serialize( mlt_animation self )
 	char *ret = mlt_animation_serialize_cut( self, -1, -1 );
 	if ( ret )
 	{
-		if ( self->data )
-			free( self->data );
+		free( self->data );
 		self->data = ret;
 		ret = strdup( ret );
 	}

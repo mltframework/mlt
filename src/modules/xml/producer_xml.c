@@ -349,8 +349,7 @@ static void on_start_profile( deserialise_context context, const xmlChar *name, 
 		}
 		else if ( xmlStrcmp( atts[ 0 ], _x("description") ) == 0 )
 		{
-			if ( p->description )
-				free( p->description );
+			free( p->description );
 			p->description = strdup( _s(atts[ 1 ]) );
 			p->is_explicit = 1;
 		}
@@ -1891,8 +1890,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	if ( context->params != NULL )
 		mlt_properties_close( context->params );
 	mlt_properties_close( context->destructors );
-	if ( context->lc_numeric )
-		free( context->lc_numeric );
+	free( context->lc_numeric );
 	free( context );
 
 	return MLT_PRODUCER( service );

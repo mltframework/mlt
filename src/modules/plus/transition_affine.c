@@ -517,8 +517,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		dz = MapZ( affine.matrix, 0, 0 );
 		if ( ( int )abs( dz * 1000 ) < 25 )
 		{
-			if ( interps )
-				free( interps );
+			free( interps );
 			return 0;
 		}
 
@@ -584,8 +583,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			}
 		}
 	}
-	if ( interps )
-		free( interps );
+	free( interps );
 
 	return 0;
 }

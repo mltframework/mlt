@@ -56,7 +56,7 @@ static void qimage_delete( void *data )
 	delete image;
 	image = NULL;
 #if defined(USE_KDE4)
-	if (instance) delete instance;
+	delete instance;
 	instance = 0L;
 #endif
 

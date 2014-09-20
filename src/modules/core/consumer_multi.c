@@ -73,8 +73,7 @@ static mlt_consumer create_consumer( mlt_profile profile, char *id, char *arg )
 	else
 		myarg = arg;
 	mlt_consumer consumer = mlt_factory_consumer( profile, myid, myarg );
-	if ( myid )
-		free( myid );
+	free( myid );
 	return consumer;
 }
 
@@ -558,8 +557,7 @@ static void purge( mlt_consumer consumer )
 		do {
 			snprintf( key, sizeof(key), "%d.consumer", index++ );
 			nested = mlt_properties_get_data( properties, key, NULL );
-			if ( nested )
-				mlt_consumer_purge( nested );
+			mlt_consumer_purge( nested );
 		} while ( nested );
 	}
 }

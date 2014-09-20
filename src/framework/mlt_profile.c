@@ -305,8 +305,7 @@ void mlt_profile_close( mlt_profile profile )
 {
 	if ( profile )
 	{
-		if ( profile->description )
-			free( profile->description );
+		free( profile->description );
 		profile->description = NULL;
 		free( profile );
 		profile = NULL;
@@ -384,8 +383,7 @@ mlt_properties mlt_profile_list( )
 		}
 	}
 	mlt_properties_close( dir );
-	if ( filename )
-		free( filename );
+	free( filename );
 
 	return properties;
 }

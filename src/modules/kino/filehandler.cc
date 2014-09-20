@@ -448,18 +448,13 @@ AVIHandler::AVIHandler( int format ) : avi( NULL ), aviFormat( format ), isOpenD
 
 AVIHandler::~AVIHandler()
 {
-	if ( audioBuffer != NULL )
-	{
-		delete audioBuffer;
-		audioBuffer = NULL;
-	}
+	delete audioBuffer;
+	audioBuffer = NULL;
+
 	for ( int c = 0; c < 4; c++ )
 	{
-		if ( audioChannels[ c ] != NULL )
-		{
-			delete audioChannels[ c ];
-			audioChannels[ c ] = NULL;
-		}
+		delete audioChannels[ c ];
+		audioChannels[ c ] = NULL;
 	}
 
 	delete avi;

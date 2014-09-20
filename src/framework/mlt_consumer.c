@@ -1286,8 +1286,7 @@ static void consumer_work_stop( mlt_consumer self )
 			pthread_join( *thread, NULL );
 
 		// Deallocate the array of threads
-		if ( priv->threads )
-			free( priv->threads );
+		free( priv->threads );
 
 		// Destroy the mutexes
 		pthread_mutex_destroy( &priv->queue_mutex );

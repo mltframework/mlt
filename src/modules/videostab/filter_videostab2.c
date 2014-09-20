@@ -230,7 +230,7 @@ static void filter_close( mlt_filter parent )
 	if (data){
 		if (data->stab) stabilize_stop(data->stab);
 		if (data->trans){
-			if (data->trans->src) free(data->trans->src);
+			free(data->trans->src);
 			free (data->trans);
 		}
 		free( data );

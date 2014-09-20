@@ -457,7 +457,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 			interp = GDK_INTERP_TILES;
 		else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "bicubic" ) == 0 )
 			interp = GDK_INTERP_HYPER;
-		if ( interps ) free( interps );
+		free( interps );
 
 		// Note - the original pixbuf is already safe and ready for destruction
 		pthread_mutex_lock( &g_mutex );
