@@ -22,8 +22,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLT_FRAME_H_
-#define _MLT_FRAME_H_
+#ifndef MLT_FRAME_H
+#define MLT_FRAME_H
 
 #include "mlt_properties.h"
 #include "mlt_deque.h"

@@ -21,8 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLT_PARSER_H_
-#define _MLT_PARSER_H_
+#ifndef MLT_PARSER_H
+#define MLT_PARSER_H
 
 #include "mlt_types.h"
 

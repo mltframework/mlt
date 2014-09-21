@@ -21,8 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLT_POOL_H
-#define _MLT_POOL_H
+#ifndef MLT_POOL_H
+#define MLT_POOL_H
 
 extern void mlt_pool_init( );
 extern void *mlt_pool_alloc( int size );

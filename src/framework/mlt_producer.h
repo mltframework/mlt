@@ -21,8 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLT_PRODUCER_H_
-#define _MLT_PRODUCER_H_
+#ifndef MLT_PRODUCER_H
+#define MLT_PRODUCER_H
 
 #include "mlt_service.h"
 #include "mlt_filter.h"

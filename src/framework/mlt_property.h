@@ -22,8 +22,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLT_PROPERTY_H_
-#define _MLT_PROPERTY_H_
+#ifndef MLT_PROPERTY_H
+#define MLT_PROPERTY_H
 
 #include "mlt_types.h"
 

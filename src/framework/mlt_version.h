@@ -20,8 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLT_VERSION_H_
-#define _MLT_VERSION_H_
+#ifndef MLT_VERSION_H
+#define MLT_VERSION_H
 
 // Add quotes around any #define variables
 #define STRINGIZE2(s)           #s
