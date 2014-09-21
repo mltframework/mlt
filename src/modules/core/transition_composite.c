@@ -1213,8 +1213,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		if ( *image != image_b && ( ( invert ? 0 : image_b ) || get_b_frame_image( self, b_frame, invert ? image : &image_b, &width_b, &height_b, &result ) == 0 ) )
 		{
-			uint8_t *dest = *image;
-			uint8_t *src = image_b;
 			int progressive = 
 					mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
 					mlt_properties_get_int( properties, "progressive" );
@@ -1285,9 +1283,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				// Composite the b_frame on the a_frame
 				if ( invert )
-					composite_yuv( dest, width_b, height_b, src, *width, *height, alpha_a, alpha_b, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
+					composite_yuv( *image, width_b, height_b, image_b, *width, *height, alpha_a, alpha_b, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
 				else
-					composite_yuv( dest, *width, *height, src, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
+					composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
 			}
 		}
 	}
