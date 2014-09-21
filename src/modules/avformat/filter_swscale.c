@@ -127,13 +127,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 	avpicture_fill( &output, outbuf, avformat, owidth, oheight );
 
 	// Create the context and output image
-	owidth = owidth > 5120 ? 5120 : owidth;
 	struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
-	if ( !context )
-	{
-		owidth = owidth > 2048 ? 2048 : owidth;
-		context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
-	}
 	if ( context )
 	{
 		// Perform the scaling
