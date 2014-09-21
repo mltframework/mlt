@@ -168,16 +168,7 @@ static void create_filter( mlt_profile profile, mlt_producer producer, char *eff
 	if ( arg != NULL )
 		*arg ++ = '\0';
 
-	// The swscale and avcolor_space filters require resolution as arg to test compatibility
-	if ( strncmp( effect, "swscale", 7 ) == 0 || strncmp( effect, "avcolo", 6 ) == 0 )
-	{
-		int width = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "meta.media.width" );
-		filter = mlt_factory_filter( profile, id, &width );
-	}
-	else
-	{
-		filter = mlt_factory_filter( profile, id, arg );
-	}
+	filter = mlt_factory_filter( profile, id, arg );
 	if ( filter )
 	{
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
