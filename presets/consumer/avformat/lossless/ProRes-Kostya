@@ -1,0 +1,10 @@
+f=mov
+acodec=pcm_s16le
+vcodec=prores_ks
+vb=0
+g=0
+bf=0
+vprofile=2
+
+meta.preset.extension=mov
+meta.preset.note=Use this one for interlaced output. Set vprofile=1 for LT or =3 for HQ.
