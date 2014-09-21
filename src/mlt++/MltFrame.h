@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLTPP_FRAME_H_
-#define _MLTPP_FRAME_H_
+#ifndef MLTPP_FRAME_H
+#define MLTPP_FRAME_H
 
 #include "config.h"
 

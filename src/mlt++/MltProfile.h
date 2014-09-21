@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLTPP_PROFILE_H_
-#define _MLTPP_PROFILE_H_
+#ifndef MLTPP_PROFILE_H
+#define MLTPP_PROFILE_H
 
 #include "config.h"
 

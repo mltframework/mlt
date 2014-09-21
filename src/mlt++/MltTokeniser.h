@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLTPP_TOKENISER_H
-#define _MLTPP_TOKENISER_H
+#ifndef MLTPP_TOKENISER_H
+#define MLTPP_TOKENISER_H
 
 #include "config.h"
 

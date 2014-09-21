@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _MLTPP_DEQUE_H
-#define _MLTPP_DEQUE_H
+#ifndef MLTPP_DEQUE_H
+#define MLTPP_DEQUE_H
 
 #include "config.h"
 
