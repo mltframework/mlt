@@ -762,7 +762,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 
 static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **image, int *width, int *height, struct geometry_s *geometry )
 {
-	int ret = 0;
+	int error = 0;
 	mlt_image_format format = mlt_image_yuv422;
 
 	// Get the properties objects
@@ -856,7 +856,7 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 // fprintf(stderr, "%s: scaled %dx%d norm %dx%d resize %dx%d\n", __FILE__,
 // geometry->sw, geometry->sh, geometry->nw, geometry->nh, *width, *height);
 
-	ret = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
+	error = mlt_frame_get_image( b_frame, image, &format, width, height, 1 );
 
 	// composite_yuv uses geometry->sw to determine source stride, which
 	// should equal the image width if not using crop property.
@@ -866,7 +866,7 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 	// Set the frame back
 	mlt_properties_set_int( b_props, "resize_alpha", resize_alpha );
 
-	return ret && image != NULL;
+	return error || ( image == NULL );
 }
 
 static void crop_calculate( mlt_transition self, mlt_properties properties, struct geometry_s *result, double position )
