@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2012 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * Author: Charles Yates <charles.yates@pandora.be>
  * Author: Dan Dennedy <dan@dennedy.org>
  * Much code borrowed from ffmpeg.c: Copyright (c) 2000-2003 Fabrice Bellard
@@ -69,7 +69,7 @@
 #define MAX_AUDIO_STREAMS (8)
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
 #define AUDIO_BUFFER_SIZE (1024 * 42)
-#define VIDEO_BUFFER_SIZE (2048 * 1024)
+#define VIDEO_BUFFER_SIZE (2048 * 2048)
 
 //
 // This structure should be extended and made globally available in mlt
@@ -1049,6 +1049,9 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 	{
 		// Fill the frame with the allocated buffer
 		avpicture_fill( (AVPicture *)picture, picture_buf, pix_fmt, width, height);
+		picture->format = pix_fmt;
+		picture->width = width;
+		picture->height = height;
 	}
 	else
 	{
