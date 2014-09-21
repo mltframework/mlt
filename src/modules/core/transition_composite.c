@@ -866,7 +866,7 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 	// Set the frame back
 	mlt_properties_set_int( b_props, "resize_alpha", resize_alpha );
 
-	return error || ( image == NULL );
+	return !error && image;
 }
 
 static void crop_calculate( mlt_transition self, mlt_properties properties, struct geometry_s *result, double position )
@@ -1211,7 +1211,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			height_b = mlt_properties_get_int( a_props, "dest_height" );
 		}
 
-		if ( *image != image_b && ( ( invert ? 0 : image_b ) || get_b_frame_image( self, b_frame, invert ? image : &image_b, &width_b, &height_b, &result ) == 0 ) )
+		if ( *image != image_b && ( ( invert ? 0 : image_b ) ||
+			get_b_frame_image( self, b_frame, invert ? image : &image_b, &width_b, &height_b, &result ) ) )
 		{
 			int progressive = 
 					mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
