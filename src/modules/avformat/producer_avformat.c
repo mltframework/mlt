@@ -186,6 +186,10 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			// Register our get_frame implementation
 			producer->get_frame = producer_get_frame;
 
+			// Force the duration to be computed unless explicitly provided.
+			mlt_properties_set_position( properties, "length", 0 );
+			mlt_properties_set_position( properties, "out", 0 );
+
 			if ( strcmp( service, "avformat-novalidate" ) )
 			{
 				// Open the file
@@ -603,27 +607,28 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	AVFormatContext *format = self->video_format;
 
 	// Get the duration
-	if ( !mlt_properties_get_int( properties, "_length_computed" ) )
+	if ( mlt_properties_get_position( properties, "length" ) <= 0 ||
+		 mlt_properties_get_position( properties, "out" ) <= 0 )
 	{
-		// The _length_computed flag prevents overwriting explicity set length/out/eof properties
-		// when producer_open is called after initial call when restoring or reseting the producer.
 		if ( format->duration != AV_NOPTS_VALUE )
 		{
 			// This isn't going to be accurate for all formats
 			// We will treat everything with the producer fps.
 			mlt_position frames = ( mlt_position )( int )( format->duration *
 				profile->frame_rate_num / profile->frame_rate_den / AV_TIME_BASE);
-			mlt_properties_set_position( properties, "out", frames - 1 );
-			mlt_properties_set_position( properties, "length", frames );
-			mlt_properties_set_int( properties, "_length_computed", 1 );
+			if ( mlt_properties_get_position( properties, "out" ) <= 0 )
+				mlt_properties_set_position( properties, "out", frames - 1 );
+			if ( mlt_properties_get_position( properties, "length" ) <= 0 )
+				mlt_properties_set_position( properties, "length", frames );
 		}
 		else
 		{
 			// Set live sources to run forever
-			mlt_properties_set_position( properties, "length", INT_MAX );
-			mlt_properties_set_position( properties, "out", INT_MAX - 1 );
+			if ( mlt_properties_get_position( properties, "length" ) <= 0 )
+				mlt_properties_set_position( properties, "length", INT_MAX );
+			if ( mlt_properties_get_position( properties, "out" ) <= 0 )
+				mlt_properties_set_position( properties, "out", INT_MAX - 1 );
 			mlt_properties_set( properties, "eof", "loop" );
-			mlt_properties_set_int( properties, "_length_computed", 1 );
 		}
 	}
 
