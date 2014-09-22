@@ -74,8 +74,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	/* Obtain properties of producer */
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( &this->parent );
 	
-	*width = mlt_properties_get_int( properties, "rescale_width" );
-	*height = mlt_properties_get_int( properties, "rescale_height" );
+	if ( mlt_properties_get_int( properties, "rescale_width" ) > 0 )
+		*width = mlt_properties_get_int( properties, "rescale_width" );
+	if ( mlt_properties_get_int( properties, "rescale_height" ) > 0 )
+		*height = mlt_properties_get_int( properties, "rescale_height" );
 	
 	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
 
@@ -134,8 +136,13 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		/* Update timecode on the frame we're creating */
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
-		/* Set producer-specific frame properties */
-		mlt_properties_pass_list( properties, producer_props, "progressive, aspect_ratio" );
+		// Set producer-specific frame properties
+		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_props, "progressive" ) );
+		double force_ratio = mlt_properties_get_double( producer_props, "force_aspect_ratio" );
+		if ( force_ratio > 0.0 )
+			mlt_properties_set_double( properties, "aspect_ratio", force_ratio );
+		else
+			mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_props, "aspect_ratio" ) );
 
 		/* Push the get_image method */
 		mlt_frame_push_get_image( *frame, producer_get_image );
@@ -173,6 +180,8 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
 		producer->close = ( mlt_destructor )producer_close;
 		mlt_properties_set( properties, "resource", filename );
 		mlt_properties_set_int( properties, "progressive", 1 );
+		mlt_properties_set_int( properties, "aspect_ratio", 1 );
+		mlt_properties_set_int( properties, "seekable", 1 );
 		read_xml(properties);
 		return producer;
 	}
