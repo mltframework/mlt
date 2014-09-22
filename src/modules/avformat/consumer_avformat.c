@@ -1583,6 +1583,30 @@ static void *consumer_thread( void *arg )
 			// Write the stream header.
 			if ( !header_written )
 			{
+				// set timecode from first frame if not been set from metadata
+				if( !mlt_properties_get( properties, "timecode" ) )
+				{
+					char *vitc = mlt_properties_get( frame_properties, "meta.attr.vitc.markup" );
+					if ( vitc && vitc[0] )
+					{
+						mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "timecode=[%s]\n", vitc );
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
+						av_dict_set
+#else
+						av_metadata_set2
+#endif
+							( &oc->metadata, "timecode", vitc, 0 );
+
+						if ( video_st )
+#if LIBAVUTIL_VERSION_INT >= ((51<<16)+(8<<8)+0)
+							av_dict_set
+#else
+							av_metadata_set2
+#endif
+								( &video_st->metadata, "timecode", vitc, 0 );
+					};
+				};
+
 #if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(2<<8)+0)
 				if ( avformat_write_header( oc, NULL ) < 0 )
 #else
