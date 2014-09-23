@@ -1373,7 +1373,7 @@ static void *consumer_thread( void *arg )
 	// Add audio and video streams
 	if ( video_codec_id != AV_CODEC_ID_NONE )
 	{
-		if ( video_st = add_video_stream( consumer, oc, video_codec ) )
+		if ( ( video_st = add_video_stream( consumer, oc, video_codec ) ) )
 		{
 			const char* img_fmt_name = mlt_properties_get( properties, "mlt_image_format" );
 			if ( img_fmt_name )

@@ -1643,7 +1643,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					ret = -1;
 				}
-				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d ret %d pkt_pos %d\n", got_picture, self->pkt.flags & PKT_FLAG_KEY, ret, int_position );
+				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d ret %d pkt_pos %"PRId64"\n",
+							   got_picture, self->pkt.flags & PKT_FLAG_KEY, ret, int_position );
 			}
 
 			// Now handle the picture if we have one
