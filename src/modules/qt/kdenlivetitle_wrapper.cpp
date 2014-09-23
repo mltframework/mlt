@@ -508,6 +508,10 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		mlt_properties_set_data( producer_props, "cached_image", self->current_image, size, mlt_pool_release, NULL );
 		self->current_width = width;
 		self->current_height = height;
+		mlt_events_block( producer_props, NULL );
+		mlt_properties_set_int( producer_props, "meta.media.width", self->current_width );
+		mlt_properties_set_int( producer_props, "meta.media.height", self->current_height );
+		mlt_events_unblock( producer_props, NULL );
 	}
 
 	pthread_mutex_unlock( &self->mutex );
