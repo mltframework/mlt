@@ -1986,7 +1986,6 @@ static void *consumer_thread( void *arg )
 						pkt.size = sizeof(AVPicture);
 
 						ret = av_write_frame(oc, &pkt);
-						video_pts += c->frame_size;
 					} 
 					else 
 					{
