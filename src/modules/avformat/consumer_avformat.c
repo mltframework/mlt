@@ -1727,8 +1727,8 @@ static void *consumer_thread( void *arg )
 							audio_avframe->nb_samples = FFMAX( samples, audio_input_nb_samples );
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 							audio_avframe->pts = sample_count[i];
-							sample_count[i] += audio_avframe->nb_samples;
 #endif
+							sample_count[i] += audio_avframe->nb_samples;
 							avcodec_fill_audio_frame( audio_avframe, codec->channels, codec->sample_fmt,
 								(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 							int got_packet = 0;
