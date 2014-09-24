@@ -1867,7 +1867,11 @@ static void *consumer_thread( void *arg )
 
 						if ( i == 0 )
 						{
+#if LIBAVFORMAT_VERSION_MAJOR >= 56
+							audio_pts = (double) sample_count[0] * av_q2d( stream->codec->time_base );
+#else
 							audio_pts = (double) sample_count[0] * av_q2d( stream->time_base );
+#endif
 						}
 					}
 				}
@@ -2057,7 +2061,11 @@ static void *consumer_thread( void *arg )
 						}
  					}
 					frame_count++;
+#if LIBAVFORMAT_VERSION_MAJOR >= 56
+					video_pts = (double) frame_count * av_q2d( video_st->codec->time_base );
+#else
 					video_pts = (double) frame_count * av_q2d( video_st->time_base );
+#endif
 					if ( ret )
 					{
 						mlt_log_fatal( MLT_CONSUMER_SERVICE( consumer ), "error writing video frame\n" );
