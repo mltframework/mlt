@@ -667,7 +667,11 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 
 		// Set parameters controlled by MLT
 		c->sample_rate = mlt_properties_get_int( properties, "frequency" );
+#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
+		st->time_base = ( AVRational ){ 1, c->sample_rate };
+#else
 		c->time_base = ( AVRational ){ 1, c->sample_rate };
+#endif
 		c->channels = channels;
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
@@ -867,8 +871,11 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->height = mlt_properties_get_int( properties, "height" );
 		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
+#if LIBAVFORMAT_VERSION_INT < ((55<<16)+(44<<8)+0)
 		if ( st->time_base.den == 0 )
-			st->time_base = c->time_base;
+#endif
+		st->time_base = c->time_base;
+
 		// Default to the codec's first pix_fmt if possible.
 		c->pix_fmt = pix_fmt? av_get_pix_fmt( pix_fmt ) : codec? codec->pix_fmts[0] : PIX_FMT_YUV420P;
 		
