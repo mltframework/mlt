@@ -149,9 +149,8 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
         else {
             mlt_properties_set_position( producer_props, "_animation_out", mlt_producer_get_out( producer ) );
         }
-        
-	mlt_properties_set_int( producer_props, "_original_width", originalWidth );
-	mlt_properties_set_int( producer_props, "_original_height", originalHeight );
+	mlt_properties_set_int( producer_props, "meta.media.width", originalWidth );
+	mlt_properties_set_int( producer_props, "meta.media.height", originalHeight );
 
 	QDomNode node;
 	QDomNodeList items = title.elementsByTagName("item");
@@ -404,13 +403,11 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		}
                 
                 QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "_startrect" ) ) );
-                QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );
-	
-		int originalWidth = mlt_properties_get_int( producer_props, "_original_width" );
-		int originalHeight= mlt_properties_get_int( producer_props, "_original_height" );
+                QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );	
 		const QRectF source( 0, 0, width, height );
+
 		if (start.isNull()) {
-		    start = QRectF( 0, 0, originalWidth, originalHeight );
+		    start = QRectF( 0, 0, mlt_properties_get_int( producer_props, "meta.media.width" ), mlt_properties_get_int( producer_props, "meta.media.height" ) );
 		}
 
 		// Effects
@@ -508,10 +505,6 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		mlt_properties_set_data( producer_props, "cached_image", self->current_image, size, mlt_pool_release, NULL );
 		self->current_width = width;
 		self->current_height = height;
-		mlt_events_block( producer_props, NULL );
-		mlt_properties_set_int( producer_props, "meta.media.width", self->current_width );
-		mlt_properties_set_int( producer_props, "meta.media.height", self->current_height );
-		mlt_events_unblock( producer_props, NULL );
 	}
 
 	pthread_mutex_unlock( &self->mutex );
