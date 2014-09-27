@@ -1367,7 +1367,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		// Construct an AVFrame for YUV422 conversion
 		if ( !self->video_frame )
+#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
+			self->video_frame = av_frame_alloc();
+#else
 			self->video_frame = avcodec_alloc_frame( );
+#endif
 
 		while( ret >= 0 && !got_picture )
 		{
@@ -2042,9 +2046,15 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		// Decode the audio
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 		if ( !self->audio_frame )
+#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
+			self->audio_frame = av_frame_alloc();
+		else
+			av_frame_unref( self->audio_frame );
+#else
 			self->audio_frame = avcodec_alloc_frame();
 		else
 			avcodec_get_frame_defaults( self->audio_frame );
+#endif
 		ret = avcodec_decode_audio4( codec_context, self->audio_frame, &data_size, &pkt );
 		if ( data_size ) {
 			data_size = av_samples_get_buffer_size( NULL, codec_context->channels,

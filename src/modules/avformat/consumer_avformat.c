@@ -964,7 +964,11 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 {
 	// Allocate a frame
+#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
+	AVFrame *picture = av_frame_alloc();
+#else
 	AVFrame *picture = avcodec_alloc_frame();
+#endif
 
 	// Determine size of the 
 	int size = avpicture_get_size(pix_fmt, width, height);
@@ -1447,7 +1451,11 @@ static void *consumer_thread( void *arg )
 	// Allocate audio AVFrame
 	if ( audio_st[0] )
 	{
+#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
+		audio_avframe = av_frame_alloc();
+#else
 		audio_avframe = avcodec_alloc_frame();
+#endif
 		if ( audio_avframe ) {
 			AVCodecContext *c = audio_st[0]->codec;
 			audio_avframe->format = c->sample_fmt;
