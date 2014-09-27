@@ -2198,7 +2198,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 		if ( codec_context && !self->audio_buffer[ index ] )
 		{
-			codec_context->request_channels = self->audio_index == INT_MAX ? codec_context->channels : *channels;
+			if ( self->audio_index != INT_MAX && !mlt_properties_get( MLT_PRODUCER_PROPERTIES(self->parent), "request_channel_layout" ) )
+				codec_context->request_channel_layout = av_get_default_channel_layout( *channels );
 			sizeof_sample = sample_bytes( codec_context );
 
 			// Check for audio buffer and create if necessary
