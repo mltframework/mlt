@@ -2020,7 +2020,7 @@ static void planar_to_interleaved( uint8_t *dest, uint8_t *src, int samples, int
 }
 #endif
 
-static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int channels, int samples, double timecode, double fps )
+static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int samples, double timecode, double fps )
 {
 	// Fetch the audio_format
 	AVFormatContext *context = self->audio_format;
@@ -2035,6 +2035,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	uint8_t *audio_buffer = self->audio_buffer[ index ];
 	uint8_t *decode_buffer = self->decode_buffer[ index ];
 
+	int channels = codec_context->channels;
 	int audio_used = self->audio_used[ index ];
 	int ret = 0;
 
@@ -2057,7 +2058,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 #endif
 		ret = avcodec_decode_audio4( codec_context, self->audio_frame, &data_size, &pkt );
 		if ( data_size ) {
-			data_size = av_samples_get_buffer_size( NULL, codec_context->channels,
+			data_size = av_samples_get_buffer_size( NULL, channels,
 				self->audio_frame->nb_samples, codec_context->sample_fmt, 1 );
 			decode_buffer = self->audio_frame->data[0];
 		}
@@ -2078,7 +2079,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		if ( data_size > 0 )
 		{
 			// Figure out how many samples will be needed after resampling
-			int convert_samples = data_size / codec_context->channels / sample_bytes( codec_context );
+			int convert_samples = data_size / channels / sizeof_sample;
 
 			// Resize audio buffer to prevent overflow
 			if ( ( audio_used + convert_samples ) * channels * sizeof_sample > self->audio_buffer_size[ index ] )
@@ -2086,7 +2087,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				self->audio_buffer_size[ index ] = ( audio_used + convert_samples * 2 ) * channels * sizeof_sample;
 				audio_buffer = self->audio_buffer[ index ] = mlt_pool_realloc( audio_buffer, self->audio_buffer_size[ index ] );
 			}
-			uint8_t *dest = &audio_buffer[ audio_used * codec_context->channels * sizeof_sample ];
+			uint8_t *dest = &audio_buffer[ audio_used * channels * sizeof_sample ];
 			switch ( codec_context->sample_fmt )
 			{
 			case AV_SAMPLE_FMT_U8P:
@@ -2094,9 +2095,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			case AV_SAMPLE_FMT_S32P:
 			case AV_SAMPLE_FMT_FLTP:
 #if LIBAVCODEC_VERSION_MAJOR >= 55
-				planar_to_interleaved( dest, self->audio_frame, convert_samples, codec_context->channels, sizeof_sample );
+				planar_to_interleaved( dest, self->audio_frame, convert_samples, channels, sizeof_sample );
 #else
-				planar_to_interleaved( dest, decode_buffer, convert_samples, codec_context->channels, sizeof_sample );
+				planar_to_interleaved( dest, decode_buffer, convert_samples, channels, sizeof_sample );
 #endif
 				break;
 			default:
@@ -2110,7 +2111,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			{
 				*ignore -= 1;
 				audio_used -= audio_used > samples ? samples : audio_used;
-				memmove( audio_buffer, &audio_buffer[ samples * codec_context->channels * sizeof_sample ],
+				memmove( audio_buffer, &audio_buffer[ samples * channels * sizeof_sample ],
 						 audio_used * sizeof_sample );
 			}
 		}
@@ -2302,8 +2303,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			if ( index < MAX_AUDIO_STREAMS && ret >= 0 && pkt.data && pkt.size > 0 && ( index == self->audio_index ||
 				 ( self->audio_index == INT_MAX && context->streams[ index ]->codec->codec_type == AVMEDIA_TYPE_AUDIO ) ) )
 			{
-				int channels2 = self->audio_codec[index]->channels;
-				ret = decode_audio( self, &ignore[index], pkt, channels2, *samples, real_timecode, fps );
+				ret = decode_audio( self, &ignore[index], pkt, *samples, real_timecode, fps );
 			}
 
 			if ( self->seekable || index != self->video_index )
