@@ -197,7 +197,7 @@ mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, cons
 		this->is_stopped = consumer_is_stopped;
 
 		mlt_properties_set( MLT_CONSUMER_PROPERTIES( this ), "resource", arg );
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "real_time", -1 );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "real_time", 0 );
 		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "prefill", 1 );
 		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "terminate_on_pause", 1 );
 
