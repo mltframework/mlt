@@ -23,6 +23,7 @@
 
 #include "mlt_properties.h"
 #include "mlt_deque.h"
+#include "mlt_log.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -135,6 +136,14 @@ static void *pool_fetch( mlt_pool self )
 		{
 			// We need to generate a release item
 			mlt_release release = mlt_alloc( self->size );
+
+			// If out of memory, log it, reclaim memory, and try again.
+			if ( !release && self->size > 0 )
+			{
+				mlt_log_fatal( NULL, "[mlt_pool] out of memory\n" );
+				mlt_pool_purge();
+				release = mlt_alloc( self->size );
+			}
 
 			// Initialise it
 			if ( release != NULL )
