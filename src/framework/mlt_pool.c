@@ -3,7 +3,7 @@
  * \brief memory pooling functionality
  * \see mlt_pool_s
  *
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
  * \author Charles Yates <charles.yates@pandora.be>
  *
  * This library is free software; you can redistribute it and/or
@@ -31,6 +31,19 @@
 // Not nice - memalign is defined here apparently?
 #ifdef linux
 #include <malloc.h>
+#endif
+
+// Macros to re-assign system functions.
+#ifdef WIN32
+#  define mlt_free _aligned_free
+#  define mlt_alloc(X) _aligned_malloc( (X), 16 )
+#else
+#  define mlt_free free
+#  ifdef linux
+#    define mlt_alloc(X) memalign( 16, (X) )
+#  else
+#    define mlt_alloc(X) malloc( (X) )
+#  endif
 #endif
 
 /** global singleton for tracking pools */
@@ -121,11 +134,7 @@ static void *pool_fetch( mlt_pool self )
 		else
 		{
 			// We need to generate a release item
-#ifdef linux
-			mlt_release release = memalign( 16, self->size );
-#else
-			mlt_release release = malloc( self->size );
-#endif
+			mlt_release release = mlt_alloc( self->size );
 
 			// Initialise it
 			if ( release != NULL )
@@ -189,7 +198,7 @@ static void pool_return( void *ptr )
 	if ( ptr != NULL )
 	{
 		// Free the release itself
-		free( ( char * )ptr - sizeof( struct mlt_release_s ) );
+		mlt_free( ( char * )ptr - sizeof( struct mlt_release_s ) );
 	}
 }
 
@@ -210,7 +219,7 @@ static void pool_close( mlt_pool self )
 		while ( ( release = mlt_deque_pop_back( self->stack ) ) != NULL )
 		{
 			// We'll free this item now
-			free( ( char * )release - sizeof( struct mlt_release_s ) );
+			mlt_free( ( char * )release - sizeof( struct mlt_release_s ) );
 		}
 
 		// We can now close the stack
@@ -349,7 +358,7 @@ void mlt_pool_purge( )
 
 		// We'll free all unused items now
 		while ( ( release = mlt_deque_pop_back( self->stack ) ) != NULL )
-			free( ( char * )release - sizeof( struct mlt_release_s ) );
+			mlt_free( ( char * )release - sizeof( struct mlt_release_s ) );
 
 		// Unlock the pool
 		pthread_mutex_unlock( &self->lock );
