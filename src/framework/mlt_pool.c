@@ -198,14 +198,9 @@ static void pool_return( void *ptr )
 			// Unlock the pool
 			pthread_mutex_unlock( &self->lock );
 
-			// Ensure that we don't clean up
-			ptr = NULL;
+			return;
 		}
-	}
 
-	// Tidy up - this will only occur if the returned item is incorrect
-	if ( ptr != NULL )
-	{
 		// Free the release itself
 		mlt_free( ( char * )ptr - sizeof( struct mlt_release_s ) );
 	}

@@ -2,7 +2,7 @@
 expression x;
 identifier release =~ "^(?x)
 (?:cJSON_InitHooks
-|  free
+|  (?:mlt_)?free
 |  mlt_(?:(?:animation
           |  cache(?:_item)?
           |  profile
@@ -21,7 +21,7 @@ identifier release =~ "^(?x)
 expression x;
 identifier release =~ "^(?x)
 (?:cJSON_InitHooks
-|  free
+|  (?:mlt_)?free
 |  mlt_(?:(?:animation
           |  cache(?:_item)?
           |  profile
@@ -42,7 +42,7 @@ identifier release =~ "^(?x)
 expression a, b;
 identifier release =~ "^(?x)
 (?:cJSON_InitHooks
-|  free
+|  (?:mlt_)?free
 |  mlt_(?:(?:animation
           |  cache(?:_item)?
           |  profile
@@ -62,7 +62,7 @@ identifier release =~ "^(?x)
 expression a, b;
 identifier release =~ "^(?x)
 (?:cJSON_InitHooks
-|  free
+|  (?:mlt_)?free
 |  mlt_(?:(?:animation
           |  cache(?:_item)?
           |  profile
