@@ -132,10 +132,11 @@ mlt_repository mlt_factory_init( const char *directory )
 	// Only initialise once
 	if ( mlt_directory == NULL )
 	{
-		// Allow user over rides
+#if !defined(WIN32) && !(defined(__DARWIN__) && defined(RELOCATABLE))
+		// Allow user overrides
 		if ( directory == NULL || !strcmp( directory, "" ) )
 			directory = getenv( "MLT_REPOSITORY" );
-
+#endif
 		// If no directory is specified, default to install directory
 		if ( directory == NULL )
 			directory = PREFIX_LIB;
