@@ -2061,6 +2061,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			data_size = av_samples_get_buffer_size( NULL, channels,
 				self->audio_frame->nb_samples, codec_context->sample_fmt, 1 );
 			decode_buffer = self->audio_frame->data[0];
+			channels = codec_context->channels;
 		}
 #else
 		ret = avcodec_decode_audio3( codec_context, (int16_t*) decode_buffer, &data_size, &pkt );
