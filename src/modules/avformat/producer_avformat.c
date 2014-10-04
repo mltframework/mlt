@@ -46,6 +46,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
+#include <math.h>
 
 #if LIBAVCODEC_VERSION_MAJOR < 55
 #define AV_CODEC_ID_H264    CODEC_ID_H264
@@ -539,8 +540,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 		{
 			// This isn't going to be accurate for all formats
 			// We will treat everything with the producer fps.
-			mlt_position frames = ( mlt_position )( int )( format->duration *
-				profile->frame_rate_num / profile->frame_rate_den / AV_TIME_BASE);
+			mlt_position frames = ( mlt_position ) lrint( format->duration * mlt_profile_fps( profile ) / AV_TIME_BASE );
 			if ( mlt_properties_get_position( properties, "out" ) <= 0 )
 				mlt_properties_set_position( properties, "out", frames - 1 );
 			if ( mlt_properties_get_position( properties, "length" ) <= 0 )
