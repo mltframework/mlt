@@ -979,6 +979,7 @@ mlt_frame composite_copy_region( mlt_transition self, mlt_frame a_frame, mlt_pos
 {
 	// Create a frame to return
 	mlt_frame b_frame = mlt_frame_init( MLT_TRANSITION_SERVICE( self ) );
+	b_frame->convert_image = a_frame->convert_image;
 
 	// Get the properties of the a frame
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
