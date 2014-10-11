@@ -85,24 +85,11 @@ static int get_next_token(char* str, int* pos, char* token, int* is_keyword)
 
 static void get_timecode_str( mlt_filter filter, mlt_frame frame, char* text )
 {
-	int frames = mlt_frame_get_position( frame );
-	double fps = mlt_profile_fps( mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
-	char tc[12] = "";
-	if (fps == 0)
-	{
-		strncat( text, "-", MAX_TEXT_LEN - strlen( text ) - 1 );
-	}
-	else
-	{
-		int seconds = frames / fps;
-		frames = frames % lrint( fps );
-		int minutes = seconds / 60;
-		seconds = seconds % 60;
-		int hours = minutes / 60;
-		minutes = minutes % 60;
-		sprintf(tc, "%.2d:%.2d:%.2d:%.2d", hours, minutes, seconds, frames);
-		strncat( text, tc, MAX_TEXT_LEN - strlen( text ) - 1 );
-	}
+	mlt_position frames = mlt_frame_get_position( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	char *s = mlt_properties_frames_to_time( properties, frames, mlt_time_smpte );
+	if ( s )
+		strncat( text, s, MAX_TEXT_LEN - strlen( text ) - 1 );
 }
 
 static void get_frame_str( mlt_filter filter, mlt_frame frame, char* text )
