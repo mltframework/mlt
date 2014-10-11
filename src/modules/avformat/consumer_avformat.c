@@ -2076,7 +2076,12 @@ static void *consumer_thread( void *arg )
 				pkt.flags |= AV_PKT_FLAG_KEY;
 #endif
 			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing video size %d\n", pkt.size );
-			if ( pkt.size <= 0 )
+			if ( pkt.size < 0 )
+				break;
+			// Dual pass logging
+			if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out )
+				fprintf( mlt_properties_get_data( properties, "_logfile", NULL ), "%s", c->stats_out );
+			if ( !pkt.size )
 				break;
 
 			if ( pkt.pts != AV_NOPTS_VALUE )
@@ -2094,9 +2099,6 @@ static void *consumer_thread( void *arg )
 				mlt_events_fire( properties, "consumer-fatal-error", NULL );
 				goto on_fatal_error;
 			}
-			// Dual pass logging
-			if ( mlt_properties_get_data( properties, "_logfile", NULL ) && c->stats_out )
-				fprintf( mlt_properties_get_data( properties, "_logfile", NULL ), "%s", c->stats_out );
 		}
 	}
 
