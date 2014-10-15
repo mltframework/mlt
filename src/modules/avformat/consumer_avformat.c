@@ -1710,7 +1710,7 @@ static void *consumer_thread( void *arg )
 							// Write the compressed frame in the media file
 							if ( pkt.pts != AV_NOPTS_VALUE )
 								pkt.pts = av_rescale_q( pkt.pts, codec->time_base, stream->time_base );
-#if LIBAVCODEC_VERSION_MAJOR >= 55
+#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
 							if ( pkt.dts != AV_NOPTS_VALUE )
 								pkt.dts = av_rescale_q( pkt.dts, codec->time_base, stream->time_base );
 							if ( pkt.duration > 0 )
@@ -1736,7 +1736,7 @@ static void *consumer_thread( void *arg )
 
 						if ( i == 0 )
 						{
-#if LIBAVFORMAT_VERSION_MAJOR >= 56
+#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
 							audio_pts = (double) sample_count[0] * av_q2d( stream->codec->time_base );
 #else
 							audio_pts = (double) sample_count[0] * av_q2d( stream->time_base );
@@ -1925,7 +1925,7 @@ static void *consumer_thread( void *arg )
 						}
  					}
 					frame_count++;
-#if LIBAVFORMAT_VERSION_MAJOR >= 56
+#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
 					video_pts = (double) frame_count * av_q2d( video_st->codec->time_base );
 #else
 					video_pts = (double) frame_count * av_q2d( video_st->time_base );
