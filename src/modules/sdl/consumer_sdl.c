@@ -502,7 +502,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = self->properties;
 
-	mlt_image_format vfmt = mlt_image_yuv422;
+	mlt_image_format vfmt = mlt_properties_get_int( properties, "mlt_image_format" );
 	int width = self->width, height = self->height;
 	uint8_t *image;
 	int changed = 0;
@@ -653,7 +653,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 		if ( self->running && SDL_GetVideoSurface() && self->sdl_overlay == NULL )
 		{
 			SDL_SetClipRect( SDL_GetVideoSurface(), &self->rect );
-			self->sdl_overlay = SDL_CreateYUVOverlay( width, height, SDL_YUY2_OVERLAY, SDL_GetVideoSurface() );
+			self->sdl_overlay = SDL_CreateYUVOverlay( width, height,
+				( vfmt == mlt_image_yuv422 ? SDL_YUY2_OVERLAY : SDL_IYUV_OVERLAY ),
+				SDL_GetVideoSurface() );
 		}
 
 		if ( self->running && SDL_GetVideoSurface() && self->sdl_overlay != NULL )
@@ -661,8 +663,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			self->buffer = self->sdl_overlay->pixels[ 0 ];
 			if ( SDL_LockYUVOverlay( self->sdl_overlay ) >= 0 )
 			{
+				int size = mlt_image_format_size( vfmt, width, height, NULL );
 				if ( image != NULL )
-					memcpy( self->buffer, image, width * height * 2 );
+					memcpy( self->buffer, image, size );
 				SDL_UnlockYUVOverlay( self->sdl_overlay );
 				SDL_DisplayYUVOverlay( self->sdl_overlay, &SDL_GetVideoSurface()->clip_rect );
 			}
