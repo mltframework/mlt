@@ -14,6 +14,7 @@ OBJS = consumer_blipflash.o \
 	   filter_invert.o \
 	   filter_lift_gamma_gain.o \
 	   filter_loudness.o \
+	   filter_lumakey.o \
 	   filter_rgblut.o \
 	   filter_sepia.o \
 	   producer_blipflash.o \
