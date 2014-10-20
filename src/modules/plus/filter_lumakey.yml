@@ -1,0 +1,61 @@
+schema_version: 0.1
+type: filter
+identifier: lumakey
+title: Lumakey
+version: 1
+copyright: Janne Liljeblad
+creator: Janne Liljeblad
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  This filter modifies image's alpha channel as a function of its luma value.
+  
+  This is used together with a compositor to combine two images so that 
+  bright or dark areas of source image are overwritten on top of the
+  destination image.
+
+parameters:
+  - identifier: threshold
+    title: Threshold
+    type: integer
+    minimum: 0
+    maximum: 255
+    default: 128
+    mutable: yes
+    description: >
+      Luma value that defines the center point of transition from 
+      prelevel to postlevel opacity value.
+
+  - identifier: slope
+    title: Slope
+    type: integer
+    minimum: 0
+    maximum: 128
+    default: 0
+    mutable: yes
+    description: >
+      This defines the width of the transition from prelevel to postlevel luma 
+      value. Start point of transition in opacity value is threshold - slope and 
+      end point is thresholt + slope, values are forced in range 0 - 255.
+
+  - identifier: prelevel
+    title: Pre-Threshold Luma Level
+    type: integer
+    minimum: 0
+    maximum: 255
+    default: 0
+    mutable: yes
+    description: >
+      Opacity value before the transition in opacity value begins.
+
+  - identifier: postlevel
+    title: Post-Threshold Luma Level
+    type: integer
+    minimum: 0
+    maximum: 255
+    default: 255
+    mutable: yes
+    description: >
+      Opacity value after the transition in opacity value ends.
