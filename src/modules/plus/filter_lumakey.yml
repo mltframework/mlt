@@ -19,7 +19,7 @@ description: >
 parameters:
   - identifier: threshold
     title: Threshold
-    type: int
+    type: integer
     minimum: 0
     maximum: 255
     default: 128
@@ -30,7 +30,7 @@ parameters:
 
   - identifier: slope
     title: Slope
-    type: int
+    type: integer
     minimum: 0
     maximum: 128
     default: 0
@@ -42,7 +42,7 @@ parameters:
 
   - identifier: prelevel
     title: Pre-Threshold Luma Level
-    type: int
+    type: integer
     minimum: 0
     maximum: 255
     default: 0
@@ -52,7 +52,7 @@ parameters:
 
   - identifier: postlevel
     title: Post-Threshold Luma Level
-    type: float
+    type: integer
     minimum: 0
     maximum: 255
     default: 255
