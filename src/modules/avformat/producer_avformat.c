@@ -1288,14 +1288,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// This is the physical frame position in the source
 	int64_t req_position = ( int64_t )( position / mlt_producer_get_fps( producer ) * source_fps + 0.5 );
 
-	// Determines if we have to decode all frames in a sequence
-	// Temporary hack to improve intra frame only
-	int must_decode = !( codec_context->codec && codec_context->codec->name ) || (
-				  strcmp( codec_context->codec->name, "dnxhd" ) &&
-				  strcmp( codec_context->codec->name, "dvvideo" ) &&
-				  strcmp( codec_context->codec->name, "huffyuv" ) &&
-				  strcmp( codec_context->codec->name, "mjpeg" ) &&
-				  strcmp( codec_context->codec->name, "rawvideo" ) );
+	// Determines if we have to decode all frames in a sequence - when there temporal compression is used.
+	const AVCodecDescriptor *descriptor = codec_context->codec? avcodec_descriptor_get( codec_context->codec->id ) : NULL;
+	int must_decode = descriptor && !( descriptor->props & AV_CODEC_PROP_INTRA_ONLY );
 
 	double delay = mlt_properties_get_double( properties, "video_delay" );
 
@@ -1450,7 +1445,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				self->last_position = int_position;
 
 				// Decode the image
-				if ( must_decode || int_position >= req_position || !self->pkt.data )
+				if ( must_decode  || int_position >= req_position || !self->pkt.data )
 				{
 #ifdef VDPAU
 					if ( self->vdpau )
