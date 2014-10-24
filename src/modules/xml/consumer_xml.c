@@ -842,12 +842,6 @@ static void output_xml( mlt_consumer this )
 		free( cwd );
 	}
 
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
-	// Get the current locale
-	char *orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
-	setlocale( LC_NUMERIC, "C" );
-#endif
-
 	// Make the document
 	doc = xml_make_doc( this, service );
 
@@ -876,12 +870,6 @@ static void output_xml( mlt_consumer this )
 
 		xmlSaveFormatFileEnc( resource, doc, "utf-8", 1 );
 	}
-
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
-	// Restore the current locale
-	setlocale( LC_NUMERIC, orig_localename );
-	free( orig_localename );
-#endif
 
 	// Close the document
 	xmlFreeDoc( doc );
