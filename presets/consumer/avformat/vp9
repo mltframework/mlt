@@ -5,7 +5,6 @@ ar=48000
 ab=128k
 
 vcodec=libvpx-vp9
-strict=experimental
 vb=2M
 g=120
 bf=2
