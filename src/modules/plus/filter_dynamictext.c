@@ -100,7 +100,7 @@ static void get_frame_str( mlt_filter filter, mlt_frame frame, char* text )
 	strncat( text, s, MAX_TEXT_LEN - strlen( text ) - 1 );
 }
 
-static void get_filedate_str( mlt_filter filter, mlt_frame frame, char* text )
+static void get_filedate_str( const char* keyword, mlt_filter filter, mlt_frame frame, char* text )
 {
 	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -109,14 +109,20 @@ static void get_filedate_str( mlt_filter filter, mlt_frame frame, char* text )
 
 	if( !stat(filename, &file_info))
 	{
+		const char *format = "%Y/%m/%d";
+		int n = strlen( "filedate" ) + 1;
 		struct tm* time_info = gmtime( &(file_info.st_mtime) );
-		char date[11] = "";
-		strftime( date, 11, "%Y/%m/%d", time_info );
+		char *date = calloc( 1, MAX_TEXT_LEN );
+
+		if ( strlen( keyword ) > n )
+			format = &keyword[n];
+		strftime( date, MAX_TEXT_LEN, format, time_info );
 		strncat( text, date, MAX_TEXT_LEN - strlen( text ) - 1);
+		free( date );
 	}
 }
 
-static void get_localfiledate_str( mlt_filter filter, mlt_frame frame, char* text )
+static void get_localfiledate_str( const char* keyword, mlt_filter filter, mlt_frame frame, char* text )
 {
 	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -125,10 +131,16 @@ static void get_localfiledate_str( mlt_filter filter, mlt_frame frame, char* tex
 
 	if( !stat( filename, &file_info ) )
 	{
+		const char *format = "%Y/%m/%d";
+		int n = strlen( "localfiledate" ) + 1;
 		struct tm* time_info = localtime( &(file_info.st_mtime) );
-		char date[11] = "";
-		strftime( date, 11, "%Y/%m/%d", time_info );
+		char *date = calloc( 1, MAX_TEXT_LEN );
+
+		if ( strlen( keyword ) > n )
+			format = &keyword[n];
+		strftime( date, MAX_TEXT_LEN, format, time_info );
 		strncat( text, date, MAX_TEXT_LEN - strlen( text ) - 1);
+		free( date );
 	}
 }
 
@@ -176,13 +188,13 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 		{
 			get_frame_str( filter, frame, result );
 		}
-		else if ( !strcmp( keyword, "filedate" ) )
+		else if ( !strncmp( keyword, "filedate", 8 ) )
 		{
-			get_filedate_str( filter, frame, result );
+			get_filedate_str( keyword, filter, frame, result );
 		}
-		else if ( !strcmp( keyword, "localfiledate" ) )
+		else if ( !strncmp( keyword, "localfiledate", 13 ) )
 		{
-			get_localfiledate_str( filter, frame, result );
+			get_localfiledate_str( keyword, filter, frame, result );
 		}
 		else if ( !strncmp( keyword, "localtime", 9 ) )
 		{
