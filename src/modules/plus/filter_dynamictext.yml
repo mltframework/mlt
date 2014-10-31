@@ -31,11 +31,13 @@ parameters:
     default: > #trick to escape "#" character
       #timecode#
     widget: text
+
   - identifier: geometry
     title: Geometry
     type: geometry
     description: A set of X/Y coordinates by which to adjust the text.
     default: 0%/0%:100%x100%:100
+
   - identifier: family
     title: Font family
     type: string
@@ -45,6 +47,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: combo
+
   - identifier: size
     title: Font size
     type: integer
@@ -54,6 +57,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+
   - identifier: weight
     title: Font weight
     type: integer
@@ -64,6 +68,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+
   - identifier: fgcolour
     title: Foreground color
     type: string
@@ -75,6 +80,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+
   - identifier: bgcolour
     title: Background color
     type: string
@@ -86,6 +92,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+
   - identifier: olcolour
     title: Outline color
     type: string
@@ -96,6 +103,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+
   - identifier: outline
     title: Outline Width
     type: string
@@ -107,6 +115,7 @@ parameters:
     maximum: 3
     mutable: yes
     widget: spinner
+
   - identifier: pad
     title: Padding
     type: integer
@@ -116,6 +125,7 @@ parameters:
     default: 0
     mutable: yes
     widget: spinner
+
   - identifier: halign
     title: Horizontal alignment
     description: >
@@ -128,6 +138,7 @@ parameters:
       - right
     mutable: yes
     widget: combo
+
   - identifier: valign
     title: Vertical alignment
     description: >
