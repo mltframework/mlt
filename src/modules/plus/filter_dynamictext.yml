@@ -21,9 +21,14 @@ parameters:
     description: |
       The text to overlay. May include keywords enclosed in "#". 
       Keywords include:
-        * #timecode# - timecode of the frame (based on framerate and position)
-        * #frame#    - frame number of the frame
-        * #filedate# - modification date of the file
+        * #timecode#  - timecode of the frame (based on framerate and position)
+        * #frame#     - frame number of the frame
+        * #filedate#  - modification date of the file
+        * #localtime# - current system date and time
+      For the time-based keywords, you can include a strftime format string to
+      customize the output as long as you put some delimiter except "#" between
+      the keyword and the format string and the keyword comes first. For example,
+      "#localtime %I:%M:%S %p#" shows only the time in 12-hour format.
       Keywords may also be any frame property (e.g. #meta.media.0.codec.frame_rate#)
       The # may be escaped with "\".
     required: yes

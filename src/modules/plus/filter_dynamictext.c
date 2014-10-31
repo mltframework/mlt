@@ -132,6 +132,21 @@ static void get_localfiledate_str( mlt_filter filter, mlt_frame frame, char* tex
 	}
 }
 
+static void get_localtime_str( const char* keyword, char* text )
+{
+	const char *format = "%Y/%m/%d %H:%M:%S";
+	int n = strlen( "localtime" ) + 1;
+	time_t now = time( NULL );
+	struct tm* time_info = localtime( &now );
+	char *date = calloc( 1, MAX_TEXT_LEN );
+
+	if ( strlen( keyword ) > n )
+		format = &keyword[n];
+	strftime( date, MAX_TEXT_LEN, format, time_info );
+	strncat( text, date, MAX_TEXT_LEN - strlen( text ) - 1);
+	free( date );
+}
+
 static void get_resource_str( mlt_filter filter, mlt_frame frame, char* text )
 {
 	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
@@ -168,6 +183,10 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 		else if ( !strcmp( keyword, "localfiledate" ) )
 		{
 			get_localfiledate_str( filter, frame, result );
+		}
+		else if ( !strncmp( keyword, "localtime", 9 ) )
+		{
+			get_localtime_str( keyword, result );
 		}
 		else if ( !strcmp( keyword, "resource" ) )
 		{
