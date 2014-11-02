@@ -78,6 +78,8 @@ else
 		else
 			echo "- Libexif not found, disabling exif features (auto rotate)"
 		fi
+	else
+		echo "- Libexif not found, disabling exif features (auto rotate)"
 	fi
 
 	if [ -d "$qt_libdir" -a -d "$qt_includedir" ]

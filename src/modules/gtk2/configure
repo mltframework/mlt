@@ -84,6 +84,8 @@ else
 		else
 			echo "- Libexif not found, disabling exif features (auto rotate)"
 		fi
+	else
+		echo "- Libexif not found, disabling exif features (auto rotate)"
 	fi
 
 	exit 0
