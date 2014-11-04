@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 0.2
 type: consumer
 identifier: avformat
 title: FFmpeg Output
-version: 2
+version: 3
 copyright: Copyright (C) 2003-2014 Meltytech, LLC
 license: LGPL
 language: en
@@ -13,24 +13,43 @@ contributor:
 tags:
   - Audio
   - Video
-description: Write or stream audio and/or video using FFmpeg
+description: Write or stream audio and/or video using FFmpeg.
+notes: >
+  The avformat consumer uses the FFmpeg/libav libraries to encode to a file or
+  network stream. You can get a lot of information about how to encode with
+  FFmpeg all over the web including FFmpeg/libav's web site. With melt, you
+  simply need to add "-consumer avformat:output.file" to the command line
+  followed by the encoding parameters by translating ffmpeg's '-option value'
+  syntax to melt's 'option=value' syntax.
+
+  Not all ffmpeg options are supported. Some are very specific to
+  avconv/ffmpeg, the command line utility, and not an "AVOption" used in the
+  libraries. In some cases, there are ffmpeg options that are not AVOptions but
+  which closely resemble an existing MLT property. In that case, MLT supports
+  the ffmpeg option name. For example, ffmpeg's "-ac" is equivalent to the MLT
+  "channels" property. Therefore, the avformat consumer also supports the "ac"
+  property. Complete details are below.
+
+  Please note that the exact options depend on the version of libavformat and
+  libavcodec on your system. The following is based on FFmpeg n2.4.4.
+
 parameters:
-  - identifier: argument
-    title: File/URL
-    type: string
-    required: yes
-    widget: filesave
   - identifier: target
+    argument: yes
     title: File/URL
     type: string
-    description: This is not the same thing as the ffmpeg -target option!
-    readonly: yes
+    description: >
+      This is not the same thing as the ffmpeg -target option! If this is not
+      supplied then it will output to stdout.
+    widget: filesave
+
   - identifier: mlt_profile
     title: MLT Profile
     type: string
     description: >
       Choose a MLT basic video settings preset.
       This overrides a profile that may have been set elsewhere.
+
   - identifier: redirect
     title: Redirect I/O
     description: >
@@ -49,36 +68,45 @@ parameters:
     type: integer
     minimum: 0
     unit: pixels
+
   - identifier: height
     title: Height
     type: integer
     minimum: 0
     unit: pixels
+
+
   - identifier: display_aspect_num
     title: Display aspect ratio numerator
     type: integer
     minimum: 0
+
   - identifier: display_aspect_den
     title: Display aspect ratio denominator
     type: integer
     minimum: 0
+
   - identifier: display_ratio
     title: Display aspect ratio
     readonly: yes
+
   - identifier: sample_aspect_num
     title: Sample aspect ratio numerator
     type: integer
     minimum: 0
+
   - identifier: sample_aspect_den
     title: Sample aspect ratio denominator
     type: integer
     minimum: 1
+
   - identifier: progressive
     title: Progressive
     type: integer
     minimum: 0
     maximum: 1
     widget: checkbox
+
   - identifier: colorspace
     title: Colorspace
     type: integer
@@ -87,16 +115,19 @@ parameters:
       - 240 # SMPTE 240M
       - 601 # ITU-R BT.601
       - 709 # ITU-R BT.709
+
   - identifier: frame_rate_num
     title: Frame rate numerator
     type: integer
     minimum: 0
     unit: frames/second
+
   - identifier: frame_rate_den
     title: Frame rate denominator
     type: integer
     minimum: 1
     unit: frames/second
+
   - identifier: fps
     title: Frame rate
     readonly: yes
@@ -113,6 +144,7 @@ parameters:
       - onefield
       - yadif
       - yadif-nospatial
+
   - identifier: rescale
     title: Image scaler
     type: string
@@ -126,6 +158,7 @@ parameters:
       - sinc
       - lanczos
       - spline
+
   - identifier: frequency
     title: Audio sample rate
     type: integer
@@ -133,12 +166,14 @@ parameters:
     maximum: 256000
     default: 48000
     unit: Hz
+
   - identifier: channels
     title: Audio channels
     type: integer
     minimum: 1
     maximum: 16
     default: 2
+
   - identifier: channels.0
     title: Channels on track 1
     type: integer
@@ -146,6 +181,7 @@ parameters:
     minimum: 0
     maximum: 16
     default: 0
+
   - identifier: channels.1
     title: Channels on track 2
     type: integer
@@ -153,6 +189,7 @@ parameters:
     minimum: 0
     maximum: 16
     default: 0
+
   - identifier: channels.2
     title: Channels on track 3
     type: integer
@@ -160,6 +197,7 @@ parameters:
     minimum: 0
     maximum: 16
     default: 0
+
   - identifier: channels.3
     title: Channels on track 4
     type: integer
@@ -167,6 +205,7 @@ parameters:
     minimum: 0
     maximum: 16
     default: 0
+
   - identifier: channels.4
     title: Channels on track 5
     type: integer
@@ -174,6 +213,7 @@ parameters:
     minimum: 0
     maximum: 16
     default: 0
+
   - identifier: channels.5
     title: Channels on track 6
     type: integer
@@ -181,6 +221,7 @@ parameters:
     minimum: 0
     maximum: 16
     default: 0
+
   - identifier: channels.6
     title: Channels on track 7
     type: integer
@@ -188,6 +229,7 @@ parameters:
     minimum: 0
     maximum: 16
     default: 0
+
   - identifier: channels.7
     title: Channels on track 8
     type: integer
@@ -205,6 +247,7 @@ parameters:
     maximum: 1
     default: 1
     widget: checkbox
+
   - identifier: real_time
     title: Drop frames
     type: integer
@@ -214,6 +257,7 @@ parameters:
     default: -1
     widget: spinner
     unit: threads
+
   - identifier: prefill
     title: Pre-roll
     type: integer
@@ -221,6 +265,7 @@ parameters:
     minimum: 1
     default: 1
     unit: frames
+
   - identifier: buffer
     title: Buffer
     type: integer
@@ -239,12 +284,14 @@ parameters:
       This is a ffmpeg-compatible equivalent to the MLT profile and width and height parameters.
     format: WxH
     unit: pixels
+
   - identifier: aspect
     title: Aspect ratio
     type: string
     description: >
       This is a ffmpeg-compatible equivalent to the MLT profile and other aspect ratio parameters.
     format: numerator:denominator
+
   - identifier: deinterlace
     title: Deinterlace
     type: integer
@@ -252,12 +299,14 @@ parameters:
       This is a ffmpeg-compatible equivalent to the MLT profile and progressive parameter.
     minimum: 0
     maximum: 1
+
   - identifier: r
     title: Frame rate
     type: float
     description: >
       This is a ffmpeg-compatible equivalent to the MLT profile and frame rate parameters.
     minimum: 5.0
+
   - identifier: ac
     title: Audio channels
     type: integer
@@ -266,6 +315,7 @@ parameters:
     minimum: 1
     maximum: 16
     default: 2
+
   - identifier: ar
     title: Audio sample rate
     type: integer
@@ -285,55 +335,68 @@ parameters:
     default: 1
     widget: spinner
     unit: threads
+
   - identifier: aq
     title: Audio quality
     type: integer
     description: The meaning depends upon the codec.
+
   - identifier: dc
     title: Intra DC precision
     type: integer
     default: 8
+
   - identifier: muxdelay
     title: Muxer delay
     type: float
     description: Set the maximum demux-decode delay.
     default: 0.7
     unit: seconds
+
   - identifier: muxpreload
     title: Muxer preload
     type: float
     description: Set the initial demux-decode delay.
     default: 0.5
     unit: seconds
+
   - identifier: f
     title: Format
     type: string
     description: Use "list" to see the list of formats.
     default: mpeg
+
   - identifier: acodec
     title: Audio codec
     description: Use "list" to see the list of audio codecs.
     default: mp2
+
   - identifier: vcodec
     title: Video codec
     description: Use "list" to see the list of video codecs.
     default: mpeg2video
+
   - identifier: atag
     title: Audio FourCC
     type: string
+
   - identifier: apre
     title: Audio codec preset
     type: string
+
   - identifier: vpre
     title: Video codec preset
     type: string
+
   - identifier: fpre
     title: Format preset
     type: string
+
   - identifier: alang
     title: Audio language
     type: string
     description: Set the 3-character ISO 639 language code of the current audio stream.
+
   - identifier: pix_fmt
     title: Pixel format
     type: string
@@ -341,27 +404,33 @@ parameters:
       See 'ffmpeg -pix_fmt list' to see a list of values.
       Normally, this is not required, but some codecs support multiple pixel
       formats, especially chroma bit-depth.
+
   - identifier: qscale
     title: Video quantizer
     type: float
     description: Set a fixed video quantizer scale for constant quality VBR output.
+
   - identifier: vtag
     title: Video FourCC
     type: string
+
   - identifier: rc_override
     title: Rate control
     type: string
     format: start_frame,end_frame,qscale/...
     description: This is an override for specific intervals.
+
   - identifier: pass
     title: Pass
     type: integer
     description: Select the pass number for two-pass encoding.
     minimum: 1
     maximum: 2
+
   - identifier: passlogfile
     title: Two-pass log file
     type: string
+
   - identifier: vb
     title: Video bitrate
     type: string
@@ -369,18 +438,21 @@ parameters:
     description: >
       Normally this is an integer, but you can append a K suffix for convenience.
     minimum: 0
+
   - identifier: ab
     title: Audio bitrate
     type: string
     unit: bits/second
     description: >
       Normally this is an integer, but you can append a K suffix for convenience.
+
   - identifier: an
     title: Disable audio
     type: integer
     minimum: 0
     maximum: 1
     widget: checkbox
+
   - identifier: vn
     title: Disable video
     type: integer
