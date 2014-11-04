@@ -31,7 +31,7 @@ parameters:
     default: 2
     mutable: no
     widget: spinner
-    unit: "%"
+    unit: '%'
 
   - identifier: maxcount
     title: Maximal number of dust 

@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
 require 'erb'
 require 'yaml'
-require 'mlt'
+require './mlt'
 
+$folder = 'twiki'
 $repo = Mlt::Factory::init
 
 $optional_params = [
@@ -33,14 +34,13 @@ creator: <%= yml['creator'] %> %BR%
 % yml['contributor'] and yml['contributor'].each do |x|
 contributor: <%= x %> %BR%
 % end 
+<%= "copyright: #{yml['copyright']} %BR%\n" if yml['copyright'] %>
 <%= "license: #{yml['license']} %BR%\n" if yml['license'] %>
 <%= "URL: [[#{yml['url']}]] %BR%\n" if yml['url'] %>
 
 % if yml['notes']
 ---++ Notes
-%   yml['notes'].each do |x|
-<%= ERB::Util.h(x) %>
-%   end
+<%= ERB::Util.h(yml['notes']) %>
 % end
 
 % if yml['bugs']
@@ -89,7 +89,7 @@ def output(mlt_type, services, type_title)
   unsorted.sort().each do |name|
     meta = $repo.metadata(mlt_type, name)
     if meta.is_valid
-      filename = type_title + name.capitalize.gsub('.', '-')
+      filename = File.join($folder, type_title + name.capitalize.gsub('.', '-'))
       puts "Processing #{filename}"
       begin
         yml = YAML.load(meta.serialise_yaml)
@@ -101,7 +101,7 @@ def output(mlt_type, services, type_title)
           puts "Failed to write file for #{filename}"
         end
         index.puts "   * [[#{filename}][#{name}]]: #{meta.get('title')}\n"
-      rescue ArgumentError
+      rescue SyntaxError
           puts "Failed to parse YAML for #{filename}"
       end
     end
@@ -109,6 +109,8 @@ def output(mlt_type, services, type_title)
   index.puts '</noautolink>'
   index.close
 end
+
+Dir.mkdir($folder) if not Dir.exists?($folder)
 
 [
   [Mlt::Consumer_type, $repo.consumers, 'Consumer'],

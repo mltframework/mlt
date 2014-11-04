@@ -34,7 +34,7 @@ parameters:
     unit: pixel
 
   - identifier: every
-    title: "% of picture have a delta"
+    title: '% of picture have a delta'
     type: integer
     description: n'th % have a Y-Delta in picture
     readonly: no
@@ -44,7 +44,7 @@ parameters:
     default: 20
     mutable: no
     widget: spinner
-    unit: "%"
+    unit: '%'
 
   - identifier: brightnessdelta_up
     title: Brightness up
@@ -81,7 +81,7 @@ parameters:
     default: 70
     mutable: no
     widget: spinner
-    unit: "%"
+    unit: '%'
 
   - identifier: unevendevelop_up
     title: Unevendevelop up
@@ -118,4 +118,4 @@ parameters:
     default: 70
     mutable: no
     widget: spinner
-    unit: "%"
+    unit: '%'
