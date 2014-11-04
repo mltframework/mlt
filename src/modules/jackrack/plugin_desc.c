@@ -5,8 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2004-2014 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

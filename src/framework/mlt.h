@@ -2,9 +2,7 @@
  * \file mlt.h
  * \brief header file for lazy client and implementation code :-)
  *
- * Copyright (C) 2003-2010 Ushodaya Enterprises Limited
- * \author Charles Yates <charles.yates@pandora.be>
- * \author Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

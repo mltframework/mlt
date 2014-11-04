@@ -3,8 +3,7 @@
  * \brief geometry animation API (deprecated)
  * \deprecated use mlt_animation_s instead
  *
- * Copyright (C) 2004-2005 Ushodaya Enterprises Limited
- * \author Charles Yates <charles.yates@pandora.be>
+ * Copyright (C) 2004-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

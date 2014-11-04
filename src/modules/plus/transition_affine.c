@@ -1,8 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2010 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

@@ -3,7 +3,7 @@ type: producer
 identifier: sdl_image
 title: SDL Image
 version: 1
-copyright: Visual Media FX ?
+copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
 language: en

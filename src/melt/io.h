@@ -1,7 +1,6 @@
 /*
  * io.h -- melt input/output
- * Copyright (C) 2002-2003 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Copyright (C) 2002-2014 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

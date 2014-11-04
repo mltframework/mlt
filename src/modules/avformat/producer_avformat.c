@@ -1,9 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
- * Author: Dan Dennedy <dan@dennedy.org>
- * Much code borrowed from ffmpeg.c: Copyright (c) 2000-2003 Fabrice Bellard
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

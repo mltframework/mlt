@@ -3,7 +3,7 @@ type: filter
 identifier: jackrack
 title: JACK
 version: 1
-copyright: Copyright (C) 2004-2011 Ushodaya Enterprises Limited
+copyright: Copyright (C) 2004-2014 Meltytech, LLC
 license: GPLv2
 language: en
 url: http://www.ladspa.org/

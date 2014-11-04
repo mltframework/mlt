@@ -1,7 +1,6 @@
 /*
  * producer_kino.c -- a DV file format parser
- * Copyright (C) 2005 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Copyright (C) 2005-2014 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -3,7 +3,7 @@ type: filter
 identifier: resize
 title: Pad
 version: 2
-copyright: Ushodaya Enterprises Limited
+copyright: Meltytech, LLC
 creator: Charles Yates <charles.yates@pandora.be>
 license: LGPLv2.1
 language: en

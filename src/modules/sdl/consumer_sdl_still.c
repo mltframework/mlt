@@ -1,7 +1,6 @@
 /*
  * consumer_sdl_still.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2003-2004, 2010 Ushodaya Enterprises Limited
- * Author: Charles Yates
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

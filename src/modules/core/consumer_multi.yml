@@ -3,7 +3,7 @@ type: consumer
 identifier: multi
 title: Multiple outputs
 version: 1
-copyright: Copyright (C) 2011 Ushodaya Enterprises Limited
+copyright: Copyright (C) 2011-2014 Meltytech, LLC
 license: LGPL
 language: en
 creator: Dan Dennedy

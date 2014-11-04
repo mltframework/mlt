@@ -3,7 +3,7 @@ type: consumer
 identifier: libdv
 title: libdv (*deprecated*)
 version: 1
-copyright: Ushodaya Enterprises Limited
+copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
 language: en

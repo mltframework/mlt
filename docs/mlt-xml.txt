@@ -1,7 +1,6 @@
 MLT XML Schema Documentation
 
-Copyright (C) 2004-2009 Ushodaya Enterprised Limited
-Authors: Charles Yates <charles.yates@pandora.be>
+Copyright (C) 2004-2014 Meltytech, LLC
 Last Revision: 2009-05-08
 
 

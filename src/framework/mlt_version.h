@@ -2,8 +2,7 @@
  * \file mlt_version.h
  * \brief contains version information
  *
- * Copyright (C) 2010-2013 Ushodaya Enterprises Limited
- * \author Jonathan Thomas <Jonathan.Oomph@gmail.com>
+ * Copyright (C) 2010-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

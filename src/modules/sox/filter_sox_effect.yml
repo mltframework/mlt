@@ -3,7 +3,7 @@ type: filter
 identifier: sox
 title: sox
 version: 1
-copyright: Copyright (C) 2003-2011 Ushodaya Enterprises Limited
+copyright: Meltytech, LLC
 license: LGPL
 language: en
 url: http://sox.sourceforge.net/

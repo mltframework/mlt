@@ -3,8 +3,7 @@
  * \brief a field for planting multiple transitions and services
  * \see mlt_field_s
  *
- * Copyright (C) 2003-2009 Ushodaya Enterprises Limited
- * \author Charles Yates <charles.yates@pandora.be>
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

@@ -3,8 +3,7 @@
  * \brief string tokeniser
  * \see mlt_tokeniser_s
  *
- * Copyright (C) 2002-2009 Ushodaya Enterprises Limited
- * \author Charles Yates <charles.yates@pandora.be>
+ * Copyright (C) 2002-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

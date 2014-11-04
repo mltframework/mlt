@@ -4,7 +4,7 @@ identifier: gtk_preview
 title: GTK+
 description: A wrapper for sdl_preview that makes it easy to embed in GTK+ applications.
 version: 1
-copyright: Ushodaya Enterprises Limited
+copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
 language: en

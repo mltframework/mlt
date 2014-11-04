@@ -1,7 +1,6 @@
 /*
  * filter_region.c -- region filter
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

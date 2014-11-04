@@ -1,8 +1,6 @@
 Melt Documentation
 
-Copyright (C) 2004-2009 Ushodaya Enterprised Limited
-Author: Charles Yates <charles.yates@pandora.be>
-Author: Dan Dennedy <dan@dennedy.org>
+Copyright (C) 2004-2014 Meltytech, LLC
 Last Revision: 2011-04-03
 
 

@@ -1,7 +1,6 @@
 /*
  * producer_ladspa.c -- LADSPA plugin producer
- * Copyright (C) 2013 Ushodaya Enterprises Limited
- * Author: Brian Matherly <pez4brian@yahoo.com>
+ * Copyright (C) 2013-2014 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

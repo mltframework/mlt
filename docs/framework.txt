@@ -1,7 +1,6 @@
 Framework Documentation
 
-Copyright (C) 2004-2009 Ushodaya Enterprises Limited
-Author: Charles Yates <charles.yates@pandora.be>
+Copyright (C) 2004-2014 Meltytech, LLC
 Last Revision: 2005-05-08
 
 

@@ -1,7 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>

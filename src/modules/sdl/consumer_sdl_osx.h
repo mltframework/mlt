@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_osx.m -- An OS X compatibility shim for SDL
- * Copyright (C) 2010 Ushodaya Enterprises Limited
+ * Copyright (C) 2010-2014 Meltytech, LLC
  * Author: Dan Dennedy
  *
  * This library is free software; you can redistribute it and/or

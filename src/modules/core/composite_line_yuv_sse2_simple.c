@@ -1,7 +1,6 @@
 /*
  * composite_line_yuv_sse2_simple.c
- * Copyright (C) 2003-2004 Ushodaya Enterprises Limited
- * Author: Maksym Veremeyenko <verem@m1stereo.tv>
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

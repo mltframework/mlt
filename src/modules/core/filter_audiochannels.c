@@ -1,7 +1,6 @@
 /*
  * filter_audiochannels.c -- convert from one audio format to another
- * Copyright (C) 2009-2012 Ushodaya Enterprises Limited
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2009-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

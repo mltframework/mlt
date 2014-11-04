@@ -1,7 +1,7 @@
 /*
  * transition_matte.c -- replace alpha channel of track
  *
- * Copyright (C) 2003-2014 Ushodaya Enterprises Limited
+ * Copyright (C) 2003-2014 Meltytech, LLC
  * Author: Maksym Veremeyenko <verem@m1stereo.tv>
  *
  * This library is free software; you can redistribute it and/or

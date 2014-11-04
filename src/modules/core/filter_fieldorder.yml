@@ -4,7 +4,7 @@ identifier: fieldorder
 title: Field order
 description: Correct the field order of interlaced video.
 version: 1
-copyright: Ushodaya Enterprises Limited
+copyright: Meltytech, LLC
 creator: Dan Dennedy <dan@dennedy.org>
 license: LGPLv2.1
 language: en

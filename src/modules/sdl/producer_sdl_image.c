@@ -1,7 +1,6 @@
 /*
  * producer_sdl_image.c -- Image loader which wraps SDL_image
- * Copyright (C) 2005 Visual Media FX
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2005-2014 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
