@@ -1657,7 +1657,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 			*( strrchr( root, '/' ) ) = '\0';
 
 			// If we don't have an absolute path here, we're heading for disaster...
-			if ( root[ 0 ] != '/' )
+			if ( root[ 0 ] != '/' && !strchr( root, ':' ) )
 			{
 				char *cwd = getcwd( NULL, 0 );
 				char *real = malloc( strlen( cwd ) + strlen( root ) + 2 );
