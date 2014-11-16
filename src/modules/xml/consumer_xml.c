@@ -732,7 +732,8 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	// If we have root, then deal with it now
 	if ( mlt_properties_get( properties, "root" ) != NULL )
 	{
-		xmlNewProp( root, _x("root"), _x(mlt_properties_get( properties, "root" )) );
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "no_root" ) )
+			xmlNewProp( root, _x("root"), _x(mlt_properties_get( properties, "root" )) );
 		context->root = strdup( mlt_properties_get( properties, "root" ) );
 	}
 	else

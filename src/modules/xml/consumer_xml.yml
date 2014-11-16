@@ -84,6 +84,16 @@ parameters:
     default: 0
     widget: checkbox
 
+  - identifier: no_root
+    title: No root attribute
+    type: integer
+    description: >
+      Set this to disable the output of the root attribute on the root element.
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
+
   - identifier: time_format
     title: Time format
     type: string
