@@ -22,3 +22,6 @@ delay0r
 threelay0r
 twolay0r
 select0r
+keyspillm0pup
+alpha0ps
+
