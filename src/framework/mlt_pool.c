@@ -388,19 +388,26 @@ void mlt_pool_release( void *release )
 void mlt_pool_close( )
 {
 #ifdef _MLT_POOL_CHECKS_
-	// Stats dump on close
-	int i = 0;
-	for ( i = 0; i < mlt_properties_count( pools ); i ++ )
-	{
-		mlt_pool pool = mlt_properties_get_data_at( pools, i, NULL );
-		if ( pool->count )
-			mlt_log( NULL, MLT_LOG_DEBUG, "%s: size %d allocated %d returned %d %c\n", __FUNCTION__,
-				pool->size, pool->count, mlt_deque_count( pool->stack ),
-				pool->count !=  mlt_deque_count( pool->stack ) ? '*' : ' ' );
-	}
+	mlt_pool_stat( );
 #endif
 
 	// Close the properties
 	mlt_properties_close( pools );
 }
 
+void mlt_pool_stat( )
+{
+	// Stats dump
+	int i = 0, c = mlt_properties_count( pools );
+
+	mlt_log( NULL, MLT_LOG_VERBOSE, "%s: count %d\n", __FUNCTION__, c);
+
+	for ( i = 0; i < c; i ++ )
+	{
+		mlt_pool pool = mlt_properties_get_data_at( pools, i, NULL );
+		if ( pool->count )
+			mlt_log_verbose( NULL, "%s: size %d allocated %d returned %d %c\n", __FUNCTION__,
+				pool->size, pool->count, mlt_deque_count( pool->stack ),
+				pool->count !=  mlt_deque_count( pool->stack ) ? '*' : ' ' );
+	}
+}
