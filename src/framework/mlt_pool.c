@@ -361,7 +361,10 @@ void mlt_pool_purge( )
 
 		// We'll free all unused items now
 		while ( ( release = mlt_deque_pop_back( self->stack ) ) != NULL )
+		{
 			mlt_free( ( char * )release - sizeof( struct mlt_release_s ) );
+			self->count--;
+		}
 
 		// Unlock the pool
 		pthread_mutex_unlock( &self->lock );
