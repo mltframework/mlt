@@ -121,6 +121,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Only continue if we have both producer and composite
 	if ( composite != NULL && producer != NULL )
 	{
+		// Save the frame position
+		mlt_position original_frame_position = mlt_frame_get_position( frame );
+
+		// Process all remaining filters
+		*format = mlt_image_yuv422;
+		error |= mlt_frame_get_image( frame, image, format, width, height, 0 );
+		error |= mlt_frame_set_image( frame, *image, mlt_image_format_size( *format, *width, *height, 0 ), NULL );
+
 		// Get the service of the producer
 		mlt_service service = MLT_PRODUCER_SERVICE( producer );
 
@@ -204,6 +212,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Close the b frame
 		mlt_frame_close( b_frame );
+
+		// Restore the frame position
+		mlt_frame_set_position( frame, original_frame_position );
 	}
 	else
 	{
