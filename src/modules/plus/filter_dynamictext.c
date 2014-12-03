@@ -281,19 +281,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the b frame and process with transition if successful
 	if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &text_frame, 0 ) == 0 )
 	{
-		// Process all remaining filters
-		*format = mlt_image_yuv422;
-		error |= mlt_frame_get_image( frame, image, format, width, height, 0 );
-		error |= mlt_frame_set_image( frame, *image, mlt_image_format_size( *format, *width, *height, 0 ), NULL );
-
-		// Save the frame position
-		mlt_position original_frame_position = mlt_frame_get_position( frame );
+		// Get the a and b frame properties
+		mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
+		mlt_properties b_props = MLT_FRAME_PROPERTIES( text_frame );
 
 		// Set the frame and text_frame to be in the same position and have same consumer requirements
 		mlt_frame_set_position( text_frame, position );
 		mlt_frame_set_position( frame, position );
-		mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
-		mlt_properties b_props = MLT_FRAME_PROPERTIES( text_frame );
 		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) );
 
 		// Apply all filters that are attached to this filter to the b frame
@@ -303,13 +297,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_transition_process( transition, frame, text_frame );
 
 		// Get the image
-		error |= mlt_frame_get_image( frame, image, format, width, height, writable );
+		*format = mlt_image_yuv422;
+		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 		// Close the b frame
 		mlt_frame_close( text_frame );
-
-		// Restore the frame position
-		mlt_frame_set_position( frame, original_frame_position );
 	}
 
 	return error;
