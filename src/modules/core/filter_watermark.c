@@ -118,11 +118,18 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
+	// Process all remaining filters first
+	*format = mlt_image_yuv422;
+	error = mlt_frame_get_image( frame, image, format, width, height, 0 );
+
 	// Only continue if we have both producer and composite
-	if ( composite != NULL && producer != NULL )
+	if ( !error && composite != NULL && producer != NULL )
 	{
 		// Get the service of the producer
 		mlt_service service = MLT_PRODUCER_SERVICE( producer );
+
+		// Create a temporary frame so the original stays in tact.
+		mlt_frame a_frame = mlt_frame_clone( frame, 0 );
 
 		// We will get the 'b frame' from the producer
 		mlt_frame b_frame = NULL;
@@ -134,13 +141,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_producer_seek( producer, position );
 
 		// Resetting position to appease the composite transition
-		mlt_frame_set_position( frame, position );
+		mlt_frame_set_position( a_frame, position );
 
 		// Get the b frame and process with composite if successful
 		if ( mlt_service_get_frame( service, &b_frame, 0 ) == 0 )
 		{
 			// Get the a and b frame properties
-			mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
+			mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 			mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 			mlt_profile profile = mlt_service_profile( service );
 
@@ -151,8 +158,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			// Check for the special case - no aspect ratio means no problem :-)
 			if ( mlt_frame_get_aspect_ratio( b_frame ) == 0 )
 				mlt_frame_set_aspect_ratio( b_frame, mlt_profile_sar( profile ) );
-			if ( mlt_frame_get_aspect_ratio( frame ) == 0 )
-				mlt_frame_set_aspect_ratio( frame, mlt_profile_sar( profile ) );
+			if ( mlt_frame_get_aspect_ratio( a_frame ) == 0 )
+				mlt_frame_set_aspect_ratio( a_frame, mlt_profile_sar( profile ) );
 
 			if ( mlt_properties_get_int( properties, "distort" ) )
 			{
@@ -168,10 +175,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), b_frame, 0 );
 
 				// Process the frame
-				mlt_transition_process( composite, frame, b_frame );
+				mlt_transition_process( composite, a_frame, b_frame );
 
 				// Get the image
-				error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+				error = mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 			}
 			else
 			{
@@ -181,7 +188,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
 				if ( rescale == NULL || !strcmp( rescale, "none" ) )
 					rescale = "hyper";
-				mlt_transition_process( composite, b_frame, frame );
+				mlt_transition_process( composite, b_frame, a_frame );
 				mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
 				mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 				mlt_properties_set( a_props, "rescale.interp", rescale );
@@ -202,13 +209,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			}
 		}
 
-		// Close the b frame
+		// Close the temporary frames
+		mlt_frame_close( a_frame );
 		mlt_frame_close( b_frame );
-	}
-	else
-	{
-		// Get the image from the frame without running fx
-		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	}
 
 	return error;
