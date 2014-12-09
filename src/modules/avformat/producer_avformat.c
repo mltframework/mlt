@@ -2163,6 +2163,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 	// Get the producer fps
 	double fps = mlt_producer_get_fps( self->parent );
+	if ( mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "producer_consumer_fps" ) )
+		fps = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame), "producer_consumer_fps" );
 
 	// Number of frames to ignore (for ffwd)
 	int ignore[ MAX_AUDIO_STREAMS ] = { 0 };
