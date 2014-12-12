@@ -55,7 +55,7 @@ namespace Mlt
 			int seek( const char* time );
 			int position( );
 			int frame( );
-			char* frame_time( mlt_time_format = mlt_time_smpte );
+			char* frame_time( mlt_time_format = mlt_time_smpte_df );
 			int set_speed( double speed );
 			int pause( );
 			double get_speed( );
@@ -64,7 +64,7 @@ namespace Mlt
 			int get_in( );
 			int get_out( );
 			int get_length( );
-			char* get_length_time( mlt_time_format = mlt_time_smpte );
+			char* get_length_time( mlt_time_format = mlt_time_smpte_df );
 			int get_playtime( );
 			Producer *cut( int in = 0, int out = -1 );
 			bool is_cut( );

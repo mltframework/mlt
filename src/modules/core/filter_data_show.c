@@ -209,7 +209,7 @@ static int process_feed( mlt_properties feed, mlt_filter filter, mlt_frame frame
 									// special case: replace #timecode# with current frame timecode
 									mlt_position frames = mlt_properties_get_position( feed, "position" );
 									mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-									char *s = mlt_properties_frames_to_time( properties, frames, mlt_time_smpte );
+									char *s = mlt_properties_frames_to_time( properties, frames, mlt_time_smpte_df );
 									if ( s )
 										strncat( result, s, sizeof( result ) - strlen( result ) - 1 );
 								}

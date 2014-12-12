@@ -82,11 +82,11 @@ static int get_next_token(char* str, int* pos, char* token, int* is_keyword)
 	return 1;
 }
 
-static void get_timecode_str( mlt_filter filter, mlt_frame frame, char* text )
+static void get_timecode_str( mlt_filter filter, mlt_frame frame, char* text, mlt_time_format time_format )
 {
 	mlt_position frames = mlt_frame_get_position( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	char *s = mlt_properties_frames_to_time( properties, frames, mlt_time_smpte );
+	char *s = mlt_properties_frames_to_time( properties, frames, time_format );
 	if ( s )
 		strncat( text, s, MAX_TEXT_LEN - strlen( text ) - 1 );
 }
@@ -179,9 +179,13 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 		{
 			strncat( result, keyword, MAX_TEXT_LEN - strlen( result ) - 1 );
 		}
-		else if ( !strcmp( keyword, "timecode" ) )
+		else if ( !strcmp( keyword, "timecode" ) || !strcmp( keyword, "smpte_df" ) )
 		{
-			get_timecode_str( filter, frame, result );
+			get_timecode_str( filter, frame, result, mlt_time_smpte_df );
+		}
+		else if ( !strcmp( keyword, "smpte_ndf" ) )
+		{
+			get_timecode_str( filter, frame, result, mlt_time_smpte_ndf );
 		}
 		else if ( !strcmp( keyword, "frame" ) )
 		{

@@ -189,7 +189,7 @@ private Q_SLOTS:
         p.set("key", timeString);
         QCOMPARE(p.get_int("key"), 1023829);
         p.set("key", 1023829);
-        QCOMPARE(p.get_time("key", mlt_time_smpte), timeString);
+        QCOMPARE(p.get_time("key", mlt_time_smpte_df), timeString);
     }
 
     void SetAndGetTimeClock()

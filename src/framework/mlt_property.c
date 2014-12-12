@@ -842,12 +842,12 @@ void mlt_property_pass( mlt_property self, mlt_property that )
  * \param[out] s the string to write into - must have enough space to hold largest time string
  */
 
-static void time_smpte_from_frames( int frames, double fps, char *s )
+static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 {
 	int hours, mins, secs;
 	char frame_sep = ':';
 
-	if ( fps == 30000.0/1001.0 )
+	if ( drop && fps == 30000.0/1001.0 )
 	{
 		fps = 30.0;
 		int i, max_frames = frames;
@@ -911,6 +911,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 {
 	char *orig_localename = NULL;
 	const char *localename = "C";
+	int frames = 0;
 
 	// Optimization for mlt_time_frames
 	if ( format == mlt_time_frames )
@@ -952,38 +953,33 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	{
 		self->types |= mlt_prop_string;
 		self->prop_string = malloc( 32 );
-		if ( format == mlt_time_clock )
-			time_clock_from_frames( self->prop_int, fps, self->prop_string );
-		else
-			time_smpte_from_frames( self->prop_int, fps, self->prop_string );
+		frames = self->prop_int;
 	}
 	else if ( self->types & mlt_prop_position )
 	{
 		self->types |= mlt_prop_string;
 		self->prop_string = malloc( 32 );
-		if ( format == mlt_time_clock )
-			time_clock_from_frames( (int) self->prop_position, fps, self->prop_string );
-		else
-			time_smpte_from_frames( (int) self->prop_position, fps, self->prop_string );
+		frames = (int) self->prop_position;
 	}
 	else if ( self->types & mlt_prop_double )
 	{
 		self->types |= mlt_prop_string;
 		self->prop_string = malloc( 32 );
-		if ( format == mlt_time_clock )
-			time_clock_from_frames( self->prop_double, fps, self->prop_string );
-		else
-			time_smpte_from_frames( self->prop_double, fps, self->prop_string );
+		frames = self->prop_double;
 	}
 	else if ( self->types & mlt_prop_int64 )
 	{
 		self->types |= mlt_prop_string;
 		self->prop_string = malloc( 32 );
-		if ( format == mlt_time_clock )
-			time_clock_from_frames( (int) self->prop_int64, fps, self->prop_string );
-		else
-			time_smpte_from_frames( (int) self->prop_int64, fps, self->prop_string );
+		frames = (int) self->prop_int64;
 	}
+
+	if ( format == mlt_time_clock )
+		time_clock_from_frames( frames, fps, self->prop_string );
+	else if ( format == mlt_time_smpte_ndf )
+		time_smpte_from_frames( frames, fps, self->prop_string, 0 );
+	else // Use smpte drop frame by default
+		time_smpte_from_frames( frames, fps, self->prop_string, 1 );
 
 	// Restore the current locale
 	if ( locale )
