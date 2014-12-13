@@ -71,6 +71,7 @@ typedef enum
 	mlt_time_frames = 0, /**< frame count */
 	mlt_time_clock,      /**< SMIL clock-value as [[hh:]mm:]ss[.fraction] */
 	mlt_time_smpte_df,   /**< SMPTE timecode as [[[hh:]mm:]ss{:|;}]frames */
+	mlt_time_smpte = mlt_time_smpte_df,   /**< Deprecated */
 	mlt_time_smpte_ndf   /**< SMPTE NDF timecode as [[[hh:]mm:]ss:]frames */
 }
 mlt_time_format;
