@@ -100,8 +100,10 @@ parameters:
     description: Output time-based values as timecode or clock formats.
     values:
       - frames
-      - smpte # or SMPTE
-      - timecode # same as smpte
+      - smpte_df # SMPTE drop-frame timecode
+      - smpte_ndf # SMPTE non-drop-frame timecode
+      - smpte # or SMPTE - same as smpte_df
+      - timecode # same as smpte_df
       - clock # or CLOCK
     default: frames
     widget: dropdown

@@ -746,8 +746,10 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	context->no_meta = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "no_meta" );
 	const char *time_format = mlt_properties_get( MLT_CONSUMER_PROPERTIES( consumer ), "time_format" );
 	if ( time_format && ( !strcmp( time_format, "smpte" ) || !strcmp( time_format, "SMPTE" )
-			|| !strcmp( time_format, "timecode" ) ) )
+			|| !strcmp( time_format, "timecode" ) || !strcmp( time_format, "smpte_df" ) ) )
 		context->time_format = mlt_time_smpte_df;
+	else if ( time_format && ( !strcmp( time_format, "smpte_ndf" ) ) )
+		context->time_format = mlt_time_smpte_ndf;
 	else if ( time_format && ( !strcmp( time_format, "clock" ) || !strcmp( time_format, "CLOCK" ) ) )
 		context->time_format = mlt_time_clock;
 
