@@ -41,6 +41,7 @@ else
 	fi
 
 	export without_kde=
+	export without_opengl=
 
 	for i in "$@"
 	do
@@ -104,8 +105,16 @@ else
 		# Qt5 on Linux, BSD, or Windows
 		if [ -f "$qt_libdir/libQt5Core.so" ] || [ -f "$qt_libdir/libQt5Core.a" ]
 		then
-			echo QTCXXFLAGS=-I$qt_includedir -I$qt_includedir/QtCore -I$qt_includedir/QtGui -I$qt_includedir/QtXml -I$qt_includedir/QtSvg -I$qt_includedir/QtOpenGL -I$qt_includedir/QtWidgets >> config.mak
-			echo QTLIBS=-Wl,-rpath-link,"$qt_libdir" -L"$qt_libdir" -lQt5Core -lQt5Gui -lQt5Xml -lQt5Svg -lQt5OpenGL -lQt5Widgets >> config.mak
+			echo QTCXXFLAGS=-I$qt_includedir -I$qt_includedir/QtCore -I$qt_includedir/QtGui -I$qt_includedir/QtXml -I$qt_includedir/QtSvg -I$qt_includedir/QtWidgets >> config.mak
+			echo QTLIBS=-Wl,-rpath-link,"$qt_libdir" -L"$qt_libdir" -lQt5Core -lQt5Gui -lQt5Xml -lQt5Svg -lQt5Widgets >> config.mak
+			if [ -f "$qt_libdir/libQt5OpenGL.so" ] || [ -f "$qt_libdir/libQt5OpenGL.a" ]
+			then
+				echo QTCXXFLAGS+=-I$qt_includedir/QtOpenGL >> config.mak
+				echo QTLIBS+=-lQt5OpenGL >> config.mak
+			else
+				echo "- Qt5OpenGL not found: disabling"
+				without_opengl=true
+			fi
 		# Qt5 on OS X
 		elif [ -d "$qt_libdir/QtWidgets.framework" ]
 		then
@@ -146,13 +155,27 @@ else
 			if [ $? -eq 0 ]
 			then
 				echo "- Qt version 5.x detected"
-				echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5OpenGL Qt5Widgets) >> config.mak
-				echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5OpenGL Qt5Widgets) >> config.mak
+				echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
+				echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
+				pkg-config --exists 'Qt5OpenGL'
+				if [ $? -eq 0 ]
+				then
+					echo QTCXXFLAGS+=$(pkg-config --cflags Qt5OpenGL) >> config.mak
+					echo QTLIBS+=$(pkg-config --libs Qt5OpenGL) >> config.mak
+				else
+					echo "- Qt5OpenGL not found: disabling"
+					without_opengl=true
+				fi
 			else
 				echo "- Qt not found - disabling"
 				touch ../disable-qt
 			fi
 		fi
+	fi
+
+	if [ "$without_opengl" = "" ]
+	then
+		echo "USE_QT_OPENGL=1" >> config.mak
 	fi
 
 	if [ "$without_kde" = "" ]

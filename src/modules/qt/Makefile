@@ -11,8 +11,12 @@ OBJS = factory.o producer_qimage.o producer_kdenlivetitle.o
 CPPOBJS = common.o \
 	qimage_wrapper.o \
 	kdenlivetitle_wrapper.o \
-	consumer_qglsl.o \
 	producer_qtext.o
+
+ifdef USE_QT_OPENGL
+	CPPOBJS += consumer_qglsl.o
+	CFLAGS += -DUSE_QT_OPENGL
+endif
 
 ifdef GPL3
 	CPPOBJS += transition_vqm.o
