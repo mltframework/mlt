@@ -38,6 +38,47 @@
 #define INNER_RING_RATIO    80
 #define TEXT_SIZE_RATIO     70
 
+typedef struct
+{
+	mlt_position position;
+	int fps;
+	int hours;
+	int minutes;
+	int seconds;
+	int frames;
+	char sep; // Either : or ; (for ndf)
+} time_info;
+
+static void get_time_info( mlt_producer producer, mlt_frame frame, time_info* info )
+{
+	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+	mlt_position position = mlt_frame_original_position( frame );
+
+	info->fps = ceil( mlt_producer_get_fps( producer ) );
+
+	char* direction = mlt_properties_get( producer_properties, "direction" );
+	if( !strcmp( direction, "down" ) )
+	{
+		mlt_position out = mlt_properties_get_int( producer_properties, "out" );
+		info->position = out - position;
+	}
+	else
+	{
+		info->position = position;
+	}
+
+	char* tc_str = NULL;
+	if( mlt_properties_get_int( producer_properties, "drop" ) )
+	{
+		tc_str = mlt_properties_frames_to_time( producer_properties, info->position, mlt_time_smpte_df );
+	}
+	else
+	{
+		tc_str = mlt_properties_frames_to_time( producer_properties, info->position, mlt_time_smpte_ndf );
+	}
+	sscanf( tc_str, "%02d:%02d:%02d%c%d", &info->hours, &info->minutes, &info->seconds, &info->sep, &info->frames );
+}
+
 static inline void mix_pixel( uint8_t* image, int width, int x, int y, int value, float mix )
 {
 	uint8_t* p = image + (( y * width ) + x ) * 4;
@@ -78,13 +119,14 @@ static void fill_beep( mlt_properties producer_properties, float* buffer, int fr
 
 static int producer_get_audio( mlt_frame frame, int16_t** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
 {
-	mlt_producer producer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_producer_count", NULL );
+	mlt_producer producer = (mlt_producer)mlt_frame_pop_audio( frame );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	char* sound = mlt_properties_get( producer_properties, "sound" );
 	double fps = mlt_producer_get_fps( producer );
-	int position = mlt_frame_get_position( frame );
+	mlt_position position = mlt_frame_original_position( frame );
 	int size = 0;
 	int do_beep = 0;
+	time_info info;
 
 	if( fps == 0 ) fps = 25;
 
@@ -98,33 +140,26 @@ static int producer_get_audio( mlt_frame frame, int16_t** buffer, mlt_audio_form
 	size = *samples * *channels * sizeof( float );
 	*buffer = mlt_pool_alloc( size );
 
+	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+
+	get_time_info( producer, frame, &info );
+
 	// Determine if this should be a tone or silence.
 	if( strcmp( sound, "none") )
 	{
 		if( !strcmp( sound, "2pop" ) )
 		{
-			int out = mlt_properties_get_int( producer_properties, "out" );
-			int frames = out - position;
+			mlt_position out = mlt_properties_get_int( producer_properties, "out" );
+			mlt_position frames = out - position;
 
-			if( frames == lrint( fps * 2 ) )
+			if( frames == ( info.fps * 2 ) )
 			{
 				do_beep = 1;
 			}
 		}
 		else if( !strcmp( sound, "frame0" ) )
 		{
-			int frames = position;
-
-			// Apply the direction
-			char* direction = mlt_properties_get( producer_properties, "direction" );
-			if( !strcmp( direction, "down" ) )
-			{
-				int out = mlt_properties_get_int( producer_properties, "out" );
-				frames = out - position;
-			}
-
-			frames = position % lrint( fps );
-			if( frames == 0 )
+			if( info.frames == 0 )
 			{
 				do_beep = 1;
 			}
@@ -140,6 +175,8 @@ static int producer_get_audio( mlt_frame frame, int16_t** buffer, mlt_audio_form
 		// Fill silence.
 		memset( *buffer, 0, size );
 	}
+
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Set the buffer for destruction
 	mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
@@ -171,7 +208,7 @@ static mlt_frame get_background_frame( mlt_producer producer )
 	return bg_frame;
 }
 
-static mlt_frame get_text_frame( mlt_producer producer, mlt_position position )
+static mlt_frame get_text_frame( mlt_producer producer, time_info* info  )
 {
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	mlt_producer text_producer = mlt_properties_get_data( producer_properties, "_text_producer", NULL );
@@ -203,46 +240,31 @@ static mlt_frame get_text_frame( mlt_producer producer, mlt_position position )
 	if( text_producer )
 	{
 		mlt_properties text_properties = MLT_PRODUCER_PROPERTIES( text_producer );
-		char* direction = mlt_properties_get( producer_properties, "direction" );
 		char* style = mlt_properties_get( producer_properties, "style" );
 		char text[MAX_TEXT_LEN] = "";
-		int fps = lrint(mlt_profile_fps( profile )); if( fps == 0 ) fps = 25;
-
-		// Apply the direction
-		if( !strcmp( direction, "down" ) )
-		{
-			int out = mlt_properties_get_int( producer_properties, "out" );
-			position = out - position;
-		}
-
-		// Calculate clock values
-		int seconds = position / fps;
-		int frames = MLT_POSITION_MOD(position, fps);
-		int minutes = seconds / 60;
-		seconds = seconds % 60;
-		int hours = minutes / 60;
-		minutes = minutes % 60;
 
 		// Apply the time style
 		if( !strcmp( style, "frames" ) )
 		{
-			snprintf( text, MAX_TEXT_LEN - 1, MLT_POSITION_FMT, position );
+			snprintf( text, MAX_TEXT_LEN - 1, MLT_POSITION_FMT, info->position );
 		}
 		else if( !strcmp( style, "timecode" ) )
 		{
-			snprintf( text, MAX_TEXT_LEN - 1, "%.2d:%.2d:%.2d:%.2d", hours, minutes, seconds, frames );
+			snprintf( text, MAX_TEXT_LEN - 1, "%02d:%02d:%02d%c%0*d",
+					info->hours, info->minutes, info->seconds, info->sep,
+					( info->fps > 999? 4 : info->fps > 99? 3 : 2 ), info->frames );
 		}
 		else if( !strcmp( style, "clock" ) )
 		{
-			snprintf( text, MAX_TEXT_LEN - 1, "%.2d:%.2d:%.2d", hours, minutes, seconds );
+			snprintf( text, MAX_TEXT_LEN - 1, "%.2d:%.2d:%.2d", info->hours, info->minutes, info->seconds );
 		}
 		else if( !strcmp( style, "seconds+1" ) )
 		{
-			snprintf( text, MAX_TEXT_LEN - 1, "%d", seconds + 1 );
+			snprintf( text, MAX_TEXT_LEN - 1, "%d", info->seconds + 1 );
 		}
 		else // seconds
 		{
-			snprintf( text, MAX_TEXT_LEN - 1, "%d", seconds );
+			snprintf( text, MAX_TEXT_LEN - 1, "%d", info->seconds );
 		}
 
 		mlt_properties_set( text_properties, "text", text );
@@ -443,7 +465,7 @@ static void draw_clock( uint8_t* image, mlt_profile profile, int angle, int line
 	}
 }
 
-static void add_clock_to_frame( mlt_producer producer, mlt_frame frame, mlt_position position )
+static void add_clock_to_frame( mlt_producer producer, mlt_frame frame, time_info* info )
 {
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -453,7 +475,6 @@ static void add_clock_to_frame( mlt_producer producer, mlt_frame frame, mlt_posi
 	int width = profile->width;
 	int height = profile->height;
 	int line_width = LINE_WIDTH_RATIO * (width > height ? height : width) / 100;
-	int fps = lrint(mlt_profile_fps( profile )); if( fps == 0 ) fps = 25;
 	int radius = (width > height ? height : width) / 2;
 	char* direction = mlt_properties_get( producer_properties, "direction" );
 	int clock_angle = 0;
@@ -461,17 +482,12 @@ static void add_clock_to_frame( mlt_producer producer, mlt_frame frame, mlt_posi
 	mlt_frame_get_image( frame, &image, &format, &width, &height, 1 );
 
 	// Calculate the angle for the clock.
+	int frames = info->frames;
 	if( !strcmp( direction, "down" ) )
 	{
-		int out = mlt_producer_get_out( producer );
-		int frames = fps - MLT_POSITION_MOD( (out - position), fps);
-		clock_angle = lrint( (frames + 1) * 360 / fps );
+		frames = info->fps - info->frames - 1;
 	}
-	else
-	{
-		int frames = MLT_POSITION_MOD(position, fps);
-		clock_angle = lrint( (frames + 1) * 360 / fps );
-	}
+	clock_angle = (frames + 1) * 360 / info->fps;
 
 	draw_clock( image, profile, clock_angle, line_width );
 	draw_cross( image, profile, line_width );
@@ -512,23 +528,24 @@ static void add_text_to_bg( mlt_producer producer, mlt_frame bg_frame, mlt_frame
 
 static int producer_get_image( mlt_frame frame, uint8_t** image, mlt_image_format* format, int* width, int* height, int writable )
 {
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_position position = mlt_frame_original_position( frame );
-	mlt_producer producer = mlt_properties_get_data( properties, "_producer_count", NULL );
+	mlt_producer producer = mlt_frame_pop_service( frame );
 	mlt_frame bg_frame = NULL;
 	mlt_frame text_frame = NULL;
 	int error = 1;
 	int size = 0;
 	char* background = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "background" );
+	time_info info;
 
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+
+	get_time_info( producer, frame, &info );
 
 	bg_frame = get_background_frame( producer );
 	if( !strcmp( background, "clock" ) )
 	{
-		add_clock_to_frame( producer, bg_frame, position );
+		add_clock_to_frame( producer, bg_frame, &info );
 	}
-	text_frame = get_text_frame( producer, position );
+	text_frame = get_text_frame( producer, &info );
 	add_text_to_bg( producer, bg_frame, text_frame );
 
 	if( bg_frame )
@@ -564,9 +581,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Obtain properties of frame
 		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( *frame );
 
-		// Save the producer to be used later
-		mlt_properties_set_data( frame_properties, "_producer_count", producer, 0, NULL, NULL );
-
 		// Update time code on the frame
 		mlt_frame_set_position( *frame, mlt_producer_frame( producer ) );
 
@@ -576,7 +590,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( frame_properties, "meta.media.height", profile->height );
 
 		// Configure callbacks
+		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_get_image( *frame, producer_get_image );
+		mlt_frame_push_audio( *frame, producer );
 		mlt_frame_push_audio( *frame, producer_get_audio );
 	}
 
@@ -609,6 +625,7 @@ mlt_producer producer_count_init( mlt_profile profile, mlt_service_type type, co
 		mlt_properties_set( properties, "style", "seconds+1" );
 		mlt_properties_set( properties, "sound", "none" );
 		mlt_properties_set( properties, "background", "clock" );
+		mlt_properties_set( properties, "drop", "0" );
 
 		// Callback registration
 		producer->get_frame = producer_get_frame;

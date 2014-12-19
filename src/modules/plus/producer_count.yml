@@ -71,3 +71,15 @@ parameters:
       - clock
     mutable: yes
     widget: combo
+  - identifier: drop
+    title: Drop Frame
+    description:  |
+      Use SMPTE style drop-frame counting for non-integer frame rates.
+      The clock and timecode will advance two frames every minute if necessary
+      to keep time with wall clock time
+    mutable: yes
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
