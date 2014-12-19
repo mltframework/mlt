@@ -847,19 +847,22 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 	int hours, mins, secs;
 	char frame_sep = ':';
 
-	if ( drop && fps == 30000.0/1001.0 )
+	if ( fps == 30000.0/1001.0 )
 	{
 		fps = 30.0;
-		int i, max_frames = frames;
-		for ( i = 1800; i <= max_frames; i += 1800 )
+		if ( drop )
 		{
-			if ( i % 18000 )
+			int i, max_frames = frames;
+			for ( i = 1800; i <= max_frames; i += 1800 )
 			{
-				max_frames += 2;
-				frames += 2;
+				if ( i % 18000 )
+				{
+					max_frames += 2;
+					frames += 2;
+				}
 			}
+			frame_sep = ';';
 		}
-		frame_sep = ';';
 	}
 	hours = frames / ( fps * 3600 );
 	frames -= hours * ( fps * 3600 );
