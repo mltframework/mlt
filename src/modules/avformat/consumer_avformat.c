@@ -902,15 +902,18 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 			c->flags |= CODEC_FLAG_PASS2;
 		if ( codec->id != AV_CODEC_ID_H264 && ( c->flags & ( CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2 ) ) )
 		{
-			char logfilename[1024];
 			FILE *f;
 			int size;
 			char *logbuffer;
 
-			snprintf( logfilename, sizeof(logfilename), "%s_2pass.log",
-				mlt_properties_get( properties, "passlogfile" ) ? mlt_properties_get( properties, "passlogfile" ) : mlt_properties_get( properties, "target" ) );
-			mlt_properties_set( properties, "_passlogfile", logfilename );
-			mlt_properties_from_utf8( properties, "_passlogfile", "_logfilename" );
+			if ( mlt_properties_get( properties, "passlogfile" ) ) {
+				mlt_properties_from_utf8( properties, "passlogfile", "_logfilename" );
+			} else {
+				char logfilename[1024];
+				snprintf( logfilename, sizeof(logfilename), "%s_2pass.log", mlt_properties_get( properties, "target" ) );
+				mlt_properties_set( properties, "_passlogfile", logfilename );
+				mlt_properties_from_utf8( properties, "_passlogfile", "_logfilename" );
+			}
 			const char *filename = mlt_properties_get( properties, "_logfilename" );
 			if ( c->flags & CODEC_FLAG_PASS1 )
 			{
