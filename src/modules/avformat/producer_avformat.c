@@ -1392,7 +1392,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				}
 				else if ( ret < 0 )
 				{
-					mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_image\n", ret );
+					if ( ret != AVERROR_EOF )
+						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_image\n", ret );
 					if ( !self->seekable && mlt_properties_get_int( properties, "reconnect" ) )
 					{
 						// Try to reconnect to live sources by closing context and codecs,
@@ -2275,7 +2276,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				{
 					mlt_producer producer = self->parent;
 					mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
-					mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_audio\n", ret );
+					if ( ret != AVERROR_EOF )
+						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_audio\n", ret );
 					if ( !self->seekable && mlt_properties_get_int( properties, "reconnect" ) )
 					{
 						// Try to reconnect to live sources by closing context and codecs,
