@@ -1,0 +1,13 @@
+f=mp4
+
+acodec=aac
+ab=256k
+
+vcodec=libx265
+threads=0
+preset=medium
+
+movflags=+faststart
+
+meta.preset.extension=mp4
+meta.preset.name=HEVC Main Profile
