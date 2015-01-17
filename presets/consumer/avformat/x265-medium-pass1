@@ -3,8 +3,7 @@ f=mp4
 vcodec=libx265
 threads=0
 preset=medium
-fastfirstpass=1
-pass=1
+x265-params=pass=1
 an=1
 audio_off=1
 
