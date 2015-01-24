@@ -724,7 +724,10 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	xmlDocSetRootElement( doc, root );
 
 	// Indicate the numeric locale
-	xmlNewProp( root, _x("LC_NUMERIC"), _x( setlocale( LC_NUMERIC, NULL ) ) );
+	if ( mlt_properties_get_lcnumeric( properties ) )
+		xmlNewProp( root, _x("LC_NUMERIC"), _x( mlt_properties_get_lcnumeric( properties ) ) );
+	else
+		xmlNewProp( root, _x("LC_NUMERIC"), _x( setlocale( LC_NUMERIC, NULL ) ) );
 
 	// Indicate the version
 	xmlNewProp( root, _x("version"), _x( mlt_version_get_string() ) );
