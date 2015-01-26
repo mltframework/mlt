@@ -913,7 +913,6 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 char *mlt_property_get_time( mlt_property self, mlt_time_format format, double fps, locale_t locale )
 {
 	char *orig_localename = NULL;
-	const char *localename = "C";
 	int frames = 0;
 
 	// Optimization for mlt_time_frames
@@ -930,11 +929,12 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
 #if defined(__DARWIN__)
-		localename = querylocale( LC_NUMERIC, locale );
+		const char *localename = querylocale( LC_NUMERIC, locale );
 #elif defined(__GLIBC__)
-		localename = locale->__names[ LC_NUMERIC ];
+		const char *localename = locale->__names[ LC_NUMERIC ];
 #else
 		// TODO: not yet sure what to do on other platforms
+		const char *localename = locale;
 #endif
 		// Protect damaging the global locale from a temporary locale on another thread.
 		pthread_mutex_lock( &self->mutex );
