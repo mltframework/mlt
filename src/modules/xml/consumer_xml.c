@@ -1,6 +1,6 @@
 /*
  * consumer_xml.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,7 @@ typedef struct serialise_context_s* serialise_context;
 
 static int consumer_start( mlt_consumer parent );
 static int consumer_stop( mlt_consumer parent );
-static int consumer_is_stopped( mlt_consumer this );
+static int consumer_is_stopped( mlt_consumer consumer );
 static void *consumer_thread( void *arg );
 static void serialise_service( serialise_context context, mlt_service service, xmlNode *node );
 
@@ -185,27 +185,27 @@ static char *xml_get_id( serialise_context context, mlt_service service, xml_typ
 mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
-	mlt_consumer this = calloc( 1, sizeof( struct mlt_consumer_s ) );
+	mlt_consumer consumer = calloc( 1, sizeof( struct mlt_consumer_s ) );
 
 	// If no malloc'd and consumer init ok
-	if ( this != NULL && mlt_consumer_init( this, NULL, profile ) == 0 )
+	if ( consumer != NULL && mlt_consumer_init( consumer, NULL, profile ) == 0 )
 	{
 		// Allow thread to be started/stopped
-		this->start = consumer_start;
-		this->stop = consumer_stop;
-		this->is_stopped = consumer_is_stopped;
+		consumer->start = consumer_start;
+		consumer->stop = consumer_stop;
+		consumer->is_stopped = consumer_is_stopped;
 
-		mlt_properties_set( MLT_CONSUMER_PROPERTIES( this ), "resource", arg );
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "real_time", 0 );
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "prefill", 1 );
-		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( this ), "terminate_on_pause", 1 );
+		mlt_properties_set( MLT_CONSUMER_PROPERTIES( consumer ), "resource", arg );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "real_time", 0 );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "prefill", 1 );
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "terminate_on_pause", 1 );
 
 		// Return the consumer produced
-		return this;
+		return consumer;
 	}
 
 	// malloc or consumer init failed
-	free( this );
+	free( consumer );
 
 	// Indicate failure
 	return NULL;
@@ -818,11 +818,11 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 }
 
 
-static void output_xml( mlt_consumer this )
+static void output_xml( mlt_consumer consumer )
 {
 	// Get the producer service
-	mlt_service service = mlt_service_producer( MLT_CONSUMER_SERVICE( this ) );
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_service service = mlt_service_producer( MLT_CONSUMER_SERVICE( consumer ) );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 	char *resource =  mlt_properties_get( properties, "resource" );
 	xmlDocPtr doc = NULL;
 
@@ -848,7 +848,7 @@ static void output_xml( mlt_consumer this )
 	}
 
 	// Make the document
-	doc = xml_make_doc( this, service );
+	doc = xml_make_doc( consumer, service );
 
 	// Handle the output
 	if ( resource == NULL || !strcmp( resource, "" ) )
@@ -879,9 +879,9 @@ static void output_xml( mlt_consumer this )
 	// Close the document
 	xmlFreeDoc( doc );
 }
-static int consumer_start( mlt_consumer this )
+static int consumer_start( mlt_consumer consumer )
 {
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	if ( mlt_properties_get_int( properties, "all" ) )
 	{
@@ -899,28 +899,28 @@ static int consumer_start( mlt_consumer this )
 			mlt_properties_set_int( properties, "joined", 0 );
 
 			// Create the thread
-			pthread_create( thread, NULL, consumer_thread, this );
+			pthread_create( thread, NULL, consumer_thread, consumer );
 		}
 	}
 	else
 	{
-		output_xml( this );
-		mlt_consumer_stop( this );
-		mlt_consumer_stopped( this );
+		output_xml( consumer );
+		mlt_consumer_stop( consumer );
+		mlt_consumer_stopped( consumer );
 	}
 	return 0;
 }
 
-static int consumer_is_stopped( mlt_consumer this )
+static int consumer_is_stopped( mlt_consumer consumer )
 {
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 	return !mlt_properties_get_int( properties, "running" );
 }
 
-static int consumer_stop( mlt_consumer this )
+static int consumer_stop( mlt_consumer consumer )
 {
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Check that we're running
 	if ( !mlt_properties_get_int( properties, "joined" ) )
@@ -943,10 +943,10 @@ static int consumer_stop( mlt_consumer this )
 static void *consumer_thread( void *arg )
 {
 	// Map the argument to the object
-	mlt_consumer this = arg;
+	mlt_consumer consumer = arg;
 
 	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( this );
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
 	// Convenience functionality
 	int terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
@@ -962,7 +962,7 @@ static void *consumer_thread( void *arg )
 	while( !terminated && mlt_properties_get_int( properties, "running" ) )
 	{
 		// Get the frame
-		frame = mlt_consumer_rt_frame( this );
+		frame = mlt_consumer_rt_frame( consumer );
 
 		// Check for termination
 		if ( terminate_on_pause && frame != NULL )
@@ -989,11 +989,11 @@ static void *consumer_thread( void *arg )
 			mlt_frame_close( frame );
 		}
 	}
-	output_xml( this );
+	output_xml( consumer );
 
 	// Indicate that the consumer is stopped
 	mlt_properties_set_int( properties, "running", 0 );
-	mlt_consumer_stopped( this );
+	mlt_consumer_stopped( consumer );
 
 	return NULL;
 }
