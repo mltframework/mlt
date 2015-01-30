@@ -42,6 +42,7 @@ namespace Mlt
 			mlt_tractor instance;
 		public:
 			Tractor( );
+			Tractor( Profile& profile );
 			Tractor( Service &tractor );
 			Tractor( mlt_tractor tractor );
 			Tractor( Tractor &tractor );
