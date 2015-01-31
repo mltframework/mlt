@@ -940,7 +940,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		skip_next = 0;
 
 		// Only consider skipping if the buffer level is low (or really small)
-		if ( mlt_deque_count( priv->queue ) <= buffer / 5 + 1 )
+		if ( mlt_deque_count( priv->queue ) <= buffer / 5 + 1 && count > 1 )
 		{
 			// Skip next frame if average cost exceeds frame duration.
 			if ( time_process / count > frame_duration )
