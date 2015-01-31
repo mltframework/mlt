@@ -2577,7 +2577,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Set the position of this producer
 	mlt_position position = self->seekable ? mlt_producer_frame( producer ) : self->nonseek_position++;
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "original_position", position );
+	mlt_frame_set_position( *frame, position );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );
