@@ -377,10 +377,6 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 		current_idx = MIN(( double )position / ttl, self->count - 1);
 	}
 
-	// Key for the cache
-	char image_key[ 10 ];
-	sprintf( image_key, "%d", current_idx );
-
 	int disable_exif = mlt_properties_get_int( producer_props, "disable_exif" );
 
 	if ( current_idx != self->pixbuf_idx )
