@@ -49,6 +49,11 @@ static void initialise( )
 			mlt_service_cache_set_size( NULL, "pixbuf.alpha", n );
 			mlt_service_cache_set_size( NULL, "pixbuf.pixbuf", n );
 		}
+		if ( getenv("MLT_PANGO_PRODUCER_CACHE") )
+		{
+			int n = atoi( getenv("MLT_PANGO_PRODUCER_CACHE" )  );
+			mlt_service_cache_set_size( NULL, "pango.image", n );
+		}
 	}
 }
 

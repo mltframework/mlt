@@ -20,6 +20,7 @@
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_geometry.h>
+#include <framework/mlt_cache.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -39,6 +40,26 @@ typedef enum
 } pango_align;
 
 static pthread_mutex_t pango_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct pango_cached_image_s
+{
+	uint8_t *image, *alpha;
+	mlt_image_format format;
+	int width, height;
+};
+
+static void pango_cached_image_destroy( void* p )
+{
+	struct pango_cached_image_s* i = p;
+
+	if ( !i )
+		return;
+	if ( i->image )
+		mlt_pool_release( i->image );
+	if ( i->alpha )
+		mlt_pool_release( i->alpha );
+	mlt_pool_release( i );
+};
 
 struct producer_pango_s
 {
@@ -60,6 +81,11 @@ struct producer_pango_s
 	int   style;
 	int   weight;
 };
+
+static void clean_cached( producer_pango self )
+{
+	mlt_service_cache_put( MLT_PRODUCER_SERVICE( &self->parent ), "pango.image", NULL, 0, NULL );
+}
 
 // special color type used by internal pango routines
 typedef struct
@@ -425,6 +451,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		if ( this->pixbuf )
 			g_object_unref( this->pixbuf );
 		this->pixbuf = NULL;
+		clean_cached( this );
 
 		// Convert from specified encoding to UTF-8
 		if ( encoding != NULL && !strncaseeq( encoding, "utf-8", 5 ) && !strncaseeq( encoding, "utf8", 4 ) )
@@ -464,6 +491,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		if ( this->pixbuf )
 			g_object_unref( this->pixbuf );
 		this->pixbuf = NULL;
+		clean_cached( this );
 		pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
 	}
 
@@ -484,6 +512,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 		// Note - the original pixbuf is already safe and ready for destruction
 		this->pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
+		clean_cached( this );
 
 		// Store width and height
 		this->width = width;
@@ -515,18 +544,104 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get width and height
 	*width = this->width;
 	*height = this->height;
-	*format = mlt_image_rgb24a;
 
 	// Always clone here to allow 'animated' text
 	if ( this->pixbuf )
 	{
-		// Clone the image
-		int image_size = this->width * this->height * 4;
-		*buffer = mlt_pool_alloc( image_size );
-		memcpy( *buffer, gdk_pixbuf_get_pixels( this->pixbuf ), image_size );
+		int size, bpp;
+		uint8_t *buf;
+		mlt_cache_item cached_item = mlt_service_cache_get( MLT_PRODUCER_SERVICE( &this->parent ), "pango.image" );
+		struct pango_cached_image_s* cached = mlt_cache_item_data( cached_item, NULL );
 
-		// Now update properties so we free the copy after
-		mlt_frame_set_image( frame, *buffer, image_size, mlt_pool_release );
+		// destroy cached data if request is differ
+		if ( !cached || ( cached && (cached->format != *format || cached->width != *width || cached->height != *height )))
+		{
+			mlt_cache_item_close( cached_item );
+			cached_item = NULL;
+			cached = NULL;
+			clean_cached( this );
+		};
+
+		// create cached image
+		if ( !cached )
+		{
+			int dst_stride, src_stride;
+
+			cached = mlt_pool_alloc( sizeof( struct pango_cached_image_s ));
+			cached->width = this->width;
+			cached->height = this->height;
+			cached->format = gdk_pixbuf_get_has_alpha( this->pixbuf ) ? mlt_image_rgb24a : mlt_image_rgb24;
+			cached->alpha = NULL;
+			cached->image = NULL;
+
+			src_stride = gdk_pixbuf_get_rowstride( this->pixbuf );
+			dst_stride = this->width * ( mlt_image_rgb24a == cached->format ? 4 : 3 );
+
+			size = dst_stride * ( this->height + 1 );
+			buf = mlt_pool_alloc( size );
+
+			if ( src_stride != dst_stride )
+			{
+				int y = this->height;
+				uint8_t *src = gdk_pixbuf_get_pixels( this->pixbuf );
+				uint8_t *dst = buf;
+				while ( y-- )
+				{
+					memcpy( dst, src, dst_stride );
+					dst += dst_stride;
+					src += src_stride;
+				};
+			}
+			else
+			{
+				memcpy( buf, gdk_pixbuf_get_pixels( this->pixbuf ), src_stride * this->height );
+			};
+
+			// convert image
+			if(frame->convert_image && cached->format != *format)
+			{
+				frame->convert_image( frame, &buf, &cached->format, *format );
+				*format = cached->format;
+			};
+
+			size = mlt_image_format_size(cached->format, cached->width, cached->height, &bpp );
+			cached->image = mlt_pool_alloc( size );
+			memcpy( cached->image, buf, size );
+
+			if ( ( buf = mlt_frame_get_alpha_mask( frame ) ) )
+			{
+				size = cached->width * cached->height;
+				cached->alpha = mlt_pool_alloc( size );
+				memcpy( cached->alpha, buf, size );
+			};
+		};
+
+		if ( cached )
+		{
+			// clone image surface
+			size = mlt_image_format_size(cached->format, cached->width, cached->height, &bpp );
+			buf = mlt_pool_alloc( size );
+			memcpy( buf, cached->image, size );
+
+			// set image surface
+			mlt_frame_set_image( frame, buf, size, mlt_pool_release );
+			*buffer = buf;
+
+			// set alpha
+			if ( cached->alpha )
+			{
+				size = cached->width * cached->height;
+				buf = mlt_pool_alloc( size );
+				memcpy( buf, cached->alpha, size );
+				mlt_frame_set_alpha( frame, buf, size, mlt_pool_release );
+			}
+		};
+
+		if ( cached_item )
+			mlt_cache_item_close( cached_item );
+		else
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( &this->parent ), "pango.image",
+				cached, sizeof( struct pango_cached_image_s ), pango_cached_image_destroy );
 	}
 	else
 	{
@@ -586,6 +701,7 @@ static void producer_close( mlt_producer parent )
 	producer_pango this = parent->child;
 	if ( this->pixbuf )
 		g_object_unref( this->pixbuf );
+	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
 	free( this->fgcolor );
 	free( this->bgcolor );
 	free( this->olcolor );
