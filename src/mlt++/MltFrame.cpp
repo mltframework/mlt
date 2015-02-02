@@ -30,7 +30,7 @@ Frame::Frame( mlt_frame frame ) :
 }
 
 Frame::Frame( Frame &frame ) :
-	Mlt::Properties( frame ),
+	Mlt::Properties( (mlt_properties)NULL ),
 	instance( frame.get_frame( ) )
 {
 	inc_ref( );
