@@ -22,6 +22,12 @@
 #include "MltProducer.h"
 using namespace Mlt;
 
+Frame::Frame() :
+	Mlt::Properties( (mlt_properties)NULL ),
+	instance( NULL )
+{
+}
+
 Frame::Frame( mlt_frame frame ) :
 	Mlt::Properties( (mlt_properties)NULL ),
 	instance( frame )
@@ -31,7 +37,14 @@ Frame::Frame( mlt_frame frame ) :
 
 Frame::Frame( Frame &frame ) :
 	Mlt::Properties( (mlt_properties)NULL ),
-	instance( frame.get_frame( ) )
+	instance( frame.instance )
+{
+	inc_ref( );
+}
+
+Frame::Frame( const Frame &frame ) :
+	Mlt::Properties( (mlt_properties)NULL ),
+	instance( frame.instance )
 {
 	inc_ref( );
 }
@@ -39,6 +52,17 @@ Frame::Frame( Frame &frame ) :
 Frame::~Frame( )
 {
 	mlt_frame_close( instance );
+}
+
+Frame& Frame::operator=( const Frame &frame )
+{
+	if (this != &frame)
+	{
+		mlt_frame_close( instance );
+		instance = frame.instance;
+		inc_ref( );
+	}
+	return *this;
 }
 
 mlt_frame Frame::get_frame( )

@@ -37,9 +37,12 @@ namespace Mlt
 		private:
 			mlt_frame instance;
 		public:
+			Frame();
 			Frame( mlt_frame frame );
 			Frame( Frame &frame );
+			Frame( const Frame &frame );
 			virtual ~Frame( );
+			Frame& operator=( const Frame &frame );
 			virtual mlt_frame get_frame( );
 			mlt_properties get_properties( );
 			uint8_t *get_image( mlt_image_format &format, int &w, int &h, int writable = 0 );

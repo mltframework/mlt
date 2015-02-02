@@ -17,7 +17,6 @@
  */
 
 #include <QtTest>
-
 #include <mlt++/Mlt.h>
 using namespace Mlt;
 
@@ -32,7 +31,7 @@ private Q_SLOTS:
     void FrameConstructorAddsReference()
     {
         mlt_frame frame = mlt_frame_init(NULL);
-        QCOMPARE(mlt_properties_ref_count( MLT_FRAME_PROPERTIES(frame) ), 1);
+        QCOMPARE(mlt_properties_ref_count(MLT_FRAME_PROPERTIES(frame)), 1);
         Frame f(frame);
         QCOMPARE(f.ref_count(), 2);
         mlt_frame_close(frame);
@@ -49,10 +48,43 @@ private Q_SLOTS:
         mlt_frame_close(frame);
     }
 
+    void ConstCopyConstructorAddsReference()
+    {
+        mlt_frame frame = mlt_frame_init(NULL);
+        QCOMPARE(mlt_properties_ref_count(MLT_FRAME_PROPERTIES(frame)), 1);
+        Frame f1(frame);
+        QCOMPARE(f1.ref_count(), 2);
+        const Frame& cf1 = f1; // Force const to avoid non-const constructor.
+        Frame f2(cf1);
+        QCOMPARE(f1.ref_count(), 3);
+        QCOMPARE(f2.ref_count(), 3);
+        mlt_frame_close(frame);
+    }
+
+    void DefaultConstructorIsNotValid()
+    {
+        Frame f1;
+        QCOMPARE(f1.is_valid(), 0);
+        QCOMPARE(f1.ref_count(), 0);
+    }
+
+    void OperatorEqualsAddsReference()
+    {
+        mlt_frame frame = mlt_frame_init(NULL);
+        QCOMPARE(mlt_properties_ref_count(MLT_FRAME_PROPERTIES(frame)), 1);
+        Frame f1(frame);
+        QCOMPARE(f1.ref_count(), 2);
+        Frame f2;
+        f2 = f1;
+        QCOMPARE(f1.ref_count(), 3);
+        QCOMPARE(f2.ref_count(), 3);
+        mlt_frame_close(frame);
+    }
+
     void DestructionRemovesReference()
     {
         mlt_frame frame = mlt_frame_init(NULL);
-        QCOMPARE(mlt_properties_ref_count( MLT_FRAME_PROPERTIES(frame) ), 1);
+        QCOMPARE(mlt_properties_ref_count(MLT_FRAME_PROPERTIES(frame)), 1);
         Frame f1(frame);
         QCOMPARE(f1.ref_count(), 2);
         Frame* f2 = new Frame(f1);
