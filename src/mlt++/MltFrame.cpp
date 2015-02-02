@@ -23,7 +23,7 @@
 using namespace Mlt;
 
 Frame::Frame( mlt_frame frame ) :
-	Properties( false ),
+	Mlt::Properties( (mlt_properties)NULL ),
 	instance( frame )
 {
 	inc_ref( );
