@@ -1,3 +1,4 @@
 TEMPLATE = subdirs
-SUBDIRS = test_properties \
+SUBDIRS = test_frame \
+    test_properties \
     test_repository
