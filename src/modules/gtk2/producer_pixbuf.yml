@@ -16,6 +16,8 @@ notes: >
   whatever the consumer requests. Therefore, it will lose its aspect ratio if 
   so requested, and it is up to the consumer to request a proper width and 
   height that maintains the image aspect.
+  Environment variable MLT_PIXBUF_PRODUCER_CACHE could be used to to override
+  /increase the number of cached converted images for simultaneous use.
 
 parameters:
   - identifier: argument

@@ -20,6 +20,7 @@
 #include <string.h>
 #include <framework/mlt.h>
 #include <gdk/gdk.h>
+#include <stdlib.h>
 
 #ifdef USE_PIXBUF
 extern mlt_producer producer_pixbuf_init( char *filename );
@@ -41,6 +42,13 @@ static void initialise( )
 	{
 		init = 1;
 		g_type_init( );
+		if ( getenv("MLT_PIXBUF_PRODUCER_CACHE") )
+		{
+			int n = atoi( getenv("MLT_PIXBUF_PRODUCER_CACHE" )  );
+			mlt_service_cache_set_size( NULL, "pixbuf.image", n );
+			mlt_service_cache_set_size( NULL, "pixbuf.alpha", n );
+			mlt_service_cache_set_size( NULL, "pixbuf.pixbuf", n );
+		}
 	}
 }
 
