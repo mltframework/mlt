@@ -608,7 +608,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			cached->image = mlt_pool_alloc( size );
 			memcpy( cached->image, buf, size );
 
-			if ( ( buf = mlt_frame_get_alpha_mask( frame ) ) )
+			if ( ( buf = mlt_frame_get_alpha( frame ) ) )
 			{
 				size = cached->width * cached->height;
 				cached->alpha = mlt_pool_alloc( size );

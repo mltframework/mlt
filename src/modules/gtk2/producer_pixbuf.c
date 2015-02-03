@@ -509,7 +509,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 				self->image = mlt_pool_alloc( image_size );
 				memcpy( self->image, buffer, image_size );
 			}
-			if ( ( buffer = mlt_frame_get_alpha_mask( frame ) ) )
+			if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
 			{
 				self->alpha = mlt_pool_alloc( width * height );
 				memcpy( self->alpha, buffer, width * height );

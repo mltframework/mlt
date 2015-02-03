@@ -380,20 +380,25 @@ void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_
 		j = width - width % 8;
 		dest += j * 2;
 		src += j * 2;
-		alpha_a += j;
-		alpha_b += j;
+		if ( alpha_a )
+			alpha_a += j;
+		if ( alpha_b )
+			alpha_b += j;
 	}
 #endif
 
 	for ( ; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++, step );
+		mix = calculate_mix( luma, j, soft, weight, (!alpha_b)?0x255:(*alpha_b ++), step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a = ( mix >> 8 ) | *alpha_a;
-		alpha_a ++;
+		if ( alpha_a )
+		{
+			*alpha_a = ( mix >> 8 ) | *alpha_a;
+			alpha_a ++;
+		};
 	}
 }
 
@@ -523,8 +528,10 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	p_dest += x * bpp + y * stride_dest;
 
 	// offset pointer into alpha channel based upon cropping
-	alpha_b += x_src + y_src * stride_src / bpp;
-	alpha_a += x + y * stride_dest / bpp;
+	if ( alpha_b )
+		alpha_b += x_src + y_src * stride_src / bpp;
+	if ( alpha_a )
+		alpha_a += x + y * stride_dest / bpp;
 
 	// offset pointer into luma channel based upon cropping
 	if ( p_luma )
@@ -546,8 +553,10 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	if ( field == 1 )
 	{
 		p_src += stride_src;
-		alpha_b += stride_src / bpp;
-		alpha_a += stride_dest / bpp;
+		if ( alpha_b )
+			alpha_b += stride_src / bpp;
+		if ( alpha_a )
+			alpha_a += stride_dest / bpp;
 		height_src--;
 	}
 
@@ -560,7 +569,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	if ( uneven_x != uneven_x_src )
 	{
 		p_src += 2;
-		alpha_b += 1;
+		if ( alpha_b )
+			alpha_b += 1;
 	}
 
 	// now do the compositing only to cropped extents
@@ -570,8 +580,10 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 
 		p_src += stride_src;
 		p_dest += stride_dest;
-		alpha_b += alpha_b_stride;
-		alpha_a += alpha_a_stride;
+		if ( alpha_b )
+			alpha_b += alpha_b_stride;
+		if ( alpha_a )
+			alpha_a += alpha_a_stride;
 		if ( p_luma )
 			p_luma += alpha_b_stride;
 	}
@@ -1176,13 +1188,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			double aspect_ratio = mlt_frame_get_aspect_ratio( b_frame );
 			get_b_frame_image( self, b_frame, &image_b, &width_b, &height_b, &result );
-			alpha_b = mlt_frame_get_alpha_mask( b_frame );
+			alpha_b = mlt_frame_get_alpha( b_frame );
 			mlt_properties_set_double( a_props, "aspect_ratio", aspect_ratio );
 		}
 
 		// Get the image from the a frame
 		mlt_frame_get_image( a_frame, invert ? &image_b : image, format, width, height, 1 );
-		alpha_a = mlt_frame_get_alpha_mask( a_frame );
+		alpha_a = mlt_frame_get_alpha( a_frame );
 
 		// Optimisation - no compositing required
 		if ( result.item.mix == 0 || ( result.item.w == 0 && result.item.h == 0 ) )
@@ -1225,7 +1237,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			mlt_service_unlock( MLT_TRANSITION_SERVICE( self ) );
 			char *operator = mlt_properties_get( properties, "operator" );
 
-			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha_mask( b_frame ) : alpha_b;
+			alpha_b = alpha_b == NULL ? mlt_frame_get_alpha( b_frame ) : alpha_b;
 
 			composite_line_fn line_fn = composite_line_yuv;
 
@@ -1241,10 +1253,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			}
 
 			// Allow the user to completely obliterate the alpha channels from both frames
-			if ( mlt_properties_get( properties, "alpha_a" ) )
+			if ( mlt_properties_get( properties, "alpha_a" ) && alpha_a )
 				memset( alpha_a, mlt_properties_get_int( properties, "alpha_a" ), *width * *height );
 
-			if ( mlt_properties_get( properties, "alpha_b" ) )
+			if ( mlt_properties_get( properties, "alpha_b" ) && alpha_b )
 				memset( alpha_b, mlt_properties_get_int( properties, "alpha_b" ), width_b * height_b );
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )

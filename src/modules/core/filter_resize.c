@@ -129,7 +129,7 @@ static uint8_t *frame_resize_image( mlt_frame frame, int owidth, int oheight, in
 
 	// Get the input image, width and height
 	uint8_t *input = mlt_properties_get_data( properties, "image", NULL );
-	uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+	uint8_t *alpha = mlt_frame_get_alpha( frame );
 	int alpha_size = 0;
 	mlt_properties_get_data( properties, "alpha", &alpha_size );
 
