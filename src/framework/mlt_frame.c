@@ -637,6 +637,26 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame self )
 	return alpha;
 }
 
+/** Get the alpha channel associated to the frame (without creating if it has not).
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \return the alpha channel
+ */
+
+uint8_t *mlt_frame_get_alpha( mlt_frame self )
+{
+	uint8_t *alpha = NULL;
+	if ( self != NULL )
+	{
+		if ( self->get_alpha_mask != NULL )
+			alpha = self->get_alpha_mask( self );
+		if ( alpha == NULL )
+			alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
+	}
+	return alpha;
+}
+
 /** Get the short name for an audio format.
  *
  * You do not need to deallocate the returned string.
