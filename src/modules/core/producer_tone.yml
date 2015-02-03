@@ -17,7 +17,7 @@ parameters:
     type: float
     description: >
       The frequency of the tone.
-    units: Hz
+    unit: Hz
     default: 1000.0
     readonly: no
     mutable: yes
@@ -27,7 +27,7 @@ parameters:
     type: float
     description: >
       The phase of the tone.
-    units: degrees
+    unit: degrees
     default: 0.0
     readonly: no
     mutable: yes
@@ -37,7 +37,7 @@ parameters:
     type: float
     description: >
       The peak level of the tone.
-    units: dB
+    unit: dB
     default: 0.0
     readonly: no
     mutable: yes
