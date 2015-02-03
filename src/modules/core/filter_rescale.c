@@ -113,7 +113,7 @@ static void scale_alpha( mlt_frame frame, int iwidth, int iheight, int owidth, i
 {
 	// Scale the alpha
 	uint8_t *output = NULL;
-	uint8_t *input = mlt_frame_get_alpha_mask( frame );
+	uint8_t *input = mlt_frame_get_alpha( frame );
 
 	if ( input != NULL )
 	{

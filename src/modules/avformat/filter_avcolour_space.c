@@ -225,7 +225,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		{
 			register int len = width * height;
 			int alpha_size = 0;
-			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+			uint8_t *alpha = mlt_frame_get_alpha( frame );
 			mlt_properties_get_data( properties, "alpha", &alpha_size );
 
 			if ( alpha && alpha_size >= len )

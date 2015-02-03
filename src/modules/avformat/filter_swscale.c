@@ -145,7 +145,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 		if ( alpha_size > 0 && alpha_size != ( owidth * oheight ) )
 		{
 			// Create the context and output image
-			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+			uint8_t *alpha = mlt_frame_get_alpha( frame );
 			if ( alpha )
 			{
 				avformat = PIX_FMT_GRAY8;
