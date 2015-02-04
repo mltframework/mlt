@@ -612,6 +612,9 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 
 /** Get the alpha channel associated to the frame.
  *
+ * Unlike mlt_frame_get_alpha(), this function WILL create an opaque alpha
+ * channel if one does not already exist.
+ *
  * \public \memberof mlt_frame_s
  * \param self a frame
  * \return the alpha channel
@@ -639,9 +642,12 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame self )
 
 /** Get the alpha channel associated to the frame (without creating if it has not).
  *
+ * Unlike mlt_frame_get_alpha_mask(), this function does NOT create an alpha
+ * channel if one does not already exist.
+ *
  * \public \memberof mlt_frame_s
  * \param self a frame
- * \return the alpha channel
+ * \return the alpha channel or NULL
  */
 
 uint8_t *mlt_frame_get_alpha( mlt_frame self )
