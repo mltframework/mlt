@@ -166,6 +166,8 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 
 const char* mlt_properties_get_lcnumeric( mlt_properties self )
 {
+	if ( !self ) return NULL;
+
 	property_list *list = self->local;
 	const char *result = NULL;
 
