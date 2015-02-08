@@ -61,7 +61,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 	if ( !freeze || freeze_after || freeze_before )
 	{
 		double prod_speed = mlt_properties_get_double( properties, "_speed" );
-		double actual_position = in + prod_speed * (double) mlt_producer_position( producer );
+                double actual_position = prod_speed * ( in + mlt_producer_position( producer ) );
 
 		if ( mlt_properties_get_int( properties, "reverse" ) )
 			actual_position = mlt_producer_get_playtime( producer ) - actual_position;
@@ -174,7 +174,6 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		mlt_properties_set_int( properties, "_output_width", *width );
 		mlt_properties_set_int( properties, "_output_height", *height );
 		mlt_properties_set_int( properties, "_output_format", *format );
-	
 	}
 
 	if ( !first_alpha )
@@ -196,8 +195,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	// Set the output image
 	*image = image_copy;
-	mlt_frame_set_image( frame, *image, size, mlt_pool_release );
-
+	mlt_frame_set_image( frame, image_copy, size, mlt_pool_release );
 	mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
 
 	return 0;
@@ -226,8 +224,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		    // Get the frame to cache from the real producer
 		    mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
 
+                    // Get the producer speed
+                    double prod_speed = mlt_properties_get_double( properties, "_speed" );
+
 		    // Seek the producer to the correct place
-		    mlt_producer_seek( real_producer, mlt_producer_position( producer ) );
+		    mlt_producer_seek( real_producer, mlt_producer_position( producer ) * prod_speed );
 
 		    // Get the frame
 		    mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
@@ -249,7 +250,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		}
 
 		mlt_properties_inherit( frame_properties, MLT_FRAME_PROPERTIES(first_frame) );
-		
+
 		double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
 		if ( force_aspect_ratio <= 0.0 ) force_aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", force_aspect_ratio );
@@ -328,7 +329,7 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 		mlt_properties_set_data( properties, "producer", real_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 		// Grab some stuff from the real_producer
-		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "length, width, height, aspect_ratio" );
+		mlt_properties_pass_list( properties, MLT_PRODUCER_PROPERTIES( real_producer ), "progressive, length, width, height, aspect_ratio" );
 
 		if ( speed < 0 )
 		{
