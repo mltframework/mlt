@@ -205,7 +205,12 @@ int mlt_producer_is_mix( mlt_producer self )
 
 int mlt_producer_is_blank( mlt_producer self )
 {
-	return self == NULL || !strcmp( mlt_properties_get( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( self ) ), "resource" ), "blank" );
+	if ( self )
+	{
+		const char *resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( self ) ), "resource" );
+		return ( resource && !strcmp( "blank", resource ) );
+	}
+	return ( self == NULL );
 }
 
 /** Obtain the parent producer.
