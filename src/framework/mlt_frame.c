@@ -89,7 +89,10 @@ mlt_properties mlt_frame_properties( mlt_frame self )
 
 int mlt_frame_is_test_card( mlt_frame self )
 {
-	return mlt_deque_count( self->stack_image ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( self ), "test_image" );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
+	return ( mlt_deque_count( self->stack_image ) == 0
+			 && !mlt_properties_get_data( properties, "image", NULL ) )
+			|| mlt_properties_get_int( properties, "test_image" );
 }
 
 /** Determine if the frame will produce audio from a test card.
@@ -101,7 +104,10 @@ int mlt_frame_is_test_card( mlt_frame self )
 
 int mlt_frame_is_test_audio( mlt_frame self )
 {
-	return mlt_deque_count( self->stack_audio ) == 0 || mlt_properties_get_int( MLT_FRAME_PROPERTIES( self ), "test_audio" );
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
+	return ( mlt_deque_count( self->stack_audio ) == 0
+			 && !mlt_properties_get_data( properties, "audio", NULL ) )
+			|| mlt_properties_get_int( properties, "test_audio" );
 }
 
 /** Get the sample aspect ratio of the frame.
