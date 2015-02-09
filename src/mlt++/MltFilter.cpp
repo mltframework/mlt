@@ -130,3 +130,8 @@ double Filter::get_progress( Frame &frame )
 {
 	return mlt_filter_get_progress( get_filter( ), frame.get_frame( ) );
 }
+
+void Filter::process( Frame &frame )
+{
+	mlt_filter_process( get_filter( ), frame.get_frame() );
+}
