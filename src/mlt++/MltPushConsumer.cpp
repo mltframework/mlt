@@ -1,7 +1,7 @@
 /**
  * MltPushConsumer.cpp - MLT Wrapper
- * Copyright (C) 2004-2005 Charles Yates
- * Author: Charles Yates <charles.yates@pandora.be>
+ * Copyright (C) 2004-2015 Meltytech, LLC
+ * Author: Charles Yates <charles.yates@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
