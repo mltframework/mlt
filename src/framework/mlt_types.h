@@ -184,7 +184,9 @@ typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serializ
 #include <pthread.h>
 /* Win32 compatibility function declarations */
 extern int usleep(unsigned int useconds);
+#ifndef WIN_PTHREADS_TIME_H
 extern int nanosleep( const struct timespec * rqtp, struct timespec * rmtp );
+#endif
 extern int setenv(const char *name, const char *value, int overwrite);
 #endif
 

@@ -37,6 +37,7 @@ extern "C" {
 #if defined(__DARWIN__)
 #include <OpenGL/OpenGL.h>
 #elif defined(WIN32)
+#include <windows.h>
 #include <wingdi.h>
 #else
 #include <GL/glx.h>

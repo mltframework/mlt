@@ -32,6 +32,12 @@
 #define PRESETS_DIR "/presets"
 
 #ifdef WIN32
+#ifdef PREFIX_LIB
+#undef PREFIX_LIB
+#endif
+#ifdef PREFIX_DATA
+#undef PREFIX_DATA
+#endif
 #include <windows.h>
 /** the default subdirectory of the libdir for holding modules (plugins) */
 #define PREFIX_LIB "\\lib\\mlt"
