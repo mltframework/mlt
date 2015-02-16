@@ -1,6 +1,47 @@
 MLT Release Notes
 -----------------
 
+Version 0.9.4 - February 15, 2015
+
+This is a bugfix and minor enhancement release. Here are some of the notable
+changes and enhancements.
+
+Framework
+  * Added color_trc (transfer characteristic) property to mlt_consumer and mlt_frame.
+  * Added Mlt::Profile::set_display_aspect(int, int).
+  * Added mlt_pool_stat().
+  * Added mlt_smpte_df and mlt_smpte_ndf to mlt_time_format for non-drop-frame
+    timecode support.
+  * Added Mlt::Tractor::Tractor(Mlt::Profile&).
+  * Added mlt_frame_get_alpha().
+  * Added default, copy, and assignment methods to Mlt::Frame.
+  * Added Mlt::Filter::process(Mlt::Frame&).
+
+Modules
+  * Added support for color_trc property to avformat and opengl modules.
+  * Performance improvements for composite and matte transitions.
+  * Added fill, halign, and valign properties to affine transition and filter.
+  * Added producer.* and consumer.* properties to consumer producer.
+  * Fixes for libavformat and libavcodec v56.
+  * Dropped support for FFmpeg < v1.0 and Libav < v9.
+  * Added a lumakey filter.
+  * Added a localtime property to dynamictext filter.
+  * Added date/time format string support to dynamictext filter.
+  * Added no_root property to xml consumer.
+  * Added audio-only tone producer.
+  * Added drop property to count producer.
+  * Added caching to pango producer to improve performance.
+
+
+Other
+  * Added WMV and WMA avformat consumer presets.
+  * Added a ProRes-Kostya avformat consumer preset.
+  * Changed VP9 WebM preset to use Opus audio codec.
+  * Added 4K UHD and 2.5K QHD profiles.
+  * Added x265-medium and x265-medium-pass1 avformat consumer presets.
+  * Added a unit test for Mlt::Frame.
+
+
 Version 0.9.2 - June 29, 2014
 
 This is a bugfix and minor enhancement release.
