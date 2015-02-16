@@ -2,7 +2,7 @@
  * \file mlt_version.h
  * \brief contains version information
  *
- * Copyright (C) 2010-2014 Meltytech, LLC
+ * Copyright (C) 2010-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@
 
 #define LIBMLT_VERSION_MAJOR    0
 #define LIBMLT_VERSION_MINOR    9
-#define LIBMLT_VERSION_REVISION 3
+#define LIBMLT_VERSION_REVISION 4
 #define LIBMLT_VERSION_INT      ((LIBMLT_VERSION_MAJOR<<16)+(LIBMLT_VERSION_MINOR<<8)+LIBMLT_VERSION_REVISION)
 #define LIBMLT_VERSION          STRINGIZE(LIBMLT_VERSION_MAJOR.LIBMLT_VERSION_MINOR.LIBMLT_VERSION_REVISION)
 
