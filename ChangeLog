@@ -1,3 +1,539 @@
+2015-02-15  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 0.9.4.
+
+2015-02-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_factory.c, src/framework/mlt_types.h,
+  src/modules/opengl/filter_glsl_manager.cpp: Some fixes for building on
+  Windows.  Noticed while working on 64-bit build, but they do not appear to be
+  64- toolchain (4.8.2).
+
+2015-02-08  Brian Matherly <code@brianmatherly.com>
+
+  * src/mlt++/MltFilter.cpp, src/mlt++/MltFilter.h, src/mlt++/mlt++.vers,
+  src/tests/test_filter/test_filter.cpp, src/tests/test_filter/test_filter.pro,
+  src/tests/tests.pro: Add Mlt::Filter::process(Frame&) and an appropriate
+  test.
+
+2015-02-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/Mlt.h, src/mlt++/MltConsumer.cpp, src/mlt++/MltConsumer.h,
+  src/mlt++/MltDeque.cpp, src/mlt++/MltDeque.h, src/mlt++/MltEvent.cpp,
+  src/mlt++/MltEvent.h, src/mlt++/MltFactory.cpp, src/mlt++/MltFactory.h,
+  src/mlt++/MltField.cpp, src/mlt++/MltField.h, src/mlt++/MltFilter.cpp,
+  src/mlt++/MltFilter.h, src/mlt++/MltFilteredConsumer.cpp,
+  src/mlt++/MltFilteredConsumer.h, src/mlt++/MltFilteredProducer.cpp,
+  src/mlt++/MltFilteredProducer.h, src/mlt++/MltFrame.cpp,
+  src/mlt++/MltFrame.h, src/mlt++/MltGeometry.cpp, src/mlt++/MltGeometry.h,
+  src/mlt++/MltMultitrack.cpp, src/mlt++/MltMultitrack.h,
+  src/mlt++/MltParser.cpp, src/mlt++/MltParser.h, src/mlt++/MltPlaylist.cpp,
+  src/mlt++/MltPlaylist.h, src/mlt++/MltProducer.cpp, src/mlt++/MltProducer.h,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h,
+  src/mlt++/MltPushConsumer.cpp, src/mlt++/MltPushConsumer.h,
+  src/mlt++/MltService.cpp, src/mlt++/MltService.h, src/mlt++/MltTokeniser.cpp,
+  src/mlt++/MltTokeniser.h, src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h,
+  src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h, src/mlt++/config.h,
+  src/modules/vmfx/filter_chroma.c, src/modules/vmfx/filter_chroma_hold.c,
+  src/modules/vmfx/filter_mono.c, src/modules/vmfx/filter_shape.c,
+  src/swig/mlt.i: Transfer copyright of mlt++ and swig/mlt.i to Meltytech, LLC.
+   Also, update Charles' email address.
+
+2015-02-03  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c, src/modules/core/filter_crop.c,
+  src/modules/core/filter_rescale.c: Replace some mlt_frame_get_alpha_mask with
+  mlt_frame_get_alpha.
+
+  * src/framework/mlt_tractor.c, src/modules/core/filter_resize.c,
+  src/modules/core/transition_composite.c, src/modules/gtk2/producer_pango.c,
+  src/modules/gtk2/producer_pixbuf.c: Use mlt_frame_get_alpha() instead of
+  mlt_frame_get_alpha_mask().
+
+  * src/framework/mlt.vers, src/framework/mlt_frame.c,
+  src/framework/mlt_frame.h: implement mlt_frame_get_alpha
+
+2015-02-02  Maksym Veremeyenko <verem@m1stereo.tv>
+
+  * src/modules/gtk2/factory.c, src/modules/gtk2/producer_pango.c,
+  src/modules/gtk2/producer_pango.yml: implement caching images
+
+  * src/modules/gtk2/factory.c, src/modules/gtk2/producer_pixbuf.yml: introduce
+  environment variable MLT_PIXBUF_PRODUCER_CACHE to increase/override number of
+  cached converted images
+
+2015-02-02  Brian Matherly <code@brianmatherly.com>
+
+  * src/mlt++/MltFrame.cpp, src/mlt++/MltFrame.h, src/mlt++/mlt++.vers,
+  src/tests/test_frame/test_frame.cpp: Add default constructor, const copy
+  constructor and copy operator=.  The default constructor is useful to define
+  frame objects that will be assigned at a later time. In Mlt++, some objects
+  have a default constructor that initializes the underlying MLT type while
+  others create an invalid object. The Frame copy constructor creates an
+  invalid object so that empty frames can be predeclared without the expense of
+  initializing an empty frame only to destroy it all when it is actually
+  assigned to a frame.  The const copy constructor duplicates the non-const
+  constructor, but is useful so that frames can be initialized from tempory
+  variables.  The copy operator= is necessary so that frames can be stored in
+  containers.  Additionally, with this change, Mlt::Frame implements "the big
+  three" which is a good practice.
+
+2015-01-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qt/qimage_wrapper.cpp:
+  Remove unusused variable image_key.
+
+2015-01-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h, src/mlt++/mlt++.vers: Add
+  Mlt::Tractor constructor that applies a Mlt::Profile.
+
+2015-01-15  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/x265-medium,
+  presets/consumer/avformat/x265-medium-pass1: Add a couple of x265 presets.
+
+2015-01-04  Kevin Deldycke <kevin@deldycke.com>
+
+  * profiles/qhd_1440p_2398, profiles/qhd_1440p_24, profiles/qhd_1440p_25,
+  profiles/qhd_1440p_2997, profiles/qhd_1440p_30, profiles/qhd_1440p_50,
+  profiles/qhd_1440p_5994, profiles/qhd_1440p_60, profiles/uhd_2160p_2398,
+  profiles/uhd_2160p_24, profiles/uhd_2160p_25, profiles/uhd_2160p_2997,
+  profiles/uhd_2160p_30, profiles/uhd_2160p_50, profiles/uhd_2160p_5994,
+  profiles/uhd_2160p_60: Add 4K and 2.5K profiles.
+
+2014-12-19  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/plus/producer_count.c, src/modules/plus/producer_count.yml: Add
+  non-drop-frame support.  Also, use mlt_properties_get_time() instead of
+  calculating the timecode manually.
+
+2014-12-16  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/Makefile, src/modules/qt/configure,
+  src/modules/qt/factory.c: Allow building qt module without OpenGL.
+
+2014-12-16  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/producer_tone.c, src/modules/core/producer_tone.yml: Add new
+  audio tone producer.
+
+2014-12-12  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/consumer_xml.yml: Add
+  support for smpte_ndf to consumer_xml.
+
+  * src/framework/mlt_property.c, src/framework/mlt_types.h,
+  src/mlt++/MltProducer.h, src/mlt++/MltProperties.h,
+  src/modules/core/filter_data_show.c, src/modules/plus/filter_dynamictext.c,
+  src/modules/plus/filter_dynamictext.yml, src/modules/xml/consumer_xml.c,
+  src/tests/test_properties/test_properties.cpp: Add support for non-drop-frame
+  timecode.
+
+2014-12-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_tractor.c, src/modules/avformat/producer_avformat.c,
+  src/modules/core/producer_consumer.c: Fix audio and huge memory leak using
+  consumer producer. (SF-221)  This would occur when the output frame rate is
+  less than the project frame rate. The problem was that the avformat producer
+  would not produce enough samples to fulfill the consumer producer's request.
+  Then, the consumer producer would skip frames to reduce frame rate. That
+  resulted in some audio being skipped and choppy output. This also caused a
+  massive audio underflow in the avformat consumer. Next, while the avformat
+  consumer is trying maintain audio/video sync, it would accumulate video
+  frames in its queue causing the memory utilization to rise quickly.
+
+2014-12-05  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/core/filter_watermark.c, src/modules/plus/filter_dynamictext.c:
+  Second Try: Fix filters with encapsulated transitions corrupting frame
+  position.  Filters that use an encapsulated transition were modifying the
+  frame position. Other filters that rely on the frame position would get an
+  incorrect value.  Test case: melt -producer frei0r.test_pat_B -filter wave
+  -filter watermark:"+hi.txt" in=200 out=400 At frame 200 the wave would "jump"
+  because the wave phase is calculated from frame position which gets modified
+  by the watermark filter.
+
+2014-12-02  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/core/filter_watermark.c, src/modules/plus/filter_dynamictext.c:
+  Fix filters with encapsulated transitions corrupting frame position.  Filters
+  that use an encapsulated transition were modifying the frame position. Other
+  filters that rely on the frame position would get an incorrect value.  Test
+  case: melt -producer frei0r.test_pat_B -filter wave -filter
+  watermark:"+hi.txt" in=200 out=400 At frame 200 the wave would "jump" because
+  the wave phase is calculated from frame position which gets modified by the
+  watermark filter.
+
+2014-11-24  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/framework/mlt.vers, src/framework/mlt_pool.c, src/framework/mlt_pool.h:
+  Implement mlt_pool_stat.
+
+2014-11-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/consumer_xml.yml: Add an
+  option to not output the root attribute.
+
+2014-11-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/oldfilm/filter_dust.yml, src/modules/oldfilm/filter_grain.yml,
+  src/modules/oldfilm/filter_oldfilm.yml, src/swig/ruby/metadata.rb: Changes to
+  YAML and metadata.rb to make ruby 1.9.3 happy.  The Ruby YAML parser does not
+  like percent sign in double-quotes - probably trying to expand it or
+  something.
+
+2014-11-03  Dan Dennedy <dan@dennedy.org>
+
+  * README, docs/framework.txt, docs/melt.1, docs/melt.txt, docs/mlt-xml.txt,
+  src/framework/mlt.h, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h, src/framework/mlt_cache.c,
+  src/framework/mlt_cache.h, src/framework/mlt_consumer.c,
+  src/framework/mlt_consumer.h, src/framework/mlt_deque.c,
+  src/framework/mlt_deque.h, src/framework/mlt_events.c,
+  src/framework/mlt_events.h, src/framework/mlt_factory.c,
+  src/framework/mlt_factory.h, src/framework/mlt_field.c,
+  src/framework/mlt_field.h, src/framework/mlt_filter.c,
+  src/framework/mlt_filter.h, src/framework/mlt_frame.c,
+  src/framework/mlt_frame.h, src/framework/mlt_geometry.c,
+  src/framework/mlt_geometry.h, src/framework/mlt_log.c,
+  src/framework/mlt_log.h, src/framework/mlt_multitrack.c,
+  src/framework/mlt_multitrack.h, src/framework/mlt_parser.c,
+  src/framework/mlt_parser.h, src/framework/mlt_playlist.c,
+  src/framework/mlt_playlist.h, src/framework/mlt_pool.c,
+  src/framework/mlt_pool.h, src/framework/mlt_producer.c,
+  src/framework/mlt_producer.h, src/framework/mlt_profile.c,
+  src/framework/mlt_profile.h, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/framework/mlt_property.c,
+  src/framework/mlt_property.h, src/framework/mlt_repository.c,
+  src/framework/mlt_repository.h, src/framework/mlt_service.c,
+  src/framework/mlt_service.h, src/framework/mlt_tokeniser.c,
+  src/framework/mlt_tokeniser.h, src/framework/mlt_tractor.c,
+  src/framework/mlt_tractor.h, src/framework/mlt_transition.c,
+  src/framework/mlt_transition.h, src/framework/mlt_types.h,
+  src/framework/mlt_version.c, src/framework/mlt_version.h, src/melt/io.c,
+  src/melt/io.h, src/melt/melt.c, src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/consumer_avformat.yml, src/modules/avformat/factory.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_avdeinterlace.c,
+  src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml, src/modules/avformat/vdpau.c,
+  src/modules/core/composite_line_yuv_sse2_simple.c,
+  src/modules/core/consumer_multi.c, src/modules/core/consumer_multi.yml,
+  src/modules/core/consumer_null.c, src/modules/core/factory.c,
+  src/modules/core/filter_audiochannels.c,
+  src/modules/core/filter_audioconvert.c, src/modules/core/filter_audiowave.c,
+  src/modules/core/filter_audiowave.yml, src/modules/core/filter_brightness.c,
+  src/modules/core/filter_brightness.yml,
+  src/modules/core/filter_channelcopy.c,
+  src/modules/core/filter_channelcopy.yml, src/modules/core/filter_crop.c,
+  src/modules/core/filter_crop.yml, src/modules/core/filter_data_feed.c,
+  src/modules/core/filter_data_show.c, src/modules/core/filter_data_show.yml,
+  src/modules/core/filter_fieldorder.c, src/modules/core/filter_fieldorder.yml,
+  src/modules/core/filter_gamma.c, src/modules/core/filter_gamma.yml,
+  src/modules/core/filter_greyscale.c, src/modules/core/filter_greyscale.yml,
+  src/modules/core/filter_imageconvert.c, src/modules/core/filter_luma.c,
+  src/modules/core/filter_luma.yml, src/modules/core/filter_mirror.c,
+  src/modules/core/filter_mirror.yml, src/modules/core/filter_mono.c,
+  src/modules/core/filter_mono.yml, src/modules/core/filter_obscure.c,
+  src/modules/core/filter_obscure.yml, src/modules/core/filter_panner.c,
+  src/modules/core/filter_panner.yml, src/modules/core/filter_region.c,
+  src/modules/core/filter_region.yml, src/modules/core/filter_rescale.c,
+  src/modules/core/filter_rescale.yml, src/modules/core/filter_resize.c,
+  src/modules/core/filter_resize.yml, src/modules/core/filter_transition.c,
+  src/modules/core/filter_transition.yml, src/modules/core/filter_watermark.c,
+  src/modules/core/filter_watermark.yml, src/modules/core/producer_colour.c,
+  src/modules/core/producer_colour.yml, src/modules/core/producer_consumer.c,
+  src/modules/core/producer_consumer.yml, src/modules/core/producer_hold.c,
+  src/modules/core/producer_hold.yml, src/modules/core/producer_loader.c,
+  src/modules/core/producer_loader.yml, src/modules/core/producer_melt.c,
+  src/modules/core/producer_melt.yml, src/modules/core/producer_melt_file.yml,
+  src/modules/core/producer_noise.c, src/modules/core/producer_noise.yml,
+  src/modules/core/transition_composite.c,
+  src/modules/core/transition_composite.h,
+  src/modules/core/transition_composite.yml,
+  src/modules/core/transition_luma.c, src/modules/core/transition_luma.yml,
+  src/modules/core/transition_matte.c, src/modules/core/transition_matte.yml,
+  src/modules/core/transition_mix.c, src/modules/core/transition_mix.yml,
+  src/modules/core/transition_region.c, src/modules/core/transition_region.h,
+  src/modules/core/transition_region.yml, src/modules/dv/consumer_libdv.c,
+  src/modules/dv/consumer_libdv.yml, src/modules/dv/factory.c,
+  src/modules/dv/producer_libdv.c, src/modules/dv/producer_libdv.yml,
+  src/modules/gtk2/consumer_gtk2.c, src/modules/gtk2/consumer_gtk2_preview.yml,
+  src/modules/gtk2/factory.c, src/modules/gtk2/filter_rescale.c,
+  src/modules/gtk2/filter_rescale.yml, src/modules/gtk2/pixops.c,
+  src/modules/gtk2/pixops.h, src/modules/gtk2/producer_pango.c,
+  src/modules/gtk2/producer_pango.yml, src/modules/gtk2/producer_pixbuf.c,
+  src/modules/gtk2/producer_pixbuf.yml,
+  src/modules/gtk2/scale_line_22_yuv_mmx.S,
+  src/modules/jackrack/consumer_jack.c, src/modules/jackrack/consumer_jack.yml,
+  src/modules/jackrack/factory.c, src/modules/jackrack/filter_jackrack.c,
+  src/modules/jackrack/filter_jackrack.yml,
+  src/modules/jackrack/filter_ladspa.c, src/modules/jackrack/filter_ladspa.yml,
+  src/modules/jackrack/jack_rack.c, src/modules/jackrack/jack_rack.h,
+  src/modules/jackrack/lock_free_fifo.c, src/modules/jackrack/lock_free_fifo.h,
+  src/modules/jackrack/plugin.c, src/modules/jackrack/plugin.h,
+  src/modules/jackrack/plugin_desc.c, src/modules/jackrack/plugin_desc.h,
+  src/modules/jackrack/plugin_mgr.c, src/modules/jackrack/plugin_mgr.h,
+  src/modules/jackrack/plugin_settings.c,
+  src/modules/jackrack/plugin_settings.h, src/modules/jackrack/process.c,
+  src/modules/jackrack/process.h, src/modules/jackrack/producer_ladspa.c,
+  src/modules/jackrack/producer_ladspa.yml, src/modules/kino/factory.c,
+  src/modules/kino/kino_wrapper.cc, src/modules/kino/kino_wrapper.h,
+  src/modules/kino/producer_kino.c, src/modules/lumas/luma.c,
+  src/modules/normalize/factory.c, src/modules/normalize/filter_volume.c,
+  src/modules/normalize/filter_volume.yml, src/modules/plus/factory.c,
+  src/modules/plus/filter_affine.c, src/modules/plus/filter_affine.yml,
+  src/modules/plus/filter_charcoal.c, src/modules/plus/filter_charcoal.yml,
+  src/modules/plus/filter_dynamictext.c,
+  src/modules/plus/filter_dynamictext.yml, src/modules/plus/filter_invert.c,
+  src/modules/plus/filter_invert.yml, src/modules/plus/filter_sepia.c,
+  src/modules/plus/filter_sepia.yml, src/modules/plus/transition_affine.c,
+  src/modules/plus/transition_affine.yml, src/modules/resample/factory.c,
+  src/modules/resample/filter_resample.c,
+  src/modules/resample/filter_resample.yml, src/modules/sdl/consumer_sdl.c,
+  src/modules/sdl/consumer_sdl.yml, src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/consumer_sdl_audio.yml, src/modules/sdl/consumer_sdl_osx.h,
+  src/modules/sdl/consumer_sdl_osx.m, src/modules/sdl/consumer_sdl_preview.c,
+  src/modules/sdl/consumer_sdl_preview.yml,
+  src/modules/sdl/consumer_sdl_still.c, src/modules/sdl/consumer_sdl_still.yml,
+  src/modules/sdl/factory.c, src/modules/sdl/producer_sdl_image.c,
+  src/modules/sdl/producer_sdl_image.yml, src/modules/sox/factory.c,
+  src/modules/sox/filter_sox.c, src/modules/sox/filter_sox.yml,
+  src/modules/sox/filter_sox_effect.yml, src/modules/vorbis/factory.c,
+  src/modules/vorbis/producer_vorbis.c, src/modules/vorbis/producer_vorbis.yml,
+  src/modules/xine/factory.c, src/modules/xine/filter_deinterlace.c,
+  src/modules/xml/consumer_xml.c, src/modules/xml/consumer_xml.yml,
+  src/modules/xml/factory.c, src/modules/xml/producer_xml-nogl.yml,
+  src/modules/xml/producer_xml-string.yml, src/modules/xml/producer_xml.c,
+  src/modules/xml/producer_xml.yml, src/win32/win32.c: Transfer Ushodaya
+  copyrights to Meltytech, LLC.  On September 30, 2014, Ushodaya Enterprises
+  Limited assigned copyright to Daniel Dennedy, acting on behalf of Meltytech,
+  LLC.
+
+2014-11-02  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/gtk2/configure, src/modules/qt/configure: print message when
+  libexif is missing on configure
+
+2014-10-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_dynamictext.c,
+  src/modules/plus/filter_dynamictext.yml: Add localtime keyword to dynamictext
+  filter.
+
+2014-10-20  Janne Liljeblad <janne.liljeblad@gmail.com>
+
+  * src/modules/plus/Makefile, src/modules/plus/factory.c,
+  src/modules/plus/filter_lumakey.c, src/modules/plus/filter_lumakey.yml: Add
+  Luma Key filter
+
+2014-10-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/Makefile, src/modules/avformat/producer_avformat.c:
+  Revert 279ebd to prevent integer overflow for duration calculation.  The
+  integer math could easily overflow with large number for profile-
+  auto-profile. To address the Maksym's concern, rounding was added.
+
+2014-10-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_factory.c, src/framework/mlt_factory.h: Ignore
+  MLT_REPOSITORY env var on Windows and RELOCATABLE Darwin builds.
+
+2014-10-01  Markus Elfring <elfring@users.sourceforge.net>
+
+  * coccinelle/delete_if4.cocci, src/framework/mlt_pool.c: Remove an
+  unnecessary null check in mlt_pool. (SF-216)
+
+2014-09-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Use av_frame_alloc() instead of
+  deprecated avcodec_alloc_frame().
+
+  * src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/producer_avformat.c: Drop support for FFmpeg < v1.0 and
+  Libav < v9.
+
+2014-09-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Fix a couple of compiler warnings
+  in avformat unrelated to API.
+
+2014-09-22  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/kdenlivetitle_wrapper.cpp,
+  src/modules/qt/producer_kdenlivetitle.c: Fix initialization of aspect ratio
+  and meta.media.width/height
+
+2014-09-21  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/MJPEG, presets/consumer/avformat/lossless/MJPEG:
+  threads=1 is no longer needed for MJPEG.
+
+  * src/mlt++/Mlt.h, src/mlt++/MltConsumer.h, src/mlt++/MltDeque.h,
+  src/mlt++/MltEvent.h, src/mlt++/MltFactory.h, src/mlt++/MltField.h,
+  src/mlt++/MltFilter.h, src/mlt++/MltFilteredConsumer.h,
+  src/mlt++/MltFilteredProducer.h, src/mlt++/MltFrame.h,
+  src/mlt++/MltGeometry.h, src/mlt++/MltMultitrack.h, src/mlt++/MltParser.h,
+  src/mlt++/MltPlaylist.h, src/mlt++/MltProducer.h, src/mlt++/MltProfile.h,
+  src/mlt++/MltProperties.h, src/mlt++/MltRepository.h, src/mlt++/MltService.h,
+  src/mlt++/MltTokeniser.h, src/mlt++/MltTractor.h, src/mlt++/MltTransition.h,
+  src/mlt++/config.h: Fix reserved identifiers for include guards in mlt++.
+  (SF-215)
+
+  * src/framework/mlt.h, src/framework/mlt_cache.h,
+  src/framework/mlt_consumer.h, src/framework/mlt_deque.h,
+  src/framework/mlt_events.h, src/framework/mlt_factory.h,
+  src/framework/mlt_field.h, src/framework/mlt_filter.h,
+  src/framework/mlt_frame.h, src/framework/mlt_geometry.h,
+  src/framework/mlt_multitrack.h, src/framework/mlt_parser.h,
+  src/framework/mlt_playlist.h, src/framework/mlt_pool.h,
+  src/framework/mlt_producer.h, src/framework/mlt_profile.h,
+  src/framework/mlt_properties.h, src/framework/mlt_property.h,
+  src/framework/mlt_repository.h, src/framework/mlt_service.h,
+  src/framework/mlt_tokeniser.h, src/framework/mlt_tractor.h,
+  src/framework/mlt_transition.h, src/framework/mlt_types.h,
+  src/framework/mlt_version.h: Fix reserved identifiers for include guards in
+  framework. (SF-215)
+
+2014-09-20  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, src/framework/mlt_factory.c, src/framework/mlt_factory.h,
+  src/framework/mlt_profile.h: Add a dedicated page to doxygen docs for
+  environment variables.
+
+  * src/framework/mlt_factory.c, src/framework/mlt_properties.c,
+  src/framework/mlt_repository.c: Refactor handling MLT_PRESETS_PATH
+  environment var.
+
+2014-09-20  Markus Elfring <elfring@users.sourceforge.net>
+
+  * src/modules/kino/filehandler.cc, src/modules/qt/qimage_wrapper.cpp: Bug
+  #MLT-216: Removal of unnecessary checks before a few calls of the C++ delete
+  operator  The C++ delete operator can also handle passed null pointers on its
+  own without unexpected side effects.
+  http://www.parashift.com/c++-faq/delete-handles-null.html  It is therefore
+  not needed to keep additional safety checks directly before such function
+  calls. 
+
+  * src/framework/mlt_animation.c, src/framework/mlt_consumer.c,
+  src/framework/mlt_geometry.c, src/framework/mlt_profile.c,
+  src/framework/mlt_properties.c, src/framework/mlt_property.c,
+  src/melt/melt.c, src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/vdpau.c, src/modules/core/consumer_multi.c,
+  src/modules/gtk2/producer_pixbuf.c, src/modules/linsys/consumer_SDIstream.c,
+  src/modules/plus/transition_affine.c, src/modules/plusgpl/cJSON.c,
+  src/modules/videostab/filter_videostab.c,
+  src/modules/videostab/filter_videostab2.c, src/modules/videostab/stabilize.c,
+  src/modules/videostab/tlist.c, src/modules/vorbis/producer_vorbis.c,
+  src/modules/xml/producer_xml.c: Bug #MLT-216: Deletion of unnecessary checks
+  before specific function calls  A couple of functions perform input parameter
+  validation before their implementations will try further actions with side
+  effects. Some calling functions perform similar safety checks.  Functions
+  which release a system resource are occasionally documented in the way that
+  they tolerate the passing of a null pointer for example. There is not a need
+  because of this fact that a function caller repeats a corresponding check.  A
+  previously added semantic patch approach suggested the changes that are shown
+  here. 
+
+2014-09-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_playlist.c, src/framework/mlt_producer.c: Fix LC_NUMERIC
+  for a couple of nested services (shotcut-36)
+
+2014-09-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltProfile.cpp, src/mlt++/MltProfile.h, src/mlt++/mlt++.vers: Add
+  Mlt::Profile::set_display_aspect().
+
+2014-09-03  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/core/filter_brightness.yml,
+  src/modules/core/filter_watermark.yml, src/modules/core/producer_loader.yml,
+  src/modules/core/transition_composite.yml,
+  src/modules/normalize/filter_volume.yml, src/modules/plus/filter_rgblut.c,
+  src/modules/plus/filter_rgblut.yml: Don't use "unset" for parameters that are
+  not set by default.  Exclude the "default" tag altogether instead.
+
+2014-09-02  Brian Matherly <pez4brian@yahoo.com>
+
+  * src/modules/normalize/filter_volume.c,
+  src/modules/normalize/filter_volume.yml: Change level parameter to be in
+  units of dB.
+
+2014-09-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/factory.c, src/modules/avformat/producer_avformat.yml:
+  Add MLT_AVFORMAT_PRODUCER_CACHE environment variable.
+
+2014-08-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_factory.c, src/framework/mlt_factory.h: Improve dox for
+  mlt_factory_producer().
+
+2014-08-25  Andreas Cadhalpun <Andreas.Cadhalpun@googlemail.com>
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure: Use
+  pkg-config to determine FFmpeg linker flags.  Use 'pkg-config --libs' instead
+  of 'pkg-config --libs-only-L'.
+
+2014-08-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_brightness.c,
+  src/modules/core/filter_brightness.yml: Add keyframable alpha property to
+  brightness filter.
+
+2014-08-19  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/WMA, presets/consumer/avformat/WMV: Add WMV and
+  WMA encode presets for Windows Media Player.
+
+  * src/modules/plus/transition_affine.c,
+  src/modules/plus/transition_affine.yml: Add halign and valign properties to
+  affine.
+
+2014-08-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/transition_affine.c,
+  src/modules/plus/transition_affine.yml: Add fill property to affine.
+
+  * src/modules/plus/filter_affine.yml, src/modules/plus/transition_affine.yml:
+  Document the affine filter and transition.
+
+2014-07-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Add support for color_trc
+  handling to avformat module.
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_frame.h,
+  src/framework/mlt_tractor.c, src/framework/mlt_transition.c,
+  src/modules/core/consumer_multi.c: Add support for color_trc (transfer
+  characteristic) to framework.  Frames and consumers can now have a color_trc
+  property. Setting color_trc on the consumer propogates to a
+  consumer_color_trc property on the frame.
+
+2014-07-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: Cleanup full range YUV handling. 
+  In FFmpeg v2.3, calling sws_setColorspaceDetails() after sws_getContext() for
+  YUV conversions works as desired. Now, we can also get rid of the swscale
+  deprecated pixel format warnings.  Based on patches by Loic Guibert <lfdummy-
+
+2014-07-13  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 0.9.3.
+
 2014-06-29  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
@@ -18,10 +554,12 @@
   documentation lets people know to use vidstab instead.
 
   * src/modules/Makefile, src/modules/configure,
-  src/modules/dv/consumer_libdv.yml, src/modules/dv/producer_libdv.yml,
-  src/modules/vorbis/producer_vorbis.yml: Deprecate the dv, kino, and vorbis
-  modules.  They are removed from the normal configure & make build process,
-  but they are still easy to build manually if needed, e.g.: make -C src/
+  src/modules/dv/consumer_libdv.yml, src/modules/dv/deprecated,
+  src/modules/dv/producer_libdv.yml, src/modules/kino/deprecated,
+  src/modules/vorbis/deprecated, src/modules/vorbis/producer_vorbis.yml:
+  Deprecate the dv, kino, and vorbis modules.  They are removed from the normal
+  configure & make build process, but they are still easy to build manually if
+  needed, e.g.: make -C src/
 
   * src/modules/core/Makefile, src/modules/core/factory.c,
   src/modules/core/producer_ppm.c: Remove the ppm pipe producer.  No one uses
@@ -134,7 +672,7 @@
   .../opengl/filter_movit_deconvolution_sharpen.cpp,
   src/modules/opengl/filter_movit_diffusion.cpp,
   src/modules/opengl/filter_movit_glow.cpp,
-  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_lift_gamma_gain.cpp,
   src/modules/opengl/filter_movit_opacity.cpp,
   src/modules/opengl/filter_movit_resample.cpp,
   src/modules/opengl/filter_movit_resize.cpp,
@@ -262,22 +800,23 @@
   src/modules/rotoscoping/cJSON.c, src/modules/rotoscoping/cJSON.h,
   src/modules/rotoscoping/factory.c,
   src/modules/rotoscoping/filter_rotoscoping.c,
-  src/modules/rotoscoping/filter_rotoscoping.yml: Move rotoscoping filter into
-  plusgpl module.
+  src/modules/rotoscoping/filter_rotoscoping.yml, src/modules/rotoscoping/gpl:
+  Move rotoscoping filter into plusgpl module.
 
   * src/modules/effectv/Makefile, src/modules/effectv/factory.c,
   src/modules/effectv/filter_burn.c, src/modules/effectv/filter_burningtv.yml,
-  src/modules/effectv/image.c, src/modules/effectv/utils.c,
-  src/modules/effectv/utils.h, src/modules/plusgpl/Makefile,
-  src/modules/plusgpl/factory.c, src/modules/plusgpl/filter_burn.c,
-  src/modules/plusgpl/filter_burningtv.yml, src/modules/plusgpl/image.c,
-  src/modules/plusgpl/utils.c, src/modules/plusgpl/utils.h: Move burningtv into
-  plusgpl module.
+  src/modules/effectv/gpl, src/modules/effectv/image.c,
+  src/modules/effectv/utils.c, src/modules/effectv/utils.h,
+  src/modules/plusgpl/Makefile, src/modules/plusgpl/factory.c,
+  src/modules/plusgpl/filter_burn.c, src/modules/plusgpl/filter_burningtv.yml,
+  src/modules/plusgpl/image.c, src/modules/plusgpl/utils.c,
+  src/modules/plusgpl/utils.h: Move burningtv into plusgpl module.
 
   * src/modules/dgraft/Makefile, src/modules/dgraft/factory.c,
-  src/modules/dgraft/filter_telecide.c, src/modules/plusgpl/Makefile,
-  src/modules/plusgpl/factory.c, src/modules/plusgpl/filter_telecide.c: Start
-  new plusgpl module from dgraft.
+  src/modules/dgraft/filter_telecide.c, src/modules/dgraft/gpl,
+  src/modules/plusgpl/Makefile, src/modules/plusgpl/factory.c,
+  src/modules/plusgpl/filter_telecide.c, src/modules/plusgpl/gpl: Start new
+  plusgpl module from dgraft.
 
 2014-02-13  Maksym Veremeyenko <verem@m1.tv>
 
@@ -409,7 +948,7 @@
   .../opengl/filter_movit_deconvolution_sharpen.cpp,
   src/modules/opengl/filter_movit_diffusion.cpp,
   src/modules/opengl/filter_movit_glow.cpp,
-  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_lift_gamma_gain.cpp,
   src/modules/opengl/filter_movit_mirror.cpp,
   src/modules/opengl/filter_movit_opacity.cpp,
   src/modules/opengl/filter_movit_rect.cpp,
@@ -469,12 +1008,12 @@
 2014-01-16  Steinar H. Gunderson <sgunderson@bigfoot.com>
 
   * src/modules/opengl/filter_movit_convert.cpp,
-  .../opengl/filter_movit_deconvolution_sharpen.cpp: Let Movit effects supply
-  their own fingerprint.  This allows effects to signal that some sort of
-  change means the chain needs to be regenerated. In particular, this unbreaks
-  changing the matrix_size parameter of DeconvolutionSharpenEffect; if you
-  change it, the entire chain will now be regenerated, instead of getting an
-  assertion failure.
+  src/modules/opengl/filter_movit_deconvolution_sharpen.cpp: Let Movit effects
+  supply their own fingerprint.  This allows effects to signal that some sort
+  of change means the chain needs to be regenerated. In particular, this
+  unbreaks changing the matrix_size parameter of DeconvolutionSharpenEffect; if
+  you change it, the entire chain will now be regenerated, instead of getting
+  an assertion failure.
 
   * src/modules/opengl/filter_movit_convert.cpp,
   src/modules/opengl/filter_movit_crop.cpp,
@@ -662,10 +1201,6 @@
   according to the original vid.stab default settings. * Added a deshake data
   clear when seeking is performed. * Added a version check in configure script.
 
-2014-01-07  Brian Matherly <pez4brian@yahoo.com>
-
-  * : Mark vid.stab module as GPL
-
 2014-01-07  Jakub Ksiezniak <jksiezniak@gmail.com>
 
   * src/modules/vid.stab/filter_deshake.cpp,
@@ -691,7 +1226,7 @@
 
 2014-01-05  Steinar H. Gunderson <sgunderson@bigfoot.com>
 
-  * .../opengl/filter_deconvolution_sharpen.cpp,
+  * src/modules/opengl/filter_deconvolution_sharpen.cpp,
   src/modules/opengl/filter_glsl_manager.cpp,
   src/modules/opengl/filter_glsl_manager.h,
   src/modules/opengl/filter_lift_gamma_gain.cpp,
@@ -811,7 +1346,7 @@
 
   * src/modules/qimage/Makefile, src/modules/qimage/configure,
   src/modules/qimage/consumer_qglsl.cpp, src/modules/qimage/factory.c,
-  src/modules/qimage/kdenlivetitle_wrapper.cpp,
+  src/modules/qimage/gpl, src/modules/qimage/kdenlivetitle_wrapper.cpp,
   src/modules/qimage/kdenlivetitle_wrapper.h,
   src/modules/qimage/producer_kdenlivetitle.c,
   src/modules/qimage/producer_kdenlivetitle.yml,
@@ -821,7 +1356,7 @@
   src/modules/qimage/transition_vqm.cpp, src/modules/qimage/transition_vqm.yml,
   src/modules/qt/Makefile, src/modules/qt/configure,
   src/modules/qt/consumer_qglsl.cpp, src/modules/qt/factory.c,
-  src/modules/qt/kdenlivetitle_wrapper.cpp,
+  src/modules/qt/gpl, src/modules/qt/kdenlivetitle_wrapper.cpp,
   src/modules/qt/kdenlivetitle_wrapper.h,
   src/modules/qt/producer_kdenlivetitle.c,
   src/modules/qt/producer_kdenlivetitle.yml, src/modules/qt/producer_qimage.c,
@@ -2623,8 +3158,9 @@
   * src/modules/xml/consumer_xml.c, src/modules/xml/mlt-xml.dtd: Add MLT
   version to serialized XML.
 
-  * src/modules/frei0r/factory.c, .../motion_est/filter_autotrack_rectangle.c:
-  Convert some printfs to fprintf(stderr) or mlt_log.
+  * src/modules/frei0r/factory.c,
+  src/modules/motion_est/filter_autotrack_rectangle.c: Convert some printfs to
+  fprintf(stderr) or mlt_log.
 
 2011-08-16  Dan Dennedy <dan@dennedy.org>
 
@@ -2648,11 +3184,11 @@
   * src/framework/mlt_geometry.c, src/framework/mlt_geometry.h,
   src/mlt++/MltGeometry.cpp, src/mlt++/MltGeometry.h,
   src/modules/core/transition_composite.c, src/modules/gtk2/producer_pango.c,
-  .../motion_est/filter_autotrack_rectangle.c: Add mlt_geometry_interpolate. 
-  This removes re-interpolation on each call to mlt_geometry_insert() to make
-  bulk invocations of that call faster. This also makes mlt_geometry_parse()
-  faster. Also, this includes a fix to mlt_geometry_serialise() for a buffer
-  overflow memory corruption.
+  src/modules/motion_est/filter_autotrack_rectangle.c: Add
+  mlt_geometry_interpolate.  This removes re-interpolation on each call to
+  mlt_geometry_insert() to make bulk invocations of that call faster. This also
+  makes mlt_geometry_parse() faster. Also, this includes a fix to
+  mlt_geometry_serialise() for a buffer overflow memory corruption.
 
   * src/modules/xml/Makefile, src/modules/xml/consumer_xml.c,
   src/modules/xml/consumer_xml.yml: Add 'all' property to xml consumer.  Makes
@@ -2662,6 +3198,11 @@
 
   * src/framework/mlt_filter.c, src/framework/mlt_filter.h,
   src/mlt++/MltFilter.cpp, src/mlt++/MltFilter.h: Add mlt_filter_get_length2.
+
+2011-08-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/videostab/filter_videostab.c, src/modules/videostab/gpl: Fix
+  for GPL license.
 
 2011-08-12  Marco Gittler <g.marco@freenet.de>
 
@@ -2697,10 +3238,10 @@
 2011-08-03  Dan Dennedy <dan@dennedy.org>
 
   * src/modules/jackrack/Makefile, src/modules/jackrack/configure,
-  src/modules/jackrack/consumer_jack.c, src/modules/jackrack/factory.c: Make
-  jack consumer LGPLv2.1 license.  This change allows the module to be built in
-  either GPL or LGPL mode where GPL mode also adds the jackrack and ladspa
-  filters.
+  src/modules/jackrack/consumer_jack.c, src/modules/jackrack/factory.c,
+  src/modules/jackrack/gpl: Make jack consumer LGPLv2.1 license.  This change
+  allows the module to be built in either GPL or LGPL mode where GPL mode also
+  adds the jackrack and ladspa filters.
 
   * src/modules/jackrack/Makefile, src/modules/jackrack/consumer_jack.yml: Add
   service metadata for jack consumer.
@@ -2864,7 +3405,7 @@
   src/framework/mlt_geometry.c, src/modules/core/filter_obscure.c,
   src/modules/core/transition_composite.c,
   src/modules/core/transition_region.c, src/modules/motion_est/Makefile,
-  .../motion_est/filter_autotrack_rectangle.c,
+  src/modules/motion_est/filter_autotrack_rectangle.c,
   src/modules/plus/transition_affine.c, src/tests/hello.c: Use '/' for
   coordinate delimiter instead of period.  Period is a decimal separator in
   some locales.
@@ -3011,7 +3552,7 @@
   module (WIP).
 
   * src/modules/motion_est/Makefile, src/modules/motion_est/factory.c,
-  .../motion_est/filter_autotrack_rectangle.yml,
+  src/modules/motion_est/filter_autotrack_rectangle.yml,
   src/modules/motion_est/filter_motion_est.yml,
   src/modules/motion_est/filter_vismv.yml,
   src/modules/motion_est/producer_slowmotion.yml: Add service metadata to
@@ -3312,7 +3853,7 @@
 
   * src/modules/core/filter_luma.c, src/modules/core/filter_watermark.c,
   src/modules/dgraft/filter_telecide.c, src/modules/kdenlive/filter_freeze.c,
-  .../motion_est/filter_autotrack_rectangle.c,
+  src/modules/motion_est/filter_autotrack_rectangle.c,
   src/modules/motion_est/filter_crop_detect.c,
   src/modules/oldfilm/filter_vignette.c, src/modules/plus/filter_affine.c,
   src/modules/vmfx/filter_shape.c: Refactor to mlt_filter_get_position().
@@ -3420,8 +3961,6 @@
 
   * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pixbuf.c:
   Alias bicubic for hyper in pango and pixbuf.
-
-  * : Add gpl flag file to rotoscoping filter.
 
 2011-03-02  Dan Dennedy <dan@dennedy.org>
 
@@ -3545,7 +4084,7 @@
 
 2010-03-04  Dan Dennedy <dan@dennedy.org>
 
-  * .../motion_est/filter_autotrack_rectangle.c,
+  * src/modules/motion_est/filter_autotrack_rectangle.c,
   src/modules/motion_est/filter_crop_detect.c,
   src/modules/motion_est/filter_motion_est.c,
   src/modules/normalize/filter_volume.c, src/modules/oldfilm/filter_dust.c,
@@ -4534,7 +5073,8 @@
 
   * src/modules/linsys/Makefile, src/modules/linsys/configure,
   src/modules/linsys/consumer_SDIstream.c, src/modules/linsys/factory.c,
-  src/modules/linsys/sdi_generator.c: Add Linsys SDI consumer from B.C.E. 
+  src/modules/linsys/gpl, src/modules/linsys/sdi_generator.c: Add Linsys SDI
+  consumer from B.C.E. 
 
 2009-08-03  Dan Dennedy <dan@dennedy.org>
 
@@ -5017,23 +5557,24 @@
   reorg.
 
   * docs/inigo.txt, docs/melt.txt, docs/mlt-xml.txt, docs/westley.txt,
-  src/inigo/Makefile, src/inigo/inigo.c, src/inigo/io.c, src/inigo/io.h,
-  src/melt/Makefile, src/melt/io.c, src/melt/io.h, src/melt/melt.c,
-  src/modules/core/data_fx.properties, src/modules/core/loader.dict,
-  src/modules/core/loader.ini, src/modules/core/producer_hold.c,
-  src/modules/core/producer_loader.c, src/modules/data_fx.properties,
-  src/modules/fezzik.dict, src/modules/fezzik.ini,
-  src/modules/fezzik/producer_fezzik.c, src/modules/fezzik/producer_hold.c,
-  src/modules/inigo/Makefile, src/modules/inigo/factory.c,
-  src/modules/inigo/producer_inigo.c, src/modules/melt/Makefile,
-  src/modules/melt/factory.c, src/modules/melt/producer_melt.c,
-  src/modules/westley/Makefile, src/modules/westley/configure,
-  src/modules/westley/consumer_westley.c, src/modules/westley/factory.c,
-  src/modules/westley/producer_westley.c, src/modules/westley/westley.dtd,
-  src/modules/xml/Makefile, src/modules/xml/configure,
-  src/modules/xml/consumer_xml.c, src/modules/xml/factory.c,
-  src/modules/xml/mlt-xml.dtd, src/modules/xml/producer_xml.c,
-  src/tests/README: Rename inigo, fezzik, and westley.
+  src/inigo/Makefile, src/inigo/configure, src/inigo/inigo.c, src/inigo/io.c,
+  src/inigo/io.h, src/melt/Makefile, src/melt/configure, src/melt/io.c,
+  src/melt/io.h, src/melt/melt.c, src/modules/core/data_fx.properties,
+  src/modules/core/loader.dict, src/modules/core/loader.ini,
+  src/modules/core/producer_hold.c, src/modules/core/producer_loader.c,
+  src/modules/data_fx.properties, src/modules/fezzik.dict,
+  src/modules/fezzik.ini, src/modules/fezzik/producer_fezzik.c,
+  src/modules/fezzik/producer_hold.c, src/modules/inigo/Makefile,
+  src/modules/inigo/factory.c, src/modules/inigo/producer_inigo.c,
+  src/modules/melt/Makefile, src/modules/melt/factory.c,
+  src/modules/melt/producer_melt.c, src/modules/westley/Makefile,
+  src/modules/westley/configure, src/modules/westley/consumer_westley.c,
+  src/modules/westley/factory.c, src/modules/westley/producer_westley.c,
+  src/modules/westley/westley.dtd, src/modules/xml/Makefile,
+  src/modules/xml/configure, src/modules/xml/consumer_xml.c,
+  src/modules/xml/factory.c, src/modules/xml/mlt-xml.dtd,
+  src/modules/xml/producer_xml.c, src/tests/README: Rename inigo, fezzik, and
+  westley.
 
   * docs/mlt++.txt, mlt++/README: Merge mlt++/README into docs/mlt++.txt.
 
@@ -5681,8 +6222,8 @@
   mlt_field_disconnect_service 
 
   * src/modules/dgraft/Makefile, src/modules/dgraft/factory.c,
-  src/modules/dgraft/filter_telecide.c: modules/dgraft: added module for ports
-  of Donald Graft's GPL filters. 
+  src/modules/dgraft/filter_telecide.c, src/modules/dgraft/gpl: modules/dgraft:
+  added module for ports of Donald Graft's GPL filters. 
 
   * src/modules/avformat/Makefile, src/modules/avformat/configure:
   avformat/Makefile, configure: fix --avformat-swscale and the removal of the
@@ -5853,30 +6394,30 @@
   src/modules/core/configure, src/modules/core/factory.c,
   src/modules/dv/configure, src/modules/dv/factory.c,
   src/modules/effectv/configure, src/modules/effectv/factory.c,
-  src/modules/fezzik/configure, src/modules/fezzik/factory.c,
-  src/modules/gtk2/configure, src/modules/gtk2/factory.c,
-  src/modules/inigo/configure, src/modules/inigo/factory.c,
-  src/modules/inigo/producer_inigo.c, src/modules/jackrack/configure,
-  src/modules/jackrack/factory.c, src/modules/kdenlive/configure,
-  src/modules/kdenlive/factory.c, src/modules/kino/configure,
-  src/modules/kino/factory.c, src/modules/motion_est/configure,
-  src/modules/motion_est/factory.c, src/modules/normalize/configure,
-  src/modules/normalize/factory.c, src/modules/oldfilm/configure,
-  src/modules/oldfilm/factory.c, src/modules/plus/configure,
-  src/modules/plus/factory.c, src/modules/qimage/configure,
-  src/modules/qimage/factory.c, src/modules/resample/configure,
-  src/modules/resample/factory.c, src/modules/sdl/configure,
-  src/modules/sdl/factory.c, src/modules/sox/configure,
-  src/modules/sox/factory.c, src/modules/valerie/configure,
-  src/modules/valerie/factory.c, src/modules/vmfx/configure,
-  src/modules/vmfx/factory.c, src/modules/vorbis/configure,
-  src/modules/vorbis/factory.c, src/modules/westley/configure,
-  src/modules/westley/factory.c, src/modules/xine/configure,
-  src/modules/xine/factory.c: mlt_repository.[hc]: - dynamically locate and
-  register modules instead of reading .dat files - added
-  mlt_repository_register() and macros for modules and apps(!) to register
-  their service factory functions mlt_factory.[hc]: change mlt_factory_init()
-  to return mlt_repository to app mlt_properties.c: let
+  src/modules/feeds/configure, src/modules/fezzik/configure,
+  src/modules/fezzik/factory.c, src/modules/gtk2/configure,
+  src/modules/gtk2/factory.c, src/modules/inigo/configure,
+  src/modules/inigo/factory.c, src/modules/inigo/producer_inigo.c,
+  src/modules/jackrack/configure, src/modules/jackrack/factory.c,
+  src/modules/kdenlive/configure, src/modules/kdenlive/factory.c,
+  src/modules/kino/configure, src/modules/kino/factory.c,
+  src/modules/motion_est/configure, src/modules/motion_est/factory.c,
+  src/modules/normalize/configure, src/modules/normalize/factory.c,
+  src/modules/oldfilm/configure, src/modules/oldfilm/factory.c,
+  src/modules/plus/configure, src/modules/plus/factory.c,
+  src/modules/qimage/configure, src/modules/qimage/factory.c,
+  src/modules/resample/configure, src/modules/resample/factory.c,
+  src/modules/sdl/configure, src/modules/sdl/factory.c,
+  src/modules/sox/configure, src/modules/sox/factory.c,
+  src/modules/valerie/configure, src/modules/valerie/factory.c,
+  src/modules/vmfx/configure, src/modules/vmfx/factory.c,
+  src/modules/vorbis/configure, src/modules/vorbis/factory.c,
+  src/modules/westley/configure, src/modules/westley/factory.c,
+  src/modules/xine/configure, src/modules/xine/factory.c: mlt_repository.[hc]:
+  - dynamically locate and register modules instead of reading .dat files -
+  added mlt_repository_register() and macros for modules and apps(!) to
+  register their service factory functions mlt_factory.[hc]: change
+  mlt_factory_init() to return mlt_repository to app mlt_properties.c: let
   mlt_properties_dir_list() take a NULL filter pattern src/modules/*: - adapt
   to new module registration system - much simpler! - remove unncessary
   configure scripts (now optional!)   
@@ -6219,9 +6760,10 @@
 
   * src/modules/effectv/Makefile, src/modules/effectv/configure,
   src/modules/effectv/factory.c, src/modules/effectv/filter_burn.c,
-  src/modules/effectv/filter_burn.h, src/modules/effectv/image.c,
-  src/modules/effectv/utils.c, src/modules/effectv/utils.h: added effectv
-  module with BurningTV filter provided by Stephane Fillod 
+  src/modules/effectv/filter_burn.h, src/modules/effectv/gpl,
+  src/modules/effectv/image.c, src/modules/effectv/utils.c,
+  src/modules/effectv/utils.h: added effectv module with BurningTV filter
+  provided by Stephane Fillod 
 
   * docs/westley.txt, src/modules/fezzik.dict: fezzik.dict: prioritize avformat
   higher than libdv for better quality 
@@ -6478,9 +7020,10 @@
 
   * src/modules/fezzik.dict, src/modules/qimage/Makefile,
   src/modules/qimage/configure, src/modules/qimage/factory.c,
-  src/modules/qimage/producer_qimage.c, src/modules/qimage/producer_qimage.h,
-  src/modules/qimage/qimage_wrapper.cpp, src/modules/qimage/qimage_wrapper.h: +
-  QImage module added - default is still GTK2 when available  
+  src/modules/qimage/gpl, src/modules/qimage/producer_qimage.c,
+  src/modules/qimage/producer_qimage.h, src/modules/qimage/qimage_wrapper.cpp,
+  src/modules/qimage/qimage_wrapper.h: + QImage module added - default is still
+  GTK2 when available  
 
   * src/framework/mlt_frame.c, src/framework/mlt_frame.h: + Preparation for a
   QT image loader (to allow optional and functionally equivalent qt or gtk2
@@ -6746,9 +7289,10 @@
   src/modules/vmfx/factory.c, src/modules/vmfx/filter_chroma.c,
   src/modules/vmfx/filter_chroma.h, src/modules/vmfx/filter_chroma_hold.c,
   src/modules/vmfx/filter_chroma_hold.h, src/modules/vmfx/filter_shape.c,
-  src/modules/vmfx/filter_shape.h, src/modules/vmfx/producer_pgm.c,
-  src/modules/vmfx/producer_pgm.h: + Changed license of plugins to LGPL + Added
-  a chroma hold filter + Small optimisation/correction to chroma filter  
+  src/modules/vmfx/filter_shape.h, src/modules/vmfx/gpl,
+  src/modules/vmfx/producer_pgm.c, src/modules/vmfx/producer_pgm.h: + Changed
+  license of plugins to LGPL + Added a chroma hold filter + Small
+  optimisation/correction to chroma filter  
 
 2005-08-29  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -6804,10 +7348,10 @@
   * src/modules/fezzik.dict, src/modules/vmfx/Makefile,
   src/modules/vmfx/configure, src/modules/vmfx/factory.c,
   src/modules/vmfx/filter_shape.c, src/modules/vmfx/filter_shape.h,
-  src/modules/vmfx/producer_pgm.c, src/modules/vmfx/producer_pgm.h: + Added
-  VMFX module + New filter (shape) which provides alpha manipulations and an
-  alternative wipe mechanism + New producer (pgm) which provides basic
-  functionality for portable grey maps  
+  src/modules/vmfx/gpl, src/modules/vmfx/producer_pgm.c,
+  src/modules/vmfx/producer_pgm.h: + Added VMFX module + New filter (shape)
+  which provides alpha manipulations and an alternative wipe mechanism + New
+  producer (pgm) which provides basic functionality for portable grey maps  
 
 2005-08-21  dezeroex <dezeroex@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -6923,8 +7467,8 @@
 
 2005-07-09  dezeroex <dezeroex@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
-  * configure, src/modules/motion_est/configure: Prevent motion estimation
-  components from building unless requested.  
+  * configure, src/modules/motion_est/configure, src/modules/motion_est/gpl:
+  Prevent motion estimation components from building unless requested.  
 
 2005-07-08  dezeroex <dezeroex@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -7112,10 +7656,10 @@
   src/modules/kino/configure, src/modules/kino/endian_types.h,
   src/modules/kino/error.cc, src/modules/kino/error.h,
   src/modules/kino/factory.c, src/modules/kino/filehandler.cc,
-  src/modules/kino/filehandler.h, src/modules/kino/kino_wrapper.cc,
-  src/modules/kino/kino_wrapper.h, src/modules/kino/producer_kino.c,
-  src/modules/kino/producer_kino.h, src/modules/kino/riff.cc,
-  src/modules/kino/riff.h: Initial version  
+  src/modules/kino/filehandler.h, src/modules/kino/gpl,
+  src/modules/kino/kino_wrapper.cc, src/modules/kino/kino_wrapper.h,
+  src/modules/kino/producer_kino.c, src/modules/kino/producer_kino.h,
+  src/modules/kino/riff.cc, src/modules/kino/riff.h: Initial version  
 
   * src/modules/dv/producer_libdv.c, src/modules/fezzik.dict: Preparation for
   kino support  
@@ -7391,12 +7935,13 @@
   * src/modules/jackrack/Makefile, src/modules/jackrack/configure,
   src/modules/jackrack/control_message.h, src/modules/jackrack/factory.c,
   src/modules/jackrack/filter_jackrack.c,
-  src/modules/jackrack/filter_jackrack.h, src/modules/jackrack/jack_rack.c,
-  src/modules/jackrack/jack_rack.h, src/modules/jackrack/lock_free_fifo.c,
-  src/modules/jackrack/lock_free_fifo.h, src/modules/jackrack/plugin.c,
-  src/modules/jackrack/plugin.h, src/modules/jackrack/plugin_desc.c,
-  src/modules/jackrack/plugin_desc.h, src/modules/jackrack/plugin_mgr.c,
-  src/modules/jackrack/plugin_mgr.h, src/modules/jackrack/plugin_settings.c,
+  src/modules/jackrack/filter_jackrack.h, src/modules/jackrack/gpl,
+  src/modules/jackrack/jack_rack.c, src/modules/jackrack/jack_rack.h,
+  src/modules/jackrack/lock_free_fifo.c, src/modules/jackrack/lock_free_fifo.h,
+  src/modules/jackrack/plugin.c, src/modules/jackrack/plugin.h,
+  src/modules/jackrack/plugin_desc.c, src/modules/jackrack/plugin_desc.h,
+  src/modules/jackrack/plugin_mgr.c, src/modules/jackrack/plugin_mgr.h,
+  src/modules/jackrack/plugin_settings.c,
   src/modules/jackrack/plugin_settings.h, src/modules/jackrack/process.c,
   src/modules/jackrack/process.h, src/modules/jackrack/ui.c,
   src/modules/jackrack/ui.h: added jackrack filter  
@@ -7422,7 +7967,8 @@
 
   * src/modules/feeds/Makefile, src/modules/feeds/NTSC/data_fx.properties,
   src/modules/feeds/PAL/data_fx.properties,
-  src/modules/feeds/PAL/obscure.properties: Feeds pseudo module added  
+  src/modules/feeds/PAL/obscure.properties, src/modules/feeds/configure: Feeds
+  pseudo module added  
 
   * docs/services.txt, src/framework/mlt_frame.c, src/framework/mlt_geometry.c,
   src/modules/core/filter_data_show.c, src/modules/core/transition_composite.c,
@@ -7437,8 +7983,8 @@
 
   * src/modules/core/transition_composite.c,
   src/modules/core/transition_luma.c, src/modules/lumas/Makefile,
-  src/modules/lumas/create_lumas, src/modules/lumas/luma.c: Luma generation and
-  use  
+  src/modules/lumas/configure, src/modules/lumas/create_lumas,
+  src/modules/lumas/luma.c: Luma generation and use  
 
   * demo/mlt_bouncy_ball, demo/mlt_push, demo/mlt_ticker,
   src/framework/Makefile, src/framework/mlt.h, src/framework/mlt_geometry.c,
@@ -8389,8 +8935,9 @@
   src/modules/core/filter_rescale.c, src/modules/core/filter_rescale.h,
   src/modules/fezzik.ini, src/modules/fezzik/Makefile,
   src/modules/fezzik/producer_fezzik.c, src/modules/gtk2/configure,
-  src/modules/gtk2/factory.c, src/modules/gtk2/filter_rescale.c: Rescaler and
-  fezzik rework (to allow inclusion of mc scaler)  
+  src/modules/gtk2/factory.c, src/modules/gtk2/filter_rescale.c,
+  src/modules/normalize/gpl, src/modules/resample/gpl, src/modules/xine/gpl:
+  Rescaler and fezzik rework (to allow inclusion of mc scaler)  
 
 2004-04-17  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -9111,7 +9658,7 @@
 
 2004-02-12  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
-  * mlt/Makefile, mlt/README, mlt/configure, mlt/docs/dvcp.txt,
+  * mlt/ChangeLog, mlt/Makefile, mlt/README, mlt/configure, mlt/docs/dvcp.txt,
   mlt/docs/inigo.txt, mlt/docs/services.txt, mlt/docs/testing-20040110.txt,
   mlt/docs/testing.txt, mlt/docs/valerie.txt, mlt/setenv,
   mlt/src/albino/Makefile, mlt/src/albino/albino.c, mlt/src/framework/Makefile,
@@ -9134,16 +9681,16 @@
   mlt/src/framework/mlt_types.h, mlt/src/humperdink/Makefile,
   mlt/src/humperdink/client.c, mlt/src/humperdink/client.h,
   mlt/src/humperdink/io.c, mlt/src/humperdink/io.h,
-  mlt/src/humperdink/remote.c, mlt/src/inigo/Makefile, mlt/src/inigo/inigo.c,
-  mlt/src/inigo/io.c, mlt/src/inigo/io.h, mlt/src/miracle/Makefile,
-  mlt/src/miracle/configure, mlt/src/miracle/miracle.c,
-  mlt/src/miracle/miracle_commands.c, mlt/src/miracle/miracle_commands.h,
-  mlt/src/miracle/miracle_connection.c, mlt/src/miracle/miracle_connection.h,
-  mlt/src/miracle/miracle_local.c, mlt/src/miracle/miracle_local.h,
-  mlt/src/miracle/miracle_log.c, mlt/src/miracle/miracle_log.h,
-  mlt/src/miracle/miracle_server.c, mlt/src/miracle/miracle_server.h,
-  mlt/src/miracle/miracle_unit.c, mlt/src/miracle/miracle_unit.h,
-  mlt/src/miracle/miracle_unit_commands.c,
+  mlt/src/humperdink/remote.c, mlt/src/inigo/Makefile, mlt/src/inigo/configure,
+  mlt/src/inigo/inigo.c, mlt/src/inigo/io.c, mlt/src/inigo/io.h,
+  mlt/src/miracle/Makefile, mlt/src/miracle/configure,
+  mlt/src/miracle/miracle.c, mlt/src/miracle/miracle_commands.c,
+  mlt/src/miracle/miracle_commands.h, mlt/src/miracle/miracle_connection.c,
+  mlt/src/miracle/miracle_connection.h, mlt/src/miracle/miracle_local.c,
+  mlt/src/miracle/miracle_local.h, mlt/src/miracle/miracle_log.c,
+  mlt/src/miracle/miracle_log.h, mlt/src/miracle/miracle_server.c,
+  mlt/src/miracle/miracle_server.h, mlt/src/miracle/miracle_unit.c,
+  mlt/src/miracle/miracle_unit.h, mlt/src/miracle/miracle_unit_commands.c,
   mlt/src/miracle/miracle_unit_commands.h, mlt/src/modules/Makefile,
   mlt/src/modules/configure, mlt/src/modules/core/Makefile,
   mlt/src/modules/core/configure, mlt/src/modules/core/factory.c,
@@ -9960,16 +10507,16 @@
 
   * Makefile, README, configure, mlt/Makefile, mlt/README, mlt/configure,
   mlt/setenv, mlt/src/framework/mlt_frame.c, mlt/src/framework/mlt_playlist.c,
-  mlt/src/inigo/Makefile, mlt/src/inigo/inigo.c, mlt/src/inigo/io.c,
-  mlt/src/inigo/io.h, mlt/src/modules/core/filter_resize.c,
+  mlt/src/inigo/Makefile, mlt/src/inigo/configure, mlt/src/inigo/inigo.c,
+  mlt/src/inigo/io.c, mlt/src/inigo/io.h, mlt/src/modules/core/filter_resize.c,
   mlt/src/modules/core/filter_resize.h, mlt/src/modules/core/producer_ppm.c,
   mlt/src/modules/core/producer_ppm.h, mlt/src/modules/sdl/consumer_sdl.c,
   mlt/src/tests/charlie.c, setenv, src/framework/mlt_frame.c,
-  src/framework/mlt_playlist.c, src/inigo/Makefile, src/inigo/inigo.c,
-  src/inigo/io.c, src/inigo/io.h, src/modules/core/filter_resize.c,
-  src/modules/core/filter_resize.h, src/modules/core/producer_ppm.c,
-  src/modules/core/producer_ppm.h, src/modules/sdl/consumer_sdl.c,
-  src/tests/charlie.c: ppm ffmpeg  
+  src/framework/mlt_playlist.c, src/inigo/Makefile, src/inigo/configure,
+  src/inigo/inigo.c, src/inigo/io.c, src/inigo/io.h,
+  src/modules/core/filter_resize.c, src/modules/core/filter_resize.h,
+  src/modules/core/producer_ppm.c, src/modules/core/producer_ppm.h,
+  src/modules/sdl/consumer_sdl.c, src/tests/charlie.c: ppm ffmpeg  
 
 2003-12-26  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -10127,30 +10674,31 @@
   src/modules/core/transition_composite.c,
   src/modules/core/transition_composite.h: Added files rejected by import  
 
-  * Makefile, README, configure, mlt/Makefile, mlt/README, mlt/configure,
-  mlt/src/framework/Makefile, mlt/src/framework/config.h,
-  mlt/src/framework/configure, mlt/src/framework/mlt_consumer.c,
-  mlt/src/framework/mlt_consumer.h, mlt/src/framework/mlt_factory.c,
-  mlt/src/framework/mlt_factory.h, mlt/src/framework/mlt_filter.c,
-  mlt/src/framework/mlt_filter.h, mlt/src/framework/mlt_frame.c,
-  mlt/src/framework/mlt_frame.h, mlt/src/framework/mlt_manager.h,
-  mlt/src/framework/mlt_multitrack.c, mlt/src/framework/mlt_multitrack.h,
-  mlt/src/framework/mlt_playlist.c, mlt/src/framework/mlt_playlist.h,
-  mlt/src/framework/mlt_producer.c, mlt/src/framework/mlt_producer.h,
-  mlt/src/framework/mlt_properties.c, mlt/src/framework/mlt_properties.h,
-  mlt/src/framework/mlt_property.c, mlt/src/framework/mlt_property.h,
-  mlt/src/framework/mlt_repository.c, mlt/src/framework/mlt_repository.h,
-  mlt/src/framework/mlt_service.c, mlt/src/framework/mlt_service.h,
-  mlt/src/framework/mlt_tractor.c, mlt/src/framework/mlt_tractor.h,
-  mlt/src/framework/mlt_transition.c, mlt/src/framework/mlt_transition.h,
-  mlt/src/framework/mlt_types.h, mlt/src/miracle/configure,
-  mlt/src/miracle/miracle.c, mlt/src/miracle/miracle_commands.c,
-  mlt/src/miracle/miracle_commands.h, mlt/src/miracle/miracle_connection.c,
-  mlt/src/miracle/miracle_connection.h, mlt/src/miracle/miracle_local.c,
-  mlt/src/miracle/miracle_local.h, mlt/src/miracle/miracle_log.c,
-  mlt/src/miracle/miracle_log.h, mlt/src/miracle/miracle_server.c,
-  mlt/src/miracle/miracle_server.h, mlt/src/miracle/miracle_unit.c,
-  mlt/src/miracle/miracle_unit.h, mlt/src/miracle/miracle_unit_commands.c,
+  * ChangeLog, Makefile, README, configure, mlt/ChangeLog, mlt/Makefile,
+  mlt/README, mlt/configure, mlt/src/framework/Makefile,
+  mlt/src/framework/config.h, mlt/src/framework/configure,
+  mlt/src/framework/mlt_consumer.c, mlt/src/framework/mlt_consumer.h,
+  mlt/src/framework/mlt_factory.c, mlt/src/framework/mlt_factory.h,
+  mlt/src/framework/mlt_filter.c, mlt/src/framework/mlt_filter.h,
+  mlt/src/framework/mlt_frame.c, mlt/src/framework/mlt_frame.h,
+  mlt/src/framework/mlt_manager.h, mlt/src/framework/mlt_multitrack.c,
+  mlt/src/framework/mlt_multitrack.h, mlt/src/framework/mlt_playlist.c,
+  mlt/src/framework/mlt_playlist.h, mlt/src/framework/mlt_producer.c,
+  mlt/src/framework/mlt_producer.h, mlt/src/framework/mlt_properties.c,
+  mlt/src/framework/mlt_properties.h, mlt/src/framework/mlt_property.c,
+  mlt/src/framework/mlt_property.h, mlt/src/framework/mlt_repository.c,
+  mlt/src/framework/mlt_repository.h, mlt/src/framework/mlt_service.c,
+  mlt/src/framework/mlt_service.h, mlt/src/framework/mlt_tractor.c,
+  mlt/src/framework/mlt_tractor.h, mlt/src/framework/mlt_transition.c,
+  mlt/src/framework/mlt_transition.h, mlt/src/framework/mlt_types.h,
+  mlt/src/miracle/configure, mlt/src/miracle/miracle.c,
+  mlt/src/miracle/miracle_commands.c, mlt/src/miracle/miracle_commands.h,
+  mlt/src/miracle/miracle_connection.c, mlt/src/miracle/miracle_connection.h,
+  mlt/src/miracle/miracle_local.c, mlt/src/miracle/miracle_local.h,
+  mlt/src/miracle/miracle_log.c, mlt/src/miracle/miracle_log.h,
+  mlt/src/miracle/miracle_server.c, mlt/src/miracle/miracle_server.h,
+  mlt/src/miracle/miracle_unit.c, mlt/src/miracle/miracle_unit.h,
+  mlt/src/miracle/miracle_unit_commands.c,
   mlt/src/miracle/miracle_unit_commands.h, mlt/src/modules/Makefile,
   mlt/src/modules/configure, mlt/src/modules/dv/Makefile,
   mlt/src/modules/dv/configure, mlt/src/modules/dv/factory.c,
