@@ -31,7 +31,6 @@
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
 #include <libxml/tree.h>
 
-#define STACK_SIZE 1000
 #define BRANCH_SIG_LEN 4000
 
 #define _x (const xmlChar*)
@@ -64,20 +63,17 @@ enum service_type
 
 struct deserialise_context_s
 {
-	enum service_type stack_types[ STACK_SIZE ];
-	mlt_service stack_service[ STACK_SIZE ];
-	int stack_service_size;
+	mlt_deque stack_types;
+	mlt_deque stack_service;
 	mlt_properties producer_map;
 	mlt_properties destructors;
 	char *property;
 	int is_value;
 	xmlDocPtr value_doc;
-	xmlNodePtr stack_node[ STACK_SIZE ];
-	int stack_node_size;
+	mlt_deque stack_node;
 	xmlDocPtr entity_doc;
 	int entity_is_replace;
-	int depth;
-	int branch[ STACK_SIZE ];
+	mlt_deque stack_branch;
 	const xmlChar *publicId;
 	const xmlChar *systemId;
 	mlt_properties params;
@@ -114,36 +110,33 @@ static char* trim( char *s )
 */
 static char *serialise_branch( deserialise_context context, char *s )
 {
-	int i;
+	int i, n = mlt_deque_count( context->stack_branch );
 	
 	s[0] = 0;
-	for ( i = 0; i < context->depth; i++ )
+	for ( i = 0; i < n - 1; i++ )
 	{
 		int len = strlen( s );
-		snprintf( s + len, BRANCH_SIG_LEN - len, "%d.", context->branch[ i ] );
+		snprintf( s + len, BRANCH_SIG_LEN - len, "%lu.",
+			(unsigned long) mlt_deque_peek( context->stack_branch, i ) );
 	}
+	fprintf(stderr, "%s: %s (%d)\n", __FUNCTION__, s, n);
 	return s;
 }
 
 /** Push a service.
 */
 
-static int context_push_service( deserialise_context context, mlt_service that, enum service_type type )
+static void context_push_service( deserialise_context context, mlt_service that, enum service_type type )
 {
-	int ret = context->stack_service_size >= STACK_SIZE - 1;
-	if ( ret == 0 )
+	mlt_deque_push_back( context->stack_service, that );
+	mlt_deque_push_back_int( context->stack_types, type );
+
+	// Record the tree branch on which this service lives
+	if ( that != NULL && mlt_properties_get( MLT_SERVICE_PROPERTIES( that ), "_xml_branch" ) == NULL )
 	{
-		context->stack_service[ context->stack_service_size ] = that;
-		context->stack_types[ context->stack_service_size++ ] = type;
-		
-		// Record the tree branch on which this service lives
-		if ( that != NULL && mlt_properties_get( MLT_SERVICE_PROPERTIES( that ), "_xml_branch" ) == NULL )
-		{
-			char s[ BRANCH_SIG_LEN ];
-			mlt_properties_set( MLT_SERVICE_PROPERTIES( that ), "_xml_branch", serialise_branch( context, s ) );
-		}
+		char s[ BRANCH_SIG_LEN ];
+		mlt_properties_set( MLT_SERVICE_PROPERTIES( that ), "_xml_branch", serialise_branch( context, s ) );
 	}
-	return ret;
 }
 
 /** Pop a service.
@@ -154,11 +147,11 @@ static mlt_service context_pop_service( deserialise_context context, enum servic
 	mlt_service result = NULL;
 	
 	if ( type ) *type = mlt_invalid_type;
-	if ( context->stack_service_size > 0 )
+	if ( mlt_deque_count( context->stack_service ) > 0 )
 	{
-		result = context->stack_service[ -- context->stack_service_size ];
+		result = mlt_deque_pop_back( context->stack_service );
 		if ( type != NULL )
-			*type = context->stack_types[ context->stack_service_size ];
+			*type = mlt_deque_pop_back_int( context->stack_types );
 		// Set the service's profile and locale so mlt_property time-to-position conversions can get fps
 		if ( result )
 		{
@@ -172,12 +165,9 @@ static mlt_service context_pop_service( deserialise_context context, enum servic
 /** Push a node.
 */
 
-static int context_push_node( deserialise_context context, xmlNodePtr node )
+static void context_push_node( deserialise_context context, xmlNodePtr node )
 {
-	int ret = context->stack_node_size >= STACK_SIZE - 1;
-	if ( ret == 0 )
-		context->stack_node[ context->stack_node_size ++ ] = node;
-	return ret;
+	mlt_deque_push_back( context->stack_node, node );
 }
 
 /** Pop a node.
@@ -185,10 +175,7 @@ static int context_push_node( deserialise_context context, xmlNodePtr node )
 
 static xmlNodePtr context_pop_node( deserialise_context context )
 {
-	xmlNodePtr result = NULL;
-	if ( context->stack_node_size > 0 )
-		result = context->stack_node[ -- context->stack_node_size ];
-	return result;
+	return mlt_deque_pop_back( context->stack_node );
 }
 
 
@@ -1239,8 +1226,8 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		}
 		return;
 	}
-	context->branch[ context->depth ] ++;
-	context->depth ++;
+	mlt_deque_push_back_int( context->stack_branch, mlt_deque_pop_back_int( context->stack_branch ) + 1 );
+	mlt_deque_push_back_int( context->stack_branch, 0 );
 	
 	// Build a tree from nodes within a property value
 	if ( context->is_value == 1 && context->pass == 1 )
@@ -1256,7 +1243,7 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		else
 		{
 			// Append child to tree
-			xmlAddChild( context->stack_node[ context->stack_node_size - 1 ], node );
+			xmlAddChild( mlt_deque_peek_back( context->stack_node ), node );
 		}
 		context_push_node( context, node );
 		
@@ -1326,8 +1313,7 @@ static void on_end_element( void *ctx, const xmlChar *name )
 	else if ( xmlStrcmp( name, _x("consumer") ) == 0 )
 		on_end_consumer( context, name );
 
-	context->branch[ context->depth ] = 0;
-	context->depth --;
+	mlt_deque_pop_back_int( context->stack_branch );
 }
 
 static void on_characters( void *ctx, const xmlChar *ch, int len )
@@ -1345,8 +1331,8 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 	value[ len ] = 0;
 	strncpy( value, (const char*) ch, len );
 
-	if ( context->stack_node_size > 0 )
-		xmlNodeAddContent( context->stack_node[ context->stack_node_size - 1 ], ( xmlChar* )value );
+	if ( mlt_deque_count( context->stack_node ) )
+		xmlNodeAddContent( mlt_deque_peek_back( context->stack_node ), ( xmlChar* )value );
 
 	// libxml2 generates an on_characters immediately after a get_entity within
 	// an element value, and we ignore it because it is called again during
@@ -1612,10 +1598,43 @@ static void retain_services( struct deserialise_context_s *context, mlt_service 
 	}
 }
 
+static deserialise_context context_new( mlt_profile profile )
+{
+	deserialise_context context = calloc( 1, sizeof( struct deserialise_context_s ) );
+	if ( context )
+	{
+		context->producer_map = mlt_properties_new();
+		context->destructors = mlt_properties_new();
+		context->params = mlt_properties_new();
+		context->profile = profile;
+		context->seekable = 1;
+		context->stack_service = mlt_deque_init();
+		context->stack_types = mlt_deque_init();
+		context->stack_node = mlt_deque_init();
+		context->stack_branch = mlt_deque_init();
+		mlt_deque_push_back_int( context->stack_branch, 0 );
+	}
+	return context;
+}
+
+void context_close( deserialise_context context )
+{
+	mlt_properties_close( context->producer_map );
+	mlt_properties_close( context->destructors );
+	mlt_properties_close( context->params );
+	mlt_deque_close( context->stack_service );
+	mlt_deque_close( context->stack_types );
+	mlt_deque_close( context->stack_node );
+	mlt_deque_close( context->stack_branch );
+	xmlFreeDoc( context->entity_doc );
+	free( context->lc_numeric );
+	free( context );
+}
+
 mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, const char *id, char *data )
 {
 	xmlSAXHandler *sax, *sax_orig;
-	struct deserialise_context_s *context;
+	deserialise_context context;
 	mlt_properties properties = NULL;
 	int i = 0;
 	struct _xmlParserCtxt *xmlcontext;
@@ -1630,15 +1649,9 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	if ( data == NULL || !strcmp( data, "" ) )
 		return NULL;
 
-	context = calloc( 1, sizeof( struct deserialise_context_s ) );
+	context = context_new( profile );
 	if ( context == NULL )
 		return NULL;
-
-	context->producer_map = mlt_properties_new();
-	context->destructors = mlt_properties_new();
-	context->params = mlt_properties_new();
-	context->profile = profile;
-	context->seekable = 1;
 
 	// Decode URL and parse parameters
 	mlt_properties_set( context->producer_map, "root", "" );
@@ -1674,10 +1687,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 
 		if ( !file_exists( filename ) )
 		{
-			mlt_properties_close( context->producer_map );
-			mlt_properties_close( context->destructors );
-			mlt_properties_close( context->params );
-			free( context );
+			context_close( context );
 			return NULL;
 		}
 	}
@@ -1706,10 +1716,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// Invalid context - clean up and return NULL
 	if ( xmlcontext == NULL )
 	{
-		mlt_properties_close( context->producer_map );
-		mlt_properties_close( context->destructors );
-		mlt_properties_close( context->params );
-		free( context );
+		context_close( context );
 		free( sax );
 		return NULL;
 	}
@@ -1727,17 +1734,11 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	if ( xmlcontext->myDoc )
 		xmlFreeDoc( xmlcontext->myDoc );
 	xmlFreeParserCtxt( xmlcontext );
-	context->stack_node_size = 0;
-	context->stack_service_size = 0;
 
 	// Bad xml - clean up and return NULL
 	if ( !well_formed )
 	{
-		mlt_properties_close( context->producer_map );
-		mlt_properties_close( context->destructors );
-		mlt_properties_close( context->params );
-		xmlFreeDoc( context->entity_doc );
-		free( context );
+		context_close( context );
 		free( sax );
 		return NULL;
 	}
@@ -1752,14 +1753,18 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// Invalid context - clean up and return NULL
 	if ( xmlcontext == NULL )
 	{
-		mlt_properties_close( context->producer_map );
-		mlt_properties_close( context->destructors );
-		mlt_properties_close( context->params );
-		xmlFreeDoc( context->entity_doc );
-		free( context );
+		context_close( context );
 		free( sax );
 		return NULL;
 	}
+
+	// Reset the stack.
+	mlt_deque_close( context->stack_service );
+	mlt_deque_close( context->stack_types );
+	mlt_deque_close( context->stack_node );
+	context->stack_service = mlt_deque_init();
+	context->stack_types = mlt_deque_init();
+	context->stack_node = mlt_deque_init();
 
 	// Create the qglsl consumer now, if requested, so that glsl.manager
 	// may exist when trying to load glsl. or movit. services.
@@ -1786,6 +1791,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 
 	// Cleanup after parsing
 	xmlFreeDoc( context->entity_doc );
+	context->entity_doc = NULL;
 	free( sax );
 	xmlMemoryDump( ); // for debugging
 	xmlcontext->sax = sax_orig;
@@ -1885,12 +1891,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// Clean up
 	if ( context->qglsl && context->consumer != context->qglsl )
 		mlt_consumer_close( context->qglsl );
-	mlt_properties_close( context->producer_map );
-	if ( context->params != NULL )
-		mlt_properties_close( context->params );
-	mlt_properties_close( context->destructors );
-	free( context->lc_numeric );
-	free( context );
+	context_close( context );
 
 	return MLT_PRODUCER( service );
 }
