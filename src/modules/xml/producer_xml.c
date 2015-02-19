@@ -119,7 +119,6 @@ static char *serialise_branch( deserialise_context context, char *s )
 		snprintf( s + len, BRANCH_SIG_LEN - len, "%lu.",
 			(unsigned long) mlt_deque_peek( context->stack_branch, i ) );
 	}
-	fprintf(stderr, "%s: %s (%d)\n", __FUNCTION__, s, n);
 	return s;
 }
 
