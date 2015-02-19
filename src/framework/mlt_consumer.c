@@ -617,6 +617,7 @@ int mlt_consumer_put_frame( mlt_consumer self, mlt_frame frame )
 		struct timespec tm;
 		consumer_private *priv = self->local;
 
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(self), "put_pending", 1 );
 		pthread_mutex_lock( &priv->put_mutex );
 		while ( priv->put_active && priv->put != NULL )
 		{
@@ -625,6 +626,7 @@ int mlt_consumer_put_frame( mlt_consumer self, mlt_frame frame )
 			tm.tv_nsec = now.tv_usec * 1000;
 			pthread_cond_timedwait( &priv->put_cond, &priv->put_mutex, &tm );
 		}
+		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(self), "put_pending", 0 );
 		if ( priv->put_active && priv->put == NULL )
 			priv->put = frame;
 		else

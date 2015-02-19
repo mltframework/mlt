@@ -871,7 +871,8 @@ static void *consumer_thread( void *arg )
 	self->running = 0;
 	
 	// Unblock sdl_preview
-	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "put_mode" ) == 1 )
+	if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "put_mode" ) &&
+	     mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "put_pending" ) )
 	{
 		frame = mlt_consumer_get_frame( consumer );
 		if ( frame )
