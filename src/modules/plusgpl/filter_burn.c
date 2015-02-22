@@ -105,7 +105,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		RGB32 *src = (RGB32*)*image;
 
 		unsigned char v, w;
-		RGB32 a, b;
+		RGB32 a, b, c;
 
 		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
@@ -174,7 +174,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				/* FIXME: endianess? */
 				a = (src[i] & 0xfefeff) + palette[buffer[i]];
 				b = a & 0x1010100;
-				dest[i] = a | (b - (b >> 8));
+				// Add alpha if necessary or use src alpha.
+				c = palette[buffer[i]] ? 0xff000000 : src[i] & 0xff000000;
+				dest[i] = a | (b - (b >> 8)) | c;
 				i++;
 			}
 			i += 2;
