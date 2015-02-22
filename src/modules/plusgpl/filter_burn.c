@@ -112,6 +112,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		diff = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "_diff", NULL );
 		if (diff == NULL)
 		{
+			// TODO: What if the image size changes?
 			diff = mlt_pool_alloc(video_area*sizeof(unsigned char));
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "_diff", 
 					diff, video_area*sizeof(unsigned char), mlt_pool_release, NULL );
@@ -120,6 +121,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		buffer = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "_buffer", NULL );
 		if (buffer == NULL)
 		{
+			// TODO: What if the image size changes?
 			buffer = mlt_pool_alloc(video_area*sizeof(unsigned char));
 			memset(buffer, 0, video_area*sizeof(unsigned char));
 			mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "_buffer", 
@@ -132,14 +134,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						"_background", NULL );
 			if (background == NULL)
 			{
+				// TODO: What if the image size changes?
 				background = mlt_pool_alloc(video_area*sizeof(RGB32));
 				image_bgset_y(background, src, video_area, y_threshold);
 				mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "_background", 
 					background, video_area*sizeof(RGB32), mlt_pool_release, NULL );
 			}
 		}
-
-		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 		if (burn_foreground == 1) {
 			image_bgsubtract_y(diff, background, src, video_area, y_threshold);
@@ -181,6 +182,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			}
 			i += 2;
 		}
+
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
 
 	return error;
