@@ -376,8 +376,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 {
 	// Get the properties of this consumer
 	mlt_properties properties = self->properties;
-	if ( self->running && !mlt_consumer_is_stopped( &self->parent ) )
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 	return 0;
 }
 
@@ -431,7 +430,7 @@ static void *video_thread( void *arg )
 		elapsed = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - start;
 
 		// See if we have to delay the display of the current frame
-		if ( mlt_properties_get_int( properties, "rendered" ) == 1 && self->running )
+		if ( mlt_properties_get_int( properties, "rendered" ) == 1 )
 		{
 			// Obtain the scheduled playout time
 			int64_t scheduled = mlt_properties_get_int( properties, "playtime" );
@@ -464,8 +463,20 @@ static void *video_thread( void *arg )
 		next = NULL;
 	}
 
-	if ( next != NULL )
+	// This consumer is stopping. But audio has already been played for all
+	// the frames in the queue. Spit out all the frames so that the display has
+	// the option to catch up with the audio.
+	if ( next != NULL ) {
+		consumer_play_video( self, next );
 		mlt_frame_close( next );
+		next = NULL;
+	}
+	while ( mlt_deque_count( self->queue ) > 0 ) {
+		next = mlt_deque_pop_front( self->queue );
+		consumer_play_video( self, next );
+		mlt_frame_close( next );
+		next = NULL;
+	}
 
 	mlt_consumer_stopped( &self->parent );
 
@@ -552,6 +563,7 @@ static void *consumer_thread( void *arg )
 				if ( self->is_purge && speed == 1.0 )
 				{
 					mlt_frame_close( frame );
+					frame = NULL;
 					self->is_purge = 0;
 				}
 				else
@@ -567,23 +579,19 @@ static void *consumer_thread( void *arg )
 			else if ( self->running )
 			{
 				pthread_mutex_lock( &self->refresh_mutex );
-				if ( ( refresh == 0 && self->refresh_count <= 0 ) || self->refresh_count > 1 )
-				{
-					consumer_play_video( self, frame );
-					pthread_cond_wait( &self->refresh_cond, &self->refresh_mutex );
-				}
-				mlt_frame_close( frame );
-				self->refresh_count --;
-				pthread_mutex_unlock( &self->refresh_mutex );
-			}
-			else
-			{
+				consumer_play_video( self, frame );
 				mlt_frame_close( frame );
 				frame = NULL;
+				self->refresh_count --;
+				if ( self->refresh_count <= 0 )
+				{
+					pthread_cond_wait( &self->refresh_cond, &self->refresh_mutex );
+				}
+				pthread_mutex_unlock( &self->refresh_mutex );
 			}
 
 			// Optimisation to reduce latency
-			if ( frame && speed == 1.0 )
+			if ( speed == 1.0 )
 			{
                 // TODO: disabled due to misbehavior on parallel-consumer
 //				if ( last_position != -1 && last_position + 1 != mlt_frame_get_position( frame ) )
@@ -607,8 +615,15 @@ static void *consumer_thread( void *arg )
 		pthread_join( thread, NULL );
 	}
 
-	while( mlt_deque_count( self->queue ) )
-		mlt_frame_close( mlt_deque_pop_back( self->queue ) );
+	if ( frame )
+	{
+		// The video thread has cleared out the queue. But the audio was played
+		// for this frame. So play the video before stopping so the display has
+		// the option to catch up with the audio.
+		consumer_play_video( self, frame );
+		mlt_frame_close( frame );
+		frame = NULL;
+	}
 
 	self->audio_avail = 0;
 
