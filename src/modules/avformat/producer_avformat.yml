@@ -218,3 +218,13 @@ parameters:
     minimum: 0
     maximum: 1
     widget: checkbox
+
+  - identifier: mute_on_pause
+    title: Mute on Pause
+    description: >
+      Mute the audio when the same frame is requested twice in a row.
+    type: integer
+    default: 1
+    minimum: 0
+    maximum: 1
+    widget: checkbox

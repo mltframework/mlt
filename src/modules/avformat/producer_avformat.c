@@ -208,6 +208,8 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 				mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
 #endif
 				mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", self, 0, (mlt_destructor) producer_avformat_close );
+
+				mlt_properties_set_int( properties, "mute_on_pause",  1 );
 			}
 		}
 	}
@@ -1953,7 +1955,8 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 				find_first_pts( self, video_index );
 		}
 
-		if ( position + 1 == self->audio_expected )
+		if ( position + 1 == self->audio_expected  &&
+			mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( self->parent ), "mute_on_pause" ) )
 		{
 			// We're paused - silence required
 			paused = 1;
