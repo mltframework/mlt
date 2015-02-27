@@ -26,10 +26,10 @@
 #include <math.h>
 
 
-static void PreCompute(uint8_t *image, int32_t *rgb, int width, int height)
+static void PreCompute(uint8_t *image, int32_t *rgba, int width, int height)
 {
 	register int x, y, z;
-	int32_t pts[3];
+	int32_t pts[4];
 	
 	for (y = 0; y < height; y++)
 	{
@@ -38,28 +38,29 @@ static void PreCompute(uint8_t *image, int32_t *rgb, int width, int height)
 			pts[0] = image[0];
 			pts[1] = image[1];
 			pts[2] = image[2];
-			for (z = 0; z < 3; z++) 
+			pts[3] = image[3];
+			for (z = 0; z < 4; z++)
 			{
-				if (x > 0) pts[z] += rgb[-3];
-				if (y > 0) pts[z] += rgb[width * -3];
-				if (x>0 && y>0) pts[z] -= rgb[(width + 1) * -3];
-				*rgb++ = pts[z];
+				if (x > 0) pts[z] += rgba[-4];
+				if (y > 0) pts[z] += rgba[width * -4];
+				if (x>0 && y>0) pts[z] -= rgba[(width + 1) * -4];
+				*rgba++ = pts[z];
 			}
-			image += 3;
+			image += 4;
 		}
 	}
 }
 
-static int32_t GetRGB(int32_t *rgb, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
+static int32_t GetRGBA(int32_t *rgba, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
 {
 	int xtheo = x * 1 + offsetx;
 	int ytheo = y + offsety;
 	if (xtheo < 0) xtheo = 0; else if (xtheo >= w) xtheo = w - 1;
 	if (ytheo < 0) ytheo = 0; else if (ytheo >= h) ytheo = h - 1;
-	return rgb[3*(xtheo+ytheo*w)+z];
+	return rgba[4*(xtheo+ytheo*w)+z];
 }
 
-static void DoBoxBlur(uint8_t *image, int32_t *rgb, unsigned int width, unsigned int height, unsigned int boxw, unsigned int boxh)
+static void DoBoxBlur(uint8_t *image, int32_t *rgba, unsigned int width, unsigned int height, unsigned int boxw, unsigned int boxh)
 {
 	register int x, y;
 	float mul = 1.f / ((boxw*2) * (boxh*2));
@@ -68,61 +69,70 @@ static void DoBoxBlur(uint8_t *image, int32_t *rgb, unsigned int width, unsigned
 	{
 		for (x = 0; x < width; x++)
 		{
-			*image++ = (GetRGB(rgb, width, height, x, +boxw, y, +boxh, 0)
-			          + GetRGB(rgb, width, height, x, -boxw, y, -boxh, 0)
-			          - GetRGB(rgb, width, height, x, -boxw, y, +boxh, 0)
-			          - GetRGB(rgb, width, height, x, +boxw, y, -boxh, 0)) * mul;
-			*image++ = (GetRGB(rgb, width, height, x, +boxw, y, +boxh, 1)
-			          + GetRGB(rgb, width, height, x, -boxw, y, -boxh, 1)
-			          - GetRGB(rgb, width, height, x, -boxw, y, +boxh, 1)
-			          - GetRGB(rgb, width, height, x, +boxw, y, -boxh, 1)) * mul;
-			*image++ = (GetRGB(rgb, width, height, x, +boxw, y, +boxh, 2)
-			          + GetRGB(rgb, width, height, x, -boxw, y, -boxh, 2)
-			          - GetRGB(rgb, width, height, x, -boxw, y, +boxh, 2)
-			          - GetRGB(rgb, width, height, x, +boxw, y, -boxh, 2)) * mul;
+			*image++ = (GetRGBA(rgba, width, height, x, +boxw, y, +boxh, 0)
+			          + GetRGBA(rgba, width, height, x, -boxw, y, -boxh, 0)
+			          - GetRGBA(rgba, width, height, x, -boxw, y, +boxh, 0)
+			          - GetRGBA(rgba, width, height, x, +boxw, y, -boxh, 0)) * mul;
+			*image++ = (GetRGBA(rgba, width, height, x, +boxw, y, +boxh, 1)
+			          + GetRGBA(rgba, width, height, x, -boxw, y, -boxh, 1)
+			          - GetRGBA(rgba, width, height, x, -boxw, y, +boxh, 1)
+			          - GetRGBA(rgba, width, height, x, +boxw, y, -boxh, 1)) * mul;
+			*image++ = (GetRGBA(rgba, width, height, x, +boxw, y, +boxh, 2)
+			          + GetRGBA(rgba, width, height, x, -boxw, y, -boxh, 2)
+			          - GetRGBA(rgba, width, height, x, -boxw, y, +boxh, 2)
+			          - GetRGBA(rgba, width, height, x, +boxw, y, -boxh, 2)) * mul;
+			*image++ = (GetRGBA(rgba, width, height, x, +boxw, y, +boxh, 3)
+			          + GetRGBA(rgba, width, height, x, -boxw, y, -boxh, 3)
+			          - GetRGBA(rgba, width, height, x, -boxw, y, +boxh, 3)
+			          - GetRGBA(rgba, width, height, x, +boxw, y, -boxh, 3)) * mul;
 		}
 	}
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	int error = 0;
 	mlt_filter filter =  (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
-	// Get the image
-	*format = mlt_image_rgb24;
-	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
-
-	// Only process if we have no error and a valid colour space
-	if ( error == 0 )
+	// Get blur factor
+	double factor = mlt_properties_get_int( properties, "start" );
+	if ( mlt_properties_get( properties, "end" ) )
 	{
-		short hori = mlt_properties_get_int( properties, "hori" );
-		short vert = mlt_properties_get_int( properties, "vert" );
+		double end = (double) mlt_properties_get_int( properties, "end" );
+		factor += ( end - factor ) * mlt_filter_get_progress( filter, frame );
+	}
 
-		// Get blur factor
-		double factor = mlt_properties_get_int( properties, "start" );
-		if ( mlt_properties_get( properties, "end" ) )
-		{
-			double end = (double) mlt_properties_get_int( properties, "end" );
-			factor += ( end - factor ) * mlt_filter_get_progress( filter, frame );
-		}
+	// If animated property "blur" is set, use its value.
+	char* blur_property = mlt_properties_get( properties, "blur" );
+	if ( blur_property )
+	{
+		mlt_position position = mlt_filter_get_position( filter, frame );
+		mlt_position length = mlt_filter_get_length2( filter, frame );
+		factor = mlt_properties_anim_get_double( properties, "blur", position, length );
+	}
 
-		// If animated property "blur" is set, use its value. 
-		char* blur_property = mlt_properties_get( properties, "blur" );
-		if ( blur_property )
-		{
-			mlt_position position = mlt_filter_get_position( filter, frame );
-			mlt_position length = mlt_filter_get_length2( filter, frame );
-			factor = mlt_properties_anim_get_double( properties, "blur", position, length );
-		}
+	if ( factor == 0.0 )
+	{
+		// Don't do anything
+		error = mlt_frame_get_image( frame, image, format, width, height, writable );
+	}
+	else
+	{
+		// Get the image
+		*format = mlt_image_rgb24a;
+		int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
-		if ( factor != 0)
+		// Only process if we have no error and a valid colour space
+		if ( error == 0 )
 		{
+			short hori = mlt_properties_get_int( properties, "hori" );
+			short vert = mlt_properties_get_int( properties, "vert" );
 			int h = *height + 1;
-			int32_t *rgb = mlt_pool_alloc( 3 * *width * h * sizeof(int32_t) );
-			PreCompute( *image, rgb, *width, h );
-			DoBoxBlur( *image, rgb, *width, h, (int) factor * hori, (int) factor * vert );
-			mlt_pool_release( rgb );
+			int32_t *rgba = mlt_pool_alloc( 4 * *width * h * sizeof(int32_t) );
+			PreCompute( *image, rgba, *width, h );
+			DoBoxBlur( *image, rgba, *width, h, (int) factor * hori, (int) factor * vert );
+			mlt_pool_release( rgba );
 		}
 	}
 	return error;
