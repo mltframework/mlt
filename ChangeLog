@@ -1,3 +1,25 @@
+2015-03-01  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 0.9.6.
+
+2015-02-25  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Add mute_on_pause property. 
+  Default behavior is to mute the audio if a frame is requested twice. This
+  matches the previous behavior.
+
+2015-02-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/modules/sdl/consumer_sdl.c: Fix deadlock
+  with sdl_preview seeking/playing near end.  Found while investigating
+  https://bugs.kde.org/show_bug.cgi?id=343326
+
+2015-02-17  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 0.9.5.
+
 2015-02-15  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
