@@ -1,6 +1,13 @@
 MLT Release Notes
 -----------------
 
+Version 0.9.6 - March 1, 2015
+
+A major regression slipped into the 0.9.4 release plus some other good fixes
+rolled in just afer that release prompting this new release. Please discontinue
+using version 0.9.4 and upgrade.
+
+
 Version 0.9.4 - February 15, 2015
 
 This is a bugfix and minor enhancement release. Here are some of the notable
