@@ -1,5 +1,5 @@
 --- # A metadata schema in Kwalify: http://www.kuwata-lab.com/kwalify/
-# Version: 0.2
+# Version: 0.3
 type: map
 mapping:
   "schema_version": # This should match the version comment above
@@ -75,7 +75,9 @@ mapping:
               - integer
               - properties # for passing options to encapsulated services
               - string
-              - time # time string values (clock, SMPTE) can be acccepted in addition to frames
+              - time # time string values (clock, SMPTE) can be accepted in addition to frames
+              - rect # X,Y,W,H
+              - color # 0xrrggbbaa | #rrggbb | #aarrggbb
           "service-name": # for type: properties, a reference to another service
             type: str     # format: type.service, e.g. transition.composite
           "title": # A UI can use this for a field label

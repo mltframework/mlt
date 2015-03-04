@@ -21,6 +21,10 @@
 
 #include <framework/mlt.h>
 
+class QImage;
+
 bool createQApplicationIfNeeded(mlt_service service);
+void copy_qimage_to_mlt_rgba( QImage* qImg, uint8_t* mImg );
+void copy_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg );
 
 #endif // COMMON_H

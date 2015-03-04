@@ -1,0 +1,113 @@
+schema_version: 0.3
+type: filter
+identifier: audiowaveform
+title: Audio Waveform Filter
+version: 1
+copyright: Meltytech, LLC
+creator: Brian Matherly
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  An audio visualization filter that draws an audio waveform on the image.
+
+parameters:
+  - identifier: bgcolor
+    title: Background Color
+    type: color
+    description: |
+      The background color to be applied to the entire frame. The default color 
+      is transparent.
+      
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+    
+  - identifier: color.*
+    title: Foreground color
+    type: color
+    description: |
+      The color of the waveform.
+      
+      Multiple colors can be specified with incrementing suffixes to cause the
+      waveform to be drawn in a gradient. color.1 is the center of the waveform.
+      Subsequent colors will produce a gradient on both sides of the center.
+      
+      By default, the filter has two colors defined:
+      
+          color.1=0xffffffff" color.2=0x000000ff
+          
+      This results in a gradient with white in the center of the waveforms and 
+      black on the top and bottom.
+      
+      To add more colors to the gradient, define more colors:
+      
+          color.3=green color.4=0x77777777
+          
+      To draw the waveform with a single color, define color.1 and color.2 to
+      be the same:
+      
+          color.1=red color.2=red
+      
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+
+  - identifier: thickness
+    title: Line Thickness
+    type: integer
+    description: >
+      The thickness of the line used to draw the waveform.
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 20
+    mutable: yes
+    widget: spinner
+    unit: pixels
+    
+  - identifier: show_channel
+    title: Audio Channel
+    type: integer
+    description: >
+      The audio channel to draw.
+      
+      "0" indicates that all channels should be drawn.
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 20
+    mutable: yes
+    widget: spinner
+    
+  - identifier: angle
+    title: Angle
+    type: float
+    description: >
+      The rotation angle to be applied to the waveform.
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 360
+    mutable: yes
+    widget: spinner
+
+  - identifier: rect
+    title: Rectangle
+    description: >
+      Defines the rectangle that the waveform(s) should be drawn in.
+      
+      Format is: "X,Y,W,H".
+      
+      X, Y, W, H are assumed to be pixel units unless they have the suffix '%'.
+    type: rect
+    default: "0,0,100%,100%"
+    readonly: no
+    mutable: yes

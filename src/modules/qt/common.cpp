@@ -19,6 +19,7 @@
 #include "common.h"
 #include <QApplication>
 #include <QLocale>
+#include <QImage>
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
 #include <X11/Xlib.h>
@@ -47,4 +48,41 @@ bool createQApplicationIfNeeded(mlt_service service)
 		QLocale::setDefault(QLocale(localename));
 	}
 	return true;
+}
+
+void copy_qimage_to_mlt_rgba(QImage* qImg, uint8_t* mImg)
+{
+	int height = qImg->height();
+	int width = qImg->width();
+	int y = height + 1;
+	while (--y)
+	{
+		QRgb* src = (QRgb*)qImg->scanLine(height - y);
+		int x = width + 1;
+		while (--x)
+		{
+			*mImg++ = qRed(*src);
+			*mImg++ = qGreen(*src);
+			*mImg++ = qBlue(*src);
+			*mImg++ = qAlpha(*src);
+			src++;
+		}
+	}
+}
+
+void copy_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg )
+{
+	int height = qImg->height();
+	int width = qImg->width();
+	int y = height + 1;
+	while (--y)
+	{
+		QRgb *dst = (QRgb*)qImg->scanLine(height - y);
+		int x = width + 1;
+		while (--x)
+		{
+			*dst++ = qRgba(mImg[0], mImg[1], mImg[2], mImg[3]);
+			mImg += 4;
+		}
+	}
 }
