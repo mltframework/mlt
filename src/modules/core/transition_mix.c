@@ -49,15 +49,6 @@ static int mix_audio( mlt_frame frame, mlt_frame that, float weight_start, float
 	if ( silent )
 		memset( src, 0, samples_src * channels_src * sizeof( int16_t ) );
 
-	if ( channels_src > 6 )
-		channels_src = 0;
-	if ( channels_dest > 6 )
-		channels_dest = 0;
-	if ( samples_src > 4000 )
-		samples_src = 0;
-	if ( samples_dest > 4000 )
-		samples_dest = 0;
-
 	// determine number of samples to process
 	*samples = samples_src < samples_dest ? samples_src : samples_dest;
 	*channels = channels_src < channels_dest ? channels_src : channels_dest;
