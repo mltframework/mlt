@@ -1996,7 +1996,8 @@ static void planar_to_interleaved( uint8_t *dest, AVFrame *src, int samples, int
 	{
 		for ( c = 0; c < channels; c++ )
 		{
-			memcpy( dest, &src->data[c][s * bytes_per_sample], bytes_per_sample );
+			if ( c < AV_NUM_DATA_POINTERS )
+				memcpy( dest, &src->data[c][s * bytes_per_sample], bytes_per_sample );
 			dest += bytes_per_sample;
 		}
 	}
