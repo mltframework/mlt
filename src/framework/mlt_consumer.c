@@ -802,17 +802,18 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	if ( frame )
 	{
+		// Get the audio of the first frame
+		if ( !audio_off )
+		{
+			samples = mlt_sample_calculator( fps, frequency, counter++ );
+			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
+		}
+
 		// Get the image of the first frame
 		if ( !video_off )
 		{
 			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
 			mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
-		}
-
-		if ( !audio_off )
-		{
-			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
 		}
 
 		// Mark as rendered
@@ -855,6 +856,13 @@ static void *consumer_read_ahead_thread( void *arg )
 
 		// Increment the counter used for averaging processing cost
 		count ++;
+
+		// Always process audio
+		if ( !audio_off )
+		{
+			samples = mlt_sample_calculator( fps, frequency, counter++ );
+			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
+		}
 
 		// All non-normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
@@ -899,13 +907,6 @@ static void *consumer_read_ahead_thread( void *arg )
 				count = 1;
 				mlt_log_verbose( self, "too many frames dropped - forcing next frame\n" );
 			}
-		}
-
-		// Always process audio
-		if ( !audio_off )
-		{
-			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
 		}
 
 		// Get the time to process this frame
