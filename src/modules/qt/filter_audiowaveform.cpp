@@ -82,6 +82,7 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 static void setup_pen( QPainter& p, QRectF& rect, mlt_properties filter_properties )
 {
 	int thickness = mlt_properties_get_int( filter_properties, "thickness" );
+	QString gorient = mlt_properties_get( filter_properties, "gorient" );
 	QVector<QColor> colors;
 	bool color_found = true;
 
@@ -106,7 +107,15 @@ static void setup_pen( QPainter& p, QRectF& rect, mlt_properties filter_properti
 		// Only use one color
 		pen.setBrush(colors[0]);
 	} else {
-		QLinearGradient gradient( rect.x(), rect.y(), rect.x(), rect.y() + rect.height() );
+		QLinearGradient gradient;
+		if( gorient.startsWith("h", Qt::CaseInsensitive) ) {
+			gradient.setStart ( rect.x(), rect.y() );
+			gradient.setFinalStop ( rect.x() + rect.width(), rect.y() );
+		} else { // Vertical
+			gradient.setStart ( rect.x(), rect.y() );
+			gradient.setFinalStop ( rect.x(), rect.y() + rect.height() );
+		}
+
 		qreal step = 1.0 / ( 2 * (colors.size() - 1 ) );
 		for( int i = 0; i < colors.size(); i++ )
 		{
@@ -301,11 +310,12 @@ mlt_filter filter_audiowaveform_init( mlt_profile profile, mlt_service_type type
 	mlt_properties_set( filter_properties, "bgcolor", "0x00000000" );
 	mlt_properties_set( filter_properties, "color.1", "0xffffffff" );
 	mlt_properties_set( filter_properties, "color.2", "0x000000ff" );
-	mlt_properties_set( filter_properties, "thickness",  "0" );
-	mlt_properties_set( filter_properties, "show_channel",  "0" );
-	mlt_properties_set( filter_properties, "angle",  "0" );
+	mlt_properties_set( filter_properties, "thickness", "0" );
+	mlt_properties_set( filter_properties, "show_channel", "0" );
+	mlt_properties_set( filter_properties, "angle", "0" );
 	mlt_properties_set( filter_properties, "rect", "0,0,100%,100%" );
-	mlt_properties_set( filter_properties, "fill",  "0" );
+	mlt_properties_set( filter_properties, "fill", "0" );
+	mlt_properties_set( filter_properties, "gorient", "v" );
 
 	return filter;
 }

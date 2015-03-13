@@ -121,3 +121,15 @@ parameters:
     mutable: yes
     widget: checkbox
     
+  - identifier: gorient
+    title: Gradient Orientation
+    description: Direction of the color gradient.
+    type: string
+    default: vertical
+    values:
+      - vertical
+      - horizontal
+    readonly: no
+    mutable: yes
+    widget: combo
+    
