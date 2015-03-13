@@ -111,3 +111,13 @@ parameters:
     default: "0,0,100%,100%"
     readonly: no
     mutable: yes
+    
+  - identifier: fill
+    title: Fill
+    description: Whether the area under the waveform should be filled in.
+    type: boolean
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+    

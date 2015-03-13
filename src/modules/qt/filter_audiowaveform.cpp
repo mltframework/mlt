@@ -27,7 +27,7 @@
 
 static const qreal MAX_AMPLITUDE = 32768.0;
 
-static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int samples, int channels )
+static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int samples, int channels, int fill )
 {
 	// For each x position on the waveform, find the min and max sample
 	// values that apply to that position. Draw a vertical line from the
@@ -46,10 +46,21 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 		if ( x != lastX ) {
 			// The min and max have been determined for the previous x
 			// So draw the line
+
+			if ( fill ) {
+				// Draw the line all the way to 0 to "fill" it in.
+				if ( max > 0 && min > 0 ) {
+					min = 0;
+				} else if ( min < 0 && max < 0 ) {
+					max = 0;
+				}
+			}
+
 			high.setX( lastX + rect.x() );
 			high.setY( max * half_height / MAX_AMPLITUDE + center_y );
 			low.setX( lastX + rect.x() );
 			low.setY( min * half_height / MAX_AMPLITUDE + center_y );
+
 			if ( high.y() == low.y() ) {
 				p.drawPoint( high );
 			} else {
@@ -118,6 +129,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 	mlt_color bg_color = mlt_properties_get_color( filter_properties, "bgcolor" );
 	int show_channel = mlt_properties_get_int( filter_properties, "show_channel" );
 	double angle = mlt_properties_get_double( filter_properties, "angle" );
+	int fill = mlt_properties_get_int( filter_properties, "fill" );
 	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
 	if ( strchr( mlt_properties_get( filter_properties, "rect" ), '%' ) ) {
 		rect.x *= qimg->width();
@@ -155,7 +167,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 			c_rect.setY( r.y() + c_height * c );
 			c_rect.setHeight( c_height );
 			setup_pen( p, c_rect, filter_properties );
-			paint_waveform( p, c_rect, audio + c, samples, channels );
+			paint_waveform( p, c_rect, audio + c, samples, channels, fill );
 		}
 	} else { // Show one specific channel
 		if ( show_channel >= channels ) {
@@ -163,7 +175,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 			show_channel = 1;
 		}
 		setup_pen( p, r, filter_properties );
-		paint_waveform( p, r, audio + show_channel - 1, samples, channels );
+		paint_waveform( p, r, audio + show_channel - 1, samples, channels, fill );
 	}
 
 	p.end();
@@ -293,6 +305,7 @@ mlt_filter filter_audiowaveform_init( mlt_profile profile, mlt_service_type type
 	mlt_properties_set( filter_properties, "show_channel",  "0" );
 	mlt_properties_set( filter_properties, "angle",  "0" );
 	mlt_properties_set( filter_properties, "rect", "0,0,100%,100%" );
+	mlt_properties_set( filter_properties, "fill",  "0" );
 
 	return filter;
 }
