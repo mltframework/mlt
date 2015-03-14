@@ -29,53 +29,92 @@ static const qreal MAX_AMPLITUDE = 32768.0;
 
 static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int samples, int channels, int fill )
 {
-	// For each x position on the waveform, find the min and max sample
-	// values that apply to that position. Draw a vertical line from the
-	// min value to the max value.
-	QPoint high;
-	QPoint low;
-	int lastX = 0;
+	int w_height = p.window().height(); // used to inver the axis
+	int width = rect.width();
 	const int16_t* q = audio;
-	qreal max = *q;
-	qreal min = *q;
+
 	qreal half_height = rect.height() / 2.0;
 	qreal center_y = rect.y() + half_height;
-	for ( int i = 0; i <= samples; i++ )
-	{
-		int x = ( i * rect.width() ) / samples;
-		if ( x != lastX ) {
-			// The min and max have been determined for the previous x
-			// So draw the line
+
+	if( samples < width ) {
+		// For each x position on the waveform, find the sample value that
+		// applies to that position and draw a point at that location.
+		QPoint point;
+		QPoint lastPoint;
+		int lastSample = 0;
+		for ( int x = 0; x < width; x++ )
+		{
+			int sample = ( x * samples ) / width;
+			if ( sample != lastSample ) {
+				lastSample = sample;
+				q += channels;
+			}
+
+			lastPoint.setX( x );
+			lastPoint.setY( point.y() );
+			point.setX( x );
+			point.setY( *q * half_height / MAX_AMPLITUDE + center_y );
 
 			if ( fill ) {
 				// Draw the line all the way to 0 to "fill" it in.
-				if ( max > 0 && min > 0 ) {
-					min = 0;
-				} else if ( min < 0 && max < 0 ) {
-					max = 0;
+				if ( ( point.y() > center_y && lastPoint.y() > center_y ) ||
+					 ( point.y() < center_y && lastPoint.y() < center_y ) ) {
+					lastPoint.setY( center_y );
 				}
 			}
 
-			high.setX( lastX + rect.x() );
-			high.setY( max * half_height / MAX_AMPLITUDE + center_y );
-			low.setX( lastX + rect.x() );
-			low.setY( min * half_height / MAX_AMPLITUDE + center_y );
-
-			if ( high.y() == low.y() ) {
-				p.drawPoint( high );
+			if ( point.y() == lastPoint.y() ) {
+				p.drawPoint( point );
 			} else {
-				p.drawLine( low, high );
+				p.drawLine( lastPoint, point );
 			}
-			lastX = x;
-			// Swap max and min so that the next line picks up where
-			// this one left off.
-			int tmp = max;
-			max = min;
-			min = tmp;
 		}
-		if ( *q > max ) max = *q;
-		if ( *q < min ) min = *q;
-		q += channels;
+	} else {
+		// For each x position on the waveform, find the min and max sample
+		// values that apply to that position. Draw a vertical line from the
+		// min value to the max value.
+		QPoint high;
+		QPoint low;
+		qreal max = *q;
+		qreal min = *q;
+		int lastX = 0;
+		for ( int s = 0; s <= samples; s++ )
+		{
+			int x = ( s * width ) / samples;
+			if ( x != lastX ) {
+				// The min and max have been determined for the previous x
+				// So draw the line
+
+				if ( fill ) {
+					// Draw the line all the way to 0 to "fill" it in.
+					if ( max > 0 && min > 0 ) {
+						min = 0;
+					} else if ( min < 0 && max < 0 ) {
+						max = 0;
+					}
+				}
+
+				high.setX( lastX + rect.x() );
+				high.setY( max * half_height / MAX_AMPLITUDE + center_y );
+				low.setX( lastX + rect.x() );
+				low.setY( min * half_height / MAX_AMPLITUDE + center_y );
+
+				if ( high.y() == low.y() ) {
+					p.drawPoint( high );
+				} else {
+					p.drawLine( low, high );
+				}
+				lastX = x;
+				// Swap max and min so that the next line picks up where
+				// this one left off.
+				int tmp = max;
+				max = min;
+				min = tmp;
+			}
+			if ( *q > max ) max = *q;
+			if ( *q < min ) min = *q;
+			q += channels;
+		}
 	}
 }
 
@@ -116,13 +155,10 @@ static void setup_pen( QPainter& p, QRectF& rect, mlt_properties filter_properti
 			gradient.setFinalStop ( rect.x(), rect.y() + rect.height() );
 		}
 
-		qreal step = 1.0 / ( 2 * (colors.size() - 1 ) );
+		qreal step = 1.0 / ( colors.size() - 1 );
 		for( int i = 0; i < colors.size(); i++ )
 		{
-			// Colors radiate from the center of the waveform
-			qreal delta = (qreal)i * step;
-			gradient.setColorAt( 0.5 + delta, colors[i] );
-			gradient.setColorAt( 0.5 - delta, colors[i] );
+			gradient.setColorAt( (qreal)i * step, colors[i] );
 		}
 		pen.setBrush(gradient);
 	}
@@ -309,7 +345,6 @@ mlt_filter filter_audiowaveform_init( mlt_profile profile, mlt_service_type type
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties_set( filter_properties, "bgcolor", "0x00000000" );
 	mlt_properties_set( filter_properties, "color.1", "0xffffffff" );
-	mlt_properties_set( filter_properties, "color.2", "0x000000ff" );
 	mlt_properties_set( filter_properties, "thickness", "0" );
 	mlt_properties_set( filter_properties, "show_channel", "0" );
 	mlt_properties_set( filter_properties, "angle", "0" );

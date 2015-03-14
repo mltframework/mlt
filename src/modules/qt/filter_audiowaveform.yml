@@ -34,24 +34,18 @@ parameters:
       The color of the waveform.
       
       Multiple colors can be specified with incrementing suffixes to cause the
-      waveform to be drawn in a gradient. color.1 is the center of the waveform.
-      Subsequent colors will produce a gradient on both sides of the center.
+      waveform to be drawn in a gradient. color.1 is the top of the waveform.
+      Subsequent colors will produce a gradient toward the bottom.
       
-      By default, the filter has two colors defined:
+      By default, the filter has one color defined:
       
-          color.1=0xffffffff" color.2=0x000000ff
+          color.1=0xffffffff"
           
-      This results in a gradient with white in the center of the waveforms and 
-      black on the top and bottom.
+      This results in a white waveform.
       
-      To add more colors to the gradient, define more colors:
+      To create a gradient, define more colors:
       
-          color.3=green color.4=0x77777777
-          
-      To draw the waveform with a single color, define color.1 and color.2 to
-      be the same:
-      
-          color.1=red color.2=red
+          color.2=green color.3=0x77777777
       
       A color value is a hexadecimal representation of RGB plus alpha channel 
       as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
