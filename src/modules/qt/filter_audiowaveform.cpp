@@ -20,16 +20,17 @@
 
 #include "common.h"
 #include <framework/mlt.h>
+#include <framework/mlt_log.h>
 #include <cstring> // memset
 #include <QPainter>
 #include <QImage>
 #include <QVector>
 
 static const qreal MAX_AMPLITUDE = 32768.0;
+static bool preprocess_warned = false;
 
 static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int samples, int channels, int fill )
 {
-	int w_height = p.window().height(); // used to inver the axis
 	int width = rect.width();
 	const int16_t* q = audio;
 
@@ -235,7 +236,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int channels = 0;
 	int frequency = 0;
 	mlt_audio_format audio_format = mlt_audio_s16;
-	int16_t* audio = NULL;
+	int16_t* audio = (int16_t*)mlt_properties_get_data( frame_properties, "audio", NULL );
+
+	if ( !audio && !preprocess_warned ) {
+		// This filter depends on the consumer processing the audio before the
+		// video. If the audio is not preprocessed, this filter will process it.
+		// If this filter processes the audio, it could cause confusion for the
+		// consumer if it needs different audio properties.
+		mlt_log_warning( MLT_FILTER_SERVICE(filter), "Audio not preprocessed. Potential audio distortion.\n" );
+		preprocess_warned = true;
+	}
 
 	*image_format = mlt_image_rgb24a;
 
