@@ -61,6 +61,10 @@ typedef struct
 	mlt_event event_listener;
 	mlt_position position;
 	int is_purge;
+	int aud_counter;
+	double fps;
+	int channels;
+	int frequency;
 
 	/* additional fields added for the parallel work queue */
 	mlt_deque worker_threads;
@@ -506,8 +510,10 @@ static void set_image_format( mlt_consumer self )
 
 int mlt_consumer_start( mlt_consumer self )
 {
+	int error = 0;
+
 	if ( !mlt_consumer_is_stopped( self ) )
-		return 0;
+		return error;
 
 	consumer_private *priv = self->local;
 
@@ -589,9 +595,15 @@ int mlt_consumer_start( mlt_consumer self )
 
 	// Start the service
 	if ( self->start != NULL )
-		return self->start( self );
+		error = self->start( self );
 
-	return 0;
+	// Store the parameters for audio processing.
+	priv->aud_counter = 0;
+	priv->fps = mlt_properties_get_double( properties, "fps" );
+	priv->channels = mlt_properties_get_int( properties, "channels" );
+	priv->frequency = mlt_properties_get_int( properties, "frequency" );
+
+	return error;
 }
 
 /** An alternative method to feed frames into the consumer.
@@ -757,11 +769,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
 	int preview_format = mlt_properties_get_int( properties, "preview_format" );
 
-	// Get the audio settings
-	int counter = 0;
-	double fps = mlt_properties_get_double( properties, "fps" );
-	int channels = mlt_properties_get_int( properties, "channels" );
-	int frequency = mlt_properties_get_int( properties, "frequency" );
+	// Audio processing variables
 	int samples = 0;
 	void *audio = NULL;
 
@@ -805,8 +813,8 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Get the audio of the first frame
 		if ( !audio_off )
 		{
-			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
+			samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
 		}
 
 		// Get the image of the first frame
@@ -860,8 +868,8 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Always process audio
 		if ( !audio_off )
 		{
-			samples = mlt_sample_calculator( fps, frequency, counter++ );
-			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &frequency, &channels, &samples );
+			samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
 		}
 
 		// All non-normal playback frames should be shown
@@ -1369,8 +1377,10 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	// Frame to return
 	mlt_frame frame = NULL;
 	consumer_private *priv = self->local;
-	double fps = mlt_properties_get_double( properties, "fps" );
 	int threads = abs( priv->real_time );
+	int audio_off = mlt_properties_get_int( properties, "audio_off" );
+	int samples = 0;
+	void *audio = NULL;
 	int buffer = mlt_properties_get_int( properties, "_buffer" );
 	buffer = buffer > 0 ? buffer : mlt_properties_get_int( properties, "buffer" );
 	// This is a heuristic to determine a suitable minimum buffer size for the number of threads.
@@ -1394,6 +1404,12 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 			frame = mlt_consumer_get_frame( self );
 			if ( frame )
 			{
+				// Process the audio
+				if ( !audio_off )
+				{
+					samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+					mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
+				}
 				pthread_mutex_lock( &priv->queue_mutex );
 				mlt_deque_push_back( priv->queue, frame );
 				pthread_cond_signal( &priv->queue_cond );
@@ -1420,6 +1436,12 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 		frame = mlt_consumer_get_frame( self );
 		if ( frame )
 		{
+			// Process the audio
+			if ( !audio_off )
+			{
+				samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+				mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
+			}
 			pthread_mutex_lock( &priv->queue_mutex );
 			mlt_deque_push_back( priv->queue, frame );
 			pthread_cond_signal( &priv->queue_cond );
@@ -1480,7 +1502,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				// Auto-scale the buffer to compensate
 				mlt_log_verbose( self, "increasing buffer to %d\n", buffer + threads );
 				mlt_properties_set_int( properties, "_buffer", buffer + threads );
-				priv->consecutive_dropped = fps / 2;
+				priv->consecutive_dropped = priv->fps / 2;
 			}
 			else
 			{
