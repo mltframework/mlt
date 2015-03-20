@@ -1,6 +1,6 @@
 /*
  * filter_volume.c -- adjust audio volume
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -293,11 +293,13 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	mlt_properties instance_props = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE( filter ) );
 
 	double gain = 1.0; // no adjustment
+	char *gain_str = mlt_properties_get( filter_props, "gain" );
 
 	// Parse the gain property
-	if ( mlt_properties_get( filter_props, "gain" ) != NULL )
+	if ( gain_str )
 	{
-		char *p = mlt_properties_get( filter_props, "gain" );
+		char *p_orig = strdup( gain_str );
+		char *p =  p_orig;
 
 		if ( strncaseeq( p, "normalise", 9 ) )
 			mlt_properties_set( filter_props, "normalise", "" );
@@ -336,6 +338,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 					gain += ( end - gain ) * mlt_filter_get_progress( filter, frame );
 			}
 		}
+		free( p_orig );
 	}
 	mlt_properties_set_double( instance_props, "gain", gain );
 	
