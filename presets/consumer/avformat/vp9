@@ -14,11 +14,12 @@ quality=good
 speed=1
 vprofile=0
 qmax=51
-qmin=11
+qmin=4
 slices=4
-arnr_max_frames=7
-arnr_strength=5
-arnr_type=3
+tile-columns=6
+frame-parallel=1
+auto-alt-ref=1
+lag-in-frames=25
 
 meta.preset.name=WebM VP9
 meta.preset.extension=webm
