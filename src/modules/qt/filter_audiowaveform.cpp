@@ -40,8 +40,8 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 	if( samples < width ) {
 		// For each x position on the waveform, find the sample value that
 		// applies to that position and draw a point at that location.
-		QPoint point;
-		QPoint lastPoint;
+		QPoint point(0, *q * half_height / MAX_AMPLITUDE + center_y);
+		QPoint lastPoint = point;
 		int lastSample = 0;
 		for ( int x = 0; x < width; x++ )
 		{
