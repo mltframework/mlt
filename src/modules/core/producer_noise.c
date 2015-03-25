@@ -140,8 +140,10 @@ static int producer_get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_form
 		int16_t *p = *buffer + size / 2;
 		rand_seed seed;
 		init_seed( &seed, mlt_frame_get_position( frame ) );
-		while ( p != *buffer )
-			*( -- p ) = fast_rand( &seed ) & 0x0f00;
+		while ( p != *buffer ) {
+			int16_t val = (int16_t)fast_rand( &seed );
+			*( -- p ) = val;
+		}
 	}
 
 	// Set the buffer for destruction
