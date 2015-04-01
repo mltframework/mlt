@@ -215,8 +215,8 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 			setup_pen( p, c_rect, filter_properties );
 			paint_waveform( p, c_rect, audio + c, samples, channels, fill );
 		}
-	} else { // Show one specific channel
-		if ( show_channel >= channels ) {
+	} else if ( show_channel > 0 ) { // Show one specific channel
+		if ( show_channel > channels ) {
 			// Sanity
 			show_channel = 1;
 		}
