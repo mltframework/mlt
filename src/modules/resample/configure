@@ -3,7 +3,7 @@
 if [ "$help" != "1" ]
 then
 
-	pkg-config samplerate 2> /dev/null
+	${PKG_CONFIG} samplerate 2> /dev/null
 	disable_samplerate=$?
 
 	if [ "$disable_samplerate" != "0" ]

@@ -10,9 +10,9 @@ OBJS = factory.o \
 	   producer_libdv.o \
 	   consumer_libdv.o
 
-CFLAGS += `pkg-config --cflags libdv`
+CFLAGS += `${PKG_CONFIG} --cflags libdv`
 
-LDFLAGS += `pkg-config --libs libdv`
+LDFLAGS += `${PKG_CONFIG} --libs libdv`
 
 SRCS := $(OBJS:.o=.c)
 

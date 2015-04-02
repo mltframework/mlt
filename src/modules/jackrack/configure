@@ -11,14 +11,14 @@ EOF
 
 else
 
-	pkg-config jack
+	${PKG_CONFIG} jack
 	disable_jack=$?
 
 	echo > config.mak
 
 	if [ "$gpl" = "true" ]
 	then
-		pkg-config libxml-2.0 > /dev/null 2>&1
+		${PKG_CONFIG} libxml-2.0 > /dev/null 2>&1
 		disable_xml2=$?
 
 		ladspa_prefix=`which listplugins 2> /dev/null`
@@ -27,7 +27,7 @@ else
 			ladspa_prefix=`dirname "$ladspa_prefix"`
 			ladspa_prefix=`dirname "$ladspa_prefix"`
 		else
-			ladspa_prefix=`pkg-config --variable=prefix jack`
+			ladspa_prefix=`${PKG_CONFIG} --variable=prefix jack`
 		fi
 		disable_ladspa=`[ -f "$ladspa_prefix/include/ladspa.h" ] && echo 0 || echo 1`
 		echo GPL=1 > config.mak

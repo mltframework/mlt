@@ -147,6 +147,8 @@ build_config()
 		echo export prefix=$prefix
 		echo export libdir=$libdir
 		echo export bindir=$prefix/bin
+        [ -z ${PKG_CONFIG} ] && PKG_CONFIG="pkg-config"
+        echo export PKG_CONFIG="${PKG_CONFIG}"
 	) >> mlt-config
 
 	cat < mlt-config-template >> mlt-config

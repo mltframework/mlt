@@ -3,7 +3,7 @@
 if [ "$help" != "1" ]
 then
 
-	pkg-config libxml-2.0 > /dev/null 2>&1
+	${PKG_CONFIG} libxml-2.0 > /dev/null 2>&1
 	disable_xml2=$?
 
 	if [ "$disable_xml2" != "0" ]

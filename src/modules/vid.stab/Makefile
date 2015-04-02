@@ -13,10 +13,10 @@ CPPOBJS = filter_deshake.o
 CPPOBJS += filter_vidstab.o
 
 CXXFLAGS += -Wno-deprecated $(CFLAGS)
-CXXFLAGS += $(shell pkg-config --cflags vidstab)
+CXXFLAGS += $(shell ${PKG_CONFIG} --cflags vidstab)
 
 LDFLAGS += -L../../mlt++ -lmlt++
-LDFLAGS += $(shell pkg-config --libs vidstab)
+LDFLAGS += $(shell ${PKG_CONFIG} --libs vidstab)
 
 
 SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)

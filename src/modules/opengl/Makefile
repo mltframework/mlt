@@ -30,18 +30,18 @@ CPPOBJS += transition_movit_mix.o
 CPPOBJS += transition_movit_overlay.o
 
 CXXFLAGS := -Wno-deprecated $(CFLAGS) $(CXXFLAGS)
-CXXFLAGS += $(shell pkg-config --cflags movit 2> /dev/null)
+CXXFLAGS += $(shell ${PKG_CONFIG} --cflags movit 2> /dev/null)
 
-SHADERDIR = $(shell pkg-config --variable=shaderdir movit)
+SHADERDIR = $(shell ${PKG_CONFIG} --variable=shaderdir movit)
 CXXFLAGS += -DSHADERDIR=\"$(SHADERDIR)\"
 
 LDFLAGS += -L../../mlt++ -lmlt++
 
 ifeq ($(targetos), MinGW)
-	CXXFLAGS += $(shell pkg-config --cflags movit)
-	LDFLAGS += $(shell pkg-config --libs movit) -lopengl32 -lpthread
+	CXXFLAGS += $(shell ${PKG_CONFIG} --cflags movit)
+	LDFLAGS += $(shell ${PKG_CONFIG} --libs movit) -lopengl32 -lpthread
 else
-	LDFLAGS += $(shell pkg-config --libs movit 2> /dev/null)
+	LDFLAGS += $(shell ${PKG_CONFIG} --libs movit 2> /dev/null)
 ifeq ($(targetos), Darwin)
 	CXXFLAGS += -FOpenGL
 	LDFLAGS += -lpthread -framework OpenGL

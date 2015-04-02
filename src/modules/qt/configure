@@ -58,14 +58,14 @@ else
 
 	echo > config.mak
 
-	pkg-config --exists 'libexif'
+	${PKG_CONFIG} --exists 'libexif'
 	if [ $? -eq 0 ]
 	then
 		echo "- Libexif found, enabling auto rotate"
 		echo "USE_EXIF=1" >> config.mak
-		echo EXIFCXXFLAGS=$(pkg-config --cflags libexif ) >> config.mak
+		echo EXIFCXXFLAGS=$(${PKG_CONFIG} --cflags libexif ) >> config.mak
 		echo EXIFCXXFLAGS += -DUSE_EXIF >> config.mak
-		echo EXIFLIBS=$(pkg-config --libs libexif) >> config.mak
+		echo EXIFLIBS=$(${PKG_CONFIG} --libs libexif) >> config.mak
 	elif [ -d "$exif_libdir" -a -d "$exif_includedir" ]
 	then
 		# test if we have a libexif
@@ -131,8 +131,8 @@ else
 		# Qt4 on OS X
 		elif [ -d "$qt_libdir/QtGui.framework" ]
 		then
-			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
-			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+			echo QTCXXFLAGS=$(${PKG_CONFIG} --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+			echo QTLIBS=$(${PKG_CONFIG} --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 		# Qt4 on Windows
 		elif [ -f "$qt_libdir/libQtCore4.a" ]
 		then
@@ -144,24 +144,24 @@ else
 			echo QTLIBS=-L$qt_libdir -lQtCore -lQtGui -lQtXml -lQtSvg -lQtOpenGL >> config.mak
 		fi
 	else
-		pkg-config --exists 'QtGui >= 4'
+		${PKG_CONFIG} --exists 'QtGui >= 4'
 		if [ $? -eq 0 ]
 		then
 			echo "- Qt version 4.x detected"
-			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
-			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+			echo QTCXXFLAGS=$(${PKG_CONFIG} --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+			echo QTLIBS=$(${PKG_CONFIG} --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 		else
-			pkg-config --exists 'Qt5Gui'
+			${PKG_CONFIG} --exists 'Qt5Gui'
 			if [ $? -eq 0 ]
 			then
 				echo "- Qt version 5.x detected"
-				echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
-				echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
-				pkg-config --exists 'Qt5OpenGL'
+				echo QTCXXFLAGS=$(${PKG_CONFIG} --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
+				echo QTLIBS=$(${PKG_CONFIG} --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
+				${PKG_CONFIG} --exists 'Qt5OpenGL'
 				if [ $? -eq 0 ]
 				then
-					echo QTCXXFLAGS+=$(pkg-config --cflags Qt5OpenGL) >> config.mak
-					echo QTLIBS+=$(pkg-config --libs Qt5OpenGL) >> config.mak
+					echo QTCXXFLAGS+=$(${PKG_CONFIG} --cflags Qt5OpenGL) >> config.mak
+					echo QTLIBS+=$(${PKG_CONFIG} --libs Qt5OpenGL) >> config.mak
 				else
 					echo "- Qt5OpenGL not found: disabling"
 					without_opengl=true

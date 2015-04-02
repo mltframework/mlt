@@ -2,7 +2,7 @@
 
 if [ "$help" != "1" ]
 then
-	if ! $(pkg-config vidstab)
+	if ! $(${PKG_CONFIG} vidstab)
 	then
 		echo "- vid.stab not found: disabling"
 		touch ../disable-vid.stab
@@ -10,8 +10,8 @@ then
 	fi
 	
 	minver="0.98"
-	modver=$(pkg-config --modversion vidstab)
-	pkg-config --exists "vidstab >= $minver"
+	modver=$(${PKG_CONFIG} --modversion vidstab)
+	${PKG_CONFIG} --exists "vidstab >= $minver"
 	if [ $? -ne 0 ]
 	then
 		echo "- vid.stab $modver found, but $minver or newer is required: disabling"

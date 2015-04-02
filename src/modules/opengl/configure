@@ -2,7 +2,7 @@
 
 if [ "$help" != "1" ]
 then
-	if ! $(pkg-config movit)
+	if ! $(${PKG_CONFIG} movit)
 	then
 		echo "- movit not found: disabling"
 		touch ../disable-opengl

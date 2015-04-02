@@ -21,18 +21,18 @@ GPL_OBJS = jack_rack.o \
 OBJS = factory.o \
 	   consumer_jack.o
 
-CFLAGS += $(shell pkg-config --cflags jack)
-LDFLAGS += $(shell pkg-config --libs jack)
+CFLAGS += $(shell ${PKG_CONFIG} --cflags jack)
+LDFLAGS += $(shell ${PKG_CONFIG} --libs jack)
 
 ifdef GPL
 OBJS += $(GPL_OBJS)
 CFLAGS += -DGPL
-CFLAGS += $(shell pkg-config --cflags libxml-2.0)
-CFLAGS += $(shell pkg-config $(PKGCONFIG_PREFIX) --cflags glib-2.0)
+CFLAGS += $(shell ${PKG_CONFIG} --cflags libxml-2.0)
+CFLAGS += $(shell ${PKG_CONFIG} $(PKGCONFIG_PREFIX) --cflags glib-2.0)
 
 LDFLAGS += $(LIBDL)
-LDFLAGS += $(shell pkg-config --libs libxml-2.0)
-LDFLAGS += $(shell pkg-config $(PKGCONFIG_PREFIX) --libs glib-2.0)
+LDFLAGS += $(shell ${PKG_CONFIG} --libs libxml-2.0)
+LDFLAGS += $(shell ${PKG_CONFIG} $(PKGCONFIG_PREFIX) --libs glib-2.0)
 LDFLAGS += -lm
 
 YML_FILES = *.yml

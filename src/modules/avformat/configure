@@ -60,7 +60,7 @@ else
 	export filters=true
 	export devices=true
 	export vdpau=false
-	pkg-config x11 > /dev/null 2>&1
+	${PKG_CONFIG} x11 > /dev/null 2>&1
 	export x11=$?
 
 	for i in "$@"
@@ -78,7 +78,7 @@ else
 		esac
 	done
 
-	: ${shared_ffmpeg:=$(pkg-config --variable=prefix libavformat${avformat_suffix})}
+	: ${shared_ffmpeg:=$(${PKG_CONFIG} --variable=prefix libavformat${avformat_suffix})}
 
 	if [ "$static_ffmpeg" != "" ]
 	then 
@@ -109,7 +109,7 @@ else
 		fi
 	elif [ "$shared_ffmpeg" != "" ]
 	then
-		if ! $(pkg-config libswscale${avformat_suffix}); then
+		if ! $(${PKG_CONFIG} libswscale${avformat_suffix}); then
 			echo "- libswscale not found: disabling"
 			touch ../disable-avformat
 			exit 0
@@ -123,28 +123,28 @@ else
 				echo "CFLAGS+=-DAVDATADIR=\\\"${shared_ffmpeg}/share/ffmpeg${avformat_suffix}/\\\"" >> config.mak
 			;;
 		esac
-                echo "CFLAGS+=$(pkg-config --cflags libavcodec${avformat_suffix})" >> config.mak
-                echo "LDFLAGS+=$(pkg-config --libs libavcodec${avformat_suffix})" >> config.mak
-                echo "CFLAGS+=$(pkg-config --cflags libavutil${avformat_suffix})" >> config.mak
-                echo "LDFLAGS+=$(pkg-config --libs libavutil${avformat_suffix})" >> config.mak
-                echo "CFLAGS+=$(pkg-config --cflags libavformat${avformat_suffix})" >> config.mak
-                echo "LDFLAGS+=$(pkg-config --libs libavformat${avformat_suffix})" >> config.mak
-		echo "CFLAGS+=$(pkg-config --cflags libswscale${avformat_suffix})" >> config.mak
-                echo "LDFLAGS+=$(pkg-config --libs libswscale${avformat_suffix})" >> config.mak
+                echo "CFLAGS+=$(${PKG_CONFIG} --cflags libavcodec${avformat_suffix})" >> config.mak
+                echo "LDFLAGS+=$(${PKG_CONFIG} --libs libavcodec${avformat_suffix})" >> config.mak
+                echo "CFLAGS+=$(${PKG_CONFIG} --cflags libavutil${avformat_suffix})" >> config.mak
+                echo "LDFLAGS+=$(${PKG_CONFIG} --libs libavutil${avformat_suffix})" >> config.mak
+                echo "CFLAGS+=$(${PKG_CONFIG} --cflags libavformat${avformat_suffix})" >> config.mak
+                echo "LDFLAGS+=$(${PKG_CONFIG} --libs libavformat${avformat_suffix})" >> config.mak
+		echo "CFLAGS+=$(${PKG_CONFIG} --cflags libswscale${avformat_suffix})" >> config.mak
+                echo "LDFLAGS+=$(${PKG_CONFIG} --libs libswscale${avformat_suffix})" >> config.mak
 		if [ "$devices" = "true" ]
 		then
-			if ! $(pkg-config libavdevice${avformat_suffix}); then
+			if ! $(${PKG_CONFIG} libavdevice${avformat_suffix}); then
 				echo "- libavdevice not found: disabling"
 				touch ../disable-avformat
 				exit 0
 			fi
-			echo "CFLAGS+=$(pkg-config --cflags libavdevice${avformat_suffix})" >> config.mak
-                        echo "LDFLAGS+=$(pkg-config --libs libavdevice${avformat_suffix})" >> config.mak
+			echo "CFLAGS+=$(${PKG_CONFIG} --cflags libavdevice${avformat_suffix})" >> config.mak
+                        echo "LDFLAGS+=$(${PKG_CONFIG} --libs libavdevice${avformat_suffix})" >> config.mak
 		fi
 		
 		if [ "$vdpau" = "true" ]
 		then
-			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC $(pkg-config --cflags libavformat${avformat_suffix}) -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
+			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC $(${PKG_CONFIG} --cflags libavformat${avformat_suffix}) -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
 			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 		fi
 	else

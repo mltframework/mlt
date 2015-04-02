@@ -3,7 +3,7 @@
 if [ "$help" != "1" ]
 then
 
-	pkg-config vorbisfile 2> /dev/null
+	${PKG_CONFIG} vorbisfile 2> /dev/null
 	disable_vorbis=$?
 
 	if [ "$disable_vorbis" != "0" ]

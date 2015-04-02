@@ -14,14 +14,14 @@ CPPOBJS = kino_wrapper.o avi.o error.o filehandler.o riff.o
 LDFLAGS += -lstdc++
 
 ifdef HAVE_LIBQUICKTIME
-CFLAGS += `pkg-config --cflags libquicktime` 
-CXXFLAGS += `pkg-config --cflags libquicktime` 
-LDFLAGS += `pkg-config --libs libquicktime`
+CFLAGS += `${PKG_CONFIG} --cflags libquicktime` 
+CXXFLAGS += `${PKG_CONFIG} --cflags libquicktime` 
+LDFLAGS += `${PKG_CONFIG} --libs libquicktime`
 endif
 
 ifdef HAVE_LIBDV
-CFLAGS += `pkg-config --cflags libdv`
-LDFLAGS += `pkg-config --libs libdv`
+CFLAGS += `${PKG_CONFIG} --cflags libdv`
+LDFLAGS += `${PKG_CONFIG} --libs libdv`
 endif
 
 

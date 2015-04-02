@@ -11,10 +11,10 @@ then
 	fi
 
 	# Entirely optional...
-	pkg-config libquicktime 2> /dev/null
+	${PKG_CONFIG} libquicktime 2> /dev/null
 	lqt_disabled=$?
 
-	pkg-config libdv 2> /dev/null
+	${PKG_CONFIG} libdv 2> /dev/null
 	libdv_disabled=$?
 
 	echo > config.mak
