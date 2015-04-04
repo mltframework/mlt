@@ -51,9 +51,9 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 				q += channels;
 			}
 
-			lastPoint.setX( x );
+			lastPoint.setX( x + rect.x() );
 			lastPoint.setY( point.y() );
-			point.setX( x );
+			point.setX( x + rect.x() );
 			point.setY( *q * half_height / MAX_AMPLITUDE + center_y );
 
 			if ( fill ) {
