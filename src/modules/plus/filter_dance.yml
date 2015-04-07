@@ -1,0 +1,179 @@
+schema_version: 0.3
+type: filter
+identifier: dance
+title: Dance
+version: 1
+copyright: Meltytech, LLC
+creator: Brian Matherly <code@brianmatherly.com>
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  An audio visualization filter that moves the image around proportional to the 
+  magnitude of the audio spectrum.
+  
+parameters:
+  - identifier: frequency_low
+    title: Low Frequency
+    type: integer
+    description: >
+      The low end of the frequency range to be used to influence the image 
+      motion.
+    mutable: yes
+    readonly: no
+    default: 20
+    unit: Hz
+    
+  - identifier: frequency_high
+    title: High Frequency
+    type: integer
+    description: >
+      The high end of the frequency range to be used to influence the image 
+      motion.
+    mutable: yes
+    readonly: no
+    default: 20000
+    unit: Hz
+    
+  - identifier: threshold
+    title: Level Threshold
+    type: float
+    description: >
+      The minimum amplitude of sound that must occur within the frequency range
+      to cause the image to move.
+      motion.
+    mutable: yes
+    readonly: no
+    default: -30
+    minimum: -100
+    maximum: 0
+    unit: dB
+    
+  - identifier: osc
+    title: Oscillation
+    type: float
+    description: >
+      Oscillation can be useful to make the image move back and forth during 
+      long periods of sound.
+      A value of 0 specifies no oscillation.
+    mutable: yes
+    readonly: no
+    default: 5
+    minimum: 0
+    unit: Hz
+    
+  - identifier: initial_zoom
+    title: Initial Zoom
+    type: float
+    description: |
+      The amount to zoom the image before any motion occurs. This can be used to
+      avoid black on the sides of the image when it moves.
+        100% = no zoom
+      < 100% = zoom out (make the image smaller)
+      > 100% = zoom in (make the image larger)
+    mutable: yes
+    readonly: no
+    default: 100
+    minimum: 0
+    maximum: 5000
+    unit: '%'
+    
+  - identifier: zoom
+    title: Zoom
+    type: float
+    description: |
+      The amount that the audio affects the zoom of the image.
+      < 0% = Image will zoom out (get smaller) with more sound
+        0% = no zoom
+      > 0% = Image will zoom in (get larger) with more sound
+    mutable: yes
+    readonly: no
+    default: 10
+    minimum: -100
+    maximum: 100
+    unit: '%'
+    
+  - identifier: left
+    title: Left
+    type: float
+    description: |
+      The amount that the audio affects the left offset of the image.
+        0% = no left offset
+      > 0% = Image will move left with more sound
+    mutable: yes
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 100
+    unit: '%'
+    
+  - identifier: right
+    title: Right
+    type: float
+    description: |
+      The amount that the audio affects the right offset of the image.
+        0% = no right offset
+      > 0% = Image will move right with more sound
+    mutable: yes
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 100
+    unit: '%'
+    
+  - identifier: up
+    title: Up
+    type: float
+    description: |
+      The amount that the audio affects the upward offset of the image.
+        0% = no upward offset
+      > 0% = Image will move up with more sound
+    mutable: yes
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 100
+    unit: '%'
+    
+  - identifier: down
+    title: Down
+    type: float
+    description: |
+      The amount that the audio affects the downward offset of the image.
+        0% = no downward offset
+      > 0% = Image will move down with more sound
+    mutable: yes
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 100
+    unit: '%'
+    
+  - identifier: clockwise
+    title: Clockwise
+    type: float
+    description: |
+      The amount that the audio affects the clockwise rotation of the image.
+        0% = no clockwise rotation
+      > 0% = Image will rotate clockwise with more sound
+    mutable: yes
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 360
+    unit: degrees
+    
+  - identifier: counterclockwise
+    title: Counterclockwise
+    type: float
+    description: |
+      The amount that the audio affects the counterclockwise rotation of the image.
+        0% = no counterclockwise rotation
+      > 0% = Image will rotate counterclockwise with more sound
+    mutable: yes
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 360
+    unit: degrees

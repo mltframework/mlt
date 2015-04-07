@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,11 @@ extern mlt_producer producer_blipflash_init( mlt_profile profile, mlt_service_ty
 extern mlt_producer producer_count_init( const char *arg );
 extern mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
+#ifdef USE_FFTW
+extern mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_fft_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+#endif
+
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
@@ -57,6 +62,10 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "blipflash", producer_blipflash_init );
 	MLT_REGISTER( producer_type, "count", producer_count_init );
 	MLT_REGISTER( transition_type, "affine", transition_affine_init );
+#ifdef USE_FFTW
+	MLT_REGISTER( filter_type, "dance", filter_dance_init );
+	MLT_REGISTER( filter_type, "fft", filter_fft_init );
+#endif
 
 	MLT_REGISTER_METADATA( consumer_type, "blipflash", metadata, "consumer_blipflash.yml" );
 	MLT_REGISTER_METADATA( filter_type, "affine", metadata, "filter_affine.yml" );
@@ -71,4 +80,8 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( producer_type, "blipflash", metadata, "producer_blipflash.yml" );
 	MLT_REGISTER_METADATA( producer_type, "count", metadata, "producer_count.yml" );
 	MLT_REGISTER_METADATA( transition_type, "affine", metadata, "transition_affine.yml" );
+#ifdef USE_FFTW
+	MLT_REGISTER_METADATA( filter_type, "dance", metadata, "filter_dance.yml" );
+	MLT_REGISTER_METADATA( filter_type, "fft", metadata, "filter_fft.yml" );
+#endif
 }

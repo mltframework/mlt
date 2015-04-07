@@ -3,6 +3,7 @@ CFLAGS += -I../..
 LDFLAGS += -L../../framework -lmlt -lm -lpthread
 
 include ../../../config.mak
+include config.mak
 
 TARGET = ../libmltplus$(LIBSUF)
 
@@ -21,6 +22,11 @@ OBJS = consumer_blipflash.o \
 	   producer_count.o \
 	   transition_affine.o \
 	   ebur128/ebur128.o
+
+ifdef USE_FFTW
+	OBJS += filter_dance.o \
+	   filter_fft.o
+endif
 
 SRCS := $(OBJS:.o=.c)
 

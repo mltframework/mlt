@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ "$help" != "1" ]
+then
+
+	echo > config.mak
+
+	pkg-config fftw3
+	if [ $? -eq 0 ]
+	then
+		echo "USE_FFTW=1" >> config.mak
+		echo "CFLAGS += -DUSE_FFTW" >> config.mak
+		echo "CFLAGS += $(pkg-config --cflags fftw3)" >> config.mak
+		echo "LDFLAGS += $(pkg-config --libs fftw3)" >> config.mak
+	else
+		echo "- fftw not found: disable fft and dance filters"
+	fi
+
+	exit 0
+fi
