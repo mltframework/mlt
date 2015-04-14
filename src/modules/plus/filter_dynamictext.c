@@ -291,7 +291,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( !error && mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &b_frame, 0 ) == 0 )
 	{
 		// Create a temporary frame so the original stays in tact.
-		mlt_frame a_frame = mlt_frame_clone( frame, 0 );
+		a_frame = mlt_frame_clone( frame, 0 );
 
 		// Get the a and b frame properties
 		mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
