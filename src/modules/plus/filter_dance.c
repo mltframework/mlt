@@ -262,7 +262,7 @@ mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const 
 		mlt_properties_set_double( properties, "threshold", -30.0 );
 		mlt_properties_set_double( properties, "osc", 5.0 );
 		mlt_properties_set_double( properties, "initial_zoom", 100.0 );
-		mlt_properties_set_double( properties, "zoom", 10.0 );
+		mlt_properties_set_double( properties, "zoom", 0.0 );
 		mlt_properties_set_double( properties, "left", 0.0 );
 		mlt_properties_set_double( properties, "right", 0.0 );
 		mlt_properties_set_double( properties, "up", 0.0 );

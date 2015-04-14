@@ -89,7 +89,7 @@ parameters:
       > 0% = Image will zoom in (get larger) with more sound
     mutable: yes
     readonly: no
-    default: 10
+    default: 0
     minimum: -100
     maximum: 100
     unit: '%'
