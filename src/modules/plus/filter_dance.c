@@ -147,6 +147,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		double mag = mlt_properties_get_double( frame_properties, private->mag_prop_name );
 
+		// Get the image to find out the width and height that will be received.
+		char *interps = mlt_properties_get( frame_properties, "rescale.interp" );
+		if ( interps ) interps = strdup( interps );
+		// Request native width/height because that is what affine will do.
+		mlt_properties_set( frame_properties, "rescale.interp", "none" );
+		*format = mlt_image_rgb24a;
+		mlt_frame_get_image( frame, image, format, width, height, 0 );
+		// At this point, *width and *height are what affine will use.
+		mlt_properties_set( frame_properties, "rescale.interp", interps );
+		free( interps );
+
 		// scale_x and scale_y are in the range 0.0 to x.0 with:
 		//    0.0 = the largest possible
 		//  < 1.0 = increase size (zoom in)
@@ -157,23 +168,21 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		double scale_xy = (100.0 / initial_zoom ) - ( fabs(mag) * (zoom / 100.0) );
 		if( scale_xy < 0.1 ) scale_xy = 0.1;
 
-		// ox is in the range -meta.media.width to +meta.media.width with:
+		// ox is in the range -width to +width with:
 		//  > 0 = offset to the left
 		//    0 = no offset
 		//  < 0 = offset to the right
-		double native_width = mlt_properties_get_int( frame_properties, "meta.media.width" );
 		double left = mlt_properties_get_double( filter_properties, "left" );
 		double right = mlt_properties_get_double( filter_properties, "right" );
-		double ox = apply( left, right, mag, native_width / 100.0 );
+		double ox = apply( left, right, mag, (double)*width / 100.0 );
 
-		// oy is in the range -meta.media.height to +meta.media.height with:
+		// oy is in the range -height to +height with:
 		//  > 0 = offset up
 		//    0 = no offset
 		//  < 0 = offset down
-		double native_height = mlt_properties_get_int( frame_properties, "meta.media.height" );
 		double up = mlt_properties_get_double( filter_properties, "up" );
 		double down = mlt_properties_get_double( filter_properties, "down" );
-		double oy = apply( up, down, mag, native_height / 100.0 );
+		double oy = apply( up, down, mag, (double)*height / 100.0 );
 
 		// fix_rotate_x is in the range -360 to +360 with:
 		// > 0 = rotate clockwise
@@ -183,6 +192,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		double clockwise = mlt_properties_get_double( filter_properties, "clockwise" );
 		double fix_rotate_x = apply( clockwise, counterclockwise, mag, 1.0 );
 
+		// Perform the affine.
 		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 		mlt_properties affine_properties = MLT_FILTER_PROPERTIES( private->affine );
 		mlt_properties_set_double( affine_properties, "transition.scale_x", scale_xy );
@@ -193,10 +203,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_filter_process( private->affine, frame );
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-	} else if ( private->preprocess_warned++ == 2 ) {
-		// This filter depends on the consumer processing the audio before the
-		// video.
-		mlt_log_warning( MLT_FILTER_SERVICE(filter), "Audio not preprocessed. Unable to dance.\n" );
+	} else {
+		if ( private->preprocess_warned++ == 2 )
+		{
+			// This filter depends on the consumer processing the audio before the
+			// video.
+			mlt_log_warning( MLT_FILTER_SERVICE(filter), "Audio not preprocessed. Unable to dance.\n" );
+		}
+		mlt_frame_get_image( frame, image, format, width, height, 0 );
 	}
 
 	return error;
