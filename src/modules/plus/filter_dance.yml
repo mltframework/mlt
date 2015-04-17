@@ -177,3 +177,17 @@ parameters:
     minimum: 0
     maximum: 360
     unit: degrees
+
+  - identifier: window_size
+    title: Window Size
+    type: integer
+    description: >
+      The number of samples that the FFT will be performed on. If
+      window_size is less than the number of samples in a frame, extra samples 
+      will be ignored. If window_size is more than the number of samples in a 
+      frame, samples will be buffered from previous frames to fill the window.
+      The buffering is performed as a sliding window so that the most recent 
+      samples are always transformed.
+    mutable: no
+    readonly: no
+    default: 2048

@@ -20,6 +20,7 @@
 #include <framework/mlt.h>
 #include <stdlib.h> // calloc(), free()
 #include <math.h>   // sin()
+#include <string.h> // strdup()
 
 // Private Constants
 static const int WINDOW_SIZE = 2048; // 23.43Hz FFT bins at 48kHz
@@ -66,8 +67,23 @@ static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* f
 {
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_audio( frame );
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
-	private_data* private = (private_data*)filter->child;
-	mlt_properties fft_properties = MLT_FILTER_PROPERTIES( private->fft );
+	private_data* pdata = (private_data*)filter->child;
+	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
+
+	// Create the FFT filter the first time.
+	if( !pdata->fft )
+	{
+		pdata->fft = mlt_factory_filter( profile, "fft", NULL );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( pdata->fft ), "window_size",
+				mlt_properties_get_int( filter_properties, "window_size" ) );
+		if( !pdata->fft )
+		{
+			mlt_log_warning( MLT_FILTER_SERVICE(filter), "Unable to create FFT.\n" );
+			return 1;
+		}
+	}
+
+	mlt_properties fft_properties = MLT_FILTER_PROPERTIES( pdata->fft );
 	double low_freq = mlt_properties_get_int( filter_properties, "frequency_low" );
 	double hi_freq = mlt_properties_get_int( filter_properties, "frequency_high" );
 	double threshold = mlt_properties_get_int( filter_properties, "threshold" );
@@ -78,7 +94,7 @@ static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* f
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
 	// Perform FFT processing on the frame
-	mlt_filter_process( private->fft, frame );
+	mlt_filter_process( pdata->fft, frame );
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
 	float* bins = mlt_properties_get_data( fft_properties, "bins", NULL );
@@ -115,20 +131,20 @@ static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* f
 		if( osc != 0 )
 		{
 			// Apply the oscillation
-			double fps = mlt_profile_fps( mlt_service_profile( MLT_FILTER_SERVICE(filter) ) );
-			double t = private->rel_pos / fps;
-			mag = mag * sin( 2 * PI * osc * t + private->phase );
+			double fps = mlt_profile_fps( profile );
+			double t = pdata->rel_pos / fps;
+			mag = mag * sin( 2 * PI * osc * t + pdata->phase );
 		}
-		private->rel_pos++;
+		pdata->rel_pos++;
 	} else {
-		private->rel_pos = 1;
+		pdata->rel_pos = 1;
 		// Alternate the phase so that the dancing alternates directions to the beat.
-		private->phase = private->phase ? 0 : PI;
+		pdata->phase = pdata->phase ? 0 : PI;
 		mag = 0;
 	}
 
 	// Save the magnitude as a property on the frame to be used in get_image()
-	mlt_properties_set_double( MLT_FRAME_PROPERTIES(frame), private->mag_prop_name, mag );
+	mlt_properties_set_double( MLT_FRAME_PROPERTIES(frame), pdata->mag_prop_name, mag );
 
 	return 0;
 }
@@ -139,13 +155,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	int error = 0;
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
-	private_data* private = (private_data*)filter->child;
+	private_data* pdata = (private_data*)filter->child;
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-	if( mlt_properties_get( frame_properties, private->mag_prop_name ) )
+	if( mlt_properties_get( frame_properties, pdata->mag_prop_name ) )
 	{
-		double mag = mlt_properties_get_double( frame_properties, private->mag_prop_name );
+		double mag = mlt_properties_get_double( frame_properties, pdata->mag_prop_name );
 
 		// Get the image to find out the width and height that will be received.
 		char *interps = mlt_properties_get( frame_properties, "rescale.interp" );
@@ -194,17 +210,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Perform the affine.
 		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-		mlt_properties affine_properties = MLT_FILTER_PROPERTIES( private->affine );
+		mlt_properties affine_properties = MLT_FILTER_PROPERTIES( pdata->affine );
 		mlt_properties_set_double( affine_properties, "transition.scale_x", scale_xy );
 		mlt_properties_set_double( affine_properties, "transition.scale_y", scale_xy );
 		mlt_properties_set_double( affine_properties, "transition.ox", ox );
 		mlt_properties_set_double( affine_properties, "transition.oy", oy );
 		mlt_properties_set_double( affine_properties, "transition.fix_rotate_x", fix_rotate_x );
-		mlt_filter_process( private->affine, frame );
+		mlt_filter_process( pdata->affine, frame );
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	} else {
-		if ( private->preprocess_warned++ == 2 )
+		if ( pdata->preprocess_warned++ == 2 )
 		{
 			// This filter depends on the consumer processing the audio before the
 			// video.
@@ -229,14 +245,14 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 static void filter_close( mlt_filter filter )
 {
-	private_data* private = (private_data*)filter->child;
+	private_data* pdata = (private_data*)filter->child;
 
-	if ( private )
+	if ( pdata )
 	{
-		mlt_filter_close( private->affine );
-		mlt_filter_close( private->fft );
-		free( private->mag_prop_name );
-		free( private );
+		mlt_filter_close( pdata->affine );
+		mlt_filter_close( pdata->fft );
+		free( pdata->mag_prop_name );
+		free( pdata );
 	}
 	filter->child = NULL;
 	filter->close = NULL;
@@ -249,11 +265,10 @@ static void filter_close( mlt_filter filter )
 mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
-	private_data* private = (private_data*)calloc( 1, sizeof(private_data) );
+	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
 	mlt_filter affine_filter = mlt_factory_filter( profile, "affine", NULL );
-	mlt_filter fft_filter = mlt_factory_filter( profile, "fft", NULL );
 
-	if ( filter && private && affine_filter && fft_filter )
+	if ( filter && pdata && affine_filter )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		mlt_properties_set_int( properties, "_filter_private", 1 );
@@ -269,22 +284,20 @@ mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const 
 		mlt_properties_set_double( properties, "down", 0.0 );
 		mlt_properties_set_double( properties, "clockwise", 0.0 );
 		mlt_properties_set_double( properties, "counterclockwise", 0.0 );
-
-		// Configure FFT filter
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( fft_filter ), "window_size", WINDOW_SIZE );
+		mlt_properties_set_int( properties, "window_size", 2048 );
 
 		// Create a unique ID for storing data on the frame
-		const char* unique_id = mlt_properties_get( MLT_FILTER_PROPERTIES( fft_filter ), "_unique_id" );
-		private->mag_prop_name = calloc( 1, 20 );
-		snprintf( private->mag_prop_name, 20, "fft_mag.%s", unique_id );
-		private->mag_prop_name[20 - 1] = '\0';
+		const char* unique_id = mlt_properties_get( properties, "_unique_id" );
+		pdata->mag_prop_name = calloc( 1, 20 );
+		snprintf( pdata->mag_prop_name, 20, "fft_mag.%s", unique_id );
+		pdata->mag_prop_name[20 - 1] = '\0';
 
-		private->affine = affine_filter;
-		private->fft = fft_filter;
+		pdata->affine = affine_filter;
+		pdata->fft = 0;
 
 		filter->close = filter_close;
 		filter->process = filter_process;
-		filter->child = private;
+		filter->child = pdata;
 	}
 	else
 	{
@@ -300,14 +313,9 @@ mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const 
 			mlt_filter_close( affine_filter );
 		}
 
-		if( fft_filter )
+		if( pdata )
 		{
-			mlt_filter_close( fft_filter );
-		}
-
-		if( private )
-		{
-			free( private );
+			free( pdata );
 		}
 
 		filter = NULL;
