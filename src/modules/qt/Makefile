@@ -24,15 +24,20 @@ ifdef GPL3
 	CFLAGS += -DGPL3
 endif
 
+ifdef USE_FFTW
+	CPPOBJS += filter_lightshow.o
+	CFLAGS += -DUSE_FFTW
+endif
+
 ifneq ($(targetos), Darwin)
 ifneq ($(targetos), MinGW)
     LDFLAGS += -lX11
 endif
 endif
 
-CXXFLAGS := $(QTCXXFLAGS) $(CXXFLAGS) $(CFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) -Wno-deprecated
+CXXFLAGS := $(QTCXXFLAGS) $(CXXFLAGS) $(CFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) $(FFTWCXXFLAGS) -Wno-deprecated
 
-LDFLAGS += $(QTLIBS) $(EXIFLIBS) $(KDELIBS)
+LDFLAGS += $(QTLIBS) $(EXIFLIBS) $(KDELIBS) $(FFTWLIBS)
 
 SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)
 

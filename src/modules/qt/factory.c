@@ -31,6 +31,10 @@ extern mlt_producer producer_qtext_init( mlt_profile profile, mlt_service_type t
 extern mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_vqm_init( mlt_profile profile, mlt_service_type type, const char *id, void *arg );
 
+#ifdef USE_FFTW
+extern mlt_filter filter_lightshow_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+#endif
+
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
@@ -47,6 +51,9 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "qimage", producer_qimage_init );
 	MLT_REGISTER( producer_type, "qtext", producer_qtext_init );
 	MLT_REGISTER( producer_type, "kdenlivetitle", producer_kdenlivetitle_init );
+#ifdef USE_FFTW
+	MLT_REGISTER( filter_type, "lightshow", filter_lightshow_init );
+#endif
 	MLT_REGISTER_METADATA( filter_type, "audiowaveform", metadata, "filter_audiowaveform.yml" );
 	MLT_REGISTER_METADATA( producer_type, "qimage", metadata, "producer_qimage.yml" );
 	MLT_REGISTER_METADATA( producer_type, "qtext", metadata, "producer_qtext.yml" );

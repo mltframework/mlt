@@ -1,0 +1,118 @@
+schema_version: 0.3
+type: filter
+identifier: lightshow
+title: Light Show
+version: 1
+copyright: Meltytech, LLC
+creator: Brian Matherly <code@brianmatherly.com>
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  An audio visualization filter that colors the image proportional to the 
+  magnitude of the audio spectrum.
+  
+parameters:
+  - identifier: frequency_low
+    title: Low Frequency
+    type: integer
+    description: >
+      The low end of the frequency range to be used to influence the image 
+      motion.
+    mutable: yes
+    readonly: no
+    default: 20
+    unit: Hz
+    
+  - identifier: frequency_high
+    title: High Frequency
+    type: integer
+    description: >
+      The high end of the frequency range to be used to influence the image 
+      motion.
+    mutable: yes
+    readonly: no
+    default: 20000
+    unit: Hz
+    
+  - identifier: threshold
+    title: Level Threshold
+    type: float
+    description: >
+      The minimum amplitude of sound that must occur within the frequency range
+      to cause the image to move.
+      motion.
+    mutable: yes
+    readonly: no
+    default: -30
+    minimum: -100
+    maximum: 0
+    unit: dB
+    
+  - identifier: osc
+    title: Oscillation
+    type: float
+    description: >
+      Oscillation can be useful to make the image move back and forth during 
+      long periods of sound.
+      A value of 0 specifies no oscillation.
+    mutable: yes
+    readonly: no
+    default: 5
+    minimum: 0
+    unit: Hz
+    
+  - identifier: color.*
+    title: Light Color
+    type: color
+    description: |
+      The color of the light.
+      
+      Multiple colors can be specified with incrementing suffixes to cause the
+      waveform to be drawn in a circular gradient. color.1 is the inside of the 
+      circle. Subsequent colors will produce a gradient toward the outside.
+      
+      By default, the filter has one color defined:
+      
+          color.1=0xffffffff"
+          
+      This results in the image being lightened.
+      
+      To create a gradient, define more colors:
+      
+          color.2=green color.3=0x77777777 color.4=0x00000000
+      
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+    
+  - identifier: rect
+    title: Rectangle
+    description: >
+      Defines the rectangle that the color should be drawn in.
+      
+      Format is: "X,Y,W,H".
+      
+      X, Y, W, H are assumed to be pixel units unless they have the suffix '%'.
+    type: rect
+    default: "0,0,100%,100%"
+    readonly: no
+    mutable: yes
+    
+  - identifier: window_size
+    title: Window Size
+    type: integer
+    description: >
+      The number of samples that the FFT will be performed on. If
+      window_size is less than the number of samples in a frame, extra samples 
+      will be ignored. If window_size is more than the number of samples in a 
+      frame, samples will be buffered from previous frames to fill the window.
+      The buffering is performed as a sliding window so that the most recent 
+      samples are always transformed.
+    mutable: no
+    readonly: no
+    default: 2048
