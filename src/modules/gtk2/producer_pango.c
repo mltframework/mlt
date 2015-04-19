@@ -579,6 +579,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 			size = dst_stride * ( this->height + 1 );
 			buf = mlt_pool_alloc( size );
+			uint8_t *buf_save = buf;
 
 			if ( src_stride != dst_stride )
 			{
@@ -602,6 +603,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 				frame->convert_image( frame, &buf, &cached->format, *format );
 				*format = cached->format;
+				if ( buf != buf_save ) mlt_pool_release( buf_save );
 			};
 
 			size = mlt_image_format_size(cached->format, cached->width, cached->height, &bpp );
