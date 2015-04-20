@@ -20,6 +20,16 @@ parameters:
       Keyframable rectangle specification.
     mutable: yes
 
+  - identifier: distort
+    title: Ignore aspect ratio
+    description: >
+      Determines whether the image aspect ratio will be distorted while scaling
+      to completely fill the geometry rectangle.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
+
   - identifier: fill
     title: Upscale to Fill
     description: >
