@@ -169,7 +169,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_properties_set_double( filter_properties, "_movit.parms.float.left", rect.x );
 		mlt_properties_set_double( filter_properties, "_movit.parms.float.top", rect.y );
 
-		bool disable = ( *width == owidth && *height == oheight );
+		bool disable = ( *width == owidth && *height == oheight && rect.x == 0 && rect.y == 0 );
 		mlt_properties_set_int( filter_properties, "_movit.parms.int.disable", disable );
 
 		GlslManager::get_instance()->unlock_service( frame );
