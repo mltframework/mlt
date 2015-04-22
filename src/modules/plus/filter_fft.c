@@ -209,7 +209,7 @@ static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* f
 		private->expected_pos++;
 	}
 
-	mlt_properties_set_double( filter_properties, "bin_width", (double)*frequency / (double)private->bin_count );
+	mlt_properties_set_double( filter_properties, "bin_width", (double)*frequency / (double)private->window_size );
 	mlt_properties_set_double( filter_properties, "window_level", (double)private->sample_buff_count / (double)private->window_size );
 
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
