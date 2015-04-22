@@ -328,9 +328,8 @@ mlt_filter filter_lightshow_init( mlt_profile profile, mlt_service_type type, co
 		mlt_properties_set_int( properties, "window_size", 2048 );
 
 		// Create a unique ID for storing data on the frame
-		const char* unique_id = mlt_properties_get( properties, "_unique_id" );
 		pdata->mag_prop_name = (char*)calloc( 1, 20 );
-		snprintf( pdata->mag_prop_name, 20, "fft_mag.%s", unique_id );
+		snprintf( pdata->mag_prop_name, 20, "fft_mag.%p", filter );
 		pdata->mag_prop_name[20 - 1] = '\0';
 
 		pdata->fft = 0;
