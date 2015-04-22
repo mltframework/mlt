@@ -351,6 +351,9 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 	if( !producer )
 		producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "pango:" );
 
+	if( !producer )
+		mlt_log_warning( MLT_FILTER_SERVICE(filter), "QT or GTK modules required for dynamic text.\n" );
+
 	if ( filter && transition && producer )
 	{
 		mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
