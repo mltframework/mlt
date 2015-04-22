@@ -162,6 +162,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( mlt_properties_get( frame_properties, pdata->mag_prop_name ) )
 	{
 		double mag = mlt_properties_get_double( frame_properties, pdata->mag_prop_name );
+		int iwidth = *width;
+		int iheight = *height;
 
 		// Get the image to find out the width and height that will be received.
 		char *interps = mlt_properties_get( frame_properties, "rescale.interp" );
@@ -169,8 +171,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Request native width/height because that is what affine will do.
 		mlt_properties_set( frame_properties, "rescale.interp", "none" );
 		*format = mlt_image_rgb24a;
-		mlt_frame_get_image( frame, image, format, width, height, 0 );
-		// At this point, *width and *height are what affine will use.
+		mlt_frame_get_image( frame, image, format, &iwidth, &iheight, 0 );
+		// At this point, iwidth and iheight are what affine will use.
 		mlt_properties_set( frame_properties, "rescale.interp", interps );
 		free( interps );
 
@@ -190,7 +192,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		//  < 0 = offset to the right
 		double left = mlt_properties_get_double( filter_properties, "left" );
 		double right = mlt_properties_get_double( filter_properties, "right" );
-		double ox = apply( left, right, mag, (double)*width / 100.0 );
+		double ox = apply( left, right, mag, (double)iwidth / 100.0 );
 
 		// oy is in the range -height to +height with:
 		//  > 0 = offset up
@@ -198,7 +200,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		//  < 0 = offset down
 		double up = mlt_properties_get_double( filter_properties, "up" );
 		double down = mlt_properties_get_double( filter_properties, "down" );
-		double oy = apply( up, down, mag, (double)*height / 100.0 );
+		double oy = apply( up, down, mag, (double)iheight / 100.0 );
 
 		// fix_rotate_x is in the range -360 to +360 with:
 		// > 0 = rotate clockwise
@@ -266,7 +268,7 @@ mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const 
 {
 	mlt_filter filter = mlt_filter_new();
 	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
-	mlt_filter affine_filter = mlt_factory_filter( profile, "affine", NULL );
+	mlt_filter affine_filter = mlt_factory_filter( profile, "affine", "colour:0x000000ff" );
 
 	if ( filter && pdata && affine_filter )
 	{
@@ -287,9 +289,8 @@ mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const 
 		mlt_properties_set_int( properties, "window_size", 2048 );
 
 		// Create a unique ID for storing data on the frame
-		const char* unique_id = mlt_properties_get( properties, "_unique_id" );
 		pdata->mag_prop_name = calloc( 1, 20 );
-		snprintf( pdata->mag_prop_name, 20, "fft_mag.%s", unique_id );
+		snprintf( pdata->mag_prop_name, 20, "fft_mag.%p", filter );
 		pdata->mag_prop_name[20 - 1] = '\0';
 
 		pdata->affine = affine_filter;
