@@ -1,6 +1,6 @@
 /*
  * producer_pango.c -- a pango-based titler
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -560,7 +560,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			cached_item = NULL;
 			cached = NULL;
 			clean_cached( this );
-		};
+		}
 
 		// create cached image
 		if ( !cached )
@@ -591,12 +591,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					memcpy( dst, src, dst_stride );
 					dst += dst_stride;
 					src += src_stride;
-				};
+				}
 			}
 			else
 			{
 				memcpy( buf, gdk_pixbuf_get_pixels( this->pixbuf ), src_stride * this->height );
-			};
+			}
 
 			// convert image
 			if(frame->convert_image && cached->format != *format)
@@ -604,7 +604,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				frame->convert_image( frame, &buf, &cached->format, *format );
 				*format = cached->format;
 				if ( buf != buf_save ) mlt_pool_release( buf_save );
-			};
+			}
 
 			size = mlt_image_format_size(cached->format, cached->width, cached->height, &bpp );
 			cached->image = mlt_pool_alloc( size );
@@ -615,8 +615,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				size = cached->width * cached->height;
 				cached->alpha = mlt_pool_alloc( size );
 				memcpy( cached->alpha, buf, size );
-			};
-		};
+			}
+		}
 
 		if ( cached )
 		{
@@ -637,7 +637,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				memcpy( buf, cached->alpha, size );
 				mlt_frame_set_alpha( frame, buf, size, mlt_pool_release );
 			}
-		};
+		}
 
 		if ( cached_item )
 			mlt_cache_item_close( cached_item );
