@@ -94,6 +94,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int error = 0;
 	mlt_filter filter =  (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	unsigned int boxw = 0;
+	unsigned int boxh = 0;
+	double hori = mlt_properties_get_double( properties, "hori" );
+	double vert = mlt_properties_get_double( properties, "vert" );
 
 	// Get blur factor
 	double factor = mlt_properties_get_int( properties, "start" );
@@ -112,7 +116,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		factor = mlt_properties_anim_get_double( properties, "blur", position, length );
 	}
 
-	if ( factor == 0.0 )
+	boxw = (unsigned int)(factor * hori);
+	boxh = (unsigned int)(factor * vert);
+
+	if ( boxw == 0 || boxh == 0 )
 	{
 		// Don't do anything
 		error = mlt_frame_get_image( frame, image, format, width, height, writable );
@@ -126,12 +133,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Only process if we have no error and a valid colour space
 		if ( error == 0 )
 		{
-			short hori = mlt_properties_get_int( properties, "hori" );
-			short vert = mlt_properties_get_int( properties, "vert" );
 			int h = *height + 1;
 			int32_t *rgba = mlt_pool_alloc( 4 * *width * h * sizeof(int32_t) );
 			PreCompute( *image, rgba, *width, h );
-			DoBoxBlur( *image, rgba, *width, h, (int) factor * hori, (int) factor * vert );
+			DoBoxBlur( *image, rgba, *width, h, boxw, boxh );
 			mlt_pool_release( rgba );
 		}
 	}
