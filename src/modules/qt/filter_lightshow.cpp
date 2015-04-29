@@ -179,8 +179,7 @@ static void setup_pen( QPainter& p, QRect& rect, mlt_properties filter_propertie
 static void draw_light( mlt_properties filter_properties, QImage* qimg, mlt_rect* rect, double mag )
 {
 	QPainter p( qimg );
-	// Transpose mlt rect to qt rect coordinates
-	QRect r( rect->x, qimg->height() - rect->y - rect->h, rect->w, rect->h );
+	QRect r( rect->x, rect->y, rect->w, rect->h );
 	p.setRenderHint( QPainter::Antialiasing );
 	// Output transparency = input transparency
 	p.setCompositionMode(QPainter::CompositionMode_SourceAtop);
