@@ -173,8 +173,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		*format = mlt_image_rgb24a;
 		mlt_frame_get_image( frame, image, format, &iwidth, &iheight, 0 );
 		// At this point, iwidth and iheight are what affine will use.
-		mlt_properties_set( frame_properties, "rescale.interp", interps );
-		free( interps );
 
 		// scale_x and scale_y are in the range 0.0 to x.0 with:
 		//    0.0 = the largest possible
@@ -221,6 +219,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_filter_process( pdata->affine, frame );
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+
+		// Restore the rescale property
+		mlt_properties_set( frame_properties, "rescale.interp", interps );
+		free( interps );
 	} else {
 		if ( pdata->preprocess_warned++ == 2 )
 		{
