@@ -1,5 +1,7 @@
 #!/bin/sh
 
+CXX=${CXX:-g++}
+
 if [ "$1" = "clean" ]
 then
 	( cd `dirname $0`; rm -rf *.cxx *.so *.o mlt.i ../.java *.class src_swig )
@@ -24,10 +26,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -java -outdir src_swig/org/mltframework -package org.mltframework mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx $JAVA_INCLUDE || exit $?
+	${CXX} -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx $JAVA_INCLUDE || exit $?
 	
 	# Create the module
-	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmlt_java.so || exit $?
+	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmlt_java.so || exit $?
 
 	# Compile the test
 	javac `find src_swig -name '*.java'` || exit $?

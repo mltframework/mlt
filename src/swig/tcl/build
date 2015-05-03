@@ -1,5 +1,7 @@
 #!/bin/sh
 
+CXX=${CXX:-g++}
+
 if [ "$1" = "clean" ]
 then
 	( cd `dirname $0`; rm -f *.cxx *.so *.o mlt.i ../.tcl )
@@ -16,10 +18,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -tcl mlt.i || exit 1
 
 	# Compile the wrapper
-	g++ -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit 1
+	${CXX} -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit 1
 
 	# Create the module
-	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit 1
+	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit 1
 else
 	echo "Unable to locate tclsh."
 	exit 1
