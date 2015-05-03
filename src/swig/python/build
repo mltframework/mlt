@@ -1,5 +1,7 @@
 #!/bin/sh
 
+CXX=${CXX:-g++}
+
 if [ "$1" = "clean" ]
 then
 	( cd `dirname $0`; rm -f *.cxx *.so *.o mlt.i ../.python mlt.py* )
@@ -21,10 +23,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -python mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -I../.. -I$PYTHON_INCLUDE mlt_wrap.cxx || exit $?
+	${CXX} -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -I../.. -I$PYTHON_INCLUDE mlt_wrap.cxx || exit $?
 
 	# Create the module
-	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -L../../framework -lmlt $(python-config --ldflags) -o _mlt.so || exit $?
+	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -L../../framework -lmlt $(python-config --ldflags) -o _mlt.so || exit $?
 else
 	echo Python not installed.
 	exit 1

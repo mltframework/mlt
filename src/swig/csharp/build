@@ -1,5 +1,7 @@
 #!/bin/sh
 
+CXX=${CXX:-g++}
+
 if [ "$1" = "clean" ]
 then
 	( cd `dirname $0`; rm -rf *.cxx *.snk *.so *.o *.exe *.dll mlt.i ../.cs src_swig )
@@ -17,10 +19,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -csharp -dllimport libmltsharp -outdir src_swig -namespace Mlt mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
+	${CXX} -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
 	
 	# Create the module
-	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmltsharp.so || exit $?
+	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o libmltsharp.so || exit $?
 
 	# Compile the library assembly
 	mcs -out:mlt-sharp.dll -target:library src_swig/*.cs

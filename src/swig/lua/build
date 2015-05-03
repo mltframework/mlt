@@ -1,5 +1,7 @@
 #!/bin/sh
 
+CXX=${CXX:-g++}
+
 if [ "$1" = "clean" ]
 then
 	( cd `dirname $0`; rm -f *.cxx *.so *.o mlt.i ../.lua )
@@ -16,10 +18,10 @@ then
 	swig -c++ -I../../mlt++ -I../.. -lua mlt.i || exit $?
 
 	# Compile the wrapper
-	g++ -fPIC -DPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
+	${CXX} -fPIC -DPIC -D_GNU_SOURCE ${CXXFLAGS} -c -rdynamic -pthread -I../.. mlt_wrap.cxx || exit $?
 
 	# Create the module
-	g++ ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit $?
+	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -o mlt.so || exit $?
 else
 	echo Lua not installed.
 	exit 1
