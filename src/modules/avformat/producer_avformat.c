@@ -821,6 +821,8 @@ static int seek_video( producer_avformat self, mlt_position position,
 	mlt_producer producer = self->parent;
 	int paused = 0;
 
+	pthread_mutex_lock( &self->packets_mutex );
+
 	if ( self->seekable && ( position != self->video_expected || self->last_position < 0 ) )
 	{
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -876,6 +878,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 			av_freep( &self->video_frame );
 		}
 	}
+	pthread_mutex_unlock( &self->packets_mutex );
 	return paused;
 }
 
@@ -1943,6 +1946,8 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 {
 	int paused = 0;
 
+	pthread_mutex_lock( &self->packets_mutex );
+
 	// Seek if necessary
 	if ( self->seekable && ( position != self->audio_expected || self->last_position < 0 ) )
 	{
@@ -1980,6 +1985,7 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 				self->audio_used[i - 1] = 0;
 		}
 	}
+	pthread_mutex_unlock( &self->packets_mutex );
 	return paused;
 }
 
