@@ -1377,10 +1377,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	// Frame to return
 	mlt_frame frame = NULL;
 	consumer_private *priv = self->local;
+	double fps = mlt_properties_get_double( properties, "fps" );
 	int threads = abs( priv->real_time );
-	int audio_off = mlt_properties_get_int( properties, "audio_off" );
-	int samples = 0;
-	void *audio = NULL;
 	int buffer = mlt_properties_get_int( properties, "_buffer" );
 	buffer = buffer > 0 ? buffer : mlt_properties_get_int( properties, "buffer" );
 	// This is a heuristic to determine a suitable minimum buffer size for the number of threads.
@@ -1404,12 +1402,6 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 			frame = mlt_consumer_get_frame( self );
 			if ( frame )
 			{
-				// Process the audio
-				if ( !audio_off )
-				{
-					samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
-					mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
-				}
 				pthread_mutex_lock( &priv->queue_mutex );
 				mlt_deque_push_back( priv->queue, frame );
 				pthread_cond_signal( &priv->queue_cond );
@@ -1436,12 +1428,6 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 		frame = mlt_consumer_get_frame( self );
 		if ( frame )
 		{
-			// Process the audio
-			if ( !audio_off )
-			{
-				samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
-				mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
-			}
 			pthread_mutex_lock( &priv->queue_mutex );
 			mlt_deque_push_back( priv->queue, frame );
 			pthread_cond_signal( &priv->queue_cond );
@@ -1502,7 +1488,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				// Auto-scale the buffer to compensate
 				mlt_log_verbose( self, "increasing buffer to %d\n", buffer + threads );
 				mlt_properties_set_int( properties, "_buffer", buffer + threads );
-				priv->consecutive_dropped = priv->fps / 2;
+				priv->consecutive_dropped = fps / 2;
 			}
 			else
 			{
