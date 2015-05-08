@@ -124,6 +124,7 @@ static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* f
 			mlt_log_info( MLT_FILTER_SERVICE(filter), "Buffer Reset %d:%d\n",
 							private->expected_pos,
 							mlt_frame_get_position( frame ) );
+			private->expected_pos = mlt_frame_get_position( frame );
 		}
 
 		int new_samples = 0;
