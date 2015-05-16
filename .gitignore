@@ -3,6 +3,7 @@
 *.so.*
 config.mak
 config.h
+config.log
 .depend
 *~
 *.cxx
@@ -20,3 +21,7 @@ mlt.config
 mlt.creator
 mlt.files
 mlt.includes
+mlt-config
+*.pc
+packages.dat
+make.inc
