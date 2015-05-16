@@ -20,6 +20,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <stdint.h>
+
 #define LOAD8(mem,dst) \
             "movq      "mem", "#dst" \n\t"\
             "punpcklbw %%xmm7, "#dst" \n\t"
@@ -209,8 +211,8 @@ static attribute_align_arg void FILTER_LINE_FUNC_NAME(int mode, uint8_t *dst, co
             :[prev] "r"(prev),\
              [cur]  "r"(cur),\
              [next] "r"(next),\
-             [prefs]"r"((long)refs),\
-             [mrefs]"r"((long)-refs),\
+			 [prefs]"r"((intptr_t)refs),\
+			 [mrefs]"r"((intptr_t)-refs),\
              [pw1]  "m"(*pw_1),\
              [pb1]  "m"(*pb_1),\
              [mode] "g"(mode)\

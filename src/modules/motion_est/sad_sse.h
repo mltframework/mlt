@@ -14,7 +14,7 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
+#include <stdint.h>
 
 #define SAD_SSE_INIT \
 	asm volatile ( "pxor %%mm6,%%mm6\n\t" ::  );\
@@ -41,7 +41,7 @@ inline static int sad_sse_4x4( uint8_t *block1, uint8_t *block2, int xstride, in
 	SAD_SSE_INIT
 	#define ROW	SAD_SSE_SUM_8(0) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -55,7 +55,7 @@ inline static int sad_sse_8x8( uint8_t *block1, uint8_t *block2, int xstride, in
 	SAD_SSE_INIT
 	#define ROW	SAD_SSE_SUM_8(0) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -70,7 +70,7 @@ inline static int sad_sse_16x16( uint8_t *block1, uint8_t *block2, int xstride, 
 	#define ROW	SAD_SSE_SUM_8(0) SAD_SSE_SUM_8(8) SAD_SSE_NEXTROW
 	asm volatile (	ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -89,7 +89,7 @@ inline static int sad_sse_32x32( uint8_t *block1, uint8_t *block2, int xstride, 
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -237,7 +237,7 @@ static int sad_sse_422_luma_4x4( uint8_t *block1, uint8_t *block2, int xstride, 
 	SAD_SSE_422_LUMA_INIT
 	#define ROW	SAD_SSE_422_LUMA_SUM_4(0) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -251,7 +251,7 @@ static int sad_sse_422_luma_8x8( uint8_t *block1, uint8_t *block2, int xstride, 
 	SAD_SSE_422_LUMA_INIT
 	#define ROW	SAD_SSE_422_LUMA_SUM_4(0) SAD_SSE_422_LUMA_SUM_4(8) SAD_SSE_NEXTROW
 	asm volatile (  ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -266,7 +266,7 @@ static int sad_sse_422_luma_16x16( uint8_t *block1, uint8_t *block2, int xstride
 	#define ROW	SAD_SSE_422_LUMA_SUM_4(0) SAD_SSE_422_LUMA_SUM_4(8) SAD_SSE_422_LUMA_SUM_4(16) SAD_SSE_422_LUMA_SUM_4(24) SAD_SSE_NEXTROW
 	asm volatile (	ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;
@@ -286,7 +286,7 @@ static int sad_sse_422_luma_32x32( uint8_t *block1, uint8_t *block2, int xstride
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
 			ROW ROW ROW ROW ROW ROW ROW ROW
-			:: "r" (block1), "r" (block2), "r" ((long int)(ystride)));
+			:: "r" (block1), "r" (block2), "r" ((intptr_t)(ystride)));
 	
 	SAD_SSE_FINISH(result)
 	return result;

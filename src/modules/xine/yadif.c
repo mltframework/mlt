@@ -24,6 +24,7 @@
 #include "yadif.h"
 #include <stdlib.h>
 #include <memory.h>
+#include <stdint.h>
 
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 #define MAX(a,b) ((a) < (b) ? (b) : (a))
@@ -215,8 +216,8 @@ static void filter_line_mmx2(int mode, uint8_t *dst, const uint8_t *prev, const 
             :[prev] "r"(prev),\
              [cur]  "r"(cur),\
              [next] "r"(next),\
-             [prefs]"r"((long)refs),\
-             [mrefs]"r"((long)-refs),\
+			 [prefs]"r"((intptr_t)refs),\
+			 [mrefs]"r"((intptr_t)-refs),\
              [pw1]  "m"(pw_1),\
              [pb1]  "m"(pb_1),\
              [mode] "g"(mode)\
