@@ -69,7 +69,7 @@ void freeCString( char* aCString )
 
 void freeDLString( DLString aDLString )
 {
-	if ( aDLString ) free( (void*) aDLString );
+	SysFreeString( aDLString );
 }
 
 #else

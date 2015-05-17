@@ -13,7 +13,7 @@ OBJS = consumer_decklink.o \
 ifeq ($(targetos), MinGW)
 CFLAGS += -Iwin
 OBJS += win/DeckLinkAPI_i.o
-LDFLAGS += -lole32
+LDFLAGS += -lole32 -loleaut32
 else
 ifeq ($(targetos), Darwin)
 CFLAGS += -Idarwin
