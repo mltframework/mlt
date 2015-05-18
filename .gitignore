@@ -10,8 +10,11 @@ config.log
 docs/html/*
 releases/*
 patches/*
+src/melt/melt
+src/modules/lumas/luma
 src/modules/lumas/NTSC/*.pgm
 src/modules/lumas/PAL/*.pgm
+src/modules/lumas/.executed
 src/swig/csharp/src_swig/*
 src/swig/perl/blib/*
 *.dylib
