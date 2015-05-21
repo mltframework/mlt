@@ -28,3 +28,4 @@ mlt-config
 *.pc
 packages.dat
 make.inc
+src/examples/play
