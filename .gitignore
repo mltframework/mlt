@@ -3,14 +3,18 @@
 *.so.*
 config.mak
 config.h
+config.log
 .depend
 *~
 *.cxx
 docs/html/*
 releases/*
 patches/*
+src/melt/melt
+src/modules/lumas/luma
 src/modules/lumas/NTSC/*.pgm
 src/modules/lumas/PAL/*.pgm
+src/modules/lumas/.executed
 src/swig/csharp/src_swig/*
 src/swig/perl/blib/*
 *.dylib
@@ -20,3 +24,8 @@ mlt.config
 mlt.creator
 mlt.files
 mlt.includes
+mlt-config
+*.pc
+packages.dat
+make.inc
+src/examples/play
