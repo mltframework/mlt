@@ -269,7 +269,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		owidth -= owidth % 2;
 	error = mlt_frame_get_image( frame, image, format, &owidth, &oheight, writable );
 
-	if ( error == 0 && *image )
+	if ( error == 0 && *image && *format != mlt_image_yuv420p )
 	{
 		int bpp;
 		mlt_image_format_size( *format, owidth, oheight, &bpp );

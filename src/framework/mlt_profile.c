@@ -408,6 +408,9 @@ void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer )
 
 	if ( ! mlt_service_get_frame( MLT_PRODUCER_SERVICE(producer), &fr, 0 ) && fr )
 	{
+		// Skip scaling and padding since not needed and we request mlt_image_none.
+		mlt_properties_set( MLT_FRAME_PROPERTIES(fr), "rescale.interp", "none" );
+
 		if ( ! mlt_frame_get_image( fr, &buffer, &fmt, &w, &h, 0 ) )
 		{
 			// Some source properties are not exposed until after the first get_image call.
