@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -241,6 +241,19 @@ int mlt_tractor_connect( mlt_tractor self, mlt_service producer )
 int mlt_tractor_set_track( mlt_tractor self, mlt_producer producer, int index )
 {
 	return mlt_multitrack_connect( mlt_tractor_multitrack( self ), producer, index );
+}
+
+/** Remove a track by its index.
+ *
+ * \public \memberof mlt_tractor_s
+ * \param self a tractor
+ * \param index the 0-based track index
+ * \return true on error
+ */
+
+int mlt_tractor_remove_track( mlt_tractor self, int index )
+{
+	return mlt_multitrack_disconnect( mlt_tractor_multitrack( self ), index );
 }
 
 /** Get the producer for a specific track.

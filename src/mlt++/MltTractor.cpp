@@ -112,6 +112,11 @@ int Tractor::set_track( Producer &producer, int index )
 	return mlt_tractor_set_track( get_tractor( ), producer.get_producer( ), index );
 }
 
+int Tractor::remove_track( int index )
+{
+	return mlt_tractor_remove_track( get_tractor(), index );
+}
+
 Producer *Tractor::track( int index )
 {
 	mlt_producer producer = mlt_tractor_get_track( get_tractor( ), index );

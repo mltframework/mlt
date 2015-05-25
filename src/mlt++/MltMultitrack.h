@@ -44,6 +44,7 @@ namespace Mlt
 			mlt_multitrack get_multitrack( );
 			mlt_producer get_producer( );
 			int connect( Producer &producer, int index );
+			int disconnect( int index );
 			int clip( mlt_whence whence, int index );
 			int count( );
 			Producer *track( int index );

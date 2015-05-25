@@ -3,7 +3,7 @@
  * \brief interface definition for all service classes
  * \see mlt_service_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -257,6 +257,39 @@ int mlt_service_connect_producer( mlt_service self, mlt_service producer, int in
 	{
 		return -1;
 	}
+}
+
+/** Remove the N-th producer.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param index which producer to remove (0-based)
+ * \return true if there was an error
+ */
+
+int mlt_service_disconnect_producer( mlt_service self, int index )
+{
+	mlt_service_base *base = self->local;
+
+	if ( base->in && index >= 0 && index < base->count )
+	{
+		mlt_service current = base->in[ index ];
+
+		if ( current )
+		{
+			// Close the current producer.
+			mlt_service_disconnect( current );
+			mlt_service_close( current );
+			base->in[ index ] = NULL;
+
+			// Contract the list of producers.
+			for ( ; index + 1 < base->count; index ++ )
+				base->in[ index ] = base->in[ index + 1 ];
+			base->count --;
+			return 0;
+		}
+	}
+	return -1;
 }
 
 /** Disconnect a service from its consumer.

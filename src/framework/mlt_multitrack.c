@@ -3,7 +3,7 @@
  * \brief multitrack service class
  * \see mlt_multitrack_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -224,6 +224,54 @@ int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int trac
 	}
 
 	return result;
+}
+
+/** Remove the N-th track.
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param self a multitrack
+ * \param track the index of the track to remove
+ * \return true if there was an error
+ */
+
+int mlt_multitrack_disconnect( mlt_multitrack self, int track )
+{
+	int error = -1;
+
+	if ( self && self->list && track >= 0 && track < self->count )
+	{
+		// Disconnect the track producer.
+		error = mlt_service_disconnect_producer( MLT_MULTITRACK_SERVICE(self), track );
+		if ( !error )
+		{
+			// Release references on track.
+			if ( self->list[ track ] )
+			{
+				mlt_producer_close( self->list[ track ]->producer );
+				mlt_event_close( self->list[ track ]->event );
+				if ( track + 1 >= self-> count )
+				{
+					free( self->list[ track ] );
+					self->list[ track ] = NULL;
+				}
+			}
+
+			// Contract the list of tracks.
+			for ( ; track + 1 < self->count; track ++ )
+			{
+				if ( self->list[ track ] && self->list[ track + 1 ] )
+				{
+					self->list[ track ]->producer = self->list[ track + 1 ]->producer;
+					self->list[ track ]->event = self->list[ track + 1 ]->event;
+				}
+			}
+			self->count --;
+
+			// Recalculate the duration.
+			mlt_multitrack_refresh( self );
+		}
+	}
+	return error;
 }
 
 /** Get the number of tracks.

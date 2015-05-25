@@ -49,6 +49,7 @@ namespace Mlt
 			void unlock( );
 			virtual mlt_properties get_properties( );
 			int connect_producer( Service &producer, int index = 0 );
+			int disconnect_producer( int index = 0 );
 			Service *consumer( );
 			Service *producer( );
 			Profile *profile( );

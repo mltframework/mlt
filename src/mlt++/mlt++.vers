@@ -479,3 +479,12 @@ MLTPP_0.9.4 {
       "Mlt::Filter::process(Mlt::Frame&)";
     };
 } MLTPP_0.9.2;
+
+MLTPP_0.9.8 {
+  global:
+    extern "C++" {
+        "Mlt::Multitrack::disconnect(int)";
+        "Mlt::Service::disconnect_producer(int)";
+        "Mlt::Tractor::remove_track(int)";
+    };
+} MLTPP_0.9.4;

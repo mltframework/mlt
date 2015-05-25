@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,6 +59,7 @@ extern mlt_multitrack mlt_tractor_multitrack( mlt_tractor self );
 extern int mlt_tractor_connect( mlt_tractor self, mlt_service service );
 extern void mlt_tractor_refresh( mlt_tractor self );
 extern int mlt_tractor_set_track( mlt_tractor self, mlt_producer producer, int index );
+extern int mlt_tractor_remove_track( mlt_tractor self, int index );
 extern mlt_producer mlt_tractor_get_track( mlt_tractor self, int index );
 extern void mlt_tractor_close( mlt_tractor self );
 
