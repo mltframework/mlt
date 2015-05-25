@@ -191,10 +191,7 @@ mlt_service_type mlt_service_identify( mlt_service self )
  * \param self a service
  * \param producer a producer
  * \param index which of potentially multiple producers to this service (0 based)
- * \return > 0 warning, == 0 success, < 0 serious error,
- *         1 = this service does not accept input,
- *         2 = the producer is invalid,
- *         3 = the producer is already registered with self consumer
+ * \return 0 for success, -1 for error, or 3 if \p producer is already connected to \p self
  */
 
 int mlt_service_connect_producer( mlt_service self, mlt_service producer, int index )
