@@ -1440,7 +1440,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					self->pkt.pts, self->pkt.dts, req_position, self->current_position, int_position );
 
 				// Make a dumb assumption on streams that contain wild timestamps
-				if ( abs( req_position - int_position ) > 999 )
+				if ( llabs( req_position - int_position ) > 999 )
 				{
 					int_position = req_position;
 					mlt_log_warning( MLT_PRODUCER_SERVICE(producer), " WILD TIMESTAMP!\n" );

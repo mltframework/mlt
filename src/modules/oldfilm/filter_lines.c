@@ -99,7 +99,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					if ( x + x1 < w && x + x1 > 0)
 					{
 						uint8_t* pixel = (*image + (y) * w * 2 + ( x + x1) * 2);
-						double diff = 1.0 - fabs(x) / dx;
+						double diff = 1.0 - (double) abs(x) / dx;
 						switch( type )
 						{
 							case 1: //blackline

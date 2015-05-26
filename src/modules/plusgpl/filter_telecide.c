@@ -457,7 +457,7 @@ void CalculateMetrics(context cx, int frame, unsigned char *fcrp, unsigned char 
 
 				// Test combination with current frame.
 				tmp1 = ((long)currbot0[x] + (long)currbot2[x]);
-				diff = abs((((long)currtop0[x] + (long)currtop2[x] + (long)currtop4[x])) - (tmp1 >> 1) - tmp1);
+				diff = labs((((long)currtop0[x] + (long)currtop2[x] + (long)currtop4[x])) - (tmp1 >> 1) - tmp1);
 				if (diff > cx->nt)
 				{
 					c += diff;
@@ -477,7 +477,7 @@ void CalculateMetrics(context cx, int frame, unsigned char *fcrp, unsigned char 
 
 				// Test combination with previous frame.
 				tmp1 = ((long)a0[x] + (long)a2[x]);
-				diff = abs((((long)b0[x] + (long)b2[x] + (long)b4[x])) - (tmp1 >> 1) - tmp1);
+				diff = labs((((long)b0[x] + (long)b2[x] + (long)b4[x])) - (tmp1 >> 1) - tmp1);
 				if (diff > cx->nt)
 				{
 					p += diff;
@@ -731,7 +731,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 						if ( cx->predicted_metric == 0 )
 							cx->mismatch = 0.0;
 						else
-							cx->mismatch = (100.0 * abs( cx->predicted_metric - cx->lowest ) ) / cx->predicted_metric;
+							cx->mismatch = (100.0 * ( cx->predicted_metric - cx->lowest ) ) / cx->predicted_metric;
 						if ( cx->mismatch < cx->gthresh )
 						{
 							// It's close enough, so use the predicted one.
@@ -774,7 +774,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 								if ( cx->predicted_metric == 0 )
 									cx->mismatch = 0.0;
 								else
-									cx->mismatch = (100.0 * abs( cx->predicted_metric - cx->lowest )) / cx->predicted_metric;
+									cx->mismatch = (100.0 * ( cx->predicted_metric - cx->lowest )) / cx->predicted_metric;
 								if ( (int) cx->mismatch <= cx->gthresh )
 								{
 									// It's close enough, so use the predicted one.

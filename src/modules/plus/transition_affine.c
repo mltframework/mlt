@@ -513,7 +513,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Compute the affine transform
 		get_affine( &affine, transition, ( float )position );
 		dz = MapZ( affine.matrix, 0, 0 );
-		if ( ( int )abs( dz * 1000 ) < 25 )
+		if ( (int) fabs( dz * 1000 ) < 25 )
 		{
 			free( interps );
 			return 0;

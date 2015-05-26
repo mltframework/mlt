@@ -283,7 +283,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				// Compute power level of samples in this channel of this frame
 				while ( --n )
 				{
-					double s = fabs( *p++ );
+					double s = abs( *p++ );
 					// Track peak
 					if ( s > peak )
 					{
