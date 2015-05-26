@@ -193,20 +193,6 @@ static int get_value( mlt_properties properties, const char *preferred, const ch
 	return value;
 }
 
-/** A linear threshold determination function.
-*/
-
-static inline int32_t linearstep( int32_t edge1, int32_t edge2, int32_t a )
-{
-	if ( a < edge1 )
-		return 0;
-
-	if ( a >= edge2 )
-		return 0x10000;
-
-	return ( ( a - edge1 ) << 16 ) / ( edge2 - edge1 );
-}
-
 /** A smoother, non-linear threshold determination function.
 */
 
