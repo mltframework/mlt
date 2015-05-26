@@ -504,7 +504,7 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	return result;
 }
 
-static mlt_image_format pick_pix_fmt( enum PixelFormat pix_fmt )
+static enum PixelFormat pick_pix_fmt( enum PixelFormat pix_fmt )
 {
 	switch ( pix_fmt )
 	{
