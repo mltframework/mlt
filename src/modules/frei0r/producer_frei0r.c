@@ -73,9 +73,6 @@ int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 		// Obtain properties of frame and producer
 		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
-		// Obtain properties of producer
-		mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
-
 		// Set the producer on the frame properties
 		mlt_properties_set_data( properties, "producer_frei0r", producer, 0, NULL, NULL );
 

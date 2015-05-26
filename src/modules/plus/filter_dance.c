@@ -23,7 +23,6 @@
 #include <string.h> // strdup()
 
 // Private Constants
-static const int WINDOW_SIZE = 2048; // 23.43Hz FFT bins at 48kHz
 static const double PI = 3.14159265358979323846;
 
 // Private Types
