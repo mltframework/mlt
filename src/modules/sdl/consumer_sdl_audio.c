@@ -529,9 +529,6 @@ static void *consumer_thread( void *arg )
 			// Get the speed of the frame
 			double speed = mlt_properties_get_double( properties, "_speed" );
 
-			// Get refresh request for the current frame
-			int refresh = mlt_properties_get_int( consumer_props, "refresh" );
-
 			// Clear refresh
 			mlt_events_block( consumer_props, consumer_props );
 			mlt_properties_set_int( consumer_props, "refresh", 0 );
