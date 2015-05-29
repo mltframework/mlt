@@ -283,8 +283,12 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
 	mlt_properties_set_int( frame_properties, "consumer_tff", mlt_properties_get_int( properties, "consumer_tff" ) );
 	mlt_properties_set( frame_properties, "consumer_color_trc", mlt_properties_get( properties, "consumer_color_trc" ) );
+	// WebVfx uses this to setup a consumer-stopping event handler.
+	mlt_properties_set_data( frame_properties, "consumer", mlt_properties_get_data( properties, "consumer", NULL ), 0, NULL, NULL );
+
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_frame_set_image( self, *buffer, 0, NULL );
+
 	mlt_properties_set_int( properties, "width", *width );
 	mlt_properties_set_int( properties, "height", *height );
 	mlt_properties_set_int( properties, "format", *format );
