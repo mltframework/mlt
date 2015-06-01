@@ -239,6 +239,10 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				{
 					//txt->setData(OriginYTop, txtProperties.namedItem("kdenlive-axis-y-inverted").nodeValue().toInt());
 				}
+				if ( !txtProperties.namedItem("preferred-width").isNull() )
+				{
+					txt->setTextWidth( txtProperties.namedItem("preferred-width").nodeValue().toInt() );
+				}
 					gitem = txt;
 			}
 			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
