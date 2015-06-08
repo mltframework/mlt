@@ -223,3 +223,13 @@ parameters:
     type: float
     description: Optionally override a (mis)detected aspect ratio
     mutable: yes
+
+  - identifier: rotate
+    title: Rotation angle
+    type: integer
+    description: >
+      The angle of text rotation in degrees. Positive value is clockwise.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner

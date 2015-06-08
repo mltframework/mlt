@@ -80,6 +80,7 @@ struct producer_pango_s
 	int   size;
 	int   style;
 	int   weight;
+	int   rotate;
 };
 
 static void clean_cached( producer_pango self )
@@ -98,7 +99,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
-		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline );
+		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline, int rotate );
 static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg );
 static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg, rgba_color ol, int outline );
 
@@ -179,6 +180,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set( properties, "style", "normal" );
 		mlt_properties_set( properties, "encoding", "UTF-8" );
 		mlt_properties_set_int( properties, "weight", PANGO_WEIGHT_NORMAL );
+		mlt_properties_set_int( properties, "rotate", 0 );
 		mlt_properties_set_int( properties, "seekable", 1 );
 
 		if ( filename == NULL || ( filename && ( !strcmp( filename, "" )
@@ -394,6 +396,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	int style = parse_style( mlt_properties_get( producer_props, "style" ) );
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
 	int weight = mlt_properties_get_int( producer_props, "weight" );
+	int rotate = mlt_properties_get_int( producer_props, "rotate" );
 	int size = mlt_properties_get_int( producer_props, "size" );
 	int property_changed = 0;
 
@@ -423,6 +426,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
 		property_changed = property_changed || ( family && this->family && strcmp( family, this->family ) );
 		property_changed = property_changed || ( weight != this->weight );
+		property_changed = property_changed || ( rotate != this->rotate );
 		property_changed = property_changed || ( style != this->style );
 		property_changed = property_changed || ( size != this->size );
 
@@ -438,6 +442,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		set_string( &this->font, font, NULL );
 		set_string( &this->family, family, "Sans" );
 		this->weight = weight;
+		this->rotate = rotate;
 		this->style = style;
 		this->size = size;
 	}
@@ -469,7 +474,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 		
 		// Render the title
-		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family, style, weight, size, outline );
+		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family, style, weight, size, outline, rotate );
 
 		if ( pixbuf != NULL )
 		{
@@ -735,11 +740,12 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline )
+static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline, int rotate )
 {
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
 	PangoLayout *layout = pango_layout_new( context );
 	int w, h;
+	int x = 0, y = 0;
 	GdkPixbuf *pixbuf = NULL;
 	FT_Bitmap bitmap;
 	PangoFontDescription *desc = NULL;
@@ -780,7 +786,38 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 		// Pango doesn't like empty strings
 		pango_layout_set_text( layout, "  ", 2 );
 	}
-	pango_layout_get_pixel_size( layout, &w, &h );
+
+	if ( rotate )
+	{
+		double n_x, n_y;
+		PangoRectangle rect;
+		PangoMatrix m_layout = PANGO_MATRIX_INIT, m_offset = PANGO_MATRIX_INIT;
+
+		pango_matrix_rotate( &m_layout, rotate );
+		pango_matrix_rotate( &m_offset, -rotate );
+
+		pango_context_set_base_gravity( context, PANGO_GRAVITY_AUTO );
+		pango_context_set_matrix( context, &m_layout );
+		pango_layout_context_changed( layout );
+		pango_layout_get_extents( layout, NULL, &rect );
+		pango_matrix_transform_rectangle( pango_context_get_matrix( context ), &rect);
+
+		n_x = -rect.x;
+		n_y = -rect.y;
+		pango_matrix_transform_point( &m_offset, &n_x, &n_y );
+		rect.x = n_x;
+		rect.y = n_y;
+
+		pango_extents_to_pixels( &rect, NULL );
+
+		w = rect.width;
+		h = rect.height;
+
+		x = rect.x;
+		y = rect.y;
+	}
+	else
+		pango_layout_get_pixel_size( layout, &w, &h );
 
 	if ( pad == 0 )
 		pad = 1;
@@ -797,7 +834,7 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 
 	memset( bitmap.buffer, 0, h * bitmap.pitch );
 
-	pango_ft2_render_layout( &bitmap, layout, 0, 0 );
+	pango_ft2_render_layout( &bitmap, layout, x, y );
 
 	if ( outline )
 	{
