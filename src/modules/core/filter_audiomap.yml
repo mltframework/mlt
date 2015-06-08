@@ -1,0 +1,268 @@
+schema_version: 0.2
+type: filter
+identifier: audiomap
+title: Remap Channels
+version: 1
+copyright: Meltytech, LLC
+creator: Maksym Veremeyenko
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+description: Copy/swap channels according to given mapping.
+parameters:
+  - identifier: '0'
+    title: Source of channel 0
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 0
+
+  - identifier: '1'
+    title: Source of channel 1
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 1
+
+  - identifier: '2'
+    title: Source of channel 2
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 2
+
+  - identifier: '3'
+    title: Source of channel 3
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 3
+
+  - identifier: '4'
+    title: Source of channel 4
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 4
+
+  - identifier: '5'
+    title: Source of channel 5
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 5
+
+  - identifier: '6'
+    title: Source of channel 6
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 6
+
+  - identifier: '7'
+    title: Source of channel 7
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 7
+
+  - identifier: '8'
+    title: Source of channel 8
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 8
+
+  - identifier: '9'
+    title: Source of channel 9
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 9
+
+  - identifier: '10'
+    title: Source of channel 10
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 10
+
+  - identifier: '11'
+    title: Source of channel 11
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 11
+
+  - identifier: '12'
+    title: Source of channel 12
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 12
+
+  - identifier: '13'
+    title: Source of channel 13
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 13
+
+  - identifier: '14'
+    title: Source of channel 14
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 14
+
+  - identifier: '15'
+    title: Source of channel 15
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 15
+
+  - identifier: '16'
+    title: Source of channel 16
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 16
+
+  - identifier: '17'
+    title: Source of channel 17
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 17
+
+  - identifier: '18'
+    title: Source of channel 18
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 18
+
+  - identifier: '19'
+    title: Source of channel 19
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 19
+
+  - identifier: '20'
+    title: Source of channel 20
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 20
+
+  - identifier: '21'
+    title: Source of channel 21
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 21
+
+  - identifier: '22'
+    title: Source of channel 22
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 22
+
+  - identifier: '23'
+    title: Source of channel 23
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 23
+
+  - identifier: '24'
+    title: Source of channel 24
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 24
+
+  - identifier: '25'
+    title: Source of channel 25
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 25
+
+  - identifier: '26'
+    title: Source of channel 26
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 26
+
+  - identifier: '27'
+    title: Source of channel 27
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 27
+
+  - identifier: '28'
+    title: Source of channel 28
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 28
+
+  - identifier: '29'
+    title: Source of channel 29
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 29
+
+  - identifier: '30'
+    title: Source of channel 30
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 30
+
+  - identifier: '31'
+    title: Source of channel 31
+    type: integer
+    mutable: yes
+    minimum: 0
+    maximum: 31
+    default: 31

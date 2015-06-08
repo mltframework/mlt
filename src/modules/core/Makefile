@@ -15,6 +15,7 @@ OBJS = factory.o \
 	   producer_noise.o \
 	   producer_tone.o \
 	   filter_audiochannels.o \
+	   filter_audiomap.o \
 	   filter_audioconvert.o \
 	   filter_audiowave.o \
 	   filter_brightness.o \

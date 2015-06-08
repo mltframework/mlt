@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@ extern mlt_consumer consumer_multi_init( mlt_profile profile, mlt_service_type t
 extern mlt_consumer consumer_null_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_audiochannels_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_audioconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_audiomap_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_audiowave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_brightness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_channelcopy_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -72,6 +73,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( consumer_type, "null", consumer_null_init );
 	MLT_REGISTER( filter_type, "audiochannels", filter_audiochannels_init );
 	MLT_REGISTER( filter_type, "audioconvert", filter_audioconvert_init );
+	MLT_REGISTER( filter_type, "audiomap", filter_audiomap_init );
 	MLT_REGISTER( filter_type, "audiowave", filter_audiowave_init );
 	MLT_REGISTER( filter_type, "brightness", filter_brightness_init );
 	MLT_REGISTER( filter_type, "channelcopy", filter_channelcopy_init );
@@ -111,6 +113,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( transition_type, "region", transition_region_init );
 
 	MLT_REGISTER_METADATA( consumer_type, "multi", metadata, "consumer_multi.yml" );
+	MLT_REGISTER_METADATA( filter_type, "audiomap", metadata, "filter_audiomap.yml" );
 	MLT_REGISTER_METADATA( filter_type, "audiowave", metadata, "filter_audiowave.yml" );
 	MLT_REGISTER_METADATA( filter_type, "brightness", metadata, "filter_brightness.yml" );
 	MLT_REGISTER_METADATA( filter_type, "channelcopy", metadata, "filter_channelcopy.yml" );
