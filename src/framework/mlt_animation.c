@@ -376,19 +376,22 @@ int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int pos
 		if ( position < node->item.frame )
 		{
 			item->is_key = 0;
-			mlt_property_pass( item->property, node->item.property );
+			if ( item->property )
+				mlt_property_pass( item->property, node->item.property );
 		}
 		// Item exists.
 		else if ( position == node->item.frame )
 		{
 			item->is_key = node->item.is_key;
-			mlt_property_pass( item->property, node->item.property );
+			if ( item->property )
+				mlt_property_pass( item->property, node->item.property );
 		}
 		// Position is after the last keyframe.
 		else if ( !node->next )
 		{
 			item->is_key = 0;
-			mlt_property_pass( item->property, node->item.property );
+			if ( item->property )
+				mlt_property_pass( item->property, node->item.property );
 		}
 		// Interpolation needed.
 		else
@@ -526,7 +529,8 @@ int mlt_animation_next_key( mlt_animation self, mlt_animation_item item, int pos
 		item->frame = node->item.frame;
 		item->is_key = node->item.is_key;
 		item->keyframe_type = node->item.keyframe_type;
-		mlt_property_pass( item->property, node->item.property );
+		if ( item->property )
+			mlt_property_pass( item->property, node->item.property );
 	}
 
 	return ( node == NULL );
@@ -553,7 +557,8 @@ int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int pos
 		item->frame = node->item.frame;
 		item->is_key = node->item.is_key;
 		item->keyframe_type = node->item.keyframe_type;
-		mlt_property_pass( item->property, node->item.property );
+		if ( item->property )
+			mlt_property_pass( item->property, node->item.property );
 	}
 
 	return ( node == NULL );
