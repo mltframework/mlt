@@ -62,6 +62,8 @@ namespace Mlt {
 %newobject Repository::languages( );
 %newobject Profile::list();
 %newobject Repository::presets();
+%newobject Properties::get_anim();
+%newobject Animation::Animation();
 
 #if defined(SWIGPYTHON)
 %feature("shadow") Frame::get_waveform(int, int) %{
@@ -100,6 +102,7 @@ void mlt_log_set_level( int );
 %include <MltTractor.h>
 %include <MltParser.h>
 %include <MltFilteredConsumer.h>
+%include <MltAnimation.h>
 
 
 

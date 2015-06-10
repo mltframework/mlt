@@ -29,6 +29,7 @@
 namespace Mlt 
 {
 	class Event;
+	class Animation;
 
 	/** Abstract Properties class.
 	 */
@@ -118,6 +119,8 @@ namespace Mlt
 			int anim_set( const char *name, mlt_rect value, int position, int length = 0,
 				mlt_keyframe_type keyframe_type = mlt_keyframe_linear );
 			mlt_rect anim_get_rect( const char *name, int position, int length = 0 );
+			mlt_animation get_animation( const char *name );
+			Animation* get_anim( const char *name );
 	};
 }
 

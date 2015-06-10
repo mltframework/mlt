@@ -21,6 +21,7 @@
 #ifndef MLTPP_H
 #define MLTPP_H
 
+#include "MltAnimation.h"
 #include "MltConsumer.h"
 #include "MltDeque.h"
 #include "MltEvent.h"
