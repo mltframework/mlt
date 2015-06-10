@@ -26,7 +26,8 @@ ifeq ($(targetos), Linux)
 LDFLAGS += -Wl,--version-script=mlt++.vers
 endif
 
-OBJS = MltConsumer.o \
+OBJS = MltAnimation.o \
+	   MltConsumer.o \
 	   MltDeque.o \
 	   MltEvent.o \
 	   MltFactory.o \

@@ -20,6 +20,7 @@
 
 #include "MltProperties.h"
 #include "MltEvent.h"
+#include "MltAnimation.h"
 using namespace Mlt;
 
 Properties::Properties( ) :
@@ -396,4 +397,14 @@ int Properties::anim_set( const char *name, mlt_rect value, int position, int le
 mlt_rect Properties::anim_get_rect(const char *name, int position, int length)
 {
 	return mlt_properties_anim_get_rect( get_properties(), name, position, length );
+}
+
+mlt_animation Properties::get_animation( const char *name )
+{
+	return mlt_properties_get_animation( get_properties(), name );
+}
+
+Animation *Properties::get_anim(const char *name)
+{
+	return new Animation( mlt_properties_get_animation( get_properties(), name ) );
 }
