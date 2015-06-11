@@ -501,6 +501,10 @@ MLTPP_0.9.8 {
         "Mlt::Animation::get_item(int, bool&, mlt_keyframe_type&)";
         "Mlt::Animation::next_key(int)";
         "Mlt::Animation::previous_key(int)";
+        "Mlt::Animation::key_count()";
+        "Mlt::Animation::key_get(int, int&, mlt_keyframe_type&)";
+        "Mlt::Animation::key_get_frame(int)";
+        "Mlt::Animation::key_get_type(int)";
         "Mlt::Animation::set_length(int)";
         "Mlt::Animation::remove(int)";
         "Mlt::Animation::interpolate()";

@@ -99,7 +99,7 @@ mlt_keyframe_type Animation::keyframe_type( int position )
 	if ( !error )
 		return item.keyframe_type;
 	else
-		return (mlt_keyframe_type) error;
+		return (mlt_keyframe_type) -1;
 }
 
 int Animation::next_key( int position )
@@ -122,6 +122,47 @@ int Animation::previous_key( int position )
 		return item.frame;
 	else
 		return error;
+}
+
+int Animation::key_count()
+{
+	return mlt_animation_key_count( instance );
+}
+
+int Animation::key_get( int index, int& frame, mlt_keyframe_type& type )
+{
+	struct mlt_animation_item_s item;
+	item.property = NULL;
+	int error = mlt_animation_key_get( instance, &item, index );
+	if ( !error )
+	{
+		frame = item.frame;
+		type = item.keyframe_type;
+	}
+	return error;
+}
+
+int Animation::key_get_frame( int index )
+{
+	struct mlt_animation_item_s item;
+	item.is_key = 0;
+	item.property = NULL;
+	int error = mlt_animation_key_get( instance, &item, index );
+	if ( !error )
+		return item.frame;
+	else
+		return -1;
+}
+
+mlt_keyframe_type Animation::key_get_type( int index )
+{
+	struct mlt_animation_item_s item;
+	item.property = NULL;
+	int error = mlt_animation_key_get( instance, &item, index );
+	if ( !error )
+		return item.keyframe_type;
+	else
+		return (mlt_keyframe_type) -1;
 }
 
 void Animation::set_length( int length )

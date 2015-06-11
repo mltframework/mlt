@@ -47,6 +47,10 @@ namespace Mlt
 			mlt_keyframe_type keyframe_type( int position );
 			int next_key( int position );
 			int previous_key( int position );
+			int key_count();
+			int key_get( int index, int& frame, mlt_keyframe_type& );
+			int key_get_frame( int index );
+			mlt_keyframe_type key_get_type( int index );
 
 			void set_length( int length );
 			int remove( int position );
