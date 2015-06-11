@@ -51,6 +51,8 @@ extern int mlt_animation_next_key( mlt_animation self, mlt_animation_item item, 
 extern int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int position );
 extern char *mlt_animation_serialize_cut( mlt_animation self, int in, int out );
 extern char *mlt_animation_serialize( mlt_animation self );
+extern int mlt_animation_key_count( mlt_animation self );
+extern int mlt_animation_key_get( mlt_animation self, mlt_animation_item item, int index );
 extern void mlt_animation_close( mlt_animation self );
 
 #endif

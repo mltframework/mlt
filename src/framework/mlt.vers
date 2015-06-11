@@ -468,4 +468,6 @@ MLT_0.9.8 {
     mlt_service_disconnect_producer;
     mlt_multitrack_disconnect;
     mlt_tractor_remove_track;
+    mlt_animation_key_count;
+    mlt_animation_key_get;
 } MLT_0.9.4;

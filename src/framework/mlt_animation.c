@@ -699,6 +699,61 @@ char *mlt_animation_serialize( mlt_animation self )
 	return ret;
 }
 
+/** Get the number of keyframes.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \return the number of keyframes or -1 on error
+ */
+
+int mlt_animation_key_count( mlt_animation self )
+{
+	int count = -1;
+	if ( self )
+	{
+		animation_node node = self->nodes;
+		for ( count = 0; node; ++count )
+			node = node->next;
+	}
+	return count;
+}
+
+/** Get an animation item for the N-th keyframe.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param item an already allocated animation item that will be filled in
+ * \param position the frame number for the point in time
+ * \return true if there was an error
+ */
+
+int mlt_animation_key_get( mlt_animation self, mlt_animation_item item, int index )
+{
+	int error = 0;
+	animation_node node = self->nodes;
+
+	// Iterate through the keyframes.
+	int i = index;
+	while ( i-- && node )
+		node = node->next;
+
+	if ( node )
+	{
+		item->is_key = node->item.is_key;
+		item->frame = node->item.frame;
+		item->keyframe_type = node->item.keyframe_type;
+		if ( item->property )
+			mlt_property_pass( item->property, node->item.property );
+	}
+	else
+	{
+		item->frame = item->is_key = 0;
+		error = 1;
+	}
+
+	return error;
+}
+
 /** Close the animation and deallocate all of its resources.
  *
  * \public \memberof mlt_animation_s
