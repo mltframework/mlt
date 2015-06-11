@@ -472,4 +472,6 @@ MLT_0.9.8 {
     mlt_multitrack_insert;
     mlt_tractor_insert_track;
     mlt_transition_set_tracks;
+    mlt_animation_key_count;
+    mlt_animation_key_get;
 } MLT_0.9.4;
