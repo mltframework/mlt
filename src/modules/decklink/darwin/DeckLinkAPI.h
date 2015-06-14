@@ -112,7 +112,34 @@ enum _BMDDisplayMode {
 
     bmdMode2k2398                                      = '2k23',
     bmdMode2k24                                        = '2k24',
-    bmdMode2k25                                        = '2k25'
+	bmdMode2k25                                        = '2k25',
+
+	/* DCI Modes (output only) */
+
+	bmdMode2kDCI2398                                             = '2d23',
+	bmdMode2kDCI24                                               = '2d24',
+	bmdMode2kDCI25                                               = '2d25',
+
+	/* 4k Modes */
+
+	bmdMode4K2160p2398                                           = '4k23',
+	bmdMode4K2160p24                                             = '4k24',
+	bmdMode4K2160p25                                             = '4k25',
+	bmdMode4K2160p2997                                           = '4k29',
+	bmdMode4K2160p30                                             = '4k30',
+	bmdMode4K2160p50                                             = '4k50',
+	bmdMode4K2160p5994                                           = '4k59',
+	bmdMode4K2160p60                                             = '4k60',
+
+	/* DCI Modes (output only) */
+
+	bmdMode4kDCI2398                                             = '4d23',
+	bmdMode4kDCI24                                               = '4d24',
+	bmdMode4kDCI25                                               = '4d25',
+
+	/* Special Modes */
+
+	bmdModeUnknown                                               = 'iunk'
 };
 
 

@@ -492,8 +492,23 @@ enum _BMDDisplayMode
 	bmdModeHD720p60	= 0x68703630,
 	bmdMode2k2398	= 0x326b3233,
 	bmdMode2k24	= 0x326b3234,
-	bmdMode2k25	= 0x326b3235
-    } 	BMDDisplayMode;
+	bmdMode2k25	= 0x326b3235,
+	bmdMode2kDCI2398 = 0x32643233,
+	bmdMode2kDCI24 = 0x32643234,
+	bmdMode2kDCI25 = 0x32643235,
+	bmdMode4K2160p2398 = 0x346b3233,
+	bmdMode4K2160p24 = 0x346b3234,
+	bmdMode4K2160p25 = 0x346b3235,
+	bmdMode4K2160p2997 = 0x346b3239,
+	bmdMode4K2160p30 = 0x346b3330,
+	bmdMode4K2160p50 = 0x346b3530,
+	bmdMode4K2160p5994 = 0x346b3539,
+	bmdMode4K2160p60 = 0x346b3630,
+	bmdMode4kDCI2398 = 0x34643233,
+	bmdMode4kDCI24 = 0x34643234,
+	bmdMode4kDCI25 = 0x34643235,
+	bmdModeUnknown = 0x69756e6b
+	} 	BMDDisplayMode;
 
 typedef /* [v1_enum] */ 
 enum _BMDFieldDominance

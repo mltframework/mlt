@@ -108,7 +108,34 @@ enum _BMDDisplayMode {
 
     bmdMode2k2398                                      = /* '2k23' */ 0x326B3233,
     bmdMode2k24                                        = /* '2k24' */ 0x326B3234,
-    bmdMode2k25                                        = /* '2k25' */ 0x326B3235
+	bmdMode2k25                                        = /* '2k25' */ 0x326B3235,
+
+	/* DCI Modes (output only) */
+
+	bmdMode2kDCI2398                                             = /* '2d23' */ 0x32643233,
+	bmdMode2kDCI24                                               = /* '2d24' */ 0x32643234,
+	bmdMode2kDCI25                                               = /* '2d25' */ 0x32643235,
+
+	/* 4k Modes */
+
+	bmdMode4K2160p2398                                           = /* '4k23' */ 0x346B3233,
+	bmdMode4K2160p24                                             = /* '4k24' */ 0x346B3234,
+	bmdMode4K2160p25                                             = /* '4k25' */ 0x346B3235,
+	bmdMode4K2160p2997                                           = /* '4k29' */ 0x346B3239,
+	bmdMode4K2160p30                                             = /* '4k30' */ 0x346B3330,
+	bmdMode4K2160p50                                             = /* '4k50' */ 0x346B3530,
+	bmdMode4K2160p5994                                           = /* '4k59' */ 0x346B3539,
+	bmdMode4K2160p60                                             = /* '4k60' */ 0x346B3630,
+
+	/* DCI Modes (output only) */
+
+	bmdMode4kDCI2398                                             = /* '4d23' */ 0x34643233,
+	bmdMode4kDCI24                                               = /* '4d24' */ 0x34643234,
+	bmdMode4kDCI25                                               = /* '4d25' */ 0x34643235,
+
+	/* Special Modes */
+
+	bmdModeUnknown                                               = /* 'iunk' */ 0x69756E6B
 };
 
 
