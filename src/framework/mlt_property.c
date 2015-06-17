@@ -1298,31 +1298,35 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 
 char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t locale, int position, int length )
 {
-	pthread_mutex_lock( &self->mutex );
 	char *result;
 	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
 
+		pthread_mutex_lock( &self->mutex );
 		if ( !self->animation )
 			refresh_animation( self, fps, locale, length );
 		mlt_animation_get_item( self->animation, &item, position );
 
 		free( self->prop_string );
+
+		pthread_mutex_unlock( &self->mutex );
 		self->prop_string = mlt_property_get_string_l( item.property, locale );
+		pthread_mutex_lock( &self->mutex );
+
 		if ( self->prop_string )
 			self->prop_string = strdup( self->prop_string );
 		self->types |= mlt_prop_string;
 
 		result = self->prop_string;
 		mlt_property_close( item.property );
+		pthread_mutex_unlock( &self->mutex );
 	}
 	else
 	{
 		result = mlt_property_get_string_l( self, locale );
 	}
-	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
 
