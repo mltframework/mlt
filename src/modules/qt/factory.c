@@ -55,6 +55,9 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "lightshow", filter_lightshow_init );
 #endif
 	MLT_REGISTER_METADATA( filter_type, "audiowaveform", metadata, "filter_audiowaveform.yml" );
+#ifdef USE_FFTW
+	MLT_REGISTER_METADATA( filter_type, "lightshow", metadata, "filter_lightshow.yml" );
+#endif
 	MLT_REGISTER_METADATA( producer_type, "qimage", metadata, "producer_qimage.yml" );
 	MLT_REGISTER_METADATA( producer_type, "qtext", metadata, "producer_qtext.yml" );
 	MLT_REGISTER_METADATA( producer_type, "kdenlivetitle", metadata, "producer_kdenlivetitle.yml" );
