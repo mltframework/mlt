@@ -78,7 +78,8 @@ $processor = ERB.new(template, 0, "%<>")
 
 
 def output(mlt_type, services, type_title)
-  index = File.open("Plugins#{type_title}s.txt", 'w')
+  filename = File.join($folder, "Plugins#{type_title}s.txt")
+  index = File.open(filename, 'w')
   index.puts '%META:TOPICPARENT{name="Documentation"}%'
   index.puts '<noautolink>'
   index.puts "---+ #{type_title} Plugins"
@@ -100,6 +101,7 @@ def output(mlt_type, services, type_title)
         else
           puts "Failed to write file for #{filename}"
         end
+        filename = type_title + name.capitalize.gsub('.', '-')
         index.puts "   * [[#{filename}][#{name}]]: #{meta.get('title')}\n"
       rescue SyntaxError
           puts "Failed to parse YAML for #{filename}"
