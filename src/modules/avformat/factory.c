@@ -232,8 +232,14 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set_double( p, "default", opt->default_val.dbl );
 			break;
 		case AV_OPT_TYPE_STRING:
-			mlt_properties_set( p, "type", "string" );
-			mlt_properties_set( p, "default", opt->default_val.str );
+			if ( opt->default_val.str ) {
+				size_t len = strlen( opt->default_val.str ) + 3;
+				char* quoted = malloc( len );
+				snprintf( quoted, len, "'%s'", opt->default_val.str );
+				mlt_properties_set( p, "type", "string" );
+				mlt_properties_set( p, "default", quoted );
+				free( quoted );
+			}
 			break;
 		case AV_OPT_TYPE_RATIONAL:
 			mlt_properties_set( p, "type", "string" );

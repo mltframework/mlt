@@ -31,7 +31,7 @@ notes: >
   property. Complete details are below.
 
   Please note that the exact options depend on the version of libavformat and
-  libavcodec on your system. The following is based on FFmpeg n2.4.4.
+  libavcodec on your system. The following is based on FFmpeg n2.6.3.
 
 parameters:
   - identifier: target
