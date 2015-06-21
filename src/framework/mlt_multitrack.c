@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Forward reference. */
 
@@ -221,6 +222,68 @@ int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int trac
 
 		// Refresh our stats
 		mlt_multitrack_refresh( self );
+	}
+
+	return result;
+}
+
+/** Insert a producer to a given track.
+ *
+ * \public \memberof mlt_multitrack_s
+ * \param self a multitrack
+ * \param producer the producer to connect to the multitrack producer
+ * \param track the 0-based index of the track on which to connect the multitrack
+ * \return true on error
+ */
+
+int mlt_multitrack_insert( mlt_multitrack self, mlt_producer producer, int track )
+{
+	if ( track >= self->count )
+		return mlt_multitrack_connect( self, producer, track );
+
+	// Connect to the producer to ourselves at the specified track
+	int result = mlt_service_insert_producer( MLT_MULTITRACK_SERVICE( self ), MLT_PRODUCER_SERVICE( producer ), track );
+
+	if ( result == 0 )
+	{
+		// Resize the producer list if needed.
+		if ( self->count + 1 > self->size )
+		{
+			int new_size = self->size + 10;
+			self->list = realloc( self->list, new_size * sizeof( mlt_track ) );
+			if ( self->list )
+			{
+				memset( &self->list[ self->size ], 0, new_size - self->size );
+				self->size = new_size;
+			}
+		}
+
+		if ( self->list )
+		{
+			// Move all of the list elements following track N down by 1.
+			memmove( &self->list[ track + 1 ], &self->list[ track ],
+					( self->count - track ) * sizeof ( mlt_track ) );
+			self->count ++;
+
+			// Assign the track in our list.
+			self->list[ track ] = malloc( sizeof( struct mlt_track_s ) );
+			self->list[ track ]->producer = producer;
+			self->list[ track ]->event = mlt_events_listen( MLT_PRODUCER_PROPERTIES( producer ), self,
+										 "producer-changed", ( mlt_listener )mlt_multitrack_listener );
+			mlt_properties_inc_ref( MLT_PRODUCER_PROPERTIES( producer ) );
+			mlt_event_inc_ref( self->list[ track ]->event );
+
+			// TODO: Move this into producer_avformat.c when mlt_events broadcasting is available.
+			if ( self->count > mlt_service_cache_get_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat" ) )
+				mlt_service_cache_set_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat", self->count + 1 );
+
+			// Refresh our stats
+			mlt_multitrack_refresh( self );
+		}
+		else
+		{
+			result = -1;
+		}
 	}
 
 	return result;

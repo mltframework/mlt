@@ -74,6 +74,11 @@ int Service::connect_producer( Service &producer, int index )
 	return mlt_service_connect_producer( get_service( ), producer.get_service( ), index );
 }
 
+int Mlt::Service::insert_producer(Mlt::Service &producer, int index)
+{
+	return mlt_service_insert_producer( get_service(), producer.get_service(), index );
+}
+
 int Service::disconnect_producer( int index )
 {
 	return mlt_service_disconnect_producer( get_service(), index );

@@ -54,6 +54,7 @@ namespace Mlt
 			Field *field( );
 			void refresh( );
 			int set_track( Producer &producer, int index );
+			int insert_track( Producer &producer, int index );
 			int remove_track( int index );
 			Producer *track( int index );
 			int count( );

@@ -259,6 +259,83 @@ int mlt_service_connect_producer( mlt_service self, mlt_service producer, int in
 	}
 }
 
+/** Insert a producer connected to the service.
+ *
+ * mlt_service_connect_producer() appends or overwrites a producer at input
+ * \p index whereas this function inserts pushing all of the inputs down by
+ * 1 in the list of inputs.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param producer a producer
+ * \param index which of potentially multiple producers to this service (0 based)
+ * \return 0 for success, -1 for error, or 3 if \p producer is already connected to \p self
+ */
+
+int mlt_service_insert_producer( mlt_service self, mlt_service producer, int index )
+{
+	// Get the service base
+	mlt_service_base *base = self->local;
+
+	if ( index >= base->count )
+		return mlt_service_connect_producer( self, producer, index );
+
+	int i = 0;
+
+	// Special case 'track' index - only works for last filter(s) in a particular chain
+	// but allows a filter to apply to the output frame regardless of which track it comes from
+	if ( index == -1 )
+		index = 0;
+
+	// Check if the producer is already registered with this service.
+	for ( i = 0; i < base->count; i ++ )
+		if ( base->in[ i ] == producer )
+			return 3;
+
+	// Allocate space if needed.
+	if ( base->count + 1 > base->size )
+	{
+		int new_size = base->size + 10;
+		base->in = realloc( base->in, new_size * sizeof( mlt_service ) );
+		if ( base->in != NULL )
+		{
+			memset( &base->in[ base->size ], 0, new_size - base->size );
+			base->size = new_size;
+		}
+	}
+
+	// If we have space, assign the input
+	if ( base->in && index >= 0 && index < base->size )
+	{
+		// Increment the reference count on this producer.
+		if ( producer != NULL )
+			mlt_properties_inc_ref( MLT_SERVICE_PROPERTIES( producer ) );
+
+		// Disconnect the producer from its consumer.
+		mlt_service_disconnect( producer );
+
+		// Make room in the list for the producer.
+		memmove( &base->in[ index + 1 ], &base->in[ index ],
+				( base->count - index ) * sizeof( mlt_service ) );
+
+		// Add the service to index specified.
+		base->in[ index ] = producer;
+
+		// Increase the number of active tracks.
+		base->count ++;
+
+		// Connect the producer to its connected consumer.
+		mlt_service_connect( producer, self );
+
+		// Inform caller that all went well
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 /** Remove the N-th producer.
  *
  * \public \memberof mlt_service_s

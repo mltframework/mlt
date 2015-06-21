@@ -243,6 +243,50 @@ int mlt_tractor_set_track( mlt_tractor self, mlt_producer producer, int index )
 	return mlt_multitrack_connect( mlt_tractor_multitrack( self ), producer, index );
 }
 
+/** Insert a producer before a specific track.
+ *
+ * This also adjusts the track indices on mlt_transition_s and mlt_filter_s,
+ *
+ * \public \memberof mlt_tractor_s
+ * \param self a tractor
+ * \param producer a producer
+ * \param index the 0-based track index
+ * \return true on error
+ */
+
+int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index )
+{
+	int error = mlt_multitrack_insert( mlt_tractor_multitrack( self ), producer, index );
+	if ( !error )
+	{
+		// Update the track indices of transitions and track filters.
+		mlt_service service = mlt_service_producer( MLT_TRACTOR_SERVICE( self ) );
+		while ( service )
+		{
+			mlt_service_type type = mlt_service_identify( service );
+			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+
+			if ( type == transition_type )
+			{
+				int current_track = mlt_properties_get_int( properties, "a_track" );
+				if ( current_track >= index )
+					mlt_properties_set_int( properties, "a_track", current_track + 1 );
+				current_track = mlt_properties_get_int( properties, "b_track" );
+				if ( current_track >= index )
+					mlt_properties_set_int( properties, "b_track", current_track + 1 );
+			}
+			else if ( type == filter_type )
+			{
+				int current_track = mlt_properties_get_int( properties, "a_track" );
+				if ( current_track >= index )
+					mlt_properties_set_int( properties, "track", index + 1 );
+			}
+			service = mlt_service_producer( service );
+		}
+	}
+	return error;
+}
+
 /** Remove a track by its index.
  *
  * \public \memberof mlt_tractor_s

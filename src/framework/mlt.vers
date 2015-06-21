@@ -468,4 +468,7 @@ MLT_0.9.8 {
     mlt_service_disconnect_producer;
     mlt_multitrack_disconnect;
     mlt_tractor_remove_track;
+    mlt_service_insert_producer;
+    mlt_multitrack_insert;
+    mlt_tractor_insert_track;
 } MLT_0.9.4;

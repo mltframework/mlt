@@ -82,6 +82,7 @@ extern void mlt_service_lock( mlt_service self );
 extern void mlt_service_unlock( mlt_service self );
 extern mlt_service_type mlt_service_identify( mlt_service self );
 extern int mlt_service_connect_producer( mlt_service self, mlt_service producer, int index );
+extern int mlt_service_insert_producer( mlt_service self, mlt_service producer, int index );
 extern int mlt_service_disconnect_producer( mlt_service self, int index );
 extern mlt_service mlt_service_get_producer( mlt_service self );
 extern int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index );

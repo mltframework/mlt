@@ -486,5 +486,8 @@ MLTPP_0.9.8 {
         "Mlt::Multitrack::disconnect(int)";
         "Mlt::Service::disconnect_producer(int)";
         "Mlt::Tractor::remove_track(int)";
+        "Mlt::Service::insert_producer(Mlt::Service&, int)";
+        "Mlt::Multitrack::insert(Mlt::Producer&, int)";
+        "Mlt::Tractor::insert_track(Mlt::Producer&, int)";
     };
 } MLTPP_0.9.4;
