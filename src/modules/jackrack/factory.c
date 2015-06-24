@@ -121,6 +121,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 				}
 				if ( LADSPA_IS_HINT_LOGARITHMIC( hint_descriptor ) )
 					mlt_properties_set( p, "scale", "log" );
+				mlt_properties_set( p, "mutable", "yes" );
 			}
 
 			if( type == filter_type )
@@ -134,6 +135,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 				mlt_properties_set_double( p, "default", 1 );
 				mlt_properties_set_double( p, "minimum", 0 );
 				mlt_properties_set_double( p, "maximum", 1 );
+				mlt_properties_set( p, "mutable", "yes" );
 			}
 		}
 	}

@@ -59,29 +59,7 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 			plugin_t *plugin;
 			if ( desc && ( plugin = jack_rack_instantiate_plugin( jackrack, desc ) ) )
 			{
-				// TODO: move this into get_audio when keyframing is ready
-				LADSPA_Data value;
-				int index, c;
-
 				plugin->enabled = TRUE;
-				for ( index = 0; index < desc->control_port_count; index++ )
-				{
-					// Apply the control port values
-					char key[20];
-					value = plugin_desc_get_default_control_value( desc, index, sample_rate );
-					snprintf( key, sizeof(key), "%d", index );
-					if ( mlt_properties_get( properties, key ) )
-						value = mlt_properties_get_double( properties, key );
-					for ( c = 0; c < plugin->copies; c++ )
-						plugin->holders[c].control_memory[index] = value;
-				}
-				plugin->wet_dry_enabled = mlt_properties_get( properties, "wetness" ) != NULL;
-				if ( plugin->wet_dry_enabled )
-				{
-					value = mlt_properties_get_double( properties, "wetness" );
-					for ( c = 0; c < channels; c++ )
-						plugin->wet_dry_values[c] = value;
-				}
 				process_add_plugin( jackrack->procinfo, plugin );
 			}
 			else
@@ -114,7 +92,39 @@ static int ladspa_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		sample_rate = *frequency; // global inside jack_rack
 		jackrack = initialise_jack_rack( filter_properties, *channels );
 	}
-		
+
+	if ( jackrack && jackrack->procinfo && jackrack->procinfo->chain &&
+		 mlt_properties_get_int64( filter_properties, "_pluginid" ) )
+	{
+		plugin_t *plugin = jackrack->procinfo->chain;
+		if ( plugin )
+		{
+			LADSPA_Data value;
+			int index, c;
+			mlt_position position = mlt_filter_get_position( filter, frame );
+			mlt_position length = mlt_filter_get_length2( filter, frame );
+
+			for ( index = 0; index < plugin->desc->control_port_count; index++ )
+			{
+				// Apply the control port values
+				char key[20];
+				value = plugin_desc_get_default_control_value( plugin->desc, index, sample_rate );
+				snprintf( key, sizeof(key), "%d", index );
+				if ( mlt_properties_get( filter_properties, key ) )
+					value = mlt_properties_anim_get_double( filter_properties, key, position, length );
+				for ( c = 0; c < plugin->copies; c++ )
+					plugin->holders[c].control_memory[index] = value;
+			}
+			plugin->wet_dry_enabled = mlt_properties_get( filter_properties, "wetness" ) != NULL;
+			if ( plugin->wet_dry_enabled )
+			{
+				value = mlt_properties_anim_get_double( filter_properties, "wetness", position, length );
+				for ( c = 0; c < *channels; c++ )
+					plugin->wet_dry_values[c] = value;
+			}
+		}
+	}
+
 	// Get the filter-specific properties
 	LADSPA_Data **input_buffers  = mlt_pool_alloc( sizeof( LADSPA_Data* ) * *channels );
 	LADSPA_Data **output_buffers = mlt_pool_alloc( sizeof( LADSPA_Data* ) * *channels );
