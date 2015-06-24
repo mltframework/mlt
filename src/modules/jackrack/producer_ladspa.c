@@ -54,22 +54,8 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 
 		if ( desc && ( plugin = jack_rack_instantiate_plugin( jackrack, desc ) ) )
 		{
-			LADSPA_Data value;
-			int index, c;
-
 			plugin->enabled = TRUE;
 			plugin->wet_dry_enabled = FALSE;
-			for ( index = 0; index < desc->control_port_count; index++ )
-			{
-				// Apply the control port values
-				char key[20];
-				value = plugin_desc_get_default_control_value( desc, index, sample_rate );
-				snprintf( key, sizeof(key), "%d", index );
-				if ( mlt_properties_get( properties, key ) )
-					value = mlt_properties_get_double( properties, key );
-				for ( c = 0; c < plugin->copies; c++ )
-					plugin->holders[c].control_memory[index] = value;
-			}
 			process_add_plugin( jackrack->procinfo, plugin );
 		}
 		else
@@ -98,13 +84,34 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		jackrack = initialise_jack_rack( producer_properties, *channels );
 	}
 
-	if( jackrack )
+	if ( jackrack )
 	{
 		// Correct the returns if necessary
 		*samples = *samples <= 0 ? 1920 : *samples;
 		*channels = *channels <= 0 ? 2 : *channels;
 		*frequency = *frequency <= 0 ? 48000 : *frequency;
 		*format = mlt_audio_float;
+
+		if ( jackrack->procinfo && jackrack->procinfo->chain )
+		{
+			plugin_t *plugin = jackrack->procinfo->chain;
+			LADSPA_Data value;
+			int index, c;
+			mlt_position position = mlt_frame_get_position( frame );
+			mlt_position length = mlt_producer_get_length( producer );
+
+			for ( index = 0; index < plugin->desc->control_port_count; index++ )
+			{
+				// Apply the control port values
+				char key[20];
+				value = plugin_desc_get_default_control_value( plugin->desc, index, sample_rate );
+				snprintf( key, sizeof(key), "%d", index );
+				if ( mlt_properties_get( producer_properties, key ) )
+					value = mlt_properties_anim_get_double( producer_properties, key, position, length );
+				for ( c = 0; c < plugin->copies; c++ )
+					plugin->holders[c].control_memory[index] = value;
+			}
+		}
 
 		// Calculate the size of the buffer
 		size = *samples * *channels * sizeof( float );
