@@ -97,31 +97,28 @@ static int ladspa_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		 mlt_properties_get_int64( filter_properties, "_pluginid" ) )
 	{
 		plugin_t *plugin = jackrack->procinfo->chain;
-		if ( plugin )
-		{
-			LADSPA_Data value;
-			int index, c;
-			mlt_position position = mlt_filter_get_position( filter, frame );
-			mlt_position length = mlt_filter_get_length2( filter, frame );
+		LADSPA_Data value;
+		int index, c;
+		mlt_position position = mlt_filter_get_position( filter, frame );
+		mlt_position length = mlt_filter_get_length2( filter, frame );
 
-			for ( index = 0; index < plugin->desc->control_port_count; index++ )
-			{
-				// Apply the control port values
-				char key[20];
-				value = plugin_desc_get_default_control_value( plugin->desc, index, sample_rate );
-				snprintf( key, sizeof(key), "%d", index );
-				if ( mlt_properties_get( filter_properties, key ) )
-					value = mlt_properties_anim_get_double( filter_properties, key, position, length );
-				for ( c = 0; c < plugin->copies; c++ )
-					plugin->holders[c].control_memory[index] = value;
-			}
-			plugin->wet_dry_enabled = mlt_properties_get( filter_properties, "wetness" ) != NULL;
-			if ( plugin->wet_dry_enabled )
-			{
-				value = mlt_properties_anim_get_double( filter_properties, "wetness", position, length );
-				for ( c = 0; c < *channels; c++ )
-					plugin->wet_dry_values[c] = value;
-			}
+		for ( index = 0; index < plugin->desc->control_port_count; index++ )
+		{
+			// Apply the control port values
+			char key[20];
+			value = plugin_desc_get_default_control_value( plugin->desc, index, sample_rate );
+			snprintf( key, sizeof(key), "%d", index );
+			if ( mlt_properties_get( filter_properties, key ) )
+				value = mlt_properties_anim_get_double( filter_properties, key, position, length );
+			for ( c = 0; c < plugin->copies; c++ )
+				plugin->holders[c].control_memory[index] = value;
+		}
+		plugin->wet_dry_enabled = mlt_properties_get( filter_properties, "wetness" ) != NULL;
+		if ( plugin->wet_dry_enabled )
+		{
+			value = mlt_properties_anim_get_double( filter_properties, "wetness", position, length );
+			for ( c = 0; c < *channels; c++ )
+				plugin->wet_dry_values[c] = value;
 		}
 	}
 
