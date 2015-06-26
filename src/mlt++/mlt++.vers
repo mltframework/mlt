@@ -489,5 +489,6 @@ MLTPP_0.9.8 {
         "Mlt::Service::insert_producer(Mlt::Service&, int)";
         "Mlt::Multitrack::insert(Mlt::Producer&, int)";
         "Mlt::Tractor::insert_track(Mlt::Producer&, int)";
+        "Mlt::Transition::set_tracks(int, int)";
     };
 } MLTPP_0.9.4;

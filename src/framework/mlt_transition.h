@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,6 +69,7 @@ extern mlt_service mlt_transition_service( mlt_transition self );
 extern mlt_properties mlt_transition_properties( mlt_transition self );
 extern int mlt_transition_connect( mlt_transition self, mlt_service producer, int a_track, int b_track );
 extern void mlt_transition_set_in_and_out( mlt_transition self, mlt_position in, mlt_position out );
+extern void mlt_transition_set_tracks( mlt_transition self, int a_track, int b_track );
 extern int mlt_transition_get_a_track( mlt_transition self );
 extern int mlt_transition_get_b_track( mlt_transition self );
 extern mlt_position mlt_transition_get_in( mlt_transition self );

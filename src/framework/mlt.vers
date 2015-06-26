@@ -471,4 +471,5 @@ MLT_0.9.8 {
     mlt_service_insert_producer;
     mlt_multitrack_insert;
     mlt_tractor_insert_track;
+    mlt_transition_set_tracks;
 } MLT_0.9.4;

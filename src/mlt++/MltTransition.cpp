@@ -92,6 +92,11 @@ void Transition::set_in_and_out( int in, int out )
 	mlt_transition_set_in_and_out( get_transition( ), in, out );
 }
 
+void Transition::set_tracks( int a_track, int b_track )
+{
+	mlt_transition_set_tracks( get_transition(), a_track, b_track );
+}
+
 int Transition::connect( Producer &producer, int a_track, int b_track )
 {
 	return mlt_transition_connect( get_transition(), producer.get_service(), a_track, b_track );

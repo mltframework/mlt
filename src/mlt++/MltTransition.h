@@ -45,6 +45,7 @@ namespace Mlt
 			virtual mlt_transition get_transition( );
 			mlt_service get_service( );
 			void set_in_and_out( int in, int out );
+			void set_tracks( int a_track, int b_track );
 			int connect( Producer &producer, int a_track, int b_track );
 			int get_a_track( );
 			int get_b_track( );

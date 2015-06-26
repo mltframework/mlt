@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -140,6 +140,21 @@ void mlt_transition_set_in_and_out( mlt_transition self, mlt_position in, mlt_po
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 	mlt_properties_set_position( properties, "in", in );
 	mlt_properties_set_position( properties, "out", out );
+}
+
+/** Change the track indices of a transition.
+ *
+ * \public \memberof mlt_transition_s
+ * \param a_track the track index of the first input
+ * \param b_track the track index of the second index
+ */
+
+void mlt_transition_set_tracks( mlt_transition self, int a_track, int b_track )
+{
+	mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( self ), "a_track", a_track );
+	mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( self ), "b_track", b_track );
+	free( self->frames );
+	self->frames = NULL;
 }
 
 /** Get the index of the a track.
