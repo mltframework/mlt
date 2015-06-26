@@ -25,6 +25,7 @@
 #include "mlt_multitrack.h"
 #include "mlt_field.h"
 #include "mlt_log.h"
+#include "mlt_transition.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -268,18 +269,22 @@ int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index
 
 			if ( type == transition_type )
 			{
-				int current_track = mlt_properties_get_int( properties, "a_track" );
-				if ( current_track >= index )
-					mlt_properties_set_int( properties, "a_track", current_track + 1 );
-				current_track = mlt_properties_get_int( properties, "b_track" );
-				if ( current_track >= index )
-					mlt_properties_set_int( properties, "b_track", current_track + 1 );
+				mlt_transition transition = MLT_TRANSITION( service );
+				int a_track = mlt_transition_get_a_track( transition );
+				int b_track = mlt_transition_get_b_track( transition );
+
+				if ( a_track >= index || b_track >= index )
+				{
+					a_track = a_track >= index ? a_track + 1 : a_track;
+					b_track = b_track >= index ? b_track + 1 : b_track;
+					mlt_transition_set_tracks( transition, a_track, b_track );
+				}
 			}
 			else if ( type == filter_type )
 			{
-				int current_track = mlt_properties_get_int( properties, "a_track" );
+				int current_track = mlt_properties_get_int( properties, "track" );
 				if ( current_track >= index )
-					mlt_properties_set_int( properties, "track", index + 1 );
+					mlt_properties_set_int( properties, "track", current_track + 1 );
 			}
 			service = mlt_service_producer( service );
 		}
@@ -309,16 +314,20 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 
 			if ( type == transition_type )
 			{
-				int current_track = mlt_properties_get_int( properties, "a_track" );
-				if ( current_track > index )
-					mlt_properties_set_int( properties, "a_track", current_track - 1 );
-				current_track = mlt_properties_get_int( properties, "b_track" );
-				if ( current_track > index )
-					mlt_properties_set_int( properties, "b_track", current_track - 1 );
+				mlt_transition transition = MLT_TRANSITION( service );
+				int a_track = mlt_transition_get_a_track( transition );
+				int b_track = mlt_transition_get_b_track( transition );
+
+				if ( a_track > index || b_track > index )
+				{
+					a_track = a_track > index ? a_track - 1 : a_track;
+					b_track = b_track > index ? b_track - 1 : b_track;
+					mlt_transition_set_tracks( transition, a_track, b_track );
+				}
 			}
 			else if ( type == filter_type )
 			{
-				int current_track = mlt_properties_get_int( properties, "a_track" );
+				int current_track = mlt_properties_get_int( properties, "track" );
 				if ( current_track > index )
 					mlt_properties_set_int( properties, "track", current_track - 1 );
 			}
