@@ -97,7 +97,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			y = h;
 			yend = 0;
-			ydiff = 1;
+			ydiff = -1;
 		}
 		else
 		{
