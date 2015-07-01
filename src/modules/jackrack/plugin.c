@@ -296,7 +296,7 @@ plugin_open_plugin (plugin_desc_t * desc,
                __FUNCTION__, desc->object_file, dlerror());
       return 1;
     }
-  
+
   
   /* get the get_descriptor function */
   dlerror (); /* clear the error report */
@@ -312,7 +312,14 @@ plugin_open_plugin (plugin_desc_t * desc,
       dlclose (dl_handle);
       return 1;
     }
-  
+
+#ifdef __DARWIN__
+  if (!get_descriptor (desc->index)) {
+    void (*constructor)(void) = dlsym (dl_handle, "_init");
+    if (constructor) constructor();
+  }
+#endif
+
   *descriptor_ptr = get_descriptor (desc->index);
   *dl_handle_ptr = dl_handle;
   
