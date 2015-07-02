@@ -182,6 +182,45 @@ private Q_SLOTS:
 		QCOMPARE(a.serialize_cut(), "50=100;60=60");
 	}
 
+	void InsertMiddleKeyframe()
+	{
+		Properties p;
+		p.set("foo", "50=100; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		int error = a.insert(60, "60", mlt_keyframe_linear);
+		QVERIFY(!error);
+		QCOMPARE(a.serialize_cut(), "50=100;60=60;100=0");
+	}
+
+	void InsertFirstKeyframe()
+    {
+		Properties p;
+		p.set("foo", "60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		int error = a.insert(50, "100", mlt_keyframe_linear);
+		QVERIFY(!error);
+		QCOMPARE(a.serialize_cut(), "50=100;60=60;100=0");
+	}
+
+	void InsertLastKeyframe()
+    {
+		Properties p;
+		p.set("foo", "50=100; 60=60");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		int error = a.insert(100, "0", mlt_keyframe_linear);
+		QVERIFY(!error);
+		QCOMPARE(a.serialize_cut(), "50=100;60=60;100=0");
+	}
+
 	void RemoveMiddleKeyframe()
 	{
 		Properties p;

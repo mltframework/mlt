@@ -53,6 +53,7 @@ namespace Mlt
 			mlt_keyframe_type key_get_type( int index );
 
 			void set_length( int length );
+            int insert( int position, char* value, mlt_keyframe_type type );
 			int remove( int position );
 			void interpolate();
 			char* serialize_cut( int in = -1, int out = -1 );
