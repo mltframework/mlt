@@ -506,6 +506,7 @@ MLTPP_0.9.8 {
         "Mlt::Animation::key_get_frame(int)";
         "Mlt::Animation::key_get_type(int)";
         "Mlt::Animation::set_length(int)";
+        "Mlt::Animation::insert(int, char*, mlt_keyframe_type)";
         "Mlt::Animation::remove(int)";
         "Mlt::Animation::interpolate()";
         "Mlt::Animation::serialize_cut(int, int)";

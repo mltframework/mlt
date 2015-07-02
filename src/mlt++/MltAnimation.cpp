@@ -170,6 +170,17 @@ void Animation::set_length( int length )
 	return mlt_animation_set_length( instance, length );
 }
 
+int Animation::insert( int position, char* value, mlt_keyframe_type type )
+{
+    struct mlt_animation_item_s item;
+    item.is_key = 1;
+    item.keyframe_type = type;
+    item.property = mlt_property_init();
+    item.frame = position;
+    mlt_property_set_string(item.property, value);
+	return mlt_animation_insert( instance, &item );
+}
+
 int Animation::remove( int position )
 {
 	return mlt_animation_remove( instance, position );

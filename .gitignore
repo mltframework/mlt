@@ -1,3 +1,4 @@
+*.moc
 *.o
 *.so
 *.so.*
@@ -29,3 +30,5 @@ mlt-config
 packages.dat
 make.inc
 src/examples/play
+src/tests/*Makefile
+src/tests/*/[^.]*
