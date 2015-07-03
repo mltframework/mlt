@@ -269,7 +269,7 @@ mlt_filter filter_dance_init( mlt_profile profile, mlt_service_type type, const 
 {
 	mlt_filter filter = mlt_filter_new();
 	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
-	mlt_filter affine_filter = mlt_factory_filter( profile, "affine", "colour:0x000000ff" );
+	mlt_filter affine_filter = mlt_factory_filter( profile, "affine", "colour:0x00000000" );
 
 	if ( filter && pdata && affine_filter )
 	{
