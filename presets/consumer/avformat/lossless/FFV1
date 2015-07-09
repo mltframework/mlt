@@ -4,6 +4,7 @@ vcodec=ffv1
 g=1
 coder=1
 context=1
+pix_fmt=yuv422p
 
 meta.preset.extension=mkv
 meta.preset.note=FFmpeg video codec 1 with FLAC audio in Matroska container
