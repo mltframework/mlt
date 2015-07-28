@@ -77,13 +77,16 @@ static void check_thread_safe( mlt_properties properties, const char *name )
 	char dirname[PATH_MAX];
 	snprintf( dirname, PATH_MAX, "%s/frei0r/not_thread_safe.txt", mlt_environment( "MLT_DATA" ) );
 	mlt_properties not_thread_safe = mlt_properties_load( dirname );
+	double version = mlt_properties_get_double( properties, "version" );
 	int i;
 
 	for ( i = 0; i < mlt_properties_count( not_thread_safe ); i++ )
 	{
 		if ( strcmp( name, mlt_properties_get_name( not_thread_safe, i ) ) == 0 )
 		{
-			mlt_properties_set_int( properties, "_not_thread_safe", 1 );
+			double thread_safe_version = mlt_properties_get_double( not_thread_safe, name );
+			if ( thread_safe_version == 0.0 || version < thread_safe_version )
+				mlt_properties_set_int( properties, "_not_thread_safe", 1 );
 			break;
 		}
 	}
@@ -312,7 +315,6 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 				ret=transition;
 			}
 		}
-		check_thread_safe( properties, name );
 		mlt_properties_set_data(properties, "_dlclose_handle", handle , sizeof ( handle ) , NULL , NULL );
 		mlt_properties_set_data(properties, "_dlclose", dlclose , sizeof (void*) , NULL , NULL );
 		mlt_properties_set_data(properties, "f0r_construct", f0r_construct , sizeof( f0r_construct ),NULL,NULL);
@@ -328,6 +330,7 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 		// Let frei0r plugin version be serialized using same format as metadata
 		snprintf( minor, sizeof( minor ), "%d", info.minor_version );
 		mlt_properties_set_double( properties, "version", info.major_version +  info.minor_version / pow( 10, strlen( minor ) ) );
+		check_thread_safe( properties, name );
 
 		// Use the global param name map for backwards compatibility when
 		// param names change and setting frei0r params by name instead of index.
