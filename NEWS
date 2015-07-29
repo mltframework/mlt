@@ -1,6 +1,49 @@
 MLT Release Notes
 -----------------
 
+Version 0.9.8 - July 29, 2015
+
+Here is a list of the enhancements included in this release. There are many API
+additions to support the ability for apps to add and remove tracks and represent
+and manipulate property animations. There are still many services, however, that
+need updating to support animated properties.
+
+Framework
+  * Added mlt_service_disconnect_producer() and Mlt::Service::disconnect_producer().
+  * Added mlt_multitrack_disconnect() and Mlt::Multitrack::disconnect().
+  * Added mlt_tractor_remove_track() and Mlt::Tractor::remove_track().
+  * Added mlt_service_insert_producer() and Mlt::Service::insert_producer().
+  * Added mlt_multitrack_insert() and Mlt::Multitrack::insert().
+  * Added mlt_tractor_insert_track() and Mlt::Tractor::insert_track().
+  * Added mlt_transition_set_tracks() and Mlt::Transition::set_tracks().
+  * Added Mlt::Properties::get_animation().
+  * Added Mlt::Properties::get_anim().
+  * Added Mlt:Animation class with methods:
+    - length()
+    - is_key()
+    - keyframe_type()
+    - get_item()
+    - next_key()
+    - previous_key()
+    - set_length()
+    - remove()
+    - interpolate()
+    - serialize_cut()
+  * Added mlt_animation_key_count() and Mlt::Animation::key_count().
+  * Added mlt_animation_key_get() and Mlt::Animation::key_get().
+
+Modules
+  * Added audiowaveform video filter.
+  * Added fft audio filter.
+  * Added dance video filter (uses fft).
+  * Added lighshow video filter (uses fft).
+  * Added distort property to movit.rect video filter.
+  * Added rotate property to pango video producer.
+  * Added 2K DCI and 4K modes to decklink producer and consumer.
+  * Added audiomap (channel remapping) filter.
+  * Added property animation to all LADSPA audio filters and producers.
+
+
 Version 0.9.6 - March 1, 2015
 
 A major regression slipped into the 0.9.4 release plus some other good fixes
