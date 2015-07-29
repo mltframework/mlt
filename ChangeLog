@@ -1,3 +1,187 @@
+2015-07-29  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 0.9.8.
+
+2015-06-10  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/python/test_animation.py,
+  src/tests/test_animation/test_animation.cpp, src/tests/tests.pro: Add tests
+  for new Mlt::Animation API.
+
+  * src/mlt++/MltAnimation.cpp, src/mlt++/MltAnimation.h, src/mlt++/mlt++.vers:
+  Add Mlt::Animation::key_count() and key_get().  Also adds
+  Mlt::Animation::key_get_frame() and Mlt::Animation::key_get_type(), which are
+  useful for scripting/managed languages that cannot pass arguments by
+  reference.
+
+  * src/framework/mlt.vers, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h: Add mlt_animation_key_count() and
+  mlt_animation_key_get().
+
+2015-06-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/Makefile, src/mlt++/Mlt.h, src/mlt++/MltAnimation.cpp,
+  src/mlt++/MltAnimation.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/mlt++.vers, src/swig/mlt.i: Add
+  Mlt::Animation C++ API.
+
+2015-07-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/factory.c, src/modules/frei0r/not_thread_safe.txt: Make
+  frei0r thread-safe check plugin version.  Now, the frei0r MLT services will
+  compare the plugin version to the version in the data file to see if they
+  have been fixed yet. Also, update the data file to include versions that have
+  the latest frei0r change to remove needless, non-parallel-safe state from
+  frei0r.hpp.
+
+2015-06-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_transition.c,
+  src/framework/mlt_transition.h, src/mlt++/MltTransition.cpp,
+  src/mlt++/MltTransition.h, src/mlt++/mlt++.vers: Add
+  Transition::set_tracks().  As well as mlt_transition_set_tracks().
+
+2015-06-24  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/jackrack/factory.c, src/modules/jackrack/filter_ladspa.c: Add
+  property animation to ladspa filter.
+
+2015-06-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_multitrack.c,
+  src/framework/mlt_multitrack.h, src/framework/mlt_service.c,
+  src/framework/mlt_service.h, src/framework/mlt_tractor.c,
+  src/framework/mlt_tractor.h, src/mlt++/MltMultitrack.cpp,
+  src/mlt++/MltMultitrack.h, src/mlt++/MltService.cpp, src/mlt++/MltService.h,
+  src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h, src/mlt++/mlt++.vers: Add
+  Mlt::Tractor::insert_track().  As well as Mlt::Multitrack::insert(),
+  Mlt::Service::insert_producer(), mlt_tractor_insert_track(),
+  mlt_multitrack_insert(), and mlt_service_insert_producer().
+
+2015-06-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.yml, src/modules/avformat/factory.c:
+  Fix valid YAML for avformat parameter default string.
+
+2015-06-08  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/filter_audiomap.c, src/modules/core/filter_audiomap.yml:
+  Implement audiomap filter.
+
+2015-06-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/darwin/DeckLinkAPI.h,
+  src/modules/decklink/linux/DeckLinkAPI.h,
+  src/modules/decklink/win/DeckLinkAPI_h.h: Add 2K DCI and 4K modes to DeckLink
+  headers.
+
+2015-06-08  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml:
+  Implement text rotation in pango producer
+
+2015-05-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/oldfilm/filter_lines.c, src/modules/plus/transition_affine.c,
+  src/modules/plusgpl/filter_telecide.c, src/modules/sox/filter_sox.c: Fix
+  clang warnings about abs functions.
+
+  * src/modules/frei0r/producer_frei0r.c, src/modules/plus/filter_dance.c:
+  Remove some more unusued variables.
+
+  * src/framework/mlt.vers, src/framework/mlt_multitrack.c,
+  src/framework/mlt_multitrack.h, src/framework/mlt_service.c,
+  src/framework/mlt_service.h, src/framework/mlt_tractor.c,
+  src/framework/mlt_tractor.h, src/mlt++/MltMultitrack.cpp,
+  src/mlt++/MltMultitrack.h, src/mlt++/MltService.cpp, src/mlt++/MltService.h,
+  src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h, src/mlt++/mlt++.vers: Add
+  Mlt::Tractor::remove_track().  As well as Mlt::Multitrack::disconnect,
+  Mlt::Service::disconnect_producer(), mlt_tractor_remove_track(),
+  mlt_multitrack_disconnect(), and mlt_service_disconnect_producer().
+
+2015-05-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_profile.c, src/modules/core/filter_resize.c: Fix heap
+  corruption on auto-profile if yuv420p.  mlt_image_none asks the producer for
+  a MLT image format closest to the source video. If that yields yuv420p, which
+  is very common, then filter_resize does not know how to pad that format. But,
+  filter_resize would try anyways, get bpp=1 from mlt_image_format_size(), and
+  not allocate enough memory for the new image.
+
+2015-05-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/Makefile, src/modules/decklink/common.cpp: Fix crash
+  listing DeckLink devices on MinGW-x64.  It is incorrect to free() a BSTR;
+  must use SysFreeString() instead.
+
+  * src/modules/motion_est/sad_sse.h, src/modules/xine/vf_yadif_template.h,
+  src/modules/xine/yadif.c: Fix assembly for MinGW-x64.
+
+2015-05-03  Bernhard Frauendienst <git@nospam.obeliks.de>
+
+  * src/swig/csharp/build, src/swig/java/build, src/swig/lua/build,
+  src/swig/php/build, src/swig/python/build, src/swig/tcl/build: Allow build
+  system to specify the name of g++  This is already possible in most places,
+  but missing for most of the bindings (except for perl and ruby)
+
+2015-04-19  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/opengl/filter_movit_rect.cpp,
+  src/modules/opengl/filter_movit_rect.yml: Add distort property to rect
+  filter.
+
+2015-04-18  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/Makefile, src/modules/qt/configure,
+  src/modules/qt/factory.c, src/modules/qt/filter_lightshow.cpp,
+  src/modules/qt/filter_lightshow.yml: Add lightshow filter.
+
+2015-04-16  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/filter_dance.c, src/modules/plus/filter_dance.yml: Cleanup
+  dance filter.
+
+2015-04-13  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/filter_dance.c, src/modules/plus/filter_dance.yml: Set
+  default zoom to 0.
+
+2015-04-07  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/Makefile, src/modules/plus/configure,
+  src/modules/plus/factory.c, src/modules/plus/filter_dance.c,
+  src/modules/plus/filter_dance.yml, src/modules/plus/filter_fft.c,
+  src/modules/plus/filter_fft.yml: Add fft and dance filters.
+
+2015-03-19  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 0.9.7.
+
+2015-03-13  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/filter_audiowaveform.cpp,
+  src/modules/qt/filter_audiowaveform.yml: Multiple improvements.  * Don't
+  mirror the gradient. * Fix waveform when horizontal resolution exceeds the
+  number of audio samples. * Only use a single color by default.
+
+2015-03-12  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/filter_audiowaveform.cpp,
+  src/modules/qt/filter_audiowaveform.yml: Add gradient orientation parameter.
+
+  * src/modules/qt/filter_audiowaveform.cpp,
+  src/modules/qt/filter_audiowaveform.yml: Add fill parameter.
+
+2015-03-04  Brian Matherly <code@brianmatherly.com>
+
+  * src/framework/metaschema.yaml, src/modules/qt/Makefile,
+  src/modules/qt/common.cpp, src/modules/qt/common.h, src/modules/qt/factory.c,
+  src/modules/qt/filter_audiowaveform.cpp,
+  src/modules/qt/filter_audiowaveform.yml: Add audiowaveform filter.
+
 2015-03-01  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
