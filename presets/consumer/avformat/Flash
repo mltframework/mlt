@@ -7,6 +7,7 @@ ar=44100
 vcodec=flv
 minrate=0
 vb=1M
+bf=0
 progressive=1
 
 meta.preset.extension=flv
