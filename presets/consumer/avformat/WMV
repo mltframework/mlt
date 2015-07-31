@@ -4,6 +4,7 @@ ab=160k
 vcodec=wmv2
 g=100
 vb=2M
+bf=0
 
 meta.preset.extension=wmv
 meta.preset.note=Windows Media Video (Windows Media Player 8 and up)
