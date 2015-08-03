@@ -811,12 +811,12 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		// ????: Shouln't this be the default behaviour?
 		if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
 		{
-			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height <= normalised_width )
+			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height >= normalised_width )
 			{
 				scaled_width = rint( scaled_width * normalised_height / scaled_height );
 				scaled_height = normalised_height;
 			}
-			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width < normalised_height )
+			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width > normalised_height )
 			{
 				scaled_height = rint( scaled_height * normalised_width / scaled_width );
 				scaled_width = normalised_width;
@@ -1278,6 +1278,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				{
 					// Otherwise, align
 					alignment_calculate( &result );
+					if ( mlt_properties_get_int( properties, "fill" ) )
+					{
+						if ( result.item.w <= result.sw )
+							result.x_src = - rint( ( result.sw - result.item.w ) / 2 );
+						if ( result.item.h <= result.sh )
+							result.y_src = - rint( ( result.sh - result.item.h ) / 2 );
+					}
 				}
 
 				// Composite the b_frame on the a_frame
