@@ -1,7 +1,7 @@
 /*
  * consumer_cbrts.c -- output constant bitrate MPEG-2 transport stream
  *
- * Copyright (C) 2010-2014 Broadcasting Center Europe S.A. http://www.bce.lu
+ * Copyright (C) 2010-2015 Broadcasting Center Europe S.A. http://www.bce.lu
  * an RTL Group Company  http://www.rtlgroup.com
  * Author: Dan Dennedy <dan@dennedy.org>
  * Some ideas and portions come from OpenCaster, Copyright (C) Lorenzo Pallara <l.pallara@avalpa.com>
@@ -36,6 +36,12 @@
 #include <arpa/inet.h>
 #endif
 #include <strings.h>
+// includes for socket IO
+#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#endif
 
 #define TSP_BYTES     (188)
 #define MAX_PID       (8192)
@@ -45,6 +51,7 @@
 #define SDT_PID       (0x11)
 #define PCR_SMOOTHING (12)
 #define PCR_PERIOD_MS (20)
+#define UDP_MTU       (TSP_BYTES * 7)
 
 #define PIDOF( packet )  ( ntohs( *( ( uint16_t* )( packet + 1 ) ) ) & 0x1fff )
 #define HASPCR( packet ) ( (packet[3] & 0x20) && (packet[4] != 0) && (packet[5] & 0x10) )
@@ -83,6 +90,12 @@ struct consumer_cbrts_s
 	int dropped;
 	uint8_t continuity_count[MAX_PID];
 	uint64_t output_counter;
+#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
+	struct addrinfo *addr;
+	uint8_t udp_packet[UDP_MTU];
+	size_t udp_bytes;
+#endif
+	int ( *write_tsp )( consumer_cbrts, const void *buf, size_t count );
 };
 
 typedef struct {
@@ -372,13 +385,13 @@ static double measure_bitrate( consumer_cbrts self, uint64_t pcr, int drop )
 	return muxrate;
 }
 
-static int writen( int fd, const void *buf, size_t count )
+static int writen( consumer_cbrts self, const void *buf, size_t count )
 {
 	int result = 0;
 	int written = 0;
 	while ( written < count )
 	{
-		if ( ( result = write( fd, buf + written, count - written ) ) < 0 )
+		if ( ( result = write( self->fd, buf + written, count - written ) ) < 0 )
 		{
 			mlt_log_error( NULL, "Failed to write: %s\n", strerror( errno ) );
 			break;
@@ -387,6 +400,136 @@ static int writen( int fd, const void *buf, size_t count )
 	}
 	return result;
 }
+
+static int write_udp( consumer_cbrts self, const void *buf, size_t count )
+{
+	int result = 0;
+
+	// Append TSP to the UDP packet.
+	memcpy( &self->udp_packet[self->udp_bytes], buf, count );
+	self->udp_bytes = ( self->udp_bytes + count ) % sizeof( self->udp_packet );
+
+	// Send the UDP packet.
+	if ( !self->udp_bytes )
+		result = writen( self, self->udp_packet, sizeof( self->udp_packet ) );
+
+	return result;
+}
+
+// socket IO code
+static int create_socket( consumer_cbrts self )
+{
+	int result = -1;
+
+#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
+	struct addrinfo hints = {0};
+	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
+	const char *hostname = mlt_properties_get( properties, "smpte2022.address" );
+	const char *port = "1234";
+
+	if ( mlt_properties_get( properties, "smpte2022.port" ) )
+		port = mlt_properties_get( properties, "smpte2022.port" );
+
+	// Resolve the address string and port.
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_flags = AI_PASSIVE;
+	result = getaddrinfo( hostname, port, &hints, &self->addr );
+	if ( result < 0 )
+	{
+		mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
+			"Error resolving UDP address and port: %s.\n", gai_strerror( result ) );
+		return result;
+	}
+
+	// Create the socket descriptor.
+	struct addrinfo *addr = self->addr;
+	for ( ; addr; addr = addr->ai_next ) {
+		result = socket( addr->ai_addr->sa_family, SOCK_DGRAM, addr->ai_protocol );
+		if ( result != -1 )
+		{
+			// success
+			self->fd = result;
+			result = 0;
+			break;
+		}
+	}
+	if ( result < 0 )
+	{
+		mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
+			"Error creating socket: %s.\n", strerror( errno ) );
+		freeaddrinfo( self->addr ); self->addr = NULL;
+		return result;
+	}
+
+	// Set the reuse address socket option if not disabled (explicitly set 0).
+	int reuse = mlt_properties_get_int( properties, "smpte2022.reuse" ) ||
+				!mlt_properties_get( properties, "smpte2022.reuse" );
+	if ( reuse )
+	{
+		result = setsockopt( self->fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse) );
+		if ( result < 0 )
+		{
+			mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
+				"Error setting the reuse address socket option.\n" );
+			close( self->fd );
+			freeaddrinfo( self->addr ); self->addr = NULL;
+			return result;
+		}
+	}
+
+	// Set the socket buffer size if supplied.
+	if ( mlt_properties_get( properties, "smpte2022.sockbufsize" ) )
+	{
+		int sockbufsize = mlt_properties_get_int( properties, "smpte2022.sockbufsize" );
+		result = setsockopt( self->fd, SOL_SOCKET, SO_SNDBUF, &sockbufsize, sizeof(sockbufsize) );
+		if ( result < 0 )
+		{
+			mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
+				"Error setting the socket buffer size.\n" );
+			close( self->fd );
+			freeaddrinfo( self->addr ); self->addr = NULL;
+			return result;
+		}
+	}
+
+	// Set the multicast TTL if supplied.
+	if ( mlt_properties_get( properties, "smpte2022.ttl" ) )
+	{
+		int ttl = mlt_properties_get_int( properties, "smpte2022.ttl" );
+		if ( addr->ai_addr->sa_family == AF_INET )
+		{
+			result = setsockopt( self->fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl) );
+		}
+		else if ( addr->ai_addr->sa_family == AF_INET6 )
+		{
+			result = setsockopt( self->fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, sizeof(ttl) );
+		}
+		if ( result < 0 )
+		{
+			mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
+				"Error setting the multicast TTL.\n" );
+			close( self->fd );
+			freeaddrinfo( self->addr ); self->addr = NULL;
+			return result;
+		}
+	}
+
+	// Set the destination address and port for writes to the socket descriptor.
+	result = connect( self->fd, addr->ai_addr, addr->ai_addrlen );
+	if ( result < 0 )
+	{
+		mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
+			"Error on socket connect(): %s.\n", strerror( errno ) );
+		close( self->fd );
+		freeaddrinfo( self->addr ); self->addr = NULL;
+		return result;
+	}
+
+#endif
+	return result;
+}
+
 
 static int insert_pcr( consumer_cbrts self, uint16_t pid, uint8_t cc, uint64_t pcr )
 {
@@ -404,7 +547,7 @@ static int insert_pcr( consumer_cbrts self, uint16_t pid, uint8_t cc, uint64_t p
 	p += 6; // 6 pcr bytes
     memset( p, 0xff, TSP_BYTES - ( p - packet ) ); // stuffing
 
-	return writen( self->fd, packet, TSP_BYTES );
+	return self->write_tsp( self, packet, TSP_BYTES );
 }
 
 static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output_rate, uint64_t *pcr )
@@ -463,7 +606,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 		if ( pcr_pid && pid == pcr_pid )
 			cc = CCOF( packet );
 
-		result = writen( self->fd, packet, TSP_BYTES );
+		result = self->write_tsp( self, packet, TSP_BYTES );
 		free( packet );
 		if ( result < 0 )
 			break;
@@ -506,7 +649,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 			else
 			{
 				// Otherwise output a null packet
-				if ( ( result = writen( self->fd, null_packet, TSP_BYTES ) ) < 0 )
+				if ( ( result = self->write_tsp( self, null_packet, TSP_BYTES ) ) < 0 )
 					break;
 				packets_since_pcr++;
 			}
@@ -623,7 +766,7 @@ static void *remux_thread( void *arg )
 			else
 			{
 				if ( self->is_stuffing_set )
-					result = writen( self->fd, packet, TSP_BYTES );
+					result = self->write_tsp( self, packet, TSP_BYTES );
 				free( packet );
 			}
 			self->packet_count++;
@@ -773,7 +916,7 @@ static void on_data_received( mlt_properties properties, mlt_consumer consumer, 
 		mlt_log_debug( service, "%s: %p 0x%x (%d)\n", __FUNCTION__, buf, *buf, size % TSP_BYTES );
 
 		// Do direct output
-//		result = writen( self->fd, buf, size );
+//		result = self->write_tsp( self, buf, size );
 	}
 }
 
@@ -802,6 +945,14 @@ static int consumer_start( mlt_consumer parent )
 		mlt_properties_set( avformat, "f", "mpegts" );
 		self->dropped = 0;
 		self->fd = STDOUT_FILENO;
+		self->write_tsp = writen;
+
+		if ( mlt_properties_get( properties, "smpte2022.address" ) )
+		{
+			if ( create_socket( self ) >= 0 )
+				self->write_tsp = write_udp;
+		}
+
 
 		// Load the DVB PSI/SI sections
 		load_sections( self, properties );
