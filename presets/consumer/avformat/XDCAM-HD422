@@ -1,3 +1,5 @@
+f=mxf
+
 vcodec=mpeg2video
 top_field_first=1
 pix_fmt=yuv422p
@@ -14,10 +16,11 @@ rc_min_vbv_use=1
 qmin=1
 qmax=12
 bufsize=36408333
+g=12
 bf=2
 vtag=xd5c
 
 acodec=pcm_s16le
 
-meta.preset.extension=mov
-meta.preset.note=use with mxf or mov
+meta.preset.extension=mxf
+meta.preset.note=Sony "workflow innovation"
