@@ -42,28 +42,28 @@ parameters:
     unit: bytes/second
 
   - identifier: rtprio
-    label: Real-time priority
+    title: Real-time priority
     description: >
-      When set to a valid value, this makes the remuxing thread run with a
+      When set to a valid value, this makes the network output thread run with a
       real-time policy and priority where 1 is lowest and 99 is highest.
     type: integer
     minimum: 1
     maximum: 99
 
   - identifier: smpte2022.address
-    label: UDP address
+    title: UDP address
     description: >
       If an IP address is provided, the stream is sent over UDP instead of STDOUT.
     type: string
 
   - identifier: smpte2022.port
-    label: UDP port
+    title: UDP port
     type: integer
     minimum: 0
     default: 1234
 
   - identifier: smpte2022.ttl
-    label: Multicast TTL
+    title: Multicast TTL
     description: >
       The multicast time-to-live value controls how many routing hops the
       multicast will survive.
@@ -72,14 +72,21 @@ parameters:
     maximum: 255
 
   - identifier: smpte2022.reuse
-    label: Reuse socket address
+    title: Reuse socket address
     description: >
       When not supplied, the socket is opened with the reuse address option. Set
       this to 0 to disable that.
     type: boolean
 
   - identifier: smpte2022.sockbufsize
-    label: Socket buffer size
+    title: Socket buffer size
     type: integer
     minimum: 1
     unit: bytes
+
+  - identifier: smpte2022.nb_tsp
+    title: TS packets per UDP packet
+    type: integer
+    minimum: 0
+    maximum: 7
+    default: 7

@@ -37,11 +37,14 @@
 #endif
 #include <strings.h>
 // includes for socket IO
-#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
+#if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE)
+#define CBRTS_BSD_SOCKETS  1
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #endif
+#include <sys/time.h>
+#include <time.h>
 
 #define TSP_BYTES     (188)
 #define MAX_PID       (8192)
@@ -52,6 +55,9 @@
 #define PCR_SMOOTHING (12)
 #define PCR_PERIOD_MS (20)
 #define UDP_MTU       (TSP_BYTES * 7)
+#define REMUX_BUFFER_MIN (10)
+#define REMUX_BUFFER_MAX (50)
+#define OUTPUT_BUFFER_MAX (300)
 
 #define PIDOF( packet )  ( ntohs( *( ( uint16_t* )( packet + 1 ) ) ) & 0x1fff )
 #define HASPCR( packet ) ( (packet[3] & 0x20) && (packet[4] != 0) && (packet[5] & 0x10) )
@@ -90,12 +96,28 @@ struct consumer_cbrts_s
 	int dropped;
 	uint8_t continuity_count[MAX_PID];
 	uint64_t output_counter;
-#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
+#ifdef CBRTS_BSD_SOCKETS
 	struct addrinfo *addr;
-	uint8_t udp_packet[UDP_MTU];
-	size_t udp_bytes;
+	long udp_packet_counter;
 #endif
 	int ( *write_tsp )( consumer_cbrts, const void *buf, size_t count );
+	uint8_t udp_packet[UDP_MTU];
+	size_t udp_bytes;
+	size_t udp_packet_size;
+#if _POSIX_C_SOURCE >= 199309L
+#ifdef CLOCK_MONOTONIC_RAW
+#  define CBRTS_CLOCK_ID CLOCK_MONOTONIC_RAW
+#else
+#  define CBRTS_CLOCK_ID CLOCK_MONOTONIC
+#endif
+	struct timespec timer;
+#else
+	struct timeval timer;
+#endif
+	mlt_deque udp_packets;
+	pthread_t output_thread;
+	pthread_mutex_t udp_deque_mutex;
+	pthread_cond_t udp_deque_cond;
 };
 
 typedef struct {
@@ -138,6 +160,7 @@ mlt_consumer consumer_cbrts_init( mlt_profile profile, mlt_service_type type, co
 		self->joined = 1;
 		self->packets = mlt_deque_init();
 		self->packets2 = mlt_deque_init();
+		self->udp_packets = mlt_deque_init();
 
 		// Create the null packet
 		memset( null_packet, 0xFF, TSP_BYTES );
@@ -149,6 +172,8 @@ mlt_consumer consumer_cbrts_init( mlt_profile profile, mlt_service_type type, co
 		// Create the deque mutex and condition
 		pthread_mutex_init( &self->deque_mutex, NULL );
 		pthread_cond_init( &self->deque_cond, NULL );
+		pthread_mutex_init( &self->udp_deque_mutex, NULL );
+		pthread_cond_init( &self->udp_deque_cond, NULL );
 
 		// Set consumer property defaults
 		mlt_properties_set_int( properties, "real_time", -1 );
@@ -401,17 +426,59 @@ static int writen( consumer_cbrts self, const void *buf, size_t count )
 	return result;
 }
 
+#if _POSIX_C_SOURCE >= 199309L
+static inline long time_difference( struct timespec *time1 )
+{
+	struct timespec time2;
+	clock_gettime( CBRTS_CLOCK_ID, &time2 );
+	return time2.tv_sec * 1000000000L + time2.tv_nsec - time1->tv_sec * 1000000000L - time1->tv_nsec;
+}
+#else
+static inline long time_difference( struct timeval *time1 )
+{
+	struct timeval time2;
+	gettimeofday( &time2, NULL );
+	return 1000L * ( time2.tv_sec * 1000000 + time2.tv_usec - time1->tv_sec * 1000000 - time1->tv_usec );
+}
+#endif
+
 static int write_udp( consumer_cbrts self, const void *buf, size_t count )
 {
 	int result = 0;
 
-	// Append TSP to the UDP packet.
-	memcpy( &self->udp_packet[self->udp_bytes], buf, count );
-	self->udp_bytes = ( self->udp_bytes + count ) % sizeof( self->udp_packet );
+#ifdef CBRTS_BSD_SOCKETS
 
-	// Send the UDP packet.
-	if ( !self->udp_bytes )
-		result = writen( self, self->udp_packet, sizeof( self->udp_packet ) );
+	result = writen( self, buf, count );
+	double muxrate = mlt_properties_get_double( MLT_CONSUMER_PROPERTIES(&self->parent), "muxrate" );
+	long nsec_per_packet = 1000000000L / muxrate * self->udp_packet_size * 8;
+	long elapsed_nsec = self->timer.tv_sec ? time_difference( &self->timer ) : 0;
+	if ( elapsed_nsec + self->udp_packet_counter < nsec_per_packet )
+	{
+		elapsed_nsec += self->udp_packet_counter;
+		long time_diff = nsec_per_packet - elapsed_nsec;
+		if ( time_diff > 0 )
+		{
+//			mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent),
+//				"elapsed %ld time_diff %ld\n", elapsed_nsec, time_diff );
+			struct timespec t = { 0 / 1000000000L, time_diff % 1000000000L };
+			nanosleep( &t, NULL );
+		}
+		self->udp_packet_counter = 0;
+	} else {
+		mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent),
+			"elapsed %ld udp_packet_counter %ld\n", elapsed_nsec, self->udp_packet_counter );
+//		self->udp_packet_counter = elapsed_nsec > nsec_per_packet ? elapsed_nsec - nsec_per_packet : 0;
+		self->udp_packet_counter += elapsed_nsec;
+		self->udp_packet_counter -= nsec_per_packet;
+		self->udp_packet_counter = self->udp_packet_counter < 0 ? 0 : self->udp_packet_counter;
+	}
+#if _POSIX_C_SOURCE >= 199309L
+	clock_gettime( CBRTS_CLOCK_ID, &self->timer );
+#else
+	gettimeofday( &self->timer, NULL );
+#endif
+
+#endif
 
 	return result;
 }
@@ -421,7 +488,7 @@ static int create_socket( consumer_cbrts self )
 {
 	int result = -1;
 
-#if _POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE
+#ifdef CBRTS_BSD_SOCKETS
 	struct addrinfo hints = {0};
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
 	const char *hostname = mlt_properties_get( properties, "smpte2022.address" );
@@ -530,6 +597,63 @@ static int create_socket( consumer_cbrts self )
 	return result;
 }
 
+static void *output_thread( void *arg )
+{
+	consumer_cbrts self = arg;
+	int result = 0;
+
+	while ( self->is_remuxing )
+	{
+		pthread_mutex_lock( &self->udp_deque_mutex );
+		while ( self->is_remuxing && mlt_deque_count( self->udp_packets ) < 1 )
+			pthread_cond_wait( &self->udp_deque_cond, &self->udp_deque_mutex );
+		pthread_mutex_unlock( &self->udp_deque_mutex );
+
+		// Dequeue the UDP packets and write them.
+		int i = mlt_deque_count( self->udp_packets );
+		mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent), "%s: count %d\n", __FUNCTION__, i );
+		while ( self->is_remuxing && i-- && result >= 0 )
+		{
+			pthread_mutex_lock( &self->udp_deque_mutex );
+			uint8_t *packet = mlt_deque_pop_front( self->udp_packets );
+			pthread_cond_broadcast( &self->udp_deque_cond );
+			pthread_mutex_unlock( &self->udp_deque_mutex );
+
+			result = write_udp( self, packet, self->udp_packet_size );
+			free( packet );
+		}
+	}
+	return NULL;
+}
+
+static int enqueue_udp( consumer_cbrts self, const void *buf, size_t count )
+{
+	// Append TSP to the UDP packet.
+	memcpy( &self->udp_packet[self->udp_bytes], buf, count );
+	self->udp_bytes = ( self->udp_bytes + count ) % self->udp_packet_size;
+
+	// Send the UDP packet.
+	if ( !self->udp_bytes )
+	{
+		// Duplicate the packet.
+		uint8_t *packet = malloc( self->udp_packet_size );
+		memcpy( packet, self->udp_packet, self->udp_packet_size );
+
+		// Wait for room in the fifo.
+		pthread_mutex_lock( &self->udp_deque_mutex );
+		while ( self->is_remuxing && mlt_deque_count( self->udp_packets ) >= OUTPUT_BUFFER_MAX )
+			pthread_cond_wait( &self->udp_deque_cond, &self->udp_deque_mutex );
+		pthread_mutex_unlock( &self->udp_deque_mutex );
+
+		// Add the packet to the fifo.
+		pthread_mutex_lock( &self->udp_deque_mutex );
+		mlt_deque_push_back( self->udp_packets, packet );
+		pthread_cond_broadcast( &self->udp_deque_cond );
+		pthread_mutex_unlock( &self->udp_deque_mutex );
+	}
+
+	return 0;
+}
 
 static int insert_pcr( consumer_cbrts self, uint16_t pid, uint8_t cc, uint64_t pcr )
 {
@@ -566,7 +690,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 	uint64_t last_input_counter;
 
 	mlt_log_debug( NULL, "%s: n %i output_counter %"PRIu64" input_rate %"PRIu64"\n", __FUNCTION__, n, self->output_counter, input_rate );
-	while ( n-- && result >= 0 )
+	while ( self->is_remuxing && n-- && result >= 0 )
 	{
 		uint8_t *packet = mlt_deque_pop_front( self->packets2 );
 		uint16_t pid = PIDOF( packet );
@@ -631,7 +755,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 		}
 
 		// Output null packets as needed
-		while ( input_counter + ( TSP_BYTES * 8 * input_rate ) <= self->output_counter )
+		while ( self->is_remuxing && input_counter + ( TSP_BYTES * 8 * input_rate ) <= self->output_counter )
 		{
 			// See if we need to output a dummy packet with PCR
 			ms_since_pcr = (float) ( packets_since_pcr + 1 ) * 8 * TSP_BYTES * 1000 / output_rate;
@@ -710,7 +834,7 @@ static void *remux_thread( void *arg )
 	while ( self->is_remuxing )
 	{
 		pthread_mutex_lock( &self->deque_mutex );
-		while ( self->is_remuxing && mlt_deque_count( self->packets ) < 10 )
+		while ( self->is_remuxing && mlt_deque_count( self->packets ) < REMUX_BUFFER_MIN )
 			pthread_cond_wait( &self->deque_cond, &self->deque_mutex );
 		pthread_mutex_unlock( &self->deque_mutex );
 
@@ -724,6 +848,7 @@ static void *remux_thread( void *arg )
 
 			pthread_mutex_lock( &self->deque_mutex );
 			uint8_t *packet = mlt_deque_pop_front( self->packets );
+			pthread_cond_broadcast( &self->deque_cond );
 			pthread_mutex_unlock( &self->deque_mutex );
 			uint16_t pid = PIDOF( packet );
 
@@ -778,31 +903,7 @@ static void *remux_thread( void *arg )
 static void start_remux_thread( consumer_cbrts self )
 {
 	self->is_remuxing = 1;
-	int rtprio = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( &self->parent ), "rtprio" );
-	if ( rtprio > 0 )
-	{
-		// Use realtime priority class
-		struct sched_param priority;
-		pthread_attr_t thread_attributes;
-		pthread_attr_init( &thread_attributes );
-		priority.sched_priority = rtprio;
-		pthread_attr_setschedpolicy( &thread_attributes, SCHED_FIFO );
-		pthread_attr_setschedparam( &thread_attributes, &priority );
-		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_EXPLICIT_SCHED );
-		pthread_attr_setscope( &thread_attributes, PTHREAD_SCOPE_SYSTEM );
-		if ( pthread_create( &self->remux_thread, &thread_attributes, remux_thread, self ) < 0 )
-		{
-			mlt_log_info( MLT_CONSUMER_SERVICE( &self->parent ),
-				"failed to initialize remux thread with realtime priority\n" );
-			pthread_create( &self->remux_thread, &thread_attributes, remux_thread, self );
-		}
-		pthread_attr_destroy( &thread_attributes );
-	}
-	else
-	{
-		// Use normal priority class
-		pthread_create( &self->remux_thread, NULL, remux_thread, self );
-	}
+	pthread_create( &self->remux_thread, NULL, remux_thread, self );
 }
 
 static void stop_remux_thread( consumer_cbrts self )
@@ -819,6 +920,10 @@ static void stop_remux_thread( consumer_cbrts self )
 		pthread_cond_broadcast( &self->deque_cond );
 		pthread_mutex_unlock( &self->deque_mutex );
 
+		pthread_mutex_lock( &self->udp_deque_mutex );
+		pthread_cond_broadcast( &self->udp_deque_cond );
+		pthread_mutex_unlock( &self->udp_deque_mutex );
+
 		// Join the thread
 		pthread_join( self->remux_thread, NULL );
 
@@ -826,6 +931,55 @@ static void stop_remux_thread( consumer_cbrts self )
 		while ( n-- )
 			free( mlt_deque_pop_back( self->packets2 ) );
 	}
+}
+
+static void start_output_thread( consumer_cbrts self )
+{
+	int rtprio = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( &self->parent ), "rtprio" );
+	if ( rtprio > 0 )
+	{
+		// Use realtime priority class
+		struct sched_param priority;
+		pthread_attr_t thread_attributes;
+		pthread_attr_init( &thread_attributes );
+		priority.sched_priority = rtprio;
+		pthread_attr_setschedpolicy( &thread_attributes, SCHED_FIFO );
+		pthread_attr_setschedparam( &thread_attributes, &priority );
+		pthread_attr_setinheritsched( &thread_attributes, PTHREAD_EXPLICIT_SCHED );
+		pthread_attr_setscope( &thread_attributes, PTHREAD_SCOPE_SYSTEM );
+		if ( pthread_create( &self->output_thread, &thread_attributes, output_thread, self ) < 0 )
+		{
+			mlt_log_info( MLT_CONSUMER_SERVICE( &self->parent ),
+				"failed to initialize output thread with realtime priority\n" );
+			pthread_create( &self->output_thread, &thread_attributes, output_thread, self );
+		}
+		pthread_attr_destroy( &thread_attributes );
+	}
+	else
+	{
+		// Use normal priority class
+		pthread_create( &self->output_thread, NULL, output_thread, self );
+	}
+}
+
+static void stop_output_thread( consumer_cbrts self )
+{
+	self->is_remuxing = 0;
+
+	// Broadcast to the condition in case it's waiting.
+	pthread_mutex_lock( &self->udp_deque_mutex );
+	pthread_cond_broadcast( &self->udp_deque_cond );
+	pthread_mutex_unlock( &self->udp_deque_mutex );
+
+	// Join the thread.
+	pthread_join( self->output_thread, NULL );
+
+	// Release the buffered packets.
+	pthread_mutex_lock( &self->udp_deque_mutex );
+	int n = mlt_deque_count( self->udp_packets );
+	while ( n-- )
+		free( mlt_deque_pop_back( self->udp_packets ) );
+	pthread_mutex_unlock( &self->udp_deque_mutex );
 }
 
 static inline int filter_packet( consumer_cbrts self, uint8_t *packet )
@@ -880,6 +1034,12 @@ static void on_data_received( mlt_properties properties, mlt_consumer consumer, 
 //			mlt_log_verbose( service, "%s: packets %d remaining %i\n", __FUNCTION__, num_packets, self->leftover_size );
 
 		pthread_mutex_lock( &self->deque_mutex );
+		while ( mlt_deque_count( self->packets ) > REMUX_BUFFER_MAX )
+			pthread_cond_wait( &self->deque_cond, &self->deque_mutex );
+		pthread_mutex_unlock( &self->deque_mutex );
+
+		pthread_mutex_lock( &self->deque_mutex );
+
 		if ( self->leftover_size )
 		{
 			packet = malloc( TSP_BYTES );
@@ -912,7 +1072,10 @@ static void on_data_received( mlt_properties properties, mlt_consumer consumer, 
 		memcpy( self->leftover_data, buf, self->leftover_size );
 
 		if ( !self->is_remuxing )
+		{
 			start_remux_thread( self );
+			start_output_thread( self );
+		}
 		mlt_log_debug( service, "%s: %p 0x%x (%d)\n", __FUNCTION__, buf, *buf, size % TSP_BYTES );
 
 		// Do direct output
@@ -950,7 +1113,12 @@ static int consumer_start( mlt_consumer parent )
 		if ( mlt_properties_get( properties, "smpte2022.address" ) )
 		{
 			if ( create_socket( self ) >= 0 )
-				self->write_tsp = write_udp;
+			{
+				self->udp_packet_size = mlt_properties_get_int( properties, "smpte2022.nb_tsp" ) * TSP_BYTES;
+				if ( self->udp_packet_size <= 0 || self->udp_packet_size > UDP_MTU )
+					self->udp_packet_size = 7 * TSP_BYTES;
+				self->write_tsp = enqueue_udp;
+			}
 		}
 
 
@@ -992,6 +1160,7 @@ static int consumer_stop( mlt_consumer parent )
 		if ( self->avformat )
 			mlt_consumer_stop( self->avformat );
 		stop_remux_thread( self );
+		stop_output_thread( self );
 		if ( self->fd > 1 )
 			close( self->fd );
 
