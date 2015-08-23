@@ -57,7 +57,8 @@
 #define UDP_MTU       (TSP_BYTES * 7)
 #define REMUX_BUFFER_MIN (10)
 #define REMUX_BUFFER_MAX (50)
-#define OUTPUT_BUFFER_MAX (300)
+#define UDP_BUFFER_MINIMUM (100)
+#define UDP_BUFFER_DEFAULT (300)
 
 #define PIDOF( packet )  ( ntohs( *( ( uint16_t* )( packet + 1 ) ) ) & 0x1fff )
 #define HASPCR( packet ) ( (packet[3] & 0x20) && (packet[4] != 0) && (packet[5] & 0x10) )
@@ -78,16 +79,12 @@ struct consumer_cbrts_s
 	int fd;
 	uint8_t *leftover_data[TSP_BYTES];
 	int leftover_size;
-	mlt_deque packets;
-	mlt_deque packets2;
+	mlt_deque tsp_packets;
 	uint64_t previous_pcr;
 	uint64_t previous_packet_count;
 	uint64_t packet_count;
 	int is_stuffing_set;
-	pthread_t remux_thread;
-	pthread_mutex_t deque_mutex;
-	pthread_cond_t deque_cond;
-	int is_remuxing;
+	int thread_running;
 	uint8_t pcr_count;
 	uint16_t pmt_pid;
 	int is_si_sdt;
@@ -98,7 +95,7 @@ struct consumer_cbrts_s
 	uint64_t output_counter;
 #ifdef CBRTS_BSD_SOCKETS
 	struct addrinfo *addr;
-	long udp_packet_counter;
+	uint64_t udp_deficit_nsecs;
 #endif
 	int ( *write_tsp )( consumer_cbrts, const void *buf, size_t count );
 	uint8_t udp_packet[UDP_MTU];
@@ -118,6 +115,9 @@ struct consumer_cbrts_s
 	pthread_t output_thread;
 	pthread_mutex_t udp_deque_mutex;
 	pthread_cond_t udp_deque_cond;
+	uint64_t muxrate;
+	uint64_t nsec_per_packet;
+	int udp_buffer_max;
 };
 
 typedef struct {
@@ -158,8 +158,7 @@ mlt_consumer consumer_cbrts_init( mlt_profile profile, mlt_service_type type, co
 		parent->stop = consumer_stop;
 		parent->is_stopped = consumer_is_stopped;
 		self->joined = 1;
-		self->packets = mlt_deque_init();
-		self->packets2 = mlt_deque_init();
+		self->tsp_packets = mlt_deque_init();
 		self->udp_packets = mlt_deque_init();
 
 		// Create the null packet
@@ -170,8 +169,6 @@ mlt_consumer consumer_cbrts_init( mlt_profile profile, mlt_service_type type, co
 		null_packet[3] = 0x10;
 
 		// Create the deque mutex and condition
-		pthread_mutex_init( &self->deque_mutex, NULL );
-		pthread_cond_init( &self->deque_cond, NULL );
 		pthread_mutex_init( &self->udp_deque_mutex, NULL );
 		pthread_cond_init( &self->udp_deque_cond, NULL );
 
@@ -289,8 +286,7 @@ static void load_sections( consumer_cbrts self, mlt_properties properties )
 						self->is_si_sdt = 1;
 
 					// Calculate the period and get the PID
-					uint64_t muxrate = mlt_properties_get_int( properties, "muxrate" );
-					section->period = ( muxrate * time ) / ( TSP_BYTES * 8 * 1000 );
+					section->period = ( self->muxrate * time ) / ( TSP_BYTES * 8 * 1000 );
 					// output one immediately
 					section->packet_count = section->period - 1;
 					mlt_log_verbose( NULL, "SI %s time=%d period=%d file=%s\n", si_name, time, section->period, filename );
@@ -335,7 +331,7 @@ static void write_section( consumer_cbrts self, ts_section *section )
 		if ( len > 0 )
 			memset( p, 0xff, len );
 
-		mlt_deque_push_back( self->packets2, packet );
+		mlt_deque_push_back( self->tsp_packets, packet );
 		self->packet_count++;
 
 		data_ptr += len;
@@ -418,7 +414,7 @@ static int writen( consumer_cbrts self, const void *buf, size_t count )
 	{
 		if ( ( result = write( self->fd, buf + written, count - written ) ) < 0 )
 		{
-			mlt_log_error( NULL, "Failed to write: %s\n", strerror( errno ) );
+			mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent), "Failed to write: %s\n", strerror( errno ) );
 			break;
 		}
 		written += result;
@@ -449,28 +445,29 @@ static int write_udp( consumer_cbrts self, const void *buf, size_t count )
 #ifdef CBRTS_BSD_SOCKETS
 
 	result = writen( self, buf, count );
-	double muxrate = mlt_properties_get_double( MLT_CONSUMER_PROPERTIES(&self->parent), "muxrate" );
-	long nsec_per_packet = 1000000000L / muxrate * self->udp_packet_size * 8;
-	long elapsed_nsec = self->timer.tv_sec ? time_difference( &self->timer ) : 0;
-	if ( elapsed_nsec + self->udp_packet_counter < nsec_per_packet )
+
+	uint64_t elapsed_nsec = self->timer.tv_sec ? time_difference( &self->timer ) : 0;
+	if ( elapsed_nsec + self->udp_deficit_nsecs < self->nsec_per_packet )
 	{
-		elapsed_nsec += self->udp_packet_counter;
-		long time_diff = nsec_per_packet - elapsed_nsec;
+		elapsed_nsec += self->udp_deficit_nsecs;
+		uint64_t time_diff = self->nsec_per_packet - elapsed_nsec;
 		if ( time_diff > 0 )
 		{
 //			mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent),
-//				"elapsed %ld time_diff %ld\n", elapsed_nsec, time_diff );
-			struct timespec t = { 0 / 1000000000L, time_diff % 1000000000L };
+//				"elapsed %"PRIu64" time_diff %"PRIu64"\n", elapsed_nsec, time_diff );
+			struct timespec t = { time_diff / 1000000000UL, time_diff % 1000000000UL };
 			nanosleep( &t, NULL );
 		}
-		self->udp_packet_counter = 0;
+		self->udp_deficit_nsecs = 0;
 	} else {
-		mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent),
-			"elapsed %ld udp_packet_counter %ld\n", elapsed_nsec, self->udp_packet_counter );
-//		self->udp_packet_counter = elapsed_nsec > nsec_per_packet ? elapsed_nsec - nsec_per_packet : 0;
-		self->udp_packet_counter += elapsed_nsec;
-		self->udp_packet_counter -= nsec_per_packet;
-		self->udp_packet_counter = self->udp_packet_counter < 0 ? 0 : self->udp_packet_counter;
+		if ( !self->udp_deficit_nsecs ) {
+			self->udp_buffer_max += UDP_BUFFER_MINIMUM;
+			mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent),
+				"IP send too long: %g ms (ideal = %g); increasing buffer to %d.\n",
+				elapsed_nsec / 1000000.0, self->nsec_per_packet / 1000000.0, self->udp_buffer_max );
+		}
+		self->udp_deficit_nsecs += elapsed_nsec;
+		self->udp_deficit_nsecs = (self->udp_deficit_nsecs > self->nsec_per_packet) ? (self->udp_deficit_nsecs - self->nsec_per_packet) : 0;
 	}
 #if _POSIX_C_SOURCE >= 199309L
 	clock_gettime( CBRTS_CLOCK_ID, &self->timer );
@@ -602,17 +599,17 @@ static void *output_thread( void *arg )
 	consumer_cbrts self = arg;
 	int result = 0;
 
-	while ( self->is_remuxing )
+	while ( self->thread_running )
 	{
 		pthread_mutex_lock( &self->udp_deque_mutex );
-		while ( self->is_remuxing && mlt_deque_count( self->udp_packets ) < 1 )
+		while ( self->thread_running && mlt_deque_count( self->udp_packets ) < 1 )
 			pthread_cond_wait( &self->udp_deque_cond, &self->udp_deque_mutex );
 		pthread_mutex_unlock( &self->udp_deque_mutex );
 
 		// Dequeue the UDP packets and write them.
 		int i = mlt_deque_count( self->udp_packets );
-		mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent), "%s: count %d\n", __FUNCTION__, i );
-		while ( self->is_remuxing && i-- && result >= 0 )
+		mlt_log_debug( MLT_CONSUMER_SERVICE(&self->parent), "%s: count %d\n", __FUNCTION__, i );
+		while ( self->thread_running && i-- && result >= 0 )
 		{
 			pthread_mutex_lock( &self->udp_deque_mutex );
 			uint8_t *packet = mlt_deque_pop_front( self->udp_packets );
@@ -641,12 +638,10 @@ static int enqueue_udp( consumer_cbrts self, const void *buf, size_t count )
 
 		// Wait for room in the fifo.
 		pthread_mutex_lock( &self->udp_deque_mutex );
-		while ( self->is_remuxing && mlt_deque_count( self->udp_packets ) >= OUTPUT_BUFFER_MAX )
+		while ( self->thread_running && mlt_deque_count( self->udp_packets ) >= self->udp_buffer_max )
 			pthread_cond_wait( &self->udp_deque_cond, &self->udp_deque_mutex );
-		pthread_mutex_unlock( &self->udp_deque_mutex );
 
 		// Add the packet to the fifo.
-		pthread_mutex_lock( &self->udp_deque_mutex );
 		mlt_deque_push_back( self->udp_packets, packet );
 		pthread_cond_broadcast( &self->udp_deque_cond );
 		pthread_mutex_unlock( &self->udp_deque_mutex );
@@ -676,7 +671,7 @@ static int insert_pcr( consumer_cbrts self, uint16_t pid, uint8_t cc, uint64_t p
 
 static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output_rate, uint64_t *pcr )
 {
-	int n = mlt_deque_count( self->packets2 );
+	int n = mlt_deque_count( self->tsp_packets );
 	unsigned output_packets = 0;
 	unsigned packets_since_pcr = 0;
 	int result = 0;
@@ -690,9 +685,9 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 	uint64_t last_input_counter;
 
 	mlt_log_debug( NULL, "%s: n %i output_counter %"PRIu64" input_rate %"PRIu64"\n", __FUNCTION__, n, self->output_counter, input_rate );
-	while ( self->is_remuxing && n-- && result >= 0 )
+	while ( self->thread_running && n-- && result >= 0 )
 	{
-		uint8_t *packet = mlt_deque_pop_front( self->packets2 );
+		uint8_t *packet = mlt_deque_pop_front( self->tsp_packets );
 		uint16_t pid = PIDOF( packet );
 
 		// Check for overflow
@@ -755,7 +750,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 		}
 
 		// Output null packets as needed
-		while ( self->is_remuxing && input_counter + ( TSP_BYTES * 8 * input_rate ) <= self->output_counter )
+		while ( self->thread_running && input_counter + ( TSP_BYTES * 8 * input_rate ) <= self->output_counter )
 		{
 			// See if we need to output a dummy packet with PCR
 			ms_since_pcr = (float) ( packets_since_pcr + 1 ) * 8 * TSP_BYTES * 1000 / output_rate;
@@ -821,121 +816,55 @@ static void get_pmt_pid( consumer_cbrts self, uint8_t *packet )
 	return;
 }
 
-static void *remux_thread( void *arg )
+static int remux_packet( consumer_cbrts self, uint8_t *packet )
 {
-	consumer_cbrts self = arg;
 	mlt_service service = MLT_CONSUMER_SERVICE( &self->parent );
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
-	double output_rate = mlt_properties_get_int( properties, "muxrate" );
-	int remux = !mlt_properties_get_int( properties, "noremux" );
-	int i;
+	uint16_t pid = PIDOF( packet );
 	int result = 0;
 
-	while ( self->is_remuxing )
+	write_sections( self );
+
+	// Sanity checks
+	if ( packet[0] != 0x47 )
 	{
-		pthread_mutex_lock( &self->deque_mutex );
-		while ( self->is_remuxing && mlt_deque_count( self->packets ) < REMUX_BUFFER_MIN )
-			pthread_cond_wait( &self->deque_cond, &self->deque_mutex );
-		pthread_mutex_unlock( &self->deque_mutex );
+		mlt_log_panic( service, "NOT SYNC BYTE 0x%02x\n", packet[0] );
+		exit(1);
+	}
+	if ( pid == NULL_PID )
+	{
+		mlt_log_panic( service, "NULL PACKET\n" );
+		exit(1);
+	}
 
-		// Dequeue the packets and write them
-		i = mlt_deque_count( self->packets );
-		mlt_log_debug( service, "%s: count %d\n", __FUNCTION__, i );
-		while ( self->is_remuxing && i-- && result >= 0 )
+	// Measure the bitrate between consecutive PCRs
+	if ( HASPCR( packet ) )
+	{
+		if ( self->pcr_count++ % PCR_SMOOTHING == 0 )
 		{
-			if ( remux )
-				write_sections( self );
-
-			pthread_mutex_lock( &self->deque_mutex );
-			uint8_t *packet = mlt_deque_pop_front( self->packets );
-			pthread_cond_broadcast( &self->deque_cond );
-			pthread_mutex_unlock( &self->deque_mutex );
-			uint16_t pid = PIDOF( packet );
-
-			// Sanity checks
-			if ( packet[0] != 0x47 )
+			uint64_t pcr = get_pcr( packet );
+			double input_rate = measure_bitrate( self, pcr, 0 );
+			if ( input_rate > 0 )
 			{
-				mlt_log_panic( service, "NOT SYNC BYTE 0x%02x\n", packet[0] );
-				exit(1);
-			}
-			if ( remux && pid == NULL_PID )
-			{
-				mlt_log_panic( service, "NULL PACKET\n" );
-				exit(1);
-			}
-
-			// Measure the bitrate between consecutive PCRs
-			if ( HASPCR( packet ) )
-			{
-				if ( self->pcr_count++ % PCR_SMOOTHING == 0 )
+				self->is_stuffing_set = 1;
+				if ( input_rate > 1.0 )
 				{
-					uint64_t pcr = get_pcr( packet );
-					double input_rate = measure_bitrate( self, pcr, 0 );
-					if ( input_rate > 0 )
-					{
-						self->is_stuffing_set = 1;
-						if ( remux && input_rate > 1.0 )
-						{
-							result = output_cbr( self, input_rate, output_rate, &pcr );
-							set_pcr( packet, pcr );
-						}
-					}
-					self->previous_pcr = pcr;
-					self->previous_packet_count = self->packet_count;
+					result = output_cbr( self, input_rate, self->muxrate, &pcr );
+					set_pcr( packet, pcr );
 				}
 			}
-			if ( remux )
-			{
-				mlt_deque_push_back( self->packets2, packet );
-			}
-			else
-			{
-				if ( self->is_stuffing_set )
-					result = self->write_tsp( self, packet, TSP_BYTES );
-				free( packet );
-			}
-			self->packet_count++;
+			self->previous_pcr = pcr;
+			self->previous_packet_count = self->packet_count;
 		}
 	}
-	return NULL;
-}
-
-static void start_remux_thread( consumer_cbrts self )
-{
-	self->is_remuxing = 1;
-	pthread_create( &self->remux_thread, NULL, remux_thread, self );
-}
-
-static void stop_remux_thread( consumer_cbrts self )
-{
-	if ( self->is_remuxing )
-	{
-		self->is_remuxing = 0;
-
-		// Broadcast to the condition in case it's waiting
-		pthread_mutex_lock( &self->deque_mutex );
-		int n = mlt_deque_count( self->packets );
-		while ( n-- )
-			free( mlt_deque_pop_back( self->packets ) );
-		pthread_cond_broadcast( &self->deque_cond );
-		pthread_mutex_unlock( &self->deque_mutex );
-
-		pthread_mutex_lock( &self->udp_deque_mutex );
-		pthread_cond_broadcast( &self->udp_deque_cond );
-		pthread_mutex_unlock( &self->udp_deque_mutex );
-
-		// Join the thread
-		pthread_join( self->remux_thread, NULL );
-
-		n = mlt_deque_count( self->packets2 );
-		while ( n-- )
-			free( mlt_deque_pop_back( self->packets2 ) );
-	}
+	mlt_deque_push_back( self->tsp_packets, packet );
+	self->packet_count++;
+	return result;
 }
 
 static void start_output_thread( consumer_cbrts self )
 {
 	int rtprio = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( &self->parent ), "rtprio" );
+	self->thread_running = 1;
 	if ( rtprio > 0 )
 	{
 		// Use realtime priority class
@@ -964,7 +893,7 @@ static void start_output_thread( consumer_cbrts self )
 
 static void stop_output_thread( consumer_cbrts self )
 {
-	self->is_remuxing = 0;
+	self->thread_running = 0;
 
 	// Broadcast to the condition in case it's waiting.
 	pthread_mutex_lock( &self->udp_deque_mutex );
@@ -1003,14 +932,27 @@ static inline int filter_packet( consumer_cbrts self, uint8_t *packet )
 	return result;
 }
 
+static void filter_remux_or_write_packet( consumer_cbrts self, uint8_t *packet )
+{
+	int remux = !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( &self->parent ), "noremux" );
+
+	// Filter out packets
+	if ( remux ) {
+		if ( !filter_packet( self, packet ) )
+			remux_packet( self, packet );
+		else
+			free( packet );
+	} else {
+		self->write_tsp( self, packet, TSP_BYTES );
+		free( packet );
+	}
+}
+
 static void on_data_received( mlt_properties properties, mlt_consumer consumer, uint8_t *buf, int size )
 {
 	if ( size > 0 )
 	{
 		consumer_cbrts self = (consumer_cbrts) consumer->child;
-		mlt_service service = MLT_CONSUMER_SERVICE( consumer );
-		mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
-		int noremux = mlt_properties_get_int( properties, "noremux" );
 
 		// Sanity check
 		if ( self->leftover_size == 0 && buf[0] != 0x47 )
@@ -1031,14 +973,7 @@ static void on_data_received( mlt_properties properties, mlt_consumer consumer, 
 		uint8_t *packet = NULL;
 		int i;
 
-//			mlt_log_verbose( service, "%s: packets %d remaining %i\n", __FUNCTION__, num_packets, self->leftover_size );
-
-		pthread_mutex_lock( &self->deque_mutex );
-		while ( mlt_deque_count( self->packets ) > REMUX_BUFFER_MAX )
-			pthread_cond_wait( &self->deque_cond, &self->deque_mutex );
-		pthread_mutex_unlock( &self->deque_mutex );
-
-		pthread_mutex_lock( &self->deque_mutex );
+//			mlt_log_verbose( MLT_CONSUMER_SERVICE(consumer), "%s: packets %d remaining %i\n", __FUNCTION__, num_packets, self->leftover_size );
 
 		if ( self->leftover_size )
 		{
@@ -1047,36 +982,21 @@ static void on_data_received( mlt_properties properties, mlt_consumer consumer, 
 			memcpy( packet + self->leftover_size, buf, TSP_BYTES - self->leftover_size );
 			buf += TSP_BYTES - self->leftover_size;
 			--num_packets;
-
-			// Filter out null packets
-			if ( noremux || !filter_packet( self, packet ) )
-				mlt_deque_push_back( self->packets, packet );
-			else
-				free( packet );
+			filter_remux_or_write_packet( self, packet );
 		}
 		for ( i = 0; i < num_packets; i++, buf += TSP_BYTES )
 		{
 			packet = malloc( TSP_BYTES );
 			memcpy( packet, buf, TSP_BYTES );
-
-			// Filter out null packets
-			if ( noremux || !filter_packet( self, packet ) )
-				mlt_deque_push_back( self->packets, packet );
-			else
-				free( packet );
+			filter_remux_or_write_packet( self, packet );
 		}
-		pthread_cond_broadcast( &self->deque_cond );
-		pthread_mutex_unlock( &self->deque_mutex );
 
 		self->leftover_size = remaining;
 		memcpy( self->leftover_data, buf, self->leftover_size );
 
-		if ( !self->is_remuxing )
-		{
-			start_remux_thread( self );
+		if ( !self->thread_running )
 			start_output_thread( self );
-		}
-		mlt_log_debug( service, "%s: %p 0x%x (%d)\n", __FUNCTION__, buf, *buf, size % TSP_BYTES );
+		mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: %p 0x%x (%d)\n", __FUNCTION__, buf, *buf, size % TSP_BYTES );
 
 		// Do direct output
 //		result = self->write_tsp( self, buf, size );
@@ -1109,6 +1029,7 @@ static int consumer_start( mlt_consumer parent )
 		self->dropped = 0;
 		self->fd = STDOUT_FILENO;
 		self->write_tsp = writen;
+		self->muxrate = mlt_properties_get_int64( MLT_CONSUMER_PROPERTIES(&self->parent), "muxrate" );
 
 		if ( mlt_properties_get( properties, "smpte2022.address" ) )
 		{
@@ -1117,6 +1038,10 @@ static int consumer_start( mlt_consumer parent )
 				self->udp_packet_size = mlt_properties_get_int( properties, "smpte2022.nb_tsp" ) * TSP_BYTES;
 				if ( self->udp_packet_size <= 0 || self->udp_packet_size > UDP_MTU )
 					self->udp_packet_size = 7 * TSP_BYTES;
+				self->nsec_per_packet = 1000000000UL * self->udp_packet_size * 8 / self->muxrate;
+				self->udp_buffer_max = mlt_properties_get_int( properties, "smpte2022.buffer" );
+				if ( self->udp_buffer_max < UDP_BUFFER_MINIMUM )
+					self->udp_buffer_max = UDP_BUFFER_DEFAULT;
 				self->write_tsp = enqueue_udp;
 			}
 		}
@@ -1159,7 +1084,6 @@ static int consumer_stop( mlt_consumer parent )
 
 		if ( self->avformat )
 			mlt_consumer_stop( self->avformat );
-		stop_remux_thread( self );
 		stop_output_thread( self );
 		if ( self->fd > 1 )
 			close( self->fd );
@@ -1255,8 +1179,8 @@ static void consumer_close( mlt_consumer parent )
 	mlt_consumer_close( self->avformat );
 
 	// Now clean up the rest
-	mlt_deque_close( self->packets );
-	mlt_deque_close( self->packets2 );
+	mlt_deque_close( self->tsp_packets );
+	mlt_deque_close( self->udp_packets );
 	mlt_consumer_close( parent );
 
 	// Finally clean up this

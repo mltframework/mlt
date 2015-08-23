@@ -90,3 +90,9 @@ parameters:
     minimum: 0
     maximum: 7
     default: 7
+
+  - idenitifier: smpte2022.buffer
+    title: Max buffer IP packets
+    type: integer
+    minimum: 100
+    default: 300
