@@ -54,11 +54,15 @@
 #define SDT_PID       (0x11)
 #define PCR_SMOOTHING (12)
 #define PCR_PERIOD_MS (20)
-#define UDP_MTU       (TSP_BYTES * 7)
+#define RTP_BYTES     (12)
+#define UDP_MTU       (RTP_BYTES + TSP_BYTES * 7)
 #define REMUX_BUFFER_MIN (10)
 #define REMUX_BUFFER_MAX (50)
 #define UDP_BUFFER_MINIMUM (100)
 #define UDP_BUFFER_DEFAULT (300)
+#define RTP_VERSION   (2)
+#define RTP_PAYLOAD   (33)
+#define RTP_HZ        (90000)
 
 #define PIDOF( packet )  ( ntohs( *( ( uint16_t* )( packet + 1 ) ) ) & 0x1fff )
 #define HASPCR( packet ) ( (packet[3] & 0x20) && (packet[4] != 0) && (packet[5] & 0x10) )
@@ -118,6 +122,9 @@ struct consumer_cbrts_s
 	uint64_t muxrate;
 	uint64_t nsec_per_packet;
 	int udp_buffer_max;
+	uint16_t rtp_sequence;
+	uint32_t rtp_ssrc;
+	uint32_t rtp_counter;
 };
 
 typedef struct {
@@ -389,6 +396,11 @@ static uint64_t update_pcr( consumer_cbrts self, uint64_t muxrate, unsigned pack
 	return self->previous_pcr + packets * TSP_BYTES * 8 * SCR_HZ / muxrate;
 }
 
+static uint32_t get_rtp_timestamp( consumer_cbrts self )
+{
+	return self->rtp_counter++ * self->udp_packet_size * RTP_HZ / self->muxrate;
+}
+
 static double measure_bitrate( consumer_cbrts self, uint64_t pcr, int drop )
 {
 	double muxrate = 0;
@@ -616,7 +628,8 @@ static void *output_thread( void *arg )
 			pthread_cond_broadcast( &self->udp_deque_cond );
 			pthread_mutex_unlock( &self->udp_deque_mutex );
 
-			result = write_udp( self, packet, self->udp_packet_size );
+			size_t size = self->rtp_ssrc ? RTP_BYTES + self->udp_packet_size : self->udp_packet_size;
+			result = write_udp( self, packet, size );
 			free( packet );
 		}
 	}
@@ -632,9 +645,33 @@ static int enqueue_udp( consumer_cbrts self, const void *buf, size_t count )
 	// Send the UDP packet.
 	if ( !self->udp_bytes )
 	{
+		size_t offset = self->rtp_ssrc ? RTP_BYTES : 0;
+
 		// Duplicate the packet.
-		uint8_t *packet = malloc( self->udp_packet_size );
-		memcpy( packet, self->udp_packet, self->udp_packet_size );
+		uint8_t *packet = malloc( self->udp_packet_size + offset );
+		memcpy( packet + offset, self->udp_packet, self->udp_packet_size );
+
+		// Add the RTP header.
+		if ( self->rtp_ssrc ) {
+			// Padding, extension, and CSRC count are all 0.
+			packet[0]  = RTP_VERSION << 6;
+			// Marker bit is 0.
+			packet[1]  = RTP_PAYLOAD & 0x7f;
+			packet[2]  = (self->rtp_sequence >> 8) & 0xff;
+			packet[3]  = (self->rtp_sequence >> 0) & 0xff;
+			// Timestamp in next 4 bytes.
+			uint32_t timestamp = get_rtp_timestamp( self );
+			packet[4]  = (timestamp >> 24) & 0xff;
+			packet[5]  = (timestamp >> 16) & 0xff;
+			packet[6]  = (timestamp >> 8)  & 0xff;
+			packet[7]  = (timestamp >> 0)  & 0xff;
+			// SSRC in next 4 bytes.
+			packet[8]  = (self->rtp_ssrc >> 24) & 0xff;
+			packet[9]  = (self->rtp_ssrc >> 16) & 0xff;
+			packet[10] = (self->rtp_ssrc >> 8)  & 0xff;
+			packet[11] = (self->rtp_ssrc >> 0)  & 0xff;
+			self->rtp_sequence++;
+		}
 
 		// Wait for room in the fifo.
 		pthread_mutex_lock( &self->udp_deque_mutex );
@@ -1035,6 +1072,16 @@ static int consumer_start( mlt_consumer parent )
 		{
 			if ( create_socket( self ) >= 0 )
 			{
+				int is_rtp = 1;
+				if ( mlt_properties_get( properties, "smpte2022.rtp" ) )
+					is_rtp = !!mlt_properties_get_int( properties, "smpte2022.rtp" );
+				if ( is_rtp ) {
+					self->rtp_ssrc = mlt_properties_get_int( properties, "smpte2022.rtp_ssrc" );
+					while ( !self->rtp_ssrc )
+						self->rtp_ssrc = (uint32_t) rand();
+					self->rtp_counter = (uint32_t) rand();
+				}
+
 				self->udp_packet_size = mlt_properties_get_int( properties, "smpte2022.nb_tsp" ) * TSP_BYTES;
 				if ( self->udp_packet_size <= 0 || self->udp_packet_size > UDP_MTU )
 					self->udp_packet_size = 7 * TSP_BYTES;
@@ -1042,6 +1089,7 @@ static int consumer_start( mlt_consumer parent )
 				self->udp_buffer_max = mlt_properties_get_int( properties, "smpte2022.buffer" );
 				if ( self->udp_buffer_max < UDP_BUFFER_MINIMUM )
 					self->udp_buffer_max = UDP_BUFFER_DEFAULT;
+
 				self->write_tsp = enqueue_udp;
 			}
 		}

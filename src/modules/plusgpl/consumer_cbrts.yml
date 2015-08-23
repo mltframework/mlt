@@ -77,6 +77,7 @@ parameters:
       When not supplied, the socket is opened with the reuse address option. Set
       this to 0 to disable that.
     type: boolean
+    default: 1
 
   - identifier: smpte2022.sockbufsize
     title: Socket buffer size
@@ -96,3 +97,13 @@ parameters:
     type: integer
     minimum: 100
     default: 300
+
+  - identifier: smpte2022.rtp
+    title: Use RTP
+    type: boolean
+    default: 1
+
+  - identifier: smptpe2022.rtp_ssrc
+    title: RTP synchronization source
+    type: integer
+    description: The default is a random number, but you can override it.
