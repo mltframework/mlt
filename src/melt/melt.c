@@ -684,6 +684,7 @@ static void query_vcodecs( )
 static void on_fatal_error( mlt_properties owner, mlt_consumer consumer )
 {
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer), "done", 1 );
+	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer), "melt_error", 1 );
 }
 
 int main( int argc, char **argv )
@@ -695,6 +696,7 @@ int main( int argc, char **argv )
 	mlt_profile profile = NULL;
 	int is_progress = 0;
 	int is_silent = 0;
+	int error = 0;
 	mlt_profile backup_profile;
 
 	// Handle abnormal exit situations.
@@ -968,6 +970,7 @@ query_all:
 	// Disconnect producer from consumer to prevent ref cycles from closing services
 	if ( consumer )
 	{
+		error = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "melt_error" );
 		mlt_consumer_connect( consumer, NULL );
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-cleanup", NULL);
 	}
@@ -990,5 +993,5 @@ exit_factory:
 	mlt_factory_close( );
 #endif
 
-	return 0;
+	return error;
 }
