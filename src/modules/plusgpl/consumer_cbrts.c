@@ -59,7 +59,7 @@
 #define REMUX_BUFFER_MIN (10)
 #define REMUX_BUFFER_MAX (50)
 #define UDP_BUFFER_MINIMUM (100)
-#define UDP_BUFFER_DEFAULT (300)
+#define UDP_BUFFER_DEFAULT (1000)
 #define RTP_VERSION   (2)
 #define RTP_PAYLOAD   (33)
 #define RTP_HZ        (90000)

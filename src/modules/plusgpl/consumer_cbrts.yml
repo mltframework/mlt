@@ -96,7 +96,7 @@ parameters:
     title: Max buffer IP packets
     type: integer
     minimum: 100
-    default: 300
+    default: 1000
 
   - identifier: smpte2022.rtp
     title: Use RTP
