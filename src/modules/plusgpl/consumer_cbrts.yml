@@ -92,7 +92,7 @@ parameters:
     maximum: 7
     default: 7
 
-  - idenitifier: smpte2022.buffer
+  - identifier: smpte2022.buffer
     title: Max buffer IP packets
     type: integer
     minimum: 100
@@ -107,3 +107,11 @@ parameters:
     title: RTP synchronization source
     type: integer
     description: The default is a random number, but you can override it.
+
+  - identifier: smpte2022.interface
+    title: Multicast interface name
+    description: >
+      Normally the multicast interface is selected by the IP routing table
+      configured on the system, but this might be more convenient. It takes
+      a name like "eth0".
+    type: string

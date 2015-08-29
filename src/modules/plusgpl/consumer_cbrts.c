@@ -42,6 +42,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <net/if.h>
 #endif
 #include <sys/time.h>
 #include <time.h>
@@ -542,6 +543,40 @@ static int create_socket( consumer_cbrts self )
 			close( self->fd );
 			freeaddrinfo( self->addr ); self->addr = NULL;
 			return result;
+		}
+	}
+
+	// Set the multicast interface if supplied.
+	if ( mlt_properties_get( properties, "smpte2022.interface" ) )
+	{
+		const char *interface = mlt_properties_get( properties, "smpte2022.interface" );
+		unsigned int iface = if_nametoindex( interface );
+
+		if ( iface )
+		{
+			if ( addr->ai_addr->sa_family == AF_INET )
+			{
+				struct ip_mreqn req = {{0}};
+				req.imr_ifindex = iface;
+				result = setsockopt( self->fd, IPPROTO_IP, IP_MULTICAST_IF, &req, sizeof(req) );
+			}
+			else if ( addr->ai_addr->sa_family == AF_INET6 )
+			{
+				result = setsockopt( self->fd, IPPROTO_IPV6, IPV6_MULTICAST_IF, &iface, sizeof(iface) );
+			}
+			if ( result < 0 )
+			{
+				mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
+					"Error setting the multicast interface.\n" );
+				close( self->fd );
+				freeaddrinfo( self->addr ); self->addr = NULL;
+				return result;
+			}
+		}
+		else
+		{
+			mlt_log_warning( MLT_CONSUMER_SERVICE(&self->parent),
+				"The network interface \"%s\" was not found.\n", interface );
 		}
 	}
 
