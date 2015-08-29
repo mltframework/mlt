@@ -99,28 +99,20 @@ struct consumer_cbrts_s
 	uint64_t output_counter;
 #ifdef CBRTS_BSD_SOCKETS
 	struct addrinfo *addr;
-	uint64_t udp_deficit_nsecs;
+	struct timespec timer;
+	uint32_t nsec_per_packet;
+	uint32_t femto_per_packet;
+	uint64_t femto_counter;
 #endif
 	int ( *write_tsp )( consumer_cbrts, const void *buf, size_t count );
 	uint8_t udp_packet[UDP_MTU];
 	size_t udp_bytes;
 	size_t udp_packet_size;
-#if _POSIX_C_SOURCE >= 199309L
-#ifdef CLOCK_MONOTONIC_RAW
-#  define CBRTS_CLOCK_ID CLOCK_MONOTONIC_RAW
-#else
-#  define CBRTS_CLOCK_ID CLOCK_MONOTONIC
-#endif
-	struct timespec timer;
-#else
-	struct timeval timer;
-#endif
 	mlt_deque udp_packets;
 	pthread_t output_thread;
 	pthread_mutex_t udp_deque_mutex;
 	pthread_cond_t udp_deque_cond;
 	uint64_t muxrate;
-	uint64_t nsec_per_packet;
 	int udp_buffer_max;
 	uint16_t rtp_sequence;
 	uint32_t rtp_ssrc;
@@ -398,7 +390,7 @@ static uint64_t update_pcr( consumer_cbrts self, uint64_t muxrate, unsigned pack
 
 static uint32_t get_rtp_timestamp( consumer_cbrts self )
 {
-	return self->rtp_counter++ * self->udp_packet_size * RTP_HZ / self->muxrate;
+	return self->rtp_counter++ * self->udp_packet_size * 8 * RTP_HZ / self->muxrate;
 }
 
 static double measure_bitrate( consumer_cbrts self, uint64_t pcr, int drop )
@@ -434,59 +426,21 @@ static int writen( consumer_cbrts self, const void *buf, size_t count )
 	return result;
 }
 
-#if _POSIX_C_SOURCE >= 199309L
-static inline long time_difference( struct timespec *time1 )
-{
-	struct timespec time2;
-	clock_gettime( CBRTS_CLOCK_ID, &time2 );
-	return time2.tv_sec * 1000000000L + time2.tv_nsec - time1->tv_sec * 1000000000L - time1->tv_nsec;
-}
-#else
-static inline long time_difference( struct timeval *time1 )
-{
-	struct timeval time2;
-	gettimeofday( &time2, NULL );
-	return 1000L * ( time2.tv_sec * 1000000 + time2.tv_usec - time1->tv_sec * 1000000 - time1->tv_usec );
-}
-#endif
-
 static int write_udp( consumer_cbrts self, const void *buf, size_t count )
 {
 	int result = 0;
 
 #ifdef CBRTS_BSD_SOCKETS
-
+	if ( !self->timer.tv_sec )
+		clock_gettime( CLOCK_MONOTONIC, &self->timer );
+	self->femto_counter += self->femto_per_packet;
+	self->timer.tv_nsec += self->femto_counter / 1000000;
+	self->femto_counter  = self->femto_counter % 1000000;
+	self->timer.tv_nsec += self->nsec_per_packet;
+	self->timer.tv_sec  += self->timer.tv_nsec / 1000000000;
+	self->timer.tv_nsec  = self->timer.tv_nsec % 1000000000;
+	clock_nanosleep( CLOCK_MONOTONIC, TIMER_ABSTIME, &self->timer, NULL );
 	result = writen( self, buf, count );
-
-	uint64_t elapsed_nsec = self->timer.tv_sec ? time_difference( &self->timer ) : 0;
-	if ( elapsed_nsec + self->udp_deficit_nsecs < self->nsec_per_packet )
-	{
-		elapsed_nsec += self->udp_deficit_nsecs;
-		uint64_t time_diff = self->nsec_per_packet - elapsed_nsec;
-		if ( time_diff > 0 )
-		{
-//			mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent),
-//				"elapsed %"PRIu64" time_diff %"PRIu64"\n", elapsed_nsec, time_diff );
-			struct timespec t = { time_diff / 1000000000UL, time_diff % 1000000000UL };
-			nanosleep( &t, NULL );
-		}
-		self->udp_deficit_nsecs = 0;
-	} else {
-		if ( !self->udp_deficit_nsecs ) {
-			self->udp_buffer_max += UDP_BUFFER_MINIMUM;
-			mlt_log_verbose( MLT_CONSUMER_SERVICE(&self->parent),
-				"IP send too long: %g ms (ideal = %g); increasing buffer to %d.\n",
-				elapsed_nsec / 1000000.0, self->nsec_per_packet / 1000000.0, self->udp_buffer_max );
-		}
-		self->udp_deficit_nsecs += elapsed_nsec;
-		self->udp_deficit_nsecs = (self->udp_deficit_nsecs > self->nsec_per_packet) ? (self->udp_deficit_nsecs - self->nsec_per_packet) : 0;
-	}
-#if _POSIX_C_SOURCE >= 199309L
-	clock_gettime( CBRTS_CLOCK_ID, &self->timer );
-#else
-	gettimeofday( &self->timer, NULL );
-#endif
-
 #endif
 
 	return result;
@@ -1085,7 +1039,10 @@ static int consumer_start( mlt_consumer parent )
 				self->udp_packet_size = mlt_properties_get_int( properties, "smpte2022.nb_tsp" ) * TSP_BYTES;
 				if ( self->udp_packet_size <= 0 || self->udp_packet_size > UDP_MTU )
 					self->udp_packet_size = 7 * TSP_BYTES;
-				self->nsec_per_packet = 1000000000UL * self->udp_packet_size * 8 / self->muxrate;
+#ifdef CBRTS_BSD_SOCKETS
+				self->nsec_per_packet  = 1000000000UL * self->udp_packet_size * 8 / self->muxrate;
+				self->femto_per_packet = 1000000000000000ULL * self->udp_packet_size * 8 / self->muxrate - self->nsec_per_packet * 1000000;
+#endif
 				self->udp_buffer_max = mlt_properties_get_int( properties, "smpte2022.buffer" );
 				if ( self->udp_buffer_max < UDP_BUFFER_MINIMUM )
 					self->udp_buffer_max = UDP_BUFFER_DEFAULT;
