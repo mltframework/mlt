@@ -455,11 +455,11 @@ static int create_socket( consumer_cbrts self )
 #ifdef CBRTS_BSD_SOCKETS
 	struct addrinfo hints = {0};
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
-	const char *hostname = mlt_properties_get( properties, "smpte2022.address" );
+	const char *hostname = mlt_properties_get( properties, "udp.address" );
 	const char *port = "1234";
 
-	if ( mlt_properties_get( properties, "smpte2022.port" ) )
-		port = mlt_properties_get( properties, "smpte2022.port" );
+	if ( mlt_properties_get( properties, "udp.port" ) )
+		port = mlt_properties_get( properties, "udp.port" );
 
 	// Resolve the address string and port.
 	hints.ai_socktype = SOCK_DGRAM;
@@ -494,8 +494,8 @@ static int create_socket( consumer_cbrts self )
 	}
 
 	// Set the reuse address socket option if not disabled (explicitly set 0).
-	int reuse = mlt_properties_get_int( properties, "smpte2022.reuse" ) ||
-				!mlt_properties_get( properties, "smpte2022.reuse" );
+	int reuse = mlt_properties_get_int( properties, "udp.reuse" ) ||
+				!mlt_properties_get( properties, "udp.reuse" );
 	if ( reuse )
 	{
 		result = setsockopt( self->fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse) );
@@ -510,9 +510,9 @@ static int create_socket( consumer_cbrts self )
 	}
 
 	// Set the socket buffer size if supplied.
-	if ( mlt_properties_get( properties, "smpte2022.sockbufsize" ) )
+	if ( mlt_properties_get( properties, "udp.sockbufsize" ) )
 	{
-		int sockbufsize = mlt_properties_get_int( properties, "smpte2022.sockbufsize" );
+		int sockbufsize = mlt_properties_get_int( properties, "udp.sockbufsize" );
 		result = setsockopt( self->fd, SOL_SOCKET, SO_SNDBUF, &sockbufsize, sizeof(sockbufsize) );
 		if ( result < 0 )
 		{
@@ -525,9 +525,9 @@ static int create_socket( consumer_cbrts self )
 	}
 
 	// Set the multicast TTL if supplied.
-	if ( mlt_properties_get( properties, "smpte2022.ttl" ) )
+	if ( mlt_properties_get( properties, "udp.ttl" ) )
 	{
-		int ttl = mlt_properties_get_int( properties, "smpte2022.ttl" );
+		int ttl = mlt_properties_get_int( properties, "udp.ttl" );
 		if ( addr->ai_addr->sa_family == AF_INET )
 		{
 			result = setsockopt( self->fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl) );
@@ -547,9 +547,9 @@ static int create_socket( consumer_cbrts self )
 	}
 
 	// Set the multicast interface if supplied.
-	if ( mlt_properties_get( properties, "smpte2022.interface" ) )
+	if ( mlt_properties_get( properties, "udp.interface" ) )
 	{
-		const char *interface = mlt_properties_get( properties, "smpte2022.interface" );
+		const char *interface = mlt_properties_get( properties, "udp.interface" );
 		unsigned int iface = if_nametoindex( interface );
 
 		if ( iface )
@@ -889,7 +889,7 @@ static int remux_packet( consumer_cbrts self, uint8_t *packet )
 
 static void start_output_thread( consumer_cbrts self )
 {
-	int rtprio = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( &self->parent ), "rtprio" );
+	int rtprio = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( &self->parent ), "udp.rtprio" );
 	self->thread_running = 1;
 	if ( rtprio > 0 )
 	{
@@ -1057,28 +1057,28 @@ static int consumer_start( mlt_consumer parent )
 		self->write_tsp = writen;
 		self->muxrate = mlt_properties_get_int64( MLT_CONSUMER_PROPERTIES(&self->parent), "muxrate" );
 
-		if ( mlt_properties_get( properties, "smpte2022.address" ) )
+		if ( mlt_properties_get( properties, "udp.address" ) )
 		{
 			if ( create_socket( self ) >= 0 )
 			{
 				int is_rtp = 1;
-				if ( mlt_properties_get( properties, "smpte2022.rtp" ) )
-					is_rtp = !!mlt_properties_get_int( properties, "smpte2022.rtp" );
+				if ( mlt_properties_get( properties, "udp.rtp" ) )
+					is_rtp = !!mlt_properties_get_int( properties, "udp.rtp" );
 				if ( is_rtp ) {
-					self->rtp_ssrc = mlt_properties_get_int( properties, "smpte2022.rtp_ssrc" );
+					self->rtp_ssrc = mlt_properties_get_int( properties, "udp.rtp_ssrc" );
 					while ( !self->rtp_ssrc )
 						self->rtp_ssrc = (uint32_t) rand();
 					self->rtp_counter = (uint32_t) rand();
 				}
 
-				self->udp_packet_size = mlt_properties_get_int( properties, "smpte2022.nb_tsp" ) * TSP_BYTES;
+				self->udp_packet_size = mlt_properties_get_int( properties, "udp.nb_tsp" ) * TSP_BYTES;
 				if ( self->udp_packet_size <= 0 || self->udp_packet_size > UDP_MTU )
 					self->udp_packet_size = 7 * TSP_BYTES;
 #ifdef CBRTS_BSD_SOCKETS
 				self->nsec_per_packet  = 1000000000UL * self->udp_packet_size * 8 / self->muxrate;
 				self->femto_per_packet = 1000000000000000ULL * self->udp_packet_size * 8 / self->muxrate - self->nsec_per_packet * 1000000;
 #endif
-				self->udp_buffer_max = mlt_properties_get_int( properties, "smpte2022.buffer" );
+				self->udp_buffer_max = mlt_properties_get_int( properties, "udp.buffer" );
 				if ( self->udp_buffer_max < UDP_BUFFER_MINIMUM )
 					self->udp_buffer_max = UDP_BUFFER_DEFAULT;
 

@@ -3,7 +3,7 @@ type: consumer
 identifier: cbrts
 title: CBR MPEG2-TS
 version: 2
-copyright: Copyright (C) 2010-2014 Broadcasting Center Europe S.A. http://www.bce.lu
+copyright: Copyright (C) 2010-2015 Broadcasting Center Europe S.A. http://www.bce.lu
 license: GPLv2
 language: en
 creator: Dan Dennedy
@@ -41,7 +41,7 @@ parameters:
     type: integer
     unit: bytes/second
 
-  - identifier: rtprio
+  - identifier: udp.rtprio
     title: Real-time priority
     description: >
       When set to a valid value, this makes the network output thread run with a
@@ -50,19 +50,19 @@ parameters:
     minimum: 1
     maximum: 99
 
-  - identifier: smpte2022.address
+  - identifier: udp.address
     title: UDP address
     description: >
       If an IP address is provided, the stream is sent over UDP instead of STDOUT.
     type: string
 
-  - identifier: smpte2022.port
+  - identifier: udp.port
     title: UDP port
     type: integer
     minimum: 0
     default: 1234
 
-  - identifier: smpte2022.ttl
+  - identifier: udp.ttl
     title: Multicast TTL
     description: >
       The multicast time-to-live value controls how many routing hops the
@@ -71,7 +71,7 @@ parameters:
     minimum: 0
     maximum: 255
 
-  - identifier: smpte2022.reuse
+  - identifier: udp.reuse
     title: Reuse socket address
     description: >
       When not supplied, the socket is opened with the reuse address option. Set
@@ -79,36 +79,36 @@ parameters:
     type: boolean
     default: 1
 
-  - identifier: smpte2022.sockbufsize
+  - identifier: udp.sockbufsize
     title: Socket buffer size
     type: integer
     minimum: 1
     unit: bytes
 
-  - identifier: smpte2022.nb_tsp
+  - identifier: udp.nb_tsp
     title: TS packets per UDP packet
     type: integer
     minimum: 0
     maximum: 7
     default: 7
 
-  - identifier: smpte2022.buffer
+  - identifier: udp.buffer
     title: Max buffer IP packets
     type: integer
     minimum: 100
     default: 1000
 
-  - identifier: smpte2022.rtp
+  - identifier: udp.rtp
     title: Use RTP
     type: boolean
     default: 1
 
-  - identifier: smptpe2022.rtp_ssrc
+  - identifier: udp.rtp_ssrc
     title: RTP synchronization source
     type: integer
     description: The default is a random number, but you can override it.
 
-  - identifier: smpte2022.interface
+  - identifier: udp.interface
     title: Multicast interface name
     description: >
       Normally the multicast interface is selected by the IP routing table
