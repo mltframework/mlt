@@ -18,6 +18,8 @@ OBJS = factory.o \
 
 ifeq ($(targetos), MinGW)
 LDFLAGS += -lws2_32
+else ifeq ($(targetos), Linux)
+LDFLAGS += -lrt
 endif
 
 SRCS := $(OBJS:.o=.c)
