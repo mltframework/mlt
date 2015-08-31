@@ -37,7 +37,7 @@
 #endif
 #include <strings.h>
 // includes for socket IO
-#if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE)
+#if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)
 #define CBRTS_BSD_SOCKETS  1
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -781,7 +781,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 			// See if we need to output a dummy packet with PCR
 			ms_since_pcr = (float) ( packets_since_pcr + 1 ) * 8 * TSP_BYTES * 1000 / output_rate;
 			ms_to_end = (float) n * 8 * TSP_BYTES * 1000 / input_rate;
-            
+
 			if ( pcr_pid && ms_since_pcr >= PCR_PERIOD_MS && ms_to_end > PCR_PERIOD_MS / 2.0 )
 			{
 				uint64_t new_pcr = update_pcr( self, output_rate, output_packets );
@@ -954,7 +954,7 @@ static inline int filter_packet( consumer_cbrts self, uint8_t *packet )
 		if ( self->is_si_pmt )
 			result = 1;
 	}
-	
+
 	return result;
 }
 
