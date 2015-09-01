@@ -1686,6 +1686,14 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 
 		if ( !file_exists( filename ) )
 		{
+			// Try the un-converted text encoding as a fallback.
+			// Fixes launching melt as child process from Shotcut on Windows
+			// when there are extended characters in the path.
+			filename = mlt_properties_get( context->params, "_mlt_xml_resource" );
+		}
+
+		if ( !file_exists( filename ) )
+		{
 			context_close( context );
 			return NULL;
 		}
