@@ -1841,7 +1841,7 @@ static void *consumer_thread( void *arg )
 						if ( mlt_properties_get_int( frame_properties, "progressive" ) )
 							c->field_order = AV_FIELD_PROGRESSIVE;
 						else
-							c->field_order = (mlt_properties_get_int( frame_properties, "top_field_first" )) ? AV_FIELD_TT : AV_FIELD_BB;
+							c->field_order = (mlt_properties_get_int( frame_properties, "top_field_first" )) ? AV_FIELD_TB : AV_FIELD_BT;
 						pkt.flags |= AV_PKT_FLAG_KEY;
 						pkt.stream_index = video_st->index;
 						pkt.data = (uint8_t *)converted_avframe;
