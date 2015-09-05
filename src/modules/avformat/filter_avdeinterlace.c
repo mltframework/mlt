@@ -234,28 +234,28 @@ static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
 {
     int i;
 
-    if (pix_fmt != PIX_FMT_YUV420P &&
-        pix_fmt != PIX_FMT_YUV422P &&
-        pix_fmt != PIX_FMT_YUYV422 &&
-        pix_fmt != PIX_FMT_YUV444P &&
-	pix_fmt != PIX_FMT_YUV411P)
+    if (pix_fmt != AV_PIX_FMT_YUV420P &&
+        pix_fmt != AV_PIX_FMT_YUV422P &&
+        pix_fmt != AV_PIX_FMT_YUYV422 &&
+        pix_fmt != AV_PIX_FMT_YUV444P &&
+	pix_fmt != AV_PIX_FMT_YUV411P)
         return -1;
     if ((width & 3) != 0 || (height & 3) != 0)
         return -1;
 
-	if ( pix_fmt != PIX_FMT_YUYV422 )
+	if ( pix_fmt != AV_PIX_FMT_YUYV422 )
 	{
       for(i=0;i<3;i++) {
           if (i == 1) {
               switch(pix_fmt) {
-              case PIX_FMT_YUV420P:
+              case AV_PIX_FMT_YUV420P:
                   width >>= 1;
                   height >>= 1;
                   break;
-              case PIX_FMT_YUV422P:
+              case AV_PIX_FMT_YUV422P:
                   width >>= 1;
                   break;
-              case PIX_FMT_YUV411P:
+              case AV_PIX_FMT_YUV411P:
                   width >>= 2;
                   break;
               default:
@@ -312,8 +312,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		AVPicture *output = mlt_pool_alloc( sizeof( AVPicture ) );
 
 		// Fill the picture
-		avpicture_fill( output, *image, PIX_FMT_YUYV422, *width, *height );
-		mlt_avpicture_deinterlace( output, output, PIX_FMT_YUYV422, *width, *height );
+		avpicture_fill( output, *image, AV_PIX_FMT_YUYV422, *width, *height );
+		mlt_avpicture_deinterlace( output, output, AV_PIX_FMT_YUYV422, *width, *height );
 
 		// Free the picture
 		mlt_pool_release( output );

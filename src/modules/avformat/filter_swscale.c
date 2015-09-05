@@ -37,17 +37,17 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 	switch( format )
 	{
 		case mlt_image_rgb24:
-			value = PIX_FMT_RGB24;
+			value = AV_PIX_FMT_RGB24;
 			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
-			value = PIX_FMT_RGBA;
+			value = AV_PIX_FMT_RGBA;
 			break;
 		case mlt_image_yuv422:
-			value = PIX_FMT_YUYV422;
+			value = AV_PIX_FMT_YUYV422;
 			break;
 		case mlt_image_yuv420p:
-			value = PIX_FMT_YUV420P;
+			value = AV_PIX_FMT_YUV420P;
 			break;
 		default:
 			fprintf( stderr, "Invalid format...\n" );
@@ -108,12 +108,6 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 			// XXX: we only know how to rescale packed formats
 			return 1;
 	}
-#ifdef USE_MMX
-	interp |= SWS_CPU_CAPS_MMX;
-#endif
-#ifdef USE_SSE
-	interp |= SWS_CPU_CAPS_MMX2;
-#endif
 
 	// Convert the pixel formats
 	int avformat = convert_mlt_to_av_cs( *format );
@@ -148,7 +142,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 			uint8_t *alpha = mlt_frame_get_alpha( frame );
 			if ( alpha )
 			{
-				avformat = PIX_FMT_GRAY8;
+				avformat = AV_PIX_FMT_GRAY8;
 				struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
 				avpicture_fill( &input, alpha, avformat, iwidth, iheight );
 				outbuf = mlt_pool_alloc( owidth * oheight );
@@ -182,7 +176,7 @@ mlt_filter filter_swscale_init( mlt_profile profile, void *arg )
 		int *width = (int*) arg;
 		if ( *width > 0 )
 		{
-			struct SwsContext *context = sws_getContext( *width, *width, PIX_FMT_RGB32, 64, 64, PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
+			struct SwsContext *context = sws_getContext( *width, *width, AV_PIX_FMT_RGB32, 64, 64, AV_PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
 			if ( context )
 				sws_freeContext( context );
 			else

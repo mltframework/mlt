@@ -136,9 +136,9 @@ static int vdpau_init( producer_avformat self )
 	return success;
 }
 
-static enum PixelFormat vdpau_get_format( struct AVCodecContext *s, const enum PixelFormat *fmt )
+static enum AVPixelFormat vdpau_get_format( struct AVCodecContext *s, const enum AVPixelFormat *fmt )
 {
-	return PIX_FMT_VDPAU_H264;
+	return AV_PIX_FMT_VDPAU_H264;
 }
 
 static int vdpau_get_buffer( AVCodecContext *codec_context, AVFrame *frame )
@@ -240,7 +240,7 @@ static int vdpau_decoder_init( producer_avformat self )
 	self->video_codec->release_buffer = vdpau_release_buffer;
 	self->video_codec->draw_horiz_band = vdpau_draw_horiz;
 	self->video_codec->slice_flags = SLICE_FLAG_CODED_ORDER | SLICE_FLAG_ALLOW_FIELD;
-	self->video_codec->pix_fmt = PIX_FMT_VDPAU_H264;
+	self->video_codec->pix_fmt = AV_PIX_FMT_VDPAU_H264;
 	
 	VdpDecoderProfile profile = VDP_DECODER_PROFILE_H264_HIGH;
 	uint32_t max_references = self->video_codec->refs;

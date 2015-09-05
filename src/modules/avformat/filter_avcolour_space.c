@@ -47,17 +47,17 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 	switch( format )
 	{
 		case mlt_image_rgb24:
-			value = PIX_FMT_RGB24;
+			value = AV_PIX_FMT_RGB24;
 			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
-			value = PIX_FMT_RGBA;
+			value = AV_PIX_FMT_RGBA;
 			break;
 		case mlt_image_yuv422:
-			value = PIX_FMT_YUYV422;
+			value = AV_PIX_FMT_YUYV422;
 			break;
 		case mlt_image_yuv420p:
-			value = PIX_FMT_YUV420P;
+			value = AV_PIX_FMT_YUV420P;
 			break;
 		default:
 			mlt_log_error( NULL, "[filter avcolor_space] Invalid format %s\n",
@@ -123,16 +123,10 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
 	int error = -1;
 
-	if ( out_fmt == PIX_FMT_YUYV422 )
+	if ( out_fmt == AV_PIX_FMT_YUYV422 )
 		flags |= SWS_FULL_CHR_H_INP;
 	else
 		flags |= SWS_FULL_CHR_H_INT;
-#ifdef USE_MMX
-	flags |= SWS_CPU_CAPS_MMX;
-#endif
-#ifdef USE_SSE
-	flags |= SWS_CPU_CAPS_MMX2;
-#endif
 
 	avpicture_fill( &input, in, in_fmt, width, height );
 	avpicture_fill( &output, out, out_fmt, width, height );
@@ -141,7 +135,7 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	if ( context )
 	{
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		if ( out_fmt == PIX_FMT_RGB24 || out_fmt == PIX_FMT_RGBA )
+		if ( out_fmt == AV_PIX_FMT_RGB24 || out_fmt == AV_PIX_FMT_RGBA )
 			dst_colorspace = 601;
 		error = set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range );
 		sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, height,
@@ -326,7 +320,7 @@ mlt_filter filter_avcolour_space_init( void *arg )
 		int *width = (int*) arg;
 		if ( *width > 0 )
 		{
-			struct SwsContext *context = sws_getContext( *width, *width, PIX_FMT_RGB32, 64, 64, PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
+			struct SwsContext *context = sws_getContext( *width, *width, AV_PIX_FMT_RGB32, 64, 64, AV_PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
 			if ( context )
 				sws_freeContext( context );
 			else

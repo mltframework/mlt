@@ -33,6 +33,7 @@
 #include <libavutil/pixdesc.h>
 #include <libavutil/dict.h>
 #include <libavutil/opt.h>
+#include <libavutil/channel_layout.h>
 
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
@@ -504,21 +505,21 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	return result;
 }
 
-static enum PixelFormat pick_pix_fmt( enum PixelFormat pix_fmt )
+static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 {
 	switch ( pix_fmt )
 	{
-	case PIX_FMT_ARGB:
-	case PIX_FMT_RGBA:
-	case PIX_FMT_ABGR:
-	case PIX_FMT_BGRA:
-		return PIX_FMT_RGBA;
+	case AV_PIX_FMT_ARGB:
+	case AV_PIX_FMT_RGBA:
+	case AV_PIX_FMT_ABGR:
+	case AV_PIX_FMT_BGRA:
+		return AV_PIX_FMT_RGBA;
 #if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
 	case AV_PIX_FMT_BAYER_RGGB16LE:
-		return PIX_FMT_RGB24;
+		return AV_PIX_FMT_RGB24;
 #endif
 	default:
-		return PIX_FMT_YUV422P;
+		return AV_PIX_FMT_YUV422P;
 	}
 }
 
@@ -976,26 +977,26 @@ static int set_luma_transfer( struct SwsContext *context, int src_colorspace,
 		brightness, contrast, saturation );
 }
 
-static mlt_image_format pick_image_format( enum PixelFormat pix_fmt )
+static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
 {
 	switch ( pix_fmt )
 	{
-	case PIX_FMT_ARGB:
-	case PIX_FMT_RGBA:
-	case PIX_FMT_ABGR:
-	case PIX_FMT_BGRA:
+	case AV_PIX_FMT_ARGB:
+	case AV_PIX_FMT_RGBA:
+	case AV_PIX_FMT_ABGR:
+	case AV_PIX_FMT_BGRA:
 		return mlt_image_rgb24a;
-	case PIX_FMT_YUV420P:
-	case PIX_FMT_YUVJ420P:
-	case PIX_FMT_YUVA420P:
+	case AV_PIX_FMT_YUV420P:
+	case AV_PIX_FMT_YUVJ420P:
+	case AV_PIX_FMT_YUVA420P:
 		return mlt_image_yuv420p;
-	case PIX_FMT_RGB24:
-	case PIX_FMT_BGR24:
-	case PIX_FMT_GRAY8:
-	case PIX_FMT_MONOWHITE:
-	case PIX_FMT_MONOBLACK:
-	case PIX_FMT_RGB8:
-	case PIX_FMT_BGR8:
+	case AV_PIX_FMT_RGB24:
+	case AV_PIX_FMT_BGR24:
+	case AV_PIX_FMT_GRAY8:
+	case AV_PIX_FMT_MONOWHITE:
+	case AV_PIX_FMT_MONOBLACK:
+	case AV_PIX_FMT_RGB8:
+	case AV_PIX_FMT_BGR8:
 #if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
 	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return mlt_image_rgb24;
@@ -1071,21 +1072,14 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
 	int result = self->yuv_colorspace;
 
-#ifdef USE_MMX
-	flags |= SWS_CPU_CAPS_MMX;
-#endif
-#ifdef USE_SSE
-	flags |= SWS_CPU_CAPS_MMX2;
-#endif
-
 	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "%s @ %dx%d space %d->%d\n",
 		mlt_image_format_name( *format ),
 		width, height, self->yuv_colorspace, profile->colorspace );
 
 	// extract alpha from planar formats
-	if ( ( pix_fmt == PIX_FMT_YUVA420P
+	if ( ( pix_fmt == AV_PIX_FMT_YUVA420P
 #if defined(FFUDIV)
-			|| pix_fmt == PIX_FMT_YUVA444P
+			|| pix_fmt == AV_PIX_FMT_YUVA444P
 #endif
 			) &&
 		*format != mlt_image_rgb24a && *format != mlt_image_opengl &&
@@ -1110,10 +1104,10 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		// avformat with no filters and explicitly requested.
 #if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
 		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
-			width, height, PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
 #else
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-					width, height, self->full_luma ? PIX_FMT_YUVJ420P : PIX_FMT_YUV420P,
+					width, height, self->full_luma ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P,
 					flags, NULL, NULL, NULL);
 #endif
 
@@ -1133,9 +1127,9 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	else if ( *format == mlt_image_rgb24 )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_RGB24, width, height );
+		avpicture_fill( &output, buffer, AV_PIX_FMT_RGB24, width, height );
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
@@ -1145,9 +1139,9 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
 		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_RGBA, width, height );
+		avpicture_fill( &output, buffer, AV_PIX_FMT_RGBA, width, height );
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
@@ -1158,13 +1152,13 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	{
 #if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 #else
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
 #endif
 		AVPicture output;
-		avpicture_fill( &output, buffer, PIX_FMT_YUYV422, width, height );
+		avpicture_fill( &output, buffer, AV_PIX_FMT_YUYV422, width, height );
 		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, 0 ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
@@ -1297,12 +1291,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	double delay = mlt_properties_get_double( properties, "video_delay" );
 
 	// Seek if necessary
-	const char *interp = mlt_properties_get( frame_properties, "rescale.interp" );
-	int preseek = must_decode
+	int preseek = must_decode && codec_context->has_b_frames;
 #if defined(FFUDIV)
-		&& ( interp && strcmp( interp, "nearest" ) )
+	const char *interp = mlt_properties_get( frame_properties, "rescale.interp" );
+	preseek = preseek && interp && strcmp( interp, "nearest" );
 #endif
-		&& codec_context->has_b_frames;
 	int paused = seek_video( self, position, req_position, preseek );
 
 	// Seek might have reopened the file
@@ -1310,10 +1303,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	stream = context->streams[ self->video_index ];
 	codec_context = stream->codec;
 	if ( *format == mlt_image_none || *format == mlt_image_glsl ||
-			codec_context->pix_fmt == PIX_FMT_ARGB ||
-			codec_context->pix_fmt == PIX_FMT_RGBA ||
-			codec_context->pix_fmt == PIX_FMT_ABGR ||
-			codec_context->pix_fmt == PIX_FMT_BGRA )
+			codec_context->pix_fmt == AV_PIX_FMT_ARGB ||
+			codec_context->pix_fmt == AV_PIX_FMT_RGBA ||
+			codec_context->pix_fmt == AV_PIX_FMT_ABGR ||
+			codec_context->pix_fmt == AV_PIX_FMT_BGRA )
 		*format = pick_image_format( codec_context->pix_fmt );
 #if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
 	else if ( codec_context->pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE ) {
@@ -1346,7 +1339,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				picture.linesize[1] = codec_context->width / 2;
 				picture.linesize[2] = codec_context->width / 2;
 				yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
-					PIX_FMT_YUV420P, format, *width, *height, &alpha );
+					AV_PIX_FMT_YUV420P, format, *width, *height, &alpha );
 			}
 			else
 #endif
@@ -1539,7 +1532,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
 							if ( status == VDP_STATUS_OK )
 							{
-								yuv_colorspace = convert_image( self, self->video_frame, *buffer, PIX_FMT_YUV420P,
+								yuv_colorspace = convert_image( self, self->video_frame, *buffer, AV_PIX_FMT_YUV420P,
 									format, *width, *height, &alpha );
 								mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 							}

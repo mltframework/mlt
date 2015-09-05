@@ -439,18 +439,18 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	}
 }
 
-static enum PixelFormat pick_pix_fmt( mlt_image_format img_fmt )
+static enum AVPixelFormat pick_pix_fmt( mlt_image_format img_fmt )
 {
 	switch ( img_fmt )
 	{
 	case mlt_image_rgb24:
-		return PIX_FMT_RGB24;
+		return AV_PIX_FMT_RGB24;
 	case mlt_image_rgb24a:
-		return PIX_FMT_RGBA;
+		return AV_PIX_FMT_RGBA;
 	case mlt_image_yuv420p:
-		return PIX_FMT_YUV420P;
+		return AV_PIX_FMT_YUV420P;
 	default:
-		return PIX_FMT_YUYV422;
+		return AV_PIX_FMT_YUYV422;
 	}
 }
 
@@ -798,7 +798,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		st->time_base = c->time_base;
 
 		// Default to the codec's first pix_fmt if possible.
-		c->pix_fmt = pix_fmt? av_get_pix_fmt( pix_fmt ) : codec? codec->pix_fmts[0] : PIX_FMT_YUV420P;
+		c->pix_fmt = pix_fmt? av_get_pix_fmt( pix_fmt ) : codec? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
 		
 		switch ( colorspace )
 		{
@@ -1032,7 +1032,7 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 
 	if( codec && codec->pix_fmts )
 	{
-		const enum PixelFormat *p = codec->pix_fmts;
+		const enum AVPixelFormat *p = codec->pix_fmts;
 		for( ; *p!=-1; p++ )
 		{
 			if( *p == video_enc->pix_fmt )
@@ -1791,12 +1791,6 @@ static void *consumer_thread( void *arg )
 
 						// Do the colour space conversion
 						int flags = SWS_BICUBIC;
-#ifdef USE_MMX
-						flags |= SWS_CPU_CAPS_MMX;
-#endif
-#ifdef USE_SSE
-						flags |= SWS_CPU_CAPS_MMX2;
-#endif
 						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
 							width, height, c->pix_fmt, flags, NULL, NULL, NULL);
 						sws_scale( context, (const uint8_t* const*) video_avframe->data, video_avframe->linesize, 0, height,
@@ -1808,9 +1802,9 @@ static void *consumer_thread( void *arg )
 						// Apply the alpha if applicable
 						if ( !mlt_properties_get( properties, "mlt_image_format" ) ||
 						     strcmp( mlt_properties_get( properties, "mlt_image_format" ), "rgb24a" ) )
-						if ( c->pix_fmt == PIX_FMT_RGBA ||
-						     c->pix_fmt == PIX_FMT_ARGB ||
-						     c->pix_fmt == PIX_FMT_BGRA )
+						if ( c->pix_fmt == AV_PIX_FMT_RGBA ||
+						     c->pix_fmt == AV_PIX_FMT_ARGB ||
+						     c->pix_fmt == AV_PIX_FMT_BGRA )
 						{
 							uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 							register int n;
@@ -1844,8 +1838,6 @@ static void *consumer_thread( void *arg )
 						av_init_packet(&pkt);
 
 						// Set frame interlace hints
-						c->coded_frame->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
-						c->coded_frame->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 						if ( mlt_properties_get_int( frame_properties, "progressive" ) )
 							c->field_order = AV_FIELD_PROGRESSIVE;
 						else
