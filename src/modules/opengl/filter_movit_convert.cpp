@@ -1,6 +1,6 @@
 /*
  * filter_movit_convert.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2015 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -473,15 +473,15 @@ static MltInput* create_input( mlt_properties properties, mlt_image_format forma
 		input->useFlatInput( FORMAT_RGB, width, height );
 	}
 	else if ( format == mlt_image_yuv420p ) {
-		ImageFormat image_format;
-		YCbCrFormat ycbcr_format;
+		ImageFormat image_format = {};
+		YCbCrFormat ycbcr_format = {};
 		get_format_from_properties( properties, &image_format, &ycbcr_format );
 		ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 2;
 		input->useYCbCrInput( image_format, ycbcr_format, width, height );
 	}
 	else if ( format == mlt_image_yuv422 ) {
-		ImageFormat image_format;
-		YCbCrFormat ycbcr_format;
+		ImageFormat image_format = {};
+		YCbCrFormat ycbcr_format = {};
 		get_format_from_properties( properties, &image_format, &ycbcr_format );
 		ycbcr_format.chroma_subsampling_x = 2;
 		ycbcr_format.chroma_subsampling_y = 1;
