@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2014 Meltytech, LLC
+ * Copyright (C) 2002-2015 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -696,6 +696,7 @@ int main( int argc, char **argv )
 	mlt_profile profile = NULL;
 	int is_progress = 0;
 	int is_silent = 0;
+	int is_abort = 0;
 	int error = 0;
 	mlt_profile backup_profile;
 
@@ -815,6 +816,10 @@ query_all:
 		else if ( !strcmp( argv[ i ], "-debug" ) )
 		{
 			mlt_log_set_level( MLT_LOG_DEBUG );
+		}
+		else if ( !strcmp( argv[ i ], "-abort" ) )
+		{
+			is_abort = 1;
 		}
 	}
 	if ( !is_silent && !isatty( STDIN_FILENO ) && !is_progress )
@@ -972,8 +977,12 @@ query_all:
 	{
 		error = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "melt_error" );
 		mlt_consumer_connect( consumer, NULL );
-		mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-cleanup", NULL);
+		if ( !is_abort )
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-cleanup", NULL);
 	}
+
+	if ( is_abort )
+		return error;
 
 	// Close the producer
 	if ( melt != NULL )
