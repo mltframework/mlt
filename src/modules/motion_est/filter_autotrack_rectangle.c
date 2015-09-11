@@ -255,17 +255,7 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 		char *arg = mlt_properties_get(filter_properties, "geometry");
 
 		// Parse the geometry if we have one
-		int in = mlt_filter_get_in( filter );
-		int out = mlt_filter_get_out( filter );
-		int length;
-
-		// Special case for attached filters - in/out come through on the frame
-		if ( out == 0 )
-		{
-			in = mlt_properties_get_int( frame_properties, "in" );
-			out = mlt_properties_get_int( frame_properties, "out" );
-		}
-		length = out - in + 1;
+		mlt_position length = mlt_filter_get_length2( filter, frame );
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		mlt_geometry_parse( geom, arg, length, profile->width, profile->height );
 
