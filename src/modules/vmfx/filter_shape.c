@@ -115,20 +115,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 	// Calculate the position and length
 	int position = mlt_filter_get_position( this, frame );
-	int in = mlt_filter_get_in( this );
-	int out = mlt_filter_get_out( this );
-	int length;
-
-	// Special case for attached filters - in/out come through on the frame
-	if ( out == 0 )
-	{
-		in = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "in" );
-		out = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "out" );
-		position -= in;
-	}
-
-	// Duration of the shape
-	length = out - in + 1;
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 
 	// If we haven't created the instance or it's changed
 	if ( producer == NULL || strcmp( resource, last_resource ) )
