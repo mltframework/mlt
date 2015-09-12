@@ -115,7 +115,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 	// Calculate the position and length
 	int position = mlt_filter_get_position( this, frame );
-	mlt_position length = mlt_filter_get_length2( filter, frame );
+	mlt_position length = mlt_filter_get_length2( this, frame );
 
 	// If we haven't created the instance or it's changed
 	if ( producer == NULL || strcmp( resource, last_resource ) )
