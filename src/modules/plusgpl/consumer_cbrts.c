@@ -427,6 +427,29 @@ static int writen( consumer_cbrts self, const void *buf, size_t count )
 	return result;
 }
 
+static int sendn( consumer_cbrts self, const void *buf, size_t count )
+{
+	int result = 0;
+
+#ifdef CBRTS_BSD_SOCKETS
+	int written = 0;
+	while ( written < count )
+	{
+		result = sendto(self->fd, buf + written, count - written, 0,
+			self->addr->ai_addr, self->addr->ai_addrlen);
+		if ( result < 0 )
+		{
+			mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent), "Failed to send: %s\n", strerror( errno ) );
+			exit( EXIT_FAILURE );
+			break;
+		}
+		written += result;
+	}
+#endif
+
+	return result;
+}
+
 static int write_udp( consumer_cbrts self, const void *buf, size_t count )
 {
 	int result = 0;
@@ -441,7 +464,7 @@ static int write_udp( consumer_cbrts self, const void *buf, size_t count )
 	self->timer.tv_sec  += self->timer.tv_nsec / 1000000000;
 	self->timer.tv_nsec  = self->timer.tv_nsec % 1000000000;
 	clock_nanosleep( CLOCK_MONOTONIC, TIMER_ABSTIME, &self->timer, NULL );
-	result = writen( self, buf, count );
+	result = sendn( self, buf, count );
 #endif
 
 	return result;
@@ -579,18 +602,6 @@ static int create_socket( consumer_cbrts self )
 				"The network interface \"%s\" was not found.\n", interface );
 		}
 	}
-
-	// Set the destination address and port for writes to the socket descriptor.
-	result = connect( self->fd, addr->ai_addr, addr->ai_addrlen );
-	if ( result < 0 )
-	{
-		mlt_log_error( MLT_CONSUMER_SERVICE(&self->parent),
-			"Error on socket connect(): %s.\n", strerror( errno ) );
-		close( self->fd );
-		freeaddrinfo( self->addr ); self->addr = NULL;
-		return result;
-	}
-
 #endif
 	return result;
 }
