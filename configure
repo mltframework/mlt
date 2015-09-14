@@ -129,6 +129,13 @@ build_config()
 		echo "LIBDL=-ldl"
 		echo "RDYNAMIC="
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
+		# If the host system is MinGW running on Windows, then cause make to
+		# treat all .c files as C and not use CXX. mingw32-make is case
+		# insensitive, and .C is considered C++.
+		if uname -s | grep -iq mingw ; then
+			echo "%.o: %.c"
+			printf "\t\$(CC) -c \$(CFLAGS) \$(CPPFLAGS) -o \$@ \$<\n"
+		fi
 		;;		
 		*)
 		;;
