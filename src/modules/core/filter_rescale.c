@@ -170,11 +170,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		int iwidth = *width;
 		int iheight = *height;
-		double factor = mlt_properties_get_double( filter_properties, "factor" );
-		factor = factor > 0 ? factor : 1.0;
-		int owidth = *width * factor;
-		int oheight = *height * factor;
+		int owidth = *width;
+		int oheight = *height;
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
+
+		if ( mlt_properties_get( filter_properties, "factor" ) )
+		{
+			double factor = mlt_properties_get_double( filter_properties, "factor" );
+			owidth *= factor;
+			oheight *= factor;
+		}
 
 		// Default from the scaler if not specifed on the frame
 		if ( interps == NULL )
