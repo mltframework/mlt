@@ -2,7 +2,7 @@ f=mov
 acodec=pcm_s16le
 vcodec=prores_ks
 vb=0
-g=0
+g=1
 bf=0
 vprofile=2
 

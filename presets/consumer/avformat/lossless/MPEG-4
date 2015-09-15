@@ -3,7 +3,7 @@ acodec=pcm_s16le
 vcodec=mpeg4
 qscale=1
 intra=1
-g=0
+g=1
 vb=0
 bf=0
 
