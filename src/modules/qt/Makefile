@@ -25,7 +25,8 @@ ifdef GPL3
 endif
 
 ifdef USE_FFTW
-	CPPOBJS += filter_lightshow.o
+	CPPOBJS += filter_lightshow.o \
+		filter_audiospectrum.o
 	CFLAGS += -DUSE_FFTW
 endif
 
