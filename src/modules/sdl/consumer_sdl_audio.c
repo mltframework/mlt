@@ -166,10 +166,10 @@ int consumer_start( mlt_consumer parent )
 		char *audio_driver = mlt_properties_get( properties, "audio_driver" );
 		char *audio_device = mlt_properties_get( properties, "audio_device" );
 
-		if ( audio_driver != NULL )
+		if ( audio_driver && strcmp( audio_driver, "" ) )
 			setenv( "SDL_AUDIODRIVER", audio_driver, 1 );
 
-		if ( audio_device != NULL )
+		if ( audio_device && strcmp( audio_device, "" ) )
 			setenv( "AUDIODEV", audio_device, 1 );
 
 		pthread_mutex_lock( &mlt_sdl_mutex );
