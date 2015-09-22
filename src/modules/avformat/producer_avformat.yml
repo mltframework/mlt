@@ -228,3 +228,14 @@ parameters:
     minimum: 0
     maximum: 1
     widget: checkbox
+
+  - identifier: seek_threshold
+    title: Seek Threshold
+    description: >
+      Number of frames required to trigger a seek forward rather than continuous read
+      when reading forward. This can be useful to optimize some applications which
+      rely on accelerated reading of a media file or in cases where lack of I-frames
+      cause libavformat to face issues in seeking and where user tries to minimize the
+      number of seek calls.
+    type: integer
+    unit: frames

@@ -821,13 +821,15 @@ static int seek_video( producer_avformat self, mlt_position position,
 	int64_t req_position, int preseek )
 {
 	mlt_producer producer = self->parent;
+        mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 	int paused = 0;
+	int seek_threshold = mlt_properties_get_int( properties, "seek_threshold" );
+	if ( seek_threshold <= 0 ) seek_threshold = 12;
 
 	pthread_mutex_lock( &self->packets_mutex );
 
 	if ( self->seekable && ( position != self->video_expected || self->last_position < 0 ) )
 	{
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
 		// Fetch the video format context
 		AVFormatContext *context = self->video_format;
@@ -850,7 +852,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 			// We're paused - use last image
 			paused = 1;
 		}
-		else if ( self->seekable && ( position < self->video_expected || position - self->video_expected >= 12 || self->last_position < 0 ) )
+		else if ( self->seekable && ( position < self->video_expected || position - self->video_expected >= seek_threshold || self->last_position < 0 ) )
 		{
 			// Calculate the timestamp for the requested frame
 			int64_t timestamp = req_position / ( av_q2d( self->video_time_base ) * source_fps );
