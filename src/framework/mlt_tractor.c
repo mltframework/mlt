@@ -32,6 +32,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MAX( x, y ) ((x) > (y) ? (x) : (y))
+
 /* Forward references to static methods.
 */
 
@@ -318,18 +320,18 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 				int a_track = mlt_transition_get_a_track( transition );
 				int b_track = mlt_transition_get_b_track( transition );
 
-				if ( a_track > index || b_track > index )
+				if ( a_track >= index || b_track >= index )
 				{
-					a_track = a_track > index ? a_track - 1 : a_track;
-					b_track = b_track > index ? b_track - 1 : b_track;
+					a_track = MAX( a_track >= index ? a_track - 1 : a_track, 0 );
+					b_track = MAX( b_track >= index ? b_track - 1 : b_track, 0 );
 					mlt_transition_set_tracks( transition, a_track, b_track );
 				}
 			}
 			else if ( type == filter_type )
 			{
 				int current_track = mlt_properties_get_int( properties, "track" );
-				if ( current_track > index )
-					mlt_properties_set_int( properties, "track", current_track - 1 );
+				if ( current_track >= index )
+					mlt_properties_set_int( properties, "track", MAX( current_track - 1, 0 ) );
 			}
 			service = mlt_service_producer( service );
 		}
