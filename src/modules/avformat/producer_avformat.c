@@ -275,6 +275,31 @@ static int first_video_index( producer_avformat self )
 /** Find the default streams.
 */
 
+#include <libavutil/display.h>
+#include <libavutil/pixfmt.h>
+
+static double get_rotation(AVStream *st)
+{
+    AVDictionaryEntry *rotate_tag = av_dict_get(st->metadata, "rotate", NULL, 0);
+    uint8_t* displaymatrix = av_stream_get_side_data(st,
+                                                     AV_PKT_DATA_DISPLAYMATRIX, NULL);
+    double theta = 0;
+
+    if (rotate_tag && *rotate_tag->value && strcmp(rotate_tag->value, "0")) {
+        char *tail;
+        theta = strtod(rotate_tag->value, &tail);
+        if (*tail)
+            theta = 0;
+    }
+    if (displaymatrix && !theta)
+        theta = -av_display_rotation_get((int32_t*) displaymatrix);
+
+    theta -= 360*floor(theta/360 + 0.9/360);
+
+    return theta;
+}
+
+
 static mlt_properties find_default_streams( producer_avformat self )
 {
 	int i;
@@ -324,6 +349,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 				mlt_properties_set_int( meta_media, key, codec_context->width );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.height", i );
 				mlt_properties_set_int( meta_media, key, codec_context->height );
+                                snprintf( key, sizeof(key), "meta.media.%d.codec.rotate", i );
+                                mlt_properties_set_int( meta_media, key, get_rotation(context->streams[i]) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.frame_rate", i );
 				AVRational frame_rate = { codec_context->time_base.den, codec_context->time_base.num * codec_context->ticks_per_frame };
 				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
@@ -526,7 +553,7 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 static int get_basic_info( producer_avformat self, mlt_profile profile, const char *filename )
 {
 	int error = 0;
-
+        self->dummy_context = NULL;
 	// Get the properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 
@@ -797,7 +824,9 @@ static void find_first_pts( producer_avformat self, int video_index )
 	AVFormatContext *context = self->video_format? self->video_format : self->audio_format;
 	int ret = 0;
 	int toscan = 500;
-	AVPacket pkt;
+        AVPacket pkt;
+        av_init_packet(&pkt);
+        self->first_pts = 0;
 
 	while ( ret >= 0 && toscan-- > 0 )
 	{
