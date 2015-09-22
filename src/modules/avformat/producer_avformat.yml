@@ -228,3 +228,15 @@ parameters:
     minimum: 0
     maximum: 1
     widget: checkbox
+
+  - identifier: seek_threshold
+    title: Seek Threshold
+    description: >
+      Number of frames required to trigger a seek forward rather than continuous read
+      when reading forward - this can be useful to optimise some applications which
+      rely on accelerated readin of a media file, or in cases where lack of I-frames in orignal
+      media files cause ffmpeg to face issues in seeking and where user tries to minimise the
+      number of call to seek.
+    type: integer
+    unit: frames
+    readonly: no
