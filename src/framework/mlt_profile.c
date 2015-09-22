@@ -54,7 +54,7 @@ static mlt_profile mlt_profile_select( const char *name )
 		filename = calloc( 1, strlen( name ) + 1 );
 	}
 	// Load from $datadir/mlt/profiles
-	else if ( prefix == NULL )
+	else if ( !prefix && mlt_environment( "MLT_DATA" ) )
 	{
 		prefix = mlt_environment( "MLT_DATA" );
 		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + strlen( name ) + 1 );
@@ -62,12 +62,17 @@ static mlt_profile mlt_profile_select( const char *name )
 		strcat( filename, PROFILES_DIR );
 	}
 	// Use environment variable instead
-	else
+	else if ( prefix )
 	{
 		filename = calloc( 1, strlen( prefix ) + strlen( name ) + 2 );
 		strcpy( filename, prefix );
 		if ( filename[ strlen( filename ) - 1 ] != '/' )
 			filename[ strlen( filename ) ] = '/';
+	}
+	else
+	{
+		mlt_properties_close( properties );
+		return profile;
 	}
 
 	// Finish loading
