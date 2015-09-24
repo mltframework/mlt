@@ -269,7 +269,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				if ( !error && *image && *format == mlt_image_yuv422 )
 				{
 					// Deinterlace the image using one of the Xine deinterlacers
-					int image_size = *width * *height * 2;
+					int image_size = mlt_image_format_size( *format, *width, *height, NULL );
 					uint8_t *new_image = mlt_pool_alloc( image_size );
 
 					deinterlace_yuv( new_image, image, *width * 2, *height, method );
