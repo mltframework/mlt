@@ -118,6 +118,8 @@ static int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **imag
 	if ( !previous_frame || !next_frame )
 		return 1;
 
+	mlt_service_lock( MLT_FILTER_SERVICE(filter) );
+
 	// Get the preceding frame's image
 	int error = mlt_frame_get_image( previous_frame, &previous_image, format, &previous_width, &previous_height, 0 );
 	int progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( previous_frame ), "progressive" );
@@ -128,15 +130,17 @@ static int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **imag
 		// OK, now we know we have work to do and can request the image in our format
 		frame->convert_image( previous_frame, &previous_image, format, mlt_image_yuv422 );
 
+		mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
+
 		// Get the current frame's image
 		*format = mlt_image_yuv422;
-		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
+		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 		if ( !error && *image && *format == mlt_image_yuv422 )
 		{
 			// Get the following frame's image
 			error = mlt_frame_get_image( next_frame, &next_image, format, &next_width, &next_height, 0 );
-		
+
 			if ( !error && next_image && *format == mlt_image_yuv422 )
 			{
 				yadif_filter *yadif = init_yadif( *width, *height );
@@ -173,6 +177,8 @@ static int deinterlace_yadif( mlt_frame frame, mlt_filter filter, uint8_t **imag
 	}
 	else
 	{
+		mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
+
 		// Get the current frame's image
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 	}
