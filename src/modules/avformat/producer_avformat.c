@@ -799,6 +799,7 @@ static void find_first_pts( producer_avformat self, int video_index )
 	int toscan = 500;
 	AVPacket pkt;
 
+	av_init_packet( &pkt );
 	while ( ret >= 0 && toscan-- > 0 )
 	{
 		ret = av_read_frame( context, &pkt );
