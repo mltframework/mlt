@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1468,7 +1468,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				if ( llabs( req_position - int_position ) > 999 )
 				{
 					int_position = req_position;
-					mlt_log_warning( MLT_PRODUCER_SERVICE(producer), " WILD TIMESTAMP!\n" );
+					mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), " WILD TIMESTAMP!\n" );
 				}
 				self->last_position = int_position;
 
