@@ -49,7 +49,13 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
 	
 		// Initialize KDE image plugins
-		init_qimage();
+		if ( !init_qimage( filename ) )
+		{
+			// Reject if animation.
+			mlt_producer_close( producer );
+			free( self );
+			return NULL;
+		}
 
 		// Callback registration
 		producer->get_frame = producer_get_frame;

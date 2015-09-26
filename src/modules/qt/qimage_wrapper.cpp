@@ -33,6 +33,7 @@
 #include <QMutex>
 #include <QtEndian>
 #include <QTemporaryFile>
+#include <QImageReader>
 
 #ifdef USE_EXIF
 #include <libexif/exif-data.h>
@@ -62,14 +63,19 @@ static void qimage_delete( void *data )
 
 }
 
-void init_qimage()
+/// Returns false if this is animated.
+int init_qimage(const char *filename)
 {
+	QImageReader reader( filename );
+	if ( reader.canRead() && reader.imageCount() > 1 ) {
+		return 0;
+	}
 #ifdef USE_KDE4
 	if ( !instance ) {
 	    instance = new KComponentData( "qimage_prod" );
 	}
 #endif
-  
+	return 1;
 }
 
 static QImage* reorient_with_exif( producer_qimage self, int image_idx, QImage *qimage )
