@@ -1,6 +1,6 @@
 /*
  * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -78,7 +78,25 @@ mlt_producer producer_pixbuf_init( char *filename )
 
 		// Get the properties interface
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
-	
+
+		// Reject if animation.
+		GError *error = NULL;
+		pthread_mutex_lock( &g_mutex );
+		GdkPixbufAnimation *anim = gdk_pixbuf_animation_new_from_file( filename, &error );
+		if ( anim )
+		{
+			gboolean is_anim = !gdk_pixbuf_animation_is_static_image( anim );
+			g_object_unref( anim );
+			if ( is_anim )
+			{
+				pthread_mutex_unlock( &g_mutex );
+				mlt_producer_close( &self->parent );
+				free( self );
+				return NULL;
+			}
+		}
+		pthread_mutex_unlock( &g_mutex );
+
 		// Callback registration
 		producer->get_frame = producer_get_frame;
 		producer->close = ( mlt_destructor )producer_close;
