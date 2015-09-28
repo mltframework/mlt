@@ -188,7 +188,7 @@ static void paint_spectrum( QPainter& p, QRectF& rect, int spect_bands, float* s
 	if( spect_bands <= width ) {
 //		// For each x position on the waveform, find the sample value that
 //		// applies to that position and draw a point at that location.
-		QPoint point(0, height - spectrum[0] * height);
+		QPoint point(rect.x(), rect.y() + height - spectrum[0] * height);
 		QPoint lastPoint = point;
 		int p0 = -1;
 		int p1 = 0;
@@ -219,7 +219,7 @@ static void paint_spectrum( QPainter& p, QRectF& rect, int spect_bands, float* s
 			}
 
 			point.setX( x + rect.x() );
-			point.setY( height - y * (double)height );
+			point.setY( rect.y() + height - y * (double)height );
 			p.drawLine( lastPoint, point );
 			lastPoint = point;
 		}
@@ -239,9 +239,9 @@ static void paint_spectrum( QPainter& p, QRectF& rect, int spect_bands, float* s
 				// The min and max have been determined for the previous x
 				// So draw the line
 				high.setX( lastX + rect.x() );
-				high.setY( height - max * height );
+				high.setY( rect.y() + height - max * height );
 				low.setX( lastX + rect.x() );
-				low.setY( height - min * height );
+				low.setY( rect.y() + height - min * height );
 
 				if ( high.y() == low.y() ) {
 					p.drawPoint( high );
