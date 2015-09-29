@@ -42,7 +42,7 @@ bool createQApplicationIfNeeded(mlt_service service)
 		if (!mlt_properties_get(mlt_global_properties(), "qt_argv"))
 			mlt_properties_set(mlt_global_properties(), "qt_argv", "MLT");
 		static int argc = 1;
-		static char* argv[] = { mlt_properties_get(mlt_global_properties(), "Qt argv") };
+		static char* argv[] = { mlt_properties_get(mlt_global_properties(), "qt_argv") };
 		new QApplication(argc, argv);
 		const char *localename = mlt_properties_get_lcnumeric(MLT_SERVICE_PROPERTIES(service));
 		QLocale::setDefault(QLocale(localename));
