@@ -9,6 +9,7 @@ TARGET = ../libmltqt$(LIBSUF)
 
 OBJS = factory.o producer_qimage.o producer_kdenlivetitle.o
 CPPOBJS = common.o \
+	graph.o \
 	filter_audiowaveform.o \
 	qimage_wrapper.o \
 	kdenlivetitle_wrapper.o \

@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2014 Dan Dennedy <dan@dennedy.org>
+ * Copyright (c) 2015 Meltytech, LLC
+ * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,16 +17,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef GRAPH_H
+#define GRAPH_H
 
 #include <framework/mlt.h>
+#include <QPainter>
+#include <QRectF>
 
-class QImage;
+void setup_graph_painter( QPainter& p, QRectF& rect, mlt_properties filter_properties );
+void setup_graph_pen( QPainter& p, QRectF& rect, mlt_properties filter_properties );
 
-bool createQApplicationIfNeeded(mlt_service service);
-void copy_qimage_to_mlt_rgba( QImage* qImg, uint8_t* mImg );
-void copy_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg );
-int create_image( mlt_frame frame, uint8_t **image, mlt_image_format *image_format, int *width, int *height, int writable );
 
-#endif // COMMON_H
+#endif // GRAPH_H

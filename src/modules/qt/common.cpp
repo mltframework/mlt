@@ -86,3 +86,29 @@ void copy_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg )
 		}
 	}
 }
+
+int create_image( mlt_frame frame, uint8_t **image, mlt_image_format *image_format, int *width, int *height, int writable )
+{
+	int error = 0;
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+
+	*image_format = mlt_image_rgb24a;
+
+	// Use the width and height suggested by the rescale filter.
+	if( mlt_properties_get_int( frame_properties, "rescale_width" ) > 0 )
+		*width = mlt_properties_get_int( frame_properties, "rescale_width" );
+	if( mlt_properties_get_int( frame_properties, "rescale_height" ) > 0 )
+		*height = mlt_properties_get_int( frame_properties, "rescale_height" );
+	// If no size is requested, use native size.
+	if( *width <=0 )
+		*width = mlt_properties_get_int( frame_properties, "meta.media.width" );
+	if( *height <=0 )
+		*height = mlt_properties_get_int( frame_properties, "meta.media.height" );
+
+	int size = mlt_image_format_size( *image_format, *width, *height, NULL );
+	*image = static_cast<uint8_t*>( mlt_pool_alloc( size ) );
+	memset( *image, 0, size ); // Transparent
+	mlt_frame_set_image( frame, *image, size, mlt_pool_release );
+
+	return error;
+}

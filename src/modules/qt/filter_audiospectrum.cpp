@@ -19,6 +19,7 @@
  */
 
 #include "common.h"
+#include "graph.h"
 #include <framework/mlt.h>
 #include <framework/mlt_log.h>
 #include <cstring> // memset
@@ -261,61 +262,11 @@ static void paint_spectrum( QPainter& p, QRectF& rect, int spect_bands, float* s
 	}
 }
 
-static void setup_pen( QPainter& p, QRectF& rect, mlt_properties filter_properties )
-{
-	int thickness = mlt_properties_get_int( filter_properties, "thickness" );
-	QString gorient = mlt_properties_get( filter_properties, "gorient" );
-	QVector<QColor> colors;
-	bool color_found = true;
-
-	QPen pen;
-	pen.setWidth( qAbs(thickness) );
-
-	// Find user specified colors for the gradient
-	while( color_found ) {
-		QString prop_name = QString("color.") + QString::number(colors.size() + 1);
-		if( mlt_properties_get(filter_properties, prop_name.toUtf8().constData() ) ) {
-			mlt_color mcolor = mlt_properties_get_color( filter_properties, prop_name.toUtf8().constData() );
-			colors.append( QColor( mcolor.r, mcolor.g, mcolor.b, mcolor.a ) );
-		} else {
-			color_found = false;
-		}
-	}
-
-	if( !colors.size() ) {
-		// No color specified. Just use white.
-		pen.setBrush(Qt::white);
-	} else if ( colors.size() == 1 ) {
-		// Only use one color
-		pen.setBrush(colors[0]);
-	} else {
-		QLinearGradient gradient;
-		if( gorient.startsWith("h", Qt::CaseInsensitive) ) {
-			gradient.setStart ( rect.x(), rect.y() );
-			gradient.setFinalStop ( rect.x() + rect.width(), rect.y() );
-		} else { // Vertical
-			gradient.setStart ( rect.x(), rect.y() );
-			gradient.setFinalStop ( rect.x(), rect.y() + rect.height() );
-		}
-
-		qreal step = 1.0 / ( colors.size() - 1 );
-		for( int i = 0; i < colors.size(); i++ )
-		{
-			gradient.setColorAt( (qreal)i * step, colors[i] );
-		}
-		pen.setBrush(gradient);
-	}
-
-	p.setPen(pen);
-}
-
 static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 {
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
-	mlt_color bg_color = mlt_properties_get_color( filter_properties, "bgcolor" );
-	double angle = mlt_properties_get_double( filter_properties, "angle" );
 	int fill = mlt_properties_get_int( filter_properties, "fill" );
 	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
 	if ( strchr( mlt_properties_get( filter_properties, "rect" ), '%' ) ) {
@@ -326,25 +277,10 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 	}
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
-
 	QPainter p( qimg );
 
-	p.setRenderHint(QPainter::Antialiasing);
-
-	// Fill background
-	if ( bg_color.r || bg_color.g || bg_color.g || bg_color.a ) {
-		QColor qbgcolor( bg_color.r, bg_color.g, bg_color.b, bg_color.a );
-		p.fillRect( 0, 0, qimg->width(), qimg->height(), qbgcolor );
-	}
-
-	// Apply rotation
-	if ( angle ) {
-		p.translate( r.x() + r.width() / 2, r.y() + r.height() / 2 );
-		p.rotate( angle );
-		p.translate( -(r.x() + r.width() / 2), -(r.y() + r.height() / 2) );
-	}
-
-	setup_pen( p, r, filter_properties );
+	setup_graph_painter( p, r, filter_properties );
+	setup_graph_pen( p, r, filter_properties );
 
 	int bands = mlt_properties_get_int( filter_properties, "bands" );
 	if ( bands == 0 ) {
@@ -364,9 +300,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	int error = 0;
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
-
-
-
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
@@ -392,32 +325,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		}
 		mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
-
-	return error;
-}
-
-static int create_image( mlt_frame frame, uint8_t **image, mlt_image_format *image_format, int *width, int *height, int writable )
-{
-	int error = 0;
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-
-	*image_format = mlt_image_rgb24a;
-
-	// Use the width and height suggested by the rescale filter.
-	if( mlt_properties_get_int( frame_properties, "rescale_width" ) > 0 )
-		*width = mlt_properties_get_int( frame_properties, "rescale_width" );
-	if( mlt_properties_get_int( frame_properties, "rescale_height" ) > 0 )
-		*height = mlt_properties_get_int( frame_properties, "rescale_height" );
-	// If no size is requested, use native size.
-	if( *width <=0 )
-		*width = mlt_properties_get_int( frame_properties, "meta.media.width" );
-	if( *height <=0 )
-		*height = mlt_properties_get_int( frame_properties, "meta.media.height" );
-
-	int size = mlt_image_format_size( *image_format, *width, *height, NULL );
-	*image = static_cast<uint8_t*>( mlt_pool_alloc( size ) );
-	memset( *image, 0, size ); // Transparent
-	mlt_frame_set_image( frame, *image, size, mlt_pool_release );
 
 	return error;
 }
@@ -474,12 +381,13 @@ mlt_filter filter_audiospectrum_init( mlt_profile profile, mlt_service_type type
 	mlt_filter filter = mlt_filter_new();
 	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
 
-	if ( filter && pdata )
+	if ( filter && pdata && createQApplicationIfNeeded( MLT_FILTER_SERVICE(filter) ) )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		mlt_properties_set_int( properties, "_filter_private", 1 );
 		mlt_properties_set_int( properties, "frequency_low", 20 );
 		mlt_properties_set_int( properties, "frequency_high", 20000 );
+		mlt_properties_set( properties, "bgcolor", "0x00000000" );
 		mlt_properties_set( properties, "color.1", "0xffffffff" );
 		mlt_properties_set( properties, "rect", "0% 0% 100% 100%" );
 		mlt_properties_set( properties, "thickness", "0" );
