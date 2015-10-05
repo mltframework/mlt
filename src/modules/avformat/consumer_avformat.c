@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,7 @@
 #define MAX_AUDIO_STREAMS (8)
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
 #define AUDIO_BUFFER_SIZE (1024 * 42)
-#define VIDEO_BUFFER_SIZE (2048 * 2048)
+#define VIDEO_BUFFER_SIZE (8192 * 8192)
 
 //
 // This structure should be extended and made globally available in mlt
