@@ -18,6 +18,8 @@
  */
 
 #include "graph.h"
+#include <QVector>
+#include <math.h>
 
 /*
  * Apply the "bgcolor" and "angle" parameters to the QPainter
@@ -92,4 +94,60 @@ void setup_graph_pen( QPainter& p, QRectF& r, mlt_properties filter_properties )
 	}
 
 	p.setPen(pen);
+}
+
+void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, int fill )
+{
+	double width = rect.width();
+	double height = rect.height();
+	double t = 0.3;
+	double pixelsPerPoint = width / (double)(points - 1);
+
+	// Calculate cubic control points
+	QVector<QPointF> controlPoints( (points - 1) * 2 );
+	int cpi = 0;
+	// First control point is equal to first point
+	controlPoints[cpi++] = QPointF( 0, rect.y() + height - values[0] * height );
+
+	// Calculate control points between data points
+	// Based on ideas from:
+	// http://scaledinnovation.com/analytics/splines/aboutSplines.html
+	for( int i = 0; i < (points - 2); i++ ) {
+		double x0 = rect.x() + (double)i * pixelsPerPoint;
+		double x1 = rect.x() + (double)(i + 1) * pixelsPerPoint;
+		double x2 = rect.x() + (double)(i + 2) * pixelsPerPoint;
+		double y0 = rect.y() + height - values[i] * height;
+		double y1 = rect.y() + height - values[i + 1] * height;
+		double y2 = rect.y() + height - values[i + 2] * height;
+		double d01 = sqrt( pow( x1 - x0, 2 ) + pow( y1 - y0, 2) );
+		double d12 = sqrt( pow( x2 - x1, 2 ) + pow( y2 - y1, 2) );
+		double fa = t * d01 / ( d01 + d12 );
+		double fb = t * d12 / ( d01 + d12 );
+		double p1x = x1 - fa * ( x2 - x0 );
+		double p1y = y1 - fa * ( y2 - y0 );
+		double p2x = x1 + fb * ( x2 - x0 );
+		double p2y = y1 + fb * ( y2 - y0 );
+		controlPoints[cpi++] = QPointF( p1x, p1y );
+		controlPoints[cpi++] = QPointF( p2x, p2y );
+	}
+
+	// Last control point is equal to last point
+	controlPoints[cpi++] = QPointF( rect.x() + width, rect.y() + height - values[points - 1] * height );
+
+	// Draw a sequence of bezier curves to interpolate between points.
+	QPainterPath curvePath;
+
+	// Begin at the first data point.
+	curvePath.moveTo( rect.x(), rect.y() + height - values[0] * height );
+	cpi = 0;
+	for( int i = 1; i < points; i++ ) {
+		QPointF c1 = controlPoints[cpi++];
+		QPointF c2 = controlPoints[cpi++];
+		double endX = rect.x() + (double)i * pixelsPerPoint;
+		double endY = rect.y() + height - values[i] * height;
+		QPointF end( endX, endY );
+		curvePath.cubicTo( c1, c2, end );
+	}
+
+	p.drawPath( curvePath );
 }

@@ -36,21 +36,6 @@ typedef struct
 	int preprocess_warned;
 } private_data;
 
-static inline double linear_interpolate( double y1, double y2, double t )
-{
-	return y1 + ( y2 - y1 ) * t;
-}
-
-static inline double catmull_rom_interpolate( double y0, double y1, double y2, double y3, double t )
-{
-	double t2 = t * t;
-	double a0 = -0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3;
-	double a1 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3;
-	double a2 = -0.5 * y0 + 0.5 * y2;
-	double a3 = y1;
-	return a0 * t * t2 + a1 * t2 + a2 * t + a3;
-}
-
 static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
 {
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_audio( frame );
@@ -146,8 +131,12 @@ static void convert_fft_to_spectrum( mlt_filter filter, mlt_frame frame, int spe
 			}
 			else
 			{
+				double y0 = bins[bin_index - 1];
+				double y1 = bins[bin_index];
 				double spect_center = band_freq_low + (band_freq_hi - band_freq_low) / 2;
-				mag = linear_interpolate( bins[bin_index - 1], bins[bin_index], spect_center - bin_freq + bin_width );
+				double prev_freq = bin_freq - bin_width;
+				double t = bin_width / ( spect_center - prev_freq );
+				mag = y0 + ( y1 - y0 ) * t;
 			}
 		}
 		else
@@ -181,87 +170,6 @@ static void convert_fft_to_spectrum( mlt_filter filter, mlt_frame frame, int spe
 	}
 }
 
-static void paint_spectrum( QPainter& p, QRectF& rect, int spect_bands, float* spectrum, int fill )
-{
-	int width = rect.width();
-	int height = rect.height();
-
-	if( spect_bands <= width ) {
-//		// For each x position on the waveform, find the sample value that
-//		// applies to that position and draw a point at that location.
-		QPoint point(rect.x(), rect.y() + height - spectrum[0] * height);
-		QPoint lastPoint = point;
-		int p0 = -1;
-		int p1 = 0;
-		int p2 = 1;
-		int p3 = 2;
-		double pixelsPerPoint = (double)(spect_bands - 1) / (double)width;
-		for ( int x = 1; x < width; x++ )
-		{
-			double pn = (double)x * pixelsPerPoint;
-			if( (int)pn > p1 )
-			{
-				p0++;
-				p1++;
-				p2++;
-				p3++;
-			}
-			double t = pn - (double)p1;
-			double y = 0;
-
-			if( p0 < 0 || p3 >= spect_bands )
-			{
-
-				y = linear_interpolate( spectrum[p1], spectrum[p2], t );
-			}
-			else
-			{
-				y = catmull_rom_interpolate( spectrum[p0], spectrum[p1], spectrum[p2], spectrum[p3], t );
-			}
-
-			point.setX( x + rect.x() );
-			point.setY( rect.y() + height - y * (double)height );
-			p.drawLine( lastPoint, point );
-			lastPoint = point;
-		}
-	} else { // width < spect_bands
-		// For each x position on the waveform, find the min and max sample
-		// values that apply to that position. Draw a vertical line from the
-		// min value to the max value.
-		QPoint high;
-		QPoint low;
-		qreal max = spectrum[0];
-		qreal min = max;
-		int lastX = 0;
-		for ( int index = 0; index <= spect_bands; index++ )
-		{
-			int x = ( index * width ) / spect_bands;
-			if ( x != lastX ) {
-				// The min and max have been determined for the previous x
-				// So draw the line
-				high.setX( lastX + rect.x() );
-				high.setY( rect.y() + height - max * height );
-				low.setX( lastX + rect.x() );
-				low.setY( rect.y() + height - min * height );
-
-				if ( high.y() == low.y() ) {
-					p.drawPoint( high );
-				} else {
-					p.drawLine( low, high );
-				}
-				lastX = x;
-				// Swap max and min so that the next line picks up where
-				// this one left off.
-				int tmp = max;
-				max = min;
-				min = tmp;
-			}
-			if ( spectrum[index] > max ) max = spectrum[index];
-			if ( spectrum[index] < min ) min = spectrum[index];
-		}
-	}
-}
-
 static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 {
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
@@ -289,7 +197,7 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 	}
 	float* spectrum = (float*)mlt_pool_alloc( bands * sizeof(float) );
 	convert_fft_to_spectrum( filter, frame, bands, spectrum );
-	paint_spectrum( p, r, bands, spectrum, fill );
+	paint_line_graph( p, r, bands, spectrum, fill );
 	mlt_pool_release( spectrum );
 
 	p.end();
