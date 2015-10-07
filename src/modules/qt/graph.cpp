@@ -96,11 +96,10 @@ void setup_graph_pen( QPainter& p, QRectF& r, mlt_properties filter_properties )
 	p.setPen(pen);
 }
 
-void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, int fill )
+void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, double tension, int fill )
 {
 	double width = rect.width();
 	double height = rect.height();
-	double t = 0.3;
 	double pixelsPerPoint = width / (double)(points - 1);
 
 	// Calculate cubic control points
@@ -121,8 +120,8 @@ void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, int
 		double y2 = rect.y() + height - values[i + 2] * height;
 		double d01 = sqrt( pow( x1 - x0, 2 ) + pow( y1 - y0, 2) );
 		double d12 = sqrt( pow( x2 - x1, 2 ) + pow( y2 - y1, 2) );
-		double fa = t * d01 / ( d01 + d12 );
-		double fb = t * d12 / ( d01 + d12 );
+		double fa = tension * d01 / ( d01 + d12 );
+		double fb = tension * d12 / ( d01 + d12 );
 		double p1x = x1 - fa * ( x2 - x0 );
 		double p1y = y1 - fa * ( y2 - y0 );
 		double p2x = x1 + fb * ( x2 - x0 );
@@ -149,5 +148,12 @@ void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, int
 		curvePath.cubicTo( c1, c2, end );
 	}
 
-	p.drawPath( curvePath );
+	if( fill ) {
+		curvePath.lineTo( rect.x() + width, rect.y() + height );
+		curvePath.lineTo( rect.x(), rect.y() + height );
+		curvePath.closeSubpath();
+		p.fillPath( curvePath, p.pen().brush() );
+	} else {
+		p.drawPath( curvePath );
+	}
 }

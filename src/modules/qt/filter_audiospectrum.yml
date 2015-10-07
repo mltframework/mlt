@@ -101,6 +101,18 @@ parameters:
     mutable: yes
     widget: checkbox
     
+  - identifier: tension
+    title: Line Tension
+    description: >
+      Affects the amount of curve in the line interpolating between points.
+      0.0 = a straight line between points.
+      1.0 = very curved lines between points.
+      values < 0 and > 1 will cause loops in the lines.
+    type: float
+    default: 0.4
+    readonly: no
+    mutable: yes
+    
   - identifier: gorient
     title: Gradient Orientation
     description: Direction of the color gradient.
