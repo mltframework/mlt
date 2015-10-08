@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.2
 type: transition
 identifier: mix
 title: Mix
@@ -15,11 +15,13 @@ bugs:
 parameters:
   - identifier: start
     title: Start
+    argument: yes
     type: float
     mutable: yes
     description: >
       The mix level to apply to the second frame. Any negative value causes an
       automatic crossfade from 0 to 1.
+
   - identifier: end
     title: End
     type: float
@@ -27,13 +29,21 @@ parameters:
     description: >
       The ending value of the mix level. Mix level will be interpolated from
       start to end over the in-out range.
+
   - identifier: reverse
     title: Reverse
-    type: integer
+    type: boolean
     mutable: yes
     description: >
       Set to 1 to reverse the direction of the mix.
     default: 0
-    minimum: 0
-    maximum: 1
     widget: checkbox
+
+  - identifier: combine
+    title: Use better mixing algorithm
+    description: >
+      Mix using a low pass filter to prevent affecting audio levels.
+      This is incompatible with start < 0.
+    type: boolean
+    default: 0
+    mutable: yes
