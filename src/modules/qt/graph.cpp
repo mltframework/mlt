@@ -106,7 +106,7 @@ void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, dou
 	QVector<QPointF> controlPoints( (points - 1) * 2 );
 	int cpi = 0;
 	// First control point is equal to first point
-	controlPoints[cpi++] = QPointF( 0, rect.y() + height - values[0] * height );
+	controlPoints[cpi++] = QPointF( rect.x(), rect.y() + height - values[0] * height );
 
 	// Calculate control points between data points
 	// Based on ideas from:
