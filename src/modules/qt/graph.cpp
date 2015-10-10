@@ -96,6 +96,21 @@ void setup_graph_pen( QPainter& p, QRectF& r, mlt_properties filter_properties )
 	p.setPen(pen);
 }
 
+static inline void fix_point( QPointF& point, QRectF& rect )
+{
+	if( point.x() < rect.x() ) {
+		point.setX( rect.x() );
+	} else if ( point.x() > rect.x() + rect.width() ) {
+		point.setX( rect.x() + rect.width() );
+	}
+
+	if( point.y() < rect.y() ) {
+		point.setY( rect.y() );
+	} else if ( point.y() > rect.y() + rect.height() ) {
+		point.setY( rect.y() + rect.height() );
+	}
+}
+
 void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, double tension, int fill )
 {
 	double width = rect.width();
@@ -124,10 +139,14 @@ void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, dou
 		double fb = tension * d12 / ( d01 + d12 );
 		double p1x = x1 - fa * ( x2 - x0 );
 		double p1y = y1 - fa * ( y2 - y0 );
+		QPointF c1( p1x, p1y );
+		fix_point( c1, rect );
 		double p2x = x1 + fb * ( x2 - x0 );
 		double p2y = y1 + fb * ( y2 - y0 );
-		controlPoints[cpi++] = QPointF( p1x, p1y );
-		controlPoints[cpi++] = QPointF( p2x, p2y );
+		QPointF c2( p2x, p2y );
+		fix_point( c2, rect );
+		controlPoints[cpi++] = c1;
+		controlPoints[cpi++] = c2;
 	}
 
 	// Last control point is equal to last point
