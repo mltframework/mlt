@@ -99,13 +99,13 @@ static int set_luma_transfer( struct SwsContext *context, int src_colorspace, in
 	case 470:
 	case 601:
 	case 624:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+		dst_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
 		break;
 	case 240:
-		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+		dst_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
 		break;
 	case 709:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		dst_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
 		break;
 	default:
 		break;
