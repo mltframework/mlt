@@ -27,6 +27,7 @@
 void setup_graph_painter( QPainter& p, QRectF& rect, mlt_properties filter_properties );
 void setup_graph_pen( QPainter& p, QRectF& rect, mlt_properties filter_properties );
 void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, double tension, int fill );
+void paint_bar_graph( QPainter& p, QRectF& rect, int points, float* values );
 
 
 #endif // GRAPH_H

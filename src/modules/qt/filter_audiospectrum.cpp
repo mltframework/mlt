@@ -175,8 +175,6 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
-	int fill = mlt_properties_get_int( filter_properties, "fill" );
-	double tension = mlt_properties_get_double( filter_properties, "tension" );
 	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
 	if ( strchr( mlt_properties_get( filter_properties, "rect" ), '%' ) ) {
 		rect.x *= qimg->width();
@@ -197,8 +195,18 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 		bands = r.width();
 	}
 	float* spectrum = (float*)mlt_pool_alloc( bands * sizeof(float) );
+
 	convert_fft_to_spectrum( filter, frame, bands, spectrum );
-	paint_line_graph( p, r, bands, spectrum, tension, fill );
+
+	char* graph_type = mlt_properties_get( filter_properties, "type" );
+	if( graph_type && graph_type[0] == 'b' ) {
+		paint_bar_graph( p, r, bands, spectrum );
+	} else {
+		int fill = mlt_properties_get_int( filter_properties, "fill" );
+		double tension = mlt_properties_get_double( filter_properties, "tension" );
+		paint_line_graph( p, r, bands, spectrum, tension, fill );
+	}
+
 	mlt_pool_release( spectrum );
 
 	p.end();
@@ -296,6 +304,7 @@ mlt_filter filter_audiospectrum_init( mlt_profile profile, mlt_service_type type
 		mlt_properties_set_int( properties, "_filter_private", 1 );
 		mlt_properties_set_int( properties, "frequency_low", 20 );
 		mlt_properties_set_int( properties, "frequency_high", 20000 );
+		mlt_properties_set( properties, "type", "line" );
 		mlt_properties_set( properties, "bgcolor", "0x00000000" );
 		mlt_properties_set( properties, "color.1", "0xffffffff" );
 		mlt_properties_set( properties, "rect", "0% 0% 100% 100%" );

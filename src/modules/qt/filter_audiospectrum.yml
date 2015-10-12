@@ -13,6 +13,18 @@ description: >
   An audio visualization filter that draws an audio spectrum on the image.
 
 parameters:
+  - identifier: type
+    title: Graph type
+    description: The type of graph to display the spectrum.
+    type: string
+    default: line
+    values:
+      - line
+      - bar
+    readonly: no
+    mutable: yes
+    widget: combo
+    
   - identifier: bgcolor
     title: Background Color
     type: color
@@ -58,7 +70,8 @@ parameters:
     title: Line Thickness
     type: integer
     description: >
-      The thickness of the line used to draw the waveform.
+      The thickness of the line used to draw the waveform for line graph.
+      The thickness of the bar for bar graph.
     readonly: no
     default: 0
     minimum: 0
@@ -94,7 +107,9 @@ parameters:
     
   - identifier: fill
     title: Fill
-    description: Whether the area under the waveform should be filled in.
+    description: >
+      Whether the area under the waveform should be filled in.
+      Only applies to line graph type.
     type: boolean
     default: 0
     readonly: no
@@ -108,6 +123,7 @@ parameters:
       0.0 = a straight line between points.
       1.0 = very curved lines between points.
       values < 0 and > 1 will cause loops in the lines.
+      Only applies to line graph type.
     type: float
     default: 0.4
     readonly: no
@@ -139,7 +155,7 @@ parameters:
     title: Low Frequency
     type: integer
     description: >
-      The low end of the frequency range to be used to influence the image 
+      The low end of the frequency range to be used for the graph.
       motion.
     mutable: yes
     readonly: no
@@ -150,7 +166,7 @@ parameters:
     title: High Frequency
     type: integer
     description: >
-      The high end of the frequency range to be used to influence the image 
+      The high end of the frequency range to be used for the graph. 
       motion.
     mutable: yes
     readonly: no
@@ -162,7 +178,7 @@ parameters:
     type: float
     description: >
       The minimum amplitude of sound that must occur within the frequency range
-      to cause the image to move.
+      to cause the value to be applied.
       motion.
     mutable: yes
     readonly: no

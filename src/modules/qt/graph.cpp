@@ -176,3 +176,19 @@ void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, dou
 		p.drawPath( curvePath );
 	}
 }
+
+void paint_bar_graph( QPainter& p, QRectF& rect, int points, float* values )
+{
+	double width = rect.width();
+	double height = rect.height();
+	double pixelsPerPoint = width / (double)points;
+	QPointF bottomPoint( rect.x() + pixelsPerPoint / 2, rect.y() + height );
+	QPointF topPoint( rect.x() + pixelsPerPoint / 2, rect.y() );
+
+	for( int i = 0; i < points; i++ ) {
+		topPoint.setY( rect.y() + height - values[i] * height );
+		p.drawLine( bottomPoint, topPoint );
+		bottomPoint.setX( bottomPoint.x() + pixelsPerPoint );
+		topPoint.setX( bottomPoint.x() );
+	}
+}
