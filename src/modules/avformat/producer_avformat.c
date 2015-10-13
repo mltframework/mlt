@@ -2611,7 +2611,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	producer_set_up_audio( self, *frame );
 
 	// Set the position of this producer
-	mlt_position position = self->seekable ? mlt_producer_frame( producer ) : self->nonseek_position++;
+	mlt_position position = mlt_producer_frame( producer );
 	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "original_position", position );
 
 	// Calculate the next timecode
