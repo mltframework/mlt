@@ -239,6 +239,7 @@ static void setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame 
 	mlt_properties_set( producer_properties, "family", mlt_properties_get( my_properties, "family" ) );
 	mlt_properties_set( producer_properties, "size", mlt_properties_get( my_properties, "size" ) );
 	mlt_properties_set( producer_properties, "weight", mlt_properties_get( my_properties, "weight" ) );
+	mlt_properties_set( producer_properties, "style", mlt_properties_get( my_properties, "style" ) );
 	mlt_properties_set( producer_properties, "fgcolour", mlt_properties_get( my_properties, "fgcolour" ) );
 	mlt_properties_set( producer_properties, "bgcolour", mlt_properties_get( my_properties, "bgcolour" ) );
 	mlt_properties_set( producer_properties, "olcolour", mlt_properties_get( my_properties, "olcolour" ) );
@@ -373,6 +374,7 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		mlt_properties_set( my_properties, "family", "Sans" );
 		mlt_properties_set( my_properties, "size", "48" );
 		mlt_properties_set( my_properties, "weight", "400" );
+		mlt_properties_set( my_properties, "style", "normal" );
 		mlt_properties_set( my_properties, "fgcolour", "0x000000ff" );
 		mlt_properties_set( my_properties, "bgcolour", "0x00000020" );
 		mlt_properties_set( my_properties, "olcolour", "0x00000000" );

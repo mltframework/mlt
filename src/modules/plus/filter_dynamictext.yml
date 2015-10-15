@@ -68,6 +68,19 @@ parameters:
     mutable: yes
     widget: spinner
 
+  - identifier: style
+    title: Font style
+    type: string
+    description: >
+      The style of the font.
+    values:
+      - normal
+      - italic
+    default: normal
+    readonly: no
+    mutable: yes
+    widget: combo
+
   - identifier: weight
     title: Font weight
     type: integer
