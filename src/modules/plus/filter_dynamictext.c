@@ -253,11 +253,13 @@ static void setup_transition( mlt_filter filter, mlt_transition transition )
 	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
 
+	mlt_service_lock( MLT_TRANSITION_SERVICE(transition) );
 	mlt_properties_set( transition_properties, "geometry", mlt_properties_get( my_properties, "geometry" ) );
 	mlt_properties_set( transition_properties, "halign", mlt_properties_get( my_properties, "halign" ) );
 	mlt_properties_set( transition_properties, "valign", mlt_properties_get( my_properties, "valign" ) );
 	mlt_properties_set_int( transition_properties, "out", mlt_properties_get_int( my_properties, "_out" ) );
 	mlt_properties_set_int( transition_properties, "refresh", 1 );
+	mlt_service_unlock( MLT_TRANSITION_SERVICE(transition) );
 }
 
 
@@ -282,7 +284,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 	setup_producer( filter, producer, frame );
 	setup_transition( filter, transition );
-	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	// Make sure the producer is in the correct position
 	position = mlt_filter_get_position( filter, frame );
@@ -291,6 +292,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the b frame and process with transition if successful
 	if ( !error && mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &b_frame, 0 ) == 0 )
 	{
+		// This lock needs to also protect the producer properties from being
+		// modified in setup_producer() while also being used in mlt_service_get_frame().
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+
 		// Create a temporary frame so the original stays in tact.
 		a_frame = mlt_frame_clone( frame, 0 );
 
@@ -316,6 +321,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Close the temporary frames
 		mlt_frame_close( a_frame );
 		mlt_frame_close( b_frame );
+	}
+	else
+	{
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
 
 	return error;
