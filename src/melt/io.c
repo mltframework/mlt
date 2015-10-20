@@ -1,6 +1,6 @@
 /*
  * io.c -- melt input/output
- * Copyright (C) 2002-2014 Meltytech, LLC
+ * Copyright (C) 2002-2015 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <pthread.h>
 // for nanosleep()
 #include <framework/mlt_types.h>
+#include <windows.h>
 #endif
 #include <unistd.h>
 #include <sys/time.h>
@@ -101,8 +102,10 @@ int *get_int( int *output, int use )
 
 #ifndef WIN32
 static struct termios oldtty;
-static int mode = 0;
+#else
+static DWORD oldtty;
 #endif
+static int mode = 0;
 
 /** This is called automatically on application exit to restore the 
 	previous tty settings.
@@ -110,13 +113,18 @@ static int mode = 0;
 
 void term_exit(void)
 {
-#ifndef WIN32
 	if ( mode == 1 )
 	{
+#ifndef WIN32
 		tcsetattr( 0, TCSANOW, &oldtty );
+#else
+		HANDLE h = GetStdHandle( STD_INPUT_HANDLE );
+		if (h) {
+			SetConsoleMode( h, oldtty );
+		}
+#endif
 		mode = 0;
 	}
-#endif
 }
 
 /** Init terminal so that we can grab keys without blocking.
@@ -139,11 +147,19 @@ void term_init( )
 	tty.c_cc[ VTIME ] = 0;
     
 	tcsetattr( 0, TCSANOW, &tty );
+#else
+	HANDLE h = GetStdHandle( STD_INPUT_HANDLE );
+	if (h) {
+		DWORD tty;
+		GetConsoleMode( h, &tty );
+		oldtty = tty;
+		SetConsoleMode( h, mode & ~( ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT ) );
+	}
+#endif
 
 	mode = 1;
 
 	atexit( term_exit );
-#endif
 }
 
 /** Check for a keypress without blocking infinitely.
@@ -172,6 +188,14 @@ int term_read( )
         return n;
     }
 #else
+	HANDLE h = GetStdHandle( STD_INPUT_HANDLE );
+	if ( h && WaitForSingleObject( h, 0 ) == WAIT_OBJECT_0 )
+	{
+		DWORD count;
+		TCHAR c = 0;
+		ReadConsole( h, &c, 1, &count, NULL );
+		return (int) c;
+	}
 	struct timespec tm = { 0, 40000000 };
 	nanosleep( &tm, NULL );
 #endif
