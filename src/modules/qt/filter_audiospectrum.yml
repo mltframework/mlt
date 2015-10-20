@@ -116,6 +116,26 @@ parameters:
     mutable: yes
     widget: checkbox
     
+  - identifier: mirror
+    title: Mirror
+    description: >
+      Mirror the spectrum about the center of the rectangle.
+    type: boolean
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+    
+  - identifier: reverse
+    title: Reverse
+    description: >
+      Draw the points starting with the highest frequency first.
+    type: boolean
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+    
   - identifier: tension
     title: Line Tension
     description: >

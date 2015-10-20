@@ -199,12 +199,35 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 	convert_fft_to_spectrum( filter, frame, bands, spectrum );
 
 	char* graph_type = mlt_properties_get( filter_properties, "type" );
+	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
+	int reverse = mlt_properties_get_int( filter_properties, "reverse" );
+	int fill = mlt_properties_get_int( filter_properties, "fill" );
+	double tension = mlt_properties_get_double( filter_properties, "tension" );
+
+	if( reverse ) {
+		p.translate( r.width(), 0 );
+		p.scale( -1, 1 );
+	}
+
+	if( mirror ) {
+		r.setHeight( r.height() / 2.0 );
+	}
+
 	if( graph_type && graph_type[0] == 'b' ) {
 		paint_bar_graph( p, r, bands, spectrum );
 	} else {
-		int fill = mlt_properties_get_int( filter_properties, "fill" );
-		double tension = mlt_properties_get_double( filter_properties, "tension" );
 		paint_line_graph( p, r, bands, spectrum, tension, fill );
+	}
+
+	if( mirror ) {
+		p.translate( 0, r.height() * 2.0 );
+		p.scale( 1, -1 );
+
+		if( graph_type && graph_type[0] == 'b' ) {
+			paint_bar_graph( p, r, bands, spectrum );
+		} else {
+			paint_line_graph( p, r, bands, spectrum, tension, fill );
+		}
 	}
 
 	mlt_pool_release( spectrum );
@@ -310,6 +333,8 @@ mlt_filter filter_audiospectrum_init( mlt_profile profile, mlt_service_type type
 		mlt_properties_set( properties, "rect", "0% 0% 100% 100%" );
 		mlt_properties_set( properties, "thickness", "0" );
 		mlt_properties_set( properties, "fill", "0" );
+		mlt_properties_set( properties, "mirror", "0" );
+		mlt_properties_set( properties, "reverse", "0" );
 		mlt_properties_set( properties, "tension", "0.4" );
 		mlt_properties_set( properties, "angle", "0" );
 		mlt_properties_set( properties, "gorient", "v" );
