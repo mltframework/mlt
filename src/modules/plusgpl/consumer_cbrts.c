@@ -1158,9 +1158,6 @@ static void *consumer_thread( void *arg )
 	// Get the consumer and producer
 	mlt_consumer consumer = &self->parent;
 
-	// Get the properties
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
-
 	// internal intialization
 	mlt_frame frame = NULL;
 	int last_position = -1;
@@ -1198,7 +1195,6 @@ static void *consumer_thread( void *arg )
 			}
 
 			mlt_consumer_put_frame( self->avformat, frame );
-			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 			// Setup event listener as a callback from consumer avformat
 			if ( !self->event_registered )
