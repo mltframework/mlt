@@ -182,9 +182,24 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 		rect.y *= qimg->height();
 		rect.h *= qimg->height();
 	}
+	char* graph_type = mlt_properties_get( filter_properties, "type" );
+	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
+	int reverse = mlt_properties_get_int( filter_properties, "reverse" );
+	int fill = mlt_properties_get_int( filter_properties, "fill" );
+	double tension = mlt_properties_get_double( filter_properties, "tension" );
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
 	QPainter p( qimg );
+
+	if( reverse ) {
+		p.translate( r.x() * 2 + r.width(), 0 );
+		p.scale( -1, 1 );
+	}
+
+	if( mirror ) {
+		// Draw two half rectangle instead of one full rectangle.
+		r.setHeight( r.height() / 2.0 );
+	}
 
 	setup_graph_painter( p, r, filter_properties );
 	setup_graph_pen( p, r, filter_properties );
@@ -198,21 +213,6 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 
 	convert_fft_to_spectrum( filter, frame, bands, spectrum );
 
-	char* graph_type = mlt_properties_get( filter_properties, "type" );
-	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
-	int reverse = mlt_properties_get_int( filter_properties, "reverse" );
-	int fill = mlt_properties_get_int( filter_properties, "fill" );
-	double tension = mlt_properties_get_double( filter_properties, "tension" );
-
-	if( reverse ) {
-		p.translate( r.width(), 0 );
-		p.scale( -1, 1 );
-	}
-
-	if( mirror ) {
-		r.setHeight( r.height() / 2.0 );
-	}
-
 	if( graph_type && graph_type[0] == 'b' ) {
 		paint_bar_graph( p, r, bands, spectrum );
 	} else {
@@ -220,7 +220,8 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 	}
 
 	if( mirror ) {
-		p.translate( 0, r.height() * 2.0 );
+		// Second rectangle is mirrored.
+		p.translate( 0, r.y() * 2 + r.height() * 2 );
 		p.scale( 1, -1 );
 
 		if( graph_type && graph_type[0] == 'b' ) {
