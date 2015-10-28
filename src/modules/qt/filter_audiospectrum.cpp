@@ -102,6 +102,7 @@ static void convert_fft_to_spectrum( mlt_filter filter, mlt_frame frame, int spe
 	double bin_width = mlt_properties_get_double( fft_properties, "bin_width" );
 	float* bins = (float*)mlt_properties_get_data( frame_properties, pdata->fft_prop_name, NULL );
 	double threshold = mlt_properties_get_int( filter_properties, "threshold" );
+	int reverse = mlt_properties_get_int( filter_properties, "reverse" );
 
 	// Map the linear fft bin frequencies to a log scale spectrum.
 	double band_freq_factor = pow( hi_freq / low_freq, 1.0 / (double)spect_bands );
@@ -157,11 +158,17 @@ static void convert_fft_to_spectrum( mlt_filter filter, mlt_frame frame, int spe
 
 		// Scale the magnitude to the range 0.0-1.0 based on dB
 		double dB = mag > 0.0 ? 20 * log10( mag ) : -1000.0;
+		double spect_val = 0;
 		if( dB >= threshold )
 		{
-			spectrum[spect_index] = 1.0 - (dB / threshold);
+			spect_val = 1.0 - (dB / threshold);
+		}
+
+		if( reverse )
+		{
+			spectrum[spect_bands - spect_index - 1] = spect_val;
 		} else {
-			spectrum[spect_index] = 0;
+			spectrum[spect_index] = spect_val;
 		}
 
 		// Calculate the next spectrum point frequency range.
@@ -184,17 +191,11 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 	}
 	char* graph_type = mlt_properties_get( filter_properties, "type" );
 	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
-	int reverse = mlt_properties_get_int( filter_properties, "reverse" );
 	int fill = mlt_properties_get_int( filter_properties, "fill" );
 	double tension = mlt_properties_get_double( filter_properties, "tension" );
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
 	QPainter p( qimg );
-
-	if( reverse ) {
-		p.translate( r.x() * 2 + r.width(), 0 );
-		p.scale( -1, 1 );
-	}
 
 	if( mirror ) {
 		// Draw two half rectangle instead of one full rectangle.
