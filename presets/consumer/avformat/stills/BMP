@@ -3,5 +3,7 @@ f=image2
 vcodec=bmp
 an=1
 audio_off=1
+g=1
+bf=0
 
 meta.preset.extension=bmp
