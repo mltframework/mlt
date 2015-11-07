@@ -1,6 +1,6 @@
 /*
  * transition_composite.c -- compose one image over another using alpha channel
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -375,7 +375,7 @@ void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_
 
 	for ( ; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, (!alpha_b)?0x255:(*alpha_b ++), step );
+		mix = calculate_mix( luma, j, soft, weight, alpha_b? *alpha_b : 255, step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
@@ -384,7 +384,8 @@ void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_
 		{
 			*alpha_a = ( mix >> 8 ) | *alpha_a;
 			alpha_a ++;
-		};
+		}
+		if ( alpha_b ) alpha_b ++;
 	}
 }
 
@@ -395,12 +396,13 @@ static void composite_line_yuv_or( uint8_t *dest, uint8_t *src, int width, uint8
 
 	for ( j = 0; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ | *alpha_a, step );
+		mix = calculate_mix( luma, j, soft, weight, (alpha_b? *alpha_b : 255) | (alpha_a? *alpha_a : 255), step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a ++ = mix >> 8;
+		if (alpha_a) *alpha_a ++ = mix >> 8;
+		if (alpha_b) alpha_b++;
 	}
 }
 
@@ -411,12 +413,13 @@ static void composite_line_yuv_and( uint8_t *dest, uint8_t *src, int width, uint
 
 	for ( j = 0; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ & *alpha_a, step );
+		mix = calculate_mix( luma, j, soft, weight, (alpha_b? *alpha_b : 255) & (alpha_a? *alpha_a : 255), step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a ++ = mix >> 8;
+		if (alpha_a) *alpha_a ++ = mix >> 8;
+		if (alpha_b) alpha_b++;
 	}
 }
 
@@ -427,12 +430,13 @@ static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint
 
 	for ( j = 0; j < width; j ++ )
 	{
-		mix = calculate_mix( luma, j, soft, weight, *alpha_b ++ ^ *alpha_a, step );
+		mix = calculate_mix( luma, j, soft, weight, (alpha_b? *alpha_b : 255) ^ (alpha_a? *alpha_a : 255), step );
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
 		*dest = sample_mix( *dest, *src++, mix );
 		dest++;
-		*alpha_a ++ = mix >> 8;
+		if (alpha_a) *alpha_a ++ = mix >> 8;
+		if (alpha_b) alpha_b++;
 	}
 }
 
