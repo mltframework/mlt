@@ -622,6 +622,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
  * channel if one does not already exist.
  *
  * \public \memberof mlt_frame_s
+ * \deprecated use mlt_frame_get_alpha() instead
  * \param self a frame
  * \return the alpha channel
  */
