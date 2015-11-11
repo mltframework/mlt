@@ -616,13 +616,17 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 
 		int pix_fmt = codec_context->pix_fmt;
 		pick_av_pixel_format( &pix_fmt );
-		// Verify that we can convert this to YUV 4:2:2
-		struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, pix_fmt,
-			codec_context->width, codec_context->height, pick_pix_fmt( codec_context->pix_fmt ), SWS_BILINEAR, NULL, NULL, NULL);
-		if ( context )
-			sws_freeContext( context );
-		else
-			error = 1;
+		if ( pix_fmt != AV_PIX_FMT_NONE ) {
+			// Verify that we can convert this to one of our image formats.
+			struct SwsContext *context = sws_getContext( codec_context->width, codec_context->height, pix_fmt,
+				codec_context->width, codec_context->height, pick_pix_fmt( codec_context->pix_fmt ), SWS_BILINEAR, NULL, NULL, NULL);
+			if ( context )
+				sws_freeContext( context );
+			else
+				error = 1;
+		} else {
+			self->video_index = -1;
+		}
 	}
 	return error;
 }
