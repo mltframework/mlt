@@ -346,7 +346,10 @@ int mlt_multitrack_disconnect( mlt_multitrack self, int track )
 
 int mlt_multitrack_count( mlt_multitrack self )
 {
-	return self->count;
+	if ( self == NULL )
+		return 0;
+	else
+		return self->count;
 }
 
 /** Get an individual track as a producer.
