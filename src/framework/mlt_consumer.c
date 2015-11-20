@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -574,6 +574,7 @@ int mlt_consumer_start( mlt_consumer self )
 	}
 
 	mlt_properties_set_int( properties, "frame_duration", frame_duration );
+	mlt_properties_set_int( properties, "drop_count", 0 );
 
 	// Check and run an ante command
 	if ( mlt_properties_get( properties, "ante" ) )
@@ -1512,6 +1513,12 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				priv->consecutive_dropped = 0;
 			}
 		}
+		if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered") )
+		{
+			int dropped = mlt_properties_get_int( properties, "drop_count" );
+			mlt_properties_set_int( properties, "drop_count", ++dropped );
+			mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "dropped video frame %d\n", dropped );
+		}
 	}
 	if ( priv->is_purge ) {
 		priv->is_purge = 0;
@@ -1570,6 +1577,13 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 		frame = mlt_deque_pop_front( priv->queue );
 		pthread_cond_broadcast( &priv->queue_cond );
 		pthread_mutex_unlock( &priv->queue_mutex );
+		if ( priv->real_time == 1 && frame &&
+			 !mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered" ) )
+		{
+			int dropped = mlt_properties_get_int( properties, "drop_count" );
+			mlt_properties_set_int( properties, "drop_count", ++dropped );
+			mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "dropped video frame %d\n", dropped );
+		}
 	}
 	else // real_time == 0
 	{

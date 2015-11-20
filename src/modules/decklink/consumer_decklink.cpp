@@ -1,6 +1,6 @@
 /*
- * consumer_decklink.c -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010 Dan Dennedy <dan@dennedy.org>
+ * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
+ * Copyright (C) 2010-2015 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,7 +45,6 @@ private:
 	double                      m_fps;
 	uint64_t                    m_count;
 	int                         m_channels;
-	unsigned                    m_dropped;
 	IDeckLinkMutableVideoFrame* m_decklinkFrame;
 	bool                        m_isAudio;
 	int                         m_isKeyer;
@@ -214,7 +213,6 @@ public:
 
 		// Initialize members
 		m_count = 0;
-		m_dropped = 0;
 		m_decklinkFrame = NULL;
 		preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
 		m_channels = mlt_properties_get_int( properties, "channels" );
@@ -477,9 +475,6 @@ public:
 
 			m_deckLinkOutput->ScheduleVideoFrame( m_decklinkFrame, m_count * m_duration, m_duration, m_timescale );
 		}
-
-		if ( !rendered )
-			mlt_log_verbose( getConsumer(), "dropped video frame %u\n", ++m_dropped );
 	}
 
 	HRESULT render( mlt_frame frame )
