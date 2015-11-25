@@ -109,7 +109,7 @@ int mlt_properties_from_utf8( mlt_properties properties, const char *prop_name, 
 	if ( result < 0 ) {
 		result = mlt_properties_set( properties, prop_name_out,
 									 mlt_properties_get( properties, prop_name ) );
+		mlt_log_warning( NULL, "iconv failed to convert \"%s\" from UTF-8 to code page %u\n", prop_name, codepage );
 	}
-	mlt_log_warning( NULL, "iconv failed to convert \"%s\" from UTF-8 to code page %u\n", prop_name, codepage );
 	return result;
 }
