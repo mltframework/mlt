@@ -269,7 +269,7 @@ case $targetos in
 	Linux|FreeBSD|NetBSD)
 	LIBSUF=".so"
 	;;
-	MINGW32_NT-*|MinGW|mingw)
+	MINGW??_NT-*|MinGW|mingw)
 	targetos="MinGW"
 	LIBSUF=".dll"
 	;;
