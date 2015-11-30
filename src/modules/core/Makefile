@@ -13,6 +13,7 @@ OBJS = factory.o \
 	   producer_loader.o \
 	   producer_melt.o \
 	   producer_noise.o \
+	   producer_timewarp.o \
 	   producer_tone.o \
 	   filter_audiochannels.o \
 	   filter_audiomap.o \
