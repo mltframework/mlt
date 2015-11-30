@@ -207,6 +207,16 @@ mlt_repository mlt_factory_init( const char *directory )
 	return repository;
 }
 
+/** Fetch the repository.
+ *
+ * \return the global repository object
+ */
+
+mlt_repository mlt_factory_repository( )
+{
+	return repository;
+}
+
 /** Fetch the events object.
  *
  * \return the global factory event object

@@ -475,3 +475,8 @@ MLT_0.9.8 {
     mlt_animation_key_count;
     mlt_animation_key_get;
 } MLT_0.9.4;
+
+MLT_0.9.10 {
+  global:
+    mlt_factory_repository;
+} MLT_0.9.8;

@@ -46,6 +46,7 @@
  */
 
 extern mlt_repository mlt_factory_init( const char *directory );
+extern mlt_repository mlt_factory_repository();
 extern const char *mlt_factory_directory( );
 extern char *mlt_environment( const char *name );
 extern int mlt_environment_set( const char *name, const char *value );
