@@ -655,6 +655,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 		if ( old_luma && old_luma[0] )
 		{
 			mlt_properties_set_data( properties, "_luma.orig_bitmap", NULL, 0, NULL, NULL );
+			mlt_properties_set_data( properties, "_luma.bitmap", NULL, 0, NULL, NULL );
 			luma_bitmap = NULL;
 			mlt_properties_set( properties, "_luma", NULL);
 		}
