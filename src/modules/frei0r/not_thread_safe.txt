@@ -51,7 +51,7 @@ saturation=0.2
 scale0tilt
 scanline0r=0.2
 screen=0.2
-select0r
+select0r=0.5
 sharpness
 sobel=0.2
 softlight=0.2
