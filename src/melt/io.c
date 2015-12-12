@@ -195,9 +195,11 @@ int term_read( )
 		TCHAR c = 0;
 		ReadConsole( h, &c, 1, &count, NULL );
 		return (int) c;
+	} else {
+		struct timespec tm = { 0, 40000000 };
+		nanosleep( &tm, NULL );
+		return 0;
 	}
-	struct timespec tm = { 0, 40000000 };
-	nanosleep( &tm, NULL );
 #endif
     return -1;
 }
