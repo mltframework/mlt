@@ -1,7 +1,7 @@
 # plugin name = lowest version that is thread safe or empty if not yet thread safe
 addition=0.2
 addition_alpha=0.2
-alpha0ps
+alpha0ps=0.4
 alphaatop=0.2
 alphain=0.2
 alphaout=0.2
