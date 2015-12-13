@@ -575,7 +575,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
 				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
-				if ( dx >= 0 && dx < (b_width - 1) && dy >=0 && dy < (b_height - 1) )
+				if ( dx >= 0 && dx < b_width && dy >=0 && dy < b_height )
 					interp( b_image, b_width, b_height, dx, dy, result.mix/100.0, p, b_alpha );
 				p += 4;
 			}
