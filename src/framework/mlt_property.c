@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -846,30 +846,30 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 {
 	int hours, mins, secs;
 	char frame_sep = ':';
+	int temp_frames;
 
 	if ( fps == 30000.0/1001.0 )
 	{
 		fps = 30.0;
 		if ( drop )
 		{
-			int i, max_frames = frames;
-			for ( i = 1800; i <= max_frames; i += 1800 )
+			int i;
+			for ( i = 1800; i <= frames; i += 1800 )
 			{
 				if ( i % 18000 )
-				{
-					max_frames += 2;
 					frames += 2;
-				}
 			}
 			frame_sep = ';';
 		}
 	}
 	hours = frames / ( fps * 3600 );
-	frames -= hours * ( fps * 3600 );
-	mins = frames / ( fps * 60 );
-	frames -= mins * ( fps * 60 );
-	secs = frames / fps;
-	frames -= secs * fps;
+	temp_frames = frames - hours * 3600 * fps;
+
+	mins = temp_frames / ( fps * 60 );
+	temp_frames = frames - ( hours * 3600 + mins * 60 ) * fps;
+
+	secs = temp_frames / fps;
+	frames -= lrint( ( hours * 3600 + mins * 60 + secs ) * fps );
 
 	sprintf( s, "%02d:%02d:%02d%c%0*d", hours, mins, secs, frame_sep,
 			 ( fps > 999? 4 : fps > 99? 3 : 2 ), frames );
@@ -887,11 +887,12 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 {
 	int hours, mins;
 	double secs;
+	int temp_frames;
 
 	hours = frames / ( fps * 3600 );
-	frames -= hours * ( fps * 3600 );
-	mins = frames / ( fps * 60 );
-	frames -= mins * ( fps * 60 );
+	temp_frames = frames - hours * 3600 * fps;
+	mins = temp_frames / ( fps * 60 );
+	frames -= lrint( ( hours * 3600 + mins * 60 ) * fps );
 	secs = (double) frames / fps;
 
 	sprintf( s, "%02d:%02d:%06.3f", hours, mins, secs );
