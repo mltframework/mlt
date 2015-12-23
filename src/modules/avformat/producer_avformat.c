@@ -45,6 +45,7 @@
 #include <pthread.h>
 #include <limits.h>
 #include <math.h>
+#include <wchar.h>
 
 #if LIBAVCODEC_VERSION_MAJOR < 55
 #define AV_CODEC_ID_H264    CODEC_ID_H264
@@ -297,6 +298,36 @@ static double get_rotation(AVStream *st)
 }
 #endif
 
+static char* filter_restricted( const char *in )
+{
+	if ( !in ) return NULL;
+	size_t n = strlen( in );
+	char *out = calloc( 1, n + 1 );
+	char *p = out;
+	mbstate_t mbs;
+	memset( &mbs, 0, sizeof(mbs) );
+	while ( *in )
+	{
+		wchar_t w;
+		size_t c = mbrtowc( &w, in, n, &mbs );
+		if ( c <= 0 || c > n ) break;
+		n -= c;
+		in += c;
+		if ( w == 0x9 || w == 0xA || w == 0xD ||
+				( w >= 0x20 && w <= 0xD7FF ) ||
+				( w >= 0xE000 && w <= 0xFFFD ) ||
+				( w >= 0x10000 && w <= 0x10FFFF ) )
+		{
+			mbstate_t ps;
+			memset( &ps, 0, sizeof(ps) );
+			c = wcrtomb( p, w, &ps );
+			if ( c > 0 )
+				p += c;
+		}
+	}
+	return out;
+}
+
 /** Find the default streams.
 */
 
@@ -423,7 +454,9 @@ static mlt_properties find_default_streams( producer_avformat self )
 			if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
 			{
 				snprintf( key, sizeof(key), "meta.attr.%d.stream.%s.markup", i, tag->key );
-				mlt_properties_set( meta_media, key, tag->value );
+				const char* value = filter_restricted( tag->value );
+				mlt_properties_set( meta_media, key, value );
+				free( value );
 			}
 		}
 	}
@@ -432,7 +465,9 @@ static mlt_properties find_default_streams( producer_avformat self )
 		if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
 		{
 			snprintf( key, sizeof(key), "meta.attr.%s.markup", tag->key );
-			mlt_properties_set( meta_media, key, tag->value );
+			const char* value = filter_restricted( tag->value );
+			mlt_properties_set( meta_media, key, value );
+			free( value );
 		}
 	}
 

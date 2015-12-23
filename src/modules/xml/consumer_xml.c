@@ -25,7 +25,6 @@
 #include <locale.h>
 #include <libxml/tree.h>
 #include <pthread.h>
-#include <wchar.h>
 
 #define ID_SIZE 128
 #define TIME_PROPERTY "_consumer_xml"
@@ -61,36 +60,6 @@ static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer consumer );
 static void *consumer_thread( void *arg );
 static void serialise_service( serialise_context context, mlt_service service, xmlNode *node );
-
-static char* filter_restricted( const char *in )
-{
-	if ( !in ) return NULL;
-	size_t n = strlen( in );
-	char *out = calloc( 1, n + 1 );
-	char *p = out;
-	mbstate_t mbs;
-	memset( &mbs, 0, sizeof(mbs) );
-	while ( *in )
-	{
-		wchar_t w;
-		size_t c = mbrtowc( &w, in, n, &mbs );
-		if ( c <= 0 || c > n ) break;
-		n -= c;
-		in += c;
-		if ( w == 0x9 || w == 0xA || w == 0xD ||
-				( w >= 0x20 && w <= 0xD7FF ) ||
-				( w >= 0xE000 && w <= 0xFFFD ) ||
-				( w >= 0x10000 && w <= 0x10FFFF ) )
-		{
-			mbstate_t ps;
-			memset( &ps, 0, sizeof(ps) );
-			c = wcrtomb( p, w, &ps );
-			if ( c > 0 )
-				p += c;
-		}
-	}
-	return out;
-}
 
 typedef enum
 {
@@ -235,13 +204,9 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 		{
 			char *value = NULL;
 			if ( !strcmp( name, "length" ) )
-			{
-				char *time = mlt_properties_get_time( properties, name, context->time_format );
-				if ( time )
-					value = strdup( time );
-			}
+				value = mlt_properties_get_time( properties, name, context->time_format );
 			else
-				value = filter_restricted( mlt_properties_get_value( properties, i ) );
+				value = mlt_properties_get_value( properties, i );
 			if ( value )
 			{
 				int rootlen = strlen( context->root );
@@ -251,7 +216,6 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 				else
 					p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
-				free( value );
 			}
 		}
 	}
@@ -268,7 +232,7 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 		char *name = mlt_properties_get_name( properties, i );
 		if ( !strncmp( name, store, strlen( store ) ) )
 		{
-			char *value = filter_restricted( mlt_properties_get_value( properties, i ) );
+			char *value = mlt_properties_get_value( properties, i );
 			if ( value )
 			{
 				int rootlen = strlen( context->root );
@@ -278,7 +242,6 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 				else
 					p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
-				free( value );
 			}
 		}
 	}
