@@ -31,7 +31,7 @@ gain_merge=0.2
 hardlight=0.2
 hqdn3d
 hue=0.2
-keyspillm0pup
+keyspillm0pup=0.3
 lighten=0.2
 lightgraffiti
 lissajous0r=0.3
