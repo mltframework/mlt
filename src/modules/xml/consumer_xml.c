@@ -1,6 +1,6 @@
 /*
  * consumer_xml.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -690,7 +690,17 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	if ( mlt_properties_get_lcnumeric( properties ) )
 		xmlNewProp( root, _x("LC_NUMERIC"), _x( mlt_properties_get_lcnumeric( properties ) ) );
 	else
+#ifdef WIN32
+	{
+		const char* lcnumeric = setlocale( LC_NUMERIC, NULL );
+		mlt_properties_set( properties, "_xml_lcnumeric_in", lcnumeric );
+		mlt_properties_to_utf8( properties, "_xml_lcnumeric_in", "_xml_lcnumeric_out" );
+		lcnumeric = mlt_properties_get( properties, "_xml_lcnumeric_out" );
+		xmlNewProp( root, _x("LC_NUMERIC"), _x( lcnumeric ) );
+	}
+#else
 		xmlNewProp( root, _x("LC_NUMERIC"), _x( setlocale( LC_NUMERIC, NULL ) ) );
+#endif
 
 	// Indicate the version
 	xmlNewProp( root, _x("version"), _x( mlt_version_get_string() ) );

@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -179,6 +179,15 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
         result = list->locale->__names[ LC_NUMERIC ];
 #else
 		result = list->locale;
+#endif
+#if defined(WIN32)
+		if ( result )
+		{
+			// Convert the string from ANSI code page to UTF-8.
+			mlt_properties_set( self, "_lcnumeric_in", result );
+			mlt_properties_to_utf8( self, "_lcnumeric_in", "_lcnumeric_out" );
+			result = mlt_properties_get( self, "_lcnumeric_out" );
+		}
 #endif
     }
 	return result;

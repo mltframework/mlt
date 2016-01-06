@@ -3,7 +3,7 @@
  * \brief Properties class declaration
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -108,4 +108,5 @@ extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, 
 extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *name, int position, int length );
 
 extern int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, const char *name_to );
+extern int mlt_properties_to_utf8( mlt_properties properties, const char *name_from, const char *name_to );
 #endif

@@ -479,4 +479,5 @@ MLT_0.9.8 {
 MLT_0.9.10 {
   global:
     mlt_factory_repository;
+    mlt_properties_to_utf8;
 } MLT_0.9.8;

@@ -2,7 +2,7 @@
  * \file win32.c
  * \brief Miscellaneous utility functions for Windows.
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -94,6 +94,33 @@ static int iconv_from_utf8( mlt_properties properties, const char *prop_name, co
 	return result;
 }
 
+static int iconv_to_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out, const char* encoding )
+{
+	char *text = mlt_properties_get( properties, prop_name );
+	int result = -1;
+
+	iconv_t cd = iconv_open( "UTF-8", encoding );
+	if ( text && ( cd != ( iconv_t )-1 ) ) {
+		size_t inbuf_n = strlen( text );
+		size_t outbuf_n = inbuf_n * 6;
+		char *outbuf = mlt_pool_alloc( outbuf_n );
+		char *outbuf_p = outbuf;
+
+		memset( outbuf, 0, outbuf_n );
+
+		if ( text != NULL && strcmp( text, "" ) && iconv( cd, &text, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
+			mlt_properties_set( properties, prop_name_out, outbuf );
+		else
+			mlt_properties_set( properties, prop_name_out, "" );
+
+		mlt_pool_release( outbuf );
+		result = 0;
+	}
+	if ( cd != (iconv_t) -1 )
+		iconv_close( cd );
+	return result;
+}
+
 int mlt_properties_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
 {
 	int result = -1;
@@ -110,6 +137,26 @@ int mlt_properties_from_utf8( mlt_properties properties, const char *prop_name, 
 		result = mlt_properties_set( properties, prop_name_out,
 									 mlt_properties_get( properties, prop_name ) );
 		mlt_log_warning( NULL, "iconv failed to convert \"%s\" from UTF-8 to code page %u\n", prop_name, codepage );
+	}
+	return result;
+}
+
+int mlt_properties_to_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out )
+{
+	int result = -1;
+	UINT codepage = GetACP();
+
+	if ( codepage > 0 ) {
+		// numeric code page
+		char codepage_str[10];
+		snprintf( codepage_str, sizeof(codepage_str), "CP%u", codepage );
+		codepage_str[sizeof(codepage_str) - 1] = '\0';
+		result = iconv_to_utf8( properties, prop_name, prop_name_out, codepage_str );
+	}
+	if ( result < 0 ) {
+		result = mlt_properties_set( properties, prop_name_out,
+									 mlt_properties_get( properties, prop_name ) );
+		mlt_log_warning( NULL, "iconv failed to convert \"%s\" from code page %u to UTF-8\n", prop_name, codepage );
 	}
 	return result;
 }
