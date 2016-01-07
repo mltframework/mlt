@@ -57,7 +57,6 @@ int mlt_filter_init( mlt_filter self, void *child )
 		// Default in, out, track properties
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
-		mlt_properties_set_int( properties, "track", 0 );
 
 		return 0;
 	}

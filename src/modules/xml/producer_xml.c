@@ -925,7 +925,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		// Associate the filter with the parent
 		if ( parent != NULL )
 		{
-			if ( parent_type == mlt_tractor_type )
+			if ( parent_type == mlt_tractor_type && mlt_properties_get( properties, "track" ) )
 			{
 				mlt_field field = mlt_tractor_field( MLT_TRACTOR( parent ) );
 				mlt_field_plant_filter( field, MLT_FILTER( filter ), mlt_properties_get_int( properties, "track" ) );
