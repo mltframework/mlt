@@ -1,6 +1,6 @@
 /*
  * producer_timewarp.c -- modify speed and direction of a clip
- * Copyright (C) 2015 Meltytech, LLC
+ * Copyright (C) 2015-2016 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -44,6 +44,8 @@ static void timewarp_property_changed( mlt_service owner, mlt_producer producer,
 		 !strcmp( name, "length" ) ||
 		 !strcmp( name, "in" ) ||
 		 !strcmp( name, "out" ) ||
+		 !strcmp( name, "ignore_points" ) ||
+		 !strcmp( name, "eof" ) ||
 		 !strncmp( name, "meta.", 5 ) )
 	{
 		// Pass parameter changes from this producer to the encapsulated clip
@@ -63,6 +65,8 @@ static void clip_property_changed( mlt_service owner, mlt_producer producer, cha
 		 !strcmp( name, "length" ) ||
 		 !strcmp( name, "in" ) ||
 		 !strcmp( name, "out" ) ||
+		 !strcmp( name, "ignore_points" ) ||
+		 !strcmp( name, "eof" ) ||
 		 !strncmp( name, "meta.", 5 ) )
 	{
 		// The encapsulated clip producer might change its own parameters.
