@@ -27,14 +27,14 @@ class TestFilter: public QObject
 
 public:
     TestFilter() {
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__linux__) || defined(__APPLE__)
         locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
 #endif
         Factory::init();
     }
 
     ~TestFilter() {
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__linux__) || defined(__APPLE__)
         freelocale(locale);
 #endif
     }

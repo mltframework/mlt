@@ -140,7 +140,7 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 	{
 		property_list *list = self->local;
 
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 		if ( list->locale )
 			freelocale( list->locale );
 		list->locale = newlocale( LC_NUMERIC_MASK, locale, NULL );
@@ -173,7 +173,7 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 
 	if ( list->locale )
 	{
-#if defined(__DARWIN__)
+#if defined(__APPLE__)
         result = querylocale( LC_NUMERIC, list->locale );
 #elif defined(__GLIBC__)
         result = list->locale->__names[ LC_NUMERIC ];
@@ -708,7 +708,7 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 			// Determine the value
 			if ( isdigit( id[ 0 ] ) )
 			{
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 				property_list *list = self->local;
 				if ( list->locale )
 					current = strtod_l( id, NULL, list->locale );
@@ -1404,7 +1404,7 @@ void mlt_properties_close( mlt_properties self )
 				free( list->name[ index ] );
 			}
 
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 			// Cleanup locale
 			if ( list->locale )
 				freelocale( list->locale );

@@ -34,7 +34,7 @@ extern "C" {
 #include <framework/mlt_factory.h>
 }
 
-#if defined(__DARWIN__)
+#if defined(__APPLE__)
 #include <OpenGL/OpenGL.h>
 #elif defined(WIN32)
 #include <windows.h>
@@ -221,7 +221,7 @@ void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 	mlt_log_debug( filter->get_service(), "%s\n", __FUNCTION__ );
 #ifdef WIN32
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("\\share\\movit");
-#elif defined(__DARWIN__) && defined(RELOCATABLE)
+#elif defined(__APPLE__) && defined(RELOCATABLE)
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("/share/movit");
 #else
 	std::string path = std::string(getenv("MLT_MOVIT_PATH") ? getenv("MLT_MOVIT_PATH") : SHADERDIR);

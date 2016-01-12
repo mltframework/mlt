@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#ifdef __DARWIN__
+#ifdef __APPLE__
 
 char* getCString( DLString aDLString )
 {

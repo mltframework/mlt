@@ -313,7 +313,7 @@ plugin_open_plugin (plugin_desc_t * desc,
       return 1;
     }
 
-#ifdef __DARWIN__
+#ifdef __APPLE__
   if (!get_descriptor (desc->index)) {
     void (*constructor)(void) = dlsym (dl_handle, "_init");
     if (constructor) constructor();

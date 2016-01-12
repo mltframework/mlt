@@ -43,7 +43,7 @@
 #define PREFIX_LIB "\\lib\\mlt"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
 #define PREFIX_DATA "\\share\\mlt"
-#elif defined(__DARWIN__) && defined(RELOCATABLE)
+#elif defined(__APPLE__) && defined(RELOCATABLE)
 #include <mach-o/dyld.h>
 /** the default subdirectory of the libdir for holding modules (plugins) */
 #define PREFIX_LIB "/lib/mlt"
@@ -121,12 +121,12 @@ mlt_repository mlt_factory_init( const char *directory )
 		char path[1024];
 		DWORD size = sizeof( path );
 		GetModuleFileName( NULL, path, size );
-#elif defined(__DARWIN__)  && defined(RELOCATABLE)
+#elif defined(__APPLE__)  && defined(RELOCATABLE)
 		char path[1024];
 		uint32_t size = sizeof( path );
 		_NSGetExecutablePath( path, &size );
 #endif
-#if defined(WIN32) || (defined(__DARWIN__) && defined(RELOCATABLE))
+#if defined(WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
 		char *path2 = strdup( path );
 		char *appdir = dirname( path2 );
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
@@ -137,7 +137,7 @@ mlt_repository mlt_factory_init( const char *directory )
 	// Only initialise once
 	if ( mlt_directory == NULL )
 	{
-#if !defined(WIN32) && !(defined(__DARWIN__) && defined(RELOCATABLE))
+#if !defined(WIN32) && !(defined(__APPLE__) && defined(RELOCATABLE))
 		// Allow user overrides
 		if ( directory == NULL || !strcmp( directory, "" ) )
 			directory = getenv( "MLT_REPOSITORY" );
@@ -147,7 +147,7 @@ mlt_repository mlt_factory_init( const char *directory )
 			directory = PREFIX_LIB;
 
 		// Store the prefix for later retrieval
-#if defined(WIN32) || (defined(__DARWIN__) && defined(RELOCATABLE))
+#if defined(WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
 		char *exedir = mlt_environment( "MLT_APPDIR" );
 		size_t size = strlen( exedir );
 		if ( global_properties && !getenv( "MLT_DATA" ) )

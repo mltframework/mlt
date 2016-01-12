@@ -93,7 +93,7 @@ build_config()
 
 		case $targetos in
 		Darwin)
-		echo "CFLAGS+=-fPIC -D__DARWIN__ `sdl-config --cflags`"
+                echo "CFLAGS+=-fPIC `sdl-config --cflags`"
 		echo "SHFLAGS=-dynamiclib"
 		echo "LDFLAGS+=`sdl-config --libs`"
 		;;

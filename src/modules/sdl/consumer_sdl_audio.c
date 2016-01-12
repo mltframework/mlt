@@ -262,7 +262,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	pthread_mutex_lock( &self->audio_mutex );
 
 	// Block until audio received
-#ifdef __DARWIN__
+#ifdef __APPLE__
 	while ( self->running && len > self->audio_avail )
 		pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
 #endif

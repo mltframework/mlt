@@ -278,7 +278,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 	s = copy;
 	pos = strrchr( s, ':' );
 
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
+#if !defined(__GLIBC__) && !defined(__APPLE__)
 	char *orig_localename = NULL;
 	if ( locale )
 	{
@@ -294,7 +294,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 #endif
 
 	if ( pos ) {
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 		if ( locale )
 			seconds = strtod_l( pos + 1, NULL, locale );
 		else
@@ -312,7 +312,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 		}
 	}
 	else {
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 		if ( locale )
 			seconds = strtod_l( s, NULL, locale );
 		else
@@ -320,7 +320,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 			seconds = strtod( s, NULL );
 	}
 
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
+#if !defined(__GLIBC__) && !defined(__APPLE__)
 	if ( locale ) {
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
@@ -489,7 +489,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		char *end = NULL;
 		double result;
 
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 		if ( locale )
 			result = strtod_l( value, &end, locale );
 		else
@@ -511,7 +511,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		if ( end && end[0] == '%' )
 			result /= 100.0;
 
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
+#if !defined(__GLIBC__) && !defined(__APPLE__)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -695,7 +695,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 	{
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
-#if defined(__DARWIN__)
+#if defined(__APPLE__)
 		const char *localename = querylocale( LC_NUMERIC, locale );
 #elif defined(__GLIBC__)
 		const char *localename = locale->__names[ LC_NUMERIC ];
@@ -929,7 +929,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	{
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
-#if defined(__DARWIN__)
+#if defined(__APPLE__)
 		const char *localename = querylocale( LC_NUMERIC, locale );
 #elif defined(__GLIBC__)
 		const char *localename = locale->__names[ LC_NUMERIC ];
@@ -1024,7 +1024,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 		double temp;
 		char *p = NULL;
 		
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 		if ( locale )
 			temp = strtod_l( self->prop_string, &p, locale );
 		else
@@ -1044,7 +1044,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 
 		temp = strtod( self->prop_string, &p );
 
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
+#if !defined(__GLIBC__) && !defined(__APPLE__)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -1528,7 +1528,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		char *p = NULL;
 		int count = 0;
 
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
+#if !defined(__GLIBC__) && !defined(__APPLE__)
 		char *orig_localename = NULL;
 		if ( locale ) {
 			// Protect damaging the global locale from a temporary locale on another thread.
@@ -1545,7 +1545,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		while ( *value )
 		{
 			double temp;
-#if defined(__GLIBC__) || defined(__DARWIN__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 			if ( locale )
 				temp = strtod_l( value, &p, locale );
             else
@@ -1580,7 +1580,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 			count ++;
 		}
 
-#if !defined(__GLIBC__) && !defined(__DARWIN__)
+#if !defined(__GLIBC__) && !defined(__APPLE__)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );

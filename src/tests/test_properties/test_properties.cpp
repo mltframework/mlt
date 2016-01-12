@@ -23,7 +23,7 @@
 using namespace Mlt;
 
 extern "C" {
-#define __DARWIN__
+#define __APPLE__
 #include <framework/mlt_property.h>
 #include <framework/mlt_animation.h>
 }
@@ -36,14 +36,14 @@ class TestProperties: public QObject
 
 public:
     TestProperties() {
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__linux__) || defined(__APPLE__)
         locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
 #endif
         Factory::init();
     }
 
     ~TestProperties() {
-#if defined(__linux__) || defined(__DARWIN__)
+#if defined(__linux__) || defined(__APPLE__)
         freelocale(locale);
 #endif
     }

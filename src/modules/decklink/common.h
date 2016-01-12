@@ -26,7 +26,7 @@
 	typedef BSTR DLString;
 #else
 #	include "DeckLinkAPI.h"
-#	ifdef __DARWIN__
+#	ifdef __APPLE__
 		typedef CFStringRef DLString;
 #	else
 		typedef const char* DLString;

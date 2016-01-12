@@ -598,7 +598,7 @@ static int consumer_get_dimensions( int *width, int *height )
 	// Specify the SDL Version
 	SDL_VERSION( &wm.version );
 
-#ifndef __DARWIN__
+#ifndef __APPLE__
 	// Get the wm structure
 	if ( SDL_GetWMInfo( &wm ) == 1 )
 	{

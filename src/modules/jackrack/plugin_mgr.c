@@ -102,7 +102,7 @@ plugin_mgr_get_object_file_plugins (plugin_mgr_t * plugin_mgr, const char * file
     return;
   }
   
-#ifdef __DARWIN__
+#ifdef __APPLE__
   if (!get_descriptor (0)) {
     void (*constructor)(void) = dlsym (dl_handle, "_init");
     if (constructor) constructor();
@@ -225,7 +225,7 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
     strcpy (ladspa_path, mlt_environment("MLT_APPDIR"));
     strcat (ladspa_path, "\\lib\\ladspa");
   }
-#elif defined(__DARWIN__) && defined(RELOCATABLE)
+#elif defined(__APPLE__) && defined(RELOCATABLE)
   {
     ladspa_path = malloc( strlen (mlt_environment ("MLT_APPDIR")) + strlen ("/lib/ladspa") + 1 );
     strcpy (ladspa_path,  mlt_environment ("MLT_APPDIR"));

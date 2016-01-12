@@ -21,7 +21,7 @@
 #ifndef _CONSUMER_SDL_OSX_H_
 #define _CONSUMER_SDL_OSX_H_
 
-#ifdef __DARWIN__
+#ifdef __APPLE__
 void* mlt_cocoa_autorelease_init();
 void  mlt_cocoa_autorelease_close( void* );
 

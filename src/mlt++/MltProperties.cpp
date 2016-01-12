@@ -246,7 +246,7 @@ int Properties::save( const char *file )
 	return mlt_properties_save( get_properties( ), file );
 }
 
-#if defined( __DARWIN__ ) && GCC_VERSION < 40000
+#if defined( __APPLE__ ) && GCC_VERSION < 40000
 
 Event *Properties::listen( const char *id, void *object, void (*listener)( ... ) )
 {

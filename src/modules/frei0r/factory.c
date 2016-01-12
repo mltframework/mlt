@@ -35,7 +35,7 @@
 #if defined(WIN32)
 #define LIBSUF ".dll"
 #define FREI0R_PLUGIN_PATH "\\lib\\frei0r-1"
-#elif defined(__DARWIN__) && defined(RELOCATABLE)
+#elif defined(__APPLE__) && defined(RELOCATABLE)
 #define LIBSUF ".so"
 #define FREI0R_PLUGIN_PATH "/lib/frei0r-1"
 #else
@@ -62,7 +62,7 @@ static char* get_frei0r_path()
 	strcpy( dirname, mlt_environment( "MLT_APPDIR" ) );
 	strcat( dirname, FREI0R_PLUGIN_PATH );
 	return dirname;
-#elif defined(__DARWIN__) && defined(RELOCATABLE)
+#elif defined(__APPLE__) && defined(RELOCATABLE)
 	char *dirname = malloc( strlen( mlt_environment( "MLT_APPDIR" ) ) + strlen( FREI0R_PLUGIN_PATH ) + 1 );
 	strcpy( dirname, mlt_environment( "MLT_APPDIR" ) );
 	strcat( dirname, FREI0R_PLUGIN_PATH );

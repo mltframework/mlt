@@ -31,7 +31,7 @@
 
 #include <framework/mlt.h>
 
-#if (defined(__DARWIN__) || defined(WIN32)) && !defined(MELT_NOSDL)
+#if (defined(__APPLE__) || defined(WIN32)) && !defined(MELT_NOSDL)
 #include <SDL.h>
 #endif
 
@@ -350,7 +350,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 	}
 }
 
-#if (defined(__DARWIN__) || defined(WIN32)) && !defined(MELT_NOSDL)
+#if (defined(__APPLE__) || defined(WIN32)) && !defined(MELT_NOSDL)
 
 static void event_handling( mlt_producer producer, mlt_consumer consumer )
 {
@@ -421,7 +421,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				transport_action( producer, string );
 			}
 
-#if (defined(__DARWIN__) || defined(WIN32)) && !defined(MELT_NOSDL)
+#if (defined(__APPLE__) || defined(WIN32)) && !defined(MELT_NOSDL)
 			event_handling( producer, consumer );
 #endif
 
