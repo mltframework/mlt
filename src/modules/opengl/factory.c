@@ -53,7 +53,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-#if !defined(__APPLE__) && !defined(WIN32)
+#if !defined(__APPLE__) && !defined(_WIN32)
 	MLT_REGISTER( consumer_type, "xgl", consumer_xgl_init );
 #endif
 	MLT_REGISTER( filter_type, "glsl.manager", filter_glsl_manager_init );

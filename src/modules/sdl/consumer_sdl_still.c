@@ -602,7 +602,7 @@ static int consumer_get_dimensions( int *width, int *height )
 	// Get the wm structure
 	if ( SDL_GetWMInfo( &wm ) == 1 )
 	{
-#ifndef WIN32
+#ifndef _WIN32
 		// Check that we have the X11 wm
 		if ( wm.subsystem == SDL_SYSWM_X11 ) 
 		{

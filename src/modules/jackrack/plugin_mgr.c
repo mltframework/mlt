@@ -218,7 +218,7 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
   char * ladspa_path, * dir;
   
   ladspa_path = g_strdup (getenv ("LADSPA_PATH"));
-#ifdef WIN32
+#ifdef _WIN32
   if (!ladspa_path)
   {
     ladspa_path = malloc (strlen (mlt_environment("MLT_APPDIR")) + strlen ("\\lib\\ladspa") + 1);

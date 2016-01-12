@@ -170,7 +170,7 @@ saved_rack_parse_plugin (jack_rack_t * jack_rack, saved_rack_t * saved_rack, sav
   xmlChar *content;
   unsigned long num;
   unsigned long control = 0;
-#ifdef WIN32
+#ifdef _WIN32
   xmlFreeFunc xmlFree = NULL;
   xmlMemGet( &xmlFree, NULL, NULL, NULL);
 #endif
@@ -267,7 +267,7 @@ saved_rack_parse_jackrack (jack_rack_t * jack_rack, saved_rack_t * saved_rack, c
   xmlNodePtr node;
   xmlChar *content;
   saved_plugin_t * saved_plugin;
-#ifdef WIN32
+#ifdef _WIN32
   xmlFreeFunc xmlFree = NULL;
   xmlMemGet( &xmlFree, NULL, NULL, NULL);
 #endif

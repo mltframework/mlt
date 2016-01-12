@@ -34,7 +34,7 @@
 #endif
 
 // Macros to re-assign system functions.
-#ifdef WIN32
+#ifdef _WIN32
 #  define mlt_free _aligned_free
 #  define mlt_alloc(X) _aligned_malloc( (X), 16 )
 #else

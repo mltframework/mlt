@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #else
 #include <arpa/inet.h>
@@ -1127,7 +1127,7 @@ static int consumer_stop( mlt_consumer parent )
 
 		// Kill the threads and clean up
 		self->running = 0;
-#ifndef WIN32
+#ifndef _WIN32
 		if ( self->thread )
 #endif
 			pthread_join( self->thread, NULL );

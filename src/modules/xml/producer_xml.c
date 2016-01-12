@@ -1181,7 +1181,7 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 			// Serialise the tree to get value
 			xmlDocDumpMemory( context->value_doc, &value, &size );
 			mlt_properties_set( properties, context->property, _s(value) );
-#ifdef WIN32
+#ifdef _WIN32
 			xmlFreeFunc xmlFree = NULL;
 			xmlMemGet( &xmlFree, NULL, NULL, NULL);
 #endif
@@ -1513,7 +1513,7 @@ static void parse_url( mlt_properties properties, char *url )
 			
 			case ':':
 			case '=':
-#ifdef WIN32
+#ifdef _WIN32
 				if ( url[i] == ':' && url[i + 1] != '/' )
 #endif
 				if ( is_query )

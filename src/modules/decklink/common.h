@@ -20,7 +20,7 @@
 #ifndef DECKLINK_COMMON_H
 #define DECKLINK_COMMON_H
 
-#ifdef WIN32
+#ifdef _WIN32
 #	include <objbase.h>
 #	include "DeckLinkAPI_h.h"
 	typedef BSTR DLString;

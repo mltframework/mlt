@@ -180,7 +180,7 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 #else
 		result = list->locale;
 #endif
-#if defined(WIN32)
+#if defined(_WIN32)
 		if ( result )
 		{
 			// Convert the string from ANSI code page to UTF-8.
@@ -2524,7 +2524,7 @@ extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *n
 	return value == NULL ? rect : mlt_property_anim_get_rect( value, fps, list->locale, position, length );
 }
 
-#ifndef WIN32
+#ifndef _WIN32
 
 // See win32/win32.c for win32 implementation.
 

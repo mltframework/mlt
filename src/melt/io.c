@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <termios.h>
 #else
 // MinGW defines struct timespec in pthread.h
@@ -100,7 +100,7 @@ int *get_int( int *output, int use )
 /** This stores the previous settings
 */
 
-#ifndef WIN32
+#ifndef _WIN32
 static struct termios oldtty;
 #else
 static DWORD oldtty;
@@ -115,7 +115,7 @@ void term_exit(void)
 {
 	if ( mode == 1 )
 	{
-#ifndef WIN32
+#ifndef _WIN32
 		tcsetattr( 0, TCSANOW, &oldtty );
 #else
 		HANDLE h = GetStdHandle( STD_INPUT_HANDLE );
@@ -132,7 +132,7 @@ void term_exit(void)
 
 void term_init( )
 {
-#ifndef WIN32
+#ifndef _WIN32
 	struct termios tty;
 
 	tcgetattr( 0, &tty );
@@ -168,7 +168,7 @@ void term_init( )
 
 int term_read( )
 {
-#ifndef WIN32
+#ifndef _WIN32
 	int n = 1;
 	unsigned char ch;
 	struct timeval tv;

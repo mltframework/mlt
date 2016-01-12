@@ -40,7 +40,7 @@ void freeDLString( DLString aDLString )
 	if ( aDLString ) CFRelease( aDLString );
 }
 
-#elif defined(WIN32)
+#elif defined(_WIN32)
 
 char* getCString( DLString aDLString )
 {

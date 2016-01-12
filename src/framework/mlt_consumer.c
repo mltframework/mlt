@@ -589,7 +589,7 @@ int mlt_consumer_start( mlt_consumer self )
 		mlt_properties_set_int( properties, "_buffer", abs( priv->real_time ) + 1 );
 
 	priv->preroll = 1;
-#ifdef WIN32
+#ifdef _WIN32
 	if ( priv->real_time == 1 || priv->real_time == -1 )
 		consumer_read_ahead_start( self );
 #endif
@@ -1562,7 +1562,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 		{
 			int buffer = mlt_properties_get_int( properties, "buffer" );
 			int prefill = mlt_properties_get_int( properties, "prefill" );
-#ifndef WIN32
+#ifndef _WIN32
 			consumer_read_ahead_start( self );
 #endif
 			if ( buffer > 1 )

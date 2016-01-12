@@ -281,7 +281,7 @@ int consumer_stop( mlt_consumer parent )
 		// Kill the thread and clean up
 		self->joined = 1;
 		self->running = 0;
-#ifndef WIN32
+#ifndef _WIN32
 		if ( self->thread )
 #endif
 			pthread_join( self->thread, NULL );
@@ -914,7 +914,7 @@ static int consumer_get_dimensions( int *width, int *height )
 	// Get the wm structure
 	if ( SDL_GetWMInfo( &wm ) == 1 )
 	{
-#ifndef WIN32
+#ifndef _WIN32
 		// Check that we have the X11 wm
 		if ( wm.subsystem == SDL_SYSWM_X11 ) 
 		{

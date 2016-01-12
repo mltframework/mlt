@@ -78,7 +78,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	int i;
 	int plugin_count = 0;
 
-#ifdef WIN32
+#ifdef _WIN32
 	char *syspath = getenv("PATH");
 	char *exedir = mlt_environment( "MLT_APPDIR" );
 	char *newpath = "PATH=";

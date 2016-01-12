@@ -114,7 +114,7 @@ public:
 		IDeckLinkIterator* decklinkIterator = NULL;
 		try
 		{
-#ifdef WIN32
+#ifdef _WIN32
 			HRESULT result =  CoInitialize( NULL );
 			if ( FAILED( result ) )
 				throw "COM initialization failed";
@@ -191,7 +191,7 @@ public:
 			}
 
 			// Determine if supports input format detection
-#ifdef WIN32
+#ifdef _WIN32
 			BOOL doesDetectFormat = FALSE;
 #else
 			bool doesDetectFormat = false;
@@ -697,7 +697,7 @@ static void on_property_changed( void*, mlt_properties properties, const char *n
 	else
 		return;
 
-#ifdef WIN32
+#ifdef _WIN32
 	if ( FAILED( CoInitialize( NULL ) ) )
 		return;
 	if ( FAILED( CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &decklinkIterator ) ) )

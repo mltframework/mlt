@@ -184,7 +184,7 @@ static int consumer_stop( mlt_consumer parent )
 		pthread_mutex_unlock( &self->refresh_mutex );
 
 		// Cleanup the main thread
-#ifndef WIN32
+#ifndef _WIN32
 		if ( self->thread )
 #endif
 			pthread_join( self->thread, NULL );

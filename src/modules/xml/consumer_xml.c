@@ -690,7 +690,7 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	if ( mlt_properties_get_lcnumeric( properties ) )
 		xmlNewProp( root, _x("LC_NUMERIC"), _x( mlt_properties_get_lcnumeric( properties ) ) );
 	else
-#ifdef WIN32
+#ifdef _WIN32
 	{
 		const char* lcnumeric = setlocale( LC_NUMERIC, NULL );
 		mlt_properties_set( properties, "_xml_lcnumeric_in", lcnumeric );
@@ -834,7 +834,7 @@ static void output_xml( mlt_consumer consumer )
 		int length = 0;
 		xmlDocDumpMemoryEnc( doc, &buffer, &length, "utf-8" );
 		mlt_properties_set( properties, resource, _s(buffer) );
-#ifdef WIN32
+#ifdef _WIN32
 		xmlFreeFunc xmlFree = NULL;
 		xmlMemGet( &xmlFree, NULL, NULL, NULL);
 #endif

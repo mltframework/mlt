@@ -36,7 +36,7 @@ extern "C" {
 
 #if defined(__APPLE__)
 #include <OpenGL/OpenGL.h>
-#elif defined(WIN32)
+#elif defined(_WIN32)
 #include <windows.h>
 #include <wingdi.h>
 #else
@@ -219,7 +219,7 @@ void GlslManager::cleanupContext()
 void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 {
 	mlt_log_debug( filter->get_service(), "%s\n", __FUNCTION__ );
-#ifdef WIN32
+#ifdef _WIN32
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("\\share\\movit");
 #elif defined(__APPLE__) && defined(RELOCATABLE)
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("/share/movit");
