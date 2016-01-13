@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -427,6 +427,8 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 		a_track = b_track;
 		b_track = mlt_properties_get_int( properties, "a_track" );
 	}
+	a_track = a_track < 0 ? 0 : a_track;
+	b_track = b_track < 0 ? 0 : b_track;
 
 	// Only act on this operation once per multitrack iteration from the tractor
 	if ( !self->held )

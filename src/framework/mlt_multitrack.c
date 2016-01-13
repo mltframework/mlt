@@ -3,7 +3,7 @@
  * \brief multitrack service class
  * \see mlt_multitrack_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -364,7 +364,7 @@ mlt_producer mlt_multitrack_track( mlt_multitrack self, int track )
 {
 	mlt_producer producer = NULL;
 
-	if ( self->list != NULL && track < self->count )
+	if ( self->list != NULL && track >= 0 && track < self->count )
 		producer = self->list[ track ]->producer;
 
 	return producer;
@@ -548,7 +548,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 	mlt_multitrack self = parent->child;
 
 	// Check if we have a track for this index
-	if ( index < self->count && self->list[ index ] != NULL )
+	if ( index >= 0 && index < self->count && self->list[ index ] != NULL )
 	{
 		// Get the producer for this track
 		mlt_producer producer = self->list[ index ]->producer;
