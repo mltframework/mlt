@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -454,7 +454,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 			if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
 			{
 				snprintf( key, sizeof(key), "meta.attr.%d.stream.%s.markup", i, tag->key );
-				const char* value = filter_restricted( tag->value );
+				char* value = filter_restricted( tag->value );
 				mlt_properties_set( meta_media, key, value );
 				free( value );
 			}
@@ -465,7 +465,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 		if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
 		{
 			snprintf( key, sizeof(key), "meta.attr.%s.markup", tag->key );
-			const char* value = filter_restricted( tag->value );
+			char* value = filter_restricted( tag->value );
 			mlt_properties_set( meta_media, key, value );
 			free( value );
 		}
