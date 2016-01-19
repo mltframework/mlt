@@ -1,6 +1,6 @@
 /*
  * transition_mix.c -- mix two audio streams
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,175 +19,209 @@
 
 #include <framework/mlt_transition.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
+#define MAX_CHANNELS (6)
+#define MAX_SAMPLES  (192000/(24000/1001))
+#define PCM16_BYTES(samples, channels) ((samples) * (channels) * sizeof(int16_t))
+#define MAX_BYTES    PCM16_BYTES( MAX_SAMPLES, MAX_CHANNELS )
 
-static int mix_audio( mlt_frame frame, mlt_frame that, float weight_start, float weight_end, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+typedef struct transition_mix_s
 {
-	int ret = 0;
-	int16_t *src, *dest;
-	int frequency_src = *frequency, frequency_dest = *frequency;
-	int channels_src = *channels, channels_dest = *channels;
-	int samples_src = *samples, samples_dest = *samples;
+	mlt_transition parent;
+	int16_t src_buffer[MAX_SAMPLES *  MAX_CHANNELS];
+	int16_t dest_buffer[MAX_SAMPLES * MAX_CHANNELS];
+	int src_buffer_count;
+	int dest_buffer_count;
+} *transition_mix;
+
+static void mix_audio( double weight_start, double weight_end, int16_t *buffer_a,
+	int16_t *buffer_b, int channels_a, int channels_b, int channels_out, int samples )
+{
 	int i, j;
-	double d = 0, s = 0;
-
-	mlt_frame_get_audio( that, (void**) &src, format, &frequency_src, &channels_src, &samples_src );
-	mlt_frame_get_audio( frame, (void**) &dest, format, &frequency_dest, &channels_dest, &samples_dest );
-
-	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio" );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio", 0 );
-	if ( silent )
-		memset( dest, 0, samples_dest * channels_dest * sizeof( int16_t ) );
-
-	silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( that ), "silent_audio" );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( that ), "silent_audio", 0 );
-	if ( silent )
-		memset( src, 0, samples_src * channels_src * sizeof( int16_t ) );
-
-	// determine number of samples to process
-	*samples = samples_src < samples_dest ? samples_src : samples_dest;
-	*channels = channels_src < channels_dest ? channels_src : channels_dest;
-	*buffer = dest;
-	*frequency = frequency_dest;
+	double a, b, v;
 
 	// Compute a smooth ramp over start to end
-	float weight = weight_start;
-	float weight_step = ( weight_end - weight_start ) / *samples;
+	double mix = weight_start;
+	double mix_step = ( weight_end - weight_start ) / samples;
 
-	if ( src == dest )
+	for ( i = 0; i < samples; i++ )
 	{
-		*samples = samples_src;
-		*channels = channels_src;
-		*buffer = src;
-		*frequency = frequency_src;
-		return ret;
-	}
-
-	// Mixdown
-	for ( i = 0; i < *samples; i++ )
-	{
-		for ( j = 0; j < *channels; j++ )
+		for ( j = 0; j < channels_out; j++ )
 		{
-			if ( j < channels_dest )
-				d = (double) dest[ i * channels_dest + j ];
-			if ( j < channels_src )
-				s = (double) src[ i * channels_src + j ];
-			dest[ i * channels_dest + j ] = s * weight + d * ( 1.0 - weight );
+			a = (double) buffer_a[ i * channels_a + j ];
+			b = (double) buffer_b[ i * channels_b + j ];
+			v = mix * b + (1.0 - mix) * a;
+			buffer_a[ i * channels_a + j ] = CLAMP( v, -32767.0, 32768.0 );
 		}
-		weight += weight_step;
+		mix += mix_step;
 	}
-
-	return ret;
 }
 
-// Replacement for broken mlt_frame_audio_mix - this filter uses an inline low pass filter
-// to allow mixing without volume hacking
-static int combine_audio( mlt_frame frame, mlt_frame that, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+// This filter uses an inline low pass filter to allow mixing without volume hacking.
+static void combine_audio( double weight, int16_t *buffer_a, int16_t *buffer_b,
+	int channels_a, int channels_b, int channels_out, int samples )
 {
-	int ret = 0;
-	int16_t *src, *dest;
-	int frequency_src = *frequency, frequency_dest = *frequency;
-	int channels_src = *channels, channels_dest = *channels;
-	int samples_src = *samples, samples_dest = *samples;
 	int i, j;
-	double vp[ 6 ];
-	double b_weight = 1.0;
-
-	if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.mixdown" ) )
-		b_weight = 1.0 - mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "meta.volume" );
-
-	mlt_frame_get_audio( that, (void**) &src, format, &frequency_src, &channels_src, &samples_src );
-	mlt_frame_get_audio( frame, (void**) &dest, format, &frequency_dest, &channels_dest, &samples_dest );
-
-	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio" );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "silent_audio", 0 );
-	if ( silent )
-		memset( dest, 0, samples_dest * channels_dest * sizeof( int16_t ) );
-
-	silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( that ), "silent_audio" );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( that ), "silent_audio", 0 );
-	if ( silent )
-		memset( src, 0, samples_src * channels_src * sizeof( int16_t ) );
-
-	if ( src == dest )
-	{
-		*samples = samples_src;
-		*channels = channels_src;
-		*buffer = src;
-		*frequency = frequency_src;
-		return ret;
-	}
-
-	// determine number of samples to process
-	*samples = samples_src < samples_dest ? samples_src : samples_dest;
-	*channels = channels_src < channels_dest ? channels_src : channels_dest;
-	*buffer = dest;
-	*frequency = frequency_dest;
-
-	for ( j = 0; j < *channels; j++ )
-		vp[ j ] = ( double )dest[ j ];
-
 	double Fc = 0.5;
 	double B = exp(-2.0 * M_PI * Fc);
 	double A = 1.0 - B;
-	double v;
+	double a, b, v;
+	double v_prev[MAX_CHANNELS];
 
-	for ( i = 0; i < *samples; i++ )
+	for ( j = 0; j < channels_out; j++ )
+		v_prev[j] = (double) buffer_a[j];
+
+	for ( i = 0; i < samples; i++ )
 	{
-		for ( j = 0; j < *channels; j++ )
+		for ( j = 0; j < channels_out; j++ )
 		{
-			v = ( double )( b_weight * dest[ i * channels_dest + j ] + src[ i * channels_src + j ] );
-			v = v < -32767 ? -32767 : v > 32768 ? 32768 : v;
-			vp[ j ] = dest[ i * channels_dest + j ] = ( int16_t )( v * A + vp[ j ] * B );
+			a = (double) buffer_a[ i * channels_a + j ];
+			b = (double) buffer_b[ i * channels_b + j ];
+			v = weight * a + b;
+			v = CLAMP( v, -32767.0, 32768.0 );
+			v_prev[j] = buffer_a[ i * channels_a + j ] = (int16_t)( v * A + v_prev[j] * B );
 		}
 	}
-
-	return ret;
 }
 
 /** Get the audio.
 */
 
-static int transition_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
+	int error = 0;
+
 	// Get the b frame from the stack
-	mlt_frame b_frame = mlt_frame_pop_audio( frame );
+	mlt_frame frame_b = mlt_frame_pop_audio( frame_a );
 
 	// Get the effect
-	mlt_transition effect = mlt_frame_pop_audio( frame );
+	mlt_transition transition = mlt_frame_pop_audio( frame_a );
 
 	// Get the properties of the b frame
-	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
+	mlt_properties b_props = MLT_FRAME_PROPERTIES( frame_b );
+
+	transition_mix self = transition->child;
+	int16_t *buffer_b, *buffer_a;
+	int frequency_b = *frequency, frequency_a = *frequency;
+	int channels_b = *channels, channels_a = *channels;
+	int samples_b = *samples, samples_a = *samples;
 
 	// We can only mix s16
 	*format = mlt_audio_s16;
+	mlt_frame_get_audio( frame_b, (void**) &buffer_b, format, &frequency_b, &channels_b, &samples_b );
+	mlt_frame_get_audio( frame_a, (void**) &buffer_a, format, &frequency_a, &channels_a, &samples_a );
 
-	if ( mlt_properties_get_int( MLT_TRANSITION_PROPERTIES( effect ), "combine" ) == 0 )
+	if ( buffer_b == buffer_a )
 	{
-		double mix_start = 0.5, mix_end = 0.5;
-		if ( mlt_properties_get( b_props, "audio.previous_mix" ) != NULL )
-			mix_start = mlt_properties_get_double( b_props, "audio.previous_mix" );
-		if ( mlt_properties_get( b_props, "audio.mix" ) != NULL )
-			mix_end = mlt_properties_get_double( b_props, "audio.mix" );
-		if ( mlt_properties_get_int( b_props, "audio.reverse" ) )
-		{
-			mix_start = 1 - mix_start;
-			mix_end = 1 - mix_end;
-		}
+		*samples = samples_b;
+		*channels = channels_b;
+		*buffer = buffer_b;
+		*frequency = frequency_b;
+		return error;
+	}
 
-		mix_audio( frame, b_frame, mix_start, mix_end, buffer, format, frequency, channels, samples );
+	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame_a ), "silent_audio" );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame_a ), "silent_audio", 0 );
+	if ( silent )
+		memset( buffer_a, 0, samples_a * channels_a * sizeof( int16_t ) );
+
+	silent = mlt_properties_get_int( b_props, "silent_audio" );
+	mlt_properties_set_int( b_props, "silent_audio", 0 );
+	if ( silent )
+		memset( buffer_b, 0, samples_b * channels_b * sizeof( int16_t ) );
+
+	// determine number of samples to process
+	*samples = MIN( self->src_buffer_count + samples_b, self->dest_buffer_count + samples_a );
+	*channels = MIN( MIN( channels_b, channels_a ), MAX_CHANNELS );
+	*frequency = frequency_a;
+
+	// Prevent src buffer overflow by discarding oldest samples.
+	size_t bytes = PCM16_BYTES( samples_b, channels_b );
+	if ( bytes > MAX_BYTES ) {
+		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: samples_src too big %d\n",
+						 samples_b );
+		samples_b = MAX_BYTES / channels_b / sizeof(*buffer_b);
+		bytes = PCM16_BYTES( samples_b, channels_b );
+	}
+	if ( PCM16_BYTES( self->src_buffer_count + samples_b, channels_b ) > MAX_BYTES ) {
+		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: src_buffer_count %d\n",
+						 self->src_buffer_count );
+		memmove( self->src_buffer, &self->src_buffer[MAX_SAMPLES * MAX_CHANNELS],
+				 PCM16_BYTES( self->src_buffer_count, channels_b ) );
+	}
+	// Buffer new src samples.
+	memcpy( &self->src_buffer[self->src_buffer_count * channels_b], buffer_b, bytes );
+	self->src_buffer_count += samples_b;
+	buffer_b = self->src_buffer;
+
+	// Prevent dest buffer overflow by discarding oldest samples.
+	bytes = PCM16_BYTES( samples_a, channels_a );
+	if ( bytes > MAX_BYTES ) {
+		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: samples_dest too big %d\n",
+						 samples_a );
+		samples_a = MAX_BYTES / channels_a / sizeof(*buffer_a);
+		bytes = PCM16_BYTES( samples_a, channels_a );
+	}
+	if ( PCM16_BYTES( self->dest_buffer_count + samples_a, channels_a ) > MAX_BYTES ) {
+		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: dest_buffer_count %d\n",
+						 self->dest_buffer_count );
+		memmove( self->dest_buffer, &self->dest_buffer[MAX_SAMPLES * MAX_CHANNELS],
+				 PCM16_BYTES( self->dest_buffer_count, channels_a ) );
+	}
+	// Buffer the new dest samples.
+	memcpy( &self->dest_buffer[self->dest_buffer_count * channels_a], buffer_a, bytes );
+	self->dest_buffer_count += samples_a;
+	buffer_a = self->dest_buffer;
+
+	// Do the mixing.
+	if ( mlt_properties_get_int( MLT_TRANSITION_PROPERTIES(transition), "combine" ) )
+	{
+		double weight = 1.0;
+		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame_a ), "meta.mixdown" ) )
+			weight = 1.0 - mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame_a ), "meta.volume" );
+		combine_audio( weight, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples );
 	}
 	else
 	{
-		combine_audio( frame, b_frame, buffer, format, frequency, channels, samples );
+		double mix_start = 0.5, mix_end = 0.5;
+		if ( mlt_properties_get( b_props, "audio.previous_mix" ) )
+			mix_start = mlt_properties_get_double( b_props, "audio.previous_mix" );
+		if ( mlt_properties_get( b_props, "audio.mix" ) )
+			mix_end = mlt_properties_get_double( b_props, "audio.mix" );
+		if ( mlt_properties_get_int( b_props, "audio.reverse" ) )
+		{
+			mix_start = 1.0 - mix_start;
+			mix_end = 1.0 - mix_end;
+		}
+		mix_audio( mix_start, mix_end, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples );
 	}
 
-	return 0;
+	// Copy the audio into the frame.
+	bytes = PCM16_BYTES( *samples, *channels );
+	*buffer = mlt_pool_alloc( bytes );
+	memcpy( *buffer, buffer_a, bytes );
+	mlt_frame_set_audio( frame_a, *buffer, *format, bytes, mlt_pool_release );
+
+	// Consume the src buffer.
+	self->src_buffer_count -= *samples;
+	if ( self->src_buffer_count ) {
+		memmove( self->src_buffer, &self->src_buffer[*samples * channels_b],
+			PCM16_BYTES( self->src_buffer_count, channels_b ));
+	}
+	// Consume the dest buffer.
+	self->dest_buffer_count -= *samples;
+	if ( self->dest_buffer_count ) {
+		memmove( self->dest_buffer, &self->dest_buffer[*samples * channels_a],
+			PCM16_BYTES( self->dest_buffer_count, channels_a ));
+	}
+
+	return error;
 }
 
 
@@ -200,7 +234,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// Only if mix is specified, otherwise a producer may set the mix
-	if ( mlt_properties_get( properties, "start" ) != NULL )
+	if ( mlt_properties_get( properties, "start" ) )
 	{
 		// Determine the time position of this frame in the transition duration
 		mlt_properties props = mlt_properties_get_data( MLT_FRAME_PROPERTIES( b_frame ), "_producer", NULL );
@@ -216,7 +250,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 		if ( length == 0 )
 		{
 			// If there is an end mix level adjust mix to the range
-			if ( mlt_properties_get( properties, "end" ) != NULL )
+			if ( mlt_properties_get( properties, "end" ) )
 			{
 				double start = mlt_properties_get_double( properties, "start" );
 				double end = mlt_properties_get_double( properties, "end" );
@@ -236,7 +270,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 			mlt_position last_position = mlt_properties_get_position( properties, "_last_position" );
 			mlt_position current_position = mlt_frame_get_position( b_frame );
 			mlt_properties_set_position( properties, "_last_position", current_position );
-			if ( mlt_properties_get( properties, "_previous_mix" ) == NULL
+			if ( !mlt_properties_get( properties, "_previous_mix" )
 			     || current_position != last_position + 1 )
 				mlt_properties_set_double( properties, "_previous_mix", mix );
 				
@@ -280,19 +314,34 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	return a_frame;
 }
 
+static void transition_close( mlt_transition transition )
+{
+	free( transition->child );
+	transition->close = NULL;
+	mlt_transition_close( transition );
+}
+
 /** Constructor for the transition.
 */
 
 mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
+	transition_mix mix = calloc( 1 , sizeof( struct transition_mix_s ) );
 	mlt_transition transition = calloc( 1, sizeof( struct mlt_transition_s ) );
-	if ( transition != NULL && mlt_transition_init( transition, NULL ) == 0 )
+	if ( mix && transition && !mlt_transition_init( transition, mix ) )
 	{
+		mix->parent = transition;
+		transition->close = transition_close;
 		transition->process = transition_process;
-		if ( arg != NULL )
+		if ( arg )
 			mlt_properties_set_double( MLT_TRANSITION_PROPERTIES( transition ), "start", atof( arg ) );
 		// Inform apps and framework that this is an audio only transition
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 2 );
+	} else {
+		if ( transition )
+			mlt_transition_close( transition );
+		if ( mix )
+			free( mix );
 	}
 	return transition;
 }
