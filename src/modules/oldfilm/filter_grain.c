@@ -23,8 +23,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MIN(a,b) (a<b?a:b)
-#define MAX(a,b) (a>b?a:b)
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {

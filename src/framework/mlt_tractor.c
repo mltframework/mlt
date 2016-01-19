@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,8 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
-#define MAX( x, y ) ((x) > (y) ? (x) : (y))
 
 /* Forward references to static methods.
 */

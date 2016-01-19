@@ -1,6 +1,6 @@
 /*
  * filter_brightness.c -- brightness, fade, and opacity filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,8 +23,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
-#define CLAMP( x, min, max ) (x) < (min) ? (min) : (x) > (max) ? (max) : (x)
 
 /** Do it :-).
 */

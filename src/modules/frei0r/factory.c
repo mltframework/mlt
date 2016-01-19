@@ -45,8 +45,6 @@
 
 #define GET_FREI0R_PATH (getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH)
 
-#define CLAMP( x, min, max ) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
-
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_frame filter_process( mlt_filter this, mlt_frame frame );
 extern void filter_close( mlt_filter this );

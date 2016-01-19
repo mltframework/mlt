@@ -1,6 +1,6 @@
 /*
  * filter_audioconvert.c -- convert from one audio format to another
- * Copyright (C) 2009-2014 Meltytech, LLC
+ * Copyright (C) 2009-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,10 +23,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifndef CLAMP
-#define CLAMP( x, min, max ) (x) < (min) ? (min) : (x) > (max) ? (max) : (x)
-#endif
 
 static int convert_audio( mlt_frame frame, void **audio, mlt_audio_format *format, mlt_audio_format requested_format )
 {

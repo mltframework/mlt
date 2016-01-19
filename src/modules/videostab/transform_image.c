@@ -28,10 +28,6 @@
 #include <stdlib.h>
 #include <framework/mlt_log.h>
 
-#define MAX (a,b) (((a)>(b)?(a):(b)))
-#define MIN (a,b) (((a)<(b)?(a):(b)))
-#define CLAMP(a,x,y) MIN( MAX( (a),(x) ,y))
-
 #define TC_MAX(a, b)		(((a) > (b)) ?(a) :(b))
 #define TC_MIN(a, b)		(((a) < (b)) ?(a) :(b))
 /* clamp x between a and b */

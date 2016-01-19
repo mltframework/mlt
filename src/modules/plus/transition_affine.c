@@ -1,6 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -274,9 +274,6 @@ static inline double MapZ( float affine[3][3], float x, float y )
 {
 	return affine[2][0] * x + affine[2][1] * y + affine[2][2];
 }
-
-#define MAX( x, y ) x > y ? x : y
-#define MIN( x, y ) x < y ? x : y
 
 static void affine_max_output( float affine[3][3], float *w, float *h, float dz, float max_width, float max_height )
 {

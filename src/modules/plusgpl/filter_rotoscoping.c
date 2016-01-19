@@ -27,8 +27,6 @@
 #include <math.h>
 #include <string.h>
 
-#define MAX( x, y ) ( ( x ) > ( y ) ? ( x ) : ( y ) )
-#define MIN( x, y ) ( ( x ) < ( y ) ? ( x ) : ( y ) )
 #define SQR( x ) ( x ) * ( x )
 
 /** x, y tuple with double precision */

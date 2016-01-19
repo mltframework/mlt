@@ -25,8 +25,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MIN(a,b) (a<b?a:b)
-#define MAX(a,b) (a<b?b:a)
 #define SIGMOD_STEPS 1000
 #define POSITION_VALUE(p,s,e) (s+((double)(e-s)*p ))
 

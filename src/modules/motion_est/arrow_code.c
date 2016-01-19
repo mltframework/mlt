@@ -25,8 +25,6 @@
 #include <math.h>
 #include <string.h>
 
-#define MIN(a,b) ((a) > (b) ? (b) : (a))
-
 #define ROUNDED_DIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
 #define ABS(a) ((a) >= 0 ? (a) : (-(a)))
 

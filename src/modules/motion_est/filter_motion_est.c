@@ -49,7 +49,6 @@
 #define DIAMOND_SEARCH 0x0
 #define FULL_SEARCH 0x1
 #define SHIFT 8
-#define MIN(a,b) ((a) > (b) ? (b) : (a))
 #define ABS(a) ((a) >= 0 ? (a) : (-(a)))
 
 
