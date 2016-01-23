@@ -142,18 +142,14 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	*frequency = frequency_a;
 
 	// Prevent src buffer overflow by discarding oldest samples.
+	samples_b = MIN( samples_b, MAX_SAMPLES * MAX_CHANNELS / channels_b );
 	size_t bytes = PCM16_BYTES( samples_b, channels_b );
-	if ( bytes > MAX_BYTES ) {
-		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: samples_src too big %d\n",
-						 samples_b );
-		samples_b = MAX_BYTES / channels_b / sizeof(*buffer_b);
-		bytes = PCM16_BYTES( samples_b, channels_b );
-	}
 	if ( PCM16_BYTES( self->src_buffer_count + samples_b, channels_b ) > MAX_BYTES ) {
-		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: src_buffer_count %d\n",
-						 self->src_buffer_count );
-		memmove( self->src_buffer, &self->src_buffer[MAX_SAMPLES * MAX_CHANNELS],
-				 PCM16_BYTES( self->src_buffer_count, channels_b ) );
+		mlt_log_verbose( MLT_TRANSITION_SERVICE(transition), "buffer overflow: src_buffer_count %d\n",
+					  self->src_buffer_count );
+		self->src_buffer_count = MAX_SAMPLES * MAX_CHANNELS / channels_b - samples_b;
+		memmove( self->src_buffer, &self->src_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_b * channels_b],
+				 PCM16_BYTES( samples_b, channels_b ) );
 	}
 	// Buffer new src samples.
 	memcpy( &self->src_buffer[self->src_buffer_count * channels_b], buffer_b, bytes );
@@ -161,18 +157,14 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	buffer_b = self->src_buffer;
 
 	// Prevent dest buffer overflow by discarding oldest samples.
+	samples_a = MIN( samples_a, MAX_SAMPLES * MAX_CHANNELS / channels_a );
 	bytes = PCM16_BYTES( samples_a, channels_a );
-	if ( bytes > MAX_BYTES ) {
-		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: samples_dest too big %d\n",
-						 samples_a );
-		samples_a = MAX_BYTES / channels_a / sizeof(*buffer_a);
-		bytes = PCM16_BYTES( samples_a, channels_a );
-	}
 	if ( PCM16_BYTES( self->dest_buffer_count + samples_a, channels_a ) > MAX_BYTES ) {
-		mlt_log_warning( MLT_TRANSITION_SERVICE(transition), "buffer overflow: dest_buffer_count %d\n",
-						 self->dest_buffer_count );
-		memmove( self->dest_buffer, &self->dest_buffer[MAX_SAMPLES * MAX_CHANNELS],
-				 PCM16_BYTES( self->dest_buffer_count, channels_a ) );
+		mlt_log_verbose( MLT_TRANSITION_SERVICE(transition), "buffer overflow: dest_buffer_count %d\n",
+					  self->dest_buffer_count );
+		self->dest_buffer_count = MAX_SAMPLES * MAX_CHANNELS / channels_a - samples_a;
+		memmove( self->dest_buffer, &self->dest_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_a * channels_a],
+				 PCM16_BYTES( samples_a, channels_a ) );
 	}
 	// Buffer the new dest samples.
 	memcpy( &self->dest_buffer[self->dest_buffer_count * channels_a], buffer_a, bytes );
