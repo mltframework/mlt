@@ -70,12 +70,12 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	for ( c = 0; c < *channels; c++ )
 	{
-		long val = 0;
+		double val = 0;
 		double level = 0.0;
 
 		for ( s = 0; s < num_samples; s++ )
 		{
-			int sample = abs( pcm[c + s * num_channels] / 128 );
+			double sample = fabs( pcm[c + s * num_channels] / 128.0 );
 			val += sample;
 			if ( sample == 128 )
 				num_oversample++;
