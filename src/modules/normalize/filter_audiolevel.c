@@ -75,7 +75,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 		for ( s = 0; s < num_samples; s++ )
 		{
-			double sample = cabs( pcm[c + s * num_channels] / 128.0 );
+			double sample = fabs( pcm[c + s * num_channels] / 128.0 );
 			val += sample;
 			if ( sample == 128 )
 				num_oversample++;
