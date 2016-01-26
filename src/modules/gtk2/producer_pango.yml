@@ -233,3 +233,23 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+
+  - identifier: width_crop
+    title: Width to crop
+    type: integer
+    description: >
+      Limit width of rendered image.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
+
+  - identifier: width_fit
+    title: Fit width
+    type: integer
+    description: >
+      Scale pango layout to fit specified width.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
