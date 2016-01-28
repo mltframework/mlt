@@ -444,6 +444,9 @@ void mlt_properties_mirror( mlt_properties self, mlt_properties that )
 int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 {
 	if ( !self || !that ) return 1;
+
+	mlt_properties_lock( that );
+
 	int count = mlt_properties_count( that );
 	int i = 0;
 	for ( i = 0; i < count; i ++ )
@@ -455,6 +458,9 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 			mlt_properties_set( self, name, value );
 		}
 	}
+
+	mlt_properties_unlock( that );
+
 	return 0;
 }
 
