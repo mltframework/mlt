@@ -396,16 +396,19 @@ int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int pos
 		// Interpolation needed.
 		else
 		{
-			double progress;
-			mlt_property points[4];
-			points[0] = node->prev? node->prev->item.property : node->item.property;
-			points[1] = node->item.property;
-			points[2] = node->next->item.property;
-			points[3] = node->next->next? node->next->next->item.property : node->next->item.property;
-			progress = position - node->item.frame;
-			progress /= node->next->item.frame - node->item.frame;
-			mlt_property_interpolate( item->property, points, progress,
-				self->fps, self->locale, item->keyframe_type );
+			if ( item->property )
+                        {
+                                double progress;
+                                mlt_property points[4];
+                                points[0] = node->prev? node->prev->item.property : node->item.property;
+                                points[1] = node->item.property;
+                                points[2] = node->next->item.property;
+                                points[3] = node->next->next? node->next->next->item.property : node->next->item.property;
+                                progress = position - node->item.frame;
+                                progress /= node->next->item.frame - node->item.frame;
+                                mlt_property_interpolate( item->property, points, progress,
+                                        self->fps, self->locale, item->keyframe_type );
+                        }
 			item->is_key = 0;
 		}
 	}
