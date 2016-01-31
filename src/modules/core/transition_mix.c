@@ -200,16 +200,36 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	memcpy( *buffer, buffer_a, bytes );
 	mlt_frame_set_audio( frame_a, *buffer, *format, bytes, mlt_pool_release );
 
+	if ( mlt_properties_get_int( b_props, "_speed" ) == 0 )
+	{
+		// Flush the buffer when paused and scrubbing.
+		samples_b = self->src_buffer_count;
+		samples_a = self->dest_buffer_count;
+	}
+	else
+	{
+		// Determine the maximum amount of latency permitted in the buffer.
+		int max_latency = CLAMP( *frequency / 1000, 0, MAX_SAMPLES ); // samples in 1ms
+		// samples_b becomes the new target src buffer count.
+		samples_b = CLAMP( self->src_buffer_count - *samples, 0, max_latency );
+		// samples_b becomes the number of samples to consume: difference between actual and the target.
+		samples_b = self->src_buffer_count - samples_b;
+		// samples_a becomes the new target dest buffer count.
+		samples_a = CLAMP( self->dest_buffer_count - *samples, 0, max_latency );
+		// samples_a becomes the number of samples to consume: difference between actual and the target.
+		samples_a = self->dest_buffer_count - samples_a;
+	}
+
 	// Consume the src buffer.
-	self->src_buffer_count -= *samples;
+	self->src_buffer_count -= samples_b;
 	if ( self->src_buffer_count ) {
-		memmove( self->src_buffer, &self->src_buffer[*samples * channels_b],
+		memmove( self->src_buffer, &self->src_buffer[samples_b * channels_b],
 			PCM16_BYTES( self->src_buffer_count, channels_b ));
 	}
 	// Consume the dest buffer.
-	self->dest_buffer_count -= *samples;
+	self->dest_buffer_count -= samples_a;
 	if ( self->dest_buffer_count ) {
-		memmove( self->dest_buffer, &self->dest_buffer[*samples * channels_a],
+		memmove( self->dest_buffer, &self->dest_buffer[samples_a * channels_a],
 			PCM16_BYTES( self->dest_buffer_count, channels_a ));
 	}
 
