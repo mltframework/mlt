@@ -689,11 +689,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
-	// Refresh the pango image
-	pthread_mutex_lock( &pango_mutex );
-	refresh_image( *frame, 0, 0 );
-	pthread_mutex_unlock( &pango_mutex );
-
 	// Set producer-specific frame properties
 	mlt_properties_set_int( properties, "progressive", 1 );
 	double force_ratio = mlt_properties_get_double( producer_properties, "force_aspect_ratio" );
@@ -701,6 +696,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_double( properties, "aspect_ratio", force_ratio );
 	else
 		mlt_properties_set_double( properties, "aspect_ratio", 1.0);
+
+	// Refresh the pango image
+	pthread_mutex_lock( &pango_mutex );
+	refresh_image( *frame, 0, 0 );
+	pthread_mutex_unlock( &pango_mutex );
 
 	// Stack the get image callback
 	mlt_frame_push_service( *frame, this );
