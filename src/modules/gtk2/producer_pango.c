@@ -83,6 +83,7 @@ struct producer_pango_s
 	int   rotate;
 	int   width_crop;
 	int   width_fit;
+	double aspect_ratio;
 };
 
 static void clean_cached( producer_pango self )
@@ -102,7 +103,8 @@ static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family,
-		int style, int weight, int size, int outline, int rotate, int width_crop, int width_fit );
+		int style, int weight, int size, int outline, int rotate, int width_crop, int width_fit,
+		double aspect_ratio );
 static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg );
 static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg, rgba_color ol, int outline );
 
@@ -403,6 +405,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	int size = mlt_properties_get_int( producer_props, "size" );
 	int width_crop = mlt_properties_get_int( producer_props, "width_crop" );
 	int width_fit = mlt_properties_get_int( producer_props, "width_fit" );
+	double aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 	int property_changed = 0;
 
 	if ( pixbuf == NULL )
@@ -418,7 +421,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			sprintf( temp, "%d", item.frame );
 			markup = mlt_properties_get( contents, temp );
 		}
-	
+
 		// See if any properties changed
 		property_changed = ( align != this->align );
 		property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
@@ -436,6 +439,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		property_changed = property_changed || ( size != this->size );
 		property_changed = property_changed || ( width_crop != this->width_crop );
 		property_changed = property_changed || ( width_fit != this->width_fit );
+		property_changed = property_changed || ( aspect_ratio != this->aspect_ratio );
 
 		// Save the properties for next comparison
 		this->align = align;
@@ -454,6 +458,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		this->size = size;
 		this->width_crop = width_crop;
 		this->width_fit = width_fit;
+		this->aspect_ratio = aspect_ratio;
 	}
 
 	if ( pixbuf == NULL && property_changed )
@@ -483,7 +488,9 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 		
 		// Render the title
-		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family, style, weight, size, outline, rotate, width_crop, width_fit );
+		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family,
+			style, weight, size, outline, rotate, width_crop, width_fit,
+			aspect_ratio );
 
 		if ( pixbuf != NULL )
 		{
@@ -695,7 +702,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	if ( force_ratio > 0.0 )
 		mlt_properties_set_double( properties, "aspect_ratio", force_ratio );
 	else
-		mlt_properties_set_double( properties, "aspect_ratio", 1.0);
+	{
+		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
+		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
+	}
 
 	// Refresh the pango image
 	pthread_mutex_lock( &pango_mutex );
@@ -749,7 +759,7 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline, int rotate, int width_crop, int width_fit )
+static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline, int rotate, int width_crop, int width_fit, double aspect_ratio )
 {
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
 	PangoLayout *layout = pango_layout_new( context );
@@ -827,6 +837,40 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	}
 	else
 		pango_layout_get_pixel_size( layout, &w, &h );
+
+	// respect aspect ratio
+	if ( 0.0 < aspect_ratio && aspect_ratio != 1.0)
+	{
+		double n_x, n_y;
+		PangoRectangle rect;
+		PangoMatrix m_layout = PANGO_MATRIX_INIT, m_offset = PANGO_MATRIX_INIT;
+#if 1
+		pango_matrix_scale( &m_layout, 1.0 / aspect_ratio, 1.0 );
+		pango_matrix_scale( &m_offset, 1.0 / aspect_ratio, 1.0 );
+#else
+		pango_matrix_scale( &m_layout, 1.0, aspect_ratio );
+		pango_matrix_scale( &m_offset, 1.0, aspect_ratio );
+#endif
+		pango_context_set_base_gravity( context, PANGO_GRAVITY_AUTO );
+		pango_context_set_matrix( context, &m_layout );
+		pango_layout_context_changed( layout );
+		pango_layout_get_extents( layout, NULL, &rect );
+		pango_matrix_transform_rectangle( pango_context_get_matrix( context ), &rect);
+
+		n_x = -rect.x;
+		n_y = -rect.y;
+		pango_matrix_transform_point( &m_offset, &n_x, &n_y );
+		rect.x = n_x;
+		rect.y = n_y;
+
+		pango_extents_to_pixels( &rect, NULL );
+
+		w = rect.width;
+		h = rect.height;
+
+		x = rect.x;
+		y = rect.y;
+	}
 
 	// limit width
 	if ( width_crop && w > width_crop)
