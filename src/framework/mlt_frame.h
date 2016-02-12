@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,10 +52,8 @@ typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format 
  * \properties \em meta.* holds metadata
  * \properties \em hide set to 1 to hide the video, 2 to mute the audio
  * \properties \em last_track a flag to indicate an end-of-tracks frame
- * \properties \em previous \em frame a reference to the unfiltered preceding frame
- * (no speed factor applied, only available when \em _need_previous_next is set on the producer)
- * \properties \em next \em frame a reference to the unfiltered following frame
- * (no speed factor applied, only available when \em _need_previous_next is set on the producer)
+ * \properties \em previous \em frame a reference to the unfiltered preceding frame (no speed factor applied)
+ * \properties \em next \em frame a reference to the unfiltered following frame (no speed factor applied)
  * \properties \em colorspace the standard for the YUV coefficients
  * \properties \em force_full_luma luma range handling, set to -1 for pass-through, 1 for full range, 0 for scaling
  * \properties \em color_trc the color transfer characteristic (gamma)

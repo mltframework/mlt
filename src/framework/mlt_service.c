@@ -3,7 +3,7 @@
  * \brief interface definition for all service classes
  * \see mlt_service_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -575,8 +575,7 @@ int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 			mlt_service_apply_filters( self, *frame, 1 );
 			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), self );
 			
-			if ( mlt_service_identify( self ) == producer_type &&
-			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( self ), "_need_previous_next" ) )
+			if ( mlt_service_identify( self ) == producer_type )
 			{
 				// Save the new position from self->get_frame
 				mlt_position new_position = mlt_producer_position( MLT_PRODUCER( self ) );

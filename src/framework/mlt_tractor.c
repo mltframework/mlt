@@ -367,6 +367,17 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	// WebVfx uses this to setup a consumer-stopping event handler.
 	mlt_properties_set_data( frame_properties, "consumer", mlt_properties_get_data( properties, "consumer", NULL ), 0, NULL, NULL );
 
+	mlt_frame ref_frame = mlt_properties_get_data( properties, "previous frame", NULL );
+	if ( ref_frame ) {
+		mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(ref_frame) );
+		mlt_properties_set_data( frame_properties, "previous frame", ref_frame, 0, (mlt_destructor) mlt_frame_close, NULL );
+	}
+	ref_frame = mlt_properties_get_data( properties, "next frame", NULL );
+	if ( ref_frame ) {
+		mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(ref_frame) );
+		mlt_properties_set_data( frame_properties, "next frame", ref_frame, 0, (mlt_destructor) mlt_frame_close, NULL );
+	}
+
 	mlt_frame_get_image( frame, buffer, format, width, height, writable );
 	mlt_frame_set_image( self, *buffer, 0, NULL );
 
@@ -612,6 +623,19 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
 				mlt_properties_set_int( frame_properties, "image_count", image_count );
 				mlt_properties_set_data( frame_properties, "_producer", mlt_frame_get_original_producer( first_video ), 0, NULL, NULL );
+
+				mlt_frame ref_frame = mlt_properties_get_data( MLT_FRAME_PROPERTIES(video), "previous frame", NULL );
+				if ( ref_frame ) {
+					mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(ref_frame) );
+					mlt_properties_set_data( frame_properties, "previous frame", ref_frame, 0, (mlt_destructor) mlt_frame_close, NULL );
+					mlt_properties_set_data( MLT_FRAME_PROPERTIES(video), "previous frame", NULL, 0, NULL, NULL );
+				}
+				ref_frame = mlt_properties_get_data( MLT_FRAME_PROPERTIES(video), "next frame", NULL );
+				if ( ref_frame ) {
+					mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(ref_frame) );
+					mlt_properties_set_data( frame_properties, "next frame", ref_frame, 0, (mlt_destructor) mlt_frame_close, NULL );
+					mlt_properties_set_data( MLT_FRAME_PROPERTIES(video), "next frame", NULL, 0, NULL, NULL );
+				}
 			}
 			else
 			{

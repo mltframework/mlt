@@ -3,7 +3,7 @@
  * \brief interface declaration for all service classes
  * \see mlt_service_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,8 +50,6 @@
  * See modules/core/filter_region.c and modules/core/filter_watermark.c for examples.
  * \properties \em _profile stores the mlt_profile for a service
  * \properties \em _unique_id is a unique identifier
- * \properties \em _need_previous_next boolean that instructs producers to get
- * preceding and following frames inside of \p mlt_service_get_frame
  */
 
 struct mlt_service_s
