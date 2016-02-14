@@ -1,6 +1,6 @@
 /*
  * filter_deinterlace.c -- deinterlace filter
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2014 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_log.h>
 #include <framework/mlt_producer.h>
+#include <framework/mlt_events.h>
 #include "deinterlace.h"
 #include "yadif.h"
 
@@ -244,6 +245,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		}
 		if ( error || ( method > DEINTERLACE_NONE && method < DEINTERLACE_YADIF ) )
 		{
+			mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
+
 			// Get the current frame's image
 			int error2 = mlt_frame_get_image( frame, image, format, width, height, writable );
 			progressive = mlt_properties_get_int( properties, "progressive" );
@@ -251,6 +254,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			if ( error )
 			{
 				method = DEINTERLACE_LINEARBLEND;
+				// If YADIF requested, prev/next cancelled because some previous frames were progressive,
+				// but new frames are interlaced, then turn prev/next frames back on.
+				if ( !progressive )
+					mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 1 );
+			}
+			else
+			{
+				// Signal that we no longer need previous and next frames
+				mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
 			}
 			error = error2;
 			
@@ -295,6 +307,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		error = mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
 
+	if ( !deinterlace || progressive )
+	{
+		// Signal that we no longer need previous and next frames
+		mlt_service service = mlt_properties_get_data( MLT_FILTER_PROPERTIES(filter), "service", NULL );
+		if ( service )
+			mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 0 );
+	}
+
 	return error;
 }
 
@@ -312,6 +332,12 @@ static mlt_frame deinterlace_process( mlt_filter filter, mlt_frame frame )
 	return frame;
 }
 
+static void on_service_changed( mlt_service owner, mlt_service filter )
+{
+	mlt_service service = mlt_properties_get_data( MLT_SERVICE_PROPERTIES(filter), "service", NULL );
+	mlt_properties_set_int( MLT_SERVICE_PROPERTIES(service), "_need_previous_next", 1 );
+}
+
 /** Constructor for the filter.
 */
 
@@ -322,6 +348,7 @@ mlt_filter filter_deinterlace_init( mlt_profile profile, mlt_service_type type, 
 	{
 		filter->process = deinterlace_process;
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "method", arg );
+		mlt_events_listen( MLT_FILTER_PROPERTIES( filter ), filter, "service-changed", (mlt_listener) on_service_changed );
 	}
 	return filter;
 }
