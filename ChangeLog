@@ -1,3 +1,268 @@
+2016-02-17  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 6.0.0
+
+2016-02-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.h, src/framework/mlt_service.c,
+  src/framework/mlt_service.h, src/framework/mlt_tractor.c,
+  src/modules/xine/filter_deinterlace.c: Fix YADIF in some multitrack
+  scenarios.
+
+2016-01-26  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml:
+  Implement text cropping and fitting to specified width
+
+2016-01-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_tractor.c, src/framework/mlt_types.h,
+  src/modules/core/filter_audioconvert.c, src/modules/core/filter_brightness.c,
+  src/modules/frei0r/factory.c, src/modules/motion_est/arrow_code.c,
+  src/modules/motion_est/filter_autotrack_rectangle.c,
+  src/modules/motion_est/filter_motion_est.c,
+  src/modules/oldfilm/filter_grain.c, src/modules/oldfilm/filter_tcolor.c,
+  src/modules/oldfilm/filter_vignette.c, src/modules/plus/transition_affine.c,
+  src/modules/plusgpl/filter_rotoscoping.c,
+  src/modules/videostab/transform_image.c: Define MIN, MAX, CLAMP in
+  mlt_types.h.  Consolidate all of the definitions of these macros and make
+  them more convenient.
+
+2016-01-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_multitrack.c, src/framework/mlt_transition.c: Fix
+  possible array index crashes in multitrack and transition.  Reported by JBM.
+
+2016-01-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_factory.c,
+  src/framework/mlt_pool.c, src/framework/mlt_properties.c,
+  src/framework/mlt_repository.c, src/framework/mlt_types.h, src/melt/io.c,
+  src/melt/melt.c, src/mlt++/config.h, src/modules/decklink/common.cpp,
+  src/modules/decklink/common.h, src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp, src/modules/frei0r/factory.c,
+  src/modules/gtk2/consumer_gtk2.c, src/modules/jackrack/consumer_jack.c,
+  src/modules/jackrack/jack_rack.c, src/modules/jackrack/plugin_mgr.c,
+  src/modules/opengl/factory.c, src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/plusgpl/consumer_cbrts.c, src/modules/sdl/consumer_sdl.c,
+  src/modules/sdl/consumer_sdl_audio.c, src/modules/sdl/consumer_sdl_preview.c,
+  src/modules/sdl/consumer_sdl_still.c, src/modules/videostab/stab/estimate.c,
+  src/modules/xml/consumer_xml.c, src/modules/xml/producer_xml.c: Switch to
+  _WIN32 define for Windows.  Based on de facto info collected at
+  http://predef.sourceforge.net/
+
+  * configure, src/framework/mlt_factory.c, src/framework/mlt_properties.c,
+  src/framework/mlt_property.c, src/framework/mlt_property.h, src/melt/melt.c,
+  src/mlt++/MltProperties.cpp, src/mlt++/MltProperties.h, src/mlt++/configure,
+  src/modules/decklink/common.cpp, src/modules/decklink/common.h,
+  src/modules/frei0r/factory.c, src/modules/jackrack/plugin.c,
+  src/modules/jackrack/plugin_mgr.c, src/modules/opengl/factory.c,
+  src/modules/opengl/filter_glsl_manager.cpp, src/modules/plusgpl/utils.c,
+  src/modules/plusgpl/utils.h, src/modules/sdl/consumer_sdl.c,
+  src/modules/sdl/consumer_sdl_audio.c, src/modules/sdl/consumer_sdl_osx.h,
+  src/modules/sdl/consumer_sdl_still.c, src/modules/videostab/stab/estimate.c,
+  src/tests/test_filter/test_filter.cpp,
+  src/tests/test_properties/test_properties.cpp: Switch to __APPLE__ define for
+  OS X.  Based on de facto info collected at http://predef.sourceforge.net/
+
+2016-01-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_filter.c, src/modules/xml/producer_xml.c: Fix saving and
+  loading filters attached to tractor.
+
+2016-01-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/modules/xml/consumer_xml.c,
+  src/win32/win32.c: Fix possible non-UTF-8 in XML on Windows (Shotcut-173).
+
+2015-12-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/producer_avformat.c, src/modules/xml/consumer_xml.c:
+  Fix some UTF-8 strings mangled by xml consumer. (Shotuct-163)  This moves
+  filter_restricted() into the avformat producer since it was its meta tag
+  values that were not known to be UTF-8 being passed into MLT.
+
+2015-11-30  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/producer_timewarp.c, src/modules/core/producer_timewarp.yml:
+  Add timewarp producer.
+
+2015-11-29  Brian Matherly <code@brianmatherly.com>
+
+  * src/framework/mlt.vers, src/framework/mlt_factory.c,
+  src/framework/mlt_factory.h: Add mlt_factory_repository() to mlt_factory.
+
+2015-11-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_consumer.h,
+  src/modules/decklink/consumer_decklink.cpp: Add drop_count property to
+  mlt_consumer and verbose log it.  Apps can use this to detect and display the
+  integrity of capture or realtime playout.
+
+2015-11-03  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/stills/BMP, presets/consumer/avformat/stills/DPX,
+  presets/consumer/avformat/stills/JPEG, presets/consumer/avformat/stills/PNG,
+  presets/consumer/avformat/stills/PPM, presets/consumer/avformat/stills/TGA,
+  presets/consumer/avformat/stills/TIFF: Set GOP size to 1 and B frames to 0
+  for all stills presets.
+
+2015-10-19  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiospectrum.yml: Add "mirror" and "reverse"
+  parameters.
+
+2015-10-14  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/filter_dynamictext.c,
+  src/modules/plus/filter_dynamictext.yml: Add style property to dynamictext
+  filter.
+
+2015-10-11  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiospectrum.yml, src/modules/qt/graph.cpp,
+  src/modules/qt/graph.h: Add bar graph.
+
+2015-10-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: Fix YCbCr colorspace conversion
+  wrong dest coefficients.
+
+2015-10-07  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiospectrum.yml, src/modules/qt/graph.cpp,
+  src/modules/qt/graph.h: Implement tension and fill parameters.
+
+  * src/modules/qt/filter_audiospectrum.cpp, src/modules/qt/graph.cpp,
+  src/modules/qt/graph.h: Improve spectrum line graph.
+
+2015-09-30  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/Makefile, src/modules/qt/common.cpp,
+  src/modules/qt/common.h, src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiowaveform.cpp, src/modules/qt/filter_lightshow.cpp,
+  src/modules/qt/graph.cpp, src/modules/qt/graph.h: Move redundant code into
+  shared files for reuse.
+
+2015-09-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qt/producer_qimage.c, src/modules/qt/qimage_wrapper.cpp,
+  src/modules/qt/qimage_wrapper.h: Make qimage reject animated images.  This
+  will allow loader to fallback to using avformat, which can already handle
+  animated images.
+
+2015-09-22  Bertrand Nouvel <b.nouvel@qmul.ac.uk>
+
+  * src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Add seek_threshold property to
+  avformat producer.
+
+2015-09-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/tests/test_tractor/test_tractor.cpp,
+  src/tests/test_tractor/test_tractor.pro, src/tests/tests.pro: Add unit tests
+  for tractor/multitrack/field.
+
+2015-09-17  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/Makefile, src/modules/qt/factory.c,
+  src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiospectrum.yml: Add audiospectrum filter.
+
+2015-09-15  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/dv_ntsc/D10,
+  presets/consumer/avformat/dv_ntsc_wide/D10,
+  presets/consumer/avformat/dv_pal/D10,
+  presets/consumer/avformat/dv_pal_wide/D10,
+  presets/consumer/avformat/lossless/H.264,
+  presets/consumer/avformat/lossless/MPEG-2,
+  presets/consumer/avformat/lossless/MPEG-4,
+  presets/consumer/avformat/lossless/ProRes,
+  presets/consumer/avformat/lossless/ProRes-Kostya: Change GOP size 0 to 1 in
+  presets.  As a matter of proactive correctness.
+
+2015-09-13  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/dv_ntsc/D10,
+  presets/consumer/avformat/dv_ntsc_wide/D10,
+  presets/consumer/avformat/dv_pal/D10,
+  presets/consumer/avformat/dv_pal_wide/D10: Set 0 B-frames for all D10
+  presets.
+
+2015-09-11  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/motion_est/filter_autotrack_rectangle.c,
+  src/modules/vmfx/filter_shape.c: Use mlt_filter_get_length2 to get filter
+  length
+
+2015-09-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_avdeinterlace.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c, src/modules/avformat/vdpau.c: Fix
+  avformat build against FFmpeg and Libav master.  This drops support for
+  FFmpeg v1.0; requires at least v1.1. Still works with Libav v9. CPU flags are
+  no longer required/used by libswscale. They are detected at runtime
+  automatically.
+
+2015-08-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml: Change the smpte2022 property prefix
+  to udp.
+
+2015-08-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml: Add smpte2022.interface property to
+  cbrts.
+
+  * src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml: Change the default UDP buffer size.
+
+2015-08-23  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml: Add RTP header to cbrts UDP output. 
+  This can be disabled by settings smpte2022.rtp=0.
+
+2015-08-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml: Remove remux thread and add
+  smpte2022.buffer property.  The remux thread was not necessary and adds
+  additional complexity. Now, the buffer between avformat and the socket is
+  configurable and self-adjusts. There was also some refactoring of types used
+  for times and muxrate.
+
+2015-08-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml: Add rate-controlled network delivery
+  to cbrts.  This adds a strict network output thread based on a high
+  resolution timer with realtime process priority.
+
+2015-08-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plusgpl/consumer_cbrts.c,
+  src/modules/plusgpl/consumer_cbrts.yml: Add UDP output to cbrts.  This is
+  currently fixed to 7 TSPs, and there is not yet any sending rate control.
+
+2015-07-30  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 0.9.9.
+
 2015-07-29  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
