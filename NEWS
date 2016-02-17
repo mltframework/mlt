@@ -1,6 +1,39 @@
 MLT Release Notes
 -----------------
 
+Version 6.0.0 - February 17, 2015
+
+This is a bugfix and minor enhancement release. Note that our release
+versioning scheme has changed. We were approaching 1.0 but decided to
+synchronize release version with the C library ABI version, which is currently
+at v6. Here are some of the notable changes and enhancements:
+
+Framework
+  * Added unit tests for tractor, multitrack, and field.
+  * Deprecate mlt_frame_get_alpha_mask().
+  * Added drop_count readable property to mlt_consumer.
+  * Added mlt_factory_repository().
+  * Added mlt_properties_to_utf8().
+  * Define MIN, MAX, CLAMP in mlt_types.h in not already defined.
+  * Switched to __APPLE__ and _WIN32 defines throughout codebase.
+
+Modules
+  * Added UDP and SMPTE 2022-2 support to cbrts consumer.
+  * Fixed build against latest FFmpeg versions - now requires v1.1 and up.
+  * Added audiospectrum filter to qt module.
+  * Added meta.media.0.codec.rotate property to avformat producer to let apps
+    and other services get the media orientation.
+  * Make the avformat producer handle animated images.
+  * Added style property to dynamictext filter.
+  * Added timewarp producer to core module.
+  * Fixed slowly accumulating A/V sync drift in mix audio transition.
+  * Added width_crop and width_fit properties to pango producer.
+
+Melt
+  * Added -abort option to simply exit without full cleanup.
+  * Fix key-press handling on Windows.
+
+
 Version 0.9.8 - July 29, 2015
 
 Here is a list of the enhancements included in this release. There are many API
