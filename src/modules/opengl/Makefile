@@ -69,7 +69,6 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/opengl/movit"
 	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/opengl"
 
 ifneq ($(wildcard .depend),)
