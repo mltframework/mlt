@@ -45,6 +45,10 @@ const static unsigned char const2[] =
         "movq           (%[src_a]), %%xmm2      \n\t"   /* load source alpha */         \
         "punpcklbw      %%xmm0, %%xmm2          \n\t"   /* unpack alpha 8 8-bits alphas to 8 16-bits values */
 
+#define SRC_A_ZERO(J)   \
+        "ptest          %%xmm2,%%xmm2           \n\t"   /* check if alpha is zero */ \
+        "jz             "J"                     \n\t"
+
 #define SRC_A_PREMUL    \
         "pmullw         %%xmm1, %%xmm2          \n\t"   /* premultiply source alpha */  \
         "psrlw          $8, %%xmm2              \n\t"
@@ -116,9 +120,12 @@ static void blend_case7(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, 
         LOAD_WEIGHT
         "loop_start7:                           \n\t"
         LOAD_SRC_A
+        SRC_A_ZERO("skip_calc7")
         SRC_A_PREMUL
+        SRC_A_ZERO("skip_calc7")
         DST_A_CALC
         DST_PIX_CALC
+        "skip_calc7:                            \n\t"
         "add            $0x08, %[src_a]         \n\t"
         "add            $0x08, %[dest_a]        \n\t"
         PIX_POINTER_INC
@@ -137,8 +144,11 @@ static void blend_case3(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, 
         LOAD_WEIGHT
         "loop_start3:                           \n\t"
         LOAD_SRC_A
+        SRC_A_ZERO("skip_calc3")
         SRC_A_PREMUL
+        SRC_A_ZERO("skip_calc3")
         DST_PIX_CALC
+        "skip_calc3:                            \n\t"
         "add            $0x08, %[src_a]         \n\t"
         PIX_POINTER_INC
         "jnz            loop_start3             \n\t"
@@ -155,7 +165,9 @@ static void blend_case2(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a)
         LOAD_CONSTS
         "loop_start2:                           \n\t"
         LOAD_SRC_A
+        SRC_A_ZERO("skip_calc2")
         DST_PIX_CALC
+        "skip_calc2:                            \n\t"
         "add            $0x08, %[src_a]         \n\t"
         PIX_POINTER_INC
         "jnz            loop_start2             \n\t"
@@ -210,8 +222,10 @@ static void blend_case6(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, 
         LOAD_CONSTS
         "loop_start6:                           \n\t"
         LOAD_SRC_A
+        SRC_A_ZERO("skip_calc6")
         DST_A_CALC
         DST_PIX_CALC
+        "skip_calc6:                            \n\t"
         "add            $0x08, %[src_a]         \n\t"
         "add            $0x08, %[dest_a]        \n\t"
         PIX_POINTER_INC
