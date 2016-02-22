@@ -38,11 +38,14 @@
 #include <strings.h>
 // includes for socket IO
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)
+#if !(defined(__FreeBSD_kernel__) && defined(__GLIBC__))
 #define CBRTS_BSD_SOCKETS  1
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <net/if.h>
+#include <netinet/in.h>
+#endif
 #endif
 #include <sys/time.h>
 #include <time.h>
