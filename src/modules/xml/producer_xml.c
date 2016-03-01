@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -604,6 +604,10 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		mlt_properties_set( properties, "in", NULL );
 		mlt_properties_set( properties, "out", NULL );
 
+		// Do not let XML overwrite these important properties set by mlt_factory.
+		mlt_properties_set( properties, "mlt_type", NULL );
+		mlt_properties_set( properties, "mlt_service", NULL );
+
 		// Inherit the properties
 		mlt_properties_inherit( MLT_SERVICE_PROPERTIES( producer ), properties );
 
@@ -910,6 +914,10 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		track_service( context->destructors, filter, (mlt_destructor) mlt_filter_close );
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( filter ), context->lc_numeric );
 
+		// Do not let XML overwrite these important properties set by mlt_factory.
+		mlt_properties_set( properties, "mlt_type", NULL );
+		mlt_properties_set( properties, "mlt_service", NULL );
+
 		// Propogate the properties
 		qualify_property( context, properties, "resource" );
 		qualify_property( context, properties, "luma" );
@@ -999,6 +1007,10 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 		}
 		track_service( context->destructors, effect, (mlt_destructor) mlt_transition_close );
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( effect ), context->lc_numeric );
+
+		// Do not let XML overwrite these important properties set by mlt_factory.
+		mlt_properties_set( properties, "mlt_type", NULL );
+		mlt_properties_set( properties, "mlt_service", NULL );
 
 		// Propogate the properties
 		qualify_property( context, properties, "resource" );
@@ -1117,6 +1129,10 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 					// Track this consumer
 					track_service( context->destructors, MLT_CONSUMER_SERVICE(context->consumer), (mlt_destructor) mlt_consumer_close );
 					mlt_properties_set_lcnumeric( MLT_CONSUMER_PROPERTIES(context->consumer), context->lc_numeric );
+
+					// Do not let XML overwrite these important properties set by mlt_factory.
+					mlt_properties_set( properties, "mlt_type", NULL );
+					mlt_properties_set( properties, "mlt_service", NULL );
 
 					// Inherit the properties
 					mlt_properties_inherit( MLT_CONSUMER_PROPERTIES(context->consumer), properties );
