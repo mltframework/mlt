@@ -1,4 +1,4 @@
-CFLAGS += -I../..
+CFLAGS += -I../.. -Iebur128/queue
 
 LDFLAGS += -L../../framework -lmlt -lm -lpthread
 
