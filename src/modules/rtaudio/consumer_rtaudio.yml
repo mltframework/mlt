@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: consumer
 identifier: rtaudio
 title: RtAudio
@@ -20,6 +20,7 @@ parameters:
     description: An optional device name, number, or ID to use.
     type: string
     required: no
+    argument: yes
 
   - identifier: audio_buffer
     title: Audio buffer
@@ -39,13 +40,13 @@ parameters:
   - identifier: refresh
     description: >
       Applications should set this to update the video frame when paused.
-    type: integer
+    type: boolean
     minimum: 0
     maximum: 1
 
   - identifier: scrub_audio
     title: Audio scrubbing
-    type: integer
+    type: boolean
     description: If enabled, sound is played even when the speed is not normal.
     mutable: yes
     minimum: 0
