@@ -4,15 +4,18 @@ LDFLAGS += -L../../framework -lmlt -lpthread
 
 include ../../../config.mak
 
+include config.mak
+
 TARGET = ../libmltrtaudio$(LIBSUF)
 
-OBJS = consumer_rtaudio.o \
-	RtAudio.o
+OBJS = consumer_rtaudio.o
 
 SRCS := $(OBJS:.o=.cpp)
 
 CXXFLAGS += $(CFLAGS) -Wno-deprecated -Wno-multichar -fno-rtti
 
+ifdef USE_INTERNAL_RTAUDIO
+OBJS += RtAudio.o
 ifeq ($(targetos), Darwin)
 CXXFLAGS += -D__MACOSX_CORE__
 LDFLAGS += -framework CoreAudio -framework CoreFoundation
@@ -26,12 +29,16 @@ else ifeq ($(targetos), Linux)
 CXXFLAGS += -D__LINUX_ALSA__
 CXXFLAGS += $(shell pkg-config --cflags alsa)
 LDFLAGS += $(shell pkg-config --libs alsa)
+CXXFLAGS += -D__LINUX_PULSE__
+CXXFLAGS += $(shell pkg-config --cflags libpulse libpulse-simple)
+LDFLAGS += $(shell pkg-config --libs libpulse libpulse-simple)
 else ifeq ($(targetos), NetBSD)
 CXXFLAGS += -D__LINUX_OSS__
 LDFLAGS += -lossaudio
 else # FreeBSD
 CXXFLAGS += -D__LINUX_OSS__
 endif
+endif # USE_INTERNAL_RTAUDIO
 
 all: 	$(TARGET)
 
@@ -49,8 +56,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
-	#install -d "$(DESTDIR)$(mltdatadir)/rtaudio"
-	#install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/rtaudio"
+	install -d "$(DESTDIR)$(mltdatadir)/rtaudio"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/rtaudio"
 
 uninstall:
 	rm "$(DESTDIR)$(moduledir)/libmltrtaudio$(LIBSUF)" 2> /dev/null || true
