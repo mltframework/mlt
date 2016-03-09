@@ -1,0 +1,94 @@
+schema_version: 0.3
+type: filter
+identifier: dynamic_loudness
+title: Dynamic Loudness
+version: 1
+copyright: Brian Matherly <code@brianmatherly.com>
+creator: Brian Matherly <code@brianmatherly.com>
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+description: Dynamically correct audio loudness as recommended by EBU R128.
+notes: >
+  This filter adjusts the level of the audio based on the loudness of the input.
+  It performs loudness measurement over a specified sliding window of time. 
+  Then, it adjusts the gain on the output based on the difference between the 
+  measured loudness and the target loudness in order to achieve the desired 
+  loudness.
+  
+parameters:
+  - identifier: target_loudness
+    title: Target Program Loudness
+    type: float
+    description: >
+      The target program loudness in LUFS (Loudness Units Full Scale).
+    readonly: no
+    mutable: yes
+    default: -23.0
+    minimum: -50.0
+    maximum: -10.0
+    unit: LUFS
+    
+  - identifier: window
+    title: Measurement Window
+    type: float
+    description: >
+      The duration of time in seconds over which the loudness is calculated.
+    readonly: no
+    mutable: yes
+    default: 3.0
+    minimum: 1
+    maximum: 100000
+    unit: seconds
+    
+  - identifier: max_gain
+    title: Maximum Gain Increase
+    type: float
+    description: >
+      The maximum amount that the gain will be increased by the filter.
+    readonly: no
+    mutable: yes
+    default: 15
+    minimum: 0
+    maximum: 30
+    unit: dB
+
+  - identifier: min_gain
+    title: Maximum Gain Decrease
+    type: float
+    description: >
+      The maximum amount that the gain will be decreased by the filter.
+    readonly: no
+    mutable: yes
+    default: -15
+    minimum: 0
+    maximum: -30
+    unit: dB
+
+  - identifier: in_loudness
+    title: Input Program Loudness
+    type: float
+    description: >
+      The program loudness measured on the input over the duration of the 
+      window.
+    readonly: yes
+    unit: LUFS
+
+  - identifier: out_gain
+    title: Output Gain
+    type: float
+    description: >
+      The amount of gain applied to the last frame. Updated with each new frame.
+    readonly: yes
+    unit: dB
+    
+  - identifier: reset_count
+    title: Reset Count
+    type: integer
+    description: >
+      The number of times the filter has reset the loudness measurement. The 
+      measurement is reset whenever the filter detects a discontinuity in the 
+      frame sequence. It also resets when it detects that the producer has 
+      changed.
+    readonly: yes
