@@ -70,7 +70,8 @@ enum error {
   EBUR128_ERROR_NOMEM,
   EBUR128_ERROR_INVALID_MODE,
   EBUR128_ERROR_INVALID_CHANNEL_INDEX,
-  EBUR128_ERROR_NO_CHANGE
+  EBUR128_ERROR_NO_CHANGE,
+  EBUR128_ERROR_INSUFFICIENT_DATA
 };
 
 /** \enum mode
@@ -106,6 +107,8 @@ typedef struct {
   int mode;                           /**< The current mode. */
   unsigned int channels;              /**< The number of channels. */
   unsigned long samplerate;           /**< The sample rate. */
+  unsigned int window;                /**< The maximum window duration. (ms)*/
+  unsigned int history;               /**< The maximum history duration. (ms)*/
   struct ebur128_state_internal* d;   /**< Internal state. */
 } ebur128_state;
 
@@ -173,6 +176,39 @@ int ebur128_change_parameters(ebur128_state* st,
                               unsigned int channels,
                               unsigned long samplerate);
 
+/** \brief Set the maximum window duration.
+ *
+ *  Set the maximum duration that will be used for ebur128_window_loudness().
+ *
+ *  @param st library state.
+ *  @param window duration of the window in ms.
+  *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_NOMEM on memory allocation error. The state will be
+ *      invalid and must be destroyed.
+ *    - EBUR128_ERROR_NO_CHANGE if window duration not changed.
+ */
+int ebur128_set_max_window(ebur128_state* st, unsigned int window);
+
+/** \brief Set the maximum history.
+ *
+ *  Set the maximum history that will be stored for loudness integration.
+ *  More history provides more accurate results, but requires more resources.
+ *
+ *  Applies to ebur128_loudness_range() and ebur128_loudness_global() when
+ *  EBUR128_MODE_HISTOGRAM is not set.
+ *
+ *  Default is UINT_MAX (approximately 50 days).
+ *  Minimum is 300ms for EBUR128_MODE_LRA and 400ms for
+ *
+ *  @param st library state.
+ *  @param history duration of history in ms.
+  *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_NO_CHANGE if history not changed.
+ */
+int ebur128_set_max_history(ebur128_state* st, unsigned int history);
+
 /** \brief Add frames to be processed.
  *
  *  @param st library state.
@@ -229,6 +265,7 @@ int ebur128_loudness_global_multiple(ebur128_state** sts,
  *             infinity.
  *  @return
  *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INSUFFICIENT_DATA if more data is needed.
  */
 int ebur128_loudness_momentary(ebur128_state* st, double* out);
 /** \brief Get short-term loudness (last 3s) in LUFS.
@@ -239,8 +276,26 @@ int ebur128_loudness_momentary(ebur128_state* st, double* out);
  *  @return
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_S" has not been set.
+ *    - EBUR128_ERROR_INSUFFICIENT_DATA if more data is needed.
  */
 int ebur128_loudness_shortterm(ebur128_state* st, double* out);
+
+/** \brief Get loudness of the specified window in LUFS.
+ *
+ *  window must not be larger than st->window.
+ *  st->window can be changed by calling ebur128_set_max_window()
+ *
+ *  @param st library state.
+ *  @param window window in ms to calculate loudness.
+ *  @param out loudness in LUFS. -HUGE_VAL if result is negative infinity.
+ *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INVALID_MODE if window > st->window.
+ *    - EBUR128_ERROR_INSUFFICIENT_DATA if more data is needed.
+ */
+int ebur128_loudness_window(ebur128_state* st,
+                            unsigned int window,
+                            double* out);
 
 /** \brief Get loudness range (LRA) of programme in LU.
  *
