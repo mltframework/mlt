@@ -22,7 +22,11 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
+#ifdef USE_INTERNAL_RTAUDIO
+#include "RtAudio.h"
+#else
 #include <RtAudio.h>
+#endif
 
 static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer consumer, char *name );
 static int  rtaudio_callback( void *outputBuffer, void *inputBuffer,
