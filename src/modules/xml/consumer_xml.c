@@ -194,6 +194,7 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 mlt_properties_get_value( properties, i ) != NULL &&
 			 ( !context->no_meta || strncmp( name, "meta.", 5 ) ) &&
 			 strcmp( name, "mlt" ) &&
+			 strcmp( name, "mlt_type" ) &&
 			 strcmp( name, "in" ) &&
 			 strcmp( name, "out" ) &&
 			 strcmp( name, "id" ) &&
