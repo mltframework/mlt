@@ -1,7 +1,7 @@
 /*
- * filter_ebur128.c -- normalize audio according to EBU R128
- * Copyright (C) 2014 Brian Matherly <pez4brian@yahoo.com>
- * Author: Brian Matherly <pez4brian@yahoo.com>
+ * filter_loudness.c -- normalize audio according to EBU R128
+ * Copyright (C) 2014 Brian Matherly <code@brianmatherly.com>
+ * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -135,7 +135,7 @@ static void analyze( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audi
 
 			snprintf( result, MAX_RESULT_SIZE, "L: %lf\tR: %lf\tP %lf", loudness, range, peak );
 			result[ MAX_RESULT_SIZE - 1 ] = '\0';
-			mlt_log_info( MLT_FILTER_SERVICE( filter ), "Stored results: %s", result );
+			mlt_log_info( MLT_FILTER_SERVICE( filter ), "Stored results: %s\n", result );
 			mlt_properties_set( properties, "results", result );
 			destroy_analyze_data( filter );
 		}
@@ -159,7 +159,7 @@ static void apply( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audio_
 	{
 		double target_db = mlt_properties_get_double( properties, "program" );
 		double delta_db = target_db - private->apply->in_loudness;
-		double coeff = delta_db > -90.0f ? powf(10.0f, delta_db * 0.05f) : 0.0f;
+		double coeff = delta_db > -90.0 ? pow(10.0, delta_db / 20.0) : 0.0;
 		float* p = *buffer;
 		int count = *samples * *channels;
 		while( count-- )

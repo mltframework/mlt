@@ -13,22 +13,53 @@ extern "C" {
 #endif
 
 #define EBUR128_VERSION_MAJOR 1
-#define EBUR128_VERSION_MINOR 0
-#define EBUR128_VERSION_PATCH 1
+#define EBUR128_VERSION_MINOR 1
+#define EBUR128_VERSION_PATCH 0
 
 #include <stddef.h>       /* for size_t */
 
 /** \enum channel
  *  Use these values when setting the channel map with ebur128_set_channel().
+ *  See definitions in ITU R-REC-BS 1770-4
  */
 enum channel {
   EBUR128_UNUSED = 0,     /**< unused channel (for example LFE channel) */
-  EBUR128_LEFT,           /**< left channel */
-  EBUR128_RIGHT,          /**< right channel */
-  EBUR128_CENTER,         /**< center channel */
-  EBUR128_LEFT_SURROUND,  /**< left surround channel */
-  EBUR128_RIGHT_SURROUND, /**< right surround channel */
-  EBUR128_DUAL_MONO       /**< a channel that is counted twice */
+  EBUR128_LEFT,
+  EBUR128_Mp030 = 1,      /**< itu M+030 */
+  EBUR128_RIGHT,
+  EBUR128_Mm030 = 2,      /**< itu M-030 */
+  EBUR128_CENTER,
+  EBUR128_Mp000 = 3,      /**< itu M+000 */
+  EBUR128_LEFT_SURROUND,
+  EBUR128_Mp110 = 4,      /**< itu M+110 */
+  EBUR128_RIGHT_SURROUND,
+  EBUR128_Mm110 = 5,      /**< itu M-110 */
+  EBUR128_DUAL_MONO,      /**< a channel that is counted twice */
+  EBUR128_MpSC,           /**< itu M+SC */
+  EBUR128_MmSC,           /**< itu M-SC */
+  EBUR128_Mp060,          /**< itu M+060 */
+  EBUR128_Mm060,          /**< itu M-060 */
+  EBUR128_Mp090,          /**< itu M+090 */
+  EBUR128_Mm090,          /**< itu M-090 */
+  EBUR128_Mp135,          /**< itu M+135 */
+  EBUR128_Mm135,          /**< itu M-135 */
+  EBUR128_Mp180,          /**< itu M+180 */
+  EBUR128_Up000,          /**< itu U+000 */
+  EBUR128_Up030,          /**< itu U+030 */
+  EBUR128_Um030,          /**< itu U-030 */
+  EBUR128_Up045,          /**< itu U+045 */
+  EBUR128_Um045,          /**< itu U-030 */
+  EBUR128_Up090,          /**< itu U+090 */
+  EBUR128_Um090,          /**< itu U-090 */
+  EBUR128_Up110,          /**< itu U+110 */
+  EBUR128_Um110,          /**< itu U-110 */
+  EBUR128_Up135,          /**< itu U+135 */
+  EBUR128_Um135,          /**< itu U-135 */
+  EBUR128_Up180,          /**< itu U+180 */
+  EBUR128_Tp000,          /**< itu T+000 */
+  EBUR128_Bp000,          /**< itu B+000 */
+  EBUR128_Bp045,          /**< itu B+045 */
+  EBUR128_Bm045           /**< itu B-045 */
 };
 
 /** \enum error
@@ -39,7 +70,8 @@ enum error {
   EBUR128_ERROR_NOMEM,
   EBUR128_ERROR_INVALID_MODE,
   EBUR128_ERROR_INVALID_CHANNEL_INDEX,
-  EBUR128_ERROR_NO_CHANGE
+  EBUR128_ERROR_NO_CHANGE,
+  EBUR128_ERROR_INSUFFICIENT_DATA
 };
 
 /** \enum mode
@@ -51,7 +83,7 @@ enum mode {
   EBUR128_MODE_M           = (1 << 0),
   /** can call ebur128_loudness_shortterm */
   EBUR128_MODE_S           = (1 << 1) | EBUR128_MODE_M,
-  /** can call ebur128_gated_loudness_* */
+  /** can call ebur128_loudness_global_* and ebur128_relative_threshold */
   EBUR128_MODE_I           = (1 << 2) | EBUR128_MODE_M,
   /** can call ebur128_loudness_range */
   EBUR128_MODE_LRA         = (1 << 3) | EBUR128_MODE_S,
@@ -75,6 +107,8 @@ typedef struct {
   int mode;                           /**< The current mode. */
   unsigned int channels;              /**< The number of channels. */
   unsigned long samplerate;           /**< The sample rate. */
+  unsigned int window;                /**< The maximum window duration. (ms)*/
+  unsigned int history;               /**< The maximum history duration. (ms)*/
   struct ebur128_state_internal* d;   /**< Internal state. */
 } ebur128_state;
 
@@ -142,6 +176,39 @@ int ebur128_change_parameters(ebur128_state* st,
                               unsigned int channels,
                               unsigned long samplerate);
 
+/** \brief Set the maximum window duration.
+ *
+ *  Set the maximum duration that will be used for ebur128_window_loudness().
+ *
+ *  @param st library state.
+ *  @param window duration of the window in ms.
+  *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_NOMEM on memory allocation error. The state will be
+ *      invalid and must be destroyed.
+ *    - EBUR128_ERROR_NO_CHANGE if window duration not changed.
+ */
+int ebur128_set_max_window(ebur128_state* st, unsigned int window);
+
+/** \brief Set the maximum history.
+ *
+ *  Set the maximum history that will be stored for loudness integration.
+ *  More history provides more accurate results, but requires more resources.
+ *
+ *  Applies to ebur128_loudness_range() and ebur128_loudness_global() when
+ *  EBUR128_MODE_HISTOGRAM is not set.
+ *
+ *  Default is UINT_MAX (approximately 50 days).
+ *  Minimum is 300ms for EBUR128_MODE_LRA and 400ms for
+ *
+ *  @param st library state.
+ *  @param history duration of history in ms.
+  *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_NO_CHANGE if history not changed.
+ */
+int ebur128_set_max_history(ebur128_state* st, unsigned int history);
+
 /** \brief Add frames to be processed.
  *
  *  @param st library state.
@@ -198,6 +265,7 @@ int ebur128_loudness_global_multiple(ebur128_state** sts,
  *             infinity.
  *  @return
  *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INSUFFICIENT_DATA if more data is needed.
  */
 int ebur128_loudness_momentary(ebur128_state* st, double* out);
 /** \brief Get short-term loudness (last 3s) in LUFS.
@@ -208,8 +276,26 @@ int ebur128_loudness_momentary(ebur128_state* st, double* out);
  *  @return
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_S" has not been set.
+ *    - EBUR128_ERROR_INSUFFICIENT_DATA if more data is needed.
  */
 int ebur128_loudness_shortterm(ebur128_state* st, double* out);
+
+/** \brief Get loudness of the specified window in LUFS.
+ *
+ *  window must not be larger than st->window.
+ *  st->window can be changed by calling ebur128_set_max_window()
+ *
+ *  @param st library state.
+ *  @param window window in ms to calculate loudness.
+ *  @param out loudness in LUFS. -HUGE_VAL if result is negative infinity.
+ *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INVALID_MODE if window > st->window.
+ *    - EBUR128_ERROR_INSUFFICIENT_DATA if more data is needed.
+ */
+int ebur128_loudness_window(ebur128_state* st,
+                            unsigned int window,
+                            double* out);
 
 /** \brief Get loudness range (LRA) of programme in LU.
  *
@@ -280,6 +366,17 @@ int ebur128_sample_peak(ebur128_state* st,
 int ebur128_true_peak(ebur128_state* st,
                       unsigned int channel_number,
                       double* out);
+
+/** \brief Get relative threshold in LUFS.
+ *
+ *  @param st library state
+ *  @param out relative threshold in LUFS.
+ *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_I" has not
+ *      been set.
+ */
+int ebur128_relative_threshold(ebur128_state* st, double* out);
 
 #ifdef __cplusplus
 }

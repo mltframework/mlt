@@ -1,0 +1,9 @@
+progressive=1
+f=gif
+vcodec=gif
+an=1
+g=1
+bf=0
+
+meta.preset.extension=gif
+meta.preset.name=GIF Animation

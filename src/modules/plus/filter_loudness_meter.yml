@@ -1,0 +1,103 @@
+schema_version: 0.3
+type: filter
+identifier: loudness_meter
+title: Loudness Meter
+version: 1
+copyright: Brian Matherly <code@brianmatherly.com>
+creator: Brian Matherly <code@brianmatherly.com>
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+description: Measure audio loudness as recommended by EBU R128.
+
+parameters:
+  - identifier: calc_program
+    title: Calculate Program Loudness
+    type: boolean
+    description: >
+      Whether to calculate program (integrated) loudness.
+    readonly: no
+    mutable: yes
+    default: 1
+
+  - identifier: calc_shortterm
+    title: Calculate Short-term Loudness
+    type: boolean
+    description: >
+      Whether to calculate short-term loudness.
+    readonly: no
+    mutable: yes
+    default: 1
+
+  - identifier: calc_momentary
+    title: Calculate momentary Loudness
+    type: boolean
+    description: >
+      Whether to calculate momentary loudness.
+    readonly: no
+    mutable: yes
+    default: 1
+
+  - identifier: calc_range
+    title: Calculate loudness range
+    type: boolean
+    description: >
+      Whether to calculate loudness range.
+    readonly: no
+    mutable: yes
+    default: 1
+
+  - identifier: program
+    title: Program Loudness
+    type: float
+    description: The measured program loudness since the last reset.
+    readonly: yes
+    unit: LUFS
+
+  - identifier: shortterm
+    title: Short-term Loudness
+    type: float
+    description: The measured short-term loudness.
+    readonly: yes
+    unit: LUFS
+
+  - identifier: momentary
+    title: Momentary Loudness
+    type: float
+    description: The measured momentary loudness.
+    readonly: yes
+    unit: LUFS
+
+  - identifier: range
+    title: Loudness Range
+    type: float
+    description: The measured loudness range since the last reset.
+    readonly: yes
+    unit: LUFS
+
+  - identifier: reset
+    title: Reset
+    type: boolean
+    description: >
+      Reset the measurement.
+      Automatically resets back to 0 after the reset is complete.
+    readonly: no
+    mutable: yes
+    default: 1
+
+  - identifier: reset_count
+    title: Reset Count
+    type: integer
+    description: >
+      The number of times the measurement has been reset.
+      The filter is reset whenever reset is set to 1 or whenever a parameter is
+      changed.
+    readonly: yes
+
+  - identifier: frames_processed
+    title: Frames Processed
+    type: integer
+    description: >
+      The number of frames that have been processed since the last reset.
+    readonly: yes

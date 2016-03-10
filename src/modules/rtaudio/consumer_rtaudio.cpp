@@ -1,6 +1,6 @@
 /*
  * consumer_rtaudio.c -- output through RtAudio audio wrapper
- * Copyright (C) 2011 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2011-2016 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,11 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
+#ifdef USE_INTERNAL_RTAUDIO
 #include "RtAudio.h"
+#else
+#include <RtAudio.h>
+#endif
 
 static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer consumer, char *name );
 static int  rtaudio_callback( void *outputBuffer, void *inputBuffer,
@@ -202,7 +206,11 @@ public:
 				// Stop the stream
 				rt.stopStream();
 			}
+#ifdef RTERROR_H
 			catch ( RtError& e ) {
+#else
+			catch ( RtAudioError& e ) {
+#endif
 				mlt_log_error( getConsumer(), "%s\n", e.getMessage().c_str() );
 			}
 		}
@@ -452,7 +460,17 @@ public:
 				parameters.deviceId = 0;
 			}
 			if ( mlt_properties_get( properties, "resource" ) )
-				parameters.deviceName = mlt_properties_get( properties, "resource" );
+			{
+				const char *resource = mlt_properties_get( properties, "resource" );
+				unsigned n = rt.getDeviceCount();
+				for (unsigned i = 0; i < n; i++) {
+					RtAudio::DeviceInfo info = rt.getDeviceInfo( i );
+					if ( info.name == resource ) {
+						device_id = parameters.deviceId = i;
+						break;
+					}
+				}
+			}
 
 			try {
 				if ( rt.isStreamOpen() ) {
@@ -464,7 +482,11 @@ public:
 				init_audio = 0;
 				playing = 1;
 			}
+#ifdef RTERROR_H
 			catch ( RtError& e ) {
+#else
+			catch ( RtAudioError& e ) {
+#endif
 				mlt_log_error( getConsumer(), "%s\n", e.getMessage().c_str() );
 				init_audio = 2;
 			}

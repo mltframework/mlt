@@ -1,4 +1,4 @@
-CFLAGS += -I../..
+CFLAGS += -I../.. -Iebur128/queue
 
 LDFLAGS += -L../../framework -lmlt -lm -lpthread
 
@@ -12,9 +12,11 @@ OBJS = consumer_blipflash.o \
 	   filter_affine.o \
 	   filter_charcoal.o \
 	   filter_dynamictext.o \
+	   filter_dynamic_loudness.o \
 	   filter_invert.o \
 	   filter_lift_gamma_gain.o \
 	   filter_loudness.o \
+	   filter_loudness_meter.o \
 	   filter_lumakey.o \
 	   filter_rgblut.o \
 	   filter_sepia.o \
