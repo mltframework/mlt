@@ -56,6 +56,8 @@ public:
     {
 	m_img = img;
     }
+
+private:
     QImage m_img;
 
 
@@ -72,6 +74,89 @@ virtual void paint( QPainter *painter,
 { 
     painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
     painter->drawImage(QPoint(), m_img);
+}
+};
+
+
+class MyTextItem: public QGraphicsItem
+{
+public:
+    MyTextItem(QString text, QFont font, double width, double height, QColor col, QColor outlineColor, double outline, int align, int lineSpacing)
+    {
+        m_boundingRect = QRectF(0, 0, width, height);
+        m_font = font;
+        m_color = col;
+        m_outline = outline;
+        m_pen = QPen(outlineColor);
+        m_pen.setWidthF(outline);
+        QFontMetrics metrics(font);
+        if ( lineSpacing == 0)
+        {
+                lineSpacing = metrics.lineSpacing();
+        }
+
+        // Calculate line width
+        QStringList lines = text.split('\n');
+        double linePos = metrics.ascent();
+        double maxWidth = 0;
+        QList <QPainterPath> paths;
+        QList <int> lineWidths;
+        foreach(const QString &line, lines)
+        {
+                QPainterPath linePath;
+                linePath.addText(0, linePos, font, line);
+                paths << linePath;
+                maxWidth = qMax( maxWidth, (double) metrics.width(line));
+                lineWidths << metrics.width(line);
+                linePos += lineSpacing;
+        }
+        // now that we have max width, manage alignment
+        int i = 0;
+        foreach(QPainterPath p, paths)
+        {
+                if ( align == Qt::AlignHCenter )
+                {
+                        double offset = (maxWidth - lineWidths.at(i)) / 2;
+                        p.translate(offset, 0);
+                } else if ( align == Qt::AlignRight ) {
+                        double offset = (maxWidth - lineWidths.at(i));
+                        p.translate(offset, 0);
+                }
+                i++;
+                m_path.addPath(p);
+        }
+        // Calculate position of text in parent item
+        QRectF pathRect = QRectF(0, 0, maxWidth, linePos - lineSpacing + metrics.descent() );
+        QPointF offset = m_boundingRect.center() - pathRect.center() + QPointF(0, 2);
+        m_path.translate(offset);
+    }
+
+private:
+    QRectF m_boundingRect;
+    QPainterPath m_path;
+    QFont m_font;
+    QColor m_color;
+    QPen m_pen;
+    double m_outline;
+
+protected:
+
+virtual QRectF boundingRect() const
+{
+    return m_boundingRect;
+}
+
+virtual void paint( QPainter *painter,
+                       const QStyleOptionGraphicsItem * option,
+                       QWidget* w)
+{
+        painter->setFont(m_font);
+        painter->setPen(m_color);
+        if ( m_outline > 0 )
+        {
+                painter->strokePath(m_path, m_pen);
+        }
+        painter->fillPath(m_path, m_color);
 }
 };
 
@@ -179,6 +264,11 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				}
 				font.setItalic( txtProperties.namedItem( "font-italic" ).nodeValue().toInt() );
 				font.setUnderline( txtProperties.namedItem( "font-underline" ).nodeValue().toInt() );
+
+                                int letterSpacing = txtProperties.namedItem( "font-spacing" ).nodeValue().toInt();
+                                if ( letterSpacing != 0 ) {
+                                    font.setLetterSpacing( QFont::AbsoluteSpacing, letterSpacing );
+                                }
 				// Older Kdenlive version did not store pixel size but point size
 				if ( txtProperties.namedItem( "font-pixel-size" ).isNull() )
 				{
@@ -194,56 +284,86 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				{
 					text = text.replace( "%s", replacementText );
 				}
-				QGraphicsTextItem *txt = scene->addText(text, font);
-				if (txtProperties.namedItem("font-outline").nodeValue().toDouble()>0.0){
-					QTextDocument *doc = txt->document();
-					// Make sure some that the text item does not request refresh by itself
-					doc->blockSignals(true);
-					QTextCursor cursor(doc);
-					cursor.select(QTextCursor::Document);
-					QTextCharFormat format;
-					format.setTextOutline(
+				QColor outlineColor(stringToColor( txtProperties.namedItem( "font-outline-color" ).nodeValue() ) );
+
+                                int align = 1;
+                                if ( txtProperties.namedItem( "alignment" ).isNull() == false )
+				{
+                                        align = txtProperties.namedItem( "alignment" ).nodeValue().toInt();
+				}
+				
+				double boxWidth = 0;
+                                double boxHeight = 0;
+				if ( txtProperties.namedItem( "box-width" ).isNull() )
+                                {
+                                        // This is an old version title, find out dimensions from QGraphicsTextItem
+                                        QGraphicsTextItem *txt = scene->addText(text, font);
+                                        QRectF br = txt->boundingRect();
+                                        boxWidth = br.width();
+                                        boxHeight = br.height();
+                                        scene->removeItem(txt);
+                                        delete txt;
+                                } else {
+                                        boxWidth = txtProperties.namedItem( "box-width" ).nodeValue().toDouble();
+                                        boxHeight = txtProperties.namedItem( "box-height" ).nodeValue().toDouble();
+                                }
+				
+				if ( txtProperties.namedItem( "compatibility" ).isNull() ) {
+                                        // Workaround Qt5 crash in threaded drawing of QGraphicsTextItem, paint by ourselves
+                                        MyTextItem *txt = new MyTextItem(text, font, boxWidth, boxHeight, col, outlineColor, txtProperties.namedItem("font-outline").nodeValue().toDouble(), align, txtProperties.namedItem("line-spacing").nodeValue().toInt());
+                                        scene->addItem( txt );
+                                        gitem = txt;
+                                } else {
+                                        QGraphicsTextItem *txt = scene->addText(text, font);
+                                        gitem = txt;
+                                        if (txtProperties.namedItem("font-outline").nodeValue().toDouble()>0.0){
+                                                QTextDocument *doc = txt->document();
+                                                // Make sure some that the text item does not request refresh by itself
+                                                doc->blockSignals(true);
+                                                QTextCursor cursor(doc);
+                                                cursor.select(QTextCursor::Document);
+                                                QTextCharFormat format;
+                                                format.setTextOutline(
 							QPen(QColor( stringToColor( txtProperties.namedItem( "font-outline-color" ).nodeValue() ) ),
 							txtProperties.namedItem("font-outline").nodeValue().toDouble(),
 							Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin)
-					);
-					format.setForeground(QBrush(col));
+                                                );
+                                                format.setForeground(QBrush(col));
+                                                cursor.mergeCharFormat(format);
+                                        } else {
+                                                txt->setDefaultTextColor( col );
+                                        }
 
-					cursor.mergeCharFormat(format);
-				} else {
-					txt->setDefaultTextColor( col );
-				}
-				
-				// Effects
-				if (!txtProperties.namedItem( "typewriter" ).isNull()) {
-					// typewriter effect
-					mlt_properties_set_int( producer_props, "_animated", 1 );
-					QStringList effetData = QStringList() << "typewriter" << text << txtProperties.namedItem( "typewriter" ).nodeValue();
-					txt->setData(0, effetData);
-					if ( !txtProperties.namedItem( "textwidth" ).isNull() )
-						txt->setData( 1, txtProperties.namedItem( "textwidth" ).nodeValue() );
-				}
-				
-				if ( txtProperties.namedItem( "alignment" ).isNull() == false )
-				{
-					txt->setTextWidth( txt->boundingRect().width() );
-					QTextOption opt = txt->document()->defaultTextOption ();
-					opt.setAlignment(( Qt::Alignment ) txtProperties.namedItem( "alignment" ).nodeValue().toInt() );
-					txt->document()->setDefaultTextOption (opt);
-				}
-					if ( !txtProperties.namedItem( "kdenlive-axis-x-inverted" ).isNull() )
-				{
-					//txt->setData(OriginXLeft, txtProperties.namedItem("kdenlive-axis-x-inverted").nodeValue().toInt());
-				}
-				if ( !txtProperties.namedItem( "kdenlive-axis-y-inverted" ).isNull() )
-				{
-					//txt->setData(OriginYTop, txtProperties.namedItem("kdenlive-axis-y-inverted").nodeValue().toInt());
-				}
-				if ( !txtProperties.namedItem("preferred-width").isNull() )
-				{
-					txt->setTextWidth( txtProperties.namedItem("preferred-width").nodeValue().toInt() );
-				}
-					gitem = txt;
+                                        // Effects
+                                        if (!txtProperties.namedItem( "typewriter" ).isNull()) {
+                                                // typewriter effect
+                                                mlt_properties_set_int( producer_props, "_animated", 1 );
+                                                QStringList effetData = QStringList() << "typewriter" << text << txtProperties.namedItem( "typewriter" ).nodeValue();
+                                                txt->setData(0, effetData);
+                                                if ( !txtProperties.namedItem( "textwidth" ).isNull() )
+                                                        txt->setData( 1, txtProperties.namedItem( "textwidth" ).nodeValue() );
+                                        }
+
+                                        if ( txtProperties.namedItem( "alignment" ).isNull() == false )
+                                        {
+                                                txt->setTextWidth( txt->boundingRect().width() );
+                                                QTextOption opt = txt->document()->defaultTextOption ();
+                                                opt.setAlignment(( Qt::Alignment ) txtProperties.namedItem( "alignment" ).nodeValue().toInt() );
+                                                txt->document()->setDefaultTextOption (opt);
+                                        }
+                                                if ( !txtProperties.namedItem( "kdenlive-axis-x-inverted" ).isNull() )
+                                        {
+                                                //txt->setData(OriginXLeft, txtProperties.namedItem("kdenlive-axis-x-inverted").nodeValue().toInt());
+                                        }
+                                        if ( !txtProperties.namedItem( "kdenlive-axis-y-inverted" ).isNull() )
+                                        {
+                                                //txt->setData(OriginYTop, txtProperties.namedItem("kdenlive-axis-y-inverted").nodeValue().toInt());
+                                        }
+                                        if ( !txtProperties.namedItem("preferred-width").isNull() )
+                                        {
+                                                txt->setTextWidth( txtProperties.namedItem("preferred-width").nodeValue().toInt() );
+                                        }
+                                }
 			}
 			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
 			{
@@ -360,7 +480,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	
 	pthread_mutex_lock( &self->mutex );
-	
+
 	// Check if user wants us to reload the image
 	if ( mlt_properties_get( producer_props, "_animated" ) != NULL || force_refresh == 1 || width != self->current_width || height != self->current_height || mlt_properties_get( producer_props, "_endrect" ) != NULL )
 	{
@@ -405,7 +525,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 			}
 			mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
 		}
-                
+
                 QRectF start = stringToRect( QString( mlt_properties_get( producer_props, "_startrect" ) ) );
                 QRectF end = stringToRect( QString( mlt_properties_get( producer_props, "_endrect" ) ) );	
 		const QRectF source( 0, 0, width, height );
