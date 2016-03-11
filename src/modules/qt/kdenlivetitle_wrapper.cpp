@@ -57,12 +57,6 @@ public:
 	m_img = img;
     }
 
-private:
-    QImage m_img;
-
-
-protected:
-
 virtual QRectF boundingRect() const
 {
     return QRectF(0, 0, m_img.width(), m_img.height());
@@ -75,13 +69,18 @@ virtual void paint( QPainter *painter,
     painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
     painter->drawImage(QPoint(), m_img);
 }
+
+private:
+    QImage m_img;
+
+
 };
 
 
-class MyTextItem: public QGraphicsItem
+class PlainTextItem: public QGraphicsItem
 {
 public:
-    MyTextItem(QString text, QFont font, double width, double height, QColor col, QColor outlineColor, double outline, int align, int lineSpacing)
+    PlainTextItem(QString text, QFont font, double width, double height, QColor col, QColor outlineColor, double outline, int align, int lineSpacing)
     {
         m_boundingRect = QRectF(0, 0, width, height);
         m_font = font;
@@ -90,45 +89,48 @@ public:
         m_pen = QPen(outlineColor);
         m_pen.setWidthF(outline);
         QFontMetrics metrics(font);
-        if ( lineSpacing == 0)
-        {
-                lineSpacing = metrics.lineSpacing();
-        }
+        lineSpacing += metrics.lineSpacing();
 
         // Calculate line width
         QStringList lines = text.split('\n');
         double linePos = metrics.ascent();
-        double maxWidth = 0;
-        QList <QPainterPath> paths;
-        QList <int> lineWidths;
         foreach(const QString &line, lines)
         {
                 QPainterPath linePath;
                 linePath.addText(0, linePos, font, line);
-                paths << linePath;
-                maxWidth = qMax( maxWidth, (double) metrics.width(line));
-                lineWidths << metrics.width(line);
                 linePos += lineSpacing;
-        }
-        // now that we have max width, manage alignment
-        int i = 0;
-        foreach(QPainterPath p, paths)
-        {
                 if ( align == Qt::AlignHCenter )
                 {
-                        double offset = (maxWidth - lineWidths.at(i)) / 2;
-                        p.translate(offset, 0);
+                        double offset = (width - metrics.width(line)) / 2;
+                        linePath.translate(offset, 0);
                 } else if ( align == Qt::AlignRight ) {
-                        double offset = (maxWidth - lineWidths.at(i));
-                        p.translate(offset, 0);
+                        double offset = (width - metrics.width(line));
+                        linePath.translate(offset, 0);
                 }
-                i++;
-                m_path.addPath(p);
+                m_path.addPath(linePath);
         }
         // Calculate position of text in parent item
-        QRectF pathRect = QRectF(0, 0, maxWidth, linePos - lineSpacing + metrics.descent() );
+        QRectF pathRect = QRectF(0, 0, width, linePos - lineSpacing + metrics.descent() );
         QPointF offset = m_boundingRect.center() - pathRect.center() + QPointF(0, 2);
         m_path.translate(offset);
+    }
+
+    virtual QRectF boundingRect() const
+    {
+        return m_boundingRect;
+    }
+
+    virtual void paint( QPainter *painter,
+                       const QStyleOptionGraphicsItem * option,
+                       QWidget* w)
+    {
+        painter->setFont(m_font);
+        painter->setPen(m_color);
+        if ( m_outline > 0 )
+        {
+                painter->strokePath(m_path, m_pen);
+        }
+        painter->fillPath(m_path, m_color);
     }
 
 private:
@@ -138,26 +140,6 @@ private:
     QColor m_color;
     QPen m_pen;
     double m_outline;
-
-protected:
-
-virtual QRectF boundingRect() const
-{
-    return m_boundingRect;
-}
-
-virtual void paint( QPainter *painter,
-                       const QStyleOptionGraphicsItem * option,
-                       QWidget* w)
-{
-        painter->setFont(m_font);
-        painter->setPen(m_color);
-        if ( m_outline > 0 )
-        {
-                painter->strokePath(m_path, m_pen);
-        }
-        painter->fillPath(m_path, m_color);
-}
 };
 
 
@@ -277,7 +259,13 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 					font.setPixelSize( QFontInfo( f2 ).pixelSize() );
 				}
 				else
+                                {
 					font.setPixelSize( txtProperties.namedItem( "font-pixel-size" ).nodeValue().toInt() );
+                                }
+                                if ( !txtProperties.namedItem( "letter-spacing" ).isNull() )
+                                {
+                                    font.setLetterSpacing(QFont::AbsoluteSpacing, txtProperties.namedItem( "letter-spacing" ).nodeValue().toInt());
+                                }
 				QColor col( stringToColor( txtProperties.namedItem( "font-color" ).nodeValue() ) );
 				QString text = node.namedItem( "content" ).firstChild().nodeValue();
 				if ( !replacementText.isEmpty() )
@@ -310,7 +298,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 				
 				if ( txtProperties.namedItem( "compatibility" ).isNull() ) {
                                         // Workaround Qt5 crash in threaded drawing of QGraphicsTextItem, paint by ourselves
-                                        MyTextItem *txt = new MyTextItem(text, font, boxWidth, boxHeight, col, outlineColor, txtProperties.namedItem("font-outline").nodeValue().toDouble(), align, txtProperties.namedItem("line-spacing").nodeValue().toInt());
+                                        PlainTextItem *txt = new PlainTextItem(text, font, boxWidth, boxHeight, col, outlineColor, txtProperties.namedItem("font-outline").nodeValue().toDouble(), align, txtProperties.namedItem("line-spacing").nodeValue().toInt());
                                         scene->addItem( txt );
                                         gitem = txt;
                                 } else {
