@@ -57,6 +57,7 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 			plugin->enabled = TRUE;
 			plugin->wet_dry_enabled = FALSE;
 			process_add_plugin( jackrack->procinfo, plugin );
+			mlt_properties_set_int( properties, "instances", plugin->copies );
 		}
 		else
 		{
@@ -132,6 +133,26 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 		// Set the buffer for destruction
 		mlt_frame_set_audio( frame, *buffer, *format, size, mlt_pool_release );
+
+		if ( jackrack && jackrack->procinfo && jackrack->procinfo->chain &&
+			 mlt_properties_get_int64( producer_properties, "_pluginid" ) )
+		{
+			plugin_t *plugin = jackrack->procinfo->chain;
+			LADSPA_Data value;
+			int i, c;
+			for ( i = 0; i < plugin->desc->status_port_count; i++ )
+			{
+				// read the status port values
+				char key[20];
+				int p = plugin->desc->status_port_indicies[i];
+				for ( c = 0; c < plugin->copies; c++ )
+				{
+					snprintf( key, sizeof(key), "%d[%d]", p, c );
+					value = plugin->holders[c].status_memory[i];
+					mlt_properties_set_double( producer_properties, key, value );
+				}
+			}
+		}
 	}
 
 	return 0;

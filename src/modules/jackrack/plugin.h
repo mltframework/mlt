@@ -41,6 +41,7 @@ struct _ladspa_holder
   LADSPA_Handle instance;
   lff_t * ui_control_fifos;
   LADSPA_Data * control_memory;
+  LADSPA_Data * status_memory;
 
   jack_port_t **             aux_ports;
 };

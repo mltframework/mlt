@@ -418,8 +418,6 @@ plugin_create_aux_ports (plugin_t * plugin, guint copy, jack_rack_t * jack_rack)
   g_free (plugin_name);
 }
 
-static LADSPA_Data unused_control_port_output;
-
 static void
 plugin_init_holder (plugin_t * plugin,
                     guint copy,
@@ -456,13 +454,19 @@ plugin_init_holder (plugin_t * plugin,
         connect_port (instance, desc->control_port_indicies[i], holder->control_memory + i);
     }
   
-  for (i = 0; i < desc->port_count; i++)
+  if (desc->status_port_count > 0)
     {
-      if (!LADSPA_IS_PORT_CONTROL (desc->port_descriptors[i]))
-        continue;
-      
-      if (LADSPA_IS_PORT_OUTPUT (desc->port_descriptors[i]))
-        plugin->descriptor-> connect_port (instance, i, &unused_control_port_output);
+      holder->status_memory = g_malloc (sizeof (LADSPA_Data) * desc->status_port_count);
+    }
+  else
+    {
+      holder->status_memory = NULL;
+    }
+
+  for (i = 0; i < desc->status_port_count; i++)
+    {
+      plugin->descriptor->
+        connect_port (instance, desc->status_port_indicies[i], holder->status_memory + i);
     }
   
   if (jack_rack->procinfo->jack_client && plugin->desc->aux_channels > 0)
@@ -560,6 +564,11 @@ plugin_destroy (plugin_t * plugin)
           g_free (plugin->holders[i].control_memory);
         }
       
+      if (plugin->desc->status_port_count > 0)
+        {
+          g_free (plugin->holders[i].status_memory);
+        }
+
       /* aux ports */
       if (plugin->jack_rack->procinfo->jack_client && plugin->desc->aux_channels > 0)
         {
