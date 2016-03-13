@@ -46,7 +46,7 @@ $(TARGET): $(OBJS)
 		$(CXX) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
-		$(CXX) -MM $(CFLAGS) $^ 1>.depend
+		$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
 
 distclean:	clean
 		rm -f .depend
