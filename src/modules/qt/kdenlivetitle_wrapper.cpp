@@ -39,6 +39,7 @@
 #include <QRectF>
 #include <QColor>
 #include <QWidget>
+#include <QtMath>
 #include <framework/mlt_log.h>
 
 #if QT_VERSION >= 0x040600
@@ -80,11 +81,11 @@ private:
 class PlainTextItem: public QGraphicsItem
 {
 public:
-    PlainTextItem(QString text, QFont font, double width, double height, QColor col, QColor outlineColor, double outline, int align, int lineSpacing)
+    PlainTextItem(QString text, QFont font, double width, double height, QBrush brush, QColor outlineColor, double outline, int align, int lineSpacing)
     {
         m_boundingRect = QRectF(0, 0, width, height);
         m_font = font;
-        m_color = col;
+        m_brush = brush;
         m_outline = outline;
         m_pen = QPen(outlineColor);
         m_pen.setWidthF(outline);
@@ -125,19 +126,18 @@ public:
                        QWidget* w)
     {
         painter->setFont(m_font);
-        painter->setPen(m_color);
         if ( m_outline > 0 )
         {
                 painter->strokePath(m_path, m_pen);
         }
-        painter->fillPath(m_path, m_color);
+        painter->fillPath(m_path, m_brush);
     }
 
 private:
     QRectF m_boundingRect;
     QPainterPath m_path;
     QFont m_font;
-    QColor m_color;
+    QBrush m_brush;
     QPen m_pen;
     double m_outline;
 };
@@ -295,10 +295,37 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
                                         boxWidth = txtProperties.namedItem( "box-width" ).nodeValue().toDouble();
                                         boxHeight = txtProperties.namedItem( "box-height" ).nodeValue().toDouble();
                                 }
+                                QBrush brush;
+                                if ( txtProperties.namedItem( "gradient" ).isNull() == false )
+				{
+                                        // Calculate gradient
+                                        QString gradientData = txtProperties.namedItem( "gradient" ).nodeValue();
+                                        QStringList values = gradientData.split(";");
+                                        if (values.count() < 5) {
+                                            // invalid gradient, use default
+                                            values = QStringList() << "#ff0000" << "#2e0046" << "0" << "100" << "90";
+                                        }
+                                        QLinearGradient gr;
+                                        gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
+                                        gr.setColorAt(values.at(3).toDouble() / 100, values.at(1));
+                                        double angle = values.at(4).toDouble();
+                                        if (angle <= 90) {
+                                            gr.setStart(0, 0);
+                                            gr.setFinalStop(boxWidth * qCos(qDegreesToRadians(angle)), boxHeight * qSin(qDegreesToRadians(angle)));
+                                        } else {
+                                            gr.setStart(boxWidth, 0);
+                                            gr.setFinalStop(boxWidth + boxWidth * qCos(qDegreesToRadians(angle)), boxHeight * qSin(qDegreesToRadians(angle)));
+                                        }
+                                        brush = QBrush(gr);
+				}
+				else
+                                {
+                                    brush = QBrush(col);
+                                }
 				
 				if ( txtProperties.namedItem( "compatibility" ).isNull() ) {
                                         // Workaround Qt5 crash in threaded drawing of QGraphicsTextItem, paint by ourselves
-                                        PlainTextItem *txt = new PlainTextItem(text, font, boxWidth, boxHeight, col, outlineColor, txtProperties.namedItem("font-outline").nodeValue().toDouble(), align, txtProperties.namedItem("line-spacing").nodeValue().toInt());
+                                        PlainTextItem *txt = new PlainTextItem(text, font, boxWidth, boxHeight, brush, outlineColor, txtProperties.namedItem("font-outline").nodeValue().toDouble(), align, txtProperties.namedItem("line-spacing").nodeValue().toInt());
                                         scene->addItem( txt );
                                         gitem = txt;
                                 } else {
@@ -355,11 +382,38 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 			}
 			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
 			{
-				QString rect = node.namedItem( "content" ).attributes().namedItem( "rect" ).nodeValue();
-				QString br_str = node.namedItem( "content" ).attributes().namedItem( "brushcolor" ).nodeValue();
-				QString pen_str = node.namedItem( "content" ).attributes().namedItem( "pencolor" ).nodeValue();
-				double penwidth = node.namedItem( "content" ).attributes().namedItem( "penwidth") .nodeValue().toDouble();
-				QGraphicsRectItem *rec = scene->addRect( stringToRect( rect ), QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin ), QBrush( stringToColor( br_str ) ) );
+                                QDomNamedNodeMap rectProperties = node.namedItem( "content" ).attributes();
+                                QRectF rect = stringToRect( rectProperties.namedItem( "rect" ).nodeValue() );
+				QString pen_str = rectProperties.namedItem( "pencolor" ).nodeValue();
+				double penwidth = rectProperties.namedItem( "penwidth") .nodeValue().toDouble();
+                                QBrush brush;
+                                if ( !rectProperties.namedItem( "gradient" ).isNull() )
+				{
+                                        // Calculate gradient
+                                        QString gradientData = rectProperties.namedItem( "gradient" ).nodeValue();
+                                        QStringList values = gradientData.split(";");
+                                        if (values.count() < 5) {
+                                            // invalid gradient, use default
+                                            values = QStringList() << "#ff0000" << "#2e0046" << "0" << "100" << "90";
+                                        }
+                                        QLinearGradient gr;
+                                        gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
+                                        gr.setColorAt(values.at(3).toDouble() / 100, values.at(1));
+                                        double angle = values.at(4).toDouble();
+                                        if (angle <= 90) {
+                                            gr.setStart(0, 0);
+                                            gr.setFinalStop(rect.width() * qCos(qDegreesToRadians(angle)), rect.height() * qSin(qDegreesToRadians(angle)));
+                                        } else {
+                                            gr.setStart(rect.width(), 0);
+                                            gr.setFinalStop(rect.width() + rect.width()* qCos(qDegreesToRadians(angle)), rect.height() * qSin(qDegreesToRadians(angle)));
+                                        }
+                                        brush = QBrush(gr);
+				}
+				else
+                                {
+                                    brush = QBrush(stringToColor( rectProperties.namedItem( "brushcolor" ).nodeValue() ) );
+                                }
+				QGraphicsRectItem *rec = scene->addRect( rect, QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin ), brush );
 				gitem = rec;
 			}
 			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
