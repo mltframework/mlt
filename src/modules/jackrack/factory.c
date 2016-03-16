@@ -39,6 +39,51 @@ extern mlt_producer producer_ladspa_init( mlt_profile profile, mlt_service_type 
 plugin_mgr_t *g_jackrack_plugin_mgr = NULL;
 #endif
 
+static void add_port_to_metadata( mlt_properties p, plugin_desc_t* desc, int j )
+{
+	LADSPA_Data sample_rate = 48000;
+	LADSPA_PortRangeHintDescriptor hint_descriptor = desc->port_range_hints[j].HintDescriptor;
+
+	mlt_properties_set( p, "title", desc->port_names[ j ] );
+	if ( LADSPA_IS_HINT_INTEGER( hint_descriptor ) )
+	{
+		mlt_properties_set( p, "type", "integer" );
+		mlt_properties_set_int( p, "default", plugin_desc_get_default_control_value( desc, j, sample_rate ) );
+	}
+	else if ( LADSPA_IS_HINT_TOGGLED( hint_descriptor ) )
+	{
+		mlt_properties_set( p, "type", "boolean" );
+		mlt_properties_set_int( p, "default", plugin_desc_get_default_control_value( desc, j, sample_rate ) );
+	}
+	else
+	{
+		mlt_properties_set( p, "type", "float" );
+		mlt_properties_set_double( p, "default", plugin_desc_get_default_control_value( desc, j, sample_rate ) );
+	}
+	/* set upper and lower, possibly adjusted to the sample rate */
+	if ( LADSPA_IS_HINT_BOUNDED_BELOW( hint_descriptor ) )
+	{
+		LADSPA_Data lower = desc->port_range_hints[j].LowerBound;
+		if ( LADSPA_IS_HINT_SAMPLE_RATE( hint_descriptor ) )
+			lower *= sample_rate;
+		if ( LADSPA_IS_HINT_LOGARITHMIC( hint_descriptor ) )
+		{
+			if (lower < FLT_EPSILON)
+				lower = FLT_EPSILON;
+		}
+		mlt_properties_set_double( p, "minimum", lower );
+	}
+	if ( LADSPA_IS_HINT_BOUNDED_ABOVE( hint_descriptor ) )
+	{
+		LADSPA_Data upper = desc->port_range_hints[j].UpperBound;
+		if ( LADSPA_IS_HINT_SAMPLE_RATE( hint_descriptor ) )
+			upper *= sample_rate;
+		mlt_properties_set_double( p, "maximum", upper );
+	}
+	if ( LADSPA_IS_HINT_LOGARITHMIC( hint_descriptor ) )
+		mlt_properties_set( p, "scale", "log" );
+}
+
 static mlt_properties metadata( mlt_service_type type, const char *id, char *data )
 {
 	char file[ PATH_MAX ];
@@ -75,59 +120,47 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 			for ( i = 0; i < desc->control_port_count; i++ )
 			{
 				int j = desc->control_port_indicies[i];
-				LADSPA_Data sample_rate = 48000;
-				LADSPA_PortRangeHintDescriptor hint_descriptor = desc->port_range_hints[j].HintDescriptor;
-
 				p = mlt_properties_new();
-				snprintf( key, sizeof(key), "%d", i );
+				snprintf( key, sizeof(key), "%d", mlt_properties_count( params ) );
 				mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
 				snprintf( key, sizeof(key), "%d", j );
 				mlt_properties_set( p, "identifier", key );
-				mlt_properties_set( p, "title", desc->port_names[ j ] );
-				if ( LADSPA_IS_HINT_INTEGER( hint_descriptor ) )
-				{
-					mlt_properties_set( p, "type", "integer" );
-					mlt_properties_set_int( p, "default", plugin_desc_get_default_control_value( desc, j, sample_rate ) );
-				}
-				else if ( LADSPA_IS_HINT_TOGGLED( hint_descriptor ) )
-				{
-					mlt_properties_set( p, "type", "boolean" );
-					mlt_properties_set_int( p, "default", plugin_desc_get_default_control_value( desc, j, sample_rate ) );
-				}
-				else
-				{
-					mlt_properties_set( p, "type", "float" );
-					mlt_properties_set_double( p, "default", plugin_desc_get_default_control_value( desc, j, sample_rate ) );
-				}
-				/* set upper and lower, possibly adjusted to the sample rate */
-				if ( LADSPA_IS_HINT_BOUNDED_BELOW( hint_descriptor ) )
-				{
-					LADSPA_Data lower = desc->port_range_hints[j].LowerBound;
-					if ( LADSPA_IS_HINT_SAMPLE_RATE( hint_descriptor ) )
-						lower *= sample_rate;
-					if ( LADSPA_IS_HINT_LOGARITHMIC( hint_descriptor ) )
-					{
-						if (lower < FLT_EPSILON)
-							lower = FLT_EPSILON;
-					}
-					mlt_properties_set_double( p, "minimum", lower );
-				}
-				if ( LADSPA_IS_HINT_BOUNDED_ABOVE( hint_descriptor ) )
-				{
-					LADSPA_Data upper = desc->port_range_hints[j].UpperBound;
-					if ( LADSPA_IS_HINT_SAMPLE_RATE( hint_descriptor ) )
-						upper *= sample_rate;
-					mlt_properties_set_double( p, "maximum", upper );
-				}
-				if ( LADSPA_IS_HINT_LOGARITHMIC( hint_descriptor ) )
-					mlt_properties_set( p, "scale", "log" );
+				add_port_to_metadata( p, desc, j );
 				mlt_properties_set( p, "mutable", "yes" );
 			}
+			for ( i = 0; i < desc->status_port_count; i++ )
+			{
+				int j = desc->status_port_indicies[i];
+				p = mlt_properties_new();
+				snprintf( key, sizeof(key), "%d", mlt_properties_count( params ) );
+				mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
+				snprintf( key, sizeof(key), "%d[*]", j );
+				mlt_properties_set( p, "identifier", key );
+				add_port_to_metadata( p, desc, j );
+				mlt_properties_set( p, "readonly", "yes" );
+			}
+
+			p = mlt_properties_new();
+			snprintf( key, sizeof(key), "%d", mlt_properties_count( params ) );
+			mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
+			mlt_properties_set( p, "identifier", "instances" );
+			mlt_properties_set( p, "title", "Instances" );
+			mlt_properties_set( p, "description",
+								"The number of instances of the plugin that are in use.\n"
+								"MLT will create the number of plugins that are required "
+								"to support the number of audio channels.\n"
+								"Status parameters (readonly) are provided for each instance "
+								"and are accessed by specifying the instance number after the "
+								"identifier (starting at zero).\n"
+								"e.g. 9[0] provides the value of status 9 for the first instance."
+								);
+			mlt_properties_set( p, "type", "integer" );
+			mlt_properties_set( p, "readonly", "yes" );
 
 			if( type == filter_type )
 			{
 				p = mlt_properties_new();
-				snprintf( key, sizeof(key), "%d", i );
+				snprintf( key, sizeof(key), "%d", mlt_properties_count( params ) );
 				mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
 				mlt_properties_set( p, "identifier", "wetness" );
 				mlt_properties_set( p, "title", "Wet/Dry" );

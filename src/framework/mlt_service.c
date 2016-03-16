@@ -3,7 +3,7 @@
  * \brief interface definition for all service classes
  * \see mlt_service_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -228,7 +228,7 @@ int mlt_service_connect_producer( mlt_service self, mlt_service producer, int in
 	if ( base->in != NULL && index >= 0 && index < base->size )
 	{
 		// Get the current service
-		mlt_service current = base->in[ index ];
+		mlt_service current = ( index < base->count )? base->in[ index ] : NULL;
 
 		// Increment the reference count on this producer
 		if ( producer != NULL )

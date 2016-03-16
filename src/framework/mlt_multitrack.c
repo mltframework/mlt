@@ -183,6 +183,7 @@ int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int trac
 
 	if ( result == 0 )
 	{
+		mlt_track current_track = ( track < self->count )? self->list[ track ] : NULL;
 		// Resize the producer list if need be
 		if ( track >= self->size )
 		{
@@ -193,10 +194,10 @@ int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int trac
 			self->size = track + 10;
 		}
 
-		if ( self->list[ track ] != NULL )
+		if ( current_track )
 		{
-			mlt_event_close( self->list[ track ]->event );
-			mlt_producer_close( self->list[ track ]->producer );
+			mlt_event_close( current_track->event );
+			mlt_producer_close( current_track->producer );
 		}
 		else
 		{

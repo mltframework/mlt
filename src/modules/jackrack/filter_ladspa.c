@@ -61,6 +61,7 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 			{
 				plugin->enabled = TRUE;
 				process_add_plugin( jackrack->procinfo, plugin );
+				mlt_properties_set_int( properties, "instances", plugin->copies );
 			}
 			else
 				mlt_log_error( properties, "failed to load plugin %lu\n", id );
@@ -138,6 +139,26 @@ static int ladspa_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	mlt_pool_release( input_buffers );
 	mlt_pool_release( output_buffers );
+
+	if ( jackrack && jackrack->procinfo && jackrack->procinfo->chain &&
+		 mlt_properties_get_int64( filter_properties, "_pluginid" ) )
+	{
+		plugin_t *plugin = jackrack->procinfo->chain;
+		LADSPA_Data value;
+		int i, c;
+		for ( i = 0; i < plugin->desc->status_port_count; i++ )
+		{
+			// read the status port values
+			char key[20];
+			int p = plugin->desc->status_port_indicies[i];
+			for ( c = 0; c < plugin->copies; c++ )
+			{
+				snprintf( key, sizeof(key), "%d[%d]", p, c );
+				value = plugin->holders[c].status_memory[i];
+				mlt_properties_set_double( filter_properties, key, value );
+			}
+		}
+	}
 
 	return error;
 }

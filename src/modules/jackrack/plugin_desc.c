@@ -66,6 +66,8 @@ plugin_desc_init (plugin_desc_t * pd)
   pd->audio_aux_port_indicies = NULL;
   pd->control_port_count = 0;
   pd->control_port_indicies = NULL;
+  pd->status_port_count = 0;
+  pd->status_port_indicies = NULL;
   pd->aux_channels = 0;
   pd->aux_are_input = TRUE;
   pd->has_input = TRUE;
@@ -205,16 +207,25 @@ plugin_desc_set_port_counts (plugin_desc_t * pd)
       else
         {
           if (LADSPA_IS_PORT_OUTPUT (pd->port_descriptors[i]))
-            continue;
-            
-          pd->control_port_count++;
-          if (pd->control_port_count == 0)
-            pd->control_port_indicies = g_malloc (sizeof (unsigned long) * pd->control_port_count);
+            {
+              pd->status_port_count++;
+              if (pd->status_port_count == 0)
+                pd->status_port_indicies = g_malloc (sizeof (unsigned long) * pd->status_port_count);
+              else
+                pd->status_port_indicies = g_realloc (pd->status_port_indicies,
+                                                       sizeof (unsigned long) * pd->status_port_count);
+              pd->status_port_indicies[pd->status_port_count - 1] = i;
+            }
           else
-            pd->control_port_indicies = g_realloc (pd->control_port_indicies,
-                                                   sizeof (unsigned long) * pd->control_port_count);
-          
-          pd->control_port_indicies[pd->control_port_count - 1] = i;
+            {
+              pd->control_port_count++;
+              if (pd->control_port_count == 0)
+                pd->control_port_indicies = g_malloc (sizeof (unsigned long) * pd->control_port_count);
+              else
+                pd->control_port_indicies = g_realloc (pd->control_port_indicies,
+                                                       sizeof (unsigned long) * pd->control_port_count);
+              pd->control_port_indicies[pd->control_port_count - 1] = i;
+            }
         }
     }
   
