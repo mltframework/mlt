@@ -32,14 +32,13 @@
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QStyleOptionGraphicsItem>
-
 #include <QString>
+#include <math.h>
 
 #include <QDomElement>
 #include <QRectF>
 #include <QColor>
 #include <QWidget>
-#include <QtMath>
 #include <framework/mlt_log.h>
 
 #if QT_VERSION >= 0x040600
@@ -49,6 +48,9 @@
 #endif
 
 Q_DECLARE_METATYPE(QTextCursor);
+
+// Private Constants
+static const double PI = 3.14159265358979323846;
 
 class ImageItem: public QGraphicsItem
 {
@@ -399,10 +401,10 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
                                         double angle = values.at(4).toDouble();
                                         if (angle <= 90) {
                                             gr.setStart(0, 0);
-                                            gr.setFinalStop(boxWidth * qCos(qDegreesToRadians(angle)), boxHeight * qSin(qDegreesToRadians(angle)));
+                                            gr.setFinalStop(boxWidth * cos( angle * PI / 180 ), boxHeight * sin( angle * PI / 180 ));
                                         } else {
                                             gr.setStart(boxWidth, 0);
-                                            gr.setFinalStop(boxWidth + boxWidth * qCos(qDegreesToRadians(angle)), boxHeight * qSin(qDegreesToRadians(angle)));
+                                            gr.setFinalStop(boxWidth + boxWidth * cos( angle * PI / 180 ), boxHeight * sin( angle * PI / 180 ));
                                         }
                                         brush = QBrush(gr);
 				}
@@ -495,10 +497,10 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
                                         double angle = values.at(4).toDouble();
                                         if (angle <= 90) {
                                             gr.setStart(0, 0);
-                                            gr.setFinalStop(rect.width() * qCos(qDegreesToRadians(angle)), rect.height() * qSin(qDegreesToRadians(angle)));
+                                            gr.setFinalStop(rect.width() * cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
                                         } else {
                                             gr.setStart(rect.width(), 0);
-                                            gr.setFinalStop(rect.width() + rect.width()* qCos(qDegreesToRadians(angle)), rect.height() * qSin(qDegreesToRadians(angle)));
+                                            gr.setFinalStop(rect.width() + rect.width()* cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
                                         }
                                         brush = QBrush(gr);
 				}
