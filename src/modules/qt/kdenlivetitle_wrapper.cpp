@@ -173,7 +173,7 @@ public:
                         double offset = (width - metrics.width(line));
                         linePath.translate(offset, 0);
                 }
-                m_path.addPath(linePath);
+                m_path = m_path.united(linePath);
         }
         // Calculate position of text in parent item
         QRectF pathRect = QRectF(0, 0, width, linePos - lineSpacing + metrics.descent() );
