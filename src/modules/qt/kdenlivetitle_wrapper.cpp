@@ -32,8 +32,8 @@
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QStyleOptionGraphicsItem>
-
 #include <QString>
+#include <math.h>
 
 #include <QDomElement>
 #include <QRectF>
@@ -48,6 +48,9 @@
 #endif
 
 Q_DECLARE_METATYPE(QTextCursor);
+
+// Private Constants
+static const double PI = 3.14159265358979323846;
 
 class ImageItem: public QGraphicsItem
 {
@@ -76,15 +79,78 @@ private:
 
 };
 
+void blur( QImage& image, int radius )
+{
+    int tab[] = { 14, 10, 8, 6, 5, 5, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 };
+    int alpha = (radius < 1)  ? 16 : (radius > 17) ? 1 : tab[radius-1];
+
+    int r1 = 0;
+    int r2 = image.height() - 1;
+    int c1 = 0;
+    int c2 = image.width() - 1;
+
+    int bpl = image.bytesPerLine();
+    int rgba[4];
+    unsigned char* p;
+
+    int i1 = 0;
+    int i2 = 3;
+
+    i1 = i2 = ( QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3 );
+
+    for (int col = c1; col <= c2; col++) {
+        p = image.scanLine(r1) + col * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p += bpl;
+        for (int j = r1; j < r2; j++, p += bpl)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+    for (int row = r1; row <= r2; row++) {
+        p = image.scanLine(row) + c1 * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p += 4;
+        for (int j = c1; j < c2; j++, p += 4)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+    for (int col = c1; col <= c2; col++) {
+        p = image.scanLine(r2) + col * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p -= bpl;
+        for (int j = r1; j < r2; j++, p -= bpl)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+    for (int row = r1; row <= r2; row++) {
+        p = image.scanLine(row) + c2 * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p -= 4;
+        for (int j = c1; j < c2; j++, p -= 4)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+}
 
 class PlainTextItem: public QGraphicsItem
 {
 public:
-    PlainTextItem(QString text, QFont font, double width, double height, QColor col, QColor outlineColor, double outline, int align, int lineSpacing)
+    PlainTextItem(QString text, QFont font, double width, double height, QBrush brush, QColor outlineColor, double outline, int align, int lineSpacing)
     {
         m_boundingRect = QRectF(0, 0, width, height);
-        m_font = font;
-        m_color = col;
+        m_brush = brush;
         m_outline = outline;
         m_pen = QPen(outlineColor);
         m_pen.setWidthF(outline);
@@ -107,7 +173,7 @@ public:
                         double offset = (width - metrics.width(line));
                         linePath.translate(offset, 0);
                 }
-                m_path.addPath(linePath);
+                m_path = m_path.united(linePath);
         }
         // Calculate position of text in parent item
         QRectF pathRect = QRectF(0, 0, width, linePos - lineSpacing + metrics.descent() );
@@ -124,24 +190,48 @@ public:
                        const QStyleOptionGraphicsItem * option,
                        QWidget* w)
     {
-        painter->setFont(m_font);
-        painter->setPen(m_color);
+        if ( !m_shadow.isNull() )
+        {
+                painter->drawImage(m_shadowOffset, m_shadow);
+        }
+        painter->fillPath(m_path, m_brush);
         if ( m_outline > 0 )
         {
                 painter->strokePath(m_path, m_pen);
         }
-        painter->fillPath(m_path, m_color);
+    }
+
+    void addShadow(QStringList params)
+    {
+        if (params.count() < 5 || params.at( 0 ).toInt() == false) 
+        {
+                // Invalid or no shadow wanted
+                return;
+        }
+        // Build shadow image
+        QColor shadowColor = QColor( params.at( 1 ) );
+        int blurRadius = params.at( 2 ).toInt();
+        int offsetX = params.at( 3 ).toInt();
+        int offsetY = params.at( 4 ).toInt();
+        m_shadowOffset = QPoint( offsetX, offsetY );
+        m_shadow = QImage( m_boundingRect.width() + abs( offsetX ), m_boundingRect.height() + abs( offsetY ), QImage::Format_ARGB32_Premultiplied );
+        m_shadow.fill( Qt::transparent );
+        QPainterPath shadowPath = m_path;
+        QPainter shadowPainter( &m_shadow );
+        shadowPainter.fillPath( m_path, QBrush( shadowColor ) );
+        shadowPainter.end();
+        blur( m_shadow, blurRadius );
     }
 
 private:
     QRectF m_boundingRect;
+    QImage m_shadow;
+    QPoint m_shadowOffset;
     QPainterPath m_path;
-    QFont m_font;
-    QColor m_color;
+    QBrush m_brush;
     QPen m_pen;
     double m_outline;
 };
-
 
 QRectF stringToRect( const QString & s )
 {
@@ -295,10 +385,42 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
                                         boxWidth = txtProperties.namedItem( "box-width" ).nodeValue().toDouble();
                                         boxHeight = txtProperties.namedItem( "box-height" ).nodeValue().toDouble();
                                 }
+                                QBrush brush;
+                                if ( txtProperties.namedItem( "gradient" ).isNull() == false )
+				{
+                                        // Calculate gradient
+                                        QString gradientData = txtProperties.namedItem( "gradient" ).nodeValue();
+                                        QStringList values = gradientData.split(";");
+                                        if (values.count() < 5) {
+                                            // invalid gradient, use default
+                                            values = QStringList() << "#ff0000" << "#2e0046" << "0" << "100" << "90";
+                                        }
+                                        QLinearGradient gr;
+                                        gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
+                                        gr.setColorAt(values.at(3).toDouble() / 100, values.at(1));
+                                        double angle = values.at(4).toDouble();
+                                        if (angle <= 90) {
+                                            gr.setStart(0, 0);
+                                            gr.setFinalStop(boxWidth * cos( angle * PI / 180 ), boxHeight * sin( angle * PI / 180 ));
+                                        } else {
+                                            gr.setStart(boxWidth, 0);
+                                            gr.setFinalStop(boxWidth + boxWidth * cos( angle * PI / 180 ), boxHeight * sin( angle * PI / 180 ));
+                                        }
+                                        brush = QBrush(gr);
+				}
+				else
+                                {
+                                    brush = QBrush(col);
+                                }
 				
 				if ( txtProperties.namedItem( "compatibility" ).isNull() ) {
                                         // Workaround Qt5 crash in threaded drawing of QGraphicsTextItem, paint by ourselves
-                                        PlainTextItem *txt = new PlainTextItem(text, font, boxWidth, boxHeight, col, outlineColor, txtProperties.namedItem("font-outline").nodeValue().toDouble(), align, txtProperties.namedItem("line-spacing").nodeValue().toInt());
+                                        PlainTextItem *txt = new PlainTextItem(text, font, boxWidth, boxHeight, brush, outlineColor, txtProperties.namedItem("font-outline").nodeValue().toDouble(), align, txtProperties.namedItem("line-spacing").nodeValue().toInt());
+                                        if ( txtProperties.namedItem( "shadow" ).isNull() == false )
+                                        {
+                                                QStringList values = txtProperties.namedItem( "shadow" ).nodeValue().split(";");
+                                                txt->addShadow(values);
+                                        }
                                         scene->addItem( txt );
                                         gitem = txt;
                                 } else {
@@ -355,11 +477,47 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 			}
 			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
 			{
-				QString rect = node.namedItem( "content" ).attributes().namedItem( "rect" ).nodeValue();
-				QString br_str = node.namedItem( "content" ).attributes().namedItem( "brushcolor" ).nodeValue();
-				QString pen_str = node.namedItem( "content" ).attributes().namedItem( "pencolor" ).nodeValue();
-				double penwidth = node.namedItem( "content" ).attributes().namedItem( "penwidth") .nodeValue().toDouble();
-				QGraphicsRectItem *rec = scene->addRect( stringToRect( rect ), QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin ), QBrush( stringToColor( br_str ) ) );
+                                QDomNamedNodeMap rectProperties = node.namedItem( "content" ).attributes();
+                                QRectF rect = stringToRect( rectProperties.namedItem( "rect" ).nodeValue() );
+				QString pen_str = rectProperties.namedItem( "pencolor" ).nodeValue();
+				double penwidth = rectProperties.namedItem( "penwidth") .nodeValue().toDouble();
+                                QBrush brush;
+                                if ( !rectProperties.namedItem( "gradient" ).isNull() )
+				{
+                                        // Calculate gradient
+                                        QString gradientData = rectProperties.namedItem( "gradient" ).nodeValue();
+                                        QStringList values = gradientData.split(";");
+                                        if (values.count() < 5) {
+                                            // invalid gradient, use default
+                                            values = QStringList() << "#ff0000" << "#2e0046" << "0" << "100" << "90";
+                                        }
+                                        QLinearGradient gr;
+                                        gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
+                                        gr.setColorAt(values.at(3).toDouble() / 100, values.at(1));
+                                        double angle = values.at(4).toDouble();
+                                        if (angle <= 90) {
+                                            gr.setStart(0, 0);
+                                            gr.setFinalStop(rect.width() * cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
+                                        } else {
+                                            gr.setStart(rect.width(), 0);
+                                            gr.setFinalStop(rect.width() + rect.width()* cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
+                                        }
+                                        brush = QBrush(gr);
+				}
+				else
+                                {
+                                    brush = QBrush(stringToColor( rectProperties.namedItem( "brushcolor" ).nodeValue() ) );
+                                }
+                                QPen pen;
+                                if ( penwidth == 0 )
+                                {
+                                    pen = QPen( Qt::NoPen );
+                                }
+                                else
+                                {
+                                    pen = QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin );
+                                }
+				QGraphicsRectItem *rec = scene->addRect( rect, pen, brush );
 				gitem = rec;
 			}
 			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
