@@ -14,7 +14,6 @@ FFmpeg/avformat options:
   --avformat-no-codecs    - Disable the producer and consumer to avoid the codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
   --avformat-no-devices   - Disable support for libavdevice
-  --avformat-vdpau        - Enable support for NVIDIA VDPAU
 
 EOF
 
