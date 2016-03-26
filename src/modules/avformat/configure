@@ -1,18 +1,11 @@
 #!/bin/sh
 
-# Determine whether to recommend/use the HEAD revision of FFmpeg (unreleased)
-# or a specific revision based upon whether the last digit of our version
-# is even or odd. An odd MLT version number always represents unreleased.
-ffmpeg_ver="1.2"
-libav_ver="0.8.7"
-micro_version=$(echo $version | cut -d . -f 3)
-odd_version=$(($micro_version % 2))
-[ "$odd_version" -eq "1" ] && ffmpeg_ver="HEAD" && libav_ver="HEAD"
-
 if [ "$help" = "1" ]
 then
 	cat << EOF
 FFmpeg/avformat options:
+
+  This module requires at least FFmpeg v1.1 or Libav 9.
 
   --avformat-shared=path  - Link against a shared installation of libavformat (default)
   --avformat-static=path  - Link against a static build of libavformat
@@ -22,8 +15,6 @@ FFmpeg/avformat options:
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
   --avformat-no-devices   - Disable support for libavdevice
   --avformat-vdpau        - Enable support for NVIDIA VDPAU
-
-  NOTE: The recommended version of FFmpeg is $ffmpeg_ver or libav $libav_ver.
 
 EOF
 
