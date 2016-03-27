@@ -6,7 +6,7 @@ then
 FFmpeg/avformat options:
 
   This module requires at least FFmpeg v1.1 or Libav 9.
-  Features using libavfilter requires at least FFmpeg v2.2 (not Libav).
+  Features using libavfilter requires at least FFmpeg v2.0 (not Libav).
 
   --avformat-shared=path  - Link against a shared installation of libavformat (default)
   --avformat-static=path  - Link against a static build of libavformat
@@ -141,11 +141,11 @@ else
 		fi
 		if [ "$avfilter" = "true" ]
 		then
-			if $(pkg-config "libavfilter${avformat_suffix} >= 4.2.100"); then
+			if $(pkg-config "libavfilter${avformat_suffix} >= 3.79.100"); then
 				echo "CFLAGS+=$(pkg-config --cflags libavfilter${avformat_suffix})" >> config.mak
 				echo "LDFLAGS+=$(pkg-config --libs libavfilter${avformat_suffix})" >> config.mak
 			else
-				echo " - libavfilter >= 4.2.100 not found, disabling some features"
+				echo " - libavfilter >= 3.79.100 not found, disabling some features"
 				avfilter=false
 			fi
 		fi
