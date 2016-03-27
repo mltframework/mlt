@@ -309,7 +309,7 @@ static double get_rotation(AVStream *st)
 	return theta;
 }
 #else
-static double get_rotation(AVStream*)
+static double get_rotation(AVStream *st)
 {
 	return 0.0;
 }
