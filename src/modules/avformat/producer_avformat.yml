@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: producer
 identifier: avformat
 title: FFmpeg Reader
@@ -40,7 +40,8 @@ bugs:
     More than 2 channels of audio more than 16 bits is not supported.
 
 parameters:
-  - identifier: argument # 'argument' is a reserved name for a value supplied to the factory
+  - identifier: resource
+    argument: yes
     title: File/URL
     type: string
     description: |
@@ -112,6 +113,7 @@ parameters:
 
   - identifier: seekable
     title: Supports seeking
+    type: boolean
     description: if the resource can seek
     readonly: yes
 
@@ -129,10 +131,7 @@ parameters:
 
   - identifier: noimagecache
     title: Disable image caching
-    type: integer
-    minimum: 0
-    maximum: 0
-    default: 0
+    type: boolean
     widget: checkbox
 
   - identifier: cache
@@ -152,25 +151,19 @@ parameters:
   - identifier: force_progressive
     title: Force progressive
     description: When provided, this overrides the detection of progressive video.
-    type: integer
-    minimum: 0
-    maximum: 1
+    type: boolean
     widget: checkbox
 
   - identifier: force_tff
     title: Force top field first
     description: When provided, this overrides the detected field order of interlaced video.
-    type: integer
-    minimum: 0
-    maximum: 1
+    type: boolean
     widget: checkbox
 
   - identifier: force_fps
     title: Force frame rate
     description: When provided, this attempts to override the detected frame rate of the video.
-    type: integer
-    minimum: 0
-    maximum: 1
+    type: float
     widget: checkbox
 
   - identifier: force_colorspace
@@ -204,9 +197,7 @@ parameters:
     description: >
       Whether to attempt to automatically reconnect to a live source when a
       read failure occurs.
-    type: integer
-    minimum: 0
-    maximum: 1
+    type: boolean
     widget: checkbox
 
   - identifier: exit_on_disconnect
@@ -214,19 +205,15 @@ parameters:
     description: >
       When this is set, the program will terminate with an error if a live source
       becomes disconnected.
-    type: integer
-    minimum: 0
-    maximum: 1
+    type: boolean
     widget: checkbox
 
   - identifier: mute_on_pause
     title: Mute on Pause
     description: >
       Mute the audio when the same frame is requested twice in a row.
-    type: integer
+    type: boolean
     default: 1
-    minimum: 0
-    maximum: 1
     widget: checkbox
 
   - identifier: seek_threshold
@@ -239,3 +226,11 @@ parameters:
       number of seek calls.
     type: integer
     unit: frames
+
+  - identifier: autorotate
+    title: Auto-rotate?
+    type: boolean
+    description: >
+      Whether to automatically compensate image orientation if the file is
+      tagged with appropriate metadata and this resource has video/images.
+    default: 1

@@ -37,6 +37,10 @@ ifdef DEVICES
 CFLAGS += -DAVDEVICE
 endif
 
+ifdef AVFILTER
+CFLAGS += -DAVFILTER
+endif
+
 SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)

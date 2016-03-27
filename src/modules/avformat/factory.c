@@ -36,6 +36,9 @@ extern mlt_producer producer_avformat_init( mlt_profile profile, const char *ser
 #ifdef AVDEVICE
 #include <libavdevice/avdevice.h>
 #endif
+#ifdef AVFILTER
+#include <libavfilter/avfilter.h>
+#endif
 #include <libavutil/opt.h>
 
 
@@ -88,6 +91,9 @@ static void avformat_init( )
 		av_register_all( );
 #ifdef AVDEVICE
 		avdevice_register_all();
+#endif
+#ifdef AVFILTER
+		avfilter_register_all();
 #endif
 		avformat_network_init();
 		av_log_set_level( mlt_log_get_level() );

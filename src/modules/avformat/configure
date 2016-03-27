@@ -14,6 +14,7 @@ FFmpeg/avformat options:
   --avformat-no-codecs    - Disable the producer and consumer to avoid the codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
   --avformat-no-devices   - Disable support for libavdevice
+  --avformat-no-avfiler   - Disable support for libavfilter
 
 EOF
 
@@ -50,6 +51,7 @@ else
 	export filters=true
 	export devices=true
 	export vdpau=false
+	export avfilter=true
 	pkg-config x11 > /dev/null 2>&1
 	export x11=$?
 
@@ -63,6 +65,7 @@ else
 			--avformat-no-codecs )	codecs=false ;;
 			--avformat-no-filters )	filters=false ;;
 			--avformat-no-devices )	devices=false ;;
+			--avformat-no-avfilter ) avfilter=false ;;
 			--avformat-no-vdpau )   vdpau=false ;;
 			--avformat-vdpau )      vdpau=true ;;
 		esac
@@ -83,6 +86,10 @@ else
 			if [ "$devices" = "true" ]
 			then
 				echo "LDFLAGS+=-L$static_ffmpeg/libavdevice" >> config.mak
+			fi
+			if [ "$avfilter" = "true" ]
+			then
+				echo "LDFLAGS+=-L$static_ffmpeg/libavfilter" >> config.mak
 			fi
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 			extra_libs="$extra_libs -lm -lz -lbz2"
@@ -129,9 +136,19 @@ else
 				exit 0
 			fi
 			echo "CFLAGS+=$(pkg-config --cflags libavdevice${avformat_suffix})" >> config.mak
-                        echo "LDFLAGS+=$(pkg-config --libs libavdevice${avformat_suffix})" >> config.mak
+			echo "LDFLAGS+=$(pkg-config --libs libavdevice${avformat_suffix})" >> config.mak
 		fi
-		
+		if [ "$avfilter" = "true" ]
+		then
+			if ! $(pkg-config libavfilter${avformat_suffix}); then
+				echo "- libavfilter not found: disabling"
+				touch ../disable-avfilter
+				exit 0
+			fi
+			echo "CFLAGS+=$(pkg-config --cflags libavfilter${avformat_suffix})" >> config.mak
+			echo "LDFLAGS+=$(pkg-config --libs libavfilter${avformat_suffix})" >> config.mak
+		fi
+
 		if [ "$vdpau" = "true" ]
 		then
 			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC $(pkg-config --cflags libavformat${avformat_suffix}) -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
@@ -147,6 +164,7 @@ else
         [ "$codecs" = "true" ] && echo "CODECS=1" >> config.mak
 	[ "$filters" = "true" ] && echo "FILTERS=1" >> config.mak
 	[ "$devices" = "true" ] && echo "DEVICES=1" >> config.mak
+	[ "$avfilter" = "true" ] && echo "AVFILTER=1" >> config.mak
 	exit 0
 
 fi

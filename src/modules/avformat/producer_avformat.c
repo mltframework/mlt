@@ -39,6 +39,12 @@
 #  include <libavcodec/vdpau.h>
 #endif
 
+#ifdef AVFILTER
+#include <libavfilter/avfilter.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#endif
+
 // System header files
 #include <stdlib.h>
 #include <string.h>
@@ -120,12 +126,18 @@ struct producer_avformat_s
 		VdpDecoder decoder;
 	} *vdpau;
 #endif
+#ifdef AVFILTER
+	AVFilterGraph *vfilter_graph;
+	AVFilterContext *vfilter_in;
+	AVFilterContext* vfilter_out;
+#endif
+	int autorotate;
 };
 typedef struct producer_avformat_s *producer_avformat;
 
 // Forward references.
 static int list_components( char* file );
-static int producer_open( producer_avformat self, mlt_profile profile, const char *URL, int take_lock );
+static int producer_open( producer_avformat self, mlt_profile profile, const char *URL, int take_lock, int test_open );
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
@@ -183,7 +195,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			{
 				// Open the file
 				mlt_properties_from_utf8( properties, "resource", "_resource" );
-				if ( producer_open( self, profile, mlt_properties_get( properties, "_resource" ), 1 ) != 0 )
+				if ( producer_open( self, profile, mlt_properties_get( properties, "_resource" ), 1, 1 ) != 0 )
 				{
 					// Clean up
 					mlt_producer_close( producer );
@@ -295,6 +307,11 @@ static double get_rotation(AVStream *st)
 	theta -= 360 * floor( theta/360 + 0.9/360 );
 
 	return theta;
+}
+#else
+static double get_rotation(AVStream*)
+{
+	return 0.0;
 }
 #endif
 
@@ -666,10 +683,61 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	return error;
 }
 
+#ifdef AVFILTER
+static int setup_video_filters( producer_avformat self )
+{
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+	AVFormatContext *format = self->video_format;
+	AVStream* stream = format->streams[ self->video_index ];
+	AVCodecContext *codec_context = stream->codec;
+
+	self->vfilter_graph = avfilter_graph_alloc();
+	self->vfilter_graph->scale_sws_opts = strdup("");
+
+	// From ffplay.c:configure_video_filters().
+	char buffersrc_args[256];
+	snprintf(buffersrc_args, sizeof(buffersrc_args),
+		"video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d:frame_rate=%d/%d",
+		codec_context->width, codec_context->height, codec_context->pix_fmt,
+		stream->time_base.num, stream->time_base.den,
+		mlt_properties_get_int(properties, "meta.media.sample_aspect_num"),
+		FFMAX(mlt_properties_get_int(properties, "meta.media.sample_aspect_den"), 1),
+		stream->avg_frame_rate.num, FFMAX(stream->avg_frame_rate.den, 1));
+
+	int result = avfilter_graph_create_filter(&self->vfilter_in, avfilter_get_by_name("buffer"),
+		"mlt_buffer", buffersrc_args, NULL, self->vfilter_graph);
+
+	if (result >= 0) {
+		result = avfilter_graph_create_filter(&self->vfilter_out, avfilter_get_by_name("buffersink"),
+			"mlt_buffersink", NULL, NULL, self->vfilter_graph);
+
+		if (result >= 0) {
+			enum AVPixelFormat pix_fmts[] = { codec_context->pix_fmt, AV_PIX_FMT_NONE };
+			result = av_opt_set_int_list(self->vfilter_out, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+		}
+	}
+
+	return result;
+}
+
+static int insert_filter(AVFilterGraph *graph, AVFilterContext **last_filter, const char *name, const char *args)
+{
+	AVFilterContext *filt_ctx;
+	int result = avfilter_graph_create_filter(&filt_ctx, avfilter_get_by_name(name),
+		name, args, NULL, graph);
+	if (result >= 0) {
+		result = avfilter_link(filt_ctx, 0, *last_filter, 0);
+		if (result >= 0)
+			*last_filter = filt_ctx;
+	}
+	return result;
+}
+#endif
+
 /** Open the file.
 */
 
-static int producer_open( producer_avformat self, mlt_profile profile, const char *URL, int take_lock )
+static int producer_open(producer_avformat self, mlt_profile profile, const char *URL, int take_lock, int test_open )
 {
 	// Return an error code (0 == no error)
 	int error = 0;
@@ -764,6 +832,37 @@ static int producer_open( producer_avformat self, mlt_profile profile, const cha
 				}
 				if ( self->audio_format && !self->audio_streams )
 					get_audio_streams_info( self );
+
+#ifdef AVFILTER
+				// Setup autorotate filters.
+				if (self->video_index != -1) {
+					self->autorotate = !mlt_properties_get(properties, "autorotate") || mlt_properties_get_int(properties, "autorotate");
+					if (!test_open && self->autorotate && !self->vfilter_graph) {
+						double theta  = get_rotation(self->video_format->streams[self->video_index]);
+
+						if (fabs(theta - 90) < 1.0) {
+							error = ( setup_video_filters(self) < 0 );
+							AVFilterContext *last_filter = self->vfilter_out;
+							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "clock") < 0 );
+							if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
+							if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
+						} else if (fabs(theta - 180) < 1.0) {
+							error = ( setup_video_filters(self) < 0 );
+							AVFilterContext *last_filter = self->vfilter_out;
+							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "hflip", NULL) < 0 );
+							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "vflip", NULL) < 0 );
+							if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
+							if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
+						} else if (fabs(theta - 270) < 1.0) {
+							error = ( setup_video_filters(self) < 0 );
+							AVFilterContext *last_filter = self->vfilter_out;
+							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "cclock") < 0 );
+							if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
+							if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
+						}
+					}
+				}
+#endif
 			}
 		}
 	}
@@ -820,6 +919,9 @@ static void prepare_reopen( producer_avformat self )
 		avformat_close_input( &self->video_format );
 	self->audio_format = NULL;
 	self->video_format = NULL;
+#ifdef AVFILTER
+	avfilter_graph_free( &self->vfilter_graph );
+#endif
 	pthread_mutex_unlock( &self->open_mutex );
 
 	// Cleanup the packet queues
@@ -1249,19 +1351,39 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	return result;
 }
 
+static void set_image_size( producer_avformat self, int *width, int *height )
+{
+	double dar = mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE(self->parent) ) );
+	double theta  = self->autorotate? get_rotation( self->video_format->streams[self->video_index] ) : 0.0;
+	if ( fabs(theta - 90.0) < 1.0 || fabs(theta - 270.0) < 1.0 )
+	{
+		*height = self->video_codec->width;
+		// Workaround 1088 encodings missing cropping info.
+		if ( self->video_codec->height == 1088 && dar == 16.0/9.0 )
+			*width = 1080;
+		else
+			*width = self->video_codec->height;
+	} else {
+		*width = self->video_codec->width;
+		// Workaround 1088 encodings missing cropping info.
+		if ( self->video_codec->height == 1088 && dar == 16.0/9.0 )
+			*height = 1080;
+		else
+			*height = self->video_codec->height;
+	}
+}
+
 /** Allocate the image buffer and set it on the frame.
 */
 
-static int allocate_buffer( mlt_frame frame, AVCodecContext *codec_context, uint8_t **buffer, mlt_image_format *format, int *width, int *height )
+static int allocate_buffer( mlt_frame frame, AVCodecContext *codec_context, uint8_t **buffer, mlt_image_format format, int width, int height )
 {
 	int size = 0;
 
 	if ( codec_context->width == 0 || codec_context->height == 0 )
 		return size;
 
-	*width = codec_context->width;
-	*height = codec_context->height;
-	size = mlt_image_format_size( *format, *width, *height, NULL );
+	size = mlt_image_format_size( format, width, height, NULL );
 	*buffer = mlt_pool_alloc( size );
 	if ( *buffer )
 		mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
@@ -1343,15 +1465,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_frame_set_image( frame, *buffer, size, NULL );
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", original, 0, (mlt_destructor) mlt_frame_close, NULL );
 			*format = mlt_properties_get_int( orig_props, "format" );
-
-			// Set the resolution
-			*width = codec_context->width;
-			*height = codec_context->height;
-
-			// Workaround 1088 encodings missing cropping info.
-			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
-				*height = 1080;
-
+			set_image_size( self, width, height );
 			got_picture = 1;
 			goto exit_get_image;
 		}
@@ -1403,12 +1517,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		 && ( paused || self->current_position >= req_position ) )
 	{
 		// Duplicate it
-		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
+		set_image_size( self, width, height );
+		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, *format, *width, *height ) ) )
 		{
 			int yuv_colorspace;
-			// Workaround 1088 encodings missing cropping info.
-			if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
-				*height = 1080;
 #ifdef VDPAU
 			if ( self->vdpau && self->vdpau->buffer )
 			{
@@ -1585,12 +1697,26 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Now handle the picture if we have one
 			if ( got_picture )
 			{
-				if ( ( image_size = allocate_buffer( frame, codec_context, buffer, format, width, height ) ) )
+#ifdef AVFILTER
+				if (self->autorotate && self->vfilter_graph) {
+					ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
+					if (ret < 0) {
+						got_picture = 0;
+						break;
+					}
+					while (ret >= 0) {
+						ret = av_buffersink_get_frame_flags(self->vfilter_out, self->video_frame, 0);
+						if (ret < 0) {
+							ret = 0;
+							break;
+						}
+					}
+				}
+#endif
+				set_image_size( self, width, height );
+				if ( ( image_size = allocate_buffer( frame, codec_context, buffer, *format, *width, *height ) ) )
 				{
 					int yuv_colorspace;
-					// Workaround 1088 encodings missing cropping info.
-					if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
-						*height = 1080;
 #ifdef VDPAU
 					if ( self->vdpau )
 					{
@@ -1684,15 +1810,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_frame_set_image( frame, *buffer, size, NULL );
 		mlt_properties_set_data( frame_properties, "avformat.conceal_error", original, 0, (mlt_destructor) mlt_frame_close, NULL );
 		*format = mlt_properties_get_int( orig_props, "format" );
-
-		// Set the resolution
-		*width = codec_context->width;
-		*height = codec_context->height;
-
-		// Workaround 1088 encodings missing cropping info.
-		if ( *height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
-			*height = 1080;
-
+		set_image_size( self, width, height );
 		got_picture = 1;
 	}
 
@@ -1943,7 +2061,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		pthread_mutex_lock( &self->video_mutex );
 		mlt_properties_from_utf8( properties, "resource", "_resource" );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "_resource" ), 0 );
+			mlt_properties_get( properties, "_resource" ), 0, 0 );
 		context = self->video_format;
 	}
 
@@ -1987,21 +2105,39 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 			force_aspect_ratio : mlt_properties_get_double( properties, "aspect_ratio" );
 
 		// Set the width and height
-		mlt_properties_set_int( frame_properties, "width", self->video_codec->width );
-		mlt_properties_set_int( frame_properties, "height", self->video_codec->height );
-		mlt_properties_set_int( properties, "meta.media.width", self->video_codec->width );
-		mlt_properties_set_int( properties, "meta.media.height", self->video_codec->height );
-		mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
+		double dar = mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) );
+		double theta  = self->autorotate? get_rotation( self->video_format->streams[index] ) : 0.0;
+		if ( fabs(theta - 90.0) < 1.0 || fabs(theta - 270.0) < 1.0 )
+		{
+			// Workaround 1088 encodings missing cropping info.
+			if ( self->video_codec->height == 1088 && dar == 16.0/9.0 ) {
+				mlt_properties_set_int( frame_properties, "width", 1080 );
+				mlt_properties_set_int( properties, "meta.media.width", 1080 );
+			} else {
+				mlt_properties_set_int( frame_properties, "width", self->video_codec->height );
+				mlt_properties_set_int( properties, "meta.media.width", self->video_codec->height );
+			}
+			mlt_properties_set_int( frame_properties, "height", self->video_codec->width );
+			mlt_properties_set_int( properties, "meta.media.height", self->video_codec->width );
+			aspect_ratio = ( force_aspect_ratio > 0.0 ) ? force_aspect_ratio : 1.0 / aspect_ratio;
+			mlt_properties_set_double( frame_properties, "aspect_ratio", 1.0/aspect_ratio );
+		} else {
+			mlt_properties_set_int( frame_properties, "width", self->video_codec->width );
+			mlt_properties_set_int( properties, "meta.media.width", self->video_codec->width );
+			// Workaround 1088 encodings missing cropping info.
+			if ( self->video_codec->height == 1088 && dar == 16.0/9.0 ) {
+				mlt_properties_set_int( frame_properties, "height", 1080 );
+				mlt_properties_set_int( properties, "meta.media.height", 1080 );
+			} else {
+				mlt_properties_set_int( frame_properties, "height", self->video_codec->height );
+				mlt_properties_set_int( properties, "meta.media.height", self->video_codec->height );
+			}
+			mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
+		}
 		mlt_properties_set_int( frame_properties, "colorspace", self->yuv_colorspace );
 		mlt_properties_set_int( frame_properties, "color_trc", self->color_trc );
 		mlt_properties_set_int( frame_properties, "color_primaries", self->color_primaries );
 		mlt_properties_set_int( frame_properties, "full_luma", self->full_luma );
-
-		// Workaround 1088 encodings missing cropping info.
-		if ( self->video_codec->height == 1088 && mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) ) == 16.0/9.0 )
-		{
-			mlt_properties_set_int( properties, "meta.media.height", 1080 );
-		}
 
 		// Add our image operation
 		mlt_frame_push_service( frame, self );
@@ -2554,7 +2690,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	{
 		mlt_properties_from_utf8( properties, "resource", "_resource" );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "_resource" ), 1 );
+			mlt_properties_get( properties, "_resource" ), 1, 0 );
 		context = self->audio_format;
 	}
 
@@ -2703,6 +2839,11 @@ static void producer_avformat_close( producer_avformat self )
 #ifdef VDPAU
 	vdpau_producer_close( self );
 #endif
+#ifdef AVFILTER
+	avfilter_graph_free(&self->vfilter_graph);
+#endif
+
+	// Cleanup caches.
 	mlt_cache_close( self->image_cache );
 	if ( self->last_good_frame )
 		mlt_frame_close( self->last_good_frame );
