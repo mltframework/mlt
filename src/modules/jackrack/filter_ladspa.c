@@ -1,6 +1,6 @@
 /*
  * filter_ladspa.c -- filter audio through LADSPA plugins
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2016 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
