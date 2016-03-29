@@ -6,7 +6,8 @@ if ARGV.shift == 'clean'
 end
 system( "ln -sf ../mlt.i" )
 system( "swig -c++ -ruby -I../../mlt++ -I../.. mlt.i" )
-$CFLAGS += " -I../.. " + (ENV.has_key?('CXXFLAGS')? ENV['CXXFLAGS'] : '')
-$LDFLAGS += " -L../../mlt++ -lmlt++"
+$CFLAGS = $CFLAGS.to_s + " -I../.. " + (ENV.has_key?('CXXFLAGS')? ENV['CXXFLAGS'] : '')
+$CXXFLAGS = $CXXFLAGS.to_s + " -I../.. " + (ENV.has_key?('CXXFLAGS')? ENV['CXXFLAGS'] : '')
+$LDFLAGS = $LDFLAGS.to_s + " -L../../mlt++ -lmlt++"
 create_makefile('mlt')
-system( "make" )
+system( "make V=1" )
