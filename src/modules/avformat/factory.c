@@ -347,6 +347,7 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 	return result;
 }
 
+#ifdef AVFILTER
 static mlt_properties avfilter_metadata( mlt_service_type type, const char *id, void *name )
 {
 	AVFilter *f = (AVFilter*)avfilter_get_by_name ( name );
@@ -378,6 +379,7 @@ static mlt_properties avfilter_metadata( mlt_service_type type, const char *id, 
 
 	return metadata;
 }
+#endif
 
 MLT_REPOSITORY
 {
@@ -397,6 +399,7 @@ MLT_REPOSITORY
 #endif
 	MLT_REGISTER( filter_type, "swscale", create_service );
 
+#ifdef AVFILTER
 	avfilter_register_all();
 	AVFilter *f = NULL;
 	while ( ( f = (AVFilter*)avfilter_next( f ) ) ) {
@@ -411,6 +414,6 @@ MLT_REPOSITORY
 			MLT_REGISTER_METADATA( filter_type, service_name, avfilter_metadata, (void*)f->name );
 		}
 	}
-
+#endif // AVFILTER
 #endif
 }

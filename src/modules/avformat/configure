@@ -15,7 +15,7 @@ FFmpeg/avformat options:
   --avformat-no-codecs    - Disable the producer and consumer to avoid the codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
   --avformat-no-devices   - Disable support for libavdevice
-  --avformat-no-avfilter   - Disable support for libavfilter
+  --avformat-no-avfilter  - Disable support for libavfilter
 
 EOF
 
@@ -141,11 +141,12 @@ else
 		fi
 		if [ "$avfilter" = "true" ]
 		then
-			if $(pkg-config "libavfilter${avformat_suffix} >= 3.79.100"); then
+			if $(pkg-config "libavfilter${avformat_suffix} >= 3.79.100") &&
+				$(pkg-config --list-all | grep libavfilter | grep -q FFmpeg); then
 				echo "CFLAGS+=$(pkg-config --cflags libavfilter${avformat_suffix})" >> config.mak
 				echo "LDFLAGS+=$(pkg-config --libs libavfilter${avformat_suffix})" >> config.mak
 			else
-				echo " - libavfilter >= 3.79.100 not found, disabling some features"
+				echo " - FFmpeg libavfilter >= 3.79.100 not found, disabling some features"
 				avfilter=false
 			fi
 		fi
