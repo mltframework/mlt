@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,32 +48,32 @@ static int avformat_initialised = 0;
 
 static int avformat_lockmgr(void **mutex, enum AVLockOp op)
 {
-   pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
+	pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
 
-   switch (op)
-   {
-   case AV_LOCK_CREATE:
-      *pmutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-       if (!*pmutex) return -1;
-       pthread_mutex_init(*pmutex, NULL);
-       break;
-   case AV_LOCK_OBTAIN:
-       if (!*pmutex) return -1;
-       pthread_mutex_lock(*pmutex);
-       break;
-   case AV_LOCK_RELEASE:
-       if (!*pmutex) return -1;
-       pthread_mutex_unlock(*pmutex);
-       break;
-   case AV_LOCK_DESTROY:
-       if (!*pmutex) return -1;
-       pthread_mutex_destroy(*pmutex);
-       free(*pmutex);
-       *pmutex = NULL;
-       break;
-   }
+	switch (op)
+	{
+	case AV_LOCK_CREATE:
+		*pmutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+		if (!*pmutex) return -1;
+		pthread_mutex_init(*pmutex, NULL);
+		break;
+	case AV_LOCK_OBTAIN:
+		if (!*pmutex) return -1;
+		pthread_mutex_lock(*pmutex);
+		break;
+	case AV_LOCK_RELEASE:
+		if (!*pmutex) return -1;
+		pthread_mutex_unlock(*pmutex);
+		break;
+	case AV_LOCK_DESTROY:
+		if (!*pmutex) return -1;
+		pthread_mutex_destroy(*pmutex);
+		free(*pmutex);
+		*pmutex = NULL;
+		break;
+	}
 
-   return 0;
+	return 0;
 }
 
 static void unregister_lockmgr( void *p )
@@ -144,7 +144,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 	{
 		// If matches flags and not a binary option (not supported by Mlt)
 		if ( !( opt->flags & req_flags ) || ( opt->type == AV_OPT_TYPE_BINARY ) )
-            continue;
+			continue;
 
 		// Ignore constants (keyword values)
 		if ( !unit && opt->type == AV_OPT_TYPE_CONST )
@@ -199,7 +199,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 				mlt_properties_set( p, "description", opt->help );
 		}
 
-        switch ( opt->type )
+		switch ( opt->type )
 		{
 		case AV_OPT_TYPE_FLAGS:
 			mlt_properties_set( p, "type", "string" );
@@ -266,7 +266,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set( p, "type", "integer" );
 			mlt_properties_set( p, "format", "constant" );
 			break;
-        }
+		}
 		// If the option belongs to a group (unit) and is not a constant (keyword value)
 		if ( opt->unit && opt->type != AV_OPT_TYPE_CONST )
 		{
