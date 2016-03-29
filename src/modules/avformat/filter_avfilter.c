@@ -30,7 +30,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/channel_layout.h>
 
-#define PARAM_PREFIX "avf."
+#define PARAM_PREFIX "av."
 #define PARAM_PREFIX_LEN (sizeof(PARAM_PREFIX) - 1)
 
 typedef struct

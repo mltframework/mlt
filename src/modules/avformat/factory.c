@@ -373,7 +373,7 @@ static mlt_properties avfilter_metadata( mlt_service_type type, const char *id, 
 	if ( f->priv_class ) {
 		mlt_properties params = mlt_properties_new ( );
 		mlt_properties_set_data( metadata , "parameters" , params , 0 , ( mlt_destructor )mlt_properties_close, NULL );
-		add_parameters( params, &f->priv_class, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_FILTERING_PARAM, NULL, NULL, "avf." );
+		add_parameters( params, &f->priv_class, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_FILTERING_PARAM, NULL, NULL, "av." );
 	}
 
 	return metadata;
