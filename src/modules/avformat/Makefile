@@ -39,6 +39,7 @@ endif
 
 ifdef AVFILTER
 CFLAGS += -DAVFILTER
+OBJS += filter_avfilter.o
 endif
 
 SRCS := $(OBJS:.o=.c)
