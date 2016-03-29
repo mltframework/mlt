@@ -248,23 +248,25 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set_double( p, "default", opt->default_val.dbl );
 			break;
 		case AV_OPT_TYPE_STRING:
+			mlt_properties_set( p, "type", "string" );
 			if ( opt->default_val.str ) {
 				size_t len = strlen( opt->default_val.str ) + 3;
 				char* quoted = malloc( len );
 				snprintf( quoted, len, "'%s'", opt->default_val.str );
-				mlt_properties_set( p, "type", "string" );
 				mlt_properties_set( p, "default", quoted );
 				free( quoted );
 			}
 			break;
 		case AV_OPT_TYPE_RATIONAL:
 			mlt_properties_set( p, "type", "string" );
-			mlt_properties_set( p, "format", "numerator:denominator" );
+			mlt_properties_set( p, "format", "numerator/denominator" );
 			break;
 		case AV_OPT_TYPE_CONST:
-		default:
 			mlt_properties_set( p, "type", "integer" );
 			mlt_properties_set( p, "format", "constant" );
+			break;
+		default:
+			mlt_properties_set( p, "type", "string" );
 			break;
 		}
 		// If the option belongs to a group (unit) and is not a constant (keyword value)
