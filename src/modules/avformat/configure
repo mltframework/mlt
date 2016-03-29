@@ -15,7 +15,7 @@ FFmpeg/avformat options:
   --avformat-no-codecs    - Disable the producer and consumer to avoid the codecs
   --avformat-no-filters   - Disable the filters to make a codecs+muxers-only plugin
   --avformat-no-devices   - Disable support for libavdevice
-  --avformat-no-avfiler   - Disable support for libavfilter
+  --avformat-no-avfilter   - Disable support for libavfilter
 
 EOF
 
