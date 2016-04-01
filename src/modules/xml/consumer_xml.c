@@ -208,12 +208,29 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 				value = mlt_properties_get_time( properties, name, context->time_format );
 			else
 				value = mlt_properties_get_value( properties, i );
+			char *value_orig = value;
 			if ( value )
 			{
 				int rootlen = strlen( context->root );
+
+				// Strip off WebVfx "plain:" prefix.
+				if ( !strncmp( value_orig, "plain:", 6 ) )
+					value += 6;
+
 				// convert absolute path to relative
 				if ( rootlen && !strncmp( value, context->root, rootlen ) && value[ rootlen ] == '/' )
-					p = xmlNewTextChild( node, NULL, _x("property"), _x(value + rootlen + 1 ) );
+				{
+					if ( !strncmp( value_orig, "plain:", 6 ) )
+					{
+						char *s = calloc( 1, strlen( value_orig ) - rootlen + 1 );
+						strcat( s, "plain:" );
+						strcat( s, value + rootlen + 1 );
+						p = xmlNewTextChild( node, NULL, _x("property"), _x(s) );
+						free( s );
+					} else {
+						p = xmlNewTextChild( node, NULL, _x("property"), _x(value + rootlen + 1) );
+					}
+				}
 				else
 					p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
