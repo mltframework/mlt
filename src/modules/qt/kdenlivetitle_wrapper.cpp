@@ -96,8 +96,6 @@ void blur( QImage& image, int radius )
     int i1 = 0;
     int i2 = 3;
 
-    i1 = i2 = ( QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3 );
-
     for (int col = c1; col <= c2; col++) {
         p = image.scanLine(r1) + col * 4;
         for (int i = i1; i <= i2; i++)
@@ -214,7 +212,7 @@ public:
         int offsetX = params.at( 3 ).toInt();
         int offsetY = params.at( 4 ).toInt();
         m_shadowOffset = QPoint( offsetX, offsetY );
-        m_shadow = QImage( m_boundingRect.width() + abs( offsetX ), m_boundingRect.height() + abs( offsetY ), QImage::Format_ARGB32_Premultiplied );
+        m_shadow = QImage( m_boundingRect.width() + abs( offsetX ) + blurRadius, m_boundingRect.height() + abs( offsetY ) + blurRadius, QImage::Format_ARGB32_Premultiplied );
         m_shadow.fill( Qt::transparent );
         QPainterPath shadowPath = m_path;
         QPainter shadowPainter( &m_shadow );
