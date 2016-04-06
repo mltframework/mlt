@@ -402,13 +402,17 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "swscale", create_service );
 
 #ifdef AVFILTER
+	char dirname[PATH_MAX];
+	snprintf( dirname, PATH_MAX, "%s/avformat/blacklist.txt", mlt_environment( "MLT_DATA" ) );
+	mlt_properties blacklist = mlt_properties_load( dirname );
 	avfilter_register_all();
 	AVFilter *f = NULL;
 	while ( ( f = (AVFilter*)avfilter_next( f ) ) ) {
 		// Support filters that have one input and one output of the same type.
 		if ( avfilter_pad_count( f->inputs ) == 1 &&
 			avfilter_pad_count( f->outputs ) == 1 &&
-			avfilter_pad_get_type( f->inputs, 0 ) == avfilter_pad_get_type( f->outputs, 0 ) )
+			avfilter_pad_get_type( f->inputs, 0 ) == avfilter_pad_get_type( f->outputs, 0 ) &&
+			!mlt_properties_get( blacklist, f->name ) )
 		{
 			char service_name[1024]="avfilter.";
 			strncat( service_name, f->name, sizeof( service_name ) - strlen( service_name ) -1 );
@@ -416,6 +420,7 @@ MLT_REPOSITORY
 			MLT_REGISTER_METADATA( filter_type, service_name, avfilter_metadata, (void*)f->name );
 		}
 	}
+	mlt_properties_close( blacklist );
 #endif // AVFILTER
 #endif
 }
