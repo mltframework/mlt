@@ -1,6 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 20016 Meltytech, LLC
+ * Copyright (C) 2016 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -461,6 +461,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	private_data* pdata = (private_data*)filter->child;
 	int64_t pos = mlt_frame_get_position( frame );
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 	int ret;
 
 	*format = get_supported_image_format( *format );
@@ -480,8 +481,43 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		pdata->avinframe->width = *width;
 		pdata->avinframe->height = *height;
 		pdata->avinframe->format = mlt_to_av_image_format( *format );
-		pdata->avinframe->sample_aspect_ratio = (AVRational){ profile->sample_aspect_num, profile->frame_rate_den };
+		if (mlt_properties_get_int( frame_properties, "meta.media.sample_aspect_den" )) {
+			pdata->avinframe->sample_aspect_ratio = (AVRational) {
+				mlt_properties_get_int( frame_properties, "meta.media.sample_aspect_num" ),
+				mlt_properties_get_int( frame_properties, "meta.media.sample_aspect_den" )
+			};
+		} else {
+			pdata->avinframe->sample_aspect_ratio = (AVRational) {
+				profile->sample_aspect_num, profile->frame_rate_den
+			};
+		}
 		pdata->avinframe->pts = pos;
+		pdata->avinframe->interlaced_frame = mlt_properties_get_int( frame_properties, "progressive" );
+		pdata->avinframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+		pdata->avinframe->color_primaries = mlt_properties_get_int( frame_properties, "color_primaries" );
+		pdata->avinframe->color_trc = mlt_properties_get_int( frame_properties, "color_trc" );
+		av_frame_set_color_range( pdata->avinframe,
+			mlt_properties_get_int( frame_properties, "full_luma" )? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG );
+
+		switch (mlt_properties_get_int( frame_properties, "colorspace" ))
+		{
+		case 240:
+			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_SMPTE240M );
+			break;
+		case 601:
+			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT470BG );
+			break;
+		case 709:
+			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT709 );
+			break;
+		case 2020:
+			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT2020_NCL );
+			break;
+		case 2021:
+			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT2020_CL );
+			break;
+		}
+
 		ret = av_frame_get_buffer( pdata->avinframe, 1 );
 		if( ret < 0 ) {
 			mlt_log_error( filter, "Cannot get in frame buffer\n" );
