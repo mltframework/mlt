@@ -176,6 +176,8 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 	if( !pdata->avfilter_graph ) {
 		mlt_log_error( filter, "Cannot create filter graph\n" );
 	}
+	av_opt_set_int( pdata->avfilter_graph, "threads",
+		mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "av.threads" ), 0 );
 
 	// Initialize the buffer source filter context
 	pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, abuffersrc, "in");
@@ -280,6 +282,8 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	if( !pdata->avfilter_graph ) {
 		mlt_log_error( filter, "Cannot create filter graph\n" );
 	}
+	av_opt_set_int( pdata->avfilter_graph, "threads",
+		mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "av.threads" ), 0 );
 
 	// Initialize the buffer source filter context
 	pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, buffersrc, "in");

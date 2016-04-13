@@ -377,6 +377,17 @@ static mlt_properties avfilter_metadata( mlt_service_type type, const char *id, 
 		mlt_properties params = mlt_properties_new ( );
 		mlt_properties_set_data( metadata , "parameters" , params , 0 , ( mlt_destructor )mlt_properties_close, NULL );
 		add_parameters( params, &f->priv_class, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_FILTERING_PARAM, NULL, NULL, "av." );
+
+		// Add the parameters common to all avfilters.
+		mlt_properties p = mlt_properties_new();
+		char key[20];
+		snprintf( key, 20, "%d", mlt_properties_count( params ) );
+		mlt_properties_set_data( params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL );
+		mlt_properties_set( p, "identifier", "av.threads" );
+		mlt_properties_set( p, "description", "Maximum number of threads" );
+		mlt_properties_set( p, "type", "integer" );
+		mlt_properties_set_int( p, "minimum", 0 );
+		mlt_properties_set_int( p, "default", 0 );
 	}
 
 	return metadata;
