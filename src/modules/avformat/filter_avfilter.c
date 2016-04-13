@@ -481,18 +481,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		pdata->avinframe->width = *width;
 		pdata->avinframe->height = *height;
 		pdata->avinframe->format = mlt_to_av_image_format( *format );
-		if (mlt_properties_get_int( frame_properties, "meta.media.sample_aspect_den" )) {
-			pdata->avinframe->sample_aspect_ratio = (AVRational) {
-				mlt_properties_get_int( frame_properties, "meta.media.sample_aspect_num" ),
-				mlt_properties_get_int( frame_properties, "meta.media.sample_aspect_den" )
-			};
-		} else {
-			pdata->avinframe->sample_aspect_ratio = (AVRational) {
-				profile->sample_aspect_num, profile->frame_rate_den
-			};
-		}
+		pdata->avinframe->sample_aspect_ratio = (AVRational) {
+			profile->sample_aspect_num, profile->frame_rate_den };
 		pdata->avinframe->pts = pos;
-		pdata->avinframe->interlaced_frame = mlt_properties_get_int( frame_properties, "progressive" );
+		pdata->avinframe->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
 		pdata->avinframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 		pdata->avinframe->color_primaries = mlt_properties_get_int( frame_properties, "color_primaries" );
 		pdata->avinframe->color_trc = mlt_properties_get_int( frame_properties, "color_trc" );
