@@ -17,7 +17,7 @@ notes: >
   "results" property is updated with the name of the file storing the results.
   The second pass applies the results to the image.
   
-  To use with melt, use 'melt ... -consumer xml:output.mlt all=-1' for the
+  To use with melt, use 'melt ... -consumer xml:output.mlt all=1 real_time=-1' for the
   first pass. Parallel processing (real_time < -1 or > 1) is not supported for
   the first pass. For the second pass, use output.mlt as the input.
 
