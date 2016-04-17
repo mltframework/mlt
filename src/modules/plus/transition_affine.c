@@ -565,6 +565,30 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		else if ( strcmp( interps, "spline" ) == 0 ) // TODO: spline 4x4 or 6x6
 			interp = interpBC_b32;
 
+		// Set affine boundaries
+		float minima, xmaxima, ymaxima;
+		if ( interp == interpNNpr_b || interp == interpNN_b || interp == interpNN_b32 )
+		{
+			// Nearest, uses lrintf. Values should be >= -0.5 and < max + 0.5
+			minima = -0.5;
+			xmaxima = b_width + 0.49;
+			ymaxima = b_height + 0.49;
+		}
+		else if ( interp == interpBL_b || interp == interpBL_b32 )
+		{
+			// Bicubic, uses floorf. Values should be >= 0 and < max + 1.
+			minima = 0;
+			xmaxima = b_width + 0.99;
+			ymaxima = b_height + 0.99;
+		}
+		else
+		{
+			// Bicubic, uses ceilf. Values should be > -1 and <= max.
+			minima = -1;
+			xmaxima = b_width;
+			ymaxima = b_height;
+		}
+
 		// Do the transform with interpolation
 		for ( i = 0, y = lower_y; i < *height; i++, y++ )
 		{
@@ -572,7 +596,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
 				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
-				if ( lrintf( dx ) >= 0 && lrintf( dx ) < b_width && lrintf( dy ) >= 0 && lrintf( dy ) < b_height )
+				if ( dx >= minima && dx <= xmaxima && dy >= minima && dy <= ymaxima)
 					interp( b_image, b_width, b_height, dx, dy, result.mix/100.0, p, b_alpha );
 				p += 4;
 			}
