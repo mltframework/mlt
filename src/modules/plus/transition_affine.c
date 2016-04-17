@@ -550,43 +550,34 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			affine_scale( affine.matrix, scale_x, scale_y );
 		}
 
-		// Set the interpolation function
-		if ( interps == NULL || strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
-			interp = interpNN_b32;
-		else if ( strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
-			interp = interpNN_b32;
-		else if ( strcmp( interps, "bilinear" ) == 0 )
-			interp = interpBL_b32;
-		else if ( strcmp( interps, "bicubic" ) == 0 )
-			interp = interpBC_b32;
-		 // TODO: lanczos 8x8
-		else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "sinc" ) == 0 || strcmp( interps, "lanczos" ) == 0 )
-			interp = interpBC_b32;
-		else if ( strcmp( interps, "spline" ) == 0 ) // TODO: spline 4x4 or 6x6
-			interp = interpBC_b32;
+		// Affine boundaries
+		float minima = 0;
+		float xmax = b_width;
+		float ymax = b_height;
 
-		// Set affine boundaries
-		float minima, xmaxima, ymaxima;
-		if ( interp == interpNNpr_b || interp == interpNN_b || interp == interpNN_b32 )
+		// Set the interpolation function
+		if ( interps == NULL || strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 || strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
 		{
-			// Nearest, uses lrintf. Values should be >= -0.5 and < max + 0.5
-			minima = -0.5;
-			xmaxima = b_width + 0.49;
-			ymaxima = b_height + 0.49;
+			interp = interpNN_b32;
+			// uses lrintf. Values should be >= -0.5 and < max + 0.5
+			minima -= 0.5;
+			xmax += 0.49;
+			ymax += 0.49;
 		}
-		else if ( interp == interpBL_b || interp == interpBL_b32 )
+		else if ( strcmp( interps, "bilinear" ) == 0 )
 		{
-			// Bicubic, uses floorf. Values should be >= 0 and < max + 1.
-			minima = 0;
-			xmaxima = b_width + 0.99;
-			ymaxima = b_height + 0.99;
+			interp = interpBL_b32;
+			// uses floorf. Values should be >= 0 and < max + 1.
+			xmax += 0.99;
+			ymax += 0.99;
 		}
-		else
+		else if ( strcmp( interps, "bicubic" ) == 0 ||  strcmp( interps, "hyper" ) == 0 || strcmp( interps, "sinc" ) == 0 || strcmp( interps, "lanczos" ) == 0 || strcmp( interps, "spline" ) == 0 )
 		{
-			// Bicubic, uses ceilf. Values should be > -1 and <= max.
-			minima = -1;
-			xmaxima = b_width;
-			ymaxima = b_height;
+			// TODO: lanczos 8x8
+			// TODO: spline 4x4 or 6x6
+			interp = interpBC_b32;
+			// uses ceilf. Values should be > -1 and <= max.
+			minima -= 1;
 		}
 
 		// Do the transform with interpolation
@@ -596,7 +587,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
 				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
-				if ( dx >= minima && dx <= xmaxima && dy >= minima && dy <= ymaxima)
+				if ( dx >= minima && dx <= xmax && dy >= minima && dy <= ymax )
 					interp( b_image, b_width, b_height, dx, dy, result.mix/100.0, p, b_alpha );
 				p += 4;
 			}
