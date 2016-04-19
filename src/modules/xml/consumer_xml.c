@@ -228,11 +228,11 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 						p = xmlNewTextChild( node, NULL, _x("property"), _x(s) );
 						free( s );
 					} else {
-						p = xmlNewTextChild( node, NULL, _x("property"), _x(value + rootlen + 1) );
+						p = xmlNewTextChild( node, NULL, _x("property"), _x(value_orig + rootlen + 1) );
 					}
 				}
 				else
-					p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
+					p = xmlNewTextChild( node, NULL, _x("property"), _x(value_orig) );
 				xmlNewProp( p, _x("name"), _x(name) );
 			}
 		}
