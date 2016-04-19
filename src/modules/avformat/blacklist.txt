@@ -55,4 +55,6 @@ thumbnail
 tile
 tinterlace
 trim
+vidstabdetect
+vidstabtransform
 yadif
