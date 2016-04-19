@@ -1,6 +1,6 @@
 /*
  * filter_audiowaveform.cpp -- audio waveform visualization filter
- * Copyright (c) 2015 Meltytech, LLC
+ * Copyright (c) 2015-2016 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -270,7 +270,7 @@ mlt_filter filter_audiowaveform_init( mlt_profile profile, mlt_service_type type
 	mlt_properties_set( filter_properties, "thickness", "0" );
 	mlt_properties_set( filter_properties, "show_channel", "0" );
 	mlt_properties_set( filter_properties, "angle", "0" );
-	mlt_properties_set( filter_properties, "rect", "0,0,100%,100%" );
+	mlt_properties_set( filter_properties, "rect", "0 0 100% 100%" );
 	mlt_properties_set( filter_properties, "fill", "0" );
 	mlt_properties_set( filter_properties, "gorient", "v" );
 

@@ -98,11 +98,11 @@ parameters:
     description: >
       Defines the rectangle that the waveform(s) should be drawn in.
       
-      Format is: "X,Y,W,H".
+      Format is: "X Y W H".
       
       X, Y, W, H are assumed to be pixel units unless they have the suffix '%'.
     type: rect
-    default: "0,0,100%,100%"
+    default: "0 0 100% 100%"
     readonly: no
     mutable: yes
     
@@ -126,4 +126,3 @@ parameters:
     readonly: no
     mutable: yes
     widget: combo
-    

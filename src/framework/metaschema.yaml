@@ -76,7 +76,7 @@ mapping:
               - properties # for passing options to encapsulated services
               - string
               - time # time string values (clock, SMPTE) can be accepted in addition to frames
-              - rect # X,Y,W,H
+              - rect  # "X Y W H" or "X/Y:WxH"
               - color # 0xrrggbbaa | #rrggbb | #aarrggbb
           "service-name": # for type: properties, a reference to another service
             type: str     # format: type.service, e.g. transition.composite
