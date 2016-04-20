@@ -812,9 +812,26 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 			scaled_height = normalised_height;
 		}
 
+		// precedence over "fill"
+		if ( mlt_properties_get_int( properties, "crop_to_fill") && scaled_width > 0 && scaled_height > 0 )
+		{
+			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height >= normalised_width )
+			{
+				scaled_width = rint( scaled_width * normalised_height / scaled_height );
+				scaled_height = normalised_height;
+			}
+			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width > normalised_height )
+			{
+				scaled_height = rint( scaled_height * normalised_width / scaled_width );
+				scaled_width = normalised_width;
+			}
+
+			geometry->sw = scaled_width;
+			geometry->sh = scaled_height;
+		}
 		// Honour the fill request - this will scale the image to fill width or height while maintaining a/r
 		// ????: Shouln't this be the default behaviour?
-		if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
+		else if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
 		{
 			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height <= normalised_width )
 			{
@@ -1254,7 +1271,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				// Assume lower field (0) first
 				double field_position = position + field * delta * length;
-				
+
 				// Do the calculation if we need to
 				// NB: Locks needed here since the properties are being modified
 				mlt_service_lock( MLT_TRANSITION_SERVICE( self ) );
@@ -1274,6 +1291,18 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Enforce cropping
 				if ( mlt_properties_get( properties, "crop" ) )
 				{
+					if ( result.x_src == 0 )
+						width_b = width_b > result.item.w ? result.item.w : width_b;
+					if ( result.y_src == 0 )
+						height_b = height_b > result.item.h ? result.item.h : height_b;
+				}
+				else if ( mlt_properties_get_int( properties, "crop_to_fill" ) )
+				{
+					if ( result.item.w < result.sw )
+						result.x_src = rint( ( result.item.w - result.sw ) * result.halign / 2 );
+					if ( result.item.h < result.sh )
+						result.y_src = rint( ( result.item.h - result.sh ) * result.valign / 2 );
+					// same as crop
 					if ( result.x_src == 0 )
 						width_b = width_b > result.item.w ? result.item.w : width_b;
 					if ( result.y_src == 0 )
