@@ -56,6 +56,17 @@ parameters:
     maximum: 1
     mutable: yes
     widget: checkbox
+  - identifier: fill
+    title: Allow filling without distorting
+    description: >
+      When set, causes the B frame image to fill the WxH completely by cropping
+      B frame image.
+    type: integer
+    default: 0
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
   - identifier: halign
     title: Horizontal alignment
     description: >
