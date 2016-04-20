@@ -1,7 +1,46 @@
 MLT Release Notes
 -----------------
 
-Version 6.0.0 - February 17, 2015
+Version 6.2.0 - April 20, 2016
+
+There are no framework changes in this release. The major announcement is the
+introduction of support for libavfilter! This is still a work-in-progress.
+It is limited to FFmpeg 2.3 and up, and there are a number of filters that
+are black-listed because they are known to not integrate with MLT, which is
+not a full libav* environment or simple wrapper for it. There are likey
+avfilters that are not yet black-listed but might not work because they
+have not been completely tested. Also, they do not support MLT's keyframable
+property animation nor its frame-threaded parallelism due to architectural
+or integration limitations. However, some avfilters are slice-threaded
+(internal parallelism), and that works. Finally, libavfilter filtergraph
+syntax is not supported either.
+
+All of the supported libavfilters are exposed as MLT filters beginning with
+the prefix "avfilter." All of the avfilter parameters are exposed as MLT
+properties with the "av." prefix to prevent clashes with MLT properties.
+You can run `melt -query filters` to see the new avfilters, and
+`melt -query filter=avfilter.rotate`, for example, to view generated
+documentation for an individual filter.
+
+Here is a list of notable fixes and enhancements in this release:
+  * Added support for libavfilter to avformat module.
+  * Added auto-rotate support to avformat producer.
+  * Added animated GIF preset for avformat consumer.
+  * Prevent serializing and deserializing mlt_type property to xml module.
+  * Fixed relative paths for WebVfx "plain:" resources in xml module.
+  * Updated libebur128 to v1.1.0 in plus module.
+  * Added dynamic_loudness filter to plus module.
+  * Added loudness_meter filter to plus module.
+  * Qt 5 fixes for kdenlivetitle producer.
+  * Added gradients and text shadows to kdenlivetitle producer.
+  * Added support for building rtaudio against external build of lib.
+  * Upgraded bundled RtAudio to v4.1.2.
+  * Added status parameters to ladspa producer and filters.
+  * Added 5.1 surround to stereo downmix to audiochannels filter in core module.
+  * Fixed compiling SWIG bindings for Ruby 2.0.
+
+
+Version 6.0.0 - February 17, 2016
 
 This is a bugfix and minor enhancement release. Note that our release
 versioning scheme has changed. We were approaching 1.0 but decided to
