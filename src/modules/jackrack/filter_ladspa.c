@@ -71,7 +71,8 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 
 			if ( plugin && plugin->desc && plugin->copies == 0 )
 			{
-				mlt_log_warning( properties, "Not compatible with %d channels. Requesting %d channels instead.\n", channels, plugin->desc->channels );
+				mlt_log_warning( properties, "Not compatible with %d channels. Requesting %lu channels instead.\n",
+					channels, plugin->desc->channels );
 				jackrack = initialise_jack_rack( properties, plugin->desc->channels );
 			}
 		}
