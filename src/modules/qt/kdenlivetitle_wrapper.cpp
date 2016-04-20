@@ -211,12 +211,15 @@ public:
         int blurRadius = params.at( 2 ).toInt();
         int offsetX = params.at( 3 ).toInt();
         int offsetY = params.at( 4 ).toInt();
-        m_shadowOffset = QPoint( offsetX, offsetY );
-        m_shadow = QImage( m_boundingRect.width() + abs( offsetX ) + blurRadius, m_boundingRect.height() + abs( offsetY ) + blurRadius, QImage::Format_ARGB32_Premultiplied );
+        m_shadow = QImage( m_boundingRect.width() + abs( offsetX ) + 4 * blurRadius, m_boundingRect.height() + abs( offsetY ) + 4 * blurRadius, QImage::Format_ARGB32_Premultiplied );
         m_shadow.fill( Qt::transparent );
         QPainterPath shadowPath = m_path;
+        offsetX -= 2 * blurRadius;
+        offsetY -= 2 * blurRadius;
+        m_shadowOffset = QPoint( offsetX, offsetY );
+        shadowPath.translate(2 * blurRadius, 2 * blurRadius);
         QPainter shadowPainter( &m_shadow );
-        shadowPainter.fillPath( m_path, QBrush( shadowColor ) );
+        shadowPainter.fillPath( shadowPath, QBrush( shadowColor ) );
         shadowPainter.end();
         blur( m_shadow, blurRadius );
     }
