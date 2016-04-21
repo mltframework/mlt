@@ -785,6 +785,32 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		geometry->sw = scaled_width;
 		geometry->sh = scaled_height;
 	}
+	else if ( mlt_properties_get_int( properties, "crop_to_fill" ) )
+	{
+		int real_width = get_value( b_props, "meta.media.width", "width" );
+		int real_height = get_value( b_props, "meta.media.height", "height" );
+		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
+		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
+		int scaled_height = real_height;
+		int normalised_width = geometry->item.w;
+		int normalised_height = geometry->item.h;
+
+		if ( scaled_height > 0 && scaled_width * normalised_height / scaled_height >= normalised_width )
+		{
+			// crop left/right edges
+			scaled_width = rint( scaled_width * normalised_height / scaled_height );
+			scaled_height = normalised_height;
+		}
+		else if ( scaled_width > 0 )
+		{
+			// crop top/bottom edges
+			scaled_height = rint( scaled_height * normalised_width / scaled_width );
+			scaled_width = normalised_width;
+		}
+
+		geometry->sw = scaled_width;
+		geometry->sh = scaled_height;
+	}
 	// Normalise aspect ratios and scale preserving aspect ratio
 	else if ( mlt_properties_get_int( properties, "aligned" ) && mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
 	{
@@ -806,32 +832,16 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 			scaled_height = rint( scaled_height * normalised_width / scaled_width );
 			scaled_width = normalised_width;
 		}
+
 		if ( scaled_height > normalised_height )
 		{
 			scaled_width = rint( scaled_width * normalised_height / scaled_height );
 			scaled_height = normalised_height;
 		}
 
-		// precedence over "fill"
-		if ( mlt_properties_get_int( properties, "crop_to_fill") && scaled_width > 0 && scaled_height > 0 )
-		{
-			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height >= normalised_width )
-			{
-				scaled_width = rint( scaled_width * normalised_height / scaled_height );
-				scaled_height = normalised_height;
-			}
-			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width > normalised_height )
-			{
-				scaled_height = rint( scaled_height * normalised_width / scaled_width );
-				scaled_width = normalised_width;
-			}
-
-			geometry->sw = scaled_width;
-			geometry->sh = scaled_height;
-		}
 		// Honour the fill request - this will scale the image to fill width or height while maintaining a/r
 		// ????: Shouln't this be the default behaviour?
-		else if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
+		if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
 		{
 			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height <= normalised_width )
 			{
