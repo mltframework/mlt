@@ -1,3 +1,109 @@
+2016-04-20  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 6.2.0
+
+2016-04-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/metaschema.yaml, src/modules/qt/filter_audiospectrum.yml,
+  src/modules/qt/filter_audiowaveform.cpp,
+  src/modules/qt/filter_audiowaveform.yml, src/modules/qt/filter_lightshow.yml:
+  Fix rect format and defaults in metadata.  It is bad to suggest using comma
+  as a separator for rect values because that is the decimal separator for many
+  locales. The canonical format (as set in the mlt_property serializer) is to
+  use spaces as separator.
+
+2016-04-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/factory.c, src/modules/avformat/filter_avfilter.c:
+  Only show & set threads property if the filter supports it.
+
+  * src/modules/avformat/factory.c, src/modules/avformat/filter_avfilter.c: Add
+  av.threads property to avfilter.
+
+2016-04-06  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/avformat/Makefile, src/modules/avformat/blacklist.txt,
+  src/modules/avformat/factory.c: Add blacklist for avformat filters.
+
+2016-03-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/producer_xml.c: Fix
+  relative path handling for "plain" webvfx resources.
+
+2016-03-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/configure, src/modules/avformat/factory.c: Fix build
+  against Libav by disabling avfilter.
+
+2016-03-28  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/avformat/factory.c, src/modules/avformat/filter_avfilter.c:
+  Change parameter prefixes from .avf to .av.
+
+  * src/modules/avformat/Makefile, src/modules/avformat/factory.c,
+  src/modules/avformat/filter_avfilter.c: Add filter to provide services from
+  avfilter.
+
+2016-03-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/Makefile, src/modules/avformat/configure,
+  src/modules/avformat/factory.c, src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Add auto-rotate support to
+  avformat producer.
+
+2016-03-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_multitrack.c, src/framework/mlt_service.c: Fix crash on
+  invalid pointer after disconnect and then connect services.
+
+2016-03-11  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/jackrack/factory.c, src/modules/jackrack/filter_ladspa.c,
+  src/modules/jackrack/plugin.c, src/modules/jackrack/plugin.h,
+  src/modules/jackrack/plugin_desc.c, src/modules/jackrack/plugin_desc.h,
+  src/modules/jackrack/producer_ladspa.c: Add status parameters to ladspa
+  producer & filter.
+
+2016-03-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/rtaudio/configure, src/modules/rtaudio/consumer_rtaudio.cpp:
+  Fix rtaudio build using internal copy.
+
+2016-03-08  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/Makefile, src/modules/plus/factory.c,
+  src/modules/plus/filter_dynamic_loudness.c,
+  src/modules/plus/filter_dynamic_loudness.yml,
+  src/modules/plus/filter_loudness_meter.c,
+  src/modules/plus/filter_loudness_meter.yml: Add dynamic_loudness and
+  loudness_meter filters.
+
+  * src/modules/plus/ebur128/ebur128.c, src/modules/plus/ebur128/ebur128.h:
+  Multiple changes to add configurable history and window size.  These changes
+  have been submitted, but not applied to the official repo.
+  https://github.com/jiixyj/libebur128/pull/49
+
+2016-03-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/rtaudio/RtAudio.cpp, src/modules/rtaudio/RtAudio.h,
+  src/modules/rtaudio/RtError.h: Upgrade bundled RtAudio to v4.1.2.
+
+  * src/modules/rtaudio/Makefile, src/modules/rtaudio/configure,
+  src/modules/rtaudio/consumer_rtaudio.cpp: Support building rtaudio against
+  external versions.
+
+2016-03-02  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/Makefile, src/modules/plus/ebur128/ebur128.c,
+  src/modules/plus/ebur128/ebur128.h, src/modules/plus/ebur128/queue.h,
+  src/modules/plus/ebur128/queue/sys/queue.h: Update internal libebur128 to
+  version 1.1.0
+
+2016-02-29  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 6.1.0
+
 2016-02-17  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
