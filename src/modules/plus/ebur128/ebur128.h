@@ -199,7 +199,7 @@ int ebur128_set_max_window(ebur128_state* st, unsigned int window);
  *  EBUR128_MODE_HISTOGRAM is not set.
  *
  *  Default is UINT_MAX (approximately 50 days).
- *  Minimum is 300ms for EBUR128_MODE_LRA and 400ms for
+ *  Minimum is 3000ms for EBUR128_MODE_LRA and 400ms for EBUR128_MODE_I.
  *
  *  @param st library state.
  *  @param history duration of history in ms.

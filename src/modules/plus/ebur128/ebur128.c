@@ -781,7 +781,7 @@ int ebur128_set_max_history(ebur128_state* st, unsigned int history)
 {
   if ((st->mode & EBUR128_MODE_LRA) == EBUR128_MODE_LRA && history < 3000) {
     history = 3000;
-  } else if ((st->mode & EBUR128_MODE_M) == EBUR128_MODE_M && history < 400) {
+  } else if ((st->mode & EBUR128_MODE_I) == EBUR128_MODE_I && history < 400) {
     history = 400;
   }
   if (history == st->history) {
