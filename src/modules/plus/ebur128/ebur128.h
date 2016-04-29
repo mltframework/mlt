@@ -329,7 +329,9 @@ int ebur128_loudness_range_multiple(ebur128_state** sts,
                                     size_t size,
                                     double* out);
 
-/** \brief Get maximum sample peak of selected channel in float format.
+/** \brief Get maximum sample peak from all frames that have been processed.
+ *
+ *  The equation to convert to dBFS is: 20 * log10(out)
  *
  *  @param st library state
  *  @param channel_number channel to analyse
@@ -344,19 +346,38 @@ int ebur128_sample_peak(ebur128_state* st,
                         unsigned int channel_number,
                         double* out);
 
-/** \brief Get maximum true peak of selected channel in float format.
+/** \brief Get maximum sample peak from the last call to add_frames().
+ *
+ *  The equation to convert to dBFS is: 20 * log10(out)
+ *
+ *  @param st library state
+ *  @param channel_number channel to analyse
+ *  @param out maximum sample peak in float format (1.0 is 0 dBFS)
+ *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_SAMPLE_PEAK" has not
+ *      been set.
+ *    - EBUR128_ERROR_INVALID_CHANNEL_INDEX if invalid channel index.
+ */
+int ebur128_prev_sample_peak(ebur128_state* st,
+                             unsigned int channel_number,
+                             double* out);
+
+/** \brief Get maximum true peak from all frames that have been processed.
  *
  *  Uses an implementation defined algorithm to calculate the true peak. Do not
  *  try to compare resulting values across different versions of the library,
  *  as the algorithm may change.
  *
- *  The current implementation uses the Speex resampler with quality level 8 to
- *  calculate true peak. Will oversample 4x for sample rates < 96000 Hz, 2x for
- *  sample rates < 192000 Hz and leave the signal unchanged for 192000 Hz.
+ *  The current implementation will oversample 4x for sample rates < 96000 Hz,
+ *  2x for sample rates < 192000 Hz and leave the signal unchanged for sample
+ *  rates above 192000 Hz.
+ *
+ *  The equation to convert to dBTP is: 20 * log10(out)
  *
  *  @param st library state
  *  @param channel_number channel to analyse
- *  @param out maximum true peak in float format (1.0 is 0 dBFS)
+ *  @param out maximum true peak in float format (1.0 is 0 dBTP)
  *  @return
  *    - EBUR128_SUCCESS on success.
  *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_TRUE_PEAK" has not
@@ -366,6 +387,31 @@ int ebur128_sample_peak(ebur128_state* st,
 int ebur128_true_peak(ebur128_state* st,
                       unsigned int channel_number,
                       double* out);
+
+/** \brief Get maximum true peak from the last call to add_frames().
+ *
+ *  Uses an implementation defined algorithm to calculate the true peak. Do not
+ *  try to compare resulting values across different versions of the library,
+ *  as the algorithm may change.
+ *
+ *  The current implementation will oversample 4x for sample rates < 96000 Hz,
+ *  2x for sample rates < 192000 Hz and leave the signal unchanged for sample
+ *  rates above 192000 Hz.
+ *
+ *  The equation to convert to dBTP is: 20 * log10(out)
+ *
+ *  @param st library state
+ *  @param channel_number channel to analyse
+ *  @param out maximum true peak in float format (1.0 is 0 dBTP)
+ *  @return
+ *    - EBUR128_SUCCESS on success.
+ *    - EBUR128_ERROR_INVALID_MODE if mode "EBUR128_MODE_TRUE_PEAK" has not
+ *      been set.
+ *    - EBUR128_ERROR_INVALID_CHANNEL_INDEX if invalid channel index.
+ */
+int ebur128_prev_true_peak(ebur128_state* st,
+                           unsigned int channel_number,
+                           double* out);
 
 /** \brief Get relative threshold in LUFS.
  *
