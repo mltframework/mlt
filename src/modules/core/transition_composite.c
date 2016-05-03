@@ -785,6 +785,32 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		geometry->sw = scaled_width;
 		geometry->sh = scaled_height;
 	}
+	else if ( mlt_properties_get_int( properties, "crop_to_fill" ) )
+	{
+		int real_width = get_value( b_props, "meta.media.width", "width" );
+		int real_height = get_value( b_props, "meta.media.height", "height" );
+		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
+		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
+		int scaled_height = real_height;
+		int normalised_width = geometry->item.w;
+		int normalised_height = geometry->item.h;
+
+		if ( scaled_height > 0 && scaled_width * normalised_height / scaled_height >= normalised_width )
+		{
+			// crop left/right edges
+			scaled_width = rint( scaled_width * normalised_height / scaled_height );
+			scaled_height = normalised_height;
+		}
+		else if ( scaled_width > 0 )
+		{
+			// crop top/bottom edges
+			scaled_height = rint( scaled_height * normalised_width / scaled_width );
+			scaled_width = normalised_width;
+		}
+
+		geometry->sw = scaled_width;
+		geometry->sh = scaled_height;
+	}
 	// Normalise aspect ratios and scale preserving aspect ratio
 	else if ( mlt_properties_get_int( properties, "aligned" ) && mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
 	{
@@ -806,6 +832,7 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 			scaled_height = rint( scaled_height * normalised_width / scaled_width );
 			scaled_width = normalised_width;
 		}
+
 		if ( scaled_height > normalised_height )
 		{
 			scaled_width = rint( scaled_width * normalised_height / scaled_height );
@@ -1254,7 +1281,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				// Assume lower field (0) first
 				double field_position = position + field * delta * length;
-				
+
 				// Do the calculation if we need to
 				// NB: Locks needed here since the properties are being modified
 				mlt_service_lock( MLT_TRANSITION_SERVICE( self ) );
@@ -1274,6 +1301,18 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Enforce cropping
 				if ( mlt_properties_get( properties, "crop" ) )
 				{
+					if ( result.x_src == 0 )
+						width_b = width_b > result.item.w ? result.item.w : width_b;
+					if ( result.y_src == 0 )
+						height_b = height_b > result.item.h ? result.item.h : height_b;
+				}
+				else if ( mlt_properties_get_int( properties, "crop_to_fill" ) )
+				{
+					if ( result.item.w < result.sw )
+						result.x_src = rint( ( result.item.w - result.sw ) * result.halign / 2 );
+					if ( result.item.h < result.sh )
+						result.y_src = rint( ( result.item.h - result.sh ) * result.valign / 2 );
+					// same as crop
 					if ( result.x_src == 0 )
 						width_b = width_b > result.item.w ? result.item.w : width_b;
 					if ( result.y_src == 0 )
