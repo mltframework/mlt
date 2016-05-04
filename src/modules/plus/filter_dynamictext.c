@@ -220,11 +220,14 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 	}
 }
 
-static void setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame frame )
+static int setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame frame )
 {
 	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	char* dynamic_text = mlt_properties_get( my_properties, "argument" );
+
+	if ( !dynamic_text || !strcmp( "", dynamic_text ) )
+		return 0;
 
 	// Check for keywords in dynamic text
 	if ( dynamic_text )
@@ -246,6 +249,8 @@ static void setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame 
 	mlt_properties_set( producer_properties, "pad", mlt_properties_get( my_properties, "pad" ) );
 	mlt_properties_set( producer_properties, "outline", mlt_properties_get( my_properties, "outline" ) );
 	mlt_properties_set( producer_properties, "align", mlt_properties_get( my_properties, "halign" ) );
+
+	return 1;
 }
 
 static void setup_transition( mlt_filter filter, mlt_transition transition )
@@ -282,7 +287,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Configure this filter
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-	setup_producer( filter, producer, frame );
+	if ( error || !setup_producer( filter, producer, frame ) ) {
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+		return error;
+	}
 	setup_transition( filter, transition );
 
 	// Make sure the producer is in the correct position
