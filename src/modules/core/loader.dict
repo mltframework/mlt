@@ -24,6 +24,7 @@ plain:https://*=webvfx:plain:
 *.jpeg=pixbuf,qimage
 *.kdenlivetitle=kdenlivetitle
 *.kino=xml
+*.kra=qimage
 *.mp3=avformat
 *.mov=mcdv,avformat,libdv
 *.mpg=mcmpeg,avformat
