@@ -38,7 +38,9 @@ static void property_changed( mlt_service owner, mlt_filter filter, char *name )
 		!strcmp( name, "calc_program" ) ||
 		!strcmp( name, "calc_shortterm" ) ||
 		!strcmp( name, "calc_momentary" ) ||
-		!strcmp( name, "calc_range" ) )
+		!strcmp( name, "calc_range" ) ||
+		!strcmp( name, "calc_peak" ) ||
+		!strcmp( name, "calc_true_peak" ) )
 	{
 		pdata->reset = 1;
 	}
@@ -93,6 +95,16 @@ static void check_for_reset( mlt_filter filter, int channels, int frequency )
 			mode |= EBUR128_MODE_LRA;
 		}
 
+		if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "calc_peak" ) )
+		{
+			mode |= EBUR128_MODE_SAMPLE_PEAK;
+		}
+
+		if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "calc_true_peak" ) )
+		{
+			mode |= EBUR128_MODE_TRUE_PEAK;
+		}
+
 		pdata->r128 = ebur128_init( channels, frequency,  mode );
 	}
 }
@@ -141,6 +153,52 @@ static void analyze_audio( mlt_filter filter, void* buffer, int samples )
 		{
 			mlt_properties_set_double( properties, "range", range );
 		}
+	}
+
+	if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "calc_peak" ) )
+	{
+		double prev_peak = 0.0;
+		double max_peak = 0.0;
+		int c = 0;
+		for( c = 0; c < pdata->r128->channels; c++ )
+		{
+			double peak;
+			result = ebur128_sample_peak( pdata->r128, c, &peak );
+			if( result == EBUR128_SUCCESS && peak != HUGE_VAL && peak > max_peak )
+			{
+				max_peak = peak;
+			}
+			result = ebur128_prev_sample_peak( pdata->r128, c, &peak );
+			if( result == EBUR128_SUCCESS && peak != HUGE_VAL && peak > prev_peak )
+			{
+				prev_peak = peak;
+			}
+		}
+		mlt_properties_set_double( properties, "max_peak", 20 * log10(max_peak) );
+		mlt_properties_set_double( properties, "peak", 20 * log10(prev_peak) );
+	}
+
+	if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "calc_true_peak" ) )
+	{
+		double prev_peak = 0.0;
+		double max_peak = 0.0;
+		int c = 0;
+		for( c = 0; c < pdata->r128->channels; c++ )
+		{
+			double peak;
+			result = ebur128_true_peak( pdata->r128, c, &peak );
+			if( result == EBUR128_SUCCESS && peak != HUGE_VAL && peak > max_peak )
+			{
+				max_peak = peak;
+			}
+			result = ebur128_prev_true_peak( pdata->r128, c, &peak );
+			if( result == EBUR128_SUCCESS && peak != HUGE_VAL && peak > prev_peak )
+			{
+				prev_peak = peak;
+			}
+		}
+		mlt_properties_set_double( properties, "max_true_peak", 20 * log10(max_peak) );
+		mlt_properties_set_double( properties, "true_peak", 20 * log10(prev_peak) );
 	}
 
 	mlt_properties_set_position( properties, "frames_processed", mlt_properties_get_position( properties, "frames_processed" ) + 1 );
@@ -219,10 +277,16 @@ mlt_filter filter_loudness_meter_init( mlt_profile profile, mlt_service_type typ
 		mlt_properties_set_int( properties, "calc_shortterm", 1 );
 		mlt_properties_set_int( properties, "calc_momentary", 1 );
 		mlt_properties_set_int( properties, "calc_range", 1 );
+		mlt_properties_set_int( properties, "calc_peak", 1 );
+		mlt_properties_set_int( properties, "calc_true_peak", 1 );
 		mlt_properties_set( properties, "program", "-100.0" );
 		mlt_properties_set( properties, "shortterm", "-100.0" );
 		mlt_properties_set( properties, "momentary", "-100.0" );
 		mlt_properties_set( properties, "range", "-1.0" );
+		mlt_properties_set( properties, "peak", "-100.0" );
+		mlt_properties_set( properties, "max_peak", "-100.0" );
+		mlt_properties_set( properties, "true_peak", "-100.0" );
+		mlt_properties_set( properties, "max_true_peak", "-100.0" );
 		mlt_properties_set( properties, "reset", "1" );
 		mlt_properties_set( properties, "reset_count", "0" );
 		mlt_properties_set( properties, "frames_processed", "0" );

@@ -47,6 +47,24 @@ parameters:
     readonly: no
     mutable: yes
     default: 1
+    
+  - identifier: calc_peak
+    title: Calculate the peak sample level
+    type: boolean
+    description: >
+      Whether to calculate the peak sample level.
+    readonly: no
+    mutable: yes
+    default: 1
+    
+  - identifier: calc_true_peak
+    title: Calculate the true peak level
+    type: boolean
+    description: >
+      Whether to calculate the true peak level.
+    readonly: no
+    mutable: yes
+    default: 1
 
   - identifier: program
     title: Program Loudness
@@ -75,6 +93,34 @@ parameters:
     description: The measured loudness range since the last reset.
     readonly: yes
     unit: LUFS
+
+  - identifier: peak
+    title: Peak
+    type: float
+    description: The measured peak sample value for the last frame that was processed.
+    readonly: yes
+    unit: dBFS
+
+  - identifier: max_peak
+    title: Max Peak
+    type: float
+    description: The measured peak sample value that has been received since the last reset.
+    readonly: yes
+    unit: dBFS
+
+  - identifier: true_peak
+    title: True Peak
+    type: float
+    description: The measured true peak value for the last frame that was processed.
+    readonly: yes
+    unit: dBTP
+
+  - identifier: max_true_peak
+    title: Max True Peak
+    type: float
+    description: The measured true peak value that has been received since the last reset.
+    readonly: yes
+    unit: dBTP
 
   - identifier: reset
     title: Reset
