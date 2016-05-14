@@ -206,7 +206,7 @@ static inline void qualify_property( deserialise_context context, mlt_properties
 		if ( root != NULL && strcmp( root, "" ) )
 		{
 			char *full_resource = calloc( 1, n );
-			if ( resource[ 0 ] != '/' && strchr( resource, ':' ) == NULL )
+			if ( resource[0] != '/' && resource[0] != '\\' && !strchr( resource, ':' ) )
 			{
 				if ( !strncmp( resource_orig, "plain:", 6 ) )
 					strcat( full_resource, "plain:" );
