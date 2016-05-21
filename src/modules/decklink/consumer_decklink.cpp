@@ -30,8 +30,18 @@
 
 static const unsigned PREROLL_MINIMUM = 3;
 
+enum
+{
+	OP_NONE = 0,
+	OP_OPEN,
+	OP_START,
+	OP_STOP,
+	OP_EXIT
+};
+
 class DeckLinkConsumer
 	: public IDeckLinkVideoOutputCallback
+	, public IDeckLinkAudioOutputCallback
 {
 private:
 	mlt_consumer_s              m_consumer;
@@ -45,15 +55,24 @@ private:
 	double                      m_fps;
 	uint64_t                    m_count;
 	int                         m_channels;
-	IDeckLinkMutableVideoFrame* m_decklinkFrame;
 	bool                        m_isAudio;
 	int                         m_isKeyer;
 	IDeckLinkKeyer*             m_deckLinkKeyer;
 	bool                        m_terminate_on_pause;
 	uint32_t                    m_preroll;
 	uint32_t                    m_acnt;
-	bool                        m_reprio;
-	pthread_t                   m_prerollThread;
+	uint32_t                    m_reprio;
+
+	mlt_deque                   m_aqueue;
+	mlt_deque                   m_frames;
+
+	pthread_mutex_t             m_op_lock;
+	pthread_mutex_t             m_op_arg_mutex;
+	pthread_cond_t              m_op_arg_cond;
+	int                         m_op_id;
+	int                         m_op_res;
+	int                         m_op_arg;
+	pthread_t                   m_op_thread;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -92,19 +111,139 @@ public:
 
 	DeckLinkConsumer()
 	{
+		pthread_mutexattr_t mta;
+
 		m_displayMode = NULL;
 		m_deckLinkKeyer = NULL;
 		m_deckLinkOutput = NULL;
 		m_deckLink = NULL;
-		m_decklinkFrame = NULL;
+
+		m_aqueue = mlt_deque_init();
+		m_frames = mlt_deque_init();
+
+		// operation locks
+		m_op_id = OP_NONE;
+		m_op_arg = 0;
+		pthread_mutexattr_init( &mta );
+		pthread_mutexattr_settype( &mta, PTHREAD_MUTEX_RECURSIVE );
+		pthread_mutex_init( &m_op_lock, &mta );
+		pthread_mutex_init( &m_op_arg_mutex, &mta );
+		pthread_mutexattr_destroy( &mta );
+		pthread_cond_init( &m_op_arg_cond, NULL );
+		pthread_create( &m_op_thread, NULL, op_main, this );
 	}
 
 	virtual ~DeckLinkConsumer()
 	{
+		mlt_log_debug( getConsumer(), "%s: entering\n",  __FUNCTION__ );
+
 		SAFE_RELEASE( m_displayMode );
 		SAFE_RELEASE( m_deckLinkKeyer );
 		SAFE_RELEASE( m_deckLinkOutput );
 		SAFE_RELEASE( m_deckLink );
+
+		mlt_deque_close( m_aqueue );
+		mlt_deque_close( m_frames );
+
+		op(OP_EXIT, 0);
+		mlt_log_debug( getConsumer(), "%s: waiting for op thread\n", __FUNCTION__ );
+		pthread_join(m_op_thread, NULL);
+		mlt_log_debug( getConsumer(), "%s: finished op thread\n", __FUNCTION__ );
+
+		pthread_mutex_destroy(&m_op_lock);
+		pthread_mutex_destroy(&m_op_arg_mutex);
+		pthread_cond_destroy(&m_op_arg_cond);
+
+		mlt_log_debug( getConsumer(), "%s: exiting\n", __FUNCTION__ );
+	}
+
+	int op(int op_id, int arg)
+	{
+		int r;
+
+		// lock operation mutex
+		pthread_mutex_lock(&m_op_lock);
+
+		mlt_log_debug( getConsumer(), "%s: op_id=%d\n", __FUNCTION__, op_id );
+
+		// notify op id
+		pthread_mutex_lock(&m_op_arg_mutex);
+		m_op_id = op_id;
+		m_op_arg = arg;
+		pthread_cond_signal(&m_op_arg_cond);
+		pthread_mutex_unlock(&m_op_arg_mutex);
+
+		// wait op done
+		pthread_mutex_lock(&m_op_arg_mutex);
+		while(OP_NONE != m_op_id)
+			pthread_cond_wait(&m_op_arg_cond, &m_op_arg_mutex);
+		pthread_mutex_unlock(&m_op_arg_mutex);
+
+		// save result
+		r = m_op_res;
+
+		mlt_log_debug( getConsumer(), "%s: r=%d\n", __FUNCTION__, r );
+
+		// unlock operation mutex
+		pthread_mutex_unlock(&m_op_lock);
+
+		return r;
+	}
+
+protected:
+
+	static void* op_main(void* thisptr)
+	{
+		DeckLinkConsumer* d = static_cast<DeckLinkConsumer*>(thisptr);
+
+		mlt_log_debug( d->getConsumer(), "%s: entering\n", __FUNCTION__ );
+
+		for (;;)
+		{
+			int o, r = 0;
+
+			// wait op command
+			pthread_mutex_lock ( &d->m_op_arg_mutex );
+			while ( OP_NONE == d->m_op_id )
+				pthread_cond_wait( &d->m_op_arg_cond, &d->m_op_arg_mutex );
+			pthread_mutex_unlock( &d->m_op_arg_mutex );
+			o = d->m_op_id;
+
+			mlt_log_debug( d->getConsumer(), "%s:%d d->m_op_id=%d\n", __FUNCTION__, __LINE__, d->m_op_id );
+
+			switch ( d->m_op_id )
+			{
+				case OP_OPEN:
+					r = d->m_op_res = d->open( d->m_op_arg );
+					break;
+
+				case OP_START:
+					r = d->m_op_res = d->start( d->m_op_arg );
+					break;
+
+				case OP_STOP:
+					r = d->m_op_res = d->stop();
+					break;
+			};
+
+			// notify op done
+			pthread_mutex_lock( &d->m_op_arg_mutex );
+			d->m_op_id = OP_NONE;
+			pthread_cond_signal( &d->m_op_arg_cond );
+			pthread_mutex_unlock( &d->m_op_arg_mutex );
+
+			// post for async
+			if ( OP_START == o && r )
+				d->preroll();
+
+			if ( OP_EXIT == o )
+			{
+				mlt_log_debug( d->getConsumer(), "%s: exiting\n", __FUNCTION__ );
+				return NULL;
+			}
+		};
+
+		return NULL;
 	}
 
 	bool open( unsigned card = 0 )
@@ -181,30 +320,35 @@ public:
 
 		// Provide this class as a delegate to the audio and video output interfaces
 		m_deckLinkOutput->SetScheduledFrameCompletionCallback( this );
+		m_deckLinkOutput->SetAudioCallback( this );
 
 		return true;
 	}
 
-
-	void* preroll_thread()
+	int preroll()
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
 
+		mlt_log_debug( getConsumer(), "%s: starting\n", __FUNCTION__ );
+
+		if ( !mlt_properties_get_int( properties, "running" ) )
+			return 0;
+
+		mlt_log_verbose( getConsumer(), "preroll %u frames\n", m_preroll );
+
 		// preroll frames
-		for ( unsigned i = 0; i < m_preroll && mlt_properties_get_int( properties, "running" ); i++ )
+		for ( unsigned i = 0; i < m_preroll ; i++ )
 			ScheduleNextFrame( true );
 
-		// start scheduled playback
-		if ( mlt_properties_get_int( properties, "running" ) )
+		// start audio preroll
+		if ( m_isAudio )
+			m_deckLinkOutput->BeginAudioPreroll( );
+		else
 			m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
 
-		return 0;
-	}
+		mlt_log_debug( getConsumer(), "%s: exiting\n", __FUNCTION__ );
 
-	static void* preroll_thread_proxy( void* arg )
-	{
-		DeckLinkConsumer* self = static_cast< DeckLinkConsumer* >( arg );
-		return self->preroll_thread();
+		return 0;
 	}
 
 	bool start( unsigned preroll )
@@ -213,12 +357,10 @@ public:
 
 		// Initialize members
 		m_count = 0;
-		m_decklinkFrame = NULL;
 		preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
 		m_channels = mlt_properties_get_int( properties, "channels" );
 		m_isAudio = !mlt_properties_get_int( properties, "audio_off" );
 		m_terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
-
 
 		m_displayMode = getDisplayMode();
 		if ( !m_displayMode )
@@ -252,12 +394,7 @@ public:
 		}
 
 		// Set the audio output mode
-		if ( !m_isAudio )
-		{
-			m_deckLinkOutput->DisableAudioOutput();
-			return true;
-		}
-		if ( S_OK != m_deckLinkOutput->EnableAudioOutput( bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
+		if ( m_isAudio && S_OK != m_deckLinkOutput->EnableAudioOutput( bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
 			m_channels, bmdAudioOutputStreamTimestamped ) )
 		{
 			mlt_log_error( getConsumer(), "Failed to enable audio output\n" );
@@ -266,13 +403,25 @@ public:
 		}
 
 		m_preroll = preroll;
-		m_reprio = false;
+		m_reprio = 2;
+
+		for ( unsigned i = 0; i < ( m_preroll + 2 ) ; i++)
+		{
+			IDeckLinkMutableVideoFrame* frame;
+
+			// Generate a DeckLink video frame
+			if ( S_OK != m_deckLinkOutput->CreateVideoFrame( m_width, m_height,
+				m_width * ( m_isKeyer? 4 : 2 ), m_isKeyer? bmdFormat8BitARGB : bmdFormat8BitYUV, bmdFrameFlagDefault, &frame ) )
+			{
+				mlt_log_error( getConsumer(), "%s: CreateVideoFrame (%d) failed\n", __FUNCTION__, i );
+				return false;
+			}
+
+			mlt_deque_push_back( m_frames, reinterpret_cast<IDeckLinkMutableVideoFrame*>(frame) );
+		}
 
 		// Set the running state
 		mlt_properties_set_int( properties, "running", 1 );
-
-		// Do preroll in thread to ensure asynchronicity of mlt_consumer_start().
-		pthread_create( &m_prerollThread, NULL, preroll_thread_proxy, this );
 
 		return true;
 	}
@@ -280,13 +429,8 @@ public:
 	bool stop()
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
-		bool wasRunning = !!mlt_properties_get_int( properties, "running" );
 
-		// set running state is 0
-		mlt_properties_set_int( properties, "running", 0 );
-
-		if ( wasRunning )
-			pthread_join( m_prerollThread, NULL );
+		mlt_log_debug( getConsumer(), "%s: starting\n", __FUNCTION__ );
 
 		// Stop the audio and video output streams immediately
 		if ( m_deckLinkOutput )
@@ -296,65 +440,39 @@ public:
 			m_deckLinkOutput->DisableVideoOutput();
 		}
 
-		// release decklink frame
-		SAFE_RELEASE( m_decklinkFrame );
+		while ( mlt_frame frame = (mlt_frame) mlt_deque_pop_back( m_aqueue ) )
+			mlt_frame_close( frame );
+
+		while ( IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_frames ) )
+			SAFE_RELEASE( frame );
+
+		// set running state is 0
+		mlt_properties_set_int( properties, "running", 0 );
 
 		mlt_consumer_stopped( getConsumer() );
+
+		mlt_log_debug( getConsumer(), "%s: exiting\n", __FUNCTION__ );
 
 		return true;
 	}
 
 	void renderAudio( mlt_frame frame )
 	{
-		mlt_audio_format format = mlt_audio_s16;
-		int frequency = bmdAudioSampleRate48kHz;
-		int samples = mlt_sample_calculator( m_fps, frequency, m_count );
-		int16_t *pcm = 0;
-
-		if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_channels, &samples ) )
-		{
-#ifdef _WIN32
-#define DECKLINK_UNSIGNED_FORMAT "%lu"
-			unsigned long written = 0;
-#else
-#define DECKLINK_UNSIGNED_FORMAT "%u"
-			uint32_t written = 0;
-#endif
-			BMDTimeValue streamTime = m_count * frequency * m_duration / m_timescale;
-			m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &written );
-			if ( written > (m_preroll + 1) * samples )
-			{
-				mlt_log_verbose( getConsumer(), "renderAudio: will flush " DECKLINK_UNSIGNED_FORMAT " audiosamples\n", written );
-				m_deckLinkOutput->FlushBufferedAudioSamples();
-			};
-#ifdef _WIN32
-			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, (unsigned long*) &written );
-#else
-			m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, &written );
-#endif
-
-			if ( written != (uint32_t) samples )
-				mlt_log_verbose( getConsumer(), "renderAudio: samples=%d, written=" DECKLINK_UNSIGNED_FORMAT "\n", samples, written );
-		}
+		mlt_properties properties;
+		properties = MLT_FRAME_PROPERTIES( frame );
+		mlt_properties_set_int64( properties, "m_count", m_count);
+		mlt_properties_inc_ref( properties );
+		mlt_deque_push_back( m_aqueue, frame );
+		mlt_log_debug( getConsumer(), "%s:%d frame=%p, len=%d\n", __FUNCTION__, __LINE__, frame, mlt_deque_count( m_aqueue ));
 	}
 
 	bool createFrame( IDeckLinkMutableVideoFrame** decklinkFrame )
 	{
-		BMDPixelFormat format = m_isKeyer? bmdFormat8BitARGB : bmdFormat8BitYUV;
-		IDeckLinkMutableVideoFrame* frame = 0;
 		uint8_t *buffer = 0;
 		int stride = m_width * ( m_isKeyer? 4 : 2 );
+		IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*)mlt_deque_pop_front( m_frames );;
 
-		*decklinkFrame = NULL;
-
-		// Generate a DeckLink video frame
-		if ( S_OK != m_deckLinkOutput->CreateVideoFrame( m_width, m_height,
-			stride, format, bmdFrameFlagDefault, &frame ) )
-		{
-			mlt_log_verbose( getConsumer(), "Failed to create video frame\n" );
-			stop();
-			return false;
-		}
+		*decklinkFrame = frame;
 
 		// Make the first line black for field order correction.
 		if ( S_OK == frame->GetBytes( (void**) &buffer ) && buffer )
@@ -370,24 +488,25 @@ public:
 			}
 		}
 
-		*decklinkFrame = frame;
-
 		return true;
 	}
 
 	void renderVideo( mlt_frame frame )
 	{
+		HRESULT hr;
 		mlt_image_format format = m_isKeyer? mlt_image_rgb24a : mlt_image_yuv422;
 		uint8_t* image = 0;
 		int rendered = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered");
 		int height = m_height;
+		IDeckLinkMutableVideoFrame* m_decklinkFrame = NULL;
+
+		mlt_log_debug( getConsumer(), "%s: entering\n", __FUNCTION__ );
 
 		if ( rendered && !mlt_frame_get_image( frame, &image, &format, &m_width, &height, 0 ) )
 		{
 			uint8_t* buffer = 0;
 			int stride = m_width * ( m_isKeyer? 4 : 2 );
 
-			SAFE_RELEASE( m_decklinkFrame );
 			if ( createFrame( &m_decklinkFrame ) )
 				m_decklinkFrame->GetBytes( (void**) &buffer );
 
@@ -472,8 +591,11 @@ public:
 				m_decklinkFrame->SetTimecodeUserBits(bmdTimecodeVITC,
 					mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.userbits" ));
 
-
-			m_deckLinkOutput->ScheduleVideoFrame( m_decklinkFrame, m_count * m_duration, m_duration, m_timescale );
+			hr = m_deckLinkOutput->ScheduleVideoFrame( m_decklinkFrame, m_count * m_duration, m_duration, m_timescale );
+			if ( S_OK != hr )
+				mlt_log_error( getConsumer(), "%s:%d: ScheduleVideoFrame failed, hr=%.8X \n", __FUNCTION__, __LINE__, unsigned(hr) );
+			else
+				mlt_log_debug( getConsumer(), "%s: ScheduleVideoFrame SUCCESS\n", __FUNCTION__ );
 		}
 	}
 
@@ -483,6 +605,7 @@ public:
 
 		// Get the audio
 		double speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES(frame), "_speed" );
+
 		if ( m_isAudio && speed == 1.0 )
 			renderAudio( frame );
 
@@ -491,6 +614,47 @@ public:
 		++m_count;
 
 		return result;
+	}
+
+	void reprio( int target )
+	{
+		int r;
+		pthread_t thread;
+		pthread_attr_t tattr;
+		struct sched_param param;
+		mlt_properties properties;
+
+		if( m_reprio & target )
+			return;
+
+		m_reprio |= target;
+
+		properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+
+		if ( !mlt_properties_get( properties, "priority" ) )
+			return;
+
+		pthread_attr_init(&tattr);
+		pthread_attr_setschedpolicy(&tattr, SCHED_FIFO);
+
+		if ( !strcmp( "max", mlt_properties_get( properties, "priority" ) ) )
+			param.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+		else if ( !strcmp( "min", mlt_properties_get( properties, "priority" ) ) )
+			param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
+		else
+			param.sched_priority = mlt_properties_get_int( properties, "priority" );
+
+		pthread_attr_setschedparam(&tattr, &param);
+
+		thread = pthread_self();
+
+		r = pthread_setschedparam(thread, SCHED_FIFO, &param);
+		if( r )
+			mlt_log_error( getConsumer(),
+				"%s: [%d] pthread_setschedparam returned %d\n", __FUNCTION__, target, r);
+		else
+			mlt_log_verbose( getConsumer(),
+				"%s: [%d] param.sched_priority=%d\n", __FUNCTION__, target, param.sched_priority);
 	}
 
 	// *** DeckLink API implementation of IDeckLinkVideoOutputCallback IDeckLinkAudioOutputCallback *** //
@@ -505,58 +669,79 @@ public:
 
 	/************************* DeckLink API Delegate Methods *****************************/
 
+#ifdef _WIN32
+	virtual HRESULT STDMETHODCALLTYPE RenderAudioSamples ( BOOL preroll )
+#else
+	virtual HRESULT STDMETHODCALLTYPE RenderAudioSamples ( bool preroll )
+#endif
+	{
+		mlt_log_debug( getConsumer(), "%s: ENTERING preroll=%d, len=%d\n", __FUNCTION__, (int)preroll, mlt_deque_count( m_aqueue ));
+		mlt_frame frame = (mlt_frame) mlt_deque_pop_front( m_aqueue );
+
+		reprio( 2 );
+
+		if ( frame )
+		{
+			mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+			uint64_t m_count = mlt_properties_get_int64( properties, "m_count" );
+			mlt_audio_format format = mlt_audio_s16;
+			int frequency = bmdAudioSampleRate48kHz;
+			int samples = mlt_sample_calculator( m_fps, frequency, m_count );
+			int16_t *pcm = 0;
+
+			if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_channels, &samples ) )
+			{
+				HRESULT hr;
+				mlt_log_debug( getConsumer(), "%s:%d, samples=%d, channels=%d, freq=%d\n",
+					__FUNCTION__, __LINE__, samples, m_channels, frequency );
+#ifdef _WIN32
+#define DECKLINK_UNSIGNED_FORMAT "%lu"
+				unsigned long written = 0;
+#else
+#define DECKLINK_UNSIGNED_FORMAT "%u"
+				uint32_t written = 0;
+#endif
+				BMDTimeValue streamTime = m_count * frequency * m_duration / m_timescale;
+				m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &written );
+				mlt_log_debug( getConsumer(), "%s:%d GetBufferedAudioSampleFrameCount=" DECKLINK_UNSIGNED_FORMAT "\n",
+					__FUNCTION__, __LINE__, written );
+				if ( written > (m_preroll + 1) * samples )
+				{
+					mlt_log_verbose( getConsumer(), "renderAudio: will flush " DECKLINK_UNSIGNED_FORMAT " audiosamples\n", written );
+					m_deckLinkOutput->FlushBufferedAudioSamples();
+				};
+#ifdef _WIN32
+				hr = m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, (unsigned long*) &written );
+#else
+				hr = m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, &written );
+#endif
+				if ( S_OK != hr )
+					mlt_log_error( getConsumer(), "%s:%d ScheduleAudioSamples failed, hr=%.8X \n", __FUNCTION__, __LINE__, unsigned(hr) );
+				else
+					mlt_log_debug( getConsumer(), "%s:%d ScheduleAudioSamples success " DECKLINK_UNSIGNED_FORMAT " samples\n", __FUNCTION__, __LINE__, written );
+				if ( written != (uint32_t) samples )
+					mlt_log_verbose( getConsumer(), "renderAudio: samples=%d, written=" DECKLINK_UNSIGNED_FORMAT "\n", samples, written );
+			}
+			else
+				mlt_log_error( getConsumer(), "%s:%d mlt_frame_get_audio failed\n", __FUNCTION__, __LINE__);
+
+			mlt_frame_close( frame );
+		}
+
+		if ( preroll )
+			m_deckLinkOutput->StartScheduledPlayback( 0, m_timescale, 1.0 );
+
+		return S_OK;
+	}
+
 	virtual HRESULT STDMETHODCALLTYPE ScheduledFrameCompleted( IDeckLinkVideoFrame* completedFrame, BMDOutputFrameCompletionResult completed )
 	{
-		if( !m_reprio )
-		{
-			mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+		mlt_log_debug( getConsumer(), "%s: ENTERING\n", __FUNCTION__ );
 
-			if ( mlt_properties_get( properties, "priority" ) )
-			{
-				int r;
-				pthread_t thread;
-				pthread_attr_t tattr;
-				struct sched_param param;
+		mlt_deque_push_back( m_frames, reinterpret_cast/*dynamic_cast*/<IDeckLinkMutableVideoFrame*>(completedFrame) );
 
-				pthread_attr_init(&tattr);
-				pthread_attr_setschedpolicy(&tattr, SCHED_FIFO);
-
-				if ( !strcmp( "max", mlt_properties_get( properties, "priority" ) ) )
-					param.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
-				else if ( !strcmp( "min", mlt_properties_get( properties, "priority" ) ) )
-					param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
-				else
-					param.sched_priority = mlt_properties_get_int( properties, "priority" );
-
-				pthread_attr_setschedparam(&tattr, &param);
-
-				thread = pthread_self();
-
-				r = pthread_setschedparam(thread, SCHED_FIFO, &param);
-				if( r )
-					mlt_log_verbose( getConsumer(),
-						"ScheduledFrameCompleted: pthread_setschedparam returned %d\n", r);
-				else
-					mlt_log_verbose( getConsumer(),
-						"ScheduledFrameCompleted: param.sched_priority=%d\n", param.sched_priority);
-			};
-
-			m_reprio = true;
-		};
-
-#ifdef _WIN32
-		unsigned long cnt;
-#else
-		uint32_t cnt;
-#endif
-		m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &cnt );
-		if ( cnt != m_acnt )
-		{
-			mlt_log_debug( getConsumer(),
-				"ScheduledFrameCompleted: GetBufferedAudioSampleFrameCount %u -> " DECKLINK_UNSIGNED_FORMAT
-				", m_count=%"PRIu64"\n", m_acnt, cnt, m_count );
-			m_acnt = cnt;
-		}
+		//  change priority of video callback thread
+		reprio( 1 );
 
 		// When a video frame has been released by the API, schedule another video frame to be output
 
@@ -587,7 +772,6 @@ public:
 		return mlt_consumer_is_stopped( getConsumer() ) ? S_FALSE : S_OK;
 	}
 
-
 	void ScheduleNextFrame( bool preroll )
 	{
 		// get the consumer
@@ -599,10 +783,12 @@ public:
 		// Frame and size
 		mlt_frame frame = NULL;
 
+		mlt_log_debug( getConsumer(), "%s:%d: preroll=%d\n", __FUNCTION__, __LINE__, preroll);
+
 		if( mlt_properties_get_int( properties, "running" ) || preroll )
 		{
 			frame = mlt_consumer_rt_frame( consumer );
-			if ( frame != NULL )
+			if ( frame )
 			{
 				render( frame );
 
@@ -615,8 +801,11 @@ public:
 
 				mlt_frame_close( frame );
 			}
+			else
+				mlt_log_error( getConsumer(), "%s: mlt_consumer_rt_frame return NULL\n", __FUNCTION__ );
 		}
 	}
+
 };
 
 /** Start the consumer.
@@ -627,7 +816,7 @@ static int start( mlt_consumer consumer )
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 	DeckLinkConsumer* decklink = (DeckLinkConsumer*) consumer->child;
-	return decklink->start( mlt_properties_get_int( properties, "preroll" ) ) ? 0 : 1;
+	return decklink->op( OP_START, mlt_properties_get_int( properties, "preroll" ) ) ? 0 : 1;
 }
 
 /** Stop the consumer.
@@ -635,9 +824,17 @@ static int start( mlt_consumer consumer )
 
 static int stop( mlt_consumer consumer )
 {
+	int r;
+
+	mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: entering\n", __FUNCTION__ );
+
 	// Get the properties
 	DeckLinkConsumer* decklink = (DeckLinkConsumer*) consumer->child;
-	return decklink->stop();
+	r = decklink->op(OP_STOP, 0);
+
+	mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: exiting\n", __FUNCTION__ );
+
+	return r;
 }
 
 /** Determine if the consumer is stopped.
@@ -655,6 +852,8 @@ static int is_stopped( mlt_consumer consumer )
 
 static void close( mlt_consumer consumer )
 {
+	mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: entering\n", __FUNCTION__ );
+
 	// Stop the consumer
 	mlt_consumer_stop( consumer );
 
@@ -664,6 +863,8 @@ static void close( mlt_consumer consumer )
 
 	// Free the memory
 	delete (DeckLinkConsumer*) consumer->child;
+
+	mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: exiting\n", __FUNCTION__ );
 }
 
 extern "C" {
@@ -728,7 +929,7 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 	if ( decklink && !mlt_consumer_init( decklink->getConsumer(), decklink, profile ) )
 	{
 		// If initialises without error
-		if ( decklink->open( arg? atoi(arg) : 0 ) )
+		if ( decklink->op( OP_OPEN, arg? atoi(arg) : 0 ) )
 		{
 			consumer = decklink->getConsumer();
 			mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
