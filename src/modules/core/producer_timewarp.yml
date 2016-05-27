@@ -23,9 +23,10 @@ description: >
   In addition to modifying the speed of the video, the audio is also slowed down
   or sped up to match the video.
 parameters:
-  - identifier: argument
+  - identifier: resource
     title: Speed and Resource
     type: string
+    argument: yes
     description: |
       The speed factor and the producer resource in the form: [speed:resource]
       The speed can be any decimal number between 20 and 0.01.
@@ -50,6 +51,7 @@ parameters:
     readonly: no
     required: yes
     mutable: no
+
   - identifier: warp_speed
     title: Warp Speed
     type: float
@@ -57,6 +59,7 @@ parameters:
       A convenience parameter to access the speed that was passed as part of 
       the argument.
     readonly: yes
+
   - identifier: warp_resource
     title: Warp Producer
     type: string
