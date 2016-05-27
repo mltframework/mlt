@@ -1,0 +1,17 @@
+f=mp4
+movflags=+faststart
+
+acodec=aac
+ar=48000
+ab=384k
+
+vcodec=libx264
+progressive=1
+preset=fast
+threads=0
+crf=21
+g=15
+bf=2
+
+meta.preset.extension=mp4
+meta.preset.note=H.264/AAC MP4 for YouTube
