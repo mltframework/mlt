@@ -8,7 +8,8 @@ TARGET = ../libmltxml$(LIBSUF)
 
 OBJS = factory.o \
 	   consumer_xml.o \
-	   producer_xml.o
+	   producer_xml.o \
+	   common.o
 
 CFLAGS += $(shell pkg-config libxml-2.0 --cflags)
 
