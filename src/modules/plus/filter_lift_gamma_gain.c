@@ -180,10 +180,7 @@ static void filter_close( mlt_filter filter )
 {
 	private_data* private = (private_data*)filter->child;
 
-	if ( private )
-	{
-		free( private );
-	}
+	free( private );
 	filter->child = NULL;
 	filter->close = NULL;
 	filter->parent.close = NULL;
@@ -229,17 +226,9 @@ mlt_filter filter_lift_gamma_gain_init( mlt_profile profile, mlt_service_type ty
 	else
 	{
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Filter lift_gamma_gain init failed\n" );
-
-		if( filter )
-		{
-			mlt_filter_close( filter );
-			filter = NULL;
-		}
-
-		if( private )
-		{
-			free( private );
-		}
+		mlt_filter_close( filter );
+		filter = NULL;
+		free( private );
 	}
 
 	return filter;
