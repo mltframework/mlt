@@ -20,6 +20,7 @@
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 typedef struct
 {
@@ -104,30 +105,40 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 static void apply_lut( mlt_filter filter, uint8_t* image, mlt_image_format format, int width, int height )
 {
 	private_data* private = (private_data*)filter->child;
+	uint8_t* rlut = malloc( sizeof(private->rlut) );
+	uint8_t* glut = malloc( sizeof(private->glut) );
+	uint8_t* blut = malloc( sizeof(private->blut) );
 	int total = width * height + 1;
 	uint8_t* sample = image;
+
+	// Copy the LUT so that we can be frame-thread safe.
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+	memcpy( rlut, private->rlut, sizeof(private->rlut) );
+	memcpy( glut, private->glut, sizeof(private->glut) );
+	memcpy( blut, private->blut, sizeof(private->blut) );
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	switch( format )
 	{
 	case mlt_image_rgb24:
 		while( --total )
 		{
-			*sample = private->rlut[ *sample ];
+			*sample = rlut[ *sample ];
 			sample++;
-			*sample = private->glut[ *sample ];
+			*sample = glut[ *sample ];
 			sample++;
-			*sample = private->blut[ *sample ];
+			*sample = blut[ *sample ];
 			sample++;
 		}
 		break;
 	case mlt_image_rgb24a:
 		while( --total )
 		{
-			*sample = private->rlut[ *sample ];
+			*sample = rlut[ *sample ];
 			sample++;
-			*sample = private->glut[ *sample ];
+			*sample = glut[ *sample ];
 			sample++;
-			*sample = private->blut[ *sample ];
+			*sample = blut[ *sample ];
 			sample++;
 			sample++; // Skip alpha
 		}
@@ -136,6 +147,9 @@ static void apply_lut( mlt_filter filter, uint8_t* image, mlt_image_format forma
 		mlt_log_error( MLT_FILTER_SERVICE( filter ), "Invalid image format: %s\n", mlt_image_format_name( format ) );
 		break;
 	}
+	free( rlut );
+	free( glut );
+	free( blut );
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
@@ -143,10 +157,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 	int error = 0;
 
-	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
 	// Regenerate the LUT if necessary
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 	refresh_lut( filter, frame );
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	// Make sure the format is acceptable
 	if( *format != mlt_image_rgb24 && *format != mlt_image_rgb24a )
@@ -163,8 +178,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		apply_lut( filter, *image, *format, *width, *height );
 	}
-
-	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	return error;
 }
