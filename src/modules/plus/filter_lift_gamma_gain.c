@@ -34,7 +34,7 @@ typedef struct
 
 static void refresh_lut( mlt_filter filter, mlt_frame frame )
 {
-	private_data* private = (private_data*)filter->child;
+	private_data* self = (private_data*)filter->child;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
@@ -49,9 +49,9 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 	double bgain = mlt_properties_anim_get_double( properties, "gain_b", position, length );
 
 	// Only regenerate the LUT if something changed.
-	if( private->rlift != rlift || private->glift != glift || private->blift != blift ||
-		private->rgamma != rgamma || private->ggamma != ggamma || private->bgamma != bgamma ||
-		private->rgain != rgain || private->ggain != ggain || private->bgain != bgain )
+	if( self->rlift != rlift || self->glift != glift || self->blift != blift ||
+		self->rgamma != rgamma || self->ggamma != ggamma || self->bgamma != bgamma ||
+		self->rgain != rgain || self->ggain != ggain || self->bgain != bgain )
 	{
 		int i = 0;
 		for( i = 0; i < 256; i++ )
@@ -83,39 +83,39 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 			b = b < 0.0 ? 0.0 : b > 1.0 ? 1.0 : b;
 
 			// Update LUT
-			private->rlut[ i ] = (int)(r * 255.0);
-			private->glut[ i ] = (int)(g * 255.0);
-			private->blut[ i ] = (int)(b * 255.0);
+			self->rlut[ i ] = (int)(r * 255.0);
+			self->glut[ i ] = (int)(g * 255.0);
+			self->blut[ i ] = (int)(b * 255.0);
 		}
 
 		// Store the values that created the LUT so that
 		// changes can be detected.
-		private->rlift = rlift;
-		private->glift = glift;
-		private->blift = blift;
-		private->rgamma = rgamma;
-		private->ggamma = ggamma;
-		private->bgamma = bgamma;
-		private->rgain = rgain;
-		private->ggain = ggain;
-		private->bgain = bgain;
+		self->rlift = rlift;
+		self->glift = glift;
+		self->blift = blift;
+		self->rgamma = rgamma;
+		self->ggamma = ggamma;
+		self->bgamma = bgamma;
+		self->rgain = rgain;
+		self->ggain = ggain;
+		self->bgain = bgain;
 	}
 }
 
 static void apply_lut( mlt_filter filter, uint8_t* image, mlt_image_format format, int width, int height )
 {
-	private_data* private = (private_data*)filter->child;
-	uint8_t* rlut = malloc( sizeof(private->rlut) );
-	uint8_t* glut = malloc( sizeof(private->glut) );
-	uint8_t* blut = malloc( sizeof(private->blut) );
+	private_data* self = (private_data*)filter->child;
+	uint8_t* rlut = malloc( sizeof(self->rlut) );
+	uint8_t* glut = malloc( sizeof(self->glut) );
+	uint8_t* blut = malloc( sizeof(self->blut) );
 	int total = width * height + 1;
 	uint8_t* sample = image;
 
 	// Copy the LUT so that we can be frame-thread safe.
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-	memcpy( rlut, private->rlut, sizeof(private->rlut) );
-	memcpy( glut, private->glut, sizeof(private->glut) );
-	memcpy( blut, private->blut, sizeof(private->blut) );
+	memcpy( rlut, self->rlut, sizeof(self->rlut) );
+	memcpy( glut, self->glut, sizeof(self->glut) );
+	memcpy( blut, self->blut, sizeof(self->blut) );
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	switch( format )
@@ -191,9 +191,9 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 static void filter_close( mlt_filter filter )
 {
-	private_data* private = (private_data*)filter->child;
+	private_data* self = (private_data*)filter->child;
 
-	free( private );
+	free( self );
 	filter->child = NULL;
 	filter->close = NULL;
 	filter->parent.close = NULL;
@@ -203,45 +203,45 @@ static void filter_close( mlt_filter filter )
 mlt_filter filter_lift_gamma_gain_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
-	private_data* private = (private_data*)calloc( 1, sizeof(private_data) );
+	private_data* self = (private_data*)calloc( 1, sizeof(private_data) );
 	int i = 0;
 
-	if ( filter && private )
+	if ( filter && self )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
-		// Initialize private data
+		// Initialize self data
 		for( i = 0; i < 256; i++ )
 		{
-			private->rlut[i] = i;
-			private->glut[i] = i;
-			private->blut[i] = i;
+			self->rlut[i] = i;
+			self->glut[i] = i;
+			self->blut[i] = i;
 		}
-		private->rlift = private->glift = private->blift = 0.0;
-		private->rgamma = private->ggamma = private->bgamma = 1.0;
-		private->rgain = private->ggain = private->bgain = 1.0;
+		self->rlift = self->glift = self->blift = 0.0;
+		self->rgamma = self->ggamma = self->bgamma = 1.0;
+		self->rgain = self->ggain = self->bgain = 1.0;
 
 		// Initialize filter properties
-		mlt_properties_set_double( properties, "lift_r", private->rlift );
-		mlt_properties_set_double( properties, "lift_g", private->glift );
-		mlt_properties_set_double( properties, "lift_b", private->blift );
-		mlt_properties_set_double( properties, "gamma_r", private->rgamma );
-		mlt_properties_set_double( properties, "gamma_g", private->ggamma );
-		mlt_properties_set_double( properties, "gamma_b", private->bgamma );
-		mlt_properties_set_double( properties, "gain_r", private->rgain );
-		mlt_properties_set_double( properties, "gain_g", private->ggain );
-		mlt_properties_set_double( properties, "gain_b", private->bgain );
+		mlt_properties_set_double( properties, "lift_r", self->rlift );
+		mlt_properties_set_double( properties, "lift_g", self->glift );
+		mlt_properties_set_double( properties, "lift_b", self->blift );
+		mlt_properties_set_double( properties, "gamma_r", self->rgamma );
+		mlt_properties_set_double( properties, "gamma_g", self->ggamma );
+		mlt_properties_set_double( properties, "gamma_b", self->bgamma );
+		mlt_properties_set_double( properties, "gain_r", self->rgain );
+		mlt_properties_set_double( properties, "gain_g", self->ggain );
+		mlt_properties_set_double( properties, "gain_b", self->bgain );
 
 		filter->close = filter_close;
 		filter->process = filter_process;
-		filter->child = private;
+		filter->child = self;
 	}
 	else
 	{
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Filter lift_gamma_gain init failed\n" );
 		mlt_filter_close( filter );
 		filter = NULL;
-		free( private );
+		free( self );
 	}
 
 	return filter;
