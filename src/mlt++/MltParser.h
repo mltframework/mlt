@@ -21,7 +21,7 @@
 #ifndef MLTPP_PARSER_H
 #define MLTPP_PARSER_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 #include "MltProperties.h"

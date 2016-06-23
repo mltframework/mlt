@@ -22,7 +22,7 @@
 #ifndef MLTPP_FACTORY_H
 #define MLTPP_FACTORY_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #ifdef SWIG
 #define MLTPP_DECLSPEC

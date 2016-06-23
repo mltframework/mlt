@@ -20,7 +20,7 @@
 #ifndef MLTPP_PROFILE_H
 #define MLTPP_PROFILE_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #ifdef SWIG
 #define MLTPP_DECLSPEC

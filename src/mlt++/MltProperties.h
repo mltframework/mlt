@@ -21,7 +21,7 @@
 #ifndef MLTPP_PROPERTIES_H
 #define MLTPP_PROPERTIES_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <stdio.h>
 #include <framework/mlt.h>

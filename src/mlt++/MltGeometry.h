@@ -21,7 +21,7 @@
 #ifndef MLTPP_GEOMETRY_H
 #define MLTPP_GEOMETRY_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

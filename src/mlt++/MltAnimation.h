@@ -21,7 +21,7 @@
 #ifndef MLTPP_ANIMATION_H
 #define MLTPP_ANIMATION_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

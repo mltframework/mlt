@@ -51,7 +51,7 @@ OBJS = MltAnimation.o \
 	   MltTransition.o
 
 SRCS = $(OBJS:.o=.cpp)
-HEADERS = config.h Mlt.h $(OBJS:.o=.h)
+HEADERS = MltConfig.h Mlt.h $(OBJS:.o=.h)
 
 all:		$(TARGET)
 

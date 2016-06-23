@@ -21,7 +21,7 @@
 #ifndef MLTPP_FIELD_H
 #define MLTPP_FIELD_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

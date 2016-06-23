@@ -21,7 +21,7 @@
 #ifndef MLTPP_PUSH_CONSUMER_H
 #define MLTPP_PUSH_CONSUMER_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include "MltConsumer.h"
 

@@ -21,7 +21,7 @@
 #ifndef MLTPP_TOKENISER_H
 #define MLTPP_TOKENISER_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

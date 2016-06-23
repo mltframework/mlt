@@ -21,7 +21,7 @@
 #ifndef MLTPP_FILTERED_CONSUMER_H
 #define MLTPP_FILTERED_CONSUMER_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include "MltConsumer.h"
 #include "MltFilter.h"

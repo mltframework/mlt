@@ -21,7 +21,7 @@
 #ifndef MLTPP_DEQUE_H
 #define MLTPP_DEQUE_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

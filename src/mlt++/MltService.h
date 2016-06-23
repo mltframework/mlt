@@ -21,7 +21,7 @@
 #ifndef MLTPP_SERVICE_H
 #define MLTPP_SERVICE_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 
