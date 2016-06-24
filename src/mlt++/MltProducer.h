@@ -21,7 +21,7 @@
 #ifndef MLTPP_PRODUCER_H
 #define MLTPP_PRODUCER_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

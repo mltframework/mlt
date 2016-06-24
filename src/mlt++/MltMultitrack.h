@@ -21,7 +21,7 @@
 #ifndef MLTPP_MULTITRACK_H
 #define MLTPP_MULTITRACK_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

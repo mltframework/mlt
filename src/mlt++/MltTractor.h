@@ -21,7 +21,7 @@
 #ifndef MLTPP_TRACTOR_H
 #define MLTPP_TRACTOR_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 

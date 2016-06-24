@@ -21,7 +21,7 @@
 #ifndef MLTPP_FILTER_H
 #define MLTPP_FILTER_H
 
-#include "config.h"
+#include "MltConfig.h"
 
 #include <framework/mlt.h>
 
