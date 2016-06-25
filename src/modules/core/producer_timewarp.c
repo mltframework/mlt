@@ -82,7 +82,6 @@ static void clip_property_changed( mlt_service owner, mlt_producer producer, cha
 static int producer_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
 {
 	mlt_producer producer = mlt_frame_pop_audio( frame );
-	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	private_data* pdata = (private_data*)producer->child;
 
 	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );

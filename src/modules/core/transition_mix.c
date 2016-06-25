@@ -57,7 +57,8 @@ static void mix_audio( double weight_start, double weight_end, int16_t *buffer_a
 			a = (double) buffer_a[ i * channels_a + j ];
 			b = (double) buffer_b[ i * channels_b + j ];
 			v = mix * b + (1.0 - mix) * a;
-			buffer_a[ i * channels_a + j ] = CLAMP( v, -32767.0, 32768.0 );
+			v = CLAMP( v, -32767.0, 32768.0 );
+			buffer_a[ i * channels_a + j ] = v;
 		}
 		mix += mix_step;
 	}
