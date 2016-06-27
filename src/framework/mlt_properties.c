@@ -174,7 +174,7 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 	if ( list->locale )
 	{
 #if defined(__APPLE__)
-        result = querylocale( LC_NUMERIC, list->locale );
+        result = querylocale( LC_NUMERIC_MASK, list->locale );
 #elif defined(__GLIBC__)
         result = list->locale->__names[ LC_NUMERIC ];
 #else

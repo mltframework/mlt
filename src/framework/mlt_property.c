@@ -696,7 +696,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
 #if defined(__APPLE__)
-		const char *localename = querylocale( LC_NUMERIC, locale );
+		const char *localename = querylocale( LC_NUMERIC_MASK, locale );
 #elif defined(__GLIBC__)
 		const char *localename = locale->__names[ LC_NUMERIC ];
 #else
@@ -930,7 +930,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
 #if defined(__APPLE__)
-		const char *localename = querylocale( LC_NUMERIC, locale );
+		const char *localename = querylocale( LC_NUMERIC_MASK, locale );
 #elif defined(__GLIBC__)
 		const char *localename = locale->__names[ LC_NUMERIC ];
 #else
