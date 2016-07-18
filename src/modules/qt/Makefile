@@ -15,6 +15,12 @@ CPPOBJS = common.o \
 	kdenlivetitle_wrapper.o \
 	producer_qtext.o
 
+ifdef USE_QT5
+	CPPOBJS += transition_qtblend.o
+	OBJS += filter_qtblend.o
+	CFLAGS += -DUSE_QT5
+endif
+
 ifdef USE_QT_OPENGL
 	CPPOBJS += consumer_qglsl.o
 	CFLAGS += -DUSE_QT_OPENGL

@@ -1,0 +1,39 @@
+schema_version: 0.1
+type: transition
+identifier: qtblend
+title: Composite and transform
+version: 1
+copyright: Meltytech, LLC
+creator: Jean-Baptiste Mardelle
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+parameters:
+  - identifier: rect
+    title: Rectangle
+    type: geometry
+    description: >
+      Keyframable rectangle specification.
+    mutable: yes
+
+  - identifier: distort
+    title: Ignore aspect ratio
+    description: >
+      Determines whether the image aspect ratio will be distorted while scaling
+      to completely fill the geometry rectangle.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
+
+  - identifier: compositing
+    title: Composition mode
+    description: >
+      Defines which composition operation will be performed (see QPainter CompositionMode for doc)
+    type: integer
+    default: 0
+    minimum: 0
+    maximum: 40
+    mutable: yes
+    widget: spinbox

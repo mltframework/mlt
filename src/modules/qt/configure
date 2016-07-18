@@ -107,6 +107,7 @@ else
 		then
 			echo QTCXXFLAGS=-I$qt_includedir -I$qt_includedir/QtCore -I$qt_includedir/QtGui -I$qt_includedir/QtXml -I$qt_includedir/QtSvg -I$qt_includedir/QtWidgets >> config.mak
 			echo QTLIBS=-Wl,-rpath-link,"$qt_libdir" -L"$qt_libdir" -lQt5Core -lQt5Gui -lQt5Xml -lQt5Svg -lQt5Widgets >> config.mak
+			echo "USE_QT5=1" >> config.mak
 			if [ -f "$qt_libdir/libQt5OpenGL.so" ] || [ -f "$qt_libdir/libQt5OpenGL.a" ]
 			then
 				echo QTCXXFLAGS+=-I$qt_includedir/QtOpenGL >> config.mak
@@ -128,6 +129,7 @@ else
 				>> config.mak
 			echo QTLIBS=-F"$qt_libdir" -framework QtCore -framework QtGui -framework \
 				QtXml -framework QtSvg -framework QtOpenGL -framework QtWidgets >> config.mak
+                        echo "USE_QT5=1" >> config.mak
 		# Qt4 on OS X
 		elif [ -d "$qt_libdir/QtGui.framework" ]
 		then
