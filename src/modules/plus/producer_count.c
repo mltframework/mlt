@@ -59,8 +59,8 @@ static void get_time_info( mlt_producer producer, mlt_frame frame, time_info* in
 	char* direction = mlt_properties_get( producer_properties, "direction" );
 	if( !strcmp( direction, "down" ) )
 	{
-		mlt_position out = mlt_properties_get_int( producer_properties, "out" );
-		info->position = out - position;
+		mlt_position length = mlt_properties_get_int( producer_properties, "length" );
+		info->position = length - 1 - position;
 	}
 	else
 	{
