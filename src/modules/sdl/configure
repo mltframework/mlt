@@ -3,13 +3,13 @@
 if [ "$help" != "1" ]
 then
 
-	sdl-config --version > /dev/null 2>&1
+	pkg-config --exists sdl > /dev/null 2>&1
 	disable_sdl=$?
 
 	if [ "$disable_sdl" = "0" ]
 	then
 		echo > config.mak
-		image=`sdl-config --prefix`/include/SDL/SDL_image.h
+		image=`pkg-config --variable=prefix sdl`/include/SDL/SDL_image.h
 		if [ -f "$image" ]
 		then
 			echo "WITH_SDL_IMAGE=1" >> config.mak
