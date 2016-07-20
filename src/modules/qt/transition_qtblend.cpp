@@ -102,6 +102,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	{
 		// No transparency, return top frame
 		memcpy( *image, b_image, image_size );
+		mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
 		return 0;
 	}
 
