@@ -144,28 +144,28 @@ else
 			echo QTLIBS=-L$qt_libdir -lQtCore -lQtGui -lQtXml -lQtSvg -lQtOpenGL >> config.mak
 		fi
 	else
-		pkg-config --exists 'QtGui >= 4'
+		pkg-config --exists 'Qt5Gui'
 		if [ $? -eq 0 ]
 		then
-			echo "- Qt version 4.x detected"
-			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
-			echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
-		else
-			pkg-config --exists 'Qt5Gui'
+			echo "- Qt version 5.x detected"
+			echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
+			echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
+			pkg-config --exists 'Qt5OpenGL'
 			if [ $? -eq 0 ]
 			then
-				echo "- Qt version 5.x detected"
-				echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
-				echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
-				pkg-config --exists 'Qt5OpenGL'
-				if [ $? -eq 0 ]
-				then
-					echo QTCXXFLAGS+=$(pkg-config --cflags Qt5OpenGL) >> config.mak
-					echo QTLIBS+=$(pkg-config --libs Qt5OpenGL) >> config.mak
-				else
-					echo "- Qt5OpenGL not found: disabling"
-					without_opengl=true
-				fi
+				echo QTCXXFLAGS+=$(pkg-config --cflags Qt5OpenGL) >> config.mak
+				echo QTLIBS+=$(pkg-config --libs Qt5OpenGL) >> config.mak
+			else
+				echo "- Qt5OpenGL not found: disabling"
+				without_opengl=true
+			fi
+		else
+			pkg-config --exists 'QtGui >= 4'
+			if [ $? -eq 0 ]
+			then
+				echo "- Qt version 4.x detected"
+				echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
+				echo QTLIBS=$(pkg-config --libs QtCore QtGui QtXml QtSvg QtOpenGL) >> config.mak
 			else
 				echo "- Qt not found - disabling"
 				touch ../disable-qt
