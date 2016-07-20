@@ -213,9 +213,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Draw the waveforms
 	if( !error ) {
 		QImage qimg( *width, *height, QImage::Format_ARGB32 );
-		copy_mlt_to_qimage_rgba( *image, &qimg );
+		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 		draw_waveforms( filter, frame, &qimg, audio, channels, samples );
-		copy_qimage_to_mlt_rgba( &qimg, *image );
+		convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
 	}
 
 	return error;

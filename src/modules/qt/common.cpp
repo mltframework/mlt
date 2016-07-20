@@ -50,10 +50,15 @@ bool createQApplicationIfNeeded(mlt_service service)
 	return true;
 }
 
-void copy_qimage_to_mlt_rgba(QImage* qImg, uint8_t* mImg)
+void convert_qimage_to_mlt_rgba( QImage* qImg, uint8_t* mImg, int width, int height )
 {
-	int height = qImg->height();
-	int width = qImg->width();
+#if QT_VERSION >= 0x050200
+	// QImage::Format_RGBA8888 was added in Qt5.2
+	// Nothing to do in this case  because the image was modified directly.
+	// Destination pointer must be the same pointer that was provided to
+	// convert_mlt_to_qimage_rgba()
+	Q_ASSERT(mImg == qImg->constBits());
+#else
 	int y = height + 1;
 	while (--y)
 	{
@@ -68,12 +73,17 @@ void copy_qimage_to_mlt_rgba(QImage* qImg, uint8_t* mImg)
 			src++;
 		}
 	}
+#endif
 }
 
-void copy_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg )
+void convert_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg, int width, int height )
 {
-	int height = qImg->height();
-	int width = qImg->width();
+#if QT_VERSION >= 0x050200
+	// QImage::Format_RGBA8888 was added in Qt5.2
+	// Initialize the QImage with the MLT image because the data formats match.
+	*qImg = QImage( mImg, width, height, QImage::Format_RGBA8888 );
+#else
+	*qImg = QImage( width, height, QImage::Format_ARGB32 );
 	int y = height + 1;
 	while (--y)
 	{
@@ -85,6 +95,7 @@ void copy_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg )
 			mImg += 4;
 		}
 	}
+#endif
 }
 
 int create_image( mlt_frame frame, uint8_t **image, mlt_image_format *image_format, int *width, int *height, int writable )

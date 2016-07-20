@@ -254,9 +254,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Draw the spectrum
 		if( !error ) {
 			QImage qimg( *width, *height, QImage::Format_ARGB32 );
-			copy_mlt_to_qimage_rgba( *image, &qimg );
+			convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 			draw_spectrum( filter, frame, &qimg );
-			copy_qimage_to_mlt_rgba( &qimg, *image );
+			convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
 		}
 	} else {
 		if ( pdata->preprocess_warned++ == 2 )

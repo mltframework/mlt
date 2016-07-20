@@ -40,8 +40,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	{
 		return error;
 	}
-	// convert top frame mlt image to qimage
-	QImage img_b( b_image, *width, *height, QImage::Format_RGBA8888 );
+
 	bool hasAlpha = false;
 	QTransform transform;
 	double opacity = 1.0;
@@ -78,8 +77,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// Prepare output image
 	int image_size = mlt_image_format_size( *format, *width, *height, NULL );
-	uint8_t *dst = (uint8_t *) mlt_pool_alloc( image_size );
-	*image = dst;
+	*image = (uint8_t *) mlt_pool_alloc( image_size );
 
 	if (!hasAlpha)
 	{
@@ -100,7 +98,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			}
 		}
 	}
-        if (!hasAlpha)
+	if (!hasAlpha)
 	{
 		// No transparency, return top frame
 		memcpy( *image, b_image, image_size );
@@ -128,11 +126,16 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		}
 	}
 
-	// convert output to qimage
-	QImage img( *image, *width, *height, QImage::Format_RGBA8888 );
+	// convert bottom mlt image to qimage
+	QImage bottomImg;
+	convert_mlt_to_qimage_rgba( *image, &bottomImg, *width, *height );
+
+	// convert top mlt image to qimage
+	QImage topImg;
+	convert_mlt_to_qimage_rgba( b_image, &topImg, *width, *height );
 
 	// setup Qt drawing
-	QPainter painter( &img );
+	QPainter painter( &bottomImg );
 	painter.setCompositionMode( ( QPainter::CompositionMode ) mlt_properties_get_int( transition_properties, "compositing" ) );
 	painter.setRenderHints( QPainter::Antialiasing | QPainter::SmoothPixmapTransform, hqPainting );
 	if ( mlt_properties_get( transition_properties, "rect" ) ) {
@@ -141,11 +144,12 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	}
 
 	// Composite top frame
-	painter.drawImage(0, 0, img_b);
+	painter.drawImage(0, 0, topImg);
 
 	// finish Qt drawing
 	painter.end();
-	mlt_properties_set_data( properties, "image", dst, image_size, mlt_pool_release, NULL );
+	convert_qimage_to_mlt_rgba( &bottomImg, *image, *width, *height );
+	mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
 
 	return error;
 }
