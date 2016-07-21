@@ -28,26 +28,31 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 {
 	int error = 0;
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
+	mlt_properties b_properties = MLT_FRAME_PROPERTIES( b_frame );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( a_frame );
 	mlt_transition transition = MLT_TRANSITION( mlt_frame_pop_service( a_frame ) );
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
 	uint8_t *b_image = NULL;
-
-	// get RGBA image for Qt drawing
-	*format = mlt_image_rgb24a;
-	error = mlt_frame_get_image( b_frame, &b_image, format, width, height, writable );
-	if (error)
-	{
-		return error;
-	}
-
 	bool hasAlpha = false;
 	QTransform transform;
 	double opacity = 1.0;
-	if ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 )
+
+	// get RGBA image for Qt drawing
+	*format = mlt_image_rgb24a;
+	int b_width;
+	int b_height;
+	if ( !mlt_properties_get_int( properties, "fill" ) )
 	{
-		hasAlpha = true;
+		b_width = mlt_properties_get_int( b_properties, "meta.media.width" );
+		b_height = mlt_properties_get_int( b_properties, "meta.media.height" );
 	}
+	else
+	{
+		b_width = *width;
+		b_height = *height;
+	}
+
+	// Check transform
 	if ( mlt_properties_get( transition_properties, "rect" ) )
 	{
 		// Determine length and obtain cycle
@@ -58,35 +63,45 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		transform.translate(rect.x, rect.y);
 		// TODO: rotate
 		//transform.rotate(45);
-		if ( mlt_properties_get_int( transition_properties, "distort" ) )
+		if ( mlt_properties_get_int( transition_properties, "distort" ) && b_width != 0 && b_height != 0 )
 		{
-			transform.scale(rect.w / *width, rect.h / *height);
+			transform.scale(rect.w / b_width, rect.h / b_height);
 		}
 		else
 		{
-			double factor = qMin(rect.w / *width, rect.h / *height);
-			transform.scale(factor, factor);
+			b_width = rect.w;
+			b_height = rect.h;
 		}
 		opacity = rect.o;
-		if (!hasAlpha && (opacity < 1 || transform.isScaling() || transform.isTranslating() || transform.isRotating() ) )
+		if ( opacity < 1 || transform.isScaling() || transform.isTranslating() || transform.isRotating() )
 		{
 			// we will process operations on top frame, so also process b_frame
 			hasAlpha = true;
 		}
 	}
 
-	// Prepare output image
-	int image_size = mlt_image_format_size( *format, *width, *height, NULL );
-	*image = (uint8_t *) mlt_pool_alloc( image_size );
+	// This is not a field-aware transform.
+	mlt_properties_set_int( b_properties, "consumer_deinterlace", 1 );
+	
+	error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
+	if (error)
+	{
+		return error;
+	}
+
+	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height ) )
+	{
+		hasAlpha = true;
+	}
 
 	if (!hasAlpha)
 	{
 		// If no transform, check if top frame has an alpha channel
 		uint8_t *src = b_image;
-		int y = *height + 1;
+		int y = b_height + 1;
 		while ( --y )
 		{
-			int x = *width + 1;
+			int x = b_width + 1;
 			while ( --x )
 			{
 				if (src[3] < 255 )
@@ -100,11 +115,19 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	}
 	if (!hasAlpha)
 	{
+		// Prepare output image
+		*width = b_width;
+		*height = b_height;
+		int image_size = mlt_image_format_size( *format, *width, *height, NULL );
+		*image = (uint8_t *) mlt_pool_alloc( image_size );
 		// No transparency, return top frame
 		memcpy( *image, b_image, image_size );
 		mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
 		return 0;
 	}
+	// Prepare output image
+	int image_size = mlt_image_format_size( *format, *width, *height, NULL );
+	*image = (uint8_t *) mlt_pool_alloc( image_size );
 
 	// Get bottom frame
 	uint8_t *a_image = NULL;
@@ -133,7 +156,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// convert top mlt image to qimage
 	QImage topImg;
-	convert_mlt_to_qimage_rgba( b_image, &topImg, *width, *height );
+	convert_mlt_to_qimage_rgba( b_image, &topImg, b_width, b_height );
 
 	// setup Qt drawing
 	QPainter painter( &bottomImg );

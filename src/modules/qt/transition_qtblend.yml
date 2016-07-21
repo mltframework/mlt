@@ -37,3 +37,16 @@ parameters:
     maximum: 40
     mutable: yes
     widget: spinbox
+
+  - identifier: fill
+    title: Fill geometry
+    description: >
+      Determines whether the image will be scaled up to fill the geometry.
+      Otherwise, if the B frame image fits within the geometry, it will not
+      be scaled.
+    type: integer
+    default: 1
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
