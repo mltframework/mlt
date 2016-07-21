@@ -1,6 +1,7 @@
 /**
  * MltProfile.h - MLT Wrapper
- * Copyright (C) 2008 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2008-2016 Meltytech, LLC
+ * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,6 +45,7 @@ namespace Mlt
 			Profile( mlt_profile profile );
 			~Profile();
 
+			bool is_valid( ) const;
 			mlt_profile get_profile( ) const;
 			char* description() const;
 			int frame_rate_num() const;
