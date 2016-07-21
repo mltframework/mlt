@@ -86,27 +86,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
 		if ( mlt_properties_get_int( producer_props, "force_reload" ) > 1 ) read_xml( producer_props );
 		mlt_properties_set_int( producer_props, "force_reload", 0 );
-		drawKdenliveTitle( this, frame, *width, *height, mlt_frame_original_position( frame ), 1);
+		drawKdenliveTitle( this, frame, buffer, *width, *height, mlt_frame_original_position( frame ), 1 );
 	}
-	else drawKdenliveTitle( this, frame, *width, *height, mlt_frame_original_position( frame ), 0);
+	else
+	{
+		drawKdenliveTitle( this, frame, buffer, *width, *height, mlt_frame_original_position( frame ), 0 );
+	}
 
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
-		
-	if ( this->current_image )
-	{
-		// Clone the image and the alpha
-		int image_size = this->current_width * ( this->current_height ) * 4;
-		uint8_t *image_copy = mlt_pool_alloc( image_size );
-		memcpy( image_copy, this->current_image, image_size );
-		// Now update properties so we free the copy after
-		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
-		// We're going to pass the copy on
-		*buffer = image_copy;		
-
-		mlt_log_debug( MLT_PRODUCER_SERVICE( &this->parent ), "width:%d height:%d %s\n", *width, *height, mlt_image_format_name( *format ) );
-	}
 
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( &this->parent ) );
 

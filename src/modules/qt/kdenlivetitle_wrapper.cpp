@@ -173,10 +173,6 @@ public:
                 }
                 m_path = m_path.united(linePath);
         }
-        // Calculate position of text in parent item
-        QRectF pathRect = QRectF(0, 0, width, linePos - lineSpacing + metrics.descent() );
-        QPointF offset = m_boundingRect.center() - pathRect.center() + QPointF(0, 2);
-        m_path.translate(offset);
     }
 
     virtual QRectF boundingRect() const
@@ -616,7 +612,7 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 }
 
 
-void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int height, double position, int force_refresh )
+void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, uint8_t **buffer, int width, int height, double position, int force_refresh )
 {
   	// Obtain the producer 
 	mlt_producer producer = &self->parent;
@@ -628,16 +624,21 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 	
 	pthread_mutex_lock( &self->mutex );
 
-	// Check if user wants us to reload the image
-	if ( mlt_properties_get( producer_props, "_animated" ) != NULL || force_refresh == 1 || width != self->current_width || height != self->current_height || mlt_properties_get( producer_props, "_endrect" ) != NULL )
+	// Check if user wants us to reload the image or if we need animation
+	bool animated = mlt_properties_get( producer_props, "_endrect" ) != NULL;
+
+	if ( mlt_properties_get( producer_props, "_animated" ) != NULL || force_refresh == 1 || width != self->current_width || height != self->current_height || animated )
 	{
-		//mlt_cache_item_close( self->image_cache );
-		self->current_image = NULL;
-		mlt_properties_set_data( producer_props, "cached_image", NULL, 0, NULL, NULL );
+		if ( !animated )
+		{
+			// Cache image only if no animation
+			self->current_image = NULL;
+			mlt_properties_set_data( producer_props, "cached_image", NULL, 0, NULL, NULL );
+		}
 		mlt_properties_set_int( producer_props, "force_reload", 0 );
 	}
-	
-	if (self->current_image == NULL) {
+	int image_size = width * height * 4;
+	if ( self->current_image == NULL || animated ) {
 		// restore QGraphicsScene
 		QGraphicsScene *scene = static_cast<QGraphicsScene *> (mlt_properties_get_data( producer_props, "qscene", NULL ));
 
@@ -713,7 +714,14 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 		}
 
 		//must be extracted from kdenlive title
+		self->current_image = (uint8_t *) mlt_pool_alloc( image_size );
+#if QT_VERSION >= 0x050200
+		// QImage::Format_RGBA8888 was added in Qt5.2
+		// Initialize the QImage with the MLT image because the data formats match.
+		QImage img( self->current_image, width, height, QImage::Format_RGBA8888 );
+#else
 		QImage img( width, height, QImage::Format_ARGB32 );
+#endif
 		img.fill( 0 );
 		QPainter p1;
 		p1.begin( &img );
@@ -757,30 +765,30 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int width, int he
 			}
 		}
 		p1.end();
-
-		int size = width * height * 4;
-		uint8_t *pointer=img.bits();
-		QRgb* src = ( QRgb* ) pointer;
-		self->current_image = ( uint8_t * )mlt_pool_alloc( size );
-		uint8_t *dst = self->current_image;
-	
-		for ( int i = 0; i < width * height * 4; i += 4 )
+		convert_qimage_to_mlt_rgba(&img, self->current_image, width, height);
+		if ( !animated )
 		{
-			*dst++=qRed( *src );
-			*dst++=qGreen( *src );
-			*dst++=qBlue( *src );
-			*dst++=qAlpha( *src );
-			src++;
+			mlt_properties_set_data( producer_props, "cached_image", self->current_image, image_size, mlt_pool_release, NULL );
 		}
-
-		mlt_properties_set_data( producer_props, "cached_image", self->current_image, size, mlt_pool_release, NULL );
 		self->current_width = width;
 		self->current_height = height;
 	}
 
 	pthread_mutex_unlock( &self->mutex );
+	if ( animated )
+	{
+		// No caching, directly pass draw image to frame
+		*buffer = self->current_image;
+	}
+	else
+	{
+		// Caching, copy cached image
+		*buffer = (uint8_t *) mlt_pool_alloc( image_size );
+		memcpy( *buffer, self->current_image, image_size );
+	}
 	mlt_properties_set_int( properties, "width", self->current_width );
 	mlt_properties_set_int( properties, "height", self->current_height );
+	mlt_properties_set_data( properties, "image", *buffer, image_size, mlt_pool_release, NULL );
 }
 
 

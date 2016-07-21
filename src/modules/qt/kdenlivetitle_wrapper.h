@@ -40,7 +40,7 @@ struct producer_ktitle_s
 
 typedef struct producer_ktitle_s *producer_ktitle;
 
-extern void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, int, int, double, int );
+extern void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, uint8_t **buffer, int, int, double, int );
 
 
 #ifdef __cplusplus
