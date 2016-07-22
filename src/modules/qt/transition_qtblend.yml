@@ -38,15 +38,13 @@ parameters:
     mutable: yes
     widget: spinbox
 
-  - identifier: fill
-    title: Fill geometry
+  - identifier: rotation
+    title: Rotation angle
     description: >
-      Determines whether the image will be scaled up to fill the geometry.
-      Otherwise, if the B frame image fits within the geometry, it will not
-      be scaled.
-    type: integer
+      Angle for rotation.
+    type: float
     default: 1
     minimum: 0
-    maximum: 1
+    maximum: 360
     mutable: yes
-    widget: checkbox
+

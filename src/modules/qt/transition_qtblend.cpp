@@ -32,61 +32,80 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	mlt_properties properties = MLT_FRAME_PROPERTIES( a_frame );
 	mlt_transition transition = MLT_TRANSITION( mlt_frame_pop_service( a_frame ) );
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
+
 	uint8_t *b_image = NULL;
 	bool hasAlpha = false;
-	QTransform transform;
 	double opacity = 1.0;
+	int b_width = *width;
+	int b_height = *height;
+	QTransform transform;
+	// reference rect
+	mlt_rect rect;
+	rect.w = -1;
+	rect.h = -1;
 
-	// get RGBA image for Qt drawing
-	*format = mlt_image_rgb24a;
-	int b_width;
-	int b_height;
-	if ( !mlt_properties_get_int( properties, "fill" ) )
-	{
-		b_width = mlt_properties_get_int( b_properties, "meta.media.width" );
-		b_height = mlt_properties_get_int( b_properties, "meta.media.height" );
-	}
-	else
-	{
-		b_width = *width;
-		b_height = *height;
-	}
+	// Determine length
+	mlt_position length = mlt_transition_get_length( transition );
+	// Get current position
+	mlt_position position =  mlt_transition_get_position( transition, a_frame );
 
 	// Check transform
 	if ( mlt_properties_get( transition_properties, "rect" ) )
 	{
-		// Determine length and obtain cycle
-		mlt_position length = mlt_transition_get_length( transition );
-		// Assign the current position
-		mlt_position position =  mlt_transition_get_position( transition, a_frame );
-		mlt_rect rect = mlt_properties_anim_get_rect( transition_properties, "rect", position, length );
+		rect = mlt_properties_anim_get_rect( transition_properties, "rect", position, length );
 		transform.translate(rect.x, rect.y);
-		// TODO: rotate
-		//transform.rotate(45);
-		if ( mlt_properties_get_int( transition_properties, "distort" ) && b_width != 0 && b_height != 0 )
-		{
-			transform.scale(rect.w / b_width, rect.h / b_height);
-		}
-		else
-		{
-			b_width = rect.w;
-			b_height = rect.h;
-		}
+		b_width = rect.w;
+		b_height = rect.h;
 		opacity = rect.o;
-		if ( opacity < 1 || transform.isScaling() || transform.isTranslating() || transform.isRotating() )
-		{
-			// we will process operations on top frame, so also process b_frame
-			hasAlpha = true;
-		}
+	}
+
+	if ( mlt_properties_get( transition_properties, "rotation" ) )
+	{
+		double angle = mlt_properties_anim_get_double( transition_properties, "rotation", position, length );
+		transform.rotate( angle );
+		hasAlpha = true;
 	}
 
 	// This is not a field-aware transform.
 	mlt_properties_set_int( b_properties, "consumer_deinterlace", 1 );
-	
+
+	// Request full resolution of b frame image.
+	mlt_properties_set_int( b_properties, "rescale_width", b_width );
+	mlt_properties_set_int( b_properties, "rescale_height", b_height );
+
+	// Suppress padding and aspect normalization.
+	char *interps = mlt_properties_get( properties, "rescale.interp" );
+	if ( interps )
+		interps = strdup( interps );
+	mlt_properties_set( b_properties, "rescale.interp", "none" );
+
+	// fetch image
+	*format = mlt_image_rgb24a;
 	error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
+
 	if (error)
 	{
 		return error;
+	}
+
+	if ( rect.w != -1 )
+	{
+		// resize to rect
+		if ( mlt_properties_get_int( transition_properties, "distort" ) && b_width != 0 && b_height != 0 )
+		{
+			transform.scale( rect.w / b_width, rect.h / b_height );
+		}
+		else
+		{
+			double scale = qMin( rect.w / b_width, rect.h / b_height );
+			transform.scale( scale, scale );
+		}
+
+		if ( opacity < 1 || transform.isScaling() || transform.isTranslating() )
+		{
+			// we will process operations on top frame, so also process b_frame
+			hasAlpha = true;
+		}
 	}
 
 	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height ) )
@@ -140,7 +159,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// Copy bottom frame in output
 	memcpy( *image, a_image, image_size );
 
-	char *interps = mlt_properties_get( properties, "rescale.interp" );
 	bool hqPainting = false;
 	if ( interps )
 	{
