@@ -521,4 +521,4 @@ MLTPP_6.4.0 {
     extern "C++" {
       "Mlt::Profile::is_valid()";
   };
-};
+} MLTPP_0.9.8;
