@@ -49,6 +49,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// Get current position
 	mlt_position position =  mlt_transition_get_position( transition, a_frame );
 
+	// Obtain the normalised width and height from the a_frame
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
+	int normalised_width = profile->width;
+	int normalised_height = profile->height;
+
 	// Check transform
 	if ( mlt_properties_get( transition_properties, "rect" ) )
 	{
@@ -58,6 +63,14 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		b_height = rect.h;
 		opacity = rect.o;
 	}
+	else
+	{
+		b_width = normalised_width;
+		b_height = normalised_height;
+	}
+
+	double output_ar = mlt_profile_sar( profile );
+	mlt_frame_set_aspect_ratio( b_frame, output_ar );
 
 	if ( mlt_properties_get( transition_properties, "rotation" ) )
 	{
@@ -68,22 +81,21 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// This is not a field-aware transform.
 	mlt_properties_set_int( b_properties, "consumer_deinterlace", 1 );
-
-	// Request full resolution of b frame image.
-	mlt_properties_set_int( b_properties, "rescale_width", b_width );
-	mlt_properties_set_int( b_properties, "rescale_height", b_height );
+	mlt_properties_set_int( b_properties, "consumer_deinterlace", 1 );
 
 	// Suppress padding and aspect normalization.
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
 	if ( interps )
 		interps = strdup( interps );
-	mlt_properties_set( b_properties, "rescale.interp", "none" );
+
+	// Required for yuv scaling
+	b_width -= b_width % 2;
 
 	// fetch image
 	*format = mlt_image_rgb24a;
 	error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
 
-	if (error)
+	if ( error )
 	{
 		return error;
 	}
@@ -107,13 +119,12 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			hasAlpha = true;
 		}
 	}
-
 	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height ) )
 	{
 		hasAlpha = true;
 	}
 
-	if (!hasAlpha)
+	if ( !hasAlpha )
 	{
 		// If no transform, check if top frame has an alpha channel
 		uint8_t *src = b_image;
@@ -132,7 +143,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			}
 		}
 	}
-	if (!hasAlpha)
+	if ( !hasAlpha )
 	{
 		// Prepare output image
 		*width = b_width;
@@ -142,6 +153,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		// No transparency, return top frame
 		memcpy( *image, b_image, image_size );
 		mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
+		free( interps );
 		return 0;
 	}
 	// Prepare output image
@@ -153,6 +165,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	error = mlt_frame_get_image( a_frame, &a_image, format, width, height, 1 );
 	if (error)
 	{
+		free( interps );
 		return error;
 	}
 
@@ -176,14 +189,13 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	QImage topImg;
 	convert_mlt_to_qimage_rgba( b_image, &topImg, b_width, b_height );
 
+
 	// setup Qt drawing
 	QPainter painter( &bottomImg );
 	painter.setCompositionMode( ( QPainter::CompositionMode ) mlt_properties_get_int( transition_properties, "compositing" ) );
 	painter.setRenderHints( QPainter::Antialiasing | QPainter::SmoothPixmapTransform, hqPainting );
-	if ( mlt_properties_get( transition_properties, "rect" ) ) {
-		painter.setTransform(transform);
-		painter.setOpacity(opacity);
-	}
+	painter.setTransform(transform);
+	painter.setOpacity(opacity);
 
 	// Composite top frame
 	painter.drawImage(0, 0, topImg);
@@ -192,7 +204,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	painter.end();
 	convert_qimage_to_mlt_rgba( &bottomImg, *image, *width, *height );
 	mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
-
+	free( interps );
 	return error;
 }
 

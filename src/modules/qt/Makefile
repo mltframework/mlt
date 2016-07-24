@@ -7,14 +7,15 @@ LDFLAGS := -L../../framework -lmlt -lpthread -lm -L../../mlt++ -lmlt++ $(LDFLAGS
 
 TARGET = ../libmltqt$(LIBSUF)
 
-OBJS = factory.o producer_qimage.o producer_kdenlivetitle.o filter_qtblend.o
+OBJS = factory.o producer_qimage.o producer_kdenlivetitle.o
 CPPOBJS = common.o \
 	graph.o \
 	filter_audiowaveform.o \
 	qimage_wrapper.o \
 	kdenlivetitle_wrapper.o \
 	producer_qtext.o \
-	transition_qtblend.o
+	transition_qtblend.o \
+	filter_qtblend.o
 
 ifdef USE_QT_OPENGL
 	CPPOBJS += consumer_qglsl.o

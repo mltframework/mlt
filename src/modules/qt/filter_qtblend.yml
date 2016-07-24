@@ -10,34 +10,31 @@ language: en
 tags:
   - Video
 parameters:
-  - identifier: background
-    argument: yes
-    title: Background
+  - identifier: rect
+    title: Rectangle
+    type: geometry
     description: >
-      The specification for a producer to act as the background image.
-    type: string
-    default: colour:0
-
-  - identifier: producer.*
-    title: Producer properties
-    description: A property and its value to apply to the producer.
-    type: properties
+      Keyframable rectangle specification.
     mutable: yes
 
-  - identifier: transition.*
-    title: Transition properties
+    - identifier: compositing
+    title: Composition mode
     description: >
-      A property and its value to apply to the transition. This is the primary
-      means to use this filter. See the qtblend transition for details.
-    type: properties
-    service-name: transition.qtblend
-    mutable: yes
-
-  - identifier: use_normalised
-    title: Use normalized
-    description: >
-      Use the profile video resolution when requesting the image from the
-      filter producer instead of the resolution requested by the consumer.
-    type: boolean
+      Defines which composition operation will be performed (see QPainter CompositionMode for doc)
+    type: integer
     default: 0
+    minimum: 0
+    maximum: 40
     mutable: yes
+    widget: spinbox
+
+  - identifier: rotation
+    title: Rotation angle
+    description: >
+      Angle for rotation.
+    type: float
+    default: 1
+    minimum: 0
+    maximum: 360
+    mutable: yes
+
