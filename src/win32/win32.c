@@ -70,54 +70,58 @@ int setenv(const char *name, const char *value, int overwrite)
 static int iconv_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out, const char* encoding )
 {
 	char *text = mlt_properties_get( properties, prop_name );
-	int result = -1;
+	int result = 0;
 
-	iconv_t cd = iconv_open( encoding, "UTF-8" );
-	if ( text && ( cd != ( iconv_t )-1 ) ) {
-		size_t inbuf_n = strlen( text );
-		size_t outbuf_n = inbuf_n * 6;
-		char *outbuf = mlt_pool_alloc( outbuf_n );
-		char *outbuf_p = outbuf;
+	if ( text ) {
+		iconv_t cd = iconv_open( encoding, "UTF-8" );
+		if ( cd != (iconv_t) -1 ) {
+			size_t inbuf_n = strlen( text );
+			size_t outbuf_n = inbuf_n * 6;
+			char *outbuf = mlt_pool_alloc( outbuf_n );
+			char *outbuf_p = outbuf;
 
-		memset( outbuf, 0, outbuf_n );
+			memset( outbuf, 0, outbuf_n );
 
-		if ( text != NULL && strcmp( text, "" ) && iconv( cd, &text, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
-			mlt_properties_set( properties, prop_name_out, outbuf );
-		else
-			mlt_properties_set( properties, prop_name_out, "" );
+			if ( text != NULL && strcmp( text, "" ) && iconv( cd, &text, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
+				mlt_properties_set( properties, prop_name_out, outbuf );
+			else
+				mlt_properties_set( properties, prop_name_out, "" );
 
-		mlt_pool_release( outbuf );
-		result = 0;
+			mlt_pool_release( outbuf );
+			result = iconv_close( cd );
+		} else {
+			result = -1;
+		}
 	}
-	if ( cd != (iconv_t) -1 )
-		iconv_close( cd );
 	return result;
 }
 
 static int iconv_to_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out, const char* encoding )
 {
 	char *text = mlt_properties_get( properties, prop_name );
-	int result = -1;
+	int result = 0;
 
-	iconv_t cd = iconv_open( "UTF-8", encoding );
-	if ( text && ( cd != ( iconv_t )-1 ) ) {
-		size_t inbuf_n = strlen( text );
-		size_t outbuf_n = inbuf_n * 6;
-		char *outbuf = mlt_pool_alloc( outbuf_n );
-		char *outbuf_p = outbuf;
+	if ( text ) {
+		iconv_t cd = iconv_open( "UTF-8", encoding );
+		if ( cd != (iconv_t) -1 ) {
+			size_t inbuf_n = strlen( text );
+			size_t outbuf_n = inbuf_n * 6;
+			char *outbuf = mlt_pool_alloc( outbuf_n );
+			char *outbuf_p = outbuf;
 
-		memset( outbuf, 0, outbuf_n );
+			memset( outbuf, 0, outbuf_n );
 
-		if ( text != NULL && strcmp( text, "" ) && iconv( cd, &text, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
-			mlt_properties_set( properties, prop_name_out, outbuf );
-		else
-			mlt_properties_set( properties, prop_name_out, "" );
+			if ( text != NULL && strcmp( text, "" ) && iconv( cd, &text, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
+				mlt_properties_set( properties, prop_name_out, outbuf );
+			else
+				mlt_properties_set( properties, prop_name_out, "" );
 
-		mlt_pool_release( outbuf );
-		result = 0;
+			mlt_pool_release( outbuf );
+			result = iconv_close( cd );
+		} else {
+			result = -1;
+		}
 	}
-	if ( cd != (iconv_t) -1 )
-		iconv_close( cd );
 	return result;
 }
 
