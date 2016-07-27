@@ -9,6 +9,9 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+description: >
+  A filter allowing compositing and transform.
+
 parameters:
   - identifier: rect
     title: Rectangle
@@ -17,16 +20,16 @@ parameters:
       Keyframable rectangle specification.
     mutable: yes
 
-    - identifier: compositing
+  - identifier: compositing
     title: Composition mode
     description: >
-      Defines which composition operation will be performed (see QPainter CompositionMode for doc)
+      Defines which composition operation will be performed (see QPainter CompositionMode for doc).
     type: integer
     default: 0
     minimum: 0
     maximum: 40
     mutable: yes
-    widget: spinbox
+    widget: spinner
 
   - identifier: rotation
     title: Rotation angle
@@ -37,4 +40,6 @@ parameters:
     minimum: 0
     maximum: 360
     mutable: yes
+    widget: spinner
+
 
