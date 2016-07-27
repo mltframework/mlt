@@ -42,6 +42,7 @@ typedef struct
 	AVFilterGraph* avfilter_graph;
 	AVFrame* avinframe;
 	AVFrame* avoutframe;
+	int format;
 	int reset;
 } private_data;
 
@@ -161,6 +162,8 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 	char channel_layout_str[64];
 	int ret;
 
+	pdata->format = format;
+
 	// Set up formats
 	sample_fmts[0] = mlt_to_av_audio_format( format );
 	sample_rates[0] = frequency;
@@ -182,7 +185,6 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 		av_opt_set_int( pdata->avfilter_graph, "threads",
 			FFMAX( 0, mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "av.threads" ) ), 0 );
 	}
-
 
 	// Initialize the buffer source filter context
 	pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, abuffersrc, "in");
@@ -275,6 +277,8 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	AVRational timebase = (AVRational){ profile->frame_rate_den, profile->frame_rate_num };
 	AVRational framerate = (AVRational){ profile->frame_rate_num, profile->frame_rate_den };
 	int ret;
+
+	pdata->format = format;
 
 	// Set up formats
 	pixel_fmts[0] = mlt_to_av_image_format( format );
@@ -385,7 +389,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if( pdata->reset || !pdata->avfilter_graph )
+	if( pdata->reset || !pdata->avfilter_graph || pdata->format != *format )
 	{
 		init_audio_filtergraph( filter, *format, *frequency, *channels );
 	}
@@ -483,7 +487,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if( pdata->reset || !pdata->avfilter_graph )
+	if( pdata->reset || !pdata->avfilter_graph || pdata->format != *format )
 	{
 		init_image_filtergraph( filter, *format, *width, *height );
 		pdata->reset = 0;
@@ -685,6 +689,7 @@ mlt_filter filter_avfilter_init( mlt_profile profile, mlt_service_type type, con
 		pdata->avfilter_graph = NULL;
 		pdata->avinframe = av_frame_alloc();
 		pdata->avoutframe = av_frame_alloc();
+		pdata->format = -1;
 		pdata->reset = 1;
 
 		filter->close = filter_close;
