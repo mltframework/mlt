@@ -121,6 +121,7 @@ static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat v
 	// it does not do the same for "results". Therefore, if both exist and
 	// "filename" ends with "results", then use "filename" instead.
 	if ( results && filename
+		 && strlen(filename) >= strlen(results)
 		 && !strcmp( &filename[strlen(filename) - strlen(results)], results ) )
 	{
 		// Convert file name string encoding.
