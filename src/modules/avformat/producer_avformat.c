@@ -692,7 +692,6 @@ static int setup_video_filters( producer_avformat self )
 	AVCodecContext *codec_context = stream->codec;
 
 	self->vfilter_graph = avfilter_graph_alloc();
-	self->vfilter_graph->scale_sws_opts = strdup("");
 
 	// From ffplay.c:configure_video_filters().
 	char buffersrc_args[256];
