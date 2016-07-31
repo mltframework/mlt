@@ -1689,12 +1689,15 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		parse_url( context->params, url_decode( filename, data ) );
 
 		// We need the directory prefix which was used for the xml
-		if ( strchr( filename, '/' ) )
+		if ( strchr( filename, '/' ) || strchr( filename, '\\' ) )
 		{
 			char *root = NULL;
 			mlt_properties_set( context->producer_map, "root", filename );
 			root = mlt_properties_get( context->producer_map, "root" );
-			*( strrchr( root, '/' ) ) = '\0';
+			if ( strchr( root, '/') )
+				*( strrchr( root, '/' ) ) = '\0';
+			else if ( strchr( root, '\\') )
+				*( strrchr( root, '\\' ) ) = '\0';
 
 			// If we don't have an absolute path here, we're heading for disaster...
 			if ( root[ 0 ] != '/' && !strchr( root, ':' ) )
