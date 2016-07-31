@@ -236,7 +236,11 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
     ladspa_path = g_strdup ("/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
 #endif
   
+#ifdef _WIN32
+  for (dir = strtok (ladspa_path, ";"); dir; dir = strtok (NULL, ";"))
+#else
   for (dir = strtok (ladspa_path, ":"); dir; dir = strtok (NULL, ":"))
+#endif
     plugin_mgr_get_dir_plugins (plugin_mgr, dir);
 
   g_free (ladspa_path);
