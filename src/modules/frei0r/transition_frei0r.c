@@ -45,6 +45,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// An optimization for cairoblend in normal (over) mode and opaque B frame.
 	if ( b_frame->convert_image
 		 && !strcmp( "frei0r.cairoblend", mlt_properties_get( properties, "mlt_service" ) )
+		 && ( !mlt_properties_get( b_props, "crop.original_width" ) )
 		 && ( !mlt_properties_get( properties, "0" ) || mlt_properties_get_double( properties, "0" ) == 1.0 )
 		 && ( !mlt_properties_get( properties, "1" ) || !strcmp( "normal", mlt_properties_get( properties, "1" ) ) ) )
 	{
@@ -64,7 +65,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				return 0;
 		} else {
 			// There is no alpha channel.
-			mlt_log_verbose( MLT_TRANSITION_SERVICE(transition), "no alpha channel\n" );
+			mlt_properties_debug( b_props, "b_frame", stderr);
 			return 0;
 		}
 		// It is not opaque so convert it to rgba.
