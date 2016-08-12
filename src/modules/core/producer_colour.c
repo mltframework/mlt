@@ -95,7 +95,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
 	
 	// Choose default image format if specific request is unsuported
-	if (*format!=mlt_image_yuv422  && *format!=mlt_image_rgb24 && *format!= mlt_image_glsl && *format!= mlt_image_glsl_texture)
+	if (*format!=mlt_image_yuv420p  && *format!=mlt_image_yuv422  && *format!=mlt_image_rgb24 && *format!= mlt_image_glsl && *format!= mlt_image_glsl_texture)
 		*format = mlt_image_rgb24a;
 
 	// See if we need to regenerate
@@ -120,6 +120,17 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		switch ( *format )
 		{
+		case mlt_image_yuv420p:
+		{
+			uint8_t y, u, v;
+
+			RGB2YUV_601_SCALED( color.r, color.g, color.b, y, u, v );
+			int plane_size =  *width * *height;
+			memset(p + 0, y, plane_size);
+			memset(p + plane_size, u, plane_size/4);
+			memset(p + plane_size + plane_size/4, v, plane_size/4);
+			break;
+		}
 		case mlt_image_yuv422:
 		{
 			int uneven = *width % 2;
