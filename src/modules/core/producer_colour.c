@@ -122,10 +122,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		{
 		case mlt_image_yuv420p:
 		{
+			int plane_size =  *width * *height;
 			uint8_t y, u, v;
 
-			RGB2YUV_601_SCALED( color.r, color.g, color.b, y, u, v );
-			int plane_size =  *width * *height;
+			RGB2YUV_601_SCALED( color.r, color.g, color.b, y, u, v );			
 			memset(p + 0, y, plane_size);
 			memset(p + plane_size, u, plane_size/4);
 			memset(p + plane_size + plane_size/4, v, plane_size/4);
@@ -169,7 +169,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		case mlt_image_glsl_texture:
 			memset(p, 0, size);
 			break;
-		default:
+		mlt_image_rgb24a:
 			while ( --i )
 			{
 				*p ++ = color.r;
