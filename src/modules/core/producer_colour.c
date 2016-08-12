@@ -93,6 +93,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
 	if ( *height <= 0 )
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
+	
+	// Choose default image format if specific request is unsuported
+	if (*format!=mlt_image_yuv422  && *format!=mlt_image_rgb24 && *format!= mlt_image_glsl && *format!= mlt_image_glsl_texture)
+		*format = mlt_image_rgb24a;
 
 	// See if we need to regenerate
 	if ( !now || ( then && strcmp( now, then ) ) || *width != current_width || *height != current_height || *format != current_format )
@@ -155,7 +159,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			memset(p, 0, size);
 			break;
 		default:
-			*format = mlt_image_rgb24a;
 			while ( --i )
 			{
 				*p ++ = color.r;
