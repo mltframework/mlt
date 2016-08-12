@@ -169,7 +169,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		case mlt_image_glsl_texture:
 			memset(p, 0, size);
 			break;
-		mlt_image_rgb24a:
+		case mlt_image_rgb24a:
 			while ( --i )
 			{
 				*p ++ = color.r;
