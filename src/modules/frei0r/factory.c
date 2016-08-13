@@ -354,7 +354,11 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 	int dircount=mlt_tokeniser_parse_new (
 		tokeniser,
 		frei0r_path,
-		 ":"
+#ifdef _WIN32
+		";"
+#else
+		":"
+#endif
 	);
 	void* ret=NULL;
 	while (dircount--){
@@ -405,7 +409,11 @@ MLT_REPOSITORY
 	int dircount=mlt_tokeniser_parse_new (
 		tokeniser ,
 		frei0r_path,
+#ifdef _WIN32
+		";"
+#else
 		":"
+#endif
 	);
 	char dirname[PATH_MAX];
 	snprintf( dirname, PATH_MAX, "%s/frei0r/blacklist.txt", mlt_environment( "MLT_DATA" ) );
