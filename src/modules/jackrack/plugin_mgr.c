@@ -4,8 +4,8 @@
  * Original:
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
- * Modification for MLT:
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Modifications for MLT:
+ * Copyright (C) 2004-2016 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -236,11 +236,7 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
     ladspa_path = g_strdup ("/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
 #endif
   
-#ifdef _WIN32
-  for (dir = strtok (ladspa_path, ";"); dir; dir = strtok (NULL, ";"))
-#else
-  for (dir = strtok (ladspa_path, ":"); dir; dir = strtok (NULL, ":"))
-#endif
+  for (dir = strtok (ladspa_path, MLT_DIRLIST_DELIMITER); dir; dir = strtok (NULL, MLT_DIRLIST_DELIMITER))
     plugin_mgr_get_dir_plugins (plugin_mgr, dir);
 
   g_free (ladspa_path);

@@ -198,6 +198,10 @@ extern int usleep(unsigned int useconds);
 extern int nanosleep( const struct timespec * rqtp, struct timespec * rmtp );
 #endif
 extern int setenv(const char *name, const char *value, int overwrite);
-#endif
+
+#define MLT_DIRLIST_DELIMITER ";"
+#else
+#define MLT_DIRLIST_DELIMITER ";"
+#endif /* ifdef _WIN32 */
 
 #endif
