@@ -201,7 +201,7 @@ extern int setenv(const char *name, const char *value, int overwrite);
 
 #define MLT_DIRLIST_DELIMITER ";"
 #else
-#define MLT_DIRLIST_DELIMITER ";"
+#define MLT_DIRLIST_DELIMITER ":"
 #endif /* ifdef _WIN32 */
 
 #endif
