@@ -28,20 +28,20 @@
 
 #define MAX_CHANNELS (6)
 #define MAX_SAMPLES  (192000/(24000/1001))
-#define PCM16_BYTES(samples, channels) ((samples) * (channels) * sizeof(int16_t))
-#define MAX_BYTES    PCM16_BYTES( MAX_SAMPLES, MAX_CHANNELS )
+#define SAMPLE_BYTES(samples, channels) ((samples) * (channels) * sizeof(float))
+#define MAX_BYTES    SAMPLE_BYTES( MAX_SAMPLES, MAX_CHANNELS )
 
 typedef struct transition_mix_s
 {
 	mlt_transition parent;
-	int16_t src_buffer[MAX_SAMPLES *  MAX_CHANNELS];
-	int16_t dest_buffer[MAX_SAMPLES * MAX_CHANNELS];
+	float src_buffer[MAX_SAMPLES *  MAX_CHANNELS];
+	float dest_buffer[MAX_SAMPLES * MAX_CHANNELS];
 	int src_buffer_count;
 	int dest_buffer_count;
 } *transition_mix;
 
-static void mix_audio( double weight_start, double weight_end, int16_t *buffer_a,
-	int16_t *buffer_b, int channels_a, int channels_b, int channels_out, int samples )
+static void mix_audio( double weight_start, double weight_end, float *buffer_a,
+	float *buffer_b, int channels_a, int channels_b, int channels_out, int samples )
 {
 	int i, j;
 	double a, b, v;
@@ -57,7 +57,6 @@ static void mix_audio( double weight_start, double weight_end, int16_t *buffer_a
 			a = (double) buffer_a[ i * channels_a + j ];
 			b = (double) buffer_b[ i * channels_b + j ];
 			v = mix * b + (1.0 - mix) * a;
-			v = CLAMP( v, -32767.0, 32768.0 );
 			buffer_a[ i * channels_a + j ] = v;
 		}
 		mix += mix_step;
@@ -65,7 +64,7 @@ static void mix_audio( double weight_start, double weight_end, int16_t *buffer_a
 }
 
 // This filter uses an inline low pass filter to allow mixing without volume hacking.
-static void combine_audio( double weight, int16_t *buffer_a, int16_t *buffer_b,
+static void combine_audio( double weight, float *buffer_a, float *buffer_b,
 	int channels_a, int channels_b, int channels_out, int samples )
 {
 	int i, j;
@@ -85,8 +84,7 @@ static void combine_audio( double weight, int16_t *buffer_a, int16_t *buffer_b,
 			a = (double) buffer_a[ i * channels_a + j ];
 			b = (double) buffer_b[ i * channels_b + j ];
 			v = weight * a + b;
-			v = CLAMP( v, -32767.0, 32768.0 );
-			v_prev[j] = buffer_a[ i * channels_a + j ] = (int16_t)( v * A + v_prev[j] * B );
+			v_prev[j] = buffer_a[ i * channels_a + j ] = v * A + v_prev[j] * B;
 		}
 	}
 }
@@ -108,13 +106,13 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( frame_b );
 
 	transition_mix self = transition->child;
-	int16_t *buffer_b, *buffer_a;
+	float *buffer_b, *buffer_a;
 	int frequency_b = *frequency, frequency_a = *frequency;
 	int channels_b = *channels, channels_a = *channels;
 	int samples_b = *samples, samples_a = *samples;
 
 	// We can only mix s16
-	*format = mlt_audio_s16;
+	*format = mlt_audio_f32le;
 	mlt_frame_get_audio( frame_b, (void**) &buffer_b, format, &frequency_b, &channels_b, &samples_b );
 	mlt_frame_get_audio( frame_a, (void**) &buffer_a, format, &frequency_a, &channels_a, &samples_a );
 
@@ -130,12 +128,12 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame_a ), "silent_audio" );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame_a ), "silent_audio", 0 );
 	if ( silent )
-		memset( buffer_a, 0, samples_a * channels_a * sizeof( int16_t ) );
+		memset( buffer_a, 0, samples_a * channels_a * sizeof( float ) );
 
 	silent = mlt_properties_get_int( b_props, "silent_audio" );
 	mlt_properties_set_int( b_props, "silent_audio", 0 );
 	if ( silent )
-		memset( buffer_b, 0, samples_b * channels_b * sizeof( int16_t ) );
+		memset( buffer_b, 0, samples_b * channels_b * sizeof( float ) );
 
 	// determine number of samples to process
 	*samples = MIN( self->src_buffer_count + samples_b, self->dest_buffer_count + samples_a );
@@ -144,13 +142,13 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 
 	// Prevent src buffer overflow by discarding oldest samples.
 	samples_b = MIN( samples_b, MAX_SAMPLES * MAX_CHANNELS / channels_b );
-	size_t bytes = PCM16_BYTES( samples_b, channels_b );
-	if ( PCM16_BYTES( self->src_buffer_count + samples_b, channels_b ) > MAX_BYTES ) {
+	size_t bytes = SAMPLE_BYTES( samples_b, channels_b );
+	if ( SAMPLE_BYTES( self->src_buffer_count + samples_b, channels_b ) > MAX_BYTES ) {
 		mlt_log_verbose( MLT_TRANSITION_SERVICE(transition), "buffer overflow: src_buffer_count %d\n",
 					  self->src_buffer_count );
 		self->src_buffer_count = MAX_SAMPLES * MAX_CHANNELS / channels_b - samples_b;
 		memmove( self->src_buffer, &self->src_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_b * channels_b],
-				 PCM16_BYTES( samples_b, channels_b ) );
+				 SAMPLE_BYTES( samples_b, channels_b ) );
 	}
 	// Buffer new src samples.
 	memcpy( &self->src_buffer[self->src_buffer_count * channels_b], buffer_b, bytes );
@@ -159,13 +157,13 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 
 	// Prevent dest buffer overflow by discarding oldest samples.
 	samples_a = MIN( samples_a, MAX_SAMPLES * MAX_CHANNELS / channels_a );
-	bytes = PCM16_BYTES( samples_a, channels_a );
-	if ( PCM16_BYTES( self->dest_buffer_count + samples_a, channels_a ) > MAX_BYTES ) {
+	bytes = SAMPLE_BYTES( samples_a, channels_a );
+	if ( SAMPLE_BYTES( self->dest_buffer_count + samples_a, channels_a ) > MAX_BYTES ) {
 		mlt_log_verbose( MLT_TRANSITION_SERVICE(transition), "buffer overflow: dest_buffer_count %d\n",
 					  self->dest_buffer_count );
 		self->dest_buffer_count = MAX_SAMPLES * MAX_CHANNELS / channels_a - samples_a;
 		memmove( self->dest_buffer, &self->dest_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_a * channels_a],
-				 PCM16_BYTES( samples_a, channels_a ) );
+				 SAMPLE_BYTES( samples_a, channels_a ) );
 	}
 	// Buffer the new dest samples.
 	memcpy( &self->dest_buffer[self->dest_buffer_count * channels_a], buffer_a, bytes );
@@ -196,7 +194,7 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	}
 
 	// Copy the audio into the frame.
-	bytes = PCM16_BYTES( *samples, *channels );
+	bytes = SAMPLE_BYTES( *samples, *channels );
 	*buffer = mlt_pool_alloc( bytes );
 	memcpy( *buffer, buffer_a, bytes );
 	mlt_frame_set_audio( frame_a, *buffer, *format, bytes, mlt_pool_release );
@@ -225,13 +223,13 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	self->src_buffer_count -= samples_b;
 	if ( self->src_buffer_count ) {
 		memmove( self->src_buffer, &self->src_buffer[samples_b * channels_b],
-			PCM16_BYTES( self->src_buffer_count, channels_b ));
+			SAMPLE_BYTES( self->src_buffer_count, channels_b ));
 	}
 	// Consume the dest buffer.
 	self->dest_buffer_count -= samples_a;
 	if ( self->dest_buffer_count ) {
 		memmove( self->dest_buffer, &self->dest_buffer[samples_a * channels_a],
-			PCM16_BYTES( self->dest_buffer_count, channels_a ));
+			SAMPLE_BYTES( self->dest_buffer_count, channels_a ));
 	}
 
 	return error;
