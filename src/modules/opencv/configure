@@ -1,0 +1,35 @@
+#!/bin/sh
+
+if [ "$help" = "1" ]
+then
+	cat << EOF
+OpenCV options:
+
+  This module requires OpenCV.
+  The Tracker filter requires OpenCV >= 3.1.0 and the tracking contrib module.
+
+
+EOF
+
+else
+	pkg-config --atleast-version=3.1.0 'opencv'
+	if [ $? -eq 0 ]
+	then
+                result=`pkg-config --libs opencv | grep "opencv_tracking"`
+                if [ -z "$result" ]
+                then
+                        echo "- OpenCV tracking contrib module NOT found, disabling OpenCV modules"
+                        touch ../disable-opencv
+                        exit 0
+                else
+                        echo "CFLAGS += $(pkg-config --cflags opencv)" >> config.mak
+                        echo "LDFLAGS += $(pkg-config --libs opencv)" >> config.mak
+                fi
+	else
+		echo "- OpenCV >= 3.1.0 NOT found, disabling OpenCV modules"
+		touch ../disable-opencv
+                exit 0
+	fi
+
+	exit 0
+fi
