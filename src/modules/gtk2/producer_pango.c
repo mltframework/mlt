@@ -212,6 +212,7 @@ mlt_producer producer_pango_init( const char *filename )
 		else if ( strstr( filename, ".mpl" ) ) 
 		{
 			int i = 0;
+			mlt_position out_point = 0;
 			mlt_properties contents = mlt_properties_load( filename );
 			mlt_geometry key_frames = mlt_geometry_init( );
 			struct mlt_geometry_item_s item;
@@ -231,8 +232,11 @@ mlt_producer producer_pango_init( const char *filename )
 					( *strchr( value, '~' ) ) = '\n';
 				item.frame = atoi( name );
 				mlt_geometry_insert( key_frames, &item );
+				out_point = MAX( out_point, item.frame );
 			}
 			mlt_geometry_interpolate( key_frames );
+			mlt_properties_set_position( properties, "length", out_point + 1 );
+			mlt_properties_set_position( properties, "out", out_point );
 		}
 		else
 		{
