@@ -31,6 +31,8 @@ typedef struct
 	bool playback;
 	bool analyze;
 	int last_position;
+	mlt_position producer_in;
+	mlt_position producer_length;
 } private_data;
 
 
@@ -53,7 +55,9 @@ static void property_changed( mlt_service owner, mlt_filter filter, char *name )
                 {
 			// Analysis data was discarded
 			pdata->initialized = false;
+			pdata->producer_length = 0;
 			pdata->playback = false;
+			mlt_properties_set( filter_properties, "_results", NULL );
 		}
 	}
 	if ( !pdata->initialized )
@@ -81,9 +85,7 @@ static void property_changed( mlt_service owner, mlt_filter filter, char *name )
 	}
 	else if ( !strcmp( name, "_reset" ) )
 	{
-		mlt_properties_set(filter_properties, "results", (char*) NULL );
-		pdata->playback = false;
-		pdata->initialized = false;
+		mlt_properties_set( filter_properties, "results", NULL );
 	}
 }
 
@@ -200,8 +202,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_position position = mlt_filter_get_position( filter, frame );
-	mlt_position length = mlt_filter_get_length2( filter, frame );
-
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 	int shape_width = mlt_properties_get_int( filter_properties, "shape_width" );
 	int blur = mlt_properties_get_int( filter_properties, "blur" );
@@ -218,7 +218,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	private_data* data = (private_data*) filter->child;
 	if ( !data->initialized )
         {
-		mlt_properties_anim_get_int( filter_properties, "results", 0, length );
+		if ( data->producer_length == 0 )
+		{
+			mlt_producer producer = mlt_frame_get_original_producer( frame );
+			if ( producer )
+			{
+				data->producer_in = mlt_producer_get_in( producer );
+				data->producer_length = mlt_producer_get_playtime( producer );
+			}
+		}
+		mlt_properties_anim_get_int( filter_properties, "results", 0, data->producer_length );
 		mlt_animation anim = mlt_properties_get_animation( filter_properties, "results" );
 		if ( anim && mlt_animation_key_count(anim) > 0 )
 		{
@@ -230,11 +239,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( data->playback )
 	{
 		// Clip already analysed, don't re-process
-		apply( filter, data, *width, *height, position, length );
+		apply( filter, data, *width, *height, position - data->producer_in, data->producer_length );
 	}
 	else
 	{
-		analyze( filter, cvFrame, data, *width, *height, position, length );
+		analyze( filter, cvFrame, data, *width, *height, position - data->producer_in, data->producer_length );
 	}
 	
 	if ( blur > 0 )
@@ -334,6 +343,8 @@ mlt_filter filter_tracker_init( mlt_profile profile, mlt_service_type type, cons
 		data->boundingBox.height = 0;
 		data->analyze = false;
 		data->last_position = -1;
+		data->producer_in = 0;
+		data->producer_length = 0;
 		filter->child = data;
 
 		// Create a unique ID for storing data on the frame
