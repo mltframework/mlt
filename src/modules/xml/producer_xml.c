@@ -937,6 +937,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		qualify_property( context, properties, "composite.luma" );
 		qualify_property( context, properties, "producer.resource" );
 		qualify_property( context, properties, "filename" );
+		qualify_property( context, properties, "av.file" );
 		mlt_properties_inherit( filter_props, properties );
 
 		// Attach all filters from service onto filter
