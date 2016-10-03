@@ -474,6 +474,9 @@ protected:
 
 		*decklinkFrame = frame;
 
+		if ( !frame )
+			return false;
+
 		// Make the first line black for field order correction.
 		if ( S_OK == frame->GetBytes( (void**) &buffer ) && buffer )
 		{
@@ -762,6 +765,7 @@ protected:
 		{
 			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDropped == completed\n" );
 			m_count++;
+			ScheduleNextFrame( false );
 		}
 
 		return S_OK;
