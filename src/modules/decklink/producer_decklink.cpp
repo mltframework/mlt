@@ -487,7 +487,8 @@ public:
 			}
 
 			// Get timecode
-			if ( video->GetTimecode( bmdTimecodeVITC, &timecode ) == S_OK && timecode )
+			if ( ( S_OK == video->GetTimecode( bmdTimecodeRP188, &timecode ) ||
+				S_OK == video->GetTimecode( bmdTimecodeVITC, &timecode ))  && timecode )
 			{
 				DLString timecodeString = 0;
 
