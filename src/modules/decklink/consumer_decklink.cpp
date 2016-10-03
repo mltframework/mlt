@@ -729,6 +729,9 @@ protected:
 				mlt_log_error( getConsumer(), "%s:%d mlt_frame_get_audio failed\n", __FUNCTION__, __LINE__);
 
 			mlt_frame_close( frame );
+
+			if ( !preroll )
+				RenderAudioSamples ( preroll );
 		}
 
 		if ( preroll )
