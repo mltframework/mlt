@@ -361,6 +361,9 @@ public:
 			IDeckLinkAudioInputPacket* audio )
 	{
 		mlt_frame frame = NULL;
+		struct timeval arrived;
+
+		gettimeofday(&arrived, NULL);
 
 		if( !m_reprio )
 		{
@@ -534,6 +537,8 @@ public:
 		// Put frame in queue
 		if ( frame )
 		{
+			mlt_properties_set_int64( MLT_FRAME_PROPERTIES( frame ), "arrived",
+				arrived.tv_sec * 1000000LL + arrived.tv_usec );
 			int queueMax = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "buffer" );
 			pthread_mutex_lock( &m_mutex );
 			if ( mlt_deque_count( m_queue ) < queueMax )
