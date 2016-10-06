@@ -21,9 +21,13 @@ else ifneq ($(targetos), MinGW)
 LDFLAGS += -lX11
 endif
 
+ifeq ($(USE_PKG_CONFIG), 1)
 CFLAGS += $(shell pkg-config --cflags sdl)
-
 LDFLAGS += $(shell pkg-config --libs sdl)
+else
+CFLAGS += $(shell sdl-config --cflags)
+LDFLAGS += $(shell sdl-config --libs)
+endif
 
 ifeq ($(WITH_SDL_IMAGE),1)
 OBJS += producer_sdl_image.o

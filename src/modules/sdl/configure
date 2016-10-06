@@ -1,17 +1,23 @@
 #!/bin/sh
 
-if [ "$help" != "1" ]
-then
+if [ "$help" != "1" ]; then
 
-	pkg-config --exists sdl > /dev/null 2>&1
-	disable_sdl=$?
+	if pkg-config --exists sdl > /dev/null 2>&1 ; then
+		PKG_CONFIG=1
+	elif sdl-config --version > /dev/null 2>&1 ; then
+		SDL_CONFIG=1
+	fi
 
-	if [ "$disable_sdl" = "0" ]
-	then
-		echo > config.mak
+	if [ "$PKG_CONFIG" ]; then
+		echo "USE_PKG_CONFIG=1" > config.mak
 		image=`pkg-config --variable=prefix sdl`/include/SDL/SDL_image.h
-		if [ -f "$image" ]
-		then
+		if [ -f "$image" ]; then
+			echo "WITH_SDL_IMAGE=1" >> config.mak
+		fi
+	elif [ "$SDL_CONFIG" ]; then
+		echo "USE_PKG_CONFIG=0" > config.mak
+		image=`sdl-config --prefix`/include/SDL/SDL_image.h
+		if [ -f "$image" ]; then
 			echo "WITH_SDL_IMAGE=1" >> config.mak
 		fi
 	else
@@ -20,4 +26,3 @@ then
 	fi
 	exit 0
 fi
-
