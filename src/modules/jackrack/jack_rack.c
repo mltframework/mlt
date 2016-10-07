@@ -103,7 +103,11 @@ jack_rack_add_saved_plugin (jack_rack_t * jack_rack, saved_plugin_t * saved_plug
 {
   plugin_t * plugin = jack_rack_instantiate_plugin (jack_rack, saved_plugin->settings->desc);
   if (!plugin)
-    return;
+    {
+      mlt_log_warning( NULL, "%s: could not instantiate object file '%s'\n",
+                       __FUNCTION__, saved_plugin->settings->desc->object_file);
+      return;
+    }
   jack_rack->saved_plugins = g_slist_append (jack_rack->saved_plugins, saved_plugin);
   process_add_plugin (jack_rack->procinfo, plugin);
   jack_rack_add_plugin (jack_rack, plugin);

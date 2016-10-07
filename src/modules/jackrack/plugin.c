@@ -287,26 +287,31 @@ plugin_open_plugin (plugin_desc_t * desc,
   void * dl_handle;
   const char * dlerr;
   LADSPA_Descriptor_Function get_descriptor;
-    
+  
+  /* clear the error report */
+  dlerror ();
+
   /* open the object file */
-  dl_handle = dlopen (desc->object_file, RTLD_NOW|RTLD_GLOBAL);
-  if (!dl_handle)
+  dl_handle = dlopen (desc->object_file, RTLD_NOW);
+  dlerr = dlerror ();
+  if (!dl_handle || dlerr)
     {
+      if (!dlerr)
+          dlerr = "unknown error";
       mlt_log_warning( NULL, "%s: error opening shared object file '%s': %s\n",
-               __FUNCTION__, desc->object_file, dlerror());
+               __FUNCTION__, desc->object_file, dlerr);
       return 1;
     }
 
   
   /* get the get_descriptor function */
-  dlerror (); /* clear the error report */
-  
   get_descriptor = (LADSPA_Descriptor_Function)
     dlsym (dl_handle, "ladspa_descriptor");
-  
   dlerr = dlerror();
   if (dlerr)
     {
+      if (!dlerr)
+          dlerr = "unknown error";
       mlt_log_warning( NULL, "%s: error finding descriptor symbol in object file '%s': %s\n",
                __FUNCTION__, desc->object_file, dlerr);
       dlclose (dl_handle);
@@ -321,6 +326,13 @@ plugin_open_plugin (plugin_desc_t * desc,
 #endif
 
   *descriptor_ptr = get_descriptor (desc->index);
+  if (!*descriptor_ptr)
+    {
+      mlt_log_warning( NULL, "%s: error finding index %lu in object file '%s'\n",
+              __FUNCTION__, desc->index, desc->object_file);
+      dlclose (dl_handle);
+      return 1;
+    }
   *dl_handle_ptr = dl_handle;
   
   return 0;
