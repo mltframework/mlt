@@ -1979,11 +1979,15 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 						strbuf_printf( output, "|\n" );
 						output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( "|" ) );
 					}
-					else if ( strchr( value, ':' ) || strchr( value, '[' ) )
+					else if ( strchr( value, ':' ) || strchr( value, '[' ) || strchr( value, '\'' ) )
 					{
 						strbuf_printf( output, "\"" );
 						strbuf_escape( output, value, '"' );
 						strbuf_printf( output, "\"\n", value );
+					}
+					else if ( strchr( value, '"') )
+					{
+						strbuf_printf( output, "%s: '%s'\n", list->name[ i ], value );
 					}
 					else
 					{
@@ -2015,11 +2019,15 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 					strbuf_printf( output, "%s: |\n", list->name[ i ] );
 					output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( ": " ) );
 				}
-				else if ( strchr( value, ':' ) || strchr( value, '[' ) )
+				else if ( strchr( value, ':' ) || strchr( value, '[' ) || strchr( value, '\'' ) )
 				{
 					strbuf_printf( output, "%s: \"", list->name[ i ] );
 					strbuf_escape( output, value, '"' );
 					strbuf_printf( output, "\"\n" );
+				}
+				else if ( strchr( value, '"') )
+				{
+					strbuf_printf( output, "%s: '%s'\n", list->name[ i ], value );
 				}
 				else
 				{
