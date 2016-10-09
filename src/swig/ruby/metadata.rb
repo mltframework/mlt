@@ -3,7 +3,7 @@ require 'erb'
 require 'yaml'
 require './mlt'
 
-$folder = 'twiki'
+$folder = 'markdown'
 $repo = Mlt::Factory::init
 
 $optional_params = [
@@ -15,74 +15,93 @@ $optional_params = [
   'format',
   'widget'
 ]
-template = %q{%%META:TOPICPARENT{name="Plugins<%= type_title %>s"}%
-<noautolink>
----+ <%= type_title %>: <%= yml['identifier'] %> 
-%%TOC%
----++ Plugin Information
-title: <%= yml['title'] %> %BR%
+template = %q{---
+layout: standard
+title: Documentation
+wrap_title: "<%= type_title %>: <%= yml['identifier'] %>"
+category: plugin
+---
+{::options auto_ids="true" /}
+{:toc}
+
+## Plugin Information
+
+title: <%= yml['title'] %>  
 % if yml['tags']
 media types:
 %   yml['tags'].each do |x|
-<%= x %> 
+<%= x + "  " %>
 %   end
-%%BR%
+<%= "\n" %>
 % end
-description: <%= ERB::Util.h(yml['description']) %> %BR%
-version: <%= yml['version'] %> %BR%
-creator: <%= yml['creator'] %> %BR%
+description: <%= ERB::Util.h(yml['description']) %>  
+version: <%= yml['version'] %>  
+creator: <%= yml['creator'] %>  
 % yml['contributor'] and yml['contributor'].each do |x|
-contributor: <%= x %> %BR%
+contributor: <%= x %>  
 % end 
-<%= "copyright: #{yml['copyright']} %BR%\n" if yml['copyright'] %>
-<%= "license: #{yml['license']} %BR%\n" if yml['license'] %>
-<%= "URL: [[#{yml['url']}]] %BR%\n" if yml['url'] %>
-
+<%= "copyright: #{yml['copyright']}  \n" if yml['copyright'] %>
+<%= "license: #{yml['license']}  \n" if yml['license'] %>
+<%= "URL: [#{yml['url']}](#{yml['url']})  \n" if yml['url'] %>
 % if yml['notes']
----++ Notes
+
+## Notes
+
 <%= ERB::Util.h(yml['notes']) %>
 % end
-
 % if yml['bugs']
----++ Bugs
+
+## Bugs
+
 %   yml['bugs'].each do |x|
-   * <%= x %>
+* <%= x %>
 %   end
 % end
-
 % if yml['parameters']
----++ Parameters
+
+## Parameters
+
 %   yml['parameters'].each do |param|
----+++ <%= param['identifier'] %>
-<%= "title: #{param['title']} %BR%\n" if param['title'] %>
-<%= "description: #{ERB::Util.h(param['description'])} %BR%\n" if param['description'] %>
-type: <%= param['type'] %> %BR%
-readonly: <%= param['readonly'] or 'no' %> %BR%
-required: <%= param['required'] or 'no' %> %BR%
+### <%= param['identifier'] %>
+
+<%= "title: #{param['title']}  " if param['title'] %>  
+%     if param['description']
+description:
+%       if param['description'].include? "\n"
+<pre>
+<%= param['description'] %>
+</pre>
+%       else
+<%= "#{ERB::Util.h(param['description'])}  \n" %>
+%       end
+%     end
+type: <%= param['type'] %>  
+readonly: <%= param['readonly'] or 'no' %>  
+required: <%= param['required'] or 'no' %>  
 %     $optional_params.each do |key|
-<%= "#{key}: #{param[key]} %BR%\n" if param[key] %>
+<%= "#{key}: #{param[key]}  \n" if param[key] %>
 %     end
 %     if param['values']
-values:
+values:  
 %       param['values'].each do |value|
-   * <%= value %>
+* <%= value %>
 %       end
-%     end 
+%     end
 
 %   end
 % end
-</noautolink>
 }
 
 $processor = ERB.new(template, 0, "%<>")
 
 
 def output(mlt_type, services, type_title)
-  filename = File.join($folder, "Plugins#{type_title}s.txt")
+  filename = File.join($folder, "Plugins#{type_title}s.md")
   index = File.open(filename, 'w')
-  index.puts '%META:TOPICPARENT{name="Documentation"}%'
-  index.puts '<noautolink>'
-  index.puts "---+ #{type_title} Plugins"
+  index.puts '---'
+  index.puts 'title: Documentation'
+  index.puts "wrap_title: #{type_title} Plugins"
+  index.puts '---'
   unsorted = []
   (0..(services.count - 1)).each do |i|
     unsorted << services.get_name(i)
@@ -95,20 +114,19 @@ def output(mlt_type, services, type_title)
       begin
         yml = YAML.load(meta.serialise_yaml)
         if yml
-          File.open(filename + '.txt', 'w') do |f|
+		  File.open(filename + '.md', 'w') do |f|
             f.puts $processor.result(binding)
           end
         else
           puts "Failed to write file for #{filename}"
         end
         filename = type_title + name.capitalize.gsub('.', '-')
-        index.puts "   * [[#{filename}][#{name}]]: #{meta.get('title')}\n"
+        index.puts "* [#{name}](../#{filename}): #{meta.get('title')}\n"
       rescue SyntaxError
           puts "Failed to parse YAML for #{filename}"
       end
     end
   end 
-  index.puts '</noautolink>'
   index.close
 end
 
