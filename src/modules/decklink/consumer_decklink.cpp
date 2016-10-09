@@ -64,6 +64,7 @@ private:
 	uint32_t                    m_reprio;
 
 	mlt_deque                   m_aqueue;
+	pthread_mutex_t             m_aqueue_lock;
 	mlt_deque                   m_frames;
 
 	pthread_mutex_t             m_op_lock;
@@ -128,6 +129,7 @@ public:
 		pthread_mutexattr_settype( &mta, PTHREAD_MUTEX_RECURSIVE );
 		pthread_mutex_init( &m_op_lock, &mta );
 		pthread_mutex_init( &m_op_arg_mutex, &mta );
+		pthread_mutex_init( &m_aqueue_lock, &mta );
 		pthread_mutexattr_destroy( &mta );
 		pthread_cond_init( &m_op_arg_cond, NULL );
 		pthread_create( &m_op_thread, NULL, op_main, this );
@@ -150,6 +152,7 @@ public:
 		pthread_join(m_op_thread, NULL);
 		mlt_log_debug( getConsumer(), "%s: finished op thread\n", __FUNCTION__ );
 
+		pthread_mutex_destroy( &m_aqueue_lock );
 		pthread_mutex_destroy(&m_op_lock);
 		pthread_mutex_destroy(&m_op_arg_mutex);
 		pthread_cond_destroy(&m_op_arg_cond);
@@ -440,8 +443,10 @@ protected:
 			m_deckLinkOutput->DisableVideoOutput();
 		}
 
+		pthread_mutex_lock( &m_aqueue_lock );
 		while ( mlt_frame frame = (mlt_frame) mlt_deque_pop_back( m_aqueue ) )
 			mlt_frame_close( frame );
+		pthread_mutex_unlock( &m_aqueue_lock );
 
 		while ( IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_frames ) )
 			SAFE_RELEASE( frame );
@@ -462,8 +467,10 @@ protected:
 		properties = MLT_FRAME_PROPERTIES( frame );
 		mlt_properties_set_int64( properties, "m_count", m_count);
 		mlt_properties_inc_ref( properties );
+		pthread_mutex_lock( &m_aqueue_lock );
 		mlt_deque_push_back( m_aqueue, frame );
 		mlt_log_debug( getConsumer(), "%s:%d frame=%p, len=%d\n", __FUNCTION__, __LINE__, frame, mlt_deque_count( m_aqueue ));
+		pthread_mutex_unlock( &m_aqueue_lock );
 	}
 
 	bool createFrame( IDeckLinkMutableVideoFrame** decklinkFrame )
@@ -473,6 +480,9 @@ protected:
 		IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*)mlt_deque_pop_front( m_frames );;
 
 		*decklinkFrame = frame;
+
+		if ( !frame )
+			return false;
 
 		// Make the first line black for field order correction.
 		if ( S_OK == frame->GetBytes( (void**) &buffer ) && buffer )
@@ -675,8 +685,10 @@ protected:
 	virtual HRESULT STDMETHODCALLTYPE RenderAudioSamples ( bool preroll )
 #endif
 	{
+		pthread_mutex_lock( &m_aqueue_lock );
 		mlt_log_debug( getConsumer(), "%s: ENTERING preroll=%d, len=%d\n", __FUNCTION__, (int)preroll, mlt_deque_count( m_aqueue ));
 		mlt_frame frame = (mlt_frame) mlt_deque_pop_front( m_aqueue );
+		pthread_mutex_unlock( &m_aqueue_lock );
 
 		reprio( 2 );
 
@@ -726,6 +738,9 @@ protected:
 				mlt_log_error( getConsumer(), "%s:%d mlt_frame_get_audio failed\n", __FUNCTION__, __LINE__);
 
 			mlt_frame_close( frame );
+
+			if ( !preroll )
+				RenderAudioSamples ( preroll );
 		}
 
 		if ( preroll )
@@ -762,6 +777,7 @@ protected:
 		{
 			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDropped == completed\n" );
 			m_count++;
+			ScheduleNextFrame( false );
 		}
 
 		return S_OK;
