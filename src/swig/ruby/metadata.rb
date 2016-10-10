@@ -21,7 +21,7 @@ title: Documentation
 wrap_title: "<%= type_title %>: <%= yml['identifier'] %>"
 category: plugin
 ---
-{::options auto_ids="true" /}
+* TOC
 {:toc}
 
 ## Plugin Information
@@ -48,6 +48,7 @@ contributor: <%= x %>
 ## Notes
 
 <%= ERB::Util.h(yml['notes']) %>
+
 % end
 % if yml['bugs']
 
@@ -56,6 +57,7 @@ contributor: <%= x %>
 %   yml['bugs'].each do |x|
 * <%= x %>
 %   end
+
 % end
 % if yml['parameters']
 
