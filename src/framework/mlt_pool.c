@@ -401,7 +401,7 @@ void mlt_pool_close( )
 void mlt_pool_stat( )
 {
 	// Stats dump
-	int64_t allocated = 0, used = 0;
+	uint64_t allocated = 0, used = 0, s;
 	int i = 0, c = mlt_properties_count( pools );
 
 	mlt_log( NULL, MLT_LOG_VERBOSE, "%s: count %d\n", __FUNCTION__, c);
@@ -413,10 +413,10 @@ void mlt_pool_stat( )
 			mlt_log_verbose( NULL, "%s: size %d allocated %d returned %d %c\n", __FUNCTION__,
 				pool->size, pool->count, mlt_deque_count( pool->stack ),
 				pool->count !=  mlt_deque_count( pool->stack ) ? '*' : ' ' );
-		allocated += pool->count * pool->size;
-		used += ( pool->count - mlt_deque_count( pool->stack ) ) * pool->size;
+		s = pool->size; s *= pool->count; allocated += s;
+		s = pool->count - mlt_deque_count( pool->stack ); s *= pool->size; used += s;
 	}
 
-	mlt_log_verbose( NULL, "%s: allocated %"PRId64" bytes, used %"PRId64" bytes \n",
+	mlt_log_verbose( NULL, "%s: allocated %"PRIu64" bytes, used %"PRIu64" bytes \n",
 		__FUNCTION__, allocated, used );
 }
