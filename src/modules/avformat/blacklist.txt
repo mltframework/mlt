@@ -17,6 +17,7 @@ codecview
 colorbalance
 copy
 cover_rect
+crop
 dejudder
 detelecine
 fifo
