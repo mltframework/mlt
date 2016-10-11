@@ -85,6 +85,7 @@ required: <%= param['required'] or 'no' %>
 %     end
 %     if param['values']
 values:  
+
 %       param['values'].each do |value|
 * <%= value %>
 %       end
@@ -123,7 +124,7 @@ def output(mlt_type, services, type_title)
           puts "Failed to write file for #{filename}"
         end
         filename = type_title + name.capitalize.gsub('.', '-')
-        index.puts "* [#{name}](../#{filename}): #{meta.get('title')}\n"
+        index.puts "* [#{name}](../#{filename}/): #{meta.get('title')}\n"
       rescue SyntaxError
           puts "Failed to parse YAML for #{filename}"
       end
