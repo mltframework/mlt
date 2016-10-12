@@ -1,0 +1,6 @@
+language: c
+before_script:
+- sudo apt-get -qq update
+- sudo apt-get build-dep melt
+script:
+- ./configure && make -j
