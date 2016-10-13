@@ -4,3 +4,6 @@ before_script:
 - sudo apt-get build-dep melt
 script:
 - ./configure && make -j
+sudo: required
+dist: trusty
+
