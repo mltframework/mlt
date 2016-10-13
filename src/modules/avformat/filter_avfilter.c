@@ -21,6 +21,7 @@
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
@@ -352,9 +353,22 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 		mlt_log_error( filter, "Cannot create audio filter\n" );
 	}
 	set_avfilter_options( filter );
-	ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
+
+	if ( !strcmp( "lut3d", pdata->avfilter->name ) ) {
+		// LUT data files use period for the decimal point regardless of LC_NUMERIC.
+		locale_t posix_locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+		// Get the current locale and swtich to POSIX local.
+		locale_t orig_locale  = uselocale( posix_locale );
+		// Initialize the filter.
+		ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
+		// Restore the original locale.
+		uselocale( orig_locale );
+		freelocale( posix_locale );
+	} else {
+		ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
+	}
 	if( ret < 0 ) {
-		mlt_log_error( filter, "Cannot init filter\n" );
+		mlt_log_error( filter, "Cannot init filter: %s\n", av_err2str(ret) );
 	}
 
 	// Connect the filters
