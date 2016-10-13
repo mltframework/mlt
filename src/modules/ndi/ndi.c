@@ -81,6 +81,25 @@ static void swab2( const void *from, void *to, int n )
 	swab((char*) from, (char*) to, n);
 };
 
+#define SWAB_SLICED_ALIGN_POW 5
+static int swab_sliced( int id, int idx, int jobs, void* cookie )
+{
+	unsigned char** args = (unsigned char**)cookie;
+	ssize_t sz = (ssize_t)args[2];
+	ssize_t bsz = ( ( sz / jobs + ( 1 << SWAB_SLICED_ALIGN_POW ) - 1 ) >> SWAB_SLICED_ALIGN_POW ) << SWAB_SLICED_ALIGN_POW;
+	ssize_t offset = bsz * idx;
+
+	if ( offset < sz )
+	{
+		if ( ( offset + bsz ) > sz )
+			bsz = sz - ( offset + bsz );
+
+		swab2( args[0] + offset, args[1] + offset, bsz );
+	}
+
+	return 0;
+};
+
 typedef struct
 {
 	struct mlt_consumer_s parent;
@@ -88,6 +107,7 @@ typedef struct
 	char* arg;
 	pthread_t th;
 	int count;
+	mlt_slices sliced_swab;
 } consumer_ndi;
 
 static void* consumer_ndi_feeder( void* p )
@@ -192,12 +212,24 @@ static void* consumer_ndi_feeder( void* p )
 
 				if ( !m_isKeyer )
 				{
-					// Normal non-keyer playout - needs byte swapping
+					unsigned char *arg[3] = { image, buffer };
+					ssize_t size = stride * height;
+
+					// convert lower field first to top field first
 					if ( !progressive )
-						// convert lower field first to top field first
-						swab2( (char*) image, (char*) buffer + stride, stride * ( height - 1 ) );
+					{
+						arg[1] += stride;
+						size -= stride;
+					}
+
+					// Normal non-keyer playout - needs byte swapping
+					if ( !self->sliced_swab )
+						swab2( arg[0], arg[1], size );
 					else
-						swab2( (char*) image, (char*) buffer, stride * height );
+					{
+						arg[2] = (unsigned char*)size;
+						mlt_slices_run( self->sliced_swab, 0, swab_sliced, arg);
+					}
 				}
 				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "test_image" ) )
 				{
@@ -305,6 +337,10 @@ static int consumer_ndi_start( mlt_consumer consumer )
 
 	if ( !self->f_running )
 	{
+		if ( !self->sliced_swab && mlt_properties_get( properties, "sliced_swab" )
+			&& mlt_properties_get_int( properties, "sliced_swab" ) )
+			self->sliced_swab = mlt_slices_init(0, SCHED_FIFO, sched_get_priority_max( SCHED_FIFO ) );
+
 		// set flags
 		self->f_exit = 0;
 
@@ -366,6 +402,9 @@ static void consumer_ndi_close( mlt_consumer consumer )
 	// free context
 	if ( self->arg )
 		free( self->arg );
+	if ( self->sliced_swab )
+		mlt_slices_close( self->sliced_swab );
+
 	free( self );
 
 	mlt_log_debug( NULL, "%s: exiting\n", __FUNCTION__ );
@@ -407,6 +446,7 @@ static mlt_consumer consumer_ndi_init( mlt_profile profile, mlt_service_type typ
 
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
 		mlt_properties_set( properties, "deinterlace_method", "onefield" );
+
 
 		return parent;
 	}
