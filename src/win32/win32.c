@@ -165,30 +165,3 @@ int mlt_properties_to_utf8( mlt_properties properties, const char *prop_name, co
 	}
 	return result;
 }
-
-// Source of uselocale: http://stackoverflow.com/questions/6561723/thread-specific-locale-manipulation-in-c
-locale_t uselocale(locale_t new_locale)
-{
-    // Retrieve the current per thread locale setting
-    bool bIsPerThread = (_configthreadlocale(0) == _ENABLE_PER_THREAD_LOCALE);
-
-    // Retrieve the current thread-specific locale
-    locale_t old_locale = bIsPerThread ? _get_current_locale() : LC_GLOBAL_LOCALE;
-
-    if(new_locale == LC_GLOBAL_LOCALE)
-    {
-        // Restore the global locale
-        _configthreadlocale(_DISABLE_PER_THREAD_LOCALE);
-    }
-    else if(new_locale != NULL)
-    {
-        // Configure the thread to set the locale only for this thread
-        _configthreadlocale(_ENABLE_PER_THREAD_LOCALE);
-
-        // Set all locale categories
-        for(int i = LC_MIN; i <= LC_MAX; i++)
-            setlocale(i, new_locale->locinfo->lc_category[i].locale);
-    }
-
-    return old_locale;
-}

@@ -199,18 +199,6 @@ extern int nanosleep( const struct timespec * rqtp, struct timespec * rmtp );
 #endif
 extern int setenv(const char *name, const char *value, int overwrite);
 
-#define locale_t         _locale_t
-#define LC_GLOBAL_LOCALE ((locale_t)-1)
-#define LC_ALL_MASK      LC_ALL
-#define LC_COLLATE_MASK  LC_COLLATE
-#define LC_CTYPE_MASK    LC_CTYPE
-#define LC_MONETARY_MASK LC_MONETARY
-#define LC_NUMERIC_MASK  LC_NUMERIC
-#define LC_TIME_MASK     LC_TIME
-#define newlocale(mask, locale, base) _create_locale(mask, locale)
-#define freelocale       _free_locale
-extern locale_t uselocale(locale_t new_locale);
-
 #define MLT_DIRLIST_DELIMITER ";"
 #else
 #define MLT_DIRLIST_DELIMITER ":"

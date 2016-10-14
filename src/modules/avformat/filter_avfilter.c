@@ -355,6 +355,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	set_avfilter_options( filter );
 
 	if ( !strcmp( "lut3d", pdata->avfilter->name ) ) {
+#if defined(__GLIBC__) || defined(__APPLE__) || (__FreeBSD__)
 		// LUT data files use period for the decimal point regardless of LC_NUMERIC.
 		locale_t posix_locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
 		// Get the current locale and swtich to POSIX local.
@@ -364,6 +365,16 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 		// Restore the original locale.
 		uselocale( orig_locale );
 		freelocale( posix_locale );
+#else
+		// Get the current locale and swtich to POSIX local.
+		char *orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
+		setlocale( LC_NUMERIC, "POSIX" );
+		// Initialize the filter.
+		ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
+		// Restore the original locale.
+		setlocale( LC_NUMERIC, orig_localename );
+		free( orig_localename );
+#endif
 	} else {
 		ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
 	}
