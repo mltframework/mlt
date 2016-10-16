@@ -70,7 +70,7 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		data.data_out = mlt_properties_get_data( filter_properties, "output_buffer", NULL );
 		data.src_ratio = ( float ) output_rate / ( float ) *frequency;
 		data.input_frames = *samples;
-		data.output_frames = BUFFER_LEN / *channels;
+		data.output_frames = BUFFER_LEN / sizeof(float) / *channels;
 		data.end_of_input = 0;
 
 		SRC_STATE *state = mlt_properties_get_data( filter_properties, "state", NULL );
