@@ -440,10 +440,55 @@ static void composite_line_yuv_xor( uint8_t *dest, uint8_t *src, int width, uint
 	}
 }
 
+struct sliced_composite_desc
+{
+	int height_src;
+	int step;
+	uint8_t* p_dest;
+	uint8_t* p_src;
+	int width_src;
+	uint8_t* alpha_b;
+	uint8_t* alpha_a;
+	int weight;
+	uint16_t* p_luma;
+	int i_softness;
+	uint32_t luma_step;
+	int stride_src;
+	int stride_dest;
+	int alpha_b_stride;
+	int alpha_a_stride;
+	composite_line_fn line_fn;
+};
+
+static int sliced_composite_proc( int id, int idx, int jobs, void* cookie )
+{
+	struct sliced_composite_desc ctx = *((struct sliced_composite_desc*)cookie);
+	int i, hs = (ctx.height_src + jobs / 2) / jobs, ho = hs * idx;
+
+	for ( i = 0; i < ctx.height_src; i += ctx.step )
+	{
+		if ( i >= ho && i < ( ho + hs ) )
+			ctx.line_fn( ctx.p_dest, ctx.p_src, ctx.width_src, ctx.alpha_b, ctx.alpha_a,
+				ctx.weight, ctx.p_luma, ctx.i_softness, ctx.luma_step );
+
+		ctx.p_src += ctx.stride_src;
+		ctx.p_dest += ctx.stride_dest;
+		if ( ctx.alpha_b )
+			ctx.alpha_b += ctx.alpha_b_stride;
+		if ( ctx.alpha_a )
+			ctx.alpha_a += ctx.alpha_a_stride;
+		if ( ctx.p_luma )
+			ctx.p_luma += ctx.alpha_b_stride;
+	}
+
+
+	return 0;
+}
+
 /** Composite function.
 */
 
-static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *alpha_b, uint8_t *alpha_a, struct geometry_s geometry, int field, uint16_t *p_luma, double softness, composite_line_fn line_fn )
+static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *alpha_b, uint8_t *alpha_a, struct geometry_s geometry, int field, uint16_t *p_luma, double softness, composite_line_fn line_fn, mlt_slices sliced )
 {
 	int ret = 0;
 	int i;
@@ -564,6 +609,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	}
 
 	// now do the compositing only to cropped extents
+	if ( !sliced )
+	{
 	for ( i = 0; i < height_src; i += step )
 	{
 		line_fn( p_dest, p_src, width_src, alpha_b, alpha_a, weight, p_luma, i_softness, luma_step );
@@ -576,6 +623,31 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 			alpha_a += alpha_a_stride;
 		if ( p_luma )
 			p_luma += alpha_b_stride;
+	}
+	}
+	else
+	{
+		struct sliced_composite_desc s =
+		{
+			.height_src = height_src,
+			.step = step,
+			.p_dest = p_dest,
+			.p_src = p_src,
+			.width_src = width_src,
+			.alpha_b = alpha_b,
+			.alpha_a = alpha_a,
+			.weight = weight,
+			.p_luma = p_luma,
+			.i_softness = i_softness,
+			.luma_step = luma_step,
+			.stride_src = stride_src,
+			.stride_dest = stride_dest,
+			.alpha_b_stride = alpha_b_stride,
+			.alpha_a_stride = alpha_a_stride,
+			.line_fn = line_fn,
+		};
+
+		mlt_slices_run(sliced, 0, sliced_composite_proc, &s);
 	}
 
 	return ret;
@@ -1279,6 +1351,20 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 			for ( field = 0; field < ( progressive ? 1 : 2 ); field++ )
 			{
+				mlt_slices sliced = NULL;
+
+				// init or set slices obj
+				if ( mlt_properties_get( properties, "sliced_composite" ) )
+				{
+					sliced = mlt_properties_get_data( properties, "sliced_composite_obj", NULL );
+					if ( !sliced )
+					{
+						sliced = mlt_slices_init( 0, SCHED_OTHER, sched_get_priority_max( SCHED_OTHER ) );
+						mlt_properties_set_data( properties, "sliced_composite_obj", sliced,
+							0, (mlt_destructor)mlt_slices_close, NULL );
+					}
+				}
+
 				// Assume lower field (0) first
 				double field_position = position + field * delta * length;
 
@@ -1326,9 +1412,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				// Composite the b_frame on the a_frame
 				if ( invert )
-					composite_yuv( *image, width_b, height_b, image_b, *width, *height, alpha_a, alpha_b, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
+					composite_yuv( *image, width_b, height_b, image_b, *width, *height, alpha_a, alpha_b, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn, sliced );
 				else
-					composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn );
+					composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn, sliced );
 			}
 		}
 	}
