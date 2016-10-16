@@ -480,4 +480,7 @@ MLT_0.9.10 {
   global:
     mlt_factory_repository;
     mlt_properties_to_utf8;
+    mlt_slices_init;
+    mlt_slices_close;
+    mlt_slices_run;
 } MLT_0.9.8;
