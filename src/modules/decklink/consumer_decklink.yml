@@ -91,3 +91,13 @@ parameters:
     description: The model name of each device that provides output.
     type: string
     readonly: yes
+
+  - identifier: sliced_swab
+    title: Use sliced swab operation
+    description: This option enables multithreaded parallel swab frame data operation
+    type: boolean
+    readonly: no
+    minimum: 0
+    maximum: 1
+    default: 0
+    widget: checkbox
