@@ -879,6 +879,11 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		geometry->sw = scaled_width;
 		geometry->sh = scaled_height;
 	}
+	else if ( mlt_properties_get( properties, "nofit" ) )
+	{
+		geometry->sw = rint( get_value( b_props, "meta.media.width", "width" ) * geometry->item.w / geometry->nw );
+		geometry->sh = rint( get_value( b_props, "meta.media.height", "height" ) * geometry->item.h / geometry->nh );
+	}
 	// Normalise aspect ratios and scale preserving aspect ratio
 	else if ( mlt_properties_get_int( properties, "aligned" ) && mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 && geometry->item.distort == 0 )
 	{

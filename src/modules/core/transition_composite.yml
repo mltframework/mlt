@@ -155,3 +155,14 @@ parameters:
     type: geometry
     readonly: no
     mutable: yes
+  - identifier: nofit
+    title: Keep original dimention of B frame
+    description: >
+      When set, causes the B frame to original dimention. Similar to "crop" but
+      will honor (v|h)align information.
+    type: integer
+    default: 0
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
