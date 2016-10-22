@@ -167,6 +167,7 @@ parameters:
     values:
       - normal
       - italic
+      - oblique
     default: normal
     readonly: no
     mutable: yes
@@ -234,22 +235,57 @@ parameters:
     mutable: yes
     widget: spinner
 
-  - identifier: width_crop
-    title: Width to crop
+  - identifier: width_value
+    title: Value of width used by width_type limiting
     type: integer
-    description: >
-      Limit width of rendered image.
     default: 0
     readonly: no
     mutable: yes
     widget: spinner
 
-  - identifier: width_fit
-    title: Fit width
+  - identifier: width_type
+    title: Type of width limiting
     type: integer
     description: >
-      Scale pango layout to fit specified width.
+      Width limiting types (width value specified by width_value)
+         0 - none
+         1 - crop width of pango canvas
+         2 - fit - scale down width of pango canvas if it widther then value specified (width_value)
+         3 - wrap word
+         4 - wrap char
+         5 - wrap word/char
     default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
+
+  - identifier: line_spacing
+    title: Sets lines spacing
+    type: integer
+    description: >
+      Sets the amount of spacing between the lines of the layout.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
+
+  - identifier: stretch
+    title: Font stretch
+    type: integer
+    description: >
+      The stretch feature of pango's font description. Possible values:
+        1 - ULTRA_CONDENSED
+        2 - EXTRA_CONDENSED
+        3 - CONDENSED
+        4 - SEMI_CONDENSED
+        5 - NORMAL
+        6 - SEMI_EXPANDED
+        7 - EXPANDED
+        8 - EXTRA_EXPANDED
+        9 - ULTRA_EXPANDED
+    minimum: 0
+    maximum: 9
+    default: 4
     readonly: no
     mutable: yes
     widget: spinner
