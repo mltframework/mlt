@@ -137,6 +137,15 @@ parameters:
     type: geometry
     readonly: no
     mutable: yes
+  - identifier: sliced_composite
+    title: Use sliced compositing
+    description: >
+      Enabling this option will start sliced processing of picture compositing, i.e.
+      some parts of picture processed in different thread
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
   - identifier: key[F]
     title: Key frame geometry
     description: >

@@ -28,6 +28,25 @@
 #include <pthread.h>
 #include "common.h"
 
+#define SWAB_SLICED_ALIGN_POW 5
+static int swab_sliced( int id, int idx, int jobs, void* cookie )
+{
+	unsigned char** args = (unsigned char**)cookie;
+	ssize_t sz = (ssize_t)args[2];
+	ssize_t bsz = ( ( sz / jobs + ( 1 << SWAB_SLICED_ALIGN_POW ) - 1 ) >> SWAB_SLICED_ALIGN_POW ) << SWAB_SLICED_ALIGN_POW;
+	ssize_t offset = bsz * idx;
+
+	if ( offset < sz )
+	{
+		if ( ( offset + bsz ) > sz )
+			bsz = sz - ( offset + bsz );
+
+		swab2( args[0] + offset, args[1] + offset, bsz );
+	}
+
+	return 0;
+};
+
 static const unsigned PREROLL_MINIMUM = 3;
 
 enum
@@ -74,6 +93,7 @@ private:
 	int                         m_op_res;
 	int                         m_op_arg;
 	pthread_t                   m_op_thread;
+	mlt_slices                  m_sliced_swab;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -118,6 +138,7 @@ public:
 		m_deckLinkKeyer = NULL;
 		m_deckLinkOutput = NULL;
 		m_deckLink = NULL;
+		m_sliced_swab = NULL;
 
 		m_aqueue = mlt_deque_init();
 		m_frames = mlt_deque_init();
@@ -156,6 +177,9 @@ public:
 		pthread_mutex_destroy(&m_op_lock);
 		pthread_mutex_destroy(&m_op_arg_mutex);
 		pthread_cond_destroy(&m_op_arg_cond);
+
+		if ( m_sliced_swab )
+			mlt_slices_close( m_sliced_swab );
 
 		mlt_log_debug( getConsumer(), "%s: exiting\n", __FUNCTION__ );
 	}
@@ -507,10 +531,15 @@ protected:
 		mlt_image_format format = m_isKeyer? mlt_image_rgb24a : mlt_image_yuv422;
 		uint8_t* image = 0;
 		int rendered = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered");
+		mlt_properties consumer_properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
 		int height = m_height;
 		IDeckLinkMutableVideoFrame* m_decklinkFrame = NULL;
 
 		mlt_log_debug( getConsumer(), "%s: entering\n", __FUNCTION__ );
+
+		if ( !m_sliced_swab && mlt_properties_get( consumer_properties, "sliced_swab" )
+			&& mlt_properties_get_int( consumer_properties, "sliced_swab" ) )
+			m_sliced_swab = mlt_slices_init(0, SCHED_FIFO, sched_get_priority_max( SCHED_FIFO ) );
 
 		if ( rendered && !mlt_frame_get_image( frame, &image, &format, &m_width, &height, 0 ) )
 		{
@@ -541,12 +570,24 @@ protected:
 				}
 				if ( !m_isKeyer )
 				{
+					unsigned char *arg[3] = { image, buffer };
+					ssize_t size = stride * height;
+
+					// convert lower field first to top field first
+					if ( !progressive )
+					{
+						arg[1] += stride;
+						size -= stride;
+					}
+
 					// Normal non-keyer playout - needs byte swapping
-					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
-						// convert lower field first to top field first
-						swab2( (char*) image, (char*) buffer + stride, stride * ( height - 1 ) );
+					if ( !m_sliced_swab )
+						swab2( arg[0], arg[1], size );
 					else
-						swab2( (char*) image, (char*) buffer, stride * height );
+					{
+						arg[2] = (unsigned char*)size;
+						mlt_slices_run( m_sliced_swab, 0, swab_sliced, arg);
+					}
 				}
 				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "test_image" ) )
 				{
