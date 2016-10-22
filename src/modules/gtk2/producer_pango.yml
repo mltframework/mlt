@@ -258,3 +258,13 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+
+  - identifier: line_spacing
+    title: Sets lines spacing
+    type: integer
+    description: >
+      Sets the amount of spacing between the lines of the layout.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
