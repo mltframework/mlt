@@ -147,6 +147,8 @@ static int parse_style( char* style )
 	int ret = PANGO_STYLE_NORMAL;
 	if( !strncmp(style, "italic", 6) )
 		ret = PANGO_STYLE_ITALIC;
+	if( !strncmp(style, "oblique", 7) )
+		ret = PANGO_STYLE_OBLIQUE;
 	return ret;
 }
 
