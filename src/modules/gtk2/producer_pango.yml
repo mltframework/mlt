@@ -268,3 +268,24 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+
+  - identifier: stretch
+    title: Font stretch
+    type: integer
+    description: >
+      The stretch feature of pango's font description. Possible values:
+        1 - ULTRA_CONDENSED
+        2 - EXTRA_CONDENSED
+        3 - CONDENSED
+        4 - SEMI_CONDENSED
+        5 - NORMAL
+        6 - SEMI_EXPANDED
+        7 - EXPANDED
+        8 - EXTRA_EXPANDED
+        9 - ULTRA_EXPANDED
+    minimum: 0
+    maximum: 9
+    default: 4
+    readonly: no
+    mutable: yes
+    widget: spinner
