@@ -235,21 +235,25 @@ parameters:
     mutable: yes
     widget: spinner
 
-  - identifier: width_crop
-    title: Width to crop
+  - identifier: width_value
+    title: Value of width used by width_type limiting
     type: integer
-    description: >
-      Limit width of rendered image.
     default: 0
     readonly: no
     mutable: yes
     widget: spinner
 
-  - identifier: width_fit
-    title: Fit width
+  - identifier: width_type
+    title: Type of width limiting
     type: integer
     description: >
-      Scale pango layout to fit specified width.
+      Width limiting types (width value specified by width_value)
+         0 - none
+         1 - crop width of pango canvas
+         2 - fit - scale down width of pango canvas if it widther then value specified (width_value)
+         3 - wrap word
+         4 - wrap char
+         5 - wrap word/char
     default: 0
     readonly: no
     mutable: yes
