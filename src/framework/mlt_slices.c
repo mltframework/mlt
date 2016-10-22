@@ -25,7 +25,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #define MAX_SLICES 32
 #define ENV_SLICES "MLT_SLICES_COUNT"
 
