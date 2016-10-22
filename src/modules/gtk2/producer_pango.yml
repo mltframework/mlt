@@ -167,6 +167,7 @@ parameters:
     values:
       - normal
       - italic
+      - oblique
     default: normal
     readonly: no
     mutable: yes
