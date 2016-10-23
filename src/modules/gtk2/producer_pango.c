@@ -84,6 +84,8 @@ struct producer_pango_s
 	int   rotate;
 	int   width_crop;
 	int   width_fit;
+	int   wrap_type;
+	int   wrap_width;
 	int   line_spacing;
 	double aspect_ratio;
 };
@@ -106,7 +108,7 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family,
 		int style, int weight, int stretch, int size, int outline, int rotate,
-		int width_crop, int width_fit,
+		int width_crop, int width_fit, int wrap_type, int wrap_width,
 		int line_spacing, double aspect_ratio );
 static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg );
 static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg, rgba_color ol, int outline );
@@ -420,6 +422,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	int size = mlt_properties_get_int( producer_props, "size" );
 	int width_crop = mlt_properties_get_int( producer_props, "width_crop" );
 	int width_fit = mlt_properties_get_int( producer_props, "width_fit" );
+	int wrap_type = mlt_properties_get_int( producer_props, "wrap_type" );
+	int wrap_width = mlt_properties_get_int( producer_props, "wrap_width" );
 	int line_spacing = mlt_properties_get_int( properties, "line_spacing" );
 	double aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 	int property_changed = 0;
@@ -456,6 +460,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		property_changed = property_changed || ( size != this->size );
 		property_changed = property_changed || ( width_crop != this->width_crop );
 		property_changed = property_changed || ( width_fit != this->width_fit );
+		property_changed = property_changed || ( wrap_type != this->wrap_type );
+		property_changed = property_changed || ( wrap_width != this->wrap_width );
 		property_changed = property_changed || ( line_spacing != this->line_spacing );
 		property_changed = property_changed || ( aspect_ratio != this->aspect_ratio );
 
@@ -477,6 +483,8 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		this->size = size;
 		this->width_crop = width_crop;
 		this->width_fit = width_fit;
+		this->wrap_type = wrap_type;
+		this->wrap_width = wrap_width;
 		this->line_spacing = line_spacing;
 		this->aspect_ratio = aspect_ratio;
 	}
@@ -510,7 +518,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		// Render the title
 		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family,
 			style, weight, stretch, size, outline, rotate,
-			width_crop, width_fit,
+			width_crop, width_fit, wrap_type, wrap_width,
 			line_spacing, aspect_ratio );
 
 		if ( pixbuf != NULL )
@@ -783,7 +791,7 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 	rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family,
 	int style, int weight, int stretch, int size, int outline, int rotate,
-	int width_crop, int width_fit,
+	int width_crop, int width_fit, int wrap_type, int wrap_width,
 	int line_spacing, double aspect_ratio )
 {
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
@@ -816,7 +824,15 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	if ( line_spacing )
 		pango_layout_set_spacing( layout,  PANGO_SCALE * line_spacing );
 
-	pango_layout_set_width( layout, -1 ); // set wrapping constraints
+	// set wrapping constraints
+	if ( wrap_width <= 0 )
+		pango_layout_set_width( layout, -1 );
+	else
+	{
+		pango_layout_set_width( layout,  PANGO_SCALE * wrap_width );
+		pango_layout_set_wrap( layout,  ( PangoWrapMode ) wrap_type );
+	}
+
 	pango_layout_set_font_description( layout, desc );
 	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
 	if ( markup != NULL && strcmp( markup, "" ) != 0 )
