@@ -80,6 +80,7 @@ struct producer_pango_s
 	int   size;
 	int   style;
 	int   weight;
+	int   stretch;
 	int   rotate;
 	int   width_crop;
 	int   width_fit;
@@ -104,7 +105,7 @@ static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family,
-		int style, int weight, int size, int outline, int rotate,
+		int style, int weight, int stretch, int size, int outline, int rotate,
 		int width_crop, int width_fit,
 		int line_spacing, double aspect_ratio );
 static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg );
@@ -193,6 +194,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set( properties, "style", "normal" );
 		mlt_properties_set( properties, "encoding", "UTF-8" );
 		mlt_properties_set_int( properties, "weight", PANGO_WEIGHT_NORMAL );
+		mlt_properties_set_int( properties, "stretch", PANGO_STRETCH_NORMAL + 1 );
 		mlt_properties_set_int( properties, "rotate", 0 );
 		mlt_properties_set_int( properties, "seekable", 1 );
 
@@ -413,6 +415,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	int style = parse_style( mlt_properties_get( producer_props, "style" ) );
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
 	int weight = mlt_properties_get_int( producer_props, "weight" );
+	int stretch = mlt_properties_get_int( producer_props, "stretch" );
 	int rotate = mlt_properties_get_int( producer_props, "rotate" );
 	int size = mlt_properties_get_int( producer_props, "size" );
 	int width_crop = mlt_properties_get_int( producer_props, "width_crop" );
@@ -447,6 +450,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
 		property_changed = property_changed || ( family && this->family && strcmp( family, this->family ) );
 		property_changed = property_changed || ( weight != this->weight );
+		property_changed = property_changed || ( stretch != this->stretch );
 		property_changed = property_changed || ( rotate != this->rotate );
 		property_changed = property_changed || ( style != this->style );
 		property_changed = property_changed || ( size != this->size );
@@ -467,6 +471,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		set_string( &this->font, font, NULL );
 		set_string( &this->family, family, "Sans" );
 		this->weight = weight;
+		this->stretch = stretch;
 		this->rotate = rotate;
 		this->style = style;
 		this->size = size;
@@ -504,7 +509,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		
 		// Render the title
 		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family,
-			style, weight, size, outline, rotate,
+			style, weight, stretch, size, outline, rotate,
 			width_crop, width_fit,
 			line_spacing, aspect_ratio );
 
@@ -777,7 +782,7 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 	rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family,
-	int style, int weight, int size, int outline, int rotate,
+	int style, int weight, int stretch, int size, int outline, int rotate,
 	int width_crop, int width_fit,
 	int line_spacing, double aspect_ratio )
 {
@@ -803,6 +808,9 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	}
 
 	pango_font_description_set_weight( desc, ( PangoWeight ) weight  );
+
+	if ( stretch )
+		pango_font_description_set_stretch( desc, ( PangoStretch ) ( stretch - 1 ) );
 
 	// set line_spacing
 	if ( line_spacing )
