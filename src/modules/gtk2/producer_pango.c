@@ -32,6 +32,16 @@
 
 typedef struct producer_pango_s *producer_pango;
 
+enum
+{
+	WIDTH_TYPE_NONE = 0,
+	WIDTH_TYPE_CROP,
+	WIDTH_TYPE_FIT,
+	WIDTH_TYPE_WRAP_WORD,
+	WIDTH_TYPE_WRAP_CHAR,
+	WIDTH_TYPE_WRAP_WORDCHAR
+};
+
 typedef enum
 {
 	pango_align_left = 0,
@@ -80,9 +90,11 @@ struct producer_pango_s
 	int   size;
 	int   style;
 	int   weight;
+	int   stretch;
 	int   rotate;
-	int   width_crop;
-	int   width_fit;
+	int   width_type;
+	int   width_value;
+	int   line_spacing;
 	double aspect_ratio;
 };
 
@@ -103,8 +115,9 @@ static void producer_close( mlt_producer parent );
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg );
 static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
 		rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family,
-		int style, int weight, int size, int outline, int rotate, int width_crop, int width_fit,
-		double aspect_ratio );
+		int style, int weight, int stretch, int size, int outline, int rotate,
+		int width_type, int width_value,
+		int line_spacing, double aspect_ratio );
 static void fill_pixbuf( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg );
 static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int w, int h, int pad, int align, rgba_color fg, rgba_color bg, rgba_color ol, int outline );
 
@@ -147,11 +160,14 @@ static int parse_style( char* style )
 	int ret = PANGO_STYLE_NORMAL;
 	if( !strncmp(style, "italic", 6) )
 		ret = PANGO_STYLE_ITALIC;
+	if( !strncmp(style, "oblique", 7) )
+		ret = PANGO_STYLE_OBLIQUE;
 	return ret;
 }
 
 static PangoFT2FontMap *fontmap = NULL;
 
+static void on_fontmap_reload( );
 mlt_producer producer_pango_init( const char *filename )
 {
 	producer_pango this = calloc( 1, sizeof( struct producer_pango_s ) );
@@ -171,6 +187,9 @@ mlt_producer producer_pango_init( const char *filename )
 		// Get the properties interface
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
 
+		mlt_events_register( properties, "fontmap-reload", NULL );
+		mlt_events_listen( properties, producer, "fontmap-reload", (mlt_listener) on_fontmap_reload );
+
 		// Set the default properties
 		mlt_properties_set( properties, "fgcolour", "0xffffffff" );
 		mlt_properties_set( properties, "bgcolour", "0x00000000" );
@@ -185,6 +204,7 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_properties_set( properties, "style", "normal" );
 		mlt_properties_set( properties, "encoding", "UTF-8" );
 		mlt_properties_set_int( properties, "weight", PANGO_WEIGHT_NORMAL );
+		mlt_properties_set_int( properties, "stretch", PANGO_STRETCH_NORMAL + 1 );
 		mlt_properties_set_int( properties, "rotate", 0 );
 		mlt_properties_set_int( properties, "seekable", 1 );
 
@@ -405,10 +425,12 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	int style = parse_style( mlt_properties_get( producer_props, "style" ) );
 	char *encoding = mlt_properties_get( producer_props, "encoding" );
 	int weight = mlt_properties_get_int( producer_props, "weight" );
+	int stretch = mlt_properties_get_int( producer_props, "stretch" );
 	int rotate = mlt_properties_get_int( producer_props, "rotate" );
 	int size = mlt_properties_get_int( producer_props, "size" );
-	int width_crop = mlt_properties_get_int( producer_props, "width_crop" );
-	int width_fit = mlt_properties_get_int( producer_props, "width_fit" );
+	int width_type = mlt_properties_get_int( producer_props, "width_type" );
+	int width_value = mlt_properties_get_int( producer_props, "width_value" );
+	int line_spacing = mlt_properties_get_int( properties, "line_spacing" );
 	double aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 	int property_changed = 0;
 
@@ -438,11 +460,13 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
 		property_changed = property_changed || ( family && this->family && strcmp( family, this->family ) );
 		property_changed = property_changed || ( weight != this->weight );
+		property_changed = property_changed || ( stretch != this->stretch );
 		property_changed = property_changed || ( rotate != this->rotate );
 		property_changed = property_changed || ( style != this->style );
 		property_changed = property_changed || ( size != this->size );
-		property_changed = property_changed || ( width_crop != this->width_crop );
-		property_changed = property_changed || ( width_fit != this->width_fit );
+		property_changed = property_changed || ( width_type != this->width_type );
+		property_changed = property_changed || ( width_value != this->width_value );
+		property_changed = property_changed || ( line_spacing != this->line_spacing );
 		property_changed = property_changed || ( aspect_ratio != this->aspect_ratio );
 
 		// Save the properties for next comparison
@@ -457,11 +481,13 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		set_string( &this->font, font, NULL );
 		set_string( &this->family, family, "Sans" );
 		this->weight = weight;
+		this->stretch = stretch;
 		this->rotate = rotate;
 		this->style = style;
 		this->size = size;
-		this->width_crop = width_crop;
-		this->width_fit = width_fit;
+		this->width_type = width_type;
+		this->width_value = width_value;
+		this->line_spacing = line_spacing;
 		this->aspect_ratio = aspect_ratio;
 	}
 
@@ -493,8 +519,9 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		
 		// Render the title
 		pixbuf = pango_get_pixbuf( markup, text, font, fgcolor, bgcolor, olcolor, pad, align, family,
-			style, weight, size, outline, rotate, width_crop, width_fit,
-			aspect_ratio );
+			style, weight, stretch, size, outline, rotate,
+			width_type, width_value,
+			line_spacing, aspect_ratio );
 
 		if ( pixbuf != NULL )
 		{
@@ -763,7 +790,11 @@ static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
 	}
 }
 
-static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font, rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family, int style, int weight, int size, int outline, int rotate, int width_crop, int width_fit, double aspect_ratio )
+static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const char *font,
+	rgba_color fg, rgba_color bg, rgba_color ol, int pad, int align, char* family,
+	int style, int weight, int stretch, int size, int outline, int rotate,
+	int width_type, int width_value,
+	int line_spacing, double aspect_ratio )
 {
 	PangoContext *context = pango_ft2_font_map_create_context( fontmap );
 	PangoLayout *layout = pango_layout_new( context );
@@ -788,7 +819,23 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 
 	pango_font_description_set_weight( desc, ( PangoWeight ) weight  );
 
-	pango_layout_set_width( layout, -1 ); // set wrapping constraints
+	if ( stretch )
+		pango_font_description_set_stretch( desc, ( PangoStretch ) ( stretch - 1 ) );
+
+	// set line_spacing
+	if ( line_spacing )
+		pango_layout_set_spacing( layout,  PANGO_SCALE * line_spacing );
+
+	// set wrapping constraints
+	if ( width_value && ( WIDTH_TYPE_WRAP_WORD == width_type
+		|| WIDTH_TYPE_WRAP_CHAR == width_type || WIDTH_TYPE_WRAP_WORDCHAR == width_type ) )
+	{
+		pango_layout_set_width( layout,  PANGO_SCALE * width_value );
+		pango_layout_set_wrap( layout,  ( PangoWrapMode ) ( width_type - WIDTH_TYPE_WRAP_WORD ) );
+	}
+	else
+		pango_layout_set_width( layout, -1 );
+
 	pango_layout_set_font_description( layout, desc );
 	pango_layout_set_alignment( layout, ( PangoAlignment ) align  );
 	if ( markup != NULL && strcmp( markup, "" ) != 0 )
@@ -876,17 +923,18 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 		y = rect.y;
 	}
 
-	// limit width
-	if ( width_crop && w > width_crop)
-		w = width_crop;
-	else if (width_fit && w > width_fit)
+	// limit width, i.e. crop it
+	if ( WIDTH_TYPE_CROP == width_type && w > width_value )
+		w = width_value;
+	// limit squeeze, i.e. fit it
+	else if ( WIDTH_TYPE_FIT == width_type && w > width_value )
 	{
 		double n_x, n_y;
 		PangoRectangle rect;
 		PangoMatrix m_layout = PANGO_MATRIX_INIT, m_offset = PANGO_MATRIX_INIT;
 
-		pango_matrix_scale( &m_layout, width_fit / (double)w, 1.0 );
-		pango_matrix_scale( &m_offset, width_fit / (double)w, 1.0 );
+		pango_matrix_scale( &m_layout, width_value / (double)w, 1.0 );
+		pango_matrix_scale( &m_offset, width_value / (double)w, 1.0 );
 
 		pango_context_set_base_gravity( context, PANGO_GRAVITY_AUTO );
 		pango_context_set_matrix( context, &m_layout );
@@ -1094,4 +1142,21 @@ static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int 
 		}
 		dest += stride;
 	}
+}
+
+static void on_fontmap_reload()
+{
+	PangoFT2FontMap *new_fontmap = NULL, *old_fontmap = NULL;
+
+	FcInitReinitialize();
+
+	new_fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
+
+	pthread_mutex_lock( &pango_mutex );
+	old_fontmap = fontmap;
+	fontmap = new_fontmap;
+	pthread_mutex_unlock( &pango_mutex );
+
+	if ( old_fontmap )
+		g_object_unref( old_fontmap );
 }
