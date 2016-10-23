@@ -154,6 +154,7 @@ static int parse_style( char* style )
 
 static PangoFT2FontMap *fontmap = NULL;
 
+static void on_fontmap_reload( );
 mlt_producer producer_pango_init( const char *filename )
 {
 	producer_pango this = calloc( 1, sizeof( struct producer_pango_s ) );
@@ -172,6 +173,9 @@ mlt_producer producer_pango_init( const char *filename )
 
 		// Get the properties interface
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
+
+		mlt_events_register( properties, "fontmap-reload", NULL );
+		mlt_events_listen( properties, producer, "fontmap-reload", (mlt_listener) on_fontmap_reload );
 
 		// Set the default properties
 		mlt_properties_set( properties, "fgcolour", "0xffffffff" );
@@ -1096,4 +1100,21 @@ static void fill_pixbuf_with_outline( GdkPixbuf* pixbuf, FT_Bitmap* bitmap, int 
 		}
 		dest += stride;
 	}
+}
+
+static void on_fontmap_reload()
+{
+	PangoFT2FontMap *new_fontmap = NULL, *old_fontmap = NULL;
+
+	FcInitReinitialize();
+
+	new_fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
+
+	pthread_mutex_lock( &pango_mutex );
+	old_fontmap = fontmap;
+	fontmap = new_fontmap;
+	pthread_mutex_unlock( &pango_mutex );
+
+	if ( old_fontmap )
+		g_object_unref( old_fontmap );
 }

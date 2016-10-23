@@ -27,6 +27,18 @@ notes: >
   Environment variable MLT_PANGO_PRODUCER_CACHE could be used to override and
   increase the size of cached converted images of simultaneous use.
 
+  Fontset used by pango producer loaded once. That behavior prevents using new
+  fonts till process used pango producer been restarted. To force fontmap reload
+  you need to send signal "fontmap-reload" to pango producer:
+    {
+        mlt_profile profile = mlt_profile_init("dv_pal");
+        mlt_producer producer = mlt_factory_producer(profile, "pango", NULL);
+        mlt_events_fire(mlt_producer_properties(producer), "fontmap-reload", NULL, NULL );
+        mlt_producer_close(producer);
+        mlt_profile_close(profile);
+    };
+
+
 parameters:
   - identifier: argument
     title: File
