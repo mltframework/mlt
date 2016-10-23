@@ -81,7 +81,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// This is not a field-aware transform.
 	mlt_properties_set_int( b_properties, "consumer_deinterlace", 1 );
-	mlt_properties_set_int( b_properties, "consumer_deinterlace", 1 );
 
 	// Suppress padding and aspect normalization.
 	char *interps = mlt_properties_get( properties, "rescale.interp" );
@@ -90,10 +89,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// Required for yuv scaling
 	b_width -= b_width % 2;
-
-	// fetch image
-	*format = mlt_image_rgb24a;
-	error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
 
 	if ( error )
 	{
@@ -119,30 +114,20 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			hasAlpha = true;
 		}
 	}
-	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height ) )
+	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height || mlt_properties_get_int( b_properties, "meta.media.width" ) < normalised_width || mlt_properties_get_int( b_properties, "meta.media.height" )  < normalised_height ) )
 	{
 		hasAlpha = true;
 	}
 
+	// Check if we have transparency
 	if ( !hasAlpha )
 	{
-		// If no transform, check if top frame has an alpha channel
-		uint8_t *src = b_image;
-		int y = b_height + 1;
-		while ( --y )
-		{
-			int x = b_width + 1;
-			while ( --x )
-			{
-				if (src[3] < 255 )
-				{
-					hasAlpha = true;
-					break;
-				}
-				src += 4;
-			}
-		}
+		// fetch image
+		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
+		uint8_t *alpha_b = mlt_frame_get_alpha( b_frame );
+		hasAlpha = alpha_b != NULL;
 	}
+
 	if ( !hasAlpha )
 	{
 		// Prepare output image
@@ -156,6 +141,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		free( interps );
 		return 0;
 	}
+	// Get RGBA image to process
+	*format = mlt_image_rgb24a;
+	error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
+
 	// Prepare output image
 	int image_size = mlt_image_format_size( *format, *width, *height, NULL );
 	*image = (uint8_t *) mlt_pool_alloc( image_size );
