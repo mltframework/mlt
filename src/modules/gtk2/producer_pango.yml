@@ -297,3 +297,28 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+
+  - identifier: wrap_width
+    title: Sets the width to wrap to
+    type: integer
+    description: >
+      Sets the width to which the lines of the PangoLayout should wrap.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
+
+  - identifier: wrap_type
+    title: Sets the wrap mode
+    type: integer
+    description: >
+      Sets the wrap mode; the wrap mode only has effect if a 'wrap_width' is set.
+      Possible values:
+          0 - wrap lines at word boundaries
+          1 - wrap lines at character boundaries
+          2 - wrap lines at word boundaries, but fall back to character
+              boundaries if there is not enough space for a full word
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
