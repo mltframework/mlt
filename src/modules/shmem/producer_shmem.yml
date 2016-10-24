@@ -1,0 +1,37 @@
+schema_version: 0.3
+type: producer
+identifier: shmem
+title: Shared memory input
+version: 2
+copyright: Copyright (C) 2016 Meltytech, LLC
+license: LGPL
+language: en
+creator: Maksym Veremeyenko
+tags:
+  - Audio
+  - Video
+description: Read a frame from shared memory interface.
+
+notes: >
+
+  Shared memory interface allows different processes to exchange
+  a frames between them.
+
+  Usage example:
+
+      melt -profile atsc_1080i_50 -producer shmem:/tmp/demo8 -consumer ndi:demo01
+
+  Currently supported under Linux.
+
+parameters:
+  - identifier: resource
+    argument: yes
+    title: File
+    type: string
+    description: |
+      Name of exisint file used to build a shared memory key to
+      indentify shared memory region.
+    readonly: no
+    required: yes
+    mutable: no
+    widget: fileopen # could provide a button to use a file-open dialog 

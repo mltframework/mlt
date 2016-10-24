@@ -1,0 +1,40 @@
+CFLAGS += -fPIC -I../.. -Wno-deprecated -Wno-multichar
+LDFLAGS += -L../../framework -lmlt -lpthread
+
+include ../../../config.mak
+#include config.mak
+
+TARGET = ../libmltshmem$(LIBSUF)
+
+OBJS = factory.o consumer_shmem.o producer_shmem.o
+
+SRCS := $(OBJS:.o=.c)
+
+LDFLAGS += $(LIBDL)
+
+all: 	$(TARGET)
+	
+$(TARGET): $(OBJS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+
+depend:	$(SRCS)
+		$(CC) -MM $(CFLAGS) $^ 1>.depend
+
+distclean:	clean
+		rm -f .depend
+
+clean:
+		rm -f $(OBJS) $(TARGET)
+
+install: all
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/ndi"
+#	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/ndi"
+
+uninstall:
+	rm "$(DESTDIR)$(moduledir)/libmltndi$(LIBSUF)" 2> /dev/null || true
+	rm -rf "$(DESTDIR)$(mltdatadir)/ndi"
+
+ifneq ($(wildcard .depend),)
+include .depend
+endif
