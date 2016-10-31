@@ -2178,7 +2178,7 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 		else if ( position < self->audio_expected || position - self->audio_expected >= 12 )
 		{
 			AVFormatContext *context = self->audio_format;
-			int64_t timestamp = ( int64_t )( timecode * AV_TIME_BASE + 0.5 );
+			int64_t timestamp = llrint( timecode * AV_TIME_BASE );
 			if ( context->start_time != AV_NOPTS_VALUE )
 				timestamp += context->start_time;
 			if ( timestamp < 0 )
@@ -2318,15 +2318,16 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				memcpy( dest, decode_buffer, data_size );
 			}
 			audio_used += convert_samples;
-
-			// Handle ignore
-			while ( *ignore && audio_used )
-			{
-				*ignore -= 1;
-				audio_used -= audio_used > samples ? samples : audio_used;
-				memmove( audio_buffer, &audio_buffer[ samples * channels * sizeof_sample ],
-						 audio_used * sizeof_sample );
-			}
+		}
+		
+		// Handle ignore
+		if ( *ignore > 0 && audio_used )
+		{
+			int n = FFMIN( audio_used, *ignore );
+			*ignore -= n;
+			audio_used -= n;
+			memmove( audio_buffer, &audio_buffer[ n * channels * sizeof_sample ],
+					 audio_used * channels * sizeof_sample );
 		}
 	}
 
@@ -2340,22 +2341,21 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		else if ( context->start_time != AV_NOPTS_VALUE )
 			pts -= context->start_time;
 		double timebase = av_q2d( context->streams[ index ]->time_base );
-		int64_t int_position = ( int64_t )( timebase * pts * fps + 0.5 );
-		int64_t req_position = ( int64_t )( timecode * fps + 0.5 );
+		int64_t int_position = llrint( timebase * pts * fps );
+		int64_t req_position = llrint( timecode * fps );
+		int64_t req_pts =      llrint( timecode / timebase );
 
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
 			"A pkt.pts %"PRId64" pkt.dts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
 			pkt.pts, pkt.dts, req_position, self->current_position, int_position );
 
-		if ( int_position > 0 )
-		{
-			if ( int_position < req_position )
-				// We are behind, so skip some
-				*ignore = req_position - int_position;
-			else if ( self->audio_index != INT_MAX && int_position > req_position + 2 )
-				// We are ahead, so seek backwards some more
-				seek_audio( self, req_position, timecode - 1.0 );
-		}
+		if ( req_pts > pts )
+			// We are behind, so skip some
+			*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
+		else if ( self->audio_index != INT_MAX && int_position > req_position + 2 )
+			// We are ahead, so seek backwards some more
+			seek_audio( self, req_position, timecode - 1.0 );
+
 		// Cancel the find_first_pts() in seek_audio()
 		if ( self->video_index == -1 && self->last_position == POSITION_INITIAL )
 			self->last_position = int_position;
@@ -2390,7 +2390,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	int ignore[ MAX_AUDIO_STREAMS ] = { 0 };
 
 	// Flag for paused (silence)
-	int paused = seek_audio( self, position, real_timecode );
+	double timecode = self->audio_expected > 0 ? real_timecode : FFMAX(real_timecode - 0.25, 0.0);
+	int paused = seek_audio( self, position, timecode );
 
 	// Initialize ignore for all streams from the seek return value
 	int i = MAX_AUDIO_STREAMS;
