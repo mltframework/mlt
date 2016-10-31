@@ -1,6 +1,6 @@
 /*
- * ndi.c -- output through NewTek NDI
- * Copyright (C) 2010-2016 Maksym Veremeyenko <verem@m1stereo.tv>
+ * consumer_ndi.c -- output through NewTek NDI
+ * Copyright (C) 2016 Maksym Veremeyenko <verem@m1stereo.tv>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,73 +32,9 @@
 #include <limits.h>
 #include <pthread.h>
 
-#include <framework/mlt.h>
+#include "factory.h"
 
 #include "Processing.NDI.Lib.h"
-
-#define NDI_CON_STR_MAX 32768
-
-static void swab2( const void *from, void *to, int n )
-{
-#if defined(USE_SSE)
-#define SWAB_STEP 16
-	__asm__ volatile
-	(
-		"loop_start:                            \n\t"
-
-		/* load */
-		"movdqa         0(%[from]), %%xmm0      \n\t"
-		"add            $0x10, %[from]          \n\t"
-
-		/* duplicate to temp registers */
-		"movdqa         %%xmm0, %%xmm1          \n\t"
-
-		/* shift right temp register */
-		"psrlw          $8, %%xmm1              \n\t"
-
-		/* shift left main register */
-		"psllw          $8, %%xmm0              \n\t"
-
-		/* compose them back */
-		"por           %%xmm0, %%xmm1           \n\t"
-
-		/* save */
-		"movdqa         %%xmm1, 0(%[to])        \n\t"
-		"add            $0x10, %[to]            \n\t"
-
-		"dec            %[cnt]                  \n\t"
-		"jnz            loop_start              \n\t"
-
-		:
-		: [from]"r"(from), [to]"r"(to), [cnt]"r"(n / SWAB_STEP)
-		//: "xmm0", "xmm1"
-	);
-
-	from = (unsigned char*) from + n - (n % SWAB_STEP);
-	to = (unsigned char*) to + n - (n % SWAB_STEP);
-	n = (n % SWAB_STEP);
-#endif
-	swab((char*) from, (char*) to, n);
-};
-
-#define SWAB_SLICED_ALIGN_POW 5
-static int swab_sliced( int id, int idx, int jobs, void* cookie )
-{
-	unsigned char** args = (unsigned char**)cookie;
-	ssize_t sz = (ssize_t)args[2];
-	ssize_t bsz = ( ( sz / jobs + ( 1 << SWAB_SLICED_ALIGN_POW ) - 1 ) >> SWAB_SLICED_ALIGN_POW ) << SWAB_SLICED_ALIGN_POW;
-	ssize_t offset = bsz * idx;
-
-	if ( offset < sz )
-	{
-		if ( ( offset + bsz ) > sz )
-			bsz = sz - ( offset + bsz );
-
-		swab2( args[0] + offset, args[1] + offset, bsz );
-	}
-
-	return 0;
-};
 
 typedef struct
 {
@@ -108,7 +44,7 @@ typedef struct
 	pthread_t th;
 	int count;
 	mlt_slices sliced_swab;
-} consumer_ndi;
+} consumer_ndi_t;
 
 static void* consumer_ndi_feeder( void* p )
 {
@@ -116,7 +52,7 @@ static void* consumer_ndi_feeder( void* p )
 	mlt_frame last = NULL;
 	mlt_consumer consumer = p;
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
-	consumer_ndi* self = ( consumer_ndi* )consumer->child;
+	consumer_ndi_t* self = ( consumer_ndi_t* )consumer->child;
 
 	mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: entering\n", __FUNCTION__ );
 
@@ -335,7 +271,7 @@ static int consumer_ndi_start( mlt_consumer consumer )
 
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
-	consumer_ndi* self = ( consumer_ndi* )consumer->child;
+	consumer_ndi_t* self = ( consumer_ndi_t* )consumer->child;
 
 	if ( !self->f_running )
 	{
@@ -363,7 +299,7 @@ static int consumer_ndi_stop( mlt_consumer consumer )
 
 	mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: entering\n", __FUNCTION__ );
 
-	consumer_ndi* self = ( consumer_ndi* )consumer->child;
+	consumer_ndi_t* self = ( consumer_ndi_t* )consumer->child;
 
 	if ( self->f_running )
 	{
@@ -384,13 +320,13 @@ static int consumer_ndi_stop( mlt_consumer consumer )
 
 static int consumer_ndi_is_stopped( mlt_consumer consumer )
 {
-	consumer_ndi* self = ( consumer_ndi* )consumer->child;
+	consumer_ndi_t* self = ( consumer_ndi_t* )consumer->child;
 	return !self->f_running;
 }
 
 static void consumer_ndi_close( mlt_consumer consumer )
 {
-	consumer_ndi* self = ( consumer_ndi* )consumer->child;
+	consumer_ndi_t* self = ( consumer_ndi_t* )consumer->child;
 
 	mlt_log_debug( MLT_CONSUMER_SERVICE(consumer), "%s: entering\n", __FUNCTION__ );
 
@@ -412,24 +348,14 @@ static void consumer_ndi_close( mlt_consumer consumer )
 	mlt_log_debug( NULL, "%s: exiting\n", __FUNCTION__ );
 }
 
-/** Initialise the producer.
- */
-static mlt_consumer producer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
-{
-	return NULL;
-}
-
 /** Initialise the consumer.
  */
-static mlt_consumer consumer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_consumer consumer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Allocate the consumer
-	consumer_ndi* self = ( consumer_ndi* )calloc( 1, sizeof( consumer_ndi ) );
+	consumer_ndi_t* self = ( consumer_ndi_t* )calloc( 1, sizeof( consumer_ndi_t ) );
 
 	mlt_log_debug( NULL, "%s: entering id=[%s], arg=[%s]\n", __FUNCTION__, id, arg );
-
-	if ( self )
-		memset( self, 0, sizeof( consumer_ndi ) );
 
 	// If allocated
 	if ( self && !mlt_consumer_init( &self->parent, self, profile ) )
@@ -456,28 +382,4 @@ static mlt_consumer consumer_ndi_init( mlt_profile profile, mlt_service_type typ
 	free( self );
 
 	return NULL;
-}
-
-static void *create_service( mlt_profile profile, mlt_service_type type, const char *id, void *arg )
-{
-	mlt_log_debug( NULL, "%s: entering id=[%s]\n", __FUNCTION__, id );
-
-	if ( !NDIlib_initialize() )
-	{
-		mlt_log_error( NULL, "%s: NDIlib_initialize failed\n", __FUNCTION__ );
-		return NULL;
-	}
-
-	if ( type == producer_type )
-		return producer_ndi_init( profile, type, id, (char*)arg );
-	else if ( type == consumer_type )
-		return consumer_ndi_init( profile, type, id, (char*)arg );
-
-	return NULL;
-}
-
-MLT_REPOSITORY
-{
-	MLT_REGISTER( consumer_type, "ndi", create_service );
-	MLT_REGISTER( producer_type, "ndi", create_service );
 }

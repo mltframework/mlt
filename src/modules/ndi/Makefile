@@ -6,7 +6,7 @@ include config.mak
 
 TARGET = ../libmltndi$(LIBSUF)
 
-OBJS = ndi.o
+OBJS = factory.o consumer_ndi.o producer_ndi.o
 
 SRCS := $(OBJS:.o=.c)
 
