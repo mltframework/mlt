@@ -24,7 +24,7 @@
 
 #define NDI_CON_STR_MAX 32768
 
-mlt_consumer producer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+mlt_producer producer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 mlt_consumer consumer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
