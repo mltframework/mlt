@@ -112,8 +112,12 @@ static void* consumer_ndi_feeder( void* p )
 					__FUNCTION__, __LINE__, width, height );
 
 				uint8_t* buffer = 0;
+				int64_t timecode;
 				int stride = width * ( m_isKeyer? 4 : 2 );
 				int progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" );
+
+				timecode = 10000000LL * (uint64_t)self->count * (uint64_t)profile->frame_rate_den;
+				timecode = timecode / (uint64_t)profile->frame_rate_num;
 
 				const NDIlib_video_frame_t ndi_video_frame =
 				{
@@ -136,8 +140,8 @@ static void* consumer_ndi_feeder( void* p )
 						? NDIlib_frame_format_type_progressive
 						: NDIlib_frame_format_type_interleaved,
 
-					// Timecode (synthesized for us !)
-					NDIlib_send_timecode_synthesize,
+					// Timecode
+					timecode,
 
 					// The video memory used for this frame
 					buffer = (uint8_t*)malloc( height * stride ),
@@ -219,8 +223,8 @@ static void* consumer_ndi_feeder( void* p )
 						//
 						samples,
 
-						// timecode
-						NDIlib_send_timecode_synthesize,
+						// Timecode
+						timecode,
 
 						// reference_level
 						0,
