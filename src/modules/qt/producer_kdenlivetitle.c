@@ -65,41 +65,69 @@ error:
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 
 {
+        int error = 0;
 	/* Obtain properties of frame */
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	/* Obtain the producer for this frame */
-	producer_ktitle this = mlt_properties_get_data( properties, "producer_kdenlivetitle", NULL );
+	producer_ktitle self = mlt_properties_get_data( properties, "producer_kdenlivetitle", NULL );
 	
 	/* Obtain properties of producer */
-	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( &this->parent );
+	mlt_producer producer = &self->parent;
+	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 	
 	if ( mlt_properties_get_int( properties, "rescale_width" ) > 0 )
 		*width = mlt_properties_get_int( properties, "rescale_width" );
 	if ( mlt_properties_get_int( properties, "rescale_height" ) > 0 )
 		*height = mlt_properties_get_int( properties, "rescale_height" );
 	
-	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
+	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 
 	/* Allocate the image */
-	*format = mlt_image_rgb24a;
 	if ( mlt_properties_get_int( producer_props, "force_reload" ) ) {
 		if ( mlt_properties_get_int( producer_props, "force_reload" ) > 1 ) read_xml( producer_props );
 		mlt_properties_set_int( producer_props, "force_reload", 0 );
-		drawKdenliveTitle( this, frame, buffer, *width, *height, mlt_frame_original_position( frame ), 1 );
+		drawKdenliveTitle( self, frame, *format, *width, *height, mlt_frame_original_position( frame ), 1 );
 	}
 	else
 	{
-		drawKdenliveTitle( this, frame, buffer, *width, *height, mlt_frame_original_position( frame ), 0 );
+		drawKdenliveTitle( self, frame, *format, *width, *height, mlt_frame_original_position( frame ), 0 );
 	}
-
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
 	*height = mlt_properties_get_int( properties, "height" );
+	*format = self->format;
 
-	mlt_service_unlock( MLT_PRODUCER_SERVICE( &this->parent ) );
+	if ( self->current_image )
+	{
+		// Clone the image and the alpha
+		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
+		uint8_t *image_copy = mlt_pool_alloc( image_size );
+		// We use height-1 because mlt_image_format_size() uses height + 1.
+		// XXX Remove -1 when mlt_image_format_size() is changed.
+		memcpy( image_copy, self->current_image,
+			mlt_image_format_size( self->format, self->current_width, self->current_height - 1, NULL ) );
+		// Now update properties so we free the copy after
+		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
+		// We're going to pass the copy on
+		*buffer = image_copy;
 
-	return 0;
+		// Clone the alpha channel
+		if ( self->current_alpha )
+		{
+			image_copy = mlt_pool_alloc( self->current_width * self->current_height );
+			memcpy( image_copy, self->current_alpha, self->current_width * self->current_height );
+			mlt_frame_set_alpha( frame, image_copy, self->current_width * self->current_height, mlt_pool_release );
+		}
+	}
+	else
+	{
+		error = 1;
+	}
+
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+
+	return error;
 }
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
@@ -145,23 +173,22 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_close( mlt_producer producer )
 {
-	/* fprintf(stderr, "::::::::::::::  CLOSING TITLE\n"); */
+	producer_ktitle self = producer->child;
 	producer->close = NULL;
+	mlt_service_cache_purge( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_producer_close( producer );
-	free( producer );
+	free( self );
 }
 
 
 mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
 {
-  	/* fprintf(stderr, ":::::::::::: CREATE TITLE\n"); */
 	/* Create a new producer object */
 	
-	producer_ktitle this = calloc( 1, sizeof( struct producer_ktitle_s ) );
-	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	producer_ktitle self = calloc( 1, sizeof( struct producer_ktitle_s ) );
+	if ( self != NULL && mlt_producer_init( &self->parent, self ) == 0 )
 	{
-		mlt_producer producer = &this->parent;
-		
+		mlt_producer producer = &self->parent;
 		/* Get the properties interface */
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 		/* Callback registration */
@@ -174,7 +201,7 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
 		read_xml(properties);
 		return producer;
 	}
-	free( this );
+	free( self );
 	return NULL;
 }
 
