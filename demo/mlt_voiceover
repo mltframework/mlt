@@ -35,4 +35,5 @@ melt \
 	out=299 \
 	a_track=2 \
 	b_track=0 \
+	sliced_composite=1 \
 $*

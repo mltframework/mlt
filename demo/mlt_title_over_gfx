@@ -11,6 +11,7 @@ melt \
 		a_track=0 \
 		b_track=1 \
 		distort=1 \
+		sliced_composite=1 \
 -transition \
 	composite:0%/75%:100%x20%:0 \
 		in=50 \
@@ -22,4 +23,5 @@ melt \
 		luma=luma1.pgm \
 		end=0%/75%:100%x20%:0 \
 		distort=1 \
+		sliced_composite=1 \
 $*
