@@ -1,6 +1,58 @@
 MLT Release Notes
 -----------------
 
+Version 6.4.0 - November 11, 2016
+
+This is both a bugfix and enhancement release:
+
+Framework
+  * Added functions for multi-threaded slice-based image processing:
+    mlt_slices_init, mlt_slices_close, and mlt_slices_run.
+  * Added Mlt::Profile::is_valid().
+  * Added MLT_DIRLIST_DELIMITER to mlt_types.h.
+  * Renamed mlt++/config.h to mlt++/MltConfig.h.
+  * Fixed mlt_properties_set_lcnumeric() on macOS.
+  * Fixed address of Free Software Foundation in comment headers.
+
+Modules
+  * Added crop_to_fill property to composite transition.
+  * Added sliced_composite property to composite transition.
+  * Added peak and true peak properties to loudness_meter filter.
+  * Added qtblend transition and filter to qt module.
+  * Added ndi (NewTek NDI) module with producer and consumer.
+  * Added opencv module with opencv_tracker filter.
+  * Added line_spacing, strech, wrap_width, and wrap_type properties to
+    pango producer.
+  * Added oblique value for style property to pango producer.
+  * Added fontmap-reload event to pango producer.
+  * Added support for pkg-config to sdl module.
+  * Added .kra (Krita Image) file name extension to loader.dict.
+  * Improved performance of kdenlivetitle producer.
+  * Improved decklink producer and consumer.
+  * Improved accuracy of seeking on lossy compressed audio in
+    avformat producer.
+  * Improved mix transition using 32-bit floating point.
+  * Fixed avfilter when image format changes.
+  * Fixed loading relative file name in vidstab filter.
+  * Fixed crash on Windows with avfilter.
+  * Fixed parsing LADSPA_PATH with semi-colon delimiter on Windows.
+  * Fixed parsing FREI0R_PATH with semi-colon delimiter on Windows.
+  * Fixed reading relative path with backslash (Windows) in xml producer.
+  * Fixed loading relative file name for av.file (avfilter).
+  * Fixed loading multiple LADSPA plugins on some systems.
+  * Fixed compile error when not configured with --enable-gpl.
+  * Fixed loading in avfilter.lut3d in locales with comma decimal point.
+  * Fixed a possible crash in resample filter.
+  * Fixed alpha channel in kdenlivetitle producer.
+  * Fixed possible crash in pixbuf and qimage producers.
+  * Fixed count when counting down in count producer.
+
+Other
+  * Moved some avformat presets from lossless to new intermediate folder.
+  * Added a YouTube avformat consumer preset.
+  * Changed metadata.rb metadata publisher to output Markdown.
+  
+
 Version 6.2.0 - April 20, 2016
 
 There are no framework changes in this release. The major announcement is the
