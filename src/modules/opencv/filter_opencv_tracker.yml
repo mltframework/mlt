@@ -108,7 +108,7 @@ parameters:
 
   - identifier: steps
     title: Keyframes spacing
-    type: int
+    type: integer
     description: >
       Defines the frequency of stored keyframes. A keyframe is created every steps frames.
     mutable: yes
