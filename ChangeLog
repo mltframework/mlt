@@ -1,3 +1,455 @@
+2016-11-11  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 6.4.0
+
+2016-11-09  Dan Dennedy <dan@dennedy.org>
+
+  * demo/mlt_bouncy, demo/mlt_bouncy_ball, demo/mlt_composite_transition,
+  demo/mlt_my_name_is, demo/mlt_news, demo/mlt_obscure,
+  demo/mlt_pango_keyframes, demo/mlt_push, demo/mlt_squeeze,
+  demo/mlt_squeeze_box, demo/mlt_ticker, demo/mlt_title_over_gfx,
+  demo/mlt_titleshadow_watermark, demo/mlt_voiceover, demo/mlt_watermark: Add
+  sliced_composite=1 to demos.
+
+2016-11-05  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/kdenlivetitle_wrapper.cpp,
+  src/modules/qt/kdenlivetitle_wrapper.h,
+  src/modules/qt/producer_kdenlivetitle.c: kdenlive titler fixes: correctly
+  create alpha mask, cache converted image for improved performance
+
+2016-11-05  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/decklink/consumer_decklink.cpp, src/modules/ndi/ndi.c: Fix
+  sliced segment size
+
+2016-11-01  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/ndi/factory.h, src/modules/ndi/producer_ndi.c: Implement NDI
+  producer
+
+2016-10-31  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/ndi/Makefile, src/modules/ndi/consumer_ndi.c,
+  src/modules/ndi/factory.c, src/modules/ndi/factory.h, src/modules/ndi/ndi.c,
+  src/modules/ndi/producer_ndi.c: Split NDI's producer/consumer code
+
+2016-10-23  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml:
+  Implement wrapping support
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml:
+  Implement stretch parameter for pango producer
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml:
+  Implement line spacing of pango
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml:
+  Implement fontmap reloading
+
+2016-10-22  Maksym Veremeyenko <verem@m1.tv>
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml:
+  Implement oblique font style handling
+
+2016-10-22  Maksym Veremeyenko <max-verem@users.noreply.github.com>
+
+  * src/framework/Makefile, src/framework/mlt.h, src/framework/mlt.vers,
+  src/framework/mlt_slices.c, src/framework/mlt_slices.h,
+  src/modules/core/transition_composite.c,
+  src/modules/core/transition_composite.yml,
+  src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/consumer_decklink.yml, src/modules/ndi/ndi.c: Sliced3
+  (#136)  * Implement sliced processing framework  * Implement sliced swab
+  operation for NDI consumer  * Implement sliced swab operation for Decklink
+  consumer  * Implement sliced compositing in transition_composite
+
+2016-10-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_types.h, src/modules/avformat/filter_avfilter.c,
+  src/win32/win32.c: Fix mingw compile error.  _create_locale, _free_locale,
+  and related require msvcr100. Falling back to a temporary locale switch on
+  Windows.
+
+  * src/framework/mlt_types.h, src/modules/avformat/filter_avfilter.c,
+  src/win32/win32.c: Fix #130 avfilter.lut3d.  When MLT switches to the
+  user-defined locale, the locale-sensitive numeric string conversion functions
+  in libavfilter may fail because LUT data files always use periods for the
+  decimal point.
+
+2016-10-10  Maksym Veremeyenko <max-verem@users.noreply.github.com>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp: Decklink improvements (#129)  *
+  Save frame arrivial time  * Use RP188 to get timecode from signal  * Dropped
+  frames recovery  * Push all available audio samples to decklink  * Avoid
+  possible race condition
+
+2016-10-06  Bart Massey <bart.massey@gmail.com>
+
+  * src/modules/jackrack/jack_rack.c, src/modules/jackrack/plugin.c: Fix
+  loading a second LADSPA plugin.  When using Flowblade or OpenShot to edit
+  videos, trying to apply a second LADSPA effect from the swh-tools package to
+  an audio stream caused a coredump in MLT's jackrack module.  After some
+  debugging, this proved to be lack of a null pointer check in jackrack: the
+  null pointer was unexpected, since it corresponded to the LADSPA plugin
+  having been incorrectly loaded.  After fixing MLT jackrack to not dump core
+  and fixing up the logging, the problem with LADSPA loading was traced to
+  unnecessarily using RTLD_GLOBAL in the dlopen() call for the LADSPA plugin in
+  one of two locations where the plugin was opened. This (for some reason I
+  don't understand) prevented the swh_init constructor for the LADSPA plugin
+  from being called at load time, which in turn caused the plugin to fail to be
+  configured properly.  With RTLD_GLOBAL removed, MLT worked as expected.
+  Flowblade applied multiple swh-plugins LADSPA effects to an audio track
+  successfully.  This patch cleans up the debug logging for MLT jackrack,
+  prevents a coredump in the case that a LADSPA plugin reports no
+  configuration, and removes the offending RTLD_GLOBAL.
+
+2016-10-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/melt/Makefile, src/modules/sdl/Makefile, src/modules/sdl/configure: Try
+  sdl-config if no pkg-config for SDL.
+
+2016-10-04  Maksym Veremeyenko <max-verem@users.noreply.github.com>
+
+  * src/modules/ndi/Makefile, src/modules/ndi/configure, src/modules/ndi/ndi.c:
+  Implement NewTek NDI consumer (#128)
+
+2016-10-04  Vincent Pinon <vincent.pinon@laposte.net>
+
+  * src/melt/Makefile, src/modules/sdl/Makefile, src/modules/sdl/configure:
+  pkg-config instead of sdl-config allows cross-builds (#127)
+
+2016-09-16  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/opencv/Makefile, src/modules/opencv/configure,
+  src/modules/opencv/factory.c, src/modules/opencv/filter_opencv_tracker.cpp,
+  src/modules/opencv/filter_opencv_tracker.yml: New tracking filter based on
+  opencv
+
+2016-08-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_types.h, src/modules/frei0r/factory.c,
+  src/modules/jackrack/plugin_mgr.c: Refactor to MLT_DIRLIST_DELIMITER.
+
+2016-07-27  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/filter_qtblend.yml, src/modules/qt/transition_qtblend.yml:
+  Fix qtblend yml
+
+2016-07-24  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/Makefile, src/modules/qt/filter_qtblend.c,
+  src/modules/qt/filter_qtblend.cpp, src/modules/qt/filter_qtblend.yml,
+  src/modules/qt/transition_qtblend.cpp: Fix qtblend transition ratio issue
+  Rewrite qtblend filter to process directly without transition, fixes memory
+  and performance issues
+
+2016-07-22  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/transition_qtblend.cpp,
+  src/modules/qt/transition_qtblend.yml: Fix qtblend transition frame size
+  handling. Kdenlive issue #365965 Add rotation parameter
+
+2016-07-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltProfile.cpp, src/mlt++/MltProfile.h, src/mlt++/mlt++.vers: Add
+  Mlt::Profile::is_valid().
+
+2016-07-21  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/transition_qtblend.cpp,
+  src/modules/qt/transition_qtblend.yml: qtblend: don't scale top image by
+  default, add fill property like affine
+
+  * src/modules/qt/kdenlivetitle_wrapper.cpp,
+  src/modules/qt/kdenlivetitle_wrapper.h,
+  src/modules/qt/producer_kdenlivetitle.c: Optimize kdenlivetitler
+
+2016-07-19  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/qt/Makefile, src/modules/qt/common.cpp,
+  src/modules/qt/common.h, src/modules/qt/configure, src/modules/qt/factory.c,
+  src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiowaveform.cpp, src/modules/qt/filter_lightshow.cpp,
+  src/modules/qt/transition_qtblend.cpp: Use QImage::Format_RGBA8888 for common
+  conversion functions.
+
+2016-07-18  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/Makefile, src/modules/qt/configure,
+  src/modules/qt/factory.c, src/modules/qt/filter_qtblend.c,
+  src/modules/qt/filter_qtblend.yml, src/modules/qt/transition_qtblend.cpp,
+  src/modules/qt/transition_qtblend.yml: New qtblend transition and filter,
+  allowing compositing and transform (Qt5 only)
+
+2016-07-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pixbuf.c, src/modules/qt/producer_qimage.c: Fix
+  crash using wrong size to read lib buffer.  This fixes
+  https://github.com/mltframework/shotcut/issues/277
+
+2016-07-09  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/intermediate/MJPEG,
+  presets/consumer/avformat/intermediate/MPEG-2,
+  presets/consumer/avformat/intermediate/MPEG-4,
+  presets/consumer/avformat/intermediate/ProRes,
+  presets/consumer/avformat/intermediate/ProRes-Kostya,
+  presets/consumer/avformat/lossless/MJPEG,
+  presets/consumer/avformat/lossless/MPEG-2,
+  presets/consumer/avformat/lossless/MPEG-4,
+  presets/consumer/avformat/lossless/ProRes,
+  presets/consumer/avformat/lossless/ProRes-Kostya: Move some encode presets to
+  new "intermediate" folder.  Fixes Shotcut bug
+  https://github.com/mltframework/shotcut/issues/272
+
+2016-07-05  Dan Dennedy <dan@dennedy.org>
+
+  * COPYING, GPL, src/framework/mlt.h, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h, src/framework/mlt_cache.c,
+  src/framework/mlt_cache.h, src/framework/mlt_consumer.c,
+  src/framework/mlt_consumer.h, src/framework/mlt_deque.c,
+  src/framework/mlt_deque.h, src/framework/mlt_events.c,
+  src/framework/mlt_events.h, src/framework/mlt_factory.c,
+  src/framework/mlt_factory.h, src/framework/mlt_field.c,
+  src/framework/mlt_field.h, src/framework/mlt_filter.c,
+  src/framework/mlt_filter.h, src/framework/mlt_frame.c,
+  src/framework/mlt_frame.h, src/framework/mlt_geometry.c,
+  src/framework/mlt_geometry.h, src/framework/mlt_log.c,
+  src/framework/mlt_log.h, src/framework/mlt_multitrack.c,
+  src/framework/mlt_multitrack.h, src/framework/mlt_parser.c,
+  src/framework/mlt_parser.h, src/framework/mlt_playlist.c,
+  src/framework/mlt_playlist.h, src/framework/mlt_pool.c,
+  src/framework/mlt_pool.h, src/framework/mlt_producer.c,
+  src/framework/mlt_producer.h, src/framework/mlt_profile.c,
+  src/framework/mlt_profile.h, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/framework/mlt_property.c,
+  src/framework/mlt_property.h, src/framework/mlt_repository.c,
+  src/framework/mlt_repository.h, src/framework/mlt_service.c,
+  src/framework/mlt_service.h, src/framework/mlt_tokeniser.c,
+  src/framework/mlt_tokeniser.h, src/framework/mlt_tractor.c,
+  src/framework/mlt_tractor.h, src/framework/mlt_transition.c,
+  src/framework/mlt_transition.h, src/framework/mlt_types.h,
+  src/framework/mlt_version.c, src/framework/mlt_version.h, src/melt/io.c,
+  src/melt/io.h, src/melt/melt.c, src/mlt++/Mlt.h, src/mlt++/MltAnimation.cpp,
+  src/mlt++/MltAnimation.h, src/mlt++/MltConfig.h, src/mlt++/MltConsumer.cpp,
+  src/mlt++/MltConsumer.h, src/mlt++/MltDeque.cpp, src/mlt++/MltDeque.h,
+  src/mlt++/MltEvent.cpp, src/mlt++/MltEvent.h, src/mlt++/MltFactory.cpp,
+  src/mlt++/MltFactory.h, src/mlt++/MltField.cpp, src/mlt++/MltField.h,
+  src/mlt++/MltFilter.cpp, src/mlt++/MltFilter.h,
+  src/mlt++/MltFilteredConsumer.cpp, src/mlt++/MltFilteredConsumer.h,
+  src/mlt++/MltFilteredProducer.cpp, src/mlt++/MltFilteredProducer.h,
+  src/mlt++/MltFrame.cpp, src/mlt++/MltFrame.h, src/mlt++/MltGeometry.cpp,
+  src/mlt++/MltGeometry.h, src/mlt++/MltMultitrack.cpp,
+  src/mlt++/MltMultitrack.h, src/mlt++/MltParser.cpp, src/mlt++/MltParser.h,
+  src/mlt++/MltPlaylist.cpp, src/mlt++/MltPlaylist.h,
+  src/mlt++/MltProducer.cpp, src/mlt++/MltProducer.h, src/mlt++/MltProfile.cpp,
+  src/mlt++/MltProfile.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/MltPushConsumer.cpp,
+  src/mlt++/MltPushConsumer.h, src/mlt++/MltRepository.cpp,
+  src/mlt++/MltRepository.h, src/mlt++/MltService.cpp, src/mlt++/MltService.h,
+  src/mlt++/MltTokeniser.cpp, src/mlt++/MltTokeniser.h,
+  src/mlt++/MltTractor.cpp, src/mlt++/MltTractor.h,
+  src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h,
+  src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_avdeinterlace.c,
+  src/modules/avformat/filter_avfilter.c,
+  src/modules/avformat/filter_avresample.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c, src/modules/avformat/vdpau.c,
+  src/modules/core/composite_line_yuv_sse2_simple.c,
+  src/modules/core/consumer_multi.c, src/modules/core/consumer_null.c,
+  src/modules/core/factory.c, src/modules/core/filter_audiochannels.c,
+  src/modules/core/filter_audioconvert.c, src/modules/core/filter_audiomap.c,
+  src/modules/core/filter_audiowave.c, src/modules/core/filter_brightness.c,
+  src/modules/core/filter_channelcopy.c, src/modules/core/filter_crop.c,
+  src/modules/core/filter_data_feed.c, src/modules/core/filter_data_show.c,
+  src/modules/core/filter_fieldorder.c, src/modules/core/filter_gamma.c,
+  src/modules/core/filter_greyscale.c, src/modules/core/filter_imageconvert.c,
+  src/modules/core/filter_luma.c, src/modules/core/filter_mirror.c,
+  src/modules/core/filter_mono.c, src/modules/core/filter_obscure.c,
+  src/modules/core/filter_panner.c, src/modules/core/filter_region.c,
+  src/modules/core/filter_rescale.c, src/modules/core/filter_resize.c,
+  src/modules/core/filter_transition.c, src/modules/core/filter_watermark.c,
+  src/modules/core/producer_colour.c, src/modules/core/producer_consumer.c,
+  src/modules/core/producer_hold.c, src/modules/core/producer_loader.c,
+  src/modules/core/producer_melt.c, src/modules/core/producer_noise.c,
+  src/modules/core/producer_timewarp.c, src/modules/core/producer_tone.c,
+  src/modules/core/transition_composite.c,
+  src/modules/core/transition_composite.h, src/modules/core/transition_luma.c,
+  src/modules/core/transition_matte.c, src/modules/core/transition_mix.c,
+  src/modules/core/transition_region.c, src/modules/core/transition_region.h,
+  src/modules/decklink/common.cpp, src/modules/decklink/common.h,
+  src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/producer_decklink.cpp, src/modules/dv/consumer_libdv.c,
+  src/modules/dv/factory.c, src/modules/dv/producer_libdv.c,
+  src/modules/frei0r/factory.c, src/modules/frei0r/filter_frei0r.c,
+  src/modules/frei0r/frei0r_helper.c, src/modules/frei0r/frei0r_helper.h,
+  src/modules/frei0r/producer_frei0r.c, src/modules/frei0r/transition_frei0r.c,
+  src/modules/gtk2/consumer_gtk2.c, src/modules/gtk2/factory.c,
+  src/modules/gtk2/filter_rescale.c, src/modules/gtk2/have_mmx.S,
+  src/modules/gtk2/pixops.c, src/modules/gtk2/pixops.h,
+  src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pixbuf.c,
+  src/modules/gtk2/scale_line_22_yuv_mmx.S,
+  src/modules/jackrack/consumer_jack.c, src/modules/jackrack/factory.c,
+  src/modules/jackrack/filter_jackrack.c, src/modules/jackrack/filter_ladspa.c,
+  src/modules/jackrack/producer_ladspa.c, src/modules/kdenlive/factory.c,
+  src/modules/kdenlive/filter_boxblur.c, src/modules/kdenlive/filter_freeze.c,
+  src/modules/kdenlive/filter_wave.c,
+  src/modules/kdenlive/producer_framebuffer.c, src/modules/kino/avi.cc,
+  src/modules/kino/avi.h, src/modules/kino/endian_types.h,
+  src/modules/kino/error.cc, src/modules/kino/error.h,
+  src/modules/kino/factory.c, src/modules/kino/filehandler.cc,
+  src/modules/kino/filehandler.h, src/modules/kino/kino_wrapper.cc,
+  src/modules/kino/kino_wrapper.h, src/modules/kino/producer_kino.c,
+  src/modules/kino/riff.cc, src/modules/kino/riff.h, src/modules/lumas/luma.c,
+  src/modules/motion_est/arrow_code.c, src/modules/motion_est/arrow_code.h,
+  src/modules/motion_est/factory.c,
+  .../motion_est/filter_autotrack_rectangle.c,
+  src/modules/motion_est/filter_crop_detect.c,
+  src/modules/motion_est/filter_motion_est.c,
+  src/modules/motion_est/filter_motion_est.h,
+  src/modules/motion_est/filter_vismv.c,
+  src/modules/motion_est/producer_slowmotion.c,
+  src/modules/motion_est/sad_sse.h, src/modules/normalize/factory.c,
+  src/modules/normalize/filter_audiolevel.c,
+  src/modules/normalize/filter_volume.c, src/modules/oldfilm/factory.c,
+  src/modules/oldfilm/filter_dust.c, src/modules/oldfilm/filter_grain.c,
+  src/modules/oldfilm/filter_lines.c, src/modules/oldfilm/filter_oldfilm.c,
+  src/modules/oldfilm/filter_tcolor.c, src/modules/oldfilm/filter_vignette.c,
+  src/modules/opengl/consumer_xgl.c, src/modules/opengl/factory.c,
+  src/modules/opengl/filter_glsl_manager.cpp,
+  src/modules/opengl/filter_glsl_manager.h,
+  src/modules/opengl/filter_movit_blur.cpp,
+  src/modules/opengl/filter_movit_convert.cpp,
+  src/modules/opengl/filter_movit_crop.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_movit_diffusion.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  .../opengl/filter_movit_lift_gamma_gain.cpp,
+  src/modules/opengl/filter_movit_mirror.cpp,
+  src/modules/opengl/filter_movit_opacity.cpp,
+  src/modules/opengl/filter_movit_rect.cpp,
+  src/modules/opengl/filter_movit_resample.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/opengl/filter_movit_saturation.cpp,
+  src/modules/opengl/filter_movit_vignette.cpp,
+  src/modules/opengl/filter_movit_white_balance.cpp,
+  src/modules/opengl/mlt_flip_effect.h, src/modules/opengl/mlt_movit_input.cpp,
+  src/modules/opengl/mlt_movit_input.h,
+  src/modules/opengl/transition_movit_luma.cpp,
+  src/modules/opengl/transition_movit_mix.cpp,
+  src/modules/opengl/transition_movit_overlay.cpp,
+  src/modules/plus/consumer_blipflash.c, src/modules/plus/factory.c,
+  src/modules/plus/filter_affine.c, src/modules/plus/filter_charcoal.c,
+  src/modules/plus/filter_dance.c, src/modules/plus/filter_dynamic_loudness.c,
+  src/modules/plus/filter_dynamictext.c, src/modules/plus/filter_fft.c,
+  src/modules/plus/filter_invert.c, src/modules/plus/filter_lift_gamma_gain.c,
+  src/modules/plus/filter_loudness.c, src/modules/plus/filter_loudness_meter.c,
+  src/modules/plus/filter_lumakey.c, src/modules/plus/filter_rgblut.c,
+  src/modules/plus/filter_sepia.c, src/modules/plus/producer_blipflash.c,
+  src/modules/plus/producer_count.c, src/modules/plus/transition_affine.c,
+  src/modules/plusgpl/factory.c, src/modules/plusgpl/filter_burn.c,
+  src/modules/plusgpl/filter_lumaliftgaingamma.c,
+  src/modules/plusgpl/filter_rotoscoping.c,
+  src/modules/plusgpl/filter_telecide.c, src/modules/qt/common.cpp,
+  src/modules/qt/common.h, src/modules/qt/consumer_qglsl.cpp,
+  src/modules/qt/factory.c, src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiowaveform.cpp, src/modules/qt/filter_lightshow.cpp,
+  src/modules/qt/graph.cpp, src/modules/qt/graph.h,
+  src/modules/qt/producer_qimage.c, src/modules/qt/producer_qtext.cpp,
+  src/modules/qt/qimage_wrapper.cpp, src/modules/qt/qimage_wrapper.h,
+  src/modules/resample/factory.c, src/modules/resample/filter_resample.c,
+  src/modules/rtaudio/consumer_rtaudio.cpp, src/modules/sdl/consumer_sdl.c,
+  src/modules/sdl/consumer_sdl_audio.c, src/modules/sdl/consumer_sdl_osx.h,
+  src/modules/sdl/consumer_sdl_osx.m, src/modules/sdl/consumer_sdl_osx_hack.h,
+  src/modules/sdl/consumer_sdl_preview.c, src/modules/sdl/consumer_sdl_still.c,
+  src/modules/sdl/factory.c, src/modules/sdl/producer_sdl_image.c,
+  src/modules/sox/factory.c, src/modules/sox/filter_sox.c,
+  src/modules/swfdec/producer_swfdec.c, src/modules/vid.stab/common.c,
+  src/modules/vid.stab/common.h, src/modules/vid.stab/factory.c,
+  src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_vidstab.cpp, src/modules/videostab/factory.c,
+  src/modules/videostab/filter_videostab.c,
+  src/modules/videostab/filter_videostab2.c, src/modules/vmfx/factory.c,
+  src/modules/vmfx/filter_chroma.c, src/modules/vmfx/filter_chroma_hold.c,
+  src/modules/vmfx/filter_mono.c, src/modules/vmfx/filter_shape.c,
+  src/modules/vmfx/producer_pgm.c, src/modules/vorbis/factory.c,
+  src/modules/vorbis/producer_vorbis.c, src/modules/xine/attributes.h,
+  src/modules/xine/cpu_accel.c, src/modules/xine/deinterlace.c,
+  src/modules/xine/deinterlace.h, src/modules/xine/factory.c,
+  src/modules/xine/filter_deinterlace.c, src/modules/xine/xineutils.h,
+  src/modules/xml/common.c, src/modules/xml/common.h,
+  src/modules/xml/consumer_xml.c, src/modules/xml/factory.c,
+  src/modules/xml/producer_xml.c, src/swig/mlt.i,
+  src/swig/python/webvfx_generator.py,
+  src/tests/test_animation/test_animation.cpp,
+  src/tests/test_filter/test_filter.cpp, src/tests/test_frame/test_frame.cpp,
+  src/tests/test_properties/test_properties.cpp,
+  src/tests/test_repository/test_repository.cpp,
+  src/tests/test_tractor/test_tractor.cpp, src/win32/win32.c: Fix #116 Free
+  Software Foundation address.
+
+2016-06-27  Pawel Golinski <golpaw1@gmail.com>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_property.c: Use
+  LC_NUMERIC_MASK instead of LC_NUMERIC in querylocale()  Without this,
+  mlt_properties_set_lcnumeric() doesn't work properly on OS X.
+
+2016-06-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_timewarp.c, src/modules/core/transition_mix.c:
+  Fix compiler warnings in core module.
+
+2016-06-23  Hugo Beauzée-Luyssen <hugo@beauzee.fr>
+
+  * src/mlt++/Makefile, src/mlt++/MltAnimation.h, src/mlt++/MltConfig.h,
+  src/mlt++/MltConsumer.h, src/mlt++/MltDeque.h, src/mlt++/MltEvent.h,
+  src/mlt++/MltFactory.h, src/mlt++/MltField.h, src/mlt++/MltFilter.h,
+  src/mlt++/MltFilteredConsumer.h, src/mlt++/MltFilteredProducer.h,
+  src/mlt++/MltFrame.h, src/mlt++/MltGeometry.h, src/mlt++/MltMultitrack.h,
+  src/mlt++/MltParser.h, src/mlt++/MltPlaylist.h, src/mlt++/MltProducer.h,
+  src/mlt++/MltProfile.h, src/mlt++/MltProperties.h,
+  src/mlt++/MltPushConsumer.h, src/mlt++/MltRepository.h,
+  src/mlt++/MltService.h, src/mlt++/MltTokeniser.h, src/mlt++/MltTractor.h,
+  src/mlt++/MltTransition.h, src/mlt++/config.h: Rename config.h to MltConfig.h
+
+2016-05-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/Makefile, src/modules/xml/common.c,
+  src/modules/xml/common.h, src/modules/xml/consumer_xml.c,
+  src/modules/xml/producer_xml.c: Fix relative paths for timewarp producer.
+
+2016-05-11  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/filter_loudness_meter.c,
+  src/modules/plus/filter_loudness_meter.yml: Add peak and true peak
+  measurements to loudness meter.
+
+2016-04-28  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/ebur128/ebur128.c, src/modules/plus/ebur128/ebur128.h: Add
+  prev_sample_peak() and prev_true_peak()
+
+2016-04-24  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/ebur128/ebur128.c, src/modules/plus/ebur128/ebur128.h: Fix
+  typo
+
+2016-05-02  Yuri Valentini <yv@3cx.com>
+
+  * src/modules/core/transition_composite.c,
+  src/modules/core/transition_composite.yml: Add crop_to_fill property to
+  composite transition.
+
+2016-05-02  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set to interim version 6.3.0.
+
 2016-04-20  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
