@@ -1,6 +1,12 @@
 MLT Release Notes
 -----------------
 
+Version 6.4.1 - November 15, 2016
+
+Hot fix for new C++ symbol Mlt::Profile::is_valid() not declare const in
+symbol versioning. This was breaking script bindings.
+
+
 Version 6.4.0 - November 11, 2016
 
 This is both a bugfix and enhancement release:
