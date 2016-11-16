@@ -519,6 +519,6 @@ MLTPP_0.9.8 {
 MLTPP_6.4.0 {
   global:
     extern "C++" {
-      "Mlt::Profile::is_valid()";
+      "Mlt::Profile::is_valid() const";
   };
 } MLTPP_0.9.8;
