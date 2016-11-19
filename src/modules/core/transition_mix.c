@@ -63,6 +63,28 @@ static void mix_audio( double weight_start, double weight_end, float *buffer_a,
 	}
 }
 
+static void sum_audio( double weight_start, double weight_end, float *buffer_a,
+	float *buffer_b, int channels_a, int channels_b, int channels_out, int samples )
+{
+	int i, j;
+	double a, b;
+
+	// Compute a smooth ramp over start to end
+	double mix = weight_start;
+	double mix_step = ( weight_end - weight_start ) / samples;
+
+	for ( i = 0; i < samples; i++ )
+	{
+		for ( j = 0; j < channels_out; j++ )
+		{
+			a = (double) buffer_a[ i * channels_a + j ];
+			b = (double) buffer_b[ i * channels_b + j ];
+			buffer_a[ i * channels_a + j ] = mix * b + a;
+		}
+		mix += mix_step;
+	}
+}
+
 // This filter uses an inline low pass filter to allow mixing without volume hacking.
 static void combine_audio( double weight, float *buffer_a, float *buffer_b,
 	int channels_a, int channels_b, int channels_out, int samples )
@@ -111,7 +133,7 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	int channels_b = *channels, channels_a = *channels;
 	int samples_b = *samples, samples_a = *samples;
 
-	// We can only mix s16
+	// We can only mix interleaved 32-bit float.
 	*format = mlt_audio_f32le;
 	mlt_frame_get_audio( frame_b, (void**) &buffer_b, format, &frequency_b, &channels_b, &samples_b );
 	mlt_frame_get_audio( frame_a, (void**) &buffer_a, format, &frequency_a, &channels_a, &samples_a );
@@ -171,7 +193,21 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	buffer_a = self->dest_buffer;
 
 	// Do the mixing.
-	if ( mlt_properties_get_int( MLT_TRANSITION_PROPERTIES(transition), "combine" ) )
+	if ( mlt_properties_get_int( MLT_TRANSITION_PROPERTIES(transition), "sum" ) )
+	{
+		double mix_start = 1.0, mix_end = 1.0;
+		if ( mlt_properties_get( b_props, "audio.previous_mix" ) )
+			mix_start = mlt_properties_get_double( b_props, "audio.previous_mix" );
+		if ( mlt_properties_get( b_props, "audio.mix" ) )
+			mix_end = mlt_properties_get_double( b_props, "audio.mix" );
+		if ( mlt_properties_get_int( b_props, "audio.reverse" ) )
+		{
+			mix_start = 1.0 - mix_start;
+			mix_end = 1.0 - mix_end;
+		}
+		sum_audio( mix_start, mix_end, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples );
+	}
+	else if ( mlt_properties_get_int( MLT_TRANSITION_PROPERTIES(transition), "combine" ) )
 	{
 		double weight = 1.0;
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame_a ), "meta.mixdown" ) )
