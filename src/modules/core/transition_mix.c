@@ -381,7 +381,11 @@ mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, 
 		transition->close = transition_close;
 		transition->process = transition_process;
 		if ( arg )
+		{
 			mlt_properties_set_double( MLT_TRANSITION_PROPERTIES( transition ), "start", atof( arg ) );
+			if ( atof( arg ) < 0 )
+				mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "accepts_blanks", 1 );
+		}
 		// Inform apps and framework that this is an audio only transition
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 2 );
 	} else {
