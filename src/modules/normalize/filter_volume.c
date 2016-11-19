@@ -1,6 +1,6 @@
 /*
  * filter_volume.c -- adjust audio volume
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ double signal_max_power( int16_t *buffer, int channels, int samples, int16_t *pe
 	int bytes_per_samp = (samp_width - 1) / 8 + 1;
 	int16_t max = (1 << (bytes_per_samp * 8 - 1)) - 1;
 	int16_t min = -max - 1;
-	
+
 	double *sums = (double *) calloc( channels, sizeof(double) );
 	int c, i;
 	int16_t sample;
@@ -178,7 +178,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	int i, j;
 	double sample;
 	int16_t peak;
-	
+
 	// Use animated value for gain if "level" property is set 
 	char* level_property = mlt_properties_get( filter_props, "level" );
 	if ( level_property != NULL )
@@ -193,13 +193,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		limiter_level = mlt_properties_get_double( instance_props, "limiter" );
 	
 	// Get the producer's audio
-	*format = mlt_audio_s16;
+	*format = normalise? mlt_audio_s16 : mlt_audio_f32le;
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
-
-	// Determine numeric limits
-	int bytes_per_samp = (samp_width - 1) / 8 + 1;
-	int samplemax = (1 << (bytes_per_samp * 8 - 1)) - 1;
-	int samplemin = -samplemax - 1;
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
@@ -225,7 +220,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		}
 		else
 		{
-			gain *= amplitude / signal_max_power( (int16_t*) *buffer, *channels, *samples, &peak );
+			gain *= amplitude / signal_max_power( *buffer, *channels, *samples, &peak );
 		}
 	}
 
@@ -254,33 +249,35 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	// Ramp from the previous gain to the current
 	gain = previous_gain;
 
-	int16_t *p = (int16_t*) *buffer;
-
 	// Apply the gain
-	for ( i = 0; i < *samples; i++ )
+	if ( normalise )
 	{
-		for ( j = 0; j < *channels; j++ )
-		{
-			sample = *p * gain;
-			*p = ROUND( sample );
-		
-			if ( gain > 1.0 )
-			{
-				/* use limiter function instead of clipping */
-				if ( normalise )
+		int16_t *p = *buffer;
+		// Determine numeric limits
+		int bytes_per_samp = (samp_width - 1) / 8 + 1;
+		int samplemax = (1 << (bytes_per_samp * 8 - 1)) - 1;
+
+		for ( i = 0; i < *samples; i++, gain += gain_step ) {
+			for ( j = 0; j < *channels; j++ ) {
+				sample = *p * gain;
+				*p = ROUND( sample );
+				if ( gain > 1.0 && normalise ) {
+					/* use limiter function instead of clipping */
 					*p = ROUND( samplemax * limiter( sample / (double) samplemax, limiter_level ) );
-				
-				/* perform clipping */
-				else if ( sample > samplemax )
-					*p = samplemax;
-				else if ( sample < samplemin )
-					*p = samplemin;
+				}
+				p++;
 			}
-			p++;
 		}
-		gain += gain_step;
 	}
-	
+	else
+	{
+		float *p = *buffer;
+		for ( i = 0; i < *samples; i++, gain += gain_step ) {
+			for ( j = 0; j < *channels; j++, p++ ) {
+				p[0] *= gain;
+			}
+		}
+	}
 	return 0;
 }
 
