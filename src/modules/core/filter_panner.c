@@ -1,6 +1,6 @@
 /*
  * filter_panner.c --pan/balance audio channels
- * Copyright (C) 2010-2014 Meltytech, LLC
+ * Copyright (C) 2010-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,19 +37,19 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties frame_props = MLT_FRAME_PROPERTIES( frame );
 
-	// We can only mix s16
-	*format = mlt_audio_s16;
+	// We can only mix interleaved 32-bit float.
+	*format = mlt_audio_f32le;
 	mlt_frame_get_audio( frame, (void**) buffer, format, frequency, channels, samples );
 
 	// Apply silence
 	int silent = mlt_properties_get_int( frame_props, "silent_audio" );
 	mlt_properties_set_int( frame_props, "silent_audio", 0 );
 	if ( silent )
-		memset( *buffer, 0, *samples * *channels * sizeof( int16_t ) );
+		memset( *buffer, 0, *samples * *channels * sizeof( float ) );
 
 	int src_size = 0;
-	int16_t *src = mlt_properties_get_data( filter_props, "scratch_buffer", &src_size );
-	int16_t *dest = *buffer;
+	float *src = mlt_properties_get_data( filter_props, "scratch_buffer", &src_size );
+	float *dest = *buffer;
 	double v; // sample accumulator
 	int i, out, in;
 	double factors[6][6]; // mixing weights [in][out]
@@ -62,17 +62,12 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	double weight_step = ( mix_end - mix_start ) / *samples;
 	int active_channel = mlt_properties_get_int( properties, "channel" );
 	int gang = mlt_properties_get_int( properties, "gang" ) ? 2 : 1;
-	// Use an inline low-pass filter to help avoid clipping
-	double Fc = 0.5;
-	double B = exp(-2.0 * M_PI * Fc);
-	double A = 1.0 - B;
-	double vp[6];
 
 	// Setup or resize a scratch buffer
-	if ( !src || src_size < *samples * *channels * sizeof(int16_t) )
+	if ( !src || src_size < *samples * *channels * sizeof(*src) )
 	{
 		// We allocate 4 more samples than we need to deal with jitter in the sample count per frame.
-		src_size = ( *samples + 4 ) * *channels * sizeof(int16_t);
+		src_size = ( *samples + 4 ) * *channels * sizeof(*src);
 		src = mlt_pool_alloc( src_size );
 		if ( !src )
 			return 0;
@@ -80,15 +75,12 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	}
 
 	// We must use a pristine copy as the source
-	memcpy( src, *buffer, *samples * *channels * sizeof(int16_t) );
+	memcpy( src, *buffer, *samples * *channels * sizeof(*src) );
 
 	// Initialize the mix factors
 	for ( i = 0; i < 6; i++ )
 		for ( out = 0; out < 6; out++ )
 			factors[i][out] = 0.0;
-
-	for ( out = 0; out < *channels; out++ )
-		vp[out] = (double) dest[out];
 
 	for ( i = 0; i < *samples; i++ )
 	{
@@ -183,9 +175,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			v = 0;
 			for ( in = 0; in < *channels && in < 6; in++ )
 				v += factors[in][out] * src[ i * *channels + in ];
-
-			v = v < -32767 ? -32767 : v > 32768 ? 32768 : v;
-			vp[out] = dest[ i * *channels + out ] = (int16_t) ( v * A + vp[ out ] * B );
+			dest[ i * *channels + out ] = v;
 		}
 		weight += weight_step;
 	}
