@@ -492,4 +492,5 @@ MLT_6.4.0 {
 MLT_6.6.0 {
   global:
     mlt_slices_count;
+    mlt_slices_init_pool;
 } MLT_6.4.0;
