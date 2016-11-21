@@ -26,6 +26,10 @@
 #include <unistd.h>
 #include <pthread.h>
 #ifdef _WIN32
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#define _WIN32_WINNT 0x0601
 #include <windows.h>
 #endif
 #define MAX_SLICES 32
@@ -100,7 +104,7 @@ mlt_slices mlt_slices_init( int threads, int policy, int priority )
 	mlt_slices ctx = (mlt_slices)calloc( 1, sizeof( struct mlt_slices_s ) );
 	char *env = getenv( ENV_SLICES );
 #ifdef _WIN32
-	int cpus = GetCurrentProcessorNumber( );
+	int cpus = GetActiveProcessorCount( ALL_PROCESSOR_GROUPS );
 #else
 	int cpus = sysconf( _SC_NPROCESSORS_ONLN );
 #endif
