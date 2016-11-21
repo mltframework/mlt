@@ -34,4 +34,6 @@ extern void mlt_slices_close( mlt_slices ctx );
 
 extern void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie );
 
+extern int mlt_slices_count( mlt_slices ctx );
+
 #endif

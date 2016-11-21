@@ -488,3 +488,8 @@ MLT_6.4.0 {
     mlt_slices_close;
     mlt_slices_run;
 } MLT_0.9.10;
+
+MLT_6.6.0 {
+  global:
+    mlt_slices_count;
+} MLT_6.4.0;

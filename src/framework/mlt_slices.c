@@ -232,3 +232,15 @@ void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cooki
 		pthread_cond_wait( &ctx->cond_var_ready, &ctx->cond_mutex );
 	pthread_mutex_unlock( &ctx->cond_mutex);
 }
+
+/** Get the number of slices.
+ *
+ * \public \memberof mlt_slices_s
+ * \param ctx context pointer
+ * \return the number of slices
+ */
+
+int mlt_slices_count(mlt_slices ctx)
+{
+	return ctx->count;
+}
