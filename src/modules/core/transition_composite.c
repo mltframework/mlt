@@ -1359,7 +1359,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					sliced = mlt_properties_get_data( properties, "sliced_composite_obj", NULL );
 					if ( !sliced )
 					{
-						sliced = mlt_slices_init( 0, SCHED_OTHER, sched_get_priority_max( SCHED_OTHER ) );
+						sliced = mlt_slices_init_pool( 0, SCHED_OTHER,
+							sched_get_priority_max( SCHED_OTHER ), __FILE__ );
 						mlt_properties_set_data( properties, "sliced_composite_obj", sliced,
 							0, (mlt_destructor)mlt_slices_close, NULL );
 					}
