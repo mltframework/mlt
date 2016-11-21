@@ -332,7 +332,8 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 	{
 		if ( !self->sliced_swab && mlt_properties_get( properties, "sliced_swab" )
 			&& mlt_properties_get_int( properties, "sliced_swab" ) )
-			self->sliced_swab = mlt_slices_init(0, SCHED_FIFO, sched_get_priority_max( SCHED_FIFO ) );
+			self->sliced_swab = mlt_slices_init_pool(0, SCHED_FIFO,
+				sched_get_priority_max( SCHED_FIFO ), __FILE__ );
 
 		// set flags
 		self->f_exit = 0;
