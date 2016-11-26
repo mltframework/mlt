@@ -718,8 +718,9 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	else
 #ifdef _WIN32
 	{
-		const char* lcnumeric = setlocale( LC_NUMERIC, NULL );
+		char* lcnumeric = getlocale();
 		mlt_properties_set( properties, "_xml_lcnumeric_in", lcnumeric );
+		free( lcnumeric );
 		mlt_properties_to_utf8( properties, "_xml_lcnumeric_in", "_xml_lcnumeric_out" );
 		lcnumeric = mlt_properties_get( properties, "_xml_lcnumeric_out" );
 		xmlNewProp( root, _x("LC_NUMERIC"), _x( lcnumeric ) );

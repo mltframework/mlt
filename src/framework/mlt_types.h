@@ -198,6 +198,7 @@ extern int usleep(unsigned int useconds);
 extern int nanosleep( const struct timespec * rqtp, struct timespec * rmtp );
 #endif
 extern int setenv(const char *name, const char *value, int overwrite);
+extern char* getlocale();
 
 #define MLT_DIRLIST_DELIMITER ";"
 #else

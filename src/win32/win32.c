@@ -165,3 +165,76 @@ int mlt_properties_to_utf8( mlt_properties properties, const char *prop_name, co
 	}
 	return result;
 }
+
+/* Adapted from g_win32_getlocale() - free() the result */
+char* getlocale()
+{
+	LCID lcid;
+	LANGID langid;
+	char *ev;
+	int primary, sub;
+	char iso639[10];
+	char iso3166[10];
+	const char *script = "";
+	char result[33];
+
+	/* Let the user override the system settings through environment
+	 * variables, as on POSIX systems.
+	 */
+	if (((ev = getenv ("LC_ALL")) != NULL && ev[0] != '\0')
+		|| ((ev = getenv ("LC_MESSAGES")) != NULL && ev[0] != '\0')
+		|| ((ev = getenv ("LANG")) != NULL && ev[0] != '\0'))
+	  return strdup (ev);
+
+	lcid = GetThreadLocale ();
+
+	if (!GetLocaleInfo (lcid, LOCALE_SISO639LANGNAME, iso639, sizeof (iso639)) ||
+		!GetLocaleInfo (lcid, LOCALE_SISO3166CTRYNAME, iso3166, sizeof (iso3166)))
+	  return strdup ("C");
+
+	/* Strip off the sorting rules, keep only the language part.  */
+	langid = LANGIDFROMLCID (lcid);
+
+	/* Split into language and territory part.  */
+	primary = PRIMARYLANGID (langid);
+	sub = SUBLANGID (langid);
+
+	/* Handle special cases */
+	switch (primary)
+	  {
+	  case LANG_AZERI:
+		switch (sub)
+		 {
+		 case SUBLANG_AZERI_LATIN:
+		   script = "@Latn";
+		   break;
+		 case SUBLANG_AZERI_CYRILLIC:
+		   script = "@Cyrl";
+		   break;
+		 }
+		break;
+	  case LANG_SERBIAN:             /* LANG_CROATIAN == LANG_SERBIAN */
+		switch (sub)
+		 {
+		 case SUBLANG_SERBIAN_LATIN:
+		 case 0x06: /* Serbian (Latin) - Bosnia and Herzegovina */
+		   script = "@Latn";
+		   break;
+		 }
+		break;
+	  case LANG_UZBEK:
+		switch (sub)
+		 {
+		 case SUBLANG_UZBEK_LATIN:
+		   script = "@Latn";
+		   break;
+		 case SUBLANG_UZBEK_CYRILLIC:
+		   script = "@Cyrl";
+		   break;
+		 }
+		break;
+	  }
+	snprintf (result, sizeof(result), "%s_%s%s", iso639, iso3166, script);
+	result[sizeof(result) - 1] = '\0';
+	return strdup (result);
+}
