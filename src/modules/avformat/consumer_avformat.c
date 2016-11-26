@@ -368,6 +368,11 @@ static int consumer_start( mlt_consumer consumer )
 		if ( mlt_properties_get( properties, "ar" ) )
 			mlt_properties_set_int( properties, "frequency", mlt_properties_get_int( properties, "ar" ) );
 
+		// Because Movit only reads this on the first frame,
+		// we must do this after properties have been set but before first frame request.
+		if ( !mlt_properties_get( properties, "color_trc") )
+			color_trc_from_colorspace( properties );
+	
 		// Assign the thread to properties
 		mlt_properties_set_data( properties, "thread", thread, sizeof( pthread_t ), free, NULL );
 
@@ -1294,11 +1299,6 @@ static void *consumer_thread( void *arg )
 			free( key );
 		}
 	}
-
-	// Because Movit only reads this on the first frame,
-	// we must do this after properties have been set but before first frame request.
-	if ( !mlt_properties_get( properties, "color_trc") )
-		color_trc_from_colorspace( properties );
 
 	// Add audio and video streams
 	if ( video_codec_id != AV_CODEC_ID_NONE )
