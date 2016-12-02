@@ -90,7 +90,7 @@ int swab_sliced( int id, int idx, int jobs, void* cookie )
 	if ( offset < sz )
 	{
 		if ( ( offset + bsz ) > sz )
-			bsz = sz - ( offset + bsz );
+			bsz = sz - offset;
 
 		swab2( args[0] + offset, args[1] + offset, bsz );
 	}
