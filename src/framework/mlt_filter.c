@@ -3,7 +3,7 @@
  * \brief abstraction for all filter services
  * \see mlt_filter_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -277,7 +277,7 @@ double mlt_filter_get_progress( mlt_filter self, mlt_frame frame )
 {
 	double position = mlt_filter_get_position( self, frame );
 	double length = mlt_filter_get_length2( self, frame );
-	return position / length;
+	return position / (length - 1);
 }
 
 /** Process the frame.
