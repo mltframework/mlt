@@ -277,7 +277,10 @@ double mlt_filter_get_progress( mlt_filter self, mlt_frame frame )
 {
 	double position = mlt_filter_get_position( self, frame );
 	double length = mlt_filter_get_length2( self, frame );
-	return position / (length - 1);
+	if (length > 1)
+		return position / (length - 1);
+	else
+		return 1.0;
 }
 
 /** Process the frame.
