@@ -38,6 +38,7 @@ struct producer_ktitle_s
 	mlt_image_format format;
 	int current_width;
 	int current_height;
+	int has_alpha;
 	pthread_mutex_t mutex;
 };
 

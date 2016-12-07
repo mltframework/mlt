@@ -267,9 +267,11 @@ static void qscene_delete( void *data )
 }
 
 
-void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *templateXml, const char *templateText )
+void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templateXml, const char *templateText )
 {
 	scene->clear();
+	mlt_producer producer = &self->parent;
+	self->has_alpha = true;
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 	QDomDocument doc;
 	QString data = QString::fromUtf8(templateXml);
@@ -583,11 +585,11 @@ void loadFromXml( mlt_producer producer, QGraphicsScene *scene, const char *temp
 	QDomNode n = title.firstChildElement("background");
 	if (!n.isNull()) {
 		QColor color = QColor( stringToColor( n.attributes().namedItem( "color" ).nodeValue() ) );
-                if (color.alpha() > 0) {
-                        QGraphicsRectItem *rec = scene->addRect(0, 0, scene->width(), scene->height() , QPen( Qt::NoPen ), QBrush( color ) );
-                        rec->setZValue(-1100);
-                }
-	  
+		self->has_alpha = color.alpha() != 255;
+		if (color.alpha() > 0) {
+			QGraphicsRectItem *rec = scene->addRect(0, 0, scene->width(), scene->height() , QPen( Qt::NoPen ), QBrush( color ) );
+			rec->setZValue(-1100);
+		}
 	}
 
 	QString startRect;
@@ -664,12 +666,12 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 			{
 				// The title has a resource property, so we read all properties from the resource.
 				// Do not serialize the xmldata
-				loadFromXml( producer, scene, mlt_properties_get( producer_props, "_xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
+				loadFromXml( self, scene, mlt_properties_get( producer_props, "_xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
 			}
 			else
 			{
 				// The title has no resource, all data should be serialized
-				loadFromXml( producer, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
+				loadFromXml( self, scene, mlt_properties_get( producer_props, "xmldata" ), mlt_properties_get( producer_props, "templatetext" ) );
 			  
 			}
 			mlt_properties_set_data( producer_props, "qscene", scene, 0, ( mlt_destructor )qscene_delete, NULL );
@@ -776,7 +778,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 		self->current_height = height;
 
 		uint8_t *alpha = NULL;
-		if ( ( alpha = mlt_frame_get_alpha( frame ) ) )
+		if ( self->has_alpha && ( alpha = mlt_frame_get_alpha_mask( frame ) ) )
 		{
 			self->current_alpha = (uint8_t*) mlt_pool_alloc( width * height );
 			memcpy( self->current_alpha, alpha, width * height );
@@ -812,7 +814,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 			memcpy( self->current_image, buffer, image_size );
 			mlt_properties_set_data( producer_props, "_cached_image", self->current_image, image_size, mlt_pool_release, NULL );
 		}
-		if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
+		if ( self->has_alpha && ( buffer = mlt_frame_get_alpha_mask( frame ) ) )
 		{
 			self->current_alpha = (uint8_t*) mlt_pool_alloc( width * height );
 			memcpy( self->current_alpha, buffer, width * height );
