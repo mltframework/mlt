@@ -357,7 +357,11 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 	mlt_frame_push_audio( a_frame, transition );
 	mlt_frame_push_audio( a_frame, b_frame );
 	mlt_frame_push_audio( a_frame, transition_get_audio );
-	
+
+	// Ensure transition_get_audio is called if test_audio=1.
+	if ( mlt_properties_get_int( properties, "accepts_blanks" ) )
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES(a_frame), "test_audio", 0 );
+
 	return a_frame;
 }
 
