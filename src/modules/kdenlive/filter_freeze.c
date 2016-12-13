@@ -83,12 +83,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		*image = image_copy;
 		mlt_frame_set_image( frame, *image, size, mlt_pool_release );
 
-                uint8_t *alpha_buffer = mlt_frame_get_alpha_mask( freeze_frame );
-                int alphasize = *width * *height;
-                uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
-                memcpy( alpha_copy, alpha_buffer, alphasize );
-                mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
-
+		uint8_t *alpha_buffer = mlt_frame_get_alpha( freeze_frame );
+		if ( alpha_buffer )
+		{
+			int alphasize = *width * *height;
+			uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
+			memcpy( alpha_copy, alpha_buffer, alphasize );
+			mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
+		}
 		return error;
 	}
 
