@@ -195,9 +195,9 @@ else
 			if [ -d "$kde_includedir" ] && [ -d "$kde_libdir" ]
 			then
 				echo "- KDE version 4.x detected, will enable extra image formats"
-				echo "#define USE_KDE4" >> config.h
 				echo "USE_KDE4=1" >> config.mak
 				echo KDECXXFLAGS=-I$kde_includedir >> config.mak
+				echo KDECXXFLAGS += -DUSE_KDE4 >> config.mak
 				# the -L with kde4/devel is for Fedora
 				echo KDELIBS=-L$kde_libdir -L${kde_libdir}/kde4/devel -lkdecore >> config.mak
 			fi
