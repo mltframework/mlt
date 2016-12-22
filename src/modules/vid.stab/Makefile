@@ -12,8 +12,9 @@ OBJS = factory.o \
 CPPOBJS = filter_deshake.o
 CPPOBJS += filter_vidstab.o
 
-CXXFLAGS += -Wno-deprecated $(CFLAGS)
-CXXFLAGS += $(shell pkg-config --cflags vidstab)
+CFLAGS += -Wno-deprecated
+CFLAGS += $(shell pkg-config --cflags vidstab)
+CXXFLAGS += $(CFLAGS)
 
 LDFLAGS += -L../../mlt++ -lmlt++
 LDFLAGS += $(shell pkg-config --libs vidstab)
