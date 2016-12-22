@@ -148,6 +148,7 @@ else
 		if [ $? -eq 0 ]
 		then
 			echo "- Qt version 5.x detected"
+			without_kde=true
 			echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
 			echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
 			pkg-config --exists 'Qt5OpenGL'
@@ -169,6 +170,7 @@ else
 			else
 				echo "- Qt not found - disabling"
 				touch ../disable-qt
+				exit 0
 			fi
 		fi
 	fi
@@ -181,7 +183,7 @@ else
 	if [ "$without_kde" = "" ]
 	then
 		kde4-config
-		if [ $? -eq 0 ] && [ "$qt4_found" != "" ]
+		if [ $? -eq 0 ]
 		then
 			# test if we have KDE4, required on some systems to get Qt extra formats (xcf, ...)
 			if [ "$kde_includedir" = "" ]
@@ -195,9 +197,9 @@ else
 			if [ -d "$kde_includedir" ] && [ -d "$kde_libdir" ]
 			then
 				echo "- KDE version 4.x detected, will enable extra image formats"
-				echo "#define USE_KDE4" >> config.h
 				echo "USE_KDE4=1" >> config.mak
 				echo KDECXXFLAGS=-I$kde_includedir >> config.mak
+				echo KDECXXFLAGS += -DUSE_KDE4 >> config.mak
 				# the -L with kde4/devel is for Fedora
 				echo KDELIBS=-L$kde_libdir -L${kde_libdir}/kde4/devel -lkdecore >> config.mak
 			fi
