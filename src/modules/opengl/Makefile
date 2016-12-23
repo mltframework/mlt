@@ -29,8 +29,9 @@ CPPOBJS += transition_movit_luma.o
 CPPOBJS += transition_movit_mix.o
 CPPOBJS += transition_movit_overlay.o
 
-CXXFLAGS := -Wno-deprecated $(CFLAGS) $(CXXFLAGS)
-CXXFLAGS += $(shell pkg-config --cflags movit 2> /dev/null)
+CFLAGS += -Wno-deprecated
+CFLAGS += $(shell pkg-config --cflags movit 2> /dev/null)
+CXXFLAGS += $(CFLAGS)
 
 SHADERDIR = $(shell pkg-config --variable=shaderdir movit)
 CXXFLAGS += -DSHADERDIR=\"$(SHADERDIR)\"
