@@ -404,6 +404,28 @@ static int add_unique( mlt_position *array, int size, mlt_position position )
 	return size;
 }
 
+/** Increase the capacity of a set of mlt_position.
+ *
+ * \private \memberof mlt_multitrack_s
+ * \param array an array of positions (the set)
+ * \param count the current number of elements in the array (not the capacity)
+ * \param[out] size the current capacity of the array
+ * \return the new address of the array
+ */
+
+static mlt_position* resize_set( mlt_position *map, int count, int *size )
+{
+	mlt_position* result = map;
+	// Resize only if needed.
+	if ( count + 1 >= *size )
+	{
+		result = realloc( map, (*size + 1000) * sizeof(*map) );
+		memset( map + *size, 0, 1000 * sizeof(*map) );
+		*size += 1000;
+	}
+	return result;
+}
+
 /** Determine the clip point.
  *
  * <pre>
@@ -437,7 +459,8 @@ mlt_position mlt_multitrack_clip( mlt_multitrack self, mlt_whence whence, int in
 	mlt_position position = 0;
 	int i = 0;
 	int j = 0;
-	mlt_position *map = calloc( 1000, sizeof( mlt_position ) );
+	int size = 1000;
+	mlt_position *map = calloc( size, sizeof(*map) );
 	int count = 0;
 
 	for ( i = 0; i < self->count; i ++ )
@@ -454,11 +477,16 @@ mlt_position mlt_multitrack_clip( mlt_multitrack self, mlt_whence whence, int in
 			// Determine if it's a playlist
 			mlt_playlist playlist = mlt_properties_get_data( properties, "playlist", NULL );
 
+			map = resize_set( map, count, &size );
+			
 			// Special case consideration of playlists
 			if ( playlist != NULL )
 			{
 				for ( j = 0; j < mlt_playlist_count( playlist ); j ++ )
+				{
 					count = add_unique( map, count, mlt_playlist_clip( playlist, mlt_whence_relative_start, j ) );
+					map = resize_set( map, count, &size );
+				}
 				count = add_unique( map, count, mlt_producer_get_out( producer ) + 1 );
 			}
 			else
