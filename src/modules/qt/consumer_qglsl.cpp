@@ -20,12 +20,13 @@
 #include "common.h"
 #include <framework/mlt.h>
 #include <QApplication>
-#include <QGLWidget>
-#include <QMutex>
-#include <QWaitCondition>
 #include <QtGlobal>
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+
+#include <QGLWidget>
+#include <QMutex>
+#include <QWaitCondition>
 
 class GLWidget : public QGLWidget
 {
