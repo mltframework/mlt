@@ -21,6 +21,8 @@
  */
 
 #include "mlt_slices.h"
+#include "mlt_properties.h"
+#include "mlt_log.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,55 +37,91 @@
 #define MAX_SLICES 32
 #define ENV_SLICES "MLT_SLICES_COUNT"
 
+static pthread_mutex_t pool_lock = PTHREAD_MUTEX_INITIALIZER;
+static mlt_properties pool_map = NULL;
+
+struct mlt_slices_runtime_s
+{
+	int jobs, done, curr;
+	mlt_slices_proc proc;
+	void* cookie;
+	struct mlt_slices_runtime_s* next;
+};
+
 struct mlt_slices_s
 {
 	int f_exit;
 	int count;
 	int readys;
+	int ref;
 	pthread_mutex_t cond_mutex;
 	pthread_cond_t cond_var_job;
 	pthread_cond_t cond_var_ready;
 	pthread_t threads[MAX_SLICES];
-	struct
-	{
-		int jobs, done;
-		mlt_slices_proc proc;
-		void* cookie;
-	} runtime;
+	struct mlt_slices_runtime_s *head, *tail;
+	const char* name;
 };
 
 static void* mlt_slices_worker( void* p )
 {
 	int id, idx;
+	struct mlt_slices_runtime_s* r;
 	mlt_slices ctx = (mlt_slices)p;
+
+//	mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] entering\n", __FUNCTION__, __LINE__ , ctx, ctx->name );
+
+	pthread_mutex_lock( &ctx->cond_mutex );
+
+	id = ctx->readys;
+	ctx->readys++;
 
 	while ( 1 )
 	{
-		if ( ctx->f_exit )
-			pthread_exit(0);
+//		mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] waiting\n", __FUNCTION__, __LINE__ , ctx, ctx->name );
 
-		pthread_mutex_lock( &ctx->cond_mutex );
-		id = ctx->readys;
-		ctx->readys++;
-		pthread_cond_signal( &ctx->cond_var_ready );
-		if ( !ctx->f_exit )
+		/* wait for new jobs */
+		while( !ctx->f_exit && !( r = ctx->head ) )
 			pthread_cond_wait( &ctx->cond_var_job, &ctx->cond_mutex );
-		pthread_mutex_unlock( &ctx->cond_mutex );
 
 		if ( ctx->f_exit )
-			pthread_exit(0);
+			break;
 
-		pthread_mutex_lock( &ctx->cond_mutex );
-		while ( ctx->runtime.done < ctx->runtime.jobs && !ctx->f_exit )
+		if ( !r )
+			continue;
+
+		/* check if no new job */
+		if ( r->curr == r->jobs )
 		{
-			idx = ctx->runtime.done;
-			ctx->runtime.done++;
-			pthread_mutex_unlock( &ctx->cond_mutex );
-			ctx->runtime.proc( id, idx, ctx->runtime.jobs, ctx->runtime.cookie );
-			pthread_mutex_lock( &ctx->cond_mutex );
-		}
+			ctx->head = ctx->head->next;
+			if ( !ctx->head )
+				ctx->tail = NULL;
+//			mlt_log_error( NULL, "%s:%d: new ctx->head=%p\n", __FUNCTION__, __LINE__, ctx->head );
+			continue;
+		};
+
+		/* new job id */
+		idx = r->curr;
+		r->curr++;
+
+		/* run job */
 		pthread_mutex_unlock( &ctx->cond_mutex );
+//		mlt_log_error( NULL, "%s:%d: running job: id=%d, idx=%d/%d, pool=[%s]\n", __FUNCTION__, __LINE__,
+//			id, idx, r->jobs, ctx->name );
+		r->proc( id, idx, r->jobs, r->cookie );
+		pthread_mutex_lock( &ctx->cond_mutex );
+
+		/* increase done jobs counter */
+		r->done++;
+
+		/* notify we fininished last job */
+		if ( r->done == r->jobs )
+		{
+//			mlt_log_error( NULL, "%s:%d: pthread_cond_signal( &ctx->cond_var_ready )\n", __FUNCTION__, __LINE__ );
+			pthread_cond_broadcast( &ctx->cond_var_ready );
+		}
 	}
+
+	pthread_mutex_unlock( &ctx->cond_mutex );
 
 	return NULL;
 }
@@ -159,12 +197,6 @@ mlt_slices mlt_slices_init( int threads, int policy, int priority )
 
 	pthread_attr_destroy( &tattr );
 
-	/* ready wait workers */
-	pthread_mutex_lock( &ctx->cond_mutex );
-	while ( ctx->readys != ctx->count )
-		pthread_cond_wait( &ctx->cond_var_ready, &ctx->cond_mutex );
-	pthread_mutex_unlock( &ctx->cond_mutex );
-
 	/* return context */
 	return ctx;
 }
@@ -179,10 +211,33 @@ void mlt_slices_close( mlt_slices ctx )
 {
 	int j;
 
+	pthread_mutex_lock( &pool_lock );
+
+//	mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] closing\n", __FUNCTION__, __LINE__, ctx, ctx->name );
+
+	/* check reference count */
+	if ( ctx->ref )
+	{
+		ctx->ref--;
+//		mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] new ref=%d\n", __FUNCTION__, __LINE__, ctx, ctx->name, ctx->ref );
+		pthread_mutex_unlock( &pool_lock );
+		return;
+	}
+
+	/* remove it from pool */
+	if ( ctx->name )
+	{
+		mlt_properties_set_data( pool_map, ctx->name, NULL, 0, NULL, NULL );
+//		mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] removed\n", __FUNCTION__, __LINE__, ctx, ctx->name );
+	}
+
+	pthread_mutex_unlock( &pool_lock );
+
 	/* notify to exit */
 	ctx->f_exit = 1;
 	pthread_mutex_lock( &ctx->cond_mutex );
 	pthread_cond_broadcast( &ctx->cond_var_job);
+	pthread_cond_broadcast( &ctx->cond_var_ready);
 	pthread_mutex_unlock( &ctx->cond_mutex );
 
 	/* wait for threads exit */
@@ -208,6 +263,13 @@ void mlt_slices_close( mlt_slices ctx )
 
 void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie )
 {
+	struct mlt_slices_runtime_s runtime, *r = &runtime;
+
+//	mlt_log_error( NULL, "%s:%d: entering\n", __FUNCTION__, __LINE__ );
+
+	/* lock */
+	pthread_mutex_lock( &ctx->cond_mutex);
+
 	/* check jobs count */
 	if ( jobs < 0 )
 		jobs = (-jobs) * ctx->count;
@@ -215,22 +277,89 @@ void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cooki
 		jobs = ctx->count;
 
 	/* setup runtime args */
-	ctx->runtime.jobs = jobs;
-	ctx->runtime.done = 0;
-	ctx->runtime.proc = proc;
-	ctx->runtime.cookie = cookie;
+	r->jobs = jobs;
+	r->done = 0;
+	r->curr = 0;
+	r->proc = proc;
+	r->cookie = cookie;
+	r->next = NULL;
 
-	/* broadcast slices signal about job exist */
-	pthread_mutex_lock( &ctx->cond_mutex);
-	ctx->readys = 0;
+	/* attach job */
+	if ( ctx->tail )
+	{
+		ctx->tail->next = r;
+		ctx->tail = r;
+	}
+	else
+	{
+		ctx->head = ctx->tail = r;
+	}
+
+	/* notify workers */
 	pthread_cond_broadcast( &ctx->cond_var_job );
-	pthread_mutex_unlock( &ctx->cond_mutex);
 
-	/* wait slices threads finished */
-	pthread_mutex_lock( &ctx->cond_mutex);
-	while ( ctx->readys != ctx->count )
+//	mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] starting [%d] jobs\n", __FUNCTION__, __LINE__,
+//		ctx, ctx->name, r->jobs );
+
+	/* wait for end of task */
+	while( !ctx->f_exit && ( r->done < r->jobs ) )
+	{
 		pthread_cond_wait( &ctx->cond_var_ready, &ctx->cond_mutex );
+//		mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] signalled\n", __FUNCTION__, __LINE__ , ctx, ctx->name );
+	}
+
+//	mlt_log_error( NULL, "%s:%d: ctx=[%p][%s] finished\n", __FUNCTION__, __LINE__ , ctx, ctx->name );
+
 	pthread_mutex_unlock( &ctx->cond_mutex);
+}
+
+/** Initialize a sliced threading context pool
+ *
+ * \public \memberof mlt_slices_s
+ * \param threads number of threads to use for job list
+ * \param policy scheduling policy of processing threads
+ * \param priority priority value that can be used with the scheduling algorithm
+ * \param name name of pool of threads
+ * \return the context pointer
+ */
+
+mlt_slices mlt_slices_init_pool( int threads, int policy, int priority, const char* name )
+{
+	mlt_slices ctx = NULL;
+
+	pthread_mutex_lock( &pool_lock );
+
+	/* try to find it by name */
+	if ( name )
+	{
+		if ( !pool_map )
+		{
+			pool_map = mlt_properties_new();
+			mlt_log_error( NULL, "%s:%d: pool_map=%p\n", __FUNCTION__, __LINE__, pool_map );
+		}
+		else
+			ctx = (mlt_slices)mlt_properties_get_data( pool_map, name, 0 );
+	}
+
+	if ( !ctx )
+	{
+		ctx = mlt_slices_init( threads, policy, priority );
+		if ( name )
+		{
+			ctx->name = name;
+			mlt_properties_set_data( pool_map, name, ctx, 0, NULL, NULL );
+		}
+		mlt_log_error( NULL, "%s:%d: initialized pool=[%s]\n", __FUNCTION__, __LINE__, name );
+	}
+	else
+	{
+		ctx->ref++;
+		mlt_log_error( NULL, "%s:%d: reusing pool=[%s]\n", __FUNCTION__, __LINE__, name );
+	}
+
+	pthread_mutex_unlock( &pool_lock );
+
+	return ctx;
 }
 
 /** Get the number of slices.

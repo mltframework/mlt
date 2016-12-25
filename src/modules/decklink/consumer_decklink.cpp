@@ -539,7 +539,8 @@ protected:
 
 		if ( !m_sliced_swab && mlt_properties_get( consumer_properties, "sliced_swab" )
 			&& mlt_properties_get_int( consumer_properties, "sliced_swab" ) )
-			m_sliced_swab = mlt_slices_init(0, SCHED_FIFO, sched_get_priority_max( SCHED_FIFO ) );
+			m_sliced_swab = mlt_slices_init_pool(0, SCHED_FIFO,
+				sched_get_priority_max( SCHED_FIFO ), __FILE__ );
 
 		if ( rendered && !mlt_frame_get_image( frame, &image, &format, &m_width, &height, 0 ) )
 		{
