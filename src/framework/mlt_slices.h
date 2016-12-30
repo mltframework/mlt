@@ -36,4 +36,6 @@ extern void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void
 
 extern int mlt_slices_count( mlt_slices ctx );
 
+extern mlt_slices mlt_slices_init_pool( int threads, int policy, int priority, const char* name );
+
 #endif
