@@ -218,6 +218,13 @@ static int mlt_playlist_virtual_refresh( mlt_playlist self )
 		frame_count += self->list[ i ]->frame_count;
 	}
 
+	// force loop
+	if ( mlt_properties_get( properties, "force_loop" ) )
+	{
+		mlt_properties_set_position( properties, "force_loop_length", frame_count );
+		frame_count = 10000000;
+	}
+
 	// Refresh all properties
 	mlt_events_block( properties, properties );
 	mlt_properties_set_position( properties, "length", frame_count );
@@ -370,6 +377,11 @@ static mlt_producer mlt_playlist_locate( mlt_playlist self, mlt_position *positi
 {
 	// Default producer to NULL
 	mlt_producer producer = NULL;
+
+	// force loop
+	mlt_properties properties = MLT_PLAYLIST_PROPERTIES( self );
+	if ( mlt_properties_get( properties, "force_loop" ) )
+		*position = (int)(*position) % (int)mlt_properties_get_position( properties, "force_loop_length" );
 
 	// Loop for each producer until found
 	for ( *clip = 0; *clip < self->count; *clip += 1 )
