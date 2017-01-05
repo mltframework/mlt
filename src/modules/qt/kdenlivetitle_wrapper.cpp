@@ -814,7 +814,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 			memcpy( self->current_image, buffer, image_size );
 			mlt_properties_set_data( producer_props, "_cached_image", self->current_image, image_size, mlt_pool_release, NULL );
 		}
-		if ( buffer = mlt_frame_get_alpha( frame ) )
+		if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
 		{
 			self->current_alpha = (uint8_t*) mlt_pool_alloc( width * height );
 			memcpy( self->current_alpha, buffer, width * height );

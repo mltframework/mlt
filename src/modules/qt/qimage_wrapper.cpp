@@ -290,7 +290,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 				self->current_image = (uint8_t*) mlt_pool_alloc( image_size );
 				memcpy( self->current_image, buffer, image_size );
 			}
-			if ( buffer = mlt_frame_get_alpha( frame ) )
+			if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
 			{
 				self->current_alpha = (uint8_t*) mlt_pool_alloc( width * height );
 				memcpy( self->current_alpha, buffer, width * height );
