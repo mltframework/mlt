@@ -44,6 +44,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Get the properties
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the image
 	*format = mlt_image_rgb24a;
@@ -62,18 +63,24 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Check transform
 	QTransform transform;
+	int normalised_width = profile->width;
+	int normalised_height = profile->height;
+	double consumer_ar = mlt_profile_sar( profile );
+
+	// Destination rect
 	mlt_rect rect;
-	rect.w = profile->width;
-	rect.h = profile->height;
-	int b_width = get_value( properties, "meta.media.width", "width" );
-	int b_height = get_value( properties, "meta.media.height", "height" );
+	rect.w = normalised_width;
+	rect.h = normalised_height;
+	int b_width = get_value( frame_properties, "meta.media.width", "width" );
+	int b_height = get_value( frame_properties, "meta.media.height", "height" );
+	double b_ar = mlt_frame_get_aspect_ratio( frame );
+	double b_dar = b_ar * b_width / b_height;
+
 	double opacity = 1.0;
 	if ( mlt_properties_get( properties, "rect" ) )
 	{
 		rect = mlt_properties_anim_get_rect( properties, "rect", position, length );
 		transform.translate(rect.x, rect.y);
-		b_width = rect.w;
-		b_height = rect.h;
 		opacity = rect.o;
 	}
 
@@ -83,27 +90,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		transform.rotate( angle );
 	}
 
-	double input_ar = mlt_properties_get_double( properties, "aspect_ratio" );
-	b_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * b_width );
-	if ( b_height > 0 && b_height * rect.w / b_height >= rect.w )
-	{
-		// crop left/right edges
-		b_width = rint( b_width * rect.h / b_height );
-		b_height = rect.h;
-	}
-	else if ( b_width > 0 )
-	{
-		// crop top/bottom edges
-		b_height = rint( b_height * rect.w / b_width );
-		b_width = rect.w;
-	}
-	// Required for yuv scaling
-	b_width -= b_width % 2;
-
 	// fetch image
 	*format = mlt_image_rgb24a;
 	uint8_t *src_image = NULL;
-	error = mlt_frame_get_image( frame, &src_image, format, &b_width, &b_height, writable );
+
+	error = mlt_frame_get_image( frame, &src_image, format, &b_width, &b_height, 0 );
 
 	// Put source buffer into QImage
 	QImage sourceImage;
@@ -112,7 +103,32 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int image_size = mlt_image_format_size( *format, *width, *height, NULL );
 	
 	// resize to rect
-	transform.scale( rect.w / b_width, rect.h / b_height );
+	if ( mlt_properties_get_int( properties, "distort" ) )
+	{
+		transform.scale( rect.w / b_width, rect.h / b_height );
+	}
+	else
+	{
+		// Take the smaller scale between horizontal and vertical
+		float scale_x = MIN( rect.w / b_width, rect.h / b_height );
+		float scale_y = scale_x;
+
+		// Determine scale with respect to aspect ratio.
+		double consumer_dar = consumer_ar * normalised_width / normalised_height;
+		if ( b_dar > consumer_dar )
+		{
+			scale_y = scale_x;
+			scale_y *= consumer_ar / b_ar;
+		}
+		else
+		{
+			scale_x = scale_y;
+			scale_x *= b_ar / consumer_ar;
+		}
+		// Center image in rect
+		transform.translate( ( rect.w - ( b_width * scale_x ) ) / 2.0, ( rect.h - ( b_height * scale_y ) ) / 2.0 );
+		transform.scale( scale_x, scale_y );
+	}
 
 	uint8_t *dest_image = NULL;
 	dest_image = (uint8_t *) mlt_pool_alloc( image_size );
@@ -132,7 +148,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	painter.end();
 	convert_qimage_to_mlt_rgba( &destImage, dest_image, *width, *height );
 	*image = dest_image;
-	mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
+	mlt_frame_set_image( frame, *image, *width * *height * 4, mlt_pool_release );
 	return error;
 }
 
