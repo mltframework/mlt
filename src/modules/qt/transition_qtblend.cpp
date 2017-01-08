@@ -54,8 +54,8 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	int b_height = mlt_properties_get_int( b_properties, "meta.media.height" );
 	double b_ar = mlt_frame_get_aspect_ratio( b_frame );
 	double b_dar = b_ar * b_width / b_height;
-	rect.w = normalised_width;
-	rect.h = normalised_height;
+	rect.w = -1;
+	rect.h = -1;
 
 	// Check transform
 	if ( mlt_properties_get( transition_properties, "rect" ) )
@@ -124,6 +124,12 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			hasAlpha = true;
 		}
 	}
+	else
+	{
+		// No transform, request profile sized image
+		b_width = *width;
+		b_height = *height;
+	}
 	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height || b_width < normalised_width || b_height  < normalised_height ) )
 	{
 		hasAlpha = true;
@@ -139,7 +145,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			hasAlpha = true;
 		}
 	}
-
 	if ( !hasAlpha )
 	{
 		// Prepare output image
@@ -152,10 +157,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	*format = mlt_image_rgb24a;
 	error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
 
-	// Prepare output image
-	int image_size = mlt_image_format_size( *format, *width, *height, NULL );
-	*image = (uint8_t *) mlt_pool_alloc( image_size );
-
 	// Get bottom frame
 	uint8_t *a_image = NULL;
 	error = mlt_frame_get_image( a_frame, &a_image, format, width, height, 1 );
@@ -164,6 +165,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		free( interps );
 		return error;
 	}
+	// Prepare output image
+	int image_size = mlt_image_format_size( *format, *width, *height, NULL );
+	*image = (uint8_t *) mlt_pool_alloc( image_size );
 
 	// Copy bottom frame in output
 	memcpy( *image, a_image, image_size );
@@ -199,7 +203,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// finish Qt drawing
 	painter.end();
 	convert_qimage_to_mlt_rgba( &bottomImg, *image, *width, *height );
-	mlt_properties_set_data( properties, "image", *image, image_size, mlt_pool_release, NULL );
+	mlt_frame_set_image( a_frame, *image, image_size, mlt_pool_release);
 	free( interps );
 	return error;
 }
