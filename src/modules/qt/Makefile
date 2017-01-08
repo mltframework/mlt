@@ -39,7 +39,11 @@ ifneq ($(targetos), MinGW)
 endif
 endif
 
-CXXFLAGS := $(QTCXXFLAGS) $(CXXFLAGS) $(CFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) -Wno-deprecated --std=c++11
+CXXFLAGS := $(QTCXXFLAGS) $(CXXFLAGS) $(CFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) -Wno-deprecated
+
+ifneq (, $(shell $(CXX) --version | grep -is gcc))
+    CXXFLAGS += --std=c++11
+endif
 
 LDFLAGS += $(QTLIBS) $(EXIFLIBS) $(KDELIBS)
 
