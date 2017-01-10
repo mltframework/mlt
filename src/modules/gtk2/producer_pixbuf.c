@@ -1,6 +1,6 @@
 /*
  * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -297,6 +297,13 @@ static void load_filenames( producer_pixbuf self, mlt_properties properties )
 		mlt_properties_set( self->filenames, "0", filename );
 	}
 	self->count = mlt_properties_count( self->filenames );
+	if ( self->count > 1 )
+	{
+		int ttl = mlt_properties_get_int( properties, "ttl" );
+		mlt_position length = self->count * ttl;
+		mlt_properties_set_position( properties, "length", length );
+		mlt_properties_set_position( properties, "out", length - 1 );
+	}
 }
 
 static GdkPixbuf* reorient_with_exif( producer_pixbuf self, int image_idx, GdkPixbuf *pixbuf )

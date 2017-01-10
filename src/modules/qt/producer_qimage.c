@@ -232,6 +232,13 @@ static void load_filenames( producer_qimage self, mlt_properties properties )
 		mlt_properties_set( self->filenames, "0", filename );
 	}
 	self->count = mlt_properties_count( self->filenames );
+	if ( self->count > 1 )
+	{
+		int ttl = mlt_properties_get_int( properties, "ttl" );
+		mlt_position length = self->count * ttl;
+		mlt_properties_set_position( properties, "length", length );
+		mlt_properties_set_position( properties, "out", length - 1 );
+	}
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
