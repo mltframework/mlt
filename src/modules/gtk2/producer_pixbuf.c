@@ -69,6 +69,23 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame );
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer parent );
 
+static void refresh_length( mlt_properties properties, producer_pixbuf self )
+{
+	if ( self->count > 1 )
+	{
+		int ttl = mlt_properties_get_int( properties, "ttl" );
+		mlt_position length = self->count * ttl;
+		mlt_properties_set_position( properties, "length", length );
+		mlt_properties_set_position( properties, "out", length - 1 );
+	}
+}
+
+static void on_property_changed( mlt_service owner, mlt_producer producer, char *name )
+{
+	if ( !strcmp( name, "ttl" ) )
+		refresh_length( MLT_PRODUCER_PROPERTIES(producer), producer->child );
+}
+
 mlt_producer producer_pixbuf_init( char *filename )
 {
 	producer_pixbuf self = calloc( 1, sizeof( struct producer_pixbuf_s ) );
@@ -129,6 +146,10 @@ mlt_producer producer_pixbuf_init( char *filename )
 		{
 			producer_close( producer );
 			producer = NULL;
+		}
+		else
+		{
+			mlt_events_listen( properties, self, "property-changed", (mlt_listener) on_property_changed );
 		}
 		return producer;
 	}
@@ -297,13 +318,7 @@ static void load_filenames( producer_pixbuf self, mlt_properties properties )
 		mlt_properties_set( self->filenames, "0", filename );
 	}
 	self->count = mlt_properties_count( self->filenames );
-	if ( self->count > 1 )
-	{
-		int ttl = mlt_properties_get_int( properties, "ttl" );
-		mlt_position length = self->count * ttl;
-		mlt_properties_set_position( properties, "length", length );
-		mlt_properties_set_position( properties, "out", length - 1 );
-	}
+	refresh_length( properties, self );
 }
 
 static GdkPixbuf* reorient_with_exif( producer_pixbuf self, int image_idx, GdkPixbuf *pixbuf )
