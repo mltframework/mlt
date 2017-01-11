@@ -671,14 +671,14 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Set the producer on the frame properties
 		mlt_properties_set_data( properties, "producer_pixbuf", self, 0, NULL, NULL );
 
-		// Update timecode on the frame we're creating
-		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
-
 		// Refresh the pixbuf
 		self->pixbuf_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "pixbuf.pixbuf" );
 		self->pixbuf = mlt_cache_item_data( self->pixbuf_cache, NULL );
 		refresh_pixbuf( self, *frame );
 		mlt_cache_item_close( self->pixbuf_cache );
+
+                // Update timecode on the frame we're creating
+		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
