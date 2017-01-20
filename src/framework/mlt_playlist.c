@@ -1819,13 +1819,17 @@ void mlt_playlist_pad_blanks( mlt_playlist self, mlt_position position, int leng
 }
 
 /** Insert a clip at a specific time.
+ * If the insertion is done in overwrite mode (mode=true):
+ *      - if the position is a blank then it is replaced by the clip. If the blank was shorter than the clip, then the following clip is pushed to make room for the new clip.
+        - if the position is inside a clip, then the new clip is inserted before or after the old one, depending on whether the position is past the middle of the old clip or not. In case it is inserted after, if there is some blank after, it is replaced by the clip similarly as before
+ * If the insertion is not done in overwrite mode, then the behaviour is the same except that blanks are considered as normal clips (and thus never deleted).
  *
  * \public \memberof mlt_playlist_s
  * \param self a playlist
  * \param position the time at which to insert
  * \param producer the producer to insert
  * \param mode true if you want to overwrite any blank section
- * \return true if there was an error
+ * \return -1 if there was an error, else returns the index of the inserted clip
  */
 
 int mlt_playlist_insert_at( mlt_playlist self, mlt_position position, mlt_producer producer, int mode )
@@ -1839,7 +1843,7 @@ int mlt_playlist_insert_at( mlt_playlist self, mlt_position position, mlt_produc
 		mlt_playlist_clip_info info;
 		mlt_playlist_get_clip_info( self, &info, clip );
 		mlt_events_block( properties, self );
-		if ( clip < self->count && mlt_playlist_is_blank( self, clip ) )
+		if ( mode == 1 && clip < self->count && mlt_playlist_is_blank( self, clip ) )
 		{
 			// Split and move to new clip if need be
 			if ( position != info.start && mlt_playlist_split( self, clip, position - info.start - 1 ) == 0 )
@@ -1872,13 +1876,8 @@ int mlt_playlist_insert_at( mlt_playlist self, mlt_position position, mlt_produc
 		}
 		else
 		{
-			if ( mode == 1 ) {
-				if ( position == info.start )
-					mlt_playlist_remove( self, clip );
-				else
-					mlt_playlist_blank( self, position - mlt_properties_get_int( properties, "length" ) - 1 );
-			}
-			mlt_playlist_append( self, producer );
+      mlt_playlist_blank( self, position - mlt_properties_get_int( properties, "length" ) - 1 );
+      mlt_playlist_append( self, producer );
 			ret = self->count - 1;
 		}
 		mlt_events_unblock( properties, self );
