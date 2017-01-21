@@ -3,7 +3,7 @@
  * \brief multitrack service class
  * \see mlt_multitrack_s
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,8 @@
 #include "mlt_multitrack.h"
 #include "mlt_playlist.h"
 #include "mlt_frame.h"
+#include "mlt_factory.h"
+#include "mlt_cache.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -164,6 +166,21 @@ static void mlt_multitrack_listener( mlt_producer producer, mlt_multitrack self 
 	mlt_multitrack_refresh( self );
 }
 
+static void resize_service_caches( mlt_multitrack self )
+{
+	mlt_properties caches = mlt_properties_get_data( mlt_global_properties(), "caches", NULL );
+	if ( caches )
+	{
+		int i;
+		for ( i = 0; i < mlt_properties_count(caches); ++i )
+		{
+			mlt_cache cache = mlt_properties_get_data_at( caches, i, NULL );
+			if ( self->count > mlt_cache_get_size(cache) )
+				mlt_cache_set_size( cache, self->count + 1 );
+		}
+	}
+}
+
 /** Connect a producer to a given track.
  *
  * Note that any producer can be connected here, but see special case treatment
@@ -215,10 +232,7 @@ int mlt_multitrack_connect( mlt_multitrack self, mlt_producer producer, int trac
 		if ( track >= self->count )
 		{
 			self->count = track + 1;
-
-			// TODO: Move this into producer_avformat.c when mlt_events broadcasting is available.
-			if ( self->count > mlt_service_cache_get_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat" ) )
-				mlt_service_cache_set_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat", self->count + 1 );
+			resize_service_caches( self );
 		}
 
 		// Refresh our stats
@@ -265,6 +279,7 @@ int mlt_multitrack_insert( mlt_multitrack self, mlt_producer producer, int track
 			memmove( &self->list[ track + 1 ], &self->list[ track ],
 					( self->count - track ) * sizeof ( mlt_track ) );
 			self->count ++;
+			resize_service_caches( self );
 
 			// Assign the track in our list.
 			self->list[ track ] = malloc( sizeof( struct mlt_track_s ) );
@@ -273,10 +288,6 @@ int mlt_multitrack_insert( mlt_multitrack self, mlt_producer producer, int track
 										 "producer-changed", ( mlt_listener )mlt_multitrack_listener );
 			mlt_properties_inc_ref( MLT_PRODUCER_PROPERTIES( producer ) );
 			mlt_event_inc_ref( self->list[ track ]->event );
-
-			// TODO: Move this into producer_avformat.c when mlt_events broadcasting is available.
-			if ( self->count > mlt_service_cache_get_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat" ) )
-				mlt_service_cache_set_size( MLT_MULTITRACK_SERVICE( self ), "producer_avformat", self->count + 1 );
 
 			// Refresh our stats
 			mlt_multitrack_refresh( self );
