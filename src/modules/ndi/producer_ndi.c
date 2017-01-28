@@ -114,7 +114,7 @@ static void* producer_ndi_feeder( void* p )
 	NDIlib_recv_create_t recv_create_desc =
 	{
 		ndi_srcs[ i ],
-		NDIlib_recv_color_format_UYVY_BGRA,
+		NDIlib_recv_color_format_e_UYVY_BGRA,
 		NDIlib_recv_bandwidth_highest,
 		true
 	};
