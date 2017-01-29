@@ -1246,6 +1246,69 @@ static int pick_av_pixel_format( int *pix_fmt )
 	return 0;
 }
 
+struct sliced_pix_fmt_conv_t
+{
+	int width, height;
+	AVFrame *frame;
+	AVPicture *output;
+	enum AVPixelFormat srcFormat, dstFormat;
+	const AVPixFmtDescriptor *desc;
+	int flags, src_colorspace, dst_colorspace, src_full_range, dst_full_range;
+};
+
+static int sliced_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
+{
+	uint8_t *out[4];
+	const uint8_t *in[4];
+	int in_stride[4], out_stride[4];
+
+	int i, slice_y, slice_h, h, mul, field, slices, interlaced;
+
+	struct SwsContext *sws;
+	struct sliced_pix_fmt_conv_t* ctx = ( struct sliced_pix_fmt_conv_t* )cookie;
+
+#if 1 /* force progressive/interlaced or original source */
+	interlaced = ctx->frame->interlaced_frame;
+#else
+	interlaced = 0; // progressive forced
+#endif
+	field = ( interlaced ) ? ( idx & 1 ) : 0;
+	idx = ( interlaced ) ? ( idx / 2 ) : idx;
+	slices = ( interlaced ) ? ( jobs / 2 ) : jobs;
+	mul = ( interlaced ) ? 2 : 1;
+	h = ctx->height >> !!interlaced;
+	slice_h = ( h + slices - 1 )/ slices;
+	slice_y = slice_h * idx;
+	slice_h = FFMIN( slice_h, h - slice_y );
+
+	mlt_log_error( NULL, "%s:%d: [id=%d, idx=%d, jobs=%d], interlaced=%d, field=%d, slices=%d, mul=%d, h=%d, slice_h=%d, slice_y=%d ctx->desc=[log2_chroma_h=%d\n",
+		__FUNCTION__, __LINE__, id, idx, jobs, interlaced, field, slices, mul, h, slice_h, slice_y, ctx->desc->log2_chroma_h );
+
+	sws = sws_getContext
+	(
+		ctx->width, slice_h, ctx->srcFormat,
+		ctx->width, slice_h, ctx->dstFormat,
+		ctx->flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL
+	);
+
+	set_luma_transfer( sws, ctx->src_colorspace, ctx->dst_colorspace, ctx->src_full_range, ctx->dst_full_range );
+
+	for( i = 0; i < 4; i++ )
+	{
+		int vsub = ( 1 == i || 2 == i ) ? ctx->desc->log2_chroma_h : 0; // U and V planes
+		in_stride[i]  = ctx->frame->linesize[i] * mul;
+		out_stride[i] = ctx->output->linesize[i] * mul;
+		in[i] =  ctx->frame->data[i] + ctx->frame->linesize[i] * ( field + mul * ( slice_y >> vsub ) );
+		out[i] = ctx->output->data[i] + ctx->output->linesize[i] * ( field + mul * slice_y );
+	}
+
+	sws_scale( sws, in, in_stride, 0, slice_h, out, out_stride );
+
+	sws_freeContext( sws );
+
+	return 0;
+}
+
 // returns resulting YUV colorspace
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
@@ -1332,20 +1395,32 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	}
 	else
 	{
-#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
-		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
-#else
-		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
-#endif
 		AVPicture output;
-		avpicture_fill( &output, buffer, AV_PIX_FMT_YUYV422, width, height );
-		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, 0 ) )
-			result = profile->colorspace;
-		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			output.data, output.linesize);
-		sws_freeContext( context );
+		struct sliced_pix_fmt_conv_t ctx =
+		{
+			.flags = flags,
+			.width = width,
+			.height = height,
+			.frame = frame,
+			.output = &output,
+			.dstFormat = AV_PIX_FMT_YUYV422,
+			.src_colorspace = self->yuv_colorspace,
+			.dst_colorspace = profile->colorspace,
+			.src_full_range = self->full_luma,
+			.dst_full_range = 0
+		};
+#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+		ctx.srcFormat = src_pix_fmt;
+#else
+		ctx.srcFormat = src_pix;
+#endif
+		ctx.desc = av_pix_fmt_desc_get( ctx.srcFormat );
+
+		avpicture_fill( ctx.output, buffer, ctx.dstFormat, width, height );
+
+#define TST_SLICES_CNT 10
+		for( int i = 0; i < TST_SLICES_CNT; i++ )
+			sliced_pix_fmt_conv_proc( 0, i, TST_SLICES_CNT, &ctx );
 	}
 	return result;
 }
