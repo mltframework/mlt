@@ -1,6 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -552,8 +552,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Affine boundaries
 		float minima = 0;
-		float xmax = b_width;
-		float ymax = b_height;
+		float xmax = b_width - 1;
+		float ymax = b_height - 1;
 
 		// Set the interpolation function
 		if ( interps == NULL || strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 || strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
@@ -567,9 +567,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		else if ( strcmp( interps, "bilinear" ) == 0 )
 		{
 			interp = interpBL_b32;
-			// uses floorf. Values should be >= 0 and < max + 1.
-			xmax += 0.99;
-			ymax += 0.99;
+			// uses floorf.
 		}
 		else if ( strcmp( interps, "bicubic" ) == 0 ||  strcmp( interps, "hyper" ) == 0 || strcmp( interps, "sinc" ) == 0 || strcmp( interps, "lanczos" ) == 0 || strcmp( interps, "spline" ) == 0 )
 		{
