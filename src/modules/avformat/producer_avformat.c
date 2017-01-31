@@ -2349,12 +2349,15 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			"A pkt.pts %"PRId64" pkt.dts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
 			pkt.pts, pkt.dts, req_position, self->current_position, int_position );
 
-		if ( req_pts > pts )
-			// We are behind, so skip some
-			*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
-		else if ( self->audio_index != INT_MAX && int_position > req_position + 2 )
-			// We are ahead, so seek backwards some more
-			seek_audio( self, req_position, timecode - 1.0 );
+		if ( self->seekable || int_position > 0 )
+		{
+			if ( req_pts > pts )
+				// We are behind, so skip some
+				*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
+			else if ( self->audio_index != INT_MAX && int_position > req_position + 2 )
+				// We are ahead, so seek backwards some more
+				seek_audio( self, req_position, timecode - 1.0 );
+		}
 
 		// Cancel the find_first_pts() in seek_audio()
 		if ( self->video_index == -1 && self->last_position == POSITION_INITIAL )
