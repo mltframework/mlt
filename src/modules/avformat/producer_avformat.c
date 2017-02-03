@@ -1256,12 +1256,13 @@ struct sliced_pix_fmt_conv_t
 	int flags, src_colorspace, dst_colorspace, src_full_range, dst_full_range;
 };
 
-static int sliced_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
+#define SLICED_420_SLICE_WIDTH 64
+
+static int sliced_420_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 {
 	uint8_t *out[4];
 	const uint8_t *in[4];
 	int in_stride[4], out_stride[4];
-
 	int i, slice_x, slice_w, w, h, mul, field, slices, interlaced = 0;
 
 	struct SwsContext *sws;
@@ -1273,12 +1274,15 @@ static int sliced_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 	slices = ( interlaced ) ? ( jobs / 2 ) : jobs;
 	mul = ( interlaced ) ? 2 : 1;
 	h = ctx->height >> !!interlaced;
-	slice_w = ( ctx->width + slices - 1 ) / slices;
+	slice_w = SLICED_420_SLICE_WIDTH;
 	slice_x = slice_w * idx;
 	slice_w = FFMIN( slice_w, ctx->width - slice_x );
 
 	mlt_log_error( NULL, "%s:%d: [id=%d, idx=%d, jobs=%d], interlaced=%d, field=%d, slices=%d, mul=%d, h=%d, slice_w=%d, slice_x=%d ctx->desc=[log2_chroma_h=%d, log2_chroma_w=%d]\n",
 		__FUNCTION__, __LINE__, id, idx, jobs, interlaced, field, slices, mul, h, slice_w, slice_x, ctx->desc->log2_chroma_h, ctx->desc->log2_chroma_w );
+
+	if ( slice_w <= 0 )
+		return 0;
 
 	sws = sws_getContext
 	(
@@ -1392,9 +1396,9 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
-	else if ( AV_PIX_FMT_YUV420P == pix_fmt ) //&& *format == mlt_image_yuv422p )
+	else if ( AV_PIX_FMT_YUV420P == pix_fmt && *format == mlt_image_yuv422 )
 	{
-		int i;
+		int i, c;
 		AVPicture output;
 		struct sliced_pix_fmt_conv_t ctx =
 		{
@@ -1418,16 +1422,10 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		avpicture_fill( ctx.output, buffer, ctx.dstFormat, width, height );
 
-#define H_SLICES 18
-//#define H_SLICES 12
-
-#ifdef H_SLICES
-		for ( i = 0; i < H_SLICES; i++ )
-			sliced_pix_fmt_conv_proc( i, i, H_SLICES, &ctx );
-#else
-		sliced_pix_fmt_conv_proc( 0, 0, 2, &ctx );
-		sliced_pix_fmt_conv_proc( 0, 1, 2, &ctx );
-#endif
+		c = ( width + SLICED_420_SLICE_WIDTH - 1 ) / SLICED_420_SLICE_WIDTH;
+		c *= frame->interlaced_frame ? 2 : 1;
+		for ( i = 0 ; i < c; i++ )
+			sliced_420_pix_fmt_conv_proc( i, i, c, &ctx );
 	}
 	else
 	{
