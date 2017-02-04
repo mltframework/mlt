@@ -105,10 +105,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		}
 		else
 		{
+			// Determine scale with respect to aspect ratio.
 			float scale_x = MIN( rect.w / b_width * ( consumer_ar / b_ar ) , rect.h / b_height );
 			float scale_y = scale_x;
-			// Determine scale with respect to aspect ratio.
-			double consumer_dar = consumer_ar * normalised_width / normalised_height;
 			transform.translate((rect.w - (b_width * scale_x)) / 2.0, (rect.h - (b_height * scale_y)) / 2.0);
 			transform.scale( scale_x, scale_y );
 		}
