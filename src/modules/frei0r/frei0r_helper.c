@@ -20,7 +20,6 @@
 #include <frei0r.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sched.h>
 
 static void parse_color( int color, f0r_param_color_t *fcolor )
 {
@@ -104,23 +103,18 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 	int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads") : -1;
 	mlt_slices slices = NULL;
 
-	mlt_service_lock( service );
-
 	if (slice_count >= 0) {
-		slices = mlt_properties_get_data(prop, "mlt_slices", NULL);
-		if (!slices)
-			slices = mlt_slices_init(slice_count, SCHED_OTHER, sched_get_priority_max(SCHED_OTHER));
-		if (slices) {
-			mlt_properties_set_data(prop, "mlt_slices", slices, 0, (mlt_destructor) mlt_slices_close, NULL);
+		if ((slices = mlt_slices_get_global(mlt_policy_normal)))
 			slice_count = mlt_slices_count(slices);
-			not_thread_safe = 1;
-		}
 	}
 
 	//use as name the width and height
 	int slice_height = *height / (slice_count > 0? slice_count : 1);
 	char ctorname[1024] = "";
 	sprintf(ctorname, "ctor-%dx%d", *width, slice_height);
+
+	mlt_service_lock( service );
+
 	f0r_instance_t inst = mlt_properties_get_data(prop, ctorname, NULL);
 	if (!inst) {
 		inst = f0r_construct(*width, slice_height);
