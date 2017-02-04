@@ -52,6 +52,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	double consumer_ar = mlt_profile_sar( profile );
 	int b_width = mlt_properties_get_int( b_properties, "meta.media.width" );
 	int b_height = mlt_properties_get_int( b_properties, "meta.media.height" );
+	if ( b_height == 0 )
+	{
+		b_width = normalised_width;
+		b_height = normalised_height;
+	}
 	double b_ar = mlt_frame_get_aspect_ratio( b_frame );
 	double b_dar = b_ar * b_width / b_height;
 	rect.w = -1;
@@ -100,20 +105,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		}
 		else
 		{
-			float scale_x = MIN( rect.w / b_width, rect.h / b_height );
+			float scale_x = MIN( rect.w / b_width * ( consumer_ar / b_ar ) , rect.h / b_height );
 			float scale_y = scale_x;
 			// Determine scale with respect to aspect ratio.
 			double consumer_dar = consumer_ar * normalised_width / normalised_height;
-			if ( b_dar > consumer_dar )
-			{
-				scale_y = scale_x;
-				scale_y *= consumer_ar / b_ar;
-			}
-			else
-			{
-				scale_x = scale_y;
-				scale_x *= b_ar / consumer_ar;
-			}
 			transform.translate((rect.w - (b_width * scale_x)) / 2.0, (rect.h - (b_height * scale_y)) / 2.0);
 			transform.scale( scale_x, scale_y );
 		}
@@ -127,6 +122,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	else
 	{
 		// No transform, request profile sized image
+		if (b_dar != mlt_profile_dar( profile ) )
+		{
+			// Activate transparency if the clips don't have the same aspect ratio
+			hasAlpha = true;
+		}
 		b_width = *width;
 		b_height = *height;
 	}
