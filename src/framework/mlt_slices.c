@@ -3,7 +3,7 @@
  * \brief sliced threading processing helper
  * \see mlt_slices_s
  *
- * Copyright (C) 2016 Meltytech, LLC
+ * Copyright (C) 2016-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,10 +23,12 @@
 #include "mlt_slices.h"
 #include "mlt_properties.h"
 #include "mlt_log.h"
+#include "mlt_factory.h"
 
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sched.h>
 #ifdef _WIN32
 #ifdef _WIN32_WINNT
 #undef _WIN32_WINNT
@@ -37,8 +39,10 @@
 #define MAX_SLICES 32
 #define ENV_SLICES "MLT_SLICES_COUNT"
 
-static pthread_mutex_t pool_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 static mlt_properties pool_map = NULL;
+static mlt_slices globals[mlt_policy_nb] = {NULL, NULL, NULL};
+
 
 struct mlt_slices_runtime_s
 {
@@ -129,9 +133,9 @@ static void* mlt_slices_worker( void* p )
 /** Initialize a sliced threading context
  *
  * \public \memberof mlt_slices_s
- * \param threads number of threads to use for job list
- * \param policy scheduling policy of processing threads
- * \param priority priority value that can be used with the scheduling algorithm
+ * \param threads number of threads to use for job list, 0 for #cpus
+ * \param policy scheduling policy of processing threads, -1 for normal
+ * \param priority priority value that can be used with the scheduling algorithm, -1 for maximum
  * \return the context pointer
  */
 
@@ -184,6 +188,10 @@ mlt_slices mlt_slices_init( int threads, int policy, int priority )
 	pthread_cond_init ( &ctx->cond_var_job, NULL );
 	pthread_cond_init ( &ctx->cond_var_ready, NULL );
 	pthread_attr_init( &tattr );
+    if ( policy < 0 )
+        policy = SCHED_OTHER;
+    if ( priority < 0 )
+        priority = sched_get_priority_max( policy );
 	pthread_attr_setschedpolicy( &tattr, policy );
 	param.sched_priority = priority;
 	pthread_attr_setschedparam( &tattr, &param );
@@ -211,7 +219,7 @@ void mlt_slices_close( mlt_slices ctx )
 {
 	int j;
 
-	pthread_mutex_lock( &pool_lock );
+	pthread_mutex_lock( &g_lock );
 
 	mlt_log_debug( NULL, "%s:%d: ctx=[%p][%s] closing\n", __FUNCTION__, __LINE__, ctx, ctx->name );
 
@@ -220,7 +228,7 @@ void mlt_slices_close( mlt_slices ctx )
 	{
 		ctx->ref--;
 		mlt_log_debug( NULL, "%s:%d: ctx=[%p][%s] new ref=%d\n", __FUNCTION__, __LINE__, ctx, ctx->name, ctx->ref );
-		pthread_mutex_unlock( &pool_lock );
+		pthread_mutex_unlock( &g_lock );
 		return;
 	}
 
@@ -231,7 +239,7 @@ void mlt_slices_close( mlt_slices ctx )
 		mlt_log_debug( NULL, "%s:%d: ctx=[%p][%s] removed\n", __FUNCTION__, __LINE__, ctx, ctx->name );
 	}
 
-	pthread_mutex_unlock( &pool_lock );
+	pthread_mutex_unlock( &g_lock );
 
 	/* notify to exit */
 	ctx->f_exit = 1;
@@ -309,9 +317,10 @@ void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cooki
 /** Initialize a sliced threading context pool
  *
  * \public \memberof mlt_slices_s
- * \param threads number of threads to use for job list
- * \param policy scheduling policy of processing threads
- * \param priority priority value that can be used with the scheduling algorithm
+ * \deprecated
+ * \param threads number of threads to use for job list, 0 for #cpus
+ * \param policy scheduling policy of processing threads, -1 for normal
+ * \param priority priority value that can be used with the scheduling algorithm, -1 for maximum
  * \param name name of pool of threads
  * \return the context pointer
  */
@@ -320,7 +329,7 @@ mlt_slices mlt_slices_init_pool( int threads, int policy, int priority, const ch
 {
 	mlt_slices ctx = NULL;
 
-	pthread_mutex_lock( &pool_lock );
+	pthread_mutex_lock( &g_lock );
 
 	/* try to find it by name */
 	if ( name )
@@ -350,9 +359,44 @@ mlt_slices mlt_slices_init_pool( int threads, int policy, int priority, const ch
 		mlt_log_debug( NULL, "%s:%d: reusing pool=[%s]\n", __FUNCTION__, __LINE__, name );
 	}
 
-	pthread_mutex_unlock( &pool_lock );
+	pthread_mutex_unlock( &g_lock );
 
 	return ctx;
+}
+
+/** Get a global shared sliced threading context.
+ *
+ * There are separate contexts for each scheduling policy.
+ *
+ * \public \memberof mlt_slices_s
+ * \param policy the thread scheduling policy needed
+ * \return the context pointer
+ */
+
+mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
+{
+	pthread_mutex_lock( &g_lock );
+	if ( !globals[policy] )
+	{
+		char *env = getenv( "MLT_GLOBAL_SLICES" );
+		int threads = env ? atoi(env) : 0;
+		int posix_policy;
+		switch (policy) {
+		case mlt_policy_rr:
+			posix_policy = SCHED_RR;
+			break;
+		case mlt_policy_fifo:
+			posix_policy = SCHED_FIFO;
+			break;
+		default:
+			posix_policy = SCHED_OTHER;
+		}
+		globals[policy] = mlt_slices_init( threads, posix_policy, -1 );
+		mlt_factory_register_for_clean_up( globals[policy], (mlt_destructor) mlt_slices_close );
+	}
+	pthread_mutex_unlock( &g_lock );
+
+	return globals[policy];
 }
 
 /** Get the number of slices.
@@ -365,4 +409,22 @@ mlt_slices mlt_slices_init_pool( int threads, int policy, int priority, const ch
 int mlt_slices_count(mlt_slices ctx)
 {
 	return ctx->count;
+}
+
+void mlt_slices_run_normal(int jobs, mlt_slices_proc proc, void *cookie)
+{
+	return mlt_slices_run( mlt_slices_get_global( mlt_policy_normal ),
+	   jobs, proc, cookie );
+}
+
+void mlt_slices_run_rr(int jobs, mlt_slices_proc proc, void *cookie)
+{
+	return mlt_slices_run( mlt_slices_get_global( mlt_policy_rr ),
+	   jobs, proc, cookie );
+}
+
+void mlt_slices_run_fifo(int jobs, mlt_slices_proc proc, void *cookie)
+{
+	return mlt_slices_run( mlt_slices_get_global( mlt_policy_fifo ),
+	   jobs, proc, cookie );
 }
