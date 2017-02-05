@@ -805,7 +805,6 @@ protected:
 		if ( bmdOutputFrameDisplayedLate == completed )
 		{
 			mlt_log_verbose( getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDisplayedLate == completed\n" );
-			m_count++;
 		}
 		if ( bmdOutputFrameDropped == completed )
 		{
