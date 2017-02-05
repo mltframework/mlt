@@ -803,8 +803,9 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		st->time_base = c->time_base;
 
 		// Default to the codec's first pix_fmt if possible.
-		c->pix_fmt = pix_fmt? av_get_pix_fmt( pix_fmt ) : codec? codec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
-		
+		c->pix_fmt = pix_fmt ? av_get_pix_fmt( pix_fmt ) : codec ?
+			( codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV422P ): AV_PIX_FMT_YUV420P;
+
 		switch ( colorspace )
 		{
 		case 170:
