@@ -157,6 +157,12 @@ static void* consumer_ndi_feeder( void* p )
 					// convert lower field first to top field first
 					if ( !progressive )
 					{
+						for ( int i = 0; i < width; i++)
+						{
+							buffer[ 2 * i + 0 ] = 128;
+							buffer[ 2 * i + 1 ] = 16;
+						}
+
 						arg[1] += stride;
 						size -= stride;
 					}
