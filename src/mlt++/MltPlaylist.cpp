@@ -71,7 +71,7 @@ void ClipInfo::update( mlt_playlist_clip_info *info )
 	producer = new Producer( info->producer );
 	cut = new Producer( info->cut );
 	start = info->start;
-	resource = strdup( info->resource );
+	resource = info->resource ? strdup( info->resource ) : 0;
 	frame_in = info->frame_in;
 	frame_out = info->frame_out;
 	frame_count = info->frame_count;
