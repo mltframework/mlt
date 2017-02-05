@@ -20,7 +20,6 @@
 #define __STDC_FORMAT_MACROS  /* see inttypes.h */
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
-#define _XOPEN_SOURCE
 
 #include <stdint.h>
 #include <inttypes.h>
@@ -80,7 +79,7 @@ static void* producer_ndi_feeder( void* p )
 	mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "%s: waiting for source [%s]\n", __FUNCTION__, self->arg );
 	for ( i = -1; !self->f_exit && -1 == i; )
 	{
-		int c = 0, j;
+		unsigned int c = 0, j;
 
 		// wait for sources
 		ndi_srcs = NDIlib_find_get_sources( ndi_find, &c, 100 );
@@ -354,7 +353,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 
 		if ( !video )
 		{
-			int r;
 			uint64_t usec;
 			struct timeval now;
 			struct timespec tm;
@@ -367,7 +365,7 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 			tm.tv_nsec = (usec % 1000000LL) * 1000LL;
 
 ////fprintf(stderr, "%s:%d: pthread_cond_timedwait...\n", __FUNCTION__, __LINE__ );
-			r = pthread_cond_timedwait( &self->cond, &self->lock, &tm );
+			pthread_cond_timedwait( &self->cond, &self->lock, &tm );
 ////fprintf(stderr, "%s:%d: pthread_cond_timedwait=%d\n", __FUNCTION__, __LINE__, r );
 
 			continue;
