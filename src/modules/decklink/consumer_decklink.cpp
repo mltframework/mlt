@@ -575,7 +575,7 @@ protected:
 					ssize_t size = stride * height;
 
 					// convert lower field first to top field first
-					if ( !progressive )
+					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
 					{
 						arg[1] += stride;
 						size -= stride;
