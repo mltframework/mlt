@@ -1627,8 +1627,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				// Make a dumb assumption on streams that contain wild timestamps
 				if ( llabs( req_position - int_position ) > 999 )
 				{
+					mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), " WILD TIMESTAMP: "
+						"pkt.pts=[%"PRId64"], pkt.dts=[%"PRId64"], req_position=[%"PRId64"], "
+						"current_position=[%"PRId64"], int_position=[%"PRId64"], pts=[%"PRId64"] \n",
+						self->pkt.pts, self->pkt.dts, req_position,
+						self->current_position, int_position, pts );
 					int_position = req_position;
-					mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), " WILD TIMESTAMP!\n" );
 				}
 				self->last_position = int_position;
 
