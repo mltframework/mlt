@@ -756,14 +756,6 @@ protected:
 				uint32_t written = 0;
 #endif
 				BMDTimeValue streamTime = m_count * frequency * m_duration / m_timescale;
-				m_deckLinkOutput->GetBufferedAudioSampleFrameCount( &written );
-				mlt_log_debug( getConsumer(), "%s:%d GetBufferedAudioSampleFrameCount=" DECKLINK_UNSIGNED_FORMAT "\n",
-					__FUNCTION__, __LINE__, written );
-				if ( written > (m_preroll + 1) * samples )
-				{
-					mlt_log_verbose( getConsumer(), "renderAudio: will flush " DECKLINK_UNSIGNED_FORMAT " audiosamples\n", written );
-					m_deckLinkOutput->FlushBufferedAudioSamples();
-				};
 #ifdef _WIN32
 				hr = m_deckLinkOutput->ScheduleAudioSamples( pcm, samples, streamTime, frequency, (unsigned long*) &written );
 #else
