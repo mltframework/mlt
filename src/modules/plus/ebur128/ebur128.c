@@ -162,18 +162,21 @@ static void interp_process(interpolator* interp, size_t frames, float* in, float
   unsigned int f = 0;
   unsigned int t = 0;
   unsigned int out_stride = interp->channels * interp->factor;
+  float* outp = 0;
+  double acc = 0;
+  double c = 0;
   for (frame = 0; frame < frames; frame++) {
     for (chan = 0; chan < interp->channels; chan++) {
       // Add sample to delay buffer
       interp->z[chan][interp->zi] = *in++;
       // Apply coefficients
-      float* outp = out + chan;
+      outp = out + chan;
       for (f = 0; f < interp->factor; f++) {
-        double acc = 0.0;
+        acc = 0.0;
         for (t = 0; t < interp->filter[f].count; t++) {
           int i = (int)interp->zi - (int)interp->filter[f].index[t];
           if (i < 0) i += interp->delay;
-          double c = interp->filter[f].coeff[t];
+          c = interp->filter[f].coeff[t];
           acc += interp->z[chan][i] * c;
         }
         *outp = (float)acc;
@@ -552,7 +555,8 @@ static void ebur128_filter_##type(ebur128_state* st, const type* src,          \
       if (max > st->d->prev_sample_peak[c]) st->d->prev_sample_peak[c] = max;  \
     }                                                                          \
   }                                                                            \
-  if ((st->mode & EBUR128_MODE_TRUE_PEAK) == EBUR128_MODE_TRUE_PEAK) {         \
+  if ((st->mode & EBUR128_MODE_TRUE_PEAK) == EBUR128_MODE_TRUE_PEAK &&         \
+      st->d->interp) {                                                         \
     for (c = 0; c < st->channels; ++c) {                                       \
       for (i = 0; i < frames; ++i) {                                           \
         st->d->resampler_buffer_input[i * st->channels + c] =                  \
