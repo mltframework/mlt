@@ -27,71 +27,6 @@
 #include <string.h>
 #include <math.h>
 
-typedef void ( *copy_luma_fn )(uint8_t* alpha_a, int stride_a, uint8_t* image_b, int stride_b, int width, int height);
-
-#if defined(USE_SSE) && defined(ARCH_X86_64)
-static void __attribute__((noinline)) copy_Y_to_A_full_luma_sse(uint8_t* alpha_a, uint8_t* image_b, int cnt)
-{
-	const static unsigned char const4[] =
-	{
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0
-	};
-
-	__asm__ volatile
-	(
-		"movdqu         (%[equ255]), %%xmm4     \n\t"   /* load bottom value 0xff */
-
-		"loop_start1:                           \n\t"
-
-		/* load pixels block 1 */
-		"movdqu         0(%[image_b]), %%xmm0   \n\t"
-		"add            $0x10, %[image_b]       \n\t"
-
-		/* load pixels block 2 */
-		"movdqu         0(%[image_b]), %%xmm1   \n\t"
-		"add            $0x10, %[image_b]       \n\t"
-
-		/* leave only Y */
-		"pand           %%xmm4, %%xmm0          \n\t"
-		"pand           %%xmm4, %%xmm1          \n\t"
-
-		/* pack to 8 bit value */
-		"packuswb       %%xmm1, %%xmm0          \n\t"
-
-		/* store */
-		"movdqu         %%xmm0, (%[alpha_a])    \n\t"
-		"add            $0x10, %[alpha_a]       \n\t"
-
-		/* loop if we done */
-		"dec            %[cnt]                  \n\t"
-		"jnz            loop_start1             \n\t"
-		:
-		: [cnt]"r" (cnt), [alpha_a]"r"(alpha_a), [image_b]"r"(image_b), [equ255]"r"(const4)
-	);
-};
-#endif
-
-static void copy_Y_to_A_full_luma(uint8_t* alpha_a, int stride_a, uint8_t* image_b, int stride_b, int width, int height)
-{
-	int i, j;
-
-	for(j = 0; j < height; j++)
-	{
-		i = 0;
-#if defined(USE_SSE) && defined(ARCH_X86_64)
-		if(width >= 16)
-		{
-			copy_Y_to_A_full_luma_sse(alpha_a, image_b, width >> 4);
-			i = (width >> 4) << 4;
-		}
-#endif
-		for(; i < width; i++)
-			alpha_a[i] = image_b[2*i];
-		alpha_a += stride_a;
-		image_b += stride_b;
-	};
-};
-
 #if defined(USE_SSE) && defined(ARCH_X86_64)
 static void __attribute__((noinline)) copy_Y_to_A_scaled_luma_sse(uint8_t* alpha_a, uint8_t* image_b, int cnt)
 {
@@ -239,9 +174,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	uint8_t *alpha_a, *image_b;
 
-	copy_luma_fn copy_luma = mlt_properties_get_int(b_props, "full_luma")?
-		copy_Y_to_A_full_luma:copy_Y_to_A_scaled_luma;
-
 	// This transition is yuv422 only
 	*format = mlt_image_yuv422;
 
@@ -250,7 +182,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	alpha_a = mlt_frame_get_alpha_mask( a_frame );
 
 	// copy data
-	copy_luma
+	copy_Y_to_A_scaled_luma
 	(
 		alpha_a, width_a, image_b, width_b * 2,
 		(width_a > width_b)?width_b:width_a,
