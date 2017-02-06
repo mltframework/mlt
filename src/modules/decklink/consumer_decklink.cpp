@@ -499,30 +499,11 @@ protected:
 
 	bool createFrame( IDeckLinkMutableVideoFrame** decklinkFrame )
 	{
-		uint8_t *buffer = 0;
-		int stride = m_width * ( m_isKeyer? 4 : 2 );
 		IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*)mlt_deque_pop_front( m_frames );;
 
 		*decklinkFrame = frame;
 
-		if ( !frame )
-			return false;
-
-		// Make the first line black for field order correction.
-		if ( S_OK == frame->GetBytes( (void**) &buffer ) && buffer )
-		{
-			if ( m_isKeyer )
-			{
-				memset( buffer, 0, stride );
-			}
-			else for ( int i = 0; i < m_width; i++ )
-			{
-				*buffer++ = 128;
-				*buffer++ = 16;
-			}
-		}
-
-		return true;
+		return ( !frame ) ? false : true;
 	}
 
 	void renderVideo( mlt_frame frame )
@@ -577,6 +558,13 @@ protected:
 					// convert lower field first to top field first
 					if ( !progressive )
 					{
+						// Make the first line black for field order correction.
+						for ( int i = 0; i < m_width; i++ )
+						{
+							buffer[ i * 2 + 0 ] = 128;
+							buffer[ i * 2 + 1 ] = 16;
+						}
+
 						arg[1] += stride;
 						size -= stride;
 					}
@@ -599,6 +587,9 @@ protected:
 
 					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
 					{
+						// Make the first line black for field order correction.
+						memset( buffer, 0, stride );
+
 						// Correct field order
 						height--;
 						y--;
