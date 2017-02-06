@@ -43,7 +43,7 @@ typedef struct
 	char* arg;
 	pthread_t th;
 	int count;
-	mlt_slices sliced_swab;
+	int sliced_swab;
 } consumer_ndi_t;
 
 static void* consumer_ndi_feeder( void* p )
@@ -168,7 +168,7 @@ static void* consumer_ndi_feeder( void* p )
 					else
 					{
 						arg[2] = (unsigned char*)size;
-						mlt_slices_run( self->sliced_swab, 0, swab_sliced, arg);
+						mlt_slices_run_fifo( 0, swab_sliced, arg);
 					}
 				}
 				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "test_image" ) )
@@ -279,10 +279,7 @@ static int consumer_ndi_start( mlt_consumer consumer )
 
 	if ( !self->f_running )
 	{
-		if ( !self->sliced_swab && mlt_properties_get( properties, "sliced_swab" )
-			&& mlt_properties_get_int( properties, "sliced_swab" ) )
-			self->sliced_swab = mlt_slices_init_pool(0, SCHED_FIFO,
-				sched_get_priority_max( SCHED_FIFO ), __FILE__ );
+		self->sliced_swab = mlt_properties_get_int( properties, "sliced_swab" );
 
 		// set flags
 		self->f_exit = 0;
@@ -345,9 +342,6 @@ static void consumer_ndi_close( mlt_consumer consumer )
 	// free context
 	if ( self->arg )
 		free( self->arg );
-	if ( self->sliced_swab )
-		mlt_slices_close( self->sliced_swab );
-
 	free( self );
 
 	mlt_log_debug( NULL, "%s: exiting\n", __FUNCTION__ );

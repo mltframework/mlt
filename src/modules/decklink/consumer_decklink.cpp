@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2015 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2010-2017 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,7 @@ private:
 	int                         m_op_res;
 	int                         m_op_arg;
 	pthread_t                   m_op_thread;
-	mlt_slices                  m_sliced_swab;
+	bool                        m_sliced_swab;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -138,7 +138,6 @@ public:
 		m_deckLinkKeyer = NULL;
 		m_deckLinkOutput = NULL;
 		m_deckLink = NULL;
-		m_sliced_swab = NULL;
 
 		m_aqueue = mlt_deque_init();
 		m_frames = mlt_deque_init();
@@ -177,9 +176,6 @@ public:
 		pthread_mutex_destroy(&m_op_lock);
 		pthread_mutex_destroy(&m_op_arg_mutex);
 		pthread_cond_destroy(&m_op_arg_cond);
-
-		if ( m_sliced_swab )
-			mlt_slices_close( m_sliced_swab );
 
 		mlt_log_debug( getConsumer(), "%s: exiting\n", __FUNCTION__ );
 	}
@@ -537,10 +533,7 @@ protected:
 
 		mlt_log_debug( getConsumer(), "%s: entering\n", __FUNCTION__ );
 
-		if ( !m_sliced_swab && mlt_properties_get( consumer_properties, "sliced_swab" )
-			&& mlt_properties_get_int( consumer_properties, "sliced_swab" ) )
-			m_sliced_swab = mlt_slices_init_pool(0, SCHED_FIFO,
-				sched_get_priority_max( SCHED_FIFO ), __FILE__ );
+		m_sliced_swab = mlt_properties_get_int( consumer_properties, "sliced_swab" );
 
 		if ( rendered && !mlt_frame_get_image( frame, &image, &format, &m_width, &height, 0 ) )
 		{
@@ -587,7 +580,7 @@ protected:
 					else
 					{
 						arg[2] = (unsigned char*)size;
-						mlt_slices_run( m_sliced_swab, 0, swab_sliced, arg);
+						mlt_slices_run_fifo( 0, swab_sliced, arg);
 					}
 				}
 				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "test_image" ) )
