@@ -25,6 +25,11 @@
 
 #include "mlt_types.h"
 
+/**
+ * \envvar \em MLT_SLICES_COUNT Set the number of slices to use, which
+ * defaults to number of CPUs found.
+ */
+
 struct mlt_slices_s;
 
 typedef int (*mlt_slices_proc)( int id, int idx, int jobs, void* cookie );

@@ -333,8 +333,6 @@ static mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
 	pthread_mutex_lock( &g_lock );
 	if ( !globals[policy] )
 	{
-		char *env = getenv( "MLT_GLOBAL_SLICES" );
-		int threads = env ? atoi(env) : 0;
 		int posix_policy;
 		switch (policy) {
 		case mlt_policy_rr:
@@ -346,7 +344,7 @@ static mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
 		default:
 			posix_policy = SCHED_OTHER;
 		}
-		globals[policy] = mlt_slices_init( threads, posix_policy, -1 );
+		globals[policy] = mlt_slices_init( 0, posix_policy, -1 );
 		mlt_factory_register_for_clean_up( globals[policy], (mlt_destructor) mlt_slices_close );
 	}
 	pthread_mutex_unlock( &g_lock );
