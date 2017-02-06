@@ -40,7 +40,6 @@
 #define ENV_SLICES "MLT_SLICES_COUNT"
 
 static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
-static mlt_properties pool_map = NULL;
 static mlt_slices globals[mlt_policy_nb] = {NULL, NULL, NULL};
 
 
@@ -133,6 +132,7 @@ static void* mlt_slices_worker( void* p )
 /** Initialize a sliced threading context
  *
  * \public \memberof mlt_slices_s
+ * \deprecated
  * \param threads number of threads to use for job list, 0 for #cpus
  * \param policy scheduling policy of processing threads, -1 for normal
  * \param priority priority value that can be used with the scheduling algorithm, -1 for maximum
@@ -212,6 +212,7 @@ mlt_slices mlt_slices_init( int threads, int policy, int priority )
 /** Destroy sliced threading context
  *
  * \public \memberof mlt_slices_s
+ * \deprecated
  * \param ctx context pointer
  */
 
@@ -231,14 +232,6 @@ void mlt_slices_close( mlt_slices ctx )
 		pthread_mutex_unlock( &g_lock );
 		return;
 	}
-
-	/* remove it from pool */
-	if ( ctx->name )
-	{
-		mlt_properties_set_data( pool_map, ctx->name, NULL, 0, NULL, NULL );
-		mlt_log_debug( NULL, "%s:%d: ctx=[%p][%s] removed\n", __FUNCTION__, __LINE__, ctx, ctx->name );
-	}
-
 	pthread_mutex_unlock( &g_lock );
 
 	/* notify to exit */
@@ -264,6 +257,7 @@ void mlt_slices_close( mlt_slices ctx )
 /** Run sliced execution
  *
  * \public \memberof mlt_slices_s
+ * \deprecated
  * \param ctx context pointer
  * \param jobs number of jobs to proccess
  * \param proc number of jobs to proccess
@@ -324,45 +318,6 @@ void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cooki
  * \param name name of pool of threads
  * \return the context pointer
  */
-
-mlt_slices mlt_slices_init_pool( int threads, int policy, int priority, const char* name )
-{
-	mlt_slices ctx = NULL;
-
-	pthread_mutex_lock( &g_lock );
-
-	/* try to find it by name */
-	if ( name )
-	{
-		if ( !pool_map )
-		{
-			pool_map = mlt_properties_new();
-			mlt_log_debug( NULL, "%s:%d: pool_map=%p\n", __FUNCTION__, __LINE__, pool_map );
-		}
-		else
-			ctx = (mlt_slices)mlt_properties_get_data( pool_map, name, 0 );
-	}
-
-	if ( !ctx )
-	{
-		ctx = mlt_slices_init( threads, policy, priority );
-		if ( name )
-		{
-			ctx->name = name;
-			mlt_properties_set_data( pool_map, name, ctx, 0, NULL, NULL );
-		}
-		mlt_log_debug( NULL, "%s:%d: initialized pool=[%s]\n", __FUNCTION__, __LINE__, name );
-	}
-	else
-	{
-		ctx->ref++;
-		mlt_log_debug( NULL, "%s:%d: reusing pool=[%s]\n", __FUNCTION__, __LINE__, name );
-	}
-
-	pthread_mutex_unlock( &g_lock );
-
-	return ctx;
-}
 
 /** Get a global shared sliced threading context.
  *

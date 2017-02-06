@@ -101,10 +101,10 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 	mlt_service_type type = mlt_service_identify( service );
 	int not_thread_safe = mlt_properties_get_int( prop, "_not_thread_safe" );
 	int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads") : -1;
-	mlt_slices slices = NULL;
 
 	if (slice_count >= 0) {
-		if ((slices = mlt_slices_get_global(mlt_policy_normal)))
+		mlt_slices slices = slices = mlt_slices_get_global(mlt_policy_normal);
+		if (slices)
 			slice_count = mlt_slices_count(slices);
 	}
 
@@ -201,7 +201,7 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 		}
 	}
 	if (type==producer_type) {
-		if (slices) {
+		if (slice_count > 0) {
 			struct update_context ctx = {
 				.frei0r = inst,
 				.width = *width,
@@ -211,12 +211,12 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 				.output = dest,
 				.f0r_update = f0r_update
 			};
-			mlt_slices_run(slices, 0, f0r_update_slice, &ctx);
+			mlt_slices_run_normal(slice_count, f0r_update_slice, &ctx);
 		} else {
 			f0r_update ( inst, time, source[0], dest );
 		}
 	} else if (type==filter_type) {
-		if (slices) {
+		if (slice_count > 0) {
 			struct update_context ctx = {
 				.frei0r = inst,
 				.width = *width,
@@ -226,12 +226,12 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 				.output = dest,
 				.f0r_update = f0r_update
 			};
-			mlt_slices_run(slices, 0, f0r_update_slice, &ctx);
+			mlt_slices_run_normal(slice_count, f0r_update_slice, &ctx);
 		} else {
 			f0r_update ( inst, time, source[0], dest );
 		}
 	} else if (type==transition_type && f0r_update2 ) {
-		if (slices) {
+		if (slice_count > 0) {
 			struct update_context ctx = {
 				.frei0r = inst,
 				.width = *width,
@@ -241,7 +241,7 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 				.output = dest,
 				.f0r_update2 = f0r_update2
 			};
-			mlt_slices_run(slices, 0, f0r_update2_slice, &ctx);
+			mlt_slices_run_normal(slice_count, f0r_update2_slice, &ctx);
 		} else {
 			f0r_update2 ( inst, time, source[0], source[1], NULL, dest );
 		}

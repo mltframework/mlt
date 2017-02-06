@@ -44,7 +44,6 @@ typedef struct
 	char* arg;
 	pthread_t th;
 	int count;
-	mlt_slices sliced_swab;
 	mlt_deque a_queue, v_queue;
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
@@ -329,11 +328,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 	// run thread
 	if ( !self->f_running )
 	{
-		if ( !self->sliced_swab && mlt_properties_get( properties, "sliced_swab" )
-			&& mlt_properties_get_int( properties, "sliced_swab" ) )
-			self->sliced_swab = mlt_slices_init_pool(0, SCHED_FIFO,
-				sched_get_priority_max( SCHED_FIFO ), __FILE__ );
-
 		// set flags
 		self->f_exit = 0;
 
