@@ -95,16 +95,6 @@ typedef enum
 }
 mlt_whence;
 
-/** Scheduling policies for threads */
-
-typedef enum {
-	mlt_policy_normal,
-	mlt_policy_rr,
-	mlt_policy_fifo,
-	mlt_policy_nb        /**< the number of policies, not an actual policy to be used */
-}
-mlt_schedule_policy;
-
 /** The recognized subclasses of mlt_service */
 
 typedef enum
