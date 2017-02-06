@@ -357,7 +357,6 @@ static mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
 /** Get the number of slices.
  *
  * \public \memberof mlt_slices_s
- * \param ctx context pointer
  * \return the number of slices
  */
 
