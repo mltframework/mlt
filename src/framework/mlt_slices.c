@@ -308,17 +308,6 @@ void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cooki
 	pthread_mutex_unlock( &ctx->cond_mutex);
 }
 
-/** Initialize a sliced threading context pool
- *
- * \public \memberof mlt_slices_s
- * \deprecated
- * \param threads number of threads to use for job list, 0 for #cpus
- * \param policy scheduling policy of processing threads, -1 for normal
- * \param priority priority value that can be used with the scheduling algorithm, -1 for maximum
- * \param name name of pool of threads
- * \return the context pointer
- */
-
 /** Get a global shared sliced threading context.
  *
  * There are separate contexts for each scheduling policy.
