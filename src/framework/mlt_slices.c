@@ -39,6 +39,14 @@
 #define MAX_SLICES 32
 #define ENV_SLICES "MLT_SLICES_COUNT"
 
+typedef enum {
+	mlt_policy_normal,
+	mlt_policy_rr,
+	mlt_policy_fifo,
+	mlt_policy_nb
+}
+mlt_schedule_policy;
+
 static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 static mlt_slices globals[mlt_policy_nb] = {NULL, NULL, NULL};
 
