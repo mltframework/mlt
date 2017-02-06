@@ -323,12 +323,12 @@ void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cooki
  *
  * There are separate contexts for each scheduling policy.
  *
- * \public \memberof mlt_slices_s
+ * \private \memberof mlt_slices_s
  * \param policy the thread scheduling policy needed
  * \return the context pointer
  */
 
-mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
+static mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
 {
 	pthread_mutex_lock( &g_lock );
 	if ( !globals[policy] )
@@ -361,9 +361,16 @@ mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
  * \return the number of slices
  */
 
-int mlt_slices_count(mlt_slices ctx)
+int mlt_slices_count()
 {
-	return ctx->count;
+	mlt_slices slices = mlt_slices_get_global( mlt_policy_normal );
+	if (slices)
+		return slices->count;
+	if ((slices = mlt_slices_get_global( mlt_policy_fifo )))
+		return slices->count;
+	if ((slices = mlt_slices_get_global( mlt_policy_rr )))
+		return slices->count;
+	return 0;
 }
 
 void mlt_slices_run_normal(int jobs, mlt_slices_proc proc, void *cookie)
