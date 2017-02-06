@@ -494,5 +494,5 @@ MLT_6.6.0 {
     mlt_slices_count;
     mlt_slices_run_normal;
     mlt_slices_run_rr;
-    mlt_slices_run_ff;
+    mlt_slices_run_fifo;
 } MLT_6.4.0;
