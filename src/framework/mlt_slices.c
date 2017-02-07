@@ -349,22 +349,49 @@ static mlt_slices mlt_slices_get_global( mlt_schedule_policy policy )
 	return globals[policy];
 }
 
-/** Get the number of slices.
+/** Get the number of slices for the normal scheduling policy.
  *
  * \public \memberof mlt_slices_s
  * \return the number of slices
  */
 
-int mlt_slices_count()
+int mlt_slices_count_normal()
 {
 	mlt_slices slices = mlt_slices_get_global( mlt_policy_normal );
 	if (slices)
 		return slices->count;
-	if ((slices = mlt_slices_get_global( mlt_policy_fifo )))
+	else
+		return 0;
+}
+
+/** Get the number of slices for the round robin scheduling policy.
+ *
+ * \public \memberof mlt_slices_s
+ * \return the number of slices
+ */
+
+int mlt_slices_count_rr()
+{
+	mlt_slices slices = mlt_slices_get_global( mlt_policy_rr );
+	if (slices)
 		return slices->count;
-	if ((slices = mlt_slices_get_global( mlt_policy_rr )))
+	else
+		return 0;
+}
+
+/** Get the number of slices for the fifo scheduling policy.
+ *
+ * \public \memberof mlt_slices_s
+ * \return the number of slices
+ */
+
+int mlt_slices_count_fifo()
+{
+	mlt_slices slices = mlt_slices_get_global( mlt_policy_fifo );
+	if (slices)
 		return slices->count;
-	return 0;
+	else
+		return 0;
 }
 
 void mlt_slices_run_normal(int jobs, mlt_slices_proc proc, void *cookie)
