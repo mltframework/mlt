@@ -491,7 +491,9 @@ MLT_6.4.0 {
 
 MLT_6.6.0 {
   global:
-    mlt_slices_count;
+    mlt_slices_count_normal;
+    mlt_slices_count_rr;
+    mlt_slices_count_fifo;
     mlt_slices_run_normal;
     mlt_slices_run_rr;
     mlt_slices_run_fifo;

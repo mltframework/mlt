@@ -103,7 +103,7 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 	int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads") : -1;
 
 	if (slice_count >= 0)
-		slice_count = mlt_slices_count();
+		slice_count = mlt_slices_count_normal();
 
 	//use as name the width and height
 	int slice_height = *height / (slice_count > 0? slice_count : 1);
