@@ -349,9 +349,9 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	}
 
 	if (info.blanking) {
-		printf("SDI frame size: %"PRIu64"\n", sdi_frame_size);
+		printf("SDI frame size: %" PRIu64 "\n", sdi_frame_size);
 	} else {
-		printf("Frame size for active video: %"PRIu64"\n", sdi_frame_size);
+		printf("Frame size for active video: %" PRIu64 "\n", sdi_frame_size);
 	}
 
 	/**

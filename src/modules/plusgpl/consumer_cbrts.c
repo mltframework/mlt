@@ -408,7 +408,7 @@ static double measure_bitrate( consumer_cbrts self, uint64_t pcr, int drop )
 			muxrate /= (double) ( pcr - self->previous_pcr ) / SCR_HZ;
 		else
 			muxrate /= ( ( (double) ( 1ULL << 33 ) - 1 ) * 300 - self->previous_pcr + pcr ) / SCR_HZ;
-		mlt_log_debug( NULL, "measured TS bitrate %.1f bits/sec PCR %"PRIu64"\n", muxrate, pcr );
+		mlt_log_debug( NULL, "measured TS bitrate %.1f bits/sec PCR %" PRIu64 "\n", muxrate, pcr );
 	}
 
 	return muxrate;
@@ -724,7 +724,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 	uint64_t input_counter = 0;
 	uint64_t last_input_counter;
 
-	mlt_log_debug( NULL, "%s: n %i output_counter %"PRIu64" input_rate %"PRIu64"\n", __FUNCTION__, n, self->output_counter, input_rate );
+	mlt_log_debug( NULL, "%s: n %i output_counter %" PRIu64 " input_rate %" PRIu64 "\n", __FUNCTION__, n, self->output_counter, input_rate );
 	while ( self->thread_running && n-- && result >= 0 )
 	{
 		uint8_t *packet = mlt_deque_pop_front( self->tsp_packets );
@@ -736,7 +736,7 @@ static int output_cbr( consumer_cbrts self, uint64_t input_rate, uint64_t output
 		{
 			if ( !warned )
 			{
-				mlt_log_warning( MLT_CONSUMER_SERVICE( &self->parent ), "muxrate too low %"PRIu64" > %"PRIu64"\n", input_rate, output_rate );
+				mlt_log_warning( MLT_CONSUMER_SERVICE( &self->parent ), "muxrate too low %" PRIu64 " > %" PRIu64 "\n", input_rate, output_rate );
 				warned = 1;
 			}
 

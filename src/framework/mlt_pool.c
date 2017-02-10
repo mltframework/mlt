@@ -417,6 +417,6 @@ void mlt_pool_stat( )
 		s = pool->count - mlt_deque_count( pool->stack ); s *= pool->size; used += s;
 	}
 
-	mlt_log_verbose( NULL, "%s: allocated %"PRIu64" bytes, used %"PRIu64" bytes \n",
+	mlt_log_verbose( NULL, "%s: allocated %" PRIu64 " bytes, used %" PRIu64 " bytes \n",
 		__FUNCTION__, allocated, used );
 }

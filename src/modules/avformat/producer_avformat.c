@@ -976,7 +976,7 @@ static void find_first_pts( producer_avformat self, int video_index )
 		if ( ret >= 0 && pkt.stream_index == video_index && ( pkt.flags & AV_PKT_FLAG_KEY ) )
 		{
 			mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
-				"first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n",
+				"first_pts %" PRId64 " dts %" PRId64 " pts_dts_delta %d\n",
 				pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
 			if ( pkt.dts != AV_NOPTS_VALUE && pkt.dts < 0 )
 				// Decoding Time Stamps with negative values are reported by ffmpeg code for
@@ -1046,7 +1046,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 				timestamp -= 2 / av_q2d( self->video_time_base );
 			if ( timestamp < 0 )
 				timestamp = 0;
-			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %"PRId64" position " MLT_POSITION_FMT " expected "MLT_POSITION_FMT" last_pos %"PRId64"\n",
+			mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "seeking timestamp %" PRId64 " position " MLT_POSITION_FMT " expected " MLT_POSITION_FMT " last_pos %" PRId64 "\n",
 				timestamp, position, self->video_expected, self->last_position );
 
 			// Seek to the timestamp
@@ -1749,15 +1749,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						int_position = self->last_position + 1;
 				}
 				mlt_log_debug( MLT_PRODUCER_SERVICE(producer),
-					"V pkt.pts %"PRId64" pkt.dts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
+					"V pkt.pts %" PRId64 " pkt.dts %" PRId64 " req_pos %" PRId64 " cur_pos %" PRId64 " pkt_pos %" PRId64 "\n",
 					self->pkt.pts, self->pkt.dts, req_position, self->current_position, int_position );
 
 				// Make a dumb assumption on streams that contain wild timestamps
 				if ( llabs( req_position - int_position ) > 999 )
 				{
 					mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), " WILD TIMESTAMP: "
-						"pkt.pts=[%"PRId64"], pkt.dts=[%"PRId64"], req_position=[%"PRId64"], "
-						"current_position=[%"PRId64"], int_position=[%"PRId64"], pts=[%"PRId64"] \n",
+						"pkt.pts=[%" PRId64 "], pkt.dts=[%" PRId64 "], req_position=[%" PRId64 "], "
+						"current_position=[%" PRId64 "], int_position=[%" PRId64 "], pts=[%" PRId64 "] \n",
 						self->pkt.pts, self->pkt.dts, req_position,
 						self->current_position, int_position, pts );
 					int_position = req_position;
@@ -1821,7 +1821,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					ret = -1;
 				}
-				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d ret %d pkt_pos %"PRId64"\n",
+				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d ret %d pkt_pos %" PRId64 "\n",
 							   got_picture, self->pkt.flags & AV_PKT_FLAG_KEY, ret, int_position );
 			}
 
@@ -2478,7 +2478,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		int64_t req_pts =      llrint( timecode / timebase );
 
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
-			"A pkt.pts %"PRId64" pkt.dts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
+			"A pkt.pts %" PRId64 " pkt.dts %" PRId64 " req_pos %" PRId64 " cur_pos %" PRId64 " pkt_pos %" PRId64 "\n",
 			pkt.pts, pkt.dts, req_position, self->current_position, int_position );
 
 		if ( self->seekable || int_position > 0 )
