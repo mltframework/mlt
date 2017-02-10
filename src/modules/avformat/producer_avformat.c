@@ -1246,6 +1246,72 @@ static int pick_av_pixel_format( int *pix_fmt )
 	return 0;
 }
 
+struct sliced_pix_fmt_conv_t
+{
+	int width, height;
+	AVFrame *frame;
+	AVPicture *output;
+	enum AVPixelFormat srcFormat, dstFormat;
+	const AVPixFmtDescriptor *desc;
+	int flags, src_colorspace, dst_colorspace, src_full_range, dst_full_range;
+};
+
+#define SLICED_420_SLICE_WIDTH 64
+
+static int sliced_420_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
+{
+	uint8_t *out[4];
+	const uint8_t *in[4];
+	int in_stride[4], out_stride[4];
+	int i, slice_x, slice_w, w, h, mul, field, slices, interlaced = 0;
+
+	struct SwsContext *sws;
+	struct sliced_pix_fmt_conv_t* ctx = ( struct sliced_pix_fmt_conv_t* )cookie;
+
+	interlaced = ctx->frame->interlaced_frame;
+	field = ( interlaced ) ? ( idx & 1 ) : 0;
+	idx = ( interlaced ) ? ( idx / 2 ) : idx;
+	slices = ( interlaced ) ? ( jobs / 2 ) : jobs;
+	mul = ( interlaced ) ? 2 : 1;
+	h = ctx->height >> !!interlaced;
+	slice_w = SLICED_420_SLICE_WIDTH;
+	slice_x = slice_w * idx;
+	slice_w = FFMIN( slice_w, ctx->width - slice_x );
+
+	mlt_log_error( NULL, "%s:%d: [id=%d, idx=%d, jobs=%d], interlaced=%d, field=%d, slices=%d, mul=%d, h=%d, slice_w=%d, slice_x=%d ctx->desc=[log2_chroma_h=%d, log2_chroma_w=%d]\n",
+		__FUNCTION__, __LINE__, id, idx, jobs, interlaced, field, slices, mul, h, slice_w, slice_x, ctx->desc->log2_chroma_h, ctx->desc->log2_chroma_w );
+
+	if ( slice_w <= 0 )
+		return 0;
+
+	sws = sws_getContext
+	(
+		slice_w, h, ctx->srcFormat,
+		slice_w, h, ctx->dstFormat,
+		ctx->flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL
+	);
+
+	set_luma_transfer( sws, ctx->src_colorspace, ctx->dst_colorspace, ctx->src_full_range, ctx->dst_full_range );
+
+	for( i = 0; i < 4; i++ )
+	{
+		int in_offset = ( 1 == i || 2 == i ) ? ( slice_x / 2 ) : ( slice_x );
+		int out_offset = slice_x * 2;
+
+		in_stride[i]  = ctx->frame->linesize[i] * mul;
+		out_stride[i] = ctx->output->linesize[i] * mul;
+
+		in[i] =  ctx->frame->data[i] + ctx->frame->linesize[i] * field + in_offset;
+		out[i] = ctx->output->data[i] + ctx->output->linesize[i] * field + out_offset;
+	}
+
+	sws_scale( sws, in, in_stride, 0, h, out, out_stride );
+
+	sws_freeContext( sws );
+
+	return 0;
+}
+
 // returns resulting YUV colorspace
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
@@ -1329,6 +1395,37 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
+	}
+	else if ( AV_PIX_FMT_YUV420P == pix_fmt && *format == mlt_image_yuv422 )
+	{
+		int i, c;
+		AVPicture output;
+		struct sliced_pix_fmt_conv_t ctx =
+		{
+			.flags = flags,
+			.width = width,
+			.height = height,
+			.frame = frame,
+			.output = &output,
+			.dstFormat = AV_PIX_FMT_YUYV422,
+			.src_colorspace = self->yuv_colorspace,
+			.dst_colorspace = profile->colorspace,
+			.src_full_range = self->full_luma,
+			.dst_full_range = 0
+		};
+#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+		ctx.srcFormat = src_pix_fmt;
+#else
+		ctx.srcFormat = pix_fmt;
+#endif
+		ctx.desc = av_pix_fmt_desc_get( ctx.srcFormat );
+
+		avpicture_fill( ctx.output, buffer, ctx.dstFormat, width, height );
+
+		c = ( width + SLICED_420_SLICE_WIDTH - 1 ) / SLICED_420_SLICE_WIDTH;
+		c *= frame->interlaced_frame ? 2 : 1;
+		for ( i = 0 ; i < c; i++ )
+			sliced_420_pix_fmt_conv_proc( i, i, c, &ctx );
 	}
 	else
 	{
