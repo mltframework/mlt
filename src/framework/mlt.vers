@@ -497,4 +497,5 @@ MLT_6.6.0 {
     mlt_slices_run_normal;
     mlt_slices_run_rr;
     mlt_slices_run_fifo;
+    mlt_log_timings_now;
 } MLT_6.4.0;

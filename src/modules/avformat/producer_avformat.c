@@ -1354,6 +1354,8 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
 	int result = self->yuv_colorspace;
 
+	mlt_log_timings_begin();
+
 	mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "%s @ %dx%d space %d->%d\n",
 		mlt_image_format_name( *format ),
 		width, height, self->yuv_colorspace, profile->colorspace );
@@ -1475,6 +1477,9 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		result = profile->colorspace;
 	}
+
+	mlt_log_timings_end( NULL, __FUNCTION__ );
+
 	return result;
 }
 
@@ -1554,6 +1559,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
+
+	mlt_log_timings_begin();
 
 	// Get the image cache
 	if ( ! self->image_cache )
@@ -1969,6 +1976,8 @@ exit_get_image:
 	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+
+	mlt_log_timings_end( NULL, __FUNCTION__ );
 
 	return !got_picture;
 }
