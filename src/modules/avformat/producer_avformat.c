@@ -25,6 +25,7 @@
 #include <framework/mlt_deque.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_cache.h>
+#include <framework/mlt_slices.h>
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
@@ -1246,6 +1247,107 @@ static int pick_av_pixel_format( int *pix_fmt )
 	return 0;
 }
 
+#if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT( 3, 1, 101 )
+struct sliced_pix_fmt_conv_t
+{
+	int width, height, slice_w;
+	AVFrame *frame;
+	AVPicture *output;
+	enum AVPixelFormat src_format, dst_format;
+	const AVPixFmtDescriptor *src_desc, *dst_desc;
+	int flags, src_colorspace, dst_colorspace, src_full_range, dst_full_range;
+};
+
+static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
+{
+	uint8_t *out[4];
+	const uint8_t *in[4];
+	int in_stride[4], out_stride[4];
+	int src_v_chr_pos = -513, dst_v_chr_pos = -513, ret, i, slice_x, slice_w, w, h, mul, field, slices, interlaced = 0;
+
+	struct SwsContext *sws;
+	struct sliced_pix_fmt_conv_t* ctx = ( struct sliced_pix_fmt_conv_t* )cookie;
+
+	interlaced = ctx->frame->interlaced_frame;
+	field = ( interlaced ) ? ( idx & 1 ) : 0;
+	idx = ( interlaced ) ? ( idx / 2 ) : idx;
+	slices = ( interlaced ) ? ( jobs / 2 ) : jobs;
+	mul = ( interlaced ) ? 2 : 1;
+	h = ctx->height >> !!interlaced;
+	slice_w = ctx->slice_w;
+	slice_x = slice_w * idx;
+	slice_w = FFMIN( slice_w, ctx->width - slice_x );
+
+	if ( AV_PIX_FMT_YUV420P == ctx->src_format )
+		src_v_chr_pos = ( !interlaced ) ? 128 : ( !field ) ? 64 : 192;
+
+	if ( AV_PIX_FMT_YUV420P == ctx->dst_format )
+		dst_v_chr_pos = ( !interlaced ) ? 128 : ( !field ) ? 64 : 192;
+
+	mlt_log_debug( NULL, "%s:%d: [id=%d, idx=%d, jobs=%d], interlaced=%d, field=%d, slices=%d, mul=%d, h=%d, slice_w=%d, slice_x=%d ctx->src_desc=[log2_chroma_h=%d, log2_chroma_w=%d], src_v_chr_pos=%d, dst_v_chr_pos=%d\n",
+		__FUNCTION__, __LINE__, id, idx, jobs, interlaced, field, slices, mul, h, slice_w, slice_x, ctx->src_desc->log2_chroma_h, ctx->src_desc->log2_chroma_w, src_v_chr_pos, dst_v_chr_pos );
+
+	if ( slice_w <= 0 )
+		return 0;
+
+	sws = sws_alloc_context();
+
+	av_opt_set_int( sws, "srcw", slice_w, 0 );
+	av_opt_set_int( sws, "srch", h, 0 );
+	av_opt_set_int( sws, "src_format", ctx->src_format, 0 );
+	av_opt_set_int( sws, "dstw", slice_w, 0 );
+	av_opt_set_int( sws, "dsth", h, 0 );
+	av_opt_set_int( sws, "dst_format", ctx->dst_format, 0 );
+	av_opt_set_int( sws, "sws_flags", ctx->flags | SWS_FULL_CHR_H_INP, 0 );
+
+	av_opt_set_int( sws, "src_h_chr_pos", -513, 0 );
+	av_opt_set_int( sws, "src_v_chr_pos", src_v_chr_pos, 0 );
+	av_opt_set_int( sws, "dst_h_chr_pos", -513, 0 );
+	av_opt_set_int( sws, "dst_v_chr_pos", dst_v_chr_pos, 0 );
+
+	if ( ( ret = sws_init_context( sws, NULL, NULL ) ) < 0 )
+	{
+		mlt_log_error( NULL, "%s:%d: sws_init_context failed, ret=%d\n", __FUNCTION__, __LINE__, ret );
+		sws_freeContext( sws );
+		return 0;
+	}
+
+	set_luma_transfer( sws, ctx->src_colorspace, ctx->dst_colorspace, ctx->src_full_range, ctx->dst_full_range );
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(55, 0, 100)
+#define PIX_DESC_BPP(DESC) (DESC.step_minus1 + 1)
+#else
+#define PIX_DESC_BPP(DESC) (DESC.step)
+#endif
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 32, 100)
+#define AV_PIX_FMT_FLAG_PLANAR PIX_FMT_PLANAR
+#endif
+	for( i = 0; i < 4; i++ )
+	{
+		int in_offset = (AV_PIX_FMT_FLAG_PLANAR & ctx->src_desc->flags)
+			 ? ( ( 1 == i || 2 == i ) ? ( slice_x >> ctx->src_desc->log2_chroma_w ) : slice_x )
+			 : ( ( i ) ? 0 : slice_x * PIX_DESC_BPP(ctx->src_desc->comp[0]) );
+
+		int out_offset = (AV_PIX_FMT_FLAG_PLANAR & ctx->dst_desc->flags)
+			 ? ( ( 1 == i || 2 == i ) ? ( slice_x >> ctx->dst_desc->log2_chroma_w ) : slice_x )
+			 : ( ( i ) ? 0 : slice_x * PIX_DESC_BPP(ctx->dst_desc->comp[0]) );
+
+		in_stride[i]  = ctx->frame->linesize[i] * mul;
+		out_stride[i] = ctx->output->linesize[i] * mul;
+
+		in[i] =  ctx->frame->data[i] + ctx->frame->linesize[i] * field + in_offset;
+		out[i] = ctx->output->data[i] + ctx->output->linesize[i] * field + out_offset;
+	}
+
+	sws_scale( sws, in, in_stride, 0, h, out, out_stride );
+
+	sws_freeContext( sws );
+
+	return 0;
+}
+#endif
+
 // returns resulting YUV colorspace
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
@@ -1331,6 +1433,52 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		sws_freeContext( context );
 	}
 	else
+#if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT( 3, 1, 101 )
+	{
+		int i, c;
+		AVPicture output;
+		struct sliced_pix_fmt_conv_t ctx =
+		{
+			.flags = flags,
+			.width = width,
+			.height = height,
+			.frame = frame,
+			.output = &output,
+			.dst_format = AV_PIX_FMT_YUYV422,
+			.src_colorspace = self->yuv_colorspace,
+			.dst_colorspace = profile->colorspace,
+			.src_full_range = self->full_luma,
+			.dst_full_range = 0,
+		};
+#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+		ctx.src_format = src_pix_fmt;
+#else
+		ctx.src_format = pix_fmt;
+#endif
+		ctx.src_desc = av_pix_fmt_desc_get( ctx.src_format );
+		ctx.dst_desc = av_pix_fmt_desc_get( ctx.dst_format );
+
+		avpicture_fill( ctx.output, buffer, ctx.dst_format, width, height );
+
+		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") )
+			ctx.slice_w = ( width < 1000 )
+				? ( 256 >> frame->interlaced_frame )
+				: ( 512 >> frame->interlaced_frame );
+		else
+			ctx.slice_w = width;
+
+		c = ( width + ctx.slice_w - 1 ) / ctx.slice_w;
+		c *= frame->interlaced_frame ? 2 : 1;
+
+		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") )
+			mlt_slices_run_normal( c, sliced_h_pix_fmt_conv_proc, &ctx );
+		else
+			for ( i = 0 ; i < c; i++ )
+				sliced_h_pix_fmt_conv_proc( i, i, c, &ctx );
+
+		result = profile->colorspace;
+	}
+#else
 	{
 #if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
@@ -1347,6 +1495,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
+#endif
 	return result;
 }
 
