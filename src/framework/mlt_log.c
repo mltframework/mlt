@@ -23,6 +23,10 @@
 #include "mlt_service.h"
 
 #include <string.h>
+#ifndef NDEBUG
+#include <sys/time.h>
+#include <time.h>
+#endif
 
 static int log_level = MLT_LOG_WARNING;
 
@@ -33,6 +37,24 @@ void default_callback( void* ptr, int level, const char* fmt, va_list vl )
 	
 	if ( level > log_level )
 		return;
+#ifndef NDEBUG
+	if ( print_prefix && level >= MLT_LOG_TIMINGS )
+	{
+		struct timeval tv;
+		time_t ltime;
+		struct tm *rtime;
+		char buf[32];
+
+		gettimeofday(&tv, NULL);
+		ltime = tv.tv_sec;
+
+		rtime = localtime( &ltime );
+		strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S" , rtime );
+
+		fprintf( stderr, "| %s.%.3d | ", buf, (int)(tv.tv_usec / 1000) );
+	}
+#endif
+
 	if ( print_prefix && properties )
 	{
 		char *mlt_type = mlt_properties_get( properties, "mlt_type" );
@@ -81,4 +103,19 @@ void mlt_log_set_level( int level )
 void mlt_log_set_callback( void (*new_callback)( void*, int, const char*, va_list ) )
 {
 	callback = new_callback;
+}
+
+int64_t mlt_log_timings_now( void )
+{
+	int64_t r = 0;
+#ifndef NDEBUG
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	r = tv.tv_sec;
+
+	r *= 1000000LL;
+	r += tv.tv_usec;
+#endif
+	return r;
 }
