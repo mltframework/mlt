@@ -196,10 +196,10 @@ mlt_slices mlt_slices_init( int threads, int policy, int priority )
 	pthread_cond_init ( &ctx->cond_var_job, NULL );
 	pthread_cond_init ( &ctx->cond_var_ready, NULL );
 	pthread_attr_init( &tattr );
-    if ( policy < 0 )
-        policy = SCHED_OTHER;
-    if ( priority < 0 )
-        priority = sched_get_priority_max( policy );
+	if ( policy < 0 )
+		policy = SCHED_OTHER;
+	if ( priority < 0 )
+		priority = sched_get_priority_max( policy );
 	pthread_attr_setschedpolicy( &tattr, policy );
 	param.sched_priority = priority;
 	pthread_attr_setschedparam( &tattr, &param );
