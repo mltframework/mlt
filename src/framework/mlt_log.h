@@ -23,6 +23,7 @@
 #define MLT_LOG_H
 
 #include <stdarg.h>
+#include <stdint.h>
 
 #define MLT_LOG_QUIET    -8
 
@@ -52,6 +53,7 @@
 
 #define MLT_LOG_INFO     32
 #define MLT_LOG_VERBOSE  40
+#define MLT_LOG_TIMINGS  44
 
 /**
  * stuff which is only useful for MLT developers
@@ -83,11 +85,24 @@ void mlt_log( void *service, int level, const char *fmt, ... );
 #define mlt_log_warning(service, format, args...) mlt_log((service), MLT_LOG_WARNING, (format), ## args)
 #define mlt_log_info(service, format, args...) mlt_log((service), MLT_LOG_INFO, (format), ## args)
 #define mlt_log_verbose(service, format, args...) mlt_log((service), MLT_LOG_VERBOSE, (format), ## args)
+#define mlt_log_timings(service, format, args...) mlt_log((service), MLT_LOG_TIMINGS, (format), ## args)
 #define mlt_log_debug(service, format, args...) mlt_log((service), MLT_LOG_DEBUG, (format), ## args)
 
 void mlt_vlog( void *service, int level, const char *fmt, va_list );
 int mlt_log_get_level( void );
 void mlt_log_set_level( int );
 void mlt_log_set_callback( void (*)( void*, int, const char*, va_list ) );
+
+#define mlt_log_timings_begin() \
+{ \
+	int64_t _mlt_log_timings_begin = mlt_log_timings_now(), _mlt_log_timings_end;
+
+#define mlt_log_timings_end(service, msg) \
+	_mlt_log_timings_end = mlt_log_timings_now(); \
+	mlt_log_timings( service, "%s:%d: T(%s)=%" PRId64 " us\n", \
+		__FUNCTION__, __LINE__, msg, _mlt_log_timings_end - _mlt_log_timings_begin ); \
+}
+
+int64_t mlt_log_timings_now( void );
 
 #endif /* MLT_LOG_H */
