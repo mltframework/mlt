@@ -1728,7 +1728,7 @@ static void *consumer_thread( void *arg )
 								goto on_fatal_error;
 							}
 							error_count = 0;
-							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio stream %d pkt pts %"PRId64" frame_size %d\n",
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "audio stream %d pkt pts %" PRId64 " frame_size %d\n",
 								stream->index, pkt.pts, codec->frame_size );
 						}
 						else if ( pkt.size < 0 )

@@ -929,7 +929,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 		else
 		{
-			mlt_log_debug( self, "current %"PRId64" threshold %"PRId64" count %d\n",
+			mlt_log_debug( self, "current %" PRId64 " threshold %" PRId64 " count %d\n",
 				time_current, (int64_t) (time_process / count * 20), count );
 			// Ignore the cost of this frame's time
 			count--;
@@ -958,7 +958,7 @@ static void *consumer_read_ahead_thread( void *arg )
 			if ( time_process / count > frame_duration )
 				skip_next = 1;
 			if ( skip_next )
-				mlt_log_debug( self, "avg usec %"PRId64" (%"PRId64"/%d) duration %d\n",
+				mlt_log_debug( self, "avg usec %" PRId64 " (%" PRId64 "/%d) duration %d\n",
 					time_process/count, time_process, count, frame_duration);
 		}
 	}
