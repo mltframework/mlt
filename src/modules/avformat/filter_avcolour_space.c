@@ -59,6 +59,9 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 		case mlt_image_yuv420p:
 			value = AV_PIX_FMT_YUV420P;
 			break;
+		case mlt_image_yuv422p16:
+			value = AV_PIX_FMT_YUV422P16LE;
+			break;
 		default:
 			mlt_log_error( NULL, "[filter avcolor_space] Invalid format %s\n",
 				mlt_image_format_name( format ) );
@@ -123,13 +126,19 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
 	int error = -1;
 
-	if ( out_fmt == AV_PIX_FMT_YUYV422 )
+	if ( out_fmt == AV_PIX_FMT_YUYV422 || out_fmt == AV_PIX_FMT_YUV422P16LE )
 		flags |= SWS_FULL_CHR_H_INP;
 	else
 		flags |= SWS_FULL_CHR_H_INT;
 
-	avpicture_fill( &input, in, in_fmt, width, height );
-	avpicture_fill( &output, out, out_fmt, width, height );
+	if ( in_fmt == AV_PIX_FMT_YUV422P16LE )
+		mlt_image_format_planes( mlt_image_yuv422p16, width, height, in, input.data, input.linesize );
+	else
+		avpicture_fill( &input, in, in_fmt, width, height );
+	if ( out_fmt == AV_PIX_FMT_YUV422P16LE )
+		mlt_image_format_planes( mlt_image_yuv422p16, width, height, out, output.data, output.linesize );
+	else
+		avpicture_fill( &output, out, out_fmt, width, height );
 	struct SwsContext *context = sws_getContext( width, height, in_fmt,
 		width, height, out_fmt, flags, NULL, NULL, NULL);
 	if ( context )
@@ -207,7 +216,9 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 								colorspace, profile_colorspace, force_full_luma ) )
 		{
 			// The new colorspace is only valid if destination is YUV.
-			if ( output_format == mlt_image_yuv422 || output_format == mlt_image_yuv420p )
+			if ( output_format == mlt_image_yuv422 ||
+				output_format == mlt_image_yuv420p ||
+				output_format == mlt_image_yuv422p16 )
 				mlt_properties_set_int( properties, "colorspace", profile_colorspace );
 		}
 		*image = output;
