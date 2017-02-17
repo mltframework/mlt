@@ -549,7 +549,7 @@ protected:
 					ssize_t size = stride * height;
 
 					// convert lower field first to top field first
-					if ( !progressive )
+					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
 					{
 						// Make the first line black for field order correction.
 						for ( int i = 0; i < m_width; i++ )
