@@ -293,12 +293,13 @@ static int convert_rgb24a_to_rgb24( uint8_t *rgba, uint8_t *rgb, uint8_t *alpha,
 
 typedef int ( *conversion_function )( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha, int width, int height );
 
-static conversion_function conversion_matrix[5][5] = {
-	{ NULL, convert_rgb24_to_rgb24a, convert_rgb24_to_yuv422, NULL, convert_rgb24_to_rgb24a },
-	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL },
-	{ convert_yuv422_to_rgb24, convert_yuv422_to_rgb24a, NULL, NULL, convert_yuv422_to_rgb24a },
-	{ NULL, NULL, convert_yuv420p_to_yuv422, NULL, NULL },
-	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL },
+static conversion_function conversion_matrix[ mlt_image_invalid - 1 ][ mlt_image_invalid - 1 ] = {
+	{ NULL, convert_rgb24_to_rgb24a, convert_rgb24_to_yuv422, NULL, convert_rgb24_to_rgb24a, NULL },
+	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL, NULL },
+	{ convert_yuv422_to_rgb24, convert_yuv422_to_rgb24a, NULL, NULL, convert_yuv422_to_rgb24a, NULL },
+	{ NULL, NULL, convert_yuv420p_to_yuv422, NULL, NULL, NULL },
+	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL, NULL },
+	{ NULL, NULL, NULL, NULL, NULL, NULL },
 };
 
 static uint8_t bpp_table[4] = { 3, 4, 2, 0 };
