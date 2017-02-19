@@ -491,6 +491,8 @@ MLT_6.4.0 {
 
 MLT_6.6.0 {
   global:
+    mlt_image_format_planes;
+    mlt_image_format_id;
     mlt_slices_count_normal;
     mlt_slices_count_rr;
     mlt_slices_count_fifo;
