@@ -391,6 +391,7 @@ protected:
 			mlt_log_error( getConsumer(), "Profile is not compatible with decklink.\n" );
 			return false;
 		}
+		mlt_properties_set_int( properties, "top_field_first", m_displayMode->GetFieldDominance() == bmdUpperFieldFirst );
 
 		// Set the keyer
 		if ( m_deckLinkKeyer && ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
@@ -526,8 +527,6 @@ protected:
 
 			if ( buffer )
 			{
-				int progressive = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" );
-
 				// NTSC SDI is always 486 lines
 				if ( m_height == 486 && height == 480 )
 				{
@@ -548,20 +547,6 @@ protected:
 					unsigned char *arg[3] = { image, buffer };
 					ssize_t size = stride * height;
 
-					// convert lower field first to top field first
-					if ( !progressive )
-					{
-						// Make the first line black for field order correction.
-						for ( int i = 0; i < m_width; i++ )
-						{
-							buffer[ i * 2 + 0 ] = 128;
-							buffer[ i * 2 + 1 ] = 16;
-						}
-
-						arg[1] += stride;
-						size -= stride;
-					}
-
 					// Normal non-keyer playout - needs byte swapping
 					if ( !m_sliced_swab )
 						swab2( arg[0], arg[1], size );
@@ -577,17 +562,6 @@ protected:
 					int y = height + 1;
 					uint32_t* s = (uint32_t*) image;
 					uint32_t* d = (uint32_t*) buffer;
-
-					if ( !progressive && m_displayMode->GetFieldDominance() == bmdUpperFieldFirst )
-					{
-						// Make the first line black for field order correction.
-						memset( buffer, 0, stride );
-
-						// Correct field order
-						height--;
-						y--;
-						d += m_width;
-					}
 
 					// Need to relocate alpha channel RGBA => ARGB
 					while ( --y )
