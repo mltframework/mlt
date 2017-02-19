@@ -1,6 +1,6 @@
 /**
  * MltRepository.h - MLT Wrapper
- * Copyright (C) 2008 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2008-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
