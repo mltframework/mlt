@@ -410,8 +410,31 @@ const char * mlt_image_format_name( mlt_image_format format )
 		case mlt_image_opengl:  return "opengl";
 		case mlt_image_glsl:    return "glsl";
 		case mlt_image_glsl_texture: return "glsl_texture";
+		case mlt_image_yuv422p16: return "yuv422p16";
+		case mlt_image_invalid: return "invalid";
 	}
 	return "invalid";
+}
+
+/** Get the id of image format from short name.
+ *
+ * \public \memberof mlt_frame_s
+ * \param name the image format short name
+ * \return a image format
+ */
+
+mlt_image_format mlt_image_format_id( const char * name )
+{
+	mlt_image_format f;
+
+	for( f = mlt_image_none; name && f < mlt_image_invalid; f++ )
+	{
+		const char * v = mlt_image_format_name( f );
+		if( !strcmp( v, name ) )
+			return f;
+	}
+
+	return mlt_image_invalid;
 }
 
 /** Get the number of bytes needed for an image.
@@ -445,6 +468,9 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 		case mlt_image_glsl_texture:
 			if ( bpp ) *bpp = 0;
 			return 4;
+		case mlt_image_yuv422p16:
+			if ( bpp ) *bpp = 0;
+			return 4 * height * width ;
 		default:
 			if ( bpp ) *bpp = 0;
 			return 0;
@@ -1132,4 +1158,64 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 	}
 
 	return new_frame;
+}
+
+/** Build a planes pointers of image mapping
+ *
+ * For proper and unified planar image processing, planes sizes and planes pointers should
+ * be provides to processing code.
+ *
+ * \public \memberof mlt_frame_s
+ * \param format the image format
+ * \param width width of the image in pixels
+ * \param height height of the image in pixels
+ * \param[in] data pointer to allocated image
+ * \param[out] planes pointers to plane's pointers will be set
+ * \param[out] strides pointers to plane's strides will be set
+ * \return the number of bytes
+ */
+int mlt_image_format_planes( mlt_image_format format, int width, int height, void* data, unsigned char *planes[4], int strides[4])
+{
+	if ( mlt_image_yuv422p16 == format )
+	{
+		strides[0] = width * 2;
+		strides[1] = width;
+		strides[2] = width;
+		strides[3] = 0;
+
+		planes[0] = (unsigned char*)data;
+		planes[1] = planes[0] + height * strides[0];
+		planes[2] = planes[1] + height * strides[1];
+		planes[3] = 0;
+	}
+	else if ( mlt_image_yuv420p == format )
+	{
+		strides[0] = width;
+		strides[1] = width >> 1;
+		strides[2] = width >> 1;
+		strides[3] = 0;
+
+		planes[0] = (unsigned char*)data;
+		planes[1] = (unsigned char*)data + width * height;
+		planes[2] = (unsigned char*)data + ( 5 * width * height ) / 4;
+		planes[3] = 0;
+	}
+	else
+	{
+		int bpp;
+
+		mlt_image_format_size( format, width, height, &bpp );
+
+		planes[0] = data;
+		planes[1] = 0;
+		planes[2] = 0;
+		planes[3] = 0;
+
+		strides[0] = bpp * width;
+		strides[1] = 0;
+		strides[2] = 0;
+		strides[3] = 0;
+	};
+
+	return 0;
 }
