@@ -392,6 +392,7 @@ protected:
 			return false;
 		}
 		mlt_properties_set_int( properties, "top_field_first", m_displayMode->GetFieldDominance() == bmdUpperFieldFirst );
+		mlt_properties_set_int( properties, "progressive", m_displayMode->GetFieldDominance() == bmdProgressiveFrame );
 
 		// Set the keyer
 		if ( m_deckLinkKeyer && ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
