@@ -286,6 +286,7 @@ plugin_mgr_destroy (plugin_mgr_t * plugin_mgr)
   
   g_slist_free (plugin_mgr->plugins);
   g_slist_free (plugin_mgr->all_plugins);
+  mlt_properties_close(plugin_mgr->blacklist);
   free (plugin_mgr);
 }
 
