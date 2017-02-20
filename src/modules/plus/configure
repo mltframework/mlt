@@ -16,5 +16,16 @@ then
 		echo "- fftw not found: disable fft and dance filters"
 	fi
 
+	pkg-config libebur128
+	if [ $? -eq 0 ]
+	then
+		echo "CFLAGS += $(pkg-config --cflags libebur128)" >> config.mak
+		echo "LDFLAGS += $(pkg-config --libs libebur128)" >> config.mak
+	else
+		echo "- libebur128 not found: using internal libebur128"
+		echo "USE_INTERNAL_LIBEBUR128=1" >> config.mak
+		echo "CFLAGS += -DUSE_INTERNAL_LIBEBUR128" >> config.mak
+	fi
+
 	exit 0
 fi
