@@ -229,7 +229,6 @@ static mlt_properties fill_param_info ( mlt_service_type type, const char *servi
 	f0r_destruct(instance);
 	f0r_deinit();
 	dlclose(handle);
-	free(name);
 
 	return metadata;
 }
@@ -458,7 +457,7 @@ MLT_REPOSITORY
 							continue;
 						}
 						MLT_REGISTER( producer_type, pluginname, create_frei0r_item );
-						MLT_REGISTER_METADATA( producer_type, pluginname, fill_param_info, strdup(name) );
+						MLT_REGISTER_METADATA( producer_type, pluginname, fill_param_info, name );
 					}
 					else if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_FILTER){
 						if (mlt_properties_get(mlt_repository_filters(repository), pluginname))
@@ -467,7 +466,7 @@ MLT_REPOSITORY
 							continue;
 						}
 						MLT_REGISTER( filter_type, pluginname, create_frei0r_item );
-						MLT_REGISTER_METADATA( filter_type, pluginname, fill_param_info, strdup(name) );
+						MLT_REGISTER_METADATA( filter_type, pluginname, fill_param_info, name );
 					}
 					else if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_MIXER2 ){
 						if (mlt_properties_get(mlt_repository_transitions(repository), pluginname))
@@ -476,13 +475,13 @@ MLT_REPOSITORY
 							continue;
 						}
 						MLT_REGISTER( transition_type, pluginname, create_frei0r_item );
-						MLT_REGISTER_METADATA( transition_type, pluginname, fill_param_info, strdup(name) );
+						MLT_REGISTER_METADATA( transition_type, pluginname, fill_param_info, name );
 					}
 				}
 				dlclose(handle);
 			}
 		}
-		mlt_properties_close(direntries);
+		mlt_factory_register_for_clean_up(direntries, mlt_properties_close);
 	}
 	mlt_tokeniser_close ( tokeniser );
 	mlt_properties_close( blacklist );
