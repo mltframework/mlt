@@ -154,19 +154,6 @@ static void* consumer_ndi_feeder( void* p )
 					unsigned char *arg[3] = { image, buffer };
 					ssize_t size = stride * height;
 
-					// convert lower field first to top field first
-					if ( !progressive )
-					{
-						for ( int i = 0; i < width; i++)
-						{
-							buffer[ 2 * i + 0 ] = 128;
-							buffer[ 2 * i + 1 ] = 16;
-						}
-
-						arg[1] += stride;
-						size -= stride;
-					}
-
 					// Normal non-keyer playout - needs byte swapping
 					if ( !self->sliced_swab )
 						swab2( arg[0], arg[1], size );
@@ -182,14 +169,6 @@ static void* consumer_ndi_feeder( void* p )
 					int y = height + 1;
 					uint32_t* s = (uint32_t*) image;
 					uint32_t* d = (uint32_t*) buffer;
-
-					if ( !progressive )
-					{
-						// Correct field order
-						height--;
-						y--;
-						d += width;
-					}
 
 					// Need to relocate alpha channel RGBA => ARGB
 					while ( --y )
@@ -279,6 +258,10 @@ static int consumer_ndi_start( mlt_consumer consumer )
 	mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "%s: entering\n", __FUNCTION__ );
 
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
+
+	// Set interlacing properties
+	mlt_profile profile = mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) );
+	mlt_properties_set_int( properties, "top_field_first", !profile->progressive );
 
 	consumer_ndi_t* self = ( consumer_ndi_t* )consumer->child;
 
