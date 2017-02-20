@@ -41,7 +41,7 @@ endif
 
 CXXFLAGS := $(QTCXXFLAGS) $(CXXFLAGS) $(CFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) -Wno-deprecated
 
-ifneq (, $(shell $(CXX) --version | grep -is gcc))
+ifneq (, $(shell $(CXX) --version | grep -is g++))
     CXXFLAGS += --std=c++11
 endif
 
