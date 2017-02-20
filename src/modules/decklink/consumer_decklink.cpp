@@ -392,6 +392,7 @@ protected:
 			return false;
 		}
 		mlt_properties_set_int( properties, "top_field_first", m_displayMode->GetFieldDominance() == bmdUpperFieldFirst );
+		mlt_properties_set_int( properties, "progressive", m_displayMode->GetFieldDominance() == bmdProgressiveFrame );
 
 		// Set the keyer
 		if ( m_deckLinkKeyer && ( m_isKeyer = mlt_properties_get_int( properties, "keyer" ) ) )
@@ -544,17 +545,13 @@ protected:
 				}
 				if ( !m_isKeyer )
 				{
-					unsigned char *arg[3] = { image, buffer };
-					ssize_t size = stride * height;
+					unsigned char *arg[3] = { image, buffer, ( unsigned char* )( ssize_t )( stride * height )};
 
 					// Normal non-keyer playout - needs byte swapping
 					if ( !m_sliced_swab )
-						swab2( arg[0], arg[1], size );
+						swab2( arg[0], arg[1], ( ssize_t )arg[2] );
 					else
-					{
-						arg[2] = (unsigned char*)size;
 						mlt_slices_run_fifo( 0, swab_sliced, arg);
-					}
 				}
 				else if ( !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "test_image" ) )
 				{
