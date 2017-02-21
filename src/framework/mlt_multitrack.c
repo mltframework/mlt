@@ -324,11 +324,6 @@ int mlt_multitrack_disconnect( mlt_multitrack self, int track )
 			{
 				mlt_producer_close( self->list[ track ]->producer );
 				mlt_event_close( self->list[ track ]->event );
-				if ( track + 1 >= self-> count )
-				{
-					free( self->list[ track ] );
-					self->list[ track ] = NULL;
-				}
 			}
 
 			// Contract the list of tracks.
@@ -339,6 +334,11 @@ int mlt_multitrack_disconnect( mlt_multitrack self, int track )
 					self->list[ track ]->producer = self->list[ track + 1 ]->producer;
 					self->list[ track ]->event = self->list[ track + 1 ]->event;
 				}
+			}
+			if ( self->list[ self->count - 1 ] )
+			{
+				free( self->list[ self->count - 1 ] );
+				self->list[ self->count - 1 ] = NULL;
 			}
 			self->count --;
 
