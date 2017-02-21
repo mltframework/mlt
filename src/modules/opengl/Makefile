@@ -69,9 +69,9 @@ clean:
 		rm -f $(OBJS) $(TARGET) $(CPPOBJS)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/mlt"
-	install -d "$(DESTDIR)$(datadir)/mlt/opengl"
-	install -m 644 *.yml "$(DESTDIR)$(datadir)/mlt/opengl"
+	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+	install -d "$(DESTDIR)$(mltdatadir)/opengl"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/opengl"
 
 ifneq ($(wildcard .depend),)
 include .depend
