@@ -100,7 +100,7 @@ void mlt_log_set_callback( void (*)( void*, int, const char*, va_list ) );
 #define mlt_log_timings_end(service, msg) \
 	_mlt_log_timings_end = mlt_log_timings_now(); \
 	mlt_log_timings( service, "%s:%d: T(%s)=%" PRId64 " us\n", \
-		__FUNCTION__, __LINE__, msg, _mlt_log_timings_end - _mlt_log_timings_begin ); \
+		__FILE__, __LINE__, msg, _mlt_log_timings_end - _mlt_log_timings_begin ); \
 }
 
 int64_t mlt_log_timings_now( void );
