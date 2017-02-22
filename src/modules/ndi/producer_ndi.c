@@ -305,7 +305,10 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 			mlt_frame_set_alpha( frame, (uint8_t*) dst, size, (mlt_destructor)mlt_pool_release );
 		}
 
-		mlt_properties_set_int( fprops, "progressive", video->frame_format_type );
+		mlt_properties_set_int( fprops, "progressive",
+			( video->frame_format_type == NDIlib_frame_format_type_progressive ) );
+		mlt_properties_set_int( fprops, "top_field_first",
+			( video->frame_format_type == NDIlib_frame_format_type_interleaved ) );
 
 		NDIlib_recv_free_video( recv, video );
 	}
