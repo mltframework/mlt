@@ -75,6 +75,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		     mlt_properties_get( properties, "progressive" ) &&
 		     mlt_properties_get_int( properties, "progressive" ) == 0 )
 		{
+			mlt_log_timings_begin();
+
 			// We only work with non-planar formats
 			if ( *format == mlt_image_yuv420p )
 			{
@@ -97,6 +99,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			// Set the normalised field order
 			mlt_properties_set_int( properties, "top_field_first", tff );
 			mlt_properties_set_int( properties, "meta.top_field_first", tff );
+
+			mlt_log_timings_end(NULL, "shifting_fields");
 		}
 	}
 

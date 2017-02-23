@@ -794,10 +794,14 @@ protected:
 
 		if( mlt_properties_get_int( properties, "running" ) || preroll )
 		{
+			mlt_log_timings_begin();
 			frame = mlt_consumer_rt_frame( consumer );
+			mlt_log_timings_end(NULL, "mlt_consumer_rt_frame");
 			if ( frame )
 			{
+				mlt_log_timings_begin();
 				render( frame );
+				mlt_log_timings_end(NULL, "render");
 
 				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
