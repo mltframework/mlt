@@ -852,8 +852,10 @@ static void *consumer_read_ahead_thread( void *arg )
 		pthread_cond_broadcast( &priv->queue_cond );
 		pthread_mutex_unlock( &priv->queue_mutex );
 
+		mlt_log_timings_begin();
 		// Get the next frame
 		frame = mlt_consumer_get_frame( self );
+		mlt_log_timings_end( NULL, "mlt_consumer_get_frame" );
 
 		// If there's no frame, we're probably stopped...
 		if ( frame == NULL )
@@ -894,7 +896,9 @@ static void *consumer_read_ahead_thread( void *arg )
 
 				// Get the image
 				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
+				mlt_log_timings_begin();
 				mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
+				mlt_log_timings_end( NULL, "mlt_frame_get_image" );
 			}
 
 			// Indicate the rendered image is available.
@@ -1572,9 +1576,11 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 
 		// Get frame from queue
 		pthread_mutex_lock( &priv->queue_mutex );
+		mlt_log_timings_begin();
 		while( priv->ahead && mlt_deque_count( priv->queue ) < size )
 			pthread_cond_wait( &priv->queue_cond, &priv->queue_mutex );
 		frame = mlt_deque_pop_front( priv->queue );
+		mlt_log_timings_end( NULL, "wait_for_frame_queue" );
 		pthread_cond_broadcast( &priv->queue_cond );
 		pthread_mutex_unlock( &priv->queue_mutex );
 		if ( priv->real_time == 1 && frame &&

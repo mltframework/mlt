@@ -1400,10 +1400,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				}
 
 				// Composite the b_frame on the a_frame
+				mlt_log_timings_begin();
 				if ( invert )
 					composite_yuv( *image, width_b, height_b, image_b, *width, *height, alpha_a, alpha_b, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
 				else
 					composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
+				mlt_log_timings_end( NULL, "composite_yuv" );
 			}
 		}
 	}
