@@ -113,3 +113,11 @@ parameters:
       It skips frames that has VITC timecode less then specified.
       After reaching first frame with timecode greater or equal then specified this
       property is reset to zero.
+
+  - identifier: bitdepth
+    title: Bitdepth for capturing
+    description: Enable capturing in 10-bit native SDI signal
+    type: integer
+    values:
+      - 8 # 8-bit data
+      - 10 # 10-bit data

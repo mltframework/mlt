@@ -26,6 +26,86 @@
 #include <sys/time.h>
 #include "common.h"
 
+#include <framework/mlt_slices.h>
+
+struct copy_lines_sliced_desc
+{
+	BMDPixelFormat in_fmt;
+	mlt_image_format out_fmt;
+	unsigned char *in_buffer, **out_buffers;
+	int in_stride, *out_strides, w, h;
+};
+
+#define READ_PIXELS( a, b, c ) \
+val  = *v210++;  \
+*a++ = ( val & 0x3FF ) << 6; \
+*b++ = ( ( val >> 10 ) & 0x3FF ) << 6;  \
+*c++ = ( ( val >> 20 ) & 0x3FF ) << 6;
+
+static int copy_lines_sliced_proc( int id, int idx, int jobs, void* cookie )
+{
+	int c, H, Y, i;
+	struct copy_lines_sliced_desc *ctx = (struct copy_lines_sliced_desc*)cookie;
+
+	H = ( ctx->h + jobs ) / jobs;
+	Y = idx * H;
+	H = MIN( H, ctx->h - Y );
+
+	if ( ctx->in_fmt == bmdFormat10BitYUV ) // bmdFormat10BitYUV -> mlt_image_yuv422p16
+	{
+		for( i = 0; i < H; i++)
+		{
+			uint32_t val,
+				*v210 = (uint32_t*)( ctx->in_buffer + ( Y + i ) * ctx->in_stride );
+			uint16_t
+				*y = (uint16_t*)( ctx->out_buffers[0] + ( Y + i ) * ctx->out_strides[0] ),
+				*u = (uint16_t*)( ctx->out_buffers[1] + ( Y + i ) * ctx->out_strides[1] ),
+				*v = (uint16_t*)( ctx->out_buffers[2] + ( Y + i ) * ctx->out_strides[2] );
+
+			for( c = 0; c < ctx->w / 6; c++ )
+			{
+				READ_PIXELS( u, y, v );
+				READ_PIXELS( y, u, y );
+				READ_PIXELS( v, y, u );
+				READ_PIXELS( y, v, y );
+			}
+		}
+	}
+	else // bmdFormat8BitYUV -> mlt_image_yuv422
+	{
+		if ( ctx->out_strides[0] == ctx->in_stride )
+			swab2(ctx->in_buffer + Y * ctx->in_stride,
+				ctx->out_buffers[0] + Y * ctx->out_strides[0],
+				H * ctx->in_stride );
+		else
+			for(i = 0; i < H; i++ )
+				swab2(ctx->in_buffer + ( Y + i ) * ctx->in_stride,
+					ctx->out_buffers[0] + ( Y + i ) * ctx->out_strides[0],
+						MIN( ctx->in_stride , ctx->out_strides[0] ) );
+	}
+
+	return 0;
+}
+
+static void copy_lines( BMDPixelFormat in_fmt, unsigned char* in_buffer, int in_stride,
+	mlt_image_format out_fmt, unsigned char* out_buffers[4], int out_strides[4], int w, int h )
+{
+	struct copy_lines_sliced_desc ctx = { .in_fmt = in_fmt, .out_fmt = out_fmt, .in_buffer = in_buffer,
+		.out_buffers = out_buffers, .in_stride = in_stride, .out_strides = out_strides };
+
+	ctx.w = w; ctx.h = h;
+
+	if ( h == 1 )
+		copy_lines_sliced_proc( 0, 0, 1, &ctx );
+	else
+		mlt_slices_run_normal( mlt_slices_count_normal(), copy_lines_sliced_proc, &ctx );
+}
+
+static void fill_line( mlt_image_format out_fmt, unsigned char *in[4], int strides[4], int pattern )
+{
+	// TODO
+}
+
 class DeckLinkProducer
 	: public IDeckLinkInputCallback
 {
@@ -40,6 +120,7 @@ private:
 	int              m_dropped;
 	bool             m_isBuffering;
 	int              m_topFieldFirst;
+	BMDPixelFormat   m_pixel_format;
 	int              m_colorspace;
 	int              m_vancLines;
 	mlt_cache        m_cache;
@@ -206,9 +287,10 @@ public:
 			mlt_log_verbose( getProducer(), "%s format detection\n", doesDetectFormat ? "supports" : "does not support" );
 
 			// Enable video capture
-			BMDPixelFormat pixelFormat = bmdFormat8BitYUV;
+			m_pixel_format = ( 10 == mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "bitdepth" ) )
+				? bmdFormat10BitYUV : bmdFormat8BitYUV;
 			BMDVideoInputFlags flags = doesDetectFormat ? bmdVideoInputEnableFormatDetection : bmdVideoInputFlagDefault;
-			if ( S_OK != m_decklinkInput->EnableVideoInput( displayMode, pixelFormat, flags ) )
+			if ( S_OK != m_decklinkInput->EnableVideoInput( displayMode, m_pixel_format, flags ) )
 				throw "Failed to enable video capture.";
 
 			// Enable audio capture
@@ -331,7 +413,7 @@ public:
 			mlt_properties_set_int( properties, "meta.media.width", profile->width );
 			mlt_properties_set_int( properties, "height", profile->height );
 			mlt_properties_set_int( properties, "meta.media.height", profile->height );
-			mlt_properties_set_int( properties, "format", mlt_image_yuv422 );
+			mlt_properties_set_int( properties, "format", ( m_pixel_format == bmdFormat8BitYUV ) ? mlt_image_yuv422 : mlt_image_yuv422p16 );
 			mlt_properties_set_int( properties, "colorspace", m_colorspace );
 			mlt_properties_set_int( properties, "meta.media.colorspace", m_colorspace );
 			mlt_properties_set_int( properties, "audio_frequency", 48000 );
@@ -436,18 +518,15 @@ public:
 					mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( getProducer() ), "vitc_in", 0 );
 				}
 
-				int size = video->GetRowBytes() * ( video->GetHeight() + m_vancLines );
+				void *buffer;
+				int image_strides[4];
+				unsigned char* image_buffers[4];
+				mlt_image_format fmt = ( m_pixel_format == bmdFormat8BitYUV ) ? mlt_image_yuv422 : mlt_image_yuv422p16;
+				int size = mlt_image_format_size( fmt, video->GetWidth(), video->GetHeight() + m_vancLines, NULL );
 				void* image = mlt_pool_alloc( size );
-				void* buffer = 0;
-				unsigned char* p = (unsigned char*) image;
-				int n = size / 2;
 
-				// Initialize VANC lines to nominal black
-				while ( --n )
-				{
-					*p ++ = 16;
-					*p ++ = 128;
-				}
+				mlt_image_format_planes( fmt, video->GetWidth(), video->GetHeight() + m_vancLines,
+					image, image_buffers, image_strides );
 
 				// Capture VANC
 				if ( m_vancLines > 0 )
@@ -457,10 +536,24 @@ public:
 					{
 						for ( int i = 1; i < m_vancLines + 1; i++ )
 						{
+							unsigned char* out[4] = {
+								image_buffers[0] + (i - 1) * image_strides[0],
+								image_buffers[1] + (i - 1) * image_strides[1],
+								image_buffers[2] + (i - 1) * image_strides[2],
+								image_buffers[3] + (i - 1) * image_strides[3] };
+
 							if ( vanc->GetBufferForVerticalBlankingLine( i, &buffer ) == S_OK )
-								swab2( (char*) buffer, (char*) image + ( i - 1 ) * video->GetRowBytes(), video->GetRowBytes() );
+								copy_lines
+								(
+									m_pixel_format, (unsigned char*)buffer, video->GetRowBytes(),
+									fmt, out, image_strides,
+									video->GetWidth(), 1
+								);
 							else
+							{
+								fill_line( fmt, out, image_strides, 0 );
 								mlt_log_debug( getProducer(), "failed capture vanc line %d\n", i );
+							}
 						}
 						SAFE_RELEASE(vanc);
 					}
@@ -470,8 +563,19 @@ public:
 				video->GetBytes( &buffer );
 				if ( image && buffer )
 				{
-					size =  video->GetRowBytes() * video->GetHeight();
-					swab2( (char*) buffer, (char*) image + m_vancLines * video->GetRowBytes(), size );
+					unsigned char* out[4] = {
+						image_buffers[0] + m_vancLines * image_strides[0],
+						image_buffers[1] + m_vancLines * image_strides[1],
+						image_buffers[2] + m_vancLines * image_strides[2],
+						image_buffers[3] + m_vancLines * image_strides[3] };
+
+					copy_lines
+					(
+						m_pixel_format, (unsigned char*)buffer, video->GetRowBytes(),
+						fmt, (unsigned char**)out, image_strides,
+						video->GetWidth(), video->GetHeight()
+					);
+
 					frame = mlt_frame_init( MLT_PRODUCER_SERVICE( getProducer() ) );
 					mlt_frame_set_image( frame, (uint8_t*) image, size, mlt_pool_release );
 				}
