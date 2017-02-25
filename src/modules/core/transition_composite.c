@@ -1319,6 +1319,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			int progressive = 
 					mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
 					mlt_properties_get_int( properties, "progressive" );
+			int top_field_first = mlt_properties_get_int( a_props, "top_field_first" );
 			int field;
 			int sliced = mlt_properties_get_int( properties, "sliced_composite" );
 			
@@ -1354,6 +1355,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			{
 				// Assume lower field (0) first
 				double field_position = position + field * delta * length;
+				int field_id = progressive ? -1 : ( top_field_first ? ( 1 - field ) : field );
 
 				// Do the calculation if we need to
 				// NB: Locks needed here since the properties are being modified
@@ -1398,10 +1400,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				}
 
 				// Composite the b_frame on the a_frame
+				mlt_log_timings_begin();
 				if ( invert )
-					composite_yuv( *image, width_b, height_b, image_b, *width, *height, alpha_a, alpha_b, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn, sliced );
+					composite_yuv( *image, width_b, height_b, image_b, *width, *height, alpha_a, alpha_b, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
 				else
-					composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, progressive ? -1 : field, luma_bitmap, luma_softness, line_fn, sliced );
+					composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
+				mlt_log_timings_end( NULL, "composite_yuv" );
 			}
 		}
 	}

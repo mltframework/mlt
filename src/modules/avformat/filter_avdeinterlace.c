@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -313,8 +314,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Fill the picture
 		avpicture_fill( output, *image, AV_PIX_FMT_YUYV422, *width, *height );
+		mlt_log_timings_begin();
 		mlt_avpicture_deinterlace( output, output, AV_PIX_FMT_YUYV422, *width, *height );
-
+		mlt_log_timings_end( NULL, "mlt_avpicture_deinterlace" );
 		// Free the picture
 		mlt_pool_release( output );
 

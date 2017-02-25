@@ -39,7 +39,7 @@
 
 typedef struct
 {
-	struct mlt_producer_s parent;
+	mlt_producer parent;
 	int f_running, f_exit, f_timeout;
 	char* arg;
 	pthread_t th;
@@ -305,7 +305,10 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 			mlt_frame_set_alpha( frame, (uint8_t*) dst, size, (mlt_destructor)mlt_pool_release );
 		}
 
-		mlt_properties_set_int( fprops, "progressive", video->frame_format_type );
+		mlt_properties_set_int( fprops, "progressive",
+			( video->frame_format_type == NDIlib_frame_format_type_progressive ) );
+		mlt_properties_set_int( fprops, "top_field_first",
+			( video->frame_format_type == NDIlib_frame_format_type_interleaved ) );
 
 		NDIlib_recv_free_video( recv, video );
 	}
@@ -320,7 +323,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 	NDIlib_video_frame_t* video = NULL;
 	double fps = mlt_producer_get_fps( producer );
 	mlt_position position = mlt_producer_position( producer );
-	mlt_properties properties = MLT_CONSUMER_PROPERTIES( producer );
 	producer_ndi_t* self = ( producer_ndi_t* )producer->child;
 
 	pthread_mutex_lock( &self->lock );
@@ -494,15 +496,16 @@ static void producer_ndi_close( mlt_producer producer )
  */
 mlt_producer producer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	// Allocate the consumer
+	// Allocate the producer
 	producer_ndi_t* self = ( producer_ndi_t* )calloc( 1, sizeof( producer_ndi_t ) );
+	mlt_producer parent = ( mlt_producer )calloc( 1, sizeof( *parent ) );
 
 	mlt_log_debug( NULL, "%s: entering id=[%s], arg=[%s]\n", __FUNCTION__, id, arg );
 
 	// If allocated
-	if ( self && !mlt_producer_init( &self->parent, self ) )
+	if ( self && !mlt_producer_init( parent, self ) )
 	{
-		mlt_producer parent = &self->parent;
+		self->parent = parent;
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
 
 		// Setup context
