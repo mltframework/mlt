@@ -454,6 +454,8 @@ static enum AVPixelFormat pick_pix_fmt( mlt_image_format img_fmt )
 		return AV_PIX_FMT_RGBA;
 	case mlt_image_yuv420p:
 		return AV_PIX_FMT_YUV420P;
+	case mlt_image_yuv422p16:
+		return AV_PIX_FMT_YUV422P16LE;
 	default:
 		return AV_PIX_FMT_YUYV422;
 	}
@@ -1144,7 +1146,6 @@ static void *consumer_thread( void *arg )
 	// Need two av pictures for converting
 	AVFrame *converted_avframe = NULL;
 	AVFrame *audio_avframe = NULL;
-	AVFrame *video_avframe = NULL;
 
 	// For receiving audio samples back from the fifo
 	uint8_t *audio_buf_1 = av_malloc( AUDIO_ENCODE_BUFFER_SIZE );
@@ -1310,12 +1311,9 @@ static void *consumer_thread( void *arg )
 			if ( img_fmt_name )
 			{
 				// Set the mlt_image_format from explicit property.
-				if ( !strcmp( img_fmt_name, "rgb24" ) )
-					img_fmt = mlt_image_rgb24;
-				else if ( !strcmp( img_fmt_name, "rgb24a" ) )
-					img_fmt = mlt_image_rgb24a;
-				else if ( !strcmp( img_fmt_name, "yuv420p" ) )
-					img_fmt = mlt_image_yuv420p;
+				mlt_image_format f = mlt_image_format_id( img_fmt_name );
+				if ( mlt_image_invalid != f )
+					img_fmt = f;
 			}
 			else
 			{
@@ -1332,7 +1330,6 @@ static void *consumer_thread( void *arg )
 					img_fmt = mlt_image_rgb24;
 				}
 			}
-			video_avframe = alloc_picture( pick_pix_fmt( img_fmt ), width, height );
 		}
 	}
 	if ( audio_codec_id != AV_CODEC_ID_NONE )
@@ -1766,36 +1763,16 @@ static void *consumer_thread( void *arg )
 
 					if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 					{
-						int i = 0;
-						uint8_t *p;
-						uint8_t *q;
-						int stride = mlt_image_format_size( img_fmt, width, 0, NULL );
-
+						AVFrame video_avframe;
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
-						q = image;
 
-						// Convert the mlt frame to an AVPicture
-						if ( img_fmt == mlt_image_yuv420p )
-						{
-							stride = width * height;
-							memcpy( video_avframe->data[0], q, video_avframe->linesize[0] * height );
-							q += stride;
-							memcpy( video_avframe->data[1], q, video_avframe->linesize[1] * height / 2 );
-							q += stride / 4;
-							memcpy( video_avframe->data[2], q, video_avframe->linesize[2] * height / 2 );
-						}
-						else for ( i = 0; i < height; i ++ )
-						{
-							p = video_avframe->data[0] + i * video_avframe->linesize[0];
-							memcpy( p, q, stride );
-							q += stride;
-						}
+						mlt_image_format_planes( img_fmt, width, height, image, video_avframe.data, video_avframe.linesize );
 
 						// Do the colour space conversion
 						int flags = SWS_BICUBIC;
 						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
 							width, height, c->pix_fmt, flags, NULL, NULL, NULL);
-						sws_scale( context, (const uint8_t* const*) video_avframe->data, video_avframe->linesize, 0, height,
+						sws_scale( context, (const uint8_t* const*) video_avframe.data, video_avframe.linesize, 0, height,
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
 
@@ -1808,6 +1785,7 @@ static void *consumer_thread( void *arg )
 						     c->pix_fmt == AV_PIX_FMT_ARGB ||
 						     c->pix_fmt == AV_PIX_FMT_BGRA )
 						{
+							uint8_t *p;
 							uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 							register int n;
 
@@ -2129,9 +2107,6 @@ on_fatal_error:
 	if ( converted_avframe )
 		av_free( converted_avframe->data[0] );
 	av_free( converted_avframe );
-	if ( video_avframe )
-		av_free( video_avframe->data[0] );
-	av_free( video_avframe );
 	av_free( video_outbuf );
 	av_free( audio_avframe );
 	av_free( audio_buf_1 );

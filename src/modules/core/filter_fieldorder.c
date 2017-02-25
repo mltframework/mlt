@@ -77,7 +77,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		{
 			mlt_log_timings_begin();
 
-			// We only work with non-planar formats
+			// We only work with non-vertical luma/chroma scaled
 			if ( *format == mlt_image_yuv420p )
 			{
 				*format = mlt_image_yuv422;
@@ -85,12 +85,21 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			}
 
 			// Shift the entire image down by one line
-			int bpp;
-			int size = mlt_image_format_size( *format, *width, *height, &bpp );
-			uint8_t *new_image = mlt_pool_alloc( size );
-			uint8_t *ptr = new_image + *width * bpp;
-			memcpy( new_image, *image, *width * bpp );
-			memcpy( ptr, *image, *width * ( *height - 1 ) * bpp );
+			int p, strides[4], size;
+			uint8_t *new_planes[4], *old_planes[4], *new_image;
+
+			size = mlt_image_format_size( *format, *width, *height, NULL );
+			new_image = mlt_pool_alloc( size );
+			mlt_image_format_planes( *format, *width, *height, new_image, new_planes, strides );
+			mlt_image_format_planes( *format, *width, *height, *image, old_planes, strides );
+
+			for( p = 0; p < 4; p++ )
+			{
+				if( !new_planes[p] )
+					continue;
+				memcpy( new_planes[p], old_planes[p], strides[p] );
+				memcpy( new_planes[p] + strides[p], old_planes[p], strides[p] * ( *height - 1 ) );
+			}
 
 			// Set the new image
 			mlt_frame_set_image( frame, new_image, size, mlt_pool_release );

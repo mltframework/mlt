@@ -486,17 +486,8 @@ static void set_image_format( mlt_consumer self )
 	const char* format = mlt_properties_get( properties, "mlt_image_format" );
 	if ( format )
 	{
-		if ( !strcmp( format, "rgb24" ) )
-			priv->image_format = mlt_image_rgb24;
-		else if ( !strcmp( format, "rgb24a" ) )
-			priv->image_format = mlt_image_rgb24a;
-		else if ( !strcmp( format, "yuv420p" ) )
-			priv->image_format = mlt_image_yuv420p;
-		else if ( !strcmp( format, "none" ) )
-			priv->image_format = mlt_image_none;
-		else if ( !strcmp( format, "glsl" ) )
-			priv->image_format = mlt_image_glsl_texture;
-		else
+		priv->image_format = mlt_image_format_id( format );
+		if ( mlt_image_invalid == priv->image_format )
 			priv->image_format = mlt_image_yuv422;
 	}
 }
