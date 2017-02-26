@@ -363,6 +363,43 @@ static inline void get_affine( affine_t *affine, mlt_transition transition, floa
 	}
 }
 
+struct sliced_desc
+{
+	uint8_t *a_image, *b_image;
+	interpp interp;
+	affine_t affine;
+	int a_width, a_height, b_width, b_height;
+	float lower_x, lower_y;
+	float dz, mix;
+	float x_offset, y_offset;
+	int b_alpha;
+	float minima, xmax, ymax;
+};
+
+static int sliced_proc( int id, int index, int jobs, void* cookie )
+{
+	struct sliced_desc ctx = *((struct sliced_desc*) cookie);
+	int height_slice = (ctx.a_height + jobs / 2) / jobs;
+	int starty = height_slice * index;
+	float x, y;
+	float dx, dy;
+	int i, j;
+
+	ctx.a_image += (index * height_slice) * (ctx.a_width * 4);
+	for (i = 0, y = ctx.lower_y; i < ctx.a_height; i++, y++) {
+		if (i >= starty && i < (starty + height_slice)) {
+			for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {
+				dx = MapX( ctx.affine.matrix, x, y ) / ctx.dz + ctx.x_offset;
+				dy = MapY( ctx.affine.matrix, x, y ) / ctx.dz + ctx.y_offset;
+				if (dx >= ctx.minima && dx <= ctx.xmax && dy >= ctx.minima && dy <= ctx.ymax)
+					ctx.interp(ctx.b_image, ctx.b_width, ctx.b_height, dx, dy, ctx.mix, ctx.a_image, ctx.b_alpha);
+				ctx.a_image += 4;
+			}
+		}
+	}
+	return 0;
+}
+
 /** Get the image.
 */
 
@@ -470,48 +507,50 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Check that both images are of the correct format and process
 	if ( *format == mlt_image_rgb24a && b_format == mlt_image_rgb24a )
 	{
-		float x, y;
-		float dx, dy;
-		float dz;
 		float sw, sh;
-		uint8_t *p = *image;
-
 		// Get values from the transition
 		float scale_x = mlt_properties_get_double( properties, "scale_x" );
 		float scale_y = mlt_properties_get_double( properties, "scale_y" );
 		int scale = mlt_properties_get_int( properties, "scale" );
-		int b_alpha = mlt_properties_get_int( properties, "b_alpha" );
 		float geom_scale_x = (float) b_width / result.w;
 		float geom_scale_y = (float) b_height / result.h;
-		float cx = result.x + result.w / 2.0;
-		float cy = result.y + result.h / 2.0;
-		float lower_x = - cx;
-		float lower_y = - cy;
-		float x_offset = (float) b_width / 2.0;
-		float y_offset = (float) b_height / 2.0;
-		affine_t affine;
-		interpp interp = interpBL_b32;
-		int i, j; // loop counters
+		struct sliced_desc desc = {
+			.a_image = *image,
+			.b_image = b_image,
+			.interp = interpBL_b32,
+			.a_width = *width,
+			.a_height = *height,
+			.b_width = b_width,
+			.b_height = b_height,
+			.lower_x = -(result.x + result.w / 2.0), // center
+			.lower_y = -(result.y + result.h / 2.0), // middle
+			.mix = result.mix / 100.0f,
+			.x_offset = (float) b_width / 2.0,
+			.y_offset = (float) b_height / 2.0,
+			.b_alpha = mlt_properties_get_int( properties, "b_alpha" ),
+			// Affine boundaries
+			.minima = 0,
+			.xmax = b_width - 1,
+			.ymax = b_height - 1
+		};
 
 		// Recalculate vars if alignment supplied.
 		if ( mlt_properties_get( properties, "halign" ) || mlt_properties_get( properties, "valign" ) )
 		{
 			float halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
 			float valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
-			x_offset = halign * b_width / 2.0f;
-			y_offset = valign * b_height / 2.0f;
-			cx = result.x + geometry_w * halign / 2.0f;
-			cy = result.y + geometry_h * valign / 2.0f;
-			lower_x = -cx;
-			lower_y = -cy;
+			desc.x_offset = halign * b_width / 2.0f;
+			desc.y_offset = valign * b_height / 2.0f;
+			desc.lower_x = -(result.x + geometry_w * halign / 2.0f);
+			desc.lower_y = -(result.y + geometry_h * valign / 2.0f);
 		}
 
-		affine_init( affine.matrix );
+		affine_init( desc.affine.matrix );
 
 		// Compute the affine transform
-		get_affine( &affine, transition, ( float )position );
-		dz = MapZ( affine.matrix, 0, 0 );
-		if ( (int) fabs( dz * 1000 ) < 25 )
+		get_affine( &desc.affine, transition, ( float )position );
+		desc.dz = MapZ( desc.affine.matrix, 0, 0 );
+		if ( (int) fabs( desc.dz * 1000 ) < 25 )
 			return 0;
 
 		// Factor scaling into the transformation based on output resolution.
@@ -540,18 +579,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 		if ( scale )
 		{
-			affine_max_output( affine.matrix, &sw, &sh, dz, *width, *height );
-			affine_scale( affine.matrix, sw * MIN( geom_scale_x, geom_scale_y ), sh * MIN( geom_scale_x, geom_scale_y ) );
+			affine_max_output( desc.affine.matrix, &sw, &sh, desc.dz, *width, *height );
+			affine_scale( desc.affine.matrix, sw * MIN( geom_scale_x, geom_scale_y ), sh * MIN( geom_scale_x, geom_scale_y ) );
 		}
 		else if ( scale_x != 0 && scale_y != 0 )
 		{
-			affine_scale( affine.matrix, scale_x, scale_y );
+			affine_scale( desc.affine.matrix, scale_x, scale_y );
 		}
 
-		// Affine boundaries
-		float minima = 0;
-		float xmax = b_width - 1;
-		float ymax = b_height - 1;
 
 		char *interps = mlt_properties_get( a_props, "rescale.interp" );
 		// Copy in case string is changed.
@@ -561,39 +596,31 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Set the interpolation function
 		if ( interps == NULL || strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 || strcmp( interps, "tiles" ) == 0 || strcmp( interps, "fast_bilinear" ) == 0 )
 		{
-			interp = interpNN_b32;
+			desc.interp = interpNN_b32;
 			// uses lrintf. Values should be >= -0.5 and < max + 0.5
-			minima -= 0.5;
-			xmax += 0.49;
-			ymax += 0.49;
+			desc.minima -= 0.5;
+			desc.xmax += 0.49;
+			desc.ymax += 0.49;
 		}
 		else if ( strcmp( interps, "bilinear" ) == 0 )
 		{
-			interp = interpBL_b32;
+			desc.interp = interpBL_b32;
 			// uses floorf.
 		}
 		else if ( strcmp( interps, "bicubic" ) == 0 ||  strcmp( interps, "hyper" ) == 0 || strcmp( interps, "sinc" ) == 0 || strcmp( interps, "lanczos" ) == 0 || strcmp( interps, "spline" ) == 0 )
 		{
 			// TODO: lanczos 8x8
 			// TODO: spline 4x4 or 6x6
-			interp = interpBC_b32;
+			desc.interp = interpBC_b32;
 			// uses ceilf. Values should be > -1 and <= max.
-			minima -= 1;
+			desc.minima -= 1;
 		}
 		free( interps );
 
 		// Do the transform with interpolation
-		for ( i = 0, y = lower_y; i < *height; i++, y++ )
-		{
-			for ( j = 0, x = lower_x; j < *width; j++, x++ )
-			{
-				dx = MapX( affine.matrix, x, y ) / dz + x_offset;
-				dy = MapY( affine.matrix, x, y ) / dz + y_offset;
-				if ( dx >= minima && dx <= xmax && dy >= minima && dy <= ymax )
-					interp( b_image, b_width, b_height, dx, dy, result.mix/100.0, p, b_alpha );
-				p += 4;
-			}
-		}
+		int threads = mlt_properties_get(properties, "threads")? mlt_properties_get_int(properties, "threads") : 1;
+		threads = CLAMP(threads, 0, mlt_slices_count_normal());
+		mlt_slices_run_normal(threads, sliced_proc, &desc);
 	}
 
 	return 0;

@@ -280,3 +280,10 @@ parameters:
       - bottom
     mutable: yes
     widget: combo
+
+  - identifier: threads
+    title: Thread count
+    description: >
+      Leave unset for one thread. Use 0 for the slice count, which defaults to
+      number of detected CPUs.
+    minimum: 0
