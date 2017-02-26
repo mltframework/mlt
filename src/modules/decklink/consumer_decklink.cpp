@@ -283,7 +283,7 @@ protected:
 		result = CoCreateInstance( CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**) &deckLinkIterator );
 		if ( FAILED( result ) )
 		{
-			mlt_log_error( getConsumer(), "The DeckLink drivers not installed.\n" );
+			mlt_log_warning( getConsumer(), "The DeckLink drivers not installed.\n" );
 			return false;
 		}
 #else
@@ -291,7 +291,7 @@ protected:
 
 		if ( !deckLinkIterator )
 		{
-			mlt_log_error( getConsumer(), "The DeckLink drivers not installed.\n" );
+			mlt_log_warning( getConsumer(), "The DeckLink drivers not installed.\n" );
 			return false;
 		}
 #endif
