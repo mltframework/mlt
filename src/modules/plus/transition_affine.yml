@@ -284,6 +284,7 @@ parameters:
   - identifier: threads
     title: Thread count
     description: >
-      Leave unset for one thread. Use 0 for the slice count, which defaults to
-      number of detected CPUs.
+      Use 0 to use the slice count, which defaults to the number of detected
+      CPUs. Otherwise, set the number of threads to use up to the slice count.
     minimum: 0
+    default: 0

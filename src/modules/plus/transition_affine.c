@@ -378,6 +378,7 @@ struct sliced_desc
 
 static int sliced_proc( int id, int index, int jobs, void* cookie )
 {
+	(void) id; // unused
 	struct sliced_desc ctx = *((struct sliced_desc*) cookie);
 	int height_slice = (ctx.a_height + jobs / 2) / jobs;
 	int starty = height_slice * index;
@@ -618,9 +619,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		free( interps );
 
 		// Do the transform with interpolation
-		int threads = mlt_properties_get(properties, "threads")? mlt_properties_get_int(properties, "threads") : 1;
+		int threads = mlt_properties_get_int(properties, "threads");
 		threads = CLAMP(threads, 0, mlt_slices_count_normal());
-		mlt_slices_run_normal(threads, sliced_proc, &desc);
+		if (threads == 1)
+			sliced_proc(0, 0, 1, &desc);
+		else
+			mlt_slices_run_normal(threads, sliced_proc, &desc);
 	}
 
 	return 0;
