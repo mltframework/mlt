@@ -1326,12 +1326,15 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 	for( i = 0; i < 4; i++ )
 	{
 		int in_offset = (AV_PIX_FMT_FLAG_PLANAR & ctx->src_desc->flags)
-			 ? ( ( 1 == i || 2 == i ) ? ( slice_x >> ctx->src_desc->log2_chroma_w ) : slice_x )
-			 : ( ( i ) ? 0 : slice_x * PIX_DESC_BPP(ctx->src_desc->comp[0]) );
+			? ( ( 1 == i || 2 == i ) ? ( slice_x >> ctx->src_desc->log2_chroma_w ) : slice_x )
+			: ( ( 0 == i ) ? slice_x : 0 );
 
 		int out_offset = (AV_PIX_FMT_FLAG_PLANAR & ctx->dst_desc->flags)
-			 ? ( ( 1 == i || 2 == i ) ? ( slice_x >> ctx->dst_desc->log2_chroma_w ) : slice_x )
-			 : ( ( i ) ? 0 : slice_x * PIX_DESC_BPP(ctx->dst_desc->comp[0]) );
+			? ( ( 1 == i || 2 == i ) ? ( slice_x >> ctx->dst_desc->log2_chroma_w ) : slice_x )
+			: ( ( 0 == i ) ? slice_x : 0 );
+
+		in_offset *= PIX_DESC_BPP(ctx->src_desc->comp[i]);
+		out_offset *= PIX_DESC_BPP(ctx->dst_desc->comp[i]);
 
 		in_stride[i]  = ctx->frame->linesize[i] * mul;
 		out_stride[i] = ctx->output->linesize[i] * mul;
