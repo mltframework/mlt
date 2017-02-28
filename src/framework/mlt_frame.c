@@ -558,12 +558,18 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 					}
 				}
 				break;
+			case mlt_image_yuv422p16:
 			case mlt_image_yuv420p:
-				*buffer = mlt_pool_alloc( size * 3 / 2 );
+				size = mlt_image_format_size( *format, *width, *height, NULL );
+				*buffer = mlt_pool_alloc( size );
 				if ( *buffer )
 				{
-					memset( *buffer, 235, size );
-					memset( *buffer + size, 128, size / 2 );
+					int strides[4];
+					uint8_t* planes[4];
+					mlt_image_format_planes( *format, *width, *height, *buffer, planes, strides );
+					memset(planes[0], 235, *height * strides[0]);
+					memset(planes[1], 128, *height * strides[1]);
+					memset(planes[2], 128, *height * strides[2]);
 				}
 				break;
 			default:
