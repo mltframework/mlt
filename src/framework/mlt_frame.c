@@ -437,6 +437,8 @@ mlt_image_format mlt_image_format_id( const char * name )
 	return mlt_image_invalid;
 }
 
+#define ALIGN_TO( V, L ) ( ( (V + L - 1) / L ) * L )
+
 /** Get the number of bytes needed for an image.
   *
   * \public \memberof mlt_frame_s
@@ -470,7 +472,7 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 			return 4;
 		case mlt_image_yuv422p16:
 			if ( bpp ) *bpp = 0;
-			return 4 * height * width ;
+			return height * ALIGN_TO( width * 2, 32 ) + 2 * height * ALIGN_TO( width, 32 ) ;
 		default:
 			if ( bpp ) *bpp = 0;
 			return 0;
@@ -1184,9 +1186,9 @@ int mlt_image_format_planes( mlt_image_format format, int width, int height, voi
 {
 	if ( mlt_image_yuv422p16 == format )
 	{
-		strides[0] = width * 2;
-		strides[1] = width;
-		strides[2] = width;
+		strides[0] = ALIGN_TO( width * 2, 32 );
+		strides[1] = ALIGN_TO( width, 32 );
+		strides[2] = ALIGN_TO( width, 32 );
 		strides[3] = 0;
 
 		planes[0] = (unsigned char*)data;
