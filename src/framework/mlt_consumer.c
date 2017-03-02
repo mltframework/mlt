@@ -489,6 +489,11 @@ static void set_image_format( mlt_consumer self )
 		priv->image_format = mlt_image_format_id( format );
 		if ( mlt_image_invalid == priv->image_format )
 			priv->image_format = mlt_image_yuv422;
+		// mlt_image_glsl is for internal use only.
+		// Remapping it glsl_texture prevents breaking existing apps
+		// using the legacy "glsl" name.
+		else if ( mlt_image_glsl == priv->image_format )
+			priv->image_format = mlt_image_glsl_texture;
 	}
 }
 
