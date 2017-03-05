@@ -3,7 +3,7 @@
  * \brief playlist service class
  * \see mlt_playlist_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1226,7 +1226,7 @@ int mlt_playlist_mix( mlt_playlist self, int clip, int length, mlt_transition tr
 			clip_b->preservation_hack = 1;
 			mlt_playlist_remove( self, clip + 2 );
 		}
-		else if ( clip_b->frame_out - clip_b->frame_in > length )
+		else if ( clip_b->frame_out - clip_b->frame_in >= length )
 		{
 			mlt_playlist_resize_clip( self, clip + 2, clip_b->frame_in + length, clip_b->frame_out );
 			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( clip_b->producer ), "mix_in", tractor, 0, NULL, NULL );
@@ -1244,7 +1244,7 @@ int mlt_playlist_mix( mlt_playlist self, int clip, int length, mlt_transition tr
 			clip_a->preservation_hack = 1;
 			mlt_playlist_remove( self, clip );
 		}
-		else if ( clip_a->frame_out - clip_a->frame_in > length )
+		else if ( clip_a->frame_out - clip_a->frame_in >= length )
 		{
 			mlt_playlist_resize_clip( self, clip, clip_a->frame_in, clip_a->frame_out - length );
 			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( clip_a->producer ), "mix_out", tractor, 0, NULL, NULL );
