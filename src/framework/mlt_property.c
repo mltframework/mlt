@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -278,7 +278,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 	s = copy;
 	pos = strrchr( s, ':' );
 
-#if !defined(__GLIBC__) && !defined(__APPLE__)
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32)
 	char *orig_localename = NULL;
 	if ( locale )
 	{
@@ -320,7 +320,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 			seconds = strtod( s, NULL );
 	}
 
-#if !defined(__GLIBC__) && !defined(__APPLE__)
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32)
 	if ( locale ) {
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
@@ -493,7 +493,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		if ( locale )
 			result = strtod_l( value, &end, locale );
 		else
-#else
+#elif !defined(_WIN32)
 		char *orig_localename = NULL;
 		if ( locale ) {
 			// Protect damaging the global locale from a temporary locale on another thread.
@@ -511,7 +511,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		if ( end && end[0] == '%' )
 			result /= 100.0;
 
-#if !defined(__GLIBC__) && !defined(__APPLE__)
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -693,6 +693,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 	// Construct a string if need be
 	if ( ! ( self->types & mlt_prop_string ) )
 	{
+#if !defined(_WIN32)
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
 		// Save the current locale
 #if defined(__APPLE__)
@@ -710,6 +711,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 
 		// Set the new locale
 		setlocale( LC_NUMERIC, localename );
+#endif // _WIN32
 
 		if ( self->types & mlt_prop_int )
 		{
@@ -740,10 +742,12 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 			self->types |= mlt_prop_string;
 			self->prop_string = self->serialiser( self->data, self->length );
 		}
+#if !defined(_WIN32)
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
 		free( orig_localename );
 		pthread_mutex_unlock( &self->mutex );
+#endif
 	}
 
 	// Return the string (may be NULL)
@@ -924,6 +928,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	if ( self->prop_string )
 		mlt_property_set_int( self, mlt_property_get_int( self, fps, locale ) );
 
+#if !defined(_WIN32)
 	// Use the specified locale
 	if ( locale )
 	{
@@ -936,7 +941,8 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 #else
 		// TODO: not yet sure what to do on other platforms
 		const char *localename = locale;
-#endif
+#endif // _WIN32
+
 		// Protect damaging the global locale from a temporary locale on another thread.
 		pthread_mutex_lock( &self->mutex );
 
@@ -947,6 +953,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 		setlocale( LC_NUMERIC, localename );
 	}
 	else
+#endif // _WIN32
 	{
 		// Make sure we have a lock before accessing self->types
 		pthread_mutex_lock( &self->mutex );
@@ -985,6 +992,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	else // Use smpte drop frame by default
 		time_smpte_from_frames( frames, fps, self->prop_string, 1 );
 
+#if !defined(_WIN32)
 	// Restore the current locale
 	if ( locale )
 	{
@@ -993,6 +1001,7 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 		pthread_mutex_unlock( &self->mutex );
 	}
 	else
+#endif // _WIN32
 	{
 		// Make sure we have a lock before accessing self->types
 		pthread_mutex_unlock( &self->mutex );
@@ -1028,7 +1037,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 		if ( locale )
 			temp = strtod_l( self->prop_string, &p, locale );
 		else
-#else
+#elif !defined(_WIN32)
 		char *orig_localename = NULL;
 		if ( locale ) {
 			// Protect damaging the global locale from a temporary locale on another thread.
@@ -1044,7 +1053,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 
 		temp = strtod( self->prop_string, &p );
 
-#if !defined(__GLIBC__) && !defined(__APPLE__)
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -1528,7 +1537,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		char *p = NULL;
 		int count = 0;
 
-#if !defined(__GLIBC__) && !defined(__APPLE__)
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32)
 		char *orig_localename = NULL;
 		if ( locale ) {
 			// Protect damaging the global locale from a temporary locale on another thread.
@@ -1580,7 +1589,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 			count ++;
 		}
 
-#if !defined(__GLIBC__) && !defined(__APPLE__)
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );

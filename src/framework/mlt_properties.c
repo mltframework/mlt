@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -136,6 +136,7 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 {
 	int error = 0;
 
+#if !defined(_WIN32)
 	if ( self && locale )
 	{
 		property_list *list = self->local;
@@ -152,6 +153,7 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
 	}
 	else
 		error = 1;
+#endif // _WIN32
 
 	return error;
 }
@@ -171,6 +173,7 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 	property_list *list = self->local;
 	const char *result = NULL;
 
+#if !defined(_WIN32)
 	if ( list->locale )
 	{
 #if defined(__APPLE__)
@@ -190,6 +193,7 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 		}
 #endif
     }
+#endif // _WIN32
 	return result;
 }
 
