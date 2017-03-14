@@ -2,7 +2,7 @@
  * \file mlt.h
  * \brief header file for lazy client and implementation code :-)
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@
  * or <a href="files.html"><b>Files</b></a>.
  * \par
  * Additional documentation about MLT, in general, can be found on the
- * <a href="http://www.mltframework.org/bin/view/MLT/Documentation">MLT website</a>.
+ * <a href="https://www.mltframework.org/docs/">MLT website</a>.
  */
 
 #ifdef __cplusplus

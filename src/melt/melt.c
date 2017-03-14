@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2016 Meltytech, LLC
+ * Copyright (C) 2002-2017 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -500,7 +500,7 @@ static void show_usage( char *program_name )
 "  -timings                                 Set the logging level to timings\n"
 "  -version                                 Show the version and copyright\n"
 "  -video-track | -hide-audio               Add a video-only track\n"
-"For more help: <http://www.mltframework.org/>\n",
+"For more help: <https://www.mltframework.org/>\n",
 	basename( program_name ) );
 }
 
@@ -816,8 +816,8 @@ query_all:
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
 			fprintf( stdout, "%s " VERSION "\n"
-				"Copyright (C) 2002-2016 Meltytech, LLC\n"
-				"<http://www.mltframework.org/>\n"
+				"Copyright (C) 2002-2017 Meltytech, LLC\n"
+				"<https://www.mltframework.org/>\n"
 				"This is free software; see the source for copying conditions.  There is NO\n"
 				"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
 				basename( argv[0] ) );
