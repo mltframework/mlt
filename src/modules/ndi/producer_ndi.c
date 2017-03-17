@@ -112,7 +112,7 @@ static void* producer_ndi_feeder( void* p )
 	NDIlib_recv_create_t recv_create_desc =
 	{
 		ndi_srcs[ i ],
-		NDIlib_recv_color_format_e_UYVY_BGRA,
+		NDIlib_recv_color_format_e_UYVY_RGBA,
 		NDIlib_recv_bandwidth_highest,
 		true
 	};
@@ -262,7 +262,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 			dst_stride = 2 * video->xres;
 			*format = mlt_image_yuv422;
 		}
-		else if ( NDIlib_FourCC_type_BGRA == video->FourCC )
+		else if ( NDIlib_FourCC_type_RGBA == video->FourCC || NDIlib_FourCC_type_RGBX == video->FourCC )
 		{
 			dst_stride = 4 * video->xres;
 			*format = mlt_image_rgb24a;
@@ -280,7 +280,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 		if ( NDIlib_FourCC_type_UYVY == video->FourCC  || NDIlib_FourCC_type_UYVA == video->FourCC )
 			for( j = 0; j < video->yres; j++)
 				swab2( video->p_data + j * video->line_stride_in_bytes, dst + j * dst_stride, stride );
-		else if ( NDIlib_FourCC_type_BGRA == video->FourCC )
+		else if ( NDIlib_FourCC_type_RGBA == video->FourCC || NDIlib_FourCC_type_RGBX == video->FourCC )
 			for( j = 0; j < video->yres; j++)
 				memcpy( dst + j * dst_stride, video->p_data + j * video->line_stride_in_bytes, stride );
 
