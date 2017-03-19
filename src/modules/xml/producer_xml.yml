@@ -22,6 +22,10 @@ notes: >
   deserialized services that are not the lastmost producer or anywhere in
   its graph.
 
+bugs:
+  - This producer is not thread-safe during its construction because it
+    may modify the mlt_profile, even if is_explcicit is set.
+
 parameters:
   - identifier: argument
     title: File
