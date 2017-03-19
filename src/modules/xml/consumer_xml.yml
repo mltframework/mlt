@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: consumer
 identifier: xml
 title: XML
@@ -48,7 +48,7 @@ parameters:
 
   - identifier: all
     title: Process all frames
-    type: integer
+    type: boolean
     description: >
       Without this option, the XML consumer does not process any frames
       and simply serializes the service network. However, some filters (.e.g,
@@ -56,8 +56,6 @@ parameters:
       analysis and stores the result in a property. Therefore, set this
       property to 1 (true) to cause the consumer to process all frames
       before serializing to XML.
-    minimum: 0
-    maximum: 1
     default: 0
 
   - identifier: title
@@ -76,21 +74,17 @@ parameters:
 
   - identifier: no_meta
     title: Exclude meta properties
-    type: integer
+    type: boolean
     description: >
       Set this to disable the output of properties with the prefix "meta."
-    minimum: 0
-    maximum: 1
     default: 0
     widget: checkbox
 
   - identifier: no_root
     title: No root attribute
-    type: integer
+    type: boolean
     description: >
       Set this to disable the output of the root attribute on the root element.
-    minimum: 0
-    maximum: 1
     default: 0
     widget: checkbox
 
@@ -114,3 +108,10 @@ parameters:
     description: >
       To save additional properties that MLT does not know about, supply an
       application-specific property name prefix that you are using.
+
+  - identifier: no_profile
+    title: No profile element
+    type: boolean
+    description: Set this to disable the output of the profile element.
+    default: 0
+    widget: checkbox

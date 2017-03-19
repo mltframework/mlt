@@ -1,6 +1,6 @@
 /*
  * consumer_xml.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -764,29 +764,32 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	// Add a profile child element
 	if ( profile )
 	{
-		xmlNodePtr profile_node = xmlNewChild( root, NULL, _x("profile"), NULL );
-		if ( profile->description )
-			xmlNewProp( profile_node, _x("description"), _x(profile->description) );
-		sprintf( tmpstr, "%d", profile->width );
-		xmlNewProp( profile_node, _x("width"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->height );
-		xmlNewProp( profile_node, _x("height"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->progressive );
-		xmlNewProp( profile_node, _x("progressive"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->sample_aspect_num );
-		xmlNewProp( profile_node, _x("sample_aspect_num"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->sample_aspect_den );
-		xmlNewProp( profile_node, _x("sample_aspect_den"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->display_aspect_num );
-		xmlNewProp( profile_node, _x("display_aspect_num"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->display_aspect_den );
-		xmlNewProp( profile_node, _x("display_aspect_den"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->frame_rate_num );
-		xmlNewProp( profile_node, _x("frame_rate_num"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->frame_rate_den );
-		xmlNewProp( profile_node, _x("frame_rate_den"), _x(tmpstr) );
-		sprintf( tmpstr, "%d", profile->colorspace );
-		xmlNewProp( profile_node, _x("colorspace"), _x(tmpstr) );
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "no_profile" ) )
+		{
+			xmlNodePtr profile_node = xmlNewChild( root, NULL, _x("profile"), NULL );
+			if ( profile->description )
+				xmlNewProp( profile_node, _x("description"), _x(profile->description) );
+			sprintf( tmpstr, "%d", profile->width );
+			xmlNewProp( profile_node, _x("width"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->height );
+			xmlNewProp( profile_node, _x("height"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->progressive );
+			xmlNewProp( profile_node, _x("progressive"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->sample_aspect_num );
+			xmlNewProp( profile_node, _x("sample_aspect_num"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->sample_aspect_den );
+			xmlNewProp( profile_node, _x("sample_aspect_den"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->display_aspect_num );
+			xmlNewProp( profile_node, _x("display_aspect_num"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->display_aspect_den );
+			xmlNewProp( profile_node, _x("display_aspect_den"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->frame_rate_num );
+			xmlNewProp( profile_node, _x("frame_rate_num"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->frame_rate_den );
+			xmlNewProp( profile_node, _x("frame_rate_den"), _x(tmpstr) );
+			sprintf( tmpstr, "%d", profile->colorspace );
+			xmlNewProp( profile_node, _x("colorspace"), _x(tmpstr) );
+		}
 		context->profile = profile;
 	}
 
