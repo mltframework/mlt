@@ -11,7 +11,7 @@ SRCS := $(OBJS:.o=.c)
 
 ifeq ($(targetos), MinGW)
 ifeq (, $(findstring MELT_NOSDL, $(CFLAGS)))
-ifeq (, $(shell pkg-config --exists sdl))
+ifeq (, $(shell pkg-config --exists sdl && echo yes))
 CFLAGS += $(shell  sdl-config --cflags)
 LDFLAGS += $(shell sdl-config --libs)
 else
