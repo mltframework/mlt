@@ -349,6 +349,7 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 
 		if ( !video )
 		{
+			int r;
 			uint64_t usec;
 			struct timeval now;
 			struct timespec tm;
@@ -361,10 +362,13 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 			tm.tv_nsec = (usec % 1000000LL) * 1000LL;
 
 ////fprintf(stderr, "%s:%d: pthread_cond_timedwait...\n", __FUNCTION__, __LINE__ );
-			pthread_cond_timedwait( &self->cond, &self->lock, &tm );
+			r = pthread_cond_timedwait( &self->cond, &self->lock, &tm );
 ////fprintf(stderr, "%s:%d: pthread_cond_timedwait=%d\n", __FUNCTION__, __LINE__, r );
 
-			continue;
+			if( !r )
+				continue;
+
+			break;
 		}
 
 		if ( !audio )
@@ -387,6 +391,7 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 			{
 				NDIlib_recv_free_audio( self->recv, audio );
 				mlt_pool_release( audio );
+				mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "%s: dropped audio frame\n", __FUNCTION__ );
 				audio = NULL;
 				continue;
 			}
