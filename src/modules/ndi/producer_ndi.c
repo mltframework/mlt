@@ -146,6 +146,8 @@ static void* producer_ndi_feeder( void* p )
 		t = NDIlib_recv_capture(self->recv, video, audio, meta, 10 );
 ////fprintf(stderr, "%s:%d: NDIlib_recv_capture=%d\n", __FUNCTION__, __LINE__, t );
 
+		mlt_log_debug( NULL, "%s:%d: NDIlib_recv_capture=%d\n", __FILE__, __LINE__, t );
+
 		switch( t )
 		{
 			case NDIlib_frame_type_none:
@@ -214,7 +216,7 @@ static int get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *forma
 	NDIlib_recv_instance_t recv = mlt_properties_get_data( fprops, "ndi_recv", NULL );
 	NDIlib_audio_frame_t* audio = mlt_properties_get_data( fprops, "ndi_audio", NULL );
 
-	mlt_log_debug( NULL, "%s: recv=%p, audio=%p\n", __FUNCTION__, recv, audio );
+	mlt_log_debug( NULL, "%s:%d: recv=%p, audio=%p\n", __FILE__, __LINE__, recv, audio );
 
 	if ( recv && audio )
 	{
@@ -246,7 +248,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 	NDIlib_recv_instance_t recv = mlt_properties_get_data( fprops, "ndi_recv", NULL );
 	NDIlib_video_frame_t* video = mlt_properties_get_data( fprops, "ndi_video", NULL );
 
-	mlt_log_debug( NULL, "%s: recv=%p, video=%p\n", __FUNCTION__, recv, video );
+	mlt_log_debug( NULL, "%s:%d: recv=%p, video=%p\n", __FILE__, __LINE__, recv, video );
 
 	if ( recv && video )
 	{
@@ -327,6 +329,8 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 
 	pthread_mutex_lock( &self->lock );
 
+	mlt_log_debug( NULL, "%s:%d: entering %s\n", __FILE__, __LINE__, __FUNCTION__ );
+
 	// run thread
 	if ( !self->f_running )
 	{
@@ -341,8 +345,9 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 
 	while ( !self->f_exit ) //&& !mlt_deque_count( self->queue ) )
 	{
-////fprintf(stderr, "%s:%d: audio=%p, video=%p, audio_cnt=%d, video_cnt=%d\n",
-////__FUNCTION__, __LINE__, audio, video,  mlt_deque_count( self->a_queue ), mlt_deque_count( self->v_queue ));
+		mlt_log_debug( NULL, "%s:%d: audio=%p, video=%p, audio_cnt=%d, video_cnt=%d\n",
+			__FILE__, __LINE__, audio, video,
+			mlt_deque_count( self->a_queue ), mlt_deque_count( self->v_queue ));
 
 		if ( !video )
 			video = (NDIlib_video_frame_t*)mlt_deque_pop_front( self->v_queue );
@@ -361,7 +366,7 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 			if( !r )
 				continue;
 
-			mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "%s:%d: pthread_cond_timedwait()=%d\n", __FILE__, __LINE__, r );
+			mlt_log_warning( NULL, "%s:%d: pthread_cond_timedwait()=%d\n", __FILE__, __LINE__, r );
 
 			break;
 		}
@@ -386,7 +391,7 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 			{
 				NDIlib_recv_free_audio( self->recv, audio );
 				mlt_pool_release( audio );
-				mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "%s: dropped audio frame\n", __FUNCTION__ );
+				mlt_log_warning( NULL, "%s:%d: dropped audio frame\n", __FILE__, __LINE__ );
 				audio = NULL;
 				continue;
 			}
@@ -423,7 +428,7 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 			mlt_frame_push_get_image( frame, get_image );
 		}
 		else
-			mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "%s:%d: NO VIDEO\n", __FILE__, __LINE__ );
+			mlt_log_error( NULL, "%s:%d: NO VIDEO\n", __FILE__, __LINE__ );
 
 		if ( audio )
 		{
