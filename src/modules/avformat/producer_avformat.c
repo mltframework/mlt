@@ -2367,7 +2367,6 @@ static int sample_bytes( AVCodecContext *context )
 	return av_get_bytes_per_sample( context->sample_fmt );
 }
 
-#if LIBAVCODEC_VERSION_MAJOR >= 55
 static void planar_to_interleaved( uint8_t *dest, AVFrame *src, int samples, int channels, int bytes_per_sample )
 {
 	int s, c;
@@ -2381,20 +2380,6 @@ static void planar_to_interleaved( uint8_t *dest, AVFrame *src, int samples, int
 		}
 	}
 }
-#else
-static void planar_to_interleaved( uint8_t *dest, uint8_t *src, int samples, int channels, int bytes_per_sample )
-{
-	int s, c;
-	for ( s = 0; s < samples; s++ )
-	{
-		for ( c = 0; c < channels; c++ )
-		{
-			memcpy( dest, src + ( c * samples + s ) * bytes_per_sample, bytes_per_sample );
-			dest += bytes_per_sample;
-		}
-	}
-}
-#endif
 
 static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int samples, double timecode, double fps )
 {
@@ -2409,7 +2394,6 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	// Obtain the audio buffers
 	uint8_t *audio_buffer = self->audio_buffer[ index ];
-	uint8_t *decode_buffer = self->decode_buffer[ index ];
 
 	int channels = codec_context->channels;
 	int audio_used = self->audio_used[ index ];
@@ -2418,10 +2402,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	while ( pkt.data && pkt.size > 0 )
 	{
 		int sizeof_sample = sample_bytes( codec_context );
-		int data_size = self->audio_buffer_size[ index ];
+		int got_frame = 0;
 
 		// Decode the audio
-#if LIBAVCODEC_VERSION_MAJOR >= 55
 		if ( !self->audio_frame )
 #if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
 			self->audio_frame = av_frame_alloc();
@@ -2432,16 +2415,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		else
 			avcodec_get_frame_defaults( self->audio_frame );
 #endif
-		ret = avcodec_decode_audio4( codec_context, self->audio_frame, &data_size, &pkt );
-		if ( data_size ) {
-			data_size = av_samples_get_buffer_size( NULL, channels,
-				self->audio_frame->nb_samples, codec_context->sample_fmt, 1 );
-			decode_buffer = self->audio_frame->data[0];
-			channels = codec_context->channels;
-		}
-#else
-		ret = avcodec_decode_audio3( codec_context, (int16_t*) decode_buffer, &data_size, &pkt );
-#endif
+		ret = avcodec_decode_audio4( codec_context, self->audio_frame, &got_frame, &pkt );
 		if ( ret < 0 )
 		{
 			mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "audio decoding error %d\n", ret );
@@ -2453,10 +2427,11 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		pkt.data += ret;
 
 		// If decoded successfully
-		if ( data_size > 0 )
+		if ( got_frame )
 		{
 			// Figure out how many samples will be needed after resampling
-			int convert_samples = data_size / channels / sizeof_sample;
+			int convert_samples = self->audio_frame->nb_samples;
+			channels = codec_context->channels;
 
 			// Resize audio buffer to prevent overflow
 			if ( ( audio_used + convert_samples ) * channels * sizeof_sample > self->audio_buffer_size[ index ] )
@@ -2471,15 +2446,14 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			case AV_SAMPLE_FMT_S16P:
 			case AV_SAMPLE_FMT_S32P:
 			case AV_SAMPLE_FMT_FLTP:
-#if LIBAVCODEC_VERSION_MAJOR >= 55
 				planar_to_interleaved( dest, self->audio_frame, convert_samples, channels, sizeof_sample );
-#else
-				planar_to_interleaved( dest, decode_buffer, convert_samples, channels, sizeof_sample );
-#endif
 				break;
-			default:
+			default: {
+				int data_size = av_samples_get_buffer_size( NULL, channels,
+					self->audio_frame->nb_samples, codec_context->sample_fmt, 1 );
 				// Straight copy to audio buffer
-				memcpy( dest, decode_buffer, data_size );
+				memcpy( dest, self->audio_frame->data[0], data_size );
+				}
 			}
 			audio_used += convert_samples;
 		}
