@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,15 @@
 #define AV_CODEC_ID_VORBIS    CODEC_ID_VORBIS
 #define AV_CODEC_ID_RAWVIDEO  CODEC_ID_RAWVIDEO
 #define AV_CODEC_ID_MJPEG     CODEC_ID_MJPEG
+#endif
+
+#ifndef AV_CODEC_FLAG_GLOBAL_HEADER
+#define AV_CODEC_FLAG_GLOBAL_HEADER  CODEC_FLAG_GLOBAL_HEADER
+#define AV_CODEC_FLAG_QSCALE         CODEC_FLAG_QSCALE
+#define AV_CODEC_FLAG_INTERLACED_DCT CODEC_FLAG_INTERLACED_DCT
+#define AV_CODEC_FLAG_INTERLACED_ME  CODEC_FLAG_INTERLACED_ME
+#define AV_CODEC_FLAG_PASS1          CODEC_FLAG_PASS1
+#define AV_CODEC_FLAG_PASS2          CODEC_FLAG_PASS2
 #endif
 
 #define MAX_AUDIO_STREAMS (8)
@@ -585,7 +594,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 #endif
 	
 		if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
-			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+			c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 		
 		// Allow the user to override the audio fourcc
 		if ( mlt_properties_get( properties, "atag" ) )
@@ -611,7 +620,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		int audio_qscale = mlt_properties_get_int( properties, "aq" );
 		if ( audio_qscale > QSCALE_NONE )
 		{
-			c->flags |= CODEC_FLAG_QSCALE;
+			c->flags |= AV_CODEC_FLAG_QSCALE;
 			c->global_quality = FF_QP2LAMBDA * audio_qscale;
 		}
 
@@ -710,7 +719,7 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 		if ( !strcmp( oc->oformat->name, "mp4" ) ||
 			 !strcmp( oc->oformat->name, "mov" ) ||
 			 !strcmp( oc->oformat->name, "3gp" ) )
-			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+			c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 	}
 	else
 	{
@@ -842,7 +851,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 
 		if ( mlt_properties_get_double( properties, "qscale" ) > 0 )
 		{
-			c->flags |= CODEC_FLAG_QSCALE;
+			c->flags |= AV_CODEC_FLAG_QSCALE;
 			c->global_quality = FF_QP2LAMBDA * mlt_properties_get_double( properties, "qscale" );
 		}
 
@@ -859,16 +868,16 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 
 		// Some formats want stream headers to be seperate
 		if ( oc->oformat->flags & AVFMT_GLOBALHEADER ) 
-			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+			c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 		// Translate these standard mlt consumer properties to ffmpeg
 		if ( mlt_properties_get_int( properties, "progressive" ) == 0 &&
 		     mlt_properties_get_int( properties, "deinterlace" ) == 0 )
 		{
 			if ( ! mlt_properties_get( properties, "ildct" ) || mlt_properties_get_int( properties, "ildct" ) )
-				c->flags |= CODEC_FLAG_INTERLACED_DCT;
+				c->flags |= AV_CODEC_FLAG_INTERLACED_DCT;
 			if ( ! mlt_properties_get( properties, "ilme" ) || mlt_properties_get_int( properties, "ilme" ) )
-				c->flags |= CODEC_FLAG_INTERLACED_ME;
+				c->flags |= AV_CODEC_FLAG_INTERLACED_ME;
 		}
 		
 		// parse the ratecontrol override string
@@ -905,13 +914,13 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		// Setup dual-pass
 		i = mlt_properties_get_int( properties, "pass" );
 		if ( i == 1 )
-			c->flags |= CODEC_FLAG_PASS1;
+			c->flags |= AV_CODEC_FLAG_PASS1;
 		else if ( i == 2 )
-			c->flags |= CODEC_FLAG_PASS2;
+			c->flags |= AV_CODEC_FLAG_PASS2;
 #ifdef AV_CODEC_ID_H265
 		if ( codec->id != AV_CODEC_ID_H265 )
 #endif
-		if ( codec->id != AV_CODEC_ID_H264 && ( c->flags & ( CODEC_FLAG_PASS1 | CODEC_FLAG_PASS2 ) ) )
+		if ( codec->id != AV_CODEC_ID_H264 && ( c->flags & ( AV_CODEC_FLAG_PASS1 | AV_CODEC_FLAG_PASS2 ) ) )
 		{
 			FILE *f;
 			int size;
@@ -926,7 +935,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 				mlt_properties_from_utf8( properties, "_passlogfile", "_logfilename" );
 			}
 			const char *filename = mlt_properties_get( properties, "_logfilename" );
-			if ( c->flags & CODEC_FLAG_PASS1 )
+			if ( c->flags & AV_CODEC_FLAG_PASS1 )
 			{
 				f = fopen( filename, "w" );
 				if ( !f )
