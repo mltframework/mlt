@@ -65,7 +65,7 @@ install: all
 	[ -f $(BLACKLIST) ] && install -m 644 $(BLACKLIST) "$(DESTDIR)$(mltdatadir)/jackrack" || true
 
 uninstall:
-	rm "$(DESTDIR)$(moduledir)/libmltjackrack$(LIBSUF)" 2> /dev/null || true
+	rm -f "$(DESTDIR)$(moduledir)/libmltjackrack$(LIBSUF)"
 	rm -rf "$(DESTDIR)$(mltdatadir)/jackrack"
 
 ifneq ($(wildcard .depend),)

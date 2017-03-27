@@ -66,8 +66,8 @@ install: all
 	install -m 644 consumer_avformat.yml "$(DESTDIR)$(mltdatadir)/avformat"
 
 uninstall:
-	rm "$(DESTDIR)$(moduledir)/libmltavformat$(LIBSUF)" 2> /dev/null || true
-	rm "$(DESTDIR)$(moduledir)/libmltffmpeg$(LIBSUF)" 2> /dev/null || true
+	rm -f "$(DESTDIR)$(moduledir)/libmltavformat$(LIBSUF)"
+	rm -f "$(DESTDIR)$(moduledir)/libmltffmpeg$(LIBSUF)"
 	rm -rf "$(DESTDIR)$(mltdatadir)/avformat"
 
 ifneq ($(wildcard .depend),)

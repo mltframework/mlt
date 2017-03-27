@@ -34,7 +34,7 @@ install: all
 	install -m 644 filter_sox_effect.yml "$(DESTDIR)$(mltdatadir)/sox"
 
 uninstall:
-	rm "$(DESTDIR)$(moduledir)/libmltsox$(LIBSUF)" 2> /dev/null || true
+	rm -f "$(DESTDIR)$(moduledir)/libmltsox$(LIBSUF)"
 	rm -rf "$(DESTDIR)$(mltdatadir)/sox"
 
 ifneq ($(wildcard .depend),)

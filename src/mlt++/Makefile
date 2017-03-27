@@ -66,7 +66,7 @@ depend:	$(SRCS)
 	$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
 
 clean:
-	$(RM) $(OBJS) $(TARGET) $(NAME) $(SONAME)
+	$(RM) $(OBJS) $(TARGET) $(NAME) $(SONAME) libmlt++.def
 
 distclean:	clean
 

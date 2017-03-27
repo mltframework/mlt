@@ -108,7 +108,7 @@ distclean:	clean
 		rm -f .depend
 
 clean:	
-		rm -f $(OBJS) $(TARGET) $(NAME) $(SONAME)
+		rm -f $(OBJS) $(TARGET) $(NAME) $(SONAME) libmlt.def
 
 install:
 	install -d $(DESTDIR)$(libdir)
