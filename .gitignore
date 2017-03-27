@@ -1,6 +1,8 @@
 *.o
 *.so
 *.so.*
+*.dll
+*.def
 config.mak
 config.h
 config.log

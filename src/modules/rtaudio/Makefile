@@ -60,7 +60,7 @@ install: all
 	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/rtaudio"
 
 uninstall:
-	rm "$(DESTDIR)$(moduledir)/libmltrtaudio$(LIBSUF)" 2> /dev/null || true
+	rm -f "$(DESTDIR)$(moduledir)/libmltrtaudio$(LIBSUF)"
 	rm -rf "$(DESTDIR)$(mltdatadir)/rtaudio"
 
 ifneq ($(wildcard .depend),)

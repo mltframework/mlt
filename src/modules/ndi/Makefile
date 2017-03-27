@@ -32,7 +32,7 @@ install: all
 #	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/ndi"
 
 uninstall:
-	rm "$(DESTDIR)$(moduledir)/libmltndi$(LIBSUF)" 2> /dev/null || true
+	rm -f "$(DESTDIR)$(moduledir)/libmltndi$(LIBSUF)"
 	rm -rf "$(DESTDIR)$(mltdatadir)/ndi"
 
 ifneq ($(wildcard .depend),)

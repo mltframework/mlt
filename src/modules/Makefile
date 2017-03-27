@@ -10,7 +10,8 @@ all clean depend:
 	done
 
 distclean:
-	rm -f consumers.dat filters.dat producers.dat transitions.dat make.inc; \
+	rm -f consumers.dat filters.dat producers.dat transitions.dat
+	echo > make.inc
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		if [ -f $$subdir/Makefile -a ! -f disable-$$subdir -a ! -f $$subdir/deprecated ] ; \

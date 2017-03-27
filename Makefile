@@ -13,12 +13,12 @@ all clean:
 	done
 
 distclean:
-	rm mlt-config packages.dat; \
+	rm -f mlt-config packages.dat
 	list='$(SUBDIRS)'; \
 	for subdir in $$list; do \
 		$(MAKE) -C $$subdir $@ || exit 1; \
-	done; \
-	rm config.mak;
+	done
+	echo > config.mak
 
 dist-clean: distclean
 
