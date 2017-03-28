@@ -217,7 +217,7 @@ int mlt_field_plant_transition( mlt_field self, mlt_transition that, int a_track
 		mlt_events_fire( mlt_field_properties( self ), "service-changed", NULL );
 	}
 
-	return 0;
+	return result;
 }
 
 /** Close the field.
