@@ -51,6 +51,7 @@ namespace Mlt
 			int connect_producer( Service &producer, int index = 0 );
 			int insert_producer( Service &producer, int index = 0 );
 			int disconnect_producer( int index = 0 );
+			int disconnect_all_producers( );
 			Service *consumer( );
 			Service *producer( );
 			Profile *profile( );
