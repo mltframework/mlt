@@ -500,4 +500,5 @@ MLT_6.6.0 {
     mlt_slices_run_rr;
     mlt_slices_run_fifo;
     mlt_log_timings_now;
+    mlt_service_disconnect_all_producers;
 } MLT_6.4.0;

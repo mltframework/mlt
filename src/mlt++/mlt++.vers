@@ -522,3 +522,10 @@ MLTPP_6.4.0 {
       "Mlt::Profile::is_valid() const";
   };
 } MLTPP_0.9.8;
+
+MLTPP_6.6.0 {
+  global:
+    extern "C++" {
+      "Mlt::Service::disconnect_all_producers()";
+  };
+} MLTPP_6.4.0;
