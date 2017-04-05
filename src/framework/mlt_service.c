@@ -382,9 +382,19 @@ int mlt_service_disconnect_all_producers( mlt_service self)
 	mlt_service_base *base = self->local;
 
 	if ( base->in )
+	{
 		for ( i = 0 ; i < base->count ; i ++ )
-			if ( mlt_service_disconnect_producer(self, i) == 0 )
-				disconnected ++ ;
+		{
+			mlt_service current = base->in[ i ];
+			if ( current )
+			{
+				mlt_service_close( current );
+				disconnected ++;
+			}
+			base->in[ i ] = NULL;
+		}
+		base->count = 0;
+	}
 
 	return disconnected;
 }
