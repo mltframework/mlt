@@ -84,6 +84,11 @@ int Service::disconnect_producer( int index )
 	return mlt_service_disconnect_producer( get_service(), index );
 }
 
+int Service::disconnect_all_producers( )
+{
+	return mlt_service_disconnect_all_producers( get_service() );
+}
+
 Service *Service::producer( )
 {
 	return new Service( mlt_service_producer( get_service( ) ) );

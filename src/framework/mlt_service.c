@@ -369,6 +369,36 @@ int mlt_service_disconnect_producer( mlt_service self, int index )
 	return -1;
 }
 
+/** Remove the all the attached producers
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \return the number of successfully disconnected producers
+ */
+
+int mlt_service_disconnect_all_producers( mlt_service self)
+{
+	int disconnected = 0, i = 0;
+	mlt_service_base *base = self->local;
+
+	if ( base->in )
+	{
+		for ( i = 0 ; i < base->count ; i ++ )
+		{
+			mlt_service current = base->in[ i ];
+			if ( current )
+			{
+				mlt_service_close( current );
+				disconnected ++;
+			}
+			base->in[ i ] = NULL;
+		}
+		base->count = 0;
+	}
+
+	return disconnected;
+}
+
 /** Disconnect a service from its consumer.
  *
  * \private \memberof mlt_service_s
