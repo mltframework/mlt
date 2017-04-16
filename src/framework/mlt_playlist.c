@@ -1407,7 +1407,7 @@ int mlt_playlist_mix_out( mlt_playlist self, int clip, int length )
 			track_a = clip_a->producer;
 
 		if ( length != clip_b->frame_in )
-			track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in - length + 1, clip_b->frame_in );
+			track_b = mlt_producer_cut( clip_b->producer, clip_b->frame_in - length, clip_b->frame_in - 1 );
 		else
 			track_b = clip_b->producer;
 
