@@ -1,0 +1,34 @@
+schema_version: 0.2
+type: consumer
+identifier: shmem
+title: Shared memory output
+version: 3
+copyright: Copyright (C) 2016 Meltytech, LLC
+license: LGPL
+language: en
+creator: Maksym Veremeyenko
+tags:
+  - Audio
+  - Video
+description: Write frame to shared memory exchange interface
+
+notes: >
+
+  Shared memory interface allows different processes to exchange
+  a frames between them.
+
+  Usage example:
+
+      melt -profile atsc_1080i_50 jamala.mxf -consumer shmem:/tmp/demo8
+
+  Currently supported under Linux.
+
+parameters:
+  - identifier: target
+    argument: yes
+    title: File
+    type: string
+    description: >
+      Name of exisint file used to build a shared memory key to
+      indentify shared memory region.
+    widget: filesave

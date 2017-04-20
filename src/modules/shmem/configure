@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ "$help" = "1" ]
+then
+	cat << EOF
+Shared memory producer/consumer has not options.
+
+  This module supported under Linux only now
+EOF
+
+else
+	targetos=$(uname -s)
+	case $targetos in
+	Linux)
+		echo "- SHMEM enabled"
+		rm -f ../disable-shmem
+		;;
+	*)
+		echo "- SHMEM supported on linux only: disabling it"
+		touch ../disable-shmem
+		;;
+	esac
+fi
+
+exit 0
