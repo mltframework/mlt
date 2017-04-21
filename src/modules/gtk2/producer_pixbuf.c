@@ -529,11 +529,11 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		}
 		pthread_mutex_unlock( &g_mutex );
 
+		uint8_t *buffer = NULL;
+
 		// Convert image to requested format
 		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format )
 		{
-			uint8_t *buffer = NULL;
-
 			// First, set the image so it can be converted when we get it
 			mlt_frame_replace_image( frame, self->image, self->format, width, height );
 			mlt_frame_set_image( frame, self->image, image_size, mlt_pool_release );
@@ -542,18 +542,20 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 			// get_image will do the format conversion
 			mlt_frame_get_image( frame, &buffer, &format, &width, &height, 0 );
 
-			// cache copies of the image and alpha buffers
+			// cache copies of the image
 			if ( buffer )
 			{
 				image_size = mlt_image_format_size( format, width, height, NULL );
 				self->image = mlt_pool_alloc( image_size );
 				memcpy( self->image, buffer, image_size );
 			}
-			if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
-			{
-				self->alpha = mlt_pool_alloc( width * height );
-				memcpy( self->alpha, buffer, width * height );
-			}
+		}
+
+		// Create alpha buffer
+		if ( has_alpha && ( buffer = mlt_frame_get_alpha_mask( frame ) ) )
+		{
+			self->alpha = mlt_pool_alloc( width * height );
+			memcpy( self->alpha, buffer, width * height );
 		}
 
 		// Update the cache
