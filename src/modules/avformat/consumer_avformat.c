@@ -925,19 +925,19 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 			FILE *f;
 			int size;
 			char *logbuffer;
+			char *filename;
 
 			if ( mlt_properties_get( properties, "passlogfile" ) ) {
-				mlt_properties_from_utf8( properties, "passlogfile", "_logfilename" );
+				filename = mlt_properties_get( properties, "passlogfile" );
 			} else {
 				char logfilename[1024];
 				snprintf( logfilename, sizeof(logfilename), "%s_2pass.log", mlt_properties_get( properties, "target" ) );
-				mlt_properties_set( properties, "_passlogfile", logfilename );
-				mlt_properties_from_utf8( properties, "_passlogfile", "_logfilename" );
+				mlt_properties_set( properties, "_logfilename", logfilename );
+				filename = mlt_properties_get( properties, "_logfilename" );
 			}
-			const char *filename = mlt_properties_get( properties, "_logfilename" );
 			if ( c->flags & AV_CODEC_FLAG_PASS1 )
 			{
-				f = fopen( filename, "w" );
+				f = mlt_fopen( filename, "w" );
 				if ( !f )
 					perror( filename );
 				else
@@ -946,7 +946,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 			else
 			{
 				/* read the log file */
-				f = fopen( filename, "r" );
+				f = mlt_fopen( filename, "r" );
 				if ( !f )
 				{
 					perror( filename );
@@ -1178,8 +1178,7 @@ static void *consumer_thread( void *arg )
 
 	// Determine the format
 	AVOutputFormat *fmt = NULL;
-	mlt_properties_from_utf8( properties, "target", "_target" );
-	const char *filename = mlt_properties_get( properties, "_target" );
+	const char *filename = mlt_properties_get( properties, "target" );
 	char *format = mlt_properties_get( properties, "f" );
 	char *vcodec = mlt_properties_get( properties, "vcodec" );
 	char *acodec = mlt_properties_get( properties, "acodec" );
@@ -2159,8 +2158,7 @@ on_fatal_error:
 		      mlt_properties_get( properties, "passlogfile" ) )
 		{
 			mlt_properties_get( properties, "passlogfile" );
-			mlt_properties_from_utf8( properties, "passlogfile", "_passlogfile" );
-			file = mlt_properties_get( properties, "_passlogfile" );
+			file = mlt_properties_get( properties, "passlogfile" );
 			remove( file );
 			full = malloc( strlen( file ) + strlen( ".mbtree" ) + 1 );
 			sprintf( full, "%s.mbtree", file );

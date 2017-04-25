@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -353,7 +353,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		{
 			FILE *test;
 			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
-			test = fopen( temp, "r" );
+			test = mlt_fopen( temp, "r" );
 			if ( test == NULL )
 				strcat( temp, ".png" );
 			else
@@ -365,12 +365,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// See if it is a PGM
 		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 		{
-			// Convert file name string encoding.
-			mlt_properties_set( properties, "_resource_utf8", resource );
-			mlt_properties_from_utf8( properties, "_resource_utf8", "_resource_local8" );
-
 			// Open PGM
-			FILE *f = fopen( mlt_properties_get( properties, "_resource_local8" ), "rb" );
+			FILE *f = mlt_fopen( resource, "rb" );
 			if ( f != NULL )
 			{
 				// Load from PGM

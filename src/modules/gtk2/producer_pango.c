@@ -1,6 +1,6 @@
 /*
  * producer_pango.c -- a pango-based titler
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -253,12 +253,8 @@ mlt_producer producer_pango_init( const char *filename )
 		}
 		else
 		{
-			// Convert file name string encoding.
 			mlt_properties_set( properties, "resource", filename );
-			mlt_properties_from_utf8( properties, "resource", "_resource" );
-			filename = mlt_properties_get( properties, "_resource" );
-
-			FILE *f = fopen( filename, "r" );
+			FILE *f = mlt_fopen( filename, "r" );
 			if ( f != NULL )
 			{
 				char line[81];

@@ -124,15 +124,11 @@ static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat v
 		 && strlen(filename) >= strlen(results)
 		 && !strcmp( &filename[strlen(filename) - strlen(results)], results ) )
 	{
-		// Convert file name string encoding.
-		mlt_properties_from_utf8( properties, "filename", "_filename" );
-		filename = mlt_properties_get( properties, "_filename" );
+		filename = mlt_properties_get( properties, "filename" );
 	}
 	else
 	{
-		// Convert file name string encoding.
-		mlt_properties_from_utf8( properties, "results", "_results" );
-		filename = mlt_properties_get( properties, "_results" );
+		filename = mlt_properties_get( properties, "results" );
 	}
 	mlt_log_info( MLT_FILTER_SERVICE(filter), "Load results from %s\n", filename );
 
@@ -150,7 +146,7 @@ static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat v
 	vsTransformationsInit( &apply_data->trans );
 
 	// Load the motions from the analyze step and convert them to VSTransformations
-	FILE* f = fopen( filename, "r" );
+	FILE* f = mlt_fopen( filename, "r" );
 	VSManyLocalMotions mlms;
 
 	if( vsReadLocalMotionsFile( f, &mlms ) == VS_OK )
@@ -226,7 +222,7 @@ static void init_analyze_data( mlt_filter filter, mlt_frame frame, VSPixelFormat
 
 	// Initialize the file to save results to
 	char* filename = mlt_properties_get( properties, "filename" );
-	analyze_data->results = fopen( filename, "w" );
+	analyze_data->results = mlt_fopen( filename, "w" );
 	if ( vsPrepareFile( &analyze_data->md, analyze_data->results ) != VS_OK )
 	{
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Can not write to results file: %s\n", filename );

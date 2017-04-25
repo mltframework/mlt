@@ -1,6 +1,6 @@
 /*
  * producer_vorbis.c -- vorbis producer
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -123,7 +123,7 @@ static void producer_file_close( void *file )
 static int producer_open( mlt_producer this, mlt_profile profile, char *file )
 {
 	// FILE pointer for file
-	FILE *input = fopen( file, "rb" );
+	FILE *input = mlt_fopen( file, "rb" );
 
 	// Error code to return
 	int error = input == NULL;

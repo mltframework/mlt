@@ -1,6 +1,6 @@
 /*
  * transition_composite.c -- compose one image over another using alpha channel
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -703,7 +703,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 		// TODO: Clean up quick and dirty compressed/existence check
 		FILE *test;
 		sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
-		test = fopen( temp, "r" );
+		test = mlt_fopen( temp, "r" );
 		if ( test == NULL )
 			strcat( temp, ".png" );
 		else
@@ -747,12 +747,8 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 			// See if it is a PGM
 			if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 			{
-				// Convert file name string encoding.
-				mlt_properties_set( properties, "_luma_utf8", resource );
-				mlt_properties_from_utf8( properties, "_luma_utf8", "_luma_local8" );
-
 				// Open PGM
-				FILE *f = fopen( mlt_properties_get( properties, "_luma_local8" ), "rb" );
+				FILE *f = mlt_fopen( resource, "rb" );
 				if ( f != NULL )
 				{
 					// Load from PGM

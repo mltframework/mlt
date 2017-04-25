@@ -195,8 +195,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			if ( strcmp( service, "avformat-novalidate" ) )
 			{
 				// Open the file
-				mlt_properties_from_utf8( properties, "resource", "_resource" );
-				if ( producer_open( self, profile, mlt_properties_get( properties, "_resource" ), 1, 1 ) != 0 )
+				if ( producer_open( self, profile, mlt_properties_get( properties, "resource" ), 1, 1 ) != 0 )
 				{
 					// Clean up
 					mlt_producer_close( producer );
@@ -508,7 +507,6 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 {
 	if ( !URL ) return NULL;
 
-	char *result = NULL;
 	char *protocol = strdup( URL );
 	char *url = strchr( protocol, ':' );
 
@@ -517,16 +515,17 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	{
 		// Truncate protocol string
 		url[0] = 0;
-		mlt_log_debug( NULL, "%s: protocol=%s resource=%s\n", __FUNCTION__, protocol, url + 1 );
+		++url;
+		mlt_log_debug( NULL, "%s: protocol=%s resource=%s\n", __FUNCTION__, protocol, url );
 
 		// Lookup the format
 		*format = av_find_input_format( protocol );
 
-		// Eat the format designator
-		result = ++url;
-
 		if ( *format )
 		{
+			// Eat the format designator
+			char *result = url;
+
 			// support for legacy width and height parameters
 			char *width = NULL;
 			char *height = NULL;
@@ -575,16 +574,13 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 				free( s );
 			}
 			free( width );
-			free ( height );
+			free( height );
+			free( protocol );
+			return strdup( result );
 		}
-		result = strdup( result );
-	}
-	else
-	{
-		result = strdup( URL );
 	}
 	free( protocol );
-	return result;
+	return strdup( URL );
 }
 
 static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
@@ -2222,9 +2218,8 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	{
 		unlock_needed = 1;
 		pthread_mutex_lock( &self->video_mutex );
-		mlt_properties_from_utf8( properties, "resource", "_resource" );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "_resource" ), 0, 0 );
+			mlt_properties_get( properties, "resource" ), 0, 0 );
 		context = self->video_format;
 	}
 
@@ -2829,9 +2824,8 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	// Reopen the file if necessary
 	if ( !context && self->audio_index > -1 && index > -1 )
 	{
-		mlt_properties_from_utf8( properties, "resource", "_resource" );
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
-			mlt_properties_get( properties, "_resource" ), 1, 0 );
+			mlt_properties_get( properties, "resource" ), 1, 0 );
 		context = self->audio_format;
 	}
 

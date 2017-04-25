@@ -90,7 +90,7 @@ mlt_consumer consumer_blipflash_init( mlt_profile profile, mlt_service_type type
 		stats->out_file = stdout;
 		if ( arg != NULL )
 		{
-			FILE* out_file = fopen( arg, "w" );
+			FILE* out_file = mlt_fopen( arg, "w" );
 			if ( out_file != NULL )
 				stats->out_file = out_file;
 		}

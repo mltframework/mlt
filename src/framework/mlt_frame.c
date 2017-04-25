@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1040,7 +1040,7 @@ void mlt_frame_write_ppm( mlt_frame frame )
 		char filename[16];
 		
 		sprintf( filename, "frame-%05d.ppm", (int)mlt_frame_get_position( frame ) );
-		file = fopen( filename, "wb" );
+		file = mlt_fopen( filename, "wb" );
 		if ( !file )
 			return;
 		fprintf( file, "P6\n%d %d\n255\n", width, height);

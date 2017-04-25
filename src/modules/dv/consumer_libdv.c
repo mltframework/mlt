@@ -1,6 +1,6 @@
 /*
  * consumer_libdv.c -- a DV encoder based on libdv
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -342,7 +342,7 @@ static void consumer_output( mlt_consumer this, uint8_t *dv_frame, int size, mlt
 		output = mlt_properties_get_data( properties, "output_file", NULL );
 		if ( output == NULL )
 		{
-			output = fopen( target, "wb" );
+			output = mlt_fopen( target, "wb" );
 			if ( output != NULL )
 				mlt_properties_set_data( properties, "output_file", output, 0, ( mlt_destructor )fclose, 0 );
 		}

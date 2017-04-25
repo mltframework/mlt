@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1574,7 +1574,7 @@ static int file_exists( char *name )
 	int exists = 0;
 	if ( name != NULL )
 	{
-		FILE *f = fopen( name, "r" );
+		FILE *f = mlt_fopen( name, "r" );
 		exists = f != NULL;
 		if ( exists ) fclose( f );
 	}
@@ -1711,10 +1711,6 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 				free( cwd );
 			}
 		}
-
-		// Convert file name string encoding.
-		mlt_properties_from_utf8( context->params, "_mlt_xml_resource", "__mlt_xml_resource" );
-		filename = mlt_properties_get( context->params, "__mlt_xml_resource" );
 
 		if ( !file_exists( filename ) )
 		{

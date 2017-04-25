@@ -170,10 +170,10 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 {
 	if ( !self ) return NULL;
 
-	property_list *list = self->local;
 	const char *result = NULL;
 
 #if !defined(_WIN32)
+	property_list *list = self->local;
 	if ( list->locale )
 	{
 #if defined(__APPLE__)
@@ -199,13 +199,8 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 
 static int load_properties( mlt_properties self, const char *filename )
 {
-	// Convert filename string encoding.
-	mlt_properties_set( self, "_mlt_properties_load", filename );
-	mlt_properties_from_utf8( self, "_mlt_properties_load", "__mlt_properties_load" );
-	filename = mlt_properties_get( self, "__mlt_properties_load" );
-
 	// Open the file
-	FILE *file = fopen( filename, "r" );
+	FILE *file = mlt_fopen( filename, "r" );
 
 	// Load contents of file
 	if ( file != NULL )
@@ -1254,12 +1249,7 @@ int mlt_properties_save( mlt_properties self, const char *filename )
 	int error = 1;
 	if ( !self || !filename ) return error;
 
-	// Convert filename string encoding.
-	mlt_properties_set( self, "_mlt_properties_save", filename );
-	mlt_properties_from_utf8( self, "_mlt_properties_save", "__mlt_properties_save" );
-	filename = mlt_properties_get( self, "__mlt_properties_save" );
-
-	FILE *f = fopen( filename, "w" );
+	FILE *f = mlt_fopen( filename, "w" );
 	if ( f != NULL )
 	{
 		mlt_properties_dump( self, f );
@@ -1757,13 +1747,8 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 
 	if ( self )
 	{
-		// Convert filename string encoding.
-		mlt_properties_set( self, "_mlt_properties_parse_yaml", filename );
-		mlt_properties_from_utf8( self, "_mlt_properties_parse_yaml", "__mlt_properties_parse_yaml" );
-		filename = mlt_properties_get( self, "__mlt_properties_parse_yaml" );
-	
 		// Open the file
-		FILE *file = fopen( filename, "r" );
+		FILE *file = mlt_fopen( filename, "r" );
 
 		// Load contents of file
 		if ( file )

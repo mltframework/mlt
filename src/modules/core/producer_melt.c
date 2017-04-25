@@ -1,6 +1,6 @@
 /*
  * producer_melt.c -- load from melt command line syntax
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,13 +30,7 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 
 mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
 {
-	// Convert file name string encoding.
-	mlt_properties properties = mlt_properties_new();
-	mlt_properties_set( properties, "filename", file );
-	mlt_properties_from_utf8( properties, "filename", "_filename" );
-	file = mlt_properties_get( properties, "_filename" );
-
-	FILE *input = fopen( file, "r" );
+	FILE *input = mlt_fopen( file, "r" );
 	char **args = calloc( sizeof( char * ), MELT_FILE_MAX_LINES );
 	int count = 0;
 	char temp[ MELT_FILE_MAX_LENGTH ];
@@ -64,7 +58,6 @@ mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( result ), "resource", file );
 	}
 
-	mlt_properties_close( properties );
 	while( count -- )
 		free( args[ count ] );
 	free( args );

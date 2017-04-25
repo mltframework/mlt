@@ -27,6 +27,7 @@
 #include <iconv.h>
 #include <locale.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "../framework/mlt_properties.h"
 #include "../framework/mlt_log.h"
 
@@ -237,4 +238,29 @@ char* getlocale()
 	snprintf (result, sizeof(result), "%s_%s%s", iso639, iso3166, script);
 	result[sizeof(result) - 1] = '\0';
 	return strdup (result);
+}
+
+FILE* win32_fopen(const char *filename_utf8, const char *mode_utf8)
+{
+	// Convert UTF-8 to wide chars.
+	int n = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename_utf8, -1, NULL, 0);
+	if (n > 0) {
+		wchar_t *filename_w = (wchar_t *) calloc(n, sizeof(wchar_t));
+		if (filename_w) {
+			int m = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, mode_utf8, -1, NULL, 0);
+			if (m > 0) {
+				wchar_t *mode_w = (wchar_t *) calloc(m, sizeof(wchar_t));
+				if (mode_w) {
+					MultiByteToWideChar(CP_UTF8, 0, filename_utf8, -1, filename_w, n);
+					MultiByteToWideChar(CP_UTF8, 0, mode_utf8, -1, mode_w, n);
+					FILE *fh = _wfopen(filename_w, mode_w);
+					free(filename_w);
+					if (fh)
+						return fh;
+				}
+			}
+		}
+	}
+	// Try with regular old fopen.
+	return fopen(filename_utf8, mode_utf8);
 }

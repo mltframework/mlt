@@ -35,12 +35,6 @@ mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, cons
 	int height = 0;
 	int maxval = 0;
 
-	// Convert file name string encoding.
-	mlt_properties tmp_properties = mlt_properties_new();
-	mlt_properties_set( tmp_properties, "utf8", resource );
-	mlt_properties_from_utf8( tmp_properties, "utf8", "local8" );
-	resource = mlt_properties_get( tmp_properties, "local8" );
-
 	if ( read_pgm( resource, &image, &width, &height, &maxval ) == 0 )
 	{
 		this = calloc( 1, sizeof( struct mlt_producer_s ) );
@@ -61,7 +55,6 @@ mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, cons
 			this = NULL;
 		}
 	}
-	mlt_properties_close( tmp_properties );
 
 	return this;
 }
@@ -73,7 +66,7 @@ static int read_pgm( char *name, uint8_t **image, int *width, int *height, int *
 {
 	uint8_t *input = NULL;
 	int error = 0;
-	FILE *f = fopen( name, "rb" );
+	FILE *f = mlt_fopen( name, "rb" );
 	char data[ 512 ];
 
 	// Initialise

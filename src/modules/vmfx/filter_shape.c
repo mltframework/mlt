@@ -134,12 +134,12 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		{
 			FILE *test;
 			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
-			test = fopen( temp, "r" );
+			test = mlt_fopen( temp, "r" );
 
 			if ( test == NULL )
 			{
 				strcat( temp, ".png" );
-				test = fopen( temp, "r" );
+				test = mlt_fopen( temp, "r" );
 			}
 
 			if ( test )

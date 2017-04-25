@@ -872,10 +872,6 @@ static void output_xml( mlt_consumer consumer )
 	}
 	else
 	{
-		// Convert file name string encoding.
-		mlt_properties_from_utf8( properties, "resource", "_resource" );
-		resource = mlt_properties_get( properties, "_resource" );
-
 		xmlSaveFormatFileEnc( resource, doc, "utf-8", 1 );
 	}
 
