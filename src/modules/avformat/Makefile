@@ -12,7 +12,7 @@ else
 TARGET = ../libmltavformat$(LIBSUF)
 endif
 
-OBJS = factory.o
+OBJS = factory.o common.o
 
 ifdef FILTERS
 OBJS += filter_avcolour_space.o \

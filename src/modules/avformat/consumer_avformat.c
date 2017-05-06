@@ -42,6 +42,8 @@
 #include <libavutil/samplefmt.h>
 #include <libavutil/opt.h>
 
+#include "common.h"
+
 #if LIBAVCODEC_VERSION_MAJOR < 55
 #define AV_CODEC_ID_PCM_S16LE CODEC_ID_PCM_S16LE
 #define AV_CODEC_ID_PCM_S16BE CODEC_ID_PCM_S16BE
@@ -450,23 +452,6 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		// Apply option if found
 		if ( opt )
 			av_opt_set( obj, opt_name, mlt_properties_get_value( properties, i), 0 );
-	}
-}
-
-static enum AVPixelFormat pick_pix_fmt( mlt_image_format img_fmt )
-{
-	switch ( img_fmt )
-	{
-	case mlt_image_rgb24:
-		return AV_PIX_FMT_RGB24;
-	case mlt_image_rgb24a:
-		return AV_PIX_FMT_RGBA;
-	case mlt_image_yuv420p:
-		return AV_PIX_FMT_YUV420P;
-	case mlt_image_yuv422p16:
-		return AV_PIX_FMT_YUV422P16LE;
-	default:
-		return AV_PIX_FMT_YUYV422;
 	}
 }
 
@@ -1776,6 +1761,7 @@ static void *consumer_thread( void *arg )
 
 						mlt_image_format_planes( img_fmt, width, height, image, video_avframe.data, video_avframe.linesize );
 
+#if LIBSWSCALE_VERSION_INT < AV_VERSION_INT( 3, 1, 101 )
 						// Do the colour space conversion
 						int flags = SWS_BICUBIC;
 						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
@@ -1784,6 +1770,22 @@ static void *consumer_thread( void *arg )
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
 
+#else
+						video_avframe.interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
+						video_avframe.format = avformat_map_pixfmt_mlt2av( img_fmt );
+						video_avframe.width = img_width;
+						video_avframe.height = img_height;
+						avformat_colorspace_convert
+						(
+							&video_avframe,
+								0, // int src_colorspace,
+								0, // int src_full_range,
+							converted_avframe,
+								0, // int dst_colorspace,
+								0, // int dst_full_range,
+							SWS_BICUBIC | SWS_ACCURATE_RND // int flags
+						);
+#endif
 						mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
 
 						// Apply the alpha if applicable

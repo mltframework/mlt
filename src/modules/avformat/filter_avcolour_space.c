@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "common.h"
+
 #if 0 // This test might come in handy elsewhere someday.
 static int is_big_endian( )
 {
@@ -40,83 +42,7 @@ static int is_big_endian( )
 }
 #endif
 
-static int convert_mlt_to_av_cs( mlt_image_format format )
-{
-	int value = 0;
-
-	switch( format )
-	{
-		case mlt_image_rgb24:
-			value = AV_PIX_FMT_RGB24;
-			break;
-		case mlt_image_rgb24a:
-		case mlt_image_opengl:
-			value = AV_PIX_FMT_RGBA;
-			break;
-		case mlt_image_yuv422:
-			value = AV_PIX_FMT_YUYV422;
-			break;
-		case mlt_image_yuv420p:
-			value = AV_PIX_FMT_YUV420P;
-			break;
-		case mlt_image_yuv422p16:
-			value = AV_PIX_FMT_YUV422P16LE;
-			break;
-		default:
-			mlt_log_error( NULL, "[filter avcolor_space] Invalid format %s\n",
-				mlt_image_format_name( format ) );
-			break;
-	}
-
-	return value;
-}
-
-static int set_luma_transfer( struct SwsContext *context, int src_colorspace, int dst_colorspace, int full_range )
-{
-	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
-	const int *dst_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
-	int brightness = 0;
-	int contrast = 1 << 16;
-	int saturation = 1  << 16;
-
-	switch ( src_colorspace )
-	{
-	case 170:
-	case 470:
-	case 601:
-	case 624:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-		break;
-	case 240:
-		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-		break;
-	case 709:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		break;
-	default:
-		break;
-	}
-	switch ( dst_colorspace )
-	{
-	case 170:
-	case 470:
-	case 601:
-	case 624:
-		dst_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-		break;
-	case 240:
-		dst_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-		break;
-	case 709:
-		dst_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		break;
-	default:
-		break;
-	}
-	return sws_setColorspaceDetails( context, src_coefficients, full_range, dst_coefficients, full_range,
-		brightness, contrast, saturation );
-}
-
+#if LIBSWSCALE_VERSION_INT < AV_VERSION_INT( 3, 1, 101 )
 // returns set_lumage_transfer result
 static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int width, int height, int src_colorspace, int dst_colorspace, int use_full_range )
@@ -146,13 +72,14 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		if ( out_fmt == AV_PIX_FMT_RGB24 || out_fmt == AV_PIX_FMT_RGBA )
 			dst_colorspace = 601;
-		error = set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range );
+		error = avformat_set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range, use_full_range );
 		sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, height,
 			output.data, output.linesize);
 		sws_freeContext( context );
 	}
 	return error;
 }
+#endif
 
 /** Do it :-).
 */
@@ -176,10 +103,14 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			mlt_image_format_name( *format ), mlt_image_format_name( output_format ),
 			width, height, colorspace, profile_colorspace );
 
-		int in_fmt = convert_mlt_to_av_cs( *format );
-		int out_fmt = convert_mlt_to_av_cs( output_format );
+#if LIBSWSCALE_VERSION_INT < AV_VERSION_INT( 3, 1, 101 )
+		int in_fmt = avformat_map_pixfmt_mlt2av( *format );
+		int out_fmt = avformat_map_pixfmt_mlt2av( output_format );
 		int size = FFMAX( avpicture_get_size( out_fmt, width, height ),
 			mlt_image_format_size( output_format, width, height, NULL ) );
+#else
+		int size = mlt_image_format_size( output_format, width, height, NULL );
+#endif
 		uint8_t *output = mlt_pool_alloc( size );
 
 		if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
@@ -212,8 +143,32 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		}
 
 		// Update the output
+#if LIBSWSCALE_VERSION_INT < AV_VERSION_INT( 3, 1, 101 )
 		if ( !av_convert_image( output, *image, out_fmt, in_fmt, width, height,
 								colorspace, profile_colorspace, force_full_luma ) )
+#else
+		AVFrame input_frame;
+		AVFrame output_frame;
+
+		input_frame.interlaced_frame = !mlt_properties_get_int( properties, "progressive" );
+		input_frame.format = avformat_map_pixfmt_mlt2av( *format );
+		output_frame.format = avformat_map_pixfmt_mlt2av( output_format );
+		output_frame.width = input_frame.width = width;
+		output_frame.height = input_frame.height = height;
+		mlt_image_format_planes( *format, input_frame.width, input_frame.height, *image, input_frame.data, input_frame.linesize );
+		mlt_image_format_planes( output_format, output_frame.width, output_frame.height, output, output_frame.data, output_frame.linesize );
+
+		avformat_colorspace_convert
+		(
+			&input_frame,
+				colorspace, // int src_colorspace,
+				force_full_luma, // int src_full_range,
+			&output_frame,
+				profile_colorspace, // int dst_colorspace,
+				force_full_luma, // int dst_full_range,
+			SWS_BICUBIC | SWS_ACCURATE_RND // int flags
+		);
+#endif
 		{
 			// The new colorspace is only valid if destination is YUV.
 			if ( output_format == mlt_image_yuv422 ||
