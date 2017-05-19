@@ -377,6 +377,14 @@ static void event_handling( mlt_producer producer, mlt_consumer consumer )
 
 #endif
 
+// borrowed from ffmpeg
+static int64_t av_gettime_relative(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (int64_t)ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+}
+
 static void transport( mlt_producer producer, mlt_consumer consumer )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -386,6 +394,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	struct timespec tm = { 0, 40000000 };
 	int total_length = mlt_producer_get_length( producer );
 	int last_position = 0;
+	int64_t timer_start;
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 	{
@@ -406,6 +415,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 			fprintf( stderr, "+---------------------------------------------------------------------+\n" );
 		}
 
+		timer_start = av_gettime_relative();
 		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 		{
 			int value = ( silent || progress || is_getc )? -1 : term_read( );
@@ -429,12 +439,17 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 			{
 				if ( progress )
 				{
+					int64_t cur_time = av_gettime_relative();
 					int current_position = mlt_producer_position( producer );
 					if ( current_position > last_position )
 					{
-						fprintf( stderr, "Current Frame: %10d, percentage: %10d%c",
+						float fps, t = (cur_time-timer_start) / 1000000.0;
+						fps = t > 1 ? current_position / t : 0;
+
+						fprintf( stderr, "Current Frame: %10d, percentage: %10d%c, fps: %3.*f",
 							current_position, 100 * current_position / total_length,
-							progress == 2 ? '\n' : '\r' );
+							progress == 2 ? '\n' : '\r',
+							fps < 9.95, fps);
 						last_position = current_position;
 					}
 				}
