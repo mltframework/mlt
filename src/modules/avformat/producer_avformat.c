@@ -1461,21 +1461,23 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		avpicture_fill( ctx.output, buffer, ctx.dst_format, width, height );
 
-		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") )
+		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
 			ctx.slice_w = ( width < 1000 )
 				? ( 256 >> frame->interlaced_frame )
 				: ( 512 >> frame->interlaced_frame );
-		else
-			ctx.slice_w = width;
+		}
 
 		c = ( width + ctx.slice_w - 1 ) / ctx.slice_w;
+		int last_slice_w = width - ctx.slice_w * (c - 1);
 		c *= frame->interlaced_frame ? 2 : 1;
 
-		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") )
+		if ( (last_slice_w % 8) || !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
+			ctx.slice_w = width;
 			mlt_slices_run_normal( c, sliced_h_pix_fmt_conv_proc, &ctx );
-		else
+		} else {
 			for ( i = 0 ; i < c; i++ )
 				sliced_h_pix_fmt_conv_proc( i, i, c, &ctx );
+		}
 
 		result = profile->colorspace;
 	}
