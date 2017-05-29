@@ -778,7 +778,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 		self->current_height = height;
 
 		uint8_t *alpha = NULL;
-		if ( self->has_alpha && ( alpha = mlt_frame_get_alpha_mask( frame ) ) )
+		if ( ( alpha = mlt_frame_get_alpha( frame ) ) )
 		{
 			self->current_alpha = (uint8_t*) mlt_pool_alloc( width * height );
 			memcpy( self->current_alpha, alpha, width * height );
