@@ -133,6 +133,7 @@ struct producer_avformat_s
 	AVFilterContext* vfilter_out;
 #endif
 	int autorotate;
+	int is_audio_synchronizing;
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -2468,7 +2469,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	// If we're behind, ignore this packet
 	// Skip this on non-seekable, audio-only inputs.
-	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples )
+	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
 	{
 		int64_t pts = pkt.pts;
 		if ( self->first_pts != AV_NOPTS_VALUE )
@@ -2486,12 +2487,14 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 		if ( self->seekable || int_position > 0 )
 		{
-			if ( req_pts > pts )
+			if ( req_pts > pts ) {
 				// We are behind, so skip some
 				*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
-			else if ( self->audio_index != INT_MAX && int_position > req_position + 2 )
+			} else if ( self->audio_index != INT_MAX && int_position > req_position + 2 && !self->is_audio_synchronizing ) {
 				// We are ahead, so seek backwards some more
 				seek_audio( self, req_position, timecode - 1.0 );
+				self->is_audio_synchronizing = 1;
+			}
 		}
 
 		// Cancel the find_first_pts() in seek_audio()
@@ -2663,8 +2666,8 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 
 			if ( self->seekable || index != self->video_index )
 				av_free_packet( &pkt );
-
 		}
+		self->is_audio_synchronizing = 0;
 
 		// Set some additional return values
 		*format = mlt_audio_s16;
