@@ -281,10 +281,6 @@ int consumer_stop( mlt_consumer parent )
 		// Kill the thread and clean up
 		self->joined = 1;
 		self->running = 0;
-#ifndef _WIN32
-		if ( self->thread )
-#endif
-			pthread_join( self->thread, NULL );
 
 		// internal cleanup
 		if ( self->sdl_overlay != NULL )
@@ -305,6 +301,10 @@ int consumer_stop( mlt_consumer parent )
 			SDL_Quit( );
 			pthread_mutex_unlock( &mlt_sdl_mutex );
 		}
+#ifndef _WIN32
+		if ( self->thread )
+#endif
+			pthread_join( self->thread, NULL );
 	}
 
 	return 0;
