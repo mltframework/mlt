@@ -42,6 +42,7 @@ plain:https://*=webvfx:plain:
 *.tga=pixbuf,qimage
 *.tif=pixbuf,qimage
 *.tiff=pixbuf,qimage
++*.txt=qtext,pango
 *.txt=pango,qtext
 *.vob=mcmpeg,avformat
 *.wav=avformat
