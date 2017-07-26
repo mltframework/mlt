@@ -37,6 +37,8 @@
 
 #include "factory.h"
 
+#define NDI_TIMEBASE 10000000LL
+
 typedef struct
 {
 	mlt_producer parent;
@@ -48,7 +50,7 @@ typedef struct
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 	NDIlib_recv_instance_t recv;
-	int v_queue_limit, a_queue_limit;
+	int v_queue_limit, a_queue_limit, v_prefill;
 } producer_ndi_t;
 
 static void* producer_ndi_feeder( void* p )
@@ -57,8 +59,8 @@ static void* producer_ndi_feeder( void* p )
 	mlt_producer producer = p;
 	const NDIlib_source_t* ndi_srcs = NULL;
 	NDIlib_video_frame_t* video = NULL;
-	NDIlib_audio_frame_t* audio = NULL;
-	NDIlib_metadata_frame_t* meta = NULL;
+	NDIlib_audio_frame_t audio;
+	NDIlib_metadata_frame_t meta;
 	producer_ndi_t* self = ( producer_ndi_t* )producer->child;
 
 	mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "%s: entering\n", __FUNCTION__ );
@@ -134,17 +136,12 @@ static void* producer_ndi_feeder( void* p )
 	while( !self->f_exit )
 	{
 		NDIlib_frame_type_e t;
+		NDIlib_audio_frame_interleaved_16s_t *audio_packet, *audio_packet_prev;
 
 		if ( !video )
 			video = mlt_pool_alloc( sizeof( NDIlib_video_frame_t ) );
-		if ( !audio )
-			audio = mlt_pool_alloc( sizeof( NDIlib_audio_frame_t ) );
-		if ( !meta )
-			meta = mlt_pool_alloc( sizeof( NDIlib_metadata_frame_t ) );
 
-////fprintf(stderr, "%s:%d: NDIlib_recv_capture....\n", __FUNCTION__, __LINE__ );
-		t = NDIlib_recv_capture(self->recv, video, audio, meta, 10 );
-////fprintf(stderr, "%s:%d: NDIlib_recv_capture=%d\n", __FUNCTION__, __LINE__, t );
+		t = NDIlib_recv_capture(self->recv, video, &audio, &meta, 10 );
 
 		mlt_log_debug( NULL, "%s:%d: NDIlib_recv_capture=%d\n", __FILE__, __LINE__, t );
 
@@ -154,9 +151,7 @@ static void* producer_ndi_feeder( void* p )
 				break;
 
 			case NDIlib_frame_type_video:
-////fprintf(stderr, "%s:%d: locking....\n", __FUNCTION__, __LINE__ );
 				pthread_mutex_lock( &self->lock );
-////fprintf(stderr, "%s:%d: locked\n", __FUNCTION__, __LINE__ );
 				mlt_deque_push_back( self->v_queue, video );
 				if ( mlt_deque_count( self->v_queue ) >= self->v_queue_limit )
 				{
@@ -167,28 +162,70 @@ static void* producer_ndi_feeder( void* p )
 					video = NULL;
 				pthread_cond_broadcast( &self->cond );
 				pthread_mutex_unlock( &self->lock );
-////fprintf(stderr, "%s:%d: unlocked\n", __FUNCTION__, __LINE__ );
 				break;
 
 			case NDIlib_frame_type_audio:
-////fprintf(stderr, "%s:%d: locking....\n", __FUNCTION__, __LINE__ );
+				// convert to 16s interleaved
+				audio_packet = mlt_pool_alloc( sizeof( NDIlib_audio_frame_interleaved_16s_t ) );
+				audio_packet->reference_level = 0;
+				audio_packet->p_data = mlt_pool_alloc( 2 * audio.no_channels * audio.no_samples );
+				NDIlib_util_audio_to_interleaved_16s( &audio, audio_packet );
+				NDIlib_recv_free_audio( self->recv, &audio );
+
+				// store into queue
 				pthread_mutex_lock( &self->lock );
-////fprintf(stderr, "%s:%d: locked\n", __FUNCTION__, __LINE__ );
-				mlt_deque_push_back( self->a_queue, audio );
+
+				// check if it continues prev packet
+				audio_packet_prev = mlt_deque_pop_back( self->a_queue );
+				if ( audio_packet_prev )
+				{
+					int64_t
+						n = audio_packet_prev->timecode +
+							NDI_TIMEBASE * audio_packet_prev->no_samples /
+								audio_packet_prev->sample_rate,
+						d = audio_packet->timecode - n;
+
+					if ( d && llabs( d ) < 2 )
+					{
+						mlt_log_debug( NULL, "%s:%d: audio_packet_prev->timecode=%"PRId64", audio_packet->timecode=%"PRId64", n=%"PRId64", d=%"PRId64", audio_packet_prev->no_samples=%d\n",
+							__FILE__, __LINE__, audio_packet_prev->timecode,
+							audio_packet->timecode, n ,d, audio_packet_prev->no_samples );
+
+						audio_packet_prev->p_data = mlt_pool_realloc( audio_packet_prev->p_data,
+							( audio_packet_prev->no_samples + audio_packet->no_samples ) *
+							audio_packet->no_channels * 2);
+
+						memcpy
+						(
+							(unsigned char*)audio_packet_prev->p_data +
+							2 * audio_packet_prev->no_channels * audio_packet_prev->no_samples,
+							audio_packet->p_data,
+							2 * audio_packet->no_channels * audio_packet->no_samples
+						);
+
+						audio_packet_prev->no_samples += audio_packet->no_samples;
+
+						mlt_pool_release( audio_packet->p_data );
+						mlt_pool_release( audio_packet );
+						audio_packet = NULL;
+					}
+
+					mlt_deque_push_back( self->a_queue, audio_packet_prev );
+				}
+				if ( audio_packet )
+					mlt_deque_push_back( self->a_queue, audio_packet );
 				if ( mlt_deque_count( self->a_queue ) >= self->a_queue_limit )
 				{
-					audio = mlt_deque_pop_front( self->a_queue );
-					NDIlib_recv_free_audio( self->recv, audio );
+					audio_packet = mlt_deque_pop_front( self->a_queue );
+					mlt_pool_release( audio_packet->p_data );
+					mlt_pool_release( audio_packet );
 				}
-				else
-					audio = NULL;
 				pthread_cond_broadcast( &self->cond );
 				pthread_mutex_unlock( &self->lock );
-////fprintf(stderr, "%s:%d: unlocked\n", __FUNCTION__, __LINE__ );
 				break;
 
 			case NDIlib_frame_type_metadata:
-				NDIlib_recv_free_metadata( self->recv, meta );
+				NDIlib_recv_free_metadata( self->recv, &meta );
 				break;
 
 			case NDIlib_frame_type_error:
@@ -200,10 +237,6 @@ static void* producer_ndi_feeder( void* p )
 
 	if ( video )
 		mlt_pool_release( video );
-	if ( audio )
-		mlt_pool_release( audio );
-	if ( meta )
-		mlt_pool_release( meta );
 
 	mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "%s: exiting\n", __FUNCTION__ );
 
@@ -214,29 +247,20 @@ static int get_audio( mlt_frame frame, int16_t **buffer, mlt_audio_format *forma
 {
 	mlt_properties fprops = MLT_FRAME_PROPERTIES( frame );
 	NDIlib_recv_instance_t recv = mlt_properties_get_data( fprops, "ndi_recv", NULL );
-	NDIlib_audio_frame_t* audio = mlt_properties_get_data( fprops, "ndi_audio", NULL );
+	NDIlib_audio_frame_interleaved_16s_t* audio = mlt_properties_get_data( fprops, "ndi_audio", NULL );
 
 	mlt_log_debug( NULL, "%s:%d: recv=%p, audio=%p\n", __FILE__, __LINE__, recv, audio );
 
 	if ( recv && audio )
 	{
 		size_t size;
-		NDIlib_audio_frame_interleaved_16s_t dst;
-
 		*format = mlt_audio_s16;
 		*frequency = audio->sample_rate;
 		*channels = audio->no_channels;
 		*samples = audio->no_samples;
-
 		size = 2 * ( *samples ) * ( *channels );
-		*buffer = mlt_pool_alloc( size );
-		mlt_frame_set_audio( frame, (uint8_t*) *buffer, *format, size, (mlt_destructor)mlt_pool_release );
-
-		dst.reference_level = 0;
-		dst.p_data = *buffer;
-		NDIlib_util_audio_to_interleaved_16s( audio, &dst );
-
-		NDIlib_recv_free_audio( recv, audio );
+		*buffer = audio->p_data;
+		mlt_frame_set_audio( frame, (uint8_t*) *buffer, *format, size, NULL );
 	}
 
 	return 0;
@@ -321,7 +345,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 {
 	mlt_frame frame = NULL;
-	NDIlib_audio_frame_t* audio = NULL;
+	NDIlib_audio_frame_interleaved_16s_t* audio_frame = NULL;
 	NDIlib_video_frame_t* video = NULL;
 	double fps = mlt_producer_get_fps( producer );
 	mlt_position position = mlt_producer_position( producer );
@@ -343,70 +367,107 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 		self->f_running = 1;
 	}
 
-	while ( !self->f_exit ) //&& !mlt_deque_count( self->queue ) )
+	mlt_log_debug( NULL, "%s:%d: audio_cnt=%d, video_cnt=%d\n", __FILE__, __LINE__,
+		mlt_deque_count( self->a_queue ), mlt_deque_count( self->v_queue ));
+
+	// wait for prefill
+	while ( !self->f_exit && mlt_deque_count( self->v_queue ) < self->v_prefill )
 	{
-		mlt_log_debug( NULL, "%s:%d: audio=%p, video=%p, audio_cnt=%d, video_cnt=%d\n",
-			__FILE__, __LINE__, audio, video,
-			mlt_deque_count( self->a_queue ), mlt_deque_count( self->v_queue ));
+		struct timespec tm;
 
-		if ( !video )
-			video = (NDIlib_video_frame_t*)mlt_deque_pop_front( self->v_queue );
+		// Wait
+		clock_gettime(CLOCK_REALTIME, &tm);
+		tm.tv_nsec += 2LL * 1000000000LL / fps;
+		tm.tv_sec += tm.tv_nsec / 1000000000LL;
+		tm.tv_nsec %= 1000000000LL;
+		pthread_cond_timedwait( &self->cond, &self->lock, &tm );
 
-		if ( !video )
+		continue;
+	}
+
+	// pop frame to use
+	video = (NDIlib_video_frame_t*)mlt_deque_pop_front( self->v_queue );
+
+	if ( video )
+	{
+		int64_t video_timecode_out, video_dur;
+
+		mlt_log_debug( NULL, "%s:%d: video: timecode=%"PRId64"\n",
+			__FILE__, __LINE__, video->timecode );
+		video_dur = NDI_TIMEBASE * video->frame_rate_D / video->frame_rate_N;
+		video_timecode_out = video->timecode + video_dur;
+
+		// deal with audio
+		while ( 1 )
 		{
-			int r;
-			struct timespec tm;
+			NDIlib_audio_frame_interleaved_16s_t* audio_packet;
+			int64_t audio_packet_dur, audio_packet_timecode_out,
+				T1, T2, dst_offset, src_offset, duration;
 
-			// Wait
-			clock_gettime(CLOCK_REALTIME, &tm);
-			tm.tv_nsec += 2LL * 1000000000LL / fps;
-			tm.tv_sec += tm.tv_nsec / 1000000000LL;
-			tm.tv_nsec %= 1000000000LL;
-			r = pthread_cond_timedwait( &self->cond, &self->lock, &tm );
-			if( !r )
-				continue;
+			// pop audio packet
+			audio_packet = ( NDIlib_audio_frame_interleaved_16s_t* )mlt_deque_pop_front( self->a_queue );
 
-			mlt_log_warning( NULL, "%s:%d: pthread_cond_timedwait()=%d\n", __FILE__, __LINE__, r );
-
-			break;
-		}
-
-		if ( !audio )
-			audio = (NDIlib_audio_frame_t*)mlt_deque_pop_front( self->a_queue );
-
-		if ( !audio )
-		{
-			// send muted video frame
-//			if( mlt_deque_count( self->v_queue ) )
+			// check if audio present
+			if ( !audio_packet )
 				break;
 
-			// push back video frame
-//			mlt_deque_push_front( self->v_queue, video );
-//			video = NULL;
-		}
-		else
-		{
-			// drop audio frame
-			if ( audio->timecode < video->timecode )
+			// check if packet in a future
+			if ( video_timecode_out < audio_packet->timecode)
 			{
-				NDIlib_recv_free_audio( self->recv, audio );
-				mlt_pool_release( audio );
-				mlt_log_warning( NULL, "%s:%d: dropped audio frame\n", __FILE__, __LINE__ );
-				audio = NULL;
-				continue;
-			}
-
-			// send muted video frame, but save current audio chunk
-			if ( audio->timecode > video->timecode )
-			{
-				mlt_deque_push_front( self->a_queue, audio );
-				audio = NULL;
+				// push it back to queue
+				mlt_deque_push_front( self->a_queue, audio_packet );
 				break;
 			}
 
-			// sync frame
-			if ( audio && audio->timecode == video->timecode )
+			// calc packet
+			audio_packet_dur = NDI_TIMEBASE * audio_packet->no_samples / audio_packet->sample_rate;
+			audio_packet_timecode_out = audio_packet_dur + audio_packet->timecode;
+
+			// check if packet in the past
+			if ( audio_packet_timecode_out < video->timecode )
+			{
+				mlt_pool_release( audio_packet->p_data );
+				mlt_pool_release( audio_packet );
+				continue;
+			}
+
+			// allocate new audio frame
+			if ( !audio_frame )
+			{
+				audio_frame = ( NDIlib_audio_frame_interleaved_16s_t* )mlt_pool_alloc
+					( sizeof( NDIlib_audio_frame_interleaved_16s_t ) );
+				audio_frame->timecode = video->timecode;
+				audio_frame->no_channels = audio_packet->no_channels;
+				audio_frame->sample_rate = audio_packet->sample_rate;
+				audio_frame->no_samples = audio_packet->sample_rate * video->frame_rate_D / video->frame_rate_N;
+				audio_frame->p_data = ( short* )mlt_pool_alloc( 2 * audio_frame->no_samples * audio_frame->no_channels );
+			}
+
+			// copy data of overlapping region
+			T1 = MAX( audio_packet->timecode, video->timecode );
+			T2 = MIN( audio_packet_timecode_out, video_timecode_out );
+			dst_offset = ( T1 - audio_frame->timecode ) * audio_frame->sample_rate / NDI_TIMEBASE;
+			src_offset = ( T1 - audio_packet->timecode ) * audio_packet->sample_rate / NDI_TIMEBASE;
+			duration = ( T2 - T1 ) * audio_frame->sample_rate / NDI_TIMEBASE;;
+
+			memcpy
+			(
+				(unsigned char*)audio_frame->p_data + 2 * audio_frame->no_channels * dst_offset,
+				(unsigned char*)audio_packet->p_data + 2 * audio_packet->no_channels * src_offset,
+				2 * audio_packet->no_channels * duration
+			);
+
+			// save packet back if it will be used later or clear it
+			if ( video_timecode_out < audio_packet_timecode_out )
+			{
+				// push it back to queue
+				mlt_deque_push_front( self->a_queue, audio_packet );
 				break;
+			}
+
+			// free packet data
+			mlt_pool_release( audio_packet->p_data );
+			mlt_pool_release( audio_packet );
 		}
 	}
 
@@ -419,9 +480,6 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 
 		mlt_properties_set_data( p, "ndi_recv", (void *)self->recv, 0, NULL, NULL );
 
-////fprintf(stderr, "%s:%d: audio=%p, video=%p, audio_cnt=%d, video_cnt=%d\n",
-////__FUNCTION__, __LINE__, audio, video,  mlt_deque_count( self->a_queue ), mlt_deque_count( self->v_queue ));
-
 		if ( video )
 		{
 			mlt_properties_set_data( p, "ndi_video", (void *)video, 0, mlt_pool_release, NULL );
@@ -430,9 +488,10 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 		else
 			mlt_log_error( NULL, "%s:%d: NO VIDEO\n", __FILE__, __LINE__ );
 
-		if ( audio )
+		if ( audio_frame )
 		{
-			mlt_properties_set_data( p, "ndi_audio", (void *)audio, 0, mlt_pool_release, NULL );
+			mlt_properties_set_data( p, "ndi_audio", (void *)audio_frame, 0, mlt_pool_release, NULL );
+			mlt_properties_set_data( p, "ndi_audio_data", (void *)audio_frame->p_data, 0, mlt_pool_release, NULL );
 			mlt_frame_push_audio( frame, (void*) get_audio );
 		}
 
@@ -470,8 +529,8 @@ static void producer_ndi_close( mlt_producer producer )
 		// dequeue audio frames
 		while( mlt_deque_count( self->a_queue ) )
 		{
-			NDIlib_audio_frame_t* audio = (NDIlib_audio_frame_t*)mlt_deque_pop_front( self->a_queue );
-			NDIlib_recv_free_audio( self->recv, audio );
+			NDIlib_audio_frame_interleaved_16s_t* audio = (NDIlib_audio_frame_interleaved_16s_t*)mlt_deque_pop_front( self->a_queue );
+			mlt_pool_release( audio->p_data );
 			mlt_pool_release( audio );
 		}
 
@@ -523,6 +582,7 @@ mlt_producer producer_ndi_init( mlt_profile profile, mlt_service_type type, cons
 		self->a_queue = mlt_deque_init();
 		self->v_queue_limit = 6;
 		self->a_queue_limit = 6;
+		self->v_prefill = 2;
 
 		// Set callbacks
 		parent->close = (mlt_destructor) producer_ndi_close;
