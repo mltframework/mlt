@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: producer
 identifier: pixbuf
 title: GDK-PixBuf
@@ -20,7 +20,7 @@ notes: >
   /increase the number of cached converted images for simultaneous use.
 
 parameters:
-  - identifier: argument
+  - identifier: resource
     title: File
     type: string
     description: >
@@ -42,6 +42,7 @@ parameters:
         If filename contains the string "<svg", then pixbuf tries to load the 
         filename as inline SVG XML, which is convenient for melt commands.
     readonly: no
+    argument: yes
     required: yes
     mutable: no
     widget: fileopen
@@ -100,9 +101,8 @@ parameters:
 
   - identifier: disable_exif
     title: Disable auto-rotation
-    type: integer
-    minimum: 0
-    maximum: 1
+    type: boolean
+    default: 0
     widget: checkbox
 
   - identifier: force_aspect_ratio
@@ -114,8 +114,13 @@ parameters:
   - identifier: loop
     title: Loop sequence of images indefinitively
     description: when 1 (default) loop sequences of images, when 0, play them only once
-    type: integer
+    type: boolean
     default: 1
-    minimum: 0
-    maximum: 1
+    widget: checkbox
+
+  - identifier: autolength
+    title: Automatically compute length
+    description: Whether to automatically compute the length and out point for an image sequence.
+    type: boolean
+    default: 0
     widget: checkbox

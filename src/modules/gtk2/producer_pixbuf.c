@@ -71,7 +71,8 @@ static void producer_close( mlt_producer parent );
 
 static void refresh_length( mlt_properties properties, producer_pixbuf self )
 {
-	if ( self->count > 1 )
+	if ( self->count > mlt_properties_get_int( properties, "length" ) ||
+	     mlt_properties_get_int( properties, "autolength" ) )
 	{
 		int ttl = mlt_properties_get_int( properties, "ttl" );
 		mlt_position length = self->count * ttl;
