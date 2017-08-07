@@ -1,7 +1,7 @@
 /*
  * filter_glsl_manager.cpp
  * Copyright (C) 2011-2012 Christophe Thommeret <hftom@free.fr>
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2017 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ extern "C" {
 
 // Texture pool may cause frames to appear out-of-order with NVIDIA
 // threaded optimizations.
-#define USE_TEXTURE_POOL 0 
+#define USE_TEXTURE_POOL 1
 
 using namespace movit;
 
