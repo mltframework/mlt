@@ -43,6 +43,10 @@ extern "C" {
 #include <GL/glx.h>
 #endif
 
+// Texture pool may cause frames to appear out-of-order with NVIDIA
+// threaded optimizations.
+#define USE_TEXTURE_POOL 0 
+
 using namespace movit;
 
 void dec_ref_and_delete(GlslManager *p)
@@ -107,6 +111,7 @@ GlslManager* GlslManager::get_instance()
 
 glsl_texture GlslManager::get_texture(int width, int height, GLint internal_format)
 {
+#if USE_TEXTURE_POOL
 	lock();
 	for (int i = 0; i < texture_list.count(); ++i) {
 		glsl_texture tex = (glsl_texture) texture_list.peek(i);
@@ -121,6 +126,7 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 		}
 	}
 	unlock();
+#endif
 
 	GLuint tex = 0;
 	glGenTextures(1, &tex);
@@ -147,15 +153,22 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
 	gtex->height = height;
 	gtex->internal_format = internal_format;
 	gtex->used = 1;
+#if USE_TEXTURE_POOL
 	lock();
 	texture_list.push_back(gtex);
 	unlock();
+#endif
 	return gtex;
 }
 
 void GlslManager::release_texture(glsl_texture texture)
 {
+#if USE_TEXTURE_POOL
 	texture->used = 0;
+#else
+	glDeleteTextures(1, &texture->texture);
+	delete texture;
+#endif
 }
 
 void GlslManager::delete_sync(GLsync sync)
