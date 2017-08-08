@@ -31,7 +31,7 @@
 #endif
 
 #if defined(__GLIBC__) || defined(__APPLE__) || (__FreeBSD_version >= 900506)
-#include <xlocale.h>
+#include <locale.h>
 #else
 typedef char* locale_t;
 #endif
