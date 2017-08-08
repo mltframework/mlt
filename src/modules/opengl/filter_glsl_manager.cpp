@@ -166,8 +166,10 @@ void GlslManager::release_texture(glsl_texture texture)
 #if USE_TEXTURE_POOL
 	texture->used = 0;
 #else
-	glDeleteTextures(1, &texture->texture);
-	delete texture;
+	GlslManager* g = GlslManager::get_instance();
+	g->lock();
+	g->texture_list.push_back(texture);
+	g->unlock();
 #endif
 }
 
@@ -404,6 +406,13 @@ int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int w
 		GLsync sync = (GLsync) syncs_to_delete.pop_front();
 		glDeleteSync( sync );
 	}
+#if !USE_TEXTURE_POOL
+	while (texture_list.count() > 0) {
+		glsl_texture texture = (glsl_texture) texture_list.pop_back();
+		glDeleteTextures(1, &texture->texture);
+		delete texture;
+	}
+#endif
 	unlock();
 
 	// Make sure we never have more than one frame pending at any time.
