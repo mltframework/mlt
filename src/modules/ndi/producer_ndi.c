@@ -375,22 +375,21 @@ static int get_frame( mlt_producer producer, mlt_frame_ptr pframe, int index )
 		mlt_deque_count( self->a_queue ), mlt_deque_count( self->v_queue ));
 
 	// wait for prefill
-	while ( !self->f_exit && mlt_deque_count( self->v_queue ) < self->v_prefill )
+	if ( mlt_deque_count( self->v_queue ) < self->v_prefill )
 	{
 		struct timespec tm;
 
 		// Wait
 		clock_gettime(CLOCK_REALTIME, &tm);
-		tm.tv_nsec += 2LL * 1000000000LL / fps;
+		tm.tv_nsec += self->v_prefill * 1000000000LL / fps;
 		tm.tv_sec += tm.tv_nsec / 1000000000LL;
 		tm.tv_nsec %= 1000000000LL;
 		pthread_cond_timedwait( &self->cond, &self->lock, &tm );
-
-		continue;
 	}
 
 	// pop frame to use
-	video = (NDIlib_video_frame_t*)mlt_deque_pop_front( self->v_queue );
+	if ( mlt_deque_count( self->v_queue ) >= self->v_prefill )
+		video = (NDIlib_video_frame_t*)mlt_deque_pop_front( self->v_queue );
 
 	if ( video )
 	{
