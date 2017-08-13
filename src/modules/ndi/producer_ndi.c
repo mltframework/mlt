@@ -55,8 +55,8 @@ typedef struct
 
 static void* producer_ndi_feeder( void* p )
 {
-	int i;
 	mlt_producer producer = p;
+	int ndi_src_idx;
 	const NDIlib_source_t* ndi_srcs = NULL;
 	NDIlib_video_frame_t* video = NULL;
 	NDIlib_audio_frame_t audio;
@@ -66,10 +66,11 @@ static void* producer_ndi_feeder( void* p )
 	mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "%s: entering\n", __FUNCTION__ );
 
 	// find the source
-	const NDIlib_find_create_t find_create_desc = { true, NULL };
+	const NDIlib_find_create_t find_create_desc = { .show_local_sources = true,
+		.p_groups = NULL, .p_extra_ips = NULL };
 
 	// create a finder
-	NDIlib_find_instance_t ndi_find = NDIlib_find_create( &find_create_desc );
+	NDIlib_find_instance_t ndi_find = NDIlib_find_create2( &find_create_desc );
 	if ( !ndi_find )
 	{
 		mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "%s: NDIlib_find_create failed\n", __FUNCTION__ );
@@ -77,31 +78,34 @@ static void* producer_ndi_feeder( void* p )
 	}
 
 	// wait for source
-	mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "%s: waiting for source [%s]\n", __FUNCTION__, self->arg );
-	for ( i = -1; !self->f_exit && -1 == i; )
+	mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "%s: waiting for sources, searching for [%s]\n",
+		__FUNCTION__, self->arg );
+	for ( ndi_src_idx = -1; ndi_src_idx == -1 && !self->f_exit; )
 	{
-		unsigned int c = 0, j;
+		unsigned int j, f, n;
 
-		// wait for sources
-		ndi_srcs = NDIlib_find_get_sources( ndi_find, &c, 100 );
-
-		// check if requested src found
-		for ( j = 0; j < c && -1 == i; j++ )
-			if ( !strcmp( self->arg, ndi_srcs[j].p_ndi_name ) )
-				i = j;
-
-		// free if not found
-		if ( -1 == i && ndi_srcs )
+		// wait sources list changed
+		f = NDIlib_find_wait_for_sources( ndi_find, 500 );
+		mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "%s: NDIlib_find_wait_for_sources=%d\n", __FUNCTION__, f );
+		if ( !f )
 		{
-			ndi_srcs = NULL;
+			mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "%s: no more sources\n", __FUNCTION__ );
+			break;
 		}
+
+		// check if request present in sources list
+		ndi_srcs = NDIlib_find_get_current_sources( ndi_find, &n );
+		mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "%s: found %d sources\n", __FUNCTION__, n );
+		for ( j = 0; j < n && ndi_src_idx == -1; j++ )
+			if ( !strcmp( self->arg, ndi_srcs[j].p_ndi_name ) )
+				ndi_src_idx = j;
 	}
 
 	// exit if nothing
-	if ( self->f_exit || -1 == i )
+	if ( self->f_exit || ndi_src_idx == -1 )
 	{
-		mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "%s: exiting, self->f_exit=%d, i=%d\n",
-			__FUNCTION__, self->f_exit, i );
+		mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "%s: exiting, self->f_exit=%d\n",
+			__FUNCTION__, self->f_exit );
 
 		NDIlib_find_destroy( ndi_find );
 
@@ -113,7 +117,7 @@ static void* producer_ndi_feeder( void* p )
 	// create receiver description
 	NDIlib_recv_create_t recv_create_desc =
 	{
-		ndi_srcs[ i ],
+		ndi_srcs[ ndi_src_idx ],
 		NDIlib_recv_color_format_e_UYVY_RGBA,
 		NDIlib_recv_bandwidth_highest,
 		true
