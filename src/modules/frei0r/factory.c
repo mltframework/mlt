@@ -481,7 +481,7 @@ MLT_REPOSITORY
 				dlclose(handle);
 			}
 		}
-		mlt_factory_register_for_clean_up(direntries, mlt_properties_close);
+		mlt_factory_register_for_clean_up(direntries, (mlt_destructor) mlt_properties_close);
 	}
 	mlt_tokeniser_close ( tokeniser );
 	mlt_properties_close( blacklist );
