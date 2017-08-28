@@ -79,7 +79,6 @@ private:
 	IDeckLinkKeyer*             m_deckLinkKeyer;
 	bool                        m_terminate_on_pause;
 	uint32_t                    m_preroll;
-	uint32_t                    m_acnt;
 	uint32_t                    m_reprio;
 
 	mlt_deque                   m_aqueue;
