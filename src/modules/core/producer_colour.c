@@ -1,6 +1,6 @@
 /*
  * producer_colour.c
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_pool.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -178,6 +179,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				*p ++ = color.a;
 			}
 			break;
+		default:
+			mlt_log_error( MLT_PRODUCER_SERVICE( producer ),
+				"invalid image format %s\n", mlt_image_format_name( *format ) );
 		}
 	}
 	else
