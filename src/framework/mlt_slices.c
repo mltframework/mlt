@@ -183,8 +183,6 @@ mlt_slices mlt_slices_init( int threads, int policy, int priority )
 			threads = env_val * threads;
 		else if ( !threads )
 			threads = env_val;
-		else
-			threads = threads;
 	}
 	if ( threads > MAX_SLICES )
 		threads = MAX_SLICES;
