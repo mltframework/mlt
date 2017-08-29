@@ -1,9 +1,0 @@
-
-# Environment variable settings to allow execution without install
-
-export LD_LIBRARY_PATH=\
-`pwd`/../mpeg_sdk_release/bin:\
-`pwd`/../dvcpro_sdk_release/lib:\
-`pwd`/../sr_sdk_release/lib:\
-$LD_LIBRARY_PATH
-
