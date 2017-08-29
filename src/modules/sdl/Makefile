@@ -14,6 +14,7 @@ OBJS = factory.o \
 ifeq ($(HAVE_SDL2),1)
 OBJS += consumer_sdl2.o
 else
+OBJS += consumer_sdl.o
 OBJS += consumer_sdl_preview.o
 OBJS += consumer_sdl_still.o
 endif
