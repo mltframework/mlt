@@ -31,7 +31,7 @@
 
 #include <framework/mlt.h>
 
-#if (defined(__APPLE__) || defined(_WIN32)) && !defined(MELT_NOSDL)
+#if !defined(MELT_NOSDL)
 #include <SDL.h>
 #endif
 
@@ -350,7 +350,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 	}
 }
 
-#if (defined(__APPLE__) || defined(_WIN32)) && !defined(MELT_NOSDL)
+#if !defined(MELT_NOSDL)
 
 static void event_handling( mlt_producer producer, mlt_consumer consumer )
 {
@@ -365,12 +365,34 @@ static void event_handling( mlt_producer producer, mlt_consumer consumer )
 				break;
 
 			case SDL_KEYDOWN:
+#if SDL_MAJOR_VERSION == 2
+				if ( event.key.keysym.sym < 0x80 && event.key.keysym.sym > 0 )
+				{
+					char keyboard[ 2 ] = { event.key.keysym.sym, 0 };
+					transport_action( producer, keyboard );
+				}
+				break;
+
+			case SDL_WINDOWEVENT:
+				if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES(consumer), "mlt_service" ) &&
+					 !strcmp( "sdl", mlt_properties_get( MLT_CONSUMER_PROPERTIES(consumer), "mlt_service" ) ) )
+				if ( event.window.event == SDL_WINDOWEVENT_RESIZED ||
+					 event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED )
+				{
+					mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer),
+						"window_width", event.window.data1 );
+					mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer),
+						"window_height", event.window.data2 );
+				}
+				break;
+#else
 				if ( event.key.keysym.unicode < 0x80 && event.key.keysym.unicode > 0 )
 				{
 					char keyboard[ 2 ] = { event.key.keysym.unicode, 0 };
 					transport_action( producer, keyboard );
 				}
 				break;
+#endif
 		}
 	}
 }
@@ -421,7 +443,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				transport_action( producer, string );
 			}
 
-#if (defined(__APPLE__) || defined(_WIN32)) && !defined(MELT_NOSDL)
+#if !defined(MELT_NOSDL)
 			event_handling( producer, consumer );
 #endif
 

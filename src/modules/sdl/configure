@@ -2,26 +2,29 @@
 
 if [ "$help" != "1" ]; then
 
-	if pkg-config --exists sdl > /dev/null 2>&1 ; then
-		PKG_CONFIG=1
-	elif sdl-config --version > /dev/null 2>&1 ; then
-		SDL_CONFIG=1
-	fi
-
-	if [ "$PKG_CONFIG" ]; then
+	if pkg-config --exists sdl2 > /dev/null 2>&1 ; then
+		echo " - using SDL2"
 		echo "USE_PKG_CONFIG=1" > config.mak
+		echo "HAVE_SDL2=1" >> config.mak
+	elif pkg-config --exists sdl > /dev/null 2>&1 ; then
+		echo " - using SDL 1"
+		echo "USE_PKG_CONFIG=1" > config.mak
+		echo "HAVE_SDL1=1" >> config.mak
 		image=`pkg-config --variable=prefix sdl`/include/SDL/SDL_image.h
 		if [ -f "$image" ]; then
+			echo " - found SDL_image"
 			echo "WITH_SDL_IMAGE=1" >> config.mak
 		fi
-	elif [ "$SDL_CONFIG" ]; then
+	elif sdl-config --version > /dev/null 2>&1 ; then
+		echo " - using SDL 1"
 		echo "USE_PKG_CONFIG=0" > config.mak
+		echo "HAVE_SDL1=1" >> config.mak
 		image=`sdl-config --prefix`/include/SDL/SDL_image.h
 		if [ -f "$image" ]; then
 			echo "WITH_SDL_IMAGE=1" >> config.mak
 		fi
 	else
-		echo "- sdl development libs not found: disabling"
+		echo "- SDL development libs not found: disabling"
 		touch ../disable-sdl
 	fi
 	exit 0

@@ -2,6 +2,7 @@ language: c
 before_script:
 - sudo apt-get -qq update
 - sudo apt-get build-dep melt
+- sudo apt-get install libsdl2-dev
 script:
 - ./configure && make -j
 sudo: required

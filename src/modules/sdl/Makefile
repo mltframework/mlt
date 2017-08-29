@@ -9,10 +9,14 @@ include config.mak
 TARGET = ../libmltsdl$(LIBSUF)
 
 OBJS = factory.o \
-	   consumer_sdl.o \
-	   consumer_sdl_audio.o \
-	   consumer_sdl_preview.o \
-	   consumer_sdl_still.o 
+	   consumer_sdl_audio.o
+
+ifeq ($(HAVE_SDL2),1)
+OBJS += consumer_sdl2.o
+else
+OBJS += consumer_sdl_preview.o
+OBJS += consumer_sdl_still.o
+endif
 
 ifeq ($(targetos),Darwin)
 CFLAGS += -ObjC
@@ -22,8 +26,13 @@ LDFLAGS += -lX11
 endif
 
 ifeq ($(USE_PKG_CONFIG), 1)
+ifeq ($(HAVE_SDL2),1)
+CFLAGS += $(shell pkg-config --cflags sdl2)
+LDFLAGS += $(shell pkg-config --libs sdl2)
+else
 CFLAGS += $(shell pkg-config --cflags sdl)
 LDFLAGS += $(shell pkg-config --libs sdl)
+endif
 else
 CFLAGS += $(shell sdl-config --cflags)
 LDFLAGS += $(shell sdl-config --libs)

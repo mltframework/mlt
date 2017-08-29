@@ -18,6 +18,7 @@ else
 ifeq ($(targetos), Darwin)
 CFLAGS += -Idarwin
 OBJS += darwin/DeckLinkAPIDispatch.o
+LDFLAGS += -framework CoreFoundation
 else
 CFLAGS += -Ilinux
 OBJS += linux/DeckLinkAPIDispatch.o

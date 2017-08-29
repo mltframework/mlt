@@ -9,16 +9,20 @@ LDFLAGS += -L../framework -lmlt -lpthread
 
 SRCS := $(OBJS:.o=.c)
 
-ifeq ($(targetos), MinGW)
 ifeq (, $(findstring MELT_NOSDL, $(CFLAGS)))
-ifeq (, $(shell pkg-config --exists sdl && echo yes))
-CFLAGS += $(shell  sdl-config --cflags)
-LDFLAGS += $(shell sdl-config --libs)
-else
-CFLAGS += $(shell  pkg-config --cflags sdl)
+ifeq (yes, $(shell pkg-config --exists sdl2 && echo yes))
+CFLAGS  += $(shell pkg-config --cflags sdl2)
+LDFLAGS += $(shell pkg-config --libs sdl2)
+else ifeq (yes, $(shell pkg-config --exists sdl && echo yes))
+CFLAGS  += $(shell pkg-config --cflags sdl)
 LDFLAGS += $(shell pkg-config --libs sdl)
+else
+CFLAGS  += $(shell sdl-config --cflags)
+LDFLAGS += $(shell sdl-config --libs)
 endif
 endif
+
+ifeq ($(targetos), MinGW)
 bindir = $(prefix)
 endif
 
