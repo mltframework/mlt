@@ -31,7 +31,7 @@
 #endif
 
 #if defined(__GLIBC__) || defined(__APPLE__) || (__FreeBSD_version >= 900506)
-#  if GLIBC_MINOR >= 26 && !defined(APPLE)
+#  if __GLIBC_MINOR__ >= 26 && !defined(__APPLE__)
 #    include <locale.h>
 #  else
 #    include <xlocale.h>
