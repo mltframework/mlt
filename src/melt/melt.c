@@ -31,7 +31,7 @@
 
 #include <framework/mlt.h>
 
-#if !defined(MELT_NOSDL)
+#if (defined(__APPLE__) || defined(_WIN32) || SDL_MAJOR_VERSION == 2) && !defined(MELT_NOSDL)
 #include <SDL.h>
 #endif
 
@@ -350,7 +350,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 	}
 }
 
-#if !defined(MELT_NOSDL)
+#if defined(SDL_MAJOR_VERSION)
 
 static void event_handling( mlt_producer producer, mlt_consumer consumer )
 {
@@ -443,7 +443,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				transport_action( producer, string );
 			}
 
-#if !defined(MELT_NOSDL)
+#if defined(SDL_MAJOR_VERSION)
 			event_handling( producer, consumer );
 #endif
 
