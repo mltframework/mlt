@@ -77,6 +77,7 @@ static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
 static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
+static int setup_sdl_video( consumer_sdl self );
 
 /** This is what will be called by the factory - anything can be passed in
 	via the argument, but keep it simple.
@@ -220,6 +221,12 @@ int consumer_start( mlt_consumer parent )
 			self->window_width = ( double )self->height * display_ratio + 0.5;
 			self->window_height = self->height;
 		}
+
+#if defined(__APPLE__)
+		// Initialize SDL video if needed.
+		if ( setup_sdl_video(self) )
+			return 1;
+#endif
 
 		pthread_create( &self->thread, NULL, consumer_thread, self );
 	}
@@ -447,6 +454,12 @@ static int setup_sdl_video( consumer_sdl self )
 	int sdl_flags = SDL_WINDOW_RESIZABLE;
 	int texture_format = SDL_PIXELFORMAT_YUY2;
 
+	// Skip this if video is disabled.
+	int video_off = mlt_properties_get_int( self->properties, "video_off" );
+	int preview_off = mlt_properties_get_int( self->properties, "preview_off" );
+	if ( video_off || preview_off )
+		return error;
+
 	if (!SDL_WasInit(SDL_INIT_VIDEO))
 	{
 		pthread_mutex_lock( &mlt_sdl_mutex );
@@ -652,13 +665,10 @@ static void *video_thread( void *arg )
 	// Get real time flag
 	int real_time = mlt_properties_get_int( self->properties, "real_time" );
 
-	// Initialize SDL video if needed.
-	int video_off = mlt_properties_get_int( self->properties, "video_off" );
-	int preview_off = mlt_properties_get_int( self->properties, "preview_off" );
-	if ( !video_off && !preview_off ) {
-		if ( setup_sdl_video(self))
-			self->running = 0;
-	}
+#if !defined(__APPLE__)
+	if ( setup_sdl_video(self) )
+		self->running = 0;
+#endif
 
 	// Determine start time
 	gettimeofday( &now, NULL );
