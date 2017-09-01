@@ -515,13 +515,13 @@ static inline mlt_property mlt_properties_find( mlt_properties self, const char 
 	if ( i >= 0 )
 	{
 		// Check if we're hashed
-		if ( list->count > 0 &&
+		if ( list->count > 0 && list->name[ i ] &&
 		 	!strcmp( list->name[ i ], name ) )
 			value = list->value[ i ];
 
 		// Locate the item
 		for ( i = list->count - 1; value == NULL && i >= 0; i -- )
-			if ( !strcmp( list->name[ i ], name ) )
+			if ( list->name[ i ] && !strcmp( list->name[ i ], name ) )
 				value = list->value[ i ];
 	}
 	mlt_properties_unlock( self );
@@ -1176,7 +1176,7 @@ int mlt_properties_rename( mlt_properties self, const char *source, const char *
 		mlt_properties_lock( self );
 		for ( i = 0; i < list->count; i ++ )
 		{
-			if ( !strcmp( list->name[ i ], source ) )
+			if ( list->name[ i ] && !strcmp( list->name[ i ], source ) )
 			{
 				free( list->name[ i ] );
 				list->name[ i ] = strdup( dest );
