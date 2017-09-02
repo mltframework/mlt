@@ -115,6 +115,9 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 
 		// Default audio buffer
 		mlt_properties_set_int( self->properties, "audio_buffer", 2048 );
+#if defined(_WIN32) && SDL_MAJOR_VERSION == 2
+		mlt_properties_set( self->properties, "audio_driver", "DirectSound" );
+#endif
 
 		// Ensure we don't join on a non-running object
 		self->joined = 1;

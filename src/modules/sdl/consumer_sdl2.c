@@ -123,6 +123,9 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 
 		// Default audio buffer
 		mlt_properties_set_int( self->properties, "audio_buffer", 2048 );
+#if defined(_WIN32) && SDL_MAJOR_VERSION == 2
+		mlt_properties_set( self->properties, "audio_driver", "DirectSound" );
+#endif
 
 		// Ensure we don't join on a non-running object
 		self->joined = 1;
@@ -222,7 +225,7 @@ int consumer_start( mlt_consumer parent )
 			self->window_height = self->height;
 		}
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_WIN32)
 		// Initialize SDL video if needed.
 		if ( setup_sdl_video(self) )
 			return 1;
@@ -535,7 +538,6 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 	mlt_image_format vfmt = mlt_image_yuv422;
 	int width = self->width, height = self->height;
 	uint8_t *image;
-	int changed = 0;
 
 	int video_off = mlt_properties_get_int( properties, "video_off" );
 	int preview_off = mlt_properties_get_int( properties, "preview_off" );
@@ -546,20 +548,15 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 		// Get the image, width and height
 		mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 
-		int x = mlt_properties_get_int( properties, "window_width" );
-		if ( x && x != self->window_width ) {
-			self->window_width = x;
-			changed = 1;
-		}
-		x = mlt_properties_get_int( properties, "window_height" );
-		if ( x && x != self->window_height ) {
-			self->window_height = x;
-			changed = 1;
-		}
-
 		if ( self->running )
 		{
 			// Determine window's new display aspect ratio
+			int x = mlt_properties_get_int( properties, "window_width" );
+			if ( x && x != self->window_width )
+				self->window_width = x;
+			x = mlt_properties_get_int( properties, "window_height" );
+			if ( x && x != self->window_height )
+				self->window_height = x;
 			double this_aspect = ( double )self->window_width / self->window_height;
 
 			// Get the display aspect ratio
@@ -665,7 +662,7 @@ static void *video_thread( void *arg )
 	// Get real time flag
 	int real_time = mlt_properties_get_int( self->properties, "real_time" );
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(_WIN32)
 	if ( setup_sdl_video(self) )
 		self->running = 0;
 #endif
