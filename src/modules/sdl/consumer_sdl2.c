@@ -310,6 +310,9 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	// Get the volume
 	double volume = mlt_properties_get_double( self->properties, "volume" );
 
+	// Wipe the stream first
+	memset( stream, 0, len );
+
 	pthread_mutex_lock( &self->audio_mutex );
 
 	// Block until audio received
@@ -332,9 +335,6 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	}
 	else
 	{
-		// Just to be safe, wipe the stream first
-		memset( stream, 0, len );
-
 		// Mix the audio 
 		SDL_MixAudio( stream, self->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 

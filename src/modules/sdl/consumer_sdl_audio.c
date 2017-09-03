@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_audio.c -- A Simple DirectMedia Layer audio-only consumer
- * Copyright (C) 2009-2014 Meltytech, LLC
+ * Copyright (C) 2009-2017 Meltytech, LLC
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -262,13 +262,10 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	// Get the volume
 	double volume = mlt_properties_get_double( self->properties, "volume" );
 
-	pthread_mutex_lock( &self->audio_mutex );
+	// Wipe the stream first
+	memset( stream, 0, len );
 
-	// Block until audio received
-#ifdef __APPLE__
-	while ( self->running && len > self->audio_avail )
-		pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
-#endif
+	pthread_mutex_lock( &self->audio_mutex );
 
 	if ( self->audio_avail >= len )
 	{
@@ -286,9 +283,6 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	}
 	else
 	{
-		// Just to be safe, wipe the stream first
-		memset( stream, 0, len );
-
 		// Mix the audio
 		SDL_MixAudio( stream, self->audio_buffer, self->audio_avail,
 			( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
