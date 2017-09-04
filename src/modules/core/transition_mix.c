@@ -1,6 +1,6 @@
 /*
  * transition_mix.c -- mix two audio streams
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -137,6 +137,10 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	*format = mlt_audio_f32le;
 	mlt_frame_get_audio( frame_b, (void**) &buffer_b, format, &frequency_b, &channels_b, &samples_b );
 	mlt_frame_get_audio( frame_a, (void**) &buffer_a, format, &frequency_a, &channels_a, &samples_a );
+
+	// Prevent dividing by zero.
+	if ( !channels_a || !channels_b )
+		return 1;
 
 	if ( buffer_b == buffer_a )
 	{
