@@ -109,7 +109,7 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
         {
 		// Build tracker
 		data->algo = mlt_properties_get( filter_properties, "algo" );
-                if ( data->algo == NULL || !strcmp(data->algo, "" ) )
+                if ( !data->algo || *data->algo == '\0' || !strcmp(data->algo, "KCF" ))
                 {
 			data->tracker = cv::TrackerKCF::create();
 		}
@@ -249,7 +249,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		analyze( filter, cvFrame, data, *width, *height, position - data->producer_in, data->producer_length );
 	}
-	
+
 	if ( blur > 0 )
 	{
 		switch ( mlt_properties_get_int( filter_properties, "blur_type" ) )
