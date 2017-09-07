@@ -109,13 +109,17 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
         {
 		// Build tracker
 		data->algo = mlt_properties_get( filter_properties, "algo" );
-                if ( !data->algo || *data->algo == '\0' || !strcmp(data->algo, "KCF" ))
-                {
+		if ( !data->algo || *data->algo == '\0' || !strcmp(data->algo, "KCF" ) )
+		{
 			data->tracker = cv::TrackerKCF::create();
 		}
-		else if (!strcmp(data->algo, "MIL" ))
+		else if ( !strcmp(data->algo, "MIL" ) )
 		{
 			data->tracker = cv::TrackerMIL::create();
+		}
+		else if ( !strcmp(data->algo, "TLD" ) )
+		{
+			data->tracker = cv::TrackerTLD::create();
 		}
 		else
 		{
