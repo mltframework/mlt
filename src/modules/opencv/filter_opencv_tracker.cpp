@@ -111,11 +111,15 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		data->algo = mlt_properties_get( filter_properties, "algo" );
                 if ( data->algo == NULL || !strcmp(data->algo, "" ) )
                 {
-			data->tracker = cv::Tracker::create( "KCF" );
+			data->tracker = cv::TrackerKCF::create();
+		}
+		else if (!strcmp(data->algo, "MIL" ))
+		{
+			data->tracker = cv::TrackerMIL::create();
 		}
 		else
-                {
-			data->tracker = cv::Tracker::create( data->algo );
+		{
+			data->tracker = cv::TrackerBoosting::create();
 		}
 
 		// Discard previous results
