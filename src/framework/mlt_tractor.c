@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -383,6 +383,21 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	mlt_properties_set_data( properties, "movit.convert.fence",
 		mlt_properties_get_data( frame_properties, "movit.convert.fence", NULL ),
 		0, NULL, NULL );
+	mlt_properties_set_data( properties, "movit.convert.texture",
+		mlt_properties_get_data( frame_properties, "movit.convert.texture", NULL ),
+		0, NULL, NULL );
+	mlt_properties_set_int( properties, "movit.convert.use_texture", mlt_properties_get_int( frame_properties, "movit.convert.use_texture" ) );
+	int i;
+	for ( i = 0; i < mlt_properties_count( frame_properties ); i++ )
+	{
+		char *name = mlt_properties_get_name( frame_properties, i );
+		if ( name && !strncmp( name, "_movit ", 7 ) ) {
+			mlt_properties_set_data( properties, name,
+				mlt_properties_get_data_at( frame_properties, i, NULL ),
+				0, NULL, NULL );
+		}
+	}
+
 	data = mlt_frame_get_alpha( frame );
 	if ( data )
 	{
