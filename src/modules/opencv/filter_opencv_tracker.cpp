@@ -19,6 +19,7 @@
 
 #include <framework/mlt.h>
 #include <opencv2/tracking.hpp>
+#include <opencv2/core/version.hpp>
 
 
 typedef struct
@@ -109,14 +110,33 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
         {
 		// Build tracker
 		data->algo = mlt_properties_get( filter_properties, "algo" );
-                if ( data->algo == NULL || !strcmp(data->algo, "" ) )
-                {
+#if CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR >= 3
+		if ( !data->algo || *data->algo == '\0' || !strcmp(data->algo, "KCF" ) )
+		{
+			data->tracker = cv::TrackerKCF::create();
+		}
+		else if ( !strcmp(data->algo, "MIL" ) )
+		{
+			data->tracker = cv::TrackerMIL::create();
+		}
+		else if ( !strcmp(data->algo, "TLD" ) )
+		{
+			data->tracker = cv::TrackerTLD::create();
+		}
+		else
+		{
+			data->tracker = cv::TrackerBoosting::create();
+		}
+#else
+		if ( data->algo == NULL || !strcmp(data->algo, "" ) )
+		{
 			data->tracker = cv::Tracker::create( "KCF" );
 		}
 		else
-                {
+		{
 			data->tracker = cv::Tracker::create( data->algo );
 		}
+#endif
 
 		// Discard previous results
 		mlt_properties_set( filter_properties, "_results", "" );
@@ -245,7 +265,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		analyze( filter, cvFrame, data, *width, *height, position - data->producer_in, data->producer_length );
 	}
-	
+
 	if ( blur > 0 )
 	{
 		switch ( mlt_properties_get_int( filter_properties, "blur_type" ) )
