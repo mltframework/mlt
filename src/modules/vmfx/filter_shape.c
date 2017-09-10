@@ -181,7 +181,9 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		mlt_producer_seek( producer, position );
 		if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &mask, 0 ) == 0 )
 		{
-			char *name = mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" );
+			char name[64];
+			snprintf( name, sizeof(name), "shape %s",
+			mlt_properties_get( MLT_FILTER_PROPERTIES( this ), "_unique_id" ) );
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), name, mask, 0, ( mlt_destructor )mlt_frame_close, NULL );
 			mlt_frame_push_service( frame, this );
 			mlt_frame_push_service( frame, mask );

@@ -1028,7 +1028,7 @@ static mlt_geometry composite_calculate( mlt_transition self, struct geometry_s 
 	char *name = mlt_properties_get( properties, "_unique_id" );
 	char key[ 256 ];
 
-	sprintf( key, "%s.in", name );
+	snprintf( key, sizeof(key), "composite %s.in", name );
 	if ( mlt_properties_get( a_props, key ) )
 	{
 		sscanf( mlt_properties_get( a_props, key ), "%f %f %f %f %f %d %d", &result->item.x, &result->item.y, &result->item.w, &result->item.h, &result->item.mix, &result->nw, &result->nh );
@@ -1135,9 +1135,9 @@ mlt_frame composite_copy_region( mlt_transition self, mlt_frame a_frame, mlt_pos
 	}
 
 	// Store the key
-	sprintf( key, "%s.in=%d %d %d %d %f %d %d", name, x, y, w, h, result.item.mix, width, height );
+	snprintf( key, sizeof(key), "composite %s.in=%d %d %d %d %f %d %d", name, x, y, w, h, result.item.mix, width, height );
 	mlt_properties_parse( a_props, key );
-	sprintf( key, "%s.out=%d %d %d %d %f %d %d", name, x, y, w, h, result.item.mix, width, height );
+	snprintf( key, sizeof(key), "composite %s.out=%d %d %d %d %f %d %d", name, x, y, w, h, result.item.mix, width, height );
 	mlt_properties_parse( a_props, key );
 
 	ds = w * 2;

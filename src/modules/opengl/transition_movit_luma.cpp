@@ -1,6 +1,6 @@
 /*
  * transition_movit_luma.cpp
- * Copyright (C) 2014 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2014-2017 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -162,7 +162,8 @@ static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_fram
 		mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), properties, "producer." );
 		mlt_producer_seek( producer, position );
 		if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &wipe, 0 ) == 0 ) {
-			char *name = mlt_properties_get( properties, "_unique_id" );
+			char name[64];
+			snprintf( name, sizeof(name), "movit.luma %s", mlt_properties_get( properties, "_unique_id" ) );
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES(a_frame), name, wipe, 0, (mlt_destructor) mlt_frame_close, NULL );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES(wipe), "distort", 1 );
 			mlt_frame_push_frame( a_frame, wipe );

@@ -480,10 +480,14 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 			mlt_deque data_queue = mlt_deque_init( );
 
 			// Used to garbage collect all frames
-			char label[ 30 ];
+			char label[64];
 
 			// Get the id of the tractor
 			char *id = mlt_properties_get( properties, "_unique_id" );
+			if ( !id ) {
+				mlt_properties_set_int64( properties, "_unique_id", (int64_t) properties );
+				id = mlt_properties_get( properties, "_unique_id" );
+			}
 
 			// Will be used to store the frame properties object
 			mlt_properties frame_properties = NULL;
@@ -545,7 +549,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				}
 
 				// We store all frames with a destructor on the output frame
-				sprintf( label, "_%s_%d", id, count ++ );
+				snprintf( label, sizeof(label), "mlt_tractor %s_%d", id, count ++ );
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
 				// We want to append all 'final' feeds to the global queue

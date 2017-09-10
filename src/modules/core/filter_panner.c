@@ -1,6 +1,6 @@
 /*
  * filter_panner.c --pan/balance audio channels
- * Copyright (C) 2010-2016 Meltytech, LLC
+ * Copyright (C) 2010-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -274,14 +274,16 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		mlt_properties_set_int( instance_props, "channel", mlt_properties_get_int( properties, "channel" ) );
 		mlt_properties_set_int( instance_props, "gang", mlt_properties_get_int( properties, "gang" ) );
 	}
-	mlt_properties_set_data( frame_props, mlt_properties_get( properties, "_unique_id" ),
+	char label[64];
+	snprintf( label, sizeof(label), "panner %s", mlt_properties_get( properties, "_unique_id" ) );
+	mlt_properties_set_data( frame_props, label,
 		instance_props, 0, (mlt_destructor) mlt_properties_close, NULL );
 
 	// Override the get_audio method
 	mlt_frame_push_audio( frame, filter );
 	mlt_frame_push_audio( frame, instance_props );
 	mlt_frame_push_audio( frame, filter_get_audio );
-	
+
 	return frame;
 }
 

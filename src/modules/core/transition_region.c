@@ -1,6 +1,6 @@
 /*
  * transition_region.c -- region transition
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -292,7 +292,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 			b_frame = composite_copy_region( composite, frame, position );
 
 			// Ensure a destructor
-			char *name = mlt_properties_get( properties, "_unique_id" );
+			char name[64];
+			snprintf( name, sizeof(name), "region %s", mlt_properties_get( properties, "_unique_id" ) );
 			mlt_properties_set_data( a_props, name, b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
 
@@ -303,7 +304,8 @@ static int transition_get_image( mlt_frame frame, uint8_t **image, mlt_image_for
 		// by compositing filtered frame over itself
 		if ( mlt_properties_get_int( properties, "filter_only" ) )
 		{
-			char *name = mlt_properties_get( properties, "_unique_id" );
+			char name[64];
+			snprintf( name, sizeof(name), "region %s", mlt_properties_get( properties, "_unique_id" ) );
 			frame = composite_copy_region( composite, b_frame, position );
 			mlt_properties_set_data( b_props, name, frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 		}
