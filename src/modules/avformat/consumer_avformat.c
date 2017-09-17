@@ -591,7 +591,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		int thread_count = mlt_properties_get_int( properties, "threads" );
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
-		if ( thread_count > 1 )
+		if ( thread_count >= 0 )
 			c->thread_count = thread_count;
 #endif
 	
@@ -764,7 +764,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		int thread_count = mlt_properties_get_int( properties, "threads" );
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
-		if ( thread_count > 1 )
+		if ( thread_count >= 0 )
 			c->thread_count = thread_count;
 
 		// Process properties as AVOptions

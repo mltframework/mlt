@@ -2064,7 +2064,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		int thread_count = mlt_properties_get_int( properties, "threads" );
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
-		if ( thread_count > 1 )
+		if ( thread_count >= 0 )
 			codec_context->thread_count = thread_count;
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...
