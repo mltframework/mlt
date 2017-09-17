@@ -41,6 +41,7 @@
 #include <libavutil/mathematics.h>
 #include <libavutil/samplefmt.h>
 #include <libavutil/opt.h>
+#include <libavutil/imgutils.h>
 
 #if LIBAVCODEC_VERSION_MAJOR < 55
 #define AV_CODEC_ID_PCM_S16LE CODEC_ID_PCM_S16LE
@@ -68,6 +69,7 @@
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
 #define AUDIO_BUFFER_SIZE (1024 * 42)
 #define VIDEO_BUFFER_SIZE (8192 * 8192)
+#define IMAGE_ALIGN (1)
 
 //
 // This structure should be extended and made globally available in mlt
@@ -990,26 +992,22 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 	AVFrame *picture = avcodec_alloc_frame();
 #endif
 
-	// Determine size of the 
-	int size = avpicture_get_size(pix_fmt, width, height);
-
-	// Allocate the picture buf
-	uint8_t *picture_buf = av_malloc(size);
-
-	// If we have both, then fill the image
-	if ( picture != NULL && picture_buf != NULL )
+	if ( picture )
 	{
-		// Fill the frame with the allocated buffer
-		avpicture_fill( (AVPicture *)picture, picture_buf, pix_fmt, width, height);
-		picture->format = pix_fmt;
-		picture->width = width;
-		picture->height = height;
+		int size = av_image_alloc(picture->data, picture->linesize, width, height, pix_fmt, IMAGE_ALIGN);
+		if (size > 0) {
+			picture->format = pix_fmt;
+			picture->width = width;
+			picture->height = height;
+		} else {
+			av_free( picture );
+			picture = NULL;
+		}
 	}
 	else
 	{
 		// Something failed - clean up what we can
 	 	av_free( picture );
-	 	av_free( picture_buf );
 	 	picture = NULL;
 	}
 

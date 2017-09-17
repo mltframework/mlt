@@ -1,6 +1,6 @@
 /*
  * filter_avdeinterlace.c -- deinterlace filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 
 #ifdef USE_MMX
 #include "mmx.h"
@@ -230,8 +231,8 @@ static inline void deinterlace_bottom_field_inplace(uint8_t *src1, int src_wrap,
 
 
 /* deinterlace - if not supported return -1 */
-static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
-                          int pix_fmt, int width, int height)
+static int mlt_avpicture_deinterlace(uint8_t *dst_data[4], int dst_stride[4],
+	uint8_t *src_data[4], int src_stride[4], int pix_fmt, int width, int height)
 {
     int i;
 
@@ -239,7 +240,7 @@ static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
         pix_fmt != AV_PIX_FMT_YUV422P &&
         pix_fmt != AV_PIX_FMT_YUYV422 &&
         pix_fmt != AV_PIX_FMT_YUV444P &&
-	pix_fmt != AV_PIX_FMT_YUV411P)
+        pix_fmt != AV_PIX_FMT_YUV411P)
         return -1;
     if ((width & 3) != 0 || (height & 3) != 0)
         return -1;
@@ -263,23 +264,23 @@ static int mlt_avpicture_deinterlace(AVPicture *dst, const AVPicture *src,
                   break;
               }
           }
-          if (src == dst) {
-              deinterlace_bottom_field_inplace(dst->data[i], dst->linesize[i],
+          if (src_data[0] == dst_data[0]) {
+              deinterlace_bottom_field_inplace(dst_data[i], dst_stride[i],
                                    width, height);
           } else {
-              deinterlace_bottom_field(dst->data[i],dst->linesize[i],
-                                          src->data[i], src->linesize[i],
+              deinterlace_bottom_field(dst_data[i], dst_stride[i],
+                                          src_data[i], src_stride[i],
                                           width, height);
           }
 	  }
     }
 	else {
-      if (src == dst) {
-          deinterlace_bottom_field_inplace(dst->data[0], dst->linesize[0],
+      if (src_data[0] == dst_data[0]) {
+          deinterlace_bottom_field_inplace(dst_data[0], dst_stride[0],
                                width<<1, height);
       } else {
-          deinterlace_bottom_field(dst->data[0],dst->linesize[0],
-                                      src->data[0], src->linesize[0],
+          deinterlace_bottom_field(dst_data[0], dst_stride[0],
+                                      src_data[0], src_stride[0],
                                       width<<1, height);
       }
 	}
@@ -310,15 +311,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( deinterlace && *format == mlt_image_yuv422 && *image != NULL && !mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "progressive" ) )
 	{
 		// Create a picture
-		AVPicture *output = mlt_pool_alloc( sizeof( AVPicture ) );
+		uint8_t *image_data[4];
+		int strides[4];
 
 		// Fill the picture
-		avpicture_fill( output, *image, AV_PIX_FMT_YUYV422, *width, *height );
+		av_image_fill_arrays(image_data, strides, *image, AV_PIX_FMT_YUYV422, *width, *height, 1);
 		mlt_log_timings_begin();
-		mlt_avpicture_deinterlace( output, output, AV_PIX_FMT_YUYV422, *width, *height );
+		mlt_avpicture_deinterlace( image_data, strides, image_data, strides, AV_PIX_FMT_YUYV422, *width, *height );
 		mlt_log_timings_end( NULL, "mlt_avpicture_deinterlace" );
-		// Free the picture
-		mlt_pool_release( output );
 
 		// Make sure that others know the frame is deinterlaced
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "progressive", 1 );

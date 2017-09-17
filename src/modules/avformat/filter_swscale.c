@@ -1,6 +1,6 @@
 /*
  * filter_swscale.c -- image scaling filter
- * Copyright (C) 2008-2014 Meltytech, LLC
+ * Copyright (C) 2008-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,10 +25,13 @@
 // ffmpeg Header files
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define IMAGE_ALIGN (1)
 
 static inline int convert_mlt_to_av_cs( mlt_image_format format )
 {
@@ -87,9 +90,8 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 		interp = SWS_SPLINE;
 	interp |= SWS_ACCURATE_RND;
 
-	// Determine the bytes per pixel
-	int bpp;
-	mlt_image_format_size( *format, 0, 0, &bpp );
+	// Determine the output image size.
+	int out_size = mlt_image_format_size( *format, owidth, oheight, NULL );
 
 	// Set swscale flags to get good quality
 	switch ( *format )
@@ -113,25 +115,28 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 	int avformat = convert_mlt_to_av_cs( *format );
 
 	// Fill out the AVPictures
-	AVPicture input;
-	AVPicture output;
-	uint8_t *outbuf = mlt_pool_alloc( owidth * ( oheight + 1 ) * bpp );
-	avpicture_fill( &input, *image, avformat, iwidth, iheight );
-	avpicture_fill( &output, outbuf, avformat, owidth, oheight );
+	uint8_t *in_data[4];
+	int in_stride[4];
+	uint8_t *out_data[4];
+	int out_stride[4];
+	uint8_t *outbuf = mlt_pool_alloc( out_size );
+
+	av_image_fill_arrays(in_data, in_stride, *image, avformat, iwidth, iheight, IMAGE_ALIGN);
+	av_image_fill_arrays(out_data, out_stride, outbuf, avformat, owidth, oheight, IMAGE_ALIGN);
 
 	// Create the context and output image
 	struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
 	if ( context )
 	{
 		// Perform the scaling
-		sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, iheight, output.data, output.linesize);
+		sws_scale( context, (const uint8_t **) in_data, in_stride, 0, iheight, out_data, out_stride);
 		sws_freeContext( context );
 	
 		// Now update the frame
-		mlt_frame_set_image( frame, output.data[0], owidth * ( oheight + 1 ) * bpp, mlt_pool_release );
+		mlt_frame_set_image( frame, outbuf, out_size, mlt_pool_release );
 	
 		// Return the output
-		*image = output.data[0];
+		*image = outbuf;
 	
 		// Scale the alpha channel only if exists and not correct size
 		int alpha_size = 0;
@@ -144,16 +149,16 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 			{
 				avformat = AV_PIX_FMT_GRAY8;
 				struct SwsContext *context = sws_getContext( iwidth, iheight, avformat, owidth, oheight, avformat, interp, NULL, NULL, NULL);
-				avpicture_fill( &input, alpha, avformat, iwidth, iheight );
 				outbuf = mlt_pool_alloc( owidth * oheight );
-				avpicture_fill( &output, outbuf, avformat, owidth, oheight );
+				av_image_fill_arrays(in_data, in_stride, alpha, avformat, iwidth, iheight, IMAGE_ALIGN);
+				av_image_fill_arrays(out_data, out_stride, outbuf, avformat, owidth, oheight, IMAGE_ALIGN);
 	
 				// Perform the scaling
-				sws_scale( context, (const uint8_t* const*) input.data, input.linesize, 0, iheight, output.data, output.linesize);
+				sws_scale( context, (const uint8_t **) in_data, in_stride, 0, iheight, out_data, out_stride);
 				sws_freeContext( context );
 	
 				// Set it back on the frame
-				mlt_frame_set_alpha( frame, output.data[0], owidth * oheight, mlt_pool_release );
+				mlt_frame_set_alpha( frame, outbuf, owidth * oheight, mlt_pool_release );
 			}
 		}
 	
