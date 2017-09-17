@@ -1,9 +1,9 @@
 language: c
-before_script:
-- sudo apt-get -qq update
-- sudo apt-get build-dep melt
-script:
-- ./configure && make -j
 sudo: required
-dist: trusty
-
+services:
+  - docker
+before_install:
+  - docker pull ubuntu:16.04
+script:
+  - docker run -v $PWD:/root -w /root ubuntu:16.04 /bin/sh -c "apt-get -qq update && apt-get -y build-dep melt && ./configure --enable-gpl --enable-gpl3 && make -j"
+ 
