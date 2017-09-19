@@ -35,6 +35,7 @@
 #include <libavutil/dict.h>
 #include <libavutil/opt.h>
 #include <libavutil/channel_layout.h>
+#include <libavutil/imgutils.h>
 
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
@@ -64,6 +65,7 @@
 #define MAX_AUDIO_STREAMS (32)
 #define MAX_VDPAU_SURFACES (10)
 #define MAX_AUDIO_FRAME_SIZE (192000) // 1 second of 48khz 32bit audio
+#define IMAGE_ALIGN (1)
 
 struct producer_avformat_s
 {
@@ -1249,7 +1251,8 @@ struct sliced_pix_fmt_conv_t
 {
 	int width, height, slice_w;
 	AVFrame *frame;
-	AVPicture *output;
+	uint8_t *out_data[4];
+	int out_stride[4];
 	enum AVPixelFormat src_format, dst_format;
 	const AVPixFmtDescriptor *src_desc, *dst_desc;
 	int flags, src_colorspace, dst_colorspace, src_full_range, dst_full_range;
@@ -1260,7 +1263,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 	uint8_t *out[4];
 	const uint8_t *in[4];
 	int in_stride[4], out_stride[4];
-	int src_v_chr_pos = -513, dst_v_chr_pos = -513, ret, i, slice_x, slice_w, w, h, mul, field, slices, interlaced = 0;
+	int src_v_chr_pos = -513, dst_v_chr_pos = -513, ret, i, slice_x, slice_w, h, mul, field, slices, interlaced = 0;
 
 	struct SwsContext *sws;
 	struct sliced_pix_fmt_conv_t* ctx = ( struct sliced_pix_fmt_conv_t* )cookie;
@@ -1334,10 +1337,10 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 		out_offset *= PIX_DESC_BPP(ctx->dst_desc->comp[i]);
 
 		in_stride[i]  = ctx->frame->linesize[i] * mul;
-		out_stride[i] = ctx->output->linesize[i] * mul;
+		out_stride[i] = ctx->out_stride[i] * mul;
 
 		in[i] =  ctx->frame->data[i] + ctx->frame->linesize[i] * field + in_offset;
-		out[i] = ctx->output->data[i] + ctx->output->linesize[i] * field + out_offset;
+		out[i] = ctx->out_data[i] + ctx->out_stride[i] * field + out_offset;
 	}
 
 	sws_scale( sws, in, in_stride, 0, h, out, out_stride );
@@ -1397,55 +1400,56 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 					flags, NULL, NULL, NULL);
 #endif
 
-		AVPicture output;
-		output.data[0] = buffer;
-		output.data[1] = buffer + width * height;
-		output.data[2] = buffer + ( 5 * width * height ) / 4;
-		output.linesize[0] = width;
-		output.linesize[1] = width >> 1;
-		output.linesize[2] = width >> 1;
+		uint8_t *out_data[4];
+		int out_stride[4];
+		out_data[0] = buffer;
+		out_data[1] = buffer + width * height;
+		out_data[2] = buffer + ( 5 * width * height ) / 4;
+		out_stride[0] = width;
+		out_stride[1] = width >> 1;
+		out_stride[2] = width >> 1;
 		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, self->full_luma ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			output.data, output.linesize);
+			out_data, out_stride);
 		sws_freeContext( context );
 	}
 	else if ( *format == mlt_image_rgb24 )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
-		AVPicture output;
-		avpicture_fill( &output, buffer, AV_PIX_FMT_RGB24, width, height );
+		uint8_t *out_data[4];
+		int out_stride[4];
+		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGB24, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			output.data, output.linesize);
+			out_data, out_stride);
 		sws_freeContext( context );
 	}
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
-		AVPicture output;
-		avpicture_fill( &output, buffer, AV_PIX_FMT_RGBA, width, height );
+		uint8_t *out_data[4];
+		int out_stride[4];
+		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGBA, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			output.data, output.linesize);
+			out_data, out_stride);
 		sws_freeContext( context );
 	}
 	else
 #if LIBSWSCALE_VERSION_INT >= AV_VERSION_INT( 3, 1, 101 )
 	{
 		int i, c;
-		AVPicture output;
 		struct sliced_pix_fmt_conv_t ctx =
 		{
 			.flags = flags,
 			.width = width,
 			.height = height,
 			.frame = frame,
-			.output = &output,
 			.dst_format = AV_PIX_FMT_YUYV422,
 			.src_colorspace = self->yuv_colorspace,
 			.dst_colorspace = profile->colorspace,
@@ -1460,7 +1464,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		ctx.src_desc = av_pix_fmt_desc_get( ctx.src_format );
 		ctx.dst_desc = av_pix_fmt_desc_get( ctx.dst_format );
 
-		avpicture_fill( ctx.output, buffer, ctx.dst_format, width, height );
+		av_image_fill_arrays(ctx.out_data, ctx.out_stride, buffer, ctx.dst_format, width, height, IMAGE_ALIGN);
 
 		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
 			ctx.slice_w = ( width < 1000 )
@@ -2060,7 +2064,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		int thread_count = mlt_properties_get_int( properties, "threads" );
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
-		if ( thread_count > 1 )
+		if ( thread_count >= 0 )
 			codec_context->thread_count = thread_count;
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...
