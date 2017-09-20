@@ -68,9 +68,9 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 			b += blift * ( 1.0 - b );
 
 			// Clamp negative values
-			r = CLAMP( r, 0.0, 1.0 );
-			g = CLAMP( g, 0.0, 1.0 );
-			b = CLAMP( b, 0.0, 1.0 );
+			r = MAX( r, 0.0 );
+			g = MAX( g, 0.0 );
+			b = MAX( b, 0.0 );
 
 			// Apply gamma
 			r = pow( r, 2.2 / rgamma );
