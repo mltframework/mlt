@@ -67,6 +67,11 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 			g += glift * ( 1.0 - g );
 			b += blift * ( 1.0 - b );
 
+			// Clamp negative values
+			r = MAX( r, 0.0 );
+			g = MAX( g, 0.0 );
+			b = MAX( b, 0.0 );
+
 			// Apply gamma
 			r = pow( r, 2.2 / rgamma );
 			g = pow( g, 2.2 / ggamma );
@@ -78,9 +83,9 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 			b *= pow( bgain, 1.0 / bgamma );
 
 			// Clamp values
-			r = r < 0.0 ? 0.0 : r > 1.0 ? 1.0 : r;
-			g = g < 0.0 ? 0.0 : g > 1.0 ? 1.0 : g;
-			b = b < 0.0 ? 0.0 : b > 1.0 ? 1.0 : b;
+			r = CLAMP( r, 0.0, 1.0 );
+			g = CLAMP( g, 0.0, 1.0 );
+			b = CLAMP( b, 0.0, 1.0 );
 
 			// Update LUT
 			self->rlut[ i ] = (int)(r * 255.0);
