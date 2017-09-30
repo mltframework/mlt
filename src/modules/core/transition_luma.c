@@ -29,36 +29,69 @@
 #include <math.h>
 #include "transition_composite.h"
 
-static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height )
+struct sliced_dissolve_desc
+{
+	int width_src;
+	int height_src;
+	uint8_t* p_src;
+	uint8_t* p_dest;
+	uint8_t* alpha_src;
+	uint8_t* alpha_dest;
+	int weight;
+	int stride_src;
+	int stride_dest;
+	int alpha_src_stride;
+	int alpha_dest_stride;
+};
+
+static int sliced_dissolve_proc( int id, int index, int jobs, void* data )
+{
+	struct sliced_dissolve_desc ctx = *((struct sliced_dissolve_desc*) data);
+	int i, height_slice = (ctx.height_src + jobs / 2) / jobs;
+	int starty = height_slice * index;
+
+	for ( i = 0; i < ctx.height_src; i++ ) {
+		if ( i >= starty && i < ( starty + height_slice ) ) {
+			composite_line_yuv( ctx.p_dest, ctx.p_src, ctx.width_src, ctx.alpha_dest,
+				ctx.alpha_src, ctx.weight, NULL, 0, 0 );
+		}
+		ctx.p_src += ctx.stride_src;
+		ctx.p_dest += ctx.stride_dest;
+		if ( ctx.alpha_src )
+			ctx.alpha_src += ctx.alpha_src_stride;
+		if ( ctx.alpha_dest )
+			ctx.alpha_dest += ctx.alpha_dest_stride;
+	}
+	return 0;
+}
+
+static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height, int threads )
 {
 	int ret = 0;
-	int i = height + 1;
-	int width_src = width, height_src = height;
-	mlt_image_format format = mlt_image_yuv422;
-	uint8_t *p_src, *p_dest;
-	uint8_t *alpha_src;
-	uint8_t *alpha_dst;
-	int mix = weight * ( 1 << 16 );
+	struct sliced_dissolve_desc s;
 
+	mlt_image_format format = mlt_image_yuv422;
 	if ( mlt_properties_get( &frame->parent, "distort" ) )
 		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &frame->parent, "distort" ) );
-	mlt_frame_get_image( frame, &p_dest, &format, &width, &height, 1 );
-	alpha_dst = mlt_frame_get_alpha_mask( frame );
-	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
-	alpha_src = mlt_frame_get_alpha_mask( that );
+
+	mlt_frame_get_image( frame, &s.p_dest, &format, &width, &height, 1 );
+	s.width_src = width;
+	s.stride_dest = width << 1;
+	s.height_src = height;
+	s.alpha_dest = mlt_frame_get_alpha_mask( frame );
+	s.alpha_dest_stride = width;
+
+	mlt_frame_get_image( that, &s.p_src, &format, &s.width_src, &s.height_src, 0 );
 
 	// Pick the lesser of two evils ;-)
-	width_src = width_src > width ? width : width_src;
-	height_src = height_src > height ? height : height_src;
+	s.width_src = s.width_src > width ? width : s.width_src;
+	s.stride_src = s.width_src << 1;
+	s.height_src = s.height_src > height ? height : s.height_src;
+	s.alpha_src = mlt_frame_get_alpha_mask( that );
+	s.alpha_src_stride = s.width_src;
+	s.weight = weight * ( 1 << 16 ),
 
-	while ( --i )
-	{
-		composite_line_yuv( p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0 );
-		p_src += width_src << 1;
-		p_dest += width << 1;
-		alpha_src += width_src;
-		alpha_dst += width;
-	}
+	mlt_slices_run_normal(threads, sliced_dissolve_proc, &s);
 
 	return ret;
 }
@@ -474,8 +507,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	{
 		mix = ( reverse || invert ) ? 1 - mix : mix;
 		invert = 0;
+		int threads = mlt_properties_get(properties, "threads")? mlt_properties_get_int(properties, "threads") : 1;
+		threads = CLAMP(threads, 0, mlt_slices_count_normal());
 		// Dissolve the frames using the time offset for mix value
-		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
+		dissolve_yuv( a_frame, b_frame, mix, *width, *height, threads );
 	}
 
 	// Extract the a_frame image info
