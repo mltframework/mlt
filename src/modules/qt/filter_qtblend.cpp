@@ -87,7 +87,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( mlt_properties_get( properties, "rotation" ) )
 	{
 		double angle = mlt_properties_anim_get_double( properties, "rotation", position, length );
-		transform.rotate( angle );
+		if ( mlt_properties_get_int( properties, "rotate_center" ) )
+		{
+			transform.translate( rect.w / 2.0, rect.h / 2.0 );
+			transform.rotate( angle );
+			transform.translate( -rect.w / 2.0, -rect.h / 2.0 );
+		}
+		else
+		{
+			// old style rotation (from top left corner) to keep compatibility
+			transform.rotate( angle );
+		}
 	}
 
 	// fetch image
@@ -174,6 +184,8 @@ mlt_filter filter_qtblend_init( mlt_profile profile, mlt_service_type type, cons
 	if ( filter && createQApplicationIfNeeded( MLT_FILTER_SERVICE(filter) ) )
 	{
 		filter->process = filter_process;
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		mlt_properties_set_int( properties, "rotate_center", 0 );
 	}
 	else
 	{

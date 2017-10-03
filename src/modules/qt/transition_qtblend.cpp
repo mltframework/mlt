@@ -79,7 +79,16 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	if ( mlt_properties_get( transition_properties, "rotation" ) )
 	{
 		double angle = mlt_properties_anim_get_double( transition_properties, "rotation", position, length );
-		transform.rotate( angle );
+		if ( mlt_properties_get_int( properties, "rotate_center" ) )
+		{
+			transform.translate( rect.w / 2.0, rect.h / 2.0 );
+			transform.rotate( angle );
+			transform.translate( -rect.w / 2.0, -rect.h / 2.0 );
+		}
+		else
+		{
+			transform.rotate( angle );
+		}
 		hasAlpha = true;
 	}
 
@@ -235,6 +244,7 @@ mlt_transition transition_qtblend_init( mlt_profile profile, mlt_service_type ty
 		mlt_properties_set( properties, "rect", (char *) arg );
 		mlt_properties_set_int( properties, "compositing", 0 );
 		mlt_properties_set_int( properties, "distort", 0 );
+		mlt_properties_set_int( properties, "rotate_center", 0 );
 	}
 
 	return transition;

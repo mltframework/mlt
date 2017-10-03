@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter
 identifier: qtblend
 title: Composite and transform
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Jean-Baptiste Mardelle
 license: LGPLv2.1
@@ -42,4 +42,11 @@ parameters:
     mutable: yes
     widget: spinner
 
-
+  - identifier: rotate_center
+    title: Rotate from center
+    type: integer
+    description: Process the rotation from center if set, otherwise from top left corner
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
