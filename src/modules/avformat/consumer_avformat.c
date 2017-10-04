@@ -1851,6 +1851,15 @@ static void *consumer_thread( void *arg )
 						converted_avframe->quality = c->global_quality;
 						converted_avframe->pts = frame_count;
 
+						// set frame interlaced if required but still progressive
+						if ( mlt_properties_get_int( frame_properties, "progressive" ) &&
+							mlt_properties_get_int( frame_properties, "consumer_tff" ) )
+						{
+							mlt_properties_set_int( frame_properties, "progressive", 0 );
+							mlt_properties_set_int( frame_properties, "top_field_first",
+								mlt_properties_get_int( frame_properties, "consumer_tff" ) );
+						}
+
 						// Set frame interlace hints
 						converted_avframe->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
 						converted_avframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
