@@ -1,0 +1,24 @@
+schema_version: 0.1
+type: consumer
+identifier: ndi
+title: NDI Output
+creator: Maksym Veremeyenko
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Network
+description: Audio/Video over IP output using NewTek's NDI technology
+parameters:
+  - identifier: argument
+    type: string
+    title: NDI Source name
+    description: Name used for discovery by NDI receivers on the network
+    required: yes
+    mutable: no
+
+  - identifier: meta.attr.*
+    type: string
+    title: NDI Device Metadata
+    required: no
+    mutable: no
