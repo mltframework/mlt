@@ -686,36 +686,9 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 		// ugly hack for PCM codecs (will be removed ASAP with new PCM
 		// support to compute the input frame size in samples
 		if ( c->frame_size <= 1 ) 
-		{
-			audio_input_frame_size = audio_outbuf_size / c->channels;
-			switch(st->codec->codec_id) 
-			{
-				case AV_CODEC_ID_PCM_S16LE:
-				case AV_CODEC_ID_PCM_S16BE:
-				case AV_CODEC_ID_PCM_U16LE:
-				case AV_CODEC_ID_PCM_U16BE:
-					audio_input_frame_size >>= 1;
-					break;
-				case AV_CODEC_ID_PCM_S24LE:
-				case AV_CODEC_ID_PCM_S24BE:
-				case AV_CODEC_ID_PCM_U24LE:
-				case AV_CODEC_ID_PCM_U24BE:
-					audio_input_frame_size /= 3;
-					break;
-				case AV_CODEC_ID_PCM_S32LE:
-				case AV_CODEC_ID_PCM_S32BE:
-				case AV_CODEC_ID_PCM_U32LE:
-				case AV_CODEC_ID_PCM_U32BE:
-					audio_input_frame_size >>= 2;
-					break;
-				default:
-					break;
-			}
-		} 
+			audio_input_frame_size = 1;
 		else 
-		{
 			audio_input_frame_size = c->frame_size;
-		}
 
 		// Some formats want stream headers to be seperate (hmm)
 		if ( !strcmp( oc->oformat->name, "mp4" ) ||
@@ -1095,7 +1068,7 @@ typedef struct encode_ctx_desc
 {
 	mlt_consumer consumer;
 	int audio_outbuf_size;
-	int audio_input_nb_samples;
+	int audio_input_frame_size;
 	uint8_t audio_outbuf[AUDIO_BUFFER_SIZE], audio_buf_1[AUDIO_ENCODE_BUFFER_SIZE], audio_buf_2[AUDIO_ENCODE_BUFFER_SIZE];
 
 	int channels;
@@ -1131,14 +1104,23 @@ typedef struct encode_ctx_desc
 static int encode_audio(encode_ctx_t* ctx)
 {
 	char key[27];
-	int i, j = 0, samples, n;
+	int i, j = 0, samples;
 
-	n = FFMIN( FFMIN( ctx->channels * ctx->audio_input_nb_samples, sample_fifo_used( ctx->fifo ) / ctx->sample_bytes ), AUDIO_ENCODE_BUFFER_SIZE );
+	int frame_length = ctx->audio_input_frame_size * ctx->channels * ctx->sample_bytes;
+
+	// Get samples count to fetch from fifo
+	if ( sample_fifo_used( ctx->fifo ) < frame_length )
+		samples = sample_fifo_used( ctx->fifo ) / ( ctx->channels * ctx->sample_bytes );
+	else
+	{
+		int frames = FFMIN( sample_fifo_used( ctx->fifo ), AUDIO_ENCODE_BUFFER_SIZE ) / frame_length;
+		samples = frames * ctx->audio_input_frame_size;
+	}
 
 	// Get the audio samples
-	if ( n > 0 )
+	if ( samples > 0 )
 	{
-		sample_fifo_fetch( ctx->fifo, ctx->audio_buf_1, n * ctx->sample_bytes );
+		sample_fifo_fetch( ctx->fifo, ctx->audio_buf_1, samples * ctx->sample_bytes * ctx->channels );
 	}
 	else if ( ctx->audio_codec_id == AV_CODEC_ID_VORBIS && ctx->terminated )
 	{
@@ -1151,7 +1133,6 @@ static int encode_audio(encode_ctx_t* ctx)
 	{
 		memset( ctx->audio_buf_1, 0, AUDIO_ENCODE_BUFFER_SIZE );
 	}
-	samples = n / ctx->channels;
 
 	// For each output stream
 	for ( i = 0; i < MAX_AUDIO_STREAMS && ctx->audio_st[i] && j < ctx->total_channels; i++ )
@@ -1176,7 +1157,7 @@ static int encode_audio(encode_ctx_t* ctx)
 				p = interleaved_to_planar( samples, ctx->channels, p, sizeof( int32_t ) );
 			else if ( codec->sample_fmt == AV_SAMPLE_FMT_U8P )
 				p = interleaved_to_planar( samples, ctx->channels, p, sizeof( uint8_t ) );
-			ctx->audio_avframe->nb_samples = FFMAX( samples, ctx->audio_input_nb_samples );
+			ctx->audio_avframe->nb_samples = FFMAX( samples, ctx->audio_input_frame_size );
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 			ctx->audio_avframe->pts = ctx->sample_count[i];
 #endif
@@ -1255,7 +1236,7 @@ static int encode_audio(encode_ctx_t* ctx)
 					dest_offset += current_channels;
 				}
 			}
-			ctx->audio_avframe->nb_samples = FFMAX( samples, ctx->audio_input_nb_samples );
+			ctx->audio_avframe->nb_samples = FFMAX( samples, ctx->audio_input_frame_size );
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 			ctx->audio_avframe->pts = ctx->sample_count[i];
 			ctx->sample_count[i] += ctx->audio_avframe->nb_samples;
@@ -1590,9 +1571,9 @@ static void *consumer_thread( void *arg )
 			enc_ctx->video_st = NULL;
 		for ( i = 0; i < MAX_AUDIO_STREAMS && enc_ctx->audio_st[i]; i++ )
 		{
-			enc_ctx->audio_input_nb_samples = open_audio( properties, enc_ctx->oc, enc_ctx->audio_st[i], enc_ctx->audio_outbuf_size,
+			enc_ctx->audio_input_frame_size = open_audio( properties, enc_ctx->oc, enc_ctx->audio_st[i], enc_ctx->audio_outbuf_size,
 				acodec? acodec : NULL );
-			if ( !enc_ctx->audio_input_nb_samples )
+			if ( !enc_ctx->audio_input_frame_size )
 			{
 				// Remove the audio stream from the output context
 				int j;
@@ -1661,7 +1642,7 @@ static void *consumer_thread( void *arg )
 		if ( enc_ctx->audio_avframe ) {
 			AVCodecContext *c = enc_ctx->audio_st[0]->codec;
 			enc_ctx->audio_avframe->format = c->sample_fmt;
-			enc_ctx->audio_avframe->nb_samples = enc_ctx->audio_input_nb_samples;
+			enc_ctx->audio_avframe->nb_samples = enc_ctx->audio_input_frame_size;
 			enc_ctx->audio_avframe->channel_layout = c->channel_layout;
 		} else {
 			mlt_log_error( MLT_CONSUMER_SERVICE(consumer), "failed to allocate audio AVFrame\n" );
@@ -1764,8 +1745,9 @@ static void *consumer_thread( void *arg )
 			if ( !enc_ctx->video_st || ( enc_ctx->video_st && enc_ctx->audio_st[0] && enc_ctx->audio_pts < enc_ctx->video_pts ) )
 			{
 				// Write audio
-				int fifo_threshold = enc_ctx->channels * enc_ctx->audio_input_nb_samples * enc_ctx->sample_bytes;
-				if ( ( enc_ctx->video_st && enc_ctx->terminated ) || fifo_threshold < sample_fifo_used( enc_ctx->fifo ) )
+				int fifo_frames = sample_fifo_used( enc_ctx->fifo ) /
+					( enc_ctx->audio_input_frame_size * enc_ctx->channels * enc_ctx->sample_bytes );
+				if ( ( enc_ctx->video_st && enc_ctx->terminated ) || fifo_frames )
 				{
 					int r = encode_audio(enc_ctx);
 
