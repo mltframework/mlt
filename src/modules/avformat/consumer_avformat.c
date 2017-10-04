@@ -1184,7 +1184,7 @@ static int encode_audio(encode_ctx_t* ctx)
 			avcodec_fill_audio_frame( ctx->audio_avframe, codec->channels, codec->sample_fmt,
 				(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 			int got_packet = 0;
-			int ret = avcodec_encode_audio2( codec, &pkt, ctx->audio_avframe, &got_packet );
+			int ret = avcodec_encode_audio2( codec, &pkt, samples ? ctx->audio_avframe : NULL, &got_packet );
 			if ( ret < 0 )
 				pkt.size = ret;
 			else if ( !got_packet )
@@ -1263,7 +1263,7 @@ static int encode_audio(encode_ctx_t* ctx)
 			avcodec_fill_audio_frame( ctx->audio_avframe, codec->channels, codec->sample_fmt,
 				(const uint8_t*) ctx->audio_buf_2, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 			int got_packet = 0;
-			int ret = avcodec_encode_audio2( codec, &pkt, ctx->audio_avframe, &got_packet );
+			int ret = avcodec_encode_audio2( codec, &pkt, samples ? ctx->audio_avframe : NULL, &got_packet );
 			if ( ret < 0 )
 				pkt.size = ret;
 			else if ( !got_packet )
@@ -1977,78 +1977,15 @@ static void *consumer_thread( void *arg )
 	{
 		// Flush audio fifo
 		// TODO: flush all audio streams
-		if ( enc_ctx->audio_st[0] && enc_ctx->audio_st[0]->codec->frame_size > 1 ) for (;;)
+		if ( enc_ctx->audio_st[0] ) for (;;)
 		{
-			AVCodecContext *c = enc_ctx->audio_st[0]->codec;
-			AVPacket pkt;
-			av_init_packet( &pkt );
-			pkt.data = enc_ctx->audio_outbuf;
-			pkt.size = 0;
+			int sz = sample_fifo_used( enc_ctx->fifo );
+			int ret = encode_audio( enc_ctx );
 
-			if ( enc_ctx->fifo && sample_fifo_used( enc_ctx->fifo ) > 0 )
-			{
-				// Drain the MLT FIFO
-				samples = FFMIN( FFMIN( enc_ctx->channels * enc_ctx->audio_input_nb_samples, sample_fifo_used( enc_ctx->fifo ) / enc_ctx->sample_bytes ), AUDIO_ENCODE_BUFFER_SIZE );
-				sample_fifo_fetch( enc_ctx->fifo, enc_ctx->audio_buf_1, samples * enc_ctx->sample_bytes );
-				void* p = enc_ctx->audio_buf_1;
-				if ( c->sample_fmt == AV_SAMPLE_FMT_FLTP )
-					p = interleaved_to_planar( enc_ctx->audio_input_nb_samples, enc_ctx->channels, p, sizeof( float ) );
-				else if ( c->sample_fmt == AV_SAMPLE_FMT_S16P )
-					p = interleaved_to_planar( enc_ctx->audio_input_nb_samples, enc_ctx->channels, p, sizeof( int16_t ) );
-				else if ( c->sample_fmt == AV_SAMPLE_FMT_S32P )
-					p = interleaved_to_planar( enc_ctx->audio_input_nb_samples, enc_ctx->channels, p, sizeof( int32_t ) );
-				else if ( c->sample_fmt == AV_SAMPLE_FMT_U8P )
-					p = interleaved_to_planar( enc_ctx->audio_input_nb_samples, enc_ctx->channels, p, sizeof( uint8_t ) );
-				pkt.size = enc_ctx->audio_outbuf_size;
-				enc_ctx->audio_avframe->nb_samples = FFMAX( samples / enc_ctx->channels, enc_ctx->audio_input_nb_samples );
-#if LIBAVCODEC_VERSION_MAJOR >= 55
-				enc_ctx->audio_avframe->pts = enc_ctx->sample_count[0];
-				enc_ctx->sample_count[0] += enc_ctx->audio_avframe->nb_samples;
-#endif
-				avcodec_fill_audio_frame( enc_ctx->audio_avframe, c->channels, c->sample_fmt,
-					(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
-				int got_packet = 0;
-				int ret = avcodec_encode_audio2( c, &pkt, enc_ctx->audio_avframe, &got_packet );
-				if ( ret < 0 )
-					pkt.size = ret;
-				else if ( !got_packet )
-					pkt.size = 0;
-				if ( p != enc_ctx->audio_buf_1 )
-					mlt_pool_release( p );
-				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing audio size %d\n", pkt.size );
-			}
-			else
-			{
-				// Drain the codec
-				if ( pkt.size <= 0 ) {
-					pkt.size = enc_ctx->audio_outbuf_size;
-					int got_packet = 0;
-					int ret = avcodec_encode_audio2( c, &pkt, NULL, &got_packet );
-					if ( ret < 0 )
-						pkt.size = ret;
-					else if ( !got_packet )
-						pkt.size = 0;
-				}
-				mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing audio size %d\n", pkt.size );
-				if ( pkt.size <= 0 )
-					break;
-			}
+			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing audio: sz=%d, ret=%d\n", sz, ret );
 
-			// Write the compressed frame in the media file
-			if ( pkt.pts != AV_NOPTS_VALUE )
-				pkt.pts = av_rescale_q( pkt.pts, c->time_base, enc_ctx->audio_st[0]->time_base );
-#if LIBAVCODEC_VERSION_MAJOR >= 55
-			if ( pkt.dts != AV_NOPTS_VALUE )
-				pkt.dts = av_rescale_q( pkt.dts, c->time_base, enc_ctx->audio_st[0]->time_base );
-			if ( pkt.duration > 0 )
-				pkt.duration = av_rescale_q( pkt.duration, c->time_base, enc_ctx->audio_st[0]->time_base );
-#endif
-			pkt.stream_index = enc_ctx->audio_st[0]->index;
-			if ( av_interleaved_write_frame( enc_ctx->oc, &pkt ) != 0 )
-			{
-				mlt_log_warning( MLT_CONSUMER_SERVICE( consumer ), "error writing flushed audio frame\n" );
+			if ( !sz || ret < 0 )
 				break;
-			}
 		}
 
 		// Flush video
