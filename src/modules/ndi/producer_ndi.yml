@@ -2,10 +2,12 @@ schema_version: 0.1
 type: producer
 identifier: ndi
 title: NDI Input
+version: 1.0
 creator: Maksym Veremeyenko
 license: LGPLv2.1
 language: en
 tags:
+  - Audio
   - Video
   - Network
 description: Audio/Video over IP input using NewTek's NDI technology
@@ -16,3 +18,4 @@ parameters:
     description: Name of the NDI Source to receive
     required: yes
     mutable: no
+

@@ -2,10 +2,12 @@ schema_version: 0.1
 type: consumer
 identifier: ndi
 title: NDI Output
+version: 1.0
 creator: Maksym Veremeyenko
 license: LGPLv2.1
 language: en
 tags:
+  - Audio
   - Video
   - Network
 description: Audio/Video over IP output using NewTek's NDI technology
@@ -22,3 +24,4 @@ parameters:
     title: NDI Device Metadata
     required: no
     mutable: no
+
