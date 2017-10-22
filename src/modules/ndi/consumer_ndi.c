@@ -78,7 +78,7 @@ static void* consumer_ndi_feeder( void* p )
 		strncat(ndi_con_str, mlt_properties_get_value( properties, i ), NDI_CON_STR_MAX);
 		strncat(ndi_con_str, "\"", NDI_CON_STR_MAX);
 	}
-	strncat(ndi_con_str, ">", NDI_CON_STR_MAX);
+	strncat(ndi_con_str, " />", NDI_CON_STR_MAX);
 
 	const NDIlib_metadata_frame_t ndi_con_type =
 	{
