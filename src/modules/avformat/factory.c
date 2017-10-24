@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2017 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,7 +27,6 @@
 extern mlt_consumer consumer_avformat_init( mlt_profile profile, char *file );
 extern mlt_filter filter_avcolour_space_init( void *arg );
 extern mlt_filter filter_avdeinterlace_init( void *arg );
-extern mlt_filter filter_avresample_init( char *arg );
 extern mlt_filter filter_swscale_init( mlt_profile profile, char *arg );
 extern mlt_producer producer_avformat_init( mlt_profile profile, const char *service, char *file );
 extern mlt_filter filter_avfilter_init( mlt_profile, mlt_service_type, const char*, char* );
@@ -125,10 +124,6 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 		return filter_avcolour_space_init( arg );
 	if ( !strcmp( id, "avdeinterlace" ) )
 		return filter_avdeinterlace_init( arg );
-#if defined(FFUDIV)
-	if ( !strcmp( id, "avresample" ) )
-		return filter_avresample_init( arg );
-#endif
 	if ( !strcmp( id, "swscale" ) )
 		return filter_swscale_init( profile, arg );
 #endif
@@ -409,9 +404,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "avcolour_space", create_service );
 	MLT_REGISTER( filter_type, "avcolor_space", create_service );
 	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
-#if defined(FFUDIV)
-	MLT_REGISTER( filter_type, "avresample", create_service );
-#endif
 	MLT_REGISTER( filter_type, "swscale", create_service );
 
 #ifdef AVFILTER
