@@ -41,6 +41,11 @@ parameters:
         
         If filename contains the string "<svg", then pixbuf tries to load the 
         filename as inline SVG XML, which is convenient for melt commands.
+
+        If filename extension is .csv (format is: picture_filename;ttl), then pixbuf
+        reads pictures and corresponding ttl from it, which is convenient
+        for generating a slideshow with different image duration; in this case main ttl
+        property is ignored.
     readonly: no
     argument: yes
     required: yes
