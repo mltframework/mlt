@@ -1,4 +1,4 @@
-CFLAGS += -I../.. -Iebur128/queue
+CFLAGS += -I../..
 
 LDFLAGS += -L../../framework -lmlt -lm -lpthread
 
@@ -22,12 +22,15 @@ OBJS = consumer_blipflash.o \
 	   filter_sepia.o \
 	   producer_blipflash.o \
 	   producer_count.o \
-	   transition_affine.o \
-	   ebur128/ebur128.o
+	   transition_affine.o
 
 ifdef USE_FFTW
 	OBJS += filter_dance.o \
 	   filter_fft.o
+endif
+
+ifdef USE_INTERNAL_LIBEBUR128
+	OBJS += ebur128/ebur128.o
 endif
 
 SRCS := $(OBJS:.o=.c)

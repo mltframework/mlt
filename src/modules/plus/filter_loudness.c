@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "ebur128/ebur128.h"
+#include <ebur128.h>
 
 #define MAX_RESULT_SIZE 512
 
