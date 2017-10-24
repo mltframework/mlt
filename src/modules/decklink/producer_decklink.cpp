@@ -1,6 +1,6 @@
 /*
  * producer_decklink.c -- input from Blackmagic Design DeckLink
- * Copyright (C) 2011 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2011-2017 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -853,7 +853,15 @@ mlt_producer producer_decklink_init( mlt_profile profile, mlt_service_type type,
 	// If allocated and initializes
 	if ( decklink && !mlt_producer_init( producer, decklink ) )
 	{
-		if ( decklink->open( arg? atoi( arg ) : 0 ) )
+		// Extract resource (card) from arg, removing path prefix, if any.
+		// (modules such as melted may pass arg with root_dir prefix)
+		char *arg_dup = strdup( arg ? arg : "" );
+		const char *resource = strchr( arg_dup, '/' ) ? strrchr( arg_dup, '/' ) + 1 : arg_dup;
+
+		// Handle empty string resource (arg supplied as "" or "/some/path/")
+		resource = strlen( resource ) ? resource : "0";
+
+		if ( decklink->open( atoi( resource ) ) )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
@@ -866,7 +874,7 @@ mlt_producer producer_decklink_init( mlt_profile profile, mlt_service_type type,
 			producer->get_frame = get_frame;
 
 			// Set properties
-			mlt_properties_set( properties, "resource", (arg && strcmp( arg, ""))? arg : "0" );
+			mlt_properties_set( properties, "resource", resource );
 			mlt_properties_set_int( properties, "channels", 2 );
 			mlt_properties_set_int( properties, "buffer", 25 );
 			mlt_properties_set_int( properties, "prefill", 25 );
@@ -879,6 +887,7 @@ mlt_producer producer_decklink_init( mlt_profile profile, mlt_service_type type,
 			mlt_event event = mlt_events_listen( properties, properties, "property-changed", (mlt_listener) on_property_changed );
 			mlt_properties_set_data( properties, "list-devices-event", event, 0, NULL, NULL );
 		}
+		free( arg_dup );
 	}
 
 	return producer;
