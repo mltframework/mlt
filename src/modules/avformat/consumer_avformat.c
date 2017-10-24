@@ -1817,6 +1817,7 @@ static void *consumer_thread( void *arg )
 						}
 					}
 
+#ifdef AVFMT_RAWPICTURE
 					if (oc->oformat->flags & AVFMT_RAWPICTURE) 
 					{
 	 					// raw video case. The API will change slightly in the near future for that
@@ -1836,6 +1837,7 @@ static void *consumer_thread( void *arg )
 						ret = av_write_frame(oc, &pkt);
 					} 
 					else 
+#endif
 					{
 						AVPacket pkt;
 						av_init_packet( &pkt );
@@ -2029,7 +2031,11 @@ static void *consumer_thread( void *arg )
 		}
 
 		// Flush video
+#ifdef AVFMT_RAWPICTURE
 		if ( video_st && !( oc->oformat->flags & AVFMT_RAWPICTURE ) ) for (;;)
+#else
+		if ( video_st ) for (;;)
+#endif
 		{
 			AVCodecContext *c = video_st->codec;
 			AVPacket pkt;
