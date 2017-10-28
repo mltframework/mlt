@@ -1104,15 +1104,18 @@ typedef struct encode_ctx_desc
 static int encode_audio(encode_ctx_t* ctx)
 {
 	char key[27];
-	int i, j = 0, samples;
+    int i, j = 0, samples = ctx->audio_input_frame_size;
 
 	int frame_length = ctx->audio_input_frame_size * ctx->channels * ctx->sample_bytes;
 
 	// Get samples count to fetch from fifo
 	if ( sample_fifo_used( ctx->fifo ) < frame_length )
+    {
 		samples = sample_fifo_used( ctx->fifo ) / ( ctx->channels * ctx->sample_bytes );
-	else
+    }
+    else if ( ctx->audio_input_frame_size == 1 )
 	{
+        // PCM consumes as much as possible.
 		int frames = FFMIN( sample_fifo_used( ctx->fifo ), AUDIO_ENCODE_BUFFER_SIZE ) / frame_length;
 		samples = frames * ctx->audio_input_frame_size;
 	}
