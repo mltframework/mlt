@@ -7,3 +7,4 @@ bf=0
 
 meta.preset.extension=gif
 meta.preset.name=GIF Animation
+meta.preset.hidden=1
