@@ -2146,7 +2146,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
 
 		// MP3 album art is a single JPEG at 90000 fps, which is not seekable.
-		if ( frame_rate.num == 90000 && frame_rate.den == 1 )
+		if ( codec->id == AV_CODEC_ID_MJPEG && frame_rate.num == 90000 && frame_rate.den == 1 )
 			self->video_seekable = 0;
 
 		// Set the YUV colorspace from override or detect
