@@ -84,7 +84,8 @@ struct producer_avformat_s
 	int video_index;
 	int64_t first_pts;
 	int64_t last_position;
-	int seekable;
+	int video_seekable;
+	int seekable; /// This one is used for both audio and file level seekability.
 	int64_t current_position;
 	mlt_position nonseek_position;
 	int top_field_first;
@@ -657,6 +658,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 		avformat_find_stream_info( self->video_format, NULL );
 		format = self->video_format;
 	}
+	self->video_seekable = self->seekable;
 
 	// Fetch the width, height and aspect ratio
 	if ( self->video_index != -1 )
@@ -1007,7 +1009,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 
 	pthread_mutex_lock( &self->packets_mutex );
 
-	if ( self->seekable && ( position != self->video_expected || self->last_position < 0 ) )
+	if ( self->video_seekable && ( position != self->video_expected || self->last_position < 0 ) )
 	{
 
 		// Fetch the video format context
@@ -1022,7 +1024,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 		// We may want to use the source fps if available
 		double source_fps = mlt_properties_get_double( properties, "meta.media.frame_rate_num" ) /
 			mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
-
+	
 		if ( self->last_position == POSITION_INITIAL )
 			find_first_pts( self, self->video_index );
 
@@ -1031,7 +1033,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 			// We're paused - use last image
 			paused = 1;
 		}
-		else if ( self->seekable && ( position < self->video_expected || position - self->video_expected >= seek_threshold || self->last_position < 0 ) )
+		else if ( position < self->video_expected || position - self->video_expected >= seek_threshold || self->last_position < 0 )
 		{
 			// Calculate the timestamp for the requested frame
 			int64_t timestamp = req_position / ( av_q2d( self->video_time_base ) * source_fps );
@@ -1732,7 +1734,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			else
 			{
 				ret = av_read_frame( context, &self->pkt );
-				if ( ret >= 0 && !self->seekable && self->pkt.stream_index == self->audio_index )
+				if ( ret >= 0 && !self->video_seekable && self->pkt.stream_index == self->audio_index )
 				{
 					if ( !av_dup_packet( &self->pkt ) )
 					{
@@ -1745,7 +1747,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					if ( ret != AVERROR_EOF )
 						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_image\n", ret );
-					if ( !self->seekable && mlt_properties_get_int( properties, "reconnect" ) )
+					if ( !self->video_seekable && mlt_properties_get_int( properties, "reconnect" ) )
 					{
 						// Try to reconnect to live sources by closing context and codecs,
 						// and letting next call to get_frame() reopen.
@@ -1753,7 +1755,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						pthread_mutex_unlock( &self->packets_mutex );
 						goto exit_get_image;
 					}
-					if ( !self->seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
+					if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
 					{
 						mlt_log_fatal( MLT_PRODUCER_SERVICE(producer), "Exiting with error due to disconnected source.\n" );
 						exit( EXIT_FAILURE );
@@ -1771,7 +1773,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				int64_t pts = best_pts( self, self->pkt.pts, self->pkt.dts );
 				if ( pts != AV_NOPTS_VALUE )
 				{
-					if ( !self->seekable && self->first_pts == AV_NOPTS_VALUE )
+					if ( !self->video_seekable && self->first_pts == AV_NOPTS_VALUE )
 						self->first_pts = pts;
 					if ( self->first_pts != AV_NOPTS_VALUE )
 						pts -= self->first_pts;
@@ -1936,7 +1938,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 			// Free packet data if not video and not live audio packet
 			if ( self->pkt.stream_index != self->video_index &&
-				 !( !self->seekable && self->pkt.stream_index == self->audio_index ) )
+				 !( !self->video_seekable && self->pkt.stream_index == self->audio_index ) )
 				av_free_packet( &self->pkt );
 		}
 	}
@@ -2142,6 +2144,10 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		}
 		mlt_properties_set_int( properties, "meta.media.frame_rate_num", frame_rate.num );
 		mlt_properties_set_int( properties, "meta.media.frame_rate_den", frame_rate.den );
+
+		// MP3 album art is a single JPEG at 90000 fps, which is not seekable.
+		if ( frame_rate.num == 90000 && frame_rate.den == 1 )
+			self->video_seekable = 0;
 
 		// Set the YUV colorspace from override or detect
 		self->yuv_colorspace = mlt_properties_get_int( properties, "force_colorspace" );
