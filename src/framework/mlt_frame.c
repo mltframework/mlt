@@ -1203,7 +1203,7 @@ int mlt_image_format_planes( mlt_image_format format, int width, int height, voi
 
 		planes[0] = (unsigned char*)data;
 		planes[1] = (unsigned char*)data + width * height;
-		planes[2] = (unsigned char*)data + width * height / 4;
+		planes[2] = (unsigned char*)data + ( 5 * width * height ) / 4;
 		planes[3] = 0;
 	}
 	else
