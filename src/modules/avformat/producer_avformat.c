@@ -967,34 +967,47 @@ static void find_first_pts( producer_avformat self, int video_index )
 	// find initial PTS
 	AVFormatContext *context = self->video_format? self->video_format : self->audio_format;
 	int ret = 0;
-	int toscan = 500;
+	int toscan = 100;
 	AVPacket pkt;
+	int64_t prev_pkt_duration = AV_NOPTS_VALUE;
+	int vfr_counter = 0;
 
 	av_init_packet( &pkt );
 	while ( ret >= 0 && toscan-- > 0 )
 	{
 		ret = av_read_frame( context, &pkt );
-		if ( ret >= 0 && pkt.stream_index == video_index && ( pkt.flags & AV_PKT_FLAG_KEY ) )
+		if ( ret >= 0 && pkt.stream_index == video_index )
 		{
-			mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
-				"first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n",
-				pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
-			if ( pkt.dts != AV_NOPTS_VALUE && pkt.dts < 0 )
-				// Decoding Time Stamps with negative values are reported by ffmpeg code for
-				// (at least) MP4 files containing h.264 video using b-frames.
-				// For reasons not understood yet, the first PTS computed then is that of the
-				// third frame, causing MLT to display the third frame as if it was the first.
-				// This if-clause is meant to catch and work around this issue - if there is
-				// a valid, but negative DTS value, we just guess that the first valid
-				// Presentation Time Stamp is == 0.
-				self->first_pts = 0;
-			else
-				self->first_pts = best_pts( self, pkt.pts, pkt.dts );
-			if ( self->first_pts != AV_NOPTS_VALUE )
-				toscan = 0;
+			if ( pkt.duration != AV_NOPTS_VALUE && pkt.duration != prev_pkt_duration ) {
+				mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "checking VFR: pkt.duration %"PRId64"\n", pkt.duration );
+				++vfr_counter;
+			}
+			prev_pkt_duration = pkt.duration;
+
+			if ( ( pkt.flags & AV_PKT_FLAG_KEY ) && self->first_pts == AV_NOPTS_VALUE )
+			{
+				mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
+					"first_pts %"PRId64" dts %"PRId64" pts_dts_delta %d\n",
+					pkt.pts, pkt.dts, (int)(pkt.pts - pkt.dts) );
+				if ( pkt.dts != AV_NOPTS_VALUE && pkt.dts < 0 )
+					// Decoding Time Stamps with negative values are reported by ffmpeg code for
+					// (at least) MP4 files containing h.264 video using b-frames.
+					// For reasons not understood yet, the first PTS computed then is that of the
+					// third frame, causing MLT to display the third frame as if it was the first.
+					// This if-clause is meant to catch and work around this issue - if there is
+					// a valid, but negative DTS value, we just guess that the first valid
+					// Presentation Time Stamp is == 0.
+					self->first_pts = 0;
+				else
+					self->first_pts = best_pts( self, pkt.pts, pkt.dts );
+			}
+			if ( self->first_pts != AV_NOPTS_VALUE && vfr_counter > 2 )
+				toscan = 0; // break out of loop while ensuring av_free_packet
 		}
 		av_free_packet( &pkt );
 	}
+	if ( vfr_counter > 2 )
+		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES(self->parent), "meta.media.variable_frame_rate", 1 );
 	av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
 }
 
