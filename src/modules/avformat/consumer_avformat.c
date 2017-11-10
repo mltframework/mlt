@@ -1407,7 +1407,7 @@ static void *consumer_thread( void *arg )
 	if ( enc_ctx->oc->oformat && enc_ctx->oc->oformat->priv_class && !enc_ctx->oc->priv_data && enc_ctx->oc->oformat->priv_data_size ) {
 		enc_ctx->oc->priv_data = av_mallocz( enc_ctx->oc->oformat->priv_data_size );
 		if ( enc_ctx->oc->priv_data ) {
-			*(const AVClass**)enc_ctx->oc->priv_data = enc_ctx->= oc->oformat->priv_class;
+			*(const AVClass**)enc_ctx->oc->priv_data = enc_ctx->oc->oformat->priv_class;
 			av_opt_set_defaults( enc_ctx->oc->priv_data );
 		}
 	}
