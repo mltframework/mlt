@@ -689,7 +689,6 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 			audio_input_frame_size = 1;
 		else 
 			audio_input_frame_size = c->frame_size;
-mlt_log_error( NULL, "AUDIO CODEC FRAME SIZE %d\n", audio_input_frame_size);
 
 		// Some formats want stream headers to be seperate (hmm)
 		if ( !strcmp( oc->oformat->name, "mp4" ) ||
