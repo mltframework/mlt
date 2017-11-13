@@ -331,7 +331,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 
 	free( copy );
 
-	return lrint( fps * ( (hours * 3600) + (minutes * 60) + seconds ) );
+	return ceil( fps * ( (hours * 3600) + (minutes * 60) + seconds ) );
 }
 
 /** Parse a SMPTE timecode string.
@@ -378,7 +378,7 @@ static int time_code_to_frames( mlt_property self, const char *s, double fps )
 	}
 	free( copy );
 
-	return lrint( fps * ( (hours * 3600) + (minutes * 60) + seconds ) + frames );
+	return ceil( fps * ( (hours * 3600) + (minutes * 60) + seconds ) + frames );
 }
 
 /** Convert a string to an integer.
@@ -873,7 +873,7 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 	temp_frames = frames - ( hours * 3600 + mins * 60 ) * fps;
 
 	secs = temp_frames / fps;
-	frames -= lrint( ( hours * 3600 + mins * 60 + secs ) * fps );
+	frames -= ceil( ( hours * 3600 + mins * 60 + secs ) * fps );
 
 	sprintf( s, "%02d:%02d:%02d%c%0*d", hours, mins, secs, frame_sep,
 			 ( fps > 999? 4 : fps > 99? 3 : 2 ), frames );
@@ -896,8 +896,10 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 	hours = frames / ( fps * 3600 );
 	temp_frames = frames - hours * 3600 * fps;
 	mins = temp_frames / ( fps * 60 );
-	frames -= lrint( ( hours * 3600 + mins * 60 ) * fps );
-	secs = (double) frames / fps;
+	temp_frames = frames - ( hours * 3600 + mins * 60 ) * fps;
+	secs = floor(temp_frames / fps);
+	frames -= ceil( ( hours * 3600 + mins * 60 + secs ) * fps );
+	secs += frames / fps;
 
 	sprintf( s, "%02d:%02d:%06.3f", hours, mins, secs );
 }
