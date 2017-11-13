@@ -690,7 +690,7 @@ int ebur128_set_channel(ebur128_state* st,
   }
   if (value == EBUR128_DUAL_MONO &&
       (st->channels != 1 || channel_number != 0)) {
-    fprintf(stderr, "EBUR128_DUAL_MONO only works with mono files!\n");
+    /*fprintf(stderr, "EBUR128_DUAL_MONO only works with mono files!\n");*/
     return 1;
   }
   st->d->channel_map[channel_number] = value;
