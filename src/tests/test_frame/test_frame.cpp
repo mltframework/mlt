@@ -64,7 +64,7 @@ private Q_SLOTS:
     void DefaultConstructorIsNotValid()
     {
         Frame f1;
-        QCOMPARE(f1.is_valid(), 0);
+        QCOMPARE(f1.is_valid(), false);
         QCOMPARE(f1.ref_count(), 0);
     }
 
