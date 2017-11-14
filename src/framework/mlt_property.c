@@ -922,13 +922,13 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	char *orig_localename = NULL;
 	int frames = 0;
 
-	// Optimization for mlt_time_frames
-	if ( format == mlt_time_frames )
-		return mlt_property_get_string_l( self, locale );
-
 	// Remove existing string
 	if ( self->prop_string )
 		mlt_property_set_int( self, mlt_property_get_int( self, fps, locale ) );
+
+	// Optimization for mlt_time_frames
+	if ( format == mlt_time_frames )
+		return mlt_property_get_string_l( self, locale );
 
 #if !defined(_WIN32)
 	// Use the specified locale
