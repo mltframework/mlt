@@ -1038,7 +1038,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 		double source_fps = mlt_properties_get_double( properties, "meta.media.frame_rate_num" ) /
 			mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
 	
-		if ( self->last_position == POSITION_INITIAL )
+		if ( self->first_pts == AV_NOPTS_VALUE && self->last_position == POSITION_INITIAL )
 			find_first_pts( self, self->video_index );
 
 		if ( self->video_frame && position + 1 == self->video_expected )
@@ -2350,7 +2350,7 @@ static int seek_audio( producer_avformat self, mlt_position position, double tim
 			int video_index = self->video_index;
 			if ( video_index == -1 )
 				video_index = first_video_index( self );
-			if ( video_index >= 0 )
+			if ( self->first_pts == AV_NOPTS_VALUE && video_index >= 0 )
 				find_first_pts( self, video_index );
 		}
 
