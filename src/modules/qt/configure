@@ -38,6 +38,9 @@ else
 	then
 		qt_includedir="$QTDIR/include"
 		qt_libdir="$QTDIR/lib"
+		qt_version=$($QTDIR/bin/qmake -query QT_VERSION)
+	else
+		qt_version=$(qmake -query QT_VERSION)
 	fi
 
 	export without_kde=
@@ -57,6 +60,11 @@ else
 	done
 
 	echo > config.mak
+
+	if $(echo $qt_version | awk 'if ($0 + 0 > 5.6) exit 0; else exit 1')
+	then
+		echo USE_CPP11 >> config.mak
+	fi
 
 	pkg-config --exists 'libexif'
 	if [ $? -eq 0 ]
@@ -91,7 +99,6 @@ else
 			echo "- Qt version 5.x detected"
 			# TODO re-enable KDE support when KDE Frameworks 5 widely available
 			without_kde=true
-			echo HAVE_QT5=1 >> config.mak
 		elif [ -f "$qt_libdir/libQtCore.so" ] || [ -d "$qt_libdir/QtCore.framework" ] || [ -f "$qt_libdir/libQtCore4.a" ]
 		then
 			echo "- Qt version 4.x detected"
@@ -141,7 +148,6 @@ else
 		then
 			echo "- Qt version 5.x detected"
 			without_kde=true
-			echo HAVE_QT5=1 >> config.mak
 			echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
 			echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Svg Qt5Widgets) >> config.mak
 		else
