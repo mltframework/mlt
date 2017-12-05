@@ -66,6 +66,7 @@
 #define MAX_VDPAU_SURFACES (10)
 #define MAX_AUDIO_FRAME_SIZE (192000) // 1 second of 48khz 32bit audio
 #define IMAGE_ALIGN (1)
+#define VFR_THRESHOLD (3) // The minimum number of video frames with differing durations to be considered VFR.
 
 struct producer_avformat_s
 {
@@ -967,23 +968,29 @@ static void find_first_pts( producer_avformat self, int video_index )
 	// find initial PTS
 	AVFormatContext *context = self->video_format? self->video_format : self->audio_format;
 	int ret = 0;
-	int toscan = 500;
+	int pkt_countdown = 500; // check max 500 packets for first video keyframe PTS
+	int vfr_countdown = 20;  // check max 20 video frames for VFR
+	int vfr_counter   = 0;   // counts the number of frame duration changes
 	AVPacket pkt;
 	int64_t prev_pkt_duration = AV_NOPTS_VALUE;
-	int vfr_counter = 0;
 
 	av_init_packet( &pkt );
-	while ( ret >= 0 && toscan-- > 0 )
+	while ( ret >= 0 && pkt_countdown-- > 0 &&
+	      ( self->first_pts == AV_NOPTS_VALUE || ( vfr_counter < VFR_THRESHOLD && vfr_countdown > 0 ) ) )
 	{
 		ret = av_read_frame( context, &pkt );
 		if ( ret >= 0 && pkt.stream_index == video_index )
 		{
+			// Variable frame rate check
 			if ( pkt.duration != AV_NOPTS_VALUE && pkt.duration != prev_pkt_duration ) {
 				mlt_log_verbose( MLT_PRODUCER_SERVICE(self->parent), "checking VFR: pkt.duration %"PRId64"\n", pkt.duration );
-				++vfr_counter;
+				if ( prev_pkt_duration != AV_NOPTS_VALUE )
+					++vfr_counter;
 			}
 			prev_pkt_duration = pkt.duration;
+			vfr_countdown--;
 
+			// Finding PTS of first video key frame
 			if ( ( pkt.flags & AV_PKT_FLAG_KEY ) && self->first_pts == AV_NOPTS_VALUE )
 			{
 				mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
@@ -1001,12 +1008,10 @@ static void find_first_pts( producer_avformat self, int video_index )
 				else
 					self->first_pts = best_pts( self, pkt.pts, pkt.dts );
 			}
-			if ( self->first_pts != AV_NOPTS_VALUE && vfr_counter > 2 )
-				toscan = 0; // break out of loop while ensuring av_free_packet
 		}
 		av_free_packet( &pkt );
 	}
-	if ( vfr_counter > 2 )
+	if ( vfr_counter >= VFR_THRESHOLD )
 		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES(self->parent), "meta.media.variable_frame_rate", 1 );
 	av_seek_frame( context, -1, 0, AVSEEK_FLAG_BACKWARD );
 }
