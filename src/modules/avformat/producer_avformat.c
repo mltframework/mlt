@@ -979,7 +979,7 @@ static void find_first_pts( producer_avformat self, int video_index )
 		if ( ret >= 0 && pkt.stream_index == video_index )
 		{
 			if ( pkt.duration != AV_NOPTS_VALUE && pkt.duration != prev_pkt_duration ) {
-				mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "checking VFR: pkt.duration %"PRId64"\n", pkt.duration );
+				mlt_log_verbose( MLT_PRODUCER_SERVICE(self->parent), "checking VFR: pkt.duration %"PRId64"\n", pkt.duration );
 				++vfr_counter;
 			}
 			prev_pkt_duration = pkt.duration;
