@@ -967,7 +967,7 @@ static void find_first_pts( producer_avformat self, int video_index )
 	// find initial PTS
 	AVFormatContext *context = self->video_format? self->video_format : self->audio_format;
 	int ret = 0;
-	int toscan = 100;
+	int toscan = 500;
 	AVPacket pkt;
 	int64_t prev_pkt_duration = AV_NOPTS_VALUE;
 	int vfr_counter = 0;
