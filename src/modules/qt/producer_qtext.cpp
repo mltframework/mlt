@@ -92,11 +92,12 @@ static void copy_image_to_alpha( uint8_t* image, uint8_t* alpha, int width, int 
 
 static bool check_qpath( mlt_properties producer_properties )
 {
-	#define MAX_SIG 500
-	char new_path_sig[MAX_SIG];
+	#define MAX_SIG 1000
+	bool result = false;
+	char* new_path_sig = new char[MAX_SIG];
 
 	// Generate a signature that represents the current properties
-	snprintf( new_path_sig, MAX_SIG, "%s%s%s%s%s%s%s%s%s%s%s",
+	snprintf( new_path_sig, MAX_SIG, "%s%s%s%s%s%s%s%s%s%s%s%s",
 			mlt_properties_get( producer_properties, "text" ),
 			mlt_properties_get( producer_properties, "fgcolour" ),
 			mlt_properties_get( producer_properties, "bgcolour" ),
@@ -104,6 +105,7 @@ static bool check_qpath( mlt_properties producer_properties )
 			mlt_properties_get( producer_properties, "outline" ),
 			mlt_properties_get( producer_properties, "align" ),
 			mlt_properties_get( producer_properties, "pad" ),
+			mlt_properties_get( producer_properties, "family" ),
 			mlt_properties_get( producer_properties, "size" ),
 			mlt_properties_get( producer_properties, "style" ),
 			mlt_properties_get( producer_properties, "weight" ),
@@ -117,9 +119,10 @@ static bool check_qpath( mlt_properties producer_properties )
 	if( !last_path_sig || strcmp( new_path_sig, last_path_sig ) )
 	{
 		mlt_properties_set( producer_properties, "_path_sig", new_path_sig );
-		return true;
+		result = true;
 	}
-	return false;
+	delete[] new_path_sig;
+	return result;
 }
 
 static void generate_qpath( mlt_properties producer_properties )
