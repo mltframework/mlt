@@ -220,21 +220,27 @@ private Q_SLOTS:
         p.set("_profile", profile.get_profile(), 0);
         const char *timeString = "11:22:33:04";
 		// 11 * 3600 + 22 * 60 + 33 = 40953 s
-		// 23.98 fps * 40953 = 981890.10989011 f
-		// 981890.10989011 f + 4 f = 981894.10989011 f
-		// ceiling(981894.10989011) = 981895
-        const int frames = 981895;
+		// floor(23.98 fps * 40953 s) = 981890 f
+		// 981890 f + 4 f = 981894 f
+        const int frames = 981894;
         p.set("key", timeString);
         QCOMPARE(p.get_int("key"), frames);
         p.set("key", frames);
-		// floor(981895 f / (24000/1001 * 3600)) = 11 h
-		// 981895 f - floor(11 * 3600 * 24000/1001) = 32445 f
-		// floor(32445 f / (24000/1001 * 60)) = 22 m
-		// 981895 f - floor((11 * 3600 + 22 * 60) * 24000/1001) = 797 f
-		// floor(797 f / (24000/1001)) = 33 s
-		// 981895 f - ceil((11 * 3600 + 22 * 60 + 33) * 24000/1001) = 4f
+		// floor(981894 f / (24000/1001 * 3600)) = 11 h
+		// 981894 f - floor(11 * 3600 * 24000/1001) = 32444 f
+		// floor(32444 f / (24000/1001 * 60)) = 22 m
+		// 981894 f - floor((11 * 3600 + 22 * 60) * 24000/1001) = 796 f
+		// floor(796 f / (24000/1001)) = 33 s
+		// 981894 f - ceil((11 * 3600 + 22 * 60 + 33) * 24000/1001) = 4f
         QCOMPARE(p.get_time("key", mlt_time_smpte_df), timeString);
-		QCOMPARE(p.get_time("key", mlt_time_clock), "11:22:33.167");
+		QCOMPARE(p.get_time("key", mlt_time_clock), "11:22:33.200");
+
+        for (int i = 0; i < 9999999; ++i) {
+            p.set("key", i);
+//            QWARN(p.get_time("key", mlt_time_smpte_df));
+            p.set("test", p.get_time("key", mlt_time_smpte_df));
+            QCOMPARE(p.get_int("test"), i);
+        }
     }
 
     void SetAndGetTimeCodeNonDropFrame()
@@ -260,17 +266,38 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_clock), timeString);
     }
 
-    void SetAndGetTimeClockNonIntFps()
+    void SetAndGetTimeClockNtscFps()
     {
         Profile profile("dv_ntsc");
         Properties p;
         p.set("_profile", profile.get_profile(), 0);
         const char *timeString = "11:22:33.400";
-        const int frames = 1227375;
+        const int frames = 1227374;
         p.set("key", timeString);
         QCOMPARE(p.get_int("key"), frames);
         p.set("key", frames);
         QCOMPARE(p.get_time("key", mlt_time_clock), timeString);
+
+        for (int i = 0; i < 9999999; ++i) {
+            p.set("key", i);
+//            QWARN(p.get_time("key", mlt_time_clock));
+            p.set("test", p.get_time("key", mlt_time_clock));
+            QCOMPARE(p.get_int("test"), i);
+        }
+    }
+
+    void SetAndGetTimeClockNonIntFps()
+    {
+        Profile profile("atsc_720p_2398");
+        Properties p;
+        p.set("_profile", profile.get_profile(), 0);
+
+        for (int i = 0; i < 9999999; ++i) {
+            p.set("key", i);
+//            QWARN(p.get_time("key", mlt_time_clock));
+            p.set("test", p.get_time("key", mlt_time_clock));
+            QCOMPARE(p.get_int("test"), i);
+        }
     }
 
     void SetSimpleMathExpression()

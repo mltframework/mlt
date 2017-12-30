@@ -331,7 +331,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 
 	free( copy );
 
-	return ceil( fps * ( (hours * 3600) + (minutes * 60) + seconds ) );
+	return floor( fps * hours * 3600 ) + floor( fps * minutes * 60 ) + lrint( fps * seconds );
 }
 
 /** Parse a SMPTE timecode string.
@@ -378,7 +378,7 @@ static int time_code_to_frames( mlt_property self, const char *s, double fps )
 	}
 	free( copy );
 
-	return ceil( fps * ( (hours * 3600) + (minutes * 60) + seconds ) + frames );
+	return floor( fps * hours * 3600 ) + floor( fps * minutes * 60 ) + ceil( fps * seconds ) + frames;
 }
 
 /** Convert a string to an integer.
@@ -850,7 +850,6 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 {
 	int hours, mins, secs;
 	char frame_sep = ':';
-	int temp_frames;
 
 	if ( fps == 30000.0/1001.0 )
 	{
@@ -867,13 +866,13 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 		}
 	}
 	hours = frames / ( fps * 3600 );
-	temp_frames = frames - hours * 3600 * fps;
+	frames -= floor( hours * 3600 * fps );
 
-	mins = temp_frames / ( fps * 60 );
-	temp_frames = frames - ( hours * 3600 + mins * 60 ) * fps;
+	mins = frames / ( fps * 60 );
+	frames -= floor( mins * 60 * fps );
 
-	secs = temp_frames / fps;
-	frames -= ceil( ( hours * 3600 + mins * 60 + secs ) * fps );
+	secs = frames / fps;
+	frames -= ceil( secs * fps );
 
 	sprintf( s, "%02d:%02d:%02d%c%0*d", hours, mins, secs, frame_sep,
 			 ( fps > 999? 4 : fps > 99? 3 : 2 ), frames );
@@ -891,15 +890,12 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 {
 	int hours, mins;
 	double secs;
-	int temp_frames;
 
 	hours = frames / ( fps * 3600 );
-	temp_frames = frames - hours * 3600 * fps;
-	mins = temp_frames / ( fps * 60 );
-	temp_frames = frames - ( hours * 3600 + mins * 60 ) * fps;
-	secs = floor(temp_frames / fps);
-	frames -= ceil( ( hours * 3600 + mins * 60 + secs ) * fps );
-	secs += frames / fps;
+	frames -= floor( hours * 3600 * fps );
+	mins = frames / ( fps * 60 );
+	frames -= floor( mins * 60  * fps );
+	secs = frames / fps;
 
 	sprintf( s, "%02d:%02d:%06.3f", hours, mins, secs );
 }
