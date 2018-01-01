@@ -634,6 +634,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->time_base = ( AVRational ){ 1, c->sample_rate };
 #endif
 		c->channels = channels;
+		c->channel_layout = av_get_default_channel_layout( channels );
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
 			av_dict_set( &oc->metadata, "language", mlt_properties_get( properties, "alang" ), 0 );
