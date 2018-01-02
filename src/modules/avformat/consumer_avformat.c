@@ -585,6 +585,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->codec_id = codec->id;
 		c->codec_type = AVMEDIA_TYPE_AUDIO;
 		c->sample_fmt = pick_sample_fmt( properties, codec );
+		c->channel_layout = av_get_default_channel_layout( channels );
 
 #if 0 // disabled until some audio codecs are multi-threaded
 		// Setup multi-threading
@@ -634,7 +635,6 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->time_base = ( AVRational ){ 1, c->sample_rate };
 #endif
 		c->channels = channels;
-		c->channel_layout = av_get_default_channel_layout( channels );
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
 			av_dict_set( &oc->metadata, "language", mlt_properties_get( properties, "alang" ), 0 );
