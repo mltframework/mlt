@@ -22,35 +22,35 @@
 #include "frei0r_helper.h"
 #include <string.h>
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 
-	mlt_filter filter = mlt_frame_pop_service( this );
+	mlt_filter filter = mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	*format = mlt_image_rgb24a;
 	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "frei0r %dx%d\n", *width, *height );
-	int error = mlt_frame_get_image( this, image, format, width, height, 0 );
+	int error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 
 	if ( error == 0 && *image )
 	{
-		double position = mlt_filter_get_position( filter, this );
+		double position = mlt_filter_get_position( filter, frame );
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		double time = position / mlt_profile_fps( profile );
-		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, time, properties, this, image, width, height );
+		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, time, properties, frame, image, width, height );
 	}
 
 	return error;
 }
 
 
-mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_frame_push_service( frame, this );
+	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
 	return frame;
 }
 
-void filter_close( mlt_filter this )
+void filter_close( mlt_filter filter )
 {
-	destruct( MLT_FILTER_PROPERTIES ( this ) );
+	destruct( MLT_FILTER_PROPERTIES ( filter ) );
 }

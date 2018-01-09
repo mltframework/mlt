@@ -46,11 +46,11 @@
 #define GET_FREI0R_PATH (getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH)
 
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_frame filter_process( mlt_filter this, mlt_frame frame );
-extern void filter_close( mlt_filter this );
+extern mlt_frame filter_process( mlt_filter filter, mlt_frame frame );
+extern void filter_close( mlt_filter filter );
 extern int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
-extern void producer_close( mlt_producer this );
-extern void transition_close( mlt_transition this );
+extern void producer_close( mlt_producer producer );
+extern void transition_close( mlt_transition transition );
 extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame );
 
 static char* get_frei0r_path()
@@ -266,13 +266,13 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 		char minor[12];
 
 		if (type == producer_type && info.plugin_type == F0R_PLUGIN_TYPE_SOURCE ){
-			mlt_producer this = mlt_producer_new( profile );
-			if ( this != NULL )
+			mlt_producer producer = mlt_producer_new( profile );
+			if ( producer != NULL )
 			{
-				this->get_frame = producer_get_frame;
-				this->close = ( mlt_destructor )producer_close;
+				producer->get_frame = producer_get_frame;
+				producer->close = ( mlt_destructor )producer_close;
 				f0r_init();
-				properties=MLT_PRODUCER_PROPERTIES ( this );
+				properties=MLT_PRODUCER_PROPERTIES ( producer );
 
 				for (i=0;i<info.num_params;i++){
 					f0r_param_info_t pinfo;
@@ -280,16 +280,16 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 
 				}
 
-				ret=this;
+				ret=producer;
 			}
 		} else if (type == filter_type && info.plugin_type == F0R_PLUGIN_TYPE_FILTER ){
-			mlt_filter this = mlt_filter_new( );
-			if ( this != NULL )
+			mlt_filter filter = mlt_filter_new( );
+			if ( filter != NULL )
 			{
-				this->process = filter_process;
-				this->close = filter_close;
+				filter->process = filter_process;
+				filter->close = filter_close;
 				f0r_init();
-				properties=MLT_FILTER_PROPERTIES ( this );
+				properties=MLT_FILTER_PROPERTIES ( filter );
 
 				for (i=0;i<info.num_params;i++){
 					f0r_param_info_t pinfo;
@@ -297,7 +297,7 @@ static void * load_lib( mlt_profile profile, mlt_service_type type , void* handl
 
 				}
 
-				ret=this;
+				ret=filter;
 			}
 		}else if (type == transition_type && info.plugin_type == F0R_PLUGIN_TYPE_MIXER2){
 			mlt_transition transition = mlt_transition_new( );

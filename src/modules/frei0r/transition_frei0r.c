@@ -84,6 +84,6 @@ mlt_frame transition_process( mlt_transition transition, mlt_frame a_frame, mlt_
 	return a_frame;
 }
 
-void transition_close( mlt_transition this ){
-	destruct ( MLT_TRANSITION_PROPERTIES ( this ) );
+void transition_close( mlt_transition transition ){
+	destruct ( MLT_TRANSITION_PROPERTIES ( transition ) );
 }
