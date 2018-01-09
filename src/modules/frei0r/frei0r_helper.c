@@ -91,7 +91,6 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 		return -1;
 	}
 	void (*f0r_update)(f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)=mlt_properties_get_data(  prop , "f0r_update" ,NULL);
-	void (*f0r_destruct)(f0r_instance_t instance)=mlt_properties_get_data(  prop , "f0r_destruct" ,NULL);
 	void (*f0r_get_plugin_info)(f0r_plugin_info_t*)=mlt_properties_get_data( prop, "f0r_get_plugin_info" ,NULL);
 	void (*f0r_get_param_info)(f0r_param_info_t* info, int param_index)=mlt_properties_get_data( prop ,  "f0r_get_param_info" ,NULL);
 	void (*f0r_set_param_value)(f0r_instance_t instance, f0r_param_t param, int param_index)=mlt_properties_get_data(  prop , "f0r_set_param_value" ,NULL);
@@ -115,7 +114,7 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 	f0r_instance_t inst = mlt_properties_get_data(prop, ctorname, NULL);
 	if (!inst) {
 		inst = f0r_construct(*width, slice_height);
-		mlt_properties_set_data(prop, ctorname, inst, 0, f0r_destruct , NULL);
+		mlt_properties_set_data(prop, ctorname, inst, 0, NULL, NULL);
 	}
 
 	if ( !not_thread_safe )
