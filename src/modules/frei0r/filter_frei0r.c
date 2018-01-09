@@ -53,4 +53,7 @@ mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 void filter_close( mlt_filter filter )
 {
 	destruct( MLT_FILTER_PROPERTIES ( filter ) );
+	filter->close = NULL;
+	filter->parent.close = NULL;
+	mlt_service_close( &filter->parent );
 }
