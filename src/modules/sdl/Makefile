@@ -27,13 +27,8 @@ LDFLAGS += -lX11
 endif
 
 ifeq ($(USE_PKG_CONFIG), 1)
-ifeq ($(HAVE_SDL2),1)
-CFLAGS += $(shell pkg-config --cflags sdl2)
-LDFLAGS += $(shell pkg-config --libs sdl2)
-else
 CFLAGS += $(shell pkg-config --cflags sdl)
 LDFLAGS += $(shell pkg-config --libs sdl)
-endif
 else
 CFLAGS += $(shell sdl-config --cflags)
 LDFLAGS += $(shell sdl-config --libs)

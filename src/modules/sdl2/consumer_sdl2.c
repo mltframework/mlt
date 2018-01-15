@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017 Meltytech, LLC
+ * Copyright (C) 2017-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,6 @@
 #include <pthread.h>
 #include <SDL.h>
 #include <sys/time.h>
-#include "consumer_sdl_osx.h"
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -83,7 +82,7 @@ static int setup_sdl_video( consumer_sdl self );
 	via the argument, but keep it simple.
 */
 
-mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_consumer consumer_sdl2_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create the consumer object
 	consumer_sdl self = calloc( 1, sizeof( struct consumer_sdl_s ) );
@@ -133,7 +132,7 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		// process actual param
 		if ( arg && sscanf( arg, "%dx%d", &self->width, &self->height ) )
 		{
-			mlt_properties_set_int( self->properties, "_arg_size", 1 );
+			mlt_properties_set_int( self->properties, "resolution", 1 );
 		}
 		else
 		{
@@ -201,7 +200,7 @@ int consumer_start( mlt_consumer parent )
 		if ( audio_device != NULL )
 			setenv( "AUDIODEV", audio_device, 1 );
 
-		if ( ! mlt_properties_get_int( self->properties, "_arg_size" ) )
+		if ( ! mlt_properties_get_int( self->properties, "resolution" ) )
 		{
 			if ( mlt_properties_get_int( self->properties, "width" ) > 0 )
 				self->width = mlt_properties_get_int( self->properties, "width" );
@@ -213,7 +212,7 @@ int consumer_start( mlt_consumer parent )
 			SDL_InitSubSystem( SDL_INIT_AUDIO );
 
 		// Default window size
-		if ( mlt_properties_get_int( self->properties, "_arg_size" ) )
+		if ( mlt_properties_get_int( self->properties, "resolution" ) )
 		{
 			self->window_width = self->width;
 			self->window_height = self->height;

@@ -2,7 +2,7 @@
  * \file mlt_factory.h
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@
 
 /**
  * \envvar \em MLT_PRODUCER the name of a default producer often used by other services, defaults to "loader"
- * \envvar \em MLT_CONSUMER the name of a default consumer, defaults to "sdl"
+ * \envvar \em MLT_CONSUMER the name of a default consumer, defaults to "sdl2" followed by "sdl"
  * \envvar \em MLT_TEST_CARD the name of a producer or file to be played when nothing is available (all tracks blank)
  * \envvar \em MLT_DATA overrides the default full path to the MLT and module supplemental data files, defaults to \p PREFIX_DATA
  * \envvar \em MLT_PROFILE selects the default mlt_profile_s, defaults to "dv_pal"

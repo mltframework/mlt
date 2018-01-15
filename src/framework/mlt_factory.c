@@ -2,7 +2,7 @@
  * \file mlt_factory.c
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -112,7 +112,7 @@ mlt_repository mlt_factory_init( const char *directory )
 	{
 		mlt_properties_set_or_default( global_properties, "MLT_NORMALISATION", getenv( "MLT_NORMALISATION" ), "PAL" );
 		mlt_properties_set_or_default( global_properties, "MLT_PRODUCER", getenv( "MLT_PRODUCER" ), "loader" );
-		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl" );
+		mlt_properties_set_or_default( global_properties, "MLT_CONSUMER", getenv( "MLT_CONSUMER" ), "sdl2" );
 		mlt_properties_set( global_properties, "MLT_TEST_CARD", getenv( "MLT_TEST_CARD" ) );
 		mlt_properties_set_or_default( global_properties, "MLT_PROFILE", getenv( "MLT_PROFILE" ), "dv_pal" );
 		mlt_properties_set_or_default( global_properties, "MLT_DATA", getenv( "MLT_DATA" ), PREFIX_DATA );
@@ -402,12 +402,18 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, profile, consumer_type, service, input );
-		mlt_events_fire( event_object, "consumer-create-done", service, input, obj, NULL );
+	}
+
+	if ( obj == NULL && !strcmp( service, "sdl2" ) )
+	{
+		service = "sdl";
+		obj = mlt_repository_create( repository, profile, consumer_type, service, input );
 	}
 
 	if ( obj != NULL )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( obj );
+		mlt_events_fire( event_object, "consumer-create-done", service, input, obj, NULL );
 		set_common_properties( properties, profile, "consumer", service );
 	}
 	return obj;
