@@ -11,7 +11,7 @@ if [ "$help" != "1" ]; then
 		echo "USE_PKG_CONFIG=0" > config.mak
 	else
 		echo "- SDL2 development libs not found: disabling"
-		touch ../disable-sdl
+		touch ../disable-sdl2
 	fi
 	exit 0
 fi
