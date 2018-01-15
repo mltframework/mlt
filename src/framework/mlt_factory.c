@@ -92,6 +92,33 @@ static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner
 		listener( owner, self, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service )args[ 2 ] );
 }
 
+#if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
+// Replacement for buggy dirname() on some systems.
+// https://github.com/mltframework/mlt/issues/285
+static char* mlt_dirname( char *path )
+{
+	if ( path && strlen( path ) )
+	{
+		char *dirsep = strrchr( path, '/' );
+		// Handle back slash on Windows.
+		if ( !dirsep )
+			dirsep = strrchr( path, '\\' );
+		// Handle trailing slash.
+		if ( dirsep == &path[ strlen( path ) - 1 ] )
+		{
+			dirsep[0] = '\0';
+			dirsep = strrchr( path, '/' );
+			if ( !dirsep )
+				dirsep = strrchr( path, '\\' );
+		}
+		// Truncate string at last directory separator.
+		if ( dirsep )
+			dirsep[0] = '\0';
+	}
+	return path;
+}
+#endif
+
 /** Construct the repository and factories.
  *
  * \param directory an optional full path to a directory containing the modules that overrides the default and
@@ -128,7 +155,7 @@ mlt_repository mlt_factory_init( const char *directory )
 #endif
 #if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
 		char *path2 = strdup( path );
-		char *appdir = dirname( path2 );
+		char *appdir = mlt_dirname( path2 );
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
 		free( path2 );
 #endif
