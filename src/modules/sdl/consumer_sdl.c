@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -282,31 +282,28 @@ int consumer_stop( mlt_consumer parent )
 		self->joined = 1;
 		self->running = 0;
 
-#ifndef _WIN32
-		if ( self->thread )
-#endif
-			pthread_join( self->thread, NULL );
-
-		// internal cleanup
-		if ( self->sdl_overlay != NULL )
-			SDL_FreeYUVOverlay( self->sdl_overlay );
-		self->sdl_overlay = NULL;
-
 		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
 		{
 			pthread_mutex_lock( &self->audio_mutex );
 			pthread_cond_broadcast( &self->audio_cond );
 			pthread_mutex_unlock( &self->audio_mutex );
+		}
+
+#ifndef _WIN32
+		if ( self->thread )
+#endif
+			pthread_join( self->thread, NULL );
+
+		// cleanup SDL
+		pthread_mutex_lock( &mlt_sdl_mutex );
+		if ( self->sdl_overlay != NULL )
+			SDL_FreeYUVOverlay( self->sdl_overlay );
+		self->sdl_overlay = NULL;
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
 			SDL_QuitSubSystem( SDL_INIT_AUDIO );
-		}
-
 		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
-		{
-			pthread_mutex_lock( &mlt_sdl_mutex );
 			SDL_Quit( );
-			pthread_mutex_unlock( &mlt_sdl_mutex );
-		}
-
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	return 0;

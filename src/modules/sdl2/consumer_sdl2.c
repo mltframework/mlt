@@ -247,12 +247,20 @@ int consumer_stop( mlt_consumer parent )
 		self->joined = 1;
 		self->running = 0;
 
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
+		{
+			pthread_mutex_lock( &self->audio_mutex );
+			pthread_cond_broadcast( &self->audio_cond );
+			pthread_mutex_unlock( &self->audio_mutex );
+		}
+
 #ifndef _WIN32
 		if ( self->thread )
 #endif
 			pthread_join( self->thread, NULL );
 
 		// cleanup SDL
+		pthread_mutex_lock( &mlt_sdl_mutex );
 		if ( self->sdl_texture )
 			SDL_DestroyTexture( self->sdl_texture );
 		self->sdl_texture = NULL;
@@ -262,21 +270,11 @@ int consumer_stop( mlt_consumer parent )
 		if ( self->sdl_window )
 			SDL_DestroyWindow( self->sdl_window );
 		self->sdl_window = NULL;
-
 		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
-		{
-			pthread_mutex_lock( &self->audio_mutex );
-			pthread_cond_broadcast( &self->audio_cond );
-			pthread_mutex_unlock( &self->audio_mutex );
 			SDL_QuitSubSystem( SDL_INIT_AUDIO );
-		}
-
 		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
-		{
-			pthread_mutex_lock( &mlt_sdl_mutex );
 			SDL_Quit( );
-			pthread_mutex_unlock( &mlt_sdl_mutex );
-		}
+		pthread_mutex_unlock( &mlt_sdl_mutex );
 	}
 
 	return 0;
