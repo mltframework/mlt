@@ -30,6 +30,8 @@
 #include <SDL.h>
 #include <sys/time.h>
 
+#undef MLT_IMAGE_FORMAT // only yuv422 working currently
+
 extern pthread_mutex_t mlt_sdl_mutex;
 
 /** This classes definition.
@@ -472,7 +474,7 @@ static int setup_sdl_video( consumer_sdl self )
 		}
 	}
 
-#if 0 // only yuv422 working currently
+#ifdef MLT_IMAGE_FORMAT
 	int image_format = mlt_properties_get_int( self->properties, "mlt_image_format" );
 
 	if ( image_format ) switch ( image_format ) {
@@ -509,8 +511,11 @@ static int setup_sdl_video( consumer_sdl self )
 	self->sdl_renderer = SDL_CreateRenderer(self->sdl_window, -1, SDL_RENDERER_ACCELERATED);
 	if ( self->sdl_renderer )
 	{
+		// Get texture width and height from the profile.
+		int width = mlt_properties_get_int( self->properties, "width" );
+		int height = mlt_properties_get_int( self->properties, "height" );
 		self->sdl_texture = SDL_CreateTexture( self->sdl_renderer, texture_format,
-			SDL_TEXTUREACCESS_STREAMING, self->window_width, self->window_height );
+			SDL_TEXTUREACCESS_STREAMING, width, height );
 		if ( self->sdl_texture ) {
 			SDL_SetRenderDrawColor( self->sdl_renderer, 0, 0, 0, 255);
 		} else {
@@ -531,8 +536,11 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = self->properties;
 
-//	mlt_image_format vfmt = mlt_properties_get_int( properties, "mlt_image_format" );
+#ifdef MLT_IMAGE_FORMAT
+	mlt_image_format vfmt = mlt_properties_get_int( properties, "mlt_image_format" );
+#else
 	mlt_image_format vfmt = mlt_image_yuv422;
+#endif
 	int width = self->width, height = self->height;
 	uint8_t *image;
 
@@ -613,7 +621,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			unsigned char* planes[4];
 			int strides[4];
 
-			mlt_image_format_planes( vfmt, width, height, image, planes, strides );
+			// We use height-1 because mlt_image_format_size() uses height + 1.
+			// XXX Remove -1 when mlt_image_format_size() is changed.
+			mlt_image_format_planes( vfmt, width, height - 1, image, planes, strides );
 			if ( strides[1] ) {
 				SDL_UpdateYUVTexture( self->sdl_texture, NULL,
 					planes[0], strides[0],
