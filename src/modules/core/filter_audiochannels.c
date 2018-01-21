@@ -201,18 +201,32 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	{
 		int size = mlt_audio_format_size( *format, *samples, *channels );
 		int16_t *new_buffer = mlt_pool_alloc( size );
+		int i, j;
 
 		// Drop all but the first *channels
 		if ( *format == mlt_audio_s16 )
 		{
-			int i, j;
 			for ( i = 0; i < *samples; i++ )
 				for ( j = 0; j < *channels; j++ )
 					new_buffer[ ( i * *channels ) + j ]	= ((int16_t*)(*buffer))[ ( i * channels_avail ) + j ];
 		}
+		else if ( *format == mlt_audio_s32le || *format == mlt_audio_f32le )
+		{
+			int32_t *p = (int32_t*) new_buffer;
+			for ( i = 0; i < *samples; i++ )
+				for ( j = 0; j < *channels; j++ )
+					p[ ( i * *channels ) + j ]	= ((int32_t*)(*buffer))[ ( i * channels_avail ) + j ];
+		}
+		else if ( *format == mlt_audio_u8 )
+		{
+			uint8_t *p = (uint8_t*) new_buffer;
+			for ( i = 0; i < *samples; i++ )
+				for ( j = 0; j < *channels; j++ )
+					p[ ( i * *channels ) + j ]	= ((uint8_t*)(*buffer))[ ( i * channels_avail ) + j ];
+		}
 		else
 		{
-			// non-interleaved
+			// non-interleaved - s32 or float
 			memcpy( new_buffer, *buffer, size );
 		}
 		// Update the audio buffer now - destroys the old
