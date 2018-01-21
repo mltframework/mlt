@@ -375,7 +375,7 @@ static void event_handling( mlt_producer producer, mlt_consumer consumer )
 
 			case SDL_WINDOWEVENT:
 				if ( mlt_properties_get( MLT_CONSUMER_PROPERTIES(consumer), "mlt_service" ) &&
-					 !strcmp( "sdl", mlt_properties_get( MLT_CONSUMER_PROPERTIES(consumer), "mlt_service" ) ) )
+					 !strcmp( "sdl2", mlt_properties_get( MLT_CONSUMER_PROPERTIES(consumer), "mlt_service" ) ) )
 				if ( event.window.event == SDL_WINDOWEVENT_RESIZED ||
 					 event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED )
 				{
