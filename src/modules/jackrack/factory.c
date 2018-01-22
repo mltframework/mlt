@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -206,6 +206,7 @@ MLT_REPOSITORY
 	}
 	mlt_factory_register_for_clean_up( g_jackrack_plugin_mgr, (mlt_destructor) plugin_mgr_destroy );
 
+	MLT_REGISTER( filter_type, "jack", filter_jackrack_init );
 	MLT_REGISTER( filter_type, "jackrack", filter_jackrack_init );
 	MLT_REGISTER_METADATA( filter_type, "jackrack", metadata, "filter_jackrack.yml" );
 	MLT_REGISTER( filter_type, "ladspa", filter_ladspa_init );

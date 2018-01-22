@@ -119,7 +119,7 @@ static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_position 
 static void initialise_jack_ports( mlt_properties properties )
 {
 	int i;
-	char mlt_name[20], rack_name[30];
+	char mlt_name[67], rack_name[30];
 	jack_port_t **port = NULL;
 	jack_client_t *jack_client = mlt_properties_get_data( properties, "jack_client", NULL );
 	jack_nframes_t jack_buffer_size = jack_get_buffer_size( jack_client );
@@ -210,7 +210,7 @@ static void initialise_jack_ports( mlt_properties properties )
 			else if ( mlt_properties_get( properties, rack_name ) )
 				snprintf( rack_name, sizeof( rack_name ), "%s", mlt_properties_get( properties, rack_name ) );
 			else
-				snprintf( rack_name, sizeof( rack_name ), "%s:%s_%d", mlt_properties_get( properties, "_client_name" ), in ? "out" : "in", i + 1);
+				snprintf( rack_name, sizeof( rack_name ), "%s:%s_%d", mlt_properties_get( properties, "client_name" ), in ? "out" : "in", i + 1);
 			
 			if ( in )
 			{
@@ -415,12 +415,22 @@ mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, con
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		char name[16];
+		char name[61];
 		char *jack_client_name;
+		const char *src;
 		jack_status_t status = 0;
 
-		snprintf( name, sizeof( name ), "mlt%d", getpid() );
-		jack_client_t *jack_client = jack_client_open( name, JackNullOption, &status, NULL );
+		if ( id && arg && !strcmp( id, "jack" ) )
+		{
+			snprintf( name, sizeof( name ), "%s", arg );
+			src = NULL;
+		}
+		else
+		{
+			snprintf( name, sizeof( name ), "mlt%d", getpid() );
+			src = arg;
+		}
+		jack_client_t *jack_client = jack_client_open( arg, JackNullOption, &status, NULL );
 		if ( jack_client )
 		{
 			if ( status & JackNameNotUnique ) 
@@ -442,8 +452,8 @@ mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, con
 			pthread_mutex_init( output_lock, NULL );
 			pthread_cond_init( output_ready, NULL );
 			
-			mlt_properties_set( properties, "src", arg );
-			mlt_properties_set( properties, "_client_name", name );
+			mlt_properties_set( properties, "src", src );
+			mlt_properties_set( properties, "client_name", name );
 			mlt_properties_set_data( properties, "jack_client", jack_client, 0, NULL, NULL );
 			mlt_properties_set_int( properties, "_sample_rate", jack_get_sample_rate( jack_client ) );
 			mlt_properties_set_data( properties, "output_lock", output_lock, 0, mlt_pool_release, NULL );

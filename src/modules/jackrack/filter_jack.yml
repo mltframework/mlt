@@ -1,6 +1,6 @@
 schema_version: 0.3
 type: filter
-identifier: jackrack
+identifier: jack
 title: JACK
 version: 1
 copyright: Copyright (C) 2004-2018 Meltytech, LLC
@@ -20,7 +20,7 @@ notes: >
   pattern for as many channels as you have configured.
   If you are using a MLT consumer that uses ALSA, then you should start
   jackd with the dummy driver, e.g.: jackd -ddummy -r48000 -p2048.
-  The MLT JACK client name uses the format: mlt{pid}.
+
 bugs:
   - >
     MLT cannot automatically adapt to the sample rate at which JACK is configured.
@@ -29,20 +29,14 @@ bugs:
   - Some effects have a temporal side-effect that may not work well.
 
 parameters:
-  - identifier: src
-    title: JACK Rack file
-    type: string
-    argument: yes
-    description: >
-      Creates JACK ports and runs a JACK Rack project to process audio
-      through a stack of LADSPA filters.
-
   - identifier: client_name
     title: JACK client name
     type: string
     argument: yes
-    readonly: yes
-    description: The generated name of the JACK client.
+    required: yes
+    description: >
+      Creates a JACK client with the specified name with input and output ports.
+      The name must be 60 characters or less.
 
   - identifier: channels
     title: Channels
@@ -57,7 +51,7 @@ parameters:
   - identifier: in_2
     title: Receive R
     type: string
-
+ 
   - identifier: out_1
     title: Send L
     type: string
