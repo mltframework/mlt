@@ -1,6 +1,73 @@
 MLT Release Notes
 -----------------
 
+Version 6.6.0 - January 22, 2018
+
+This version builds upon the previous release with performance improvements
+using the sliced image processing framework. It also improves compatibility
+with dependencies (FFmpeg, Qt 5, SDL 2, NDI, OpenCV, libebur128).
+
+Framework
+  * Added a thread pool to mlt_slices:
+    - mlt_slices_run_normal()
+    - mlt_slices_run_rr()
+    - mlt_slices_run_fifo()
+    - mlt_slices_count_normal()
+    - mlt_slices_count_rr()
+    - mlt_slices_count_fifo()
+    - MLT_SLICES_COUNT environment variable
+  * Added mlt_log_timings_now() to mlt_log.
+  * Added mlt_image_yuv422p16 image format.
+  * Added mlt_image_format_planes() and mlt_image_format_id() to mlt_frame.
+  * Added mlt_service_disconnect_all_producers() and
+    Mlt::Service::disconnect_all_producers()
+  * Fixed accuracy of mlt_time_format conversions.
+  * Fixed mlt_filter_get_progress() never reaching 1.0.
+  * Fixed divide by zero in mlt_filter_get_progress().
+
+Modules
+  * Added sdl2 module!
+  * Added sum property to mix transition for simple mixing without dynamics.
+  * Added TLD and KCF tracking modes to opencv module.
+  * Added CSV (comma-separated values) simple slideshow to pixbuf producer.
+  * Added jack filter to jackrack module.
+  * Added sliced processing to frei0r.
+  * Added sliced processing to composite transition.
+  * Added sliced processing to avformat producer pixel format conversion.
+  * Added sliced processing to affine transition and filter.
+  * Converted volume and pan filters to floating point.
+  * Added rotate_center property to qtblend transition and filters.
+  * Added meta.media.variable_frame_rate (VFR detection) to avformat producer.
+  * Added support for external libebur128.
+  * Updated internal libebur128 to latest.
+  * Added 10-bit capture to decklink producer.
+  * Added mlt_image_yuv422p16 to fieldorder filter, avcolour_space filter, and
+    avformat consumer.
+  * Added no_profile property to xml consumer.
+  * Various ndi module fixes and improvements.
+  * Fixed setting color_trc in multi consumer.
+  * Fixed kdenlive title transparency.
+  * Fixed incorrect alpha channel breaking freeze filter with qtblend transition.
+  * Fixed transparency of pixbuf images with qtblend transition.
+  * Fixed some crashes in new qtblend transition.
+  * Fixed building qt module with C++11 for Qt 5.7+.
+  * Fixed reporting accurage length for image sequences in qimage and pixbuf.
+  * Fixed extra audio samples added to end of file in avformat consumer.
+  * Fixed rawvideo export in avformat consumer.
+  * Fixed multi-threading wtih FFmpeg 3.2+ in avformat module.
+  * Fixed JPEG album art in avformat producer.
+  * Removed filter_avresample (dropped by FFmpeg).
+  * Stop flushing audio buffer in decklink consumer.
+  * Fixed field order handling in decklink consumer.
+  * Make composite transition field order aware.
+  * Fixed nesting mlt_tractor with opengl module.
+  * Fixed kdenlive titler crash on resized frame.
+
+Other
+  * Various memory leak fixes.
+  * Fixed opening files with extended chars on Windows (framework and modules).
+
+
 Version 6.4.1 - November 15, 2016
 
 Hot fix for new C++ symbol Mlt::Profile::is_valid() not declare const in
