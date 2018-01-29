@@ -313,7 +313,6 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 	int samples = mlt_sample_calculator( mlt_properties_get_double( self->properties, "fps" ), frequency, counter++ );
 	
 	int16_t *pcm;
-	int bytes;
 
 	mlt_frame_get_audio( frame, (void**) &pcm, &afmt, &frequency, &channels, &samples );
 	*duration = ( ( samples * 1000 ) / frequency );
@@ -356,19 +355,33 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 	if ( init_audio == 0 )
 	{
 		mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-		bytes = ( samples * channels * 2 );
+		int bytes_copied = 0;
+		int bytes_to_copy = ( samples * channels * sizeof( int16_t ) );
 		pthread_mutex_lock( &self->audio_mutex );
-		while ( self->running && bytes > ( sizeof( self->audio_buffer) - self->audio_avail ) )
-			pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
-		if ( self->running )
+		while ( bytes_copied < bytes_to_copy )
 		{
-			if ( scrub || mlt_properties_get_double( properties, "_speed" ) == 1 )
-				memcpy( &self->audio_buffer[ self->audio_avail ], pcm, bytes );
-			else
-				memset( &self->audio_buffer[ self->audio_avail ], 0, bytes );
-			self->audio_avail += bytes;
+			int bytes = bytes_to_copy - bytes_copied;
+			int buffer_space = sizeof( self->audio_buffer) - self->audio_avail;
+			while ( buffer_space == 0 )
+			{
+				pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
+				buffer_space = sizeof( self->audio_buffer) - self->audio_avail;
+			}
+			if ( bytes > buffer_space )
+			{
+				bytes = buffer_space;
+			}
+			if ( self->running )
+			{
+				if ( scrub || mlt_properties_get_double( properties, "_speed" ) == 1 )
+					memcpy( &self->audio_buffer[ self->audio_avail ], pcm + ( bytes_copied / sizeof(int16_t) ), bytes );
+				else
+					memset( &self->audio_buffer[ self->audio_avail ], 0, bytes );
+				self->audio_avail += bytes;
+			}
+			bytes_copied += bytes;
+			pthread_cond_broadcast( &self->audio_cond );
 		}
-		pthread_cond_broadcast( &self->audio_cond );
 		pthread_mutex_unlock( &self->audio_mutex );
 	}
 	else
