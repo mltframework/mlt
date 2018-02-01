@@ -30,7 +30,7 @@
 #include <sys/param.h>
 #endif
 
-#if defined(__GLIBC__) && !defined(__APPLE__)
+#if defined(__GLIBC__) && !defined(__APPLE__) || HAVE_LOCALE_H
 #  include <locale.h>
 #elif defined(__APPLE__) || (__FreeBSD_version >= 900506)
 #  include <xlocale.h>
