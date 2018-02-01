@@ -10,6 +10,8 @@ luma:	luma.c
 # Strips the CROSS prefix from the C compiler variable.
 ifdef CROSS
 	$(subst $(CROSS),,$(CC)) -o $@ luma.c
+else
+	$(CC) -o $@ luma.c
 endif
 
 create_lumas:
