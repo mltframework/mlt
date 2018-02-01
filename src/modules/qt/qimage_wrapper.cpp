@@ -229,18 +229,19 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		QString interps = mlt_properties_get( properties, "rescale.interp" );
 		bool interp = ( interps != "nearest" ) && ( interps != "none" );
 		QImage *qimage = static_cast<QImage*>( self->qimage );
+		int has_alpha = qimage->hasAlphaChannel();
+		QImage::Format qimageFormat = has_alpha ? QImage::Format_ARGB32 : QImage::Format_RGB32;
 
 		// Note - the original qimage is already safe and ready for destruction
-		if ( qimage->depth() == 1 )
+		if ( qimage->format() != qimageFormat )
 		{
-			QImage temp = qimage->convertToFormat( QImage::Format_RGB32 );
+			QImage temp = qimage->convertToFormat( qimageFormat );
 			delete qimage;
 			qimage = new QImage( temp );
 			self->qimage = qimage;
 		}
 		QImage scaled = interp? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
-		int has_alpha = scaled.hasAlphaChannel();
 
 		// Store width and height
 		self->current_width = width;
