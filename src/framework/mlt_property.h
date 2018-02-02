@@ -3,7 +3,7 @@
  * \brief Property class declaration
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@
 #include <sys/param.h>
 #endif
 
-#if defined(__GLIBC__) && !defined(__APPLE__) || HAVE_LOCALE_H
+#if (defined(__GLIBC__) && !defined(__APPLE__)) || HAVE_LOCALE_H
 #  include <locale.h>
 #elif defined(__APPLE__) || (__FreeBSD_version >= 900506)
 #  include <xlocale.h>
