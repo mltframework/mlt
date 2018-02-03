@@ -128,6 +128,9 @@ mlt_consumer consumer_sdl2_init( mlt_profile profile, mlt_service_type type, con
 		mlt_properties_set( self->properties, "audio_driver", "DirectSound" );
 #endif
 
+		// Default scrub audio
+		mlt_properties_set_int( self->properties, "scrub_audio", 1 );
+
 		// Ensure we don't join on a non-running object
 		self->joined = 1;
 		

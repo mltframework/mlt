@@ -125,6 +125,9 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		// Default audio buffer
 		mlt_properties_set_int( self->properties, "audio_buffer", 2048 );
 
+		// Default scrub audio
+		mlt_properties_set_int( self->properties, "scrub_audio", 1 );
+
 		// Ensure we don't join on a non-running object
 		self->joined = 1;
 		
