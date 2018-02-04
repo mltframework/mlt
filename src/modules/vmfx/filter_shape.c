@@ -121,7 +121,6 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 	if ( producer == NULL || strcmp( resource, last_resource ) )
 	{
 		char temp[ 512 ];
-		char *extension = strrchr( resource, '.' );
 
 		// Store the last resource now
 		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "_resource", resource );
@@ -148,7 +147,6 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 				strcpy( temp, "colour:0x00000080" );
 
 			resource = temp;
-			extension = strrchr( resource, '.' );
 		}
 
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( this ) );

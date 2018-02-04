@@ -245,7 +245,7 @@ static int mlt_avpicture_deinterlace(uint8_t *dst_data[4], int dst_stride[4],
     if ((width & 3) != 0 || (height & 3) != 0)
         return -1;
 
-	if ( pix_fmt != AV_PIX_FMT_YUYV422 )
+    if ( pix_fmt != AV_PIX_FMT_YUYV422 )
 	{
       for(i=0;i<3;i++) {
           if (i == 1) {

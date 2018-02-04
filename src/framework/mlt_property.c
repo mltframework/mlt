@@ -1028,12 +1028,11 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 	// If not already numeric but string is numeric.
 	if ( ( !result && self->types & mlt_prop_string ) && self->prop_string )
 	{
-		double temp;
 		char *p = NULL;
 
 #if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
 		if ( locale )
-			temp = strtod_l( self->prop_string, &p, locale );
+			strtod_l( self->prop_string, &p, locale );
 		else
 #elif !defined(_WIN32)
 		char *orig_localename = NULL;
@@ -1049,7 +1048,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 		}
 #endif
 
-		temp = strtod( self->prop_string, &p );
+		strtod( self->prop_string, &p );
 
 #if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
 		if ( locale ) {

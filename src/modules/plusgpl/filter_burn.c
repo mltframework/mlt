@@ -55,7 +55,9 @@ static void makePalette(void)
 		p++;
 	}
 	for(i=MaxColor; i<256; i++) {
-		if(r<255)r++;if(r<255)r++;if(r<255)r++;
+		if(r<255)r++;
+                if(r<255)r++;
+                if(r<255)r++;
 		if(g<255)g++;
 		if(g<255)g++;
 		if(b<255)b++;

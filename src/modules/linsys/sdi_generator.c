@@ -1252,7 +1252,7 @@ static inline int create_SD_SDI_Line(uint16_t *buf, const struct line_info *info
  **/
 static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info, uint16_t active_video_line, unsigned int active,
 		uint8_t *video_buffer) {
-	uint16_t *p = buf, *endp, ln;
+	uint16_t *p = buf, ln;
 	uint16_t samples = info->blanking ? info->fmt->samples_per_line : info->fmt->active_samples_per_line;
 
 	if (active_video_line >= info->fmt->active_lines_per_frame) {
@@ -1336,8 +1336,6 @@ static inline int create_HD_SDI_Line(uint16_t *buf, const struct line_info *info
 			*p++ = info->xyz->sav;
 		}
 	}
-	/* Active region */
-	endp = p;
 
 	switch (active) {
 	default:
