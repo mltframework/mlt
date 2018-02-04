@@ -376,8 +376,6 @@ pixops_process ( guchar *dest_buf,
 	int x_step = ( 1 << SCALE_SHIFT ) / scale_x; /* X step in source (fixed point) */
 	int y_step = ( 1 << SCALE_SHIFT ) / scale_y; /* Y step in source (fixed point) */
 
-	int check_shift = check_size ? get_check_shift ( check_size ) : 0;
-
 	int scaled_x_offset = floor ( filter->x.offset * ( 1 << SCALE_SHIFT ) );
 
 	/* Compute the index where we run off the end of the source buffer. The furthest
@@ -406,21 +404,9 @@ pixops_process ( guchar *dest_buf,
 		                   ( ( y >> ( SCALE_SHIFT - SUBSAMPLE_BITS ) ) & SUBSAMPLE_MASK ) *
 		                   filter->x.n * filter->y.n * SUBSAMPLE;
 		guchar *new_outbuf;
-		guint32 tcolor1, tcolor2;
 
 		guchar *outbuf = dest_buf + dest_rowstride * i;
 		guchar *outbuf_end = outbuf + dest_channels * ( render_x1 - render_x0 );
-
-		if ( ( ( i + check_y ) >> check_shift ) & 1 )
-		{
-			tcolor1 = color2;
-			tcolor2 = color1;
-		}
-		else
-		{
-			tcolor1 = color1;
-			tcolor2 = color2;
-		}
 
 		for ( j = 0; j < filter->y.n; j++ )
 		{

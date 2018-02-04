@@ -119,7 +119,6 @@ static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_fram
 	if ( resource )
 	if ( !producer || strcmp( resource, last_resource ) ) {
 		char temp[ 512 ];
-		char *extension = strrchr( resource, '.' );
 
 		// Store the last resource now
 		mlt_properties_set( properties, "_resource", resource );
@@ -145,7 +144,6 @@ static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_fram
 				strcpy( temp, "colour:0x00000080" );
 
 			resource = temp;
-			extension = strrchr( resource, '.' );
 		}
 
 		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
