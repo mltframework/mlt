@@ -48,3 +48,12 @@ parameters:
     mutable: yes
     default: 2048
     minimum: 128
+  - identifier: scrub_audio
+    title: Audio scrubbing
+    type: integer
+    description: If enabled, sound is played even when the speed is not normal.
+    mutable: yes
+    minimum: 0
+    maximum: 1
+    default: 1
+    widget: checkbox
