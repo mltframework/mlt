@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -915,7 +915,9 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 
 char *mlt_property_get_time( mlt_property self, mlt_time_format format, double fps, locale_t locale )
 {
+#if !defined(_WIN32)
 	char *orig_localename = NULL;
+#endif
 	int frames = 0;
 
 	// Remove existing string
