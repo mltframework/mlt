@@ -20,6 +20,7 @@ tile-columns=6
 frame-parallel=1
 auto-alt-ref=1
 lag-in-frames=25
+row-mt=1
 
 meta.preset.name=WebM VP9
 meta.preset.extension=webm
