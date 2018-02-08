@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1647,6 +1647,7 @@ static void *consumer_thread( void *arg )
 			enc_ctx->audio_avframe->format = c->sample_fmt;
 			enc_ctx->audio_avframe->nb_samples = enc_ctx->audio_input_frame_size;
 			enc_ctx->audio_avframe->channel_layout = c->channel_layout;
+			enc_ctx->audio_avframe->channels = c->channels;
 		} else {
 			mlt_log_error( MLT_CONSUMER_SERVICE(consumer), "failed to allocate audio AVFrame\n" );
 			mlt_events_fire( properties, "consumer-fatal-error", NULL );
