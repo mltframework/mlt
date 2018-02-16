@@ -2,6 +2,8 @@ f=dv
 pix_fmt=yuv420p
 vcodec=dvvideo
 acodec=pcm_s16le
+g=1
+bf=0
 
 meta.preset.extension=dv
 meta.preset.note=The popular standard definition camcorder digital video format

@@ -3,6 +3,8 @@ vcodec=dnxhd
 vb=175M
 threads=2
 acodec=pcm_s16le
+g=1
+bf=0
 
 meta.preset.extension=mov
 meta.preset.note=A lightly compressed intermediate codec developed by Avid also known as SMPTE VC-3
