@@ -1266,7 +1266,7 @@ static int pick_av_pixel_format( int *pix_fmt )
 	return 0;
 }
 
-#if defined(FFUDIV) && LIBSWSCALE_VERSION_INT >= AV_VERSION_INT( 3, 1, 101 )
+#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((3<<16)+(1<<8)+101))
 struct sliced_pix_fmt_conv_t
 {
 	int width, height, slice_w;
@@ -1461,7 +1461,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		sws_freeContext( context );
 	}
 	else
-#if defined(FFUDIV) && LIBSWSCALE_VERSION_INT >= AV_VERSION_INT( 3, 1, 101 )
+#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((3<<16)+(1<<8)+101))
 	{
 		int i, c;
 		struct sliced_pix_fmt_conv_t ctx =
