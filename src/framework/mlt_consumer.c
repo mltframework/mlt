@@ -712,8 +712,9 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer self )
 		if ( test_card != NULL )
 			mlt_properties_set_data( frame_properties, "test_card_producer", test_card, 0, NULL, NULL );
 
-		// Pass along the interpolation and deinterlace options
+		// Pass along the channel convert, interpolation and deinterlace options
 		// TODO: get rid of consumer_deinterlace and use profile.progressive
+		mlt_properties_set( frame_properties, "audiochannel.convert", mlt_properties_get( properties, "channelconvert" ) );
 		mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale" ) );
 		mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" ) );
 		mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
