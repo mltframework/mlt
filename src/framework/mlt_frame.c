@@ -1228,3 +1228,128 @@ int mlt_image_format_planes( mlt_image_format format, int width, int height, voi
 
 	return 0;
 }
+
+/** Get the short name for a channel configuration.
+ *
+ * You do not need to deallocate the returned string.
+ * \public \member of mlt_frame_s
+ * \param cfg a channel configuration enum
+ * \return a string for the name of the channel configuration
+ */
+
+const char * mlt_chan_cfg_name( mlt_chan_cfg cfg )
+{
+	switch ( cfg )
+	{
+		case mlt_chan_auto:           return "auto";
+		case mlt_chan_independent:    return "independent";
+		case mlt_chan_mono:           return "mono";
+		case mlt_chan_stereo:         return "stereo";
+		case mlt_chan_2p1:            return "2.1";
+		case mlt_chan_3p0:            return "3.0";
+		case mlt_chan_3p0_back:       return "3.0(back)";
+		case mlt_chan_3p1:            return "3.1";
+		case mlt_chan_4p0:            return "4.0";
+		case mlt_chan_4p1:            return "4.1";
+		case mlt_chan_quad_back:      return "quad(back)";
+		case mlt_chan_quad_side:      return "quad(side)";
+		case mlt_chan_5p0:            return "5.0";
+		case mlt_chan_5p1:            return "5.1";
+		case mlt_chan_5p0_back:       return "5.0(back)";
+		case mlt_chan_5p1_back:       return "5.1(back)";
+		case mlt_chan_6p0:            return "6.0";
+		case mlt_chan_6p0_front:      return "6.0(front)";
+		case mlt_chan_hexagonal:      return "hexagonal";
+		case mlt_chan_6p1:            return "6.1";
+		case mlt_chan_6p1_back:       return "6.1(back)";
+		case mlt_chan_6p1_front:      return "6.1(front)";
+		case mlt_chan_7p0:            return "7.0";
+		case mlt_chan_7p0_front:      return "7.0(front)";
+		case mlt_chan_7p1:            return "7.1";
+		case mlt_chan_7p1_wide_side:  return "7.1(wide-side)";
+		case mlt_chan_7p1_wide_back:  return "7.1(wide-back)";
+	}
+	return "invalid";
+}
+
+/** Get the id of channel configuration from short name.
+ *
+ * \public \memberof mlt_frame_s
+ * \param name the channel configuration short name
+ * \return a channel configuration
+ */
+
+mlt_chan_cfg mlt_chan_cfg_id( const char * name )
+{
+	if( name )
+	{
+		mlt_chan_cfg c;
+		for( c = mlt_chan_auto; c <= mlt_chan_7p1_wide_back; c++ )
+		{
+			const char * v = mlt_chan_cfg_name( c );
+			if( !strcmp( v, name ) )
+				return c;
+		}
+	}
+	return mlt_chan_auto;
+}
+
+/** Get the number of channels for a channel configuration.
+ *
+ * \public \memberof mlt_frame_s
+ * \param cfg a channel configuration enum
+ * \return the number of channels for the channel configuration
+ */
+
+int mlt_chan_cfg_channels( mlt_chan_cfg cfg )
+{
+	switch ( cfg )
+	{
+		case mlt_chan_auto:           return 0;
+		case mlt_chan_independent:    return 0;
+		case mlt_chan_mono:           return 1;
+		case mlt_chan_stereo:         return 2;
+		case mlt_chan_2p1:            return 3;
+		case mlt_chan_3p0:            return 3;
+		case mlt_chan_3p0_back:       return 3;
+		case mlt_chan_4p0:            return 4;
+		case mlt_chan_3p1:            return 4;
+		case mlt_chan_quad_back:      return 4;
+		case mlt_chan_quad_side:      return 4;
+		case mlt_chan_5p0:            return 5;
+		case mlt_chan_5p0_back:       return 5;
+		case mlt_chan_4p1:            return 5;
+		case mlt_chan_5p1:            return 6;
+		case mlt_chan_5p1_back:       return 6;
+		case mlt_chan_6p0:            return 6;
+		case mlt_chan_6p0_front:      return 6;
+		case mlt_chan_hexagonal:      return 6;
+		case mlt_chan_6p1:            return 7;
+		case mlt_chan_6p1_back:       return 7;
+		case mlt_chan_6p1_front:      return 7;
+		case mlt_chan_7p0:            return 7;
+		case mlt_chan_7p0_front:      return 7;
+		case mlt_chan_7p1:            return 8;
+		case mlt_chan_7p1_wide_side:  return 8;
+		case mlt_chan_7p1_wide_back:  return 8;
+	}
+	return 0;
+}
+
+/** Get a default channel configuration for a given number of channels.
+ *
+ * \public \memberof mlt_frame_s
+ * \param channels the number of channels
+ * \return the default channel configuration
+ */
+
+mlt_chan_cfg mlt_chan_cfg_default( int channels )
+{
+	mlt_chan_cfg c;
+	for( c = mlt_chan_mono; c <= mlt_chan_7p1_wide_back; c++ )
+	{
+		if( mlt_chan_cfg_channels( c ) == channels )
+			return c;
+	}
+	return mlt_chan_independent;
+}

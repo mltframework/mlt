@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "common.h"
+
 // mlt Header files
 #include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
@@ -566,7 +568,7 @@ static uint8_t* interleaved_to_planar( int samples, int channels, uint8_t* audio
 /** Add an audio output stream
 */
 
-static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec, int channels )
+static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec, int channels, int64_t channel_layout )
 {
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -585,7 +587,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->codec_id = codec->id;
 		c->codec_type = AVMEDIA_TYPE_AUDIO;
 		c->sample_fmt = pick_sample_fmt( properties, codec );
-		c->channel_layout = av_get_default_channel_layout( channels );
+		c->channel_layout = channel_layout;
 
 #if 0 // disabled until some audio codecs are multi-threaded
 		// Setup multi-threading
@@ -1531,13 +1533,20 @@ static void *consumer_thread( void *arg )
 			{
 				is_multi = 1;
 				enc_ctx->total_channels += j;
-				enc_ctx->audio_st[i] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, j );
+				enc_ctx->audio_st[i] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, j, av_get_default_channel_layout( j ) );
 			}
 		}
 		// single track
 		if ( !is_multi )
 		{
-			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels );
+			mlt_chan_cfg chan_cfg = mlt_chan_cfg_id( mlt_properties_get( properties, "chan_cfg" ) );
+			if( chan_cfg == mlt_chan_auto ||
+				chan_cfg == mlt_chan_independent ||
+				mlt_chan_cfg_channels( chan_cfg ) != enc_ctx->channels )
+			{
+				chan_cfg = mlt_chan_cfg_default( enc_ctx->channels );
+			}
+			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels, mlt_to_av_chan_layout( chan_cfg ) );
 			enc_ctx->total_channels = enc_ctx->channels;
 		}
 	}

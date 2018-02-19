@@ -18,6 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "common.h"
+
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,30 +63,6 @@ static void property_changed( mlt_service owner, mlt_filter filter, char *name )
 				break;
 			}
 		}
-	}
-}
-
-static int mlt_to_av_audio_format( mlt_audio_format format )
-{
-	switch( format )
-	{
-	case mlt_audio_none:
-		return AV_SAMPLE_FMT_NONE;
-	case mlt_audio_s16:
-		return AV_SAMPLE_FMT_S16;
-	case mlt_audio_s32:
-		return AV_SAMPLE_FMT_S32P;
-	case mlt_audio_float:
-		return AV_SAMPLE_FMT_FLTP;
-	case mlt_audio_s32le:
-		return AV_SAMPLE_FMT_S32;
-	case mlt_audio_f32le:
-		return AV_SAMPLE_FMT_FLT;
-	case mlt_audio_u8:
-		return AV_SAMPLE_FMT_U8;
-	default:
-		mlt_log_error(NULL, "[filter_avfilter] Unknown audio format: %d\n", format );
-		return AV_SAMPLE_FMT_NONE;
 	}
 }
 
@@ -166,7 +144,7 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 	pdata->format = format;
 
 	// Set up formats
-	sample_fmts[0] = mlt_to_av_audio_format( format );
+	sample_fmts[0] = mlt_to_av_sample_format( format );
 	sample_rates[0] = frequency;
 	channel_counts[0] = channels;
 	channel_layouts[0] = av_get_default_channel_layout( channels );
@@ -422,9 +400,10 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	if( pdata->avfilter_graph )
 	{
 		// Set up the input frame
+		mlt_chan_cfg chan_cfg = get_chan_cfg_or_default( mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "chan_cfg" ) , *channels );
 		pdata->avinframe->sample_rate = *frequency;
-		pdata->avinframe->format = mlt_to_av_audio_format( *format );
-		pdata->avinframe->channel_layout = av_get_default_channel_layout( *channels );
+		pdata->avinframe->format = mlt_to_av_sample_format( *format );
+		pdata->avinframe->channel_layout = mlt_to_av_chan_layout( chan_cfg );
 		pdata->avinframe->channels = *channels;
 		pdata->avinframe->nb_samples = *samples;
 		pdata->avinframe->pts = samplepos;

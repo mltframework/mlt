@@ -27,6 +27,7 @@
 extern mlt_consumer consumer_avformat_init( mlt_profile profile, char *file );
 extern mlt_filter filter_avcolour_space_init( void *arg );
 extern mlt_filter filter_avdeinterlace_init( void *arg );
+extern mlt_filter filter_swresample_init( mlt_profile profile, char *arg );
 extern mlt_filter filter_swscale_init( mlt_profile profile, char *arg );
 extern mlt_producer producer_avformat_init( mlt_profile profile, const char *service, char *file );
 extern mlt_filter filter_avfilter_init( mlt_profile, mlt_service_type, const char*, char* );
@@ -126,6 +127,10 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 		return filter_avdeinterlace_init( arg );
 	if ( !strcmp( id, "swscale" ) )
 		return filter_swscale_init( profile, arg );
+#endif
+#ifdef SWRESAMPLE
+	if ( !strcmp( id, "swresample" ) )
+		return filter_swresample_init( profile, arg );
 #endif
 	return NULL;
 }
@@ -427,5 +432,8 @@ MLT_REPOSITORY
 	}
 	mlt_properties_close( blacklist );
 #endif // AVFILTER
+#endif
+#ifdef SWRESAMPLE
+	MLT_REGISTER( filter_type, "swresample", create_service );
 #endif
 }

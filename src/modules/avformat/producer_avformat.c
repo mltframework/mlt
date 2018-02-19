@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "common.h"
+
 // MLT Header files
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
@@ -2613,6 +2615,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		int ret	= 0;
 		int got_audio = 0;
 		AVPacket pkt;
+		mlt_chan_cfg chan_cfg;
 
 		av_init_packet( &pkt );
 		
@@ -2706,9 +2709,11 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			*frequency = self->audio_codec[ index ]->sample_rate;
 			*format = pick_audio_format( self->audio_codec[ index ]->sample_fmt );
 			sizeof_sample = sample_bytes( self->audio_codec[ index ] );
+			chan_cfg = av_chan_layout_to_mlt( self->audio_codec[ index ]->channel_layout );
 		}
 		else if ( self->audio_index == INT_MAX )
 		{
+			chan_cfg = mlt_chan_independent;
 			for ( index = 0; index < index_max; index++ )
 				if ( self->audio_codec[ index ] )
 				{
@@ -2718,6 +2723,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 					break;
 				}
 		}
+		mlt_properties_set( MLT_FRAME_PROPERTIES(frame), "chan_cfg", mlt_chan_cfg_name( chan_cfg ) );
 
 		// Allocate and set the frame's audio buffer
 		int size = mlt_audio_format_size( *format, *samples, *channels );

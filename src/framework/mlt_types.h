@@ -67,6 +67,38 @@ typedef enum
 }
 mlt_audio_format;
 
+typedef enum
+{
+	mlt_chan_auto = 0,      /**< MLT will determine the default configuration based on channel number */
+	mlt_chan_independent,   /**< channels are not related */
+	mlt_chan_mono,
+	mlt_chan_stereo,
+	mlt_chan_2p1,
+	mlt_chan_3p0,
+	mlt_chan_3p0_back,
+	mlt_chan_3p1,
+	mlt_chan_4p0,
+	mlt_chan_4p1,
+	mlt_chan_quad_back,
+	mlt_chan_quad_side,
+	mlt_chan_5p0,
+	mlt_chan_5p1,
+	mlt_chan_5p0_back,
+	mlt_chan_5p1_back,
+	mlt_chan_6p0,
+	mlt_chan_6p0_front,
+	mlt_chan_hexagonal,
+	mlt_chan_6p1,
+	mlt_chan_6p1_back,
+	mlt_chan_6p1_front,
+	mlt_chan_7p0,
+	mlt_chan_7p0_front,
+	mlt_chan_7p1,
+	mlt_chan_7p1_wide_side,
+	mlt_chan_7p1_wide_back,
+}
+mlt_chan_cfg;
+
 /** The time string formats */
 
 typedef enum
