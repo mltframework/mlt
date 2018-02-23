@@ -1647,7 +1647,9 @@ static void *consumer_thread( void *arg )
 			enc_ctx->audio_avframe->format = c->sample_fmt;
 			enc_ctx->audio_avframe->nb_samples = enc_ctx->audio_input_frame_size;
 			enc_ctx->audio_avframe->channel_layout = c->channel_layout;
+#if LIBAVCODEC_VERSION_INT >= ((57<<16)+(96<<8)) && LIBAVCODEC_VERSION_MICRO >= 100
 			enc_ctx->audio_avframe->channels = c->channels;
+#endif
 		} else {
 			mlt_log_error( MLT_CONSUMER_SERVICE(consumer), "failed to allocate audio AVFrame\n" );
 			mlt_events_fire( properties, "consumer-fatal-error", NULL );
