@@ -73,7 +73,8 @@ private:
 	BMDTimeScale                m_timescale;
 	double                      m_fps;
 	uint64_t                    m_count;
-	int                         m_channels;
+	int                         m_outChannels;
+	int                         m_inChannels;
 	bool                        m_isAudio;
 	int                         m_isKeyer;
 	IDeckLinkKeyer*             m_deckLinkKeyer;
@@ -380,7 +381,19 @@ protected:
 		// Initialize members
 		m_count = 0;
 		preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
-		m_channels = mlt_properties_get_int( properties, "channels" );
+		m_inChannels = mlt_properties_get_int( properties, "channels" );
+		if( m_inChannels <= 2 )
+		{
+			m_outChannels = 2;
+		}
+		else if( m_inChannels <= 8 )
+		{
+			m_outChannels = 8;
+		}
+		else
+		{
+			m_outChannels = 16;
+		}
 		m_isAudio = !mlt_properties_get_int( properties, "audio_off" );
 		m_terminate_on_pause = mlt_properties_get_int( properties, "terminate_on_pause" );
 
@@ -418,7 +431,7 @@ protected:
 
 		// Set the audio output mode
 		if ( m_isAudio && S_OK != m_deckLinkOutput->EnableAudioOutput( bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
-			m_channels, bmdAudioOutputStreamTimestamped ) )
+			m_outChannels, bmdAudioOutputStreamTimestamped ) )
 		{
 			mlt_log_error( getConsumer(), "Failed to enable audio output\n" );
 			stop();
@@ -700,11 +713,45 @@ protected:
 			int samples = mlt_sample_calculator( m_fps, frequency, m_count );
 			int16_t *pcm = 0;
 
-			if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_channels, &samples ) )
+			if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_inChannels, &samples ) )
 			{
 				HRESULT hr;
+				int16_t* outBuff = NULL;
 				mlt_log_debug( getConsumer(), "%s:%d, samples=%d, channels=%d, freq=%d\n",
-					__FUNCTION__, __LINE__, samples, m_channels, frequency );
+					__FUNCTION__, __LINE__, samples, m_inChannels, frequency );
+
+				if( m_inChannels != m_outChannels )
+				{
+					int s = 0;
+					int c = 0;
+					int size = mlt_audio_format_size( format, samples, m_outChannels );
+					int16_t* src = pcm;
+					int16_t* dst = (int16_t*)mlt_pool_alloc( size );
+					outBuff = dst;
+					for( s = 0; s < samples; s++ )
+					{
+						for( c = 0; c < m_outChannels; c++ )
+						{
+							if( c < m_inChannels )
+							{
+								*dst = *src;
+								*src++;
+							}
+							else
+							{
+								// Fill silence if there are more out channels than in channels.
+								*dst = 0;
+							}
+						}
+						for( c = 0; c < m_inChannels - m_outChannels; c++ )
+						{
+							// Drop samples if there are more in channels than out channels.
+							*src++;
+						}
+					}
+					pcm = outBuff;
+				}
+
 #ifdef _WIN32
 #define DECKLINK_UNSIGNED_FORMAT "%lu"
 				unsigned long written = 0;
@@ -724,6 +771,8 @@ protected:
 					mlt_log_debug( getConsumer(), "%s:%d ScheduleAudioSamples success " DECKLINK_UNSIGNED_FORMAT " samples\n", __FUNCTION__, __LINE__, written );
 				if ( written != (uint32_t) samples )
 					mlt_log_verbose( getConsumer(), "renderAudio: samples=%d, written=" DECKLINK_UNSIGNED_FORMAT "\n", samples, written );
+
+				mlt_pool_release( outBuff );
 			}
 			else
 				mlt_log_error( getConsumer(), "%s:%d mlt_frame_get_audio failed\n", __FUNCTION__, __LINE__);
