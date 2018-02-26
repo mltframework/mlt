@@ -20,7 +20,7 @@
 #define __STDC_FORMAT_MACROS  /* see inttypes.h */
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
-#define _XOPEN_SOURCE
+//#define _XOPEN_SOURCE 700
 
 #include <stdint.h>
 #include <inttypes.h>
