@@ -11,55 +11,49 @@ tags:
   - Audio
   - Video
 description: >
-  Simple DirectMedia Layer audio and video output module.
+  Simple DirectMedia Layer audio and video output module
 parameters:
   - identifier: resolution
     title: Resolution
     type: string
-    description: The size of the window as WxH pixels.
+    description: The size of the window as WxH pixels
     argument: yes
     required: no
 
   - identifier: volume
     title: Volume
     type: float
-    description: Audio level factor.
+    description: Audio level factor
     mutable: yes
 
   - identifier: video_off
     title: Video off
-    type: integer
-    description: If 1, disable video output
+    type: boolean
+    description: Disable video output
     mutable: yes
-    minimum: 0
-    maximum: 1
     default: 0
     widget: checkbox
 
   - identifier: audio_off
     title: Audio off
-    type: integer
-    description: If 1, disable audio output
+    type: boolean
+    description: Disable audio output
     mutable: yes
-    minimum: 0
-    maximum: 1
     default: 0
     widget: checkbox
 
   - identifier: audio_buffer
     title: Audio buffer
     type: integer
-    description: Size of the sdl audio buffer.
+    description: Size of the SDL audio buffer
     mutable: yes
     default: 2048
     minimum: 128
 
   - identifier: scrub_audio
     title: Audio scrubbing
-    type: integer
-    description: If enabled, sound is played even when the speed is not normal.
+    type: boolean
+    description: Play sound even when the speed is not normal.
     mutable: yes
-    minimum: 0
-    maximum: 1
     default: 1
     widget: checkbox

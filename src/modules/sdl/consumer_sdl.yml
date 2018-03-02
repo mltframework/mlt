@@ -57,3 +57,4 @@ parameters:
     maximum: 1
     default: 1
     widget: checkbox
+
