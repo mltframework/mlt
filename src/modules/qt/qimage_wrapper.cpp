@@ -236,9 +236,11 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		if ( qimage->format() != qimageFormat )
 		{
 			QImage temp = qimage->convertToFormat( qimageFormat );
-			delete qimage;
 			qimage = new QImage( temp );
 			self->qimage = qimage;
+			mlt_cache_item_close( self->qimage_cache );
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
+			self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
 		}
 		QImage scaled = interp? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
