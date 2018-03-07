@@ -2615,7 +2615,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		int ret	= 0;
 		int got_audio = 0;
 		AVPacket pkt;
-		mlt_chan_cfg chan_cfg;
+		mlt_channel_layout layout;
 
 		av_init_packet( &pkt );
 		
@@ -2709,11 +2709,11 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			*frequency = self->audio_codec[ index ]->sample_rate;
 			*format = pick_audio_format( self->audio_codec[ index ]->sample_fmt );
 			sizeof_sample = sample_bytes( self->audio_codec[ index ] );
-			chan_cfg = av_chan_layout_to_mlt( self->audio_codec[ index ]->channel_layout );
+			layout = av_channel_layout_to_mlt( self->audio_codec[ index ]->channel_layout );
 		}
 		else if ( self->audio_index == INT_MAX )
 		{
-			chan_cfg = mlt_chan_independent;
+			layout = mlt_channel_independent;
 			for ( index = 0; index < index_max; index++ )
 				if ( self->audio_codec[ index ] )
 				{
@@ -2723,7 +2723,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 					break;
 				}
 		}
-		mlt_properties_set( MLT_FRAME_PROPERTIES(frame), "chan_cfg", mlt_chan_cfg_name( chan_cfg ) );
+		mlt_properties_set( MLT_FRAME_PROPERTIES(frame), "channel_layout", mlt_channel_layout_name( layout ) );
 
 		// Allocate and set the frame's audio buffer
 		int size = mlt_audio_format_size( *format, *samples, *channels );

@@ -24,8 +24,8 @@
 #include <framework/mlt.h>
 
 int mlt_to_av_sample_format( mlt_audio_format format );
-int64_t mlt_to_av_chan_layout( mlt_chan_cfg cfg );
-mlt_chan_cfg av_chan_layout_to_mlt( int64_t layout );
-mlt_chan_cfg get_chan_cfg_or_default( const char* chan_cfg_name, int channels );
+int64_t mlt_to_av_channel_layout( mlt_channel_layout layout );
+mlt_channel_layout av_channel_layout_to_mlt( int64_t layout );
+mlt_channel_layout get_channel_layout_or_default( const char* name, int channels );
 
 #endif // COMMON_H

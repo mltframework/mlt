@@ -505,8 +505,8 @@ MLT_6.6.0 {
 
 MLT_6.8.0 {
   global:
-    mlt_chan_cfg_name;
-    mlt_chan_cfg_id;
-    mlt_chan_cfg_channels;
-    mlt_chan_cfg_default;
+    mlt_channel_layout_name;
+    mlt_channel_layout_id;
+    mlt_channel_layout_channels;
+    mlt_channel_layout_default;
 } MLT_6.6.0;

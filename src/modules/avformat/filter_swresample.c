@@ -38,8 +38,8 @@ typedef struct
 	int out_frequency;
 	int in_channels;
 	int out_channels;
-	mlt_chan_cfg in_chan_cfg;
-	mlt_chan_cfg out_chan_cfg;
+	mlt_channel_layout in_layout;
+	mlt_channel_layout out_layout;
 } private_data;
 
 static int audio_plane_count( mlt_audio_format format, int channels )
@@ -104,7 +104,7 @@ static int configure_swr_context( mlt_filter filter )
 	int error = 0;
 
 	mlt_log_debug( MLT_FILTER_SERVICE(filter), "%d(%s) %s %dHz -> %d(%s) %s %dHz\n",
-				   pdata->in_channels, mlt_chan_cfg_name( pdata->in_chan_cfg ), mlt_audio_format_name( pdata->in_format ), pdata->in_frequency, pdata->out_channels, mlt_chan_cfg_name( pdata->out_chan_cfg ), mlt_audio_format_name( pdata->out_format ), pdata->out_frequency );
+				   pdata->in_channels, mlt_channel_layout_name( pdata->in_layout ), mlt_audio_format_name( pdata->in_format ), pdata->in_frequency, pdata->out_channels, mlt_channel_layout_name( pdata->out_layout ), mlt_audio_format_name( pdata->out_format ), pdata->out_frequency );
 
 	swr_free( &pdata->ctx );
 	pdata->ctx = swr_alloc();
@@ -122,11 +122,11 @@ static int configure_swr_context( mlt_filter filter )
 	av_opt_set_int( pdata->ctx, "isr", pdata->in_frequency,  0 );
 	av_opt_set_int( pdata->ctx, "ich", pdata->in_channels, 0 );
 
-	if( pdata->in_chan_cfg != mlt_chan_independent && pdata->out_chan_cfg != mlt_chan_independent )
+	if( pdata->in_layout != mlt_channel_independent && pdata->out_layout != mlt_channel_independent )
 	{
 		// Use standard channel layout and matrix for known channel configurations.
-		av_opt_set_int( pdata->ctx, "ocl", mlt_to_av_chan_layout( pdata->out_chan_cfg ), 0 );
-		av_opt_set_int( pdata->ctx, "icl", mlt_to_av_chan_layout( pdata->in_chan_cfg ), 0 );
+		av_opt_set_int( pdata->ctx, "ocl", mlt_to_av_channel_layout( pdata->out_layout ), 0 );
+		av_opt_set_int( pdata->ctx, "icl", mlt_to_av_channel_layout( pdata->in_layout ), 0 );
 	}
 	else
 	{
@@ -192,21 +192,21 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	int out_frequency = *frequency;
 	int in_channels = *channels;
 	int out_channels = *channels;
-	mlt_chan_cfg in_chan_cfg;
-	mlt_chan_cfg out_chan_cfg;
+	mlt_channel_layout in_layout;
+	mlt_channel_layout out_layout;
 
 	// Get the producer's audio
 	int error = mlt_frame_get_audio( frame, buffer, &in_format, &in_frequency, &in_channels, samples );
 	if ( error || in_format == mlt_audio_none || out_format == mlt_audio_none ) return error;
 
 	// Determine the input/output channel layout.
-	in_chan_cfg = get_chan_cfg_or_default( mlt_properties_get( frame_properties, "chan_cfg" ), in_channels );
-	out_chan_cfg = get_chan_cfg_or_default( mlt_properties_get( frame_properties, "consumer_chan_cfg" ), out_channels );
+	in_layout = get_channel_layout_or_default( mlt_properties_get( frame_properties, "channel_layout" ), in_channels );
+	out_layout = get_channel_layout_or_default( mlt_properties_get( frame_properties, "consumer_channel_layout" ), out_channels );
 
 	if( in_format == out_format &&
 		in_frequency == out_frequency &&
 		in_channels == out_channels &&
-		in_chan_cfg == out_chan_cfg )
+		in_layout == out_layout )
 	{
 		// No change necessary
 		return error;
@@ -222,8 +222,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		pdata->out_frequency != out_frequency ||
 		pdata->in_channels != in_channels ||
 		pdata->out_channels != out_channels ||
-		pdata->in_chan_cfg != in_chan_cfg ||
-		pdata->out_chan_cfg != out_chan_cfg )
+		pdata->in_layout != in_layout ||
+		pdata->out_layout != out_layout )
 	{
 		// Save the configuration
 		pdata->in_format = in_format;
@@ -232,8 +232,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		pdata->out_frequency = out_frequency;
 		pdata->in_channels = in_channels;
 		pdata->out_channels = out_channels;
-		pdata->in_chan_cfg = in_chan_cfg;
-		pdata->out_chan_cfg = out_chan_cfg;
+		pdata->in_layout = in_layout;
+		pdata->out_layout = out_layout;
 		// Reconfigure the context
 		error = configure_swr_context( filter );
 	}
@@ -264,7 +264,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			*samples = out_samples;
 			*format = out_format;
 			*channels = out_channels;
-			mlt_properties_set( frame_properties, "chan_cfg", mlt_chan_cfg_name( pdata->out_chan_cfg ) );
+			mlt_properties_set( frame_properties, "channel_layout", mlt_channel_layout_name( pdata->out_layout ) );
 		}
 		else
 		{

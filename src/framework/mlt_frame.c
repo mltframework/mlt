@@ -1237,37 +1237,37 @@ int mlt_image_format_planes( mlt_image_format format, int width, int height, voi
  * \return a string for the name of the channel configuration
  */
 
-const char * mlt_chan_cfg_name( mlt_chan_cfg cfg )
+const char * mlt_channel_layout_name( mlt_channel_layout layout )
 {
-	switch ( cfg )
+	switch ( layout )
 	{
-		case mlt_chan_auto:           return "auto";
-		case mlt_chan_independent:    return "independent";
-		case mlt_chan_mono:           return "mono";
-		case mlt_chan_stereo:         return "stereo";
-		case mlt_chan_2p1:            return "2.1";
-		case mlt_chan_3p0:            return "3.0";
-		case mlt_chan_3p0_back:       return "3.0(back)";
-		case mlt_chan_3p1:            return "3.1";
-		case mlt_chan_4p0:            return "4.0";
-		case mlt_chan_4p1:            return "4.1";
-		case mlt_chan_quad_back:      return "quad(back)";
-		case mlt_chan_quad_side:      return "quad(side)";
-		case mlt_chan_5p0:            return "5.0";
-		case mlt_chan_5p1:            return "5.1";
-		case mlt_chan_5p0_back:       return "5.0(back)";
-		case mlt_chan_5p1_back:       return "5.1(back)";
-		case mlt_chan_6p0:            return "6.0";
-		case mlt_chan_6p0_front:      return "6.0(front)";
-		case mlt_chan_hexagonal:      return "hexagonal";
-		case mlt_chan_6p1:            return "6.1";
-		case mlt_chan_6p1_back:       return "6.1(back)";
-		case mlt_chan_6p1_front:      return "6.1(front)";
-		case mlt_chan_7p0:            return "7.0";
-		case mlt_chan_7p0_front:      return "7.0(front)";
-		case mlt_chan_7p1:            return "7.1";
-		case mlt_chan_7p1_wide_side:  return "7.1(wide-side)";
-		case mlt_chan_7p1_wide_back:  return "7.1(wide-back)";
+		case mlt_channel_auto:           return "auto";
+		case mlt_channel_independent:    return "independent";
+		case mlt_channel_mono:           return "mono";
+		case mlt_channel_stereo:         return "stereo";
+		case mlt_channel_2p1:            return "2.1";
+		case mlt_channel_3p0:            return "3.0";
+		case mlt_channel_3p0_back:       return "3.0(back)";
+		case mlt_channel_3p1:            return "3.1";
+		case mlt_channel_4p0:            return "4.0";
+		case mlt_channel_4p1:            return "4.1";
+		case mlt_channel_quad_back:      return "quad";
+		case mlt_channel_quad_side:      return "quad(side)";
+		case mlt_channel_5p0:            return "5.0(side)";
+		case mlt_channel_5p1:            return "5.1(side)";
+		case mlt_channel_5p0_back:       return "5.0";
+		case mlt_channel_5p1_back:       return "5.1";
+		case mlt_channel_6p0:            return "6.0";
+		case mlt_channel_6p0_front:      return "6.0(front)";
+		case mlt_channel_hexagonal:      return "hexagonal";
+		case mlt_channel_6p1:            return "6.1";
+		case mlt_channel_6p1_back:       return "6.1(back)";
+		case mlt_channel_6p1_front:      return "6.1(front)";
+		case mlt_channel_7p0:            return "7.0";
+		case mlt_channel_7p0_front:      return "7.0(front)";
+		case mlt_channel_7p1:            return "7.1";
+		case mlt_channel_7p1_wide_side:  return "7.1(wide-side)";
+		case mlt_channel_7p1_wide_back:  return "7.1(wide)";
 	}
 	return "invalid";
 }
@@ -1279,19 +1279,19 @@ const char * mlt_chan_cfg_name( mlt_chan_cfg cfg )
  * \return a channel configuration
  */
 
-mlt_chan_cfg mlt_chan_cfg_id( const char * name )
+mlt_channel_layout mlt_channel_layout_id( const char * name )
 {
 	if( name )
 	{
-		mlt_chan_cfg c;
-		for( c = mlt_chan_auto; c <= mlt_chan_7p1_wide_back; c++ )
+		mlt_channel_layout c;
+		for( c = mlt_channel_auto; c <= mlt_channel_7p1_wide_back; c++ )
 		{
-			const char * v = mlt_chan_cfg_name( c );
+			const char * v = mlt_channel_layout_name( c );
 			if( !strcmp( v, name ) )
 				return c;
 		}
 	}
-	return mlt_chan_auto;
+	return mlt_channel_auto;
 }
 
 /** Get the number of channels for a channel configuration.
@@ -1301,37 +1301,37 @@ mlt_chan_cfg mlt_chan_cfg_id( const char * name )
  * \return the number of channels for the channel configuration
  */
 
-int mlt_chan_cfg_channels( mlt_chan_cfg cfg )
+int mlt_channel_layout_channels( mlt_channel_layout layout )
 {
-	switch ( cfg )
+	switch ( layout )
 	{
-		case mlt_chan_auto:           return 0;
-		case mlt_chan_independent:    return 0;
-		case mlt_chan_mono:           return 1;
-		case mlt_chan_stereo:         return 2;
-		case mlt_chan_2p1:            return 3;
-		case mlt_chan_3p0:            return 3;
-		case mlt_chan_3p0_back:       return 3;
-		case mlt_chan_4p0:            return 4;
-		case mlt_chan_3p1:            return 4;
-		case mlt_chan_quad_back:      return 4;
-		case mlt_chan_quad_side:      return 4;
-		case mlt_chan_5p0:            return 5;
-		case mlt_chan_5p0_back:       return 5;
-		case mlt_chan_4p1:            return 5;
-		case mlt_chan_5p1:            return 6;
-		case mlt_chan_5p1_back:       return 6;
-		case mlt_chan_6p0:            return 6;
-		case mlt_chan_6p0_front:      return 6;
-		case mlt_chan_hexagonal:      return 6;
-		case mlt_chan_6p1:            return 7;
-		case mlt_chan_6p1_back:       return 7;
-		case mlt_chan_6p1_front:      return 7;
-		case mlt_chan_7p0:            return 7;
-		case mlt_chan_7p0_front:      return 7;
-		case mlt_chan_7p1:            return 8;
-		case mlt_chan_7p1_wide_side:  return 8;
-		case mlt_chan_7p1_wide_back:  return 8;
+		case mlt_channel_auto:           return 0;
+		case mlt_channel_independent:    return 0;
+		case mlt_channel_mono:           return 1;
+		case mlt_channel_stereo:         return 2;
+		case mlt_channel_2p1:            return 3;
+		case mlt_channel_3p0:            return 3;
+		case mlt_channel_3p0_back:       return 3;
+		case mlt_channel_4p0:            return 4;
+		case mlt_channel_3p1:            return 4;
+		case mlt_channel_quad_back:      return 4;
+		case mlt_channel_quad_side:      return 4;
+		case mlt_channel_5p0:            return 5;
+		case mlt_channel_5p0_back:       return 5;
+		case mlt_channel_4p1:            return 5;
+		case mlt_channel_5p1:            return 6;
+		case mlt_channel_5p1_back:       return 6;
+		case mlt_channel_6p0:            return 6;
+		case mlt_channel_6p0_front:      return 6;
+		case mlt_channel_hexagonal:      return 6;
+		case mlt_channel_6p1:            return 7;
+		case mlt_channel_6p1_back:       return 7;
+		case mlt_channel_6p1_front:      return 7;
+		case mlt_channel_7p0:            return 7;
+		case mlt_channel_7p0_front:      return 7;
+		case mlt_channel_7p1:            return 8;
+		case mlt_channel_7p1_wide_side:  return 8;
+		case mlt_channel_7p1_wide_back:  return 8;
 	}
 	return 0;
 }
@@ -1343,13 +1343,13 @@ int mlt_chan_cfg_channels( mlt_chan_cfg cfg )
  * \return the default channel configuration
  */
 
-mlt_chan_cfg mlt_chan_cfg_default( int channels )
+mlt_channel_layout mlt_channel_layout_default( int channels )
 {
-	mlt_chan_cfg c;
-	for( c = mlt_chan_mono; c <= mlt_chan_7p1_wide_back; c++ )
+	mlt_channel_layout c;
+	for( c = mlt_channel_mono; c <= mlt_channel_7p1_wide_back; c++ )
 	{
-		if( mlt_chan_cfg_channels( c ) == channels )
+		if( mlt_channel_layout_channels( c ) == channels )
 			return c;
 	}
-	return mlt_chan_independent;
+	return mlt_channel_independent;
 }

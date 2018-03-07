@@ -1539,14 +1539,14 @@ static void *consumer_thread( void *arg )
 		// single track
 		if ( !is_multi )
 		{
-			mlt_chan_cfg chan_cfg = mlt_chan_cfg_id( mlt_properties_get( properties, "chan_cfg" ) );
-			if( chan_cfg == mlt_chan_auto ||
-				chan_cfg == mlt_chan_independent ||
-				mlt_chan_cfg_channels( chan_cfg ) != enc_ctx->channels )
+			mlt_channel_layout layout = mlt_channel_layout_id( mlt_properties_get( properties, "channel_layout" ) );
+			if( layout == mlt_channel_auto ||
+				layout == mlt_channel_independent ||
+				mlt_channel_layout_channels( layout ) != enc_ctx->channels )
 			{
-				chan_cfg = mlt_chan_cfg_default( enc_ctx->channels );
+				layout = mlt_channel_layout_default( enc_ctx->channels );
 			}
-			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels, mlt_to_av_chan_layout( chan_cfg ) );
+			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels, mlt_to_av_channel_layout( layout ) );
 			enc_ctx->total_channels = enc_ctx->channels;
 		}
 	}
