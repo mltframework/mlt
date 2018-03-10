@@ -3,7 +3,7 @@
  * \brief abstraction for all producer services
  * \see mlt_producer_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -458,12 +458,12 @@ int mlt_producer_set_in_and_out( mlt_producer self, mlt_position in, mlt_positio
 	else if ( in >= mlt_producer_get_length( self ) )
 		in = mlt_producer_get_length( self ) - 1;
 
-	if ( ( out < 0 || out >= mlt_producer_get_length( self ) ) && !mlt_producer_is_blank( self ) )
-		out = mlt_producer_get_length( self ) - 1;
-	else if ( ( out < 0 || out >= mlt_producer_get_length( self ) ) && mlt_producer_is_blank( self ) )
+	if ( mlt_producer_is_blank( self ) && out >= mlt_producer_get_length( self ) )
+		// Extend the blank producer if needed.
 		mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( self ), "length", out + 1 );
-	else if ( out < 0 )
-		out = 0;
+	else if ( out < 0 || out >= mlt_producer_get_length( self ) )
+		// Get the out point from the length.
+		out = mlt_producer_get_length( self ) - 1;
 
 	// Swap ins and outs if wrong
 	if ( out < in )
