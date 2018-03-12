@@ -71,7 +71,7 @@
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
 #define AUDIO_BUFFER_SIZE (1024 * 42)
 #define VIDEO_BUFFER_SIZE (8192 * 8192)
-#define IMAGE_ALIGN (1)
+#define IMAGE_ALIGN (4)
 
 //
 // This structure should be extended and made globally available in mlt
