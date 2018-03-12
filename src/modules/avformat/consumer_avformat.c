@@ -1641,8 +1641,14 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Allocate picture
-	if ( enc_ctx->video_st )
+	if ( enc_ctx->video_st ) {
 		converted_avframe = alloc_picture( enc_ctx->video_st->codec->pix_fmt, width, height );
+		if ( !converted_avframe ) {
+			mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "failed to allocate video AVFrame\n", filename );
+			mlt_events_fire( properties, "consumer-fatal-error", NULL );
+			goto on_fatal_error;
+		}
+	}
 
 	// Allocate audio AVFrame
 	if ( enc_ctx->audio_st[0] )
