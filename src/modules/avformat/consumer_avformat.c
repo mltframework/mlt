@@ -452,7 +452,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 			( opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) ) )
 			opt = av_opt_find( obj, ++opt_name, NULL, flags, flags );
 		// Apply option if found
-		if ( opt )
+		if ( opt &&  strcmp( opt_name, "channel_layout" ) )
 			av_opt_set( obj, opt_name, mlt_properties_get_value( properties, i), 0 );
 	}
 }
@@ -597,7 +597,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		if ( thread_count >= 0 )
 			c->thread_count = thread_count;
 #endif
-	
+
 		if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
 			c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 		
@@ -1629,7 +1629,7 @@ static void *consumer_thread( void *arg )
 				goto on_fatal_error;
 			}
 		}
-	
+
 	}
 
 	// Last check - need at least one stream
