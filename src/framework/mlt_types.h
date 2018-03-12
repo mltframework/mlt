@@ -2,7 +2,7 @@
  * \file mlt_types.h
  * \brief Provides forward definitions of all public types
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,15 +76,15 @@ typedef enum
 	mlt_channel_2p1,
 	mlt_channel_3p0,
 	mlt_channel_3p0_back,
-	mlt_channel_3p1,
 	mlt_channel_4p0,
-	mlt_channel_4p1,
 	mlt_channel_quad_back,
 	mlt_channel_quad_side,
-	mlt_channel_5p0,
-	mlt_channel_5p1,
+	mlt_channel_3p1,
 	mlt_channel_5p0_back,
+	mlt_channel_5p0,
+	mlt_channel_4p1,
 	mlt_channel_5p1_back,
+	mlt_channel_5p1,
 	mlt_channel_6p0,
 	mlt_channel_6p0_front,
 	mlt_channel_hexagonal,

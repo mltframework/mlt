@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1248,15 +1248,15 @@ const char * mlt_channel_layout_name( mlt_channel_layout layout )
 		case mlt_channel_2p1:            return "2.1";
 		case mlt_channel_3p0:            return "3.0";
 		case mlt_channel_3p0_back:       return "3.0(back)";
-		case mlt_channel_3p1:            return "3.1";
 		case mlt_channel_4p0:            return "4.0";
-		case mlt_channel_4p1:            return "4.1";
 		case mlt_channel_quad_back:      return "quad";
 		case mlt_channel_quad_side:      return "quad(side)";
-		case mlt_channel_5p0:            return "5.0(side)";
-		case mlt_channel_5p1:            return "5.1(side)";
+		case mlt_channel_3p1:            return "3.1";
 		case mlt_channel_5p0_back:       return "5.0";
+		case mlt_channel_5p0:            return "5.0(side)";
+		case mlt_channel_4p1:            return "4.1";
 		case mlt_channel_5p1_back:       return "5.1";
+		case mlt_channel_5p1:            return "5.1(side)";
 		case mlt_channel_6p0:            return "6.0";
 		case mlt_channel_6p0_front:      return "6.0(front)";
 		case mlt_channel_hexagonal:      return "hexagonal";
@@ -1313,14 +1313,14 @@ int mlt_channel_layout_channels( mlt_channel_layout layout )
 		case mlt_channel_3p0:            return 3;
 		case mlt_channel_3p0_back:       return 3;
 		case mlt_channel_4p0:            return 4;
-		case mlt_channel_3p1:            return 4;
 		case mlt_channel_quad_back:      return 4;
 		case mlt_channel_quad_side:      return 4;
-		case mlt_channel_5p0:            return 5;
+		case mlt_channel_3p1:            return 4;
 		case mlt_channel_5p0_back:       return 5;
+		case mlt_channel_5p0:            return 5;
 		case mlt_channel_4p1:            return 5;
-		case mlt_channel_5p1:            return 6;
 		case mlt_channel_5p1_back:       return 6;
+		case mlt_channel_5p1:            return 6;
 		case mlt_channel_6p0:            return 6;
 		case mlt_channel_6p0_front:      return 6;
 		case mlt_channel_hexagonal:      return 6;
@@ -1330,8 +1330,8 @@ int mlt_channel_layout_channels( mlt_channel_layout layout )
 		case mlt_channel_7p0:            return 7;
 		case mlt_channel_7p0_front:      return 7;
 		case mlt_channel_7p1:            return 8;
-		case mlt_channel_7p1_wide_side:  return 8;
 		case mlt_channel_7p1_wide_back:  return 8;
+		case mlt_channel_7p1_wide_side:  return 8;
 	}
 	return 0;
 }
