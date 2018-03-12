@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "common.h"
+
 // mlt Header files
 #include <framework/mlt_consumer.h>
 #include <framework/mlt_frame.h>
@@ -450,7 +452,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 			( opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) ) )
 			opt = av_opt_find( obj, ++opt_name, NULL, flags, flags );
 		// Apply option if found
-		if ( opt )
+		if ( opt &&  strcmp( opt_name, "channel_layout" ) )
 			av_opt_set( obj, opt_name, mlt_properties_get_value( properties, i), 0 );
 	}
 }
@@ -566,7 +568,7 @@ static uint8_t* interleaved_to_planar( int samples, int channels, uint8_t* audio
 /** Add an audio output stream
 */
 
-static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec, int channels )
+static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec, int channels, int64_t channel_layout )
 {
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -585,7 +587,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->codec_id = codec->id;
 		c->codec_type = AVMEDIA_TYPE_AUDIO;
 		c->sample_fmt = pick_sample_fmt( properties, codec );
-		c->channel_layout = av_get_default_channel_layout( channels );
+		c->channel_layout = channel_layout;
 
 #if 0 // disabled until some audio codecs are multi-threaded
 		// Setup multi-threading
@@ -595,7 +597,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		if ( thread_count >= 0 )
 			c->thread_count = thread_count;
 #endif
-	
+
 		if (oc->oformat->flags & AVFMT_GLOBALHEADER) 
 			c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 		
@@ -1531,13 +1533,20 @@ static void *consumer_thread( void *arg )
 			{
 				is_multi = 1;
 				enc_ctx->total_channels += j;
-				enc_ctx->audio_st[i] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, j );
+				enc_ctx->audio_st[i] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, j, av_get_default_channel_layout( j ) );
 			}
 		}
 		// single track
 		if ( !is_multi )
 		{
-			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels );
+			mlt_channel_layout layout = mlt_channel_layout_id( mlt_properties_get( properties, "channel_layout" ) );
+			if( layout == mlt_channel_auto ||
+				layout == mlt_channel_independent ||
+				mlt_channel_layout_channels( layout ) != enc_ctx->channels )
+			{
+				layout = mlt_channel_layout_default( enc_ctx->channels );
+			}
+			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels, mlt_to_av_channel_layout( layout ) );
 			enc_ctx->total_channels = enc_ctx->channels;
 		}
 	}
@@ -1620,7 +1629,7 @@ static void *consumer_thread( void *arg )
 				goto on_fatal_error;
 			}
 		}
-	
+
 	}
 
 	// Last check - need at least one stream

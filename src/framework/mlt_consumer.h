@@ -43,6 +43,8 @@
  * \properties \em drop_max the maximum number of consecutively dropped frames, defaults to 5
  * \properties \em frequency the audio sample rate to use in Hertz, defaults to 48000
  * \properties \em channels the number of audio channels to use, defaults to 2
+ * \properties \em channel_layout the layout of the audio channels, defaults to auto.
+ * other options include: mono, stereo, 5.1, 7.1, etc.
  * \properties \em real_time the asynchronous behavior: 1 (default) for asynchronous
  * with frame dropping, -1 for asynchronous without frame dropping, 0 to disable (synchronous)
  * \properties \em test_card the name of a resource to use as the test card, defaults to

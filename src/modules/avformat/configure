@@ -53,6 +53,7 @@ else
 	export devices=true
 	export vdpau=false
 	export avfilter=true
+	export swresample=false
 	pkg-config x11 > /dev/null 2>&1
 	export x11=$?
 
@@ -150,6 +151,13 @@ else
 				avfilter=false
 			fi
 		fi
+		if $(pkg-config libswresample${avformat_suffix}); then
+			swresample=true
+			echo "CFLAGS+=$(pkg-config --cflags libswresample${avformat_suffix})" >> config.mak
+			echo "LDFLAGS+=$(pkg-config --libs libswresample${avformat_suffix})" >> config.mak
+		else
+			echo " - libswresample not found, disabling some features"
+		fi
 		if [ "$vdpau" = "true" ]
 		then
 			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC $(pkg-config --cflags libavformat${avformat_suffix}) -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
@@ -166,6 +174,7 @@ else
 	[ "$filters" = "true" ] && echo "FILTERS=1" >> config.mak
 	[ "$devices" = "true" ] && echo "DEVICES=1" >> config.mak
 	[ "$avfilter" = "true" ] && echo "AVFILTER=1" >> config.mak
+	[ "$swresample" = "true" ] && echo "SWRESAMPLE=1" >> config.mak
 	exit 0
 
 fi

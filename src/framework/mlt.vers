@@ -502,3 +502,11 @@ MLT_6.6.0 {
     mlt_log_timings_now;
     mlt_service_disconnect_all_producers;
 } MLT_6.4.0;
+
+MLT_6.8.0 {
+  global:
+    mlt_channel_layout_name;
+    mlt_channel_layout_id;
+    mlt_channel_layout_channels;
+    mlt_channel_layout_default;
+} MLT_6.6.0;

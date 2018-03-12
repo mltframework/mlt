@@ -12,7 +12,8 @@ else
 TARGET = ../libmltavformat$(LIBSUF)
 endif
 
-OBJS = factory.o
+OBJS = common.o \
+       factory.o
 
 ifdef FILTERS
 OBJS += filter_avcolour_space.o \
@@ -39,6 +40,11 @@ endif
 ifdef AVFILTER
 CFLAGS += -DAVFILTER
 OBJS += filter_avfilter.o
+endif
+
+ifdef SWRESAMPLE
+OBJS += filter_swresample.o
+CFLAGS += -DSWRESAMPLE
 endif
 
 SRCS := $(OBJS:.o=.c)
