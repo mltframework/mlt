@@ -2040,11 +2040,12 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	for ( i = 0; i < count; i++ )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
-		const AVOption *opt = av_opt_find( obj, opt_name, NULL, flags, flags );
+		int search_flags = AV_OPT_SEARCH_CHILDREN;
+		const AVOption *opt = av_opt_find( obj, opt_name, NULL, flags, search_flags );
 		if ( opt_name && mlt_properties_get( properties, opt_name ) )
 		{
 			if ( opt )
-				av_opt_set( obj, opt_name, mlt_properties_get( properties, opt_name), 0 );
+				av_opt_set( obj, opt_name, mlt_properties_get( properties, opt_name), search_flags );
 		}
 	}
 }

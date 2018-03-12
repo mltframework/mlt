@@ -444,16 +444,17 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	for ( i = 0; i < count; i++ )
 	{
 		const char *opt_name = mlt_properties_get_name( properties, i );
-		const AVOption *opt = av_opt_find( obj, opt_name, NULL, flags, flags );
+		int search_flags = AV_OPT_SEARCH_CHILDREN;
+		const AVOption *opt = av_opt_find( obj, opt_name, NULL, flags, search_flags );
 
 		// If option not found, see if it was prefixed with a or v (-vb)
 		if ( !opt && (
 			( opt_name[0] == 'v' && ( flags & AV_OPT_FLAG_VIDEO_PARAM ) ) ||
 			( opt_name[0] == 'a' && ( flags & AV_OPT_FLAG_AUDIO_PARAM ) ) ) )
-			opt = av_opt_find( obj, ++opt_name, NULL, flags, flags );
+			opt = av_opt_find( obj, ++opt_name, NULL, flags, search_flags );
 		// Apply option if found
 		if ( opt &&  strcmp( opt_name, "channel_layout" ) )
-			av_opt_set( obj, opt_name, mlt_properties_get_value( properties, i), 0 );
+			av_opt_set( obj, opt_name, mlt_properties_get_value( properties, i), search_flags );
 	}
 }
 
