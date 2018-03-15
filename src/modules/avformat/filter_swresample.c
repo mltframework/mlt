@@ -76,7 +76,8 @@ static void audio_format_planes( mlt_audio_format format, int samples, int chann
 {
 	int plane_count = audio_plane_count( format, channels );
 	size_t plane_size = audio_plane_size( format, samples, channels );
-	for( int p = 0; p < plane_count; p++ )
+	int p = 0;
+	for( p = 0; p < plane_count; p++ )
 	{
 		planes[p] = buffer + ( p * plane_size );
 	}
@@ -89,7 +90,8 @@ static void collapse_channels( mlt_audio_format format, int channels, int alloca
 	{
 		size_t src_plane_size = audio_plane_size( format, allocated_samples, channels );
 		size_t dst_plane_size = audio_plane_size( format, used_samples, channels );
-		for( int p = 0; p < plane_count; p++ )
+		int p = 0;
+		for( p = 0; p < plane_count; p++ )
 		{
 			uint8_t* src = buffer + ( p * src_plane_size );
 			uint8_t* dst = buffer + ( p * dst_plane_size );
@@ -138,12 +140,13 @@ static int configure_swr_context( mlt_filter filter )
 		int64_t custom_out_layout = 0;
 		double* matrix = av_mallocz_array( pdata->in_channels * pdata->out_channels, sizeof(double) );
 		int stride = pdata->in_channels;
+		int i = 0;
 
-		for( int i = 0; i < pdata->in_channels; i++ )
+		for( i = 0; i < pdata->in_channels; i++ )
 		{
 			custom_in_layout = (custom_in_layout << 1) | 0x01;
 		}
-		for( int i = 0; i < pdata->out_channels; i++ )
+		for( i = 0; i < pdata->out_channels; i++ )
 		{
 			custom_out_layout = (custom_out_layout << 1) | 0x01;
 			if( i <= pdata->in_channels )
@@ -241,6 +244,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	if( !error )
 	{
 		int in_samples = *samples;
+		int out_samples = 0;
 		int alloc_samples = in_samples;
 		if( in_frequency != out_frequency )
 		{
@@ -255,7 +259,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		audio_format_planes( in_format, in_samples, in_channels, *buffer, pdata->in_buffers );
 		audio_format_planes( out_format, alloc_samples, out_channels, out_buffer, pdata->out_buffers );
 
-		int out_samples = swr_convert( pdata->ctx, pdata->out_buffers, alloc_samples, (const uint8_t**)pdata->in_buffers, in_samples );
+		out_samples = swr_convert( pdata->ctx, pdata->out_buffers, alloc_samples, (const uint8_t**)pdata->in_buffers, in_samples );
 		if( out_samples > 0 )
 		{
 			collapse_channels( out_format, out_channels, alloc_samples, out_samples, out_buffer );
