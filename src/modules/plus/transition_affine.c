@@ -1,6 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -502,8 +502,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
 
 	error = mlt_frame_get_image( b_frame, &b_image, &b_format, &b_width, &b_height, 0 );
-	if (error || !b_image) 
+	if (error || !b_image) {
+		// Remove potentially large image on the B frame. 
+		mlt_frame_set_image( b_frame, NULL, 0, NULL );
 		return error;
+	}
 
 	// Check that both images are of the correct format and process
 	if ( *format == mlt_image_rgb24a && b_format == mlt_image_rgb24a )
@@ -625,6 +628,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			sliced_proc(0, 0, 1, &desc);
 		else
 			mlt_slices_run_normal(threads, sliced_proc, &desc);
+		
+		// Remove potentially large image on the B frame. 
+		mlt_frame_set_image( b_frame, NULL, 0, NULL );
 	}
 
 	return 0;
