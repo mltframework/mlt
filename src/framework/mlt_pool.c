@@ -3,7 +3,7 @@
  * \brief memory pooling functionality
  * \see mlt_pool_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,7 @@
 #ifdef _WIN32
 #  define mlt_free _aligned_free
 #  define mlt_alloc(X) _aligned_malloc( (X), 16 )
+#  define mlt_realloc(X) _aligned_realloc( (X), 16 )
 #else
 #  define mlt_free free
 #  ifdef linux
@@ -44,7 +45,21 @@
 #  else
 #    define mlt_alloc(X) malloc( (X) )
 #  endif
+#  define mlt_realloc realloc
 #endif
+
+// We now require a compile-time define to use mlt_pool.
+#ifndef USE_MLT_POOL
+
+void mlt_pool_init() {}
+void *mlt_pool_alloc( int size ) { return mlt_alloc( size ); }
+void *mlt_pool_realloc( void *ptr, int size ) { return mlt_realloc( ptr, size ); }
+void mlt_pool_release( void *release ) { return mlt_free( release ); }
+void mlt_pool_purge() {}
+void mlt_pool_close() {}
+void mlt_pool_stat() {}
+
+#else
 
 /** global singleton for tracking pools */
 
@@ -420,3 +435,5 @@ void mlt_pool_stat( )
 	mlt_log_verbose( NULL, "%s: allocated %"PRIu64" bytes, used %"PRIu64" bytes \n",
 		__FUNCTION__, allocated, used );
 }
+
+#endif // NO_MLT_POOL
