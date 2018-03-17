@@ -37,7 +37,7 @@
 #ifdef _WIN32
 #  define mlt_free _aligned_free
 #  define mlt_alloc(X) _aligned_malloc( (X), 16 )
-#  define mlt_realloc(X) _aligned_realloc( (X), 16 )
+#  define mlt_realloc(X, Y) _aligned_realloc( (X), (Y), 16 )
 #else
 #  define mlt_free free
 #  ifdef linux
