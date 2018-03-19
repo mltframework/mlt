@@ -41,7 +41,7 @@ void read_xml(mlt_properties properties)
 			goto error;
 		rewind (f);
 
-		char *infile = (char*) mlt_pool_alloc(lSize);
+		char *infile = (char*) mlt_pool_alloc(lSize + 1);
 		if ( infile )
 		{
 			size = fread(infile,1,lSize,f);
