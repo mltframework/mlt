@@ -9,6 +9,7 @@ include config.mak
 TARGET = ../libmltsdl2$(LIBSUF)
 
 OBJS = factory.o \
+	   common.o \
 	   consumer_sdl2.o \
 	   consumer_sdl2_audio.o
 
