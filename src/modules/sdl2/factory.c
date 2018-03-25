@@ -23,7 +23,7 @@
 #include <SDL_version.h>
 
 extern mlt_consumer consumer_sdl2_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_sdl2_audio_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
@@ -36,6 +36,6 @@ MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "sdl2", consumer_sdl2_init );
 	MLT_REGISTER_METADATA( consumer_type, "sdl2", metadata, "consumer_sdl2.yml" );
-	MLT_REGISTER( consumer_type, "sdl2_audio", consumer_sdl_audio_init );
+	MLT_REGISTER( consumer_type, "sdl2_audio", consumer_sdl2_audio_init );
 	MLT_REGISTER_METADATA( consumer_type, "sdl2_audio", metadata, "consumer_sdl_audio.yml" );
 }

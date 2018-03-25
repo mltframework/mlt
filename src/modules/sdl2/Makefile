@@ -9,7 +9,8 @@ include config.mak
 TARGET = ../libmltsdl2$(LIBSUF)
 
 OBJS = factory.o \
-	   consumer_sdl2.o
+	   consumer_sdl2.o \
+	   consumer_sdl2_audio.o
 
 ifeq ($(targetos),Darwin)
 CFLAGS += -ObjC
@@ -30,10 +31,7 @@ SRCS := $(OBJS:.o=.c)
 
 all: 	$(TARGET)
 
-consumer_sdl_audio.o: ../sdl/consumer_sdl_audio.c
-		$(CC) $(CFLAGS) -c -o $@ ../sdl/consumer_sdl_audio.c
-
-$(TARGET): $(OBJS) consumer_sdl_audio.o
+$(TARGET): $(OBJS)
 		$(CC) $(SHFLAGS) -o $@ $(OBJS) consumer_sdl_audio.o $(LDFLAGS)
 
 depend:	$(SRCS)
