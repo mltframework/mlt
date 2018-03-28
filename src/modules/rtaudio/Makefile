@@ -22,6 +22,8 @@ LDFLAGS += -framework CoreAudio -framework CoreFoundation
 else ifeq ($(targetos), MinGW)
 CXXFLAGS += -D__WINDOWS_DS__
 LDFLAGS += -lole32 -ldsound -lwinmm
+CXXFLAGS += -D__WINDOWS_WASAPI__
+LDFLAGS += -lksuser
 # For ASIO when ready to try that:
 #OBJS += asio.o asiodrivers.o asiolist.o iasiothiscallresolver.o
 #CXXFLAGS +=-D__WINDOWS_ASIO__

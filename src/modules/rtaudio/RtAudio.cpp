@@ -3683,6 +3683,7 @@ static const char* getAsioErrorString( ASIOError result )
 #include <avrt.h>
 #include <mmdeviceapi.h>
 #include <functiondiscoverykeys_devpkey.h>
+#include <math.h>
 
 //=============================================================================
 

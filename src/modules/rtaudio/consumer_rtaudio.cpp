@@ -34,16 +34,35 @@ static int  rtaudio_callback( void *outputBuffer, void *inputBuffer,
 static void *consumer_thread_proxy( void *arg );
 static void *video_thread_proxy( void *arg );
 
+static const char *rtaudio_api_str( RtAudio::Api api )
+{
+	switch( api )
+	{
+		case RtAudio::UNSPECIFIED: return "UNSPECIFIED";
+		case RtAudio::LINUX_ALSA: return "LINUX_ALSA";
+		case RtAudio::LINUX_PULSE: return "LINUX_PULSE";
+		case RtAudio::LINUX_OSS: return "LINUX_OSS";
+		case RtAudio::UNIX_JACK: return "UNIX_JACK";
+		case RtAudio::MACOSX_CORE: return "MACOSX_CORE";
+		case RtAudio::WINDOWS_WASAPI: return "WINDOWS_WASAPI";
+		case RtAudio::WINDOWS_ASIO: return "WINDOWS_ASIO";
+		case RtAudio::WINDOWS_DS: return "WINDOWS_DS";
+		case RtAudio::RTAUDIO_DUMMY: return "RTAUDIO_DUMMY";
+	}
+	return "UNKNOWN!?!";
+}
+
 class RtAudioConsumer
 {
 public:
 	struct mlt_consumer_s consumer;
-	RtAudio               rt;
+	RtAudio*              rt;
 	int                   device_id;
 	mlt_deque             queue;
 	pthread_t             thread;
 	int                   joined;
 	int                   running;
+	int                   out_channels;
 	uint8_t               audio_buffer[4096 * 10];
 	int                   audio_avail;
 	pthread_mutex_t       audio_mutex;
@@ -60,7 +79,8 @@ public:
 		{ return &consumer; }
 
 	RtAudioConsumer()
-		: device_id(-1)
+		: rt(NULL)
+		, device_id(-1)
 		, queue(NULL)
 		, joined(0)
 		, running(0)
@@ -85,34 +105,47 @@ public:
 		pthread_mutex_destroy( &refresh_mutex );
 		pthread_cond_destroy( &refresh_cond );
 
-		if ( rt.isStreamOpen() )
-			rt.closeStream();
+		if ( rt && rt->isStreamOpen() )
+			rt->closeStream();
+		delete rt;
 	}
 
-	bool open( const char* arg )
+	bool create_rtaudio( RtAudio::Api api, int channels, int frequency )
 	{
-		if ( rt.getDeviceCount() < 1 )
+		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+		const char *resource = mlt_properties_get( properties, "resource" );
+		unsigned int bufferFrames = mlt_properties_get_int( properties, "audio_buffer" );
+
+		mlt_log_info( getConsumer(), "Attempt to open RtAudio: %s\t%d\t%d\n", rtaudio_api_str( api ), channels, frequency );
+		rt = new RtAudio( api );
+
+		if( !rt )
+		{
+			return false;
+		}
+
+		if ( rt->getDeviceCount() < 1 )
 		{
 			mlt_log_warning( getConsumer(), "no audio devices found\n" );
+			delete rt;
 			return false;
 		}
 
 #ifndef __LINUX_ALSA__
-		device_id = rt.getDefaultOutputDevice();
+		device_id = rt->getDefaultOutputDevice();
 #endif
-		if ( arg && strcmp( arg, "" ) && strcmp( arg, "default" ) )
+		if ( resource && strcmp( resource, "" ) && strcmp( resource, "default" ) )
 		{
 			// Get device ID by name
-			unsigned int n = rt.getDeviceCount();
+			unsigned int n = rt->getDeviceCount();
 			RtAudio::DeviceInfo info;
 			unsigned int i;
 
 			for ( i = 0; i < n; i++ )
 			{
-				info = rt.getDeviceInfo( i );
-				mlt_log_verbose( NULL, "RtAudio device %d = %s\n",
-					i, info.name.c_str() );
-				if ( info.probed && info.name == arg )
+				info = rt->getDeviceInfo( i );
+				mlt_log_verbose( NULL, "RtAudio device %d = %s\n", i, info.name.c_str() );
+				if ( info.probed && info.name == resource )
 				{
 					device_id = i;
 					break;
@@ -120,9 +153,115 @@ public:
 			}
 			// Name selection failed, try arg as numeric
 			if ( i == n )
-				device_id = (int) strtol( arg, NULL, 0 );
+				device_id = (int) strtol( resource, NULL, 0 );
 		}
 
+		RtAudio::StreamParameters parameters;
+		parameters.deviceId = device_id;
+		parameters.nChannels = channels;
+		parameters.firstChannel = 0;
+		RtAudio::StreamOptions options;
+
+		if ( device_id == -1 )
+		{
+			options.flags = RTAUDIO_ALSA_USE_DEFAULT;
+			parameters.deviceId = 0;
+		}
+		if ( resource )
+		{
+			unsigned n = rt->getDeviceCount();
+			for (unsigned i = 0; i < n; i++) {
+				RtAudio::DeviceInfo info = rt->getDeviceInfo( i );
+				if ( info.name == resource ) {
+					device_id = parameters.deviceId = i;
+					break;
+				}
+			}
+		}
+
+		try {
+			if ( rt->isStreamOpen() ) {
+				 rt->closeStream();
+			}
+			rt->openStream( &parameters, NULL, RTAUDIO_SINT16,
+				frequency, &bufferFrames, &rtaudio_callback, this, &options );
+			rt->startStream();
+		}
+#ifdef RTERROR_H
+		catch ( RtError& e ) {
+#else
+		catch ( RtAudioError& e ) {
+#endif
+			mlt_log_info( getConsumer(), "%s\n", e.getMessage().c_str() );
+			delete rt;
+			return false;
+		}
+		mlt_log_info( getConsumer(), "Opened RtAudio: %s\t%d\t%d\n", rtaudio_api_str( rt->getCurrentApi() ), channels, frequency );
+		return true;
+	}
+
+	bool find_and_create_rtaudio( int requested_channels, int frequency, int* actual_channels )
+	{
+		bool result = false;
+#ifdef __WINDOWS_DS__
+		// Prefer DirectSound on Windows
+		RtAudio::Api PREFERRED_API = RtAudio::WINDOWS_DS;
+#else
+		RtAudio::Api PREFERRED_API = RtAudio::UNSPECIFIED;
+#endif
+		*actual_channels = requested_channels;
+		if ( rt && rt->isStreamOpen() )
+			rt->closeStream();
+		delete rt;
+
+		// First try with preferred API.
+		result = create_rtaudio( PREFERRED_API, *actual_channels, frequency );
+
+		if( !result )
+		{
+			// If the preferred API fails, try other APIs that are available.
+			std::vector<RtAudio::Api> apis;
+			RtAudio::getCompiledApi( apis );
+			for( size_t i = 0; i < apis.size(); i++ )
+			{
+				if( apis[i] == PREFERRED_API || apis[i] == RtAudio::RTAUDIO_DUMMY )
+				{
+					continue;
+				}
+				result = create_rtaudio( apis[i], *actual_channels, frequency );
+				if( result )
+				{
+					break;
+				}
+			}
+		}
+
+		if( !result && *actual_channels != 2 )
+		{
+			// If surround has failed for all APIs, try stereo.
+			*actual_channels = 2;
+			mlt_log_info( getConsumer(), "Unable to open %d channels. Try %d channels\n", requested_channels, *actual_channels );
+			std::vector<RtAudio::Api> apis;
+			RtAudio::getCompiledApi( apis );
+			for( size_t i = 0; i < apis.size(); i++ )
+			{
+				if( apis[i] == RtAudio::RTAUDIO_DUMMY )
+				{
+					continue;
+				}
+				result = create_rtaudio( apis[i], *actual_channels, frequency );
+				if( result )
+				{
+					break;
+				}
+			}
+		}
+
+		return result;
+	}
+
+	bool open( const char* arg )
+	{
 		// Create the queue
 		queue = mlt_deque_init( );
 
@@ -201,10 +340,10 @@ public:
 			pthread_cond_broadcast( &audio_cond );
 			pthread_mutex_unlock( &audio_mutex );
 
-			if ( rt.isStreamOpen() )
+			if ( rt && rt->isStreamOpen() )
 			try {
 				// Stop the stream
-				rt.stopStream();
+				rt->stopStream();
 			}
 #ifdef RTERROR_H
 			catch ( RtError& e ) {
@@ -213,6 +352,7 @@ public:
 #endif
 				mlt_log_error( getConsumer(), "%s\n", e.getMessage().c_str() );
 			}
+			delete rt;
 		}
 
 		return 0;
@@ -373,8 +513,7 @@ public:
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
 		double volume = mlt_properties_get_double( properties, "volume" );
-		int channels = mlt_properties_get_int( properties, "channels" );
-		int len = mlt_audio_format_size( mlt_audio_s16, samples, channels );
+		int len = mlt_audio_format_size( mlt_audio_s16, samples, out_channels );
 
 		pthread_mutex_lock( &audio_mutex );
 
@@ -408,7 +547,7 @@ public:
 		if ( volume != 1.0 )
 		{
 			int16_t *p = outbuf;
-			int i = samples * channels + 1;
+			int i = samples * out_channels + 1;
 			while ( --i )
 				*p++ *= volume;
 		}
@@ -447,47 +586,15 @@ public:
 
 		if ( init_audio == 1 )
 		{
-			RtAudio::StreamParameters parameters;
-			parameters.deviceId = device_id;
-			parameters.nChannels = channels;
-			parameters.firstChannel = 0;
-			RtAudio::StreamOptions options;
-			unsigned int bufferFrames = mlt_properties_get_int( properties, "audio_buffer" );
-
-			if ( device_id == -1 )
+			if( find_and_create_rtaudio( channels, frequency, &out_channels ) )
 			{
-				options.flags = RTAUDIO_ALSA_USE_DEFAULT;
-				parameters.deviceId = 0;
-			}
-			if ( mlt_properties_get( properties, "resource" ) )
-			{
-				const char *resource = mlt_properties_get( properties, "resource" );
-				unsigned n = rt.getDeviceCount();
-				for (unsigned i = 0; i < n; i++) {
-					RtAudio::DeviceInfo info = rt.getDeviceInfo( i );
-					if ( info.name == resource ) {
-						device_id = parameters.deviceId = i;
-						break;
-					}
-				}
-			}
-
-			try {
-				if ( rt.isStreamOpen() ) {
-				    rt.closeStream();
-				}
-				rt.openStream( &parameters, NULL, RTAUDIO_SINT16,
-					frequency, &bufferFrames, &rtaudio_callback, this, &options );
-				rt.startStream();
 				init_audio = 0;
 				playing = 1;
 			}
-#ifdef RTERROR_H
-			catch ( RtError& e ) {
-#else
-			catch ( RtAudioError& e ) {
-#endif
-				mlt_log_error( getConsumer(), "%s\n", e.getMessage().c_str() );
+			else
+			{
+				rt = NULL;
+				mlt_log_error( getConsumer(), "Unable to initialize RtAudio\n" );
 				init_audio = 2;
 			}
 		}
@@ -495,19 +602,58 @@ public:
 		if ( init_audio == 0 )
 		{
 			mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-			size_t bytes = ( samples * channels * 2 );
+			int samples_copied = 0;
+			int dst_stride = out_channels * sizeof( *pcm );
+
 			pthread_mutex_lock( &audio_mutex );
-			while ( running && bytes > ( sizeof( audio_buffer) - audio_avail ) )
-				pthread_cond_wait( &audio_cond, &audio_mutex );
-			if ( running )
+
+			while ( running && samples_copied < samples )
 			{
-				if ( scrub || mlt_properties_get_double( properties, "_speed" ) == 1 )
-					memcpy( &audio_buffer[ audio_avail ], pcm, bytes );
-				else
-					memset( &audio_buffer[ audio_avail ], 0, bytes );
-				audio_avail += bytes;
+				int sample_space = ( sizeof( audio_buffer ) - audio_avail ) / dst_stride;
+
+				while ( running && sample_space == 0 )
+				{
+					pthread_cond_wait( &audio_cond, &audio_mutex );
+					sample_space = ( sizeof( audio_buffer ) - audio_avail ) / dst_stride;
+				}
+				if ( running )
+				{
+					int samples_to_copy = samples - samples_copied;
+					if ( samples_to_copy > sample_space )
+					{
+						samples_to_copy = sample_space;
+					}
+					int dst_bytes = samples_to_copy * dst_stride;
+
+					if ( scrub || mlt_properties_get_double( properties, "_speed" ) == 1 )
+					{
+						if ( channels == out_channels )
+						{
+							memcpy( &audio_buffer[ audio_avail ], pcm, dst_bytes );
+							pcm += samples_to_copy * channels;
+						}
+						else
+						{
+							int16_t *dest = (int16_t*) &audio_buffer[ audio_avail ];
+							int i = samples_to_copy + 1;
+							while ( --i )
+							{
+								memcpy( dest, pcm, dst_stride );
+								pcm += channels;
+								dest += out_channels;
+							}
+						}
+					}
+					else
+					{
+						memset( &audio_buffer[ audio_avail ], 0, dst_bytes );
+						pcm += samples_to_copy * channels;
+					}
+					audio_avail += dst_bytes;
+					samples_copied += samples_to_copy;
+				}
+				pthread_cond_broadcast( &audio_cond );
 			}
-			pthread_cond_broadcast( &audio_cond );
 			pthread_mutex_unlock( &audio_mutex );
 		}
 
