@@ -33,7 +33,7 @@ SRCS := $(OBJS:.o=.c)
 all: 	$(TARGET)
 
 $(TARGET): $(OBJS)
-		$(CC) $(SHFLAGS) -o $@ $(OBJS) consumer_sdl_audio.o $(LDFLAGS)
+		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
 		$(CC) -MM $(CFLAGS) $^ 1>.depend
