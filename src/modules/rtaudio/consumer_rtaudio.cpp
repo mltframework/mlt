@@ -108,6 +108,7 @@ public:
 		if ( rt && rt->isStreamOpen() )
 			rt->closeStream();
 		delete rt;
+		rt = NULL;
 	}
 
 	bool create_rtaudio( RtAudio::Api api, int channels, int frequency )
@@ -128,6 +129,7 @@ public:
 		{
 			mlt_log_warning( getConsumer(), "no audio devices found\n" );
 			delete rt;
+			rt = NULL;
 			return false;
 		}
 
@@ -194,6 +196,7 @@ public:
 #endif
 			mlt_log_info( getConsumer(), "%s\n", e.getMessage().c_str() );
 			delete rt;
+			rt = NULL;
 			return false;
 		}
 		mlt_log_info( getConsumer(), "Opened RtAudio: %s\t%d\t%d\n", rtaudio_api_str( rt->getCurrentApi() ), channels, frequency );
@@ -210,9 +213,6 @@ public:
 		RtAudio::Api PREFERRED_API = RtAudio::UNSPECIFIED;
 #endif
 		*actual_channels = requested_channels;
-		if ( rt && rt->isStreamOpen() )
-			rt->closeStream();
-		delete rt;
 
 		// First try with preferred API.
 		result = create_rtaudio( PREFERRED_API, *actual_channels, frequency );
@@ -353,6 +353,7 @@ public:
 				mlt_log_error( getConsumer(), "%s\n", e.getMessage().c_str() );
 			}
 			delete rt;
+			rt = NULL;
 		}
 
 		return 0;
