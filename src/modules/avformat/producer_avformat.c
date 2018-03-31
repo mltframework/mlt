@@ -2710,7 +2710,10 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			*frequency = self->audio_codec[ index ]->sample_rate;
 			*format = pick_audio_format( self->audio_codec[ index ]->sample_fmt );
 			sizeof_sample = sample_bytes( self->audio_codec[ index ] );
-			layout = av_channel_layout_to_mlt( self->audio_codec[ index ]->channel_layout );
+			if( self->audio_codec[ index ]->channel_layout == 0 )
+				layout = av_channel_layout_to_mlt( av_get_default_channel_layout( self->audio_codec[ index ]->channels ) );
+			else
+				layout = av_channel_layout_to_mlt( self->audio_codec[ index ]->channel_layout );
 		}
 		else if ( self->audio_index == INT_MAX )
 		{
