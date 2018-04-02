@@ -792,7 +792,9 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 #endif
 		st->time_base = c->time_base;
 		st->avg_frame_rate = av_inv_q( c->time_base );
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(56, 5, 0)
 		c->framerate = av_inv_q( c->time_base );
+#endif
 
 		// Default to the codec's first pix_fmt if possible.
 		c->pix_fmt = pix_fmt ? av_get_pix_fmt( pix_fmt ) : codec ?
