@@ -105,7 +105,7 @@ static int configure_swr_context( mlt_filter filter )
 	private_data* pdata = (private_data*)filter->child;
 	int error = 0;
 
-	mlt_log_debug( MLT_FILTER_SERVICE(filter), "%d(%s) %s %dHz -> %d(%s) %s %dHz\n",
+	mlt_log_info( MLT_FILTER_SERVICE(filter), "%d(%s) %s %dHz -> %d(%s) %s %dHz\n",
 				   pdata->in_channels, mlt_channel_layout_name( pdata->in_layout ), mlt_audio_format_name( pdata->in_format ), pdata->in_frequency, pdata->out_channels, mlt_channel_layout_name( pdata->out_layout ), mlt_audio_format_name( pdata->out_format ), pdata->out_frequency );
 
 	swr_free( &pdata->ctx );
