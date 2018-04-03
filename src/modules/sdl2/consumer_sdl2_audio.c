@@ -271,10 +271,9 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	{
 		// Place in the audio buffer
 		if ( volume != 1.0 )
-			SDL_MixAudio( stream, self->audio_buffer, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
+			SDL_MixAudioFormat( stream, self->audio_buffer, AUDIO_S16SYS, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 		else
 			memcpy( stream, self->audio_buffer, len );
-
 		// Remove len from the audio available
 		self->audio_avail -= len;
 
@@ -284,7 +283,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	else
 	{
 		// Mix the audio
-		SDL_MixAudio( stream, self->audio_buffer, self->audio_avail,
+		SDL_MixAudioFormat( stream, self->audio_buffer, self->audio_avail, AUDIO_S16SYS,
 			( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
 		// No audio left
