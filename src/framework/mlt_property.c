@@ -109,7 +109,7 @@ static inline void mlt_property_clear( mlt_property self )
 		self->destructor( self->data );
 
 	// Special case string handling
-	if ( self->types & mlt_prop_string )
+	if ( self->prop_string )
 		free( self->prop_string );
 
 	mlt_animation_close( self->animation );
@@ -633,9 +633,15 @@ int64_t mlt_property_get_int64( mlt_property self )
 char *mlt_property_get_string( mlt_property self )
 {
 	// Construct a string if need be
-	if ( ! ( self->types & mlt_prop_string ) )
+	pthread_mutex_lock( &self->mutex );
+	if ( self->animation && self->serialiser )
 	{
-		pthread_mutex_lock( &self->mutex );
+		if ( self->prop_string )
+			free( self->prop_string );
+		self->prop_string = self->serialiser( self->data, self->length );
+	}
+	else if ( ! ( self->types & mlt_prop_string ) )
+	{
 		if ( self->types & mlt_prop_int )
 		{
 			self->types |= mlt_prop_string;
@@ -665,8 +671,8 @@ char *mlt_property_get_string( mlt_property self )
 			self->types |= mlt_prop_string;
 			self->prop_string = self->serialiser( self->data, self->length );
 		}
-		pthread_mutex_unlock( &self->mutex );
 	}
+	pthread_mutex_unlock( &self->mutex );
 
 	// Return the string (may be NULL)
 	return self->prop_string;
@@ -691,7 +697,14 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		return mlt_property_get_string( self );
 
 	// Construct a string if need be
-	if ( ! ( self->types & mlt_prop_string ) )
+	pthread_mutex_lock( &self->mutex );
+	if ( self->animation && self->serialiser )
+	{
+		if ( self->prop_string )
+			free( self->prop_string );
+		self->prop_string = self->serialiser( self->data, self->length );
+	}
+	else if ( ! ( self->types & mlt_prop_string ) )
 	{
 #if !defined(_WIN32)
 		// TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
@@ -703,9 +716,6 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 #else
 		const char *localename = locale;
 #endif
-		// Protect damaging the global locale from a temporary locale on another thread.
-		pthread_mutex_lock( &self->mutex );
-
 		// Get the current locale
 		char *orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
 
@@ -746,9 +756,9 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
 		free( orig_localename );
-		pthread_mutex_unlock( &self->mutex );
 #endif
 	}
+	pthread_mutex_unlock( &self->mutex );
 
 	// Return the string (may be NULL)
 	return self->prop_string;
@@ -1203,6 +1213,9 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 	if ( !self->animation )
 	{
 		self->animation = mlt_animation_new();
+		self->types |= mlt_prop_data;
+		self->data = self->animation;
+		self->serialiser = (mlt_serialiser) mlt_animation_serialize;
 		if ( self->prop_string )
 		{
 			mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
@@ -1210,12 +1223,9 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 		else
 		{
 			mlt_animation_set_length( self->animation, length );
-			self->types |= mlt_prop_data;
-			self->data = self->animation;
-			self->serialiser = (mlt_serialiser) mlt_animation_serialize;
 		}
 	}
-	else if ( self->prop_string )
+	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 	{
 		mlt_animation_refresh( self->animation, self->prop_string, length );
 	}
