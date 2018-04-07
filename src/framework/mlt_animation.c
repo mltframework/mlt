@@ -3,7 +3,7 @@
  * \brief Property Animation class definition
  * \see mlt_animation_s
  *
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -192,6 +192,8 @@ int mlt_animation_parse(mlt_animation self, const char *data, int length, double
 	self->fps = fps;
 	self->locale = locale;
 	item.property = mlt_property_init();
+	item.frame = item.is_key = 0;
+	item.keyframe_type = mlt_keyframe_discrete;
 
 	// Tokenise
 	if ( data )
@@ -585,6 +587,8 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 	size_t size = 1000;
 
 	item.property = mlt_property_init();
+	item.frame = item.is_key = 0;
+	item.keyframe_type = mlt_keyframe_discrete;
 	if ( in == -1 )
 		in = 0;
 	if ( out == -1 )
