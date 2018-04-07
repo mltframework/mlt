@@ -369,7 +369,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
                 blur( map, *width, *height, feather, mlt_properties_get_int( unique, "feather_passes" ) );
 
             int bpp;
-            size = mlt_image_format_size( *format, *width, *height, &bpp );
+            size = mlt_image_format_size( *format, *width, *height - 1, &bpp ); // mlt_image_format_size increments height!
             uint8_t *p = *image;
             uint8_t *q = *image + size;
 
