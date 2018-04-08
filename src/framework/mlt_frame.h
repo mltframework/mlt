@@ -162,6 +162,10 @@ extern mlt_channel_layout mlt_channel_layout_default( int channels );
   y = ((263*r + 516*g + 100*b) >> 10) + 16;\
   u = ((-152*r - 300*g + 450*b) >> 10) + 128;\
   v = ((450*r - 377*g - 73*b) >> 10) + 128;
+/** This macro scales RGB into the YUV gamut - uv is scaled by 224/255 (y unused). */
+#define RGB2UV_601_SCALED(r, g, b, u, v)\
+  u = ((-152*r - 300*g + 450*b) >> 10) + 128;\
+  v = ((450*r - 377*g - 73*b) >> 10) + 128;
 
 /** This macro scales YUV up into the full gamut of the RGB color space. */
 #define YUV2RGB_601_SCALED( y, u, v, r, g, b ) \
