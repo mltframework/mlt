@@ -1,6 +1,6 @@
 /**
  * MltAnimation.h - MLT Wrapper
- * Copyright (C) 2015 Meltytech, LLC
+ * Copyright (C) 2015-2018 Meltytech, LLC
  * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
@@ -51,6 +51,7 @@ namespace Mlt
 			int key_get( int index, int& frame, mlt_keyframe_type& );
 			int key_get_frame( int index );
 			mlt_keyframe_type key_get_type( int index );
+			int key_set_type( int index, mlt_keyframe_type type );
 
 			void set_length( int length );
 			int remove( int position );

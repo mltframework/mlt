@@ -3,7 +3,7 @@
  * \brief Property Animation class declaration
  * \see mlt_animation_s
  *
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,6 +54,7 @@ extern char *mlt_animation_serialize( mlt_animation self );
 extern int mlt_animation_key_count( mlt_animation self );
 extern int mlt_animation_key_get( mlt_animation self, mlt_animation_item item, int index );
 extern void mlt_animation_close( mlt_animation self );
+extern int mlt_animation_key_set_type( mlt_animation self, int index, mlt_keyframe_type type );
 
 #endif
 

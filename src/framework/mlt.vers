@@ -509,4 +509,5 @@ MLT_6.8.0 {
     mlt_channel_layout_id;
     mlt_channel_layout_channels;
     mlt_channel_layout_default;
+    mlt_animation_key_set_type;
 } MLT_6.6.0;

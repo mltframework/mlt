@@ -165,6 +165,11 @@ mlt_keyframe_type Animation::key_get_type( int index )
 		return (mlt_keyframe_type) -1;
 }
 
+int Animation::key_set_type(int index, mlt_keyframe_type type)
+{
+	return mlt_animation_key_set_type(instance, index, type);
+}
+
 void Animation::set_length( int length )
 {
 	return mlt_animation_set_length( instance, length );

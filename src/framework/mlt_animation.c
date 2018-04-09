@@ -730,7 +730,7 @@ int mlt_animation_key_count( mlt_animation self )
  * \public \memberof mlt_animation_s
  * \param self an animation
  * \param item an already allocated animation item that will be filled in
- * \param position the frame number for the point in time
+ * \param index the N-th keyframe (0 based) in this animation
  * \return true if there was an error
  */
 
@@ -774,4 +774,33 @@ void mlt_animation_close( mlt_animation self )
 		mlt_animation_clean( self );
 		free( self );
 	}
+}
+
+/** Change the interpolation for the N-th keyframe.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param index the N-th keyframe (0 based) in this animation
+ * \param type the method of interpolation for this key frame
+ * \return true if there was an error
+ */
+
+int mlt_animation_key_set_type(mlt_animation self, int index, mlt_keyframe_type type)
+{
+	int error = 0;
+	animation_node node = self->nodes;
+
+	// Iterate through the keyframes.
+	int i = index;
+	while ( i-- && node )
+		node = node->next;
+
+	if ( node ) {
+		node->item.keyframe_type = type;
+		mlt_animation_interpolate(self);
+	} else {
+		error = 1;
+	}
+
+	return error;
 }

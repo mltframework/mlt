@@ -529,3 +529,10 @@ MLTPP_6.6.0 {
       "Mlt::Service::disconnect_all_producers()";
   };
 } MLTPP_6.4.0;
+
+MLTPP_6.8.0 {
+  global:
+    extern "C++" {
+      "Mlt::Animation::key_set_type(int, mlt_keyframe_type)";
+  };
+} MLTPP_6.6.0;
