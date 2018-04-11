@@ -745,6 +745,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 			char *extension = strrchr( resource, '.' );
 			
 			// See if it is a PGM
+			int lumaLoaded = 0;
 			if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 			{
 				// Open PGM
@@ -754,14 +755,16 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 					// Load from PGM
 					luma_read_pgm( f, &orig_bitmap, &luma_width, &luma_height );
 					fclose( f );
-					
-					// Remember the original size for subsequent scaling
-					mlt_properties_set_data( properties, "_luma.orig_bitmap", orig_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
-					mlt_properties_set_int( properties, "_luma.orig_width", luma_width );
-					mlt_properties_set_int( properties, "_luma.orig_height", luma_height );
+					if ( luma_width > 0 && luma_height > 0 ) {
+						// Remember the original size for subsequent scaling
+						mlt_properties_set_data( properties, "_luma.orig_bitmap", orig_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+						mlt_properties_set_int( properties, "_luma.orig_width", luma_width );
+						mlt_properties_set_int( properties, "_luma.orig_height", luma_height );
+						lumaLoaded = 1;
+					}
 				}
 			}
-			else
+			if ( !lumaLoaded )
 			{
 				// Get the factory producer service
 				char *factory = mlt_properties_get( properties, "factory" );
