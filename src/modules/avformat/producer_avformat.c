@@ -1693,6 +1693,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			*format = mlt_image_rgb24;
 	}
 #endif
+	else if ( codec_context->pix_fmt == AV_PIX_FMT_YUVA444P10LE
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 19, 100)
+			|| codec_context->pix_fmt == AV_PIX_FMT_GBRAP10LE
+			|| codec_context->pix_fmt == AV_PIX_FMT_GBRAP12LE
+#endif
+			)
+		*format = mlt_image_rgb24a;
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
