@@ -804,3 +804,32 @@ int mlt_animation_key_set_type(mlt_animation self, int index, mlt_keyframe_type 
 
 	return error;
 }
+
+/** Change the frame number for the N-th keyframe.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param index the N-th keyframe (0 based) in this animation
+ * \param frame the position of this keyframe in frame units
+ * \return true if there was an error
+ */
+
+int mlt_animation_key_set_frame(mlt_animation self, int index, int frame)
+{
+	int error = 0;
+	animation_node node = self->nodes;
+
+	// Iterate through the keyframes.
+	int i = index;
+	while ( i-- && node )
+		node = node->next;
+
+	if ( node ) {
+		node->item.frame = frame;
+		mlt_animation_interpolate(self);
+	} else {
+		error = 1;
+	}
+
+	return error;
+}

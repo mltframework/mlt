@@ -534,5 +534,6 @@ MLTPP_6.8.0 {
   global:
     extern "C++" {
       "Mlt::Animation::key_set_type(int, mlt_keyframe_type)";
+      "Mlt::Animation::key_set_frame(int, int)";
   };
 } MLTPP_6.6.0;
