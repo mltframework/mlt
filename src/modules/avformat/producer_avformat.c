@@ -1694,7 +1694,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 #endif
 	else if ( codec_context->pix_fmt == AV_PIX_FMT_YUVA444P10LE
-#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 19, 100)
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56,0,0)
 			|| codec_context->pix_fmt == AV_PIX_FMT_GBRAP10LE
 			|| codec_context->pix_fmt == AV_PIX_FMT_GBRAP12LE
 #endif
