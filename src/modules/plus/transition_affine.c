@@ -25,28 +25,61 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 
 #include "interp.h"
 
-static float alignment_parse( char* align )
+static double alignment_parse( char* align )
 {
-	int ret = 0.0f;
+	int ret = 0.0;
 
 	if ( align == NULL );
 	else if ( isdigit( align[ 0 ] ) )
 		ret = atoi( align );
 	else if ( align[ 0 ] == 'c' || align[ 0 ] == 'm' )
-		ret = 1.0f;
+		ret = 1.0;
 	else if ( align[ 0 ] == 'r' || align[ 0 ] == 'b' )
-		ret = 2.0f;
+		ret = 2.0;
 
 	return ret;
+}
+
+static mlt_position repeat_position(mlt_properties properties, const char* name, mlt_position position, int length)
+{
+	// Make mlt_properties parse and refresh animation.
+	mlt_properties_anim_get_double(properties, name, position, length);
+	mlt_animation animation = mlt_properties_get_animation(properties, name);
+	if (animation) {
+		// Apply repeat and mirror options.
+		int anim_length = mlt_animation_get_length(animation);
+		int repeat_off = mlt_properties_get_int(properties, "repeat_off");
+		if (!repeat_off && position >= anim_length && anim_length != 0) {
+			int section = position / anim_length;
+			int mirror_off = mlt_properties_get_int(properties, "mirror_off");
+			position -= section * anim_length;
+			if (!mirror_off && section % 2 == 1)
+				position = anim_length - position;
+		}
+	}
+	return position;
+}
+
+static double anim_get_angle(mlt_properties properties, const char* name, mlt_position position, mlt_position length)
+{
+	double result = 0.0;
+	if (mlt_properties_get(properties, name)) {
+		position = repeat_position(properties, name, position, length);
+		result = mlt_properties_anim_get_double(properties, name, position, length);
+		if (strchr(mlt_properties_get(properties, name), '%'))
+			result *= 360;
+	}
+	return result;
 }
 
 /** Calculate real geometry.
 */
 
-static void geometry_calculate( mlt_transition transition, const char *store, struct mlt_geometry_item_s *output, float position )
+static void geometry_calculate( mlt_transition transition, const char *store, struct mlt_geometry_item_s *output, double position )
 {
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
@@ -109,7 +142,7 @@ static mlt_geometry transition_parse_keys( mlt_transition transition, const char
 	return geometry;
 }
 
-static mlt_geometry composite_calculate( mlt_transition transition, struct mlt_geometry_item_s *result, int nw, int nh, float position )
+static mlt_geometry composite_calculate( mlt_transition transition, struct mlt_geometry_item_s *result, int nw, int nh, double position )
 {
 	// Structures for geometry
 	mlt_geometry start = transition_parse_keys( transition, "geometry", "geometries", nw, nh );
@@ -120,7 +153,7 @@ static mlt_geometry composite_calculate( mlt_transition transition, struct mlt_g
 	return start;
 }
 
-static inline float composite_calculate_key( mlt_transition transition, const char *name, const char *store, int norm, float position )
+static inline double composite_calculate_key( mlt_transition transition, const char *name, const char *store, int norm, double position )
 {
 	// Struct for the result
 	struct mlt_geometry_item_s result;
@@ -136,11 +169,11 @@ static inline float composite_calculate_key( mlt_transition transition, const ch
 
 typedef struct
 {
-	float matrix[3][3];
+	double matrix[3][3];
 }
 affine_t;
 
-static void affine_init( float affine[3][3] )
+static void affine_init( double affine[3][3] )
 {
 	affine[0][0] = 1;
 	affine[0][1] = 0;
@@ -154,9 +187,9 @@ static void affine_init( float affine[3][3] )
 }
 
 // Multiply two this affine transform with that
-static void affine_multiply( float affine[3][3], float matrix[3][3] )
+static void affine_multiply( double affine[3][3], double matrix[3][3] )
 {
-	float output[3][3];
+	double output[3][3];
 	int i;
 	int j;
 
@@ -176,9 +209,9 @@ static void affine_multiply( float affine[3][3], float matrix[3][3] )
 }
 
 // Rotate by a given angle
-static void affine_rotate_x( float affine[3][3], float angle )
+static void affine_rotate_x( double affine[3][3], double angle )
 {
-	float matrix[3][3];
+	double matrix[3][3];
 	matrix[0][0] = cos( angle * M_PI / 180 );
 	matrix[0][1] = 0 - sin( angle * M_PI / 180 );
 	matrix[0][2] = 0;
@@ -191,9 +224,9 @@ static void affine_rotate_x( float affine[3][3], float angle )
 	affine_multiply( affine, matrix );
 }
 
-static void affine_rotate_y( float affine[3][3], float angle )
+static void affine_rotate_y( double affine[3][3], double angle )
 {
-	float matrix[3][3];
+	double matrix[3][3];
 	matrix[0][0] = cos( angle * M_PI / 180 );
 	matrix[0][1] = 0;
 	matrix[0][2] = 0 - sin( angle * M_PI / 180 );
@@ -206,9 +239,9 @@ static void affine_rotate_y( float affine[3][3], float angle )
 	affine_multiply( affine, matrix );
 }
 
-static void affine_rotate_z( float affine[3][3], float angle )
+static void affine_rotate_z( double affine[3][3], double angle )
 {
-	float matrix[3][3];
+	double matrix[3][3];
 	matrix[0][0] = 1;
 	matrix[0][1] = 0;
 	matrix[0][2] = 0;
@@ -221,9 +254,9 @@ static void affine_rotate_z( float affine[3][3], float angle )
 	affine_multiply( affine, matrix );
 }
 
-static void affine_scale( float affine[3][3], float sx, float sy )
+static void affine_scale( double affine[3][3], double sx, double sy )
 {
-	float matrix[3][3];
+	double matrix[3][3];
 	matrix[0][0] = sx;
 	matrix[0][1] = 0;
 	matrix[0][2] = 0;
@@ -237,9 +270,9 @@ static void affine_scale( float affine[3][3], float sx, float sy )
 }
 
 // Shear by a given value
-static void affine_shear( float affine[3][3], float shear_x, float shear_y, float shear_z )
+static void affine_shear( double affine[3][3], double shear_x, double shear_y, double shear_z )
 {
-	float matrix[3][3];
+	double matrix[3][3];
 	matrix[0][0] = 1;
 	matrix[0][1] = tan( shear_x * M_PI / 180 );
 	matrix[0][2] = 0;
@@ -252,30 +285,30 @@ static void affine_shear( float affine[3][3], float shear_x, float shear_y, floa
 	affine_multiply( affine, matrix );
 }
 
-static void affine_offset( float affine[3][3], float x, float y )
+static void affine_offset( double affine[3][3], double x, double y )
 {
 	affine[0][2] += x;
 	affine[1][2] += y;
 }
 
 // Obtain the mapped x coordinate of the input
-static inline double MapX( float affine[3][3], float x, float y )
+static inline double MapX( double affine[3][3], double x, double y )
 {
 	return affine[0][0] * x + affine[0][1] * y + affine[0][2];
 }
 
 // Obtain the mapped y coordinate of the input
-static inline double MapY( float affine[3][3], float x, float y )
+static inline double MapY( double affine[3][3], double x, double y )
 {
 	return affine[1][0] * x + affine[1][1] * y + affine[1][2];
 }
 
-static inline double MapZ( float affine[3][3], float x, float y )
+static inline double MapZ( double affine[3][3], double x, double y )
 {
 	return affine[2][0] * x + affine[2][1] * y + affine[2][2];
 }
 
-static void affine_max_output( float affine[3][3], float *w, float *h, float dz, float max_width, float max_height )
+static void affine_max_output( double affine[3][3], double *w, double *h, double dz, double max_width, double max_height )
 {
 	int tlx = MapX( affine, -max_width,  max_height ) / dz;
 	int tly = MapY( affine, -max_width,  max_height ) / dz;
@@ -307,33 +340,33 @@ static void affine_max_output( float affine[3][3], float *w, float *h, float dz,
 	min_y = MIN( min_y, bly );
 	min_y = MIN( min_y, bry );
 
-	*w = ( float )( max_x - min_x + 1 ) / max_width / 2.0;
-	*h = ( float )( max_y - min_y + 1 ) / max_height / 2.0;
+	*w = ( double )( max_x - min_x + 1 ) / max_width / 2.0;
+	*h = ( double )( max_y - min_y + 1 ) / max_height / 2.0;
 }
 
 #define IN_RANGE( v, r )	( v >= - r / 2 && v < r / 2 )
 
-static inline void get_affine( affine_t *affine, mlt_transition transition, float position )
+static inline void get_affine( affine_t *affine, mlt_transition transition, double position, int length )
 {
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 	int keyed = mlt_properties_get_int( properties, "keyed" );
 
 	if ( keyed == 0 )
 	{
-		float fix_rotate_x = mlt_properties_get_double( properties, "fix_rotate_x" );
-		float fix_rotate_y = mlt_properties_get_double( properties, "fix_rotate_y" );
-		float fix_rotate_z = mlt_properties_get_double( properties, "fix_rotate_z" );
-		float rotate_x = mlt_properties_get_double( properties, "rotate_x" );
-		float rotate_y = mlt_properties_get_double( properties, "rotate_y" );
-		float rotate_z = mlt_properties_get_double( properties, "rotate_z" );
-		float fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
-		float fix_shear_y = mlt_properties_get_double( properties, "fix_shear_y" );
-		float fix_shear_z = mlt_properties_get_double( properties, "fix_shear_z" );
-		float shear_x = mlt_properties_get_double( properties, "shear_x" );
-		float shear_y = mlt_properties_get_double( properties, "shear_y" );
-		float shear_z = mlt_properties_get_double( properties, "shear_z" );
-		float ox = mlt_properties_get_double( properties, "ox" );
-		float oy = mlt_properties_get_double( properties, "oy" );
+		double fix_rotate_x = mlt_properties_get_double( properties, "fix_rotate_x" );
+		double fix_rotate_y = mlt_properties_get_double( properties, "fix_rotate_y" );
+		double fix_rotate_z = mlt_properties_get_double( properties, "fix_rotate_z" );
+		double rotate_x = mlt_properties_get_double( properties, "rotate_x" );
+		double rotate_y = mlt_properties_get_double( properties, "rotate_y" );
+		double rotate_z = mlt_properties_get_double( properties, "rotate_z" );
+		double fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
+		double fix_shear_y = mlt_properties_get_double( properties, "fix_shear_y" );
+		double fix_shear_z = mlt_properties_get_double( properties, "fix_shear_z" );
+		double shear_x = mlt_properties_get_double( properties, "shear_x" );
+		double shear_y = mlt_properties_get_double( properties, "shear_y" );
+		double shear_z = mlt_properties_get_double( properties, "shear_z" );
+		double ox = mlt_properties_get_double( properties, "ox" );
+		double oy = mlt_properties_get_double( properties, "oy" );
 
 		affine_rotate_x( affine->matrix, fix_rotate_x + rotate_x * position );
 		affine_rotate_y( affine->matrix, fix_rotate_y + rotate_y * position );
@@ -346,14 +379,16 @@ static inline void get_affine( affine_t *affine, mlt_transition transition, floa
 	}
 	else
 	{
-		float rotate_x = composite_calculate_key( transition, "rotate_x", "rotate_x_info", 360, position );
-		float rotate_y = composite_calculate_key( transition, "rotate_y", "rotate_y_info", 360, position );
-		float rotate_z = composite_calculate_key( transition, "rotate_z", "rotate_z_info", 360, position );
-		float shear_x = composite_calculate_key( transition, "shear_x", "shear_x_info", 360, position );
-		float shear_y = composite_calculate_key( transition, "shear_y", "shear_y_info", 360, position );
-		float shear_z = composite_calculate_key( transition, "shear_z", "shear_z_info", 360, position );
-		float o_x = composite_calculate_key( transition, "ox", "ox_info", 0, position );
-		float o_y = composite_calculate_key( transition, "oy", "oy_info", 0, position );
+		double rotate_x = anim_get_angle(properties, "rotate_x", position, length);
+		double rotate_y = anim_get_angle(properties, "rotate_y", position, length);
+		double rotate_z = anim_get_angle(properties, "rotate_z", position, length);
+		double shear_x = anim_get_angle(properties, "shear_x", position, length);
+		double shear_y = anim_get_angle(properties, "shear_y", position, length);
+		double shear_z = anim_get_angle(properties, "shear_z", position, length);
+		double o_x = mlt_properties_anim_get_double(properties, "ox",
+			repeat_position(properties, "ox", position, length), length);
+		double o_y = mlt_properties_anim_get_double(properties, "oy",
+			repeat_position(properties, "ox", position, length), length);
 		
 		affine_rotate_x( affine->matrix, rotate_x );
 		affine_rotate_y( affine->matrix, rotate_y );
@@ -369,11 +404,11 @@ struct sliced_desc
 	interpp interp;
 	affine_t affine;
 	int a_width, a_height, b_width, b_height;
-	float lower_x, lower_y;
-	float dz, mix;
-	float x_offset, y_offset;
+	double lower_x, lower_y;
+	double dz, mix;
+	double x_offset, y_offset;
 	int b_alpha;
-	float minima, xmax, ymax;
+	double minima, xmax, ymax;
 };
 
 static int sliced_proc( int id, int index, int jobs, void* cookie )
@@ -382,8 +417,8 @@ static int sliced_proc( int id, int index, int jobs, void* cookie )
 	struct sliced_desc ctx = *((struct sliced_desc*) cookie);
 	int height_slice = (ctx.a_height + jobs / 2) / jobs;
 	int starty = height_slice * index;
-	float x, y;
-	float dx, dy;
+	double x, y;
+	double dx, dy;
 	int i, j;
 
 	ctx.a_image += (index * height_slice) * (ctx.a_width * 4);
@@ -449,9 +484,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	double consumer_ar = mlt_profile_sar( profile );
 
-	// Structures for geometry
-	struct mlt_geometry_item_s result;
-
 	if ( mirror && position > length / 2 )
 		position = abs( position - length );
 
@@ -462,12 +494,45 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		return error;
 
 	// Calculate the region now
+	mlt_rect result = {0, 0, normalised_width, normalised_height, 1.0};
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
-	composite_calculate( transition, &result, normalised_width, normalised_height, ( float )position );
+
+	if (mlt_properties_get(properties, "geometry"))
+	{
+		// Structures for geometry
+		struct mlt_geometry_item_s geometry;
+		composite_calculate( transition, &geometry, normalised_width, normalised_height, ( double )position );
+		result.x = geometry.x;
+		result.y = geometry.y;
+		result.w = geometry.w;
+		result.h = geometry.h;
+		result.o = geometry.mix / 100.0f;
+	}
+	else if (mlt_properties_get(properties, "rect"))
+	{
+		// Determine length and obtain cycle
+		double cycle = mlt_properties_get_double( properties, "cycle" );
+	
+		// Allow a repeat cycle
+		if ( cycle >= 1 )
+			length = cycle;
+		else if ( cycle > 0 )
+			length *= cycle;
+		
+		mlt_position anim_pos = repeat_position(properties, "rect", position, length);
+		result = mlt_properties_anim_get_rect(properties, "rect", anim_pos, length);
+		if (strchr(mlt_properties_get(properties, "rect"), '%')) {
+			result.x *= normalised_width;
+			result.y *= normalised_height;
+			result.w *= normalised_width;
+			result.h *= normalised_height;
+		}
+		result.o = (result.o == DBL_MIN)? 1.0 : MIN(result.o, 1.0);
+	}
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
-	float geometry_w = result.w;
-	float geometry_h = result.h;
+	double geometry_w = result.w;
+	double geometry_h = result.h;
 
 	if ( !mlt_properties_get_int( properties, "fill" ) )
 	{
@@ -511,13 +576,13 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Check that both images are of the correct format and process
 	if ( *format == mlt_image_rgb24a && b_format == mlt_image_rgb24a )
 	{
-		float sw, sh;
+		double sw, sh;
 		// Get values from the transition
-		float scale_x = mlt_properties_get_double( properties, "scale_x" );
-		float scale_y = mlt_properties_get_double( properties, "scale_y" );
+		double scale_x = mlt_properties_get_double( properties, "scale_x" );
+		double scale_y = mlt_properties_get_double( properties, "scale_y" );
 		int scale = mlt_properties_get_int( properties, "scale" );
-		float geom_scale_x = (float) b_width / result.w;
-		float geom_scale_y = (float) b_height / result.h;
+		double geom_scale_x = (double) b_width / result.w;
+		double geom_scale_y = (double) b_height / result.h;
 		struct sliced_desc desc = {
 			.a_image = *image,
 			.b_image = b_image,
@@ -528,9 +593,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			.b_height = b_height,
 			.lower_x = -(result.x + result.w / 2.0), // center
 			.lower_y = -(result.y + result.h / 2.0), // middle
-			.mix = result.mix / 100.0f,
-			.x_offset = (float) b_width / 2.0,
-			.y_offset = (float) b_height / 2.0,
+			.mix = result.o,
+			.x_offset = (double) b_width / 2.0,
+			.y_offset = (double) b_height / 2.0,
 			.b_alpha = mlt_properties_get_int( properties, "b_alpha" ),
 			// Affine boundaries
 			.minima = 0,
@@ -541,10 +606,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Recalculate vars if alignment supplied.
 		if ( mlt_properties_get( properties, "halign" ) || mlt_properties_get( properties, "valign" ) )
 		{
-			float halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
-			float valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
-			desc.x_offset = halign * b_width / 2.0f;
-			desc.y_offset = valign * b_height / 2.0f;
+			double halign = alignment_parse( mlt_properties_get( properties, "halign" ) );
+			double valign = alignment_parse( mlt_properties_get( properties, "valign" ) );
+			desc.x_offset = halign * b_width / 2.0;
+			desc.y_offset = valign * b_height / 2.0;
 			desc.lower_x = -(result.x + geometry_w * halign / 2.0f);
 			desc.lower_y = -(result.y + geometry_h * valign / 2.0f);
 		}
@@ -552,7 +617,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		affine_init( desc.affine.matrix );
 
 		// Compute the affine transform
-		get_affine( &desc.affine, transition, ( float )position );
+		get_affine( &desc.affine, transition, ( double )position, length );
 		desc.dz = MapZ( desc.affine.matrix, 0, 0 );
 		if ( (int) fabs( desc.dz * 1000 ) < 25 )
 			return 0;
@@ -662,7 +727,7 @@ mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type typ
 	if ( transition != NULL )
 	{
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "distort", 0 );
-		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "geometry", "0/0:100%x100%" );
+		mlt_properties_set( MLT_TRANSITION_PROPERTIES( transition ), "rect", "0%/0%:100%x100%:100%" );
 		// Inform apps and framework that this is a video only transition
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 1 );
 		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "fill", 1 );

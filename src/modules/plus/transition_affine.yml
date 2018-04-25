@@ -2,7 +2,7 @@ schema_version: 0.2
 type: transition
 identifier: affine
 title: Transform
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Charles Yates
 contributor:
@@ -15,6 +15,7 @@ parameters:
   - identifier: geometry
     title: Rectangle
     type: geometry
+    description: This property is deprecated. Use rect instead.
 
   - identifier: distort
     title: Ignore aspect ratio
@@ -288,3 +289,17 @@ parameters:
       CPUs. Otherwise, set the number of threads to use up to the slice count.
     minimum: 0
     default: 0
+
+  - identifier: rect
+    title: Rectangle
+    description: >
+      This replaces the geometry property and specifies a specifies a rectangle
+      for the size and position of the image. The format of this is
+      "X/Y:WxH[:opacity]" and can be animated with key frames.
+      Unlike the geometry property, if you use percentages you must use them for
+      every field in the above format. For example, you cannot mix and match
+      usage of absolute coordinates and percentages for size and opacity.
+    type: rect
+    default: "0%/0%:100%x100%:100%"
+    readonly: no
+    mutable: yes
