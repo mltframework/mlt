@@ -71,10 +71,27 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 
 			if ( plugin && plugin->desc && plugin->copies == 0 )
 			{
-				mlt_log_warning( properties, "Not compatible with %d channels. Requesting %lu channels instead.\n",
-					channels, plugin->desc->channels );
-				jackrack = initialise_jack_rack( properties, plugin->desc->channels );
+				// Calculate the number of channels that will work with this plugin
+				int request_channels = plugin->desc->channels;
+				while ( request_channels < channels )
+					request_channels += plugin->desc->channels;
+
+				if ( request_channels != channels )
+				{
+					// Try to load again with a compatible number of channels.
+					mlt_log_warning( properties, "Not compatible with %d channels. Requesting %d channels instead.\n",
+						channels, request_channels );
+					jackrack = initialise_jack_rack( properties, request_channels );
+				}
+				else
+				{
+					mlt_log_error( properties, "Invalid plugin configuration: %lu\n", id );
+					return jackrack;
+				}
 			}
+
+			if ( plugin && plugin->desc && plugin->copies )
+				mlt_log_debug( properties, "Plugin Initialized. Channels: %lu\tCopies: %d\tTotal: %lu\n", plugin->desc->channels, plugin->copies, jackrack->channels );
 		}
 	}
 	return jackrack;
@@ -94,6 +111,18 @@ static int ladspa_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	// Get the filter properties
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
+	// Check if the channel configuration has changed
+	int prev_channels = mlt_properties_get_int( filter_properties, "_prev_channels" );
+	if ( prev_channels != *channels )
+	{
+		if( prev_channels )
+		{
+			mlt_log_info( MLT_FILTER_SERVICE(filter), "Channel configuration changed. Old: %d New: %d.\n", prev_channels, *channels );
+			mlt_properties_set_data( filter_properties, "jackrack", NULL, 0, (mlt_destructor) NULL, NULL );
+		}
+		mlt_properties_set_int( filter_properties, "_prev_channels", *channels );
+	}
+
 	// Initialise LADSPA if needed
 	jack_rack_t *jackrack = mlt_properties_get_data( filter_properties, "jackrack", NULL );
 	if ( jackrack == NULL )
@@ -112,9 +141,23 @@ static int ladspa_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		mlt_position length = mlt_filter_get_length2( filter, frame );
 
 		// Get the producer's audio
-		*channels = jackrack->channels;
 		*format = mlt_audio_float;
 		mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+
+		// Resize the buffer if necessary.
+		if ( *channels < jackrack->channels )
+		{
+			// Add extra channels to satisfy the plugin.
+			// Extra channels in the buffer will be ignored by downstream services.
+			int old_size = mlt_audio_format_size( *format, *samples, *channels );
+			int new_size = mlt_audio_format_size( *format, *samples, jackrack->channels );
+			uint8_t* new_buffer = mlt_pool_alloc( new_size );
+			memcpy( new_buffer, *buffer, old_size );
+			// Put silence in extra channels.
+			memset( new_buffer + old_size, 0, new_size - old_size );
+			mlt_frame_set_audio( frame, new_buffer, *format, new_size, mlt_pool_release );
+			*buffer = new_buffer;
+		}
 
 		for ( i = 0; i < plugin->desc->control_port_count; i++ )
 		{
@@ -131,15 +174,15 @@ static int ladspa_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		if ( plugin->wet_dry_enabled )
 		{
 			value = mlt_properties_anim_get_double( filter_properties, "wetness", position, length );
-			for ( c = 0; c < *channels; c++ )
+			for ( c = 0; c < jackrack->channels; c++ )
 				plugin->wet_dry_values[c] = value;
 		}
 
 		// Configure the buffers
-		LADSPA_Data **input_buffers  = mlt_pool_alloc( sizeof( LADSPA_Data* ) * *channels );
-		LADSPA_Data **output_buffers = mlt_pool_alloc( sizeof( LADSPA_Data* ) * *channels );
+		LADSPA_Data **input_buffers  = mlt_pool_alloc( sizeof( LADSPA_Data* ) * jackrack->channels );
+		LADSPA_Data **output_buffers = mlt_pool_alloc( sizeof( LADSPA_Data* ) * jackrack->channels );
 
-		for ( i = 0; i < *channels; i++ )
+		for ( i = 0; i < jackrack->channels; i++ )
 		{
 			input_buffers[i]  = (LADSPA_Data*) *buffer + i * *samples;
 			output_buffers[i] = (LADSPA_Data*) *buffer + i * *samples;
