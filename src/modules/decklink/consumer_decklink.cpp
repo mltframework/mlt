@@ -735,7 +735,7 @@ protected:
 							if( c < m_inChannels )
 							{
 								*dst = *src;
-								*src++;
+								src++;
 							}
 							else
 							{
@@ -746,7 +746,7 @@ protected:
 						for( c = 0; c < m_inChannels - m_outChannels; c++ )
 						{
 							// Drop samples if there are more in channels than out channels.
-							*src++;
+							src++;
 						}
 					}
 					pcm = outBuff;

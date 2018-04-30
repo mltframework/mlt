@@ -49,9 +49,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	uint8_t r = ( key_val >> 24 ) & 0xff;
 	uint8_t g = ( key_val >> 16 ) & 0xff;
 	uint8_t b = ( key_val >>  8 ) & 0xff;
-	uint8_t y, u, v;
+	uint8_t u, v;
 
-	RGB2YUV_601_SCALED( r, g, b, y, u, v );
+	RGB2UV_601_SCALED( r, g, b, u, v );
 
 	*format = mlt_image_yuv422;
 	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
