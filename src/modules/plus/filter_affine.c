@@ -76,7 +76,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_producer_set_in_and_out( producer, in, out );
 			}
 			mlt_producer_seek( producer, in + position );
-			mlt_frame_set_position( frame, position );
 			mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), properties, "producer." );
 			mlt_properties_pass( MLT_TRANSITION_PROPERTIES( transition ), properties, "transition." );
 			mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &a_frame, 0 );

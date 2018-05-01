@@ -67,7 +67,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Process the frame
 	mlt_transition_process( transition, frame, NULL );
 
-	return mlt_frame_get_image( frame, image, format, width, height, writable );
+	int result = mlt_frame_get_image( frame, image, format, width, height, writable );
+
+	// Restore the frame's position.
+	mlt_frame_set_position( frame, mlt_frame_original_position( frame ) );
+
+	return result;
 }
 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
