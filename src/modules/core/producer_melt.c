@@ -115,15 +115,17 @@ static mlt_filter create_filter( mlt_profile profile, mlt_field field, char *id,
 
 static mlt_transition create_transition( mlt_profile profile, mlt_field field, char *id, int track )
 {
-	char *arg = strchr( id, ':' );
+	char *temp = strdup( id );
+	char *arg = strchr( temp, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
-	mlt_transition transition = mlt_factory_transition( profile, id, arg );
+	mlt_transition transition = mlt_factory_transition( profile, temp, arg );
 	if ( transition != NULL )
 	{
 		mlt_field_plant_transition( field, transition, track, track + 1 );
 		track_service( field, transition, ( mlt_destructor )mlt_transition_close );
 	}
+	free( temp );
 	return transition;
 }
 
