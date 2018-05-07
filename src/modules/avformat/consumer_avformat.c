@@ -289,6 +289,16 @@ static void property_changed( mlt_properties owner, mlt_consumer self, char *nam
 		mlt_properties_set_int( properties, "frame_rate_num", rational.num );
 		mlt_properties_set_int( properties, "frame_rate_den", rational.den );
 	}
+    // Apply AVOptions that are synonyms for standard mlt_consumer options
+    else if ( !strcmp( name, "ac" ) )
+    {
+        mlt_properties_set_int( properties, "channels", mlt_properties_get_int( properties, "ac" ) );
+    }
+    else if ( !strcmp( name, "ar" ))
+    {
+        mlt_properties_set_int( properties, "frequency", mlt_properties_get_int( properties, "ar" ) );
+    }
+
 }
 
 /** Start the consumer.
@@ -375,13 +385,7 @@ static int consumer_start( mlt_consumer consumer )
 
 		mlt_event_block( mlt_properties_get_data( properties, "property-changed event", NULL ) );
 
-		// Apply AVOptions that are synonyms for standard mlt_consumer options
-		if ( mlt_properties_get( properties, "ac" ) )
-			mlt_properties_set_int( properties, "channels", mlt_properties_get_int( properties, "ac" ) );
-		if ( mlt_properties_get( properties, "ar" ) )
-			mlt_properties_set_int( properties, "frequency", mlt_properties_get_int( properties, "ar" ) );
-
-		// Because Movit only reads this on the first frame,
+        // Because Movit only reads this on the first frame,
 		// we must do this after properties have been set but before first frame request.
 		if ( !mlt_properties_get( properties, "color_trc") )
 			color_trc_from_colorspace( properties );

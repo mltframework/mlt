@@ -584,7 +584,13 @@ int mlt_consumer_start( mlt_consumer self )
 	if ( abs( priv->real_time ) > 1 && mlt_properties_get_int( properties, "buffer" ) <= abs( priv->real_time ) )
 		mlt_properties_set_int( properties, "_buffer", abs( priv->real_time ) + 1 );
 
+	// Store the parameters for audio processing.
+	priv->aud_counter = 0;
+	priv->fps = mlt_properties_get_double( properties, "fps" );
+	priv->channels = mlt_properties_get_int( properties, "channels" );
+	priv->frequency = mlt_properties_get_int( properties, "frequency" );
 	priv->preroll = 1;
+
 #ifdef _WIN32
 	if ( priv->real_time == 1 || priv->real_time == -1 )
 		consumer_read_ahead_start( self );
@@ -593,12 +599,6 @@ int mlt_consumer_start( mlt_consumer self )
 	// Start the service
 	if ( self->start != NULL )
 		error = self->start( self );
-
-	// Store the parameters for audio processing.
-	priv->aud_counter = 0;
-	priv->fps = mlt_properties_get_double( properties, "fps" );
-	priv->channels = mlt_properties_get_int( properties, "channels" );
-	priv->frequency = mlt_properties_get_int( properties, "frequency" );
 
 	return error;
 }
