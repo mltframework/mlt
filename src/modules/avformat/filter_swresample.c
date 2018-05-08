@@ -200,7 +200,19 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	// Get the producer's audio
 	int error = mlt_frame_get_audio( frame, buffer, &in_format, &in_frequency, &in_channels, samples );
-	if ( error || in_format == mlt_audio_none || out_format == mlt_audio_none ) return error;
+	if ( error ||
+			in_format == mlt_audio_none || out_format == mlt_audio_none ||
+			in_frequency == 0 || out_frequency == 0 ||
+			in_channels == 0 || out_channels == 0 ||
+			*samples == 0 )
+	{
+		// Error situation. Do not attempt to convert.
+		*format = in_format;
+		*frequency = in_frequency;
+		*channels = in_channels;
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid Parameters: %dS - %dHz %dC %s -> %dHz %dC %s\n", *samples, in_frequency, in_channels, mlt_audio_format_name( in_format ), out_frequency, out_channels, mlt_audio_format_name( out_format ) );
+		return error;
+	}
 
 	// Determine the input/output channel layout.
 	in_layout = get_channel_layout_or_default( mlt_properties_get( frame_properties, "channel_layout" ), in_channels );
@@ -272,7 +284,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		}
 		else
 		{
-			mlt_log_error( MLT_FILTER_SERVICE(filter), "swr_convert() failed\n" );
+			mlt_log_error( MLT_FILTER_SERVICE(filter), "swr_convert() failed. Alloc: %d\tIn: %d\tOut: %d\n", alloc_samples, in_samples, out_samples );
 			error = 1;
 		}
 	}
