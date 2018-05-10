@@ -198,8 +198,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		memset( alpha, color.a, alpha_size );
 
 	// Clone our image
-	*buffer = mlt_pool_alloc( size );
-	memcpy( *buffer, image, size );
+	if (*buffer && image && size > 0) {
+		*buffer = mlt_pool_alloc( size );
+		memcpy( *buffer, image, size );
+	}
 
 	// Now update properties so we free the copy after
 	mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
