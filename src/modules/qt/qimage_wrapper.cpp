@@ -250,11 +250,10 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->current_height = height;
 
 		// Allocate/define image
-		int dst_stride = width * ( has_alpha ? 4 : 3 );
-		int image_size = dst_stride * ( height + 1 );
+		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		self->current_alpha = NULL;
-		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 		// Copy the image
 		int y = self->current_height + 1;
@@ -281,7 +280,6 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			// First, set the image so it can be converted when we get it
 			mlt_frame_replace_image( frame, self->current_image, self->format, width, height );
 			mlt_frame_set_image( frame, self->current_image, image_size, mlt_pool_release );
-			self->format = format;
 
 			// get_image will do the format conversion
 			mlt_frame_get_image( frame, &buffer, &format, &width, &height, 0 );
@@ -289,6 +287,9 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			// cache copies of the image and alpha buffers
 			if ( buffer )
 			{
+				self->current_width = width;
+				self->current_height = height;
+				self->format = format;
 				image_size = mlt_image_format_size( format, width, height, NULL );
 				self->current_image = (uint8_t*) mlt_pool_alloc( image_size );
 				memcpy( self->current_image, buffer, image_size );
