@@ -1,6 +1,59 @@
 MLT Release Notes
 -----------------
 
+Version 6.8.0 - May 10, 2018
+
+This version improves support for multi-channel audio and adds some new
+manipulation functions to the mlt_animation API.
+
+Framework
+  * Added support for musl C library.
+  * Added functions for audio channel layouts:
+    - mlt_channel_layout_name()
+    - mlt_channel_layout_id()
+    - mlt_channel_layout_channels()
+    - mlt_channel_layout_default()
+  * Added channel_layout property to mlt_consumer.
+  * Added mlt_channel_layout enum.
+  * Disabled memory pooling by default and require compile macro USE_MLT_POOL
+    to re-enable it.
+  * Fixed reliability of keyframed properties serializing properly.
+  * Fixed parsing non-animated string as an animation.
+  * Added more functions to mlt_animation:
+    - mlt_animation_key_set_type()
+    - mlt_animation_key_set_frame()
+    - Mlt::Animation::key_set_type()
+    - Mlt::Animation::key_set_frame()
+
+Modules
+  * Fixed some crashes in qimage producer especially with alpha channel.
+  * Fixed >2 channel audio output in the SDL consumers.
+  * Fixed >2 channel audio output in the rtaudio consumer on Windows.
+  * Fixed vorbis encoding with FFmpeg v3.4+.
+  * qimage and qtext are now higher priority than gtk2 pixbuf and pango by the
+    loader producer.
+  * Added support for more channel counts to decklink consumer.
+  * Added swresample filter based on libswresample from FFmpeg. This is now
+    the preferred channel count normalizing filter used by the loader producer.
+  * Fixed the strange "Undefined constant" and "Unable to parse option value"
+    log messages in the the avformat consumer.
+  * Fixed GIF and DPX writing in avformat consumer.
+  * Reduced the memory usage of the affine transition and filters.
+  * Fixed a crash in kdenlivetitle producer.
+  * Fixed a crash in the rotoscoping filter.
+  * Fixed frame rate reported in Matroska and WebM files produced by the
+    avformat consumer.
+  * Added sdl2_audio consumer.
+  * Fixed alpha channel support for more pixel formats in the avformat producer.
+  * Converted the affine transition to use mlt_rect and mlt_animation.
+  * Fixed LADSPA plugins with mono channel audio.
+
+Other
+  * Fixed a melt command line parsing bug when argument supplied to -transition.
+  * Fixed melt with SDL2 on Windows not using stdio and stderr.
+  * Improved speed of the vp9 avformat consumer preset.
+
+
 Version 6.6.0 - January 22, 2018
 
 This version builds upon the previous release with performance improvements
