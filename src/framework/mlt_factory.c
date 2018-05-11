@@ -431,10 +431,18 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 		obj = mlt_repository_create( repository, profile, consumer_type, service, input );
 	}
 
-	if ( obj == NULL && !strcmp( service, "sdl2" ) )
+	if ( obj == NULL )
 	{
-		service = "sdl";
-		obj = mlt_repository_create( repository, profile, consumer_type, service, input );
+		if ( !strcmp( service, "sdl2" ) )
+		{
+			service = "sdl";
+			obj = mlt_repository_create( repository, profile, consumer_type, service, input );
+		}
+		else if ( !strcmp( service, "sdl_audio" ) )
+		{
+			service = "sdl2_audio";
+			obj = mlt_repository_create( repository, profile, consumer_type, service, input );
+		}
 	}
 
 	if ( obj != NULL )
