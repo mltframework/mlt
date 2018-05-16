@@ -198,7 +198,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		memset( alpha, color.a, alpha_size );
 
 	// Clone our image
-	if (*buffer && image && size > 0) {
+	if (buffer && image && size > 0) {
 		*buffer = mlt_pool_alloc( size );
 		memcpy( *buffer, image, size );
 	}
