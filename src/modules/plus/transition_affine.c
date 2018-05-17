@@ -427,7 +427,7 @@ static int sliced_proc( int id, int index, int jobs, void* cookie )
 			for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {
 				dx = MapX( ctx.affine.matrix, x, y ) / ctx.dz + ctx.x_offset;
 				dy = MapY( ctx.affine.matrix, x, y ) / ctx.dz + ctx.y_offset;
-				if (dx >= ctx.minima && dx <= ctx.xmax && dy >= ctx.minima && dy <= ctx.ymax)
+				if (dx >= ctx.minima && dx < ctx.xmax && dy >= ctx.minima && dy < ctx.ymax)
 					ctx.interp(ctx.b_image, ctx.b_width, ctx.b_height, dx, dy, ctx.mix, ctx.a_image, ctx.b_alpha);
 				ctx.a_image += 4;
 			}
