@@ -208,6 +208,7 @@ static int load_properties( mlt_properties self, const char *filename )
 		// Temp string
 		char temp[ 1024 ];
 		char last[ 1024 ] = "";
+		char prevParse[ 1024 ] = "";
 
 		// Read each string from the file
 		while( fgets( temp, 1024, file ) )
@@ -217,8 +218,17 @@ static int load_properties( mlt_properties self, const char *filename )
 			if ( temp[x] == '\n' || temp[x] == '\r' )
 				temp[x] = '\0';
 
+			// Check if this line is a continuation of a multi-line string.
+			// a " " indent indicates a continuation.
+			if ( temp[ 0 ] == ' ' )
+			{
+				// Concat with the previous value and re-parse.
+				char multiline[ 1024 ];
+				sprintf( multiline, "%s\n%s", prevParse, temp + 1 );
+				strcpy( temp, multiline );
+			}
 			// Check if the line starts with a .
-			if ( temp[ 0 ] == '.' )
+			else if ( temp[ 0 ] == '.' )
 			{
 				char temp2[ 1024 ];
 				sprintf( temp2, "%s%s", last, temp );
@@ -232,7 +242,10 @@ static int load_properties( mlt_properties self, const char *filename )
 
 			// Parse and set the property
 			if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
+			{
+				strcpy( prevParse, temp );
 				mlt_properties_parse( self, temp );
+			}
 		}
 
 		// Close the file
@@ -1203,8 +1216,25 @@ void mlt_properties_dump( mlt_properties self, FILE *output )
 	property_list *list = self->local;
 	int i = 0;
 	for ( i = 0; i < list->count; i ++ )
-		if ( mlt_properties_get( self, list->name[ i ] ) != NULL )
-			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( self, list->name[ i ] ) );
+	{
+		char* value = mlt_properties_get( self, list->name[ i ] );
+		if ( value != NULL )
+		{
+			int c = 0;
+			fprintf( output, "%s=", list->name[ i ] );
+			while ( value[c] != '\0' )
+			{
+				fputc( value[c], output );
+				if ( value[c] == '\n' )
+				{
+					// Prefix multi-line strings with a " " so they can be recombined when loading.
+					fputc( ' ', output );
+				}
+				c++;
+			}
+			fprintf( output, "\n" );
+		}
+	}
 }
 
 /** Output the properties to a file handle.
