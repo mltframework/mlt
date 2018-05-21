@@ -199,59 +199,62 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 
 static int load_properties( mlt_properties self, const char *filename )
 {
+#define MAX_STR_LEN 1024
+	char line[ MAX_STR_LEN ];
+	char prevKey[ MAX_STR_LEN ] = "";
+	char prevParse[ MAX_STR_LEN ] = "";
+
 	// Open the file
 	FILE *file = mlt_fopen( filename, "r" );
+	if ( !file )
+		return 0;
 
 	// Load contents of file
-	if ( file != NULL )
+	// Read each line from the file
+	while( fgets( line, 1024, file ) )
 	{
-		// Temp string
-		char temp[ 1024 ];
-		char last[ 1024 ] = "";
-		char prevParse[ 1024 ] = "";
+		// Chomp the new line character from the string
+		int x = strlen( line ) - 1;
+		if ( line[x] == '\n' || line[x] == '\r' )
+			line[x] = '\0';
 
-		// Read each string from the file
-		while( fgets( temp, 1024, file ) )
+		// Check if this line is a continuation of a multi-line string.
+		// a " " indent indicates a continuation.
+		if ( line[ 0 ] == ' ' )
 		{
-			// Chomp the new line character from the string
-			int x = strlen( temp ) - 1;
-			if ( temp[x] == '\n' || temp[x] == '\r' )
-				temp[x] = '\0';
-
-			// Check if this line is a continuation of a multi-line string.
-			// a " " indent indicates a continuation.
-			if ( temp[ 0 ] == ' ' )
-			{
-				// Concat with the previous value and re-parse.
-				char multiline[ 1024 ];
-				sprintf( multiline, "%s\n%s", prevParse, temp + 1 );
-				strcpy( temp, multiline );
-			}
-			// Check if the line starts with a .
-			else if ( temp[ 0 ] == '.' )
-			{
-				char temp2[ 1024 ];
-				sprintf( temp2, "%s%s", last, temp );
-				strcpy( temp, temp2 );
-			}
-			else if ( strchr( temp, '=' ) )
-			{
-				strcpy( last, temp );
-				*( strchr( last, '=' ) ) = '\0';
-			}
-
-			// Parse and set the property
-			if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
-			{
-				strcpy( prevParse, temp );
-				mlt_properties_parse( self, temp );
-			}
+			// Concat with the previous value and re-parse.
+			char multiline[ MAX_STR_LEN ];
+			int ret = snprintf( multiline, MAX_STR_LEN, "%s\n%s", prevParse, line + 1 );
+			if ( ret >= MAX_STR_LEN )
+				mlt_log_error( NULL, "Truncated string: %s", multiline );
+			strcpy( line, multiline );
+		}
+		// Check if the line starts with a .
+		else if ( line[ 0 ] == '.' )
+		{
+			char temp[ MAX_STR_LEN ];
+			int ret = snprintf( temp, MAX_STR_LEN, "%s%s", prevKey, line );
+			if ( ret >= MAX_STR_LEN )
+				mlt_log_error( NULL, "Truncated string: %s", temp );
+			strcpy( line, temp );
+		}
+		else if ( strchr( line, '=' ) )
+		{
+			strcpy( prevKey, line );
+			*( strchr( prevKey, '=' ) ) = '\0';
 		}
 
-		// Close the file
-		fclose( file );
+		// Parse and set the property
+		if ( strcmp( line, "" ) && line[ 0 ] != '#' )
+		{
+			strcpy( prevParse, line );
+			mlt_properties_parse( self, line );
+		}
 	}
-	return file? 0 : errno;
+
+	// Close the file
+	fclose( file );
+	return errno;
 }
 
 /** Create a properties object by reading a .properties text file.
