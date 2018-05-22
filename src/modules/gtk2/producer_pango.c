@@ -1,6 +1,6 @@
 /*
  * producer_pango.c -- a pango-based titler
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -624,7 +624,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			src_stride = gdk_pixbuf_get_rowstride( this->pixbuf );
 			dst_stride = this->width * ( mlt_image_rgb24a == cached->format ? 4 : 3 );
 
-			size = dst_stride * ( this->height + 1 );
+			size = mlt_image_format_size( cached->format, cached->width, cached->height, &bpp );
 			buf = mlt_pool_alloc( size );
 			uint8_t *buf_save = buf;
 

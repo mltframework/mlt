@@ -1,6 +1,6 @@
 /*
  * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -605,10 +605,10 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		int has_alpha = gdk_pixbuf_get_has_alpha( pixbuf );
 		int src_stride = gdk_pixbuf_get_rowstride( pixbuf );
 		int dst_stride = self->width * ( has_alpha ? 4 : 3 );
-		int image_size = dst_stride * ( height + 1 );
+		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+		int image_size = mlt_image_format_size( self->format, width, height, NULL );
 		self->image = mlt_pool_alloc( image_size );
 		self->alpha = NULL;
-		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 		if ( src_stride != dst_stride )
 		{

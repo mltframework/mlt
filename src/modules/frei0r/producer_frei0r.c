@@ -43,7 +43,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
 
 	// Allocate the image
-	int size = *width * ( *height + 1 ) * 4;
+	*format = mlt_image_rgb24a;
+	int size = mlt_image_format_size( *format, *width, *height, NULL );
 
 	// Allocate the image
 	*buffer = mlt_pool_alloc( size );
@@ -51,7 +52,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Update the frame
 	mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
 
-	*format = mlt_image_rgb24a;
 	if ( *buffer != NULL )
 	{
 		double position = mlt_frame_get_position( frame );
