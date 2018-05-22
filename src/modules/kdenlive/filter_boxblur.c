@@ -133,10 +133,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Only process if we have no error and a valid colour space
 		if ( error == 0 )
 		{
-			int h = *height + 1;
-			int32_t *rgba = mlt_pool_alloc( 4 * *width * h * sizeof(int32_t) );
-			PreCompute( *image, rgba, *width, h );
-			DoBoxBlur( *image, rgba, *width, h, boxw, boxh );
+			int size = mlt_image_format_size( *format, *width, *height, NULL );
+			int32_t *rgba = mlt_pool_alloc( 4 * size );
+			PreCompute( *image, rgba, *width, *height );
+			DoBoxBlur( *image, rgba, *width, *height, boxw, boxh );
 			mlt_pool_release( rgba );
 		}
 	}
