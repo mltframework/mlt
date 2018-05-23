@@ -96,8 +96,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	unsigned int boxw = 0;
 	unsigned int boxh = 0;
-	double hori = mlt_properties_get_double( properties, "hori" );
-	double vert = mlt_properties_get_double( properties, "vert" );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
+	double hori = mlt_properties_anim_get_double( properties, "hori", position, length );
+	double vert = mlt_properties_anim_get_double( properties, "vert", position, length );
 
 	// Get blur factor
 	double factor = mlt_properties_get_int( properties, "start" );
@@ -111,8 +113,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	char* blur_property = mlt_properties_get( properties, "blur" );
 	if ( blur_property )
 	{
-		mlt_position position = mlt_filter_get_position( filter, frame );
-		mlt_position length = mlt_filter_get_length2( filter, frame );
 		factor = mlt_properties_anim_get_double( properties, "blur", position, length );
 	}
 
