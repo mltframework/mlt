@@ -1246,7 +1246,7 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 double mlt_property_anim_get_double( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	double result;
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
@@ -1281,7 +1281,7 @@ double mlt_property_anim_get_double( mlt_property self, double fps, locale_t loc
 int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	int result;
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
@@ -1316,7 +1316,7 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	char *result;
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
@@ -1660,7 +1660,7 @@ int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, l
 mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	mlt_rect result;
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if ( self->animation || ( ( self->types & mlt_prop_string ) && self->prop_string ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
