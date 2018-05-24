@@ -582,8 +582,9 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			}
 			free( width );
 			free( height );
+			result = strdup(result);
 			free( protocol );
-			return strdup( result );
+			return result;
 		}
 	}
 	free( protocol );
