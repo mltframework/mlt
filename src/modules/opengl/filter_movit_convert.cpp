@@ -495,7 +495,9 @@ static MltInput* create_input( mlt_properties properties, mlt_image_format forma
 // with the same parameters), and return that pointer.
 static uint8_t* make_input_copy( mlt_image_format format, uint8_t *image, int width, int height )
 {
-	int img_size = mlt_image_format_size( format, width, height, NULL );
+	// We use height-1 because mlt_image_format_size() uses height + 1.
+	// XXX Remove -1 when mlt_image_format_size() is changed.
+	int img_size = mlt_image_format_size( format, width, height - 1, NULL );
 	uint8_t* img_copy = (uint8_t*) mlt_pool_alloc( img_size );
 	if ( format == mlt_image_yuv422 ) {
 		yuv422_to_yuv422p( image, img_copy, width, height );
