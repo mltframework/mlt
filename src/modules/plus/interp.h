@@ -118,10 +118,12 @@ int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
 #endif
 	int p = (int) rintf(x) * 4 + (int) rintf(y) * 4 * w;
-	float alpha = (float) sl[p + 3] / 255.0 * o;
-	v[0]= v[0] * (1.0 - alpha) + sl[p] * alpha;
-	v[1]= v[1] * (1.0 - alpha) + sl[p + 1] * alpha;
-	v[2]= v[2] * (1.0 - alpha) + sl[p + 2] * alpha;
+	float alpha_sl = (float) sl[p + 3] / 255.0f * o;
+	float alpha_v = (float) v[3] / 255.0f;
+	float alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
+	v[0] = v[0] * (1.0f - alpha) + sl[p] * alpha;
+	v[1] = v[1] * (1.0f - alpha) + sl[p + 1] * alpha;
+	v[2] = v[2] * (1.0f - alpha) + sl[p + 2] * alpha;
 	if (is_alpha) v[3] = sl[p +3];
 
 	return 0;
@@ -171,21 +173,25 @@ int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 
 	a=sl[k+3]+(sl[k1+3]-sl[k+3])*(x-(float)m);
 	b=sl[l+3]+(sl[l1+3]-sl[n1+3])*(x-(float)m);
-	float alpha = a+(b-a)*(y-(float)n);
-	if (is_alpha) v[3] = alpha;
-	alpha = alpha / 255.0 * o;
+
+
+	float alpha_sl = a+(b-a)*(y-(float)n);
+	float alpha_v = (float) v[3] / 255.0f;
+	if (is_alpha) v[3] = alpha_sl;
+	alpha_sl = alpha_sl / 255.0f * o;
+	float alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
 
 	a=sl[k]+(sl[k1]-sl[k])*(x-(float)m);
 	b=sl[l]+(sl[l1]-sl[n1])*(x-(float)m);
-	v[0]= v[0] * (1.0 - alpha) + (a+(b-a)*(y-(float)n)) * alpha;
+	v[0]= v[0] * (1.0f - alpha) + (a+(b-a)*(y-(float)n)) * alpha;
 
 	a=sl[k+1]+(sl[k1+1]-sl[k+1])*(x-(float)m);
 	b=sl[l+1]+(sl[l1+1]-sl[n1+1])*(x-(float)m);
-	v[1]= v[1] * (1.0 - alpha) + (a+(b-a)*(y-(float)n)) * alpha;
+	v[1]= v[1] * (1.0f - alpha) + (a+(b-a)*(y-(float)n)) * alpha;
 
 	a=sl[k+2]+(sl[k1+2]-sl[k+2])*(x-(float)m);
 	b=sl[l+2]+(sl[l1+2]-sl[n1+2])*(x-(float)m);
-	v[2]= v[2] * (1.0 - alpha) + (a+(b-a)*(y-(float)n)) * alpha;
+	v[2]= v[2] * (1.0f - alpha) + (a+(b-a)*(y-(float)n)) * alpha;
 
 	return 0;
 }
@@ -290,14 +296,16 @@ int interpBC_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 			for (i=3;i>=j;i--)
 				p[i]=p[i]+(x-i-m)/j*(p[i]-p[i-1]);
 
-		if (p[3]<0.0) p[3]=0.0;
-		if (p[3]>255.0) p[3]=255.0;
+		if (p[3] < 0.0f) p[3] = 0.0f;
+		if (p[3] > 255.0f) p[3] = 255.0f;
 
 		if (b == 3) {
-			alpha = p[3] / 255.0 * o;
+			float alpha_sl = (float) p[3] / 255.0f * o;
+			float alpha_v = (float) v[3] / 255.0f;
+			alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
 			if (is_alpha) v[3] = p[3];
 		} else {
-			v[b] = v[b] * (1.0 - alpha) + p[3] * alpha;
+			v[b] = v[b] * (1.0f - alpha) + p[3] * alpha;
 		}
 	}
 
