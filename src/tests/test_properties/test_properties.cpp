@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2015 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2018 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -823,6 +823,10 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_double("foo",  0), 100.0);
         QCOMPARE(p.anim_get_double("foo", 25), 150.0);
         QCOMPARE(p.anim_get_double("foo", 50), 200.0);
+
+        // Test a non-animation string.
+        p.set("bar", "0.5");
+        QCOMPARE(p.anim_get_double("bar", 25), 0.5);
     }
 
     void PropertiesStringAnimation()

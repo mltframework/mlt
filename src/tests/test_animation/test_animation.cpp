@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2015-2018 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -237,15 +237,14 @@ private Q_SLOTS:
 		QCOMPARE(p.anim_get_int("foo", 60), 60);
 	}
 
-	void EmptyAnimationIsZeroKeyCount()
+	void EmptyAnimationIsInvalid()
 	{
 		Properties p;
 		p.set("foo", "");
 		// Cause the string to be interpreted as animated value.
 		p.anim_get_int("foo", 0);
 		Animation a = p.get_animation("foo");
-		QVERIFY(a.is_valid());
-		QCOMPARE(a.key_count(), 0);
+		QVERIFY(!a.is_valid());
 	}
 
 	void NonEmptyAnimationKeyCount()
