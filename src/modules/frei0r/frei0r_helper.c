@@ -82,9 +82,10 @@ static int f0r_update2_slice( int id, int index, int count, void *context )
 	return 0;
 }
 
-int process_frei0r_item( mlt_service service, double position, double time, mlt_properties prop, mlt_frame frame, uint8_t **image, int *width, int *height )
+int process_frei0r_item( mlt_service service, double position, double time, int length, mlt_frame frame, uint8_t **image, int *width, int *height )
 {
 	int i=0;
+	mlt_properties prop = MLT_SERVICE_PROPERTIES(service);
 	f0r_instance_t ( *f0r_construct ) ( unsigned int , unsigned int ) = mlt_properties_get_data(  prop , "f0r_construct" ,NULL);
 	if (!f0r_construct) {
 		//printf("no ctor\n");
@@ -129,17 +130,22 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 			f0r_get_param_info(&pinfo,i);
 			char index[20];
 			snprintf( index, sizeof(index), "%d", i );
-			char *val = mlt_properties_get( prop , index );
-			if ( !val )
-				val = mlt_properties_get( prop , pinfo.name );
+			const char *name = index;
+			char *val = mlt_properties_get( prop , name );
+			if ( !val ) {
+				name = pinfo.name;
+				val = mlt_properties_get( prop , name );
+			}
 			if ( !val ) {
 				// Use the backwards-compatibility param name map.
 				mlt_properties map = mlt_properties_get_data( prop, "_param_name_map", NULL );
 				if ( map ) {
 					int j;
 					for ( j = 0; !val && j < mlt_properties_count(map); j++ ) {
-						if ( !strcmp(mlt_properties_get_value(map, j), index) )
-							val = mlt_properties_get( prop , mlt_properties_get_name(map, j) );
+						if ( !strcmp(mlt_properties_get_value(map, j), index) ) {
+							name = mlt_properties_get_name(map, j);
+							val = mlt_properties_get( prop , name );
+						}
 					}
 				}
 			}
@@ -148,13 +154,8 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 					case F0R_PARAM_DOUBLE:
 					case F0R_PARAM_BOOL:
 					{
-						mlt_geometry geom=mlt_geometry_init();
-						struct mlt_geometry_item_s item;
-						mlt_geometry_parse(geom,val,-1,-1,-1);
-						mlt_geometry_fetch(geom,&item,position);
-						double t=item.x;
+						double t = mlt_properties_anim_get_double(prop, name, position, length);
 						f0r_set_param_value(inst,&t,i);
-						mlt_geometry_close(geom);
 						break;
 					}
 					case F0R_PARAM_COLOR:
@@ -168,6 +169,7 @@ int process_frei0r_item( mlt_service service, double position, double time, mlt_
 					}
 					case F0R_PARAM_STRING:
 					{
+						val = mlt_properties_anim_get(prop, name, position, length);
 						f0r_set_param_value(inst, &val, i);
 						break;
 					}

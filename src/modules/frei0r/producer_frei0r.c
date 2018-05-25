@@ -33,9 +33,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Obtain the producer for this frame
 	mlt_producer producer = mlt_properties_get_data( properties, "producer_frei0r", NULL );
 
-	// Obtain properties of producer
-	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
-
 	// Choose suitable out values if nothing specific requested
 	if ( *width <= 0 )
 		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
@@ -57,7 +54,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		double position = mlt_frame_get_position( frame );
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 		double time = position / mlt_profile_fps( profile );
-		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, time, producer_props, frame, buffer, width, height );
+		int length = mlt_producer_get_playtime( producer );
+		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, time, length, frame, buffer, width, height );
 	}
 
     return 0;
