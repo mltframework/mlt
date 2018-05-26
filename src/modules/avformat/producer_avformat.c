@@ -2437,6 +2437,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	int channels = codec_context->channels;
 	int audio_used = self->audio_used[ index ];
 	int ret = 0;
+	int discarded = 1;
 
 	while ( pkt.data && pkt.size > 0 )
 	{
@@ -2495,6 +2496,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				}
 			}
 			audio_used += convert_samples;
+			discarded = 0;
 		}
 		
 		// Handle ignore
@@ -2510,7 +2512,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	// If we're behind, ignore this packet
 	// Skip this on non-seekable, audio-only inputs.
-	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
+	if ( !discarded && pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
 	{
 		int64_t pts = pkt.pts;
 		if ( self->first_pts != AV_NOPTS_VALUE )
