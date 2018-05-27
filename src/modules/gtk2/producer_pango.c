@@ -838,12 +838,7 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	}
 	else if ( text != NULL && strcmp( text, "" ) != 0 )
 	{
-		// Replace all ~'s with a line feed (silly convention, but handy)
-		char *copy = strdup( text );
-		while ( strchr( copy, '~' ) )
-			( *strchr( copy, '~' ) ) = '\n';
-		pango_layout_set_text( layout, copy, strlen( copy ) );
-		free( copy );
+		pango_layout_set_text( layout, text, strlen( text ) );
 	}
 	else
 	{
