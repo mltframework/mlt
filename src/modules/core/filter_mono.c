@@ -1,6 +1,6 @@
 /*
  * filter_mono.c -- mix all channels to a mono signal across n channels
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				uint8_t mixdown = 0;
 				for ( j = 0; j < *channels; j++ )
-					mixdown += ((uint8_t*) *buffer)[ ( i * *channels ) + j ] / *channels;
+					mixdown += ((uint8_t*) *buffer)[ ( i * *channels ) + j ];
 				for ( j = 0; j < channels_out; j++ )
 					new_buffer[ ( i * channels_out ) + j ] = mixdown;
 			}
@@ -64,7 +64,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				int16_t mixdown = 0;
 				for ( j = 0; j < *channels; j++ )
-					mixdown += ((int16_t*) *buffer)[ ( i * *channels ) + j ] / *channels;
+					mixdown += ((int16_t*) *buffer)[ ( i * *channels ) + j ];
 				for ( j = 0; j < channels_out; j++ )
 					new_buffer[ ( i * channels_out ) + j ] = mixdown;
 			}
@@ -78,7 +78,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				int32_t mixdown = 0;
 				for ( j = 0; j < *channels; j++ )
-					mixdown += ((int32_t*) *buffer)[ ( i * *channels ) + j ] / *channels;
+					mixdown += ((int32_t*) *buffer)[ ( i * *channels ) + j ];
 				for ( j = 0; j < channels_out; j++ )
 					new_buffer[ ( i * channels_out ) + j ] = mixdown;
 			}
@@ -92,7 +92,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				float mixdown = 0;
 				for ( j = 0; j < *channels; j++ )
-					mixdown += ((float*) *buffer)[ ( i * *channels ) + j ] / *channels;
+					mixdown += ((float*) *buffer)[ ( i * *channels ) + j ];
 				for ( j = 0; j < channels_out; j++ )
 					new_buffer[ ( i * channels_out ) + j ] = mixdown;
 			}
@@ -106,7 +106,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				int32_t mixdown = 0;
 				for ( j = 0; j < *channels; j++ )
-					mixdown += ((int32_t*) *buffer)[ ( j * *channels ) + i ] / *channels;
+					mixdown += ((int32_t*) *buffer)[ ( j * *channels ) + i ];
 				for ( j = 0; j < channels_out; j++ )
 					new_buffer[ ( j * *samples ) + i ] = mixdown;
 			}
@@ -120,7 +120,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			{
 				float mixdown = 0;
 				for ( j = 0; j < *channels; j++ )
-					mixdown += ((float*) *buffer)[ ( j * *channels ) + i ] / *channels;
+					mixdown += ((float*) *buffer)[ ( j * *channels ) + i ];
 				for ( j = 0; j < channels_out; j++ )
 					new_buffer[ ( j * *samples ) + i ] = mixdown;
 			}
