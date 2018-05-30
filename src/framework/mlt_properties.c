@@ -1519,6 +1519,12 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 	unsigned int indent = ltrim( &name );
 	mlt_properties properties = mlt_deque_peek_back( context->stack );
 
+	// Skip over colons in the key. Key/value separator must be ": ".
+	while ( ptr && ptr[1] != ' ' && ptr[1] != '\0' )
+	{
+		ptr = strchr( ptr + 1, ':' );
+	}
+
 	// Ascending one more levels in the tree
 	if ( indent < context->level )
 	{
