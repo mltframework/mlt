@@ -18,6 +18,7 @@
 
 #include <QString>
 #include <QtTest>
+#include <QTemporaryFile>
 
 #include <mlt++/Mlt.h>
 using namespace Mlt;
@@ -28,6 +29,8 @@ extern "C" {
 #include <framework/mlt_animation.h>
 }
 #include <cfloat>
+
+static const bool kRunLongTests = false;
 
 class TestProperties: public QObject
 {
@@ -235,6 +238,7 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_smpte_df), timeString);
 		QCOMPARE(p.get_time("key", mlt_time_clock), "11:22:33.200");
 
+        if (kRunLongTests)
         for (int i = 0; i < 9999999; ++i) {
             p.set("key", i);
 //            QWARN(p.get_time("key", mlt_time_smpte_df));
@@ -278,6 +282,7 @@ private Q_SLOTS:
         p.set("key", frames);
         QCOMPARE(p.get_time("key", mlt_time_clock), timeString);
 
+        if (kRunLongTests)
         for (int i = 0; i < 9999999; ++i) {
             p.set("key", i);
 //            QWARN(p.get_time("key", mlt_time_clock));
@@ -292,6 +297,7 @@ private Q_SLOTS:
         Properties p;
         p.set("_profile", profile.get_profile(), 0);
 
+        if (kRunLongTests)
         for (int i = 0; i < 9999999; ++i) {
             p.set("key", i);
 //            QWARN(p.get_time("key", mlt_time_clock));
@@ -393,22 +399,52 @@ private Q_SLOTS:
 
     void SerializesToYamlTiny()
     {
-        Properties p[2];
+        Properties p[3];
         p[0].set("key1", "value1");
-        p[0].set("key2", "value2");
+        p[0].set("key:2", "value[2]");
         p[1].set("1", "value3");
-        p[1].set("2", "value4");
-        p[0].set("seq", p[1].get_properties(), 0);
+        p[1].set("2", "value:4");
+        p[2].set("1", "value5");
+        p[2].set("2", "\"value6\"");
+        p[0].set("seq1", p[1].get_properties(), 0);
+        p[0].set("seq'2", p[2].get_properties(), 0);
         char* serializedYaml = p[0].serialise_yaml();
         QCOMPARE(serializedYaml,
                 "---\n"
                 "key1: value1\n"
-                "key2: value2\n"
-                "seq:\n"
+                "\"key:2\": \"value[2]\"\n"
+                "seq1:\n"
                 "  - value3\n"
-                "  - value4\n"
+                "  - \"value:4\"\n"
+                "\"seq'2\":\n"
+                "  - value5\n"
+                "  - '\"value6\"'\n"
                 "...\n");
         free(serializedYaml);
+    }
+    
+    void ParsesYamlTiny()
+    {
+        QTemporaryFile tempFile;
+        if (tempFile.open()) {
+            tempFile.write(
+                        "---\n"
+                        "key1: value1\n"
+                        "\"key:2\":\"value[2]\"\n"
+                        "seq1:\n"
+                        "  - value3\n"
+                        "  - \"value:4\"\n"
+                        "\"seq'2\":\n"
+                        "  - value5\n"
+                        "  - \"value:6\"\n"
+                        "...\n");
+            tempFile.close();
+        }
+        QScopedPointer<Properties> p(Properties::parse_yaml(tempFile.fileName().toUtf8().constData()));
+        QVERIFY(!p.isNull());
+        QVERIFY(p->is_valid());
+        QCOMPARE(p->get("key1"), "value1");
+        QCOMPARE(p->get("key:2"), "value[2]");
     }
 
     void RadixRespondsToLocale()

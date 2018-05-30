@@ -1519,6 +1519,18 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 	unsigned int indent = ltrim( &name );
 	mlt_properties properties = mlt_deque_peek_back( context->stack );
 
+	// If name is quoted
+	if ( ptr && name[0] == '\"' ) {
+		// Look for ending quote.
+		ptr = strchr( ptr + 1, '\"');
+		if ( ptr )
+			// Locate delimiter after ending quote.
+			ptr = strchr( ptr + 1, ':' );
+		else
+			// No ending quote!
+			ptr = strchr( name, ':' );
+	}
+
 	// Ascending one more levels in the tree
 	if ( indent < context->level )
 	{
@@ -1722,6 +1734,12 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		value = strdup( "" );
 	}
 
+	// Remove quotes around the name.
+	if ( name && name[0] == '"' && name[strlen(name) - 1] == '"' ) {
+		name ++;
+		name[strlen(name) - 1] = '\0';
+	}
+
 	error = mlt_properties_set( properties, name, value );
 
 	if ( !strcmp( name, "LC_NUMERIC" ) )
@@ -1902,6 +1920,11 @@ static void strbuf_escape( strbuf output, const char *value, char c )
 	free( v );
 }
 
+static inline int has_reserved_char( const char* string )
+{
+	return strchr( string, ':' ) || strchr( string, '[' ) || strchr( string, '\'' );
+}
+
 /** Convert a line string into a YAML block literal.
  *
  * \private \memberof strbuf_s
@@ -1948,27 +1971,28 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 		// This implementation assumes that all data elements are property lists.
 		// Unfortunately, we do not have run time type identification.
 		mlt_properties child = mlt_property_get_data( list->value[ i ], NULL );
+		const char *name = list->name[i];
+		const char *value = mlt_properties_get( self, name );
 
 		if ( mlt_properties_is_sequence( self ) )
 		{
 			// Ignore hidden/non-serialisable items
-			if ( list->name[ i ][ 0 ] != '_' )
+			if ( name[ 0 ] != '_' )
 			{
 				// Indicate a sequence item
 				indent_yaml( output, indent );
 				strbuf_printf( output, "- " );
 
 				// If the value can be represented as a string
-				const char *value = mlt_properties_get( self, list->name[ i ] );
 				if ( value && strcmp( value, "" ) )
 				{
 					// Determine if this is an unfolded block literal
 					if ( strchr( value, '\n' ) )
 					{
 						strbuf_printf( output, "|\n" );
-						output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( "|" ) );
+						output_yaml_block_literal( output, value, indent + strlen( name ) + strlen( "|" ) );
 					}
-					else if ( strchr( value, ':' ) || strchr( value, '[' ) || strchr( value, '\'' ) )
+					else if ( has_reserved_char( value ) )
 					{
 						strbuf_printf( output, "\"" );
 						strbuf_escape( output, value, '"' );
@@ -1976,7 +2000,7 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 					}
 					else if ( strchr( value, '"') )
 					{
-						strbuf_printf( output, "%s: '%s'\n", list->name[ i ], value );
+						strbuf_printf( output, "'%s'\n", value );
 					}
 					else
 					{
@@ -1991,36 +2015,44 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 		else
 		{
 			// Assume this is a normal map-oriented properties list
-			const char *value = mlt_properties_get( self, list->name[ i ] );
 
 			// Ignore hidden/non-serialisable items
 			// If the value can be represented as a string
-			if ( list->name[ i ][ 0 ] != '_' && value && strcmp( value, "" ) )
+			if ( name[ 0 ] != '_' && value && strcmp( value, "" ) )
 			{
 				if ( is_parent_sequence == 0 )
 					indent_yaml( output, indent );
 				else
 					is_parent_sequence = 0;
 
+				// Output the name.
+				if ( has_reserved_char( name) ) {
+					strbuf_printf( output, "\"" );
+					strbuf_escape( output, name, '"' );
+					strbuf_printf( output, "\": " );
+				} else {
+					strbuf_printf( output, "%s: ", name );
+				}
+
 				// Determine if this is an unfolded block literal
 				if ( strchr( value, '\n' ) )
 				{
-					strbuf_printf( output, "%s: |\n", list->name[ i ] );
-					output_yaml_block_literal( output, value, indent + strlen( list->name[ i ] ) + strlen( ": " ) );
+					strbuf_printf( output, "|\n" );
+					output_yaml_block_literal( output, value, indent + strlen( name ) + strlen( ": " ) );
 				}
-				else if ( strchr( value, ':' ) || strchr( value, '[' ) || strchr( value, '\'' ) )
+				else if ( has_reserved_char( value ) )
 				{
-					strbuf_printf( output, "%s: \"", list->name[ i ] );
+					strbuf_printf( output, "\"" );
 					strbuf_escape( output, value, '"' );
 					strbuf_printf( output, "\"\n" );
 				}
 				else if ( strchr( value, '"') )
 				{
-					strbuf_printf( output, "%s: '%s'\n", list->name[ i ], value );
+					strbuf_printf( output, "'%s'\n", value );
 				}
 				else
 				{
-					strbuf_printf( output, "%s: %s\n", list->name[ i ], value );
+					strbuf_printf( output, "%s\n", value );
 				}
 			}
 
@@ -2028,7 +2060,14 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 			if ( child )
 			{
 				indent_yaml( output, indent );
-				strbuf_printf( output, "%s:\n", list->name[ i ] );
+
+				if ( has_reserved_char( name ) ) {
+					strbuf_printf( output, "\"" );
+					strbuf_escape( output, name, '"' );
+					strbuf_printf( output, "\":\n" );
+				} else {
+					strbuf_printf( output, "%s:\n", name );
+				}
 
 				// Recurse on child
 				serialise_yaml( child, output, indent + 2, 0 );
