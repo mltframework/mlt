@@ -78,6 +78,7 @@
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
+    title    CDATA    #IMPLIED
 >
 <!ELEMENT multitrack (track | producer | playlist | tractor | multitrack)+ >
 <!ATTLIST multitrack
