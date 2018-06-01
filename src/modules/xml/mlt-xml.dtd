@@ -79,6 +79,7 @@
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
     title    CDATA    #IMPLIED
+    global_feed CDATA #IMPLIED
 >
 <!ELEMENT multitrack (track | producer | playlist | tractor | multitrack)+ >
 <!ATTLIST multitrack
