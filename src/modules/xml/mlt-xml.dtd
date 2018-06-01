@@ -9,6 +9,7 @@
     root       CDATA    #IMPLIED
     profile    CDATA    #IMPLIED
     title      CDATA    #IMPLIED
+    producer   IDREF    #IMPLIED
 >
 <!ELEMENT profile EMPTY >
 <!ATTLIST profile
