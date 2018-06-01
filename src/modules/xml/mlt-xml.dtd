@@ -14,6 +14,7 @@
 <!ELEMENT profile EMPTY >
 <!ATTLIST profile
     name               CDATA    #IMPLIED
+    colorspace         CDATA    #IMPLIED
     description        CDATA    #IMPLIED
     display_aspect_den CDATA    #IMPLIED
     display_aspect_num CDATA    #IMPLIED
