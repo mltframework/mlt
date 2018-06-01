@@ -36,6 +36,7 @@
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
+    title    CDATA    #IMPLIED
     mlt_service  CDATA    #IMPLIED
 >
 <!ELEMENT filter (property)* >
