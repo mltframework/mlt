@@ -73,7 +73,7 @@
 <!ATTLIST blank
     length   CDATA    #REQUIRED
 >
-<!ELEMENT tractor (multitrack, (filter | transition)*) >
+<!ELEMENT tractor ((property)*, (multitrack | (track)+), (filter | transition )*) >
 <!ATTLIST tractor
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
