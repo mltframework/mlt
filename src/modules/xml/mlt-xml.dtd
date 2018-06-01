@@ -56,7 +56,7 @@
     a_track  CDATA    #IMPLIED
     b_track  CDATA    #IMPLIED
 >
-<!ELEMENT playlist (entry | blank | producer | playlist | tractor | multitrack)+ >
+<!ELEMENT playlist (property*,(entry | blank | producer | playlist | tractor | multitrack)+) >
 <!ATTLIST playlist
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
