@@ -88,6 +88,7 @@
 <!ELEMENT track (producer | playlist | tractor | multitrack | filter | transition)* >
 <!ATTLIST track
     producer IDREF    #IMPLIED
+    hide    (video | audio | both) #IMPLIED
 >
 <!ELEMENT consumer (property)* >
 <!ATTLIST consumer
