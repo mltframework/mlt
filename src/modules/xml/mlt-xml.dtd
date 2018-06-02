@@ -31,7 +31,7 @@
     name     CDATA    #REQUIRED
     value    CDATA    #IMPLIED
 >
-<!ELEMENT producer (property)* >
+<!ELEMENT producer (property | filter)* >
 <!ATTLIST producer
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
