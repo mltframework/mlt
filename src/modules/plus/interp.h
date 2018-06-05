@@ -71,7 +71,7 @@ typedef int (*interpp)(unsigned char*, int, int, float, float, float, unsigned c
 //	x,y tocka, za katero izracuna interpolirano vrednost
 //  o opacity
 //	*v interpolirana vrednost
-int interpNNpr_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpNNpr_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	//printf("u=%5.2f v=%5.2f   ",x,y);
 	printf("u=%5.3f v=%5.3f     ",x/(w-1),y/(h-1));
@@ -93,7 +93,7 @@ int interpNNpr_b(unsigned char *sl, int w, int h, float x, float y, float o, uns
 //	x,y tocka, za katero izracuna interpolirano vrednost
 //  o opacity
 //	*v interpolirana vrednost
-int interpNN_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpNN_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
 	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
@@ -112,7 +112,7 @@ int interpNN_b(unsigned char *sl, int w, int h, float x, float y, float o, unsig
 //	x,y tocka, za katero izracuna interpolirano vrednost
 //  o opacity
 //	*v interpolirana vrednost
-int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
 	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
@@ -124,7 +124,7 @@ int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	v[0] = v[0] * (1.0f - alpha) + sl[p] * alpha;
 	v[1] = v[1] * (1.0f - alpha) + sl[p + 1] * alpha;
 	v[2] = v[2] * (1.0f - alpha) + sl[p + 2] * alpha;
-	if (is_alpha) v[3] = sl[p +3];
+	v[3] = is_atop? sl[p + 3] : (255 * alpha);
 
 	return 0;
 }
@@ -137,7 +137,7 @@ int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 //	x,y tocka, za katero izracuna interpolirano vrednost
 //  o opacity
 //	*v interpolirana vrednost
-int interpBL_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpBL_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int m,n,k,l;
 	float a,b;
@@ -157,7 +157,7 @@ int interpBL_b(unsigned char *sl, int w, int h, float x, float y, float o, unsig
 //------------------------------------------------------
 //bilinearna interpolacija
 //za byte (char) vrednosti  v packed color 32 bitnem formatu
-int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int m,n,k,l,n1,l1,k1;
 	float a,b;
@@ -177,9 +177,10 @@ int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 
 	float alpha_sl = a+(b-a)*(y-(float)n);
 	float alpha_v = (float) v[3] / 255.0f;
-	if (is_alpha) v[3] = alpha_sl;
+	if (is_atop) v[3] = alpha_sl;
 	alpha_sl = alpha_sl / 255.0f * o;
 	float alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
+	if (!is_atop) v[3] = 255 * alpha;
 
 	a=sl[k]+(sl[k1]-sl[k])*(x-(float)m);
 	b=sl[l]+(sl[l1]-sl[n1])*(x-(float)m);
@@ -205,7 +206,7 @@ int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 //	x,y tocka, za katero izracuna interpolirano vrednost
 //  o opacity
 //	*v interpolirana vrednost
-int interpBC_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpBC_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,j,l,m,n;
 	float k;
@@ -254,7 +255,7 @@ int interpBC_b(unsigned char *sl, int w, int h, float x, float y, float o, unsig
 //------------------------------------------------------
 //bikubicna interpolacija  "smooth"
 //za byte (char) vrednosti  v packed color 32 bitnem formatu
-int interpBC_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpBC_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,j,b,l,m,n;
 	float k;
@@ -303,7 +304,7 @@ int interpBC_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 			float alpha_sl = (float) p[3] / 255.0f * o;
 			float alpha_v = (float) v[3] / 255.0f;
 			alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
-			if (is_alpha) v[3] = p[3];
+			v[3] = is_atop? p[3] : (255 * alpha);
 		} else {
 			v[b] = v[b] * (1.0f - alpha) + p[3] * alpha;
 		}
@@ -323,7 +324,7 @@ int interpBC_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 //	*v interpolirana vrednost
 //!!! ODKOD SUM???  (ze po eni rotaciji v interp_test !!)
 //!!! v defish tega suma ni???
-int interpBC2_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpBC2_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,k,l,m,n;
 	float pp,p[4],wx[4],wy[4],xx;
@@ -375,7 +376,7 @@ int interpBC2_b(unsigned char *sl, int w, int h, float x, float y, float o, unsi
 //za byte (char) vrednosti  v packed color 32 bitnem formatu
 //!!! ODKOD SUM???  (ze po eni rotaciji v interp_test !!)
 //!!! v defish tega suma ni???
-int interpBC2_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpBC2_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int b,i,k,l,m,n,u;
 	float pp,p[4],wx[4],wy[4],xx;
@@ -435,7 +436,7 @@ int interpBC2_b32(unsigned char *sl, int w, int h, float x, float y, float o, un
 //	x,y tocka, za katero izracuna interpolirano vrednost
 //  o opacity
 //	*v interpolirana vrednost
-int interpSP4_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpSP4_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,j,m,n;
 	float pp,p[4],wx[4],wy[4],xx;
@@ -481,7 +482,7 @@ int interpSP4_b(unsigned char *sl, int w, int h, float x, float y, float o, unsi
 //------------------------------------------------------
 //spline 4x4 interpolacija
 //za byte (char) vrednosti  v packed color 32 bitnem formatu
-int interpSP4_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpSP4_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,j,m,n,b;
 	float pp,p[4],wx[4],wy[4],xx;
@@ -539,7 +540,7 @@ int interpSP4_b32(unsigned char *sl, int w, int h, float x, float y, float o, un
 //	*v interpolirana vrednost
 //!!! PAZI, TOLE NE DELA CISTO PRAV ???   belina se siri
 //!!! zaenkrat sem dodal fudge factor...
-int interpSP6_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpSP6_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,j,m,n;
 	float pp,p[6],wx[6],wy[6],xx;
@@ -605,7 +606,7 @@ int interpSP6_b(unsigned char *sl, int w, int h, float x, float y, float o, unsi
 //za byte (char) vrednosti  v packed color 32 bitnem formatu
 //!!! PAZI, TOLE NE DELA CISTO PRAV ???   belina se siri
 //!!! zaenkrat sem dodal fudge factor...
-int interpSP6_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpSP6_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,b,j,m,n;
 	float pp,p[6],wx[6],wy[6],xx;
@@ -678,7 +679,7 @@ int interpSP6_b32(unsigned char *sl, int w, int h, float x, float y, float o, un
 //	x,y tocka, za katero izracuna interpolirano vrednost
 //  o opacity
 //	*v interpolirana vrednost
-int interpSC16_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpSC16_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,j,m,n;
 	float pp,p[16],wx[16],wy[16],xx,xxx,x1;
@@ -737,7 +738,7 @@ int interpSC16_b(unsigned char *sl, int w, int h, float x, float y, float o, uns
 //------------------------------------------------------
 //truncated sinc "lanczos" 16x16 interpolacija
 //za byte (char) vrednosti  v packed color 32 bitnem formatu
-int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_alpha)
+int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 	int i,j,m,b,n;
 	float pp,p[16],wx[16],wy[16],xx,xxx,x1;

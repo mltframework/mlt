@@ -238,6 +238,8 @@ parameters:
     description: >
       Whether to use the B frame's alpha channel in transformations for the
       output, The affine filter sets this to 1 by default.
+      Basically, this tells the blend function to use the Porter-Duff atop
+      mode instead of the default over.
     type: boolean
     default: 0
     mutable: yes
