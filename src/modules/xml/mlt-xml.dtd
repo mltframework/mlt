@@ -31,7 +31,7 @@
     name     CDATA    #REQUIRED
     value    CDATA    #IMPLIED
 >
-<!ELEMENT producer (property)* >
+<!ELEMENT producer (property | filter)* >
 <!ATTLIST producer
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
@@ -88,6 +88,7 @@
 <!ELEMENT track (producer | playlist | tractor | multitrack | filter | transition)* >
 <!ATTLIST track
     producer IDREF    #IMPLIED
+    hide    (video | audio | both) #IMPLIED
 >
 <!ELEMENT consumer (property)* >
 <!ATTLIST consumer
