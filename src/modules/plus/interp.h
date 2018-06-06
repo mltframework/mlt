@@ -120,11 +120,12 @@ int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	int p = (int) rintf(x) * 4 + (int) rintf(y) * 4 * w;
 	float alpha_sl = (float) sl[p + 3] / 255.0f * o;
 	float alpha_v = (float) v[3] / 255.0f;
-	float alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
+	float alpha = alpha_sl + alpha_v - alpha_sl * alpha_v;
+	v[3] = is_atop? sl[p + 3] : (255 * alpha);
+	alpha = alpha_sl / alpha;
 	v[0] = v[0] * (1.0f - alpha) + sl[p] * alpha;
 	v[1] = v[1] * (1.0f - alpha) + sl[p + 1] * alpha;
 	v[2] = v[2] * (1.0f - alpha) + sl[p + 2] * alpha;
-	v[3] = is_atop? sl[p + 3] : (255 * alpha);
 
 	return 0;
 }
@@ -179,8 +180,9 @@ int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	float alpha_v = (float) v[3] / 255.0f;
 	if (is_atop) v[3] = alpha_sl;
 	alpha_sl = alpha_sl / 255.0f * o;
-	float alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
+	float alpha = alpha_sl + alpha_v - alpha_sl * alpha_v;
 	if (!is_atop) v[3] = 255 * alpha;
+	alpha = alpha_sl / alpha;
 
 	a=sl[k]+(sl[k1]-sl[k])*(x-(float)m);
 	b=sl[l]+(sl[l1]-sl[n1])*(x-(float)m);
@@ -303,8 +305,9 @@ int interpBC_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 		if (b == 3) {
 			float alpha_sl = (float) p[3] / 255.0f * o;
 			float alpha_v = (float) v[3] / 255.0f;
-			alpha = alpha_sl / (alpha_sl + alpha_v - alpha_sl * alpha_v);
+			alpha = alpha_sl + alpha_v - alpha_sl * alpha_v;
 			v[3] = is_atop? p[3] : (255 * alpha);
+			alpha = alpha_sl / alpha;
 		} else {
 			v[b] = v[b] * (1.0f - alpha) + p[3] * alpha;
 		}
