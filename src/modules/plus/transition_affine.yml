@@ -2,7 +2,7 @@ schema_version: 0.2
 type: transition
 identifier: affine
 title: Transform
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Charles Yates
 contributor:
@@ -72,7 +72,10 @@ parameters:
 
   - identifier: keyed
     title: Key-framed
-    description: Whether rotate, shear, and offset are key-framed or not.
+    description: >
+      Whether rotate, shear, and offset are key-framed or not.
+      This ("key-framed") refers to the legacy, deprecated, mlt_geometry-based
+      property evaluation. Most of the properties support mlt_animation now.
     type: boolean
     default: 0
     mutable: yes
