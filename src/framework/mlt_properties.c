@@ -812,6 +812,25 @@ char *mlt_properties_get_name( mlt_properties self, int index )
 	return NULL;
 }
 
+/** Get a property's string value by index (with time format).
+ *
+ * Do not free the returned string.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param index the numeric index of the property
+ * \param time_format the time format to use for animation
+ * \return the property value as a string or NULL if the index is out of range
+ */
+
+char *mlt_properties_get_value_tf( mlt_properties self, int index, mlt_time_format time_format )
+{
+	if ( !self ) return NULL;
+	property_list *list = self->local;
+	if ( index >= 0 && index < list->count )
+		return mlt_property_get_string_l_tf( list->value[ index ], list->locale, time_format );
+	return NULL;
+}
+
 /** Get a property's string value by index.
  *
  * Do not free the returned string.
@@ -823,11 +842,7 @@ char *mlt_properties_get_name( mlt_properties self, int index )
 
 char *mlt_properties_get_value( mlt_properties self, int index )
 {
-	if ( !self ) return NULL;
-	property_list *list = self->local;
-	if ( index >= 0 && index < list->count )
-		return mlt_property_get_string_l( list->value[ index ], list->locale );
-	return NULL;
+	return mlt_properties_get_value_tf( self, index, mlt_time_frames );
 }
 
 /** Get a data value by index.
@@ -2123,6 +2138,29 @@ void mlt_properties_unlock( mlt_properties self )
 {
 	if ( self )
 		pthread_mutex_unlock( &( ( property_list* )( self->local ) )->mutex );
+}
+
+/** Remove the value for a property.
+ *
+ * This initializes the value to zero and removes any string, data, or animation.
+ * This is especially useful when you want to reset an animation.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the name of the property to clear
+ */
+
+void mlt_properties_clear( mlt_properties self, const char *name )
+{
+	if ( !self || !name ) return;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property )
+		mlt_property_clear( property );
+
+	mlt_events_fire( self, "property-changed", name, NULL );
 }
 
 /** Get a time string associated to the name.

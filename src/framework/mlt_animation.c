@@ -23,6 +23,8 @@
 #include "mlt_animation.h"
 #include "mlt_tokeniser.h"
 #include "mlt_profile.h"
+#include "mlt_factory.h"
+#include "mlt_properties.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -585,22 +587,24 @@ int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int pos
 	return ( node == NULL );
 }
 
-/** Serialize a cut of the animation.
+/** Serialize a cut of the animation (with time format).
  *
  * The caller is responsible for free-ing the returned string.
  * \public \memberof mlt_animation_s
  * \param self an animation
  * \param in the frame at which to start serializing animation nodes
  * \param out the frame at which to stop serializing nodes
+ * \param time_format the time format to use for the key frames
  * \return a string representing the animation
  */
 
-char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
+char *mlt_animation_serialize_cut_tf( mlt_animation self, int in, int out, mlt_time_format time_format )
 {
 	struct mlt_animation_item_s item;
 	char *ret = calloc( 1, 1000 );
 	size_t used = 0;
 	size_t size = 1000;
+	mlt_property time_property = mlt_property_init();
 
 	item.property = mlt_property_init();
 	item.frame = item.is_key = 0;
@@ -652,8 +656,7 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 			}
 
 			// Determine length of string to be appended.
-			if ( item.frame - in != 0 )
-				item_len += 20;
+			item_len += 100;
 			if ( item.is_key )
 				item_len += strlen( mlt_property_get_string_l( item.property, self->locale ) );
 
@@ -685,7 +688,13 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 					s = "";
 					break;
 				}
-				sprintf( ret + used, "%d%s=", item.frame - in, s );
+				if ( time_property && self->fps > 0.0 ) {
+					mlt_property_set_int( time_property, item.frame - in );
+					const char *time = mlt_property_get_time( time_property, time_format, self->fps, self->locale );
+					sprintf( ret + used, "%s%s=", time, s );
+				} else {
+					sprintf( ret + used, "%d%s=", item.frame - in, s );
+				}
 
 				// Append item value.
 				if ( item.is_key )
@@ -696,12 +705,57 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 		}
 	}
 	mlt_property_close( item.property );
+	mlt_property_close( time_property );
 
+	return ret;
+}
+
+static mlt_time_format default_time_format()
+{
+	const char *e = getenv("MLT_ANIMATION_TIME_FORMAT");
+	return e? strtol( e, NULL, 10 ) : mlt_time_frames;
+}
+
+/** Serialize a cut of the animation.
+ *
+ * This version outputs the key frames' position as a frame number.
+ * The caller is responsible for free-ing the returned string.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param in the frame at which to start serializing animation nodes
+ * \param out the frame at which to stop serializing nodes
+ * \return a string representing the animation
+ */
+
+char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
+{
+	return mlt_animation_serialize_cut_tf( self, in, out, default_time_format() );
+}
+
+/** Serialize the animation (with time format).
+ *
+ * The caller is responsible for free-ing the returned string.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param time_format the time format to use for the key frames
+ * \return a string representing the animation
+ */
+
+char *mlt_animation_serialize_tf( mlt_animation self, mlt_time_format time_format )
+{
+	char *ret = mlt_animation_serialize_cut_tf( self, -1, -1, time_format );
+	if ( self && ret )
+	{
+		free( self->data );
+		self->data = ret;
+		ret = strdup( ret );
+	}
 	return ret;
 }
 
 /** Serialize the animation.
  *
+ * This version outputs the key frames' position as a frame number.
  * The caller is responsible for free-ing the returned string.
  * \public \memberof mlt_animation_s
  * \param self an animation
@@ -710,14 +764,7 @@ char *mlt_animation_serialize_cut( mlt_animation self, int in, int out )
 
 char *mlt_animation_serialize( mlt_animation self )
 {
-	char *ret = mlt_animation_serialize_cut( self, -1, -1 );
-	if ( self && ret )
-	{
-		free( self->data );
-		self->data = ret;
-		ret = strdup( ret );
-	}
-	return ret;
+	return mlt_animation_serialize_tf( self, default_time_format() );
 }
 
 /** Get the number of keyframes.

@@ -1,7 +1,6 @@
 /**
  * MltAnimation.h - MLT Wrapper
  * Copyright (C) 2015-2018 Meltytech, LLC
- * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,6 +57,7 @@ namespace Mlt
 			int remove( int position );
 			void interpolate();
 			char* serialize_cut( int in = -1, int out = -1 );
+			char* serialize_cut( mlt_time_format format, int in = -1, int out = -1 );
 	};
 }
 

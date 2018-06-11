@@ -293,6 +293,51 @@ private Q_SLOTS:
 		QCOMPARE(a.keyframe_type(1), mlt_keyframe_linear);
 		QCOMPARE(a.keyframe_type(2), mlt_keyframe_linear);
 	}
+
+	void SerializesInTimeFormat()
+	{
+		Profile profile;
+        Properties p;
+        p.set("_profile", profile.get_profile(), 0);
+		p.set("foo", "50=100; 60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		QCOMPARE(a.serialize_cut(mlt_time_clock), "00:00:02.000=100;00:00:02.400=60;00:00:04.000=0");
+		QCOMPARE(a.serialize_cut(mlt_time_smpte_ndf), "00:00:02:00=100;00:00:02:10=60;00:00:04:00=0");
+	}
+
+	void GetPropertyInTimeFormat()
+	{
+		Profile profile;
+        Properties p;
+        p.set("_profile", profile.get_profile(), 0);
+		p.set("foo", "50=100; 60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		for (int i = 0; i < p.count(); i++) {
+			if (!qstrcmp(p.get_name(i), "foo")) {
+				QCOMPARE(p.get(i, mlt_time_clock), "00:00:02.000=100;00:00:02.400=60;00:00:04.000=0");
+				QCOMPARE(p.get(i, mlt_time_smpte_ndf), "00:00:02:00=100;00:00:02:10=60;00:00:04:00=0");
+				break;
+			}
+		}
+	}
+
+	void AnimationClears()
+	{
+		Properties p;
+		p.set("foo", "50=100; 60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		p.clear("foo");
+		QCOMPARE(p.get_animation("foo"), mlt_animation(0));
+	}
 };
 
 QTEST_APPLESS_MAIN(TestAnimation)

@@ -30,7 +30,7 @@ extern "C" {
 }
 #include <cfloat>
 
-static const bool kRunLongTests = false;
+static const bool kRunLongTests = true;
 
 class TestProperties: public QObject
 {
@@ -39,14 +39,16 @@ class TestProperties: public QObject
 
 public:
     TestProperties() {
-#if defined(__linux__) || defined(__APPLE__)
+#if !defined(_WIN32) && (defined(__GLIBC__) || defined(__APPLE__))
         locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#else
+		locale = 0;
 #endif
         Factory::init();
     }
 
     ~TestProperties() {
-#if defined(__linux__) || defined(__APPLE__)
+#if !defined(_WIN32) && (defined(__GLIBC__) || defined(__APPLE__))
         freelocale(locale);
 #endif
     }
@@ -453,9 +455,11 @@ private Q_SLOTS:
         p.set_lcnumeric("en_US");
         p.set("key", "0.125");
         QCOMPARE(p.get_double("key"), double(1) / double(8));
+#if !defined(_WIN32)
         p.set_lcnumeric("de_DE");
         p.set("key", "0,125");
         QCOMPARE(p.get_double("key"), double(1) / double(8));
+#endif
     }
 
     void AnimationInsert()
@@ -1076,6 +1080,19 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_int("key", 75, 100), 175);
         p.set("key", "0=100; -1:=200");
         QCOMPARE(p.anim_get_int("key", 75, 125), 175);
+    }
+
+    void PropertyClears()
+    {
+        Properties p;
+        p.set("key", 1);
+        QCOMPARE(p.get_int("key"), 1);
+        QCOMPARE(p.get("key"), "1");
+        p.clear("key");
+        QCOMPARE(p.get("key"), (char*) 0);
+        QCOMPARE(p.get_data("key"), (void*) 0);
+        QCOMPARE(p.get_animation("key"), mlt_animation(0));
+        QCOMPARE(p.get_int("key"), 0);
     }
 };
 

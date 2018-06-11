@@ -98,11 +98,11 @@ mlt_property mlt_property_init( )
 /** Clear (0/null) a property.
  *
  * Frees up any associated resources in the process.
- * \private \memberof mlt_property_s
+ * \public \memberof mlt_property_s
  * \param self a property
  */
 
-static inline void mlt_property_clear( mlt_property self )
+void mlt_property_clear( mlt_property self )
 {
 	// Special case data handling
 	if ( self->types & mlt_prop_data && self->destructor != NULL )
@@ -619,7 +619,7 @@ int64_t mlt_property_get_int64( mlt_property self )
 	return 0;
 }
 
-/** Get the property as a string.
+/** Get the property as a string (with time format).
  *
  * The caller is not responsible for deallocating the returned string!
  * The string is deallocated when the Property is closed.
@@ -627,10 +627,11 @@ int64_t mlt_property_get_int64( mlt_property self )
  * a serialization function for binary data, if supplied.
  * \public \memberof mlt_property_s
  * \param self a property
+ * \param time_format the time format to use for animation
  * \return a string representation of the property or NULL if failed
  */
 
-char *mlt_property_get_string( mlt_property self )
+char *mlt_property_get_string_tf( mlt_property self, mlt_time_format time_format )
 {
 	// Construct a string if need be
 	pthread_mutex_lock( &self->mutex );
@@ -638,7 +639,7 @@ char *mlt_property_get_string( mlt_property self )
 	{
 		if ( self->prop_string )
 			free( self->prop_string );
-		self->prop_string = self->serialiser( self->data, self->length );
+		self->prop_string = self->serialiser( self->data, time_format );
 	}
 	else if ( ! ( self->types & mlt_prop_string ) )
 	{
@@ -678,7 +679,29 @@ char *mlt_property_get_string( mlt_property self )
 	return self->prop_string;
 }
 
-/** Get the property as a string (with locale).
+static mlt_time_format default_time_format()
+{
+	const char *e = getenv("MLT_ANIMATION_TIME_FORMAT");
+	return e? strtol( e, NULL, 10 ) : mlt_time_frames;
+}
+
+/** Get the property as a string.
+ *
+ * The caller is not responsible for deallocating the returned string!
+ * The string is deallocated when the Property is closed.
+ * This tries its hardest to convert the property to string including using
+ * a serialization function for binary data, if supplied.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return a string representation of the property or NULL if failed
+ */
+
+char *mlt_property_get_string( mlt_property self )
+{
+	return mlt_property_get_string_tf( self, default_time_format() );
+}
+
+/** Get the property as a string (with locale and time format).
  *
  * The caller is not responsible for deallocating the returned string!
  * The string is deallocated when the Property is closed.
@@ -687,14 +710,15 @@ char *mlt_property_get_string( mlt_property self )
  * \public \memberof mlt_property_s
  * \param self a property
  * \param locale the locale to use for this conversion
+ * \param time_format the time format to use for animation
  * \return a string representation of the property or NULL if failed
  */
 
-char *mlt_property_get_string_l( mlt_property self, locale_t locale )
+char *mlt_property_get_string_l_tf( mlt_property self, locale_t locale, mlt_time_format time_format )
 {
 	// Optimization for no locale
 	if ( !locale )
-		return mlt_property_get_string( self );
+		return mlt_property_get_string_tf( self, time_format );
 
 	// Construct a string if need be
 	pthread_mutex_lock( &self->mutex );
@@ -702,7 +726,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 	{
 		if ( self->prop_string )
 			free( self->prop_string );
-		self->prop_string = self->serialiser( self->data, self->length );
+		self->prop_string = self->serialiser( self->data, time_format );
 	}
 	else if ( ! ( self->types & mlt_prop_string ) )
 	{
@@ -762,6 +786,23 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 
 	// Return the string (may be NULL)
 	return self->prop_string;
+}
+
+/** Get the property as a string (with locale).
+ *
+ * The caller is not responsible for deallocating the returned string!
+ * The string is deallocated when the Property is closed.
+ * This tries its hardest to convert the property to string including using
+ * a serialization function for binary data, if supplied.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param locale the locale to use for this conversion
+ * \return a string representation of the property or NULL if failed
+ */
+
+char *mlt_property_get_string_l( mlt_property self, locale_t locale )
+{
+	return mlt_property_get_string_l_tf( self, locale, default_time_format() );
 }
 
 /** Get the binary data from a property.
@@ -840,7 +881,12 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 		self->destructor = free;
 		self->serialiser = that->serialiser;
 	}
-	else if ( self->types & mlt_prop_data && that->serialiser != NULL )
+	else if ( that->animation && that->serialiser )
+	{
+		self->types = mlt_prop_string;
+		self->prop_string = that->serialiser( that->animation, default_time_format() );
+	}
+	else if ( that->types & mlt_prop_data && that->serialiser )
 	{
 		self->types = mlt_prop_string;
 		self->prop_string = that->serialiser( that->data, that->length );
@@ -1215,15 +1261,8 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 		self->animation = mlt_animation_new();
 		self->types |= mlt_prop_data;
 		self->data = self->animation;
-		self->serialiser = (mlt_serialiser) mlt_animation_serialize;
-		if ( self->prop_string )
-		{
-			mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
-		}
-		else
-		{
-			mlt_animation_set_length( self->animation, length );
-		}
+		self->serialiser = (mlt_serialiser) mlt_animation_serialize_tf;
+		mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
 	}
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 	{

@@ -537,3 +537,12 @@ MLTPP_6.8.0 {
       "Mlt::Animation::key_set_frame(int, int)";
   };
 } MLTPP_6.6.0;
+
+MLTPP_6.10.0 {
+  global:
+    extern "C++" {
+      "Mlt::Properties::get(int, mlt_time_format)";
+      "Mlt::Properties::clear(char const*)";
+      "Mlt::Animation::serialize_cut(mlt_time_format, int, int)";
+  };
+} MLTPP_6.8.0;

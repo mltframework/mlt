@@ -512,3 +512,14 @@ MLT_6.8.0 {
     mlt_animation_key_set_type;
     mlt_animation_key_set_frame;
 } MLT_6.6.0;
+
+MLT_6.10.0 {
+  global:
+    mlt_animation_serialize_cut_tf;
+    mlt_animation_serialize_tf;
+    mlt_property_clear;
+    mlt_property_get_string_tf;
+    mlt_property_get_string_l_tf;
+    mlt_properties_clear;
+    mlt_properties_get_value_tf;
+} MLT_6.8.0;
