@@ -44,6 +44,7 @@
 #include <libavutil/samplefmt.h>
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/version.h>
 
 #if LIBAVCODEC_VERSION_MAJOR < 55
 #define AV_CODEC_ID_PCM_S16LE CODEC_ID_PCM_S16LE
@@ -1327,7 +1328,7 @@ receive_audio_packet:
 		}
 		else if ( pkt.size < 0 )
 		{
-			mlt_log_warning( MLT_CONSUMER_SERVICE( ctx->consumer ), "error with audio encode: %d (frame %d)\n", ctx->frame_count );
+			mlt_log_warning( MLT_CONSUMER_SERVICE( ctx->consumer ), "error with audio encode: %d (frame %d)\n", pkt.size, ctx->frame_count );
 			if ( ++ctx->error_count > 2 )
 				return -1;
 		}

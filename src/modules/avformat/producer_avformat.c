@@ -38,6 +38,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/version.h>
 
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
