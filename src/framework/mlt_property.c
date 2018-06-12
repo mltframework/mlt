@@ -639,7 +639,7 @@ char *mlt_property_get_string_tf( mlt_property self, mlt_time_format time_format
 	{
 		if ( self->prop_string )
 			free( self->prop_string );
-		self->prop_string = self->serialiser( self->data, time_format );
+		self->prop_string = self->serialiser( self->animation, time_format );
 	}
 	else if ( ! ( self->types & mlt_prop_string ) )
 	{
@@ -667,7 +667,7 @@ char *mlt_property_get_string_tf( mlt_property self, mlt_time_format time_format
 			self->prop_string = malloc( 32 );
 			sprintf( self->prop_string, "%"PRId64, self->prop_int64 );
 		}
-		else if ( self->types & mlt_prop_data && self->serialiser != NULL )
+		else if ( self->types & mlt_prop_data && self->data && self->serialiser )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = self->serialiser( self->data, self->length );
@@ -726,7 +726,7 @@ char *mlt_property_get_string_l_tf( mlt_property self, locale_t locale, mlt_time
 	{
 		if ( self->prop_string )
 			free( self->prop_string );
-		self->prop_string = self->serialiser( self->data, time_format );
+		self->prop_string = self->serialiser( self->animation, time_format );
 	}
 	else if ( ! ( self->types & mlt_prop_string ) )
 	{
@@ -771,7 +771,7 @@ char *mlt_property_get_string_l_tf( mlt_property self, locale_t locale, mlt_time
 			self->prop_string = malloc( 32 );
 			sprintf( self->prop_string, "%"PRId64, self->prop_int64 );
 		}
-		else if ( self->types & mlt_prop_data && self->serialiser != NULL )
+		else if ( self->types & mlt_prop_data && self->data && self->serialiser )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = self->serialiser( self->data, self->length );
