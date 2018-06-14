@@ -22,3 +22,4 @@ x264opts=ref=1:bframes=1
 
 meta.preset.extension=mp4
 meta.preset.note=for Sony PlayStation Portable
+meta.preset.name=device/Sony PSP

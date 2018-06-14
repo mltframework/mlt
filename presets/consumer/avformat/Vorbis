@@ -4,6 +4,6 @@ ab=256k
 vn=1
 video_off=1
 
-meta.preset.name=Ogg Vorbis
+meta.preset.name=audio/Ogg Vorbis
 meta.preset.extension=ogg
 meta.preset.note=audio only

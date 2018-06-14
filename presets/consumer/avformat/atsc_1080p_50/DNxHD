@@ -8,3 +8,4 @@ bf=0
 
 meta.preset.extension=mov
 meta.preset.note=A lightly compressed intermediate codec developed by Avid also known as SMPTE VC-3
+meta.preset.name=intermediate/DNxHD (HD 1080p 50 fps)

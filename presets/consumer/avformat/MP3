@@ -6,3 +6,4 @@ video_off=1
 
 meta.preset.extension=mp3
 meta.preset.note=audio only
+meta.preset.name=audio/MP3

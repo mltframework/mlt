@@ -5,3 +5,4 @@ vn=1
 video_off=1
 meta.preset.extension=m4a
 meta.preset.note=audio only
+meta.preset.name=audio/AAC

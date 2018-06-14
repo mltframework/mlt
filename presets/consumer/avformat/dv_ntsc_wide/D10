@@ -21,3 +21,4 @@ acodec=pcm_s16le
 
 meta.preset.extension=mxf
 meta.preset.note=Intra-frame only, 50 Mb/s MPEG-2 also known as Sony IMX or SMPTE 365M
+meta.preset.name=camcorder/D10 (SD Widescreen NTSC)

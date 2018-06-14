@@ -17,3 +17,4 @@ subcmp=satd
 
 meta.preset.extension=m2t
 meta.preset.note=HD MPEG-2 camcorder format
+meta.preset.name=camcorder/HDV (HD 720p 50 fps)
