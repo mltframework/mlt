@@ -140,6 +140,7 @@ static void generate_qpath( mlt_properties producer_properties )
 
 	// Make the path empty
 	*qPath = QPainterPath();
+	qPath->setFillRule(Qt::WindingFill);
 
 	// Get the strings to display
 	QTextCodec *codec = QTextCodec::codecForName( encoding );
