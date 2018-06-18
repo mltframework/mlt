@@ -205,10 +205,6 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "width" ) &&
 			 strcmp( name, "height" ) )
 		{
-			// Force a string with keyframes to be parsed with mlt_animation to
-			// facilitate output with the specified time format.
-			mlt_properties_anim_get_int( properties, name, 0, 0 );
-
 			char *value = mlt_properties_get_value_tf( properties, i, context->time_format );
 			if ( value )
 			{
@@ -258,10 +254,6 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 		char *name = mlt_properties_get_name( properties, i );
 		if ( !strncmp( name, store, strlen( store ) ) )
 		{
-			// Force a string with keyframes to be parsed with mlt_animation to
-			// facilitate output with the specified time format.
-			mlt_properties_anim_get_int( properties, name, 0, 0 );
-
 			char *value = mlt_properties_get_value_tf( properties, i, context->time_format );
 			if ( value )
 			{
