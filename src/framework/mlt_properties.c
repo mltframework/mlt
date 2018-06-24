@@ -1584,7 +1584,9 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		char *comment = strchr( ptr, '#' );
 		if ( comment )
 		{
-			*comment = 0;
+			const char* quote = strchr( ptr, '\"' );
+			if ( !quote || quote > comment )
+				*comment = 0;
 		}
 
 		// Trim leading and trailing spaces from bare value
@@ -1937,7 +1939,7 @@ static void strbuf_escape( strbuf output, const char *value, char c )
 
 static inline int has_reserved_char( const char* string )
 {
-	return strchr( string, ':' ) || strchr( string, '[' ) || strchr( string, '\'' );
+	return strchr( string, ':' ) || strchr( string, '[' ) || strchr( string, '\'' ) || strchr( string, '#' );
 }
 
 /** Convert a line string into a YAML block literal.
