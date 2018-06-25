@@ -629,24 +629,26 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		pthread_mutex_unlock( &g_mutex );
 
 		// Convert image to requested format
-		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format )
+		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format && frame->convert_image )
 		{
-			uint8_t *buffer = NULL;
-
-			// First, set the image so it can be converted when we get it
-			mlt_frame_replace_image( frame, self->image, self->format, width, height );
-			mlt_frame_set_image( frame, self->image, image_size, mlt_pool_release );
-			self->format = format;
-
-			// get_image will do the format conversion
-			mlt_frame_get_image( frame, &buffer, &format, &width, &height, 0 );
-
 			// cache copies of the image and alpha buffers
+			uint8_t *buffer = self->image;
 			if ( buffer )
 			{
-				image_size = mlt_image_format_size( format, width, height, NULL );
-				self->image = mlt_pool_alloc( image_size );
-				memcpy( self->image, buffer, image_size );
+				mlt_frame_set_image( frame, self->image, image_size, mlt_pool_release );
+				mlt_properties_set_int( properties, "width", self->width );
+				mlt_properties_set_int( properties, "height", self->height );
+				mlt_properties_set_int( properties, "format", self->format );
+
+				if ( !frame->convert_image( frame, &self->image, &self->format, format ) )
+				{
+					buffer = self->image;
+					image_size = mlt_image_format_size( self->format, self->width, self->height, NULL );
+					self->image = mlt_pool_alloc( image_size );
+					// We use height-1 because mlt_image_format_size() uses height + 1.
+					// XXX Remove -1 when mlt_image_format_size() is changed.
+					memcpy( self->image, buffer, mlt_image_format_size( self->format, self->width, self->height - 1, NULL ) );
+				}
 			}
 			if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
 			{
