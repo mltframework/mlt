@@ -94,7 +94,7 @@ int mlt_producer_init( mlt_producer self, void *child )
 			mlt_properties_set_position( properties, "in", 0 );
 			char *e = getenv( "MLT_DEFAULT_PRODUCER_LENGTH" );
 			int p = e ? atoi( e ) : 15000;
-			mlt_properties_set_position( properties, "out", MIN(0, p - 1) );
+			mlt_properties_set_position( properties, "out", MAX(0, p - 1) );
 			mlt_properties_set_position( properties, "length", p );
 			mlt_properties_set( properties, "eof", "pause" );
 			mlt_properties_set( properties, "resource", "<producer>" );
@@ -256,7 +256,7 @@ mlt_producer mlt_producer_cut( mlt_producer self, int in, int out )
 	if ( in <= 0 )
 		in = 0;
 	if ( ( out < 0 || out >= mlt_producer_get_length( parent ) ) && !mlt_producer_is_blank( self ) )
-		out = MIN(0, mlt_producer_get_length( parent ) - 1);
+		out = MAX(0, mlt_producer_get_length( parent ) - 1);
 
 	mlt_properties_inc_ref( parent_props );
 	mlt_properties_set_int( properties, "_cut", 1 );
