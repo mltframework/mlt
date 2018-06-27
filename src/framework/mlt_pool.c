@@ -50,6 +50,10 @@
 
 // We now require a compile-time define to use mlt_pool.
 #ifndef USE_MLT_POOL
+#define USE_MLT_POOL 1
+#endif
+
+#if USE_MLT_POOL
 
 void mlt_pool_init() {}
 void *mlt_pool_alloc( int size ) { return mlt_alloc( size ); }
