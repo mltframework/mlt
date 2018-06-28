@@ -53,7 +53,7 @@
 #define USE_MLT_POOL 1
 #endif
 
-#if USE_MLT_POOL
+#if !USE_MLT_POOL
 
 void mlt_pool_init() {}
 void *mlt_pool_alloc( int size ) { return mlt_alloc( size ); }
