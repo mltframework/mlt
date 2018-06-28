@@ -2082,7 +2082,7 @@ receive_video_packet:
 			while ( (ret = avcodec_receive_packet( c, &pkt )) == AVERROR(EAGAIN) ) {
 				ret = avcodec_send_frame( c, NULL );
 				if ( ret < 0 ) {
-					mlt_log_warning( MLT_CONSUMER_SERVICE(consumer), "error with video encode: %s\n", av_err2str(ret) );
+					mlt_log_warning( MLT_CONSUMER_SERVICE(consumer), "error with video encode: %d\n", ret );
 					break;
 				}
 			}
