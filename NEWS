@@ -1,6 +1,71 @@
 MLT Release Notes
 -----------------
 
+Version 6.10.0 - July 2, 2018
+
+This version fixes bugs and supports serializing animation keyframes with a
+specified time format (previously only frame number).
+
+Framework
+  * Reverted mlt_pool change in v6.8.0 pending further testing.  
+    (USE_MLT_POOL compiler define is now a 0/1 boolean, defaults to 1.)
+  * Fixed crash regression in v6.8.0 "parsing non-animated string as an animation."
+  * Added pointer checks to mlt_animation.
+  * Changed producer cache size heuristic in mlt_multitrack to be more liberal.
+  * Fixed handling reserved characters in names for YAML in mlt_properties.
+  * Added clamping to prevent computing negative in and out points to mlt_producer.
+  * Added functions to serialize animation with a time format:
+    - mlt_animation_serialize_cut_tf()
+    - mlt_animation_serialize_tf()
+    - mlt_property_get_string_tf()
+    - mlt_property_get_string_l_tf()
+    - mlt_properties_get_value_tf()
+    - Mlt::Properties::get(int, mlt_time_format)
+    - Mlt::Animation::serialize_cut(mlt_time_format, int, int)
+  * Added functions to clear a property to mlt_properties:
+    - mlt_property_clear()
+    - mlt_properties_clear()
+    - Mlt::Properties::clear()
+  
+Modules
+  * Fixed enabling sliced pix_fmt conversion in avformat producer.
+  * Fixed incorrect seek and sync on audio files with discard packets.
+  * Added support for avcodec_send_frame() API to avformat consumer.
+  * Fixed compile errors with Libav master.
+  * Fixed a crash in affine transition.
+  * Fixed a crash in ladspa filters when consumer frame rate is low (e.g. <= 8).
+  * Fixed a crash in boxblur filter.
+  * Added animation support to boxblur hori and vert properties.
+  * Fixed a crash in movit.convert.
+  * Fixed incorrect alpha in affine transition blending routine.
+  * Converted frei0r from deprecated mlt_geometry to mlt_animation API.
+  * Fixed tilde in text string for pango producer.
+  * Fixed using more than one channelcopy filter.
+  * Fixed the mono filter reducing volume level.
+  * Fixed degraded audio scrubbing in sdl2_audio consumer.
+  * Converted dynamictext filter to use affine transition for more correct
+    alpha compositing and sub-pixel positioning.
+  * Added time format support for animation keyframes to the xml consumer.
+  * Added animation support to more affine transition properties:
+    - fix_rotate_x
+    - fix_rotate_y
+    - fix_rotate_z
+    - fix_shear_x
+    - fix_shear_y
+    - fix_shear_z
+    - ox
+    - oy
+    - scale_x
+    - scale_y
+  * Fixed gaps in text when characters overlap in qtext and kdenlive producers.
+  * Fixed a crash in pixbuf producer with multiple render threads.
+  * Converted the oldfilm vignette filter from mlt_geometry to mlt_animation.
+
+Other
+  * Numerous updates to mlt-xml.dtd.
+  * Categorized many of the encode presets (using meta.preset.name).
+
+
 Version 6.8.0 - May 10, 2018
 
 This version improves support for multi-channel audio and adds some new
