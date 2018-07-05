@@ -24,6 +24,11 @@ parameters:
         * #smpte_df#      - SMPTE drop-frame timecode of the frame
         * #smpte_ndf#     - SMPTE non-drop-frame timecode of the frame
         * #timecode#      - same as #smpte_df#
+        * #time_h#        - time in hours
+        * #time_m#        - time in minutes
+        * #time_s#        - time in seconds
+        * #time_ms#       - time in miliseconds
+        * #time_sign#     - a minus if the Origin Frame is in the future
         * #frame#         - frame number of the frame
         * #filedate#      - modification date of the file (GMT)
         * #localfiledate# - modification date of the file (local)
@@ -41,6 +46,13 @@ parameters:
     default: > #trick to escape "#" character
       #timecode#
     widget: text
+
+  - identifier: originframe
+    title: Origin Frame
+    type: integer
+    default: 0
+    unit: frames
+    widget: spinner
 
   - identifier: geometry
     title: Geometry

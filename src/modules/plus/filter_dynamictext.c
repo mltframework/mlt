@@ -167,17 +167,59 @@ static void get_resource_str( mlt_filter filter, mlt_frame frame, char* text )
 
 /** Perform substitution for keywords that are enclosed in "# #".
 */
-static void substitute_keywords(mlt_filter filter, char* result, char* value, mlt_frame frame)
+static void substitute_keywords(mlt_filter filter, char* result, char* value, mlt_frame frame, mlt_position origin)
 {
 	char keyword[MAX_TEXT_LEN] = "";
 	int pos = 0;
 	int is_keyword = 0;
-
+	
+	mlt_position frames = mlt_frame_get_position( frame ) - origin;
+	int frames_negative = frames < 0 ? 1 : 0;
+	frames = abs( frames );
+	
+	double fps = 0;
+	{
+		mlt_profile profile = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "_profile", NULL );
+		if ( profile )
+			fps = mlt_profile_fps( profile );
+	}
+	
 	while ( get_next_token(value, &pos, keyword, &is_keyword) )
 	{
+		size_t len = strlen( result );
+		size_t left = MAX_TEXT_LEN - len;
 		if(!is_keyword)
 		{
-			strncat( result, keyword, MAX_TEXT_LEN - strlen( result ) - 1 );
+			strncat( result, keyword, left - 1 );
+		}
+		else if ( !strcmp( keyword, "time_sign" ) )
+		{
+			if ( frames_negative )
+				strncat( result, "-", left - 1 );
+		}
+		else if ( !strcmp( keyword, "time_h" ) )
+		{
+			int num = frames / ( fps * 60 * 60 );
+			snprintf( result + len, left, "%02d", num );
+			frames -= num * fps * 60 * 60;
+		}
+		else if ( !strcmp( keyword, "time_m" ) )
+		{
+			int num = frames / ( fps * 60 );
+			snprintf( result + len, left, "%02d", num );
+			frames -= num * fps * 60;
+		}
+		else if ( !strcmp( keyword, "time_s" ) )
+		{
+			int num = frames / fps;
+			snprintf( result + len, left, "%02d", num );
+			frames -= num * fps;
+		}
+		else if ( !strcmp( keyword, "time_ms" ) )
+		{
+			int num = ( frames / fps ) * 1000;
+			snprintf( result + len, left, "%03d", num );
+			frames -= num / 1000 * fps;
 		}
 		else if ( !strcmp( keyword, "timecode" ) || !strcmp( keyword, "smpte_df" ) )
 		{
@@ -214,7 +256,7 @@ static void substitute_keywords(mlt_filter filter, char* result, char* value, ml
 			char *frame_value = mlt_properties_get( frame_properties, keyword );
 			if( frame_value )
 			{
-				strncat( result, frame_value, MAX_TEXT_LEN - strlen(result) - 1 );
+				strncat( result, frame_value, left - 1 );
 			}
 		}
 	}
@@ -232,9 +274,12 @@ static int setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame f
 	// Check for keywords in dynamic text
 	if ( dynamic_text )
 	{
+		int origin = 0;
+		if ( mlt_properties_get( my_properties, "originframe" ) )
+			origin = mlt_properties_get_int( my_properties, "originframe" );
 		// Apply keyword substitution before passing the text to the filter.
 		char result[MAX_TEXT_LEN] = "";
-		substitute_keywords( filter, result, dynamic_text, frame );
+		substitute_keywords( filter, result, dynamic_text, frame, origin );
 		mlt_properties_set( producer_properties, "text", (char*)result );
 	}
 
@@ -381,6 +426,7 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
 
 		// Assign default values
+		mlt_properties_set( my_properties, "originframe", "0" );
 		mlt_properties_set( my_properties, "argument", arg ? arg: "#timecode#" );
 		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100%" );
 		mlt_properties_set( my_properties, "family", "Sans" );
