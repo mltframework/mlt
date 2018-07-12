@@ -258,7 +258,6 @@ void consumer_purge( mlt_consumer parent )
 static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 {
 	consumer_sdl self = udata;
-	int bytes = MIN(len, self->audio_avail);
 
 	// Get the volume
 	double volume = mlt_properties_get_double( self->properties, "volume" );
@@ -267,15 +266,18 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	memset( stream, 0, len );
 
 	pthread_mutex_lock( &self->audio_mutex );
+	int bytes = MIN(len, self->audio_avail);
 
 	// Place in the audio buffer
 	if ( volume != 1.0 ) {
 		// Adjust the volume while copying.
 		int16_t *src = (int16_t*) self->audio_buffer;
 		int16_t *dst = (int16_t*) stream;
-		int i;
-		for (i = 0; i < bytes / sizeof(*dst); i++)
-			dst[i] = CLAMP(volume * src[i], -32768, 32767);
+		int i = bytes / sizeof(*dst) + 1;
+		while (--i) {
+			*dst++ = CLAMP(volume * src[0], -32768, 32767);
+			src++;
+		}
 	} else {
 		memcpy( stream, self->audio_buffer, bytes );
 	}
@@ -284,8 +286,7 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	self->audio_avail -= bytes;
 
 	// Remove the samples
-	if ( self->audio_avail > len )
-		memmove( self->audio_buffer, self->audio_buffer + len, self->audio_avail );
+	memmove( self->audio_buffer, self->audio_buffer + bytes, self->audio_avail );
 
 	// We're definitely playing now
 	self->playing = 1;
