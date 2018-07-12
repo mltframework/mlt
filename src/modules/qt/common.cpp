@@ -30,7 +30,6 @@ bool createQApplicationIfNeeded(mlt_service service)
 {
 	if (!qApp) {
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
-		XInitThreads();
 		if (getenv("DISPLAY") == 0) {
 			mlt_log_error(service,
 				"The MLT Qt module requires a X11 environment.\n"
