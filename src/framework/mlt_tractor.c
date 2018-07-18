@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -320,7 +320,7 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 
 				if ( a_track >= index || b_track >= index )
 				{
-					a_track = MAX( a_track >= index ? a_track - 1 : a_track, 0 );
+					a_track = MAX( a_track > index ? a_track - 1 : a_track, 0 );
 					b_track = MAX( b_track >= index ? b_track - 1 : b_track, 0 );
 					mlt_transition_set_tracks( transition, a_track, b_track );
 				}
