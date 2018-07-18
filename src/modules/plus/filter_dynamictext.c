@@ -1,6 +1,6 @@
 /*
  * filter_dynamictext.c -- dynamic text overlay filter
- * Copyright (C) 2011-2014 Meltytech, LLC
+ * Copyright (C) 2011-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -229,14 +229,10 @@ static int setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame f
 	if ( !dynamic_text || !strcmp( "", dynamic_text ) )
 		return 0;
 
-	// Check for keywords in dynamic text
-	if ( dynamic_text )
-	{
-		// Apply keyword substitution before passing the text to the filter.
-		char result[MAX_TEXT_LEN] = "";
-		substitute_keywords( filter, result, dynamic_text, frame );
-		mlt_properties_set( producer_properties, "text", (char*)result );
-	}
+	// Apply keyword substitution before passing the text to the filter.
+	char result[MAX_TEXT_LEN] = "";
+	substitute_keywords( filter, result, dynamic_text, frame );
+	mlt_properties_set( producer_properties, "text", (char*)result );
 
 	// Pass the properties to the pango producer
 	mlt_properties_set( producer_properties, "family", mlt_properties_get( my_properties, "family" ) );
@@ -289,7 +285,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 	if ( !setup_producer( filter, producer, frame ) ) {
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-		return 1;
+		return mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
 	setup_transition( filter, transition );
 
