@@ -254,10 +254,8 @@ parameters:
       Otherwise, if the B frame image fits within the geometry, it will not
       be scaled. If 0, and the B frame image exceeds the geometry, then it is
       scaled down to fit within the geometry.
-    type: integer
+    type: boolean
     default: 1
-    minimum: 0
-    maximum: 1
     mutable: yes
     widget: checkbox
 
@@ -307,4 +305,10 @@ parameters:
     type: rect
     default: "0%/0%:100%x100%:100%"
     readonly: no
+    mutable: yes
+
+  - identifier: b_scaled
+    title: Do not use full resolution of B frame
+    type: boolean
+    default: 0
     mutable: yes

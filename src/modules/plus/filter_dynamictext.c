@@ -263,8 +263,6 @@ static void setup_transition( mlt_filter filter, mlt_transition transition )
 	mlt_properties_set( transition_properties, "halign", mlt_properties_get( my_properties, "halign" ) );
 	mlt_properties_set( transition_properties, "valign", mlt_properties_get( my_properties, "valign" ) );
 	mlt_properties_set_int( transition_properties, "out", mlt_properties_get_int( my_properties, "_out" ) );
-	mlt_properties_set_int( transition_properties, "fill", 0 );
-	mlt_properties_set_int( transition_properties, "refresh", 1 );
 	mlt_service_unlock( MLT_TRANSITION_SERVICE(transition) );
 }
 
@@ -368,7 +366,9 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 
 		// Register the transition for reuse/destruction
-    	mlt_properties_set_data( my_properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES(transition), "fill", 0 );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES(transition), "b_scaled", 1 );
+		mlt_properties_set_data( my_properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
 
 		// Register the producer for reuse/destruction
 		mlt_properties_set_data( my_properties, "_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
