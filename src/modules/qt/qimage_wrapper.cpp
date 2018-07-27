@@ -245,6 +245,9 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		QImage scaled = interp? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
 
+		// Convert scaled image to target format (it might be premultiplied after scaling).
+		scaled = scaled.convertToFormat( qimageFormat );
+
 		// Store width and height
 		self->current_width = width;
 		self->current_height = height;
