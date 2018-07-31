@@ -98,11 +98,11 @@ mlt_property mlt_property_init( )
 /** Clear (0/null) a property.
  *
  * Frees up any associated resources in the process.
- * \public \memberof mlt_property_s
+ * \private \memberof mlt_property_s
  * \param self a property
  */
 
-void mlt_property_clear( mlt_property self )
+static void clear_property( mlt_property self )
 {
 	// Special case data handling
 	if ( self->types & mlt_prop_data && self->destructor != NULL )
@@ -128,6 +128,20 @@ void mlt_property_clear( mlt_property self )
 	self->animation = NULL;
 }
 
+/** Clear (0/null) a property.
+ *
+ * Frees up any associated resources in the process.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ */
+
+void mlt_property_clear( mlt_property self )
+{
+	pthread_mutex_lock( &self->mutex );
+	clear_property( self );
+	pthread_mutex_unlock( &self->mutex );
+}
+
 /** Set the property to an integer value.
  *
  * \public \memberof mlt_property_s
@@ -139,7 +153,7 @@ void mlt_property_clear( mlt_property self )
 int mlt_property_set_int( mlt_property self, int value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_int;
 	self->prop_int = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -157,7 +171,7 @@ int mlt_property_set_int( mlt_property self, int value )
 int mlt_property_set_double( mlt_property self, double value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_double;
 	self->prop_double = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -176,7 +190,7 @@ int mlt_property_set_double( mlt_property self, double value )
 int mlt_property_set_position( mlt_property self, mlt_position value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_position;
 	self->prop_position = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -198,7 +212,7 @@ int mlt_property_set_string( mlt_property self, const char *value )
 	pthread_mutex_lock( &self->mutex );
 	if ( value != self->prop_string )
 	{
-		mlt_property_clear( self );
+		clear_property( self );
 		self->types = mlt_prop_string;
 		if ( value != NULL )
 			self->prop_string = strdup( value );
@@ -222,7 +236,7 @@ int mlt_property_set_string( mlt_property self, const char *value )
 int mlt_property_set_int64( mlt_property self, int64_t value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_int64;
 	self->prop_int64 = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -249,7 +263,7 @@ int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destr
 	pthread_mutex_lock( &self->mutex );
 	if ( self->data == value )
 		self->destructor = NULL;
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_data;
 	self->data = value;
 	self->length = length;
@@ -837,7 +851,7 @@ void *mlt_property_get_data( mlt_property self, int *length )
 
 void mlt_property_close( mlt_property self )
 {
-	mlt_property_clear( self );
+	clear_property( self );
 	pthread_mutex_destroy( &self->mutex );
 	free( self );
 }
@@ -854,7 +868,7 @@ void mlt_property_close( mlt_property self )
 void mlt_property_pass( mlt_property self, mlt_property that )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 
 	self->types = that->types;
 
@@ -873,7 +887,7 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 	}
 	else if ( that->types & mlt_prop_rect )
 	{
-		mlt_property_clear( self );
+		clear_property( self );
 		self->types = mlt_prop_rect | mlt_prop_data;
 		self->length = that->length;
 		self->data = calloc( 1, self->length );
@@ -1547,7 +1561,7 @@ static char* serialise_mlt_rect( mlt_rect *rect, int length )
 int mlt_property_set_rect( mlt_property self, mlt_rect value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_rect | mlt_prop_data;
 	self->length = sizeof(value);
 	self->data = calloc( 1, self->length );
