@@ -1586,7 +1586,7 @@ int mlt_property_set_rect( mlt_property self, mlt_rect value )
 mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 {
 	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
-	if ( self->types & mlt_prop_rect )
+	if ( ( self->types & mlt_prop_rect ) && self->data )
 		rect = *( (mlt_rect*) self->data );
 	else if ( self->types & mlt_prop_double )
 		rect.x = self->prop_double;
