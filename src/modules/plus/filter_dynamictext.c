@@ -249,17 +249,16 @@ static int setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame f
 	return 1;
 }
 
-static void setup_transition( mlt_filter filter, mlt_transition transition )
+static void setup_transition( mlt_frame frame, mlt_filter filter, mlt_transition transition )
 {
 	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 
 	mlt_service_lock( MLT_TRANSITION_SERVICE(transition) );
-	if ( mlt_properties_get( my_properties, "geometry" ) && mlt_properties_get( transition_properties, "rect" )
-		 && strcmp( mlt_properties_get( my_properties, "geometry" ), mlt_properties_get( transition_properties, "rect" ) ) )
-	{
-		mlt_properties_set( transition_properties, "rect", mlt_properties_get( my_properties, "geometry" ) );
-	}
+	mlt_rect rect = mlt_properties_anim_get_rect( my_properties, "geometry", position, length );
+	mlt_properties_set_rect( transition_properties, "rect", rect );
 	mlt_properties_set( transition_properties, "halign", mlt_properties_get( my_properties, "halign" ) );
 	mlt_properties_set( transition_properties, "valign", mlt_properties_get( my_properties, "valign" ) );
 	mlt_properties_set_int( transition_properties, "out", mlt_properties_get_int( my_properties, "_out" ) );
@@ -285,7 +284,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
-	setup_transition( filter, transition );
+	setup_transition( frame, filter, transition );
 
 	// Make sure the producer is in the correct position
 	position = mlt_filter_get_position( filter, frame );
