@@ -1032,28 +1032,23 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	// Convert number to string
 	if ( self->types & mlt_prop_int )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = self->prop_int;
 	}
 	else if ( self->types & mlt_prop_position )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = (int) self->prop_position;
 	}
 	else if ( self->types & mlt_prop_double )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = self->prop_double;
 	}
 	else if ( self->types & mlt_prop_int64 )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = (int) self->prop_int64;
 	}
+
+	self->types |= mlt_prop_string;
+	self->prop_string = malloc( 32 );
 
 	if ( format == mlt_time_clock )
 		time_clock_from_frames( frames, fps, self->prop_string );
