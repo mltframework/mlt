@@ -2047,7 +2047,7 @@ receive_video_packet:
 	{
 		// Flush audio fifo
 		// TODO: flush all audio streams
-		if ( enc_ctx->audio_st[0] ) for (;;)
+		if ( enc_ctx->fifo && enc_ctx->audio_st[0] ) for (;;)
 		{
 			int sz = sample_fifo_used( enc_ctx->fifo );
 			int ret = encode_audio( enc_ctx );
