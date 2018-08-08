@@ -1,6 +1,6 @@
 /*
  * producer_colour.c
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -190,12 +190,18 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Create the alpha channel
-	int alpha_size = *width * *height;
-	uint8_t *alpha = mlt_pool_alloc( alpha_size );
+	int alpha_size = 0;
+	uint8_t *alpha = NULL;
 
 	// Initialise the alpha
-	if ( alpha )
-		memset( alpha, color.a, alpha_size );
+	if (color.a < 255 || *format == mlt_image_rgb24a) {
+		alpha_size = *width * *height;
+		alpha = mlt_pool_alloc( alpha_size );
+		if ( alpha )
+			memset( alpha, color.a, alpha_size );
+		else
+			alpha_size = 0;
+	}
 
 	// Clone our image
 	if (buffer && image && size > 0) {
