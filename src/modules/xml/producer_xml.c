@@ -1106,7 +1106,7 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 			qualify_property( context, properties, "target" );
 			char *resource = mlt_properties_get( properties, "resource" );
 
-			if ( context->multi_consumer > 1 || context->qglsl )
+			if ( context->multi_consumer > 1 || context->qglsl || mlt_properties_get_int( context->params, "multi" ) )
 			{
 				// Instantiate the multi consumer
 				if ( !context->consumer )
