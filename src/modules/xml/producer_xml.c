@@ -1125,11 +1125,24 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 				if ( context->consumer )
 				{
 					// Set this properties object on multi consumer
+					mlt_properties consumer_properties = MLT_CONSUMER_PROPERTIES(context->consumer);
 					char key[20];
 					snprintf( key, sizeof(key), "%d", context->consumer_count++ );
 					mlt_properties_inc_ref( properties );
-					mlt_properties_set_data( MLT_CONSUMER_PROPERTIES(context->consumer), key, properties, 0,
+					mlt_properties_set_data( consumer_properties, key, properties, 0,
 						(mlt_destructor) mlt_properties_close, NULL );
+
+					// Pass along quality and performance properties to the multi consumer and its render thread(s).
+					if ( !context->qglsl )
+					{
+						mlt_properties_pass_list( consumer_properties, properties,
+							"real_time, deinterlace_method, rescale, progressive, top_field_first" );
+
+						// We only really know how to optimize real_time for the avformat consumer.
+						const char *service_name = mlt_properties_get( properties, "mlt_service" );
+						if ( service_name && !strcmp( "avformat", service_name ) )
+							mlt_properties_set_int( properties, "real_time", -1 );
+					}
 				}
 			}
 			else
