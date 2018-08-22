@@ -167,17 +167,36 @@ static void generate_qpath( mlt_properties producer_properties )
 	height = fm.lineSpacing() * lines.size();
 	for( int i = 0; i < lines.size(); ++i )
 	{
-		int line_width = fm.width( lines.at(i) );
-		if( line_width > width ) width = line_width;
+		const QString line = lines[i];
+		int line_width = fm.width(line);
+		int bearing = (line.size() > 0) ? fm.leftBearing(line.at(0)) : 0;
+		if (bearing < 0)
+			line_width -= bearing;
+		bearing = (line.size() > 0) ? fm.rightBearing(line.at(line.size() - 1)) : 0;
+		if (bearing < 0)
+			line_width -= bearing;
+		if (line_width > width)
+			width = line_width;
 	}
 
 	// Lay out the text in the path
 	int x = 0;
-	int y = fm.ascent() + 1 + offset;
+	int y = fm.ascent() + offset;
 	for( int i = 0; i < lines.size(); ++i )
 	{
 		QString line = lines.at(i);
 		x = offset;
+		int line_width = fm.width(line);
+		int bearing = (line.size() > 0)? fm.leftBearing(line.at(0)) : 0;
+
+		if (bearing < 0) {
+			line_width -= bearing;
+			x -= bearing;
+		}
+		bearing = (line.size() > 0)? fm.rightBearing(line.at(line.size() - 1)) : 0;
+		if (bearing < 0)
+			line_width -= bearing;
+
 		switch( align[0] )
 		{
 			default:
@@ -186,11 +205,11 @@ static void generate_qpath( mlt_properties producer_properties )
 				break;
 			case 'c':
 			case 'C':
-				x += ( width - fm.width( line ) ) / 2;
+				x += ( width - line_width ) / 2;
 				break;
 			case 'r':
 			case 'R':
-				x += width - fm.width( line );
+				x += width - line_width;
 				break;
 		}
 		qPath->addText( x, y, font, line );
@@ -202,7 +221,7 @@ static void generate_qpath( mlt_properties producer_properties )
 	height += offset * 2;
 	// Sanity check
 	if( width == 0 ) width = 1;
-	if( height == 0 ) height = 1;
+	height += 2; // I found some fonts whose descenders get cut off.
 	mlt_properties_set_int( producer_properties, "meta.media.width", width );
 	mlt_properties_set_int( producer_properties, "meta.media.height", height );
 }
