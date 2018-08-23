@@ -217,8 +217,19 @@ int mlt_animation_parse(mlt_animation self, const char *data, int length, double
 		// Reset item
 		item.frame = item.is_key = 0;
 
-		// Now parse the item
-		mlt_animation_parse_item( self, &item, value );
+		// Do not parse a string enclosed entirely within quotes as animation.
+		// (mlt_tokeniser already skips splitting on delimiter inside quotes).
+		if ( value[0] == '\"' && value[strlen(value) - 1] == '\"' )
+		{
+			// Remove the quotes.
+			value[strlen(value) - 1] = '\0';
+			mlt_property_set_string( item.property, &value[1] );
+		}
+		else
+		{
+			// Now parse the item
+			mlt_animation_parse_item( self, &item, value );
+		}
 
 		// Now insert into place
 		mlt_animation_insert( self, &item );
@@ -328,6 +339,7 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 			char *p = strchr( s, '=' );
 			p[0] = '\0';
 			mlt_property_set_string( item->property, s );
+			
 			item->frame = mlt_property_get_int( item->property, self->fps, self->locale );
 			free( s );
 
@@ -340,6 +352,14 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 			else
 				item->keyframe_type = mlt_keyframe_linear;
 			value = &p[2];
+
+			// Check if the value is quoted.
+			p = &p[2];
+			if ( p && p[0] == '\"' && p[strlen(p) - 1] == '\"' ) {
+				// Remove the quotes.
+				p[strlen(p) - 1] = '\0';
+				value = &p[1];
+			}
 		}
 
 		// Special case - frame < 0
