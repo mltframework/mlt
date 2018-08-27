@@ -677,8 +677,14 @@ char *mlt_animation_serialize_cut_tf( mlt_animation self, int in, int out, mlt_t
 
 			// Determine length of string to be appended.
 			item_len += 100;
-			if ( item.is_key )
-				item_len += strlen( mlt_property_get_string_l( item.property, self->locale ) );
+			const char* value = mlt_property_get_string_l( item.property, self->locale );
+			if ( item.is_key && value )
+			{
+				item_len += strlen( value );
+				// Check if the value must be quoted.
+				if ( strchr(value, ';') || strchr(value, '=') )
+					item_len += 2;
+			}
 
 			// Reallocate return string to be long enough.
 			while ( used + item_len + 2 > size ) // +2 for ';' and NULL
@@ -708,17 +714,25 @@ char *mlt_animation_serialize_cut_tf( mlt_animation self, int in, int out, mlt_t
 					s = "";
 					break;
 				}
-				if ( time_property && self->fps > 0.0 ) {
+				if ( time_property && self->fps > 0.0 )
+				{
 					mlt_property_set_int( time_property, item.frame - in );
 					const char *time = mlt_property_get_time( time_property, time_format, self->fps, self->locale );
 					sprintf( ret + used, "%s%s=", time, s );
 				} else {
 					sprintf( ret + used, "%d%s=", item.frame - in, s );
 				}
+				used = strlen( ret );
 
 				// Append item value.
-				if ( item.is_key )
-					strcat( ret, mlt_property_get_string_l( item.property, self->locale ) );
+				if ( item.is_key && value )
+				{
+					// Check if the value must be quoted.
+					if ( strchr(value, ';') || strchr(value, '=') )
+						sprintf( ret + used, "\"%s\"", value );
+					else
+						strcat( ret, value );
+				}
 				used = strlen( ret );
 			}
 			item.frame ++;

@@ -336,7 +336,7 @@ private Q_SLOTS:
 		Animation a = p.get_animation("foo");
 		QVERIFY(a.is_valid());
 		p.clear("foo");
-		QCOMPARE(p.get_animation("foo"), mlt_animation(nullptr));
+		QCOMPARE(p.get_animation("foo"), mlt_animation(0));
 	}
     
     void CanBeEscapedWithQuotes()

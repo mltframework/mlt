@@ -658,8 +658,19 @@ private Q_SLOTS:
 
         mlt_animation_parse(a, "50=hello world; 60=\"good night\"; 100=bar", 100, fps, locale);
         char *a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50=hello world;60=good night;100=bar");
+        if (a_serialized) free(a_serialized);
+
+        mlt_animation_parse(a, "50=hello world; 60=\"good; night\"; 100=bar", 100, fps, locale);
+        a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50=hello world;60=\"good; night\";100=bar");
+        if (a_serialized) free(a_serialized);
+        
+        mlt_animation_parse(a, "50=hello world; 60=\"\"good night\"\"; 100=bar", 100, fps, locale);
+        a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50=hello world;60=\"good night\";100=bar");
         if (a_serialized) free(a_serialized);
+        
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
