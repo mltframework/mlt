@@ -633,6 +633,13 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 			if ( mlt_properties_get_position( properties, "length" ) <= 0 )
 				mlt_properties_set_position( properties, "length", frames );
 		}
+		else if ( format->nb_streams > 0 && format->streams[0]->codec && format->streams[0]->codec->codec_id == AV_CODEC_ID_WEBP )
+		{
+			char *e = getenv( "MLT_DEFAULT_PRODUCER_LENGTH" );
+			int p = e ? atoi( e ) : 15000;
+			mlt_properties_set_int( properties, "out", MAX(0, p - 1) );
+			mlt_properties_set_int( properties, "length", p );
+		}
 		else
 		{
 			// Set live sources to run forever
@@ -655,7 +662,8 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	if ( self->seekable )
 	{
 		// Do a more rigourous test of seekable on a disposable context
-		self->seekable = av_seek_frame( format, -1, format->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
+		if ( format->nb_streams > 0 && format->streams[0]->codec && format->streams[0]->codec->codec_id != AV_CODEC_ID_WEBP )
+			self->seekable = av_seek_frame( format, -1, format->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 		mlt_properties_set_int( properties, "seekable", self->seekable );
 		self->dummy_context = format;
 		self->video_format = NULL;
