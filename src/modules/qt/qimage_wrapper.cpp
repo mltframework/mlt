@@ -66,7 +66,9 @@ static void qimage_delete( void *data )
 /// Returns false if this is animated.
 int init_qimage(const char *filename)
 {
-	QImageReader reader( filename );
+	QImageReader reader;
+	reader.setDecideFormatFromContent( true );
+	reader.setFileName( filename );
 	if ( reader.canRead() && reader.imageCount() > 1 ) {
 		return 0;
 	}
@@ -171,7 +173,10 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	if ( !self->qimage || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif )
 	{
 		self->current_image = NULL;
-		QImage *qimage = new QImage( QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) ) );
+		QImageReader reader;
+		reader.setDecideFormatFromContent( true );
+		reader.setFileName( QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) ) );
+		QImage *qimage = new  QImage( reader.read() );
 		self->qimage = qimage;
 
 		if ( !qimage->isNull( ) )
