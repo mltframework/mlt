@@ -78,7 +78,7 @@ int interpNNpr_b(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	//printf("U=%2d V=%2d   ",(int)rintf(x),(int)rintf(y));
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	*v=sl[(int)rintf(x)+(int)rintf(y)*w];
@@ -96,7 +96,7 @@ int interpNNpr_b(unsigned char *sl, int w, int h, float x, float y, float o, uns
 int interpNN_b(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	*v=sl[(int)rintf(x)+(int)rintf(y)*w];
@@ -115,7 +115,7 @@ int interpNN_b(unsigned char *sl, int w, int h, float x, float y, float o, unsig
 int interpNN_b32(unsigned char *sl, int w, int h, float x, float y, float o, unsigned char *v, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 	int p = (int) rintf(x) * 4 + (int) rintf(y) * 4 * w;
 	float alpha_sl = (float) sl[p + 3] / 255.0f * o;
@@ -144,7 +144,7 @@ int interpBL_b(unsigned char *sl, int w, int h, float x, float y, float o, unsig
 	float a,b;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)floorf(x); n=(int)floorf(y);
@@ -164,10 +164,14 @@ int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	float a,b;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
-	m=(int)floorf(x); n=(int)floorf(y);
+	m=(int)floorf(x);
+	if (m + 2 > w) m = w - 2;
+	n=(int)floorf(y);
+	if (n + 2 > w) n = w - 2;
+
 	k=n*w+m; l=(n+1)*w+m;
 	k1=4*(k+1); l1=4*(l+1); n1=4*((n+1)*w+m);
 	l=4*l; k=4*k;
@@ -215,7 +219,7 @@ int interpBC_b(unsigned char *sl, int w, int h, float x, float y, float o, unsig
 	float p[4],p1[4],p2[4],p3[4],p4[4];
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-2; if (m<0) m=0; if ((m+5)>w) m=w-4;
@@ -265,7 +269,7 @@ int interpBC_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	float alpha = 1.0;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-2; if (m<0) m=0; if ((m+5)>w) m=w-4;
@@ -333,7 +337,7 @@ int interpBC2_b(unsigned char *sl, int w, int h, float x, float y, float o, unsi
 	float pp,p[4],wx[4],wy[4],xx;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-2; if (m<0) m=0; if ((m+5)>w) m=w-4;
@@ -385,7 +389,7 @@ int interpBC2_b32(unsigned char *sl, int w, int h, float x, float y, float o, un
 	float pp,p[4],wx[4],wy[4],xx;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-2; if (m<0) m=0; if ((m+5)>w) m=w-4;
@@ -445,7 +449,7 @@ int interpSP4_b(unsigned char *sl, int w, int h, float x, float y, float o, unsi
 	float pp,p[4],wx[4],wy[4],xx;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-2; if (m<0) m=0; if ((m+5)>w) m=w-4;
@@ -491,7 +495,7 @@ int interpSP4_b32(unsigned char *sl, int w, int h, float x, float y, float o, un
 	float pp,p[4],wx[4],wy[4],xx;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-2; if (m<0) m=0; if ((m+5)>w) m=w-4;
@@ -549,7 +553,7 @@ int interpSP6_b(unsigned char *sl, int w, int h, float x, float y, float o, unsi
 	float pp,p[6],wx[6],wy[6],xx;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-3; if (m<0) m=0; if ((m+7)>w) m=w-6;
@@ -615,7 +619,7 @@ int interpSP6_b32(unsigned char *sl, int w, int h, float x, float y, float o, un
 	float pp,p[6],wx[6],wy[6],xx;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-3; if (m<0) m=0; if ((m+7)>w) m=w-6;
@@ -689,7 +693,7 @@ int interpSC16_b(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	float PI=3.141592654;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-8; if (m<0) m=0; if ((m+17)>w) m=w-16;
@@ -748,7 +752,7 @@ int interpSC16_b32(unsigned char *sl, int w, int h, float x, float y, float o, u
 	float PI=3.141592654;
 
 #ifdef TEST_XY_LIMITS
-	if ((x<0)||(x>=(w-1))||(y<0)||(y>=(h-1))) return -1;
+	if ((x<0)||(x>=w)||(y<0)||(y>=h)) return -1;
 #endif
 
 	m=(int)ceilf(x)-8; if (m<0) m=0; if ((m+17)>w) m=w-16;
