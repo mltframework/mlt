@@ -132,9 +132,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	// Get the properties of the frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, filter );
 
