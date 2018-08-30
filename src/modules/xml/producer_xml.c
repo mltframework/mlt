@@ -1554,10 +1554,10 @@ static void parse_url( mlt_properties properties, char *url )
 				break;
 			
 			case ':':
-			case '=':
 #ifdef _WIN32
-				if ( url[i] == ':' && url[i + 1] != '/' )
+				if ( url[i + 1] != '/' && url[i + 1] != '\\' )
 #endif
+			case '=':
 				if ( is_query )
 				{
 					url[ i++ ] = '\0';
