@@ -20,7 +20,7 @@
 
 %module mlt
 %include "carrays.i"
-%array_class(unsigned char, unsignedCharArray);
+%array_class(unsigned char, UnsignedCharArray);
 
 %{
 #include <mlt++/Mlt.h>
