@@ -65,6 +65,9 @@ namespace Mlt {
 %newobject Properties::get_anim();
 %newobject Animation::Animation();
 
+%rename(__assign__) Animation::operator=;
+%rename(__assign__) Frame::operator=;
+
 #if defined(SWIGPYTHON)
 %feature("shadow") Frame::get_waveform(int, int) %{
     def get_waveform(*args): return _mlt.frame_get_waveform(*args)
@@ -123,7 +126,7 @@ class RubyListener
 		{}
 
 		RubyListener( Mlt::Properties &properties, char *id, VALUE callback ) :
-			callback( callback ) 
+			callback( callback )
 		{
 			event = properties.listen( id, this, ( mlt_listener )ruby_listener );
 		}
@@ -134,8 +137,8 @@ class RubyListener
 		}
 
 		void mark( )
-		{ 
-			((void (*)(VALUE))(rb_gc_mark))( callback ); 
+		{
+			((void (*)(VALUE))(rb_gc_mark))( callback );
 		}
 
 		void doit( )
@@ -151,7 +154,7 @@ static void ruby_listener( mlt_properties owner, void *object )
 	o->doit( );
 }
 
-void markRubyListener( void* p ) 
+void markRubyListener( void* p )
 {
     RubyListener *o = static_cast<RubyListener*>( p );
     o->mark( );

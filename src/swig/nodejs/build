@@ -1,0 +1,28 @@
+#!/bin/sh
+
+CXX=${CXX:-g++}
+
+gypBuildDir="node-gyp-build"
+
+if [ "$1" = "clean" ]
+then
+	( cd `dirname $0`; rm -f *.cxx *.so *.o mlt.i ../.nodejs; rm -r "$gypBuildDir" )
+	exit 0
+fi
+
+which node-gyp 2> /dev/null
+
+if [ $? = 0 ]
+then
+	ln -sf ../mlt.i
+
+	# Invoke swig
+	swig -c++ -I../../mlt++ -I../.. -javascript -node mlt.i || exit $?
+
+	# Compile the wrapper
+	NODE_GYP_BUILD_DIR="$gypBuildDir" node-gyp configure build || exit $?
+
+else
+	echo node-gyp not installed.
+	exit 1
+fi
