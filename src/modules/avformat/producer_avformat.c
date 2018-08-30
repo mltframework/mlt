@@ -511,30 +511,7 @@ static void get_aspect_ratio( mlt_properties properties, AVStream *stream, AVCod
 	mlt_properties_set_double( properties, "aspect_ratio", av_q2d( sar ) );
 }
 
-void parse_query_string( char* url, mlt_properties properties )
-{
-	// Parse out params
-	url = strchr( url, '?' );
-	while ( url )
-	{
-		url[0] = 0;
-		char *name = strdup( ++url );
-		char *value = strchr( name, '=' );
-		if ( value )
-		{
-			value[0] = 0;
-			value++;
-			char *t = strchr( value, '&' );
-			if ( t )
-				t[0] = 0;
-			mlt_properties_set( properties, name, value );
-		}
-		free( name );
-		url = strchr( url, '&' );
-	}
-}
-
-static char* parse_url( const char* URL, AVInputFormat **format, AVDictionary **params, mlt_properties properties )
+static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **format, AVDictionary **params )
 {
 	if ( !URL ) return NULL;
 
@@ -542,11 +519,7 @@ static char* parse_url( const char* URL, AVInputFormat **format, AVDictionary **
 	char *url = strchr( protocol, ':' );
 
 	// Only if there is not a protocol specification that avformat can handle
-#ifdef _WIN32
-	if ( url && url[1] != '/' && url[1] != '\\' && avio_check( URL, 0 ) < 0 )
-#else
 	if ( url && avio_check( URL, 0 ) < 0 )
-#endif
 	{
 		// Truncate protocol string
 		url[0] = 0;
@@ -615,15 +588,8 @@ static char* parse_url( const char* URL, AVInputFormat **format, AVDictionary **
 			return result;
 		}
 	}
-	else
-	{
-		url = protocol;
-		parse_query_string( url, properties );
-		const char *result = strdup(url);
-		free( protocol );
-		return result;
-	}
-	return NULL;
+	free( protocol );
+	return strdup( URL );
 }
 
 static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
@@ -811,7 +777,7 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 	// Parse URL
 	AVInputFormat *format = NULL;
 	AVDictionary *params = NULL;
-	char *filename = parse_url( URL, &format, &params, properties );
+	char *filename = parse_url( profile, URL, &format, &params );
 
 	// Now attempt to open the file or device with filename
 	error = avformat_open_input( &self->video_format, filename, format, &params ) < 0;
