@@ -511,7 +511,30 @@ static void get_aspect_ratio( mlt_properties properties, AVStream *stream, AVCod
 	mlt_properties_set_double( properties, "aspect_ratio", av_q2d( sar ) );
 }
 
-static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **format, AVDictionary **params )
+void parse_query_string( char* url, mlt_properties properties )
+{
+	// Parse out params
+	url = strchr( url, '?' );
+	while ( url )
+	{
+		url[0] = 0;
+		char *name = strdup( ++url );
+		char *value = strchr( name, '=' );
+		if ( value )
+		{
+			value[0] = 0;
+			value++;
+			char *t = strchr( value, '&' );
+			if ( t )
+				t[0] = 0;
+			mlt_properties_set( properties, name, value );
+		}
+		free( name );
+		url = strchr( url, '&' );
+	}
+}
+
+static char* parse_url( const char* URL, AVInputFormat **format, AVDictionary **params, mlt_properties properties )
 {
 	if ( !URL ) return NULL;
 
@@ -519,7 +542,11 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	char *url = strchr( protocol, ':' );
 
 	// Only if there is not a protocol specification that avformat can handle
+#ifdef _WIN32
+	if ( url && url[1] != '/' && url[1] != '\\' && avio_check( URL, 0 ) < 0 )
+#else
 	if ( url && avio_check( URL, 0 ) < 0 )
+#endif
 	{
 		// Truncate protocol string
 		url[0] = 0;
@@ -588,8 +615,15 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			return result;
 		}
 	}
-	free( protocol );
-	return strdup( URL );
+	else
+	{
+		url = protocol;
+		parse_query_string( url, properties );
+		const char *result = strdup(url);
+		free( protocol );
+		return result;
+	}
+	return NULL;
 }
 
 static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
@@ -777,7 +811,7 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 	// Parse URL
 	AVInputFormat *format = NULL;
 	AVDictionary *params = NULL;
-	char *filename = parse_url( profile, URL, &format, &params );
+	char *filename = parse_url( URL, &format, &params, properties );
 
 	// Now attempt to open the file or device with filename
 	error = avformat_open_input( &self->video_format, filename, format, &params ) < 0;
@@ -2085,6 +2119,16 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Find the codec
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+		if ( mlt_properties_get( properties, "vcodec" ) ) {
+			if ( !( codec = avcodec_find_decoder_by_name( mlt_properties_get( properties, "vcodec" ) ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		} else if ( codec_context->codec_id == AV_CODEC_ID_VP9 ) {
+			if ( !( codec = avcodec_find_decoder_by_name( "libvpx-vp9" ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		} else if ( codec_context->codec_id == AV_CODEC_ID_VP8 ) {
+			if ( !( codec = avcodec_find_decoder_by_name( "libvpx" ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		}
 #ifdef VDPAU
 		if ( codec_context->codec_id == AV_CODEC_ID_H264 )
 		{
@@ -2113,6 +2157,18 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		pthread_mutex_lock( &self->open_mutex );
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
 		{
+			// Switch to the native vp8/vp9 decoder if not yuva420p
+			if ( codec_context->pix_fmt != AV_PIX_FMT_YUVA420P
+				 && !mlt_properties_get( properties, "vcodec" )
+				 && ( !strcmp(codec->name, "libvpx") || !strcmp(codec->name, "libvpx-vp9") ) )
+			{
+				codec = avcodec_find_decoder( codec_context->codec_id );
+				if ( codec && avcodec_open2( codec_context, codec, NULL ) < 0 ) {
+					self->video_index = -1;
+					pthread_mutex_unlock( &self->open_mutex );
+					return 0;
+				}
+			}
 			// Now store the codec with its destructor
 			self->video_codec = codec_context;
 		}
@@ -2835,6 +2891,11 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Find the codec
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+		if ( mlt_properties_get( properties, "acodec" ) )
+		{
+			if ( !( codec = avcodec_find_decoder_by_name( mlt_properties_get( properties, "acodec" ) ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		}
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...
 		pthread_mutex_lock( &self->open_mutex );
