@@ -774,9 +774,6 @@ static void *consumer_read_ahead_thread( void *arg )
 	// See if audio is turned off
 	int audio_off = mlt_properties_get_int( properties, "audio_off" );
 
-	// Get the maximum size of the buffer
-	int buffer = mlt_properties_get_int( properties, "buffer" ) + 1;
-
 	// General frame variable
 	mlt_frame frame = NULL;
 	uint8_t *image = NULL;
@@ -805,6 +802,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( self );
+	int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
 	if ( frame )
 	{
@@ -833,6 +831,9 @@ static void *consumer_read_ahead_thread( void *arg )
 	// Continue to read ahead
 	while ( priv->ahead )
 	{
+		// Get the maximum size of the buffer
+		int buffer = (speed == 0) ? 1 : MAX(mlt_properties_get_int( properties, "buffer" ), 0) + 1;
+	
 		// Put the current frame into the queue
 		pthread_mutex_lock( &priv->queue_mutex );
 		while( priv->ahead && mlt_deque_count( priv->queue ) >= buffer )
@@ -858,6 +859,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( frame == NULL )
 			continue;
 		pos = mlt_frame_get_position( frame );
+		speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
 		// WebVfx uses this to setup a consumer-stopping event handler.
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "consumer", self, 0, NULL, NULL );
@@ -873,7 +875,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 
 		// All non-normal playback frames should be shown
-		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
+		if ( speed != 1 )
 		{
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
@@ -1386,8 +1388,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 	int buffer = mlt_properties_get_int( properties, "_buffer" );
 	buffer = buffer > 0 ? buffer : mlt_properties_get_int( properties, "buffer" );
 	// This is a heuristic to determine a suitable minimum buffer size for the number of threads.
-	int headroom = 2 + threads * threads;
-	buffer = buffer < headroom ? headroom : buffer;
+	int headroom = (priv->real_time < 0) ? threads : (2 + threads * threads);
+	buffer = MAX(buffer, headroom);
 
 	// Start worker threads if not already started.
 	if ( ! priv->ahead )
@@ -1416,6 +1418,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				mlt_deque_push_back( priv->queue, frame );
 				pthread_cond_signal( &priv->queue_cond );
 				pthread_mutex_unlock( &priv->queue_mutex );
+				int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+				buffer = (speed == 0) ? 1 : buffer;
 			}
 		}
 
@@ -1448,6 +1452,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 			mlt_deque_push_back( priv->queue, frame );
 			pthread_cond_signal( &priv->queue_cond );
 			pthread_mutex_unlock( &priv->queue_mutex );
+			int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+			buffer = (speed == 0) ? 1 : buffer;
 		}
 	}
 
