@@ -275,6 +275,10 @@ int consumer_stop( mlt_consumer parent )
 		if ( self->sdl_window )
 			SDL_DestroyWindow( self->sdl_window );
 		self->sdl_window = NULL;
+#ifndef _WIN32
+		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
+			SDL_QuitSubSystem( SDL_INIT_AUDIO );
+#endif
 		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
 			SDL_Quit( );
 		pthread_mutex_unlock( &mlt_sdl_mutex );

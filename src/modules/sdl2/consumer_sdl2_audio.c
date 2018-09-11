@@ -222,6 +222,9 @@ int consumer_stop( mlt_consumer parent )
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_cond_broadcast( &self->audio_cond );
 		pthread_mutex_unlock( &self->audio_mutex );
+#ifndef _WIN32
+		SDL_QuitSubSystem( SDL_INIT_AUDIO );
+#endif
 	}
 
 	return 0;
