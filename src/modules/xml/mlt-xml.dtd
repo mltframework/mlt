@@ -9,10 +9,12 @@
     root       CDATA    #IMPLIED
     profile    CDATA    #IMPLIED
     title      CDATA    #IMPLIED
+    producer   IDREF    #IMPLIED
 >
 <!ELEMENT profile EMPTY >
 <!ATTLIST profile
     name               CDATA    #IMPLIED
+    colorspace         CDATA    #IMPLIED
     description        CDATA    #IMPLIED
     display_aspect_den CDATA    #IMPLIED
     display_aspect_num CDATA    #IMPLIED
@@ -29,11 +31,12 @@
     name     CDATA    #REQUIRED
     value    CDATA    #IMPLIED
 >
-<!ELEMENT producer (property)* >
+<!ELEMENT producer (property | filter)* >
 <!ATTLIST producer
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
+    title    CDATA    #IMPLIED
     mlt_service  CDATA    #IMPLIED
 >
 <!ELEMENT filter (property)* >
@@ -53,11 +56,12 @@
     a_track  CDATA    #IMPLIED
     b_track  CDATA    #IMPLIED
 >
-<!ELEMENT playlist (entry | blank | producer | playlist | tractor | multitrack)+ >
+<!ELEMENT playlist (property*,(entry | blank | producer | playlist | tractor | multitrack)+) >
 <!ATTLIST playlist
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
+    title    CDATA    #IMPLIED
 >
 <!ELEMENT entry (producer | playlist | tractor | multitrack | filter | transition)* >
 <!ATTLIST entry
@@ -69,11 +73,13 @@
 <!ATTLIST blank
     length   CDATA    #REQUIRED
 >
-<!ELEMENT tractor (multitrack, (filter | transition)*) >
+<!ELEMENT tractor ((property)*, (multitrack | (track)+), (filter | transition )*) >
 <!ATTLIST tractor
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
+    title    CDATA    #IMPLIED
+    global_feed CDATA #IMPLIED
 >
 <!ELEMENT multitrack (track | producer | playlist | tractor | multitrack)+ >
 <!ATTLIST multitrack
@@ -82,6 +88,7 @@
 <!ELEMENT track (producer | playlist | tractor | multitrack | filter | transition)* >
 <!ATTLIST track
     producer IDREF    #IMPLIED
+    hide    (video | audio | both) #IMPLIED
 >
 <!ELEMENT consumer (property)* >
 <!ATTLIST consumer

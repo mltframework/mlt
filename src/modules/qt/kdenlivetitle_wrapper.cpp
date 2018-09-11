@@ -154,6 +154,7 @@ public:
         m_pen.setWidthF(outline);
         QFontMetrics metrics(font);
         lineSpacing += metrics.lineSpacing();
+        m_path.setFillRule(Qt::WindingFill);
 
         // Calculate line width
         QStringList lines = text.split('\n');
@@ -171,7 +172,7 @@ public:
                         double offset = (width - metrics.width(line));
                         linePath.translate(offset, 0);
                 }
-                m_path = m_path.united(linePath);
+                m_path.addPath(linePath);
         }
     }
 

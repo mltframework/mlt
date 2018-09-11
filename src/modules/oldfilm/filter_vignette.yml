@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter # consumer, filter, producer, or transition
 identifier: vignette
 title: Vignette Effect
-version: 0.2.5
+version: 1.0
 copyright: Copyright (C) 2008 Marco Gittler
 license: GPL
 language: en
@@ -71,6 +71,7 @@ parameters:
     minimum: 0.0
     maximum: 1.0
     default: 0.0
+
   - identifier: mode
     title: Mode
     type: integer

@@ -1,7 +1,6 @@
 /**
  * MltProperties.h - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -74,6 +73,7 @@ namespace Mlt
 			int parse( const char *namevalue );
 			char *get_name( int index );
 			char *get( int index );
+			char *get( int index, mlt_time_format );
 			void *get_data( int index, int &size );
 			void mirror( Properties &that );
 			int inherit( Properties &that );
@@ -97,6 +97,8 @@ namespace Mlt
 			int preset( const char *name );
 			int set_lcnumeric( const char *locale );
 			const char *get_lcnumeric( );
+			void clear( const char *name );
+
 			char *get_time( const char *name, mlt_time_format = mlt_time_smpte_df );
 			char *frames_to_time( int, mlt_time_format = mlt_time_smpte_df );
 			int time_to_frames( const char* time );

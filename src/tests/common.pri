@@ -8,8 +8,14 @@ TEMPLATE = app
 DEFINES  += SRCDIR=\\\"$$PWD/\\\"
 
 win32 {
-    INCLUDEPATH += include/mlt++ include/mlt
-    LIBS += -Llib -lmlt++ -lmlt
+    INCLUDEPATH += $$PWD/..
+    LIBS += -L$$PWD/../framework -L$$PWD/../mlt++ -lmlt++ -lmlt
+    isEmpty(PREFIX) {
+        message("Install PREFIX not set; using C:\\Projects\\Shotcut. You can change this with 'qmake PREFIX=...'")
+        PREFIX = C:\\Projects\\Shotcut
+    }
+    target.path = $$PREFIX
+    INSTALLS += target
 } else {
     CONFIG += link_pkgconfig
     PKGCONFIG += mlt++

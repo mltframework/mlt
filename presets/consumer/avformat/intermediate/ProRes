@@ -4,8 +4,9 @@ vcodec=prores
 vb=0
 g=1
 bf=0
-threads=1
 vprofile=2
+vendor=ap10
 
 meta.preset.extension=mov
 meta.preset.note=Designed by Apple in California. Set vprofile=1 for LT or =3 for HQ.
+meta.preset.hidden=1

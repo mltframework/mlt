@@ -1,7 +1,6 @@
 /*
  * consumer_sdl2_audio.c -- A Simple DirectMedia Layer audio-only consumer
  * Copyright (C) 2009-2018 Meltytech, LLC
- * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -121,7 +120,7 @@ mlt_consumer consumer_sdl2_audio_init( mlt_profile profile, mlt_service_type typ
 
 		// Ensure we don't join on a non-running object
 		self->joined = 1;
-		
+
 		// Allow thread to be started/stopped
 		parent->start = consumer_start;
 		parent->stop = consumer_stop;
@@ -223,8 +222,6 @@ int consumer_stop( mlt_consumer parent )
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_cond_broadcast( &self->audio_cond );
 		pthread_mutex_unlock( &self->audio_mutex );
-
-		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 	}
 
 	return 0;
@@ -266,29 +263,27 @@ static void sdl_fill_audio( void *udata, uint8_t *stream, int len )
 	memset( stream, 0, len );
 
 	pthread_mutex_lock( &self->audio_mutex );
+	int bytes = MIN(len, self->audio_avail);
 
-	if ( self->audio_avail >= len )
-	{
-		// Place in the audio buffer
-		if ( volume != 1.0 )
-			SDL_MixAudioFormat( stream, self->audio_buffer, AUDIO_S16SYS, len, ( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
-		else
-			memcpy( stream, self->audio_buffer, len );
-		// Remove len from the audio available
-		self->audio_avail -= len;
-
-		// Remove the samples
-		memmove( self->audio_buffer, self->audio_buffer + len, self->audio_avail );
+	// Place in the audio buffer
+	if ( volume != 1.0 ) {
+		// Adjust the volume while copying.
+		int16_t *src = (int16_t*) self->audio_buffer;
+		int16_t *dst = (int16_t*) stream;
+		int i = bytes / sizeof(*dst) + 1;
+		while (--i) {
+			*dst++ = CLAMP(volume * src[0], -32768, 32767);
+			src++;
+		}
+	} else {
+		memcpy( stream, self->audio_buffer, bytes );
 	}
-	else
-	{
-		// Mix the audio
-		SDL_MixAudioFormat( stream, self->audio_buffer, self->audio_avail, AUDIO_S16SYS,
-			( int )( ( float )SDL_MIX_MAXVOLUME * volume ) );
 
-		// No audio left
-		self->audio_avail = 0;
-	}
+	// Remove len from the audio available
+	self->audio_avail -= bytes;
+
+	// Remove the samples
+	memmove( self->audio_buffer, self->audio_buffer + bytes, self->audio_avail );
 
 	// We're definitely playing now
 	self->playing = 1;
@@ -371,8 +366,21 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 			int sample_space = ( sizeof( self->audio_buffer ) - self->audio_avail ) / dst_stride;
 			while ( self->running && sample_space == 0 )
 			{
-				pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
+				struct timeval now;
+				struct timespec tm;
+
+				gettimeofday( &now, NULL );
+				tm.tv_sec = now.tv_sec + 1;
+				tm.tv_nsec = now.tv_usec * 1000;
+				pthread_cond_timedwait( &self->audio_cond, &self->audio_mutex, &tm );
 				sample_space = ( sizeof( self->audio_buffer ) - self->audio_avail ) / dst_stride;
+
+				if ( sample_space == 0 )
+				{
+					mlt_log_warning( MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n" );
+					pthread_mutex_unlock( &self->audio_mutex );
+					return 1;
+				}
 			}
 			if ( self->running )
 			{

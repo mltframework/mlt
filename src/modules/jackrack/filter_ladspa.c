@@ -1,6 +1,6 @@
 /*
  * filter_ladspa.c -- filter audio through LADSPA plugins
- * Copyright (C) 2004-2016 Meltytech, LLC
+ * Copyright (C) 2004-2018 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@
 
 #include "jack_rack.h"
 
-#define BUFFER_LEN 10000
+#define BUFFER_LEN       (10000)
+#define MAX_SAMPLE_COUNT (4096)
 
 static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channels )
 {
@@ -182,15 +183,20 @@ static int ladspa_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		// Configure the buffers
 		LADSPA_Data **input_buffers  = mlt_pool_alloc( sizeof( LADSPA_Data* ) * jackrack->channels );
 		LADSPA_Data **output_buffers = mlt_pool_alloc( sizeof( LADSPA_Data* ) * jackrack->channels );
-
-		for ( i = 0; i < jackrack->channels; i++ )
-		{
-			input_buffers[i]  = (LADSPA_Data*) *buffer + i * *samples;
-			output_buffers[i] = (LADSPA_Data*) *buffer + i * *samples;
+		
+		// Some plugins crash with too many frames (samples).
+		// So, feed the plugin with N samples per loop iteration.
+		int samples_offset = 0;
+		int sample_count = MIN(*samples, MAX_SAMPLE_COUNT);
+		for (i = 0; samples_offset < *samples; i++) {
+			int j = 0;
+			for (; j < jackrack->channels; j++)
+				output_buffers[j] = input_buffers[j] = (LADSPA_Data*) *buffer + j * (*samples) + samples_offset;
+			sample_count = MIN(*samples - samples_offset, MAX_SAMPLE_COUNT);
+			// Do LADSPA processing
+			error = process_ladspa( jackrack->procinfo, sample_count, input_buffers, output_buffers );
+			samples_offset += MAX_SAMPLE_COUNT;
 		}
-
-		// Do LADSPA processing
-		error = process_ladspa( jackrack->procinfo, *samples, input_buffers, output_buffers );
 
 		mlt_pool_release( input_buffers );
 		mlt_pool_release( output_buffers );

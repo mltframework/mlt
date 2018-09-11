@@ -20,6 +20,8 @@ OBJS = consumer_blipflash.o \
 	   filter_lumakey.o \
 	   filter_rgblut.o \
 	   filter_sepia.o \
+	   filter_text.o \
+	   filter_timer.o \
 	   producer_blipflash.o \
 	   producer_count.o \
 	   transition_affine.o

@@ -102,7 +102,7 @@ mlt_property mlt_property_init( )
  * \param self a property
  */
 
-static inline void mlt_property_clear( mlt_property self )
+static void clear_property( mlt_property self )
 {
 	// Special case data handling
 	if ( self->types & mlt_prop_data && self->destructor != NULL )
@@ -128,6 +128,20 @@ static inline void mlt_property_clear( mlt_property self )
 	self->animation = NULL;
 }
 
+/** Clear (0/null) a property.
+ *
+ * Frees up any associated resources in the process.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ */
+
+void mlt_property_clear( mlt_property self )
+{
+	pthread_mutex_lock( &self->mutex );
+	clear_property( self );
+	pthread_mutex_unlock( &self->mutex );
+}
+
 /** Set the property to an integer value.
  *
  * \public \memberof mlt_property_s
@@ -139,7 +153,7 @@ static inline void mlt_property_clear( mlt_property self )
 int mlt_property_set_int( mlt_property self, int value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_int;
 	self->prop_int = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -157,7 +171,7 @@ int mlt_property_set_int( mlt_property self, int value )
 int mlt_property_set_double( mlt_property self, double value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_double;
 	self->prop_double = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -176,7 +190,7 @@ int mlt_property_set_double( mlt_property self, double value )
 int mlt_property_set_position( mlt_property self, mlt_position value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_position;
 	self->prop_position = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -198,7 +212,7 @@ int mlt_property_set_string( mlt_property self, const char *value )
 	pthread_mutex_lock( &self->mutex );
 	if ( value != self->prop_string )
 	{
-		mlt_property_clear( self );
+		clear_property( self );
 		self->types = mlt_prop_string;
 		if ( value != NULL )
 			self->prop_string = strdup( value );
@@ -222,7 +236,7 @@ int mlt_property_set_string( mlt_property self, const char *value )
 int mlt_property_set_int64( mlt_property self, int64_t value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_int64;
 	self->prop_int64 = value;
 	pthread_mutex_unlock( &self->mutex );
@@ -249,7 +263,7 @@ int mlt_property_set_data( mlt_property self, void *value, int length, mlt_destr
 	pthread_mutex_lock( &self->mutex );
 	if ( self->data == value )
 		self->destructor = NULL;
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_data;
 	self->data = value;
 	self->length = length;
@@ -619,7 +633,7 @@ int64_t mlt_property_get_int64( mlt_property self )
 	return 0;
 }
 
-/** Get the property as a string.
+/** Get the property as a string (with time format).
  *
  * The caller is not responsible for deallocating the returned string!
  * The string is deallocated when the Property is closed.
@@ -627,10 +641,11 @@ int64_t mlt_property_get_int64( mlt_property self )
  * a serialization function for binary data, if supplied.
  * \public \memberof mlt_property_s
  * \param self a property
+ * \param time_format the time format to use for animation
  * \return a string representation of the property or NULL if failed
  */
 
-char *mlt_property_get_string( mlt_property self )
+char *mlt_property_get_string_tf( mlt_property self, mlt_time_format time_format )
 {
 	// Construct a string if need be
 	pthread_mutex_lock( &self->mutex );
@@ -638,7 +653,7 @@ char *mlt_property_get_string( mlt_property self )
 	{
 		if ( self->prop_string )
 			free( self->prop_string );
-		self->prop_string = self->serialiser( self->data, self->length );
+		self->prop_string = self->serialiser( self->animation, time_format );
 	}
 	else if ( ! ( self->types & mlt_prop_string ) )
 	{
@@ -666,7 +681,7 @@ char *mlt_property_get_string( mlt_property self )
 			self->prop_string = malloc( 32 );
 			sprintf( self->prop_string, "%"PRId64, self->prop_int64 );
 		}
-		else if ( self->types & mlt_prop_data && self->serialiser != NULL )
+		else if ( self->types & mlt_prop_data && self->data && self->serialiser )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = self->serialiser( self->data, self->length );
@@ -678,7 +693,29 @@ char *mlt_property_get_string( mlt_property self )
 	return self->prop_string;
 }
 
-/** Get the property as a string (with locale).
+static mlt_time_format default_time_format()
+{
+	const char *e = getenv("MLT_ANIMATION_TIME_FORMAT");
+	return e? strtol( e, NULL, 10 ) : mlt_time_frames;
+}
+
+/** Get the property as a string.
+ *
+ * The caller is not responsible for deallocating the returned string!
+ * The string is deallocated when the Property is closed.
+ * This tries its hardest to convert the property to string including using
+ * a serialization function for binary data, if supplied.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return a string representation of the property or NULL if failed
+ */
+
+char *mlt_property_get_string( mlt_property self )
+{
+	return mlt_property_get_string_tf( self, default_time_format() );
+}
+
+/** Get the property as a string (with locale and time format).
  *
  * The caller is not responsible for deallocating the returned string!
  * The string is deallocated when the Property is closed.
@@ -687,14 +724,15 @@ char *mlt_property_get_string( mlt_property self )
  * \public \memberof mlt_property_s
  * \param self a property
  * \param locale the locale to use for this conversion
+ * \param time_format the time format to use for animation
  * \return a string representation of the property or NULL if failed
  */
 
-char *mlt_property_get_string_l( mlt_property self, locale_t locale )
+char *mlt_property_get_string_l_tf( mlt_property self, locale_t locale, mlt_time_format time_format )
 {
 	// Optimization for no locale
 	if ( !locale )
-		return mlt_property_get_string( self );
+		return mlt_property_get_string_tf( self, time_format );
 
 	// Construct a string if need be
 	pthread_mutex_lock( &self->mutex );
@@ -702,7 +740,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 	{
 		if ( self->prop_string )
 			free( self->prop_string );
-		self->prop_string = self->serialiser( self->data, self->length );
+		self->prop_string = self->serialiser( self->animation, time_format );
 	}
 	else if ( ! ( self->types & mlt_prop_string ) )
 	{
@@ -747,7 +785,7 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 			self->prop_string = malloc( 32 );
 			sprintf( self->prop_string, "%"PRId64, self->prop_int64 );
 		}
-		else if ( self->types & mlt_prop_data && self->serialiser != NULL )
+		else if ( self->types & mlt_prop_data && self->data && self->serialiser )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = self->serialiser( self->data, self->length );
@@ -762,6 +800,23 @@ char *mlt_property_get_string_l( mlt_property self, locale_t locale )
 
 	// Return the string (may be NULL)
 	return self->prop_string;
+}
+
+/** Get the property as a string (with locale).
+ *
+ * The caller is not responsible for deallocating the returned string!
+ * The string is deallocated when the Property is closed.
+ * This tries its hardest to convert the property to string including using
+ * a serialization function for binary data, if supplied.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param locale the locale to use for this conversion
+ * \return a string representation of the property or NULL if failed
+ */
+
+char *mlt_property_get_string_l( mlt_property self, locale_t locale )
+{
+	return mlt_property_get_string_l_tf( self, locale, default_time_format() );
 }
 
 /** Get the binary data from a property.
@@ -796,7 +851,7 @@ void *mlt_property_get_data( mlt_property self, int *length )
 
 void mlt_property_close( mlt_property self )
 {
-	mlt_property_clear( self );
+	clear_property( self );
 	pthread_mutex_destroy( &self->mutex );
 	free( self );
 }
@@ -813,7 +868,7 @@ void mlt_property_close( mlt_property self )
 void mlt_property_pass( mlt_property self, mlt_property that )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 
 	self->types = that->types;
 
@@ -832,7 +887,7 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 	}
 	else if ( that->types & mlt_prop_rect )
 	{
-		mlt_property_clear( self );
+		clear_property( self );
 		self->types = mlt_prop_rect | mlt_prop_data;
 		self->length = that->length;
 		self->data = calloc( 1, self->length );
@@ -840,7 +895,12 @@ void mlt_property_pass( mlt_property self, mlt_property that )
 		self->destructor = free;
 		self->serialiser = that->serialiser;
 	}
-	else if ( self->types & mlt_prop_data && that->serialiser != NULL )
+	else if ( that->animation && that->serialiser )
+	{
+		self->types = mlt_prop_string;
+		self->prop_string = that->serialiser( that->animation, default_time_format() );
+	}
+	else if ( that->types & mlt_prop_data && that->serialiser )
 	{
 		self->types = mlt_prop_string;
 		self->prop_string = that->serialiser( that->data, that->length );
@@ -972,28 +1032,23 @@ char *mlt_property_get_time( mlt_property self, mlt_time_format format, double f
 	// Convert number to string
 	if ( self->types & mlt_prop_int )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = self->prop_int;
 	}
 	else if ( self->types & mlt_prop_position )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = (int) self->prop_position;
 	}
 	else if ( self->types & mlt_prop_double )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = self->prop_double;
 	}
 	else if ( self->types & mlt_prop_int64 )
 	{
-		self->types |= mlt_prop_string;
-		self->prop_string = malloc( 32 );
 		frames = (int) self->prop_int64;
 	}
+
+	self->types |= mlt_prop_string;
+	self->prop_string = malloc( 32 );
 
 	if ( format == mlt_time_clock )
 		time_clock_from_frames( frames, fps, self->prop_string );
@@ -1215,15 +1270,8 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 		self->animation = mlt_animation_new();
 		self->types |= mlt_prop_data;
 		self->data = self->animation;
-		self->serialiser = (mlt_serialiser) mlt_animation_serialize;
-		if ( self->prop_string )
-		{
-			mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
-		}
-		else
-		{
-			mlt_animation_set_length( self->animation, length );
-		}
+		self->serialiser = (mlt_serialiser) mlt_animation_serialize_tf;
+		mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
 	}
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 	{
@@ -1246,12 +1294,12 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 double mlt_property_anim_get_double( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	double result;
+	pthread_mutex_lock( &self->mutex );
 	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
 
-		pthread_mutex_lock( &self->mutex );
 		refresh_animation( self, fps, locale, length );
 		mlt_animation_get_item( self->animation, &item, position );
 		pthread_mutex_unlock( &self->mutex );
@@ -1261,6 +1309,7 @@ double mlt_property_anim_get_double( mlt_property self, double fps, locale_t loc
 	}
 	else
 	{
+		pthread_mutex_unlock( &self->mutex );
 		result = mlt_property_get_double( self, fps, locale );
 	}
 	return result;
@@ -1281,12 +1330,12 @@ double mlt_property_anim_get_double( mlt_property self, double fps, locale_t loc
 int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	int result;
+	pthread_mutex_lock( &self->mutex );
 	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
 
-		pthread_mutex_lock( &self->mutex );
 		refresh_animation( self, fps, locale, length );
 		mlt_animation_get_item( self->animation, &item, position );
 		pthread_mutex_unlock( &self->mutex );
@@ -1296,6 +1345,7 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 	}
 	else
 	{
+		pthread_mutex_unlock( &self->mutex );
 		result = mlt_property_get_int( self, fps, locale );
 	}
 	return result;
@@ -1316,12 +1366,12 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	char *result;
+	pthread_mutex_lock( &self->mutex );
 	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
 
-		pthread_mutex_lock( &self->mutex );
 		if ( !self->animation )
 			refresh_animation( self, fps, locale, length );
 		mlt_animation_get_item( self->animation, &item, position );
@@ -1342,6 +1392,7 @@ char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t loca
 	}
 	else
 	{
+		pthread_mutex_unlock( &self->mutex );
 		result = mlt_property_get_string_l( self, locale );
 	}
 	return result;
@@ -1505,7 +1556,7 @@ static char* serialise_mlt_rect( mlt_rect *rect, int length )
 int mlt_property_set_rect( mlt_property self, mlt_rect value )
 {
 	pthread_mutex_lock( &self->mutex );
-	mlt_property_clear( self );
+	clear_property( self );
 	self->types = mlt_prop_rect | mlt_prop_data;
 	self->length = sizeof(value);
 	self->data = calloc( 1, self->length );
@@ -1530,7 +1581,7 @@ int mlt_property_set_rect( mlt_property self, mlt_rect value )
 mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 {
 	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
-	if ( self->types & mlt_prop_rect )
+	if ( ( self->types & mlt_prop_rect ) && self->data )
 		rect = *( (mlt_rect*) self->data );
 	else if ( self->types & mlt_prop_double )
 		rect.x = self->prop_double;
@@ -1660,13 +1711,13 @@ int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, l
 mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t locale, int position, int length )
 {
 	mlt_rect result;
+	pthread_mutex_lock( &self->mutex );
 	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
 		item.property->types = mlt_prop_rect;
 
-		pthread_mutex_lock( &self->mutex );
 		refresh_animation( self, fps, locale, length );
 		mlt_animation_get_item( self->animation, &item, position );
 		pthread_mutex_unlock( &self->mutex );
@@ -1676,6 +1727,7 @@ mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t loc
 	}
 	else
 	{
+		pthread_mutex_unlock( &self->mutex );
 		result = mlt_property_get_rect( self, locale );
 	}
 	return result;

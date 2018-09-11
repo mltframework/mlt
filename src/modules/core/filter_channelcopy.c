@@ -1,6 +1,6 @@
 /*
  * filter_channelcopy.c -- copy one audio channel to another
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,15 +30,13 @@
 
 static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
-	// Get the properties of the a frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	// Get the filter service
 	mlt_filter filter = mlt_frame_pop_audio( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 
-	int from = mlt_properties_get_int( properties, "channelcopy.from" );
-	int to = mlt_properties_get_int( properties, "channelcopy.to" );
-	int swap = mlt_properties_get_int( properties, "channelcopy.swap" );
+	int from = mlt_properties_get_int( properties, "from" );
+	int to = mlt_properties_get_int( properties, "to" );
+	int swap = mlt_properties_get_int( properties, "swap" );
 
 	// Get the producer's audio
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
@@ -156,14 +154,6 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_properties frame_props = MLT_FRAME_PROPERTIES( frame );
-
-	// Propogate the parameters
-	mlt_properties_set_int( frame_props, "channelcopy.to", mlt_properties_get_int( properties, "to" ) );
-	mlt_properties_set_int( frame_props, "channelcopy.from", mlt_properties_get_int( properties, "from" ) );
-	mlt_properties_set_int( frame_props, "channelcopy.swap", mlt_properties_get_int( properties, "swap" ) );
-
 	// Override the get_audio method
 	mlt_frame_push_audio( frame, filter );
 	mlt_frame_push_audio( frame, filter_get_audio );

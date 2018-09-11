@@ -24,6 +24,7 @@ endif
 endif
 
 ifeq ($(targetos), MinGW)
+LDFLAGS += -mconsole
 bindir = $(prefix)
 endif
 

@@ -1,7 +1,6 @@
 /**
  * MltAnimation.cpp - MLT Wrapper
- * Copyright (C) 2015 Meltytech, LLC
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2015-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -193,4 +192,9 @@ void Animation::interpolate()
 char *Animation::serialize_cut( int in, int out )
 {
 	return mlt_animation_serialize_cut( instance, in, out );
+}
+
+char *Animation::serialize_cut( mlt_time_format format , int in, int out )
+{
+	return mlt_animation_serialize_cut_tf( instance, in, out, format );
 }

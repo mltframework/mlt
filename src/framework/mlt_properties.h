@@ -62,6 +62,7 @@ extern int mlt_properties_set_or_default( mlt_properties self, const char *name,
 extern int mlt_properties_parse( mlt_properties self, const char *namevalue );
 extern char *mlt_properties_get( mlt_properties self, const char *name );
 extern char *mlt_properties_get_name( mlt_properties self, int index );
+extern char *mlt_properties_get_value_tf( mlt_properties self, int index, mlt_time_format );
 extern char *mlt_properties_get_value( mlt_properties self, int index );
 extern void *mlt_properties_get_data_at( mlt_properties self, int index, int *size );
 extern int mlt_properties_get_int( mlt_properties self, const char *name );
@@ -86,6 +87,7 @@ extern mlt_properties mlt_properties_parse_yaml( const char *file );
 extern char *mlt_properties_serialise_yaml( mlt_properties self );
 extern void mlt_properties_lock( mlt_properties self );
 extern void mlt_properties_unlock( mlt_properties self );
+extern void mlt_properties_clear( mlt_properties self, const char *name );
 
 extern char *mlt_properties_get_time( mlt_properties, const char* name, mlt_time_format );
 extern char *mlt_properties_frames_to_time( mlt_properties, mlt_position, mlt_time_format );

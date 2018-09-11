@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2015 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2018 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,7 @@
 
 #include <QString>
 #include <QtTest>
+#include <QTemporaryFile>
 
 #include <mlt++/Mlt.h>
 using namespace Mlt;
@@ -29,6 +30,8 @@ extern "C" {
 }
 #include <cfloat>
 
+static const bool kRunLongTests = true;
+
 class TestProperties: public QObject
 {
     Q_OBJECT
@@ -36,14 +39,16 @@ class TestProperties: public QObject
 
 public:
     TestProperties() {
-#if defined(__linux__) || defined(__APPLE__)
+#if !defined(_WIN32) && (defined(__GLIBC__) || defined(__APPLE__))
         locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+#else
+		locale = 0;
 #endif
         Factory::init();
     }
 
     ~TestProperties() {
-#if defined(__linux__) || defined(__APPLE__)
+#if !defined(_WIN32) && (defined(__GLIBC__) || defined(__APPLE__))
         freelocale(locale);
 #endif
     }
@@ -235,6 +240,7 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_smpte_df), timeString);
 		QCOMPARE(p.get_time("key", mlt_time_clock), "11:22:33.200");
 
+        if (kRunLongTests)
         for (int i = 0; i < 9999999; ++i) {
             p.set("key", i);
 //            QWARN(p.get_time("key", mlt_time_smpte_df));
@@ -278,6 +284,7 @@ private Q_SLOTS:
         p.set("key", frames);
         QCOMPARE(p.get_time("key", mlt_time_clock), timeString);
 
+        if (kRunLongTests)
         for (int i = 0; i < 9999999; ++i) {
             p.set("key", i);
 //            QWARN(p.get_time("key", mlt_time_clock));
@@ -292,6 +299,7 @@ private Q_SLOTS:
         Properties p;
         p.set("_profile", profile.get_profile(), 0);
 
+        if (kRunLongTests)
         for (int i = 0; i < 9999999; ++i) {
             p.set("key", i);
 //            QWARN(p.get_time("key", mlt_time_clock));
@@ -393,22 +401,52 @@ private Q_SLOTS:
 
     void SerializesToYamlTiny()
     {
-        Properties p[2];
+        Properties p[3];
         p[0].set("key1", "value1");
-        p[0].set("key2", "value2");
+        p[0].set("key:2", "value[2]");
         p[1].set("1", "value3");
-        p[1].set("2", "value4");
-        p[0].set("seq", p[1].get_properties(), 0);
+        p[1].set("2", "value:4");
+        p[2].set("1", "value5");
+        p[2].set("2", "\"value6\"");
+        p[0].set("seq1", p[1].get_properties(), 0);
+        p[0].set("seq'2", p[2].get_properties(), 0);
         char* serializedYaml = p[0].serialise_yaml();
         QCOMPARE(serializedYaml,
                 "---\n"
                 "key1: value1\n"
-                "key2: value2\n"
-                "seq:\n"
+                "\"key:2\": \"value[2]\"\n"
+                "seq1:\n"
                 "  - value3\n"
-                "  - value4\n"
+                "  - \"value:4\"\n"
+                "\"seq'2\":\n"
+                "  - value5\n"
+                "  - '\"value6\"'\n"
                 "...\n");
         free(serializedYaml);
+    }
+    
+    void ParsesYamlTiny()
+    {
+        QTemporaryFile tempFile;
+        if (tempFile.open()) {
+            tempFile.write(
+                        "---\n"
+                        "key1: value1\n"
+                        "\"key:2\":\"value[2]\"\n"
+                        "seq1:\n"
+                        "  - value3\n"
+                        "  - \"value:4\"\n"
+                        "\"seq'2\":\n"
+                        "  - value5\n"
+                        "  - \"value:6\"\n"
+                        "...\n");
+            tempFile.close();
+        }
+        QScopedPointer<Properties> p(Properties::parse_yaml(tempFile.fileName().toUtf8().constData()));
+        QVERIFY(!p.isNull());
+        QVERIFY(p->is_valid());
+        QCOMPARE(p->get("key1"), "value1");
+        QCOMPARE(p->get("key:2"), "value[2]");
     }
 
     void RadixRespondsToLocale()
@@ -417,9 +455,11 @@ private Q_SLOTS:
         p.set_lcnumeric("en_US");
         p.set("key", "0.125");
         QCOMPARE(p.get_double("key"), double(1) / double(8));
+#if !defined(_WIN32)
         p.set_lcnumeric("de_DE");
         p.set("key", "0,125");
         QCOMPARE(p.get_double("key"), double(1) / double(8));
+#endif
     }
 
     void AnimationInsert()
@@ -618,8 +658,19 @@ private Q_SLOTS:
 
         mlt_animation_parse(a, "50=hello world; 60=\"good night\"; 100=bar", 100, fps, locale);
         char *a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50=hello world;60=good night;100=bar");
+        if (a_serialized) free(a_serialized);
+
+        mlt_animation_parse(a, "50=hello world; 60=\"good; night\"; 100=bar", 100, fps, locale);
+        a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50=hello world;60=\"good; night\";100=bar");
+        if (a_serialized) free(a_serialized);
+        
+        mlt_animation_parse(a, "50=hello world; 60=\"\"good night\"\"; 100=bar", 100, fps, locale);
+        a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50=hello world;60=\"good night\";100=bar");
         if (a_serialized) free(a_serialized);
+        
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
@@ -823,6 +874,10 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_double("foo",  0), 100.0);
         QCOMPARE(p.anim_get_double("foo", 25), 150.0);
         QCOMPARE(p.anim_get_double("foo", 50), 200.0);
+
+        // Test a non-animation string.
+        p.set("bar", "0.5");
+        QCOMPARE(p.anim_get_double("bar", 25), 0.5);
     }
 
     void PropertiesStringAnimation()
@@ -1036,6 +1091,19 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_int("key", 75, 100), 175);
         p.set("key", "0=100; -1:=200");
         QCOMPARE(p.anim_get_int("key", 75, 125), 175);
+    }
+
+    void PropertyClears()
+    {
+        Properties p;
+        p.set("key", 1);
+        QCOMPARE(p.get_int("key"), 1);
+        QCOMPARE(p.get("key"), "1");
+        p.clear("key");
+        QCOMPARE(p.get("key"), (char*) 0);
+        QCOMPARE(p.get_data("key"), (void*) 0);
+        QCOMPARE(p.get_animation("key"), mlt_animation(0));
+        QCOMPARE(p.get_int("key"), 0);
     }
 };
 

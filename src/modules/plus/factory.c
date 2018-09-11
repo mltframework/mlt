@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,8 @@ extern mlt_filter filter_lumakey_init( mlt_profile profile, mlt_service_type typ
 extern mlt_filter filter_invert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_rgblut_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_sepia_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_text_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_timer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_blipflash_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_count_init( const char *arg );
 extern mlt_transition transition_affine_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -63,6 +65,8 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "lumakey", filter_lumakey_init );
 	MLT_REGISTER( filter_type, "rgblut", filter_rgblut_init );
 	MLT_REGISTER( filter_type, "sepia", filter_sepia_init );
+	MLT_REGISTER( filter_type, "text", filter_text_init );
+	MLT_REGISTER( filter_type, "timer", filter_timer_init );
 	MLT_REGISTER( producer_type, "blipflash", producer_blipflash_init );
 	MLT_REGISTER( producer_type, "count", producer_count_init );
 	MLT_REGISTER( transition_type, "affine", transition_affine_init );
@@ -83,6 +87,8 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "lumakey", metadata, "filter_lumakey.yml" );
 	MLT_REGISTER_METADATA( filter_type, "rgblut", metadata, "filter_rgblut.yml" );
 	MLT_REGISTER_METADATA( filter_type, "sepia", metadata, "filter_sepia.yml" );
+	MLT_REGISTER_METADATA( filter_type, "text", metadata, "filter_text.yml" );
+	MLT_REGISTER_METADATA( filter_type, "timer", metadata, "filter_timer.yml" );
 	MLT_REGISTER_METADATA( producer_type, "blipflash", metadata, "producer_blipflash.yml" );
 	MLT_REGISTER_METADATA( producer_type, "count", metadata, "producer_count.yml" );
 	MLT_REGISTER_METADATA( transition_type, "affine", metadata, "transition_affine.yml" );

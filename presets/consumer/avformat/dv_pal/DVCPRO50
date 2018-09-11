@@ -7,3 +7,4 @@ bf=0
 
 meta.preset.extension=dv
 meta.preset.note=Double the amount of chroma as normal DV
+meta.preset.name=camcorder/DVCPRO50 (SD PAL)

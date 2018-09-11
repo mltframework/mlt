@@ -38,6 +38,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/version.h>
 
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
@@ -582,8 +583,9 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			}
 			free( width );
 			free( height );
+			result = strdup(result);
 			free( protocol );
-			return strdup( result );
+			return result;
 		}
 	}
 	free( protocol );
@@ -631,6 +633,13 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 			if ( mlt_properties_get_position( properties, "length" ) <= 0 )
 				mlt_properties_set_position( properties, "length", frames );
 		}
+		else if ( format->nb_streams > 0 && format->streams[0]->codec && format->streams[0]->codec->codec_id == AV_CODEC_ID_WEBP )
+		{
+			char *e = getenv( "MLT_DEFAULT_PRODUCER_LENGTH" );
+			int p = e ? atoi( e ) : 15000;
+			mlt_properties_set_int( properties, "out", MAX(0, p - 1) );
+			mlt_properties_set_int( properties, "length", p );
+		}
 		else
 		{
 			// Set live sources to run forever
@@ -653,7 +662,8 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	if ( self->seekable )
 	{
 		// Do a more rigourous test of seekable on a disposable context
-		self->seekable = av_seek_frame( format, -1, format->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
+		if ( format->nb_streams > 0 && format->streams[0]->codec && format->streams[0]->codec->codec_id != AV_CODEC_ID_WEBP )
+			self->seekable = av_seek_frame( format, -1, format->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 		mlt_properties_set_int( properties, "seekable", self->seekable );
 		self->dummy_context = format;
 		self->video_format = NULL;
@@ -1492,16 +1502,18 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			ctx.slice_w = ( width < 1000 )
 				? ( 256 >> frame->interlaced_frame )
 				: ( 512 >> frame->interlaced_frame );
+		} else {
+			ctx.slice_w = width;
 		}
 
 		c = ( width + ctx.slice_w - 1 ) / ctx.slice_w;
 		int last_slice_w = width - ctx.slice_w * (c - 1);
 		c *= frame->interlaced_frame ? 2 : 1;
 
-		if ( (last_slice_w % 8) || !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
-			ctx.slice_w = width;
+		if ( (last_slice_w % 8) == 0 && !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
 			mlt_slices_run_normal( c, sliced_h_pix_fmt_conv_proc, &ctx );
 		} else {
+			ctx.slice_w = width;
 			for ( i = 0 ; i < c; i++ )
 				sliced_h_pix_fmt_conv_proc( i, i, c, &ctx );
 		}
@@ -2073,6 +2085,16 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Find the codec
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+		if ( mlt_properties_get( properties, "vcodec" ) ) {
+			if ( !( codec = avcodec_find_decoder_by_name( mlt_properties_get( properties, "vcodec" ) ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		} else if ( codec_context->codec_id == AV_CODEC_ID_VP9 ) {
+			if ( !( codec = avcodec_find_decoder_by_name( "libvpx-vp9" ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		} else if ( codec_context->codec_id == AV_CODEC_ID_VP8 ) {
+			if ( !( codec = avcodec_find_decoder_by_name( "libvpx" ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		}
 #ifdef VDPAU
 		if ( codec_context->codec_id == AV_CODEC_ID_H264 )
 		{
@@ -2101,6 +2123,18 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		pthread_mutex_lock( &self->open_mutex );
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
 		{
+			// Switch to the native vp8/vp9 decoder if not yuva420p
+			if ( codec_context->pix_fmt != AV_PIX_FMT_YUVA420P
+				 && !mlt_properties_get( properties, "vcodec" )
+				 && ( !strcmp(codec->name, "libvpx") || !strcmp(codec->name, "libvpx-vp9") ) )
+			{
+				codec = avcodec_find_decoder( codec_context->codec_id );
+				if ( codec && avcodec_open2( codec_context, codec, NULL ) < 0 ) {
+					self->video_index = -1;
+					pthread_mutex_unlock( &self->open_mutex );
+					return 0;
+				}
+			}
 			// Now store the codec with its destructor
 			self->video_codec = codec_context;
 		}
@@ -2434,6 +2468,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	int channels = codec_context->channels;
 	int audio_used = self->audio_used[ index ];
 	int ret = 0;
+	int discarded = 1;
 
 	while ( pkt.data && pkt.size > 0 )
 	{
@@ -2492,6 +2527,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				}
 			}
 			audio_used += convert_samples;
+			discarded = 0;
 		}
 		
 		// Handle ignore
@@ -2507,7 +2543,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	// If we're behind, ignore this packet
 	// Skip this on non-seekable, audio-only inputs.
-	if ( pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
+	if ( !discarded && pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
 	{
 		int64_t pts = pkt.pts;
 		if ( self->first_pts != AV_NOPTS_VALUE )
@@ -2821,6 +2857,11 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Find the codec
 		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+		if ( mlt_properties_get( properties, "acodec" ) )
+		{
+			if ( !( codec = avcodec_find_decoder_by_name( mlt_properties_get( properties, "acodec" ) ) ) )
+				codec = avcodec_find_decoder( codec_context->codec_id );
+		}
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...
 		pthread_mutex_lock( &self->open_mutex );

@@ -66,7 +66,9 @@ static void qimage_delete( void *data )
 /// Returns false if this is animated.
 int init_qimage(const char *filename)
 {
-	QImageReader reader( filename );
+	QImageReader reader;
+	reader.setDecideFormatFromContent( true );
+	reader.setFileName( filename );
 	if ( reader.canRead() && reader.imageCount() > 1 ) {
 		return 0;
 	}
@@ -171,7 +173,10 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	if ( !self->qimage || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif )
 	{
 		self->current_image = NULL;
-		QImage *qimage = new QImage( QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) ) );
+		QImageReader reader;
+		reader.setDecideFormatFromContent( true );
+		reader.setFileName( QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) ) );
+		QImage *qimage = new  QImage( reader.read() );
 		self->qimage = qimage;
 
 		if ( !qimage->isNull( ) )
@@ -245,16 +250,18 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		QImage scaled = interp? qimage->scaled( QSize( width, height ) ) :
 			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
 
+		// Convert scaled image to target format (it might be premultiplied after scaling).
+		scaled = scaled.convertToFormat( qimageFormat );
+
 		// Store width and height
 		self->current_width = width;
 		self->current_height = height;
 
 		// Allocate/define image
-		int dst_stride = width * ( has_alpha ? 4 : 3 );
-		int image_size = dst_stride * ( height + 1 );
+		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		self->current_alpha = NULL;
-		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 
 		// Copy the image
 		int y = self->current_height + 1;
@@ -281,7 +288,6 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			// First, set the image so it can be converted when we get it
 			mlt_frame_replace_image( frame, self->current_image, self->format, width, height );
 			mlt_frame_set_image( frame, self->current_image, image_size, mlt_pool_release );
-			self->format = format;
 
 			// get_image will do the format conversion
 			mlt_frame_get_image( frame, &buffer, &format, &width, &height, 0 );
@@ -289,6 +295,9 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			// cache copies of the image and alpha buffers
 			if ( buffer )
 			{
+				self->current_width = width;
+				self->current_height = height;
+				self->format = format;
 				image_size = mlt_image_format_size( format, width, height, NULL );
 				self->current_image = (uint8_t*) mlt_pool_alloc( image_size );
 				memcpy( self->current_image, buffer, image_size );

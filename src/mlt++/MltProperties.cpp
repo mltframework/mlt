@@ -1,7 +1,6 @@
 /**
  * MltProperties.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -203,6 +202,11 @@ char *Properties::get( int index )
 	return mlt_properties_get_value( get_properties( ), index );
 }
 
+char *Properties::get( int index , mlt_time_format format )
+{
+	return mlt_properties_get_value_tf( get_properties( ), index, format );
+}
+
 void *Properties::get_data( int index, int &size )
 {
 	return mlt_properties_get_data_at( get_properties( ), index, &size );
@@ -316,6 +320,11 @@ int Properties::set_lcnumeric( const char *locale )
 const char *Properties::get_lcnumeric( )
 {
 	return mlt_properties_get_lcnumeric( get_properties() );
+}
+
+void Properties::clear( const char *name )
+{
+	return mlt_properties_clear( get_properties(), name );
 }
 
 char *Properties::get_time( const char *name, mlt_time_format format )

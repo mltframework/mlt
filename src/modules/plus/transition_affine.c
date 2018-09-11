@@ -153,20 +153,6 @@ static mlt_geometry composite_calculate( mlt_transition transition, struct mlt_g
 	return start;
 }
 
-static inline double composite_calculate_key( mlt_transition transition, const char *name, const char *store, int norm, double position )
-{
-	// Struct for the result
-	struct mlt_geometry_item_s result;
-
-	// Structures for geometry
-	transition_parse_keys( transition, name, store, norm, 0 );
-
-	// Do the calculation
-	geometry_calculate( transition, store, &result, position );
-
-	return result.x;
-}
-
 typedef struct
 {
 	double matrix[3][3];
@@ -353,20 +339,20 @@ static inline void get_affine( affine_t *affine, mlt_transition transition, doub
 
 	if ( keyed == 0 )
 	{
-		double fix_rotate_x = mlt_properties_get_double( properties, "fix_rotate_x" );
-		double fix_rotate_y = mlt_properties_get_double( properties, "fix_rotate_y" );
-		double fix_rotate_z = mlt_properties_get_double( properties, "fix_rotate_z" );
+		double fix_rotate_x = anim_get_angle( properties, "fix_rotate_x", position, length );
+		double fix_rotate_y = anim_get_angle( properties, "fix_rotate_y", position, length );
+		double fix_rotate_z = anim_get_angle( properties, "fix_rotate_z", position, length );
 		double rotate_x = mlt_properties_get_double( properties, "rotate_x" );
 		double rotate_y = mlt_properties_get_double( properties, "rotate_y" );
 		double rotate_z = mlt_properties_get_double( properties, "rotate_z" );
-		double fix_shear_x = mlt_properties_get_double( properties, "fix_shear_x" );
-		double fix_shear_y = mlt_properties_get_double( properties, "fix_shear_y" );
-		double fix_shear_z = mlt_properties_get_double( properties, "fix_shear_z" );
+		double fix_shear_x = anim_get_angle( properties, "fix_shear_x", position, length );
+		double fix_shear_y = anim_get_angle( properties, "fix_shear_y", position, length );
+		double fix_shear_z = anim_get_angle( properties, "fix_shear_z", position, length );
 		double shear_x = mlt_properties_get_double( properties, "shear_x" );
 		double shear_y = mlt_properties_get_double( properties, "shear_y" );
 		double shear_z = mlt_properties_get_double( properties, "shear_z" );
-		double ox = mlt_properties_get_double( properties, "ox" );
-		double oy = mlt_properties_get_double( properties, "oy" );
+		double ox = mlt_properties_anim_get_double( properties, "ox", position, length );
+		double oy = mlt_properties_anim_get_double( properties, "oy", position, length );
 
 		affine_rotate_x( affine->matrix, fix_rotate_x + rotate_x * position );
 		affine_rotate_y( affine->matrix, fix_rotate_y + rotate_y * position );
@@ -388,7 +374,7 @@ static inline void get_affine( affine_t *affine, mlt_transition transition, doub
 		double o_x = mlt_properties_anim_get_double(properties, "ox",
 			repeat_position(properties, "ox", position, length), length);
 		double o_y = mlt_properties_anim_get_double(properties, "oy",
-			repeat_position(properties, "ox", position, length), length);
+			repeat_position(properties, "oy", position, length), length);
 		
 		affine_rotate_x( affine->matrix, rotate_x );
 		affine_rotate_y( affine->matrix, rotate_y );
@@ -556,12 +542,20 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	result.x = ( result.x * *width / normalised_width );
 	result.y = ( result.y * *height / normalised_height );
 
-	// Request full resolution of b frame image.
-	mlt_properties_set_int( b_props, "rescale_width", b_width );
-	mlt_properties_set_int( b_props, "rescale_height", b_height );
+	if (mlt_properties_get_int(properties, "b_scaled")) {
+		// Request b frame image size just what is needed.
+		b_width = result.w;
+		b_height = result.h;
+		// Set the rescale interpolation to match the frame
+		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
+	} else {
+		// Request full resolution of b frame image.
+		mlt_properties_set_int( b_props, "rescale_width", b_width );
+		mlt_properties_set_int( b_props, "rescale_height", b_height );
 
-	// Suppress padding and aspect normalization.
-	mlt_properties_set( b_props, "rescale.interp", "none" );
+		// Suppress padding and aspect normalization.
+		mlt_properties_set( b_props, "rescale.interp", "none" );
+	}
 
 	// This is not a field-aware transform.
 	mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
@@ -578,8 +572,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	{
 		double sw, sh;
 		// Get values from the transition
-		double scale_x = mlt_properties_get_double( properties, "scale_x" );
-		double scale_y = mlt_properties_get_double( properties, "scale_y" );
+		double scale_x = mlt_properties_anim_get_double( properties, "scale_x", position, length );
+		double scale_y = mlt_properties_anim_get_double( properties, "scale_y", position, length );
 		int scale = mlt_properties_get_int( properties, "scale" );
 		double geom_scale_x = (double) b_width / result.w;
 		double geom_scale_y = (double) b_height / result.h;

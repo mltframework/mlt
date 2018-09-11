@@ -39,6 +39,7 @@ typedef char* locale_t;
 #endif
 
 extern mlt_property mlt_property_init( );
+extern void mlt_property_clear( mlt_property self );
 extern int mlt_property_set_int( mlt_property self, int value );
 extern int mlt_property_set_double( mlt_property self, double value );
 extern int mlt_property_set_position( mlt_property self, mlt_position value );
@@ -49,7 +50,9 @@ extern int mlt_property_get_int( mlt_property self, double fps, locale_t );
 extern double mlt_property_get_double( mlt_property self, double fps, locale_t );
 extern mlt_position mlt_property_get_position( mlt_property self, double fps, locale_t );
 extern int64_t mlt_property_get_int64( mlt_property self );
+extern char *mlt_property_get_string_tf( mlt_property self, mlt_time_format );
 extern char *mlt_property_get_string( mlt_property self );
+extern char *mlt_property_get_string_l_tf( mlt_property self, locale_t, mlt_time_format );
 extern char *mlt_property_get_string_l( mlt_property self, locale_t );
 extern void *mlt_property_get_data( mlt_property self, int *length );
 extern void mlt_property_close( mlt_property self );

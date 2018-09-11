@@ -61,7 +61,7 @@ else
 
 	echo > config.mak
 
-	if $(echo $qt_version | awk '{if ($0 + 0 > 5.6) exit 0; else exit 1;}')
+	if $(echo $qt_version | awk '{split($0, a, "."); if (a[1] >= 5 && a[2] > 6) exit 0; else exit 1;}')
 	then
 		echo "USE_CPP11=1" >> config.mak
 	fi

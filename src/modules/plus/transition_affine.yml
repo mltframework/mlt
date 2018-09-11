@@ -2,7 +2,7 @@ schema_version: 0.2
 type: transition
 identifier: affine
 title: Transform
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Charles Yates
 contributor:
@@ -72,7 +72,10 @@ parameters:
 
   - identifier: keyed
     title: Key-framed
-    description: Whether rotate, shear, and offset are key-framed or not.
+    description: >
+      Whether rotate, shear, and offset are key-framed or not.
+      This ("key-framed") refers to the legacy, deprecated, mlt_geometry-based
+      property evaluation. Most of the properties support mlt_animation now.
     type: boolean
     default: 0
     mutable: yes
@@ -238,6 +241,8 @@ parameters:
     description: >
       Whether to use the B frame's alpha channel in transformations for the
       output, The affine filter sets this to 1 by default.
+      Basically, this tells the blend function to use the Porter-Duff atop
+      mode instead of the default over.
     type: boolean
     default: 0
     mutable: yes
@@ -249,10 +254,8 @@ parameters:
       Otherwise, if the B frame image fits within the geometry, it will not
       be scaled. If 0, and the B frame image exceeds the geometry, then it is
       scaled down to fit within the geometry.
-    type: integer
+    type: boolean
     default: 1
-    minimum: 0
-    maximum: 1
     mutable: yes
     widget: checkbox
 
@@ -302,4 +305,10 @@ parameters:
     type: rect
     default: "0%/0%:100%x100%:100%"
     readonly: no
+    mutable: yes
+
+  - identifier: b_scaled
+    title: Do not use full resolution of B frame
+    type: boolean
+    default: 0
     mutable: yes

@@ -24,3 +24,4 @@ acodec=pcm_s16le
 
 meta.preset.extension=mxf
 meta.preset.note=Sony "workflow innovation"
+meta.preset.name=camcorder/XDCAM-HD422

@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -311,6 +311,7 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 		{
 			mlt_service_type type = mlt_service_identify( service );
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+			int track_max = MAX( mlt_multitrack_count( mlt_tractor_multitrack( self ) ) - 1, 0 );
 
 			if ( type == transition_type )
 			{
@@ -318,10 +319,10 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 				int a_track = mlt_transition_get_a_track( transition );
 				int b_track = mlt_transition_get_b_track( transition );
 
-				if ( a_track >= index || b_track >= index )
+				if ( a_track > index || b_track >= index )
 				{
-					a_track = MAX( a_track >= index ? a_track - 1 : a_track, 0 );
-					b_track = MAX( b_track >= index ? b_track - 1 : b_track, 0 );
+					a_track = CLAMP( a_track > index ? a_track - 1 : a_track, 0,  track_max );
+					b_track = CLAMP( b_track >= index ? b_track - 1 : b_track, 0, track_max );
 					mlt_transition_set_tracks( transition, a_track, b_track );
 				}
 			}
@@ -329,7 +330,7 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 			{
 				int current_track = mlt_properties_get_int( properties, "track" );
 				if ( current_track >= index )
-					mlt_properties_set_int( properties, "track", MAX( current_track - 1, 0 ) );
+					mlt_properties_set_int( properties, "track", CLAMP( current_track - 1, 0, track_max ) );
 			}
 			service = mlt_service_producer( service );
 		}

@@ -12,3 +12,4 @@ progressive=1
 
 meta.preset.extension=flv
 meta.preset.note=This is the old Sorenson H.263-based codec. Most people use H.264 with Flash now.
+meta.preset.name=legacy/Flash

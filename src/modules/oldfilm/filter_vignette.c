@@ -28,20 +28,6 @@
 #define SIGMOD_STEPS 1000
 #define POSITION_VALUE(p,s,e) (s+((double)(e-s)*p ))
 
-static float geometry_to_float( char *val, mlt_position pos )
-{
-	float ret=0.0;
-	struct mlt_geometry_item_s item;
-
-	mlt_geometry geom = mlt_geometry_init();
-	mlt_geometry_parse( geom, val, -1, -1, -1);
-	mlt_geometry_fetch( geom, &item, pos );
-	ret = item.x;
-	mlt_geometry_close( geom );
-
-	return ret;
-}
-
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter filter = mlt_frame_pop_service( frame );
@@ -53,12 +39,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		float smooth, radius, cx, cy, opac;
 		mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter ) ;
 		mlt_position pos = mlt_filter_get_position( filter, frame );
+		mlt_position len = mlt_filter_get_length2( filter, frame );
 
-		smooth = geometry_to_float( mlt_properties_get( filter_props, "smooth" ), pos ) * 100.0 ;
-		radius = geometry_to_float( mlt_properties_get( filter_props, "radius" ), pos ) * *width;
-		cx = geometry_to_float( mlt_properties_get( filter_props, "x" ), pos ) * *width;
-		cy = geometry_to_float( mlt_properties_get( filter_props, "y" ), pos ) * *height;
-		opac = geometry_to_float( mlt_properties_get( filter_props, "opacity" ), pos );
+		smooth = mlt_properties_anim_get_double( filter_props, "smooth", pos, len ) * 100.0;
+		radius = mlt_properties_anim_get_double( filter_props, "radius", pos, len ) * *width;
+		cx = mlt_properties_anim_get_double( filter_props, "x", pos, len ) * *width;
+		cy = mlt_properties_anim_get_double( filter_props, "y", pos, len ) * *height;
+		opac = mlt_properties_anim_get_double( filter_props, "opacity", pos, len );
 		int mode = mlt_properties_get_int( filter_props , "mode" );
 
 		int video_width = *width;

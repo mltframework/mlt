@@ -1,3 +1,300 @@
+2018-07-02  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 6.10.0
+
+2018-06-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/oldfilm/filter_vignette.c,
+  src/modules/oldfilm/filter_vignette.yml: Convert oldfilm/vignette filter to
+  mlt_animation.
+
+2018-06-14  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/AAC, presets/consumer/avformat/Flash,
+  presets/consumer/avformat/MP3, presets/consumer/avformat/MPEG-4,
+  presets/consumer/avformat/MPEG-4-ASP, presets/consumer/avformat/Sony-PSP,
+  presets/consumer/avformat/Vorbis, presets/consumer/avformat/WAV,
+  presets/consumer/avformat/WMA, presets/consumer/avformat/XDCAM-HD422,
+  presets/consumer/avformat/atsc_1080i_50/DNxHD,
+  presets/consumer/avformat/atsc_1080i_5994/DNxHD,
+  presets/consumer/avformat/atsc_1080p_2398/DNxHD,
+  presets/consumer/avformat/atsc_1080p_24/DNxHD,
+  presets/consumer/avformat/atsc_1080p_25/DNxHD,
+  presets/consumer/avformat/atsc_1080p_2997/DNxHD,
+  presets/consumer/avformat/atsc_1080p_30/DNxHD,
+  presets/consumer/avformat/atsc_1080p_50/DNxHD,
+  presets/consumer/avformat/atsc_1080p_5994/DNxHD,
+  presets/consumer/avformat/atsc_1080p_60/DNxHD,
+  presets/consumer/avformat/atsc_720p_2398/DNxHD,
+  presets/consumer/avformat/atsc_720p_50/DNxHD,
+  presets/consumer/avformat/atsc_720p_5994/DNxHD,
+  presets/consumer/avformat/atsc_720p_60/DNxHD,
+  presets/consumer/avformat/dv_ntsc/D10, presets/consumer/avformat/dv_ntsc/DV,
+  presets/consumer/avformat/dv_ntsc/DVCPRO50,
+  presets/consumer/avformat/dv_ntsc/DVD,
+  presets/consumer/avformat/dv_ntsc_wide/D10,
+  presets/consumer/avformat/dv_ntsc_wide/DV,
+  presets/consumer/avformat/dv_ntsc_wide/DVCPRO50,
+  presets/consumer/avformat/dv_ntsc_wide/DVD,
+  presets/consumer/avformat/dv_pal/D10, presets/consumer/avformat/dv_pal/DV,
+  presets/consumer/avformat/dv_pal/DVCPRO50,
+  presets/consumer/avformat/dv_pal/DVD,
+  presets/consumer/avformat/dv_pal_wide/D10,
+  presets/consumer/avformat/dv_pal_wide/DV,
+  presets/consumer/avformat/dv_pal_wide/DVCPRO50,
+  presets/consumer/avformat/dv_pal_wide/DVD,
+  presets/consumer/avformat/hdv_1080_25p/HDV,
+  presets/consumer/avformat/hdv_1080_30p/HDV,
+  presets/consumer/avformat/hdv_1080_50i/HDV,
+  presets/consumer/avformat/hdv_1080_60i/HDV,
+  presets/consumer/avformat/hdv_720_25p/HDV,
+  presets/consumer/avformat/hdv_720_30p/HDV,
+  presets/consumer/avformat/hdv_720_50p/HDV,
+  presets/consumer/avformat/hdv_720_60p/HDV: Categorize many of the encoding
+  presets.
+
+  * presets/consumer/avformat/intermediate/ProRes,
+  presets/consumer/avformat/intermediate/ProRes-Kostya: Hide ProRes in Shotcut
+  and show ProRes-Kostya as ProRes.
+
+2018-06-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Fix AV_VERSION_INT not found in
+  libav master.
+
+2018-06-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/transition_affine.c,
+  src/modules/plus/transition_affine.yml: Add mlt_animation to affine fix_,
+  scale_, and ox/oy props.
+
+  * src/framework/mlt.vers, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/framework/mlt_property.c,
+  src/framework/mlt_property.h, src/mlt++/MltAnimation.cpp,
+  src/mlt++/MltAnimation.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/mlt++.vers, src/tests/common.pri,
+  src/tests/test_animation/test_animation.cpp,
+  src/tests/test_properties/test_properties.cpp: Add functions to serialize
+  animation with a time format.  This also includes functions to clear a
+  property (set it to zero and null values), which is important for
+  reconstructing an animation by API.  mlt_animation_serialize_cut_tf()
+  mlt_animation_serialize_tf() mlt_property_clear()
+  mlt_property_get_string_tf() mlt_property_get_string_l_tf()
+  mlt_properties_clear() mlt_properties_get_value_tf() 
+  Mlt::Properties::get(int, mlt_time_format) Mlt::Properties::clear()
+  Mlt::Animation::serialize_cut(mlt_time_format, int, int)
+
+2018-06-05  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/interp.h, src/modules/plus/transition_affine.yml: Fix
+  affine output alpha incorrect for over mode.
+
+2018-05-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c,
+  src/tests/test_properties/test_properties.cpp: Fix #343 handle reserved chars
+  in name for YAML.
+
+2018-05-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/filter_frei0r.c, src/modules/frei0r/frei0r_helper.c,
+  src/modules/frei0r/frei0r_helper.h, src/modules/frei0r/producer_frei0r.c,
+  src/modules/frei0r/transition_frei0r.c: Convert frei0r services to property
+  animation APIs.
+
+  * src/tests/test_animation/test_animation.cpp,
+  src/tests/test_properties/test_properties.cpp: Update unit tests for 5256000.
+
+2018-05-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/producer_frei0r.c, src/modules/gtk2/producer_pango.c,
+  src/modules/gtk2/producer_pixbuf.c, src/modules/swfdec/producer_swfdec.c:
+  Refactor to mlt_image_format_size().
+
+2018-05-11  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interm version to 6.9.0
+
+2018-05-10  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 6.8.0
+
+2018-05-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qt/producer_qimage.c, src/modules/qt/qimage_wrapper.cpp: Fix
+  qimage crash on source amd request format mismatch.
+
+2018-05-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_consumer.c, src/modules/avformat/consumer_avformat.c: Fix
+  mlt_frame_get_audio() may be called before setting private data.  This fixes
+  https://github.com/mltframework/shotcut/issues/549
+
+2018-05-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_region.c, src/modules/plus/filter_affine.c: Fix
+  affine and region filters alter the frame's position.
+
+2018-04-08  Vincent Pinon <vpinon@kde.org>
+
+  * src/framework/mlt_frame.h, src/modules/avformat/consumer_avformat.c,
+  src/modules/vmfx/filter_chroma.c, src/modules/vmfx/filter_chroma_hold.c: Fix
+  GCC warnings
+
+2018-04-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_affine.yml, src/modules/plus/transition_affine.c,
+  src/modules/plus/transition_affine.yml: Convert affine to mlt_rect and
+  animation APIs.
+
+2018-04-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h, src/mlt++/MltAnimation.cpp,
+  src/mlt++/MltAnimation.h, src/mlt++/mlt++.vers: Add
+  mlt_animation_key_set_frame() and Animation::key_set_frame().
+
+2018-04-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_animation.c,
+  src/framework/mlt_animation.h, src/mlt++/MltAnimation.cpp,
+  src/mlt++/MltAnimation.h, src/mlt++/mlt++.vers: Add
+  mlt_animation_key_set_type() and Animation::key_set_type().
+
+2018-03-28  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/rtaudio/Makefile, src/modules/rtaudio/RtAudio.cpp,
+  src/modules/rtaudio/consumer_rtaudio.cpp: Improve surround support in RtAudio
+  on Windows.  The directsound implementation in RtAudio does not support > 2
+  channels. But the WASAPI implementation does. This change will try all
+  available drivers to try to sucessfully open the audio device. If none of the
+  drivers work with surround, then it will revert to 2 channels.  In the case
+  that the module reverts to 2 channels, the requested number of channels will
+  still be processed, but only the first two channels will be output.  These
+  implementation changes were carried over from the SDL2 module to match the
+  behavior of consumer_sdl2_audio.
+
+2018-03-25  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/sdl2/Makefile, src/modules/sdl2/common.c,
+  src/modules/sdl2/common.h, src/modules/sdl2/consumer_sdl2.c,
+  src/modules/sdl2/consumer_sdl2_audio.c: Improve surround support in SDL2 on
+  Windows.  The directsound implementation in SDL does not support > 2
+  channels. But the xaudio2 implementation does. This change will try all
+  available drivers to try to sucessfully open the audio device. If none of the
+  drivers work with surround, then it will revert to 2 channels.  The user can
+  still request a specific driver using the audio_driver parameter.
+
+2018-03-12  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/GIF, src/modules/avformat/consumer_avformat.c:
+  Fix #284 GIF encoding not working.  This also fixes DPX.
+
+  * src/framework/mlt_frame.c, src/framework/mlt_types.h: Order the channel
+  layouts the same as FFmpeg.
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/producer_avformat.c: Fix wrong search flags supplied to
+  av_opt_set().  Not only were the wrong AV_OPT flags supplied as search
+  options but also lack of AV_OPT_SEARCH_CHILDREN was the cause of warnings
+  such as:  [libx264 @ 0x7ff55c001c60] [Eval @ 0x7ff561544c60] Undefined
+  constant or missing '(' in 'main' [libx264 @ 0x7ff55c001c60] Unable to parse
+  option value "main"
+
+2018-03-12  Brian Matherly <code@brianmatherly.com>
+
+  * src/framework/mlt.vers, src/framework/mlt_consumer.c,
+  src/framework/mlt_consumer.h, src/framework/mlt_frame.c,
+  src/framework/mlt_frame.h, src/framework/mlt_tractor.c,
+  src/framework/mlt_transition.c, src/framework/mlt_types.h,
+  src/modules/avformat/Makefile, src/modules/avformat/common.c,
+  src/modules/avformat/common.h, src/modules/avformat/configure,
+  src/modules/avformat/consumer_avformat.c, src/modules/avformat/factory.c,
+  src/modules/avformat/filter_avfilter.c,
+  src/modules/avformat/filter_swresample.c,
+  src/modules/avformat/producer_avformat.c, src/modules/core/loader.ini: Add
+  filter_swresample. (#305)  * Add filter_swresample.  Performs channel
+  configuration aware channel count conversion. Also performs sample format and
+  frequency conversion. Set this filter as the default channelconvert normalize
+  filter.  * Resolve review comments for filter_swresample.  * Fix applying
+  channel_layout property.  MLT allows specifying channel_layout as a string
+  representing the channel layout. But avcodec expects channel_layout to be
+  specified as an integer which represents a channel position bitmap. This
+  change stops the channel_layout property from being passed to avcodec so that
+  the value calculated by MLT will be used instead.
+
+2018-03-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl.yml, src/modules/sdl2/consumer_sdl2.yml,
+  src/modules/sdl2/factory.c: Fix sdl2 metadata.
+
+2018-02-16  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/MJPEG,
+  presets/consumer/avformat/atsc_1080i_50/DNxHD,
+  presets/consumer/avformat/atsc_1080i_5994/DNxHD,
+  presets/consumer/avformat/atsc_1080p_2398/DNxHD,
+  presets/consumer/avformat/atsc_1080p_24/DNxHD,
+  presets/consumer/avformat/atsc_1080p_25/DNxHD,
+  presets/consumer/avformat/atsc_1080p_2997/DNxHD,
+  presets/consumer/avformat/atsc_1080p_30/DNxHD,
+  presets/consumer/avformat/atsc_1080p_50/DNxHD,
+  presets/consumer/avformat/atsc_1080p_5994/DNxHD,
+  presets/consumer/avformat/atsc_1080p_60/DNxHD,
+  presets/consumer/avformat/atsc_720p_2398/DNxHD,
+  presets/consumer/avformat/atsc_720p_50/DNxHD,
+  presets/consumer/avformat/atsc_720p_5994/DNxHD,
+  presets/consumer/avformat/atsc_720p_60/DNxHD,
+  presets/consumer/avformat/dv_ntsc/DV,
+  presets/consumer/avformat/dv_ntsc/DVCPRO50,
+  presets/consumer/avformat/dv_ntsc_wide/DV,
+  presets/consumer/avformat/dv_ntsc_wide/DVCPRO50,
+  presets/consumer/avformat/dv_pal/DV,
+  presets/consumer/avformat/dv_pal/DVCPRO50,
+  presets/consumer/avformat/dv_pal_wide/DV,
+  presets/consumer/avformat/dv_pal_wide/DVCPRO50,
+  presets/consumer/avformat/intermediate/MJPEG,
+  presets/consumer/avformat/lossless/FFV1,
+  presets/consumer/avformat/lossless/HuffYUV: Add g(op) and bf(rames) to more
+  encode presets.
+
+2018-02-04  Vincent Pinon <vpinon@kde.org>
+
+  * src/framework/mlt_property.c, src/modules/avformat/filter_avdeinterlace.c,
+  src/modules/gtk2/pixops.c, src/modules/linsys/sdi_generator.c,
+  src/modules/opengl/transition_movit_luma.cpp, src/modules/plusgpl/cJSON.c,
+  src/modules/plusgpl/filter_burn.c, src/modules/vmfx/filter_shape.c: Fix
+  trivial GCC warnings
+
+2018-02-05  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl.yml,
+  src/modules/sdl/consumer_sdl_audio.c, src/modules/sdl2/consumer_sdl2.c,
+  src/modules/sdl2/consumer_sdl2.yml: Fix mulit-channel audio. (#294)  * Fix
+  mulit-channel audio.  At some framerates, audio with > 6 channels would
+  result in an audio buffer larger than that allocated for SDL. This change
+  will copy from the buffer in pieces if it won't all fit at once.  * Unify
+  consumer_play_audio() in sdl consumers.  Use the same code for all 3
+  implementations. Affected features (all have these now): * Handling audio
+  frames larger than the sdl audio buffer * Audio scrubbing * "audio_offset"
+  property * Handling more or fewer channels than requested  * Default
+  scrub_audio to 1 for sdl and sdl2 consumers.
+
+2018-02-01  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 0.6.7
+
+2018-01-30  johannes <johannes.brechtmann@gmail.com>
+
+  * src/framework/mlt_properties.c, src/framework/mlt_property.c,
+  src/framework/mlt_property.h: musl libc support  musl has no macro, so it can
+  not be detected straigthforward.  HAVE_STRTOD_L tells that strdod_l() is
+  available HAVE_LOCALE_H tells that the header locale.h is available
+
 2018-01-22  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version

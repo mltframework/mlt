@@ -123,9 +123,10 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 	*width = swfdec->width;
 	*height = swfdec->height;
 	*format = mlt_image_rgb24a;
+	int size = mlt_image_format_size( *format, *width, *height, NULL );
 
-	*buffer = mlt_pool_alloc( *width * ( *height + 1 ) * 4 );
-	mlt_frame_set_image( frame, *buffer, *width * ( *height + 1 ) * 4, mlt_pool_release );
+	*buffer = mlt_pool_alloc( size );
+	mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
 
 	// Seek
 	mlt_position pos = mlt_frame_original_position( frame );

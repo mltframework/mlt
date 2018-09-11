@@ -1,6 +1,6 @@
 /*
  * filter_dynamictext.c -- dynamic text overlay filter
- * Copyright (C) 2011-2014 Meltytech, LLC
+ * Copyright (C) 2011-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -229,14 +229,10 @@ static int setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame f
 	if ( !dynamic_text || !strcmp( "", dynamic_text ) )
 		return 0;
 
-	// Check for keywords in dynamic text
-	if ( dynamic_text )
-	{
-		// Apply keyword substitution before passing the text to the filter.
-		char result[MAX_TEXT_LEN] = "";
-		substitute_keywords( filter, result, dynamic_text, frame );
-		mlt_properties_set( producer_properties, "text", (char*)result );
-	}
+	// Apply keyword substitution before passing the text to the filter.
+	char result[MAX_TEXT_LEN] = "";
+	substitute_keywords( filter, result, dynamic_text, frame );
+	mlt_properties_set( producer_properties, "text", (char*)result );
 
 	// Pass the properties to the pango producer
 	mlt_properties_set( producer_properties, "family", mlt_properties_get( my_properties, "family" ) );
@@ -253,17 +249,19 @@ static int setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame f
 	return 1;
 }
 
-static void setup_transition( mlt_filter filter, mlt_transition transition )
+static void setup_transition( mlt_frame frame, mlt_filter filter, mlt_transition transition )
 {
 	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 
 	mlt_service_lock( MLT_TRANSITION_SERVICE(transition) );
-	mlt_properties_set( transition_properties, "geometry", mlt_properties_get( my_properties, "geometry" ) );
+	mlt_rect rect = mlt_properties_anim_get_rect( my_properties, "geometry", position, length );
+	mlt_properties_set_rect( transition_properties, "rect", rect );
 	mlt_properties_set( transition_properties, "halign", mlt_properties_get( my_properties, "halign" ) );
 	mlt_properties_set( transition_properties, "valign", mlt_properties_get( my_properties, "valign" ) );
 	mlt_properties_set_int( transition_properties, "out", mlt_properties_get_int( my_properties, "_out" ) );
-	mlt_properties_set_int( transition_properties, "refresh", 1 );
 	mlt_service_unlock( MLT_TRANSITION_SERVICE(transition) );
 }
 
@@ -277,42 +275,33 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_producer producer = mlt_properties_get_data( properties, "_producer", NULL );
 	mlt_transition transition = mlt_properties_get_data( properties, "_transition", NULL );
-	mlt_frame a_frame = 0;
 	mlt_frame b_frame = 0;
 	mlt_position position = 0;
 
-	// Process all remaining filters first
-	*format = mlt_image_yuv422;
-	error = mlt_frame_get_image( frame, image, format, width, height, 0 );
-
 	// Configure this filter
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-	if ( error || !setup_producer( filter, producer, frame ) ) {
+	if ( !setup_producer( filter, producer, frame ) ) {
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-		return error;
+		return mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
-	setup_transition( filter, transition );
+	setup_transition( frame, filter, transition );
 
 	// Make sure the producer is in the correct position
 	position = mlt_filter_get_position( filter, frame );
 	mlt_producer_seek( producer, position );
 
 	// Get the b frame and process with transition if successful
-	if ( !error && mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &b_frame, 0 ) == 0 )
+	if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &b_frame, 0 ) == 0 )
 	{
 		// This lock needs to also protect the producer properties from being
 		// modified in setup_producer() while also being used in mlt_service_get_frame().
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
-		// Create a temporary frame so the original stays in tact.
-		a_frame = mlt_frame_clone( frame, 0 );
-
 		// Get the a and b frame properties
-		mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
+		mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
 		mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
-		// Set the a_frame and b_frame to be in the same position and have same consumer requirements
-		mlt_frame_set_position( a_frame, position );
+		// Set the b_frame to be in the same position and have same consumer requirements
 		mlt_frame_set_position( b_frame, position );
 		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) );
 
@@ -320,14 +309,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), b_frame, 0 );
 
 		// Process the frame
-		mlt_transition_process( transition, a_frame, b_frame );
+		mlt_transition_process( transition, frame, b_frame );
 
 		// Get the image
-		*format = mlt_image_yuv422;
-		error = mlt_frame_get_image( a_frame, image, format, width, height, 1 );
+		*format = mlt_image_rgb24a;
+		error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 		// Close the temporary frames
-		mlt_frame_close( a_frame );
 		mlt_frame_close( b_frame );
 	}
 	else
@@ -362,7 +350,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
-	mlt_transition transition = mlt_factory_transition( profile, "composite", NULL );
+	mlt_transition transition = mlt_factory_transition( profile, "affine", NULL );
 	mlt_producer producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "qtext:" );
 
 	// Use pango if qtext is not available.
@@ -377,7 +365,9 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 
 		// Register the transition for reuse/destruction
-    	mlt_properties_set_data( my_properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES(transition), "fill", 0 );
+		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES(transition), "b_scaled", 1 );
+		mlt_properties_set_data( my_properties, "_transition", transition, 0, ( mlt_destructor )mlt_transition_close, NULL );
 
 		// Register the producer for reuse/destruction
 		mlt_properties_set_data( my_properties, "_producer", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
@@ -387,7 +377,7 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 
 		// Assign default values
 		mlt_properties_set( my_properties, "argument", arg ? arg: "#timecode#" );
-		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100" );
+		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100%" );
 		mlt_properties_set( my_properties, "family", "Sans" );
 		mlt_properties_set( my_properties, "size", "48" );
 		mlt_properties_set( my_properties, "weight", "400" );

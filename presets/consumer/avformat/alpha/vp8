@@ -1,0 +1,27 @@
+f=webm
+
+acodec=vorbis
+ab=128k
+
+vcodec=libvpx
+g=120
+rc_lookahead=16
+quality=good
+speed=0
+vprofile=0
+qmax=51
+qmin=11
+slices=4
+vb=2M
+maxrate=24M
+minrate=100k
+arnr_max_frames=7
+arnr_strength=5
+arnr_type=3
+auto-alt-ref=0
+mlt_image_format=rgb24a
+pix_fmt=yuva420p
+
+meta.preset.name=alpha/WebM VP8 with alpha channel
+meta.preset.extension=webm
+meta.preset.note=VP8 video with Ogg Vorbis audio in Matroska container: "Don't be evil"

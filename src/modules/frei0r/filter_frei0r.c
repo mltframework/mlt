@@ -26,7 +26,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 
 	mlt_filter filter = mlt_frame_pop_service( frame );
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	*format = mlt_image_rgb24a;
 	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "frei0r %dx%d\n", *width, *height );
 	int error = mlt_frame_get_image( frame, image, format, width, height, 0 );
@@ -36,7 +35,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		double position = mlt_filter_get_position( filter, frame );
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		double time = position / mlt_profile_fps( profile );
-		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, time, properties, frame, image, width, height );
+		int length = mlt_filter_get_length2( filter, frame );
+		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, time, length, frame, image, width, height );
 	}
 
 	return error;

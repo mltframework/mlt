@@ -1,6 +1,6 @@
 /*
  * consumer_xml.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -205,11 +205,7 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 			 strcmp( name, "width" ) &&
 			 strcmp( name, "height" ) )
 		{
-			char *value = NULL;
-			if ( !strcmp( name, "length" ) )
-				value = mlt_properties_get_time( properties, name, context->time_format );
-			else
-				value = mlt_properties_get_value( properties, i );
+			char *value = mlt_properties_get_value_tf( properties, i, context->time_format );
 			if ( value )
 			{
 				int rootlen = strlen( context->root );
@@ -258,7 +254,7 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 		char *name = mlt_properties_get_name( properties, i );
 		if ( !strncmp( name, store, strlen( store ) ) )
 		{
-			char *value = mlt_properties_get_value( properties, i );
+			char *value = mlt_properties_get_value_tf( properties, i, context->time_format );
 			if ( value )
 			{
 				int rootlen = strlen( context->root );

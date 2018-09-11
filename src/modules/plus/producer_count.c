@@ -219,6 +219,13 @@ static mlt_frame get_text_frame( mlt_producer producer, time_info* info  )
 	{
 		text_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "qtext:" );
 
+		// Use pango if qtext is not available.
+		if( !text_producer )
+			text_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "pango:" );
+	
+		if( !text_producer )
+			mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "QT or GTK modules required for count producer.\n" );
+
 		// Save the producer for future use.
 		mlt_properties_set_data( producer_properties, "_text_producer", text_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
