@@ -1,7 +1,6 @@
 /*
  * consumer_sdl2_audio.c -- A Simple DirectMedia Layer audio-only consumer
  * Copyright (C) 2009-2018 Meltytech, LLC
- * Author: Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -223,8 +222,6 @@ int consumer_stop( mlt_consumer parent )
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_cond_broadcast( &self->audio_cond );
 		pthread_mutex_unlock( &self->audio_mutex );
-
-		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 	}
 
 	return 0;
@@ -369,8 +366,21 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 			int sample_space = ( sizeof( self->audio_buffer ) - self->audio_avail ) / dst_stride;
 			while ( self->running && sample_space == 0 )
 			{
-				pthread_cond_wait( &self->audio_cond, &self->audio_mutex );
+				struct timeval now;
+				struct timespec tm;
+
+				gettimeofday( &now, NULL );
+				tm.tv_sec = now.tv_sec + 1;
+				tm.tv_nsec = now.tv_usec * 1000;
+				pthread_cond_timedwait( &self->audio_cond, &self->audio_mutex, &tm );
 				sample_space = ( sizeof( self->audio_buffer ) - self->audio_avail ) / dst_stride;
+
+				if ( sample_space == 0 )
+				{
+					mlt_log_warning( MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n" );
+					pthread_mutex_unlock( &self->audio_mutex );
+					return 1;
+				}
 			}
 			if ( self->running )
 			{
