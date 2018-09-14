@@ -1,7 +1,5 @@
 /*
  * qimage_wrapper.cpp -- a QT/QImage based producer for MLT
- * Copyright (C) 2006 Visual Media
- * Author: Charles Yates <charles.yates@gmail.com>
  *
  * NB: This module is designed to be functionally equivalent to the 
  * gtk2 image loading module so it can be used as replacement.
@@ -224,7 +222,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 	// Get index and qimage
 	int image_idx = refresh_qimage( self, frame );
 
-	// optimization for subsequent iterations on single pictur
+	// optimization for subsequent iterations on single picture
 	if ( image_idx != self->image_idx || width != self->current_width || height != self->current_height )
 		self->current_image = NULL;
 
@@ -247,8 +245,8 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
 			self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
 		}
-		QImage scaled = interp? qimage->scaled( QSize( width, height ) ) :
-			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
+		QImage scaled = interp? qimage->scaled( QSize( width, height ), Qt::IgnoreAspectRatio, Qt::SmoothTransformation ) :
+			qimage->scaled( QSize(width, height) );
 
 		// Convert scaled image to target format (it might be premultiplied after scaling).
 		scaled = scaled.convertToFormat( qimageFormat );
