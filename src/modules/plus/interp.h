@@ -170,7 +170,7 @@ int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	m=(int)floorf(x);
 	if (m + 2 > w) m = w - 2;
 	n=(int)floorf(y);
-	if (n + 2 > w) n = w - 2;
+	if (n + 2 > h) n = h - 2;
 
 	k=n*w+m; l=(n+1)*w+m;
 	k1=4*(k+1); l1=4*(l+1); n1=4*((n+1)*w+m);
