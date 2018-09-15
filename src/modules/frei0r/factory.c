@@ -356,7 +356,7 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 		MLT_DIRLIST_DELIMITER
 	);
 	void* ret=NULL;
-	while (dircount--){
+	while (dircount-- && !ret){
 		char soname[PATH_MAX];
 		char *myid = strdup( id );
 
