@@ -69,6 +69,9 @@ struct consumer_sdl_s
 	SDL_Rect sdl_rect;
 	uint8_t *buffer;
 	int is_purge;
+#ifdef _WIN32
+	int no_quit_subsystem;
+#endif
 };
 
 /** Forward references to static functions.
@@ -275,10 +278,11 @@ int consumer_stop( mlt_consumer parent )
 		if ( self->sdl_window )
 			SDL_DestroyWindow( self->sdl_window );
 		self->sdl_window = NULL;
-#ifndef _WIN32
+#ifdef _WIN32
+		if ( !self->no_quit_subsystem )
+#endif
 		if ( !mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "audio_off" ) )
 			SDL_QuitSubSystem( SDL_INIT_AUDIO );
-#endif
 		if ( mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( parent ), "sdl_started" ) == 0 )
 			SDL_Quit( );
 		pthread_mutex_unlock( &mlt_sdl_mutex );
@@ -440,6 +444,9 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 				{
 					mlt_log_warning( MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n" );
 					pthread_mutex_unlock( &self->audio_mutex );
+#ifdef _WIN32
+					self->no_quit_subsystem = 1;
+#endif
 					return 1;
 				}
 			}
