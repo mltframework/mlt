@@ -391,6 +391,7 @@ static mlt_producer mlt_playlist_locate( mlt_playlist self, mlt_position *positi
 			*position -= self->list[ *clip ]->frame_count;
 		}
 	}
+	*clip = MIN( *clip, self->count - 1 );
 
 	return producer;
 }
