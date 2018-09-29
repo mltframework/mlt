@@ -157,6 +157,7 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 	pdata->avfilter_graph = avfilter_graph_alloc();
 	if( !pdata->avfilter_graph ) {
 		mlt_log_error( filter, "Cannot create filter graph\n" );
+		goto fail;
 	}
 
 	// Set thread count if supported.
@@ -169,80 +170,102 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 	pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, abuffersrc, "in");
 	if( !pdata->avbuffsrc_ctx ) {
 		mlt_log_error( filter, "Cannot create audio buffer source\n" );
+		goto fail;
 	}
 	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "sample_rate", sample_rates[0], AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src sample rate %d\n", sample_rates[0] );
+		goto fail;
 	}
 	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "sample_fmt", sample_fmts[0], AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src sample format %d\n", sample_fmts[0] );
+		goto fail;
 	}
 	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "channels", channel_counts[0], AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src channels %d\n", channel_counts[0] );
+		goto fail;
 	}
 	ret = av_opt_set( pdata->avbuffsrc_ctx, "channel_layout", channel_layout_str, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src channel layout %s\n", channel_layout_str );
+		goto fail;
 	}
 	ret = avfilter_init_str( pdata->avbuffsrc_ctx, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot int buffer source\n" );
+		goto fail;
 	}
 
 	// Initialize the buffer sink filter context
 	pdata->avbuffsink_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, abuffersink, "in");
 	if( !pdata->avbuffsink_ctx ) {
 		mlt_log_error( filter, "Cannot create audio buffer sink\n" );
+		goto fail;
 	}
 	ret = av_opt_set_int_list( pdata->avbuffsink_ctx, "sample_fmts", sample_fmts, -1, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set sink sample formats\n" );
+		goto fail;
 	}
 	ret = av_opt_set_int_list( pdata->avbuffsink_ctx, "sample_rates", sample_rates, -1, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set sink sample rates\n" );
+		goto fail;
 	}
 	ret = av_opt_set_int_list( pdata->avbuffsink_ctx, "channel_counts", channel_counts, -1, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set sink channel counts\n" );
+		goto fail;
 	}
 	ret = av_opt_set_int_list( pdata->avbuffsink_ctx, "channel_layouts", channel_layouts, -1, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set sink channel_layouts\n" );
+		goto fail;
 	}
 	ret = avfilter_init_str(  pdata->avbuffsink_ctx, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot init buffer sink\n" );
+		goto fail;
 	}
 
 	// Initialize the filter context
 	pdata->avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, pdata->avfilter, "filt" );
 	if( !pdata->avfilter_ctx ) {
 		mlt_log_error( filter, "Cannot create audio filter\n" );
+		goto fail;
 	}
 	set_avfilter_options( filter );
 	ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot init filter\n" );
+		goto fail;
 	}
 
 	// Connect the filters
 	ret = avfilter_link( pdata->avbuffsrc_ctx, 0, pdata->avfilter_ctx, 0 );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot link src to filter\n" );
+		goto fail;
 	}
 	ret = avfilter_link( pdata->avfilter_ctx, 0, pdata->avbuffsink_ctx, 0 );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot link filter to sink\n" );
+		goto fail;
 	}
 
 	// Configure the graph.
 	ret = avfilter_graph_config( pdata->avfilter_graph, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot configure the filter graph\n" );
+		goto fail;
 	}
+
+	return;
+
+fail:
+	avfilter_graph_free( &pdata->avfilter_graph );
 }
 
 static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, int width, int height )
@@ -269,6 +292,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	pdata->avfilter_graph = avfilter_graph_alloc();
 	if( !pdata->avfilter_graph ) {
 		mlt_log_error( filter, "Cannot create filter graph\n" );
+		goto fail;
 	}
 
 	// Set thread count if supported.
@@ -281,54 +305,66 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, buffersrc, "in");
 	if( !pdata->avbuffsrc_ctx ) {
 		mlt_log_error( filter, "Cannot create audio buffer source\n" );
+		goto fail;
 	}
 	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "width", width, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src width %d\n", width );
+		goto fail;
 	}
 	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "height", height, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src height %d\n", height );
+		goto fail;
 	}
 	ret = av_opt_set_pixel_fmt( pdata->avbuffsrc_ctx, "pix_fmt", pixel_fmts[0], AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src pixel format %d\n", pixel_fmts[0] );
+		goto fail;
 	}
 	ret = av_opt_set_q( pdata->avbuffsrc_ctx, "sar", sar, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src sar %d/%d\n", sar.num, sar.den );
+		goto fail;
 	}
 	ret = av_opt_set_q( pdata->avbuffsrc_ctx, "time_base", timebase, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src time_base %d/%d\n", timebase.num, timebase.den );
+		goto fail;
 	}
 	ret = av_opt_set_q( pdata->avbuffsrc_ctx, "frame_rate", framerate, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set src frame_rate %d/%d\n", framerate.num, framerate.den );
+		goto fail;
 	}
 	ret = avfilter_init_str( pdata->avbuffsrc_ctx, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot int buffer source\n" );
+		goto fail;
 	}
 
 	// Initialize the buffer sink filter context
 	pdata->avbuffsink_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, buffersink, "in");
 	if( !pdata->avbuffsink_ctx ) {
 		mlt_log_error( filter, "Cannot create audio buffer sink\n" );
+		goto fail;
 	}
 	ret = av_opt_set_int_list( pdata->avbuffsink_ctx, "pix_fmts", pixel_fmts, -1, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot set sink pixel formats\n" );
+		goto fail;
 	}
 	ret = avfilter_init_str(  pdata->avbuffsink_ctx, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot init buffer sink\n" );
+		goto fail;
 	}
 
 	// Initialize the filter context
 	pdata->avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, pdata->avfilter, "filt" );
 	if( !pdata->avfilter_ctx ) {
 		mlt_log_error( filter, "Cannot create audio filter\n" );
+		goto fail;
 	}
 	set_avfilter_options( filter );
 
@@ -358,23 +394,32 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	}
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot init filter: %s\n", av_err2str(ret) );
+		goto fail;
 	}
 
 	// Connect the filters
 	ret = avfilter_link( pdata->avbuffsrc_ctx, 0, pdata->avfilter_ctx, 0 );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot link src to filter\n" );
+		goto fail;
 	}
 	ret = avfilter_link( pdata->avfilter_ctx, 0, pdata->avbuffsink_ctx, 0 );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot link filter to sink\n" );
+		goto fail;
 	}
 
 	// Configure the graph.
 	ret = avfilter_graph_config( pdata->avfilter_graph, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot configure the filter graph\n" );
+		goto fail;
 	}
+
+	return;
+
+fail:
+	avfilter_graph_free( &pdata->avfilter_graph );
 }
 
 static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
@@ -392,9 +437,10 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if( pdata->reset || !pdata->avfilter_graph || pdata->format != *format )
+	if( pdata->reset || pdata->format != *format )
 	{
 		init_audio_filtergraph( filter, *format, *frequency, *channels );
+		pdata->reset = 0;
 	}
 
 	if( pdata->avfilter_graph )
@@ -491,7 +537,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if( pdata->reset || !pdata->avfilter_graph || pdata->format != *format )
+	if( pdata->reset || pdata->format != *format )
 	{
 		init_image_filtergraph( filter, *format, *width, *height );
 		pdata->reset = 0;
