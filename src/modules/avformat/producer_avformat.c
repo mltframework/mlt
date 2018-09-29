@@ -2548,7 +2548,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		int64_t pts = pkt.pts;
 		if ( self->first_pts != AV_NOPTS_VALUE )
 			pts -= self->first_pts;
-		else if ( context->start_time != AV_NOPTS_VALUE )
+		else if ( context->start_time != AV_NOPTS_VALUE && self->video_index != -1 )
 			pts -= context->start_time;
 		double timebase = av_q2d( context->streams[ index ]->time_base );
 		int64_t int_position = llrint( timebase * pts * fps );
