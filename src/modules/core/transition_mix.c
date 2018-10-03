@@ -1,6 +1,6 @@
 /*
  * transition_mix.c -- mix two audio streams
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,7 +27,7 @@
 #include <math.h>
 
 #define MAX_CHANNELS (6)
-#define MAX_SAMPLES  (192000/(24000/1001))
+#define MAX_SAMPLES  (192000)
 #define SAMPLE_BYTES(samples, channels) ((samples) * (channels) * sizeof(float))
 #define MAX_BYTES    SAMPLE_BYTES( MAX_SAMPLES, MAX_CHANNELS )
 
@@ -267,7 +267,7 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	}
 	// Consume the dest buffer.
 	self->dest_buffer_count -= samples_a;
-	if ( self->dest_buffer_count ) {
+	if ( self->dest_buffer_count > 0 ) {
 		memmove( self->dest_buffer, &self->dest_buffer[samples_a * channels_a],
 			SAMPLE_BYTES( self->dest_buffer_count, channels_a ));
 	}
