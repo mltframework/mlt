@@ -814,18 +814,26 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 					// Cleanup the luma producer
 					mlt_producer_close( producer );
 				}
+				else
+				{
+					luma_width = 0;
+					luma_height = 0;
+                }
 			}
 		}
-		// Scale luma map
-		luma_bitmap = mlt_pool_alloc( width * height * sizeof( uint16_t ) );
-		scale_luma( luma_bitmap, width, height, orig_bitmap, luma_width, luma_height, invert * ( ( 1 << 16 ) - 1 ) );
+		if ( luma_width > 0 && luma_height > 0 )
+		{
+			// Scale luma map
+			luma_bitmap = mlt_pool_alloc( width * height * sizeof( uint16_t ) );
+			scale_luma( luma_bitmap, width, height, orig_bitmap, luma_width, luma_height, invert * ( ( 1 << 16 ) - 1 ) );
 
-		// Remember the scaled luma size to prevent unnecessary scaling
-		mlt_properties_set_int( properties, "_luma.width", width );
-		mlt_properties_set_int( properties, "_luma.height", height );
-		mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, width * height * 2, mlt_pool_release, NULL );
-		mlt_properties_set( properties, "_luma", resource );
-		mlt_properties_set_int( properties, "_luma_invert", invert );
+			// Remember the scaled luma size to prevent unnecessary scaling
+			mlt_properties_set_int( properties, "_luma.width", width );
+			mlt_properties_set_int( properties, "_luma.height", height );
+			mlt_properties_set_data( properties, "_luma.bitmap", luma_bitmap, width * height * 2, mlt_pool_release, NULL );
+			mlt_properties_set( properties, "_luma", resource );
+			mlt_properties_set_int( properties, "_luma_invert", invert );
+		}
 	}
 	return luma_bitmap;
 }
