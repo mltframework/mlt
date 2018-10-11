@@ -908,7 +908,7 @@ void AVIFile::UpdateIndx( int stream, int chunk, int duration )
 	int parent;
 	int i;
 
-	/* update the appropiate entry in the super index. It reflects
+	/* update the appropriate entry in the super index. It reflects
 	   the number of frames in the referenced index. */
 
 	i = indx[ stream ] ->nEntriesInUse - 1;

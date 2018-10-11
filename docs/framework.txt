@@ -351,7 +351,7 @@ Playlists:
 	and we have a means to play multiple clips.
 
 	[*] This reference functionality was introduced in mlt 0.1.2 - it is 100%
-	compatable with the early mechanism of registering the reference and 
+	compatible with the early mechanism of registering the reference and 
 	destructor with the properties of the playlist object.
 
 

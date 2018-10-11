@@ -403,7 +403,7 @@ int mlt_geometry_fetch( mlt_geometry self, mlt_geometry_item item, float positio
 	// Get the local geometry
 	geometry g = self->local;
 
-	// Need to find the nearest key to the position specifed
+	// Need to find the nearest key to the position specified
 	geometry_item key = g->item;
 
 	// Iterate through the keys until we reach last or have 

@@ -92,7 +92,7 @@ static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defa
 		geometry->mask_h = 20;
 	}
 
-	// Parse the geomtry string
+	// Parse the geometry string
 	if ( property != NULL )
 	{
 		char *ptr = property;

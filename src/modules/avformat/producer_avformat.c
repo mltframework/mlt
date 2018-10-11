@@ -661,7 +661,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	}
 	if ( self->seekable )
 	{
-		// Do a more rigourous test of seekable on a disposable context
+		// Do a more rigorous test of seekable on a disposable context
 		if ( format->nb_streams > 0 && format->streams[0]->codec && format->streams[0]->codec->codec_id != AV_CODEC_ID_WEBP )
 			self->seekable = av_seek_frame( format, -1, format->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 		mlt_properties_set_int( properties, "seekable", self->seekable );
@@ -1248,7 +1248,7 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
 }
 
 /**
- * Handle deprecated pixel format (JPEG range in YUV420P for exemple).
+ * Handle deprecated pixel format (JPEG range in YUV420P for example).
  *
  * Replace pix_fmt with the official pixel format to use.
  * @return 0 if no pix_fmt replacement, 1 otherwise

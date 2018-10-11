@@ -140,7 +140,7 @@ int cmp_double(const void *t1, const void* t2)
  *    transforms: array of transforms.
  *           len: length  of array
  * Return value:
- *     A new transform with x and y beeing the median of 
+ *     A new transform with x and y being the median of 
  *     all transforms. alpha and other fields are 0.
  * Preconditions:
  *     len>0
@@ -172,7 +172,7 @@ Transform median_xy_transform(const Transform* transforms, int len)
  *    transforms: array of transforms.
  *           len: length  of array
  * Return value:
- *     A new transform with x and y beeing the cleaned mean 
+ *     A new transform with x and y being the cleaned mean 
  *     (meaning upper and lower pentile are removed) of 
  *     all transforms. alpha and other fields are 0.
  * Preconditions:

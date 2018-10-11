@@ -293,7 +293,7 @@ static void *consumer_thread( void *arg )
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 
-	// internal intialization
+	// internal initialization
 	mlt_frame frame = NULL;
 	int last_position = -1;
 	int eos = 0;

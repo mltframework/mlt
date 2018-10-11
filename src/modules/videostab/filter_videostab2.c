@@ -76,7 +76,7 @@ static void serialize_vectors( videostab2_data* self, mlt_position length )
 			(mlt_destructor) mlt_geometry_close, (mlt_serialiser) mlt_geometry_serialise );
 	}
 }
-// scale zoom implements the factor that the vetcors must be scaled since the vector is calulated for real with, now we need it for (scaled)width
+// scale zoom implements the factor that the vetcors must be scaled since the vector is calculated for real with, now we need it for (scaled)width
 Transform* deserialize_vectors( char *vectors, mlt_position length ,float scale_zoom )
 {
 	mlt_geometry g = mlt_geometry_init();

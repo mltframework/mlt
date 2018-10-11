@@ -385,7 +385,7 @@ public:
 		// Video thread
 		pthread_t thread;
 
-		// internal intialization
+		// internal initialization
 		int init_audio = 1;
 		int init_video = 1;
 		mlt_frame frame = NULL;

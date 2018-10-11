@@ -225,7 +225,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	// Get the ogg vorbis file
 	OggVorbis_File *ov = mlt_properties_get_data( properties, "ogg_vorbis_file", NULL );
 
-	// Obtain the expected frame numer
+	// Obtain the expected frame number
 	mlt_position expected = mlt_properties_get_position( properties, "audio_expected" );
 
 	// Get the fps for this producer

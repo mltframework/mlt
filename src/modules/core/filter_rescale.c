@@ -181,7 +181,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			oheight *= factor;
 		}
 
-		// Default from the scaler if not specifed on the frame
+		// Default from the scaler if not specified on the frame
 		if ( interps == NULL )
 		{
 			interps = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "interpolation" );

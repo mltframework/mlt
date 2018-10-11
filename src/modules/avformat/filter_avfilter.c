@@ -372,7 +372,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 #if defined(__GLIBC__) || defined(__APPLE__) || (__FreeBSD__)
 		// LUT data files use period for the decimal point regardless of LC_NUMERIC.
 		locale_t posix_locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
-		// Get the current locale and swtich to POSIX local.
+		// Get the current locale and switch to POSIX local.
 		locale_t orig_locale  = uselocale( posix_locale );
 		// Initialize the filter.
 		ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
@@ -380,7 +380,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 		uselocale( orig_locale );
 		freelocale( posix_locale );
 #else
-		// Get the current locale and swtich to POSIX local.
+		// Get the current locale and switch to POSIX local.
 		char *orig_localename = strdup( setlocale( LC_NUMERIC, NULL ) );
 		setlocale( LC_NUMERIC, "C" );
 		// Initialize the filter.
