@@ -268,7 +268,7 @@ static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
 		if ( *map == NULL )
 			break;
 
-		// proces the raw data into the luma bitmap
+		// process the raw data into the luma bitmap
 		for ( i = 0; i < *width * *height * bpp; i += bpp )
 		{
 			if ( bpp == 1 )
@@ -297,7 +297,7 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 	if ( *map == NULL )
 		return;
 
-	// proces the image data into the luma bitmap
+	// process the image data into the luma bitmap
 	for ( i = 0; i < size; i += 2 )
 		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
 }

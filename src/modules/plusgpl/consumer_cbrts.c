@@ -1161,7 +1161,7 @@ static void *consumer_thread( void *arg )
 	// Get the consumer and producer
 	mlt_consumer consumer = &self->parent;
 
-	// internal intialization
+	// internal initialization
 	mlt_frame frame = NULL;
 	int last_position = -1;
 

@@ -54,7 +54,7 @@ static int get_next_token(char* str, int* pos, char* token, int* is_keyword)
 	{
 		if( str[*pos] == '\\' && str[(*pos) + 1] == '#' )
 		{
-			// Escape Sequence - "#" preceeded by "\" - copy the # into the token.
+			// Escape Sequence - "#" preceded by "\" - copy the # into the token.
 			token[token_pos] = '#';
 			token_pos++;
 			(*pos)++; // skip "\"

@@ -208,7 +208,7 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
 {
 	if ( !strcmp( name, "mlt_profile" ) )
 	{
-		// Get the properies
+		// Get the properties
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 
 		// Get the current profile
@@ -516,7 +516,7 @@ int mlt_consumer_start( mlt_consumer self )
 	// Stop listening to the property-changed event
 	mlt_event_block( priv->event_listener );
 
-	// Get the properies
+	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 
 	// Determine if there's a test card producer
@@ -617,7 +617,7 @@ int mlt_consumer_put_frame( mlt_consumer self, mlt_frame frame )
 {
 	int error = 1;
 
-	// Get the service assoicated to the consumer
+	// Get the service associated to the consumer
 	mlt_service service = MLT_CONSUMER_SERVICE( self );
 
 	if ( mlt_service_producer( service ) == NULL )
@@ -663,7 +663,7 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer self )
 	// Frame to return
 	mlt_frame frame = NULL;
 
-	// Get the service assoicated to the consumer
+	// Get the service associated to the consumer
 	mlt_service service = MLT_CONSUMER_SERVICE( self );
 
 	// Get the consumer properties
@@ -1153,7 +1153,7 @@ static void consumer_work_start( mlt_consumer self )
 	priv->ahead = 1;
 	priv->threads = thread;
 	
-	// These keep track of the accelleration of frame dropping or recovery.
+	// These keep track of the acceleration of frame dropping or recovery.
 	priv->consecutive_dropped = 0;
 	priv->consecutive_rendered = 0;
 	
@@ -1639,7 +1639,7 @@ void mlt_consumer_stopped( mlt_consumer self )
 
 int mlt_consumer_stop( mlt_consumer self )
 {
-	// Get the properies
+	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 	consumer_private *priv = self->local;
 

@@ -30,7 +30,7 @@ static mlt_filter obtain_filter( mlt_filter filter, char *type )
 	// Result to return
 	mlt_filter result = NULL;
 
-	// Miscelaneous variable
+	// Miscellaneous variable
 	int i = 0;
 	int type_len = strlen( type );
 

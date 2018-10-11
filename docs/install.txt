@@ -8,7 +8,7 @@ Last Revision: 2013-09-07
 
 ---++ Directories
 
-   The directory heirarchy is defined as follows:
+   The directory hierarchy is defined as follows:
 
    * demo                - A selection of samples to show off capabilities.
    * docs                - Location of all documentation

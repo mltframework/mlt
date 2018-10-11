@@ -389,7 +389,7 @@ static int get_image_b( mlt_frame b_frame, uint8_t **image, mlt_image_format *fo
 	transition simply treats the frames from c3 as though they're the a track.
 
 	For this to work, we cache all frames coming from all tracks between the a and b
-	tracks.  Before we process, we determine that the b frame contains someting of the
+	tracks.  Before we process, we determine that the b frame contains something of the
 	right type and then we determine which frame to use as the a frame (selecting a
 	matching frame from a_track to b_track - 1). If both frames contain data of the
 	correct type, we process the transition.

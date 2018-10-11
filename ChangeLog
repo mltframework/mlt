@@ -116,7 +116,7 @@
 
 2018-05-11  Dan Dennedy <dan@dennedy.org>
 
-  * configure, src/framework/mlt_version.h: Set interm version to 6.9.0
+  * configure, src/framework/mlt_version.h: Set interim version to 6.9.0
 
 2018-05-10  Dan Dennedy <dan@dennedy.org>
 
@@ -171,7 +171,7 @@
   src/modules/rtaudio/consumer_rtaudio.cpp: Improve surround support in RtAudio
   on Windows.  The directsound implementation in RtAudio does not support > 2
   channels. But the WASAPI implementation does. This change will try all
-  available drivers to try to sucessfully open the audio device. If none of the
+  available drivers to try to successfully open the audio device. If none of the
   drivers work with surround, then it will revert to 2 channels.  In the case
   that the module reverts to 2 channels, the requested number of channels will
   still be processed, but only the first two channels will be output.  These
@@ -185,7 +185,7 @@
   src/modules/sdl2/consumer_sdl2_audio.c: Improve surround support in SDL2 on
   Windows.  The directsound implementation in SDL does not support > 2
   channels. But the xaudio2 implementation does. This change will try all
-  available drivers to try to sucessfully open the audio device. If none of the
+  available drivers to try to successfully open the audio device. If none of the
   drivers work with surround, then it will revert to 2 channels.  The user can
   still request a specific driver using the audio_driver parameter.
 
@@ -402,7 +402,7 @@
   src/modules/avformat/filter_avcolour_space.c,
   src/modules/avformat/filter_avdeinterlace.c,
   src/modules/avformat/filter_swscale.c,
-  src/modules/avformat/producer_avformat.c: Stop using deprectated AVPicture
+  src/modules/avformat/producer_avformat.c: Stop using deprecated AVPicture
   API.
 
 2017-09-10  Dan Dennedy <dan@dennedy.org>
@@ -467,7 +467,7 @@
   src/framework/mlt_service.h, src/mlt++/MltService.cpp,
   src/mlt++/MltService.h, src/mlt++/mlt++.vers: Add function to disconnect all
   producers (#226)  * Add function to disconnect all producers  * Add forgotten
-  versionning  * Change logic to avoid consumer disconnection
+  versioning  * Change logic to avoid consumer disconnection
 
 2017-03-27  Vincent Pinon <vpinon@kde.org>
 
@@ -546,7 +546,7 @@
 
   * src/framework/mlt.vers, src/framework/mlt_log.c, src/framework/mlt_log.h,
   src/melt/melt.c, src/modules/avformat/producer_avformat.c: Timestamped
-  logging and timings measurment implemented
+  logging and timings measurement implemented
 
 2017-02-06  Dan Dennedy <dan@dennedy.org>
 
@@ -1752,7 +1752,7 @@
   invalid object so that empty frames can be predeclared without the expense of
   initializing an empty frame only to destroy it all when it is actually
   assigned to a frame.  The const copy constructor duplicates the non-const
-  constructor, but is useful so that frames can be initialized from tempory
+  constructor, but is useful so that frames can be initialized from temporary
   variables.  The copy operator= is necessary so that frames can be stored in
   containers.  Additionally, with this change, Mlt::Frame implements "the big
   three" which is a good practice.
@@ -2196,7 +2196,7 @@
   src/framework/mlt_tractor.c, src/framework/mlt_transition.c,
   src/modules/core/consumer_multi.c: Add support for color_trc (transfer
   characteristic) to framework.  Frames and consumers can now have a color_trc
-  property. Setting color_trc on the consumer propogates to a
+  property. Setting color_trc on the consumer propagates to a
   consumer_color_trc property on the frame.
 
 2014-07-20  Dan Dennedy <dan@dennedy.org>
@@ -2358,7 +2358,7 @@
   src/modules/opengl/filter_movit_white_balance.cpp,
   src/modules/opengl/transition_movit_luma.cpp,
   src/modules/opengl/transition_movit_mix.cpp: Hide the movit.parms properties
-  from serialization.  These properties were adding unncessary noise in the XML
+  from serialization.  These properties were adding unnecessary noise in the XML
   output.
 
 2014-04-04  Dan Dennedy <dan@dennedy.org>
@@ -3444,7 +3444,7 @@
 2013-03-17  Dan Dennedy <dan@dennedy.org>
 
   * src/modules/frei0r/factory.c, src/modules/frei0r/frei0r_helper.c: Switch to
-  indexed propery names for frei0r params.  Properties supplied by frei0r param
+  indexed property names for frei0r params.  Properties supplied by frei0r param
   name are supported for backwards compatibility.
 
 2013-03-13  Dan Dennedy <dan@dennedy.org>
@@ -3586,7 +3586,7 @@
 
 2013-02-13  Cristian Morales Vega <reddwarf@opensuse.org>
 
-  * src/framework/Makefile, src/mlt++/Makefile: Fix OSX buld which broke when
+  * src/framework/Makefile, src/mlt++/Makefile: Fix OSX build which broke when
   adding Linux symbols versioning
 
 2013-02-10  Dan Dennedy <dan@dennedy.org>
@@ -4351,7 +4351,7 @@
   src/modules/sdl/producer_sdl_image.yml: deprecate sdl_image
 
   * src/mlt++/MltFrame.cpp, src/mlt++/MltFrame.h: make Frame::get_position()
-  retrun type consistent
+  return type consistent
 
 2012-02-12  Simon A. Eugster <simon.eu@gmail.com>
 
@@ -4448,7 +4448,7 @@
   src/modules/videostab/stabilize.c, src/modules/videostab/stabilize.h,
   src/modules/videostab/transform_image.c,
   src/modules/videostab/transform_image.h: use calloc insteadt of malloc/memset
-  use struct for instance data small cleanup use PIX(n) dont use instable
+  use struct for instance data small cleanup use PIX(n) don't use instable
   yuv420 use stabilize on grayimage (converted from yuv422)
 
 2011-11-21  Marco Gittler <g.marco@freenet.de>
@@ -4474,7 +4474,7 @@
   src/modules/videostab/stabilize.c, src/modules/videostab/stabilize.h,
   src/modules/videostab/transform_image.c,
   src/modules/videostab/transform_image.h: use calloc insteadt of malloc/memset
-  use struct for instance data small cleanup use PIX(n) dont use instable
+  use struct for instance data small cleanup use PIX(n) don't use instable
   yuv420 use stabilize on grayimage (converted from yuv422)
 
 2011-11-21  Marco Gittler <g.marco@freenet.de>
@@ -4596,7 +4596,7 @@
   move printf -> mlt_log*
 
   * src/modules/videostab/filter_videostab2.c,
-  src/modules/videostab/stabilize.c: set all paramters
+  src/modules/videostab/stabilize.c: set all parameters
 
   * src/modules/videostab/filter_videostab2.c,
   src/modules/videostab/stabilize.c, src/modules/videostab/stabilize.h,
@@ -5223,7 +5223,7 @@
 
   * src/modules/dv/Makefile, src/modules/dv/consumer_libdv.yml,
   src/modules/dv/factory.c, src/modules/dv/producer_libdv.yml: Add service
-  metdata for dv module (WIP).
+  metadata for dv module (WIP).
 
   * src/modules/core/Makefile, src/modules/core/factory.c,
   src/modules/core/filter_audiowave.yml,
@@ -5837,7 +5837,7 @@
   src/modules/rotoscoping/filter_rotoscoping.c: Rotoscoping: Add support for
   simple keyframes - current limits: - number of points has to be equal for all
   keyframes - points have to be in "correct" order (1. point in 1. kf will be
-  moved to 1. point in 2. kf, ...) - the parameter "polygon" is now formated
+  moved to 1. point in 2. kf, ...) - the parameter "polygon" is now formatted
   using json: - no keyframes: polygon="[[x,y], [x,y], ...]" - keyframes:
   polygon= '{ "framepos1" : [[x,y], [x,y], ...], "framepos2" : [[x,y], [x,y],
   ...], ...}'
@@ -5860,7 +5860,7 @@
   CC for linking C++ (3090682)
 
   * src/modules/sdl/consumer_sdl_audio.c,
-  src/modules/sdl/consumer_sdl_preview.c: Fix undefined bahavior in SDL module
+  src/modules/sdl/consumer_sdl_preview.c: Fix undefined behavior in SDL module
   (3066195).  The standard says the post-increment can have effect at any point
   between the previous and the next sequence point (or something similar), so
   the behavior of "this->refresh_count = this->refresh_count ++" is undefined. 
@@ -5989,7 +5989,7 @@
   kdenlivetitle (kdenlive-1841).  Patch below fixes an issue with the
   kdenlivetitle producer. Basically, the problem was that when loading a
   kdenlivetitle from a file, all the properties were serialized and passed to
-  the xml consumer.  The problem became more obvious with the "embeded" images
+  the xml consumer.  The problem became more obvious with the "embedded" images
   in titles, which then caused images to be embedded inside the kdenlive
   project file, causing problems like reported in this issue: 
   http://kdenlive.org/mantis/view.php?id=1841  With the patch, titles loaded
@@ -6629,7 +6629,7 @@
   also bug in wrong y center
 
   * src/modules/oldfilm/filter_vignette.c,
-  src/modules/oldfilm/filter_vignette.yml: use extra paramters for vignette
+  src/modules/oldfilm/filter_vignette.yml: use extra parameters for vignette
   settings
 
 2009-10-10  Dan Dennedy <dan@dennedy.org>
@@ -7196,7 +7196,7 @@
   src/modules/melt/Makefile, src/modules/{valerie => mvsp}/Makefile,
   src/modules/mvsp/configure, .../consumer_valerie.c => mvsp/consumer_mvsp.c},
   src/modules/{valerie => mvsp}/factory.c, src/modules/xml/Makefile,
-  src/modules/xml/configure: Fix the build afer the reorg.
+  src/modules/xml/configure: Fix the build after the reorg.
 
   * docs/{inigo.txt => melt.txt}, docs/{westley.txt => mlt-xml.txt}, src/{inigo
   => melt}/Makefile, src/{inigo => melt}/configure, src/{inigo => melt}/io.c,
@@ -7816,7 +7816,7 @@
 2008-06-26  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * mlt++/src/MltProducer.cpp, mlt++/src/MltProducer.h, mlt++/swig/mltpp.i:
-  MltProducer.{h,cpp}, mltpp.i: remove Producer::get_frame that is unncessary
+  MltProducer.{h,cpp}, mltpp.i: remove Producer::get_frame that is unnecessary
   and introduced a memory leak. 
 
 2008-06-01  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
@@ -7907,7 +7907,7 @@
 
   * src/modules/sox/Makefile, src/modules/sox/configure: sox/configure,
   Makefile: try to make sox build smarter about library dependencies (pending
-  Darwin compatibilty) 
+  Darwin compatibility) 
 
   * src/framework/metaschema.yaml, src/modules/avformat/producer_avformat.yml:
   metaschema.yaml, producer_avformat.yml: reset schema_version to 0.1 since we
@@ -8045,7 +8045,7 @@
   register their service factory functions mlt_factory.[hc]: change
   mlt_factory_init() to return mlt_repository to app mlt_properties.c: let
   mlt_properties_dir_list() take a NULL filter pattern src/modules/*: - adapt
-  to new module registration system - much simpler! - remove unncessary
+  to new module registration system - much simpler! - remove unnecessary
   configure scripts (now optional!)   
 
 2008-02-04  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
@@ -8833,7 +8833,7 @@
   Added an output aspect ratio (being the aspect ratio of the background) 
   src/modules/core/filter_rescale.c + Force a rescale of the alpha in parallel
   with image  src/modules/core/filter_resize.c + Rounding errors corrections 
-  src/modules/core/filter_watermark.c + Propogation of output aspect ratio in
+  src/modules/core/filter_watermark.c + Propagation of output aspect ratio in
   reverse case  src/modules/core/producer_colour.c + Reassign aspect ratio
   after get_image  src/modules/core/transition_composite.c + More uneven width
   corrections + Use of output aspect ratio when available 
@@ -8848,7 +8848,7 @@
   Correction for uneven width  filter_avdeinterlace.c + Correction for cases
   were the interlace state of frame is only known after rendering 
   producer_avformat.c + Corrections for uneven width + Corrections for state
-  propogation of top field first and interlaced state  
+  propagation of top field first and interlaced state  
 
 2005-09-15  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -8858,8 +8858,8 @@
   src/modules/core/producer_colour.c, src/modules/core/transition_composite.c,
   src/modules/plus/filter_sepia.c, src/modules/plus/transition_affine.c,
   src/modules/sdl/consumer_sdl.c: src/framework/mlt_frame.c + Removed
-  unecessary even pixel position and width dependency + Rewrote resize methods
-  to accomodate uneven widths  src/framework/mlt_frame.h + Correct RGB2YUV -
+  unnecessary even pixel position and width dependency + Rewrote resize methods
+  to accommodate uneven widths  src/framework/mlt_frame.h + Correct RGB2YUV -
   now 2^10 based and range checks removed (not needed) 
   src/framework/mlt_producer.c + Check for unspecified eof property 
   src/modules/avformat/producer_avformat.c + Provide forced aspect ratio
@@ -10067,7 +10067,7 @@
 2004-09-18  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * Makefile, src/humperdink/Makefile, src/modules/dv/producer_libdv.c: Build
-  fix and temporary libdv compatability  
+  fix and temporary libdv compatibility  
 
 2004-09-17  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -10535,7 +10535,7 @@
   src/framework/mlt_property.h, src/framework/mlt_repository.h,
   src/framework/mlt_service.c, src/framework/mlt_service.h,
   src/framework/mlt_tokeniser.h, src/framework/mlt_tractor.h,
-  src/framework/mlt_transition.h: C++ compatability  
+  src/framework/mlt_transition.h: C++ compatibility  
 
 2004-04-19  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -10720,7 +10720,7 @@
   * demo/mlt_fade_black, demo/mlt_push, demo/mlt_squeeze, docs/TODO,
   docs/dvcp.txt, docs/framework.txt, docs/inigo.txt, docs/install.txt,
   docs/services.txt, docs/testing.txt, docs/valerie.txt, docs/westley.txt: Doc
-  formating  
+  formatting  
 
 2004-03-26  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
@@ -11151,7 +11151,7 @@
   src/modules/fezzik/producer_fezzik.c: Minor fixes  
 
   * src/modules/core/transition_luma.c, src/modules/sdl/consumer_sdl.c: sdl
-  rework (prepatory read-ahead implementation) and luma work around  
+  rework (preparatory read-ahead implementation) and luma work around  
 
   * src/framework/mlt_pool.c, src/framework/mlt_pool.h,
   src/modules/core/transition_luma.c: Big luma optimisations, minor pooling
@@ -11821,13 +11821,13 @@
 
   * docs/services.txt, mlt/docs/services.txt,
   mlt/src/modules/gtk2/producer_pixbuf.c, src/modules/gtk2/producer_pixbuf.c:
-  doc updates and better control of pixbuf composite property propogation  
+  doc updates and better control of pixbuf composite property propagation  
 
   * mlt/src/inigo/inigo.c, mlt/src/modules/core/transition_composite.c,
   mlt/src/modules/gtk2/producer_pango.c, mlt/src/modules/gtk2/producer_pango.h,
   src/inigo/inigo.c, src/modules/core/transition_composite.c,
   src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.h: better
-  propogating of producer and transition properties to the frame in pango and
+  propagating of producer and transition properties to the frame in pango and
   composite; add pango support to inigo  
 
 2004-01-11  ddennedy <ddennedy@d19143bc-622f-0410-bfdd-b5b2a6649095>
@@ -12260,7 +12260,7 @@
 2003-12-22  lilo_booter <lilo_booter@d19143bc-622f-0410-bfdd-b5b2a6649095>
 
   * mlt/src/framework/mlt.h, mlt/src/framework/mlt_repository.c,
-  src/framework/mlt.h, src/framework/mlt_repository.c: c++ compatability  
+  src/framework/mlt.h, src/framework/mlt_repository.c: c++ compatibility  
 
   * README, mlt/README, mlt/src/framework/Makefile, mlt/src/framework/mlt.h,
   mlt/src/framework/mlt_factory.c, mlt/src/framework/mlt_factory.h,

@@ -323,7 +323,7 @@ Mix
 
 	There is a convenience function which simplifies the process of applying 
 	transitions betwee adjacent cuts on a playlist. This is often preferable 
-	to use over the constuction of your own tractor and transition set up.
+	to use over the construction of your own tractor and transition set up.
 
 	To apply a 25 frame luma transition between the first and second cut on 
 	the playlist, you could use:
@@ -377,7 +377,7 @@ That's All Folks...
 
 	And that, believe it or not, is a fairly complete summary of the classes you'll 
 	typically be interfacing with in mlt++. Obviously, there's a little more to it 
-	than this - a couple of intrisinc classes have been glossed over (notably, the 
+	than this - a couple of intrinsic classes have been glossed over (notably, the 
 	Properties and Service base classes). The next section will cover all of the 
 	above, but in much more detail...
 

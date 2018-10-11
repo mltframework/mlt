@@ -172,7 +172,7 @@ Modules
   * Fixed reporting accurage length for image sequences in qimage and pixbuf.
   * Fixed extra audio samples added to end of file in avformat consumer.
   * Fixed rawvideo export in avformat consumer.
-  * Fixed multi-threading wtih FFmpeg 3.2+ in avformat module.
+  * Fixed multi-threading with FFmpeg 3.2+ in avformat module.
   * Fixed JPEG album art in avformat producer.
   * Removed filter_avresample (dropped by FFmpeg).
   * Stop flushing audio buffer in decklink consumer.
@@ -212,7 +212,7 @@ Modules
   * Added qtblend transition and filter to qt module.
   * Added ndi (NewTek NDI) module with producer and consumer.
   * Added opencv module with opencv_tracker filter.
-  * Added line_spacing, strech, wrap_width, and wrap_type properties to
+  * Added line_spacing, stretch, wrap_width, and wrap_type properties to
     pango producer.
   * Added oblique value for style property to pango producer.
   * Added fontmap-reload event to pango producer.
@@ -362,7 +362,7 @@ Modules
 Version 0.9.6 - March 1, 2015
 
 A major regression slipped into the 0.9.4 release plus some other good fixes
-rolled in just afer that release prompting this new release. Please discontinue
+rolled in just after that release prompting this new release. Please discontinue
 using version 0.9.4 and upgrade.
 
 
@@ -425,7 +425,7 @@ Framework
 Modules
   * Renamed "qimage" module to "qt".
   * Added support for Qt 5.
-  * Added qtext producer, which is now prefered by dynamictext filter over pango.
+  * Added qtext producer, which is now preferred by dynamictext filter over pango.
   * Added xml-nogl consumer.
   * Consolidated dgraft, burningtv, and rotoscoping into new plusgpl module.
   * Added vid.stab module with vidstab and deshake filters.
@@ -540,7 +540,7 @@ Version 0.7.8 - February 13, 2012
 This is a bugfix and minor enhancement release.
 
 * Improved support for v53 of libavcodec/libavformat
-* Added "multi" consumer - multiple, simultanous outputs
+* Added "multi" consumer - multiple, simultaneous outputs
 * Added framerate adaption to "consumer" producer and "multi" consumer
 * Can now use YADIF deinterlacer with decklink producer
 * Added "rtaudio" consumer for native audio support on multiple platforms
@@ -611,7 +611,7 @@ Other
  * Added presets for DVD, DV, x264, and WebM encoding.
 
 Since FFmpeg forked and there were a few releases, there is no recommended
-version at this time. With that said, there were changes to accomodate the
+version at this time. With that said, there were changes to accommodate the
 API changes with some moderate testing of the 0.6, 0.7, and 0.8 series
 releases of both FFmpeg and Libav.
 
@@ -641,7 +641,7 @@ The recommended version of FFmpeg for use with this release is 0.6.1.
 
 Version 0.7.0 - March 27, 2011
 
-This is a major new release due to signficant additions to API, framework,
+This is a major new release due to significant additions to API, framework,
 and build.
 
 Build

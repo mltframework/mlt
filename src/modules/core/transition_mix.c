@@ -317,7 +317,7 @@ static mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 			// Finally, set the mix property on the frame
 			mlt_properties_set_double( b_props, "audio.mix", mix );
 	
-			// Initialise transition previous mix value to prevent an inadvertant jump from 0
+			// Initialise transition previous mix value to prevent an inadvertent jump from 0
 			mlt_position last_position = mlt_properties_get_position( properties, "_last_position" );
 			mlt_position current_position = mlt_frame_get_position( b_frame );
 			mlt_properties_set_position( properties, "_last_position", current_position );

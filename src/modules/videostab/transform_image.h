@@ -69,7 +69,7 @@ typedef struct {
     int crop;       // 1: black bg, 0: keep border from last frame(s)
     int invert;     // 1: invert transforms, 0: nothing
     /* constants */
-    /* threshhold below which no rotation is performed */
+    /* threshold below which no rotation is performed */
     double rotation_threshhold;
     double zoom;      // percentage to zoom: 0->no zooming 10:zoom in 10%
     int optzoom;      // 1: determine optimal zoom, 0: nothing

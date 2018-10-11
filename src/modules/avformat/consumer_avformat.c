@@ -707,7 +707,7 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 		else 
 			audio_input_frame_size = c->frame_size;
 
-		// Some formats want stream headers to be seperate (hmm)
+		// Some formats want stream headers to be separate (hmm)
 		if ( !strcmp( oc->oformat->name, "mp4" ) ||
 			 !strcmp( oc->oformat->name, "mov" ) ||
 			 !strcmp( oc->oformat->name, "3gp" ) )
@@ -862,7 +862,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 			c->codec_tag = tag;
 		}
 
-		// Some formats want stream headers to be seperate
+		// Some formats want stream headers to be separate
 		if ( oc->oformat->flags & AVFMT_GLOBALHEADER ) 
 			c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
@@ -1467,7 +1467,7 @@ static void *consumer_thread( void *arg )
 	enc_ctx->audio_codec_id = fmt->audio_codec;
 	enc_ctx->video_codec_id = fmt->video_codec;
 
-	// Check for audio codec overides
+	// Check for audio codec overrides
 	if ( ( acodec && strcmp( acodec, "none" ) == 0 ) || mlt_properties_get_int( properties, "an" ) )
 		enc_ctx->audio_codec_id = AV_CODEC_ID_NONE;
 	else if ( acodec )
@@ -1498,7 +1498,7 @@ static void *consumer_thread( void *arg )
 		audio_codec = avcodec_find_encoder( enc_ctx->audio_codec_id );
 	}
 
-	// Check for video codec overides
+	// Check for video codec overrides
 	if ( ( vcodec && strcmp( vcodec, "none" ) == 0 ) || mlt_properties_get_int( properties, "vn" ) )
 		enc_ctx->video_codec_id = AV_CODEC_ID_NONE;
 	else if ( vcodec )

@@ -55,12 +55,12 @@ inline static int constrain(	int *x, int *y, int *w,	int *h,
 		h_remains = *h - top + ((*y < y2) ? *y : y2);
 		*y += *h - h_remains;
 	}
-	// Portion of macroblock moves bellow image boundry
+	// Portion of macroblock moves below image boundry
 	else if( *y + *h > bottom || y2 + *h > bottom )
 		h_remains = bottom - ((*y > y2) ?  *y : y2);
 
 	if( w_remains == *w && h_remains == *h ) return penalty; 
-	if( w_remains <= 0 || h_remains <= 0) return 0;	// Block is clipped out of existance
+	if( w_remains <= 0 || h_remains <= 0) return 0;	// Block is clipped out of existence
 	penalty = (*w * *h * penalty)
 		/ ( w_remains * h_remains);		// Recipricol of the fraction of the block that remains
 
@@ -379,7 +379,7 @@ mlt_producer producer_slowmotion_init( mlt_profile profile, mlt_service_type typ
 		// The loader normalised it for us already
 		mlt_properties_set_int( properties, "loader_normalised", 1);
 
-		// Store the producer and fitler
+		// Store the producer and filter
 		mlt_properties_set_data( properties, "producer", real_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 		mlt_properties_set_data( properties, "motion_est", filter, 0, ( mlt_destructor )mlt_filter_close, NULL );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "macroblock_width", 16 );

@@ -818,7 +818,7 @@ query_all:
 				query_services( repo, producer_type );
 				query_services( repo, transition_type );
 				fprintf( stdout, "# You can query the metadata for a specific service using:\n"
-					"# -query <type>=<identifer>\n"
+					"# -query <type>=<identifier>\n"
 					"# where <type> is one of: consumer, filter, producer, or transition.\n" );
 			}
 			goto exit_factory;

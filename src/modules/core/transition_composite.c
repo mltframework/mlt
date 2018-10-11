@@ -305,7 +305,7 @@ static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
 		if ( *map == NULL )
 			break;
 
-		// proces the raw data into the luma bitmap
+		// process the raw data into the luma bitmap
 		for ( i = 0; i < *width * *height * bpp; i += bpp )
 		{
 			if ( bpp == 1 )
@@ -333,7 +333,7 @@ static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int hei
 	if ( *map == NULL )
 		return;
 
-	// proces the image data into the luma bitmap
+	// process the image data into the luma bitmap
 	for ( i = 0; i < width * height * 2; i += 2 )
 		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
 }
@@ -919,7 +919,7 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		}
 
 		// Honour the fill request - this will scale the image to fill width or height while maintaining a/r
-		// ????: Shouln't this be the default behaviour?
+		// ????: Shouldn't this be the default behaviour?
 		if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
 		{
 			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height <= normalised_width )

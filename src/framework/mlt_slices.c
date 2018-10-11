@@ -265,8 +265,8 @@ void mlt_slices_close( mlt_slices ctx )
  * \public \memberof mlt_slices_s
  * \deprecated
  * \param ctx context pointer
- * \param jobs number of jobs to proccess
- * \param proc number of jobs to proccess
+ * \param jobs number of jobs to process
+ * \param proc number of jobs to process
  */
 
 void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie )

@@ -221,7 +221,7 @@ void interpolateN(unsigned char *rv, float x, float y,
  * Parameters:
  *         td: private data structure of this filter
  * Return value:
- *         0 for failture, 1 for success
+ *         0 for failure, 1 for success
  * Preconditions:
  *  The frame must be in RGB format
  */
@@ -298,7 +298,7 @@ int transformRGB(TransformData* td)
  * Parameters:
  *         td: private data structure of this filter
  * Return value:
- *         0 for failture, 1 for success
+ *         0 for failure, 1 for success
  * Preconditions:
  *  The frame must be in YUV format
  */
@@ -420,12 +420,12 @@ int transformYUV(TransformData* td)
  *  and cropping of too large transforms.
  *  This is actually the core algorithm for canceling the jiggle in the
  *  movie. We perform a low-pass filter in terms of transformation size.
- *  This enables still camera movement, but in a smooth fasion.
+ *  This enables still camera movement, but in a smooth fashion.
  *
  * Parameters:
- *            td: tranform private data structure
+ *            td: transform private data structure
  * Return value:
- *     1 for success and 0 for failture
+ *     1 for success and 0 for failure
  * Preconditions:
  *     None
  * Side effects:

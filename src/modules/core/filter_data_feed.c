@@ -21,7 +21,7 @@
 #include <string.h>
 #include <framework/mlt.h>
 
-/** This filter should be used in conjuction with the data_show filter.
+/** This filter should be used in conjunction with the data_show filter.
 	The concept of the data_feed is that it can be used to pass titles
 	or images to render on the frame, but doesn't actually do it 
 	itself. data_feed imposes few rules on what's passed on and the 

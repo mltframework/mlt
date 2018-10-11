@@ -208,7 +208,7 @@ mlt_cache mlt_cache_init()
 	return result;
 }
 
-/** Set the numer of items to cache.
+/** Set the number of items to cache.
  *
  * This must be called before using the cache. The size can not be more
  * than \p MAX_CACHE_SIZE.
@@ -223,7 +223,7 @@ void mlt_cache_set_size( mlt_cache cache, int size )
 		cache->size = size;
 }
 
-/** Get the numer of possible cache items.
+/** Get the number of possible cache items.
  *
  * \public \memberof mlt_cache_s
  * \param cache the cache to check
@@ -347,7 +347,7 @@ static void** shuffle_get_hit( mlt_cache cache, void *object )
 /** Put a chunk of data in the cache.
  *
  * This function and mlt_cache_get() are not scalable with a large volume
- * of unique \p object paramter values. Therefore, it does not make sense
+ * of unique \p object parameter values. Therefore, it does not make sense
  * to use it for a frame/image cache using the frame position for \p object.
  * Instead, use mlt_cache_put_frame() for that.
  *

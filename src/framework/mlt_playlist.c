@@ -261,7 +261,7 @@ static int mlt_playlist_virtual_append( mlt_playlist self, mlt_producer source, 
 	{
 		mlt_position length = out - in + 1;
 
-		// Make sure the blank is long enough to accomodate the length specified
+		// Make sure the blank is long enough to accommodate the length specified
 		if ( length > mlt_producer_get_length( &self->blank ) )
 		{
 			mlt_properties blank_props = MLT_PRODUCER_PROPERTIES( &self->blank );
@@ -992,7 +992,7 @@ int mlt_playlist_resize_clip( mlt_playlist self, int clip, mlt_position in, mlt_
 		{
 			mlt_position length = out - in + 1;
 
-			// Make sure the parent blank is long enough to accomodate the length specified
+			// Make sure the parent blank is long enough to accommodate the length specified
 			if ( length > mlt_producer_get_length( &self->blank ) )
 			{
 				mlt_properties blank_props = MLT_PRODUCER_PROPERTIES( &self->blank );

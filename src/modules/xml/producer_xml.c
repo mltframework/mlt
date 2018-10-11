@@ -930,7 +930,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		mlt_properties_set( properties, "mlt_type", NULL );
 		mlt_properties_set( properties, "mlt_service", NULL );
 
-		// Propogate the properties
+		// Propagate the properties
 		qualify_property( context, properties, "resource" );
 		qualify_property( context, properties, "luma" );
 		qualify_property( context, properties, "luma.resource" );
@@ -1025,7 +1025,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 		mlt_properties_set( properties, "mlt_type", NULL );
 		mlt_properties_set( properties, "mlt_service", NULL );
 
-		// Propogate the properties
+		// Propagate the properties
 		qualify_property( context, properties, "resource" );
 		qualify_property( context, properties, "luma" );
 		qualify_property( context, properties, "luma.resource" );
@@ -1410,7 +1410,7 @@ static void params_to_entities( deserialise_context context )
 	{	
 		int i;
 		
-		// Add our params as entitiy declarations
+		// Add our params as entity declarations
 		for ( i = 0; i < mlt_properties_count( context->params ); i++ )
 		{
 			xmlChar *name = ( xmlChar* )mlt_properties_get_name( context->params, i );
@@ -1581,7 +1581,7 @@ static void parse_url( mlt_properties properties, char *url )
 		mlt_properties_set( properties, name, value );
 }
 
-// Quick workaround to avoid unecessary libxml2 warnings
+// Quick workaround to avoid unnecessary libxml2 warnings
 static int file_exists( char *name )
 {
 	int exists = 0;
@@ -1594,7 +1594,7 @@ static int file_exists( char *name )
 	return exists;
 }
 
-// This function will add remaing services in the context service stack marked
+// This function will add remaining services in the context service stack marked
 // with a "xml_retain" property to a property named "xml_retain" on the returned
 // service. The property is a mlt_properties data property.
 
