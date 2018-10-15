@@ -1,5 +1,5 @@
 /*
- * filter_remover.cpp -- filter to interpolate pixels to cover an area
+ * filter_remover.c -- filter to interpolate pixels to cover an area
  * Copyright (c) 2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
@@ -100,12 +100,12 @@ static void remove_spot_channel( uint8_t *chan, int rowCount, int step, mlt_rect
 		uint8_t* xValueL = chan + ( y * rowSize ) + ( ( (int)rect.x - 1 ) * step );
 		uint8_t* xValueR = xValueL + ( (int)rect.w * step );
 		uint8_t* p = chan + ( y * rowSize ) + ( (int)rect.x * step );
-		float yRatio = 1.0 - ( ( y - rect.y ) / rect.h );
+		double yRatio = 1.0 - ( ( y - rect.y ) / rect.h );
 		for( int x = rect.x; x < xStop; x++ )
 		{
 			uint8_t* yValueT = chan  + ( ( (int)rect.y - 1 ) * rowSize ) + ( x * step );
 			uint8_t* yValueB = yValueT + (int)rect.h * rowSize;
-			float xRatio = 1.0 - ( ( x - rect.x ) / rect.w );
+			double xRatio = 1.0 - ( ( x - rect.x ) / rect.w );
 			unsigned int xValueInterp = ( *xValueL * xRatio ) + ( *xValueR * ( 1.0 - xRatio ) );
 			unsigned int yValueInterp = ( *yValueT * yRatio ) + ( *yValueB * ( 1.0 - yRatio ) );
 			unsigned int value = ( xValueInterp + yValueInterp ) / 2;
