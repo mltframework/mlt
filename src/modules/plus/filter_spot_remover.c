@@ -95,13 +95,15 @@ static void remove_spot_channel( uint8_t *chan, int rowCount, int step, mlt_rect
 	int yStop = rect.y + rect.h;
 	int xStop = rect.x + rect.w;
 	int rowSize = rowCount * step;
-	for ( int y = rect.y; y < yStop; y++ )
+	int y;
+	for ( y = rect.y; y < yStop; y++ )
 	{
 		uint8_t* xValueL = chan + ( y * rowSize ) + ( ( (int)rect.x - 1 ) * step );
 		uint8_t* xValueR = xValueL + ( (int)rect.w * step );
 		uint8_t* p = chan + ( y * rowSize ) + ( (int)rect.x * step );
 		double yRatio = 1.0 - ( ( y - rect.y ) / rect.h );
-		for( int x = rect.x; x < xStop; x++ )
+		int x;
+		for ( x = rect.x; x < xStop; x++ )
 		{
 			uint8_t* yValueT = chan  + ( ( (int)rect.y - 1 ) * rowSize ) + ( x * step );
 			uint8_t* yValueB = yValueT + (int)rect.h * rowSize;
@@ -122,7 +124,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	char* rect_str = mlt_properties_get( filter_properties, "rect" );
-	if( !rect_str )
+	if ( !rect_str )
 	{
 		mlt_log_warning( MLT_FILTER_SERVICE(filter), "rect property not set\n" );
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
@@ -139,7 +141,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		rect.h *= profile->height;
 	}
 	rect = constrain_rect( rect, profile->width, profile->height );
-	if( rect.w < 1 || rect.h < 1 )
+	if ( rect.w < 1 || rect.h < 1 )
 	{
 		mlt_log_info( MLT_FILTER_SERVICE(filter), "rect invalid\n" );
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
@@ -160,16 +162,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	if (error) return error;
 
+	int i;
 	switch( *format )
 	{
 		case mlt_image_rgb24a:
-			for ( int i = 0; i < 4; i++ )
+			for ( i = 0; i < 4; i++ )
 			{
 				remove_spot_channel( *image + i, *width, 4, rect );
 			}
 			break;
 		case mlt_image_rgb24:
-			for ( int i = 0; i < 3; i++ )
+			for ( i = 0; i < 3; i++ )
 			{
 				remove_spot_channel( *image + i, *width, 3, rect );
 			}
@@ -199,7 +202,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 
 	uint8_t *alpha = mlt_frame_get_alpha( frame );
-	if( alpha && *format != mlt_image_rgb24a )
+	if ( alpha && *format != mlt_image_rgb24a )
 	{
 		remove_spot_channel( alpha, *width, 1, rect );
 	}
