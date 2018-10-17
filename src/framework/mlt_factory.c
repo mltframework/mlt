@@ -46,9 +46,9 @@
 #elif defined(__APPLE__) && defined(RELOCATABLE)
 #include <mach-o/dyld.h>
 /** the default subdirectory of the libdir for holding modules (plugins) */
-#define PREFIX_LIB "/lib/mlt"
+#define PREFIX_LIB "/PlugIns/mlt"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
-#define PREFIX_DATA "/share/mlt"
+#define PREFIX_DATA "/Resources/mlt"
 #endif
 
 /** holds the full path to the modules directory - initialized and retained for the entire session */
@@ -154,10 +154,9 @@ mlt_repository mlt_factory_init( const char *directory )
 		_NSGetExecutablePath( path, &size );
 #endif
 #if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
-		char *path2 = strdup( path );
-		char *appdir = mlt_dirname( path2 );
+		char *appdir = mlt_dirname( mlt_dirname( strdup( path ) ) );
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
-		free( path2 );
+		free( appdir );
 #endif
 	}
 
