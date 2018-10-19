@@ -12,6 +12,12 @@ OpenCV options:
 EOF
 
 else
+	if [ "$opencv" = "false" ]
+	then
+		touch ../disable-opencv
+		echo "- OpenCV disabled"
+		exit 0
+	fi
 	pkg-config --atleast-version=3.1.0 'opencv'
 	if [ $? -eq 0 ]
 	then

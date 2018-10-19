@@ -22,6 +22,7 @@ General build options:
   --enable-extra-versioning  - Version melt and the data and modules directories
   --enable-gpl               - Enable GPLv2 components
   --enable-gpl3              - Enable GPLv3 components
+  --enable-opencv            - Enable OpenCV module
   --enable-debug             - Compile without optimizations support (default: off)
   --disable-debug            - Compile without debug support (default: on)
   --disable-mmx              - Compile without MMX support (default: on)
@@ -210,6 +211,7 @@ export sse=true
 export sse2=true
 export gpl=false
 export gpl3=false
+export opencv=false
 export arch=
 export cpu=
 export targetos=$(uname -s)
@@ -239,6 +241,7 @@ do
 		--disable-sse2 )		sse2=false ;;
 		--enable-gpl )			gpl=true ;;
 		--enable-gpl3 )			gpl3=true ;;
+		--enable-opencv )		opencv=true ;;
 		--arch=* )			arch="${i#--arch=}" ;;
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 		--target-os=* )			targetos="${i#--target-os=}" ;;
