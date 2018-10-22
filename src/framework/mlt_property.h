@@ -30,9 +30,9 @@
 #include <sys/param.h>
 #endif
 
-#if (defined(__GLIBC__) && !defined(__APPLE__)) || HAVE_LOCALE_H
+#if (defined(__GLIBC__) && !defined(__APPLE__)) || defined(HAVE_LOCALE_H)
 #  include <locale.h>
-#elif defined(__APPLE__) || (__FreeBSD_version >= 900506)
+#elif defined(__APPLE__) || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
 #  include <xlocale.h>
 #else
 typedef char* locale_t;
