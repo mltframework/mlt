@@ -292,7 +292,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 	s = copy;
 	pos = strrchr( s, ':' );
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 	char *orig_localename = NULL;
 	if ( locale )
 	{
@@ -308,7 +308,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 #endif
 
 	if ( pos ) {
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			seconds = strtod_l( pos + 1, NULL, locale );
 		else
@@ -326,7 +326,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 		}
 	}
 	else {
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			seconds = strtod_l( s, NULL, locale );
 		else
@@ -334,7 +334,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 			seconds = strtod( s, NULL );
 	}
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 	if ( locale ) {
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
@@ -503,7 +503,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		char *end = NULL;
 		double result;
 
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			result = strtod_l( value, &end, locale );
 		else
@@ -525,7 +525,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		if ( end && end[0] == '%' )
 			result /= 100.0;
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -1097,7 +1097,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 	{
 		char *p = NULL;
 
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			strtod_l( self->prop_string, &p, locale );
 		else
@@ -1117,7 +1117,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 
 		strtod( self->prop_string, &p );
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -1595,7 +1595,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		char *p = NULL;
 		int count = 0;
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		char *orig_localename = NULL;
 		if ( locale ) {
 			// Protect damaging the global locale from a temporary locale on another thread.
@@ -1612,7 +1612,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		while ( *value )
 		{
 			double temp;
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 			if ( locale )
 				temp = strtod_l( value, &p, locale );
             else
@@ -1647,7 +1647,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 			count ++;
 		}
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
