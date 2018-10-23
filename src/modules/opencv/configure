@@ -5,14 +5,28 @@ then
 	cat << EOF
 OpenCV options:
 
-  This module requires OpenCV.
-  The Tracker filter requires OpenCV >= 3.1.0 and the tracking contrib module.
+  --enable-opencv         - This module must be explicitly enabled due to a multi-threading issue:
+                            https://github.com/mltframework/mlt/issues/274
 
+  The Tracker filter requires OpenCV >= 3.1.0 and the tracking contrib module.
 
 EOF
 
 else
-	pkg-config --atleast-version=3.1.0 'opencv'
+    for i in "$@"
+	do
+	    case $i in
+		    --enable-opencv ) opencv_enabled=1;;
+		esac
+	done
+
+    if [ "$opencv_enabled" != "1" ]; then
+	    echo "- not explicitly enabled: disabling"
+		touch ../disable-opencv
+		exit 0
+	fi
+
+    pkg-config --atleast-version=3.1.0 'opencv'
 	if [ $? -eq 0 ]
 	then
                 result=`pkg-config --libs opencv | grep "opencv_tracking"`
@@ -26,9 +40,9 @@ else
                         echo "LDFLAGS += $(pkg-config --libs opencv)" >> config.mak
                 fi
 	else
-		echo "- OpenCV >= 3.1.0 NOT found, disabling OpenCV modules"
+	    echo "- OpenCV >= 3.1.0 NOT found: disabling"
 		touch ../disable-opencv
-                exit 0
+		exit 0
 	fi
 
 	exit 0
