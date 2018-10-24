@@ -2565,8 +2565,11 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				// We are behind, so skip some
 				*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
 			} else if ( self->audio_index != INT_MAX && int_position > req_position + 2 && !self->is_audio_synchronizing ) {
-				// We are ahead, so seek backwards some more
-				seek_audio( self, req_position, timecode - 1.0 );
+				// We are ahead, so seek backwards some more.
+				// Supply -1 as the position to defeat the checks needed by for the other
+				// call to seek_audio() at the beginning of producer_get_audio(). Otherwise,
+				// more often than not, req_position will equal audio_expected.
+				seek_audio( self, -1, timecode - 1.0 );
 				self->is_audio_synchronizing = 1;
 			}
 		}
