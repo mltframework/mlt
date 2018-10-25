@@ -148,12 +148,13 @@ mlt_repository mlt_factory_init( const char *directory )
 		char path[1024];
 		DWORD size = sizeof( path );
 		GetModuleFileName( NULL, path, size );
+		char *appdir = mlt_dirname( strdup( path ) );
+        mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
+        free( appdir );
 #elif defined(__APPLE__)  && defined(RELOCATABLE)
 		char path[1024];
 		uint32_t size = sizeof( path );
 		_NSGetExecutablePath( path, &size );
-#endif
-#if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
 		char *appdir = mlt_dirname( mlt_dirname( strdup( path ) ) );
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
 		free( appdir );
