@@ -45,6 +45,12 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/version.h>
+#ifdef AVFILTER
+#include <libavfilter/avfilter.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#endif
+
 
 #if LIBAVCODEC_VERSION_MAJOR < 55
 #define AV_CODEC_ID_PCM_S16LE CODEC_ID_PCM_S16LE
@@ -134,6 +140,83 @@ void sample_fifo_close( sample_fifo fifo )
 	free( fifo->buffer );
 	free( fifo );
 }
+
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+static AVFilterGraph *vfilter_graph;
+
+static int setup_hwupload_filter(mlt_properties properties, AVStream* stream, AVCodecContext *codec_context)
+{
+	AVFilterContext *vfilter_in;
+	AVFilterContext *vfilter_out;
+	AVFilterContext *vfilter_hwupload;
+
+	vfilter_graph = avfilter_graph_alloc();
+	mlt_properties_set_data(properties, "vfilter_graph", &vfilter_graph, 0,
+		(mlt_destructor) avfilter_graph_free, NULL);
+
+	// From ffplay.c:configure_video_filters().
+	char buffersrc_args[256];
+	snprintf(buffersrc_args, sizeof(buffersrc_args),
+			 "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d:frame_rate=%d/%d",
+			 codec_context->width, codec_context->height, AV_PIX_FMT_NV12,
+			 stream->time_base.num, stream->time_base.den,
+		     codec_context->sample_aspect_ratio.num, codec_context->sample_aspect_ratio.den,
+			 codec_context->time_base.den, codec_context->time_base.num);
+
+	int result = avfilter_graph_create_filter(&vfilter_in, avfilter_get_by_name("buffer"),
+		"mlt_buffer", buffersrc_args, NULL, vfilter_graph);
+
+	if (result >= 0) {
+		result = avfilter_graph_create_filter(&vfilter_out, avfilter_get_by_name("buffersink"),
+			"mlt_buffersink", NULL, NULL, vfilter_graph);
+
+		if (result >= 0) {
+			enum AVPixelFormat pix_fmts[] = { codec_context->pix_fmt, AV_PIX_FMT_NONE };
+			result = av_opt_set_int_list(vfilter_out, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+
+			result = avfilter_graph_create_filter(&vfilter_hwupload, avfilter_get_by_name("hwupload"),
+				"mlt_hwupload", "", NULL, vfilter_graph);
+
+			if (result >= 0) {
+				vfilter_hwupload->hw_device_ctx = av_buffer_ref(codec_context->hw_device_ctx);
+				result = avfilter_link(vfilter_in, 0, vfilter_hwupload, 0);
+				if (result >= 0) {
+					result = avfilter_link(vfilter_hwupload, 0, vfilter_out, 0);
+					if (result >= 0) {
+						result = avfilter_graph_config(vfilter_graph, NULL);
+						if (result >= 0)
+							codec_context->hw_frames_ctx = av_buffer_ref(av_buffersink_get_hw_frames_ctx(vfilter_out));
+					}
+				}
+			}
+			mlt_properties_set_data(properties, "vfilter_in", vfilter_in, 0, NULL, NULL);
+			mlt_properties_set_data(properties, "vfilter_out", vfilter_out, 0, NULL, NULL);
+		}
+	}
+
+	return result;
+}
+
+static AVBufferRef *hw_device_ctx;
+
+static int init_vaapi(mlt_properties properties, AVCodecContext *codec_context)
+{
+	int err = 0;
+	const char* vaapi_device = mlt_properties_get(properties, "vaapi_device");
+	
+	if ((err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI,
+									  vaapi_device, NULL, 0)) < 0) {
+		mlt_log_warning(NULL, "Failed to create VAAPI device.\n");
+		return err;
+	}
+	codec_context->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+	mlt_properties_set_data(properties, "hw_device_ctx", &hw_device_ctx, 0,
+							(mlt_destructor) av_buffer_unref, NULL);
+	
+	return err;
+}
+
+#endif
 
 // Forward references.
 static void property_changed( mlt_properties owner, mlt_consumer self, char *name );
@@ -813,6 +896,19 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->pix_fmt = pix_fmt ? av_get_pix_fmt( pix_fmt ) : codec ?
 			( codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV422P ): AV_PIX_FMT_YUV420P;
 
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+		if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
+			int result = init_vaapi(properties, c);
+			if (result >= 0) {
+				int result = setup_hwupload_filter(properties, st, c);
+				if (result < 0)
+					mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "Failed to setup hwfilter: %d\n", result);
+			} else {
+				mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "Failed to initialize VA-API: %d\n", result);
+			}
+		}
+#endif
+
 		switch ( colorspace )
 		{
 		case 170:
@@ -1408,6 +1504,7 @@ static void *consumer_thread( void *arg )
 
 	// Need two av pictures for converting
 	AVFrame *converted_avframe = NULL;
+	AVFrame *avframe = NULL;
 
 	// For receiving audio samples back from the fifo
 	int count = 0;
@@ -1688,8 +1785,14 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Allocate picture
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+	enum AVPixelFormat pix_fmt = enc_ctx->video_st->codec->pix_fmt == AV_PIX_FMT_VAAPI ?
+	           AV_PIX_FMT_NV12 : enc_ctx->video_st->codec->pix_fmt;
+#else
+	enum AVPixelFormat pix_fmt = enc_ctx->video_st->codec->pix_fmt;
+#endif
 	if ( enc_ctx->video_st ) {
-		converted_avframe = alloc_picture( enc_ctx->video_st->codec->pix_fmt, width, height );
+		converted_avframe = alloc_picture( pix_fmt, width, height );
 		if ( !converted_avframe ) {
 			mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "failed to allocate video AVFrame\n" );
 			mlt_events_fire( properties, "consumer-fatal-error", NULL );
@@ -1851,7 +1954,7 @@ static void *consumer_thread( void *arg )
 						// Do the colour space conversion
 						int flags = SWS_BICUBIC;
 						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
-							width, height, c->pix_fmt, flags, NULL, NULL, NULL);
+							width, height, pix_fmt, flags, NULL, NULL, NULL);
 						sws_scale( context, (const uint8_t* const*) video_avframe.data, video_avframe.linesize, 0, height,
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
@@ -1889,6 +1992,29 @@ static void *consumer_thread( void *arg )
 								}
 							}
 						}
+
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+						if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
+							AVFilterContext *vfilter_in = mlt_properties_get_data(properties, "vfilter_in", NULL);
+							AVFilterContext *vfilter_out = mlt_properties_get_data(properties, "vfilter_out", NULL);
+							if (vfilter_in && vfilter_out) {
+								if (!avframe)
+									avframe = av_frame_alloc();									
+								ret = av_buffersrc_add_frame(vfilter_in, converted_avframe);
+								ret = av_buffersink_get_frame(vfilter_out, avframe);
+								if (ret < 0) {
+									mlt_log_warning(MLT_CONSUMER_SERVICE(consumer), "error with hwupload: %d (frame %d)\n", ret, enc_ctx->frame_count);
+									if (++enc_ctx->error_count > 2)
+										goto on_fatal_error;
+									ret = 0;
+								}
+							}
+						} else {
+							avframe = converted_avframe;
+						}
+#else
+						avframe = converted_avframe;
+#endif
 					}
 
 #ifdef AVFMT_RAWPICTURE
@@ -1905,7 +2031,7 @@ static void *consumer_thread( void *arg )
 							c->field_order = (mlt_properties_get_int( frame_properties, "top_field_first" )) ? AV_FIELD_TB : AV_FIELD_BT;
 						pkt.flags |= AV_PKT_FLAG_KEY;
 						pkt.stream_index = enc_ctx->video_st->index;
-						pkt.data = (uint8_t *)converted_avframe;
+						pkt.data = (uint8_t*) avframe;
 						pkt.size = sizeof(AVPicture);
 
 						ret = av_write_frame(enc_ctx->oc, &pkt);
@@ -1924,12 +2050,12 @@ static void *consumer_thread( void *arg )
 						}
 
 						// Set the quality
-						converted_avframe->quality = c->global_quality;
-						converted_avframe->pts = enc_ctx->frame_count;
+						avframe->quality = c->global_quality;
+						avframe->pts = enc_ctx->frame_count;
 
 						// Set frame interlace hints
-						converted_avframe->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
-						converted_avframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+						avframe->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
+						avframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 						if ( mlt_properties_get_int( frame_properties, "progressive" ) )
 							c->field_order = AV_FIELD_PROGRESSIVE;
 						else if ( c->codec_id == AV_CODEC_ID_MJPEG )
@@ -1939,7 +2065,7 @@ static void *consumer_thread( void *arg )
 
 	 					// Encode the image
 #if LIBAVCODEC_VERSION_INT >= ((57<<16)+(37<<8)+0)
-						ret = avcodec_send_frame( c, converted_avframe );
+						ret = avcodec_send_frame( c, avframe );
 						if ( ret < 0 ) {
 							pkt.size = ret;
 						} else {
@@ -1952,13 +2078,13 @@ receive_video_packet:
 						}
 #elif LIBAVCODEC_VERSION_MAJOR >= 55
 						int got_packet;
-						ret = avcodec_encode_video2( c, &pkt, converted_avframe, &got_packet );
+						ret = avcodec_encode_video2( c, &pkt, avframe, &got_packet );
 						if ( ret < 0 )
 							pkt.size = ret;
 						else if ( !got_packet )
 							pkt.size = 0;
 #else
-	 					pkt.size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, converted_avframe );
+	 					pkt.size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, avframe );
 	 					pkt.pts = c->coded_frame? c->coded_frame->pts : AV_NOPTS_VALUE;
 						if ( c->coded_frame && c->coded_frame->key_frame )
 							pkt.flags |= AV_PKT_FLAG_KEY;
@@ -2012,6 +2138,10 @@ receive_video_packet:
 					}
 					mlt_frame_close( frame );
 					frame = NULL;
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+					if (AV_PIX_FMT_VAAPI == c->pix_fmt)
+						av_frame_unref( avframe );
+#endif
 				}
 				else
 				{
@@ -2156,6 +2286,10 @@ on_fatal_error:
 	if ( converted_avframe )
 		av_free( converted_avframe->data[0] );
 	av_free( converted_avframe );
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+	if (AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
+		av_frame_free(&avframe);
+#endif
 	av_free( video_outbuf );
 	av_free( enc_ctx->audio_avframe );
 
