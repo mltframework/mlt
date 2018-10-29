@@ -1,0 +1,8 @@
+f=avi
+vcodec=utvideo
+g=1
+bf=0
+acodec=pcm_s24le
+
+meta.preset.extension=avi
+meta.preset.note=Ut Video with 24-bit PCM audio in AVI container
