@@ -1622,6 +1622,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	mlt_log_timings_begin();
 
+	// Always use the image cache for album art.
+	int is_album_art = (codec_context->codec_id == AV_CODEC_ID_MJPEG && stream->r_frame_rate.num == 90000 && stream->r_frame_rate.den == 1);
+	if (is_album_art)
+		position = 0;
+
 	// Get the image cache
 	if ( ! self->image_cache )
 	{
@@ -1991,7 +1996,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_set_int( frame_properties, "format", *format );
 		// Cache the image for rapid repeated access.
 		if ( self->image_cache ) {
-			mlt_cache_put_frame( self->image_cache, frame );
+			if (is_album_art) {
+				mlt_position original_pos = mlt_frame_original_position( frame );
+				mlt_properties_set_position(frame_properties, "original_position", 0);
+				mlt_cache_put_frame( self->image_cache, frame );
+				mlt_properties_set_position(frame_properties, "original_position", original_pos);
+			} else {
+				mlt_cache_put_frame( self->image_cache, frame );
+			}
 		}
 		// Clone frame for error concealment.
 		if ( self->current_position >= self->last_good_position ) {
