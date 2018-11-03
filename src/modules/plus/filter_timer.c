@@ -142,7 +142,10 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 mlt_filter filter_timer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
-	mlt_filter text_filter = mlt_factory_filter( profile, "text", NULL );
+	mlt_filter text_filter = mlt_factory_filter( profile, "qtext", NULL );
+
+	if( !text_filter )
+		text_filter = mlt_factory_filter( profile, "text", NULL );
 
 	if( !text_filter )
 		mlt_log_warning( MLT_FILTER_SERVICE(filter), "Unable to create text filter.\n" );
