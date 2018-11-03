@@ -11,6 +11,7 @@ OBJS = factory.o producer_qimage.o producer_kdenlivetitle.o
 CPPOBJS = common.o \
 	graph.o \
 	filter_audiowaveform.o \
+	filter_qtext.o \
 	qimage_wrapper.o \
 	kdenlivetitle_wrapper.o \
 	producer_qtext.o \
