@@ -21,16 +21,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void setup_producer( mlt_filter filter, mlt_producer producer, mlt_frame frame )
+static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+{
+	if( !strcmp( "geometry", name ) ||
+		!strcmp( "family", name ) ||
+		!strcmp( "size", name ) ||
+		!strcmp( "weight", name ) ||
+		!strcmp( "style", name ) ||
+		!strcmp( "fgcolour", name ) ||
+		!strcmp( "bgcolour", name ) ||
+		!strcmp( "olcolour", name ) ||
+		!strcmp( "pad", name ) ||
+		!strcmp( "halign", name ) ||
+		!strcmp( "valign", name ) ||
+		!strcmp( "outline", name ) )
+	{
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES(filter), "_reset", 1 );
+	}
+}
+
+static void setup_producer( mlt_filter filter, mlt_producer producer )
 {
 	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Make sure the producer is in the correct position
-	mlt_producer_seek( producer, mlt_filter_get_position( filter, frame ) );
-
 	// Pass the properties to the text producer
-	mlt_properties_set( producer_properties, "text", mlt_properties_get( my_properties, "argument" ) );
 	mlt_properties_set( producer_properties, "family", mlt_properties_get( my_properties, "family" ) );
 	mlt_properties_set( producer_properties, "size", mlt_properties_get( my_properties, "size" ) );
 	mlt_properties_set( producer_properties, "weight", mlt_properties_get( my_properties, "weight" ) );
@@ -55,7 +70,6 @@ static void setup_transition( mlt_filter filter, mlt_transition transition, mlt_
 	mlt_properties_set_rect( transition_properties, "rect", rect );
 	mlt_properties_set( transition_properties, "halign", mlt_properties_get( my_properties, "halign" ) );
 	mlt_properties_set( transition_properties, "valign", mlt_properties_get( my_properties, "valign" ) );
-	mlt_properties_set_int( transition_properties, "out", mlt_properties_get_int( my_properties, "_out" ) );
 	mlt_service_unlock( MLT_TRANSITION_SERVICE(transition) );
 }
 
@@ -66,19 +80,25 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	int error = 0;
 	mlt_filter filter = mlt_frame_pop_service( frame );
+	char* argument = (char*)mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_producer producer = mlt_properties_get_data( properties, "_producer", NULL );
 	mlt_transition transition = mlt_properties_get_data( properties, "_transition", NULL );
 	mlt_frame b_frame = 0;
-	char* argument = mlt_properties_get( properties, "argument" );
-
-	if ( !argument || !strcmp( "", argument ) )
-		return mlt_frame_get_image( frame, image, format, width, height, writable );
+	mlt_position position = 0;
 
 	// Configure this filter
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-	setup_producer( filter, producer, frame );
-	setup_transition( filter, transition, frame );
+	if( mlt_properties_get_int( properties, "_reset" ) )
+	{
+		setup_producer( filter, producer );
+		setup_transition( filter, transition, frame );
+	}
+	mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "text", argument );
+
+	// Make sure the producer is in the correct position
+	position = mlt_filter_get_position( filter, frame );
+	mlt_producer_seek( producer, position );
 
 	// Get the b frame and process with transition if successful
 	if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &b_frame, 0 ) == 0 )
@@ -92,7 +112,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 		// Set the b_frame to be in the same position and have same consumer requirements
-		mlt_frame_set_position( b_frame, mlt_filter_get_position( filter, frame ) );
+		mlt_frame_set_position( b_frame, position );
 		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) );
 
 		// Apply all filters that are attached to this filter to the b frame
@@ -102,7 +122,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_transition_process( transition, frame, b_frame );
 
 		// Get the image
-		*format = mlt_image_rgb24a;
 		error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 		// Close the temporary frames
@@ -112,6 +131,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
+	free( argument );
 
 	return error;
 }
@@ -120,11 +140,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 */
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	// Get the properties of the frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	char* argument = mlt_properties_get( properties, "argument" );
+	if ( !argument || !strcmp( "", argument ) )
+		return frame;
 
-	// Save the frame out point
-	mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_out", mlt_properties_get_int( properties, "out" ) );
+	// Save the text to be used by get_image() to support parallel processing
+	// when this filter is encapsulated by other filters.
+	mlt_frame_push_service( frame, strdup( argument ) );
 
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, filter );
@@ -165,6 +188,9 @@ mlt_filter filter_text_init( mlt_profile profile, mlt_service_type type, const c
 		// Ensure that we loop
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
 
+		// Listen for property changes.
+		mlt_events_listen( MLT_FILTER_PROPERTIES(filter), filter, "property-changed", (mlt_listener)property_changed );
+
 		// Assign default values
 		mlt_properties_set( my_properties, "argument", arg ? arg: "text" );
 		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100%" );
@@ -179,7 +205,7 @@ mlt_filter filter_text_init( mlt_profile profile, mlt_service_type type, const c
 		mlt_properties_set( my_properties, "halign", "left" );
 		mlt_properties_set( my_properties, "valign", "top" );
 		mlt_properties_set( my_properties, "outline", "0" );
-
+		mlt_properties_set_int( my_properties, "_reset", 1 );
 		mlt_properties_set_int( my_properties, "_filter_private", 1 );
 
 		filter->process = filter_process;
