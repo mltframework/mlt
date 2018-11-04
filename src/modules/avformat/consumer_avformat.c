@@ -141,7 +141,7 @@ void sample_fifo_close( sample_fifo fifo )
 	free( fifo );
 }
 
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55,9,0)
 static AVFilterGraph *vfilter_graph;
 
 static int setup_hwupload_filter(mlt_properties properties, AVStream* stream, AVCodecContext *codec_context)
@@ -896,7 +896,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->pix_fmt = pix_fmt ? av_get_pix_fmt( pix_fmt ) : codec ?
 			( codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV422P ): AV_PIX_FMT_YUV420P;
 
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55,9,0)
 		if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
 			int result = init_vaapi(properties, c);
 			if (result >= 0) {
@@ -1785,7 +1785,7 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Allocate picture
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55,9,0)
 	enum AVPixelFormat pix_fmt = enc_ctx->video_st->codec->pix_fmt == AV_PIX_FMT_VAAPI ?
 	           AV_PIX_FMT_NV12 : enc_ctx->video_st->codec->pix_fmt;
 #else
@@ -1993,7 +1993,7 @@ static void *consumer_thread( void *arg )
 							}
 						}
 
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55,9,0)
 						if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
 							AVFilterContext *vfilter_in = mlt_properties_get_data(properties, "vfilter_in", NULL);
 							AVFilterContext *vfilter_out = mlt_properties_get_data(properties, "vfilter_out", NULL);
@@ -2138,7 +2138,7 @@ receive_video_packet:
 					}
 					mlt_frame_close( frame );
 					frame = NULL;
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55,9,0)
 					if (AV_PIX_FMT_VAAPI == c->pix_fmt)
 						av_frame_unref( avframe );
 #endif
@@ -2286,7 +2286,7 @@ on_fatal_error:
 	if ( converted_avframe )
 		av_free( converted_avframe->data[0] );
 	av_free( converted_avframe );
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= ((54<<16)+(31<<8)+0)
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55,9,0)
 	if (AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
 		av_frame_free(&avframe);
 #endif
