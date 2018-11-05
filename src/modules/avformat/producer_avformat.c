@@ -1623,7 +1623,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_log_timings_begin();
 
 	// Always use the image cache for album art.
-	int is_album_art = (codec_context->codec_id == AV_CODEC_ID_MJPEG && stream->r_frame_rate.num == 90000 && stream->r_frame_rate.den == 1);
+	int is_album_art = (codec_context->codec_id == AV_CODEC_ID_MJPEG
+		&& mlt_properties_get_int(properties, "meta.media.frame_rate_num") == 90000
+		&& mlt_properties_get_int(properties, "meta.media.frame_rate_den") == 1);
 	if (is_album_art)
 		position = 0;
 
