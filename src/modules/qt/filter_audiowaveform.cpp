@@ -1,6 +1,6 @@
 /*
  * filter_audiowaveform.cpp -- audio waveform visualization filter
- * Copyright (c) 2015-2016 Meltytech, LLC
+ * Copyright (c) 2015-2018 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -22,13 +22,149 @@
 #include "graph.h"
 #include <framework/mlt.h>
 #include <framework/mlt_log.h>
-#include <cstring> // memset
 #include <QPainter>
 #include <QImage>
 #include <QVector>
 
-static const qreal MAX_AMPLITUDE = 32768.0;
-static bool preprocess_warned = false;
+static const qreal MAX_S16_AMPLITUDE = 32768.0;
+
+// Private Types
+typedef struct
+{
+	char *buffer_prop_name;
+	int reset_window;
+	int16_t* window_buffer;
+	int window_samples;
+	int window_frequency;
+	int window_channels;
+} private_data;
+
+typedef struct
+{
+	int16_t* buffer;
+	int samples;
+	int channels;
+} save_buffer;
+
+static save_buffer* create_save_buffer( int samples, int channels, int16_t* buffer )
+{
+	save_buffer* ret = (save_buffer*)calloc( 1, sizeof(save_buffer) );
+	int buffer_size = samples * channels * sizeof(int16_t);
+	ret->samples = samples;
+	ret->channels = channels;
+	ret->buffer = (int16_t*)calloc( 1, buffer_size );
+	memcpy( ret->buffer, buffer, buffer_size );
+	return ret;
+}
+
+static void destory_save_buffer( void* ptr )
+{
+	if( !ptr )
+	{
+		mlt_log_error( NULL, "Invalid save_buffer ptr.\n" );
+		return;
+	}
+	save_buffer* buff = (save_buffer*)ptr;
+	free( buff->buffer );
+	free( buff );
+}
+
+static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+{
+	if ( !strcmp( name, "window" ) )
+	{
+		private_data* pdata = (private_data*)filter->child;
+		pdata->reset_window = 1;
+	}
+}
+
+static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
+{
+	int error = 0;
+	mlt_filter filter = (mlt_filter)mlt_frame_pop_audio( frame );
+	private_data* pdata = (private_data*)filter->child;
+
+	if( *format != mlt_audio_s16 && *format != mlt_audio_float )
+	{
+		*format = mlt_audio_float;
+	}
+
+	error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	if( error )
+	{
+		return error;
+	}
+
+	if( *frequency != pdata->window_frequency || *channels != pdata->window_channels )
+	{
+		pdata->reset_window = true;
+	}
+
+	if( pdata->reset_window )
+	{
+		mlt_log_info( MLT_FILTER_SERVICE(filter), "Reset window buffer: %d.\n", mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "window" ) );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+		double fps = mlt_profile_fps( profile );
+		int frame_samples = mlt_sample_calculator( fps, *frequency, mlt_frame_get_position( frame ) );
+		int window_ms = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "window" );
+		pdata->window_frequency = *frequency;
+		pdata->window_channels = *channels;
+		pdata->window_samples = window_ms * *frequency / 1000;
+		if( pdata->window_samples < frame_samples )
+		{
+			pdata->window_samples = frame_samples;
+		}
+		free( pdata->window_buffer );
+		pdata->window_buffer = (int16_t*)calloc( 1, pdata->window_samples * pdata->window_channels * sizeof(int16_t) );
+		pdata->reset_window = 0;
+	}
+
+	int new_sample_count = *samples;
+	if( new_sample_count > pdata->window_samples )
+	{
+		new_sample_count = pdata->window_samples;
+	}
+	int old_sample_count = pdata->window_samples - new_sample_count;
+	int window_buff_bytes = pdata->window_samples * pdata->window_channels * sizeof(int16_t);
+	int new_sample_bytes = new_sample_count * pdata->window_channels * sizeof(int16_t);
+	int old_sample_bytes = old_sample_count * pdata->window_channels * sizeof(int16_t);
+
+	// Move the old samples ahead in the window buffer to make room for new samples.
+	if( new_sample_bytes < window_buff_bytes )
+	{
+		char* old_sample_src = (char*)pdata->window_buffer + new_sample_bytes;
+		char* old_sample_dst = (char*)pdata->window_buffer;
+		memmove( old_sample_dst, old_sample_src, old_sample_bytes );
+	}
+
+	// Copy the new samples to the back of the window buffer.
+	if( *format == mlt_audio_s16 )
+	{
+		char* new_sample_src = (char*)*buffer;
+		char* new_sample_dst = (char*)pdata->window_buffer + old_sample_bytes;
+		memcpy( new_sample_dst, new_sample_src, new_sample_bytes );
+	}
+	else // mlt_audio_float
+	{
+		for( int c = 0; c < pdata->window_channels; c++ )
+		{
+			float* src = (float*)*buffer + (*samples * c);
+			int16_t* dst = pdata->window_buffer + (old_sample_count * pdata->window_channels) + c;
+			for( int s = 0; s < new_sample_count; s++ )
+			{
+				*dst = *src * MAX_S16_AMPLITUDE;
+				src++;
+				dst += pdata->window_channels;
+			}
+		}
+	}
+
+	// Copy the window buffer and pass it along with the frame.
+	save_buffer* out = create_save_buffer( pdata->window_samples, pdata->window_channels, pdata->window_buffer );
+	mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), pdata->buffer_prop_name, out, sizeof(save_buffer), destory_save_buffer, NULL );
+
+	return 0;
+}
 
 static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int samples, int channels, int fill )
 {
@@ -41,7 +177,7 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 	if( samples < width ) {
 		// For each x position on the waveform, find the sample value that
 		// applies to that position and draw a point at that location.
-		QPoint point(0, *q * half_height / MAX_AMPLITUDE + center_y);
+		QPoint point(0, *q * half_height / MAX_S16_AMPLITUDE + center_y);
 		QPoint lastPoint = point;
 		int lastSample = 0;
 		for ( int x = 0; x < width; x++ )
@@ -55,7 +191,7 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 			lastPoint.setX( x + rect.x() );
 			lastPoint.setY( point.y() );
 			point.setX( x + rect.x() );
-			point.setY( *q * half_height / MAX_AMPLITUDE + center_y );
+			point.setY( *q * half_height / MAX_S16_AMPLITUDE + center_y );
 
 			if ( fill ) {
 				// Draw the line all the way to 0 to "fill" it in.
@@ -97,9 +233,9 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 				}
 
 				high.setX( lastX + rect.x() );
-				high.setY( max * half_height / MAX_AMPLITUDE + center_y );
+				high.setY( max * half_height / MAX_S16_AMPLITUDE + center_y );
 				low.setX( lastX + rect.x() );
-				low.setY( min * half_height / MAX_AMPLITUDE + center_y );
+				low.setY( min * half_height / MAX_S16_AMPLITUDE + center_y );
 
 				if ( high.y() == low.y() ) {
 					p.drawPoint( high );
@@ -141,6 +277,26 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 
 	setup_graph_painter( p, r, filter_properties );
 
+	if ( show_channel == -1 ) // Combine all channels
+	{
+		if( channels > 1 )
+		{
+			int16_t* in = audio;
+			int16_t* out = audio;
+			for ( int s = 0; s < samples; s++ )
+			{
+				double acc = 0.0;
+				for ( int c = 0; c < channels; c++ )
+				{
+					acc += *in++;
+				}
+				*out++ = acc / channels;
+			}
+			channels = 1;
+		}
+		show_channel = 1;
+	}
+
 	if ( show_channel == 0 ) // Show all channels
 	{
 		QRectF c_rect = r;
@@ -170,52 +326,29 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int error = 0;
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
-	int samples = 0;
-	int channels = 0;
-	int frequency = 0;
-	mlt_audio_format audio_format = mlt_audio_s16;
-	int16_t* audio = (int16_t*)mlt_properties_get_data( frame_properties, "audio", NULL );
+	private_data* pdata = (private_data*)filter->child;
+	save_buffer* audio = (save_buffer*)mlt_properties_get_data( frame_properties, pdata->buffer_prop_name, NULL );
 
-	if ( !audio && !preprocess_warned ) {
-		// This filter depends on the consumer processing the audio before the
-		// video. If the audio is not preprocessed, this filter will process it.
-		// If this filter processes the audio, it could cause confusion for the
-		// consumer if it needs different audio properties.
-		mlt_log_warning( MLT_FILTER_SERVICE(filter), "Audio not preprocessed. Potential audio distortion.\n" );
-		preprocess_warned = true;
+	if( audio )
+	{
+		// Get the current image
+		*image_format = mlt_image_rgb24a;
+		error = mlt_frame_get_image( frame, image, image_format, width, height, writable );
+
+		// Draw the waveforms
+		if( !error ) {
+			QImage qimg( *width, *height, QImage::Format_ARGB32 );
+			convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
+			draw_waveforms( filter, frame, &qimg, audio->buffer, audio->channels, audio->samples );
+			convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
+		}
 	}
-
-	*image_format = mlt_image_rgb24a;
-
-	// Get the current image
-	error = mlt_frame_get_image( frame, image, image_format, width, height, writable );
-
-	// Get the audio
-	if( !error ) {
-		frequency = mlt_properties_get_int( frame_properties, "audio_frequency" );
-		if (!frequency) {
-			frequency = 48000;
-		}
-		channels = mlt_properties_get_int( frame_properties, "audio_channels" );
-		if (!channels) {
-			channels = 2;
-		}
-		samples = mlt_properties_get_int( frame_properties, "audio_samples" );
-		if (!samples) {
-			mlt_producer producer = mlt_frame_get_original_producer( frame );
-			double fps = mlt_producer_get_fps( mlt_producer_cut_parent( producer ) );
-			samples = mlt_sample_calculator( fps, frequency, mlt_frame_get_position( frame ) );
-		}
-
-		error = mlt_frame_get_audio( frame, (void**)&audio, &audio_format, &frequency, &channels, &samples );
-	}
-
-	// Draw the waveforms
-	if( !error ) {
-		QImage qimg( *width, *height, QImage::Format_ARGB32 );
-		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
-		draw_waveforms( filter, frame, &qimg, audio, channels, samples );
-		convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
+	else
+	{
+		// This filter depends on the consumer processing the audio before
+		// the video.
+		mlt_log_warning( MLT_FILTER_SERVICE(filter), "Audio not preprocessed.\n" );
+		return mlt_frame_get_image( frame, image, image_format, width, height, writable );
 	}
 
 	return error;
@@ -241,10 +374,28 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		// Push a callback to create the image.
 		mlt_frame_push_get_image( frame, create_image );
 	}
+	mlt_frame_push_audio( frame, filter );
+	mlt_frame_push_audio( frame, (void*)filter_get_audio );
 	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
 
 	return frame;
+}
+
+static void filter_close( mlt_filter filter )
+{
+	private_data* pdata = (private_data*)filter->child;
+
+	if ( pdata )
+	{
+		free( pdata->window_buffer );
+		free( pdata->buffer_prop_name );
+		free( pdata );
+	}
+	filter->child = NULL;
+	filter->close = NULL;
+	filter->parent.close = NULL;
+	mlt_service_close( &filter->parent );
 }
 
 /** Constructor for the filter.
@@ -255,24 +406,54 @@ extern "C" {
 mlt_filter filter_audiowaveform_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
+	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
 
-	if ( !filter ) return NULL;
+	if( filter && pdata )
+	{
+		if ( !createQApplicationIfNeeded( MLT_FILTER_SERVICE(filter) ) )  {
+			mlt_filter_close( filter );
+			return NULL;
+		}
 
-	if ( !createQApplicationIfNeeded( MLT_FILTER_SERVICE(filter) ) )  {
-		mlt_filter_close( filter );
-		return NULL;
+		mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
+		mlt_properties_set( filter_properties, "bgcolor", "0x00000000" );
+		mlt_properties_set( filter_properties, "color.1", "0xffffffff" );
+		mlt_properties_set( filter_properties, "thickness", "0" );
+		mlt_properties_set( filter_properties, "show_channel", "0" );
+		mlt_properties_set( filter_properties, "angle", "0" );
+		mlt_properties_set( filter_properties, "rect", "0 0 100% 100%" );
+		mlt_properties_set( filter_properties, "fill", "0" );
+		mlt_properties_set( filter_properties, "gorient", "v" );
+		mlt_properties_set_int( filter_properties, "window", 0 );
+
+		pdata->reset_window = 1;
+		// Create a unique ID for storing data on the frame
+		pdata->buffer_prop_name = (char*)calloc( 1, 20 );
+		snprintf( pdata->buffer_prop_name, 20, "audiowave.%p", filter );
+		pdata->buffer_prop_name[20 - 1] = '\0';
+
+		filter->close = filter_close;
+		filter->process = filter_process;
+		filter->child = pdata;
+
+		mlt_events_listen( filter_properties, filter, "property-changed", (mlt_listener)property_changed );
 	}
+	else
+	{
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Failed to initialize\n" );
 
-	filter->process = filter_process;
-	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_properties_set( filter_properties, "bgcolor", "0x00000000" );
-	mlt_properties_set( filter_properties, "color.1", "0xffffffff" );
-	mlt_properties_set( filter_properties, "thickness", "0" );
-	mlt_properties_set( filter_properties, "show_channel", "0" );
-	mlt_properties_set( filter_properties, "angle", "0" );
-	mlt_properties_set( filter_properties, "rect", "0 0 100% 100%" );
-	mlt_properties_set( filter_properties, "fill", "0" );
-	mlt_properties_set( filter_properties, "gorient", "v" );
+		if( filter )
+		{
+			mlt_filter_close( filter );
+		}
+
+		if( pdata )
+		{
+			free( pdata );
+		}
+
+		filter = NULL;
+	}
 
 	return filter;
 }
