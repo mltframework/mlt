@@ -1658,7 +1658,7 @@ static deserialise_context context_new( mlt_profile profile )
 	return context;
 }
 
-void context_close( deserialise_context context )
+static void context_close( deserialise_context context )
 {
 	mlt_properties_close( context->producer_map );
 	mlt_properties_close( context->destructors );
