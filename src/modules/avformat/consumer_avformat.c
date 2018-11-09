@@ -2288,7 +2288,7 @@ on_fatal_error:
 		av_free( converted_avframe->data[0] );
 	av_free( converted_avframe );
 #if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
-	if (enc_ctx->video_st && AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
+	if (enc_ctx->video_st && enc_ctx->video_st->codec && AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
 		av_frame_free(&avframe);
 #endif
 	av_free( video_outbuf );
