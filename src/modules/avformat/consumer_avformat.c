@@ -1785,12 +1785,7 @@ static void *consumer_thread( void *arg )
 	}
 
 	// Allocate picture
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
-	enum AVPixelFormat pix_fmt = enc_ctx->video_st->codec->pix_fmt == AV_PIX_FMT_VAAPI ?
-	           AV_PIX_FMT_NV12 : enc_ctx->video_st->codec->pix_fmt;
-#else
-	enum AVPixelFormat pix_fmt = enc_ctx->video_st->codec->pix_fmt;
-#endif
+	enum AVPixelFormat pix_fmt;
 	if ( enc_ctx->video_st ) {
 		converted_avframe = alloc_picture( pix_fmt, width, height );
 		if ( !converted_avframe ) {
@@ -1798,6 +1793,12 @@ static void *consumer_thread( void *arg )
 			mlt_events_fire( properties, "consumer-fatal-error", NULL );
 			goto on_fatal_error;
 		}
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
+		pix_fmt = enc_ctx->video_st->codec->pix_fmt == AV_PIX_FMT_VAAPI ?
+				   AV_PIX_FMT_NV12 : enc_ctx->video_st->codec->pix_fmt;
+#else
+		pix_fmt = enc_ctx->video_st->codec->pix_fmt;
+#endif
 	}
 
 	// Allocate audio AVFrame
@@ -2287,7 +2288,7 @@ on_fatal_error:
 		av_free( converted_avframe->data[0] );
 	av_free( converted_avframe );
 #if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
-	if (AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
+	if (enc_ctx->video_st && AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
 		av_frame_free(&avframe);
 #endif
 	av_free( video_outbuf );
