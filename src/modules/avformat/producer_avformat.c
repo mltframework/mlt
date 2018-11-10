@@ -1142,55 +1142,6 @@ static void get_audio_streams_info( producer_avformat self )
 		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
 }
 
-static int set_luma_transfer( struct SwsContext *context, int src_colorspace,
-	int dst_colorspace, int src_full_range, int dst_full_range )
-{
-	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
-	const int *dst_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
-	int brightness = 0;
-	int contrast = 1 << 16;
-	int saturation = 1  << 16;
-	int src_range = src_full_range ? 1 : 0;
-	int dst_range = dst_full_range ? 1 : 0;
-
-	switch ( src_colorspace )
-	{
-	case 170:
-	case 470:
-	case 601:
-	case 624:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-		break;
-	case 240:
-		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-		break;
-	case 709:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		break;
-	default:
-		break;
-	}
-	switch ( dst_colorspace )
-	{
-	case 170:
-	case 470:
-	case 601:
-	case 624:
-		dst_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-		break;
-	case 240:
-		dst_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-		break;
-	case 709:
-		dst_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		break;
-	default:
-		break;
-	}
-	return sws_setColorspaceDetails( context, src_coefficients, src_range, dst_coefficients, dst_range,
-		brightness, contrast, saturation );
-}
-
 static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
 {
 	switch ( pix_fmt )
