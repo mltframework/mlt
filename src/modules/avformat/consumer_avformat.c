@@ -1527,6 +1527,9 @@ static void *consumer_thread( void *arg )
 	char key[27];
 	enc_ctx->frame_meta_properties = mlt_properties_new();
 	int header_written = 0;
+	int dst_colorspace = mlt_properties_get_int( properties, "colorspace" );
+	const char* color_range = mlt_properties_get( properties, "color_range" );
+	int dst_full_range = color_range && (!strcmp("pc", color_range) || !strcmp("jpeg", color_range));
 
 	// Check for user selected format first
 	if ( format != NULL )
@@ -1953,9 +1956,18 @@ static void *consumer_thread( void *arg )
 						mlt_image_format_planes( img_fmt, width, height, image, video_avframe.data, video_avframe.linesize );
 
 						// Do the colour space conversion
-						int flags = SWS_BICUBIC;
+						int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
+						if ( pix_fmt == AV_PIX_FMT_YUYV422 || pix_fmt == AV_PIX_FMT_YUV422P16LE )
+							flags |= SWS_FULL_CHR_H_INP;
+						else
+							flags |= SWS_FULL_CHR_H_INT;
+
 						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
 							width, height, pix_fmt, flags, NULL, NULL, NULL);
+						int src_colorspace = mlt_properties_get_int( frame_properties, "colorspace" );
+						int src_full_range = mlt_properties_get_int( frame_properties, "full_luma" );
+						if ( (src_colorspace && dst_colorspace != src_colorspace) || dst_full_range != src_full_range )
+							set_luma_transfer( context, src_colorspace, dst_colorspace, src_full_range, dst_full_range );
 						sws_scale( context, (const uint8_t* const*) video_avframe.data, video_avframe.linesize, 0, height,
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
