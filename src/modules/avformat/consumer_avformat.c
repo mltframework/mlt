@@ -1787,18 +1787,18 @@ static void *consumer_thread( void *arg )
 	// Allocate picture
 	enum AVPixelFormat pix_fmt;
 	if ( enc_ctx->video_st ) {
-		converted_avframe = alloc_picture( pix_fmt, width, height );
-		if ( !converted_avframe ) {
-			mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "failed to allocate video AVFrame\n" );
-			mlt_events_fire( properties, "consumer-fatal-error", NULL );
-			goto on_fatal_error;
-		}
 #if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
 		pix_fmt = enc_ctx->video_st->codec->pix_fmt == AV_PIX_FMT_VAAPI ?
 				   AV_PIX_FMT_NV12 : enc_ctx->video_st->codec->pix_fmt;
 #else
 		pix_fmt = enc_ctx->video_st->codec->pix_fmt;
 #endif
+		converted_avframe = alloc_picture( pix_fmt, width, height );
+		if ( !converted_avframe ) {
+			mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "failed to allocate video AVFrame\n" );
+			mlt_events_fire( properties, "consumer-fatal-error", NULL );
+			goto on_fatal_error;
+		}
 	}
 
 	// Allocate audio AVFrame
