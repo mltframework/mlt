@@ -21,6 +21,7 @@ parameters:
       - HH:MM:SS
       - HH:MM:SS.S
       - MM:SS
+      - MM:SS.SS
       - SS
       - SS.S
     default: SS.SS
