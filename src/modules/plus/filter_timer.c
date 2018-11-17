@@ -88,6 +88,10 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 	{
 		snprintf( text, MAX_TEXT_LEN, "%02d:%02d", hours * 60 + mins, (int)secs );
 	}
+	else if ( !strcmp( format, "MM:SS.SS" ) )
+	{
+		snprintf( text, MAX_TEXT_LEN, "%02d:%02.2f", hours * 60 + mins, secs );
+	}
 	else if ( !strcmp( format, "SS" ) )
 	{
 		snprintf( text, MAX_TEXT_LEN, "%02d", (int)value );
