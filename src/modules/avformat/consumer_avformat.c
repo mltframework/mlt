@@ -2278,6 +2278,17 @@ on_fatal_error:
 	if ( frames )
 		av_write_trailer( enc_ctx->oc );
 
+	// Clean up input and output frames
+	if ( converted_avframe )
+		av_free( converted_avframe->data[0] );
+	av_free( converted_avframe );
+#if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
+	if (enc_ctx->video_st && enc_ctx->video_st->codec && AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
+		av_frame_free(&avframe);
+#endif
+	av_free( video_outbuf );
+	av_free( enc_ctx->audio_avframe );
+
 	// close each codec
 	if ( enc_ctx->video_st )
 		close_video(enc_ctx->oc, enc_ctx->video_st);
@@ -2294,17 +2305,6 @@ on_fatal_error:
 	{
 		if ( enc_ctx->oc->pb  ) avio_close( enc_ctx->oc->pb );
 	}
-
-	// Clean up input and output frames
-	if ( converted_avframe )
-		av_free( converted_avframe->data[0] );
-	av_free( converted_avframe );
-#if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
-	if (enc_ctx->video_st && enc_ctx->video_st->codec && AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
-		av_frame_free(&avframe);
-#endif
-	av_free( video_outbuf );
-	av_free( enc_ctx->audio_avframe );
 
 	// Free the stream
 	av_free( enc_ctx->oc );
