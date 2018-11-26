@@ -174,18 +174,18 @@ plugin_desc_set_properties  (plugin_desc_t * pd, LADSPA_Properties properties)
 }
 
 static void
-plugin_desc_add_audio_port_index (unsigned long ** indicies,
+plugin_desc_add_audio_port_index (unsigned long ** indices,
                                   unsigned long * current_port_count,
                                   unsigned long index)
 {
   (*current_port_count)++;
   
   if (*current_port_count == 0)
-    *indicies = g_malloc (sizeof (unsigned long) * *current_port_count);
+    *indices = g_malloc (sizeof (unsigned long) * *current_port_count);
   else
-    *indicies = g_realloc (*indicies, sizeof (unsigned long) * *current_port_count);
+    *indices = g_realloc (*indices, sizeof (unsigned long) * *current_port_count);
   
-  (*indicies)[*current_port_count - 1] = index;
+  (*indices)[*current_port_count - 1] = index;
 }
 
 static void
@@ -237,7 +237,7 @@ plugin_desc_set_port_counts (plugin_desc_t * pd)
       pd->has_input = FALSE;
     }
   else
-    { /* deal with auxilliary ports */
+    { /* deal with auxiliary ports */
       unsigned long ** port_indicies;
       unsigned long port_count;
       unsigned long i, j;
@@ -259,14 +259,14 @@ plugin_desc_set_port_counts (plugin_desc_t * pd)
           port_count = ocount;
         }
       
-      /* allocate indicies */
+      /* allocate indices */
       pd->audio_aux_port_indicies = g_malloc (sizeof (unsigned long) * pd->aux_channels);
       
-      /* copy indicies */
+      /* copy indices */
       for (i = pd->channels, j = 0; i < port_count; i++, j++)
         pd->audio_aux_port_indicies[j] = (*port_indicies)[i];
       
-      /* shrink the main indicies to only have channels indicies */
+      /* shrink the main indices to only have channels indices */
       *port_indicies = g_realloc (*port_indicies, sizeof (unsigned long) * pd->channels);
     }
 }

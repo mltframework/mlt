@@ -510,7 +510,7 @@ static void motion_search( uint8_t *from,			//<! Image data.
 #endif
 
 	motion_vector candidates[10];
-	motion_vector *here;		// This one gets used alot (about 30 times per macroblock)
+	motion_vector *here;		// This one gets used a lot (about 30 times per macroblock)
 	int n = 0;
 
 	int i, j, count=0;
