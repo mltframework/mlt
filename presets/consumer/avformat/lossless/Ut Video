@@ -1,5 +1,7 @@
 f=avi
 vcodec=utvideo
+color_range=mpeg
+pix_fmt=yuv422p
 g=1
 bf=0
 acodec=pcm_s24le
