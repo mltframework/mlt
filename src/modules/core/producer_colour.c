@@ -87,6 +87,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	mlt_color color = mlt_properties_get_color( producer_props, "resource" );
 
+	if ( mlt_properties_get( producer_props, "mlt_image_format") )
+		*format = mlt_image_format_id( mlt_properties_get( producer_props, "mlt_image_format") );
+
 	// Choose suitable out values if nothing specific requested
 	if ( *format == mlt_image_none || *format == mlt_image_glsl )
 		*format = mlt_image_rgb24a;

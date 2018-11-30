@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: producer
 identifier: colour
 title: Color
@@ -11,7 +11,8 @@ tags:
   - Video
 description: A simple color generator.
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: Color
     description: >
       A color value is a hexadecimal representation of RGB plus alpha channel 
@@ -22,3 +23,16 @@ parameters:
     readonly: no
     default: black
     widget: color
+
+  - identifier: mlt_image_format
+    title: MLT image format
+    type: string
+    description: >
+      Force to generate image in the specified format. The default behavior is
+      to supply whatever was requested by the connected consumer.
+    mutable: yes
+    values:
+      - mlt_image_yuv420p
+      - mlt_image_yuv422
+      - mlt_image_rgb24
+      - mlt_image_rgb24a
