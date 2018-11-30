@@ -22,6 +22,8 @@
 #include <libavutil/channel_layout.h>
 #include <libavutil/samplefmt.h>
 
+int mlt_default_sws_flags = SWS_BICUBIC | SWS_FULL_CHR_H_INP | SWS_FULL_CHR_H_INT | SWS_ACCURATE_RND;
+
 int mlt_to_av_sample_format( mlt_audio_format format )
 {
 	switch( format )

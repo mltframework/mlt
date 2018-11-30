@@ -1281,7 +1281,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 	av_opt_set_int( sws, "dstw", slice_w, 0 );
 	av_opt_set_int( sws, "dsth", h, 0 );
 	av_opt_set_int( sws, "dst_format", ctx->dst_format, 0 );
-	av_opt_set_int( sws, "sws_flags", ctx->flags | SWS_FULL_CHR_H_INP, 0 );
+	av_opt_set_int( sws, "sws_flags", ctx->flags, 0 );
 
 	av_opt_set_int( sws, "src_h_chr_pos", -513, 0 );
 	av_opt_set_int( sws, "src_v_chr_pos", src_v_chr_pos, 0 );
@@ -1338,7 +1338,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
 {
-	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
+	int flags = mlt_default_sws_flags;
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
 	int result = self->yuv_colorspace;
 
@@ -1400,7 +1400,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	else if ( *format == mlt_image_rgb24 )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_RGB24, flags, NULL, NULL, NULL);
 		uint8_t *out_data[4];
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGB24, width, height, IMAGE_ALIGN);
@@ -1413,7 +1413,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_RGBA, flags, NULL, NULL, NULL);
 		uint8_t *out_data[4];
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGBA, width, height, IMAGE_ALIGN);
@@ -1475,10 +1475,10 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	{
 #if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_YUYV422, flags, NULL, NULL, NULL);
 #else
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_YUYV422, flags, NULL, NULL, NULL);
 #endif
 		AVPicture output;
 		avpicture_fill( &output, buffer, AV_PIX_FMT_YUYV422, width, height );

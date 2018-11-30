@@ -1956,12 +1956,7 @@ static void *consumer_thread( void *arg )
 						mlt_image_format_planes( img_fmt, width, height, image, video_avframe.data, video_avframe.linesize );
 
 						// Do the colour space conversion
-						int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
-						if ( pix_fmt == AV_PIX_FMT_YUYV422 || pix_fmt == AV_PIX_FMT_YUV422P16LE )
-							flags |= SWS_FULL_CHR_H_INP;
-						else
-							flags |= SWS_FULL_CHR_H_INT;
-
+						int flags = mlt_default_sws_flags;
 						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
 							width, height, pix_fmt, flags, NULL, NULL, NULL);
 						int src_colorspace = mlt_properties_get_int( frame_properties, "colorspace" );

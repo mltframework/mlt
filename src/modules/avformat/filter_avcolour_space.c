@@ -84,13 +84,8 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int in_stride[4];
 	uint8_t *out_data[4];
 	int out_stride[4];
-	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
+	int flags = mlt_default_sws_flags;
 	int error = -1;
-
-	if ( out_fmt == AV_PIX_FMT_YUYV422 || out_fmt == AV_PIX_FMT_YUV422P16LE )
-		flags |= SWS_FULL_CHR_H_INP;
-	else
-		flags |= SWS_FULL_CHR_H_INT;
 
 	if ( in_fmt == AV_PIX_FMT_YUV422P16LE )
 		mlt_image_format_planes(mlt_image_yuv422p16, width, height, in, in_data, in_stride);
