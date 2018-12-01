@@ -446,7 +446,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	if( pdata->avfilter_graph )
 	{
 		// Set up the input frame
-		mlt_channel_layout layout = get_channel_layout_or_default( mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "channel_layout" ) , *channels );
+		mlt_channel_layout layout = mlt_get_channel_layout_or_default( mlt_properties_get( MLT_FRAME_PROPERTIES(frame), "channel_layout" ) , *channels );
 		pdata->avinframe->sample_rate = *frequency;
 		pdata->avinframe->format = mlt_to_av_sample_format( *format );
 		pdata->avinframe->channel_layout = mlt_to_av_channel_layout( layout );

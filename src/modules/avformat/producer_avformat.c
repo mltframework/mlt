@@ -1295,7 +1295,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 		return 0;
 	}
 
-	set_luma_transfer( sws, ctx->src_colorspace, ctx->dst_colorspace, ctx->src_full_range, ctx->dst_full_range );
+	mlt_set_luma_transfer( sws, ctx->src_colorspace, ctx->dst_colorspace, ctx->src_full_range, ctx->dst_full_range );
 
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(55, 0, 100)
 #define PIX_DESC_BPP(DESC) (DESC.step_minus1 + 1)
@@ -1391,7 +1391,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		out_stride[0] = width;
 		out_stride[1] = width >> 1;
 		out_stride[2] = width >> 1;
-		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, self->full_luma ) )
+		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, self->full_luma ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
@@ -1405,7 +1405,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGB24, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
+		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );
@@ -1418,7 +1418,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGBA, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
+		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );
@@ -1482,7 +1482,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 #endif
 		AVPicture output;
 		avpicture_fill( &output, buffer, AV_PIX_FMT_YUYV422, width, height );
-		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, 0 ) )
+		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, 0 ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);

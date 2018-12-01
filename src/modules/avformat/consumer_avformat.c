@@ -1962,7 +1962,7 @@ static void *consumer_thread( void *arg )
 						int src_colorspace = mlt_properties_get_int( frame_properties, "colorspace" );
 						int src_full_range = mlt_properties_get_int( frame_properties, "full_luma" );
 						if ( (src_colorspace && dst_colorspace != src_colorspace) || dst_full_range != src_full_range )
-							set_luma_transfer( context, src_colorspace, dst_colorspace, src_full_range, dst_full_range );
+							mlt_set_luma_transfer( context, src_colorspace, dst_colorspace, src_full_range, dst_full_range );
 						sws_scale( context, (const uint8_t* const*) video_avframe.data, video_avframe.linesize, 0, height,
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );

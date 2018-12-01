@@ -121,7 +121,7 @@ mlt_channel_layout av_channel_layout_to_mlt( int64_t layout )
 	return mlt_channel_independent;
 }
 
-mlt_channel_layout get_channel_layout_or_default( const char* name, int channels )
+mlt_channel_layout mlt_get_channel_layout_or_default( const char* name, int channels )
 {
 	mlt_channel_layout layout = mlt_channel_layout_id( name );
 	if( layout == mlt_channel_auto ||
@@ -132,7 +132,7 @@ mlt_channel_layout get_channel_layout_or_default( const char* name, int channels
 	return layout;
 }
 
-int set_luma_transfer( struct SwsContext *context, int src_colorspace,
+int mlt_set_luma_transfer( struct SwsContext *context, int src_colorspace,
 	int dst_colorspace, int src_full_range, int dst_full_range )
 {
 	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );

@@ -102,7 +102,7 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		if ( out_fmt == AV_PIX_FMT_RGB24 || out_fmt == AV_PIX_FMT_RGBA )
 			dst_colorspace = 601;
-		error = set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range, use_full_range );
+		error = mlt_set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range, use_full_range );
 		sws_scale(context, (const uint8_t* const*) in_data, in_stride, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );

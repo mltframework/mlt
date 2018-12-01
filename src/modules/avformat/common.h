@@ -26,8 +26,8 @@
 int mlt_to_av_sample_format( mlt_audio_format format );
 int64_t mlt_to_av_channel_layout( mlt_channel_layout layout );
 mlt_channel_layout av_channel_layout_to_mlt( int64_t layout );
-mlt_channel_layout get_channel_layout_or_default( const char* name, int channels );
-int set_luma_transfer( struct SwsContext *context, int src_colorspace,
+mlt_channel_layout mlt_get_channel_layout_or_default( const char* name, int channels );
+int mlt_set_luma_transfer( struct SwsContext *context, int src_colorspace,
 	int dst_colorspace, int src_full_range, int dst_full_range );
 extern int mlt_default_sws_flags;
 
