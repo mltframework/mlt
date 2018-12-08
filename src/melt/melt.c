@@ -406,7 +406,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	int progress = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "progress" );
 	int is_getc = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "melt_getc" );
 	struct timespec tm = { 0, 40000000 };
-	int total_length = mlt_producer_get_length( producer );
+	int total_length = mlt_producer_get_playtime( producer );
 	int last_position = 0;
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
@@ -972,11 +972,18 @@ query_all:
 	
 			// Get the last group
 			mlt_properties group = mlt_properties_get_data( melt_props, "group", 0 );
-	
+
 			// Apply group settings
 			mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
 			mlt_properties_inherit( properties, group );
-
+			int in = mlt_properties_get_int( properties, "in" );
+			int out = mlt_properties_get_int( properties, "out" );
+			if ( in > 0 || out > 0 ) {
+				if ( out == 0 ) {
+					out = mlt_producer_get_length( melt ) - 1;
+				}
+				mlt_producer_set_in_and_out( melt, in, out );
+			}
 			// Connect consumer to melt
 			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( melt ) );
 
