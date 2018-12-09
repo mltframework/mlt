@@ -41,7 +41,9 @@ static void property_changed( mlt_service owner, mlt_filter filter, char *name )
 		!strcmp( "pad", name ) ||
 		!strcmp( "halign", name ) ||
 		!strcmp( "valign", name ) ||
-		!strcmp( "outline", name ) )
+		!strcmp( "outline", name ) ||
+		!strcmp( "in", name ) ||
+		!strcmp( "out", name ))
 	{
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES(filter), "_reset", 1 );
 	}
@@ -258,7 +260,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	if( mlt_properties_get_int( properties, "_reset" ) )
 	{
 		mlt_properties_pass_list( text_filter_properties, properties,
-			"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline" );
+			"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline in out" );
 	}
 	return mlt_filter_process( text_filter, frame );
 }
