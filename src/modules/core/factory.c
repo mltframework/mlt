@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,8 @@ extern mlt_filter filter_gamma_init( mlt_profile profile, mlt_service_type type,
 extern mlt_filter filter_greyscale_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_imageconvert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_mask_apply_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_mask_start_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_mirror_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_obscure_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -88,6 +90,8 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "grayscale", filter_greyscale_init );
 	MLT_REGISTER( filter_type, "imageconvert", filter_imageconvert_init );
 	MLT_REGISTER( filter_type, "luma", filter_luma_init );
+	MLT_REGISTER( filter_type, "mask_apply", filter_mask_apply_init );
+	MLT_REGISTER( filter_type, "mask_start", filter_mask_start_init );
 	MLT_REGISTER( filter_type, "mirror", filter_mirror_init );
 	MLT_REGISTER( filter_type, "mono", filter_mono_init );
 	MLT_REGISTER( filter_type, "obscure", filter_obscure_init );
@@ -127,6 +131,8 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "greyscale", metadata, "filter_greyscale.yml" );
 	MLT_REGISTER_METADATA( filter_type, "grayscale", metadata, "filter_greyscale.yml" );
 	MLT_REGISTER_METADATA( filter_type, "luma", metadata, "filter_luma.yml" );
+	MLT_REGISTER_METADATA( filter_type, "mask_apply", metadata, "filter_mask_apply.yml" );
+	MLT_REGISTER_METADATA( filter_type, "mask_start", metadata, "filter_mask_start.yml" );
 	MLT_REGISTER_METADATA( filter_type, "mirror", metadata, "filter_mirror.yml" );
 	MLT_REGISTER_METADATA( filter_type, "mono", metadata, "filter_mono.yml" );
 	MLT_REGISTER_METADATA( filter_type, "obscure", metadata, "filter_obscure.yml" );

@@ -1,0 +1,28 @@
+schema_version: 0.3
+type: filter
+identifier: mask_apply
+title: Apply a filter mask
+version: 1
+copyright: Meltytech, LLC
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  This filter works in conjunction with the mask_start filter, which makes a
+  snapshot of the frame. There can be other filters between the two, which
+  are masked by the alpha channel via this filter's compositing transition.
+
+parameters:
+  - identifier: transition
+    title: Transition
+    description: The name of a compositing or blending transition
+    type: string
+    argument: yes
+    default: frei0r.composition
+
+  - identifier: transition.*
+    type: properties
+    description: >
+      Properties to set on the encapsulated transition

@@ -1,0 +1,31 @@
+schema_version: 0.3
+type: filter
+identifier: mask_start
+title: Setup a filter mask
+version: 1
+copyright: Meltytech, LLC
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  This filter works in conjunction with the mask_apply filter to make filter
+  masking easier. This filter makes a snapshop of the frame before applying
+  a filter, typically one to affect the alpha channel defining the mask. Then,
+  the mask_apply filter uses a transition to composite the current frame's
+  image over the snapshot. The typical use case is to add filters in the
+  following sequence: mask_start, zero or more filters, mask_apply.
+
+parameters:
+  - identifier: filter
+    title: Filter
+    description: The name of a filter
+    type: string
+    argument: yes
+    default: frei0r.alphaspot
+
+  - identifier: filter.*
+    type: properties
+    description: >
+      Properties to set on the encapsulated filter
