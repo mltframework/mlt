@@ -59,7 +59,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		uint8_t *mask_img = NULL;
 		mlt_image_format mask_fmt = mlt_image_yuv422;
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( mask ), "distort", 1 );
-		mlt_properties_pass_list( MLT_FRAME_PROPERTIES( mask ), MLT_FRAME_PROPERTIES( frame ), "deinterlace,deinterlace_method,rescale.interp" );
+		mlt_properties_pass_list( MLT_FRAME_PROPERTIES( mask ), MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace, deinterlace_method, rescale.interp, consumer_tff, consumer_color_trc" );
 
 		if ( mlt_frame_get_image( mask, &mask_img, &mask_fmt, width, height, 0 ) == 0 )
 		{
@@ -80,12 +80,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			}
 			else if ( ( int )mix != 1 )
 			{
+				int full_range = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "full_luma" );
+				double offset = full_range ? 0.0 : 16.0;
+				double divisor = full_range ? 255.0 : 235.0;
 				uint8_t *q = mask_img;
-				// Ensure softness tends to zero has mix tends to 1
+				// Ensure softness tends to zero as mix tends to 1
 				softness *= ( 1.0 - mix );
 				while( size -- )
 				{
-					a = ( ( double )*q - 16 ) / 235.0;
+					a = ( ( double ) *q - offset ) / divisor;
             		b = smoothstep( a, a + softness, mix );
 					*p = ( uint8_t )( *p * b ) ^ invert;
 					p ++;
@@ -105,6 +108,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	// Obtain the shape instance
 	char *resource = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "resource" );
+	if ( !resource ) return frame;
 	char *last_resource = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "_resource" );
 	mlt_producer producer = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "instance", NULL );
 
@@ -118,7 +122,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 
 	// If we haven't created the instance or it's changed
-	if ( producer == NULL || strcmp( resource, last_resource ) )
+	if ( producer == NULL || !last_resource || strcmp( resource, last_resource ) )
 	{
 		char temp[ 512 ];
 
