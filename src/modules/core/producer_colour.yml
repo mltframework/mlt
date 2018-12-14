@@ -32,7 +32,7 @@ parameters:
       to supply whatever was requested by the connected consumer.
     mutable: yes
     values:
-      - mlt_image_yuv420p
-      - mlt_image_yuv422
-      - mlt_image_rgb24
-      - mlt_image_rgb24a
+      - yuv420p
+      - yuv422
+      - rgb24
+      - rgb24a

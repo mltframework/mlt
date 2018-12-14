@@ -21,8 +21,21 @@ parameters:
     type: string
     argument: yes
     default: frei0r.composition
+    mutable: yes
 
   - identifier: transition.*
     type: properties
     description: >
       Properties to set on the encapsulated transition
+
+  - identifier: mlt_image_format
+    title: MLT image format
+    type: string
+    description: Set to the same image format that the transition needs.
+    values:
+    mutable: yes
+    default: rgb24a
+    values:
+      - yuv422
+      - rgb24
+      - rgb24a

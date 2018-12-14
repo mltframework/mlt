@@ -24,6 +24,7 @@ parameters:
     type: string
     argument: yes
     default: frei0r.alphaspot
+    mutable: yes
 
   - identifier: filter.*
     type: properties
