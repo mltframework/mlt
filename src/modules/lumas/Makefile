@@ -19,13 +19,19 @@ create_lumas:
 depend:
 
 distclean:
-	rm -rf PAL NTSC luma 
+	rm -rf luma 9_16 16_9 NTSC PAL square
 
 clean:
 	rm -f luma 
 
 install:	all
-	install -d $(DESTDIR)$(mltdatadir)/lumas/PAL
+	install -d $(DESTDIR)$(mltdatadir)/lumas/9_16
+	install -d $(DESTDIR)$(mltdatadir)/lumas/16_9
 	install -d $(DESTDIR)$(mltdatadir)/lumas/NTSC
-	install -m 644 PAL/* $(DESTDIR)$(mltdatadir)/lumas/PAL
+	install -d $(DESTDIR)$(mltdatadir)/lumas/PAL
+	install -d $(DESTDIR)$(mltdatadir)/lumas/square
+	install -m 644 9_16/* $(DESTDIR)$(mltdatadir)/lumas/9_16
+	install -m 644 16_9/* $(DESTDIR)$(mltdatadir)/lumas/16_9
 	install -m 644 NTSC/* $(DESTDIR)$(mltdatadir)/lumas/NTSC
+	install -m 644 PAL/* $(DESTDIR)$(mltdatadir)/lumas/PAL
+	install -m 644 square/* $(DESTDIR)$(mltdatadir)/lumas/square
