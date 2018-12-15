@@ -523,3 +523,8 @@ MLT_6.10.0 {
     mlt_properties_clear;
     mlt_properties_get_value_tf;
 } MLT_6.8.0;
+
+MLT_6.12.0 {
+  global:
+    mlt_profile_lumas_dir;
+} MLT_6.10.0;
