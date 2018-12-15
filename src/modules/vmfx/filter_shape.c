@@ -124,6 +124,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	// If we haven't created the instance or it's changed
 	if ( producer == NULL || !last_resource || strcmp( resource, last_resource ) )
 	{
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		char temp[ 512 ];
 
 		// Store the last resource now
@@ -136,7 +137,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		if ( strchr( resource, '%' ) )
 		{
 			FILE *test;
-			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
 			test = mlt_fopen( temp, "r" );
 
 			if ( test == NULL )
@@ -153,7 +154,6 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			resource = temp;
 		}
 
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		producer = mlt_factory_producer( profile, NULL, resource );
 		if ( producer != NULL )
 			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );

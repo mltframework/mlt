@@ -1,6 +1,6 @@
 /*
  * transition_composite.c -- compose one image over another using alpha channel
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -689,7 +689,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 	
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "luma" );
-
+	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
 	char temp[ 512 ];
 
 	if ( luma_width == 0 || luma_height == 0 )
@@ -702,7 +702,8 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 	{
 		// TODO: Clean up quick and dirty compressed/existence check
 		FILE *test;
-		sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+		sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ),
+			mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
 		test = mlt_fopen( temp, "r" );
 		if ( test == NULL )
 			strcat( temp, ".png" );
@@ -770,7 +771,6 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 				char *factory = mlt_properties_get( properties, "factory" );
 	
 				// Create the producer
-				mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
 				mlt_producer producer = mlt_factory_producer( profile, factory, resource );
 	
 				// If we have one

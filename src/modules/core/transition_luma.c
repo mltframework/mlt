@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -348,11 +348,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		char temp[ 512 ];
 		char *extension = strrchr( resource, '.' );
 		char *orig_resource = resource;
+		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 
 		if ( strchr( resource, '%' ) )
 		{
 			FILE *test;
-			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
+			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
 			test = mlt_fopen( temp, "r" );
 			if ( test == NULL )
 				strcat( temp, ".png" );
@@ -392,7 +393,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			char *factory = mlt_properties_get( properties, "factory" );
 
 			// Create the producer
-			mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 			mlt_producer producer = mlt_factory_producer( profile, factory, resource );
 
 			// If we have one
