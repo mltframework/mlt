@@ -25,6 +25,16 @@
 
 #include <string.h>
 
+static int dummy_get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable)
+{
+	mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+	*image = mlt_properties_get_data(properties, "image", NULL);
+	*format = mlt_properties_get_int(properties, "format");
+	*width = mlt_properties_get_int(properties, "width");
+	*height = mlt_properties_get_int(properties, "height");
+	return 0;
+}
+
 static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable)
 {
 	mlt_transition transition = mlt_frame_pop_service(frame);
@@ -34,10 +44,15 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 		mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
 		mlt_frame clone = mlt_properties_get_data(properties, "mask frame", NULL);
 		if (clone) {
+			mlt_frame_push_get_image(frame, dummy_get_image);
 			mlt_service_lock(MLT_TRANSITION_SERVICE(transition));
 			mlt_transition_process(transition, clone, frame);
 			mlt_service_unlock(MLT_TRANSITION_SERVICE(transition));
 			error = mlt_frame_get_image(clone, image, format, width, height, writable);
+			if (!error) {
+				int size = mlt_image_format_size(*format, *width, *height, NULL);
+				mlt_frame_set_image(frame, *image, size, NULL);
+			}
 		}
 	}
 	return error;
