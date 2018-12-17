@@ -303,6 +303,8 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			}
 			if ( ( buffer = (uint8_t*) mlt_properties_get_data( properties, "alpha", &self->alpha_size ) ) )
 			{
+                if ( !self->alpha_size )
+                    self->alpha_size = self->current_width * self->current_height;
 				self->current_alpha = (uint8_t*) mlt_pool_alloc( self->alpha_size );
 				memcpy( self->current_alpha, buffer, self->alpha_size );
 			}

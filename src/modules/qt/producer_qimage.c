@@ -279,7 +279,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 	self->current_image = mlt_cache_item_data( self->image_cache, NULL );
 	self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
-	self->current_alpha = mlt_cache_item_data( self->alpha_cache, NULL );
+	self->current_alpha = mlt_cache_item_data( self->alpha_cache, &self->alpha_size );
 	refresh_image( self, frame, *format, *width, *height );
 
 	// Get width and height (may have changed during the refresh)
@@ -304,6 +304,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Clone the alpha channel
 		if ( self->current_alpha )
 		{
+            if ( !self->alpha_size )
+                self->alpha_size = self->current_width * self->current_height;
 			uint8_t * alpha_copy = mlt_pool_alloc( self->alpha_size );
 			memcpy( alpha_copy, self->current_alpha, self->alpha_size );
 			mlt_frame_set_alpha( frame, alpha_copy, self->alpha_size, mlt_pool_release );
