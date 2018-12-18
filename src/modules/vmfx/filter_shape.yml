@@ -27,7 +27,7 @@ parameters:
     description: >
       Convert alpha or luma values below this level as opaque and above this
       level as transparent. This is mostly useful for luma wipe images.
-    unit: %
+    unit: '%'
     minimum: 0
     maximum: 100
     default: 100
