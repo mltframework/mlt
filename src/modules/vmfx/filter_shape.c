@@ -45,11 +45,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Obtain the constants
 	double softness = mlt_properties_get_double( MLT_FILTER_PROPERTIES( filter ), "softness" );
 	int use_luminance = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "use_luminance" );
+	int use_mix = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "use_mix" );
 	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" ) * 255;
 
 	// Render the frame
 	*format = mlt_image_yuv422;
-	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 && ( !use_luminance || ( int )mix != 1 ) )
+	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 && ( !use_luminance || !use_mix || ( int )mix != 1 ) )
 	{
 		// Get the alpha mask of the source
 		uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
@@ -69,12 +70,31 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			if ( !use_luminance )
 			{
 				uint8_t *q = mlt_frame_get_alpha_mask( mask );
+				if ( use_mix )
+				{
+					while( size -- )
+					{
+						a = ( double )*q ++ / 255.0;
+						b = 1.0 - smoothstep( a, a + softness, mix );
+						*p = ( uint8_t )( *p * b ) ^ invert;
+						p ++;
+					}
+				}
+				else
+				{
+					while( size -- )
+						*p++ = *q++;
+				}
+			}
+			else if ( !use_mix )
+			{
+				// Do not apply threshold filter.
+				uint8_t *q = mask_img;
 				while( size -- )
 				{
-					a = ( double )*q ++ / 255.0;
-            		b = 1.0 - smoothstep( a, a + softness, mix );
-					*p = ( uint8_t )( *p * b ) ^ invert;
-					p ++;
+					*p = *q;
+					p++;
+					q += 2;
 				}
 			}
 			else if ( ( int )mix != 1 )
@@ -88,7 +108,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				while( size -- )
 				{
 					a = ( ( double ) *q - offset ) / divisor;
-            		b = smoothstep( a, a + softness, mix );
+					b = smoothstep( a, a + softness, mix );
 					*p = ( uint8_t )( *p * b ) ^ invert;
 					p ++;
 					q += 2;
@@ -192,6 +212,7 @@ mlt_filter filter_shape_init( mlt_profile profile, mlt_service_type type, const 
 	{
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "resource", arg );
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "mix", "100" );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "use_mix", 1 );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "audio_match", 1 );
 		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "invert", 0 );
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( filter ), "softness", 0.1 );
