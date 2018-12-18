@@ -23,7 +23,6 @@
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
-#include <framework/mlt_geometry.h>
 
 static inline double smoothstep( const double e1, const double e2, const double a )
 {
@@ -112,11 +111,6 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	char *last_resource = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "_resource" );
 	mlt_producer producer = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "instance", NULL );
 
-	// Get the key framed values
-	mlt_geometry alpha = mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "_alpha", NULL );
-	char *alpha_data = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "mix" );
-	double alpha_mix = 0.0;
-
 	// Calculate the position and length
 	int position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
@@ -160,25 +154,11 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "instance", producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 	}
 
-	// Construct the geometry item if needed, otherwise refresh it
-	if ( alpha == NULL )
-	{
-		alpha = mlt_geometry_init( );
-		mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "_alpha", alpha, 0, ( mlt_destructor )mlt_geometry_close, NULL );
-		mlt_geometry_parse( alpha, alpha_data, length, 100, 100 );
-	}
-	else
-	{
-		mlt_geometry_refresh( alpha, alpha_data, length, 100, 100 );
-	}
-
 	// We may still not have a producer in which case, we do nothing
 	if ( producer != NULL )
 	{
 		mlt_frame mask = NULL;
-		struct mlt_geometry_item_s item;
-		mlt_geometry_fetch( alpha, &item, position );
-		alpha_mix = item.x;
+		double alpha_mix = mlt_properties_anim_get_double( MLT_FILTER_PROPERTIES(filter), "mix", position, length );
 		mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), MLT_FILTER_PROPERTIES( filter ), "producer." );
 		mlt_producer_seek( producer, position );
 		if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &mask, 0 ) == 0 )
