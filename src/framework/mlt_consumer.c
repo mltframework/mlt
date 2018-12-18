@@ -1190,9 +1190,12 @@ static void consumer_work_start( mlt_consumer self )
 
 		while ( n-- )
 		{
-			if ( pthread_create( thread, &thread_attributes, consumer_worker_thread, self ) < 0 )
+			if ( pthread_create( thread, &thread_attributes, consumer_worker_thread, self ) < 0 ) {
 				if ( pthread_create( thread, NULL, consumer_worker_thread, self ) == 0 )
 					mlt_deque_push_back( priv->worker_threads, thread );
+			} else {
+				mlt_deque_push_back( priv->worker_threads, thread );
+			}
 			thread++;
 		}
 		pthread_attr_destroy( &thread_attributes );
