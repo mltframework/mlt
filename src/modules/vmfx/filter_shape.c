@@ -27,7 +27,7 @@
 static inline double smoothstep( const double e1, const double e2, const double a )
 {
     if ( a < e1 ) return 0.0;
-    if ( a > e2 ) return 1.0;
+    if ( a >= e2 ) return 1.0;
     double v = ( a - e1 ) / ( e2 - e1 );
     return ( v * v * ( 3 - 2 * v ) );
 }
@@ -50,7 +50,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Render the frame
 	*format = mlt_image_yuv422;
-	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 && ( !use_luminance || !use_mix || ( int )mix != 1 ) )
+	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 &&
+		 ( !use_luminance || !use_mix || (int) mix != 1 || invert == 255 ) )
 	{
 		// Get the alpha mask of the source
 		uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
@@ -97,7 +98,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					q += 2;
 				}
 			}
-			else if ( ( int )mix != 1 )
+			else if ( (int) mix != 1 || invert == 255 )
 			{
 				int full_range = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "full_luma" );
 				double offset = full_range ? 0.0 : 16.0;
