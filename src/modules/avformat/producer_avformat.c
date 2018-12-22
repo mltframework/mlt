@@ -1449,7 +1449,8 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		av_image_fill_arrays(ctx.out_data, ctx.out_stride, buffer, ctx.dst_format, width, height, IMAGE_ALIGN);
 
-		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
+		int sliced = !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE");
+		if ( sliced ) {
 			ctx.slice_w = ( width < 1000 )
 				? ( 256 >> frame->interlaced_frame )
 				: ( 512 >> frame->interlaced_frame );
@@ -1459,11 +1460,12 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		c = ( width + ctx.slice_w - 1 ) / ctx.slice_w;
 		int last_slice_w = width - ctx.slice_w * (c - 1);
-		c *= frame->interlaced_frame ? 2 : 1;
 
-		if ( (last_slice_w % 8) == 0 && !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
+		if ( sliced && (last_slice_w % 8) == 0 && !(ctx.src_format == AV_PIX_FMT_YUV422P && last_slice_w % 16) ) {
+			c *= frame->interlaced_frame ? 2 : 1;
 			mlt_slices_run_normal( c, sliced_h_pix_fmt_conv_proc, &ctx );
 		} else {
+			c = frame->interlaced_frame ? 2 : 1;
 			ctx.slice_w = width;
 			for ( i = 0 ; i < c; i++ )
 				sliced_h_pix_fmt_conv_proc( i, i, c, &ctx );
