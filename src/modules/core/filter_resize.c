@@ -75,7 +75,7 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 	uint8_t *p = output;
 
 	// Optimisation point
-	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || oheight <= 6 ) )
+	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || iheight <= 6 ) )
 	{
 		return;
 	}
