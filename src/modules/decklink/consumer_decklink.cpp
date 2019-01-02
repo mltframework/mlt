@@ -985,7 +985,7 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 	mlt_consumer consumer = NULL;
 
 	// If allocated
-	if ( decklink && !mlt_consumer_init( decklink->getConsumer(), decklink, profile ) )
+	if ( !mlt_consumer_init( decklink->getConsumer(), decklink, profile ) )
 	{
 		// If initialises without error
 		if ( decklink->op( OP_OPEN, arg? atoi(arg) : 0 ) )
