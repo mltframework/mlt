@@ -338,7 +338,7 @@ extern void make_tempfile( producer_qimage self, const char *xml )
 	if ( tempFile.open() )
 	{
 		// Write the svg into the temp file
-		char *fullname = tempFile.fileName().toUtf8().data();
+		QByteArray fullname = tempFile.fileName().toUtf8();
 
 		// Strip leading crap
 		while ( xml[0] != '<' )
@@ -349,10 +349,10 @@ extern void make_tempfile( producer_qimage self, const char *xml )
 			remaining_bytes -= tempFile.write( xml + strlen( xml ) - remaining_bytes, remaining_bytes );
 		tempFile.close();
 
-		mlt_properties_set( self->filenames, "0", fullname );
+		mlt_properties_set( self->filenames, "0", fullname.data() );
 
 		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( &self->parent ), "__temporary_file__",
-			fullname, 0, ( mlt_destructor )unlink, NULL );
+			fullname.data(), 0, ( mlt_destructor )unlink, NULL );
 	}
 }
 
