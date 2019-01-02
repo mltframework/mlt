@@ -229,7 +229,7 @@ mlt_filter filter_spot_remover_init( mlt_profile profile, mlt_service_type type,
 	}
 	else
 	{
-		mlt_log_error( MLT_FILTER_SERVICE(filter), "Filter initialization failed\n" );
+		mlt_log_error( NULL, "Filter spot_remover initialization failed\n" );
 	}
 	return filter;
 }
