@@ -283,7 +283,7 @@ static int slowmotion_get_frame( mlt_producer this, mlt_frame_ptr frame, int ind
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES(this);
 
 
-	if( frame != NULL )
+	if( *frame )
 	{
 
 		mlt_frame first_frame = mlt_properties_get_data( properties, "first_frame", NULL );
