@@ -378,7 +378,6 @@ static void *consumer_thread(void *arg) {
 		}
 	} else if (this->device_file_video &&
 			strstr(this->device_file_video, "sdivideotx")) {
-		free(this->device_file_audio);
 		this->device_file_audio = strdup("/dev/sdiaudiotx0");
 	}
 
