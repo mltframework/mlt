@@ -22,13 +22,13 @@
 #include <framework/mlt_log.h>
 #include <QPainter>
 #include <QTextCodec>
+#include <QString>
 
 static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text )
 {
 	int outline = mlt_properties_get_int( filter_properties, "outline" );
-	char* halign = mlt_properties_get( filter_properties, "halign" );
-	char* style = mlt_properties_get( filter_properties, "style" );
-	char* encoding = mlt_properties_get( filter_properties, "encoding" );
+	char halign = mlt_properties_get( filter_properties, "halign" )[0];
+	char style = mlt_properties_get( filter_properties, "style" )[0];
 	int pad = mlt_properties_get_int( filter_properties, "pad" );
 	int offset = pad + ( outline / 2 );
 	int width = 0;
@@ -37,7 +37,7 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 	qpath->setFillRule( Qt::WindingFill );
 
 	// Get the strings to display
-	QTextCodec *codec = QTextCodec::codecForName( encoding );
+	QTextCodec *codec = QTextCodec::codecForName( mlt_properties_get( filter_properties, "encoding" ) );
 	QTextDecoder *decoder = codec->makeDecoder();
 	QString s = decoder->toUnicode( text );
 	delete decoder;
@@ -48,7 +48,7 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 	font.setPixelSize( mlt_properties_get_int( filter_properties, "size" ) );
 	font.setFamily( mlt_properties_get( filter_properties, "family" ) );
 	font.setWeight( ( mlt_properties_get_int( filter_properties, "weight" ) / 10 ) -1 );
-	switch( style[0] )
+	switch( style )
 	{
 	case 'i':
 	case 'I':
@@ -91,7 +91,7 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 		if (bearing < 0)
 			line_width -= bearing;
 
-		switch( halign[0] )
+		switch( halign )
 		{
 			default:
 			case 'l':
@@ -171,8 +171,8 @@ static void transform_painter( QPainter* painter, mlt_rect frame_rect, QRectF pa
 
 	qreal dx = frame_rect.x;
 	qreal dy = frame_rect.y;
-	char* halign = mlt_properties_get( filter_properties, "halign" );
-	switch( halign[0] )
+	char halign = mlt_properties_get( filter_properties, "halign" )[0];
+	switch( halign )
 	{
 		default:
 		case 'l':
@@ -187,8 +187,8 @@ static void transform_painter( QPainter* painter, mlt_rect frame_rect, QRectF pa
 			dx += frame_rect.w - ( sx * path_rect.width() );
 			break;
 	}
-	char* valign = mlt_properties_get( filter_properties, "valign" );
-	switch( valign[0] )
+	char valign = mlt_properties_get( filter_properties, "valign" )[0];
+	switch( valign )
 	{
 		default:
 		case 't':
@@ -234,8 +234,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
-	char* geom_str = mlt_properties_get( filter_properties, "geometry" );
-	if( !geom_str )
+	QString geom_str = QString::fromLatin1( mlt_properties_get( filter_properties, "geometry" ) );
+	if( geom_str.isEmpty() )
 	{
 		mlt_log_warning( MLT_FILTER_SERVICE(filter), "geometry property not set\n" );
 		mlt_frame_get_image( frame, image, image_format, width, height, writable );
@@ -251,7 +251,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if( !error )
 	{
-		if ( strchr( geom_str, '%' ) )
+		if ( geom_str.contains('%') )
 		{
 			rect.x *= *width;
 			rect.w *= *width;
