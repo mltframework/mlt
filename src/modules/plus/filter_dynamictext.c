@@ -28,27 +28,6 @@
 
 #define MAX_TEXT_LEN 512
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
-{
-	if( !strcmp( "geometry", name ) ||
-		!strcmp( "family", name ) ||
-		!strcmp( "size", name ) ||
-		!strcmp( "weight", name ) ||
-		!strcmp( "style", name ) ||
-		!strcmp( "fgcolour", name ) ||
-		!strcmp( "bgcolour", name ) ||
-		!strcmp( "olcolour", name ) ||
-		!strcmp( "pad", name ) ||
-		!strcmp( "halign", name ) ||
-		!strcmp( "valign", name ) ||
-		!strcmp( "outline", name ) ||
-		!strcmp( "in", name ) ||
-		!strcmp( "out", name ))
-	{
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES(filter), "_reset", 1 );
-	}
-}
-
 /** Get the next token and indicate whether it is enclosed in "# #".
 */
 static int get_next_token(char* str, int* pos, char* token, int* is_keyword)
@@ -251,17 +230,15 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		return frame;
 
 	mlt_filter text_filter = mlt_properties_get_data( properties, "_text_filter", NULL );
-	mlt_properties text_filter_properties = MLT_FILTER_PROPERTIES( text_filter );
+	mlt_properties text_filter_properties = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE(text_filter));
 
 	// Apply keyword substitution before passing the text to the filter.
-	char result[MAX_TEXT_LEN] = "";
+	char* result = calloc( 1, MAX_TEXT_LEN );
 	substitute_keywords( filter, result, dynamic_text, frame );
-	mlt_properties_set( text_filter_properties, "argument", (char*)result );
-	if( mlt_properties_get_int( properties, "_reset" ) )
-	{
-		mlt_properties_pass_list( text_filter_properties, properties,
-			"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline in out" );
-	}
+	mlt_properties_set( text_filter_properties, "argument", result );
+	free( result );
+	mlt_properties_pass_list( text_filter_properties, properties,
+		"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline in out" );
 	return mlt_filter_process( text_filter, frame );
 }
 
@@ -285,9 +262,6 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		// Register the text filter for reuse/destruction
 		mlt_properties_set_data( my_properties, "_text_filter", text_filter, 0, ( mlt_destructor )mlt_filter_close, NULL );
 
-		// Listen for property changes.
-		mlt_events_listen( MLT_FILTER_PROPERTIES(filter), filter, "property-changed", (mlt_listener)property_changed );
-
 		// Assign default values
 		mlt_properties_set( my_properties, "argument", arg ? arg: "#timecode#" );
 		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100%" );
@@ -302,7 +276,6 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		mlt_properties_set( my_properties, "halign", "left" );
 		mlt_properties_set( my_properties, "valign", "top" );
 		mlt_properties_set( my_properties, "outline", "0" );
-		mlt_properties_set_int( my_properties, "_reset", 1 );
 		mlt_properties_set_int( my_properties, "_filter_private", 1 );
 
 		filter->process = filter_process;

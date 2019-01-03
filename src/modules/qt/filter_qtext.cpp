@@ -21,7 +21,6 @@
 #include <framework/mlt.h>
 #include <framework/mlt_log.h>
 #include <QPainter>
-#include <QTextCodec>
 #include <QString>
 
 static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text )
@@ -37,10 +36,7 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 	qpath->setFillRule( Qt::WindingFill );
 
 	// Get the strings to display
-	QTextCodec *codec = QTextCodec::codecForName( mlt_properties_get( filter_properties, "encoding" ) );
-	QTextDecoder *decoder = codec->makeDecoder();
-	QString s = decoder->toUnicode( text );
-	delete decoder;
+	QString s = QString::fromUtf8(text);
 	QStringList lines = s.split( "\n" );
 
 	// Configure the font
@@ -225,12 +221,20 @@ static void paint_text( QPainter* painter, QPainterPath* qpath, mlt_properties f
 	painter->drawPath( *qpath );
 }
 
+static mlt_properties get_filter_properties( mlt_filter filter, mlt_frame frame )
+{
+	mlt_properties properties = mlt_frame_get_unique_properties( frame, MLT_FILTER_SERVICE(filter) );
+	if ( !properties )
+		properties = MLT_FILTER_PROPERTIES(filter);
+	return properties;
+}
+
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *image_format, int *width, int *height, int writable )
 {
 	int error = 0;
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
 	char* argument = (char*)mlt_frame_pop_service( frame );
-	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_properties filter_properties = get_filter_properties( filter, frame );
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
@@ -283,7 +287,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_properties properties = get_filter_properties( filter, frame );
 	char* argument = mlt_properties_get( properties, "argument" );
 	if ( !argument || !strcmp( "", argument ) )
 		return frame;
@@ -334,8 +338,6 @@ mlt_filter filter_qtext_init( mlt_profile profile, mlt_service_type type, const 
 	mlt_properties_set( filter_properties, "halign", "left" );
 	mlt_properties_set( filter_properties, "valign", "top" );
 	mlt_properties_set( filter_properties, "outline", "0" );
-	mlt_properties_set( filter_properties, "encoding", "UTF-8" );
-
 	mlt_properties_set_int( filter_properties, "_filter_private", 1 );
 
 	return filter;
