@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -140,6 +140,7 @@ extern mlt_deque mlt_frame_service_stack( mlt_frame self );
 extern mlt_producer mlt_frame_get_original_producer( mlt_frame self );
 extern void mlt_frame_close( mlt_frame self );
 extern mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service );
+extern mlt_properties mlt_frame_get_unique_properties( mlt_frame self, mlt_service service );
 extern mlt_frame mlt_frame_clone( mlt_frame self, int is_deep );
 
 /* convenience functions */
