@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -493,28 +493,31 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			mlt_frame a_frame_ptr = self->frames[ frame_nb ];
 			frame_nb = ( !reverse_order || a_frame > b_track )? b_frame : a_frame;
 			mlt_frame b_frame_ptr = self->frames[ frame_nb ];
-			int a_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide" );
-			int b_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide" );
-			if ( !( a_hide & type ) && !( b_hide & type ) )
+			if ( a_frame && MLT_FRAME_PROPERTIES(a_frame_ptr)->local && b_frame_ptr && MLT_FRAME_PROPERTIES(b_frame_ptr)->local )
 			{
-				// Add hooks for pre-processing frames
-				mlt_frame_push_service( a_frame_ptr, self );
-				mlt_frame_push_get_image( a_frame_ptr, get_image_a );
-				mlt_frame_push_frame( b_frame_ptr, a_frame_ptr );
-				mlt_frame_push_service( b_frame_ptr, self );
-				mlt_frame_push_get_image( b_frame_ptr, get_image_b );
+				int a_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide" );
+				int b_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide" );
+				if ( !( a_hide & type ) && !( b_hide & type ) )
+				{
+					// Add hooks for pre-processing frames
+					mlt_frame_push_service( a_frame_ptr, self );
+					mlt_frame_push_get_image( a_frame_ptr, get_image_a );
+					mlt_frame_push_frame( b_frame_ptr, a_frame_ptr );
+					mlt_frame_push_service( b_frame_ptr, self );
+					mlt_frame_push_get_image( b_frame_ptr, get_image_b );
 
-				// Process the transition
-				*frame = mlt_transition_process( self, a_frame_ptr, b_frame_ptr );
+					// Process the transition
+					*frame = mlt_transition_process( self, a_frame_ptr, b_frame_ptr );
 
-				// We need to ensure that the tractor doesn't consider this frame for output
-				if ( *frame == a_frame_ptr )
-					b_hide |= type;
-				else
-					a_hide |= type;
+					// We need to ensure that the tractor doesn't consider this frame for output
+					if ( *frame == a_frame_ptr )
+						b_hide |= type;
+					else
+						a_hide |= type;
 
-				mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide", a_hide );
-				mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide", b_hide );
+					mlt_properties_set_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide", a_hide );
+					mlt_properties_set_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide", b_hide );
+				}
 			}
 		}
 	}
