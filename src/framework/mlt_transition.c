@@ -493,7 +493,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 			mlt_frame a_frame_ptr = self->frames[ frame_nb ];
 			frame_nb = ( !reverse_order || a_frame > b_track )? b_frame : a_frame;
 			mlt_frame b_frame_ptr = self->frames[ frame_nb ];
-			if ( a_frame && MLT_FRAME_PROPERTIES(a_frame_ptr)->local && b_frame_ptr && MLT_FRAME_PROPERTIES(b_frame_ptr)->local )
+			if ( a_frame_ptr && MLT_FRAME_PROPERTIES(a_frame_ptr)->local && b_frame_ptr && MLT_FRAME_PROPERTIES(b_frame_ptr)->local )
 			{
 				int a_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( a_frame_ptr ), "hide" );
 				int b_hide = mlt_properties_get_int( MLT_FRAME_PROPERTIES( b_frame_ptr ), "hide" );
