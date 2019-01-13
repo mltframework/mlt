@@ -285,6 +285,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		else
 		{
 			mlt_log_error( MLT_FILTER_SERVICE(filter), "swr_convert() failed. Alloc: %d\tIn: %d\tOut: %d\n", alloc_samples, in_samples, out_samples );
+			mlt_pool_release( out_buffer );
 			error = 1;
 		}
 	}
