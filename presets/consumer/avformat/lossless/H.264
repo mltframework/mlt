@@ -7,8 +7,7 @@ vb=0
 g=1
 bf=0
 preset=medium
-qscale=1
-qp=0
+crf=0
 coder=ac
 
 meta.preset.extension=mp4
