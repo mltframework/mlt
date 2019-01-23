@@ -1084,6 +1084,23 @@ mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service 
 	return instance_props;
 }
 
+/** Get a properties object unique to this service instance.
+ *
+ * Unlike \p mlt_frame_unique_properties, this function does not create the
+ * service-unique properties object if it does not exist.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param service a service
+ * \return a properties object or NULL if it does not exist
+ */
+
+mlt_properties mlt_frame_get_unique_properties( mlt_frame self, mlt_service service )
+{
+	char *unique = mlt_properties_get( MLT_SERVICE_PROPERTIES(service), "_unique_id" );
+	return mlt_properties_get_data( MLT_FRAME_PROPERTIES(self), unique, NULL );
+}
+
 /** Make a copy of a frame.
  *
  * This does not copy the get_image/get_audio processing stacks or any

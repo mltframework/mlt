@@ -87,6 +87,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	mlt_color color = mlt_properties_get_color( producer_props, "resource" );
 
+	if ( mlt_properties_get( producer_props, "mlt_image_format") )
+		*format = mlt_image_format_id( mlt_properties_get( producer_props, "mlt_image_format") );
+
 	// Choose suitable out values if nothing specific requested
 	if ( *format == mlt_image_none || *format == mlt_image_glsl )
 		*format = mlt_image_rgb24a;
@@ -95,7 +98,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	if ( *height <= 0 )
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
 	
-	// Choose default image format if specific request is unsuported
+	// Choose default image format if specific request is unsupported
 	if (*format!=mlt_image_yuv420p  && *format!=mlt_image_yuv422  && *format!=mlt_image_rgb24 && *format!= mlt_image_glsl && *format!= mlt_image_glsl_texture)
 		*format = mlt_image_rgb24a;
 
@@ -126,10 +129,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			int plane_size =  *width * *height;
 			uint8_t y, u, v;
 
-			RGB2YUV_601_SCALED( color.r, color.g, color.b, y, u, v );			
+			RGB2YUV_601_SCALED( color.r, color.g, color.b, y, u, v );
 			memset(p + 0, y, plane_size);
 			memset(p + plane_size, u, plane_size/4);
 			memset(p + plane_size + plane_size/4, v, plane_size/4);
+			mlt_properties_set_int( properties, "colorspace", 601 );
 			break;
 		}
 		case mlt_image_yuv422:
@@ -156,6 +160,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					*p ++ = u;
 				}
 			}
+			mlt_properties_set_int( properties, "colorspace", 601 );
 			break;
 		}
 		case mlt_image_rgb24:

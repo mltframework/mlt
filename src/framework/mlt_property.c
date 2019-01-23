@@ -1268,8 +1268,6 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 	if ( !self->animation )
 	{
 		self->animation = mlt_animation_new();
-		self->types |= mlt_prop_data;
-		self->data = self->animation;
 		self->serialiser = (mlt_serialiser) mlt_animation_serialize_tf;
 		mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
 	}

@@ -153,9 +153,9 @@ int process_frei0r_item( mlt_service service, double position, double time, int 
 						f0r_param_color_t f_color;
 						mlt_color m_color = mlt_properties_get(prop, index) ?
 							mlt_properties_get_color(prop, index) : mlt_properties_get_color(prop, pinfo.name);
-						f_color.r = m_color.r / 255;
-						f_color.g = m_color.g / 255;
-						f_color.b = m_color.b / 255;
+						f_color.r = (float) m_color.r / 255.0f;
+						f_color.g = (float) m_color.g / 255.0f;
+						f_color.b = (float) m_color.b / 255.0f;
 						f0r_set_param_value(inst, &f_color, i);
 						break;
 					}

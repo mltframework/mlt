@@ -148,7 +148,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties frame_props = MLT_FRAME_PROPERTIES( frame );
 
-	// Propogate the parameters
+	// Propagate the parameters
 	mlt_properties_set_int( frame_props, "mono.channels", mlt_properties_get_int( properties, "channels" ) );
 
 	// Override the get_audio method

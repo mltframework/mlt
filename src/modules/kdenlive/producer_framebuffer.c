@@ -325,7 +325,7 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 
 		mlt_properties_set( properties, "resource", arg);
 
-		// Store the producer and fitler
+		// Store the producer and filter
 		mlt_properties_set_data( properties, "producer", real_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 		// Grab some stuff from the real_producer

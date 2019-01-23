@@ -175,7 +175,7 @@ process_move_plugin (process_info_t * procinfo, plugin_t *plugin, gint up)
   /* other plugins in the chain */
   plugin_t *pp = NULL, *p, *n, *nn = NULL;
 
-  /* note that we should never recieve an illogical move request
+  /* note that we should never receive an illogical move request
      ie, there will always be at least 1 plugin before for an up
      request or 1 plugin after for a down request */
 

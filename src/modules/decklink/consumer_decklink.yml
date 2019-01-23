@@ -3,7 +3,7 @@ type: consumer
 identifier: decklink
 title: Blackmagic Design DeckLink Output
 version: 2
-copyright: Copyright (C) 2011 Daniel R. Dennedy
+copyright: Copyright (C) 2010-2018 Meltytech, LLC
 license: LGPL
 language: en
 creator: Dan Dennedy

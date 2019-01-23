@@ -1,7 +1,5 @@
 /*
  * qimage_wrapper.cpp -- a QT/QImage based producer for MLT
- * Copyright (C) 2006 Visual Media
- * Author: Charles Yates <charles.yates@gmail.com>
  *
  * NB: This module is designed to be functionally equivalent to the 
  * gtk2 image loading module so it can be used as replacement.
@@ -224,7 +222,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 	// Get index and qimage
 	int image_idx = refresh_qimage( self, frame );
 
-	// optimization for subsequent iterations on single pictur
+	// optimization for subsequent iterations on single picture
 	if ( image_idx != self->image_idx || width != self->current_width || height != self->current_height )
 		self->current_image = NULL;
 
@@ -247,8 +245,8 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
 			self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
 		}
-		QImage scaled = interp? qimage->scaled( QSize( width, height ) ) :
-			qimage->scaled( QSize(width, height), Qt::IgnoreAspectRatio, Qt::SmoothTransformation );
+		QImage scaled = interp? qimage->scaled( QSize( width, height ), Qt::IgnoreAspectRatio, Qt::SmoothTransformation ) :
+			qimage->scaled( QSize(width, height) );
 
 		// Convert scaled image to target format (it might be premultiplied after scaling).
 		scaled = scaled.convertToFormat( qimageFormat );
@@ -262,6 +260,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		self->current_alpha = NULL;
+		self->alpha_size = 0;
 
 		// Copy the image
 		int y = self->current_height + 1;
@@ -302,10 +301,12 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 				self->current_image = (uint8_t*) mlt_pool_alloc( image_size );
 				memcpy( self->current_image, buffer, image_size );
 			}
-			if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
+			if ( ( buffer = (uint8_t*) mlt_properties_get_data( properties, "alpha", &self->alpha_size ) ) )
 			{
-				self->current_alpha = (uint8_t*) mlt_pool_alloc( width * height );
-				memcpy( self->current_alpha, buffer, width * height );
+                if ( !self->alpha_size )
+                    self->alpha_size = self->current_width * self->current_height;
+				self->current_alpha = (uint8_t*) mlt_pool_alloc( self->alpha_size );
+				memcpy( self->current_alpha, buffer, self->alpha_size );
 			}
 		}
 
@@ -318,7 +319,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->alpha_cache = NULL;
 		if ( self->current_alpha )
 		{
-			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, width * height, mlt_pool_release );
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, self->alpha_size, mlt_pool_release );
 			self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
 		}
 	}
@@ -337,7 +338,7 @@ extern void make_tempfile( producer_qimage self, const char *xml )
 	if ( tempFile.open() )
 	{
 		// Write the svg into the temp file
-		char *fullname = tempFile.fileName().toUtf8().data();
+		QByteArray fullname = tempFile.fileName().toUtf8();
 
 		// Strip leading crap
 		while ( xml[0] != '<' )
@@ -348,10 +349,10 @@ extern void make_tempfile( producer_qimage self, const char *xml )
 			remaining_bytes -= tempFile.write( xml + strlen( xml ) - remaining_bytes, remaining_bytes );
 		tempFile.close();
 
-		mlt_properties_set( self->filenames, "0", fullname );
+		mlt_properties_set( self->filenames, "0", fullname.data() );
 
 		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( &self->parent ), "__temporary_file__",
-			fullname, 0, ( mlt_destructor )unlink, NULL );
+			fullname.data(), 0, ( mlt_destructor )unlink, NULL );
 	}
 }
 

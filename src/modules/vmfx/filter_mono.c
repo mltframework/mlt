@@ -23,7 +23,6 @@
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
-#include <framework/mlt_geometry.h>
 
 /** Get the images and apply the luminance of the mask to the alpha of the frame.
 */

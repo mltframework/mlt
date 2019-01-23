@@ -235,7 +235,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			// Finally, set the mix property on the frame
 			mlt_properties_set_double( instance_props, "mix", mix );
 	
-			// Initialise filter previous mix value to prevent an inadvertant jump from 0
+			// Initialise filter previous mix value to prevent an inadvertent jump from 0
 			mlt_position last_position = mlt_properties_get_position( properties, "_last_position" );
 			mlt_position current_position = mlt_frame_get_position( frame );
 			mlt_properties_set_position( properties, "_last_position", current_position );

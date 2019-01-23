@@ -292,7 +292,7 @@ Tractors:
 	Tracks act like "layers" in an image processing program like the GIMP. The 
 	bottom-most track takes highest priority and higher layers are overlays 
 	and do not appear unless there are gaps in the lower layers or unless
-	a transition is applied that merges the tracks on the specifed region.
+	a transition is applied that merges the tracks on the specified region.
 	Practically speaking, for A/B video editing it does not mean too much, 
 	and it will work as expected; however, as a general rule apply any CGI
 	(graphic overlays with pixbuf or titles with pango) on tracks higher than
@@ -502,7 +502,7 @@ Entities and Parameterisation:
 	
 	There are a couple of rules of usage. The melted LOAD command and melt
 	command line tool require you to preface the URL with "xml:" because
-	the query string destroys the filename extension matching peformed by
+	the query string destroys the filename extension matching performed by
 	the auto-loader. Also, melt looks for '=' to tokenise property settings.
 	Therefore, one uses ':' between name and value instead of '='. Finally,
 	since melt is run from the shell, one must enclose the URL within single
@@ -515,7 +515,7 @@ Entities and Parameterisation:
 	
 	Technically, the entity declaration is not needed in the head of the XML
 	document if you always supply the parameter. However, you run the risk
-	of unpredictable behviour without one. Therefore, it is safest and a best
+	of unpredictable behaviour without one. Therefore, it is safest and a best
 	practice to always supply an entity declaration. It is improves the 
 	readability as one does not need to search for the entity references to 
 	see what parameters are available.

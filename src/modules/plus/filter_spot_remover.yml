@@ -1,0 +1,29 @@
+schema_version: 0.1
+type: filter
+identifier: spot_remover
+title: Spot Remover
+version: 1
+copyright: Meltytech, LLC
+creator: Brian Matherly
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Replace an area with interpolated pixels.
+  
+  The new pixel values are interpolated from the nearest pixels immediately
+  outside of the specified area.
+parameters:
+  - identifier: rect
+    title: Rectangle
+    description: >
+      Defines the rectangle of the area that will be removed.
+      
+      Format is: "X Y W H".
+      
+      X, Y, W, H are assumed to be pixel units unless they have the suffix '%'.
+    type: rect
+    default: "0 0 10% 10%"
+    readonly: no
+    mutable: yes

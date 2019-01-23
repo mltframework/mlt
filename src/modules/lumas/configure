@@ -6,7 +6,7 @@ then
 Luma options:
 
   --luma-compress         - Produce compressed (png) lumas
-  --luma-8bpp             - Produce 8 bit pgm lumas (defaut is 16 bit)
+  --luma-8bpp             - Produce 8 bit pgm lumas (default is 16 bit)
 
 EOF
 

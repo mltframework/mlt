@@ -47,7 +47,7 @@
  *      PCIe LP HD-SDI Master™ O     (model 193)
  *
  *  Note: PCIe LP HD-SDI Master™ O (model 193) is an VidPort model and supports an
- *  seperate video and audio interface. Device file:
+ *  separate video and audio interface. Device file:
  * 		/dev/sdivideotx[]	for active video data
  *  	/dev/sdiaudiotx[]	for pcm audio data
  *
@@ -411,7 +411,7 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 
 				/**
 				 * prepare sample size
-				 * MLT suports: 16bit, 32bit
+				 * MLT supports: 16bit, 32bit
 				 * LINSYS SDI boards supports: 16bit, 24bit, 32bit
 				 * we set 16bit as default
 				 **/
@@ -957,7 +957,7 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 	// if available write audio data
 	if (fh_sdi_audio) {
 
-		// count writen bytes
+		// count written bytes
 		written_bytes = 0;
 
 		// set number of samples and cut by 1600 if NTSC (handle problem of real time encoding of NTSC frequencies)
@@ -968,7 +968,7 @@ static int sdi_playout(uint8_t *vBuffer, int16_t aBuffer[MAX_AUDIO_STREAMS][MAX_
 
 		//printf("samples_total_per_track:%li\n", samples_total_per_track);
 
-		// to write blockwise 2 samples of one track we must claculate the number of bytes we want to write per write-session
+		// to write blockwise 2 samples of one track we must calculate the number of bytes we want to write per write-session
 		// 2samples = 2x16Bit = 32Bit = 4Byte
 		// 2samples = 2x32Bit = 64Bit = 8Byte
 		// set total bytes per session
@@ -1423,8 +1423,8 @@ static int writeANC(uint16_t *p, int videoline_sdiframe, uint16_t DID, int my_DB
 		// 1 DBN	(Data Block Number) inactiv: 1000000000 b9,b8,b7-b0	; SMPTE 272-M chapter15.1
 		//		*p++ = 0x200;
 
-		// 1 DBN (dynamic version0.1-beta ), should start with previus DBN of SDI-Frame
-		//	-need "previus DBN" or "current framenumber"
+		// 1 DBN (dynamic version0.1-beta ), should start with previous DBN of SDI-Frame
+		//	-need "previous DBN" or "current framenumber"
 		//		SDI-LINE:	DBN:
 		//		[1]			[1]		<< start sdi frame
 		//		[2]			[2]
@@ -1539,7 +1539,7 @@ static uint16_t checker(uint16_t *DID_pointer) {
 
 	DID_pointer++;
 
-	// while DID_pointer point to smaller addres like 'ende'
+	// while DID_pointer point to smaller address like 'ende'
 	while (DID_pointer <= ende) {
 		cs += (*DID_pointer++) & 0x1FF; // 9 x LSB
 	}

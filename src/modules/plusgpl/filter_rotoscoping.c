@@ -131,7 +131,7 @@ static int json2BCurves( cJSON *array, BPointF **points )
     return i;
 }
 
-/** Blurs \param src horizontally. \See funtion blur. */
+/** Blurs \param src horizontally. \See function blur. */
 static void blurHorizontal( uint8_t *src, uint8_t *dst, int width, int height, int radius)
 {
     int x, y, kx, yOff, total, amount, amountInit;
@@ -164,7 +164,7 @@ static void blurHorizontal( uint8_t *src, uint8_t *dst, int width, int height, i
     }
 }
 
-/** Blurs \param src vertically. \See funtion blur. */
+/** Blurs \param src vertically. \See function blur. */
 static void blurVertical( uint8_t *src, uint8_t *dst, int width, int height, int radius)
 {
     int x, y, ky, total, amount, amountInit;
@@ -194,7 +194,7 @@ static void blurVertical( uint8_t *src, uint8_t *dst, int width, int height, int
 
 /**
  * Blurs the \param map using a simple "average" blur.
- * \param map Will be blured; 1bpp
+ * \param map Will be blurred; 1bpp
  * \param width x dimension of channel stored in \param map
  * \param height y dimension of channel stored in \param map
  * \param radius blur radius
@@ -286,7 +286,7 @@ static void deCasteljau( BPointF *p1, BPointF *p2, BPointF *mid )
 /**
  * Calculates points for the cubic Bézier curve defined by \param p1 and \param p2.
  * Points are calculated until the squared distanced between neighbour points is smaller than 2.
- * \param points Pointer to list of points. Will be allocted and filled with calculated points.
+ * \param points Pointer to list of points. Will be allocated and filled with calculated points.
  * \param count Number of calculated points in \param points
  * \param size Allocated size of \param points (in elements not in bytes)
  */

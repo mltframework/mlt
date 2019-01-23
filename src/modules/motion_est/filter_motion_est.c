@@ -136,12 +136,12 @@ inline static int constrain(	int *x, int *y, int *w,	int *h,
 		h_remains = *h - top + ((*y < y2) ? *y : y2);
 		*y += *h - h_remains;
 	}
-	// Portion of macroblock moves bellow image boundry
+	// Portion of macroblock moves below image boundry
 	else if( *y + *h > bottom || y2 + *h > bottom )
 		h_remains = bottom - ((*y > y2) ?  *y : y2);
 
 	if( w_remains == *w && h_remains == *h ) return penalty;
-	if( w_remains <= 0 || h_remains <= 0) return 0;	// Block is clipped out of existance
+	if( w_remains <= 0 || h_remains <= 0) return 0;	// Block is clipped out of existence
 	penalty = (*w * *h * penalty)
 		/ ( w_remains * h_remains);		// Recipricol of the fraction of the block that remains
 
@@ -205,7 +205,7 @@ inline static int block_compare( uint8_t *block1,
 	int penalty = constrain( &x, &y, &mb_w,	&mb_h, dx, dy, 0, c->width, 0, c->height);
 
 	// Some gotchas
-	if( penalty == 0 )			// Clipped out of existance: Return worst score
+	if( penalty == 0 )			// Clipped out of existence: Return worst score
 		return MAX_MSAD;
 	else if( penalty != 1<<SHIFT )		// Nonstandard macroblock dimensions: Disable SIMD optimizizations.
 		cmp = c->compare_reference;
@@ -338,7 +338,7 @@ static inline void diamond_search(
 		best.dx = result->dx - current.dx;
 		best.dy = result->dy - current.dy;
 
-		// A better canidate was not found
+		// A better candidate was not found
 		if ( best.dx == 0 && best.dy == 0 )
 			return;
 
@@ -395,7 +395,7 @@ int ncompare (const void * a, const void * b)
 }
 
 // motion vector denoising
-// for x and y components seperately,
+// for x and y components separately,
 // change the vector to be the median value of the 9 adjacent vectors
 static void median_denoise( motion_vector *v, struct motion_est_context_s *c )
 {
@@ -510,7 +510,7 @@ static void motion_search( uint8_t *from,			//<! Image data.
 #endif
 
 	motion_vector candidates[10];
-	motion_vector *here;		// This one gets used alot (about 30 times per macroblock)
+	motion_vector *here;		// This one gets used a lot (about 30 times per macroblock)
 	int n = 0;
 
 	int i, j, count=0;

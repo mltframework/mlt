@@ -478,7 +478,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		// If we don't have one, we're in trouble...
 		if ( multitrack != NULL )
 		{
-			// The output frame will hold the 'global' data feeds (ie: those which are targetted for the final frame)
+			// The output frame will hold the 'global' data feeds (ie: those which are targeted for the final frame)
 			mlt_deque data_queue = mlt_deque_init( );
 
 			// Used to garbage collect all frames

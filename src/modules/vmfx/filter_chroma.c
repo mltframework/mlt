@@ -23,7 +23,6 @@
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
-#include <framework/mlt_geometry.h>
 
 static inline int in_range( uint8_t v, uint8_t c, int var )
 {

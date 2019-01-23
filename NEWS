@@ -1,6 +1,82 @@
 MLT Release Notes
 -----------------
 
+Version 6.12.0 - November 26, 2018
+
+This version has many important fixes plus a few new filters and support for
+encoding using VA-API.
+
+Framework
+  * Changed buffer property to be mutable and adaptive to speed property in
+    mlt_consumer.
+  * Changed macOS RELOCATABLE build to use standard app bundle layout:
+    - lib/mlt      -> ../PlugIns/mlt
+    - lib/frei0r-1 -> ../PlugIns/frei0r-1
+    - lib/ladspa   -> ../PlugIns/ladspa
+    - share/mlt    -> ../Resources/mlt
+    - share/movit  -> ../Resources/movit
+  * Fixed a_track of transitions matching deleted track in
+    mlt_tractor_remove_track().
+  * Fixed multi-thread race crash in mlt_properties_clear().
+  * Fixed possiblle null pointer crash in mlt_property_get_rect() and
+    mlt_property_get_time().
+  * Fixed non-animated strings containing ';' or '=' in mlt_animation_parse().
+  * Fixed crash in clear_property() with mlt_animation.
+
+Modules
+  * Added a generic text filter to the plus module.
+  * Added a timer filter to the plus module.
+  * Added audio timeout handling to sdl2 consumers.
+  * Added spot_remove filter to the plus module.
+  * Added dds, ico, and webp filename extensions for qimage producer.
+  * Added support for color_range property in avformat consumer:
+    "pc" or "jpeg" for full range, otherwise limited range.
+  * Added a window property to the audiowaveform filter.
+  * Added MM:SS.SS to the timer filter.
+  * Added query string param "multi" to the xml producer to force using the
+    multi consumer.
+  * Improved WebP image support in avformat producer.
+  * Integrated hwupload filter in avformat consumer if using VAAPI codec.
+  * Changed count producer to use pango if qtext not available.
+  * Changed qt moduled to not call XInitThreads()
+  * Changed color producer to only set alpha on frame if rgb24a requested or
+    not opaque.
+  * Changed the xml producer to pass quality and performance parameters to the
+    multi consumer.
+  * Fixed sdl2_audio distortion (regression in v6.10.0).
+  * Fixed dynamictext filter to not error on empty text.
+  * Fixed dynamictext aliased (regression in v6.10.0).
+  * Fixed qimage outputs premultiplied if scaled internally.
+  * Fixed crash in cbrts consumer if running property was never set.
+  * Fixed rendering edges of some typefaces in qtext producer.
+  * Fixed qimage fails to load with wrong filename extension.
+  * Fixed affine dark right and bottom edge artifacts regression in (v6.10.0).
+  * Fixed support for vp8 and vp9 with alpha channel in avformat producer.
+  * Fixed interpolation mode selection in qimage producer.
+  * Fixed crash in qimage with alpha channel.
+  * Fixed some AAC MP4 files start playing from middle in avformat producer.
+  * Fixed crash in avfilter if initialization fails.
+  * Fixed crash in mix when frame rate is very low.
+  * Fixed crash on missing luma file in composite transition.
+  * Fixed A/V sync on some files in avformat producer.
+  * Fixed seeking on audio filter with album art in avformat producer.
+  * Fixed colorspace conversion in avformat consumer.
+  
+Other
+  * Added more avformat consumer presets:
+    - alpha/Quicktime Animation
+    - alpha/vp8
+    - alpha/vp9
+    - alpha/Ut Video
+    - lossless/Ut Video
+  * Added square video profiles:
+    - square_1080p_30
+    - square_1080p_60
+  * Added support for nodejs to the swig bindings.
+  * Changed configure script to require opencv module be explicitly enabled.
+  * Numerous spelling fixes in source code and comments thanks to codespell.
+
+
 Version 6.10.0 - July 2, 2018
 
 This version fixes bugs and supports serializing animation keyframes with a
@@ -172,7 +248,7 @@ Modules
   * Fixed reporting accurage length for image sequences in qimage and pixbuf.
   * Fixed extra audio samples added to end of file in avformat consumer.
   * Fixed rawvideo export in avformat consumer.
-  * Fixed multi-threading wtih FFmpeg 3.2+ in avformat module.
+  * Fixed multi-threading with FFmpeg 3.2+ in avformat module.
   * Fixed JPEG album art in avformat producer.
   * Removed filter_avresample (dropped by FFmpeg).
   * Stop flushing audio buffer in decklink consumer.
@@ -212,7 +288,7 @@ Modules
   * Added qtblend transition and filter to qt module.
   * Added ndi (NewTek NDI) module with producer and consumer.
   * Added opencv module with opencv_tracker filter.
-  * Added line_spacing, strech, wrap_width, and wrap_type properties to
+  * Added line_spacing, stretch, wrap_width, and wrap_type properties to
     pango producer.
   * Added oblique value for style property to pango producer.
   * Added fontmap-reload event to pango producer.
@@ -362,7 +438,7 @@ Modules
 Version 0.9.6 - March 1, 2015
 
 A major regression slipped into the 0.9.4 release plus some other good fixes
-rolled in just afer that release prompting this new release. Please discontinue
+rolled in just after that release prompting this new release. Please discontinue
 using version 0.9.4 and upgrade.
 
 
@@ -425,7 +501,7 @@ Framework
 Modules
   * Renamed "qimage" module to "qt".
   * Added support for Qt 5.
-  * Added qtext producer, which is now prefered by dynamictext filter over pango.
+  * Added qtext producer, which is now preferred by dynamictext filter over pango.
   * Added xml-nogl consumer.
   * Consolidated dgraft, burningtv, and rotoscoping into new plusgpl module.
   * Added vid.stab module with vidstab and deshake filters.
@@ -540,7 +616,7 @@ Version 0.7.8 - February 13, 2012
 This is a bugfix and minor enhancement release.
 
 * Improved support for v53 of libavcodec/libavformat
-* Added "multi" consumer - multiple, simultanous outputs
+* Added "multi" consumer - multiple, simultaneous outputs
 * Added framerate adaption to "consumer" producer and "multi" consumer
 * Can now use YADIF deinterlacer with decklink producer
 * Added "rtaudio" consumer for native audio support on multiple platforms
@@ -611,7 +687,7 @@ Other
  * Added presets for DVD, DV, x264, and WebM encoding.
 
 Since FFmpeg forked and there were a few releases, there is no recommended
-version at this time. With that said, there were changes to accomodate the
+version at this time. With that said, there were changes to accommodate the
 API changes with some moderate testing of the 0.6, 0.7, and 0.8 series
 releases of both FFmpeg and Libav.
 
@@ -641,7 +717,7 @@ The recommended version of FFmpeg for use with this release is 0.6.1.
 
 Version 0.7.0 - March 27, 2011
 
-This is a major new release due to signficant additions to API, framework,
+This is a major new release due to significant additions to API, framework,
 and build.
 
 Build

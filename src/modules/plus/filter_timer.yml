@@ -16,11 +16,12 @@ parameters:
     title: Format
     type: string
     description: >
-      The time format of the overlayed timer text.
+      The time format of the overlaid timer text.
     values:
       - HH:MM:SS
       - HH:MM:SS.S
       - MM:SS
+      - MM:SS.SS
       - SS
       - SS.S
     default: SS.SS

@@ -88,6 +88,10 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 	{
 		snprintf( text, MAX_TEXT_LEN, "%02d:%02d", hours * 60 + mins, (int)secs );
 	}
+	else if ( !strcmp( format, "MM:SS.SS" ) )
+	{
+		snprintf( text, MAX_TEXT_LEN, "%02d:%05.2f", hours * 60 + mins, secs );
+	}
 	else if ( !strcmp( format, "SS" ) )
 	{
 		snprintf( text, MAX_TEXT_LEN, "%02d", (int)value );
@@ -102,43 +106,18 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 	}
 }
 
-static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
-{
-	int error = 0;
-	mlt_filter filter = mlt_frame_pop_service( frame );
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_filter text_filter = mlt_properties_get_data( properties, "_text_filter", NULL );
-	mlt_properties text_filter_properties = MLT_FILTER_PROPERTIES( text_filter );
-
-	// Configure this filter
-	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-
-	char result[MAX_TEXT_LEN] = "";
-	get_timer_str( filter, frame, result );
-	mlt_properties_set( text_filter_properties, "argument", (char*)result );
-
-	mlt_properties_pass_list( text_filter_properties, properties,
-		"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline" );
-	mlt_filter_process( text_filter, frame );
-
-	// Get the image
-	*format = mlt_image_rgb24a;
-	error = mlt_frame_get_image( frame, image, format, width, height, writable );
-
-	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-
-	return error;
-}
-
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	// Push the filter on to the stack
-	mlt_frame_push_service( frame, filter );
-
-	// Push the get_image on to the stack
-	mlt_frame_push_get_image( frame, filter_get_image );
-
-	return frame;
+	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_filter text_filter = mlt_properties_get_data( properties, "_text_filter", NULL );
+	mlt_properties text_filter_properties = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE(text_filter));
+	char* result = calloc( 1, MAX_TEXT_LEN );
+	get_timer_str( filter, frame, result );
+	mlt_properties_set( text_filter_properties, "argument", result );
+	free( result );
+	mlt_properties_pass_list( text_filter_properties, properties,
+		"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline in out" );
+	return mlt_filter_process( text_filter, frame );
 }
 
 /** Constructor for the filter.
@@ -146,7 +125,10 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 mlt_filter filter_timer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
-	mlt_filter text_filter = mlt_factory_filter( profile, "text", NULL );
+	mlt_filter text_filter = mlt_factory_filter( profile, "qtext", NULL );
+
+	if( !text_filter )
+		text_filter = mlt_factory_filter( profile, "text", NULL );
 
 	if( !text_filter )
 		mlt_log_warning( MLT_FILTER_SERVICE(filter), "Unable to create text filter.\n" );
@@ -175,7 +157,6 @@ mlt_filter filter_timer_init( mlt_profile profile, mlt_service_type type, const 
 		mlt_properties_set( my_properties, "halign", "left" );
 		mlt_properties_set( my_properties, "valign", "top" );
 		mlt_properties_set( my_properties, "outline", "0" );
-
 		mlt_properties_set_int( my_properties, "_filter_private", 1 );
 
 		filter->process = filter_process;

@@ -1,7 +1,5 @@
 /*
  * qimage_wrapper.h -- a QT/QImage based producer for MLT
- * Copyright (C) 2006 Visual Media
- * Author: Charles Yates <charles.yates@gmail.com>
  *
  * NB: This module is designed to be functionally equivalent to the 
  * gtk2 image loading module so it can be used as replacement.
@@ -43,6 +41,7 @@ struct producer_qimage_s
 	uint8_t *current_alpha;
 	int current_width;
 	int current_height;
+	int alpha_size;
 	mlt_cache_item image_cache;
 	mlt_cache_item alpha_cache;
 	mlt_cache_item qimage_cache;

@@ -1,11 +1,69 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: shape
 title: Shape Alpha
-version: 1
+version: 3
 copyright: Visual Media FX ?
 creator: Charles Yates
 license: LGPLv2.1
 language: en
 tags:
   - Video
+
+parameters:
+  - identifier: resource
+    argument: yes
+    title: File
+    type: string
+    description: >
+      The name of a file or MLT producer URL. To use a luma wipe from the lumas
+      module, put % in front of the base name of the luma file e.g. %luma16.pgm
+    required: true
+    mutable: yes
+
+  - identifier: mix
+    title: Threshold
+    type: float
+    description: >
+      Convert alpha or luma values below this level as opaque and above this
+      level as transparent. This is mostly useful for luma wipe images.
+    unit: '%'
+    minimum: 0
+    maximum: 100
+    default: 100
+    mutable: yes
+
+  - identifier: softness
+    title: Softness
+    type: float
+    mutable: yes
+    description: >
+      When using mix (threshold) how soft to make the edge around the threshold.
+      0.0 = no softness, 1.0 = too soft
+    minimum: 0
+    maximum: 1
+    default: 0.1
+    mutable: yes
+
+  - identifier: invert
+    title: Invert
+    type: boolean
+    description: Use the inverse of the alpha or luma value.
+    default: no
+    mutable: yes
+
+  - identifier: use_luminance
+    title: Use Luma
+    type: boolean
+    description: Use the image luma instead of the alpha channel.
+    default: no
+    mutable: yes
+
+  - identifier: use_mix
+    title: Use Threshold
+    type: boolean
+    description: >
+      Whether to apply a threshold filter to the luma or alpha or not. If not,
+      luma or alpha value of the resource (File) is copied to the alpha channel.
+    default: no
+    mutable: yes

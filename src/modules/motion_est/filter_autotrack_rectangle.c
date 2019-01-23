@@ -359,7 +359,7 @@ mlt_filter filter_autotrack_rectangle_init( mlt_profile profile, mlt_service_typ
 	{
 		this->process = filter_process;
 
-		// Initialize with the supplied geometry if ther is one
+		// Initialize with the supplied geometry if there is one
 		if( arg != NULL ) 
 			mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "geometry", arg );
 		else

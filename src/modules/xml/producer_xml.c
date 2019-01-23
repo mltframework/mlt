@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -930,7 +930,7 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		mlt_properties_set( properties, "mlt_type", NULL );
 		mlt_properties_set( properties, "mlt_service", NULL );
 
-		// Propogate the properties
+		// Propagate the properties
 		qualify_property( context, properties, "resource" );
 		qualify_property( context, properties, "luma" );
 		qualify_property( context, properties, "luma.resource" );
@@ -1025,7 +1025,7 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 		mlt_properties_set( properties, "mlt_type", NULL );
 		mlt_properties_set( properties, "mlt_service", NULL );
 
-		// Propogate the properties
+		// Propagate the properties
 		qualify_property( context, properties, "resource" );
 		qualify_property( context, properties, "luma" );
 		qualify_property( context, properties, "luma.resource" );
@@ -1042,8 +1042,6 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 			if ( parent_type == mlt_tractor_type )
 			{
 				mlt_field field = mlt_tractor_field( MLT_TRACTOR( parent ) );
-				if ( mlt_properties_get_int( properties, "a_track" ) == mlt_properties_get_int( properties, "b_track" ) )
-					mlt_properties_set_int( properties, "b_track", mlt_properties_get_int( properties, "a_track" ) + 1 );
 				mlt_field_plant_transition( field, MLT_TRANSITION( effect ),
 											mlt_properties_get_int( properties, "a_track" ),
 											mlt_properties_get_int( properties, "b_track" ) );
@@ -1136,7 +1134,7 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 					if ( !context->qglsl )
 					{
 						mlt_properties_pass_list( consumer_properties, properties,
-							"real_time, deinterlace_method, rescale, progressive, top_field_first" );
+							"real_time, deinterlace_method, rescale, progressive, top_field_first, channels, channel_layout" );
 
 						// We only really know how to optimize real_time for the avformat consumer.
 						const char *service_name = mlt_properties_get( properties, "mlt_service" );
@@ -1410,7 +1408,7 @@ static void params_to_entities( deserialise_context context )
 	{	
 		int i;
 		
-		// Add our params as entitiy declarations
+		// Add our params as entity declarations
 		for ( i = 0; i < mlt_properties_count( context->params ); i++ )
 		{
 			xmlChar *name = ( xmlChar* )mlt_properties_get_name( context->params, i );
@@ -1581,7 +1579,7 @@ static void parse_url( mlt_properties properties, char *url )
 		mlt_properties_set( properties, name, value );
 }
 
-// Quick workaround to avoid unecessary libxml2 warnings
+// Quick workaround to avoid unnecessary libxml2 warnings
 static int file_exists( char *name )
 {
 	int exists = 0;
@@ -1594,7 +1592,7 @@ static int file_exists( char *name )
 	return exists;
 }
 
-// This function will add remaing services in the context service stack marked
+// This function will add remaining services in the context service stack marked
 // with a "xml_retain" property to a property named "xml_retain" on the returned
 // service. The property is a mlt_properties data property.
 
@@ -1658,7 +1656,7 @@ static deserialise_context context_new( mlt_profile profile )
 	return context;
 }
 
-void context_close( deserialise_context context )
+static void context_close( deserialise_context context )
 {
 	mlt_properties_close( context->producer_map );
 	mlt_properties_close( context->destructors );

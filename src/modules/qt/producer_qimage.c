@@ -1,7 +1,5 @@
 /*
  * producer_image.c -- a QT/QImage based producer for MLT
- * Copyright (C) 2006 Visual Media
- * Author: Charles Yates <charles.yates@gmail.com>
  *
  * NB: This module is designed to be functionally equivalent to the 
  * gtk2 image loading module so it can be used as replacement.
@@ -281,7 +279,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 	self->current_image = mlt_cache_item_data( self->image_cache, NULL );
 	self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
-	self->current_alpha = mlt_cache_item_data( self->alpha_cache, NULL );
+	self->current_alpha = mlt_cache_item_data( self->alpha_cache, &self->alpha_size );
 	refresh_image( self, frame, *format, *width, *height );
 
 	// Get width and height (may have changed during the refresh)
@@ -306,9 +304,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Clone the alpha channel
 		if ( self->current_alpha )
 		{
-			image_copy = mlt_pool_alloc( self->current_width * self->current_height );
-			memcpy( image_copy, self->current_alpha, self->current_width * self->current_height );
-			mlt_frame_set_alpha( frame, image_copy, self->current_width * self->current_height, mlt_pool_release );
+            if ( !self->alpha_size )
+                self->alpha_size = self->current_width * self->current_height;
+			uint8_t * alpha_copy = mlt_pool_alloc( self->alpha_size );
+			memcpy( alpha_copy, self->current_alpha, self->alpha_size );
+			mlt_frame_set_alpha( frame, alpha_copy, self->alpha_size, mlt_pool_release );
 		}
 	}
 	else

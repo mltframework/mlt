@@ -60,6 +60,9 @@ struct consumer_sdl_s
 	pthread_mutex_t refresh_mutex;
 	int refresh_count;
 	int is_purge;
+#ifdef _WIN32
+	int no_quit_subsystem;
+#endif
 };
 
 /** Forward references to static functions.
@@ -182,7 +185,6 @@ int consumer_start( mlt_consumer parent )
 			mlt_log_error( MLT_CONSUMER_SERVICE(parent), "Failed to initialize SDL: %s\n", SDL_GetError() );
 			return -1;
 		}
-
 		self->running = 1;
 		self->joined = 0;
 		pthread_create( &self->thread, NULL, consumer_thread, self );
@@ -222,6 +224,10 @@ int consumer_stop( mlt_consumer parent )
 		pthread_mutex_lock( &self->audio_mutex );
 		pthread_cond_broadcast( &self->audio_cond );
 		pthread_mutex_unlock( &self->audio_mutex );
+#ifdef _WIN32
+		if ( !self->no_quit_subsystem )
+#endif
+		SDL_QuitSubSystem( SDL_INIT_AUDIO );
 	}
 
 	return 0;
@@ -379,6 +385,9 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 				{
 					mlt_log_warning( MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n" );
 					pthread_mutex_unlock( &self->audio_mutex );
+#ifdef _WIN32
+					self->no_quit_subsystem = 1;
+#endif
 					return 1;
 				}
 			}
@@ -558,7 +567,7 @@ static void *consumer_thread( void *arg )
 	// Video thread
 	pthread_t thread;
 
-	// internal intialization
+	// internal initialization
 	int init_audio = 1;
 	int init_video = 1;
 	mlt_frame frame = NULL;

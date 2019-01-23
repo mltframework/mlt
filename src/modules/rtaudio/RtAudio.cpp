@@ -204,7 +204,7 @@ RtAudio :: RtAudio( RtAudio::Api api )
   // It should not be possible to get here because the preprocessor
   // definition __RTAUDIO_DUMMY__ is automatically defined if no
   // API-specific definitions are passed to the compiler. But just in
-  // case something weird happens, we'll thow an error.
+  // case something weird happens, we'll throw an error.
   std::string errorText = "\nRtAudio: no compiled API support found ... critical error!!\n\n";
   throw( RtAudioError( errorText, RtAudioError::UNSPECIFIED ) );
 }
@@ -2712,13 +2712,13 @@ static long asioMessages( long selector, long value, void* message, double* opt 
 
 RtApiAsio :: RtApiAsio()
 {
-  // ASIO cannot run on a multi-threaded appartment. You can call
-  // CoInitialize beforehand, but it must be for appartment threading
+  // ASIO cannot run on a multi-threaded apartment. You can call
+  // CoInitialize beforehand, but it must be for apartment threading
   // (in which case, CoInitilialize will return S_FALSE here).
   coInitialized_ = false;
   HRESULT hr = CoInitialize( NULL ); 
   if ( FAILED(hr) ) {
-    errorText_ = "RtApiAsio::ASIO requires a single-threaded appartment. Call CoInitializeEx(0,COINIT_APARTMENTTHREADED)";
+    errorText_ = "RtApiAsio::ASIO requires a single-threaded apartment. Call CoInitializeEx(0,COINIT_APARTMENTTHREADED)";
     error( RtAudioError::WARNING );
   }
   coInitialized_ = true;
@@ -6557,7 +6557,7 @@ void RtApiDs :: callbackEvent()
     if ( stream_.mode == DUPLEX ) {
       if ( safeReadPointer < endRead ) {
         if ( duplexPrerollBytes <= 0 ) {
-          // Pre-roll time over. Be more agressive.
+          // Pre-roll time over. Be more aggressive.
           int adjustment = endRead-safeReadPointer;
 
           handle->xrun[1] = true;
@@ -7957,7 +7957,7 @@ void RtApiAlsa :: callbackEvent()
     }
 
     if ( result < (int) stream_.bufferSize ) {
-      // Either an error or overrun occured.
+      // Either an error or overrun occurred.
       if ( result == -EPIPE ) {
         snd_pcm_state_t state = snd_pcm_state( handle[1] );
         if ( state == SND_PCM_STATE_XRUN ) {
@@ -8027,7 +8027,7 @@ void RtApiAlsa :: callbackEvent()
     }
 
     if ( result < (int) stream_.bufferSize ) {
-      // Either an error or underrun occured.
+      // Either an error or underrun occurred.
       if ( result == -EPIPE ) {
         snd_pcm_state_t state = snd_pcm_state( handle[0] );
         if ( state == SND_PCM_STATE_XRUN ) {

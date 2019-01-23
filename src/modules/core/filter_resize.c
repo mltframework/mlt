@@ -62,7 +62,7 @@ static uint8_t *resize_alpha( uint8_t *input, int owidth, int oheight, int iwidt
 	return output;
 }
 
-static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight, int bpp )
+static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *input, int iwidth, int iheight, int bpp, mlt_image_format format, uint8_t alpha_value )
 {
 	// Calculate strides
 	int istride = iwidth * bpp;
@@ -75,7 +75,7 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 	uint8_t *p = output;
 
 	// Optimisation point
-	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || oheight <= 6 ) )
+	if ( output == NULL || input == NULL || ( owidth <= 6 || oheight <= 6 || iwidth <= 6 || iheight <= 6 ) )
 	{
 		return;
 	}
@@ -85,7 +85,17 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 		return;
 	}
 
-	if ( bpp == 2 )
+	if ( format == mlt_image_rgb24a )
+	{
+		while ( size -- )
+		{
+			*p ++ = 0;
+			*p ++ = 0;
+			*p ++ = 0;
+			*p ++ = alpha_value;
+		}
+	}
+	else if ( bpp == 2 )
 	{
 		while( size -- )
 		{
@@ -122,7 +132,7 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 	resizes.
 */
 
-static uint8_t *frame_resize_image( mlt_frame frame, int owidth, int oheight, int bpp )
+static uint8_t *frame_resize_image( mlt_frame frame, int owidth, int oheight, mlt_image_format format )
 {
 	// Get properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -132,6 +142,8 @@ static uint8_t *frame_resize_image( mlt_frame frame, int owidth, int oheight, in
 	uint8_t *alpha = mlt_frame_get_alpha( frame );
 	int alpha_size = 0;
 	mlt_properties_get_data( properties, "alpha", &alpha_size );
+	int bpp = 0;
+	mlt_image_format_size( format, owidth, oheight, &bpp );
 
 	int iwidth = mlt_properties_get_int( properties, "width" );
 	int iheight = mlt_properties_get_int( properties, "height" );
@@ -140,18 +152,17 @@ static uint8_t *frame_resize_image( mlt_frame frame, int owidth, int oheight, in
 	if ( iwidth < owidth || iheight < oheight )
 	{
 		uint8_t alpha_value = mlt_properties_get_int( properties, "resize_alpha" );
-
 		// Create the output image
 		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * bpp );
 
 		// Call the generic resize
-		resize_image( output, owidth, oheight, input, iwidth, iheight, bpp );
+		resize_image( output, owidth, oheight, input, iwidth, iheight, bpp, format, alpha_value );
 
 		// Now update the frame
 		mlt_frame_set_image( frame, output, owidth * ( oheight + 1 ) * bpp, mlt_pool_release );
 
 		// We should resize the alpha too
-		if ( alpha && alpha_size >= iwidth * iheight )
+		if ( format != mlt_image_rgb24a && alpha && alpha_size >= iwidth * iheight )
 		{
 			alpha = resize_alpha( alpha, owidth, oheight, iwidth, iheight, alpha_value );
 			if ( alpha )
@@ -271,9 +282,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if ( error == 0 && *image && *format != mlt_image_yuv420p )
 	{
-		int bpp;
-		mlt_image_format_size( *format, owidth, oheight, &bpp );
-		*image = frame_resize_image( frame, *width, *height, bpp );
+		*image = frame_resize_image( frame, *width, *height, *format );
 	}
 
 	return error;

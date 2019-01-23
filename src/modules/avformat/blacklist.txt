@@ -23,6 +23,7 @@ detelecine
 fifo
 format
 fps
+framerate
 framestep
 frei0r
 il
@@ -30,6 +31,7 @@ interlace
 kerndeint
 ladspa
 mcdeint
+minterpolate
 mpdecimate
 noformat
 null

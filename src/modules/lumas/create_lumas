@@ -5,34 +5,55 @@
 bpp=16
 [ -f .8bit ] && bpp=8
 
-for i in PAL NTSC
+for i in PAL NTSC 16_9 9_16 square
 do
 	mkdir -p $i
 	rm -f $i/*.pgm $i/*.png
 
-	[ "$i" = "PAL" ] && h=576 || h=480
-	./luma -h $h -bpp $bpp > $i/luma01.pgm
-	./luma -h $h -bpp $bpp -bands $h > $i/luma02.pgm
-	./luma -h $h -bpp $bpp -hmirror 1 > $i/luma03.pgm
-	./luma -h $h -bpp $bpp -bands $h -vmirror 1 > $i/luma04.pgm
-	./luma -h $h -bpp $bpp -offset 32768 -dmirror 1 > $i/luma05.pgm
-	./luma -h $h -bpp $bpp -offset 32768 -dmirror 1 -flip 1 > $i/luma06.pgm
-	./luma -h $h -bpp $bpp -offset 32768 -dmirror 1 -quart 1 > $i/luma07.pgm
-	./luma -h $h -bpp $bpp -offset 32768 -dmirror 1 -quart 1 -flip 1 > $i/luma08.pgm
-	./luma -h $h -bpp $bpp -bands 12 -rband 0 > $i/luma09.pgm
-	./luma -h $h -bpp $bpp -bands 12 -rband 0 -rotate 1 -flop 1 > $i/luma10.pgm
-	./luma -h $h -bpp $bpp -bands 12 -rband 1 > $i/luma11.pgm
-	./luma -h $h -bpp $bpp -bands 12 -rband 1 -vmirror 1 > $i/luma12.pgm
-	./luma -h $h -bpp $bpp -bands 12 -rband 1 -rotate 1 -flop 1 > $i/luma13.pgm
-	./luma -h $h -bpp $bpp -bands 12 -rband 1 -rotate 1 -vmirror 1 > $i/luma14.pgm
-	./luma -h $h -bpp $bpp -offset 32768 -dmirror 1 -hmirror 1 > $i/luma15.pgm
-	./luma -h $h -bpp $bpp -type 1 > $i/luma16.pgm
-	./luma -h $h -bpp $bpp -type 1 -bands 2 -rband 1 > $i/luma17.pgm
-	./luma -h $h -bpp $bpp -type 2 > $i/luma18.pgm
-	./luma -h $h -bpp $bpp -type 2 -quart 1 > $i/luma19.pgm
-	./luma -h $h -bpp $bpp -type 2 -quart 1 -flip 1 > $i/luma20.pgm
-	./luma -h $h -bpp $bpp -type 2 -quart 1 -bands 2 > $i/luma21.pgm
-	./luma -h $h -bpp $bpp -type 3 > $i/luma22.pgm
+	case $i in
+	NTSC)
+		w=720
+		h=480
+		;;
+	PAL)
+		w=720
+		h=576
+		;;
+	16_9)
+		w=1920
+		h=1080
+		;;
+	9_16)
+		w=1080
+		h=1920
+		;;
+	square)
+		w=1080
+		h=1080
+		;;
+	esac
+	./luma -w $w -h $h -bpp $bpp > $i/luma01.pgm
+	./luma -w $w -h $h -bpp $bpp -bands $h > $i/luma02.pgm
+	./luma -w $w -h $h -bpp $bpp -hmirror 1 > $i/luma03.pgm
+	./luma -w $w -h $h -bpp $bpp -bands $h -vmirror 1 > $i/luma04.pgm
+	./luma -w $w -h $h -bpp $bpp -offset 32768 -dmirror 1 > $i/luma05.pgm
+	./luma -w $w -h $h -bpp $bpp -offset 32768 -dmirror 1 -flip 1 > $i/luma06.pgm
+	./luma -w $w -h $h -bpp $bpp -offset 32768 -dmirror 1 -quart 1 > $i/luma07.pgm
+	./luma -w $w -h $h -bpp $bpp -offset 32768 -dmirror 1 -quart 1 -flip 1 > $i/luma08.pgm
+	./luma -w $w -h $h -bpp $bpp -bands 12 -rband 0 > $i/luma09.pgm
+	./luma -w $w -h $h -bpp $bpp -bands 12 -rband 0 -rotate 1 -flop 1 > $i/luma10.pgm
+	./luma -w $w -h $h -bpp $bpp -bands 12 -rband 1 > $i/luma11.pgm
+	./luma -w $w -h $h -bpp $bpp -bands 12 -rband 1 -vmirror 1 > $i/luma12.pgm
+	./luma -w $w -h $h -bpp $bpp -bands 12 -rband 1 -rotate 1 -flop 1 > $i/luma13.pgm
+	./luma -w $w -h $h -bpp $bpp -bands 12 -rband 1 -rotate 1 -vmirror 1 > $i/luma14.pgm
+	./luma -w $w -h $h -bpp $bpp -offset 32768 -dmirror 1 -hmirror 1 > $i/luma15.pgm
+	./luma -w $w -h $h -bpp $bpp -type 1 > $i/luma16.pgm
+	./luma -w $w -h $h -bpp $bpp -type 1 -bands 2 -rband 1 > $i/luma17.pgm
+	./luma -w $w -h $h -bpp $bpp -type 2 > $i/luma18.pgm
+	./luma -w $w -h $h -bpp $bpp -type 2 -quart 1 > $i/luma19.pgm
+	./luma -w $w -h $h -bpp $bpp -type 2 -quart 1 -flip 1 > $i/luma20.pgm
+	./luma -w $w -h $h -bpp $bpp -type 2 -quart 1 -bands 2 > $i/luma21.pgm
+	./luma -w $w -h $h -bpp $bpp -type 3 > $i/luma22.pgm
 
 	if [ -f .compress ]
 	then 

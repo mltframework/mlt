@@ -227,9 +227,9 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
   }
 #elif defined(__APPLE__) && defined(RELOCATABLE)
   {
-    ladspa_path = malloc( strlen (mlt_environment ("MLT_APPDIR")) + strlen ("/lib/ladspa") + 1 );
+    ladspa_path = malloc( strlen (mlt_environment ("MLT_APPDIR")) + strlen ("/PlugIns/ladspa") + 1 );
     strcpy (ladspa_path,  mlt_environment ("MLT_APPDIR"));
-    strcat (ladspa_path, "/lib/ladspa" );
+    strcat (ladspa_path, "/PlugIns/ladspa" );
   }
 #else
   if (!ladspa_path)

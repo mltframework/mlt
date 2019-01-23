@@ -1,6 +1,6 @@
 /*
  * filter_swscale.c -- image scaling filter
- * Copyright (C) 2008-2017 Meltytech, LLC
+ * Copyright (C) 2008-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -88,23 +88,19 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 		interp = SWS_LANCZOS;
 	else if ( strcmp( interps, "spline" ) == 0 )
 		interp = SWS_SPLINE;
-	interp |= SWS_ACCURATE_RND;
+
+	// Set swscale flags to get good quality
+	interp |= SWS_FULL_CHR_H_INP | SWS_FULL_CHR_H_INT | SWS_ACCURATE_RND;
 
 	// Determine the output image size.
 	int out_size = mlt_image_format_size( *format, owidth, oheight, NULL );
 
-	// Set swscale flags to get good quality
 	switch ( *format )
 	{
 		case mlt_image_yuv422:
-			interp |= SWS_FULL_CHR_H_INP;
-			break;
 		case mlt_image_rgb24:
-			interp |= SWS_FULL_CHR_H_INT;
-			break;
 		case mlt_image_rgb24a:
 		case mlt_image_opengl:
-			interp |= SWS_FULL_CHR_H_INT;
 			break;
 		default:
 			// XXX: we only know how to rescale packed formats

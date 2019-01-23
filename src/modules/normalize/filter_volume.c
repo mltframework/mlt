@@ -227,7 +227,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	if ( max_gain > 0 && gain > max_gain )
 		gain = max_gain;
 
-	// Initialise filter's previous gain value to prevent an inadvertant jump from 0
+	// Initialise filter's previous gain value to prevent an inadvertent jump from 0
 	mlt_position last_position = mlt_properties_get_position( filter_props, "_last_position" );
 	mlt_position current_position = mlt_frame_get_position( frame );
 	if ( mlt_properties_get( filter_props, "_previous_gain" ) == NULL

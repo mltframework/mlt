@@ -661,7 +661,7 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 	}
 	if ( self->seekable )
 	{
-		// Do a more rigourous test of seekable on a disposable context
+		// Do a more rigorous test of seekable on a disposable context
 		if ( format->nb_streams > 0 && format->streams[0]->codec && format->streams[0]->codec->codec_id != AV_CODEC_ID_WEBP )
 			self->seekable = av_seek_frame( format, -1, format->start_time, AVSEEK_FLAG_BACKWARD ) >= 0;
 		mlt_properties_set_int( properties, "seekable", self->seekable );
@@ -1142,55 +1142,6 @@ static void get_audio_streams_info( producer_avformat self )
 		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
 }
 
-static int set_luma_transfer( struct SwsContext *context, int src_colorspace,
-	int dst_colorspace, int src_full_range, int dst_full_range )
-{
-	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
-	const int *dst_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
-	int brightness = 0;
-	int contrast = 1 << 16;
-	int saturation = 1  << 16;
-	int src_range = src_full_range ? 1 : 0;
-	int dst_range = dst_full_range ? 1 : 0;
-
-	switch ( src_colorspace )
-	{
-	case 170:
-	case 470:
-	case 601:
-	case 624:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-		break;
-	case 240:
-		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-		break;
-	case 709:
-		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		break;
-	default:
-		break;
-	}
-	switch ( dst_colorspace )
-	{
-	case 170:
-	case 470:
-	case 601:
-	case 624:
-		dst_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
-		break;
-	case 240:
-		dst_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
-		break;
-	case 709:
-		dst_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
-		break;
-	default:
-		break;
-	}
-	return sws_setColorspaceDetails( context, src_coefficients, src_range, dst_coefficients, dst_range,
-		brightness, contrast, saturation );
-}
-
 static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
 {
 	switch ( pix_fmt )
@@ -1248,7 +1199,7 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
 }
 
 /**
- * Handle deprecated pixel format (JPEG range in YUV420P for exemple).
+ * Handle deprecated pixel format (JPEG range in YUV420P for example).
  *
  * Replace pix_fmt with the official pixel format to use.
  * @return 0 if no pix_fmt replacement, 1 otherwise
@@ -1330,7 +1281,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 	av_opt_set_int( sws, "dstw", slice_w, 0 );
 	av_opt_set_int( sws, "dsth", h, 0 );
 	av_opt_set_int( sws, "dst_format", ctx->dst_format, 0 );
-	av_opt_set_int( sws, "sws_flags", ctx->flags | SWS_FULL_CHR_H_INP, 0 );
+	av_opt_set_int( sws, "sws_flags", ctx->flags, 0 );
 
 	av_opt_set_int( sws, "src_h_chr_pos", -513, 0 );
 	av_opt_set_int( sws, "src_v_chr_pos", src_v_chr_pos, 0 );
@@ -1344,7 +1295,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 		return 0;
 	}
 
-	set_luma_transfer( sws, ctx->src_colorspace, ctx->dst_colorspace, ctx->src_full_range, ctx->dst_full_range );
+	mlt_set_luma_transfer( sws, ctx->src_colorspace, ctx->dst_colorspace, ctx->src_full_range, ctx->dst_full_range );
 
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(55, 0, 100)
 #define PIX_DESC_BPP(DESC) (DESC.step_minus1 + 1)
@@ -1387,7 +1338,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
 {
-	int flags = SWS_BICUBIC | SWS_ACCURATE_RND;
+	int flags = mlt_default_sws_flags;
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
 	int result = self->yuv_colorspace;
 
@@ -1440,7 +1391,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		out_stride[0] = width;
 		out_stride[1] = width >> 1;
 		out_stride[2] = width >> 1;
-		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, self->full_luma ) )
+		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, self->full_luma ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
@@ -1449,12 +1400,12 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	else if ( *format == mlt_image_rgb24 )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_RGB24, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_RGB24, flags, NULL, NULL, NULL);
 		uint8_t *out_data[4];
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGB24, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
+		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );
@@ -1462,12 +1413,12 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_RGBA, flags | SWS_FULL_CHR_H_INT, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_RGBA, flags, NULL, NULL, NULL);
 		uint8_t *out_data[4];
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGBA, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
+		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );
@@ -1498,7 +1449,8 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		av_image_fill_arrays(ctx.out_data, ctx.out_stride, buffer, ctx.dst_format, width, height, IMAGE_ALIGN);
 
-		if ( !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
+		int sliced = !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE");
+		if ( sliced ) {
 			ctx.slice_w = ( width < 1000 )
 				? ( 256 >> frame->interlaced_frame )
 				: ( 512 >> frame->interlaced_frame );
@@ -1508,11 +1460,12 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		c = ( width + ctx.slice_w - 1 ) / ctx.slice_w;
 		int last_slice_w = width - ctx.slice_w * (c - 1);
-		c *= frame->interlaced_frame ? 2 : 1;
 
-		if ( (last_slice_w % 8) == 0 && !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") ) {
+		if ( sliced && (last_slice_w % 8) == 0 && !(ctx.src_format == AV_PIX_FMT_YUV422P && last_slice_w % 16) ) {
+			c *= frame->interlaced_frame ? 2 : 1;
 			mlt_slices_run_normal( c, sliced_h_pix_fmt_conv_proc, &ctx );
 		} else {
+			c = frame->interlaced_frame ? 2 : 1;
 			ctx.slice_w = width;
 			for ( i = 0 ; i < c; i++ )
 				sliced_h_pix_fmt_conv_proc( i, i, c, &ctx );
@@ -1524,14 +1477,14 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	{
 #if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_YUYV422, flags, NULL, NULL, NULL);
 #else
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-			width, height, AV_PIX_FMT_YUYV422, flags | SWS_FULL_CHR_H_INP, NULL, NULL, NULL);
+			width, height, AV_PIX_FMT_YUYV422, flags, NULL, NULL, NULL);
 #endif
 		AVPicture output;
 		avpicture_fill( &output, buffer, AV_PIX_FMT_YUYV422, width, height );
-		if ( !set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, 0 ) )
+		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, 0 ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			output.data, output.linesize);
@@ -1621,6 +1574,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	AVCodecContext *codec_context = stream->codec;
 
 	mlt_log_timings_begin();
+
+	// Always use the image cache for album art.
+	int is_album_art = (codec_context->codec_id == AV_CODEC_ID_MJPEG
+		&& mlt_properties_get_int(properties, "meta.media.frame_rate_num") == 90000
+		&& mlt_properties_get_int(properties, "meta.media.frame_rate_den") == 1);
+	if (is_album_art)
+		position = 0;
 
 	// Get the image cache
 	if ( ! self->image_cache )
@@ -1991,7 +1951,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_set_int( frame_properties, "format", *format );
 		// Cache the image for rapid repeated access.
 		if ( self->image_cache ) {
-			mlt_cache_put_frame( self->image_cache, frame );
+			if (is_album_art) {
+				mlt_position original_pos = mlt_frame_original_position( frame );
+				mlt_properties_set_position(frame_properties, "original_position", 0);
+				mlt_cache_put_frame( self->image_cache, frame );
+				mlt_properties_set_position(frame_properties, "original_position", original_pos);
+			} else {
+				mlt_cache_put_frame( self->image_cache, frame );
+			}
 		}
 		// Clone frame for error concealment.
 		if ( self->current_position >= self->last_good_position ) {
@@ -2548,7 +2515,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		int64_t pts = pkt.pts;
 		if ( self->first_pts != AV_NOPTS_VALUE )
 			pts -= self->first_pts;
-		else if ( context->start_time != AV_NOPTS_VALUE )
+		else if ( context->start_time != AV_NOPTS_VALUE && self->video_index != -1 )
 			pts -= context->start_time;
 		double timebase = av_q2d( context->streams[ index ]->time_base );
 		int64_t int_position = llrint( timebase * pts * fps );
@@ -2565,8 +2532,11 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 				// We are behind, so skip some
 				*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
 			} else if ( self->audio_index != INT_MAX && int_position > req_position + 2 && !self->is_audio_synchronizing ) {
-				// We are ahead, so seek backwards some more
-				seek_audio( self, req_position, timecode - 1.0 );
+				// We are ahead, so seek backwards some more.
+				// Supply -1 as the position to defeat the checks needed by for the other
+				// call to seek_audio() at the beginning of producer_get_audio(). Otherwise,
+				// more often than not, req_position will equal audio_expected.
+				seek_audio( self, -1, timecode - 1.0 );
 				self->is_audio_synchronizing = 1;
 			}
 		}

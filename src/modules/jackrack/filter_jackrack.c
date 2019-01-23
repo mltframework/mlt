@@ -124,7 +124,7 @@ static void initialise_jack_ports( mlt_properties properties )
 	jack_client_t *jack_client = mlt_properties_get_data( properties, "jack_client", NULL );
 	jack_nframes_t jack_buffer_size = jack_get_buffer_size( jack_client );
 	
-	// Propogate these for the Jack processing callback
+	// Propagate these for the Jack processing callback
 	int channels = mlt_properties_get_int( properties, "channels" );
 
 	// Start JackRack

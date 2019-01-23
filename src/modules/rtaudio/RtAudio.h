@@ -205,12 +205,12 @@ class RtAudioError : public std::exception
     UNSPECIFIED,       /*!< The default, unspecified error type. */
     NO_DEVICES_FOUND,  /*!< No devices found on system. */
     INVALID_DEVICE,    /*!< An invalid device ID was specified. */
-    MEMORY_ERROR,      /*!< An error occured during memory allocation. */
+    MEMORY_ERROR,      /*!< An error occurred during memory allocation. */
     INVALID_PARAMETER, /*!< An invalid parameter was specified to a function. */
     INVALID_USE,       /*!< The function was called incorrectly. */
-    DRIVER_ERROR,      /*!< A system driver error occured. */
-    SYSTEM_ERROR,      /*!< A system error occured. */
-    THREAD_ERROR       /*!< A thread error occured. */
+    DRIVER_ERROR,      /*!< A system driver error occurred. */
+    SYSTEM_ERROR,      /*!< A system error occurred. */
+    THREAD_ERROR       /*!< A thread error occurred. */
   };
 
   //! The constructor.
@@ -295,7 +295,7 @@ class RtAudio
        isDefaultOutput(false), isDefaultInput(false), preferredSampleRate(0), nativeFormats(0) {}
   };
 
-  //! The structure for specifying input or ouput stream parameters.
+  //! The structure for specifying input or output stream parameters.
   struct StreamParameters {
     unsigned int deviceId;     /*!< Device index (0 to getDeviceCount() - 1). */
     unsigned int nChannels;    /*!< Number of channels. */
@@ -485,7 +485,7 @@ class RtAudio
            lowest allowable value is used.  The actual value used is
            returned via the structure argument.  The parameter is API dependent.
     \param errorCallback A client-defined function that will be invoked
-           when an error has occured.
+           when an error has occurred.
   */
   void openStream( RtAudio::StreamParameters *outputParameters,
                    RtAudio::StreamParameters *inputParameters,
@@ -867,7 +867,7 @@ public:
   // This function is intended for internal use only.  It must be
   // public because it is called by the internal callback handler,
   // which is not a member of RtAudio.  External use of this function
-  // will most likely produce highly undesireable results!
+  // will most likely produce highly undesirable results!
   bool callbackEvent( AudioDeviceID deviceId,
                       const AudioBufferList *inBufferList,
                       const AudioBufferList *outBufferList );
@@ -903,7 +903,7 @@ public:
   // This function is intended for internal use only.  It must be
   // public because it is called by the internal callback handler,
   // which is not a member of RtAudio.  External use of this function
-  // will most likely produce highly undesireable results!
+  // will most likely produce highly undesirable results!
   bool callbackEvent( unsigned long nframes );
 
   private:
@@ -936,7 +936,7 @@ public:
   // This function is intended for internal use only.  It must be
   // public because it is called by the internal callback handler,
   // which is not a member of RtAudio.  External use of this function
-  // will most likely produce highly undesireable results!
+  // will most likely produce highly undesirable results!
   bool callbackEvent( long bufferIndex );
 
   private:
@@ -974,7 +974,7 @@ public:
   // This function is intended for internal use only.  It must be
   // public because it is called by the internal callback handler,
   // which is not a member of RtAudio.  External use of this function
-  // will most likely produce highly undesireable results!
+  // will most likely produce highly undesirable results!
   void callbackEvent( void );
 
   private:
@@ -1047,7 +1047,7 @@ public:
   // This function is intended for internal use only.  It must be
   // public because it is called by the internal callback handler,
   // which is not a member of RtAudio.  External use of this function
-  // will most likely produce highly undesireable results!
+  // will most likely produce highly undesirable results!
   void callbackEvent( void );
 
   private:
@@ -1079,7 +1079,7 @@ public:
   // This function is intended for internal use only.  It must be
   // public because it is called by the internal callback handler,
   // which is not a member of RtAudio.  External use of this function
-  // will most likely produce highly undesireable results!
+  // will most likely produce highly undesirable results!
   void callbackEvent( void );
 
   private:
@@ -1113,7 +1113,7 @@ public:
   // This function is intended for internal use only.  It must be
   // public because it is called by the internal callback handler,
   // which is not a member of RtAudio.  External use of this function
-  // will most likely produce highly undesireable results!
+  // will most likely produce highly undesirable results!
   void callbackEvent( void );
 
   private:

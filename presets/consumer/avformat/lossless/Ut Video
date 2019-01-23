@@ -1,0 +1,12 @@
+f=avi
+vcodec=utvideo
+color_range=mpeg
+pix_fmt=yuv422p
+g=1
+bf=0
+color_range=mpeg
+pix_fmt=yuv422p
+acodec=pcm_s24le
+
+meta.preset.extension=avi
+meta.preset.note=Ut Video with 24-bit PCM audio in AVI container

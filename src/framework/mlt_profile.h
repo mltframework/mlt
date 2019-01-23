@@ -3,7 +3,7 @@
  * \brief video output definition
  * \see mlt_profile_s
  *
- * Copyright (C) 2007-2014 Meltytech, LLC
+ * Copyright (C) 2007-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,4 +58,5 @@ extern void mlt_profile_close( mlt_profile profile );
 extern mlt_profile mlt_profile_clone( mlt_profile profile );
 extern mlt_properties mlt_profile_list( );
 extern void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer );
+extern char *mlt_profile_lumas_dir( mlt_profile profile );
 #endif

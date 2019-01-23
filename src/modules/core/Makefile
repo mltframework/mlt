@@ -29,6 +29,8 @@ OBJS = factory.o \
 	   filter_greyscale.o \
 	   filter_imageconvert.o \
 	   filter_luma.o \
+       filter_mask_apply.o \
+       filter_mask_start.o \
 	   filter_mirror.o \
 	   filter_mono.o \
 	   filter_obscure.o \

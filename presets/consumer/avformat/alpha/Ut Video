@@ -1,0 +1,10 @@
+f=avi
+vcodec=utvideo
+mlt_image_format=rgb24a
+pix_fmt=gbrap
+g=1
+bf=0
+acodec=pcm_s24le
+
+meta.preset.extension=avi
+meta.preset.note=Ut Video with alpha channel and 24-bit PCM audio in AVI container

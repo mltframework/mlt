@@ -215,8 +215,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	}
 
 	// Determine the input/output channel layout.
-	in_layout = get_channel_layout_or_default( mlt_properties_get( frame_properties, "channel_layout" ), in_channels );
-	out_layout = get_channel_layout_or_default( mlt_properties_get( frame_properties, "consumer_channel_layout" ), out_channels );
+	in_layout = mlt_get_channel_layout_or_default( mlt_properties_get( frame_properties, "channel_layout" ), in_channels );
+	out_layout = mlt_get_channel_layout_or_default( mlt_properties_get( frame_properties, "consumer_channel_layout" ), out_channels );
 
 	if( in_format == out_format &&
 		in_frequency == out_frequency &&
@@ -285,6 +285,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		else
 		{
 			mlt_log_error( MLT_FILTER_SERVICE(filter), "swr_convert() failed. Alloc: %d\tIn: %d\tOut: %d\n", alloc_samples, in_samples, out_samples );
+			mlt_pool_release( out_buffer );
 			error = 1;
 		}
 	}

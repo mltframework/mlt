@@ -35,7 +35,7 @@ void image_bgset_y(RGB32 *background, const RGB32 *src, int video_area, int y_th
 	p = src;
 	q = (short *)background;
 	for(i=0; i<video_area; i++) {
-		/* FIXME: endianess */
+		/* FIXME: endianness */
 
 		R = ((*p)&0xff0000)>>(16-1);
 		G = ((*p)&0xff00)>>(8-2);
@@ -59,7 +59,7 @@ void image_bgsubtract_y(unsigned char *diff, const RGB32 *background, const RGB3
 	q = (const short *)background;
 	r = diff;
 	for(i=0; i<video_area; i++) {
-		/* FIXME: endianess */
+		/* FIXME: endianness */
 
 		R = ((*p)&0xff0000)>>(16-1);
 		G = ((*p)&0xff00)>>(8-2);
@@ -99,7 +99,7 @@ void image_bgsubtract_update_y(unsigned char *diff, RGB32 *background, const RGB
 	q = (short *)background;
 	r = diff;
 	for(i=0; i<video_area; i++) {
-		/* FIXME: endianess */
+		/* FIXME: endianness */
 
 		R = ((*p)&0xff0000)>>(16-1);
 		G = ((*p)&0xff00)>>(8-2);

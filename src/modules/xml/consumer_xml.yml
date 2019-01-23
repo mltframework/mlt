@@ -37,7 +37,7 @@ parameters:
     description: >
       The name of a file in which to store the XML.
       If the value does not contain a period (to start an extension), then
-      the value is interpreted as the name of a propery in which to store the
+      the value is interpreted as the name of a property in which to store the
       XML. This makes it easy for an application to use the consumer to
       serialize a service network and retrieve the XML in-memory.
     readonly: no

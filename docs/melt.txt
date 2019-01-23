@@ -98,7 +98,7 @@ Terminology:
 	Collectively, these are known as 'services'. 
 	
 	All services have 'properties' associated to them. These are typically
-	defaulted or evaluated and may be overriden on a case by case basis.
+	defaulted or evaluated and may be overridden on a case by case basis.
 	
 	All services except consumers obey in and out properties.
 	
@@ -201,7 +201,7 @@ Attached Filters:
 	localise filters to a specific clip on a track, you have to know information
 	about the lengths of the clip and all clips leading up to it. In practise, 
 	this is horrifically impractical, especially at a command line level (and not
-	even that practical from a programing point of view...).
+	even that practical from a programming point of view...).
 
 	The -attach family of switches simplify things enormously. By default, -attach
 	will attach a filter to the last service created, so:
@@ -236,7 +236,7 @@ Mixes:
 
 	would provide both an audio and video transition between clip1 and clip2.
 
-	This functionality supercedes the enforced use of the -track and -transition
+	This functionality supersedes the enforced use of the -track and -transition
 	switches from earlier versions of melt and makes life a lot easier :-).
 
 	These can be used in combination, so you can for example do a fade from black

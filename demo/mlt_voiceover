@@ -1,8 +1,8 @@
 melt \
 "+voice over demo.txt" \
-		family="Sans"
-		size="72"
-		weight="700"
+		family="Sans" \
+		size="72" \
+		weight="700" \
 		fgcolour=0x00000000 \
 		bgcolour=0xff9933aa \
 		pad=10 \

@@ -182,7 +182,7 @@ double compareImg(unsigned char* I1, unsigned char* I2,
 /**
    compares a small part of two given images
    and returns the average absolute difference.
-   Field center, size and shift have to be choosen,
+   Field center, size and shift have to be chosen,
    so that no clipping is required
 
    \param field Field specifies position(center) and size of subimage
@@ -701,7 +701,7 @@ Transform calcTransFields(StabData* sd, calcFieldTransFunc fieldfunc,
     // cleaned mean
     t = cleanmean_xy_transform(ts, num_trans);
 
-    // substract avg
+    // subtract avg
     for (i = 0; i < num_trans; i++) {
         ts[i] = sub_transforms(&ts[i], &t);
     }

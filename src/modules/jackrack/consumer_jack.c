@@ -254,7 +254,7 @@ static void initialise_jack_ports( consumer_jack self )
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
 	const char **ports = NULL;
 
-	// Propogate these for the Jack processing callback
+	// Propagate these for the Jack processing callback
 	int channels = mlt_properties_get_int( properties, "channels" );
 
 	// Allocate buffers and ports
@@ -476,7 +476,7 @@ static void *consumer_thread( void *arg )
 	// Video thread
 	pthread_t thread;
 
-	// internal intialization
+	// internal initialization
 	int init_audio = 1;
 	int init_video = 1;
 	mlt_frame frame = NULL;

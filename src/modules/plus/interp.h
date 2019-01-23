@@ -19,7 +19,7 @@
  */
 
 /*******************************************************************
- * The remapping functions use a map aray, which contains a pair
+ * The remapping functions use a map array, which contains a pair
  * of floating values fo each pixel of the output image. These
  * represent the location in the input image, from where the value
  * of the given output pixel should be interpolated.
@@ -170,7 +170,7 @@ int interpBL_b32(unsigned char *sl, int w, int h, float x, float y, float o, uns
 	m=(int)floorf(x);
 	if (m + 2 > w) m = w - 2;
 	n=(int)floorf(y);
-	if (n + 2 > w) n = w - 2;
+	if (n + 2 > h) n = h - 2;
 
 	k=n*w+m; l=(n+1)*w+m;
 	k1=4*(k+1); l1=4*(l+1); n1=4*((n+1)*w+m);

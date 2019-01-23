@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2017 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2010-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -94,6 +94,7 @@ private:
 	int                         m_op_arg;
 	pthread_t                   m_op_thread;
 	bool                        m_sliced_swab;
+	uint8_t*                    m_buffer;
 
 	IDeckLinkDisplayMode* getDisplayMode()
 	{
@@ -138,9 +139,9 @@ public:
 		m_deckLinkKeyer = NULL;
 		m_deckLinkOutput = NULL;
 		m_deckLink = NULL;
-
 		m_aqueue = mlt_deque_init();
 		m_frames = mlt_deque_init();
+		m_buffer = NULL;
 
 		// operation locks
 		m_op_id = OP_NONE;
@@ -380,6 +381,7 @@ protected:
 
 		// Initialize members
 		m_count = 0;
+		m_buffer = NULL;
 		preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
 		m_inChannels = mlt_properties_get_int( properties, "channels" );
 		if( m_inChannels <= 2 )
@@ -453,7 +455,7 @@ protected:
 				return false;
 			}
 
-			mlt_deque_push_back( m_frames, reinterpret_cast<IDeckLinkMutableVideoFrame*>(frame) );
+			mlt_deque_push_back( m_frames, frame );
 		}
 
 		// Set the running state
@@ -481,6 +483,7 @@ protected:
 			mlt_frame_close( frame );
 		pthread_mutex_unlock( &m_aqueue_lock );
 
+		m_buffer = NULL;
 		while ( IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*) mlt_deque_pop_back( m_frames ) )
 			SAFE_RELEASE( frame );
 
@@ -506,15 +509,6 @@ protected:
 		pthread_mutex_unlock( &m_aqueue_lock );
 	}
 
-	bool createFrame( IDeckLinkMutableVideoFrame** decklinkFrame )
-	{
-		IDeckLinkMutableVideoFrame* frame = (IDeckLinkMutableVideoFrame*)mlt_deque_pop_front( m_frames );;
-
-		*decklinkFrame = frame;
-
-		return ( !frame ) ? false : true;
-	}
-
 	void renderVideo( mlt_frame frame )
 	{
 		HRESULT hr;
@@ -522,22 +516,21 @@ protected:
 		uint8_t* image = 0;
 		int rendered = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered");
 		mlt_properties consumer_properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+		int stride = m_width * ( m_isKeyer? 4 : 2 );
 		int height = m_height;
-		IDeckLinkMutableVideoFrame* m_decklinkFrame = NULL;
-
+		IDeckLinkMutableVideoFrame* decklinkFrame =
+			static_cast<IDeckLinkMutableVideoFrame*>( mlt_deque_pop_front( m_frames ) );
+		
 		mlt_log_debug( getConsumer(), "%s: entering\n", __FUNCTION__ );
 
 		m_sliced_swab = mlt_properties_get_int( consumer_properties, "sliced_swab" );
 
 		if ( rendered && !mlt_frame_get_image( frame, &image, &format, &m_width, &height, 0 ) )
 		{
-			uint8_t* buffer = 0;
-			int stride = m_width * ( m_isKeyer? 4 : 2 );
+			if ( decklinkFrame )
+				decklinkFrame->GetBytes( (void**) &m_buffer );
 
-			if ( createFrame( &m_decklinkFrame ) )
-				m_decklinkFrame->GetBytes( (void**) &buffer );
-
-			if ( buffer )
+			if ( m_buffer )
 			{
 				// NTSC SDI is always 486 lines
 				if ( m_height == 486 && height == 480 )
@@ -545,18 +538,18 @@ protected:
 					// blank first 6 lines
 					if ( m_isKeyer )
 					{
-						memset( buffer, 0, stride * 6 );
-						buffer += stride * 6;
+						memset( m_buffer, 0, stride * 6 );
+						m_buffer += stride * 6;
 					}
 					else for ( int i = 0; i < m_width * 6; i++ )
 					{
-						*buffer++ = 128;
-						*buffer++ = 16;
+						*m_buffer++ = 128;
+						*m_buffer++ = 16;
 					}
 				}
 				if ( !m_isKeyer )
 				{
-					unsigned char *arg[3] = { image, buffer };
+					unsigned char *arg[3] = { image, m_buffer };
 					ssize_t size = stride * height;
 
 					// Normal non-keyer playout - needs byte swapping
@@ -573,7 +566,7 @@ protected:
 					// Normal keyer output
 					int y = height + 1;
 					uint32_t* s = (uint32_t*) image;
-					uint32_t* d = (uint32_t*) buffer;
+					uint32_t* d = (uint32_t*) m_buffer;
 
 					// Need to relocate alpha channel RGBA => ARGB
 					while ( --y )
@@ -589,11 +582,18 @@ protected:
 				else
 				{
 					// Keying blank frames - nullify alpha
-					memset( buffer, 0, stride * height );
+					memset( m_buffer, 0, stride * height );
 				}
 			}
 		}
-		if ( m_decklinkFrame )
+		else if ( decklinkFrame )
+		{
+			uint8_t* buffer = NULL;
+			decklinkFrame->GetBytes( (void**) &buffer );
+			if ( buffer )
+				memcpy( buffer, m_buffer, stride * height );
+		}
+		if ( decklinkFrame )
 		{
 			char* vitc;
 
@@ -603,17 +603,17 @@ protected:
 			{
 				int h, m, s, f;
 				if ( 4 == sscanf( vitc, "%d:%d:%d:%d", &h, &m, &s, &f ) )
-					m_decklinkFrame->SetTimecodeFromComponents(bmdTimecodeVITC,
+					decklinkFrame->SetTimecodeFromComponents(bmdTimecodeVITC,
 						h, m, s, f, bmdTimecodeFlagDefault);
 			}
 
 			// set userbits
 			vitc = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.userbits" );
 			if( vitc )
-				m_decklinkFrame->SetTimecodeUserBits(bmdTimecodeVITC,
+				decklinkFrame->SetTimecodeUserBits(bmdTimecodeVITC,
 					mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "meta.attr.vitc.userbits" ));
 
-			hr = m_deckLinkOutput->ScheduleVideoFrame( m_decklinkFrame, m_count * m_duration, m_duration, m_timescale );
+			hr = m_deckLinkOutput->ScheduleVideoFrame( decklinkFrame, m_count * m_duration, m_duration, m_timescale );
 			if ( S_OK != hr )
 				mlt_log_error( getConsumer(), "%s:%d: ScheduleVideoFrame failed, hr=%.8X \n", __FUNCTION__, __LINE__, unsigned(hr) );
 			else
@@ -793,7 +793,7 @@ protected:
 	{
 		mlt_log_debug( getConsumer(), "%s: ENTERING\n", __FUNCTION__ );
 
-		mlt_deque_push_back( m_frames, reinterpret_cast/*dynamic_cast*/<IDeckLinkMutableVideoFrame*>(completedFrame) );
+		mlt_deque_push_back( m_frames, completedFrame );
 
 		//  change priority of video callback thread
 		reprio( 1 );
@@ -840,7 +840,7 @@ protected:
 
 		mlt_log_debug( getConsumer(), "%s:%d: preroll=%d\n", __FUNCTION__, __LINE__, preroll);
 
-		if( mlt_properties_get_int( properties, "running" ) || preroll )
+		while ( !frame && (mlt_properties_get_int( properties, "running" ) || preroll ) )
 		{
 			mlt_log_timings_begin();
 			frame = mlt_consumer_rt_frame( consumer );
@@ -861,7 +861,7 @@ protected:
 				mlt_frame_close( frame );
 			}
 			else
-				mlt_log_error( getConsumer(), "%s: mlt_consumer_rt_frame return NULL\n", __FUNCTION__ );
+				mlt_log_warning( getConsumer(), "%s: mlt_consumer_rt_frame return NULL\n", __FUNCTION__ );
 		}
 	}
 
@@ -985,7 +985,7 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 	mlt_consumer consumer = NULL;
 
 	// If allocated
-	if ( decklink && !mlt_consumer_init( decklink->getConsumer(), decklink, profile ) )
+	if ( !mlt_consumer_init( decklink->getConsumer(), decklink, profile ) )
 	{
 		// If initialises without error
 		if ( decklink->op( OP_OPEN, arg? atoi(arg) : 0 ) )

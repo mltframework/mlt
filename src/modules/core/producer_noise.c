@@ -50,7 +50,7 @@ static inline unsigned int fast_rand( rand_seed* seed )
 	return ( ( seed->x << 16 ) + ( seed->y & 65535 ) );
 }
 
-// Foward declarations
+// Forward declarations
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static void producer_close( mlt_producer producer );
 

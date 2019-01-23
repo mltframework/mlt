@@ -47,7 +47,7 @@
  *      PCIe LP HD-SDI Master™ O     (model 193)
  *
  *  Note: PCIe LP HD-SDI Master™ O (model 193) is an VidPort model and supports an
- *  seperate video and audio interface. Device file:
+ *  separate video and audio interface. Device file:
  * 		/dev/sdivideotx[]	for active video data
  *  	/dev/sdiaudiotx[]	for pcm audio data
  *
@@ -166,7 +166,7 @@ struct consumer_SDIstream_s {
 	 *		/dev/sdiaudiotx0
 	 **/
 	char *device_file_video; // Path for SDI output
-	char *device_file_audio; // Path for exlusive SDI audio output
+	char *device_file_audio; // Path for exclusive SDI audio output
 
 	/**
 	 *  write own HANC (ancillary data) is available for:
@@ -329,7 +329,7 @@ static void *consumer_thread(void *arg) {
 
 	// Convenience functionality (this is to stop melt/inigo after the end of a playout)
 	int terminate_on_pause = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES( consumer ), "terminate_on_pause");
-	int terminated = 0; // save ony status
+	int terminated = 0; // save only status
 
 	int save_jpegs = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES( consumer ), "save_jpegs");
 	char * jpeg_folder = mlt_properties_get(MLT_CONSUMER_PROPERTIES( consumer ), "jpeg_file");
@@ -378,7 +378,6 @@ static void *consumer_thread(void *arg) {
 		}
 	} else if (this->device_file_video &&
 			strstr(this->device_file_video, "sdivideotx")) {
-		free(this->device_file_audio);
 		this->device_file_audio = strdup("/dev/sdiaudiotx0");
 	}
 

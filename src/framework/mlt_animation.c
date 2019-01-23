@@ -66,7 +66,7 @@ mlt_animation mlt_animation_new( )
 	return self;
 }
 
-/** Re-interpolate non-keyframe nodess after a series of insertions or removals.
+/** Re-interpolate non-keyframe nodes after a series of insertions or removals.
  *
  * \public \memberof mlt_animation_s
  * \param self an animation
@@ -311,8 +311,8 @@ void mlt_animation_set_length( mlt_animation self, int length )
  * of the animation for the parsing (e.g. fps, locale).
  * It parses into a mlt_animation_item that you provide.
  * \p item->frame should be specified if the string does not have an equal sign and time field.
- * If an exclamation point (!) or vertical bar (|) character preceeds the equal sign, then
- * the keyframe interpolation is set to discrete. If a tilde (~) preceeds the equal sign,
+ * If an exclamation point (!) or vertical bar (|) character precedes the equal sign, then
+ * the keyframe interpolation is set to discrete. If a tilde (~) precedes the equal sign,
  * then the keyframe interpolation is set to smooth (spline).
  *
  * \public \memberof mlt_animation_s
@@ -343,7 +343,7 @@ int mlt_animation_parse_item( mlt_animation self, mlt_animation_item item, const
 			item->frame = mlt_property_get_int( item->property, self->fps, self->locale );
 			free( s );
 
-			// The character preceeding the equal sign indicates interpolation method.
+			// The character preceding the equal sign indicates interpolation method.
 			p = strchr( value, '=' ) - 1;
 			if ( p[0] == '|' || p[0] == '!' )
 				item->keyframe_type = mlt_keyframe_discrete;
@@ -393,7 +393,7 @@ int mlt_animation_get_item( mlt_animation self, mlt_animation_item item, int pos
 	if (!self || !item) return 1;
 
 	int error = 0;
-	// Need to find the nearest keyframe to the position specifed
+	// Need to find the nearest keyframe to the position specified
 	animation_node node = self->nodes;
 
 	// Iterate through the keyframes until we reach last or have
@@ -577,7 +577,7 @@ int mlt_animation_next_key( mlt_animation self, mlt_animation_item item, int pos
 	return ( node == NULL );
 }
 
-/** Get the keyfame at the position or the next preceeding.
+/** Get the keyfame at the position or the next preceding.
  *
  * \public \memberof mlt_animation_s
  * \param self an animation

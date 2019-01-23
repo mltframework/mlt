@@ -174,7 +174,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		i = 1;
 		for(y=0; y<video_height; y++) {
 			for(x=1; x<video_width-1; x++) {
-				/* FIXME: endianess? */
+				/* FIXME: endianness? */
 				a = (src[i] & 0xfefeff) + palette[buffer[i]];
 				b = a & 0x1010100;
 				// Add alpha if necessary or use src alpha.

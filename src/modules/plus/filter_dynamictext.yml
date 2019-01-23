@@ -11,7 +11,7 @@ tags:
   - Video
 description: Overlay dynamic text onto the video
 notes: >
-  The dynamic text filter will search for keywords in the text to be overlayed
+  The dynamic text filter will search for keywords in the text to be overlaid
   and will replace those keywords on a frame-by-frame basis.
   
 parameters:

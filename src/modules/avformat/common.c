@@ -1,7 +1,6 @@
 /*
  * common.h
  * Copyright (C) 2018 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +21,8 @@
 
 #include <libavutil/channel_layout.h>
 #include <libavutil/samplefmt.h>
+
+int mlt_default_sws_flags = SWS_BICUBIC | SWS_FULL_CHR_H_INP | SWS_FULL_CHR_H_INT | SWS_ACCURATE_RND;
 
 int mlt_to_av_sample_format( mlt_audio_format format )
 {
@@ -120,7 +121,7 @@ mlt_channel_layout av_channel_layout_to_mlt( int64_t layout )
 	return mlt_channel_independent;
 }
 
-mlt_channel_layout get_channel_layout_or_default( const char* name, int channels )
+mlt_channel_layout mlt_get_channel_layout_or_default( const char* name, int channels )
 {
 	mlt_channel_layout layout = mlt_channel_layout_id( name );
 	if( layout == mlt_channel_auto ||
@@ -129,4 +130,53 @@ mlt_channel_layout get_channel_layout_or_default( const char* name, int channels
 		layout = mlt_channel_layout_default( channels );
 	}
 	return layout;
+}
+
+int mlt_set_luma_transfer( struct SwsContext *context, int src_colorspace,
+	int dst_colorspace, int src_full_range, int dst_full_range )
+{
+	const int *src_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+	const int *dst_coefficients = sws_getCoefficients( SWS_CS_DEFAULT );
+	int brightness = 0;
+	int contrast = 1 << 16;
+	int saturation = 1  << 16;
+	int src_range = src_full_range ? 1 : 0;
+	int dst_range = dst_full_range ? 1 : 0;
+
+	switch ( src_colorspace )
+	{
+	case 170:
+	case 470:
+	case 601:
+	case 624:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+		break;
+	case 240:
+		src_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+		break;
+	case 709:
+		src_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		break;
+	default:
+		break;
+	}
+	switch ( dst_colorspace )
+	{
+	case 170:
+	case 470:
+	case 601:
+	case 624:
+		dst_coefficients = sws_getCoefficients( SWS_CS_ITU601 );
+		break;
+	case 240:
+		dst_coefficients = sws_getCoefficients( SWS_CS_SMPTE240M );
+		break;
+	case 709:
+		dst_coefficients = sws_getCoefficients( SWS_CS_ITU709 );
+		break;
+	default:
+		break;
+	}
+	return sws_setColorspaceDetails( context, src_coefficients, src_range, dst_coefficients, dst_range,
+		brightness, contrast, saturation );
 }
