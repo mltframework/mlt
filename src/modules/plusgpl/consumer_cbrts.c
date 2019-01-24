@@ -20,6 +20,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
 
 #include <framework/mlt.h>
 #include <stdlib.h>
@@ -30,11 +35,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#ifdef _WIN32
-#include <winsock2.h>
-#else
-#include <arpa/inet.h>
-#endif
+
 #include <strings.h>
 // includes for socket IO
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)
