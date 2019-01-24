@@ -1,6 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -507,7 +507,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		
 		mlt_position anim_pos = repeat_position(properties, "rect", position, length);
 		result = mlt_properties_anim_get_rect(properties, "rect", anim_pos, length);
-		if (strchr(mlt_properties_get(properties, "rect"), '%')) {
+		if (mlt_properties_get(properties, "rect") && strchr(mlt_properties_get(properties, "rect"), '%')) {
 			result.x *= normalised_width;
 			result.y *= normalised_height;
 			result.w *= normalised_width;
