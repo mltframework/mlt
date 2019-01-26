@@ -1,6 +1,6 @@
 /*
  * filter_dynamictext.c -- dynamic text overlay filter
- * Copyright (C) 2011-2018 Meltytech, LLC
+ * Copyright (C) 2011-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -238,7 +238,8 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	mlt_properties_set( text_filter_properties, "argument", result );
 	free( result );
 	mlt_properties_pass_list( text_filter_properties, properties,
-		"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline in out" );
+		"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline" );
+	mlt_filter_set_in_and_out( text_filter, mlt_filter_get_in( filter ), mlt_filter_get_out( filter ) );
 	return mlt_filter_process( text_filter, frame );
 }
 
