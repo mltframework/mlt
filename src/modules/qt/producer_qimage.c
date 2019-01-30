@@ -129,44 +129,6 @@ static int load_svg( producer_qimage self, mlt_properties properties, const char
 	return result;
 }
 
-static int load_sequence_sprintf( producer_qimage self, mlt_properties properties, const char *filename )
-{
-	int result = 0;
-
-	// Obtain filenames with pattern
-	if ( strchr( filename, '%' ) != NULL )
-	{
-		// handle picture sequences
-		int i = mlt_properties_get_int( properties, "begin" );
-		int gap = 0;
-		char full[1024];
-		int keyvalue = 0;
-		char key[ 50 ];
-
-		while ( gap < 100 )
-		{
-			struct stat buf;
-			snprintf( full, 1023, filename, i ++ );
-			if ( stat( full, &buf ) == 0 )
-			{
-				sprintf( key, "%d", keyvalue ++ );
-				mlt_properties_set( self->filenames, key, full );
-				gap = 0;
-			}
-			else
-			{
-				gap ++;
-			}
-		}
-		if ( mlt_properties_count( self->filenames ) > 0 )
-		{
-			mlt_properties_set_int( properties, "ttl", 1 );
-			result = 1;
-		}
-	}
-	return result;
-}
-
 static int load_sequence_deprecated( producer_qimage self, mlt_properties properties, const char *filename )
 {
 	int result = 0;

@@ -55,6 +55,7 @@ extern int refresh_qimage( producer_qimage self, mlt_frame frame );
 extern void refresh_image( producer_qimage, mlt_frame, mlt_image_format, int width, int height );
 extern void make_tempfile( producer_qimage, const char *xml );
 extern int init_qimage(const char *filename);
+extern int load_sequence_sprintf( producer_qimage self, mlt_properties properties, const char *filename );
 
 
 #ifdef __cplusplus

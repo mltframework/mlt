@@ -356,4 +356,32 @@ extern void make_tempfile( producer_qimage self, const char *xml )
 	}
 }
 
+int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const char *filename)
+{
+	int result = 0;
+
+	// Obtain filenames with pattern
+	if (filename && strchr(filename, '%')) {
+		// handle picture sequences
+		int i = mlt_properties_get_int( properties, "begin" );
+		int keyvalue = 0;
+
+		for (int gap = 0; gap < 100;) {
+			QString full = QString::asprintf(filename, i++);
+			if (QFile::exists(full)) {
+				QString key = QString::asprintf("%d", keyvalue++);
+				mlt_properties_set(self->filenames, key.toLatin1().constData(), full.toUtf8().constData());
+				gap = 0;
+			} else {
+				gap ++;
+			}
+		}
+		if (mlt_properties_count(self->filenames) > 0) {
+			mlt_properties_set_int(properties, "ttl", 1);
+			result = 1;
+		}
+	}
+	return result;
+}
+
 } // extern "C"
