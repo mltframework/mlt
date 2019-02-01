@@ -346,7 +346,8 @@ static void set_movit_parameters( GlslChain *chain, mlt_service service, mlt_fra
 	if ( service == (mlt_service) -1 ) {
 		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 		MltInput* input = chain->inputs[ producer ];
-		input->set_pixel_data( GlslManager::get_input_pixel_pointer( producer, frame ) );
+		if (input)
+			input->set_pixel_data( GlslManager::get_input_pixel_pointer( producer, frame ) );
 		return;
 	}
 
