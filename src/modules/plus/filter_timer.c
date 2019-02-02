@@ -40,6 +40,7 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 	char* direction = mlt_properties_get( properties, "direction" );
 	double timer_start = time_to_seconds( mlt_properties_get( properties, "start" ) );
 	double timer_duration = time_to_seconds( mlt_properties_get( properties, "duration" ) );
+	double timer_offset = time_to_seconds( mlt_properties_get( properties, "offset" ) );
 	double value = time_to_seconds( mlt_properties_frames_to_time( properties, current_frame, mlt_time_clock ) );
 
 	if ( timer_duration <= 0.0 )
@@ -70,6 +71,9 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 	{
 		value = timer_duration - value;
 	}
+
+	// Apply offset
+	value += timer_offset;
 
 	int hours = value / ( 60 * 60 );
 	int mins = ( value / 60 ) - ( hours * 60 );
@@ -145,6 +149,7 @@ mlt_filter filter_timer_init( mlt_profile profile, mlt_service_type type, const 
 		mlt_properties_set( my_properties, "format", "SS.SS" );
 		mlt_properties_set( my_properties, "start", "00:00:00.000" );
 		mlt_properties_set( my_properties, "duration", "00:10:00.000" );
+		mlt_properties_set( my_properties, "offset", "00:00:00.000" );
 		mlt_properties_set( my_properties, "direction", "up" );
 		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100%" );
 		mlt_properties_set( my_properties, "family", "Sans" );
