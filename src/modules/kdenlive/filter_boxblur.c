@@ -119,7 +119,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	boxw = (unsigned int)(factor * hori);
 	boxh = (unsigned int)(factor * vert);
 
-	if ( boxw == 0 || boxh == 0 )
+	if ( boxw == 0 && boxh == 0 )
 	{
 		// Don't do anything
 		error = mlt_frame_get_image( frame, image, format, width, height, writable );
@@ -136,7 +136,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			int size = mlt_image_format_size( *format, *width, *height, NULL );
 			int32_t *rgba = mlt_pool_alloc( 4 * size );
 			PreCompute( *image, rgba, *width, *height );
-			DoBoxBlur( *image, rgba, *width, *height, boxw, boxh );
+			DoBoxBlur( *image, rgba, *width, *height, MAX(1, boxw), MAX(1, boxh) );
 			mlt_pool_release( rgba );
 		}
 	}

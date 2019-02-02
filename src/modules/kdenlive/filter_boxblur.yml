@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: boxblur
 title: Box Blur
@@ -49,7 +49,7 @@ parameters:
     type: integer
     unit: pixels
     mutable: yes
-    minimum: 1
+    minimum: 0
     default: 1
 
   - identifier: vert
@@ -57,5 +57,5 @@ parameters:
     type: integer
     unit: pixels
     mutable: yes
-    minimum: 1
+    minimum: 0
     default: 1
