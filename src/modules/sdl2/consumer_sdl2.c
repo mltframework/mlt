@@ -232,11 +232,9 @@ int consumer_start( mlt_consumer parent )
 			self->window_height = self->height;
 		}
 
-#if defined(__APPLE__) || defined(_WIN32)
 		// Initialize SDL video if needed.
 		if ( setup_sdl_video(self) )
 			return 1;
-#endif
 
 		pthread_create( &self->thread, NULL, consumer_thread, self );
 	}
@@ -716,11 +714,6 @@ static void *video_thread( void *arg )
 
 	// Get real time flag
 	int real_time = mlt_properties_get_int( self->properties, "real_time" );
-
-#if !defined(__APPLE__) && !defined(_WIN32)
-	if ( setup_sdl_video(self) )
-		self->running = 0;
-#endif
 
 	// Determine start time
 	gettimeofday( &now, NULL );
