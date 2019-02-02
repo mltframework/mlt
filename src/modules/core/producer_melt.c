@@ -1,6 +1,6 @@
 /*
  * producer_melt.c -- load from melt command line syntax
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,7 @@ mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type
 	if ( result != NULL )
 	{
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( result ), "resource", file );
+		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( result ), "loader_normalised", 1);
 	}
 
 	while( count -- )
