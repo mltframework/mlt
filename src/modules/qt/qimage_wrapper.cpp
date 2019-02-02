@@ -38,6 +38,8 @@
 #endif
 
 #include <cmath>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 extern "C" {
@@ -366,6 +368,7 @@ int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const
 		int i = mlt_properties_get_int( properties, "begin" );
 		int keyvalue = 0;
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
 		for (int gap = 0; gap < 100;) {
 			QString full = QString::asprintf(filename, i++);
 			if (QFile::exists(full)) {
@@ -376,6 +379,22 @@ int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const
 				gap ++;
 			}
 		}
+#else
+		char full[1024];
+		char key[ 50 ];
+
+		for (int gap = 0; gap < 100;) {
+			struct stat buf;
+			snprintf(full, 1023, filename, i++);
+			if (stat(full, &buf ) == 0) {
+				sprintf(key, "%d", keyvalue ++);
+				mlt_properties_set(self->filenames, key, full);
+				gap = 0;
+			} else {
+				gap ++;
+			}
+		}
+#endif
 		if (mlt_properties_count(self->filenames) > 0) {
 			mlt_properties_set_int(properties, "ttl", 1);
 			result = 1;
