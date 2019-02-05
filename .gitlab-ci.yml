@@ -1,36 +1,45 @@
 ubuntu-daily:
-    image: ubuntu:bionic
+    image: ubuntu:disco
     script:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 ubuntu-latest:
-    image: ubuntu:artful
+    image: ubuntu:cosmic
     script:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
-ubuntu-lts-1:
-    image: ubuntu:xenial
+ubuntu-lts-3:
+    image: ubuntu:bionic
     script:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 ubuntu-lts-2:
+    image: ubuntu:xenial
+    script:
+        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+        - apt-get -qq update
+        - apt-get -yqq build-dep mlt
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
+            # there's no `check` or `test` `make` target
+
+ubuntu-lts-1:
     image: ubuntu:trusty
     script:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
@@ -38,8 +47,8 @@ debian-testing:
     image: debian:buster
     script:
         - echo -e 'deb-src http://deb.debian.org/debian buster main\ndeb-src http://deb.debian.org/debian buster-updates main\ndeb-src http://security.debian.org buster/updates main' >> /etc/apt/sources.list
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
@@ -47,8 +56,8 @@ debian-stable:
     image: debian:stretch
     script:
         - echo -e 'deb-src http://deb.debian.org/debian stretch main\ndeb-src http://deb.debian.org/debian stretch-updates main\ndeb-src http://security.debian.org stretch/updates main' >> /etc/apt/sources.list
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
@@ -56,8 +65,8 @@ debian-oldstable:
     image: debian:jessie
     script:
         - echo -e 'deb-src http://deb.debian.org/debian jessie main\ndeb-src http://deb.debian.org/debian jessie-updates main\ndeb-src http://security.debian.org jessie/updates main' >> /etc/apt/sources.list
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
@@ -65,8 +74,8 @@ debian-oldoldstable:
     image: debian:wheezy
     script:
         - echo -e 'deb-src http://deb.debian.org/debian wheezy main\ndeb-src http://deb.debian.org/debian wheezy-updates main\ndeb-src http://security.debian.org wheezy/updates main' >> /etc/apt/sources.list
-        - apt-get update
-        - apt-get build-dep --yes mlt
+        - apt-get -qq update
+        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
@@ -84,6 +93,22 @@ centos-7:
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel
         - ./configure --enable-gpl --enable-gpl3 && make && make install
 
+fedora-29:
+    image: fedora:29
+    script:
+        - yum --assumeyes groupinstall "Development Tools"
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+            # unclear why `gcc-c++` isn't in `Development Tools`
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
+
+fedora-28:
+    image: fedora:28
+    script:
+        - yum --assumeyes groupinstall "Development Tools"
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+            # unclear why `gcc-c++` isn't in `Development Tools`
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
+
 fedora-27:
     image: fedora:27
     script:
@@ -99,4 +124,3 @@ fedora-26:
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
             # unclear why `gcc-c++` isn't in `Development Tools`
         - ./configure --enable-gpl --enable-gpl3 && make && make install
-
