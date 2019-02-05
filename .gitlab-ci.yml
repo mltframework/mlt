@@ -4,7 +4,7 @@ ubuntu-daily:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 ubuntu-latest:
@@ -13,7 +13,7 @@ ubuntu-latest:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 ubuntu-lts-1:
@@ -22,7 +22,7 @@ ubuntu-lts-1:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 ubuntu-lts-2:
@@ -31,7 +31,7 @@ ubuntu-lts-2:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 debian-testing:
@@ -40,7 +40,7 @@ debian-testing:
         - echo -e 'deb-src http://deb.debian.org/debian buster main\ndeb-src http://deb.debian.org/debian buster-updates main\ndeb-src http://security.debian.org buster/updates main' >> /etc/apt/sources.list
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 debian-stable:
@@ -49,7 +49,7 @@ debian-stable:
         - echo -e 'deb-src http://deb.debian.org/debian stretch main\ndeb-src http://deb.debian.org/debian stretch-updates main\ndeb-src http://security.debian.org stretch/updates main' >> /etc/apt/sources.list
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 debian-oldstable:
@@ -58,7 +58,7 @@ debian-oldstable:
         - echo -e 'deb-src http://deb.debian.org/debian jessie main\ndeb-src http://deb.debian.org/debian jessie-updates main\ndeb-src http://security.debian.org jessie/updates main' >> /etc/apt/sources.list
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 debian-oldoldstable:
@@ -67,7 +67,7 @@ debian-oldoldstable:
         - echo -e 'deb-src http://deb.debian.org/debian wheezy main\ndeb-src http://deb.debian.org/debian wheezy-updates main\ndeb-src http://security.debian.org wheezy/updates main' >> /etc/apt/sources.list
         - apt-get update
         - apt-get build-dep --yes mlt
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 centos-6:
@@ -75,14 +75,14 @@ centos-6:
     script:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
 
 centos-7:
     image: centos:7
     script:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
 
 fedora-27:
     image: fedora:27
@@ -90,7 +90,7 @@ fedora-27:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
 
 fedora-26:
     image: fedora:26
@@ -98,5 +98,5 @@ fedora-26:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - ./configure && make && make install
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
 
