@@ -1,6 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 2016 Meltytech, LLC
+ * Copyright (C) 2016-2019 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -42,6 +42,8 @@ typedef struct
 	AVFilterContext* avbuffsink_ctx;
 	AVFilterContext* avbuffsrc_ctx;
 	AVFilterContext* avfilter_ctx;
+	AVFilterContext* scale_ctx;
+	AVFilterContext* pad_ctx;
 	AVFilterGraph* avfilter_graph;
 	AVFrame* avinframe;
 	AVFrame* avoutframe;
@@ -194,12 +196,12 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 	}
 	ret = avfilter_init_str( pdata->avbuffsrc_ctx, NULL );
 	if( ret < 0 ) {
-		mlt_log_error( filter, "Cannot int buffer source\n" );
+		mlt_log_error( filter, "Cannot init buffer source\n" );
 		goto fail;
 	}
 
 	// Initialize the buffer sink filter context
-	pdata->avbuffsink_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, abuffersink, "in");
+	pdata->avbuffsink_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, abuffersink, "out");
 	if( !pdata->avbuffsink_ctx ) {
 		mlt_log_error( filter, "Cannot create audio buffer sink\n" );
 		goto fail;
@@ -231,7 +233,7 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 	}
 
 	// Initialize the filter context
-	pdata->avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, pdata->avfilter, "filt" );
+	pdata->avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, pdata->avfilter, pdata->avfilter->name );
 	if( !pdata->avfilter_ctx ) {
 		mlt_log_error( filter, "Cannot create audio filter\n" );
 		goto fail;
@@ -268,12 +270,16 @@ fail:
 	avfilter_graph_free( &pdata->avfilter_graph );
 }
 
+
 static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, int width, int height )
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 	AVFilter *buffersrc  = avfilter_get_by_name("buffer");
 	AVFilter *buffersink = avfilter_get_by_name("buffersink");
+	AVFilter *scale = avfilter_get_by_name("scale");
+	AVFilter *pad = avfilter_get_by_name("pad");
+	mlt_properties p = mlt_properties_new();
 	enum AVPixelFormat pixel_fmts[] = { -1, -1 };
 	AVRational sar = (AVRational){ profile->sample_aspect_num, profile->frame_rate_den };
 	AVRational timebase = (AVRational){ profile->frame_rate_den, profile->frame_rate_num };
@@ -304,7 +310,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	// Initialize the buffer source filter context
 	pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, buffersrc, "in");
 	if( !pdata->avbuffsrc_ctx ) {
-		mlt_log_error( filter, "Cannot create audio buffer source\n" );
+		mlt_log_error( filter, "Cannot create image buffer source\n" );
 		goto fail;
 	}
 	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "width", width, AV_OPT_SEARCH_CHILDREN );
@@ -339,14 +345,14 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	}
 	ret = avfilter_init_str( pdata->avbuffsrc_ctx, NULL );
 	if( ret < 0 ) {
-		mlt_log_error( filter, "Cannot int buffer source\n" );
+		mlt_log_error( filter, "Cannot init buffer source\n" );
 		goto fail;
 	}
 
 	// Initialize the buffer sink filter context
-	pdata->avbuffsink_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, buffersink, "in");
+	pdata->avbuffsink_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, buffersink, "out");
 	if( !pdata->avbuffsink_ctx ) {
-		mlt_log_error( filter, "Cannot create audio buffer sink\n" );
+		mlt_log_error( filter, "Cannot create image buffer sink\n" );
 		goto fail;
 	}
 	ret = av_opt_set_int_list( pdata->avbuffsink_ctx, "pix_fmts", pixel_fmts, -1, AV_OPT_SEARCH_CHILDREN );
@@ -361,9 +367,9 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	}
 
 	// Initialize the filter context
-	pdata->avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, pdata->avfilter, "filt" );
+	pdata->avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, pdata->avfilter, pdata->avfilter->name );
 	if( !pdata->avfilter_ctx ) {
-		mlt_log_error( filter, "Cannot create audio filter\n" );
+		mlt_log_error( filter, "Cannot create video filter\n" );
 		goto fail;
 	}
 	set_avfilter_options( filter );
@@ -393,7 +399,96 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 		ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
 	}
 	if( ret < 0 ) {
-		mlt_log_error( filter, "Cannot init filter: %s\n", av_err2str(ret) );
+		mlt_log_error( filter, "Cannot init scale filter: %s\n", av_err2str(ret) );
+		goto fail;
+	}
+
+	// scale=w=1280:h=720:force_original_aspect_ratio=decrease, pad=w=1280:h=720:x=(ow-iw)/2:y=(oh-ih)/2
+
+	// Initialize the scale filter context
+	pdata->scale_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, scale, "scale");
+	if( !pdata->scale_ctx ) {
+		mlt_log_error( filter, "Cannot create scale filer\n" );
+		goto fail;
+	}
+	mlt_properties_set_int( p, "w", width );
+	mlt_properties_set_int( p, "h", height );
+	const AVOption *opt = av_opt_find( pdata->scale_ctx->priv, "w", 0, 0, 0 );
+	if ( opt ) {
+		ret = av_opt_set( pdata->scale_ctx->priv, opt->name, mlt_properties_get(p, "w"), 0 );
+		if ( ret < 0 ) {
+			mlt_log_error( filter, "Cannot set scale width\n" );
+			goto fail;
+		}
+	}
+	opt = av_opt_find( pdata->scale_ctx->priv, "h", 0, 0, 0 );
+	if ( opt ) {
+		ret = av_opt_set( pdata->scale_ctx->priv, opt->name, mlt_properties_get(p, "h"), 0 );
+		if ( ret < 0 ) {
+			mlt_log_error( filter, "Cannot set scale height\n" );
+			goto fail;
+		}
+	}
+	ret = av_opt_set_int( pdata->scale_ctx, "force_original_aspect_ratio", 1, AV_OPT_SEARCH_CHILDREN );
+	if( ret < 0 ) {
+		mlt_log_error( filter, "Cannot set scale force_original_aspect_ratio\n" );
+		goto fail;
+	}
+	opt = av_opt_find( pdata->scale_ctx->priv, "flags", 0, 0, 0 );
+	if ( opt ) {
+		ret = av_opt_set( pdata->scale_ctx->priv, opt->name, "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp", 0 );
+		if ( ret < 0 ) {
+			mlt_log_error( filter, "Cannot set scale flags\n" );
+			goto fail;
+		}
+	}
+	ret = avfilter_init_str(  pdata->scale_ctx, NULL );
+	if( ret < 0 ) {
+		mlt_log_error( filter, "Cannot init scale filter\n" );
+		goto fail;
+	}
+
+	// Initialize the padding filter context
+	pdata->pad_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, pad, "pad");
+	if( !pdata->pad_ctx ) {
+		mlt_log_error( filter, "Cannot create pad filter\n" );
+		goto fail;
+	}
+	opt = av_opt_find( pdata->pad_ctx->priv, "w", 0, 0, 0 );
+	if ( opt ) {
+		ret = av_opt_set( pdata->pad_ctx->priv, opt->name, mlt_properties_get(p, "w"), 0 );
+		if ( ret < 0 ) {
+			mlt_log_error( filter, "Cannot set pad width\n" );
+			goto fail;
+		}
+	}
+	opt = av_opt_find( pdata->pad_ctx->priv, "h", 0, 0, 0 );
+	if ( opt ) {
+		ret = av_opt_set( pdata->pad_ctx->priv, opt->name, mlt_properties_get(p, "h"), 0 );
+		if ( ret < 0 ) {
+			mlt_log_error( filter, "Cannot pad scale height\n" );
+			goto fail;
+		}
+	}
+	opt = av_opt_find( pdata->pad_ctx->priv, "x", 0, 0, 0 );
+	if ( opt ) {
+		ret = av_opt_set( pdata->pad_ctx->priv, opt->name, "(ow-iw)/2", 0 );
+		if ( ret < 0 ) {
+			mlt_log_error( filter, "Cannot set pad x\n" );
+			goto fail;
+		}
+	}
+	opt = av_opt_find( pdata->pad_ctx->priv, "y", 0, 0, 0 );
+	if ( opt ) {
+		ret = av_opt_set( pdata->pad_ctx->priv, opt->name, "(oh-ih)/2", 0 );
+		if ( ret < 0 ) {
+			mlt_log_error( filter, "Cannot set pad y\n" );
+			goto fail;
+		}
+	}
+	ret = avfilter_init_str(  pdata->pad_ctx, NULL );
+	if( ret < 0 ) {
+		mlt_log_error( filter, "Cannot init pad filter\n" );
 		goto fail;
 	}
 
@@ -403,9 +498,19 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 		mlt_log_error( filter, "Cannot link src to filter\n" );
 		goto fail;
 	}
-	ret = avfilter_link( pdata->avfilter_ctx, 0, pdata->avbuffsink_ctx, 0 );
+	ret = avfilter_link( pdata->avfilter_ctx, 0, pdata->scale_ctx, 0 );
 	if( ret < 0 ) {
-		mlt_log_error( filter, "Cannot link filter to sink\n" );
+		mlt_log_error( filter, "Cannot link filter to scale\n" );
+		goto fail;
+	}
+	ret = avfilter_link( pdata->scale_ctx, 0, pdata->pad_ctx, 0 );
+	if( ret < 0 ) {
+		mlt_log_error( filter, "Cannot link scale to pad\n" );
+		goto fail;
+	}
+	ret = avfilter_link( pdata->pad_ctx, 0, pdata->avbuffsink_ctx, 0 );
+	if( ret < 0 ) {
+		mlt_log_error( filter, "Cannot link pad to sink\n" );
 		goto fail;
 	}
 
@@ -419,6 +524,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	return;
 
 fail:
+	mlt_properties_close( p );
 	avfilter_graph_free( &pdata->avfilter_graph );
 }
 
