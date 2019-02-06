@@ -1,6 +1,6 @@
 /*
  * producer_decklink.c -- input from Blackmagic Design DeckLink
- * Copyright (C) 2011-2018 Meltytech, LLC
+ * Copyright (C) 2011-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -90,10 +90,8 @@ static int copy_lines_sliced_proc( int id, int idx, int jobs, void* cookie )
 static void copy_lines( BMDPixelFormat in_fmt, unsigned char* in_buffer, int in_stride,
 	mlt_image_format out_fmt, unsigned char* out_buffers[4], int out_strides[4], int w, int h )
 {
-	struct copy_lines_sliced_desc ctx = { .in_fmt = in_fmt, .out_fmt = out_fmt, .in_buffer = in_buffer,
-		.out_buffers = out_buffers, .in_stride = in_stride, .out_strides = out_strides };
-
-	ctx.w = w; ctx.h = h;
+	struct copy_lines_sliced_desc ctx = { in_fmt, out_fmt, in_buffer,
+		out_buffers, in_stride, out_strides, w, h };
 
 	if ( h == 1 )
 		copy_lines_sliced_proc( 0, 0, 1, &ctx );
