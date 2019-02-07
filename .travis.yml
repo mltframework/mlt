@@ -10,7 +10,6 @@ matrix:
     - language: python
       python: 3.7
       dist: xenial  # required for Python >= 3.7 (travis-ci/travis-ci#9069)
-      services: true  # override docker
       before_install: pip install flake8
       script:
         # stop the build if there are Python syntax errors or undefined names
