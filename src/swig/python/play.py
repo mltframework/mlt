@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Import required modules
+from __future__ import print_function
 import mlt
 import time
 import sys
@@ -33,5 +34,5 @@ if p:
 		time.sleep( 1 )
 else:
 	# Diagnostics
-	print "Unable to open ", sys.argv[ 1 ]
+	print("Unable to open ", sys.argv[ 1 ])
 
