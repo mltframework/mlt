@@ -113,6 +113,11 @@ else
 			touch ../disable-avformat
 			exit 0
 		fi
+		if $(pkg-config "libavformat${avformat_suffix} < 55.12.100"); then
+			echo "- libavformat version $(pkg-config --modversion libavformat) is too old: disabling"
+			touch ../disable-avformat
+			exit 0
+		fi
 		echo "PREFIX=$shared_ffmpeg" >> config.mak
 		case $targetos in
 			MINGW32_NT-*)
