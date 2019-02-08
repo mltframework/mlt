@@ -243,7 +243,13 @@ binary_data frame_get_image( Mlt::Frame &frame, mlt_image_format format, int w, 
 %}
 
 %typemap(out) binary_data {
-	$result = PyString_FromStringAndSize( $1.data, $1.size );
+        $result =
+%#if PY_MAJOR_VERSION < 3
+        PyString_FromStringAndSize(
+%#else
+        PyUnicode_FromStringAndSize(
+%#endif
+	$1.data, $1.size );
 }
 
 binary_data frame_get_waveform(Mlt::Frame&, int, int);

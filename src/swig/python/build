@@ -13,7 +13,7 @@ path=`which python 2> /dev/null`
 if [ $? = 0 ]
 then
 	# Change this as needed
-	export PYTHON_INCLUDE=`python -c "import sys;print \"%s/include/python%d.%d\"%(sys.prefix,sys.version_info[0],sys.version_info[1])"`
+	export PYTHON_INCLUDE=`python -c "from __future__ import print_function;import sys;print(\"%s/include/python%d.%d\"%(sys.prefix,sys.version_info[0],sys.version_info[1]))"`
 
 	[ ! -d "$PYTHON_INCLUDE" ] && echo python development missing && exit 1
 
