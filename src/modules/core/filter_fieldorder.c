@@ -1,6 +1,6 @@
 /*
  * filter_fieldorder.c -- change field dominance
- * Copyright (C) 2011-2014 Meltytech, LLC
+ * Copyright (C) 2011-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -105,12 +105,12 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			mlt_frame_set_image( frame, new_image, size, mlt_pool_release );
 			*image = new_image;
 
-			// Set the normalised field order
-			mlt_properties_set_int( properties, "top_field_first", tff );
-			mlt_properties_set_int( properties, "meta.top_field_first", tff );
-
 			mlt_log_timings_end( NULL, "shifting_fields" );
 		}
+
+		// Set the normalised field order
+		mlt_properties_set_int( properties, "top_field_first", tff );
+		mlt_properties_set_int( properties, "meta.top_field_first", tff );
 	}
 
 	return error;
