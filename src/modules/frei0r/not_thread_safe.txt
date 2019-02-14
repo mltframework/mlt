@@ -6,6 +6,7 @@ alphaatop=0.2
 alphain=0.2
 alphaout=0.2
 alphaover=0.2
+alphaspot
 alphaxor=0.2
 baltan
 blend=0.2
