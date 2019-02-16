@@ -1651,6 +1651,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
+		 && (self->pkt.stream_index == self->video_index )
 		 && ( paused || self->current_position >= req_position ) )
 	{
 		// Duplicate it
