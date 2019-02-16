@@ -70,8 +70,40 @@ static void composite_line_yuv_float( uint8_t *dest, uint8_t *src, int width, ui
 	}
 }
 
+struct dissolve_slice_context {
+	uint8_t *dst_image;
+	uint8_t *src_image;
+	uint8_t *dst_alpha;
+	uint8_t *src_alpha;
+	int width;
+	int height;
+	float weight;
+};
 
-static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height )
+static int dissolve_slice( int id, int index, int count, void *context )
+{
+	struct dissolve_slice_context ctx = *((struct dissolve_slice_context*) context);
+	int stride = ctx.width * 2;
+	int slice_height = (ctx.height + count - 1) / count;
+	int i;
+
+	ctx.dst_image += index * slice_height * stride;
+	ctx.src_image += index * slice_height * stride;
+	if (ctx.dst_alpha) ctx.dst_alpha += index * slice_height * ctx.width;
+	if (ctx.src_alpha) ctx.src_alpha += index * slice_height * ctx.width;
+	slice_height = MIN(slice_height, ctx.height - index * slice_height);
+
+	for (i = 0; i < slice_height; i++) {
+		composite_line_yuv_float( ctx.dst_image, ctx.src_image, ctx.width, ctx.src_alpha, ctx.dst_alpha, ctx.weight );
+		ctx.dst_image += stride;
+		ctx.src_image += stride;
+		if (ctx.dst_alpha) ctx.dst_alpha += ctx.width;
+		if (ctx.src_alpha) ctx.src_alpha += ctx.width;
+	}
+	return 0;
+}
+
+static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height, int threads )
 {
 	int ret = 0;
 	int i = height + 1;
@@ -95,16 +127,29 @@ static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, i
 	width_src = width_src > width ? width : width_src;
 	height_src = height_src > height ? height : height_src;
 
-	while ( --i )
+	if (is_translucent)
 	{
-		if (is_translucent)
-			composite_line_yuv_float( p_dest, p_src, width_src, alpha_src, alpha_dst, weight );
-		else
+		struct dissolve_slice_context context = {
+			.dst_image = p_dest,
+			.src_image = p_src,
+			.dst_alpha = alpha_dst,
+			.src_alpha = alpha_src,
+			.width = width_src,
+			.height = height_src,
+			.weight = weight
+		};
+		mlt_slices_run_normal(threads, dissolve_slice, &context);
+	}
+	else
+	{
+		while ( --i )
+		{
 			composite_line_yuv( p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0 );
-		p_src += width_src << 1;
-		p_dest += width << 1;
-		alpha_src += width_src;
-		alpha_dst += width;
+			p_src += width_src << 1;
+			p_dest += width << 1;
+			alpha_src += width_src;
+			alpha_dst += width;
+		}
 	}
 
 	return ret;
@@ -541,6 +586,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
 	int reverse = mlt_properties_get_int( properties, "reverse" );
 	int invert = mlt_properties_get_int( properties, "invert" );
+	int threads = CLAMP(mlt_properties_get_int(properties, "threads"), 0, mlt_slices_count_normal());
 
 	// Honour the reverse here
 	if ( mix >= 1.0 )
@@ -565,7 +611,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mix = ( reverse || invert ) ? 1 - mix : mix;
 		invert = 0;
 		// Dissolve the frames using the time offset for mix value
-		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
+		dissolve_yuv( a_frame, b_frame, mix, *width, *height, threads );
 	}
 
 	// Extract the a_frame image info
