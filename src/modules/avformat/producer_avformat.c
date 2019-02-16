@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1650,7 +1650,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*format = mlt_image_rgb24a;
 
 	// Duplicate the last image if necessary
-	if ( self->video_frame && self->video_frame->linesize[0] && !self->autorotate
+	if ( self->video_frame && self->video_frame->linesize[0]
 		 && ( paused || self->current_position >= req_position ) )
 	{
 		// Duplicate it
