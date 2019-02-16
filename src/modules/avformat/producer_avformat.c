@@ -2876,7 +2876,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	}
 
 	// Update the audio properties if the index changed
-	if ( context && index > -1 && self->audio_index > -1 && index != self->audio_index )
+	if ( context && self->audio_index < context->nb_streams && index > -1 && self->audio_index > -1 && index != self->audio_index )
 	{
 		pthread_mutex_lock( &self->open_mutex );
 		if ( self->audio_codec[ self->audio_index ] )
