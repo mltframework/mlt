@@ -73,9 +73,14 @@ distclean:	clean
 install:
 	$(INSTALL) -d "$(DESTDIR)$(libdir)"
 	if [ "$(targetos)" = "MinGW" ]; then \
-		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(prefix) ; \
-		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)/libmlt++.dll ; \
-		$(INSTALL) -m 644 libmlt++.def $(DESTDIR)$(libdir) ; \
+		if [ "$(windeploy)" = true ]; then \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(prefix)" ; \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(libdir)/libmlt++.dll" ; \
+		else \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(bindir)" ; \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(bindir)/libmlt++.dll" ; \
+		fi; \
+		$(INSTALL) -m 644 libmlt++.def "$(DESTDIR)$(libdir)" ; \
 	else \
 		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
@@ -89,6 +94,15 @@ uninstall:
 	if [ "$(targetos)" != "MinGW" ]; then \
 		rm -f "$(DESTDIR)$(libdir)/$(NAME)" ; \
 		rm -f "$(DESTDIR)$(libdir)/$(SONAME)" ; \
+	else \
+		if [ "$(windeploy)" = true ]; then \
+			rm -f "$(DESTDIR)$(prefix)/$(TARGET)" ; \
+			rm -f "$(DESTDIR)$(libdir)/libmlt++.dll" ; \
+		else \
+			rm -f "$(DESTDIR)$(bindir)/$(TARGET)" ; \
+			rm -f "$(DESTDIR)$(bindir)/libmlt++.dll" ; \
+		fi ; \
+		rm -f "$(DESTDIR)$(libdir)/libmlt++.def" ; \
 	fi
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt++"
 

@@ -148,7 +148,11 @@ mlt_repository mlt_factory_init( const char *directory )
 		char path[1024];
 		DWORD size = sizeof( path );
 		GetModuleFileName( NULL, path, size );
+		#ifndef NODEPLOY
 		char *appdir = mlt_dirname( strdup( path ) );
+		#else
+		char *appdir = mlt_dirname( mlt_dirname( strdup( path ) ) );
+		#endif
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
 		free( appdir );
 #elif defined(__APPLE__)  && defined(RELOCATABLE)

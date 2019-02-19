@@ -31,6 +31,7 @@ General build options:
   --cpu='cpu'                - Compile for a specific CPU (default: none)
   --target-os='os'           - Cross-compile to a specific OS (default: $(uname -s))
   --target-arch='arch'       - Cross-compile to a specific CPU architecture
+  --disable-windeploy        - Keep bin/ lib/ layout on Windows
 
 Module disable options:
 
@@ -60,6 +61,7 @@ build_config()
 		echo "extra_versioning=$extra_versioning"
 		echo "melt_noversion=$melt_noversion"
 		echo "targetos=$targetos"
+		echo "windeploy=$windeploy"
 
 		[ "$mmx" = "true" ] && 
 		echo "MMX_FLAGS=-DUSE_MMX"
@@ -123,6 +125,8 @@ build_config()
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		MinGW)
+		[ "$windeploy" = false ] &&
+			echo "CFLAGS+=-DNODEPLOY"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
 		echo "SHFLAGS=-shared"
@@ -194,7 +198,7 @@ build_pkgconfig()
 }
 
 # Debug mode
-set +x
+# set -x
 
 # Define build directory for scripts called
 export build_dir=`dirname $0`
@@ -217,6 +221,7 @@ export targetarch=
 export amd64=false
 export extra_versioning=false
 export melt_noversion=false
+export windeploy=true
 
 # Define the compiler used in tests (gcc is not installed everywhere)
 : ${CC:=gcc}
@@ -243,6 +248,7 @@ do
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 		--target-os=* )			targetos="${i#--target-os=}" ;;
 		--target-arch=* )		targetarch="${i#--target-arch=}" ;;
+		--disable-windeploy )		windeploy=false ;;
 	esac
 done
 
