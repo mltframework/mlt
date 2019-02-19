@@ -2,7 +2,7 @@
  * \file mlt_types.h
  * \brief Provides forward definitions of all public types
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +24,11 @@
 
 #ifndef GCC_VERSION
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
 #endif
 
 #include <inttypes.h>
@@ -246,5 +251,9 @@ extern char* strptime(const char *buf, const char *fmt, struct tm *tm);
 #define mlt_fopen fopen
 #define MLT_DIRLIST_DELIMITER ":"
 #endif /* ifdef _WIN32 */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
