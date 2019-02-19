@@ -238,6 +238,8 @@ extern int nanosleep( const struct timespec * rqtp, struct timespec * rmtp );
 extern int setenv(const char *name, const char *value, int overwrite);
 extern char* getlocale();
 extern FILE* win32_fopen(const char *filename_utf8, const char *mode_utf8);
+#include <time.h>
+extern char* strptime(const char *buf, const char *fmt, struct tm *tm);
 #define mlt_fopen win32_fopen
 #define MLT_DIRLIST_DELIMITER ";"
 #else
