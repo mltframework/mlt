@@ -80,8 +80,21 @@ plugin_desc_free_ports (plugin_desc_t * pd)
     {
       g_free (pd->port_descriptors);
       g_free (pd->port_range_hints);
+      g_free (pd->audio_input_port_indicies);
+      g_free (pd->audio_output_port_indicies);
+      g_free (pd->port_names);
+      g_free (pd->control_port_indicies);
+      g_free (pd->status_port_indicies);
+      g_free (pd->audio_aux_port_indicies);
       pd->port_descriptors = NULL;
       pd->port_range_hints = NULL;
+      pd->audio_input_port_indicies = NULL;
+      pd->audio_output_port_indicies = NULL;
+      pd->port_names = NULL;
+      pd->control_port_indicies = NULL;
+      pd->status_port_indicies = NULL;
+      pd->audio_aux_port_indicies = NULL;
+
       pd->port_count = 0;
     }
 }
