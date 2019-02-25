@@ -60,6 +60,7 @@ typedef struct serialise_context_s* serialise_context;
 static int consumer_start( mlt_consumer parent );
 static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer consumer );
+static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void *arg );
 static void serialise_service( serialise_context context, mlt_service service, xmlNode *node );
 
@@ -165,6 +166,9 @@ mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, cons
 		consumer->start = consumer_start;
 		consumer->stop = consumer_stop;
 		consumer->is_stopped = consumer_is_stopped;
+		
+		// Assign close callback
+		consumer->close = consumer_close;
 
 		mlt_properties_set( MLT_CONSUMER_PROPERTIES( consumer ), "resource", arg );
 		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "real_time", 0 );
@@ -991,4 +995,16 @@ static void *consumer_thread( void *arg )
 	mlt_consumer_stopped( consumer );
 
 	return NULL;
+}
+
+static void consumer_close( mlt_consumer consumer )
+{
+	// Stop the consumer
+	mlt_consumer_stop( consumer );
+
+	// Close the parent
+	mlt_consumer_close( consumer );
+
+	// Free the memory
+	free( consumer );
 }
