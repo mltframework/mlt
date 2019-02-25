@@ -532,4 +532,5 @@ MLT_6.12.0 {
 MLT_6.14.0 {
   global:
     mlt_frame_get_unique_properties;
+    mlt_playlist_reorder;
 } MLT_6.12.0;
