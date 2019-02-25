@@ -546,3 +546,10 @@ MLTPP_6.10.0 {
       "Mlt::Animation::serialize_cut(mlt_time_format, int, int)";
   };
 } MLTPP_6.8.0;
+
+MLTPP_6.14.0 {
+  global:
+    extern "C++" {
+      "Mlt::Producer::Producer(mlt_profile_s*, char const*, char const*)";
+  };
+} MLTPP_6.10.0;
