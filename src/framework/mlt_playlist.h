@@ -101,6 +101,7 @@ extern int mlt_playlist_get_clip_info( mlt_playlist self, mlt_playlist_clip_info
 extern int mlt_playlist_insert( mlt_playlist self, mlt_producer producer, int where, mlt_position in, mlt_position out );
 extern int mlt_playlist_remove( mlt_playlist self, int where );
 extern int mlt_playlist_move( mlt_playlist self, int from, int to );
+extern int mlt_playlist_reorder( mlt_playlist self, const int *indices );
 extern int mlt_playlist_resize_clip( mlt_playlist self, int clip, mlt_position in, mlt_position out );
 extern int mlt_playlist_repeat_clip( mlt_playlist self, int clip, int repeat );
 extern int mlt_playlist_split( mlt_playlist self, int clip, mlt_position position );

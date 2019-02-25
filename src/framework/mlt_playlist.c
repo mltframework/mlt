@@ -946,6 +946,48 @@ int mlt_playlist_move( mlt_playlist self, int src, int dest )
 	return 0;
 }
 
+/** Reorder the entries in the playlist.
+ *
+ * \public \memberof mlt_playlist_s
+ * \param self a playlist
+ * \param indices a list of current indices mapped to the new desired index
+ * \return true if there was an error
+ */
+
+int mlt_playlist_reorder( mlt_playlist self, const int *indices )
+{
+	// Check that the playlist is sortable.
+	if ( self->count < 2 ) return 1;
+
+	// Sanity check the indices. The values must be in range and unique.
+	int i, j;
+	for ( i = 0; i < self->count - 1; i++ )
+		for ( j = i + 1; j < self->count; j++ )
+			if ( indices[i] < 0 || indices[i] >= self->count ||
+				 indices[j] < 0 || indices[j] >= self->count ||
+				 indices[i] == indices[j] )
+				return 1;
+
+	// Create a new list to copy entries in a new order.
+	playlist_entry **new_list = calloc( self->size, sizeof( playlist_entry * ) );
+	if ( new_list == NULL ) return 1;
+
+	// Copy entries according to the new indices
+	int new_index;
+	for ( new_index = 0; new_index < self->count; new_index++ )
+	{
+		int old_index = indices[new_index];
+		new_list[new_index] = self->list[old_index];
+	}
+
+	// Delete the old list and save the new list
+	free( self->list );
+	self->list = new_list;
+	mlt_playlist_virtual_refresh( self );
+
+	return 0;
+}
+
 /** Repeat the specified clip n times.
  *
  * \public \memberof mlt_playlist_s

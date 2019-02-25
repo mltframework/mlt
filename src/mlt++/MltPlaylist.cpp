@@ -201,6 +201,11 @@ int Playlist::move( int from, int to )
 	return mlt_playlist_move( get_playlist( ), from, to );
 }
 
+int Playlist::reorder( const int *indices )
+{
+	return mlt_playlist_reorder( get_playlist( ), indices );
+}
+
 int Playlist::resize_clip( int clip, int in, int out )
 {
 	return mlt_playlist_resize_clip( get_playlist( ), clip, in, out );
