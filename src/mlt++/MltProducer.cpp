@@ -32,13 +32,18 @@ Producer::Producer( ) :
 }
 
 Producer::Producer( Profile& profile, const char *id, const char *service ) :
+	Producer( profile.get_profile() , id, service )
+{
+}
+
+Producer::Producer( mlt_profile profile, const char *id, const char *service ) :
 	instance( NULL ),
 	parent_( NULL )
 {
 	if ( id != NULL && service != NULL )
-		instance = mlt_factory_producer( profile.get_profile(), id, service );
+		instance = mlt_factory_producer( profile, id, service );
 	else
-		instance = mlt_factory_producer( profile.get_profile(), NULL, id != NULL ? id : service );
+		instance = mlt_factory_producer( profile, NULL, id != NULL ? id : service );
 }
 
 Producer::Producer( Service &producer ) :
