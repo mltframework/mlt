@@ -47,6 +47,7 @@ namespace Mlt
 			Tractor( mlt_tractor tractor );
 			Tractor( Tractor &tractor );
 			Tractor( Profile& profile, char *id, char *arg = NULL );
+			Tractor( mlt_profile profile, char *id, char *arg = NULL );
 			virtual ~Tractor( );
 			virtual mlt_tractor get_tractor( );
 			mlt_producer get_producer( );

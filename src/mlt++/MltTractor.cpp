@@ -61,6 +61,11 @@ Tractor::Tractor( Tractor &tractor ) :
 }
 
 Tractor::Tractor( Profile& profile, char *id, char *resource ) :
+	Tractor( profile.get_profile(), id, resource )
+{
+}
+
+Tractor::Tractor( mlt_profile profile, char *id, char *resource ) :
 	instance( NULL )
 {
 	Producer producer( profile, id, resource );
