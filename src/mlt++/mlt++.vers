@@ -552,5 +552,6 @@ MLTPP_6.14.0 {
     extern "C++" {
       "Mlt::Producer::Producer(mlt_profile_s*, char const*, char const*)";
       "Mlt::Consumer::Consumer(mlt_profile_s*, char const*, char const*)";
+      "Mlt::Transition::Transition(mlt_profile_s*, char const*, char const*)";
   };
 } MLTPP_6.10.0;

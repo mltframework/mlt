@@ -26,6 +26,11 @@
 using namespace Mlt;
 
 Transition::Transition( Profile& profile, const char *id, const char *arg ) :
+	Transition( profile.get_profile(), id, arg )
+{
+}
+
+Transition::Transition( mlt_profile profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( arg != NULL )
