@@ -38,6 +38,7 @@ namespace Mlt
 			mlt_transition instance;
 		public:
 			Transition( Profile& profile, const char *id, const char *arg = NULL );
+			Transition( mlt_profile profile, const char *id, const char *arg = NULL );
 			Transition( Service &transition );
 			Transition( Transition &transition );
 			Transition( mlt_transition transition );
