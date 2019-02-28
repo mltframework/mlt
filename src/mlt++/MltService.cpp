@@ -149,7 +149,12 @@ Filter *Service::filter( int index )
 	return result == NULL ? NULL : new Filter( result );
 }
 
+void Service::set_profile( mlt_profile profile )
+{
+    mlt_service_set_profile( get_service( ), profile );
+}
+
 void Service::set_profile( Profile &profile )
 {
-	mlt_service_set_profile( get_service( ), profile.get_profile( ) );
+	set_profile( profile.get_profile( ) );
 }

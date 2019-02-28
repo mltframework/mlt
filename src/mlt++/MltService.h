@@ -63,6 +63,7 @@ namespace Mlt
 			int filter_count( );
 			int move_filter( int from, int to );
 			Filter *filter( int index );
+			void set_profile( mlt_profile profile );
 			void set_profile( Profile &profile );
 	};
 }
