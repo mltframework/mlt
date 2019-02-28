@@ -25,6 +25,11 @@
 using namespace Mlt;
 
 Filter::Filter( Profile& profile, const char *id, const char *arg ) :
+	Filter( profile.get_profile(), id, arg )
+{
+}
+
+Filter::Filter( mlt_profile profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( arg != NULL )
