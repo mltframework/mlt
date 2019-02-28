@@ -38,6 +38,11 @@ Consumer::Consumer( Profile& profile ) :
 }
 
 Consumer::Consumer( Profile& profile, const char *id, const char *arg ) :
+	Consumer ( profile.get_profile(), id, arg )
+{
+}
+
+Consumer::Consumer( mlt_profile profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( id == NULL || arg != NULL )
