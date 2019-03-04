@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1812,6 +1812,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					pts = best_pts( self, self->video_frame->pkt_pts, self->video_frame->pkt_dts );
 					if ( pts != AV_NOPTS_VALUE )
 					{
+						// Some streams are not marking their key frames even though
+						// there are I frames, and find_first_pts() fails as a result.
+						// Try to set first_pts here after getting pict_type.
+						if ( self->first_pts == AV_NOPTS_VALUE &&
+							(self->video_frame->key_frame || self->video_frame->pict_type == AV_PICTURE_TYPE_I) )
+							 self->first_pts = pts;
 						if ( self->first_pts != AV_NOPTS_VALUE )
 							pts -= self->first_pts;
 						else if ( context->start_time != AV_NOPTS_VALUE )
