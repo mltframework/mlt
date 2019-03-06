@@ -32,7 +32,7 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
-	install -d $(DESTDIR)$(mltdatadir)/oldfilm
+	install -d "$(DESTDIR)$(mltdatadir)/oldfilm"
 	install -m 644 *.svg "$(DESTDIR)$(mltdatadir)/oldfilm"
 	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/oldfilm"
 
