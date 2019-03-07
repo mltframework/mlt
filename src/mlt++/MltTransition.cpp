@@ -1,7 +1,6 @@
 /**
  * MltTransition.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,7 +34,7 @@ Transition::Transition( mlt_profile profile, const char *id, const char *arg ) :
 {
 	if ( arg != NULL )
 	{
-		instance = mlt_factory_transition( profile.get_profile(), id, arg );
+		instance = mlt_factory_transition( profile, id, arg );
 	}
 	else
 	{
@@ -44,12 +43,12 @@ Transition::Transition( mlt_profile profile, const char *id, const char *arg ) :
 			char *temp = strdup( id );
 			char *arg = strchr( temp, ':' ) + 1;
 			*( arg - 1 ) = '\0';
-			instance = mlt_factory_transition( profile.get_profile(), temp, arg );
+			instance = mlt_factory_transition( profile, temp, arg );
 			free( temp );
 		}
 		else
 		{
-			instance = mlt_factory_transition( profile.get_profile(), id, NULL );
+			instance = mlt_factory_transition( profile, id, NULL );
 		}
 	}
 }
