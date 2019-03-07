@@ -16,6 +16,9 @@ src/melt/melt
 src/modules/lumas/luma
 src/modules/lumas/NTSC/*.pgm
 src/modules/lumas/PAL/*.pgm
+src/modules/lumas/16_9/*.pgm
+src/modules/lumas/9_16/*.pgm
+src/modules/lumas/square/*.pgm
 src/modules/lumas/.executed
 src/swig/csharp/src_swig/*
 src/swig/perl/blib/*

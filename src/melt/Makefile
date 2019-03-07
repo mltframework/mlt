@@ -25,7 +25,9 @@ endif
 
 ifeq ($(targetos), MinGW)
 LDFLAGS += -mconsole
+ifeq ($(windeploy), true)
 bindir = $(prefix)
+endif
 endif
 
 all: $(meltname)
