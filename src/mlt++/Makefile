@@ -10,7 +10,10 @@ LIBFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compa
 else ifeq ($(targetos), MinGW)
 NAME = libmlt++$(LIBSUF)
 TARGET = libmlt++-$(soversion)$(LIBSUF)
-CXXFLAGS += -DMLTPP_EXPORTS --std=c++11
+CXXFLAGS += -DMLTPP_EXPORTS
+ifneq (, $(shell $(CXX) --version | grep -is -e g++ -e clang))
+	CXXFLAGS += -std=c++11
+endif
 LIBFLAGS += -Wl,--output-def,libmlt++.def
 else
 NAME = libmlt++$(LIBSUF)
