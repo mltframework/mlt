@@ -226,6 +226,28 @@ export windeploy=true
 # Define the compiler used in tests (gcc is not installed everywhere)
 : ${CC:=gcc}
 
+# Test for a supported C++ compiler.
+if $($CC --version | grep -is -e gcc > /dev/null)
+then
+	echo "Found gcc version $($CC -dumpversion)"
+	if $CC -dumpversion | awk '{split($0, a, "."); if ((lshift(a[1],16) + lshift(a[2],8) + a[3]) < lshift(4,16) + lshift(8,8) + 1) exit 0; else exit 1;}'
+	then
+		echo "The minimum version of gcc supported is 4.8.1 (for C++11)."
+		exit 0
+	fi
+elif $($CC --version | grep -is -e clang > /dev/null)
+then
+	echo "Found clang version $($CC -dumpversion)"
+	if $CC -dumpversion | awk '{split($0, a, "."); if ((lshift(a[1],8) + a[2]) < lshift(3,8) + 3) exit 0; else exit 1;}'
+	then
+		echo "The minimum version of clang supported is 3.3 (for C++11)."
+		exit 0
+	fi
+else
+	echo "MLT requires either the gcc or clang C/C++ compilers."
+	exit 0
+fi
+
 # Iterate through arguments
 for i in "$@"
 do
