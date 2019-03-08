@@ -983,6 +983,7 @@ query_all:
 					out = mlt_producer_get_length( melt ) - 1;
 				}
 				mlt_producer_set_in_and_out( melt, in, out );
+				mlt_producer_seek( melt, 0 );
 			}
 			// Connect consumer to melt
 			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( melt ) );
