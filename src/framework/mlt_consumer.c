@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,7 @@ typedef struct
 	double fps;
 	int channels;
 	int frequency;
-
+	int speed;
 	/* additional fields added for the parallel work queue */
 	mlt_deque worker_threads;
 	pthread_mutex_t done_mutex;
@@ -802,7 +802,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( self );
-	int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+	priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
 	if ( frame )
 	{
@@ -832,7 +832,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	while ( priv->ahead )
 	{
 		// Get the maximum size of the buffer
-		int buffer = (speed == 0) ? 1 : MAX(mlt_properties_get_int( properties, "buffer" ), 0) + 1;
+		int buffer = (priv->speed == 0) ? 1 : MAX(mlt_properties_get_int( properties, "buffer" ), 0) + 1;
 	
 		// Put the current frame into the queue
 		pthread_mutex_lock( &priv->queue_mutex );
@@ -859,7 +859,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( frame == NULL )
 			continue;
 		pos = mlt_frame_get_position( frame );
-		speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+		priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
 		// WebVfx uses this to setup a consumer-stopping event handler.
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "consumer", self, 0, NULL, NULL );
@@ -875,7 +875,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 
 		// All non-normal playback frames should be shown
-		if ( speed != 1 )
+		if ( priv->speed != 1 )
 		{
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
@@ -1421,8 +1421,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				mlt_deque_push_back( priv->queue, frame );
 				pthread_cond_signal( &priv->queue_cond );
 				pthread_mutex_unlock( &priv->queue_mutex );
-				int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
-				buffer = (speed == 0) ? 1 : buffer;
+				priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+				buffer = (priv->speed == 0) ? 1 : buffer;
 			}
 		}
 
@@ -1455,8 +1455,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 			mlt_deque_push_back( priv->queue, frame );
 			pthread_cond_signal( &priv->queue_cond );
 			pthread_mutex_unlock( &priv->queue_mutex );
-			int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
-			buffer = (speed == 0) ? 1 : buffer;
+			priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+			buffer = (priv->speed == 0) ? 1 : buffer;
 		}
 	}
 
@@ -1575,7 +1575,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 #ifndef _WIN32
 			consumer_read_ahead_start( self );
 #endif
-			if ( buffer > 1 )
+			if ( buffer > 1 && priv->speed )
 				size = prefill > 0 && prefill < buffer ? prefill : buffer;
 			priv->preroll = 0;
 		}
