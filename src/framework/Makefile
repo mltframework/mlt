@@ -143,7 +143,7 @@ uninstall:
 		else \
 			rm -f "$(DESTDIR)$(bindir)/$(TARGET)" ; \
 			rm -f "$(DESTDIR)$(bindir)/libmlt.dll" ; \
-		fi ;
+		fi ; \
 		rm -f "$(DESTDIR)$(libdir)/libmlt.def" ; \
 	fi
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
