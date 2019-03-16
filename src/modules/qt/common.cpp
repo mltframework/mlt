@@ -29,6 +29,10 @@
 bool createQApplicationIfNeeded(mlt_service service)
 {
 	if (!qApp) {
+#if defined(Q_OS_WIN) && defined(NODEPLOY)
+		QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))+QStringLiteral("/bin"));
+		QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))+QStringLiteral("/plugins"));
+#endif
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
 		if (getenv("DISPLAY") == 0) {
 			mlt_log_error(service,
