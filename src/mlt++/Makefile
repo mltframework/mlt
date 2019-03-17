@@ -21,7 +21,7 @@ ifneq (, $(shell $(CXX) --version | grep -is -e g++ -e clang))
 endif
 CXXFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\" -fvisibility=hidden
 
-LDFLAGS += -L../framework -lmlt
+LDFLAGS := -L../framework -lmlt $(LDFLAGS)
 ifeq ($(targetos), Linux)
 LDFLAGS += -Wl,--version-script=mlt++.vers
 endif
