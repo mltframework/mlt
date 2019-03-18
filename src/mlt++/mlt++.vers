@@ -557,5 +557,6 @@ MLTPP_6.14.0 {
       "Mlt::Tractor::Tractor(mlt_profile_s*, char const*, char const*)";
       "Mlt::Service::set_profile(mlt_profile_s*)";
       "Mlt::Playlist::reorder(int const*)";
+      "Mlt::Transition::connect(Mlt::Service&, int, int)";
   };
 } MLTPP_6.10.0;

@@ -106,6 +106,11 @@ int Transition::connect( Producer &producer, int a_track, int b_track )
 	return mlt_transition_connect( get_transition(), producer.get_service(), a_track, b_track );
 }
 
+int Transition::connect(Service &service, int a_track, int b_track)
+{
+	return mlt_transition_connect( get_transition(), service.get_service(), a_track, b_track );
+}
+
 int Transition::get_a_track( )
 {
 	return mlt_transition_get_a_track( get_transition() );

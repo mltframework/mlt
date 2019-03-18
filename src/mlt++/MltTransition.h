@@ -1,7 +1,6 @@
 /**
  * MltTransition.h - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,6 +47,7 @@ namespace Mlt
 			void set_in_and_out( int in, int out );
 			void set_tracks( int a_track, int b_track );
 			int connect( Producer &producer, int a_track, int b_track );
+			int connect( Service &service, int a_track, int b_track );
 			int get_a_track( );
 			int get_b_track( );
 			int get_in( );
