@@ -81,13 +81,19 @@ mlt_repository mlt_repository_init( const char *directory )
 #ifdef _WIN32
 	char *syspath = getenv("PATH");
 	char *exedir = mlt_environment( "MLT_APPDIR" );
-	char *newpath = "PATH=";
-	newpath = calloc( 1, strlen( newpath )+ strlen( exedir ) + 1 + strlen( syspath ) + 1 );
-	strcat( newpath, "PATH=" );
+	#ifdef NODEPLOY
+	char *sep = "\\bin;";
+	#else
+	char *sep = ";";
+	#endif
+	char *newpath;
+	newpath = calloc( 1, 5 + strlen( exedir ) + strlen( sep ) + strlen( syspath ) + 1 );
+	strcat( newpath, "PATH=" ); // len=5
 	strcat( newpath, exedir );
-	strcat( newpath, ";" );
+	strcat( newpath, sep );
 	strcat( newpath, syspath );
-	putenv(newpath);
+	putenv( newpath );
+	free(newpath);
 #endif
 
 	// Iterate over files
