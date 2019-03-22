@@ -53,16 +53,18 @@ typedef struct
 
 static void property_changed( mlt_service owner, mlt_filter filter, char *name )
 {
-	private_data* pdata = (private_data*)filter->child;
-	if( pdata->avfilter )
-	{
-		const AVOption *opt = NULL;
-		while( ( opt = av_opt_next( &pdata->avfilter->priv_class, opt ) ) )
+	if( strncmp( PARAM_PREFIX, name, PARAM_PREFIX_LEN ) == 0 ) {
+		private_data* pdata = (private_data*)filter->child;
+		if( pdata->avfilter )
 		{
-			if( !strcmp( opt->name, name + PARAM_PREFIX_LEN ) )
+			const AVOption *opt = NULL;
+			while( ( opt = av_opt_next( &pdata->avfilter->priv_class, opt ) ) )
 			{
-				pdata->reset = 1;
-				break;
+				if( !strcmp( opt->name, name + PARAM_PREFIX_LEN ) )
+				{
+					pdata->reset = 1;
+					break;
+				}
 			}
 		}
 	}
