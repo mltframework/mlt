@@ -235,3 +235,13 @@ int Producer::clear( )
 {
 	return mlt_producer_clear( get_producer( ) );
 }
+
+int64_t Producer::get_creation_time( )
+{
+	return mlt_producer_get_creation_time( get_producer( ) );
+}
+
+void Producer::set_creation_time( int64_t creation_time )
+{
+	mlt_producer_set_creation_time( get_producer( ), creation_time );
+}

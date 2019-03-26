@@ -125,5 +125,7 @@ extern int mlt_producer_is_blank( mlt_producer self );
 extern mlt_producer mlt_producer_cut_parent( mlt_producer self );
 extern int mlt_producer_optimise( mlt_producer self );
 extern void mlt_producer_close( mlt_producer self );
+int64_t mlt_producer_get_creation_time( mlt_producer self );
+void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time );
 
 #endif

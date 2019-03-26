@@ -30,6 +30,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h> // for stat()
+#include <sys/stat.h>  // for stat()
+#include <time.h>      // for strftime() and gtime()
+#include <unistd.h>    // for stat()
 
 /* Forward references. */
 
@@ -1094,4 +1098,84 @@ void mlt_producer_close( mlt_producer self )
 				free( self );
 		}
 	}
+}
+
+/** Get the creation time for the producer.
+ *
+ * The creation_time value is searched in the following order:
+ *   - A "creation_time" property in ISO 8601 format (yyyy-mm-ddThh:mm:ss)
+ *   - A "meta.attr.creation_time.markup" property in ISO 8601 format
+ *   - If the producer has a resource that is a file, the mtime of the file
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \return the creation time of the producer in seconds since the epoch
+ */
+
+int64_t mlt_producer_get_creation_time( mlt_producer self )
+{
+	mlt_producer producer = mlt_producer_cut_parent( self );
+
+	// Prefer datetime property if present
+	char* datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "creation_time");
+	if (!datestr)
+	{
+		// Fall back to creation_time property
+		datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "meta.attr.creation_time.markup");
+	}
+	if (datestr)
+	{
+		struct tm time_info = {0};
+		double seconds;
+		int ret = sscanf(datestr, "%04d-%02d-%02dT%02d:%02d:%lfZ",
+					&time_info.tm_year, &time_info.tm_mon, &time_info.tm_mday,
+					&time_info.tm_hour, &time_info.tm_min, &seconds);
+		if (ret == 6)
+		{
+			time_info.tm_sec   = (int) seconds;
+			time_info.tm_mon  -= 1;
+			time_info.tm_year -= 1900;
+			time_info.tm_isdst =-1;
+			int64_t milliseconds = (int64_t)timegm(&time_info) * 1000;
+			milliseconds += (seconds - (double)time_info.tm_sec) * 1000.0;
+			return milliseconds;
+		}
+	}
+
+	// Fall back to file modification time.
+	char* resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "resource");
+	if (!resource)
+	{
+		resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "warp_resource");
+	}
+	if (resource)
+	{
+		struct stat file_info;
+		if ( !stat( resource, &file_info ) )
+		{
+			return (int64_t)file_info.st_mtime * 1000;
+		}
+	}
+
+	return 0;
+}
+
+/** Set the creation time for the producer.
+ *
+ * A "creation_time" property in ISO 8601 format (yyyy-mm-ddThh:mm:ss) will be
+ * applied to the producer.
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \param creation_time the creation time of the producer in seconds since the epoch
+ */
+
+void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time )
+{
+	time_t time = creation_time / 1000;
+	mlt_producer parent = mlt_producer_cut_parent( self );
+	char* datestr = calloc( 1, 20 );
+	strftime( datestr, 20, "%Y-%m-%dT%H:%M:%S", gmtime( &time ) );
+	mlt_properties_set( MLT_PRODUCER_PROPERTIES( parent ), "creation_time", datestr);
+	free( datestr );
 }

@@ -167,35 +167,12 @@ static void get_resource_str( mlt_filter filter, mlt_frame frame, char* text )
 
 static void get_createdate_str( const char* keyword, mlt_filter filter, mlt_frame frame, char* text )
 {
-	char* datestr = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "meta.attr.creation_time.markup");
+	time_t creation_date = (time_t)(mlt_producer_get_creation_time( mlt_frame_get_original_producer( frame ) ) / 1000);
 	const char *format = "%Y/%m/%d";
 	int n = strlen( "createdate" ) + 1;
 	if ( strlen( keyword ) > n )
 		format = &keyword[n];
-	struct tm time_info;
-	char *date = calloc( 1, MAX_TEXT_LEN );
-
-	if ( datestr && strptime( datestr, "%Y-%m-%dT%H:%M:%S", &time_info ) )
-	{
-		// Prefer creation_time property if available.
-		strftime( date, MAX_TEXT_LEN, format, &time_info );
-	}
-	else
-	{
-		// Fall back to file modification time.
-		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-		mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
-		char* filename = mlt_properties_get( producer_properties, "resource");
-		struct stat file_info;
-		if ( !stat( filename, &file_info ) )
-		{
-			strftime( date, MAX_TEXT_LEN, format, gmtime( &(file_info.st_mtime) ) );
-
-		}
-	}
-
-	strncat( text, date, MAX_TEXT_LEN - strlen( text ) - 1 );
-	free( date );
+	strftime( text, MAX_TEXT_LEN - strlen( text ) - 1, format, localtime( &creation_date ) );
 }
 
 /** Perform substitution for keywords that are enclosed in "# #".
