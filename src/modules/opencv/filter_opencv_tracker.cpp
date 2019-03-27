@@ -110,7 +110,7 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
         {
 		// Build tracker
 		data->algo = mlt_properties_get( filter_properties, "algo" );
-#if CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR >= 3
+#if CV_VERSION_MAJOR > 3 || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR >= 3)
 		if ( !data->algo || *data->algo == '\0' || !strcmp(data->algo, "KCF" ) )
 		{
 			data->tracker = cv::TrackerKCF::create();
