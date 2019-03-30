@@ -1,3 +1,255 @@
+2019-03-30  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 6.14.0
+
+2019-03-16  Vincent Pinon <vpinon@kde.org>
+
+  * src/framework/mlt_repository.c, src/modules/qt/common.cpp: Windows: fix
+  melt.exe with nodeploy
+
+2019-03-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h,
+  src/mlt++/mlt++.vers: Add Mlt::Transition::connect(Service&).  This is needed
+  for manipulating transitions in a field, which connect to one another, and
+  transitions do not inherit from Producer.
+
+2019-03-09  Brian Matherly <code@brianmatherly.com>
+
+  * src/tests/test_playlist/test_playlist.cpp,
+  src/tests/test_playlist/test_playlist.pro, src/tests/tests.pro: Add unit
+  tests for playlist
+
+2019-02-24  Brian Matherly <code@brianmatherly.com>
+
+  * src/framework/mlt.vers, src/framework/mlt_playlist.c,
+  src/framework/mlt_playlist.h, src/mlt++/MltPlaylist.cpp,
+  src/mlt++/MltPlaylist.h, src/mlt++/mlt++.vers: Add reorder function to mlt
+  playlist.
+
+2019-03-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltConsumer.cpp, src/mlt++/MltFilter.cpp,
+  src/mlt++/MltProducer.cpp, src/mlt++/MltTractor.cpp,
+  src/mlt++/MltTransition.cpp: Fix compile errors in mlt++
+
+2019-02-28  alcinos <carion.nicolas@gmail.com>
+
+  * src/mlt++/MltService.cpp, src/mlt++/MltService.h, src/mlt++/MltTractor.cpp,
+  src/mlt++/MltTractor.h, src/mlt++/mlt++.vers: add convenience constructor for
+  Mlt::Tractor
+
+  * src/mlt++/MltFilter.cpp, src/mlt++/MltFilter.h, src/mlt++/mlt++.vers: add
+  convenience constructor for Mlt::Filter
+
+  * src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h,
+  src/mlt++/mlt++.vers: add convenience constructor for Mlt::Transition
+
+  * src/mlt++/MltConsumer.cpp, src/mlt++/MltConsumer.h, src/mlt++/mlt++.vers:
+  add convenience constructor for Mlt::Consumer
+
+2019-02-25  alcinos <carion.nicolas@gmail.com>
+
+  * src/mlt++/MltProducer.cpp, src/mlt++/MltProducer.h, src/mlt++/mlt++.vers:
+  add convenience constructor for Mlt::Producer
+
+2019-03-06  Vincent Pinon <vpinon@kde.org>
+
+  * src/modules/lumas/Makefile, src/modules/oldfilm/Makefile: Support spaces in
+  prefix
+
+2019-02-19  Vincent Pinon <vpinon@kde.org>
+
+  * configure, src/framework/Makefile, src/framework/mlt_factory.c,
+  src/melt/Makefile, src/mlt++/Makefile: Windows: option to keep exe and dll in
+  bin/ directory  Then app can run after 'make install' with no extra
+  deployment
+
+2019-02-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/Makefile, src/framework/mlt_types.h, src/win32/strptime.c:
+  Fix compile error on strptime() not in MinGW.
+
+2019-02-11  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/filter_dynamictext.c,
+  src/modules/plus/filter_dynamictext.yml: Add createdate keyword to
+  dynamictext
+
+2019-02-12  Dan Dennedy <dan@dennedy.org>
+
+  * profiles/vertical_hd_30, profiles/vertical_hd_60: Add vertical HD profiles.
+
+2019-02-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/consumer_avformat.yml,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c,
+  src/modules/avformat/producer_avformat.yml: Remove old code based on minimum
+  versions.
+
+  * src/swig/mlt.i, src/swig/python/build: Fix build with Python 3.
+
+2019-02-07  cclauss <cclauss@me.com>
+
+  * src/swig/python/codecs.py, src/swig/python/play.py,
+  src/swig/python/test_animation.py: Use print() function in both Python 2 and
+  Python 3  Legacy __print__ statements are syntax errors in Python 3 but
+  __print()__ function works as expected in both Python 2 and Python 3.
+
+2019-02-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/filter_boxblur.c,
+  src/modules/kdenlive/filter_boxblur.yml: Change boxblur hori/vert minimum to
+  0.  This is a little superficial, but when start/blur=1 and using only hori/
+  vert to make directional blurs, it allows more expression especially with
+  animation. It is easier to go from no-blur to blur, possibly in only one
+  direction with minimal blur in the other direction.
+
+2019-02-02  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/filter_timer.c, src/modules/plus/filter_timer.yml: Add
+  offset parameter to timer filter.
+
+2019-02-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qt/producer_qimage.c, src/modules/qt/qimage_wrapper.cpp: Fix
+  qimage build on < Qt 5.5
+
+2019-01-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qt/producer_qimage.c, src/modules/qt/qimage_wrapper.cpp,
+  src/modules/qt/qimage_wrapper.h: Fix loading image sequence on Windows.
+
+2018-10-22  Vincent PINON <vpinon@kde.org>
+
+  * src/framework/mlt_property.c, src/framework/mlt_property.h: Fix MinGW
+  compilation warnings
+
+2019-01-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_frame.c, src/modules/plus/filter_dynamictext.c,
+  src/modules/plus/filter_timer.c: Fix text animation broken with in > 0.
+
+2019-01-24  vvck <chenkai.sooner@163.com>
+
+  * src/framework/mlt_slices.c, src/framework/mlt_types.h,
+  src/modules/plusgpl/consumer_cbrts.c: mingw32  Compiler compatibility for
+  mingw32
+
+2019-01-12  Dan Dennedy <dan@dennedy.org>
+
+  * docs/melt.1, src/melt/melt.c: Update melt copyrights for 2019.
+
+2019-01-03  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_dynamictext.c, src/modules/plus/filter_timer.c,
+  src/modules/qt/filter_qtext.cpp: Fix qtext glitches with multiple threads. 
+  Fixes https://github.com/mltframework/shotcut/issues/686
+
+2019-01-04  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_frame.c,
+  src/framework/mlt_frame.h: Add mlt_frame_get_unique_properties()
+
+2019-01-02  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/decklink/consumer_decklink.cpp,
+  src/modules/decklink/consumer_decklink.yml,
+  src/modules/decklink/producer_decklink.cpp,
+  src/modules/decklink/producer_decklink.yml: Update copyrights in decklink
+  module.
+
+2018-12-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/vmfx/filter_shape.c, src/modules/vmfx/filter_shape.yml: Add
+  use_mix property to the shape filter.
+
+  * src/modules/vmfx/filter_chroma.c, src/modules/vmfx/filter_chroma_hold.c,
+  src/modules/vmfx/filter_mono.c, src/modules/vmfx/filter_shape.c: Convert
+  shape filter to mlt_animation API.
+
+2018-12-16  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/qt/producer_qimage.c, src/modules/qt/qimage_wrapper.cpp: Fix
+  crash when alpha_size is zero.
+
+2018-12-14  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_composite.c,
+  src/modules/core/transition_luma.c, src/modules/vmfx/filter_shape.c: Use
+  mlt_profile_lumas_dir() in services.
+
+  * src/framework/mlt.vers, src/framework/mlt_profile.c,
+  src/framework/mlt_profile.h: Add mlt_profile_lumas_dir().
+
+2018-12-13  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_mask_apply.c,
+  src/modules/core/filter_mask_apply.yml, src/modules/core/filter_mask_start.c,
+  src/modules/core/filter_mask_start.yml, src/modules/core/producer_colour.yml:
+  Make the mask filters' nested service mutable.
+
+2018-12-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/Makefile, src/modules/core/factory.c,
+  src/modules/core/filter_mask_apply.c, src/modules/core/filter_mask_apply.yml,
+  src/modules/core/filter_mask_start.c, src/modules/core/filter_mask_start.yml:
+  Add mask_start and mask_apply filters.  These do not yet support multiple
+  filter masks.
+
+2018-12-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_dynamictext.c, src/modules/plus/filter_timer.c: Fix
+  animation for dynamictext and timer filters.  Regression with conversion to
+  use qtext.
+
+2018-11-30  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/avformat/common.c, src/modules/avformat/common.h,
+  src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_avfilter.c,
+  src/modules/avformat/filter_swresample.c,
+  src/modules/avformat/producer_avformat.c: Refactor to prefix global symbols
+  with "mlt_".
+
+  * src/modules/avformat/common.c, src/modules/avformat/common.h,
+  src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/filter_swscale.c,
+  src/modules/avformat/producer_avformat.c: Fix color accuracy of RGB->YUV
+  conversion.  Fixes https://github.com/mltframework/shotcut/issues/674
+
+2018-11-02  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/plus/filter_dynamictext.c, src/modules/plus/filter_timer.c: Use
+  qtext for dynamictext and timer filters.  The qtext filter has better
+  performance than the text producer/affine transition combination. Both
+  filters will fall back to the text_filter if qtext is not available.
+
+  * src/modules/qt/Makefile, src/modules/qt/factory.c,
+  src/modules/qt/filter_qtext.cpp, src/modules/qt/filter_qtext.yml: Add
+  filter_qtext.  This filter provides the same capabilities as filter_text,
+  however, it draws directlly on the image rather than applying an encapsulated
+  transition.
+
+  * src/modules/plus/filter_text.c, src/modules/plus/filter_timer.c: Improve
+  parallel processing for filter_timer.  Copy the argument property and pass it
+  to get_image() so that the mutex in get_image can be moved to allow parallel
+  frame processing.
+
+2018-11-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/producer_colour.c, src/modules/core/producer_colour.yml:
+  Add mlt_image_format property to color producer.
+
+2018-11-28  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 6.13.0
+
 2018-11-26  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
