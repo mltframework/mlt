@@ -554,7 +554,7 @@ MLTPP_6.14.0 {
       "Mlt::Consumer::Consumer(mlt_profile_s*, char const*, char const*)";
       "Mlt::Transition::Transition(mlt_profile_s*, char const*, char const*)";
       "Mlt::Filter::Filter(mlt_profile_s*, char const*, char const*)";
-      "Mlt::Tractor::Tractor(mlt_profile_s*, char const*, char const*)";
+      "Mlt::Tractor::Tractor(mlt_profile_s*, char*, char*)";
       "Mlt::Service::set_profile(mlt_profile_s*)";
       "Mlt::Playlist::reorder(int const*)";
       "Mlt::Transition::connect(Mlt::Service&, int, int)";
