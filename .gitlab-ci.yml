@@ -61,25 +61,6 @@ debian-stable:
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
-debian-oldstable:
-    image: debian:jessie
-    script:
-        - echo -e 'deb-src http://deb.debian.org/debian jessie main\ndeb-src http://deb.debian.org/debian jessie-updates main\ndeb-src http://security.debian.org jessie/updates main' >> /etc/apt/sources.list
-        - apt-get -qq update
-        - apt-get -yqq build-dep mlt
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
-            # there's no `check` or `test` `make` target
-
-debian-oldoldstable:
-    image: debian:wheezy
-    script:
-        - echo -e 'deb-src http://deb.debian.org/debian wheezy main\ndeb-src http://deb.debian.org/debian wheezy-updates main\ndeb-src http://security.debian.org wheezy/updates main' >> /etc/apt/sources.list
-        - apt-get -qq update
-        - apt-get -yqq build-dep mlt
-        - apt-get -yqq install libqt4-opengl-dev
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
-            # there's no `check` or `test` `make` target
-
 centos-7:
     image: centos:7
     script:
