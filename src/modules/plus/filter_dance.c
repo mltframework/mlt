@@ -161,17 +161,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( mlt_properties_get( frame_properties, pdata->mag_prop_name ) )
 	{
 		double mag = mlt_properties_get_double( frame_properties, pdata->mag_prop_name );
-		int iwidth = *width;
-		int iheight = *height;
-
-		// Get the image to find out the width and height that will be received.
-		char *interps = mlt_properties_get( frame_properties, "rescale.interp" );
-		if ( interps ) interps = strdup( interps );
-		// Request native width/height because that is what affine will do.
-		mlt_properties_set( frame_properties, "rescale.interp", "none" );
-		*format = mlt_image_rgb24a;
-		mlt_frame_get_image( frame, image, format, &iwidth, &iheight, 0 );
-		// At this point, iwidth and iheight are what affine will use.
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
 
 		// scale_x and scale_y are in the range 0.0 to x.0 with:
 		//    0.0 = the largest possible
@@ -189,7 +179,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		//  < 0 = offset to the right
 		double left = mlt_properties_get_double( filter_properties, "left" );
 		double right = mlt_properties_get_double( filter_properties, "right" );
-		double ox = apply( left, right, mag, (double)iwidth / 100.0 );
+		double ox = apply( left, right, mag, (double)profile->width / 100.0 );
 
 		// oy is in the range -height to +height with:
 		//  > 0 = offset up
@@ -197,7 +187,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		//  < 0 = offset down
 		double up = mlt_properties_get_double( filter_properties, "up" );
 		double down = mlt_properties_get_double( filter_properties, "down" );
-		double oy = apply( up, down, mag, (double)iheight / 100.0 );
+		double oy = apply( up, down, mag, (double)profile->height / 100.0 );
 
 		// fix_rotate_x is in the range -360 to +360 with:
 		// > 0 = rotate clockwise
@@ -218,10 +208,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_filter_process( pdata->affine, frame );
 		error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-
-		// Restore the rescale property
-		mlt_properties_set( frame_properties, "rescale.interp", interps );
-		free( interps );
 	} else {
 		if ( pdata->preprocess_warned++ == 2 )
 		{
