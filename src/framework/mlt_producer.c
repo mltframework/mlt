@@ -1173,6 +1173,7 @@ static inline time_t internal_timegm(struct tm const *t)
  *
  * The creation_time value is searched in the following order:
  *   - A "creation_time" property in ISO 8601 format (yyyy-mm-ddThh:mm:ss)
+ *   - A "meta.attr.com.apple.quicktime.creationdate.markup" property in ISO 8601 format
  *   - A "meta.attr.creation_time.markup" property in ISO 8601 format
  *   - If the producer has a resource that is a file, the mtime of the file
  *
@@ -1184,22 +1185,34 @@ static inline time_t internal_timegm(struct tm const *t)
 int64_t mlt_producer_get_creation_time( mlt_producer self )
 {
 	mlt_producer producer = mlt_producer_cut_parent( self );
-
-	// Prefer datetime property if present
+	// Prefer creation_time producer property if present
 	char* datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "creation_time");
 	if (!datestr)
 	{
-		// Fall back to creation_time property
+		// Fall back to quicktime creationdate metadata (common for .mov files)
+		// creationdate is preferred over creation_time metadata because
+		// creation_time may be recalculated if the device re-encodes the file.
+		datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "meta.attr.com.apple.quicktime.creationdate.markup");
+
+	}
+	if (!datestr)
+	{
+		// Fall back to creation_time metadata (common for most media handled by ffmpeg)
 		datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "meta.attr.creation_time.markup");
 	}
 	if (datestr)
 	{
 		struct tm time_info = {0};
 		double seconds;
-		int ret = sscanf(datestr, "%04d-%02d-%02dT%02d:%02d:%lfZ",
+		char offset_indicator = 0;
+		int hour_offset = 0;
+		int min_offset = 0;
+		int ret = sscanf(datestr, "%04d-%02d-%02dT%02d:%02d:%lf%c%02d%02d",
 					&time_info.tm_year, &time_info.tm_mon, &time_info.tm_mday,
-					&time_info.tm_hour, &time_info.tm_min, &seconds);
-		if (ret == 6)
+					&time_info.tm_hour, &time_info.tm_min, &seconds,
+					&offset_indicator, &hour_offset, &min_offset);
+
+		if (ret >= 6)
 		{
 			time_info.tm_sec   = (int) seconds;
 			time_info.tm_mon  -= 1;
@@ -1207,6 +1220,16 @@ int64_t mlt_producer_get_creation_time( mlt_producer self )
 			time_info.tm_isdst =-1;
 			int64_t milliseconds = (int64_t) internal_timegm(&time_info) * 1000;
 			milliseconds += (seconds - (double)time_info.tm_sec) * 1000.0;
+
+			// Apply time zone offset if present.
+			if (ret == 9 && offset_indicator == '-')
+			{
+				milliseconds += ((hour_offset * 60) + min_offset) * 60000;
+			}
+			else if (ret == 9 && offset_indicator == '+')
+			{
+				milliseconds -= ((hour_offset * 60) + min_offset) * 60000;
+			}
 			return milliseconds;
 		}
 	}
