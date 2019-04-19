@@ -49,6 +49,7 @@ partik0l=0.3
 plasma
 primaries=0.2
 rgbparade
+rgbsplit0r=1.1
 saturation=0.2
 scale0tilt
 scanline0r=0.2
