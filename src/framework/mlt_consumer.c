@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 /** Define this if you want an automatic deinterlace (if necessary) when the
  * consumer's producer is not running at normal speed.
@@ -65,7 +66,7 @@ typedef struct
 	double fps;
 	int channels;
 	int frequency;
-	int speed;
+	atomic_int speed;
 	/* additional fields added for the parallel work queue */
 	mlt_deque worker_threads;
 	pthread_mutex_t done_mutex;
