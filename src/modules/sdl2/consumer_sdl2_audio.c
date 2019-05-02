@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <SDL.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -54,7 +55,7 @@ struct consumer_sdl_s
 	pthread_mutex_t video_mutex;
 	pthread_cond_t video_cond;
 	int out_channels;
-	int playing;
+	atomic_int playing;
 
 	pthread_cond_t refresh_cond;
 	pthread_mutex_t refresh_mutex;
@@ -689,7 +690,9 @@ static void *consumer_thread( void *arg )
 		frame = NULL;
 	}
 
+	pthread_mutex_lock( &self->audio_mutex );
 	self->audio_avail = 0;
+	pthread_mutex_unlock( &self->audio_mutex );
 
 	return NULL;
 }
