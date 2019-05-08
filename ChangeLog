@@ -1,3 +1,21 @@
+2019-05-07  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
+  to 6.16.0
+
+2019-03-25  Brian Matherly <code@brianmatherly.com>
+
+  * src/framework/mlt.vers, src/framework/mlt_producer.c,
+  src/framework/mlt_producer.h, src/mlt++/MltProducer.cpp,
+  src/mlt++/MltProducer.h, src/mlt++/mlt++.vers,
+  src/modules/plus/filter_dynamictext.c: Add get/set creation_date to producer.
+   "creation_date" is a reserved producer property that can hold the creation
+  time of the producer. The creation_time property is always in UTC.
+
+2019-04-07  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set interim version to 6.15.0
+
 2019-03-30  Dan Dennedy <dan@dennedy.org>
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
