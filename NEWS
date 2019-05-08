@@ -1,6 +1,25 @@
 MLT Release Notes
 -----------------
 
+Version 6.16.0 - May 7, 2019
+
+This version is released to facilitate packaging the latest version of Shotcut,
+which is using new APIs.
+
+Framework
+  Added functions to get/set a creation date to a producer:
+  - mlt_producer_get_creation_time()
+  - mlt_producer_set_creation_time()
+  - Mlt::Producer::set_creation_time()
+  - Mlt::Producer::get_creation_time()
+
+Modules
+  * Fixed dance filter not showing when lower track is transparent.
+  * Refactored dynamictext filter to use mlt_producer_get_creation_time().
+  * Marked frei0r rgsplit0r plugin version < 1.1 as not thread-safe.
+  * Fixed possible null pointer crash in mlt_properties_serialise_yaml.
+
+
 Version 6.14.0 - March 30, 2019
 
 This version is mostly fixes plus a few API additions and filters.
