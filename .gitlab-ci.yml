@@ -34,16 +34,6 @@ ubuntu-lts-2:
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
-ubuntu-lts-1:
-    image: ubuntu:trusty
-    script:
-        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-        - apt-get -qq update
-        - apt-get -yqq build-dep mlt
-        - export CFLAGS="-std=gnu11"
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
-            # there's no `check` or `test` `make` target
-
 debian-testing:
     image: debian:buster
     script:
@@ -61,14 +51,6 @@ debian-stable:
         - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
-
-centos-7:
-    image: centos:7
-    script:
-        - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel
-        - export CFLAGS="-std=gnu11"
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
 
 fedora-29:
     image: fedora:29
