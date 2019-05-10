@@ -572,7 +572,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
             int c2 = json2BCurves( keyframe, &p2 );
 
             // range 0-1
-            double position = ( time - pos1 ) / (double)( pos2 - pos1 + 1 );
+            double position = ( time - pos1 ) / (double)( pos2 - pos1 );
 
             count = MIN( c1, c2 );  // additional points are ignored
             points = mlt_pool_alloc( count * sizeof( BPointF ) );
