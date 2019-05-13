@@ -1,6 +1,6 @@
 /*
  * producer_colour.c
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -248,6 +248,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( properties, "progressive", 1 );
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
+		mlt_properties_set_int( properties, "meta.media.width", profile->width );
+		mlt_properties_set_int( properties, "meta.media.height", profile->height );
 
 		// colour is an alias for resource
 		if ( mlt_properties_get( producer_props, "colour" ) != NULL )
