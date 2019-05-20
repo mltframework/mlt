@@ -47,7 +47,7 @@ pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 typedef struct
 {
 	int real_time;
-	int ahead;
+	atomic_int ahead;
 	int preroll;
 	mlt_image_format image_format;
 	mlt_audio_format audio_format;
@@ -61,6 +61,7 @@ typedef struct
 	int put_active;
 	mlt_event event_listener;
 	mlt_position position;
+	pthread_mutex_t position_mutex;	
 	int is_purge;
 	int aud_counter;
 	double fps;
@@ -74,7 +75,7 @@ typedef struct
 	int consecutive_dropped;
 	int consecutive_rendered;
 	int process_head;
-	int started;
+	atomic_int started;
 	pthread_t *threads; /**< used to deallocate all threads */
 }
 consumer_private;
@@ -165,6 +166,7 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 		pthread_mutex_init( &priv->put_mutex, NULL );
 		pthread_cond_init( &priv->put_cond, NULL );
 
+		pthread_mutex_init( &priv->position_mutex, NULL );
 	}
 	return error;
 }
@@ -373,8 +375,12 @@ static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties own
 
 static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_frame frame )
 {
-	if ( frame )
-		( ( consumer_private*) consumer->local )->position = mlt_frame_get_position( frame );
+	if ( frame ) {
+		consumer_private* priv = consumer->local;
+		pthread_mutex_lock( &priv->position_mutex );
+		priv->position = mlt_frame_get_position( frame );
+		pthread_mutex_unlock( &priv->position_mutex );
+	}
 }
 
 /** Create a new consumer.
@@ -1738,6 +1744,8 @@ void mlt_consumer_close( mlt_consumer self )
 			pthread_mutex_destroy( &priv->put_mutex );
 			pthread_cond_destroy( &priv->put_cond );
 
+			pthread_mutex_destroy( &priv->position_mutex );
+
 			mlt_service_close( &self->parent );
 			free( priv );
 		}
@@ -1753,7 +1761,11 @@ void mlt_consumer_close( mlt_consumer self )
 
 mlt_position mlt_consumer_position( mlt_consumer consumer )
 {
-	return ( ( consumer_private* ) consumer->local )->position;
+	consumer_private* priv = consumer->local;
+	pthread_mutex_lock( &priv->position_mutex );
+	mlt_position result = priv->position;
+	pthread_mutex_unlock( &priv->position_mutex );
+	return result;
 }
 
 static void transmit_thread_create( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
