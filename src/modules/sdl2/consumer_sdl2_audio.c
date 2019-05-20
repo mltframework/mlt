@@ -1,6 +1,6 @@
 /*
  * consumer_sdl2_audio.c -- A Simple DirectMedia Layer audio-only consumer
- * Copyright (C) 2009-2018 Meltytech, LLC
+ * Copyright (C) 2009-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,7 @@ struct consumer_sdl_s
 	mlt_deque queue;
 	pthread_t thread;
 	int joined;
-	int running;
+	atomic_int running;
 	uint8_t audio_buffer[ 4096 * 10 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;

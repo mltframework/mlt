@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017-2018 Meltytech, LLC
+ * Copyright (C) 2017-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <SDL.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 #undef MLT_IMAGE_FORMAT // only yuv422 working currently
 
@@ -48,7 +49,7 @@ struct consumer_sdl_s
 	mlt_deque queue;
 	pthread_t thread;
 	int joined;
-	int running;
+	atomic_int running;
 	uint8_t audio_buffer[ 4096 * 10 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
@@ -62,7 +63,7 @@ struct consumer_sdl_s
 	int width;
 	int height;
 	int out_channels;
-	int playing;
+	atomic_int playing;
 	SDL_Window *sdl_window;
 	SDL_Renderer *sdl_renderer;
 	SDL_Texture *sdl_texture;
@@ -898,7 +899,9 @@ static void *consumer_thread( void *arg )
 	while( mlt_deque_count( self->queue ) )
 		mlt_frame_close( mlt_deque_pop_back( self->queue ) );
 
+	pthread_mutex_lock( &self->audio_mutex );
 	self->audio_avail = 0;
+	pthread_mutex_unlock( &self->audio_mutex );
 
 	return NULL;
 }
