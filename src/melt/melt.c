@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2018 Meltytech, LLC
+ * Copyright (C) 2002-2019 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -361,7 +361,7 @@ static void event_handling( mlt_producer producer, mlt_consumer consumer )
 		switch( event.type )
 		{
 			case SDL_QUIT:
-				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( consumer ), "done", 1 );
+				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "done", 1 );
 				break;
 
 			case SDL_KEYDOWN:
