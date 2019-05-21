@@ -278,7 +278,7 @@ static mlt_consumer create_consumer( mlt_profile profile, char *id )
 	return consumer;
 }
 
-static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc, char **argv )
+static int load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc, char **argv )
 {
 	int i;
 	int multi = 0;
@@ -290,6 +290,13 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 		// Seee if we need the qglsl variant of multi consumer.
 		if ( !strncmp( argv[i], "glsl.", 5 ) || !strncmp( argv[i], "movit.", 6 ) )
 			qglsl = 1;
+#if SDL_MAJOR_VERSION == 2
+		if ( !strcmp("sdl", argv[i]) || !strcmp("sdl_audio", argv[i]) || !strcmp("sdl_preview", argv[i]) || !strcmp("sdl_still", argv[i]) ) {
+			fprintf(stderr, 
+"Error: This program was linked against SDL2, which is incompatible with\nSDL1 consumers. Aborting.\n");
+			return EXIT_FAILURE;
+		}
+#endif
 	}
 	// Disable qglsl if xgl is being used!
 	for ( i = 1; qglsl && i < argc; i ++ )
@@ -348,6 +355,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 			}
 		}
 	}
+	return EXIT_SUCCESS;
 }
 
 #if defined(SDL_MAJOR_VERSION)
@@ -871,7 +879,8 @@ query_all:
 
 	// Look for the consumer option to load profile settings from consumer properties
 	backup_profile = mlt_profile_clone( profile );
-	load_consumer( &consumer, profile, argc, argv );
+	if ( load_consumer( &consumer, profile, argc, argv ) != EXIT_SUCCESS )
+		goto exit_factory;
 
 	// If the consumer changed the profile, then it is explicit.
 	if ( backup_profile && !profile->is_explicit && (
