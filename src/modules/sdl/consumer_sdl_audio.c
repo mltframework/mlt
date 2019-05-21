@@ -1,7 +1,6 @@
 /*
  * consumer_sdl_audio.c -- A Simple DirectMedia Layer audio-only consumer
- * Copyright (C) 2009-2017 Meltytech, LLC
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2009-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +29,7 @@
 #include <pthread.h>
 #include <SDL.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 extern pthread_mutex_t mlt_sdl_mutex;
 
@@ -45,14 +45,14 @@ struct consumer_sdl_s
 	mlt_deque queue;
 	pthread_t thread;
 	int joined;
-	int running;
+	atomic_int running;
 	uint8_t audio_buffer[ 4096 * 10 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
 	pthread_cond_t audio_cond;
 	pthread_mutex_t video_mutex;
 	pthread_cond_t video_cond;
-	int playing;
+	atomic_int playing;
 
 	pthread_cond_t refresh_cond;
 	pthread_mutex_t refresh_mutex;
@@ -666,7 +666,9 @@ static void *consumer_thread( void *arg )
 		frame = NULL;
 	}
 
+	pthread_mutex_lock( &self->audio_mutex );
 	self->audio_avail = 0;
+	pthread_mutex_unlock( &self->audio_mutex );
 
 	return NULL;
 }

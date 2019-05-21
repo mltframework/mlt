@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_still.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,8 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <sys/time.h>
+#include <stdatomic.h>
+
 #include "consumer_sdl_osx.h"
 
 extern pthread_mutex_t mlt_sdl_mutex;
@@ -45,12 +47,12 @@ struct consumer_sdl_s
 	mlt_properties properties;
 	pthread_t thread;
 	int joined;
-	int running;
+	atomic_int running;
 	int window_width;
 	int window_height;
 	int width;
 	int height;
-	int playing;
+	atomic_int playing;
 	int sdl_flags;
 	SDL_Rect rect;
 	uint8_t *buffer;
