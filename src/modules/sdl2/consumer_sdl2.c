@@ -439,7 +439,7 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 				pthread_cond_timedwait( &self->audio_cond, &self->audio_mutex, &tm );
 				sample_space = ( sizeof( self->audio_buffer ) - self->audio_avail ) / dst_stride;
 
-				if ( sample_space == 0 )
+				if ( sample_space == 0 && self->running )
 				{
 					mlt_log_warning( MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n" );
 					pthread_mutex_unlock( &self->audio_mutex );
