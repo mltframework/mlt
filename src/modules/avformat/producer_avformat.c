@@ -57,6 +57,7 @@
 #include <limits.h>
 #include <math.h>
 #include <wchar.h>
+#include <stdatomic.h>
 
 #define POSITION_INITIAL (-2)
 #define POSITION_INVALID (-1)
@@ -83,12 +84,12 @@ struct producer_avformat_s
 	int audio_index;
 	int video_index;
 	int64_t first_pts;
-	int64_t last_position;
+	atomic_int_fast64_t last_position;
 	int video_seekable;
 	int seekable; /// This one is used for both audio and file level seekability.
-	int64_t current_position;
+	atomic_int_fast64_t current_position;
 	mlt_position nonseek_position;
-	int top_field_first;
+	atomic_int top_field_first;
 	uint8_t *audio_buffer[ MAX_AUDIO_STREAMS ];
 	size_t audio_buffer_size[ MAX_AUDIO_STREAMS ];
 	uint8_t *decode_buffer[ MAX_AUDIO_STREAMS ];
