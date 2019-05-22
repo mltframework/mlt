@@ -1231,15 +1231,9 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 	consumer_private *priv = self->local;
 
 	// Make sure we're running
-// TODO improve support for atomic ops in general (see libavutil/atomic.h)
-#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
-	if ( __sync_val_compare_and_swap( &priv->started, 1, 0 ) )
+	int expected = 1;
+	if ( atomic_compare_exchange_strong( &priv->started, &expected, 0 ) )
 	{
-#else
-	if ( priv->started )
-	{
-		priv->started = 0;
-#endif
 		// Inform thread to stop
 		priv->ahead = 0;
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
@@ -1276,14 +1270,9 @@ static void consumer_work_stop( mlt_consumer self )
 	consumer_private *priv = self->local;
 
 	// Make sure we're running
-#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
-	if ( __sync_val_compare_and_swap( &priv->started, 1, 0 ) )
+	int expected = 1;
+	if ( atomic_compare_exchange_strong( &priv->started, &expected, 0 ) )
 	{
-#else
-	if ( priv->started )
-	{
-		priv->started = 0;
-#endif
 		// Inform thread to stop
 		priv->ahead = 0;
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
