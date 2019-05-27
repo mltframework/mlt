@@ -4,6 +4,8 @@ QT       -= gui
 CONFIG   += console
 CONFIG   -= app_bundle
 CONFIG   += testcase
+CONFIG   += c++11
+QMAKE_CXXFLAGS += -std=c++11
 TEMPLATE = app
 DEFINES  += SRCDIR=\\\"$$PWD/\\\"
 
