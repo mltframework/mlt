@@ -14,6 +14,7 @@ CPPOBJS += filter_movit_convert.o
 CPPOBJS += filter_movit_crop.o
 CPPOBJS += filter_movit_deconvolution_sharpen.o
 CPPOBJS += filter_movit_diffusion.o
+CPPOBJS += filter_movit_flip.o
 CPPOBJS += filter_movit_glow.o
 CPPOBJS += filter_movit_lift_gamma_gain.o
 CPPOBJS += filter_movit_mirror.o

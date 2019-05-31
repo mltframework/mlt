@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2019 Dan Dennedy <dan@dennedy.org>
  * factory.c -- the factory method interfaces
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@ extern mlt_filter filter_movit_convert_init( mlt_profile profile, mlt_service_ty
 extern mlt_filter filter_movit_crop_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_deconvolution_sharpen_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_movit_diffusion_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_movit_flip_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_movit_glow_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_lift_gamma_gain_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_movit_mirror_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -61,6 +62,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "movit.convert", filter_movit_convert_init );
 	MLT_REGISTER( filter_type, "movit.crop", filter_movit_crop_init );
 	MLT_REGISTER( filter_type, "movit.diffusion", filter_movit_diffusion_init );
+	MLT_REGISTER( filter_type, "movit.flip", filter_movit_flip_init );
 	MLT_REGISTER( filter_type, "movit.glow", filter_movit_glow_init );
 	MLT_REGISTER( filter_type, "movit.lift_gamma_gain", filter_lift_gamma_gain_init );
 	MLT_REGISTER( filter_type, "movit.mirror", filter_movit_mirror_init );
@@ -78,6 +80,7 @@ MLT_REPOSITORY
 
 	MLT_REGISTER_METADATA( filter_type, "movit.blur", metadata, "filter_movit_blur.yml" );
 	MLT_REGISTER_METADATA( filter_type, "movit.diffusion", metadata, "filter_movit_diffusion.yml" );
+	MLT_REGISTER_METADATA( filter_type, "movit.flip", metadata, "filter_movit_flip.yml" );
 	MLT_REGISTER_METADATA( filter_type, "movit.glow", metadata, "filter_movit_glow.yml" );
 	MLT_REGISTER_METADATA( filter_type, "movit.lift_gamma_gain", metadata, "filter_movit_lift_gamma_gain.yml" );
 	MLT_REGISTER_METADATA( filter_type, "movit.mirror", metadata, "filter_movit_mirror.yml" );

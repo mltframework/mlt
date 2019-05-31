@@ -1,0 +1,12 @@
+schema_version: 0.1
+type: filter
+identifier: movit.flip
+title: Flip (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+description: A simple vertical flip.
+tags:
+  - Video
