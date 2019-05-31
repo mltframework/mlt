@@ -921,6 +921,20 @@ query_all:
 				mlt_properties_inc_ref( MLT_CONSUMER_PROPERTIES(consumer) ); // because we explicitly close it
 				mlt_properties_set_data( MLT_CONSUMER_PROPERTIES(consumer),
 					"transport_callback", transport_action, 0, NULL, NULL );
+				mlt_profile consumer_profile = mlt_service_profile(MLT_CONSUMER_SERVICE(consumer));
+
+				// Reload producer if consumer changed profile
+				if ( consumer_profile && (
+					profile->width != consumer_profile->width ||
+					profile->height != consumer_profile->height ||
+					profile->sample_aspect_num != consumer_profile->sample_aspect_num ||
+					profile->sample_aspect_den != consumer_profile->sample_aspect_den ||
+					profile->frame_rate_den != consumer_profile->frame_rate_den ||
+					profile->frame_rate_num != consumer_profile->frame_rate_num ||
+					profile->colorspace != consumer_profile->colorspace ) ) {
+						mlt_producer_close( melt );
+						melt = mlt_factory_producer( consumer_profile, "melt", &argv[ 1 ] );
+				}
 			}
 		}
 
