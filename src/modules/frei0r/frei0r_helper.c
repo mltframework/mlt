@@ -177,17 +177,17 @@ int process_frei0r_item( mlt_service service, double position, double time, int 
 	uint32_t *dest = result;
 
 	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
-		rgba_bgra(image[0], (uint8_t*) result, *width, *height);
-		source[0] = result;
-		dest = (uint32_t*) image[0];
 		if (type == producer_type) {
-			extra = mlt_pool_alloc( video_area * sizeof(uint32_t) );
-			dest = extra;
-		}
-		else if (type == transition_type && f0r_update2) {
-			extra = mlt_pool_alloc( video_area * sizeof(uint32_t) );
-			rgba_bgra(image[1], (uint8_t*) extra, *width, *height);
-			source[1] = extra;
+			dest = source[0];
+		} else {
+			rgba_bgra(image[0], (uint8_t*) result, *width, *height);
+			source[0] = result;
+			dest = (uint32_t*) image[0];
+			if (type == transition_type && f0r_update2) {
+				extra = mlt_pool_alloc( video_area * sizeof(uint32_t) );
+				rgba_bgra(image[1], (uint8_t*) extra, *width, *height);
+				source[1] = extra;
+			}
 		}
 	}
 	if (type==producer_type) {
@@ -203,7 +203,7 @@ int process_frei0r_item( mlt_service service, double position, double time, int 
 			};
 			mlt_slices_run_normal(slice_count, f0r_update_slice, &ctx);
 		} else {
-			f0r_update ( inst, time, source[0], dest );
+			f0r_update ( inst, time, NULL, dest );
 		}
 	} else if (type==filter_type) {
 		if (slice_count > 0) {
