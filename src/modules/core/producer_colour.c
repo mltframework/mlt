@@ -59,7 +59,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Obtain the producer for this frame
-	mlt_producer producer = mlt_properties_get_data( properties, "producer_colour", NULL );
+	mlt_producer producer = mlt_frame_pop_service( frame );
 
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 
@@ -238,9 +238,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Obtain properties of producer
 		mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
-		// Set the producer on the frame properties
-		mlt_properties_set_data( properties, "producer_colour", producer, 0, NULL, NULL );
-
 		// Update timecode on the frame we're creating
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
@@ -256,6 +253,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 			mlt_properties_set( producer_props, "resource", mlt_properties_get( producer_props, "colour" ) );
 		
 		// Push the get_image method
+		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_get_image( *frame, producer_get_image );
 	}
 
