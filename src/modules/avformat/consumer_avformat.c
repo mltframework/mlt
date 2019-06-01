@@ -271,22 +271,24 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 static void recompute_aspect_ratio( mlt_properties properties )
 {
 	double ar = mlt_properties_get_double( properties, "aspect" );
-	AVRational rational = av_d2q( ar, 255 );
-	int width = mlt_properties_get_int( properties, "width" );
-	int height = mlt_properties_get_int( properties, "height" );
-
-	// Update the profile and properties as well since this is an alias
-	// for mlt properties that correspond to profile settings
-	mlt_properties_set_int( properties, "display_aspect_num", rational.num );
-	mlt_properties_set_int( properties, "display_aspect_den", rational.den );
-
-	// Now compute the sample aspect ratio
-	rational = av_d2q( ar * height / FFMAX(width, 1), 255 );
-
-	// Update the profile and properties as well since this is an alias
-	// for mlt properties that correspond to profile settings
-	mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
-	mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+	if (ar > 0.0) {
+		AVRational rational = av_d2q( ar, 255 );
+		int width = mlt_properties_get_int( properties, "width" );
+		int height = mlt_properties_get_int( properties, "height" );
+	
+		// Update the profile and properties as well since this is an alias
+		// for mlt properties that correspond to profile settings
+		mlt_properties_set_int( properties, "display_aspect_num", rational.num );
+		mlt_properties_set_int( properties, "display_aspect_den", rational.den );
+	
+		// Now compute the sample aspect ratio
+		rational = av_d2q( ar * height / FFMAX(width, 1), 255 );
+	
+		// Update the profile and properties as well since this is an alias
+		// for mlt properties that correspond to profile settings
+		mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
+		mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+	}
 }
 
 static void color_trc_from_colorspace( mlt_properties properties )
