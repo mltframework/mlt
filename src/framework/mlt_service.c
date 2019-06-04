@@ -171,6 +171,8 @@ mlt_service_type mlt_service_identify( mlt_service self )
 			type = tractor_type;
 		else if (resource != NULL && !strcmp( resource, "<multitrack>" ) )
 			type = multitrack_type;
+		else if (resource != NULL && !strcmp( resource, "<producer>" ) )
+			type = producer_type;
 		else if ( !strcmp( mlt_type, "producer" ) )
 			type = producer_type;
 		else if ( !strcmp( mlt_type, "filter" ) )
