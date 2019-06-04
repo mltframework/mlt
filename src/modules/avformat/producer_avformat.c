@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,10 +57,7 @@
 #include <limits.h>
 #include <math.h>
 #include <wchar.h>
-
-#if LIBAVCODEC_VERSION_MAJOR < 55
-#define AV_CODEC_ID_H264    CODEC_ID_H264
-#endif
+#include <stdatomic.h>
 
 #define POSITION_INITIAL (-2)
 #define POSITION_INVALID (-1)
@@ -87,12 +84,12 @@ struct producer_avformat_s
 	int audio_index;
 	int video_index;
 	int64_t first_pts;
-	int64_t last_position;
+	atomic_int_fast64_t last_position;
 	int video_seekable;
 	int seekable; /// This one is used for both audio and file level seekability.
-	int64_t current_position;
+	atomic_int_fast64_t current_position;
 	mlt_position nonseek_position;
-	int top_field_first;
+	atomic_int top_field_first;
 	uint8_t *audio_buffer[ MAX_AUDIO_STREAMS ];
 	size_t audio_buffer_size[ MAX_AUDIO_STREAMS ];
 	uint8_t *decode_buffer[ MAX_AUDIO_STREAMS ];
@@ -293,7 +290,6 @@ static int first_video_index( producer_avformat self )
 	return i;
 }
 
-#if (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(39<<8)+100))
 #include <libavutil/display.h>
 
 static double get_rotation(AVStream *st)
@@ -316,12 +312,6 @@ static double get_rotation(AVStream *st)
 
 	return theta;
 }
-#else
-static double get_rotation(AVStream *st)
-{
-	return 0.0;
-}
-#endif
 
 static char* filter_restricted( const char *in )
 {
@@ -393,10 +383,6 @@ static mlt_properties find_default_streams( producer_avformat self )
 				mlt_properties_set( meta_media, key, "video" );
 				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
 				double ffmpeg_fps = av_q2d( context->streams[ i ]->avg_frame_rate );
-#if LIBAVFORMAT_VERSION_MAJOR < 55
-				if ( isnan( ffmpeg_fps ) || ffmpeg_fps == 0 )
-					ffmpeg_fps = av_q2d( context->streams[ i ]->r_frame_rate );
-#endif
 				mlt_properties_set_double( meta_media, key, ffmpeg_fps );
 
 				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
@@ -405,10 +391,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 				mlt_properties_set_int( meta_media, key, codec_context->width );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.height", i );
 				mlt_properties_set_int( meta_media, key, codec_context->height );
-#if (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(39<<8)+100))
 				snprintf( key, sizeof(key), "meta.media.%d.codec.rotate", i );
 				mlt_properties_set_int( meta_media, key, get_rotation(context->streams[i]) );
-#endif
 				snprintf( key, sizeof(key), "meta.media.%d.codec.frame_rate", i );
 				AVRational frame_rate = { codec_context->time_base.den, codec_context->time_base.num * codec_context->ticks_per_frame };
 				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
@@ -601,7 +585,7 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_ABGR:
 	case AV_PIX_FMT_BGRA:
 		return AV_PIX_FMT_RGBA;
-#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
+#if defined(FFUDIV)
 	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return AV_PIX_FMT_RGB24;
 #endif
@@ -1162,7 +1146,7 @@ static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_MONOBLACK:
 	case AV_PIX_FMT_RGB8:
 	case AV_PIX_FMT_BGR8:
-#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
+#if defined(FFUDIV)
 	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return mlt_image_rgb24;
 #endif
@@ -1206,7 +1190,7 @@ static mlt_audio_format pick_audio_format( int sample_fmt )
  */
 static int pick_av_pixel_format( int *pix_fmt )
 {
-#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+#if defined(FFUDIV)
 	switch (*pix_fmt)
 	{
 	case AV_PIX_FMT_YUVJ420P:
@@ -1303,9 +1287,6 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 #define PIX_DESC_BPP(DESC) (DESC.step)
 #endif
 
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 32, 100)
-#define AV_PIX_FMT_FLAG_PLANAR PIX_FMT_PLANAR
-#endif
 	for( i = 0; i < 4; i++ )
 	{
 		int in_offset = (AV_PIX_FMT_FLAG_PLANAR & ctx->src_desc->flags)
@@ -1374,7 +1355,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		// This is a special case. Movit wants the full range, if available.
 		// Thankfully, there is not much other use of yuv420p except consumer
 		// avformat with no filters and explicitly requested.
-#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+#if defined(FFUDIV)
 		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
 #else
@@ -1439,11 +1420,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			.src_full_range = self->full_luma,
 			.dst_full_range = 0,
 		};
-#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
 		ctx.src_format = src_pix_fmt;
-#else
-		ctx.src_format = pix_fmt;
-#endif
 		ctx.src_desc = av_pix_fmt_desc_get( ctx.src_format );
 		ctx.dst_desc = av_pix_fmt_desc_get( ctx.dst_format );
 
@@ -1475,7 +1452,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	}
 #else
 	{
-#if defined(FFUDIV) && (LIBAVFORMAT_VERSION_INT >= ((55<<16)+(48<<8)+100))
+#if defined(FFUDIV)
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_YUYV422, flags, NULL, NULL, NULL);
 #else
@@ -1657,7 +1634,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			codec_context->pix_fmt == AV_PIX_FMT_ABGR ||
 			codec_context->pix_fmt == AV_PIX_FMT_BGRA )
 		*format = pick_image_format( codec_context->pix_fmt );
-#if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((2<<16)+(5<<8)+102))
+#if defined(FFUDIV)
 	else if ( codec_context->pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE ) {
 		if ( *format == mlt_image_yuv422 )
 			*format = mlt_image_yuv420p;
@@ -1675,6 +1652,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
+		 && (self->pkt.stream_index == self->video_index )
 		 && ( paused || self->current_position >= req_position ) )
 	{
 		// Duplicate it
@@ -1711,11 +1689,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		// Construct an AVFrame for YUV422 conversion
 		if ( !self->video_frame )
-#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
 			self->video_frame = av_frame_alloc();
-#else
-			self->video_frame = avcodec_alloc_frame( );
-#endif
 
 		while( ret >= 0 && !got_picture )
 		{
@@ -1839,6 +1813,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					pts = best_pts( self, self->video_frame->pkt_pts, self->video_frame->pkt_dts );
 					if ( pts != AV_NOPTS_VALUE )
 					{
+						// Some streams are not marking their key frames even though
+						// there are I frames, and find_first_pts() fails as a result.
+						// Try to set first_pts here after getting pict_type.
+						if ( self->first_pts == AV_NOPTS_VALUE &&
+							(self->video_frame->key_frame || self->video_frame->pict_type == AV_PICTURE_TYPE_I) )
+							 self->first_pts = pts;
 						if ( self->first_pts != AV_NOPTS_VALUE )
 							pts -= self->first_pts;
 						else if ( context->start_time != AV_NOPTS_VALUE )
@@ -2128,15 +2108,13 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		AVRational frame_rate = stream->avg_frame_rate;
 		double fps = av_q2d( frame_rate );
 
-#if LIBAVFORMAT_VERSION_MAJOR < 55 || defined(FFUDIV)
+#if defined(FFUDIV)
 		// Verify and sanitize the muxer frame rate.
 		if ( isnan( fps ) || isinf( fps ) || fps == 0 )
 		{
 			frame_rate = stream->r_frame_rate;
 			fps = av_q2d( frame_rate );
 		}
-#endif
-#if (LIBAVFORMAT_VERSION_MAJOR < 55) || defined(FFUDIV)
 		// With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
 		// avg_frame_rate gives some approximate value that does not well match the media.
 		// Also, on my sample where r_frame_rate = 1000, using avg_frame_rate directly
@@ -2444,15 +2422,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 		// Decode the audio
 		if ( !self->audio_frame )
-#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
 			self->audio_frame = av_frame_alloc();
 		else
 			av_frame_unref( self->audio_frame );
-#else
-			self->audio_frame = avcodec_alloc_frame();
-		else
-			avcodec_get_frame_defaults( self->audio_frame );
-#endif
 		ret = avcodec_decode_audio4( codec_context, self->audio_frame, &got_frame, &pkt );
 		if ( ret < 0 )
 		{
@@ -2911,7 +2883,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	}
 
 	// Update the audio properties if the index changed
-	if ( context && index > -1 && self->audio_index > -1 && index != self->audio_index )
+	if ( context && self->audio_index < context->nb_streams && index > -1 && self->audio_index > -1 && index != self->audio_index )
 	{
 		pthread_mutex_lock( &self->open_mutex );
 		if ( self->audio_codec[ self->audio_index ] )

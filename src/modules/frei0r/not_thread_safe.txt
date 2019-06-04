@@ -6,6 +6,7 @@ alphaatop=0.2
 alphain=0.2
 alphaout=0.2
 alphaover=0.2
+alphaspot
 alphaxor=0.2
 baltan
 blend=0.2
@@ -30,6 +31,7 @@ grain_extract=0.2
 gain_merge=0.2
 hardlight=0.2
 hqdn3d
+IIRblur
 hue=0.2
 keyspillm0pup=0.3
 lighten=0.2
@@ -47,6 +49,7 @@ partik0l=0.3
 plasma
 primaries=0.2
 rgbparade
+rgbsplit0r=1.1
 saturation=0.2
 scale0tilt
 scanline0r=0.2

@@ -26,7 +26,7 @@
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
-    mlt_producer producer = mlt_frame_pop_service( frame );
+	mlt_producer producer = mlt_frame_pop_service( frame );
 
 	// Choose suitable out values if nothing specific requested
 	if ( *width <= 0 )
@@ -53,7 +53,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, time, length, frame, buffer, width, height );
 	}
 
-    return 0;
+	return 0;
 }
 
 int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
@@ -66,9 +66,6 @@ int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 		// Obtain properties of frame and producer
 		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
-		// Set the producer on the frame properties
-		mlt_properties_set_data( properties, "producer_frei0r", producer, 0, NULL, NULL );
-
 		// Update timecode on the frame we're creating
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
@@ -76,9 +73,11 @@ int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 		mlt_properties_set_int( properties, "progressive", 1 );
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
+		mlt_properties_set_int( properties, "meta.media.width", profile->width );
+		mlt_properties_set_int( properties, "meta.media.height", profile->height );
 
 		// Push the get_image method
-        mlt_frame_push_service( *frame, producer );
+		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_get_image( *frame, producer_get_image );
 	}
 

@@ -1,6 +1,98 @@
 MLT Release Notes
 -----------------
 
+Version 6.16.0 - May 7, 2019
+
+This version is released to facilitate packaging the latest version of Shotcut,
+which is using new APIs.
+
+Framework
+  Added functions to get/set a creation date to a producer:
+  - mlt_producer_get_creation_time()
+  - mlt_producer_set_creation_time()
+  - Mlt::Producer::set_creation_time()
+  - Mlt::Producer::get_creation_time()
+
+Modules
+  * Fixed dance filter not showing when lower track is transparent.
+  * Refactored dynamictext filter to use mlt_producer_get_creation_time().
+  * Marked frei0r rgsplit0r plugin version < 1.1 as not thread-safe.
+  * Fixed possible null pointer crash in mlt_properties_serialise_yaml.
+
+
+Version 6.14.0 - March 30, 2019
+
+This version is mostly fixes plus a few API additions and filters.
+
+Framework
+  * Added mlt_profile_lumas_dir().
+  * Added mlt_frame_get_unique_properties().
+  * Added mlt_playlist_reorder() and Mlt::Playlist::reorder().
+  * Added some new convenience constructors to mlt++
+    - Producer(mlt_profile profile, const char *id, const char *service = NULL)
+    - Consumer(mlt_profile profile, const char *id , const char *service = NULL)
+    - Transition(mlt_profile profile, const char *id, const char *arg = NULL)
+    - Filter(mlt_profile profile, const char *id, const char *service = NULL)
+    - Tractor(mlt_profile profile, char *id, char *arg = NULL)
+  * Added Mlt::Transition::connect(Service&).
+  * Added unit tests for mlt_playlist.
+  * Fixed a crash on invalid transition track values in mlt_transition.
+  * Fixed a deadlock regression in v6.12.0 of mlt_consumer when starting from
+    a paused state (producer speed=0).
+
+Modules
+  * The avformat module now requires at least FFmpeg v2.4 or Libav 12.
+  * Added mask_start and mask_apply filters to the core module.
+  * Added qtext filter to qt module.
+  * Changed dynamictext and timer filters to use qtext.
+  * Fixed number of digits for seconds in timer filter.
+  * Added mlt_image_format property to color producer.
+  * Improved color accuracy of libswscale RGB->YUV conversion.
+  * Fixed frei0r producer not working with tractor.
+  * Fixed decklink consumer stalling on dropped frames.
+  * Generate lumas for 16:9, 9:16 (vertical), and square aspect ratios.
+  * Fixed crash in qimage when alpha_size is zero.
+  * Fixed the mlt_consumer channels property not being passed to multi consumer.
+  * Fixed the shape filter for full range color and crashes.
+  * Converted the shape filter to use mlt_animation.
+  * Added a use_mix property to the shape filter.
+  * Fixed invert=1 and mix=100 gives wrong image in shape filter.
+  * Fixed a possible free null pointer in the linsys sdi consumer.
+  * Fixed using destroyed temporary object in qimage.
+  * Fixed a possible null pointer dereference in the spot_remover filter.
+  * Fixed memory leak on swr_convert() failure in swresample filter.
+  * Fixed possible null pointer dereference in affine when not using rect.
+  * Fixed loading image sequence on Windows in qimage.
+  * Fixed some null pointer crashes using Movit opengl services.
+  * Fixed sdl2 consumer crashes during initialization on Linux or BSD.
+  * Fixed distorted image using melt_file.
+  * Fixed qimage build on Qt version < 5.5.
+  * Added offset property to the timer filter.
+  * Changed the boxblur hori & vert properties' minimum to 0.
+  * Fixed crash in duplicate frame on rotated videos.
+  * Added automatic scaling and padding to avfilter.
+  * Fixed field order when encoding progressive as interlace.
+  * Fixed frei0r plugins to use the number of slices from the threads property.
+  * Fixed over compositing with transparent clips in luma transition.
+  * Added sliced processing to dissolve-with-alpha using the threads property.
+  * Added createdate keyword to dynamictext filter.
+  * Fixed possible crash changing audio_index in avformat producer.
+  * Fixed small memory leaks in xml consumer, jackrack, and timewarp producer.
+  * Fixed compiling opencv module with OpenCV > 3.
+
+Other
+  * Added vertical video profiles:
+    - vertical_hd_30
+    - vertical_hd_60
+  * Mlt++ now requires C++11 compiler support.
+  * Added --disable-windeploy to configure to keep bin & lib folders on Windows.
+  * Added support for consumer in & out to melt.
+  * Fixed color accuracy of lossless/Ut Video preset and use pix_fmt yuv422p.
+  * Fixed x264 lossless preset to use crf=0.
+  * Fixed compiling with mingw32.
+  * Fixed build with Python 3.
+
+
 Version 6.12.0 - November 26, 2018
 
 This version has many important fixes plus a few new filters and support for

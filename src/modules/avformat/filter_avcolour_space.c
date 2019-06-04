@@ -1,6 +1,6 @@
 /*
  * filter_avcolour_space.c -- Colour space filter
- * Copyright (C) 2004-2018 Meltytech, LLC
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -214,45 +214,6 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	}
 	return error;
 }
-
-/* TODO: Enable this to force colorspace conversion. Cost is heavy due to RGB conversions. */
-#if 0
-static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
-{
-	int error = 0;
-	mlt_profile profile = (mlt_profile) mlt_frame_pop_get_image( frame );
-	mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
-	mlt_image_format format_from = *format;
-	mlt_image_format format_to = mlt_image_rgb24;
-	
-	error = mlt_frame_get_image( frame, image, format, width, height, writable );
-	
-	int frame_colorspace = mlt_properties_get_int( properties, "colorspace" );
-	
-	if ( !error && *format == mlt_image_yuv422 && profile->colorspace > 0 &&
-	     frame_colorspace > 0 && frame_colorspace != profile->colorspace )
-	{
-		mlt_log_debug( NULL, "[filter avcolor_space] colorspace %d -> %d\n",
-			frame_colorspace, profile->colorspace );
-		
-		// Convert to RGB using frame's colorspace
-		error = convert_image( frame, image, &format_from, format_to );
-
-		// Convert to YUV using profile's colorspace
-		if ( !error )
-		{
-			*image = mlt_properties_get_data( properties, "image", NULL );
-			format_from = mlt_image_rgb24;
-			format_to = *format;
-			mlt_properties_set_int( properties, "colorspace", profile->colorspace );
-			error = convert_image( frame, image, &format_from, format_to );
-			*image = mlt_properties_get_data( properties, "image", NULL );
-		}
-	}
-	
-	return error;
-}
-#endif
 
 /** Filter processing.
 */

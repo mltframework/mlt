@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1982,6 +1982,7 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 {
 	property_list *list = self->local;
 	int i = 0;
+	int is_sequence = mlt_properties_is_sequence( self );
 
 	for ( i = 0; i < list->count; i ++ )
 	{
@@ -1991,7 +1992,7 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 		const char *name = list->name[i];
 		const char *value = mlt_properties_get( self, name );
 
-		if ( mlt_properties_is_sequence( self ) )
+		if ( is_sequence )
 		{
 			// Ignore hidden/non-serialisable items
 			if ( name[ 0 ] != '_' )
@@ -2026,7 +2027,7 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 				}
 			}
 			// Recurse on child
-			if ( child )
+			if ( child && child->local )
 				serialise_yaml( child, output, indent + 2, 1 );
 		}
 		else
@@ -2074,7 +2075,7 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
 			}
 
 			// Output a child as a map item
-			if ( child )
+			if ( child && child->local )
 			{
 				indent_yaml( output, indent );
 

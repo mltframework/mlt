@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Import required modules
+from __future__ import print_function
 import mlt
 
 # Start the mlt system
@@ -21,4 +22,4 @@ codecs = mlt.Properties( c.get_data( 'vcodec' ) )
 
 # Print the list of codecs
 for i in range( 0, codecs.count()):
-	print codecs.get( i )
+	print(codecs.get( i ))

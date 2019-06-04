@@ -84,8 +84,8 @@ SRCS := $(OBJS:.o=.c)
 
 ifeq ($(targetos), MinGW)
 LDFLAGS += -liconv
-OBJS += ../win32/win32.o
-SRCS += ../win32/win32.c
+OBJS += ../win32/win32.o ../win32/strptime.o
+SRCS += ../win32/win32.c ../win32/strptime.c
 endif
 
 CFLAGS += $(RDYNAMIC) -DPREFIX_DATA="\"$(mltdatadir)\"" -DPREFIX_LIB="\"$(moduledir)\""
@@ -113,9 +113,14 @@ clean:
 install:
 	install -d $(DESTDIR)$(libdir)
 	if [ "$(targetos)" = "MinGW" ]; then \
-		install -m 755 $(TARGET) $(DESTDIR)$(prefix) ; \
-		install -m 755 $(TARGET) $(DESTDIR)$(libdir)/libmlt.dll ; \
-		install -m 644 libmlt.def $(DESTDIR)$(libdir) ; \
+		if [ "$(windeploy)" = true ]; then \
+			install -m 755 $(TARGET) "$(DESTDIR)$(prefix)" ; \
+			install -m 755 $(TARGET) "$(DESTDIR)$(libdir)/libmlt.dll" ; \
+		else \
+			install -m 755 $(TARGET) "$(DESTDIR)$(bindir)" ; \
+			install -m 755 $(TARGET) "$(DESTDIR)$(bindir)/libmlt.dll" ; \
+		fi; \
+		install -m 644 libmlt.def "$(DESTDIR)$(libdir)" ; \
 	else \
 		install -m 755 $(TARGET) $(DESTDIR)$(libdir) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
@@ -131,6 +136,15 @@ uninstall:
 	if [ "$(targetos)" != "MinGW" ]; then \
 		rm -f "$(DESTDIR)$(libdir)/$(SONAME)" ; \
 		rm -f "$(DESTDIR)$(libdir)/$(NAME)" ; \
+	else \
+		if [ "$(windeploy)" = true ]; then \
+			rm -f "$(DESTDIR)$(prefix)/$(TARGET)" ; \
+			rm -f "$(DESTDIR)$(libdir)/libmlt.dll" ; \
+		else \
+			rm -f "$(DESTDIR)$(bindir)/$(TARGET)" ; \
+			rm -f "$(DESTDIR)$(bindir)/libmlt.dll" ; \
+		fi ; \
+		rm -f "$(DESTDIR)$(libdir)/libmlt.def" ; \
 	fi
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
 	rm -f "$(DESTDIR)$(mltdatadir)/metaschema.yaml"

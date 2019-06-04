@@ -51,20 +51,6 @@
 #include <libavfilter/buffersrc.h>
 #endif
 
-
-#if LIBAVCODEC_VERSION_MAJOR < 55
-#define AV_CODEC_ID_PCM_S16LE CODEC_ID_PCM_S16LE
-#define AV_CODEC_ID_PCM_S16BE CODEC_ID_PCM_S16BE
-#define AV_CODEC_ID_PCM_U16LE CODEC_ID_PCM_U16LE
-#define AV_CODEC_ID_PCM_U16BE CODEC_ID_PCM_U16BE
-#define AV_CODEC_ID_H264      CODEC_ID_H264
-#define AV_CODEC_ID_NONE      CODEC_ID_NONE
-#define AV_CODEC_ID_AC3       CODEC_ID_AC3
-#define AV_CODEC_ID_VORBIS    CODEC_ID_VORBIS
-#define AV_CODEC_ID_RAWVIDEO  CODEC_ID_RAWVIDEO
-#define AV_CODEC_ID_MJPEG     CODEC_ID_MJPEG
-#endif
-
 #ifndef AV_CODEC_FLAG_GLOBAL_HEADER
 #define AV_CODEC_FLAG_GLOBAL_HEADER  CODEC_FLAG_GLOBAL_HEADER
 #define AV_CODEC_FLAG_QSCALE         CODEC_FLAG_QSCALE
@@ -285,22 +271,24 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 static void recompute_aspect_ratio( mlt_properties properties )
 {
 	double ar = mlt_properties_get_double( properties, "aspect" );
-	AVRational rational = av_d2q( ar, 255 );
-	int width = mlt_properties_get_int( properties, "width" );
-	int height = mlt_properties_get_int( properties, "height" );
-
-	// Update the profile and properties as well since this is an alias
-	// for mlt properties that correspond to profile settings
-	mlt_properties_set_int( properties, "display_aspect_num", rational.num );
-	mlt_properties_set_int( properties, "display_aspect_den", rational.den );
-
-	// Now compute the sample aspect ratio
-	rational = av_d2q( ar * height / FFMAX(width, 1), 255 );
-
-	// Update the profile and properties as well since this is an alias
-	// for mlt properties that correspond to profile settings
-	mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
-	mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+	if (ar > 0.0) {
+		AVRational rational = av_d2q( ar, 255 );
+		int width = mlt_properties_get_int( properties, "width" );
+		int height = mlt_properties_get_int( properties, "height" );
+	
+		// Update the profile and properties as well since this is an alias
+		// for mlt properties that correspond to profile settings
+		mlt_properties_set_int( properties, "display_aspect_num", rational.num );
+		mlt_properties_set_int( properties, "display_aspect_den", rational.den );
+	
+		// Now compute the sample aspect ratio
+		rational = av_d2q( ar * height / FFMAX(width, 1), 255 );
+	
+		// Update the profile and properties as well since this is an alias
+		// for mlt properties that correspond to profile settings
+		mlt_properties_set_int( properties, "sample_aspect_num", rational.num );
+		mlt_properties_set_int( properties, "sample_aspect_den", rational.den );
+	}
 }
 
 static void color_trc_from_colorspace( mlt_properties properties )
@@ -317,7 +305,6 @@ static void color_trc_from_colorspace( mlt_properties properties )
 	case 240:
 		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_SMPTE240M );
 		break;
-#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(52<<8)+0)
 	case 0: // sRGB
 		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_IEC61966_2_1 );
 		break;
@@ -325,7 +312,6 @@ static void color_trc_from_colorspace( mlt_properties properties )
 	case 170:
 		mlt_properties_set_int( properties, "color_trc", AVCOL_TRC_SMPTE170M );
 		break;
-#endif
 	default:
 		break;
 	}
@@ -728,11 +714,7 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 
 		// Set parameters controlled by MLT
 		c->sample_rate = mlt_properties_get_int( properties, "frequency" );
-#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
 		st->time_base = ( AVRational ){ 1, c->sample_rate };
-#else
-		c->time_base = ( AVRational ){ 1, c->sample_rate };
-#endif
 		c->channels = channels;
 
 		if ( mlt_properties_get( properties, "alang" ) != NULL )
@@ -883,9 +865,6 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 		c->height = mlt_properties_get_int( properties, "height" );
 		c->time_base.num = mlt_properties_get_int( properties, "frame_rate_den" );
 		c->time_base.den = mlt_properties_get_int( properties, "frame_rate_num" );
-#if LIBAVFORMAT_VERSION_INT < ((55<<16)+(44<<8)+0)
-		if ( st->time_base.den == 0 )
-#endif
 		st->time_base = c->time_base;
 		st->avg_frame_rate = av_inv_q( c->time_base );
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(56, 5, 0)
@@ -1076,11 +1055,7 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 {
 	// Allocate a frame
-#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
 	AVFrame *picture = av_frame_alloc();
-#else
-	AVFrame *picture = avcodec_alloc_frame();
-#endif
 
 	if ( picture )
 	{
@@ -1277,9 +1252,7 @@ static int encode_audio(encode_ctx_t* ctx)
 			else if ( codec->sample_fmt == AV_SAMPLE_FMT_U8P )
 				p = interleaved_to_planar( samples, ctx->channels, p, sizeof( uint8_t ) );
 			ctx->audio_avframe->nb_samples = FFMAX( samples, ctx->audio_input_frame_size );
-#if LIBAVCODEC_VERSION_MAJOR >= 55
 			ctx->audio_avframe->pts = ctx->sample_count[i];
-#endif
 			ctx->sample_count[i] += ctx->audio_avframe->nb_samples;
 			avcodec_fill_audio_frame( ctx->audio_avframe, codec->channels, codec->sample_fmt,
 				(const uint8_t*) p, AUDIO_ENCODE_BUFFER_SIZE, 0 );
@@ -1368,10 +1341,8 @@ static int encode_audio(encode_ctx_t* ctx)
 				}
 			}
 			ctx->audio_avframe->nb_samples = FFMAX( samples, ctx->audio_input_frame_size );
-#if LIBAVCODEC_VERSION_MAJOR >= 55
 			ctx->audio_avframe->pts = ctx->sample_count[i];
 			ctx->sample_count[i] += ctx->audio_avframe->nb_samples;
-#endif
 			avcodec_fill_audio_frame( ctx->audio_avframe, codec->channels, codec->sample_fmt,
 				(const uint8_t*) ctx->audio_buf_2, AUDIO_ENCODE_BUFFER_SIZE, 0 );
 #if LIBAVCODEC_VERSION_INT >= ((57<<16)+(37<<8)+0)
@@ -1401,12 +1372,10 @@ receive_audio_packet:
 			// Write the compressed frame in the media file
 			if ( pkt.pts != AV_NOPTS_VALUE )
 				pkt.pts = av_rescale_q( pkt.pts, codec->time_base, stream->time_base );
-#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
 			if ( pkt.dts != AV_NOPTS_VALUE )
 				pkt.dts = av_rescale_q( pkt.dts, codec->time_base, stream->time_base );
 			if ( pkt.duration > 0 )
 				pkt.duration = av_rescale_q( pkt.duration, codec->time_base, stream->time_base );
-#endif
 			pkt.stream_index = stream->index;
 			if ( av_interleaved_write_frame( ctx->oc, &pkt ) )
 			{
@@ -1431,11 +1400,7 @@ receive_audio_packet:
 
 		if ( i == 0 )
 		{
-#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
 			ctx->audio_pts = (double) ctx->sample_count[0] * av_q2d( stream->codec->time_base );
-#else
-			ctx->audio_pts = (double) ctx->sample_count[0] * av_q2d( stream->time_base );
-#endif
 		}
 	}
 
@@ -1547,7 +1512,7 @@ static void *consumer_thread( void *arg )
 	if ( filename == NULL || !strcmp( filename, "" ) )
 		filename = "pipe:";
 
-#if defined(FFUDIV) && LIBAVUTIL_VERSION_INT >= ((53<<16)+(2<<8)+0)
+#if defined(FFUDIV)
 	avformat_alloc_output_context2( &enc_ctx->oc, fmt, format, filename );
 #else
 	enc_ctx->oc = avformat_alloc_context( );
@@ -1807,11 +1772,7 @@ static void *consumer_thread( void *arg )
 	// Allocate audio AVFrame
 	if ( enc_ctx->audio_st[0] )
 	{
-#if LIBAVCODEC_VERSION_INT >= ((55<<16)+(45<<8)+0)
 		enc_ctx->audio_avframe = av_frame_alloc();
-#else
-		enc_ctx->audio_avframe = avcodec_alloc_frame();
-#endif
 		if ( enc_ctx->audio_avframe ) {
 			AVCodecContext *c = enc_ctx->audio_st[0]->codec;
 			enc_ctx->audio_avframe->format = c->sample_fmt;
@@ -2084,18 +2045,13 @@ receive_video_packet:
 							else if ( ret < 0 )
 								pkt.size = ret;
 						}
-#elif LIBAVCODEC_VERSION_MAJOR >= 55
+#else
 						int got_packet;
 						ret = avcodec_encode_video2( c, &pkt, avframe, &got_packet );
 						if ( ret < 0 )
 							pkt.size = ret;
 						else if ( !got_packet )
 							pkt.size = 0;
-#else
-	 					pkt.size = avcodec_encode_video(c, video_outbuf, video_outbuf_size, avframe );
-	 					pkt.pts = c->coded_frame? c->coded_frame->pts : AV_NOPTS_VALUE;
-						if ( c->coded_frame && c->coded_frame->key_frame )
-							pkt.flags |= AV_PKT_FLAG_KEY;
 #endif
 
 	 					// If zero size, it means the image was buffered
@@ -2103,10 +2059,8 @@ receive_video_packet:
 						{
 							if ( pkt.pts != AV_NOPTS_VALUE )
 								pkt.pts = av_rescale_q( pkt.pts, c->time_base, enc_ctx->video_st->time_base );
-#if LIBAVCODEC_VERSION_MAJOR >= 55
 							if ( pkt.dts != AV_NOPTS_VALUE )
 								pkt.dts = av_rescale_q( pkt.dts, c->time_base, enc_ctx->video_st->time_base );
-#endif
 							pkt.stream_index = enc_ctx->video_st->index;
 
 							// write the compressed frame in the media file
@@ -2133,11 +2087,7 @@ receive_video_packet:
 						}
  					}
 					enc_ctx->frame_count++;
-#if LIBAVFORMAT_VERSION_INT >= ((55<<16)+(44<<8)+0)
 					enc_ctx->video_pts = (double) enc_ctx->frame_count * av_q2d( enc_ctx->video_st->codec->time_base );
-#else
-					enc_ctx->video_pts = (double) enc_ctx->frame_count * av_q2d( enc_ctx->video_st->time_base );
-#endif
 					if ( ret )
 					{
 						mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "error writing video frame: %d\n", ret );
@@ -2224,18 +2174,13 @@ receive_video_packet:
 					break;
 				}
 			}
-#elif LIBAVCODEC_VERSION_MAJOR >= 55
+#else
 			int got_packet = 0;
 			int ret = avcodec_encode_video2( c, &pkt, NULL, &got_packet );
 			if ( ret < 0 )
 				pkt.size = ret;
 			else if ( !got_packet )
 				pkt.size = 0;
-#else
-			pkt.size = avcodec_encode_video( c, video_outbuf, video_outbuf_size, NULL );
-			pkt.pts = c->coded_frame? c->coded_frame->pts : AV_NOPTS_VALUE;
-			if( c->coded_frame && c->coded_frame->key_frame )
-				pkt.flags |= AV_PKT_FLAG_KEY;
 #endif
 			mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "flushing video size %d\n", pkt.size );
 			if ( pkt.size < 0 )
@@ -2248,10 +2193,8 @@ receive_video_packet:
 
 			if ( pkt.pts != AV_NOPTS_VALUE )
 				pkt.pts = av_rescale_q( pkt.pts, c->time_base, enc_ctx->video_st->time_base );
-#if LIBAVCODEC_VERSION_MAJOR >= 55
 			if ( pkt.dts != AV_NOPTS_VALUE )
 				pkt.dts = av_rescale_q( pkt.dts, c->time_base, enc_ctx->video_st->time_base );
-#endif
 			pkt.stream_index = enc_ctx->video_st->index;
 
 			// write the compressed frame in the media file

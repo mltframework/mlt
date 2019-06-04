@@ -3,7 +3,7 @@
  * \brief abstraction for all producer services
  * \see mlt_producer_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h> // for stat()
+#include <sys/stat.h>  // for stat()
+#include <time.h>      // for strftime() and gtime()
+#include <unistd.h>    // for stat()
 
 /* Forward references. */
 
@@ -1094,4 +1098,176 @@ void mlt_producer_close( mlt_producer self )
 				free( self );
 		}
 	}
+}
+
+
+/*
+ * Boost implementation of timegm()
+ * (C) Copyright Howard Hinnant
+ * (C) Copyright 2010-2011 Vicente J. Botet Escriba
+ */
+
+static inline int32_t is_leap(int32_t year)
+{
+	if(year % 400 == 0)
+		return 1;
+	if(year % 100 == 0)
+		return 0;
+	if(year % 4 == 0)
+		return 1;
+	return 0;
+}
+
+static inline int32_t days_from_0(int32_t year)
+{
+	year--;
+	return 365 * year + (year / 400) - (year/100) + (year / 4);
+}
+
+static inline int32_t days_from_1970(int32_t year)
+{
+	const int days_from_0_to_1970 = days_from_0(1970);
+	return days_from_0(year) - days_from_0_to_1970;
+}
+
+static inline int32_t days_from_1jan(int32_t year,int32_t month,int32_t day)
+{
+	static const int32_t days[2][12] =
+	{
+		{ 0,31,59,90,120,151,181,212,243,273,304,334},
+		{ 0,31,60,91,121,152,182,213,244,274,305,335}
+	};
+	return days[is_leap(year)][month-1] + day - 1;
+}
+
+static inline time_t internal_timegm(struct tm const *t)
+{
+	int year = t->tm_year + 1900;
+	int month = t->tm_mon;
+	if(month > 11)
+	{
+		year += month/12;
+		month %= 12;
+	}
+	else if(month < 0)
+	{
+		int years_diff = (-month + 11)/12;
+		year -= years_diff;
+		month+=12 * years_diff;
+	}
+	month++;
+	int day = t->tm_mday;
+	int day_of_year = days_from_1jan(year,month,day);
+	int days_since_epoch = days_from_1970(year) + day_of_year;
+
+	time_t seconds_in_day = 3600 * 24;
+	time_t result = seconds_in_day * days_since_epoch + 3600 * t->tm_hour + 60 * t->tm_min + t->tm_sec;
+
+	return result;
+}
+
+/* End of Boost implementation of timegm(). */
+
+
+/** Get the creation time for the producer.
+ *
+ * The creation_time value is searched in the following order:
+ *   - A "creation_time" property in ISO 8601 format (yyyy-mm-ddThh:mm:ss)
+ *   - A "meta.attr.com.apple.quicktime.creationdate.markup" property in ISO 8601 format
+ *   - A "meta.attr.creation_time.markup" property in ISO 8601 format
+ *   - If the producer has a resource that is a file, the mtime of the file
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \return the creation time of the producer in seconds since the epoch
+ */
+
+int64_t mlt_producer_get_creation_time( mlt_producer self )
+{
+	mlt_producer producer = mlt_producer_cut_parent( self );
+	// Prefer creation_time producer property if present
+	char* datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "creation_time");
+	if (!datestr)
+	{
+		// Fall back to quicktime creationdate metadata (common for .mov files)
+		// creationdate is preferred over creation_time metadata because
+		// creation_time may be recalculated if the device re-encodes the file.
+		datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "meta.attr.com.apple.quicktime.creationdate.markup");
+
+	}
+	if (!datestr)
+	{
+		// Fall back to creation_time metadata (common for most media handled by ffmpeg)
+		datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "meta.attr.creation_time.markup");
+	}
+	if (datestr)
+	{
+		struct tm time_info = {0};
+		double seconds;
+		char offset_indicator = 0;
+		int hour_offset = 0;
+		int min_offset = 0;
+		int ret = sscanf(datestr, "%04d-%02d-%02dT%02d:%02d:%lf%c%02d%02d",
+					&time_info.tm_year, &time_info.tm_mon, &time_info.tm_mday,
+					&time_info.tm_hour, &time_info.tm_min, &seconds,
+					&offset_indicator, &hour_offset, &min_offset);
+
+		if (ret >= 6)
+		{
+			time_info.tm_sec   = (int) seconds;
+			time_info.tm_mon  -= 1;
+			time_info.tm_year -= 1900;
+			time_info.tm_isdst =-1;
+			int64_t milliseconds = (int64_t) internal_timegm(&time_info) * 1000;
+			milliseconds += (seconds - (double)time_info.tm_sec) * 1000.0;
+
+			// Apply time zone offset if present.
+			if (ret == 9 && offset_indicator == '-')
+			{
+				milliseconds += ((hour_offset * 60) + min_offset) * 60000;
+			}
+			else if (ret == 9 && offset_indicator == '+')
+			{
+				milliseconds -= ((hour_offset * 60) + min_offset) * 60000;
+			}
+			return milliseconds;
+		}
+	}
+
+	// Fall back to file modification time.
+	char* resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "resource");
+	if (!resource)
+	{
+		resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "warp_resource");
+	}
+	if (resource)
+	{
+		struct stat file_info;
+		if ( !stat( resource, &file_info ) )
+		{
+			return (int64_t)file_info.st_mtime * 1000;
+		}
+	}
+
+	return 0;
+}
+
+/** Set the creation time for the producer.
+ *
+ * A "creation_time" property in ISO 8601 format (yyyy-mm-ddThh:mm:ss) will be
+ * applied to the producer.
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \param creation_time the creation time of the producer in seconds since the epoch
+ */
+
+void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time )
+{
+	time_t time = creation_time / 1000;
+	mlt_producer parent = mlt_producer_cut_parent( self );
+	char* datestr = calloc( 1, 20 );
+	strftime( datestr, 20, "%Y-%m-%dT%H:%M:%S", gmtime( &time ) );
+	mlt_properties_set( MLT_PRODUCER_PROPERTIES( parent ), "creation_time", datestr);
+	free( datestr );
 }

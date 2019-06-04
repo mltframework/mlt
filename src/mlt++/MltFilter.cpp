@@ -1,7 +1,6 @@
 /**
  * MltFilter.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,11 +24,16 @@
 using namespace Mlt;
 
 Filter::Filter( Profile& profile, const char *id, const char *arg ) :
+	Filter( profile.get_profile(), id, arg )
+{
+}
+
+Filter::Filter( mlt_profile profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( arg != NULL )
 	{
-		instance = mlt_factory_filter( profile.get_profile(), id, arg );
+		instance = mlt_factory_filter( profile, id, arg );
 	}
 	else
 	{
@@ -38,12 +42,12 @@ Filter::Filter( Profile& profile, const char *id, const char *arg ) :
 			char *temp = strdup( id );
 			char *arg = strchr( temp, ':' ) + 1;
 			*( arg - 1 ) = '\0';
-			instance = mlt_factory_filter( profile.get_profile(), temp, arg );
+			instance = mlt_factory_filter( profile, temp, arg );
 			free( temp );
 		}
 		else
 		{
-			instance = mlt_factory_filter( profile.get_profile(), id, NULL );
+			instance = mlt_factory_filter( profile, id, NULL );
 		}
 	}
 }

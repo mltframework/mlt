@@ -81,6 +81,7 @@ namespace Mlt
 			int insert( Producer &producer, int where, int in = -1, int out = -1 );
 			int remove( int where );
 			int move( int from, int to );
+			int reorder( const int *indices );
 			int resize_clip( int clip, int in, int out );
 			int split( int clip, int position );
 			int split_at( int position, bool left = true );

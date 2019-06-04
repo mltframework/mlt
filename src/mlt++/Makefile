@@ -2,26 +2,26 @@ include ../../config.mak
 include config.mak
 INSTALL = install
 
+NAME = libmlt++$(LIBSUF)
 ifeq ($(targetos), Darwin)
-NAME = libmlt++$(LIBSUF)
-TARGET = libmlt++.$(version)$(LIBSUF)
-SONAME = libmlt++.$(soversion)$(LIBSUF)
-LIBFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
+	TARGET = libmlt++.$(version)$(LIBSUF)
+	SONAME = libmlt++.$(soversion)$(LIBSUF)
+	LIBFLAGS += -install_name $(libdir)/$(SONAME) -current_version $(version) -compatibility_version $(soversion)
 else ifeq ($(targetos), MinGW)
-NAME = libmlt++$(LIBSUF)
-TARGET = libmlt++-$(soversion)$(LIBSUF)
-CXXFLAGS += -DMLTPP_EXPORTS
-LIBFLAGS += -Wl,--output-def,libmlt++.def
+	TARGET = libmlt++-$(soversion)$(LIBSUF)
+	CXXFLAGS += -DMLTPP_EXPORTS
+	LIBFLAGS += -Wl,--output-def,libmlt++.def
 else
-NAME = libmlt++$(LIBSUF)
-TARGET = $(NAME).$(version)
-SONAME = $(NAME).$(soversion)
-LIBFLAGS += -Wl,-soname,$(SONAME)
+	TARGET = $(NAME).$(version)
+	SONAME = $(NAME).$(soversion)
+	LIBFLAGS += -Wl,-soname,$(SONAME)
 endif
-
+ifneq (, $(shell $(CXX) --version | grep -is -e g++ -e clang))
+	CXXFLAGS += -std=c++11
+endif
 CXXFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\" -fvisibility=hidden
 
-LDFLAGS += -L../framework -lmlt
+LDFLAGS := -L../framework -lmlt $(LDFLAGS)
 ifeq ($(targetos), Linux)
 LDFLAGS += -Wl,--version-script=mlt++.vers
 endif
@@ -73,9 +73,14 @@ distclean:	clean
 install:
 	$(INSTALL) -d "$(DESTDIR)$(libdir)"
 	if [ "$(targetos)" = "MinGW" ]; then \
-		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(prefix) ; \
-		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)/libmlt++.dll ; \
-		$(INSTALL) -m 644 libmlt++.def $(DESTDIR)$(libdir) ; \
+		if [ "$(windeploy)" = true ]; then \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(prefix)" ; \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(libdir)/libmlt++.dll" ; \
+		else \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(bindir)" ; \
+			$(INSTALL) -m 755 $(TARGET) "$(DESTDIR)$(bindir)/libmlt++.dll" ; \
+		fi; \
+		$(INSTALL) -m 644 libmlt++.def "$(DESTDIR)$(libdir)" ; \
 	else \
 		$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
@@ -89,6 +94,15 @@ uninstall:
 	if [ "$(targetos)" != "MinGW" ]; then \
 		rm -f "$(DESTDIR)$(libdir)/$(NAME)" ; \
 		rm -f "$(DESTDIR)$(libdir)/$(SONAME)" ; \
+	else \
+		if [ "$(windeploy)" = true ]; then \
+			rm -f "$(DESTDIR)$(prefix)/$(TARGET)" ; \
+			rm -f "$(DESTDIR)$(libdir)/libmlt++.dll" ; \
+		else \
+			rm -f "$(DESTDIR)$(bindir)/$(TARGET)" ; \
+			rm -f "$(DESTDIR)$(bindir)/libmlt++.dll" ; \
+		fi ; \
+		rm -f "$(DESTDIR)$(libdir)/libmlt++.def" ; \
 	fi
 	rm -rf "$(DESTDIR)$(prefix)/include/mlt++"
 

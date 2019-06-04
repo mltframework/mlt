@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export version=6.13.0
+export version=6.17.0
 export soversion=6
 
 show_help()
@@ -31,6 +31,7 @@ General build options:
   --cpu='cpu'                - Compile for a specific CPU (default: none)
   --target-os='os'           - Cross-compile to a specific OS (default: $(uname -s))
   --target-arch='arch'       - Cross-compile to a specific CPU architecture
+  --disable-windeploy        - Keep bin/ lib/ layout on Windows
 
 Module disable options:
 
@@ -60,6 +61,7 @@ build_config()
 		echo "extra_versioning=$extra_versioning"
 		echo "melt_noversion=$melt_noversion"
 		echo "targetos=$targetos"
+		echo "windeploy=$windeploy"
 
 		[ "$mmx" = "true" ] && 
 		echo "MMX_FLAGS=-DUSE_MMX"
@@ -123,6 +125,8 @@ build_config()
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
 		MinGW)
+		[ "$windeploy" = false ] &&
+			echo "CFLAGS+=-DNODEPLOY"
 		[ "$optimisations" = "true" ] &&
 			echo "OPTIMISATIONS+=-ffast-math"
 		echo "SHFLAGS=-shared"
@@ -194,7 +198,7 @@ build_pkgconfig()
 }
 
 # Debug mode
-set +x
+# set -x
 
 # Define build directory for scripts called
 export build_dir=`dirname $0`
@@ -217,9 +221,32 @@ export targetarch=
 export amd64=false
 export extra_versioning=false
 export melt_noversion=false
+export windeploy=true
 
 # Define the compiler used in tests (gcc is not installed everywhere)
 : ${CC:=gcc}
+
+# Test for a supported C++ compiler.
+if $($CC --version | grep -is -e gcc > /dev/null)
+then
+	echo "Found gcc version $($CC -dumpversion)"
+	if $CC -dumpversion | awk '{split($0, a, "."); if ((lshift(a[1],16) + lshift(a[2],8) + a[3]) < lshift(4,16) + lshift(8,8) + 1) exit 0; else exit 1;}'
+	then
+		echo "The minimum version of gcc supported is 4.8.1 (for C++11)."
+		exit 1
+	fi
+elif $($CC --version | grep -is -e clang > /dev/null)
+then
+	echo "Found clang version $($CC -dumpversion)"
+	if $CC -dumpversion | awk '{split($0, a, "."); if ((lshift(a[1],8) + a[2]) < lshift(3,8) + 3) exit 0; else exit 1;}'
+	then
+		echo "The minimum version of clang supported is 3.3 (for C++11)."
+		exit 1
+	fi
+else
+	echo "MLT requires either the gcc or clang C/C++ compilers."
+	exit 1
+fi
 
 # Iterate through arguments
 for i in "$@"
@@ -243,6 +270,7 @@ do
 		--cpu=* )			cpu="${i#--cpu=}" ;;
 		--target-os=* )			targetos="${i#--target-os=}" ;;
 		--target-arch=* )		targetarch="${i#--target-arch=}" ;;
+		--disable-windeploy )		windeploy=false ;;
 	esac
 done
 

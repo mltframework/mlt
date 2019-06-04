@@ -38,6 +38,8 @@
 #endif
 
 #include <cmath>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 extern "C" {
@@ -354,6 +356,51 @@ extern void make_tempfile( producer_qimage self, const char *xml )
 		mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( &self->parent ), "__temporary_file__",
 			fullname.data(), 0, ( mlt_destructor )unlink, NULL );
 	}
+}
+
+int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const char *filename)
+{
+	int result = 0;
+
+	// Obtain filenames with pattern
+	if (filename && strchr(filename, '%')) {
+		// handle picture sequences
+		int i = mlt_properties_get_int( properties, "begin" );
+		int keyvalue = 0;
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+		for (int gap = 0; gap < 100;) {
+			QString full = QString::asprintf(filename, i++);
+			if (QFile::exists(full)) {
+				QString key = QString::asprintf("%d", keyvalue++);
+				mlt_properties_set(self->filenames, key.toLatin1().constData(), full.toUtf8().constData());
+				gap = 0;
+			} else {
+				gap ++;
+			}
+		}
+#else
+		char full[1024];
+		char key[ 50 ];
+
+		for (int gap = 0; gap < 100;) {
+			struct stat buf;
+			snprintf(full, 1023, filename, i++);
+			if (stat(full, &buf ) == 0) {
+				sprintf(key, "%d", keyvalue ++);
+				mlt_properties_set(self->filenames, key, full);
+				gap = 0;
+			} else {
+				gap ++;
+			}
+		}
+#endif
+		if (mlt_properties_count(self->filenames) > 0) {
+			mlt_properties_set_int(properties, "ttl", 1);
+			result = 1;
+		}
+	}
+	return result;
 }
 
 } // extern "C"

@@ -1,7 +1,6 @@
 /**
  * MltConsumer.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,11 +37,16 @@ Consumer::Consumer( Profile& profile ) :
 }
 
 Consumer::Consumer( Profile& profile, const char *id, const char *arg ) :
+	Consumer ( profile.get_profile(), id, arg )
+{
+}
+
+Consumer::Consumer( mlt_profile profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( id == NULL || arg != NULL )
 	{
-		instance = mlt_factory_consumer( profile.get_profile(), id, arg );
+		instance = mlt_factory_consumer( profile, id, arg );
 	}
 	else
 	{
@@ -51,12 +55,12 @@ Consumer::Consumer( Profile& profile, const char *id, const char *arg ) :
 			char *temp = strdup( id );
 			char *arg = strchr( temp, ':' ) + 1;
 			*( arg - 1 ) = '\0';
-			instance = mlt_factory_consumer( profile.get_profile(), temp, arg );
+			instance = mlt_factory_consumer( profile, temp, arg );
 			free( temp );
 		}
 		else
 		{
-			instance = mlt_factory_consumer( profile.get_profile(), id, NULL );
+			instance = mlt_factory_consumer( profile, id, NULL );
 		}
 	}
 }

@@ -42,6 +42,7 @@ namespace Mlt
 		public:
 			Producer( );
 			Producer( Profile& profile, const char *id, const char *service = NULL );
+			Producer( mlt_profile profile, const char *id, const char *service = NULL );
 			Producer( Service &producer );
 			Producer( mlt_producer producer );
 			Producer( Producer &producer );
@@ -73,6 +74,8 @@ namespace Mlt
 			bool runs_into( Producer &that );
 			void optimise( );
 			int clear( );
+			int64_t get_creation_time( );
+			void set_creation_time( int64_t creation_time );
 	};
 }
 

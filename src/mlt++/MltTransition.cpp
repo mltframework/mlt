@@ -1,7 +1,6 @@
 /**
  * MltTransition.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,11 +25,16 @@
 using namespace Mlt;
 
 Transition::Transition( Profile& profile, const char *id, const char *arg ) :
+	Transition( profile.get_profile(), id, arg )
+{
+}
+
+Transition::Transition( mlt_profile profile, const char *id, const char *arg ) :
 	instance( NULL )
 {
 	if ( arg != NULL )
 	{
-		instance = mlt_factory_transition( profile.get_profile(), id, arg );
+		instance = mlt_factory_transition( profile, id, arg );
 	}
 	else
 	{
@@ -39,12 +43,12 @@ Transition::Transition( Profile& profile, const char *id, const char *arg ) :
 			char *temp = strdup( id );
 			char *arg = strchr( temp, ':' ) + 1;
 			*( arg - 1 ) = '\0';
-			instance = mlt_factory_transition( profile.get_profile(), temp, arg );
+			instance = mlt_factory_transition( profile, temp, arg );
 			free( temp );
 		}
 		else
 		{
-			instance = mlt_factory_transition( profile.get_profile(), id, NULL );
+			instance = mlt_factory_transition( profile, id, NULL );
 		}
 	}
 }
@@ -100,6 +104,11 @@ void Transition::set_tracks( int a_track, int b_track )
 int Transition::connect( Producer &producer, int a_track, int b_track )
 {
 	return mlt_transition_connect( get_transition(), producer.get_service(), a_track, b_track );
+}
+
+int Transition::connect(Service &service, int a_track, int b_track)
+{
+	return mlt_transition_connect( get_transition(), service.get_service(), a_track, b_track );
 }
 
 int Transition::get_a_track( )

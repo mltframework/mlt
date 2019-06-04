@@ -1,7 +1,6 @@
 /**
  * MltTractor.cpp - Tractor wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +23,7 @@
 #include "MltTransition.h"
 #include "MltFilter.h"
 #include "MltPlaylist.h"
+#include "MltProfile.h"
 using namespace Mlt;
 
 Tractor::Tractor( ) :
@@ -61,6 +61,11 @@ Tractor::Tractor( Tractor &tractor ) :
 }
 
 Tractor::Tractor( Profile& profile, char *id, char *resource ) :
+	Tractor( profile.get_profile(), id, resource )
+{
+}
+
+Tractor::Tractor( mlt_profile profile, char *id, char *resource ) :
 	instance( NULL )
 {
 	Producer producer( profile, id, resource );

@@ -32,23 +32,30 @@
 #define PRESETS_DIR "/presets"
 
 #ifdef _WIN32
-#ifdef PREFIX_LIB
-#undef PREFIX_LIB
-#endif
-#ifdef PREFIX_DATA
-#undef PREFIX_DATA
-#endif
-#include <windows.h>
-/** the default subdirectory of the libdir for holding modules (plugins) */
-#define PREFIX_LIB "\\lib\\mlt"
-/** the default subdirectory of the install prefix for holding module (plugin) data */
-#define PREFIX_DATA "\\share\\mlt"
+#  include <windows.h>
+#  ifdef PREFIX_LIB
+#    undef PREFIX_LIB
+#  endif
+#  ifdef PREFIX_DATA
+#    undef PREFIX_DATA
+#  endif
+   /** the default subdirectory of the libdir for holding modules (plugins) */
+#  define PREFIX_LIB "\\lib\\mlt"
+   /** the default subdirectory of the install prefix for holding module (plugin) data */
+#  define PREFIX_DATA "\\share\\mlt"
+
 #elif defined(__APPLE__) && defined(RELOCATABLE)
-#include <mach-o/dyld.h>
-/** the default subdirectory of the libdir for holding modules (plugins) */
-#define PREFIX_LIB "/PlugIns/mlt"
-/** the default subdirectory of the install prefix for holding module (plugin) data */
-#define PREFIX_DATA "/Resources/mlt"
+#  include <mach-o/dyld.h>
+#  ifdef PREFIX_LIB
+#    undef PREFIX_LIB
+#  endif
+#  ifdef PREFIX_DATA
+#    undef PREFIX_DATA
+#  endif
+   /** the default subdirectory of the libdir for holding modules (plugins) */
+#  define PREFIX_LIB "/PlugIns/mlt"
+   /** the default subdirectory of the install prefix for holding module (plugin) data */
+#  define PREFIX_DATA "/Resources/mlt"
 #endif
 
 /** holds the full path to the modules directory - initialized and retained for the entire session */
@@ -148,7 +155,11 @@ mlt_repository mlt_factory_init( const char *directory )
 		char path[1024];
 		DWORD size = sizeof( path );
 		GetModuleFileName( NULL, path, size );
+		#ifndef NODEPLOY
 		char *appdir = mlt_dirname( strdup( path ) );
+		#else
+		char *appdir = mlt_dirname( mlt_dirname( strdup( path ) ) );
+		#endif
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
 		free( appdir );
 #elif defined(__APPLE__)  && defined(RELOCATABLE)

@@ -39,6 +39,7 @@ namespace Mlt
 			mlt_filter instance;
 		public:
 			Filter( Profile& profile, const char *id, const char *service = NULL );
+			Filter( mlt_profile profile, const char *id, const char *service = NULL );
 			Filter( Service &filter );
 			Filter( Filter &filter );
 			Filter( mlt_filter filter );

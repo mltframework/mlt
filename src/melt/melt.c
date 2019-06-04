@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2018 Meltytech, LLC
+ * Copyright (C) 2002-2019 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -278,7 +278,7 @@ static mlt_consumer create_consumer( mlt_profile profile, char *id )
 	return consumer;
 }
 
-static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc, char **argv )
+static int load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc, char **argv )
 {
 	int i;
 	int multi = 0;
@@ -290,6 +290,13 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 		// Seee if we need the qglsl variant of multi consumer.
 		if ( !strncmp( argv[i], "glsl.", 5 ) || !strncmp( argv[i], "movit.", 6 ) )
 			qglsl = 1;
+#if SDL_MAJOR_VERSION == 2
+		if ( !strcmp("sdl", argv[i]) || !strcmp("sdl_audio", argv[i]) || !strcmp("sdl_preview", argv[i]) || !strcmp("sdl_still", argv[i]) ) {
+			fprintf(stderr, 
+"Error: This program was linked against SDL2, which is incompatible with\nSDL1 consumers. Aborting.\n");
+			return EXIT_FAILURE;
+		}
+#endif
 	}
 	// Disable qglsl if xgl is being used!
 	for ( i = 1; qglsl && i < argc; i ++ )
@@ -348,6 +355,7 @@ static void load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc
 			}
 		}
 	}
+	return EXIT_SUCCESS;
 }
 
 #if defined(SDL_MAJOR_VERSION)
@@ -361,7 +369,7 @@ static void event_handling( mlt_producer producer, mlt_consumer consumer )
 		switch( event.type )
 		{
 			case SDL_QUIT:
-				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( consumer ), "done", 1 );
+				mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( producer ), "done", 1 );
 				break;
 
 			case SDL_KEYDOWN:
@@ -871,7 +879,8 @@ query_all:
 
 	// Look for the consumer option to load profile settings from consumer properties
 	backup_profile = mlt_profile_clone( profile );
-	load_consumer( &consumer, profile, argc, argv );
+	if ( load_consumer( &consumer, profile, argc, argv ) != EXIT_SUCCESS )
+		goto exit_factory;
 
 	// If the consumer changed the profile, then it is explicit.
 	if ( backup_profile && !profile->is_explicit && (
@@ -983,6 +992,7 @@ query_all:
 					out = mlt_producer_get_length( melt ) - 1;
 				}
 				mlt_producer_set_in_and_out( melt, in, out );
+				mlt_producer_seek( melt, 0 );
 			}
 			// Connect consumer to melt
 			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( melt ) );

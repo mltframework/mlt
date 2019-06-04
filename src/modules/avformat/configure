@@ -5,8 +5,8 @@ then
 	cat << EOF
 FFmpeg/avformat options:
 
-  This module requires at least FFmpeg v1.1 or Libav 9.
-  Features using libavfilter requires at least FFmpeg v2.3 (not Libav).
+  This module requires at least FFmpeg v2.4 or Libav 12.
+  Features using libavfilter requires FFmpeg (not Libav).
 
   --avformat-shared=path  - Link against a shared installation of libavformat (default)
   --avformat-static=path  - Link against a static build of libavformat
@@ -110,6 +110,11 @@ else
 	then
 		if ! $(pkg-config libswscale${avformat_suffix}); then
 			echo "- libswscale not found: disabling"
+			touch ../disable-avformat
+			exit 0
+		fi
+		if $(pkg-config "libavformat${avformat_suffix} < 56.4.101"); then
+			echo "- libavformat version $(pkg-config --modversion libavformat) is too old: disabling"
 			touch ../disable-avformat
 			exit 0
 		fi

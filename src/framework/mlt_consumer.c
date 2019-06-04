@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 /** Define this if you want an automatic deinterlace (if necessary) when the
  * consumer's producer is not running at normal speed.
@@ -46,7 +47,7 @@ pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 typedef struct
 {
 	int real_time;
-	int ahead;
+	atomic_int ahead;
 	int preroll;
 	mlt_image_format image_format;
 	mlt_audio_format audio_format;
@@ -60,12 +61,13 @@ typedef struct
 	int put_active;
 	mlt_event event_listener;
 	mlt_position position;
+	pthread_mutex_t position_mutex;	
 	int is_purge;
 	int aud_counter;
 	double fps;
 	int channels;
 	int frequency;
-
+	atomic_int speed;
 	/* additional fields added for the parallel work queue */
 	mlt_deque worker_threads;
 	pthread_mutex_t done_mutex;
@@ -73,7 +75,7 @@ typedef struct
 	int consecutive_dropped;
 	int consecutive_rendered;
 	int process_head;
-	int started;
+	atomic_int started;
 	pthread_t *threads; /**< used to deallocate all threads */
 }
 consumer_private;
@@ -164,6 +166,7 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 		pthread_mutex_init( &priv->put_mutex, NULL );
 		pthread_cond_init( &priv->put_cond, NULL );
 
+		pthread_mutex_init( &priv->position_mutex, NULL );
 	}
 	return error;
 }
@@ -372,8 +375,12 @@ static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties own
 
 static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_frame frame )
 {
-	if ( frame )
-		( ( consumer_private*) consumer->local )->position = mlt_frame_get_position( frame );
+	if ( frame ) {
+		consumer_private* priv = consumer->local;
+		pthread_mutex_lock( &priv->position_mutex );
+		priv->position = mlt_frame_get_position( frame );
+		pthread_mutex_unlock( &priv->position_mutex );
+	}
 }
 
 /** Create a new consumer.
@@ -802,7 +809,7 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( self );
-	int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+	priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
 	if ( frame )
 	{
@@ -832,7 +839,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	while ( priv->ahead )
 	{
 		// Get the maximum size of the buffer
-		int buffer = (speed == 0) ? 1 : MAX(mlt_properties_get_int( properties, "buffer" ), 0) + 1;
+		int buffer = (priv->speed == 0) ? 1 : MAX(mlt_properties_get_int( properties, "buffer" ), 0) + 1;
 	
 		// Put the current frame into the queue
 		pthread_mutex_lock( &priv->queue_mutex );
@@ -859,7 +866,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( frame == NULL )
 			continue;
 		pos = mlt_frame_get_position( frame );
-		speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+		priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 
 		// WebVfx uses this to setup a consumer-stopping event handler.
 		mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "consumer", self, 0, NULL, NULL );
@@ -875,7 +882,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 
 		// All non-normal playback frames should be shown
-		if ( speed != 1 )
+		if ( priv->speed != 1 )
 		{
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
@@ -1224,15 +1231,9 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 	consumer_private *priv = self->local;
 
 	// Make sure we're running
-// TODO improve support for atomic ops in general (see libavutil/atomic.h)
-#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
-	if ( __sync_val_compare_and_swap( &priv->started, 1, 0 ) )
+	int expected = 1;
+	if ( atomic_compare_exchange_strong( &priv->started, &expected, 0 ) )
 	{
-#else
-	if ( priv->started )
-	{
-		priv->started = 0;
-#endif
 		// Inform thread to stop
 		priv->ahead = 0;
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
@@ -1269,14 +1270,9 @@ static void consumer_work_stop( mlt_consumer self )
 	consumer_private *priv = self->local;
 
 	// Make sure we're running
-#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
-	if ( __sync_val_compare_and_swap( &priv->started, 1, 0 ) )
+	int expected = 1;
+	if ( atomic_compare_exchange_strong( &priv->started, &expected, 0 ) )
 	{
-#else
-	if ( priv->started )
-	{
-		priv->started = 0;
-#endif
 		// Inform thread to stop
 		priv->ahead = 0;
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
@@ -1421,8 +1417,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				mlt_deque_push_back( priv->queue, frame );
 				pthread_cond_signal( &priv->queue_cond );
 				pthread_mutex_unlock( &priv->queue_mutex );
-				int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
-				buffer = (speed == 0) ? 1 : buffer;
+				priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+				buffer = (priv->speed == 0) ? 1 : buffer;
 			}
 		}
 
@@ -1455,8 +1451,8 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 			mlt_deque_push_back( priv->queue, frame );
 			pthread_cond_signal( &priv->queue_cond );
 			pthread_mutex_unlock( &priv->queue_mutex );
-			int speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
-			buffer = (speed == 0) ? 1 : buffer;
+			priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+			buffer = (priv->speed == 0) ? 1 : buffer;
 		}
 	}
 
@@ -1575,7 +1571,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 #ifndef _WIN32
 			consumer_read_ahead_start( self );
 #endif
-			if ( buffer > 1 )
+			if ( buffer > 1 && priv->speed )
 				size = prefill > 0 && prefill < buffer ? prefill : buffer;
 			priv->preroll = 0;
 		}
@@ -1737,6 +1733,8 @@ void mlt_consumer_close( mlt_consumer self )
 			pthread_mutex_destroy( &priv->put_mutex );
 			pthread_cond_destroy( &priv->put_cond );
 
+			pthread_mutex_destroy( &priv->position_mutex );
+
 			mlt_service_close( &self->parent );
 			free( priv );
 		}
@@ -1752,7 +1750,11 @@ void mlt_consumer_close( mlt_consumer self )
 
 mlt_position mlt_consumer_position( mlt_consumer consumer )
 {
-	return ( ( consumer_private* ) consumer->local )->position;
+	consumer_private* priv = consumer->local;
+	pthread_mutex_lock( &priv->position_mutex );
+	mlt_position result = priv->position;
+	pthread_mutex_unlock( &priv->position_mutex );
+	return result;
 }
 
 static void transmit_thread_create( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )

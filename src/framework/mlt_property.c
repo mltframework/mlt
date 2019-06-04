@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -292,7 +292,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 	s = copy;
 	pos = strrchr( s, ':' );
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 	char *orig_localename = NULL;
 	if ( locale )
 	{
@@ -308,7 +308,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 #endif
 
 	if ( pos ) {
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			seconds = strtod_l( pos + 1, NULL, locale );
 		else
@@ -326,7 +326,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 		}
 	}
 	else {
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			seconds = strtod_l( s, NULL, locale );
 		else
@@ -334,7 +334,7 @@ static int time_clock_to_frames( mlt_property self, const char *s, double fps, l
 			seconds = strtod( s, NULL );
 	}
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 	if ( locale ) {
 		// Restore the current locale
 		setlocale( LC_NUMERIC, orig_localename );
@@ -459,19 +459,22 @@ static int mlt_property_atoi( mlt_property self, double fps, locale_t locale )
 
 int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
 {
+	pthread_mutex_lock( &self->mutex );
+	int result = 0;
 	if ( self->types & mlt_prop_int )
-		return self->prop_int;
+		result = self->prop_int;
 	else if ( self->types & mlt_prop_double )
-		return ( int )self->prop_double;
+		result = ( int )self->prop_double;
 	else if ( self->types & mlt_prop_position )
-		return ( int )self->prop_position;
+		result = ( int )self->prop_position;
 	else if ( self->types & mlt_prop_int64 )
-		return ( int )self->prop_int64;
+		result = ( int )self->prop_int64;
 	else if ( self->types & mlt_prop_rect && self->data )
-		return ( int ) ( (mlt_rect*) self->data )->x;
+		result = ( int ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return mlt_property_atoi( self, fps, locale );
-	return 0;
+		result = mlt_property_atoi( self, fps, locale );
+	pthread_mutex_unlock( &self->mutex );
+	return result;
 }
 
 /** Convert a string to a floating point number.
@@ -503,7 +506,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		char *end = NULL;
 		double result;
 
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			result = strtod_l( value, &end, locale );
 		else
@@ -525,7 +528,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		if ( end && end[0] == '%' )
 			result /= 100.0;
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -549,19 +552,22 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 
 double mlt_property_get_double( mlt_property self, double fps, locale_t locale )
 {
+	double result = 0.0;
+	pthread_mutex_lock( &self->mutex );
 	if ( self->types & mlt_prop_double )
-		return self->prop_double;
+		result = self->prop_double;
 	else if ( self->types & mlt_prop_int )
-		return ( double )self->prop_int;
+		result = ( double )self->prop_int;
 	else if ( self->types & mlt_prop_position )
-		return ( double )self->prop_position;
+		result = ( double )self->prop_position;
 	else if ( self->types & mlt_prop_int64 )
-		return ( double )self->prop_int64;
+		result = ( double )self->prop_int64;
 	else if ( self->types & mlt_prop_rect && self->data )
-		return ( (mlt_rect*) self->data )->x;
+		result = ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return mlt_property_atof( self, fps, locale );
-	return 0;
+		result = mlt_property_atof( self, fps, locale );
+	pthread_mutex_unlock( &self->mutex );
+	return result;
 }
 
 /** Get the property as a position.
@@ -576,19 +582,22 @@ double mlt_property_get_double( mlt_property self, double fps, locale_t locale )
 
 mlt_position mlt_property_get_position( mlt_property self, double fps, locale_t locale )
 {
+	mlt_position result = 0;
+	pthread_mutex_lock( &self->mutex );
 	if ( self->types & mlt_prop_position )
-		return self->prop_position;
+		result = self->prop_position;
 	else if ( self->types & mlt_prop_int )
-		return ( mlt_position )self->prop_int;
+		result = ( mlt_position )self->prop_int;
 	else if ( self->types & mlt_prop_double )
-		return ( mlt_position )self->prop_double;
+		result = ( mlt_position )self->prop_double;
 	else if ( self->types & mlt_prop_int64 )
-		return ( mlt_position )self->prop_int64;
+		result = ( mlt_position )self->prop_int64;
 	else if ( self->types & mlt_prop_rect && self->data )
-		return ( mlt_position ) ( (mlt_rect*) self->data )->x;
+		result = ( mlt_position ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return ( mlt_position )mlt_property_atoi( self, fps, locale );
-	return 0;
+		result = ( mlt_position )mlt_property_atoi( self, fps, locale );
+	pthread_mutex_unlock( &self->mutex );
+	return result;
 }
 
 /** Convert a string to a 64-bit integer.
@@ -618,19 +627,22 @@ static inline int64_t mlt_property_atoll( const char *value )
 
 int64_t mlt_property_get_int64( mlt_property self )
 {
+	int64_t result = 0;
+	pthread_mutex_lock( &self->mutex );
 	if ( self->types & mlt_prop_int64 )
-		return self->prop_int64;
+		result = self->prop_int64;
 	else if ( self->types & mlt_prop_int )
-		return ( int64_t )self->prop_int;
+		result = ( int64_t )self->prop_int;
 	else if ( self->types & mlt_prop_double )
-		return ( int64_t )self->prop_double;
+		result = ( int64_t )self->prop_double;
 	else if ( self->types & mlt_prop_position )
-		return ( int64_t )self->prop_position;
+		result = ( int64_t )self->prop_position;
 	else if ( self->types & mlt_prop_rect && self->data )
-		return ( int64_t ) ( (mlt_rect*) self->data )->x;
+		result = ( int64_t ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		return mlt_property_atoll( self->prop_string );
-	return 0;
+		result = mlt_property_atoll( self->prop_string );
+	pthread_mutex_unlock( &self->mutex );
+	return result;
 }
 
 /** Get the property as a string (with time format).
@@ -840,7 +852,10 @@ void *mlt_property_get_data( mlt_property self, int *length )
 		*length = self->length;
 
 	// Return the data (note: there is no conversion here)
-	return self->data;
+	pthread_mutex_lock( &self->mutex );
+	void* result = self->data;
+	pthread_mutex_unlock( &self->mutex );	
+	return result;
 }
 
 /** Destroy a property and free all related resources.
@@ -1097,7 +1112,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 	{
 		char *p = NULL;
 
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 		if ( locale )
 			strtod_l( self->prop_string, &p, locale );
 		else
@@ -1117,7 +1132,7 @@ static int is_property_numeric( mlt_property self, locale_t locale )
 
 		strtod( self->prop_string, &p );
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );
@@ -1513,7 +1528,10 @@ int mlt_property_anim_set_string( mlt_property self, const char *value, double f
 
 mlt_animation mlt_property_get_animation( mlt_property self )
 {
-    return self->animation;
+	pthread_mutex_lock( &self->mutex );
+	mlt_animation result = self->animation;
+	pthread_mutex_unlock( &self->mutex );
+	return result;
 }
 
 /** Convert a rectangle value into a string.
@@ -1595,7 +1613,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		char *p = NULL;
 		int count = 0;
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		char *orig_localename = NULL;
 		if ( locale ) {
 			// Protect damaging the global locale from a temporary locale on another thread.
@@ -1612,7 +1630,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 		while ( *value )
 		{
 			double temp;
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 			if ( locale )
 				temp = strtod_l( value, &p, locale );
             else
@@ -1647,7 +1665,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 			count ++;
 		}
 
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !HAVE_STRTOD_L
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L)
 		if ( locale ) {
 			// Restore the current locale
 			setlocale( LC_NUMERIC, orig_localename );

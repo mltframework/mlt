@@ -1,9 +1,9 @@
-schema_version: 0.2
+schema_version: 0.3
 type: consumer
 identifier: avformat
 title: FFmpeg Output
 version: 3
-copyright: Copyright (C) 2003-2014 Meltytech, LLC
+copyright: Copyright (C) 2003-2019 Meltytech, LLC
 license: LGPL
 language: en
 url: http://www.ffmpeg.org/
@@ -31,7 +31,7 @@ notes: >
   property. Complete details are below.
 
   Please note that the exact options depend on the version of libavformat and
-  libavcodec on your system. The following is based on FFmpeg n2.6.3.
+  libavcodec on your system. The following is based on FFmpeg v4.0.
 
 parameters:
   - identifier: target

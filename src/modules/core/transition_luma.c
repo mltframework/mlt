@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -29,7 +29,81 @@
 #include <math.h>
 #include "transition_composite.h"
 
-static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height )
+static inline int is_opaque( uint8_t *alpha_channel, int width, int height )
+{
+	int n = width * height + 1;
+	while ( --n )
+		if ( *alpha_channel++ != 0xff ) return 0;
+	return 1;
+}
+
+static inline float calculate_mix( float weight, float alpha )
+{
+	return weight * alpha / 255.f;
+}
+
+static inline uint8_t sample_mix( uint8_t dest, uint8_t src, float mix )
+{
+	return src * mix + dest * ( 1.f - mix );
+}
+
+static void composite_line_yuv_float( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b, uint8_t *alpha_a, float weight )
+{
+	register int j = 0;
+	float mix_a, mix_b;
+
+	for ( ; j < width; j ++ )
+	{
+		mix_a = calculate_mix( 1.0f - weight, alpha_a? *alpha_a : 255 );
+		mix_b = calculate_mix( weight, alpha_b? *alpha_b : 255 );
+		if (alpha_a) {
+			float mix2 = mix_b + mix_a - mix_b * mix_a;
+			*alpha_a = 255 * mix2;
+			if (mix2 != 0.f) mix_b /= mix2;
+		}
+		*dest = sample_mix( *dest, *src++, mix_b );
+		dest++;
+		*dest = sample_mix( *dest, *src++, mix_b );
+		dest++;
+		if ( alpha_a ) alpha_a ++;
+		if ( alpha_b ) alpha_b ++;
+	}
+}
+
+struct dissolve_slice_context {
+	uint8_t *dst_image;
+	uint8_t *src_image;
+	uint8_t *dst_alpha;
+	uint8_t *src_alpha;
+	int width;
+	int height;
+	float weight;
+};
+
+static int dissolve_slice( int id, int index, int count, void *context )
+{
+	struct dissolve_slice_context ctx = *((struct dissolve_slice_context*) context);
+	int stride = ctx.width * 2;
+	int slice_height = (ctx.height + count - 1) / count;
+	int i;
+
+	ctx.dst_image += index * slice_height * stride;
+	ctx.src_image += index * slice_height * stride;
+	if (ctx.dst_alpha) ctx.dst_alpha += index * slice_height * ctx.width;
+	if (ctx.src_alpha) ctx.src_alpha += index * slice_height * ctx.width;
+	slice_height = MIN(slice_height, ctx.height - index * slice_height);
+
+	for (i = 0; i < slice_height; i++) {
+		composite_line_yuv_float( ctx.dst_image, ctx.src_image, ctx.width, ctx.src_alpha, ctx.dst_alpha, ctx.weight );
+		ctx.dst_image += stride;
+		ctx.src_image += stride;
+		if (ctx.dst_alpha) ctx.dst_alpha += ctx.width;
+		if (ctx.src_alpha) ctx.src_alpha += ctx.width;
+	}
+	return 0;
+}
+
+static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height, int threads )
 {
 	int ret = 0;
 	int i = height + 1;
@@ -46,24 +120,43 @@ static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, i
 	alpha_dst = mlt_frame_get_alpha_mask( frame );
 	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
 	alpha_src = mlt_frame_get_alpha_mask( that );
+	int is_translucent = ( alpha_dst && !is_opaque(alpha_dst, width, height) )
+	                  || ( alpha_src && !is_opaque(alpha_src, width_src, height_src) );
 
 	// Pick the lesser of two evils ;-)
 	width_src = width_src > width ? width : width_src;
 	height_src = height_src > height ? height : height_src;
 
-	while ( --i )
+	if (is_translucent)
 	{
-		composite_line_yuv( p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0 );
-		p_src += width_src << 1;
-		p_dest += width << 1;
-		alpha_src += width_src;
-		alpha_dst += width;
+		struct dissolve_slice_context context = {
+			.dst_image = p_dest,
+			.src_image = p_src,
+			.dst_alpha = alpha_dst,
+			.src_alpha = alpha_src,
+			.width = width_src,
+			.height = height_src,
+			.weight = weight
+		};
+		mlt_slices_run_normal(threads, dissolve_slice, &context);
+	}
+	else
+	{
+		while ( --i )
+		{
+			composite_line_yuv( p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0 );
+			p_src += width_src << 1;
+			p_dest += width << 1;
+			alpha_src += width_src;
+			alpha_dst += width;
+		}
 	}
 
 	return ret;
 }
 
-// image processing functions
+/** A smoother, non-linear threshold determination function.
+*/
 
 static inline int32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
 {
@@ -78,30 +171,48 @@ static inline int32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
 	return ( ( ( a * a ) >> 16 )  * ( ( 3 << 16 ) - ( 2 * a ) ) ) >> 16;
 }
 
+static float smoothstep_float( float edge1, float edge2, float a )
+{
+	if ( a < edge1 )
+		return 0.f;
+
+	if ( a >= edge2 )
+		return 1.f;
+
+	a = ( a - edge1 ) / ( edge2 - edge1 );
+
+	return ( a * a )  * ( 3 - ( 2 * a ) );
+}
+
 /** powerful stuff
 
     \param field_order -1 = progressive, 0 = lower field first, 1 = top field first
 */
 static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width, int luma_height,
 							uint16_t *luma_bitmap, float pos, float frame_delta, float softness, int field_order,
-							int *width, int *height )
+							int *width, int *height, int invert )
 {
 	int width_src = *width, height_src = *height;
 	int width_dest = *width, height_dest = *height;
 	mlt_image_format format_src = mlt_image_yuv422, format_dest = mlt_image_yuv422;
 	uint8_t *p_src, *p_dest;
+	uint8_t *alpha_src, *alpha_dest;
 	int i, j;
 	int stride_src;
 	int stride_dest;
-	uint16_t weight = 0;
 
 	if ( mlt_properties_get( &a_frame->parent, "distort" ) )
 		mlt_properties_set( &b_frame->parent, "distort", mlt_properties_get( &a_frame->parent, "distort" ) );
 	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 );
+	alpha_dest = mlt_frame_get_alpha_mask( a_frame );
 	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 );
+	alpha_src = mlt_frame_get_alpha_mask( b_frame );
 
 	if ( *width == 0 || *height == 0 )
 		return;
+
+	int is_translucent = ( alpha_dest && !is_opaque(alpha_dest, width_dest, height_dest) )
+	                  || ( alpha_src  && !is_opaque(alpha_src,  width_src,  height_src ) );
 
 	// Pick the lesser of two evils ;-)
 	width_src = width_src > width_dest ? width_dest : width_src;
@@ -111,30 +222,25 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	stride_dest = width_dest * 2;
 
 	// Offset the position based on which field we're looking at ...
-	int32_t field_pos[ 2 ];
-	field_pos[ 0 ] = ( pos + ( ( field_order == 0 ? 1 : 0 ) * frame_delta * 0.5 ) ) * ( 1 << 16 ) * ( 1.0 + softness );
-	field_pos[ 1 ] = ( pos + ( ( field_order == 0 ? 0 : 1 ) * frame_delta * 0.5 ) ) * ( 1 << 16 ) * ( 1.0 + softness );
+	float field_pos[ 2 ];
+	field_pos[ 0 ] = ( pos + ( ( field_order == 0 ? 1 : 0 ) * frame_delta * 0.5f ) ) * ( 1.f + softness );
+	field_pos[ 1 ] = ( pos + ( ( field_order == 0 ? 0 : 1 ) * frame_delta * 0.5f ) ) * ( 1.f + softness );
 
 	register uint8_t *p;
 	register uint8_t *q;
-	register uint8_t *o;
 	uint16_t  *l;
-
-	uint32_t value;
-
 	int32_t x_diff = ( luma_width << 16 ) / *width;
 	int32_t y_diff = ( luma_height << 16 ) / *height;
 	int32_t x_offset = 0;
 	int32_t y_offset = 0;
 	uint8_t *p_row;
 	uint8_t *q_row;
-
-	int32_t i_softness = softness * ( 1 << 16 );
-
+	uint32_t i_softness = softness * ( 1 << 16 );
 	int field_count = field_order < 0 ? 1 : 2;
 	int field_stride_src = field_count * stride_src;
 	int field_stride_dest = field_count * stride_dest;
 	int field = 0;
+	float mix_a, mix_b;
 
 	// composite using luma map
 	while ( field < field_count )
@@ -148,20 +254,49 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 		{
 			p = p_row;
 			q = q_row;
-			o = q;
 			l = luma_bitmap + ( y_offset >> 16 ) * ( luma_width * field_count );
 			x_offset = 0;
 			j = width_src;
 
-			while( j -- )
+			if (is_translucent)
 			{
-             	weight = l[ x_offset >> 16 ];
-   				value = smoothstep( weight, i_softness + weight, field_pos[ field ] );
-				*o ++ = ( *p ++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
-				*o ++ = ( *p ++ * value + *q++ * ( ( 1 << 16 ) - value ) ) >> 16;
-				x_offset += x_diff;
+				while( j -- )
+				{
+					float weight = l[ x_offset >> 16 ] / 65535.f;
+					float value = smoothstep_float( weight, softness + weight, field_pos[ field ] );
+					mix_a = calculate_mix( 1.0f - value, alpha_dest? *alpha_dest : 255 );
+					mix_b = calculate_mix( value, alpha_src? *alpha_src : 255 );
+					if (invert && alpha_src) {
+						float mix2 = mix_b + mix_a - mix_b * mix_a;
+						*alpha_src = 255 * mix2;
+						if (mix2 != 0.f) mix_b /= mix2;
+					} else if (!invert && alpha_dest) {
+						float mix2 = mix_b + mix_a - mix_b * mix_a;
+						*alpha_dest = 255 * mix2;
+						if (mix2 != 0.f) mix_b /= mix2;
+					}
+					*q = sample_mix( *q, *p++, mix_b );
+					q++;
+					*q = sample_mix( *q, *p++, mix_b );
+					q++;
+					if ( alpha_dest ) alpha_dest ++;
+					if ( alpha_src ) alpha_src ++;
+					x_offset += x_diff;
+				}
 			}
-
+			else
+			{
+				while( j -- )
+				{
+					uint16_t weight = l[ x_offset >> 16 ];
+					uint32_t value = smoothstep( weight, i_softness + weight, (1 << 16) * field_pos[ field ] );
+					*q = ( *p++ * value + *q * ((1 << 16) - value) ) >> 16;
+					q++;
+					*q = ( *p++ * value + *q * ((1 << 16) - value) ) >> 16;
+					q++;
+					x_offset += x_diff;
+				}
+			}
 			y_offset += y_diff;
 			i += field_count;
 			p_row += field_stride_src;
@@ -451,6 +586,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int top_field_first =  mlt_properties_get_int( b_props, "top_field_first" );
 	int reverse = mlt_properties_get_int( properties, "reverse" );
 	int invert = mlt_properties_get_int( properties, "invert" );
+	int threads = CLAMP(mlt_properties_get_int(properties, "threads"), 0, mlt_slices_count_normal());
 
 	// Honour the reverse here
 	if ( mix >= 1.0 )
@@ -468,14 +604,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		frame_delta *= reverse ? -1.0 : 1.0;
 		// Composite the frames using a luma map
 		luma_composite( !invert ? a_frame : b_frame, !invert ? b_frame : a_frame, luma_width, luma_height, luma_bitmap, mix, frame_delta,
-			luma_softness, progressive ? -1 : top_field_first, width, height );
+			luma_softness, progressive ? -1 : top_field_first, width, height, invert );
 	}
 	else
 	{
 		mix = ( reverse || invert ) ? 1 - mix : mix;
 		invert = 0;
 		// Dissolve the frames using the time offset for mix value
-		dissolve_yuv( a_frame, b_frame, mix, *width, *height );
+		dissolve_yuv( a_frame, b_frame, mix, *width, *height, threads );
 	}
 
 	// Extract the a_frame image info

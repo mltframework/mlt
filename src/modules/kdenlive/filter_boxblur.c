@@ -51,13 +51,11 @@ static void PreCompute(uint8_t *image, int32_t *rgba, int width, int height)
 	}
 }
 
-static int32_t GetRGBA(int32_t *rgba, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
+static inline int32_t GetRGBA(int32_t *rgba, unsigned int w, unsigned int h, unsigned int x, int offsetx, unsigned int y, int offsety, unsigned int z)
 {
-	int xtheo = x * 1 + offsetx;
+	int xtheo = x + offsetx;
 	int ytheo = y + offsety;
-	if (xtheo < 0) xtheo = 0; else if (xtheo >= w) xtheo = w - 1;
-	if (ytheo < 0) ytheo = 0; else if (ytheo >= h) ytheo = h - 1;
-	return rgba[4*(xtheo+ytheo*w)+z];
+	return rgba[4 * (CLAMP(xtheo, 0, w-1) + CLAMP(ytheo, 0, h-1) * w) + z];
 }
 
 static void DoBoxBlur(uint8_t *image, int32_t *rgba, unsigned int width, unsigned int height, unsigned int boxw, unsigned int boxh)
@@ -119,7 +117,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	boxw = (unsigned int)(factor * hori);
 	boxh = (unsigned int)(factor * vert);
 
-	if ( boxw == 0 || boxh == 0 )
+	if ( boxw == 0 && boxh == 0 )
 	{
 		// Don't do anything
 		error = mlt_frame_get_image( frame, image, format, width, height, writable );
@@ -136,7 +134,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			int size = mlt_image_format_size( *format, *width, *height, NULL );
 			int32_t *rgba = mlt_pool_alloc( 4 * size );
 			PreCompute( *image, rgba, *width, *height );
-			DoBoxBlur( *image, rgba, *width, *height, boxw, boxh );
+			DoBoxBlur( *image, rgba, *width, *height, MAX(1, boxw), MAX(1, boxh) );
 			mlt_pool_release( rgba );
 		}
 	}

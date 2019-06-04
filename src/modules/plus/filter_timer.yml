@@ -55,6 +55,19 @@ parameters:
     mutable: yes
     widget: text
 
+  - identifier: offset
+    title: Offset
+    type: string
+    description: >
+      An offset to be added to the timer value. When the direction is "down",
+      the timer will count down to "offset" instead of 00:00:00.000. When the
+      direction is up, the timer will count up starting from "offset".
+      Must be in the format HH:MM:SS.SSS
+    default: 00:00:00.000
+    readonly: no
+    mutable: yes
+    widget: text
+
   - identifier: direction
     title: Direction
     type: string

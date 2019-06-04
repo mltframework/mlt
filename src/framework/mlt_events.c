@@ -3,7 +3,7 @@
  * \brief event handling
  * \see mlt_events_struct
  *
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -128,7 +128,6 @@ void mlt_event_close( mlt_event self )
 */
 
 static mlt_events mlt_events_fetch( mlt_properties );
-static void mlt_events_store( mlt_properties, mlt_events );
 static void mlt_events_close( mlt_events );
 
 /** Initialise the events structure.
@@ -140,11 +139,13 @@ static void mlt_events_close( mlt_events );
 void mlt_events_init( mlt_properties self )
 {
 	mlt_events events = mlt_events_fetch( self );
-	if ( events == NULL )
-	{
+	if (!events && self) {
 		events = calloc( 1, sizeof( struct mlt_events_struct ) );
-		events->list = mlt_properties_new( );
-		mlt_events_store( self, events );
+		if (events) {
+			events->list = mlt_properties_new( );
+			events->owner = self;
+			mlt_properties_set_data( self, "_events", events, 0, ( mlt_destructor )mlt_events_close, NULL );
+		}
 	}
 }
 
@@ -213,9 +214,9 @@ int mlt_events_fire( mlt_properties self, const char *id, ... )
 				if ( event != NULL && event->owner != NULL && event->block_count == 0 )
 				{
 					if ( transmitter != NULL )
-						transmitter( event->listener, event->owner, event->service, args );
+						transmitter( event->listener, event->owner->owner, event->service, args );
 					else
-						event->listener( event->owner, event->service );
+						event->listener( event->owner->owner, event->service );
 					++result;
 				}
 			}
@@ -470,19 +471,6 @@ static mlt_events mlt_events_fetch( mlt_properties self )
 	if ( self != NULL )
 		events = mlt_properties_get_data( self, "_events", NULL );
 	return events;
-}
-
-/** Store the events object.
- *
- * \private \memberof mlt_events_struct
- * \param self a properties list
- * \param events an events object
- */
-
-static void mlt_events_store( mlt_properties self, mlt_events events )
-{
-	if ( self != NULL && events != NULL )
-		mlt_properties_set_data( self, "_events", events, 0, ( mlt_destructor )mlt_events_close, NULL );
 }
 
 /** Close the events object.

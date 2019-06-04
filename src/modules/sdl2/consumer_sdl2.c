@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017-2018 Meltytech, LLC
+ * Copyright (C) 2017-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <SDL.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 #undef MLT_IMAGE_FORMAT // only yuv422 working currently
 
@@ -48,7 +49,7 @@ struct consumer_sdl_s
 	mlt_deque queue;
 	pthread_t thread;
 	int joined;
-	int running;
+	atomic_int running;
 	uint8_t audio_buffer[ 4096 * 10 ];
 	int audio_avail;
 	pthread_mutex_t audio_mutex;
@@ -62,7 +63,7 @@ struct consumer_sdl_s
 	int width;
 	int height;
 	int out_channels;
-	int playing;
+	atomic_int playing;
 	SDL_Window *sdl_window;
 	SDL_Renderer *sdl_renderer;
 	SDL_Texture *sdl_texture;
@@ -232,11 +233,9 @@ int consumer_start( mlt_consumer parent )
 			self->window_height = self->height;
 		}
 
-#if defined(__APPLE__) || defined(_WIN32)
 		// Initialize SDL video if needed.
 		if ( setup_sdl_video(self) )
 			return 1;
-#endif
 
 		pthread_create( &self->thread, NULL, consumer_thread, self );
 	}
@@ -440,7 +439,7 @@ static int consumer_play_audio( consumer_sdl self, mlt_frame frame, int init_aud
 				pthread_cond_timedwait( &self->audio_cond, &self->audio_mutex, &tm );
 				sample_space = ( sizeof( self->audio_buffer ) - self->audio_avail ) / dst_stride;
 
-				if ( sample_space == 0 )
+				if ( sample_space == 0 && self->running )
 				{
 					mlt_log_warning( MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n" );
 					pthread_mutex_unlock( &self->audio_mutex );
@@ -717,11 +716,6 @@ static void *video_thread( void *arg )
 	// Get real time flag
 	int real_time = mlt_properties_get_int( self->properties, "real_time" );
 
-#if !defined(__APPLE__) && !defined(_WIN32)
-	if ( setup_sdl_video(self) )
-		self->running = 0;
-#endif
-
 	// Determine start time
 	gettimeofday( &now, NULL );
 	start = ( int64_t )now.tv_sec * 1000000 + now.tv_usec;
@@ -905,7 +899,9 @@ static void *consumer_thread( void *arg )
 	while( mlt_deque_count( self->queue ) )
 		mlt_frame_close( mlt_deque_pop_back( self->queue ) );
 
+	pthread_mutex_lock( &self->audio_mutex );
 	self->audio_avail = 0;
+	pthread_mutex_unlock( &self->audio_mutex );
 
 	return NULL;
 }

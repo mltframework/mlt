@@ -1,7 +1,6 @@
 /**
  * MltProducer.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,13 +31,18 @@ Producer::Producer( ) :
 }
 
 Producer::Producer( Profile& profile, const char *id, const char *service ) :
+	Producer( profile.get_profile() , id, service )
+{
+}
+
+Producer::Producer( mlt_profile profile, const char *id, const char *service ) :
 	instance( NULL ),
 	parent_( NULL )
 {
 	if ( id != NULL && service != NULL )
-		instance = mlt_factory_producer( profile.get_profile(), id, service );
+		instance = mlt_factory_producer( profile, id, service );
 	else
-		instance = mlt_factory_producer( profile.get_profile(), NULL, id != NULL ? id : service );
+		instance = mlt_factory_producer( profile, NULL, id != NULL ? id : service );
 }
 
 Producer::Producer( Service &producer ) :
@@ -230,4 +234,14 @@ void Producer::optimise( )
 int Producer::clear( )
 {
 	return mlt_producer_clear( get_producer( ) );
+}
+
+int64_t Producer::get_creation_time( )
+{
+	return mlt_producer_get_creation_time( get_producer( ) );
+}
+
+void Producer::set_creation_time( int64_t creation_time )
+{
+	mlt_producer_set_creation_time( get_producer( ), creation_time );
 }

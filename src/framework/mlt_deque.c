@@ -3,7 +3,7 @@
  * \brief double ended queue
  * \see mlt_deque_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@
 // System header files
 #include <stdlib.h>
 #include <string.h>
+#include <stdatomic.h>
 
 /** \brief Deque entry class
  *
@@ -49,7 +50,7 @@ struct mlt_deque_s
 {
 	deque_entry *list;
 	int size;
-	int count;
+	atomic_int count;
 };
 
 /** Create a deque.

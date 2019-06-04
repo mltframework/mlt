@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1079,6 +1079,8 @@ mlt_properties mlt_frame_unique_properties( mlt_frame self, mlt_service service 
 	{
 		instance_props = mlt_properties_new();
 		mlt_properties_set_data( frame_props, unique, instance_props, 0, (mlt_destructor) mlt_properties_close, NULL );
+		mlt_properties_set_lcnumeric( instance_props, mlt_properties_get_lcnumeric( service_props ) );
+		mlt_properties_set_data( instance_props, "_profile", mlt_service_profile( service ), 0, NULL, NULL );
 	}
 
 	return instance_props;

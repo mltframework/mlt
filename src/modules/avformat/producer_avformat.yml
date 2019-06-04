@@ -3,7 +3,7 @@ type: producer
 identifier: avformat
 title: FFmpeg Reader
 version: 2
-copyright: Copyright (C) 2003-2014 Meltytech, LLC
+copyright: Copyright (C) 2003-2019 Meltytech, LLC
 license: LGPL
 language: en
 url: http://www.ffmpeg.org/
