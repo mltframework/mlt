@@ -1130,6 +1130,9 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 					mlt_properties_set_data( consumer_properties, key, properties, 0,
 						(mlt_destructor) mlt_properties_close, NULL );
 
+					// Pass in / out if provided
+					mlt_properties_pass_list( consumer_properties, properties, "in, out" );
+
 					// Pass along quality and performance properties to the multi consumer and its render thread(s).
 					if ( !context->qglsl )
 					{
