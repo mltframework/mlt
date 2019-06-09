@@ -2,7 +2,7 @@
  * \file mlt_factory.c
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -136,7 +136,12 @@ static char* mlt_dirname( char *path )
 mlt_repository mlt_factory_init( const char *directory )
 {
 	// Load the system locales
-	setlocale( LC_ALL, "" );
+	const char* locale = "";
+#if defined(_WIN32)
+	if (getenv("LC_ALL"))
+		locale = getenv("LC_ALL");
+#endif
+	setlocale( LC_ALL, locale );
 
 	if ( ! global_properties )
 		global_properties = mlt_properties_new( );
