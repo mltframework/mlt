@@ -304,7 +304,7 @@ static void foreach_consumer_start( mlt_consumer consumer )
 		if ( nested )
 		{
 			mlt_properties nested_props = MLT_CONSUMER_PROPERTIES(nested);
-			mlt_properties_set_position( nested_props, "_multi_position", 0 );
+			mlt_properties_set_position( nested_props, "_multi_position", mlt_properties_get_position( properties, "in" ) );
 			mlt_properties_set_data( nested_props, "_multi_audio", NULL, 0, NULL, NULL );
 			mlt_properties_set_int( nested_props, "_multi_samples", 0 );
 			mlt_consumer_start( nested );
