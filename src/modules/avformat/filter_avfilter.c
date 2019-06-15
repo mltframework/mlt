@@ -645,7 +645,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if( pdata->reset || pdata->format != *format )
+	if( pdata->reset || pdata->format != *format || pdata->avinframe->width != *width || pdata->avinframe->height != *height )
 	{
 		init_image_filtergraph( filter, *format, *width, *height );
 		pdata->reset = 0;
