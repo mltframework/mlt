@@ -18,6 +18,8 @@
  */
 
 #include <framework/mlt.h>
+
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -82,31 +84,31 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 
 	if ( !strcmp( format, "HH:MM:SS" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%02d:%02d:%02d", hours, mins, (int)secs );
+		snprintf( text, MAX_TEXT_LEN, "%02d:%02d:%02d", hours, mins, (int)floor(secs) );
 	}
 	else if ( !strcmp( format, "HH:MM:SS.S" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%02d:%02d:%04.1f", hours, mins, secs );
+		snprintf( text, MAX_TEXT_LEN, "%02d:%02d:%04.1f", hours, mins, floor(secs * 10.0) / 10.0 );
 	}
 	else if ( !strcmp( format, "MM:SS" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%02d:%02d", hours * 60 + mins, (int)secs );
+		snprintf( text, MAX_TEXT_LEN, "%02d:%02d", hours * 60 + mins, (int)floor(secs) );
 	}
 	else if ( !strcmp( format, "MM:SS.SS" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%02d:%05.2f", hours * 60 + mins, secs );
+		snprintf( text, MAX_TEXT_LEN, "%02d:%05.2f", hours * 60 + mins, floor(secs * 100.0) / 100.0 );
 	}
 	else if ( !strcmp( format, "SS" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%02d", (int)value );
+		snprintf( text, MAX_TEXT_LEN, "%02d", (int)floor(value) );
 	}
 	else if ( !strcmp( format, "SS.S" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%04.1f", value );
+		snprintf( text, MAX_TEXT_LEN, "%04.1f", floor(value * 10.0) / 10.0 );
 	}
 	else if ( !strcmp( format, "SS.SS" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%05.2f", value );
+		snprintf( text, MAX_TEXT_LEN, "%05.2f", floor(value * 100.0) / 100.0 );
 	}
 }
 
