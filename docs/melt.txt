@@ -1,7 +1,7 @@
 Melt Documentation
 
-Copyright (C) 2004-2014 Meltytech, LLC
-Last Revision: 2011-04-03
+Copyright (C) 2004-2019 Meltytech, LLC
+Last Revision: 2019-06-24
 
 
 MELT
@@ -39,8 +39,6 @@ Usage:
       -null-track | -hide-track                Add a hidden track
       -profile name                            Set the processing settings
       -progress                                Display progress along with the position
-      -remove                                  Remove the most recent cut
-      -repeat times                            Repeat the last cut
       -query                                   List all of the registered services
       -query "consumers" | "consumer"=id       List consumers or show info about one
       -query "filters" | "filter"=id           List filters or show info about one
@@ -51,6 +49,9 @@ Usage:
       -query "formats"                         List audio/video formats
       -query "audio_codecs"                    List audio codecs
       -query "video_codecs"                    List video codecs
+      -remove                                  Remove the most recent cut
+      -repeat times                            Repeat the last cut
+      -repository path                         Set the directory of MLT plugins
       -serialise [filename]                    Write the commands to a text file
       -silent                                  Do not display position/transport help
       -split relative-frame                    Split the last cut into two cuts

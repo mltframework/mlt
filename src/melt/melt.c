@@ -508,8 +508,6 @@ static void show_usage( char *program_name )
 "  -null-track | -hide-track                Add a hidden track\n"
 "  -profile name                            Set the processing settings\n"
 "  -progress                                Display progress along with position\n"
-"  -remove                                  Remove the most recent cut\n"
-"  -repeat times                            Repeat the last cut\n"
 "  -query                                   List all of the registered services\n"
 "  -query \"consumers\" | \"consumer\"=id       List consumers or show info about one\n"
 "  -query \"filters\" | \"filter\"=id           List filters or show info about one\n"
@@ -520,6 +518,9 @@ static void show_usage( char *program_name )
 "  -query \"formats\"                         List audio/video formats\n"
 "  -query \"audio_codecs\"                    List audio codecs\n"
 "  -query \"video_codecs\"                    List video codecs\n"
+"  -remove                                  Remove the most recent cut\n"
+"  -repeat times                            Repeat the last cut\n"
+"  -repository path                         Set the directory of MLT modules\n"
 "  -serialise [filename]                    Write the commands to a text file\n"
 "  -silent                                  Do not display position/transport\n"
 "  -split relative-frame                    Split the last cut into two cuts\n"
@@ -739,14 +740,13 @@ int main( int argc, char **argv )
 	int is_getc = 0;
 	int error = 0;
 	mlt_profile backup_profile;
+	mlt_repository repo = NULL;
+	const char* repo_path = NULL;
 
 	// Handle abnormal exit situations.
 	signal( SIGSEGV, abnormal_exit_handler );
 	signal( SIGILL, abnormal_exit_handler );
 	signal( SIGABRT, abnormal_exit_handler );
-
-	// Construct the factory
-	mlt_repository repo = mlt_factory_init( NULL );
 
 	for ( i = 1; i < argc; i ++ )
 	{
@@ -781,6 +781,10 @@ int main( int argc, char **argv )
 		// Look for the query option
 		else if ( !strcmp( argv[ i ], "-query" ) )
 		{
+			// Construct the factory
+			if ( !repo )
+				repo = mlt_factory_init( repo_path );
+		
 			const char *pname = argv[ ++ i ];
 			if ( pname && pname[0] != '-' )
 			{
@@ -865,9 +869,18 @@ query_all:
 		{
 			is_getc = 1;
 		}
+		else if ( !repo && !strcmp( argv[ i ], "-repository" ) )
+		{
+			if ( i+1 < argc && argv[i+1][0] != '-' )
+				repo_path = argv[++i];
+		}
 	}
 	if ( !is_silent && !isatty( STDIN_FILENO ) && !is_progress )
 		is_progress = 1;
+
+	// Construct the factory
+	if ( !repo )
+		repo = mlt_factory_init( repo_path );
 
 	// Create profile if not set explicitly
 	if ( getenv( "MLT_PROFILE" ) )
