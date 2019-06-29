@@ -1,6 +1,6 @@
 /*
  * consumer_xml.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -325,6 +325,15 @@ static void serialise_producer( serialise_context context, mlt_service service, 
 			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
 		xmlNewProp( child, _x("in"), _x(mlt_properties_get_time( properties, "in", context->time_format )) );
 		xmlNewProp( child, _x("out"), _x(mlt_properties_get_time( properties, "out", context->time_format )) );
+
+		// If the xml producer fails to load a producer, it creates a text producer that says INVALID
+		// and sets the xml_mlt_service property to the original service.
+		const char *xml_mlt_service = mlt_properties_get(properties, "_xml_mlt_service");
+		if (xml_mlt_service) {
+			// We should not serialize this as a text producer but using the original mlt_service.
+			mlt_properties_set(properties, "mlt_service", xml_mlt_service);
+		}
+
 		serialise_properties( context, properties, child );
 		serialise_service_filters( context, service, child );
 

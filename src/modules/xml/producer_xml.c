@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -553,12 +553,28 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 			char *service_name = trim( mlt_properties_get( properties, "mlt_service" ) );
 			if ( resource )
 			{
-				char *temp = calloc( 1, strlen( service_name ) + strlen( resource ) + 2 );
-				strcat( temp, service_name );
-				strcat( temp, ":" );
-				strcat( temp, resource );
-				producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, temp ) );
-				free( temp );
+				// If a document was saved as +INVALID.txt (see below), then ignore the mlt_service and
+				// try to load it just from the resource. This is an attempt to recover the failed
+				// producer in case, for example, a file returns.
+				if (!strcmp("qtext", service_name)) {
+					const char *text = mlt_properties_get( properties, "text" );
+					if (text && !strcmp("INVALID", text)) {
+						service_name = NULL;
+					}
+				} else if (!strcmp("pango", service_name)) {
+					const char *markup = mlt_properties_get( properties, "markup" );
+					if (markup && !strcmp("INVALID", markup)) {
+						service_name = NULL;
+					}
+				}
+				if (service_name) {
+					char *temp = calloc( 1, strlen( service_name ) + strlen( resource ) + 2 );
+					strcat( temp, service_name );
+					strcat( temp, ":" );
+					strcat( temp, resource );
+					producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, temp ) );
+					free( temp );
+				}
 			}
 			else
 			{
@@ -569,10 +585,15 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		// Just in case the plugin requested doesn't exist...
 		if ( !producer && resource )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, resource ) );
-		if ( !producer )
+		if ( !producer ) {
 			mlt_log_error( NULL, "[producer_xml] failed to load producer \"%s\"\n", resource );
-		if ( !producer )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "+INVALID.txt" ) );
+			if (producer) {
+				// Save the original mlt_service for the consumer to serialize it as original.
+				mlt_properties_set( MLT_SERVICE_PROPERTIES(producer), "_xml_mlt_service",
+					mlt_properties_get( properties, "mlt_service" ) );
+			}
+		}
 		if ( !producer )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "colour:red" ) );
 		if ( !producer )
