@@ -191,19 +191,23 @@ mlt_repository mlt_factory_init( const char *directory )
 
 		// Store the prefix for later retrieval
 #if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
-		char *exedir = mlt_environment( "MLT_APPDIR" );
-		size_t size = strlen( exedir );
-		if ( global_properties && !getenv( "MLT_DATA" ) )
-		{
-			mlt_directory = calloc( 1, size + strlen( PREFIX_DATA ) + 1 );
+		if ( directory ) {
+			mlt_directory = strdup( directory );
+		} else {
+			char *exedir = mlt_environment( "MLT_APPDIR" );
+			size_t size = strlen( exedir );
+			if ( global_properties && !getenv( "MLT_DATA" ) )
+			{
+				mlt_directory = calloc( 1, size + strlen( PREFIX_DATA ) + 1 );
+				strcpy( mlt_directory, exedir );
+				strcat( mlt_directory, PREFIX_DATA );
+				mlt_properties_set( global_properties, "MLT_DATA", mlt_directory );
+				free( mlt_directory );
+			}
+			mlt_directory = calloc( 1, size + strlen( directory ) + 1 );
 			strcpy( mlt_directory, exedir );
-			strcat( mlt_directory, PREFIX_DATA );
-			mlt_properties_set( global_properties, "MLT_DATA", mlt_directory );
-			free( mlt_directory );
+			strcat( mlt_directory, directory );
 		}
-		mlt_directory = calloc( 1, size + strlen( directory ) + 1 );
-		strcpy( mlt_directory, exedir );
-		strcat( mlt_directory, directory );
 #else
 		mlt_directory = strdup( directory );
 #endif
