@@ -185,9 +185,6 @@ mlt_repository mlt_factory_init( const char *directory )
 		if ( directory == NULL || !strcmp( directory, "" ) )
 			directory = getenv( "MLT_REPOSITORY" );
 #endif
-		// If no directory is specified, default to install directory
-		if ( directory == NULL )
-			directory = PREFIX_LIB;
 
 		// Store the prefix for later retrieval
 #if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
@@ -204,11 +201,14 @@ mlt_repository mlt_factory_init( const char *directory )
 				mlt_properties_set( global_properties, "MLT_DATA", mlt_directory );
 				free( mlt_directory );
 			}
-			mlt_directory = calloc( 1, size + strlen( directory ) + 1 );
+			mlt_directory = calloc( 1, size + strlen( PREFIX_LIB ) + 1 );
 			strcpy( mlt_directory, exedir );
-			strcat( mlt_directory, directory );
+			strcat( mlt_directory, PREFIX_LIB );
 		}
 #else
+		// If no directory is specified, default to install directory
+		if ( directory == NULL )
+			directory = PREFIX_LIB;
 		mlt_directory = strdup( directory );
 #endif
 		
