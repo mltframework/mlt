@@ -24,7 +24,7 @@ notes: >
 
 bugs:
   - This producer is not thread-safe during its construction because it
-    may modify the mlt_profile, even if is_explcicit is set.
+    may modify the mlt_profile, even if is_explicit is set.
 
 parameters:
   - identifier: argument
