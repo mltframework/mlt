@@ -31,7 +31,7 @@ static uint8_t getPoint(uint8_t *src, int w, int h, int x, int y, int z)
 {
 	if (x<0) x+=-((-x)%w)+w; else if (x>=w) x=x%w;
 	if (y<0) y+=-((-y)%h)+h; else if (y>=h) y=y%h;
-	return src[(x+y*w)*4+z];
+	return src[CLAMP(x+y*w, 0, w*h-1) * 4 + z];
 }
 
 // the main meat of the algorithm lies here
@@ -50,7 +50,7 @@ static void DoWave(uint8_t *src, int src_w, int src_h, uint8_t *dst, mlt_positio
 		for (x=0;x<w;x++) {
 			decalY = deformY ? sin(pulsation * x * 2 + phase) * amplitude : 0;
 			for (z=0; z<4; z++)
-                		*dst++ = getPoint(src, w, src_h, (x+decalX), (y+decalY), z);
+				*dst++ = getPoint(src, w, src_h, (x+decalX), (y+decalY), z);
 		}
 		if (uneven) {
 			decalY = sin(pulsation * x * 2 + phase) * amplitude;
