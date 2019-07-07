@@ -2316,6 +2316,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		mlt_properties_set_int( frame_properties, "color_trc", self->color_trc );
 		mlt_properties_set_int( frame_properties, "color_primaries", self->color_primaries );
 		mlt_properties_set_int( frame_properties, "full_luma", self->full_luma );
+		mlt_properties_set( properties, "meta.media.color_range", self->full_luma? "full" : "mpeg" );
 
 		// Add our image operation
 		mlt_frame_push_service( frame, self );
