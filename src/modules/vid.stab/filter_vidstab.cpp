@@ -422,7 +422,7 @@ mlt_filter filter_vidstab_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set( properties, "accuracy", "4" );
 		mlt_properties_set( properties, "stepsize", "6" );
 		mlt_properties_set( properties, "algo", "1" );
-		mlt_properties_set( properties, "mincontrast", "0.3" );
+		mlt_properties_set_double( properties, "mincontrast", 0.3 );
 		mlt_properties_set( properties, "show", "0" );
 		mlt_properties_set( properties, "tripod", "0" );
 
@@ -435,7 +435,7 @@ mlt_filter filter_vidstab_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set( properties, "relative", "1" );
 		mlt_properties_set( properties, "zoom", "0" );
 		mlt_properties_set( properties, "optzoom", "1" );
-		mlt_properties_set( properties, "zoomspeed", "0.25" );
+		mlt_properties_set_double( properties, "zoomspeed", 0.25 );
 		mlt_properties_set( properties, "reload", "0" );
 
 		mlt_properties_set( properties, "vid.stab.version", LIBVIDSTAB_VERSION );

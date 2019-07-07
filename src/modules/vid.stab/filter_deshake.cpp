@@ -227,7 +227,7 @@ mlt_filter filter_deshake_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set(properties, "shakiness", "4");
 		mlt_properties_set(properties, "accuracy", "4");
 		mlt_properties_set(properties, "stepsize", "6");
-		mlt_properties_set(properties, "mincontrast", "0.3");
+		mlt_properties_set_double(properties, "mincontrast", 0.3);
 
 		//properties for transform
 		mlt_properties_set(properties, "smoothing", "15");
@@ -236,7 +236,7 @@ mlt_filter filter_deshake_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set(properties, "crop", "0");
 		mlt_properties_set(properties, "zoom", "0");
 		mlt_properties_set(properties, "optzoom", "1");
-		mlt_properties_set(properties, "zoomspeed", "0.25");
+		mlt_properties_set_double(properties, "zoomspeed", 0.25);
 
 		init_vslog();
 
