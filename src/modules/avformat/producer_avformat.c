@@ -1420,7 +1420,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			.src_full_range = self->full_luma,
 			.dst_full_range = 0,
 		};
-		ctx.src_format = src_pix_fmt;
+		ctx.src_format = (self->full_luma && src_pix_fmt == AV_PIX_FMT_YUV422P) ? AV_PIX_FMT_YUVJ422P : src_pix_fmt;
 		ctx.src_desc = av_pix_fmt_desc_get( ctx.src_format );
 		ctx.dst_desc = av_pix_fmt_desc_get( ctx.dst_format );
 
