@@ -1,6 +1,6 @@
 /*
  * producer_pango.c -- a pango-based titler
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -163,10 +163,10 @@ static PangoFT2FontMap *fontmap = NULL;
 static void on_fontmap_reload( );
 mlt_producer producer_pango_init( const char *filename )
 {
-	producer_pango this = calloc( 1, sizeof( struct producer_pango_s ) );
-	if ( this != NULL && mlt_producer_init( &this->parent, this ) == 0 )
+	producer_pango self = calloc( 1, sizeof( struct producer_pango_s ) );
+	if ( self != NULL && mlt_producer_init( &self->parent, self ) == 0 )
 	{
-		mlt_producer producer = &this->parent;
+		mlt_producer producer = &self->parent;
 
 		pthread_mutex_lock( &pango_mutex );
 		if ( fontmap == NULL )
@@ -178,7 +178,7 @@ mlt_producer producer_pango_init( const char *filename )
 		producer->close = ( mlt_destructor )producer_close;
 
 		// Get the properties interface
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &this->parent );
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
 
 		mlt_events_register( properties, "fontmap-reload", NULL );
 		mlt_events_listen( properties, producer, "fontmap-reload", (mlt_listener) on_fontmap_reload );
@@ -292,13 +292,13 @@ mlt_producer producer_pango_init( const char *filename )
 				producer->close = NULL;
 				mlt_producer_close( producer );
 				producer = NULL;
-				free( this );
+				free( self );
 			}
 		}
 
 		return producer;
 	}
-	free( this );
+	free( self );
 	return NULL;
 }
 
@@ -391,11 +391,11 @@ static void refresh_image( mlt_frame frame, int width, int height )
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
-	// Obtain the producer pango for this frame
-	producer_pango this = mlt_properties_get_data( properties, "producer_pango", NULL );
+	// Obtain the producer pango for self frame
+	producer_pango self = mlt_properties_get_data( properties, "producer_pango", NULL );
 
 	// Obtain the producer 
-	mlt_producer producer = &this->parent;
+	mlt_producer producer = &self->parent;
 
 	// Obtain the producer properties
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
@@ -440,62 +440,62 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		}
 
 		// See if any properties changed
-		property_changed = ( align != this->align );
-		property_changed = property_changed || ( this->fgcolor == NULL || ( fg && strcmp( fg, this->fgcolor ) ) );
-		property_changed = property_changed || ( this->bgcolor == NULL || ( bg && strcmp( bg, this->bgcolor ) ) );
-		property_changed = property_changed || ( this->olcolor == NULL || ( ol && strcmp( ol, this->olcolor ) ) );
-		property_changed = property_changed || ( pad != this->pad );
-		property_changed = property_changed || ( outline != this->outline );
-		property_changed = property_changed || ( markup && this->markup && strcmp( markup, this->markup ) );
-		property_changed = property_changed || ( text && this->text && strcmp( text, this->text ) );
-		property_changed = property_changed || ( font && this->font && strcmp( font, this->font ) );
-		property_changed = property_changed || ( family && this->family && strcmp( family, this->family ) );
-		property_changed = property_changed || ( weight != this->weight );
-		property_changed = property_changed || ( stretch != this->stretch );
-		property_changed = property_changed || ( rotate != this->rotate );
-		property_changed = property_changed || ( style != this->style );
-		property_changed = property_changed || ( size != this->size );
-		property_changed = property_changed || ( width_crop != this->width_crop );
-		property_changed = property_changed || ( width_fit != this->width_fit );
-		property_changed = property_changed || ( wrap_type != this->wrap_type );
-		property_changed = property_changed || ( wrap_width != this->wrap_width );
-		property_changed = property_changed || ( line_spacing != this->line_spacing );
-		property_changed = property_changed || ( aspect_ratio != this->aspect_ratio );
+		property_changed = ( align != self->align );
+		property_changed = property_changed || ( self->fgcolor == NULL || ( fg && strcmp( fg, self->fgcolor ) ) );
+		property_changed = property_changed || ( self->bgcolor == NULL || ( bg && strcmp( bg, self->bgcolor ) ) );
+		property_changed = property_changed || ( self->olcolor == NULL || ( ol && strcmp( ol, self->olcolor ) ) );
+		property_changed = property_changed || ( pad != self->pad );
+		property_changed = property_changed || ( outline != self->outline );
+		property_changed = property_changed || ( markup && self->markup && strcmp( markup, self->markup ) );
+		property_changed = property_changed || ( text && self->text && strcmp( text, self->text ) );
+		property_changed = property_changed || ( font && self->font && strcmp( font, self->font ) );
+		property_changed = property_changed || ( family && self->family && strcmp( family, self->family ) );
+		property_changed = property_changed || ( weight != self->weight );
+		property_changed = property_changed || ( stretch != self->stretch );
+		property_changed = property_changed || ( rotate != self->rotate );
+		property_changed = property_changed || ( style != self->style );
+		property_changed = property_changed || ( size != self->size );
+		property_changed = property_changed || ( width_crop != self->width_crop );
+		property_changed = property_changed || ( width_fit != self->width_fit );
+		property_changed = property_changed || ( wrap_type != self->wrap_type );
+		property_changed = property_changed || ( wrap_width != self->wrap_width );
+		property_changed = property_changed || ( line_spacing != self->line_spacing );
+		property_changed = property_changed || ( aspect_ratio != self->aspect_ratio );
 
 		// Save the properties for next comparison
-		this->align = align;
-		this->pad = pad;
-		this->outline = outline;
-		set_string( &this->fgcolor, fg, "0xffffffff" );
-		set_string( &this->bgcolor, bg, "0x00000000" );
-		set_string( &this->olcolor, ol, "0x00000000" );
-		set_string( &this->markup, markup, NULL );
-		set_string( &this->text, text, NULL );
-		set_string( &this->font, font, NULL );
-		set_string( &this->family, family, "Sans" );
-		this->weight = weight;
-		this->stretch = stretch;
-		this->rotate = rotate;
-		this->style = style;
-		this->size = size;
-		this->width_crop = width_crop;
-		this->width_fit = width_fit;
-		this->wrap_type = wrap_type;
-		this->wrap_width = wrap_width;
-		this->line_spacing = line_spacing;
-		this->aspect_ratio = aspect_ratio;
+		self->align = align;
+		self->pad = pad;
+		self->outline = outline;
+		set_string( &self->fgcolor, fg, "0xffffffff" );
+		set_string( &self->bgcolor, bg, "0x00000000" );
+		set_string( &self->olcolor, ol, "0x00000000" );
+		set_string( &self->markup, markup, NULL );
+		set_string( &self->text, text, NULL );
+		set_string( &self->font, font, NULL );
+		set_string( &self->family, family, "Sans" );
+		self->weight = weight;
+		self->stretch = stretch;
+		self->rotate = rotate;
+		self->style = style;
+		self->size = size;
+		self->width_crop = width_crop;
+		self->width_fit = width_fit;
+		self->wrap_type = wrap_type;
+		self->wrap_width = wrap_width;
+		self->line_spacing = line_spacing;
+		self->aspect_ratio = aspect_ratio;
 	}
 
 	if ( pixbuf == NULL && property_changed )
 	{
-		rgba_color fgcolor = parse_color( this->fgcolor, mlt_properties_get_int( producer_props, "fgcolour" ) );
-		rgba_color bgcolor = parse_color( this->bgcolor, mlt_properties_get_int( producer_props, "bgcolour" ) );
-		rgba_color olcolor = parse_color( this->olcolor, mlt_properties_get_int( producer_props, "olcolour" ) );
+		rgba_color fgcolor = parse_color( self->fgcolor, mlt_properties_get_int( producer_props, "fgcolour" ) );
+		rgba_color bgcolor = parse_color( self->bgcolor, mlt_properties_get_int( producer_props, "bgcolour" ) );
+		rgba_color olcolor = parse_color( self->olcolor, mlt_properties_get_int( producer_props, "olcolour" ) );
 
-		if ( this->pixbuf )
-			g_object_unref( this->pixbuf );
-		this->pixbuf = NULL;
-		clean_cached( this );
+		if ( self->pixbuf )
+			g_object_unref( self->pixbuf );
+		self->pixbuf = NULL;
+		clean_cached( self );
 
 		// Convert from specified encoding to UTF-8
 		if ( encoding != NULL && !strncaseeq( encoding, "utf-8", 5 ) && !strncaseeq( encoding, "utf8", 4 ) )
@@ -503,12 +503,12 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			if ( markup != NULL && iconv_utf8( producer_props, "markup", encoding ) != -1 )
 			{
 				markup = mlt_properties_get( producer_props, "markup" );
-				set_string( &this->markup, markup, NULL );
+				set_string( &self->markup, markup, NULL );
 			}
 			if ( text != NULL && iconv_utf8( producer_props, "text", encoding ) != -1 )
 			{
 				text = mlt_properties_get( producer_props, "text" );
-				set_string( &this->text, text, NULL );
+				set_string( &self->text, text, NULL );
 			}
 		}
 		
@@ -520,7 +520,7 @@ static void refresh_image( mlt_frame frame, int width, int height )
 
 		if ( pixbuf != NULL )
 		{
-			// Register this pixbuf for destruction and reuse
+			// Register self pixbuf for destruction and reuse
 			mlt_properties_set_data( producer_props, "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
 			g_object_ref( pixbuf );
 			mlt_properties_set_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", pixbuf, 0, ( mlt_destructor )g_object_unref, NULL );
@@ -529,16 +529,16 @@ static void refresh_image( mlt_frame frame, int width, int height )
 			mlt_properties_set_int( producer_props, "meta.media.height", gdk_pixbuf_get_height( pixbuf ) );
 
 			// Store the width/height of the pixbuf temporarily
-			this->width = gdk_pixbuf_get_width( pixbuf );
-			this->height = gdk_pixbuf_get_height( pixbuf );
+			self->width = gdk_pixbuf_get_width( pixbuf );
+			self->height = gdk_pixbuf_get_height( pixbuf );
 		}
 	}
-	else if ( pixbuf == NULL && width > 0 && ( this->pixbuf == NULL || width != this->width || height != this->height ) )
+	else if ( pixbuf == NULL && width > 0 && ( self->pixbuf == NULL || width != self->width || height != self->height ) )
 	{
-		if ( this->pixbuf )
-			g_object_unref( this->pixbuf );
-		this->pixbuf = NULL;
-		clean_cached( this );
+		if ( self->pixbuf )
+			g_object_unref( self->pixbuf );
+		self->pixbuf = NULL;
+		clean_cached( self );
 		pixbuf = mlt_properties_get_data( producer_props, "pixbuf", NULL );
 	}
 
@@ -555,26 +555,26 @@ static void refresh_image( mlt_frame frame, int width, int height )
 		else if ( strcmp( interps, "hyper" ) == 0 || strcmp( interps, "bicubic" ) == 0 )
 			interp = GDK_INTERP_HYPER;
 
-// fprintf(stderr,"%s: scaling from %dx%d to %dx%d\n", __FILE__, this->width, this->height, width, height);
+// fprintf(stderr,"%s: scaling from %dx%d to %dx%d\n", __FILE__, self->width, self->height, width, height);
 
 		// Note - the original pixbuf is already safe and ready for destruction
-		this->pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
-		clean_cached( this );
+		self->pixbuf = gdk_pixbuf_scale_simple( pixbuf, width, height, interp );
+		clean_cached( self );
 
 		// Store width and height
-		this->width = width;
-		this->height = height;
+		self->width = width;
+		self->height = height;
 	}
 
 	// Set width/height
-	mlt_properties_set_int( properties, "width", this->width );
-	mlt_properties_set_int( properties, "height", this->height );
+	mlt_properties_set_int( properties, "width", self->width );
+	mlt_properties_set_int( properties, "height", self->height );
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
-	producer_pango this = ( producer_pango ) mlt_frame_pop_service( frame );
+	producer_pango self = ( producer_pango ) mlt_frame_pop_service( frame );
 
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -582,22 +582,22 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	*width = mlt_properties_get_int( properties, "rescale_width" );
 	*height = mlt_properties_get_int( properties, "rescale_height" );
 
-	mlt_service_lock( MLT_PRODUCER_SERVICE( &this->parent ) );
+	mlt_service_lock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	// Refresh the image
 	pthread_mutex_lock( &pango_mutex );
 	refresh_image( frame, *width, *height );
 
 	// Get width and height
-	*width = this->width;
-	*height = this->height;
+	*width = self->width;
+	*height = self->height;
 
 	// Always clone here to allow 'animated' text
-	if ( this->pixbuf )
+	if ( self->pixbuf )
 	{
 		int size, bpp;
 		uint8_t *buf;
-		mlt_cache_item cached_item = mlt_service_cache_get( MLT_PRODUCER_SERVICE( &this->parent ), "pango.image" );
+		mlt_cache_item cached_item = mlt_service_cache_get( MLT_PRODUCER_SERVICE( &self->parent ), "pango.image" );
 		struct pango_cached_image_s* cached = mlt_cache_item_data( cached_item, NULL );
 
 		// destroy cached data if request is differ
@@ -606,7 +606,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_cache_item_close( cached_item );
 			cached_item = NULL;
 			cached = NULL;
-			clean_cached( this );
+			clean_cached( self );
 		}
 
 		// create cached image
@@ -615,14 +615,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			int dst_stride, src_stride;
 
 			cached = mlt_pool_alloc( sizeof( struct pango_cached_image_s ));
-			cached->width = this->width;
-			cached->height = this->height;
-			cached->format = gdk_pixbuf_get_has_alpha( this->pixbuf ) ? mlt_image_rgb24a : mlt_image_rgb24;
+			cached->width = self->width;
+			cached->height = self->height;
+			cached->format = gdk_pixbuf_get_has_alpha( self->pixbuf ) ? mlt_image_rgb24a : mlt_image_rgb24;
 			cached->alpha = NULL;
 			cached->image = NULL;
 
-			src_stride = gdk_pixbuf_get_rowstride( this->pixbuf );
-			dst_stride = this->width * ( mlt_image_rgb24a == cached->format ? 4 : 3 );
+			src_stride = gdk_pixbuf_get_rowstride( self->pixbuf );
+			dst_stride = self->width * ( mlt_image_rgb24a == cached->format ? 4 : 3 );
 
 			size = mlt_image_format_size( cached->format, cached->width, cached->height, &bpp );
 			buf = mlt_pool_alloc( size );
@@ -630,8 +630,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 			if ( src_stride != dst_stride )
 			{
-				int y = this->height;
-				uint8_t *src = gdk_pixbuf_get_pixels( this->pixbuf );
+				int y = self->height;
+				uint8_t *src = gdk_pixbuf_get_pixels( self->pixbuf );
 				uint8_t *dst = buf;
 				while ( y-- )
 				{
@@ -642,7 +642,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			}
 			else
 			{
-				memcpy( buf, gdk_pixbuf_get_pixels( this->pixbuf ), src_stride * this->height );
+				memcpy( buf, gdk_pixbuf_get_pixels( self->pixbuf ), src_stride * self->height );
 			}
 
 			// convert image
@@ -689,7 +689,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		if ( cached_item )
 			mlt_cache_item_close( cached_item );
 		else
-			mlt_service_cache_put( MLT_PRODUCER_SERVICE( &this->parent ), "pango.image",
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( &self->parent ), "pango.image",
 				cached, sizeof( struct pango_cached_image_s ), pango_cached_image_destroy );
 	}
 	else
@@ -698,14 +698,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	pthread_mutex_unlock( &pango_mutex );
-	mlt_service_unlock( MLT_PRODUCER_SERVICE( &this->parent ) );
+	mlt_service_unlock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	return error;
 }
 
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
-	producer_pango this = producer->child;
+	producer_pango self = producer->child;
 
 	// Fetch the producers properties
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -717,7 +717,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
 	// Set the producer on the frame properties
-	mlt_properties_set_data( properties, "producer_pango", this, 0, NULL, NULL );
+	mlt_properties_set_data( properties, "producer_pango", self, 0, NULL, NULL );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
@@ -739,7 +739,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	pthread_mutex_unlock( &pango_mutex );
 
 	// Stack the get image callback
-	mlt_frame_push_service( *frame, this );
+	mlt_frame_push_service( *frame, self );
 	mlt_frame_push_get_image( *frame, producer_get_image );
 
 	// Calculate the next timecode
@@ -750,20 +750,20 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_close( mlt_producer parent )
 {
-	producer_pango this = parent->child;
-	if ( this->pixbuf )
-		g_object_unref( this->pixbuf );
+	producer_pango self = parent->child;
+	if ( self->pixbuf )
+		g_object_unref( self->pixbuf );
 	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
-	free( this->fgcolor );
-	free( this->bgcolor );
-	free( this->olcolor );
-	free( this->markup );
-	free( this->text );
-	free( this->font );
-	free( this->family );
+	free( self->fgcolor );
+	free( self->bgcolor );
+	free( self->olcolor );
+	free( self->markup );
+	free( self->text );
+	free( self->font );
+	free( self->family );
 	parent->close = NULL;
 	mlt_producer_close( parent );
-	free( this );
+	free( self );
 }
 
 static void pango_draw_background( GdkPixbuf *pixbuf, rgba_color bg )
