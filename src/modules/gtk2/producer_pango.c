@@ -383,16 +383,13 @@ static int iconv_utf8( mlt_properties properties, const char *prop_name, const c
 	return result;
 }
 
-static void refresh_image( mlt_frame frame, int width, int height )
+static void refresh_image( producer_pango self, mlt_frame frame, int width, int height )
 {
 	// Pixbuf
 	GdkPixbuf *pixbuf = mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "pixbuf", NULL );
 
 	// Obtain properties of frame
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
-	// Obtain the producer pango for self frame
-	producer_pango self = mlt_properties_get_data( properties, "producer_pango", NULL );
 
 	// Obtain the producer 
 	mlt_producer producer = &self->parent;
@@ -586,7 +583,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Refresh the image
 	pthread_mutex_lock( &pango_mutex );
-	refresh_image( frame, *width, *height );
+	refresh_image( self, frame, *width, *height );
 
 	// Get width and height
 	*width = self->width;
@@ -716,9 +713,6 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
 
-	// Set the producer on the frame properties
-	mlt_properties_set_data( properties, "producer_pango", self, 0, NULL, NULL );
-
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
@@ -735,7 +729,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Refresh the pango image
 	pthread_mutex_lock( &pango_mutex );
-	refresh_image( *frame, 0, 0 );
+	refresh_image( self, *frame, 0, 0 );
 	pthread_mutex_unlock( &pango_mutex );
 
 	// Stack the get image callback
