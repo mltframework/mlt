@@ -1,6 +1,6 @@
 /*
  * filter_text.c -- text overlay filter
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -67,6 +67,13 @@ static void setup_transition( mlt_filter filter, mlt_transition transition, mlt_
 
 	mlt_service_lock( MLT_TRANSITION_SERVICE(transition) );
 	mlt_rect rect = mlt_properties_anim_get_rect( my_properties, "geometry", position, length );
+	if (mlt_properties_get(my_properties, "geometry") && strchr(mlt_properties_get(my_properties, "geometry"), '%')) {
+		mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+		rect.x *= profile->width;
+		rect.y *= profile->height;
+		rect.w *= profile->width;
+		rect.h *= profile->height;
+	}
 	mlt_properties_set_rect( transition_properties, "rect", rect );
 	mlt_properties_set( transition_properties, "halign", mlt_properties_get( my_properties, "halign" ) );
 	mlt_properties_set( transition_properties, "valign", mlt_properties_get( my_properties, "valign" ) );
