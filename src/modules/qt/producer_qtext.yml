@@ -1,7 +1,7 @@
-schema_version: 0.1
+schema_version: 0.3
 type: producer
 identifier: qtext
-title: QT Titler
+title: Qt Titler
 version: 1
 copyright: Brian Matherly
 creator: Brian Matherly
@@ -23,14 +23,14 @@ notes: >
   height that maintains the image aspect.
 
 parameters:
-  - identifier: argument
+  - identifier: resource
     title: File
     type: string
     description: |
       A text file containing text to be rendered.
       The text file contents initialize the value of the "text" parameter.
     readonly: no
-    required: no
+    argument: yes
     mutable: no
     widget: fileopen
     
@@ -40,6 +40,7 @@ parameters:
     description: |
       A text string to be rendered.
     readonly: no
+    argument: yes
     mutable: yes
     widget: textbox
     

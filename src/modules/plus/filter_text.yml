@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: text
 title: Text
@@ -18,6 +18,7 @@ parameters:
     description: |
       The text to overlay.
     required: yes
+    argument: yes
     readonly: no
     default: text
     widget: text
