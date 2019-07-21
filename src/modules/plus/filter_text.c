@@ -40,9 +40,8 @@ static void property_changed( mlt_service owner, mlt_filter filter, char *name )
 	}
 }
 
-static void setup_producer( mlt_filter filter, mlt_producer producer )
+static void setup_producer( mlt_producer producer, mlt_properties my_properties )
 {
-	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Pass the properties to the text producer
@@ -58,9 +57,8 @@ static void setup_producer( mlt_filter filter, mlt_producer producer )
 	mlt_properties_set( producer_properties, "align", mlt_properties_get( my_properties, "halign" ) );
 }
 
-static void setup_transition( mlt_filter filter, mlt_transition transition, mlt_frame frame )
+static void setup_transition( mlt_filter filter, mlt_transition transition, mlt_frame frame, mlt_properties my_properties )
 {
-	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
@@ -80,6 +78,13 @@ static void setup_transition( mlt_filter filter, mlt_transition transition, mlt_
 	mlt_service_unlock( MLT_TRANSITION_SERVICE(transition) );
 }
 
+static mlt_properties get_filter_properties( mlt_filter filter, mlt_frame frame )
+{
+	mlt_properties properties = mlt_frame_get_unique_properties( frame, MLT_FILTER_SERVICE(filter) );
+	if ( !properties )
+		properties = MLT_FILTER_PROPERTIES(filter);
+	return properties;
+}
 
 /** Get the image.
 */
@@ -88,18 +93,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int error = 0;
 	mlt_filter filter = mlt_frame_pop_service( frame );
 	char* argument = (char*)mlt_frame_pop_service( frame );
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_producer producer = mlt_properties_get_data( properties, "_producer", NULL );
-	mlt_transition transition = mlt_properties_get_data( properties, "_transition", NULL );
+	mlt_properties my_properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_properties properties = get_filter_properties( filter, frame );
+	mlt_producer producer = mlt_properties_get_data( my_properties, "_producer", NULL );
+	mlt_transition transition = mlt_properties_get_data( my_properties, "_transition", NULL );
 	mlt_frame b_frame = 0;
 	mlt_position position = 0;
 
 	// Configure this filter
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-	if( mlt_properties_get_int( properties, "_reset" ) )
+	if( mlt_properties_get_int( my_properties, "_reset" ) )
 	{
-		setup_producer( filter, producer );
-		setup_transition( filter, transition, frame );
+		setup_producer( producer, properties );
+		setup_transition( filter, transition, frame, properties );
 	}
 	mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "text", argument );
 
@@ -147,7 +153,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 */
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_properties properties = get_filter_properties( filter, frame );
 	char* argument = mlt_properties_get( properties, "argument" );
 	if ( !argument || !strcmp( "", argument ) )
 		return frame;
