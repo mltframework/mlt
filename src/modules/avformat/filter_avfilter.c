@@ -48,6 +48,8 @@ typedef struct
 	AVFrame* avinframe;
 	AVFrame* avoutframe;
 	int format;
+	int width;
+	int height;
 	int reset;
 } private_data;
 
@@ -289,6 +291,8 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	int ret;
 
 	pdata->format = format;
+	pdata->width = width;
+	pdata->height = height;
 
 	// Set up formats
 	pixel_fmts[0] = mlt_to_av_image_format( format );
@@ -645,7 +649,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if( pdata->reset || pdata->format != *format || pdata->avinframe->width != *width || pdata->avinframe->height != *height )
+	if( pdata->reset || pdata->format != *format || pdata->width != *width || pdata->height != *height )
 	{
 		init_image_filtergraph( filter, *format, *width, *height );
 		pdata->reset = 0;
@@ -848,6 +852,8 @@ mlt_filter filter_avfilter_init( mlt_profile profile, mlt_service_type type, con
 		pdata->avinframe = av_frame_alloc();
 		pdata->avoutframe = av_frame_alloc();
 		pdata->format = -1;
+		pdata->width = -1;
+		pdata->height = -1;
 		pdata->reset = 1;
 
 		filter->close = filter_close;
