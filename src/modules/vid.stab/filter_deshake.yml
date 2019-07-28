@@ -1,6 +1,6 @@
 schema_version: 0.1
 type: filter
-identifier: vid.stab.deshake
+identifier: deshake
 title: Vid.Stab Deshake
 copyright: Jakub Ksiezniak
 creator: Georg Martius
