@@ -534,12 +534,30 @@ fail:
 	avfilter_graph_free( &pdata->avfilter_graph );
 }
 
+mlt_position get_position(mlt_filter filter, mlt_frame frame)
+{
+	mlt_position position = mlt_frame_get_position(frame);
+	const char* pos_type = mlt_properties_get(MLT_FILTER_PROPERTIES(filter), "position");
+	if (pos_type) {
+		if (!strcmp("filter", pos_type)) {
+			position = mlt_filter_get_position(filter, frame);
+		} else if (!strcmp("source", pos_type)) {
+			position = mlt_frame_original_position(frame);
+		} else if (!strcmp("producer", pos_type)) {
+			mlt_producer producer = mlt_properties_get_data(MLT_FILTER_PROPERTIES(filter), "service", NULL);
+			if (producer)
+				position = mlt_producer_position(producer);
+		}
+	}
+	return position;
+}
+
 static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 	private_data* pdata = (private_data*)filter->child;
 	double fps = mlt_profile_fps( mlt_service_profile(MLT_FILTER_SERVICE(filter)) );
-	int64_t samplepos = mlt_sample_calculator_to_now( fps, *frequency, mlt_frame_get_position(frame) );
+	int64_t samplepos = mlt_sample_calculator_to_now( fps, *frequency, get_position(filter, frame) );
 	int bufsize = 0;
 	int ret;
 
@@ -638,11 +656,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	mlt_filter filter = mlt_frame_pop_service( frame );
 	private_data* pdata = (private_data*)filter->child;
-	int64_t pos = mlt_frame_get_position( frame );
+	int64_t pos = get_position( filter, frame );
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 	int ret;
 
+	mlt_log_debug(MLT_FILTER_SERVICE(filter), "position %"PRId64"\n", pos);
 	*format = get_supported_image_format( *format );
 
 	mlt_frame_get_image( frame, image, format, width, height, 0 );
