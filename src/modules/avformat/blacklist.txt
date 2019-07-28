@@ -80,7 +80,6 @@ sidechaingate
 silenceremove
 ssim
 streamselect
-subtitles
 surround
 telecine
 thumbnail

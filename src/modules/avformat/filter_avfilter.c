@@ -548,6 +548,10 @@ mlt_position get_position(mlt_filter filter, mlt_frame frame)
 			if (producer)
 				position = mlt_producer_position(producer);
 		}
+	} else {
+		private_data* pdata = (private_data*)filter->child;
+		if (!strcmp("subtitles", pdata->avfilter->name))
+			position = mlt_frame_original_position(frame);
 	}
 	return position;
 }
