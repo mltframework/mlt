@@ -1,6 +1,6 @@
 /**
  * MltProperties.h - MLT Wrapper
- * Copyright (C) 2004-2018 Meltytech, LLC
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,10 +41,12 @@ namespace Mlt
 			Properties( );
 			Properties( bool dummy );
 			Properties( Properties &properties );
+			Properties( const Properties &properties );
 			Properties( mlt_properties properties );
 			Properties( void *properties );
 			Properties( const char *file );
 			virtual ~Properties( );
+			Properties& operator=( const Properties &properties );
 			virtual mlt_properties get_properties( );
 			int inc_ref( );
 			int dec_ref( );

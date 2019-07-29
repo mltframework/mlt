@@ -563,3 +563,21 @@ MLTPP_6.14.0 {
       "Mlt::Producer::get_creation_time()";
   };
 } MLTPP_6.10.0;
+
+MLTPP_6.18.0 {
+global:
+  extern "C++" {
+      "Mlt::Filter::Filter()";
+      "Mlt::Filter::Filter(Mlt::Filter const&)";
+      "Mlt::Filter::operator=(Mlt::Filter const&)";
+      "Mlt::Producer::Producer(Mlt::Producer const&)";
+      "Mlt::Producer::operator=(Mlt::Producer const&)";
+      "Mlt::Properties::Properties(Mlt::Properties const&)";
+      "Mlt::Properties::operator=(Mlt::Properties const&)";
+      "Mlt::Service::Service(Mlt::Service const&)";
+      "Mlt::Service::operator=(Mlt::Service const&)";
+      "Mlt::Transition::Transition()";
+      "Mlt::Transition::Transition(Mlt::Transition const&)";
+      "Mlt::Transition::operator=(Mlt::Transition const&)";
+};
+} MLTPP_6.14.0;

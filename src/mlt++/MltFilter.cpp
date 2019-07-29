@@ -23,6 +23,12 @@
 #include "MltProfile.h"
 using namespace Mlt;
 
+Filter::Filter()
+	: Service()
+	, instance(nullptr)
+{
+}
+
 Filter::Filter( Profile& profile, const char *id, const char *arg ) :
 	Filter( profile.get_profile(), id, arg )
 {
@@ -69,6 +75,11 @@ Filter::Filter( Filter &filter ) :
 	inc_ref( );
 }
 
+Filter::Filter( const Filter &filter ) :
+	Filter( const_cast<Filter&>(filter) )
+{
+}
+
 Filter::Filter( mlt_filter filter ) :
 	instance( filter )
 {
@@ -78,6 +89,17 @@ Filter::Filter( mlt_filter filter ) :
 Filter::~Filter( )
 {
 	mlt_filter_close( instance );
+}
+
+Filter &Filter::operator=(const Filter &filter)
+{
+	if (this != &filter)
+	{
+		mlt_filter_close( instance );
+		instance = filter.instance;
+		inc_ref( );
+	}
+	return *this;
 }
 
 mlt_filter Filter::get_filter( )

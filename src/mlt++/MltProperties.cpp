@@ -1,6 +1,6 @@
 /**
  * MltProperties.cpp - MLT Wrapper
- * Copyright (C) 2004-2018 Meltytech, LLC
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,11 @@ Properties::Properties( Properties &properties ) :
 	inc_ref( );
 }
 
+Properties::Properties( const Properties &properties )
+	: Properties(const_cast<Properties&>(properties))
+{
+}
+
 Properties::Properties( mlt_properties properties ) :
 	instance( properties )
 {
@@ -60,6 +65,17 @@ Properties::Properties( const char *file ) :
 Properties::~Properties( )
 {
 	mlt_properties_close( instance );
+}
+
+Properties &Properties::operator=(const Properties &properties)
+{
+	if (this != &properties)
+	{
+		mlt_properties_close( instance );
+		instance = properties.instance;
+		inc_ref( );
+	}
+	return *this;
 }
 
 mlt_properties Properties::get_properties( )

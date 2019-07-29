@@ -1,7 +1,6 @@
 /**
  * MltProducer.h - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,8 +45,10 @@ namespace Mlt
 			Producer( Service &producer );
 			Producer( mlt_producer producer );
 			Producer( Producer &producer );
+			Producer( const Producer &producer );
 			Producer( Producer *producer );
 			virtual ~Producer( );
+			Producer& operator=( const Producer &producer );
 			virtual mlt_producer get_producer( );
 			Producer &parent( );
 			mlt_producer get_parent( );

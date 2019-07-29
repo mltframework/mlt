@@ -1,7 +1,6 @@
 /**
  * MltFilter.h - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,12 +37,15 @@ namespace Mlt
 		private:
 			mlt_filter instance;
 		public:
+			Filter();
 			Filter( Profile& profile, const char *id, const char *service = NULL );
 			Filter( mlt_profile profile, const char *id, const char *service = NULL );
 			Filter( Service &filter );
 			Filter( Filter &filter );
+			Filter( const Filter &filter );
 			Filter( mlt_filter filter );
 			virtual ~Filter( );
+			Filter& operator=( const Filter &filter );
 			virtual mlt_filter get_filter( );
 			mlt_service get_service( );
 			int connect( Service &service, int index = 0 );

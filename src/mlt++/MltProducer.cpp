@@ -73,6 +73,11 @@ Producer::Producer( Producer &producer ) :
 	inc_ref( );
 }
 
+Producer::Producer( const Producer &producer ) :
+	Producer( const_cast<Producer&>(producer) )
+{
+}
+
 Producer::Producer( Producer *producer ) :
 	instance( producer != NULL ? producer->get_producer( ) : NULL ),
 	parent_( NULL )
@@ -86,6 +91,19 @@ Producer::~Producer( )
 	delete parent_;
 	mlt_producer_close( instance );
 	instance = NULL;
+}
+
+Producer &Producer::operator=(const Producer &producer)
+{
+	if (this != &producer)
+	{
+		delete parent_;
+		parent_ = nullptr;
+		mlt_producer_close( instance );
+		instance = producer.instance;
+		inc_ref( );
+	}
+	return *this;
 }
 
 mlt_producer Producer::get_producer( )

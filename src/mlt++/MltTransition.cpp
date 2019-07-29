@@ -24,6 +24,12 @@
 #include "MltProducer.h"
 using namespace Mlt;
 
+Transition::Transition()
+	: Service()
+	, instance(nullptr)
+{
+}
+
 Transition::Transition( Profile& profile, const char *id, const char *arg ) :
 	Transition( profile.get_profile(), id, arg )
 {
@@ -70,6 +76,11 @@ Transition::Transition( Transition &transition ) :
 	inc_ref( );
 }
 
+Transition::Transition( const Transition &transition )
+	: Transition(const_cast<Transition&>(transition))
+{	
+}
+
 Transition::Transition( mlt_transition transition ) :
 	instance( transition )
 {
@@ -79,6 +90,17 @@ Transition::Transition( mlt_transition transition ) :
 Transition::~Transition( )
 {
 	mlt_transition_close( instance );
+}
+
+Transition &Transition::operator=(const Transition &transition)
+{
+	if (this != &transition)
+	{
+		mlt_transition_close( instance );
+		instance = transition.instance;
+		inc_ref( );
+	}
+	return *this;
 }
 
 mlt_transition Transition::get_transition( )

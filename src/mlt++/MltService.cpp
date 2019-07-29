@@ -1,7 +1,6 @@
 /**
  * MltService.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,6 +36,11 @@ Service::Service( Service &service ) :
 	inc_ref( );
 }
 
+Service::Service(const Service &service )
+	: Service(const_cast<Service&>(service))
+{
+}
+
 Service::Service( mlt_service service ) :
 	Properties( false ),
 	instance( service )
@@ -47,6 +51,17 @@ Service::Service( mlt_service service ) :
 Service::~Service( )
 {
 	mlt_service_close( instance );
+}
+
+Service &Service::operator=(const Service &service)
+{
+	if (this != &service)
+	{
+		mlt_service_close( instance );
+		instance = service.instance;
+		inc_ref( );
+	}
+	return *this;
 }
 
 mlt_service Service::get_service( )

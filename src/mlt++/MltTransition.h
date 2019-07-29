@@ -36,12 +36,15 @@ namespace Mlt
 		private:
 			mlt_transition instance;
 		public:
+			Transition();
 			Transition( Profile& profile, const char *id, const char *arg = NULL );
 			Transition( mlt_profile profile, const char *id, const char *arg = NULL );
 			Transition( Service &transition );
 			Transition( Transition &transition );
+			Transition( const Transition &transition );
 			Transition( mlt_transition transition );
 			virtual ~Transition( );
+			Transition& operator=( const Transition &transition );
 			virtual mlt_transition get_transition( );
 			mlt_service get_service( );
 			void set_in_and_out( int in, int out );
