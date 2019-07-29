@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: vidstab
 title: Vid.Stab Detect and Transform
@@ -177,45 +177,36 @@ parameters:
 
   - identifier: crop
     title: Crop
-    type: integer
+    type: boolean
     description: >
       Used during application.
       0 = keep border, 1 = black background
     readonly: no
     required: no
-    minimum: 0
-    maximum: 1
     default: 0
     mutable: yes
-    widget: spinner
 
   - identifier: invert
     title: Invert
-    type: integer
+    type: boolean
     description: >
       Used during application.
       Invert transforms
     readonly: no
     required: no
-    minimum: 0
-    maximum: 1
     default: 0
     mutable: yes
-    widget: spinner
 
   - identifier: relative
     title: Relative
-    type: integer
+    type: boolean
     description: >
       Used during application.
       Consider transforms as absolute (0) or relative (1)
     readonly: no
     required: no
-    minimum: 0
-    maximum: 1
     default: 1
     mutable: yes
-    widget: spinner
 
   - identifier: zoom
     title: Zoom
@@ -264,8 +255,15 @@ parameters:
   - identifier: reload
     title: Reload Results
     description: >
-      The application should set this to 1 when it updates the results property to indicate that the results should be reloaded.
-    type: integer
-    minimum: 0
-    maximum: 1
+      The application should set this to 1 when it updates the results
+      property to indicate that the results should be reloaded.
+    type: boolean
     mutable: yes
+
+  - identifier: analyze
+    title: Commence analysis
+    description: >
+      This is optional, but it can help applications avoid race conditions
+      writing to the file. When not set, it does not affect the start of
+      analysis. When set, analysis only starts and the file written if true.
+    type: boolean

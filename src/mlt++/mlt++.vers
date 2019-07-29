@@ -579,5 +579,5 @@ global:
       "Mlt::Transition::Transition()";
       "Mlt::Transition::Transition(Mlt::Transition const&)";
       "Mlt::Transition::operator=(Mlt::Transition const&)";
-};
+  };
 } MLTPP_6.14.0;

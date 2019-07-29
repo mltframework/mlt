@@ -182,7 +182,7 @@ static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat v
 	}
 }
 
-void destory_analyze_data( vs_analyze* analyze_data )
+void	destory_analyze_data( vs_analyze* analyze_data )
 {
 	if ( analyze_data )
 	{
@@ -358,7 +358,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			apply_results( filter, frame, vs_image, vs_format, *width, *height );
 			vsimage_to_mltimage( vs_image, *image, *format, *width, *height );
 		}
-		else
+		else if (!mlt_properties_get(properties, "analyze") ||
+		         mlt_properties_get_int(properties, "analyze"))
 		{
 			analyze_image( filter, frame, vs_image, vs_format, *width, *height );
 			if( mlt_properties_get_int( properties, "show" ) == 1 )
