@@ -54,6 +54,7 @@ int mlt_transition_init( mlt_transition self, void *child )
 		service->close = ( mlt_destructor )mlt_transition_close;
 		service->close_object = self;
 
+		mlt_properties_set( properties, "mlt_type", "transition" );
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
 		mlt_properties_set_int( properties, "a_track", 0 );

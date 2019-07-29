@@ -3,7 +3,7 @@
  * \brief abstraction for all filter services
  * \see mlt_filter_s
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,8 +53,8 @@ int mlt_filter_init( mlt_filter self, void *child )
 		// Define the destructor
 		service->close = ( mlt_destructor )mlt_filter_close;
 		service->close_object = self;
-
-		// Default in, out, track properties
+ 
+		mlt_properties_set( properties, "mlt_type", "filter" );
 		mlt_properties_set_position( properties, "in", 0 );
 		mlt_properties_set_position( properties, "out", 0 );
 

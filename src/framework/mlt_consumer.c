@@ -126,6 +126,7 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 			mlt_properties_set_data( properties, "_profile", profile, 0, (mlt_destructor)mlt_profile_close, NULL );
 		}
 		apply_profile_properties( self, profile, properties );
+		mlt_properties_set( properties, "mlt_type", "consumer" );
 
 		// Default rescaler for all consumers
 		mlt_properties_set( properties, "rescale", "bilinear" );
