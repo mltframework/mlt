@@ -542,7 +542,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	result.x = ( result.x * *width / normalised_width );
 	result.y = ( result.y * *height / normalised_height );
 
-	if (mlt_properties_get_int(properties, "b_scaled")) {
+	if (mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
 		// Request b frame image size just what is needed.
 		b_width = result.w;
 		b_height = result.h;
