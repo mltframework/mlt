@@ -1907,6 +1907,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						format, *width, *height, &alpha );
 					mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 					self->top_field_first |= self->video_frame->top_field_first;
+					self->top_field_first |= codec_context->field_order == AV_FIELD_TT;
+					self->top_field_first |= codec_context->field_order == AV_FIELD_TB;
 					self->current_position = int_position;
 				}
 				else
@@ -1974,10 +1976,14 @@ exit_get_image:
 	pthread_mutex_unlock( &self->video_mutex );
 
 	// Set the progressive flag
-	if ( mlt_properties_get( properties, "force_progressive" ) )
+	if ( mlt_properties_get( properties, "force_progressive" ) ) {
 		mlt_properties_set_int( frame_properties, "progressive", !!mlt_properties_get_int( properties, "force_progressive" ) );
-	else if ( self->video_frame )
-		mlt_properties_set_int( frame_properties, "progressive", !self->video_frame->interlaced_frame );
+	} else if ( self->video_frame ) {
+		mlt_properties_set_int( frame_properties, "progressive",
+			!self->video_frame->interlaced_frame &&
+				(codec_context->field_order == AV_FIELD_PROGRESSIVE ||
+				 codec_context->field_order == AV_FIELD_UNKNOWN) );
+	}
 
 	// Set the field order property for this frame
 	if ( mlt_properties_get( properties, "force_tff" ) )
