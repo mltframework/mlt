@@ -9,7 +9,7 @@ vcodec=libx264
 progressive=1
 preset=fast
 threads=0
-crf=21
+crf=23
 g=15
 bf=2
 
