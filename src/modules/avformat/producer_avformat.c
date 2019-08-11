@@ -1617,11 +1617,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	double delay = mlt_properties_get_double( properties, "video_delay" );
 
 	// Seek if necessary
-	int preseek = must_decode && codec_context->has_b_frames;
-#if defined(FFUDIV)
-	const char *interp = mlt_properties_get( frame_properties, "rescale.interp" );
-	preseek = preseek && interp && strcmp( interp, "nearest" );
-#endif
+	double speed = mlt_producer_get_speed(producer);
+	int preseek = must_decode && codec_context->has_b_frames && speed >= 0.0 && speed <= 1.0;
 	int paused = seek_video( self, position, req_position, preseek );
 
 	// Seek might have reopened the file
