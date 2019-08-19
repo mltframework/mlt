@@ -82,7 +82,6 @@ static jack_rack_t* initialise_jack_rack( mlt_properties properties, int channel
 					// Try to load again with a compatible number of channels.
 					mlt_log_warning( properties, "Not compatible with %d channels. Requesting %d channels instead.\n",
 						channels, request_channels );
-					jack_rack_destroy( jackrack );
 					jackrack = initialise_jack_rack( properties, request_channels );
 				}
 				else
