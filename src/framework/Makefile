@@ -49,7 +49,8 @@ OBJS = mlt_frame.o \
 	   mlt_log.o \
 	   mlt_cache.o \
 	   mlt_animation.o \
-	   mlt_slices.o
+	   mlt_slices.o \
+	   mlt_luma_map.o
 
 INCS = mlt_consumer.h \
 	   mlt_version.h \
@@ -78,7 +79,8 @@ INCS = mlt_consumer.h \
 	   mlt_log.h \
 	   mlt_cache.h \
 	   mlt_animation.h \
-	   mlt_slices.h
+	   mlt_slices.h \
+	   mlt_luma_map.h
 
 SRCS := $(OBJS:.o=.c)
 

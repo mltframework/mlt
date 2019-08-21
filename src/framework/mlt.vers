@@ -536,3 +536,12 @@ MLT_6.14.0 {
     mlt_producer_set_creation_time;
     mlt_producer_get_creation_time;
 } MLT_6.12.0;
+
+MLT_6.18.0 {
+  global:
+    mlt_luma_map_init;
+    mlt_luma_map_new;
+    mlt_luma_map_render;
+    mlt_luma_map_from_pgm;
+    mlt_luma_map_from_yuv422;
+} MLT_6.14.0;
