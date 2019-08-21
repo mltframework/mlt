@@ -162,12 +162,10 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 				test = mlt_fopen( temp, "r" );
 			}
 
-			if ( test )
-				fclose( test ); 
-			else
-				strcpy( temp, "colour:0x00000080" );
-
-			resource = temp;
+			if ( test ) {
+				fclose( test );
+				resource = temp;
+			}
 		}
 
 		producer = mlt_factory_producer( profile, NULL, resource );

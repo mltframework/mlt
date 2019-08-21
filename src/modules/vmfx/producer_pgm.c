@@ -20,6 +20,7 @@
 
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_luma_map.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -35,8 +36,31 @@ mlt_producer producer_pgm_init( mlt_profile profile, mlt_service_type type, cons
 	int height = 0;
 	int maxval = 0;
 
-	if ( read_pgm( resource, &image, &width, &height, &maxval ) == 0 )
-	{
+	if (read_pgm(resource, &image, &width, &height, &maxval)){
+		if (resource && strstr(resource, "%luma")) {
+			// Failed to read file; generate it.
+			mlt_luma_map luma = mlt_luma_map_new(resource);
+			if (profile) {
+				luma->w = profile->width;
+				luma->h = profile->height;
+			}
+			uint16_t* map = mlt_luma_map_render(luma);
+			if (map) {
+				int n = luma->w * luma->h;
+				image = mlt_pool_alloc(n * 2);
+				width = luma->w;
+				height = luma->h;
+				for (int i = 0; i < n; i++) {
+					image[2*i] = 16 + map[i] * 219 / USHRT_MAX;
+					image[2*i+1] = 128;
+				}
+				mlt_pool_release(map);
+			}
+			free(luma);
+		}
+	}
+
+	if (image) {
 		this = calloc( 1, sizeof( struct mlt_producer_s ) );
 		if ( this != NULL && mlt_producer_init( this, NULL ) == 0 )
 		{
