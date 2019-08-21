@@ -1,28 +1,32 @@
+CFLAGS += -I../..
+
+LDFLAGS += -L../../framework -lmlt
+
 include ../../../config.mak
-LDFLAGS=
 
 all:	luma create_lumas
 	@./create_lumas 
 
-luma:	luma.c
+luma:	luma.o
 # When cross-compiling, use the host OS compiler to build the luma
 # binary because the files are generated at build time.
 # Strips the CROSS prefix from the C compiler variable.
 ifdef CROSS
-	$(subst $(CROSS),,$(CC)) -o $@ luma.c
+	$(subst $(CROSS),,$(CC)) -o $@ luma.o $(LDFLAGS)
 else
-	$(CC) -o $@ luma.c
+	$(CC) -o $@ luma.o $(LDFLAGS)
 endif
 
 create_lumas:
 
-depend:
+depend: luma.c
+	$(CC) -MM $(CFLAGS) $^ 1>.depend
 
 distclean:
 	rm -rf luma 9_16 16_9 NTSC PAL square
 
 clean:
-	rm -f luma 
+	rm -f luma luma.o .executed
 
 install:	all
 	install -d "$(DESTDIR)$(mltdatadir)/lumas/9_16"

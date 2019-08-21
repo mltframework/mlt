@@ -5,6 +5,8 @@ then
 	cat << EOF
 Luma options:
 
+  --enable-lumas            This must be explicitly enabled since they can now
+                            be generated dynamically.
   --luma-compress         - Produce compressed (png) lumas
   --luma-8bpp             - Produce 8 bit pgm lumas (default is 16 bit)
 
@@ -17,10 +19,17 @@ else
 	for i in "$@"
 	do
 		case $i in
+			--enable-lumas )    lumas_enabled=1;;
 			--luma-compress )	touch .compress .8bit ;;
 			--luma-8bit )		touch .8bit ;;
 		esac
 	done
+
+	if [ "$lumas_enabled" != "1" ]; then
+		echo "- not explicitly enabled: disabling"
+		touch ../disable-lumas
+		exit 0
+	fi
 
 fi
 
