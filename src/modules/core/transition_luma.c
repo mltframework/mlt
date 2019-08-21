@@ -21,6 +21,7 @@
  */
 
 #include <framework/mlt.h>
+#include <framework/mlt_luma_map.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -307,139 +308,6 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	}
 }
 
-/** Load the luma map from PGM stream.
-*/
-
-static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
-{
-	uint8_t *data = NULL;
-	while (1)
-	{
-		char line[128];
-		char comment[128];
-		int i = 2;
-		int maxval;
-		int bpp;
-		uint16_t *p;
-
-		line[127] = '\0';
-
-		// get the magic code
-		if ( fgets( line, 127, f ) == NULL )
-			break;
-
-		// skip comments
-		while ( sscanf( line, " #%s", comment ) > 0 )
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-		if ( line[0] != 'P' || line[1] != '5' )
-			break;
-
-		// skip white space and see if a new line must be fetched
-		for ( i = 2; i < 127 && line[i] != '\0' && isspace( line[i] ); i++ );
-		if ( ( line[i] == '\0' || line[i] == '#' ) && fgets( line, 127, f ) == NULL )
-			break;
-
-		// skip comments
-		while ( sscanf( line, " #%s", comment ) > 0 )
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-		// get the dimensions
-		if ( line[0] == 'P' )
-			i = sscanf( line, "P5 %d %d %d", width, height, &maxval );
-		else
-			i = sscanf( line, "%d %d %d", width, height, &maxval );
-
-		// get the height value, if not yet
-		if ( i < 2 )
-		{
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-			// skip comments
-			while ( sscanf( line, " #%s", comment ) > 0 )
-				if ( fgets( line, 127, f ) == NULL )
-					break;
-
-			i = sscanf( line, "%d", height );
-			if ( i == 0 )
-				break;
-			else
-				i = 2;
-		}
-
-		// get the maximum gray value, if not yet
-		if ( i < 3 )
-		{
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-			// skip comments
-			while ( sscanf( line, " #%s", comment ) > 0 )
-				if ( fgets( line, 127, f ) == NULL )
-					break;
-
-			i = sscanf( line, "%d", &maxval );
-			if ( i == 0 )
-				break;
-		}
-
-		// determine if this is one or two bytes per pixel
-		bpp = maxval > 255 ? 2 : 1;
-
-		// allocate temporary storage for the raw data
-		data = mlt_pool_alloc( *width * *height * bpp );
-		if ( data == NULL )
-			break;
-
-		// read the raw data
-		if ( fread( data, *width * *height * bpp, 1, f ) != 1 )
-			break;
-
-		// allocate the luma bitmap
-		*map = p = (uint16_t*)mlt_pool_alloc( *width * *height * sizeof( uint16_t ) );
-		if ( *map == NULL )
-			break;
-
-		// process the raw data into the luma bitmap
-		for ( i = 0; i < *width * *height * bpp; i += bpp )
-		{
-			if ( bpp == 1 )
-				*p++ = data[ i ] << 8;
-			else
-				*p++ = ( data[ i ] << 8 ) + data[ i+1 ];
-		}
-
-		break;
-	}
-
-	if ( data != NULL )
-		mlt_pool_release( data );
-}
-
-/** Generate a luma map from an RGB image.
-*/
-
-static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int height )
-{
-	int i;
-	int size = width * height * 2;
-	
-	// allocate the luma bitmap
-	uint16_t *p = *map = ( uint16_t* )mlt_pool_alloc( width * height * sizeof( uint16_t ) );
-	if ( *map == NULL )
-		return;
-
-	// process the image data into the luma bitmap
-	for ( i = 0; i < size; i += 2 )
-		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
-}
-
-/** Get the image.
-*/
-
 static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the b frame from the stack
@@ -487,34 +355,42 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		if ( strchr( resource, '%' ) )
 		{
-			FILE *test;
 			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
-			test = mlt_fopen( temp, "r" );
-			if ( test == NULL )
-				strcat( temp, ".png" );
-			else
-				fclose( test ); 
-			resource = temp;
+			FILE *test = mlt_fopen(temp, "r");
+			if (!test) {
+				strcat(temp, ".png");
+				test = mlt_fopen(temp, "r");
+			}
+			if (test) {
+				fclose( test );
+				resource = temp;
+			}
 			extension = strrchr( resource, '.' );
 		}
 
 		// See if it is a PGM
 		if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 		{
-			// Open PGM
-			FILE *f = mlt_fopen( resource, "rb" );
-			if ( f != NULL )
-			{
-				// Load from PGM
-				luma_read_pgm( f, &luma_bitmap, &luma_width, &luma_height );
-				fclose( f );
-
-				// Set the transition properties
-				mlt_properties_set_int( properties, "width", luma_width );
-				mlt_properties_set_int( properties, "height", luma_height );
-				mlt_properties_set( properties, "_resource", orig_resource );
-				mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+			// Load from PGM
+			luma_bitmap = NULL;
+			if (mlt_luma_map_from_pgm(resource, &luma_bitmap, &luma_width, &luma_height)) {
+				// Failed to read file; generate it.
+				mlt_luma_map luma = mlt_luma_map_new(orig_resource);
+				if (profile) {
+					luma->w = profile->width;
+					luma->h = profile->height;
+				}
+				luma_bitmap = mlt_luma_map_render(luma);
+				luma_width = luma->w;
+				luma_height = luma->h;
+				free(luma);
 			}
+
+			// Set the transition properties
+			mlt_properties_set_int( properties, "width", luma_width );
+			mlt_properties_set_int( properties, "height", luma_height );
+			mlt_properties_set( properties, "_resource", orig_resource );
+			mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
 		}
 		else if (!*resource) 
 		{
@@ -557,7 +433,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 					// Generate the luma map
 					if ( luma_image != NULL )
-						luma_read_yuv422( luma_image, &luma_bitmap, luma_width, luma_height );
+						mlt_luma_map_from_yuv422( luma_image, &luma_bitmap, luma_width, luma_height );
 					
 					// Set the transition properties
 					mlt_properties_set_int( properties, "width", luma_width );

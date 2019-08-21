@@ -1,6 +1,6 @@
 /*
  * transition_composite.c -- compose one image over another using alpha channel
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 #include "transition_composite.h"
 #include <framework/mlt.h>
+#include <framework/mlt_luma_map.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -207,135 +208,6 @@ static inline int32_t smoothstep( int32_t edge1, int32_t edge2, uint32_t a )
 	a = ( ( a - edge1 ) << 16 ) / ( edge2 - edge1 );
 
 	return ( ( ( a * a ) >> 16 )  * ( ( 3 << 16 ) - ( 2 * a ) ) ) >> 16;
-}
-
-/** Load the luma map from PGM stream.
-*/
-
-static void luma_read_pgm( FILE *f, uint16_t **map, int *width, int *height )
-{
-	uint8_t *data = NULL;
-	while (1)
-	{
-		char line[128];
-		char comment[128];
-		int i = 2;
-		int maxval;
-		int bpp;
-		uint16_t *p;
-
-		line[127] = '\0';
-
-		// get the magic code
-		if ( fgets( line, 127, f ) == NULL )
-			break;
-
-		// skip comments
-		while ( sscanf( line, " #%s", comment ) > 0 )
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-		if ( line[0] != 'P' || line[1] != '5' )
-			break;
-
-		// skip white space and see if a new line must be fetched
-		for ( i = 2; i < 127 && line[i] != '\0' && isspace( line[i] ); i++ );
-		if ( ( line[i] == '\0' || line[i] == '#' ) && fgets( line, 127, f ) == NULL )
-			break;
-
-		// skip comments
-		while ( sscanf( line, " #%s", comment ) > 0 )
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-		// get the dimensions
-		if ( line[0] == 'P' )
-			i = sscanf( line, "P5 %d %d %d", width, height, &maxval );
-		else
-			i = sscanf( line, "%d %d %d", width, height, &maxval );
-
-		// get the height value, if not yet
-		if ( i < 2 )
-		{
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-			// skip comments
-			while ( sscanf( line, " #%s", comment ) > 0 )
-				if ( fgets( line, 127, f ) == NULL )
-					break;
-
-			i = sscanf( line, "%d", height );
-			if ( i == 0 )
-				break;
-			else
-				i = 2;
-		}
-
-		// get the maximum gray value, if not yet
-		if ( i < 3 )
-		{
-			if ( fgets( line, 127, f ) == NULL )
-				break;
-
-			// skip comments
-			while ( sscanf( line, " #%s", comment ) > 0 )
-				if ( fgets( line, 127, f ) == NULL )
-					break;
-
-			i = sscanf( line, "%d", &maxval );
-			if ( i == 0 )
-				break;
-		}
-
-		// determine if this is one or two bytes per pixel
-		bpp = maxval > 255 ? 2 : 1;
-
-		// allocate temporary storage for the raw data
-		data = mlt_pool_alloc( *width * *height * bpp );
-		if ( data == NULL )
-			break;
-
-		// read the raw data
-		if ( fread( data, *width * *height * bpp, 1, f ) != 1 )
-			break;
-
-		// allocate the luma bitmap
-		*map = p = (uint16_t*)mlt_pool_alloc( *width * *height * sizeof( uint16_t ) );
-		if ( *map == NULL )
-			break;
-
-		// process the raw data into the luma bitmap
-		for ( i = 0; i < *width * *height * bpp; i += bpp )
-		{
-			if ( bpp == 1 )
-				*p++ = data[ i ] << 8;
-			else
-				*p++ = ( data[ i ] << 8 ) + data[ i + 1 ];
-		}
-
-		break;
-	}
-
-	if ( data != NULL )
-		mlt_pool_release( data );
-}
-
-/** Generate a luma map from any YUV image.
-*/
-
-static void luma_read_yuv422( uint8_t *image, uint16_t **map, int width, int height )
-{
-	int i;
-	
-	// allocate the luma bitmap
-	uint16_t *p = *map = ( uint16_t* )mlt_pool_alloc( width * height * sizeof( uint16_t ) );
-	if ( *map == NULL )
-		return;
-
-	// process the image data into the luma bitmap
-	for ( i = 0; i < width * height * 2; i += 2 )
-		*p++ = ( image[ i ] - 16 ) * 299; // 299 = 65535 / 219
 }
 
 static inline int calculate_mix( uint16_t *luma, int j, int softness, int weight, int alpha, uint32_t step )
@@ -689,6 +561,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 	
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "luma" );
+	char *orig_resource = resource;
 	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
 	char temp[ 512 ];
 
@@ -700,16 +573,17 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 
 	if ( resource && resource[0] && strchr( resource, '%' ) )
 	{
-		// TODO: Clean up quick and dirty compressed/existence check
-		FILE *test;
 		sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ),
 			mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
-		test = mlt_fopen( temp, "r" );
-		if ( test == NULL )
-			strcat( temp, ".png" );
-		else
+		FILE *test = mlt_fopen(temp, "r");
+		if (!test) {
+			strcat(temp, ".png");
+			test = mlt_fopen(temp, "r");
+		}
+		if (test) {
 			fclose( test );
-		resource = temp;
+			resource = temp;
+		}
 	}
 
 	if ( resource && resource[0] )
@@ -749,20 +623,25 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 			int lumaLoaded = 0;
 			if ( extension != NULL && strcmp( extension, ".pgm" ) == 0 )
 			{
-				// Open PGM
-				FILE *f = mlt_fopen( resource, "rb" );
-				if ( f != NULL )
-				{
-					// Load from PGM
-					luma_read_pgm( f, &orig_bitmap, &luma_width, &luma_height );
-					fclose( f );
-					if ( luma_width > 0 && luma_height > 0 ) {
-						// Remember the original size for subsequent scaling
-						mlt_properties_set_data( properties, "_luma.orig_bitmap", orig_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
-						mlt_properties_set_int( properties, "_luma.orig_width", luma_width );
-						mlt_properties_set_int( properties, "_luma.orig_height", luma_height );
-						lumaLoaded = 1;
+				// Load from PGM
+				if (mlt_luma_map_from_pgm( resource, &orig_bitmap, &luma_width, &luma_height )) {
+					// Failed to read file; generate it.
+					mlt_luma_map luma = mlt_luma_map_new(orig_resource);
+					if (profile) {
+						luma->w = profile->width;
+						luma->h = profile->height;
 					}
+					luma_bitmap = mlt_luma_map_render(luma);
+					luma_width = luma->w;
+					luma_height = luma->h;
+					free(luma);
+				}
+				if ( luma_width > 0 && luma_height > 0 ) {
+					// Remember the original size for subsequent scaling
+					mlt_properties_set_data( properties, "_luma.orig_bitmap", orig_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+					mlt_properties_set_int( properties, "_luma.orig_width", luma_width );
+					mlt_properties_set_int( properties, "_luma.orig_height", luma_height );
+					lumaLoaded = 1;
 				}
 			}
 			if ( !lumaLoaded )
@@ -800,7 +679,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 	
 						// Generate the luma map
 						if ( luma_image != NULL && luma_format == mlt_image_yuv422 )
-							luma_read_yuv422( luma_image, &orig_bitmap, luma_width, luma_height );
+							mlt_luma_map_from_yuv422( luma_image, &orig_bitmap, luma_width, luma_height );
 	
 						// Remember the original size for subsequent scaling
 						mlt_properties_set_data( properties, "_luma.orig_bitmap", orig_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
