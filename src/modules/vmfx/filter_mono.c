@@ -27,15 +27,15 @@
 /** Get the images and apply the luminance of the mask to the alpha of the frame.
 */
 
-static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	int use_alpha = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( this ) );
-	int midpoint = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( this ) );
-	int invert = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( this ) );
+	int use_alpha = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( frame ) );
+	int midpoint = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( frame ) );
+	int invert = mlt_deque_pop_back_int( MLT_FRAME_IMAGE_STACK( frame ) );
 
 	// Render the frame
 	*format = mlt_image_yuv422;
-	if ( mlt_frame_get_image( this, image, format, width, height, writable ) == 0 )
+	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
 	{
 		uint8_t *p = *image;
 		uint8_t A = invert? 235 : 16;
@@ -55,7 +55,7 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 		}
 		else
 		{
-			uint8_t *alpha = mlt_frame_get_alpha_mask( this );
+			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 			while( size -- )
 			{
 				if ( *alpha ++ < midpoint )
@@ -73,11 +73,11 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	int midpoint = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "midpoint" );
-	int use_alpha = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "use_alpha" );
-	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "invert" );
+	int midpoint = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "midpoint" );
+	int use_alpha = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "use_alpha" );
+	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" );
 	mlt_deque_push_back_int( MLT_FRAME_IMAGE_STACK( frame ), invert );
 	mlt_deque_push_back_int( MLT_FRAME_IMAGE_STACK( frame ), midpoint );
 	mlt_deque_push_back_int( MLT_FRAME_IMAGE_STACK( frame ), use_alpha );
@@ -90,14 +90,13 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 
 mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
+	mlt_filter filter = mlt_filter_new( );
+	if ( filter != NULL )
 	{
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "midpoint", 128 );
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "use_alpha", 0 );
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "invert", 0 );
-		this->process = filter_process;
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "midpoint", 128 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "use_alpha", 0 );
+		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "invert", 0 );
+		filter->process = filter_process;
 	}
-	return this;
+	return filter;
 }
-
