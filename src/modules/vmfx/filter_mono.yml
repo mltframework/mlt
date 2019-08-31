@@ -2,7 +2,7 @@ schema_version: 0.3
 type: filter
 identifier: threshold
 title: Threshold
-version: 1
+version: 2
 copyright: Visual Media FX ?
 creator: Charles Yates
 license: LGPLv2.1
