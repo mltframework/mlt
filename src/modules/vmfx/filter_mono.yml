@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: threshold
 title: Threshold
@@ -9,3 +9,29 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+
+parameters:
+  - identifier: midpoint
+    title: Threshold
+    type: integer
+    description: The value of the threshold
+    mutable: yes
+    minimum: 0
+    maximum: 255
+    default: 128
+
+  - identifier: use_alpha
+    title: Use alpha channel
+    type: boolean
+    description: Whether to compare the midpoint with the alpha channel instead of luma
+    mutable: yes
+    default: 0
+    widget: checkbox
+
+  - identifier: invert
+    title: Invert
+    type: integer
+    description: Wether to swap black and white
+    mutable: yes
+    default: 0
+    widget: checkbox
