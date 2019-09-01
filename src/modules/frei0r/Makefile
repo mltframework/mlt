@@ -10,7 +10,8 @@ OBJS = factory.o \
 	   producer_frei0r.o \
 	   filter_frei0r.o \
 	   transition_frei0r.o \
-	   frei0r_helper.o
+	   frei0r_helper.o \
+	   filter_cairoblend_mode.o
 
 CFLAGS += $(shell pkg-config --cflags frei0r 2> /dev/null)
 
@@ -39,6 +40,7 @@ install: all
 	install -m 644 blacklist.txt "$(DESTDIR)$(mltdatadir)/frei0r"
 	install -m 644 not_thread_safe.txt "$(DESTDIR)$(mltdatadir)/frei0r"
 	install -m 644 param_name_map.yaml "$(DESTDIR)$(mltdatadir)/frei0r"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/frei0r"
 
 ifneq ($(wildcard .depend),)
 include .depend

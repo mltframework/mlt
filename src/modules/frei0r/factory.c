@@ -46,6 +46,7 @@
 #define GET_FREI0R_PATH (getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH)
 
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_cairoblend_mode_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_frame filter_process( mlt_filter filter, mlt_frame frame );
 extern void filter_close( mlt_filter filter );
 extern int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
@@ -395,6 +396,12 @@ static void * create_frei0r_item ( mlt_profile profile, mlt_service_type type, c
 	return ret;
 }
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/frei0r/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
 
 MLT_REPOSITORY
 {
@@ -486,4 +493,6 @@ MLT_REPOSITORY
 	mlt_tokeniser_close ( tokeniser );
 	mlt_properties_close( blacklist );
 	free( frei0r_path );
+	MLT_REGISTER( filter_type, "cairoblend_mode", filter_cairoblend_mode_init );
+	MLT_REGISTER_METADATA( filter_type, "cairoblend_mode", metadata, "filter_cairoblend_mode.yml" );
 }
