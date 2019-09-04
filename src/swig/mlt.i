@@ -247,7 +247,7 @@ binary_data frame_get_image( Mlt::Frame &frame, mlt_image_format format, int w, 
 %#if PY_MAJOR_VERSION < 3
         PyString_FromStringAndSize(
 %#else
-        PyUnicode_FromStringAndSize(
+        PyByteArray_FromStringAndSize(
 %#endif
 	$1.data, $1.size );
 }
