@@ -19,13 +19,14 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include "frei0r_helper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
-	mlt_properties_set(MLT_FRAME_PROPERTIES(frame), "frei0r.cairoblend.mode",
+	mlt_properties_set(MLT_FRAME_PROPERTIES(frame), CAIROBLEND_MODE_PROPERTY,
 		mlt_properties_get(MLT_FILTER_PROPERTIES(filter), "mode"));
 	return frame;
 }

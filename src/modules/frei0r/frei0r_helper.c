@@ -21,6 +21,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+const char *CAIROBLEND_MODE_PROPERTY = "frei0r.cairoblend.mode";
+
 static void rgba_bgra( uint8_t *src, uint8_t* dst, int width, int height )
 {
 	int n = width * height + 1;
@@ -91,6 +93,8 @@ int process_frei0r_item( mlt_service service, double position, double time, int 
 	mlt_service_type type = mlt_service_identify( service );
 	int not_thread_safe = mlt_properties_get_int( prop, "_not_thread_safe" );
 	int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads") : -1;
+	const char *service_name = mlt_properties_get(prop, "mlt_service");
+	int is_cairoblend = service_name  && !strcmp("frei0r.cairoblend", service_name);
 
 	if (slice_count >= 0)
 		slice_count = CLAMP(slice_count, 0, mlt_slices_count_normal());
@@ -115,13 +119,21 @@ int process_frei0r_item( mlt_service service, double position, double time, int 
 	memset(&info, 0, sizeof(info));
 	if (f0r_get_plugin_info) {
 		f0r_get_plugin_info(&info);
-		for (i=0;i<info.num_params;i++){
+		for (i = 0; i < info.num_params; i++) {
+			prop = MLT_SERVICE_PROPERTIES(service);
 			f0r_param_info_t pinfo;
 			f0r_get_param_info(&pinfo,i);
 			char index[20];
 			snprintf( index, sizeof(index), "%d", i );
 			const char *name = index;
 			char *val = mlt_properties_get( prop , name );
+
+			// Special cairoblend handling for an override from the cairoblend_mode filter.
+			if (is_cairoblend && i == 1 && mlt_properties_get(MLT_FRAME_PROPERTIES(frame), CAIROBLEND_MODE_PROPERTY)) {
+				name = CAIROBLEND_MODE_PROPERTY;
+				prop = MLT_FRAME_PROPERTIES(frame);
+				val = mlt_properties_get(prop , name);
+			}
 			if ( !val ) {
 				name = pinfo.name;
 				val = mlt_properties_get( prop , name );

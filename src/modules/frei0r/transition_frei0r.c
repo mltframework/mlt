@@ -47,24 +47,18 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	error = mlt_frame_get_image( b_frame, &images[1], format, width, height, 0 );
 	if ( error ) return error;
 
-	int is_cairoblend = !strcmp("frei0r.cairoblend", mlt_properties_get(properties, "mlt_service"));
+	const char *service_name = mlt_properties_get(properties, "mlt_service");
+	int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
+	const char *blend_mode = mlt_properties_get(b_props, "frei0r.cairoblend.mode");
 	// Special cairoblend handling for an override from the cairoblend_mode filter.
 	if (is_cairoblend) {
-		const char *blend_mode = mlt_properties_get(b_props, "frei0r.cairoblend.mode");
-		if (blend_mode) {
-			// Save the old value to a hidden property.
-			if (!mlt_properties_get(properties, "_1"))
-				mlt_properties_set(properties, "_1", mlt_properties_get(properties, "1"));
-			mlt_properties_set(properties, "1", blend_mode);
-		} else if (mlt_properties_get(properties, "_1")) {
-			// Restore the saved value.
-			mlt_properties_set(properties, "1", mlt_properties_get(properties, "_1"));
-		}
+		mlt_properties_set(a_props, "frei0r.cairoblend.mode", blend_mode);
 	}
 	// An optimization for cairoblend in normal (over) mode and opaque B frame.
 	if (is_cairoblend
 	    && ( !mlt_properties_get( properties, "0" ) || mlt_properties_get_double( properties, "0" ) == 1.0 )
 	    && ( !mlt_properties_get( properties, "1" ) || !strcmp( "normal", mlt_properties_get( properties, "1" ) ) )
+	    && ( !blend_mode || !strcmp("normal", blend_mode) )
 	    // Check if the alpha channel is entirely opaque.
 	    && is_opaque( images[1], *width, *height ) )
 	{
