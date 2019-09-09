@@ -50,10 +50,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	const char *service_name = mlt_properties_get(properties, "mlt_service");
 	int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
 	const char *blend_mode = mlt_properties_get(b_props, "frei0r.cairoblend.mode");
-	// Special cairoblend handling for an override from the cairoblend_mode filter.
-	if (is_cairoblend) {
-		mlt_properties_set(a_props, "frei0r.cairoblend.mode", blend_mode);
-	}
+
 	// An optimization for cairoblend in normal (over) mode and opaque B frame.
 	if (is_cairoblend
 	    && ( !mlt_properties_get( properties, "0" ) || mlt_properties_get_double( properties, "0" ) == 1.0 )
@@ -76,6 +73,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 		double time = position / mlt_profile_fps( profile );
 		int length = mlt_transition_get_length( transition );
+
+		// Special cairoblend handling for an override from the cairoblend_mode filter.
+		if (is_cairoblend) {
+			mlt_properties_set(a_props, "frei0r.cairoblend.mode", blend_mode);
+		}
+
 		process_frei0r_item( MLT_TRANSITION_SERVICE(transition), position, time, length, !invert ? a_frame : b_frame, images, width, height );
 
 		*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
