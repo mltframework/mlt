@@ -1,6 +1,6 @@
 /*
  * producer_timewarp.c -- modify speed and direction of a clip
- * Copyright (C) 2015-2016 Meltytech, LLC
+ * Copyright (C) 2015-2019 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -214,7 +214,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		{
 			char* name = mlt_properties_get_name( pdata->clip_parameters, i );
 			if( mlt_properties_get_int( clip_properties, name ) &&
-				mlt_properties_get( producer_properties, name ) )
+				mlt_properties_get( producer_properties, name ) &&
+				strcmp("resource", name) )
 			{
 				mlt_properties_pass_property( clip_properties, producer_properties, name );
 			}
