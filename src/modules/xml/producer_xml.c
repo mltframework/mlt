@@ -208,7 +208,9 @@ static inline void qualify_property( deserialise_context context, mlt_properties
 		if ( root != NULL && strcmp( root, "" ) )
 		{
 			char *full_resource = calloc( 1, n );
-			if ( resource[0] != '/' && resource[0] != '\\' && !strchr( resource, ':' ) )
+			int drive_letter = strlen(resource) > 3 && resource[1] == ':' &&
+				(resource[2] == '/' || resource[2] == '\\');
+			if (resource[0] != '/' && resource[0] != '\\' && !drive_letter)
 			{
 				if ( prefix_size )
 					strncat( full_resource, resource_orig, prefix_size );
