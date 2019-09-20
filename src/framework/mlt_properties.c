@@ -444,6 +444,11 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 {
 	if ( !self || !that ) return 1;
 
+	// Set "properties" first so preset overrides are reliable.
+	char *value = mlt_properties_get(that, "properties");
+	if (value)
+		mlt_properties_set(self, "properties", value);
+
 	mlt_properties_lock( that );
 
 	int count = mlt_properties_count( that );
@@ -454,7 +459,8 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 		if ( value != NULL )
 		{
 			char *name = mlt_properties_get_name( that, i );
-			mlt_properties_set( self, name, value );
+			if (name && strcmp("properties", name))
+				mlt_properties_set( self, name, value );
 		}
 	}
 
