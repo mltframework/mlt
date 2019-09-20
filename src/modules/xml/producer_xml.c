@@ -189,6 +189,58 @@ static void track_service( mlt_properties properties, void *service, mlt_destruc
 	mlt_properties_set_int( properties, "registered", ++ registered );
 }
 
+static inline int is_known_prefix(const char* resource)
+{
+	char *prefix = strchr(resource, ':');
+	if (prefix) {
+		const char *whitelist[] = {
+			"alsa",
+			"avfoundation",
+			"dshow",
+			"fbdev",
+			"gdigrab",
+			"jack",
+			"lavfi",
+			"oss",
+			"pulse",
+			"sndio",
+			"video4linux2",
+			"v4l2",
+			"x11grab",
+			"async",
+			"cache",
+			"concat",
+			"crypto",
+			"data",
+			"ffrtmphttp",
+			"file",
+			"ftp",
+			"gopher",
+			"hls",
+			"http",
+			"httpproxy",
+			"mmsh",
+			"mmst",
+			"pipe",
+			"rtmp",
+			"rtmpt",
+			"rtp",
+			"srtp",
+			"subfile",
+			"tcp",
+			"udp",
+			"udplite",
+			"unix"
+		};
+		size_t i, n = prefix - resource;
+		for (i = 0; i < sizeof(whitelist) / sizeof(whitelist[0]); ++i) {
+			if (!strncmp(whitelist[i], resource, n))
+				return 1;
+		}
+	}
+	return 0;
+}
+
 // Prepend the property value with the document root
 static inline void qualify_property( deserialise_context context, mlt_properties properties, const char *name )
 {
@@ -210,7 +262,7 @@ static inline void qualify_property( deserialise_context context, mlt_properties
 			char *full_resource = calloc( 1, n );
 			int drive_letter = strlen(resource) > 3 && resource[1] == ':' &&
 				(resource[2] == '/' || resource[2] == '\\');
-			if (resource[0] != '/' && resource[0] != '\\' && !drive_letter)
+			if (resource[0] != '/' && resource[0] != '\\' && !drive_letter && !is_known_prefix(resource))
 			{
 				if ( prefix_size )
 					strncat( full_resource, resource_orig, prefix_size );
