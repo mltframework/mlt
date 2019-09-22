@@ -92,6 +92,8 @@ int process_frei0r_item( mlt_service service, double position, double time,
 			= mlt_properties_get_data(prop, "f0r_get_param_info", NULL);
 	void (*f0r_set_param_value) (f0r_instance_t instance, f0r_param_t param, int param_index)
 			= mlt_properties_get_data(prop, "f0r_set_param_value", NULL);
+	void (*f0r_get_param_value) (f0r_instance_t instance, f0r_param_t param, int param_index)
+			= mlt_properties_get_data(prop, "f0r_get_param_value", NULL);
 	void (*f0r_update2) (f0r_instance_t instance, double time, const uint32_t* inframe1,
 	                     const uint32_t* inframe2, const uint32_t* inframe3, uint32_t* outframe)
 			= mlt_properties_get_data(prop, "f0r_update2", NULL);
@@ -131,13 +133,24 @@ int process_frei0r_item( mlt_service service, double position, double time,
 			char index[20];
 			snprintf( index, sizeof(index), "%d", i );
 			const char *name = index;
-			char *val = mlt_properties_get(prop , name);
+			char *val = mlt_properties_get(prop, name);
 
 			// Special cairoblend handling for an override from the cairoblend_mode filter.
-			if (is_cairoblend && i == 1 && mlt_properties_get(MLT_FRAME_PROPERTIES(frame), CAIROBLEND_MODE_PROPERTY)) {
-				name = CAIROBLEND_MODE_PROPERTY;
-				prop = MLT_FRAME_PROPERTIES(frame);
-				val = mlt_properties_get(prop, name);
+			if (is_cairoblend && i == 1) {
+				if (mlt_properties_get(MLT_FRAME_PROPERTIES(frame), CAIROBLEND_MODE_PROPERTY)) {
+					name = CAIROBLEND_MODE_PROPERTY;
+					prop = MLT_FRAME_PROPERTIES(frame);
+					val = mlt_properties_get(prop, name);
+				} else if (!val && !mlt_properties_get(MLT_FRAME_PROPERTIES(frame), name)) {
+					// Reset plugin back to its default value.
+					char *default_val = "normal";
+					char *plugin_val = NULL;
+					f0r_get_param_value(inst, &plugin_val, i);
+					if (plugin_val && strcmp(default_val, plugin_val)) {
+						f0r_set_param_value(inst, &default_val, i);
+						continue;
+					}
+				}
 			}
 			if (!val) {
 				name = pinfo.name;
