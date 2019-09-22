@@ -47,9 +47,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	if ( *buffer != NULL )
 	{
-		double position = mlt_frame_get_position( frame );
+		mlt_position position = mlt_frame_get_position( frame );
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
-		double time = position / mlt_profile_fps( profile );
+		double time = (double) position / mlt_profile_fps( profile );
 		int length = mlt_producer_get_playtime( producer );
 		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, time, length, frame, buffer, width, height );
 	}

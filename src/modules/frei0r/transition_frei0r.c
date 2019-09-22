@@ -70,9 +70,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		error = mlt_frame_get_image( a_frame, &images[0], format, width, height, 0 );
 		if ( error ) return error;
 
-		double position = mlt_transition_get_position( transition, a_frame );
+		mlt_position position = mlt_transition_get_position( transition, a_frame );
 		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
-		double time = position / mlt_profile_fps( profile );
+		double time = (double) position / mlt_profile_fps( profile );
 		int length = mlt_transition_get_length( transition );
 
 		// Special cairoblend handling for an override from the cairoblend_mode filter.

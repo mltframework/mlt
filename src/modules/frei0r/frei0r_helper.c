@@ -74,7 +74,7 @@ static int f0r_update2_slice( int id, int index, int count, void *context )
 	return 0;
 }
 
-int process_frei0r_item( mlt_service service, double position, double time,
+int process_frei0r_item( mlt_service service, mlt_position position, double time,
 	int length, mlt_frame frame, uint8_t **image, int *width, int *height )
 {
 	int i=0;
