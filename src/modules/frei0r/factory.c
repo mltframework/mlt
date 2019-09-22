@@ -1,6 +1,7 @@
 /*
  * factory.c -- the factory method interfaces
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
+ * Copyright (C) 2009-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

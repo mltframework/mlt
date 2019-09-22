@@ -1,6 +1,7 @@
 /*
  * producer_frei0r.c -- frei0r producer
  * Copyright (c) 2009 Jean-Baptiste Mardelle <jb@kdenlive.org>
+ * Copyright (C) 2009-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
