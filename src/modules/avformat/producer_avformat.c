@@ -356,7 +356,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 
 	// Default to the first audio and video streams found
 	self->audio_index = -1;
-	self->video_index = -1;
+	int first_video_index = self->video_index = -1;
 
 	mlt_properties_set_int( meta_media, "meta.media.nb_streams", context->nb_streams );
 
@@ -377,9 +377,16 @@ static mlt_properties find_default_streams( producer_avformat self )
 		switch( codec_context->codec_type )
 		{
 			case AVMEDIA_TYPE_VIDEO:
-				// Use first video stream
-				if ( self->video_index < 0 )
+				// Save the first video stream
+				if ( first_video_index < 0 )
+					first_video_index = i;
+				// Only set the video stream if not album art
+				if (self->video_index < 0 &&
+						(codec_context->codec_id != AV_CODEC_ID_MJPEG ||
+						 codec_context->time_base.num != 1 ||
+						 codec_context->time_base.den != 90000)) {
 					self->video_index = i;
+				}
 				mlt_properties_set( meta_media, key, "video" );
 				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
 				double ffmpeg_fps = av_q2d( context->streams[ i ]->avg_frame_rate );
@@ -449,7 +456,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 		snprintf( key, sizeof(key), "meta.media.%d.codec.long_name", i );
 		mlt_properties_set( meta_media, key, codec->long_name );
 		snprintf( key, sizeof(key), "meta.media.%d.codec.bit_rate", i );
-		mlt_properties_set_int( meta_media, key, codec_context->bit_rate );
+		mlt_properties_set_int64( meta_media, key, codec_context->bit_rate );
 // 		snprintf( key, sizeof(key), "meta.media.%d.codec.time_base", i );
 // 		mlt_properties_set_double( meta_media, key, av_q2d( codec_context->time_base ) );
 //		snprintf( key, sizeof(key), "meta.media.%d.codec.profile", i );
@@ -469,6 +476,11 @@ static mlt_properties find_default_streams( producer_avformat self )
 			}
 		}
 	}
+	
+	// Use the album art if that is all we have
+	if (self->video_index < 0 && first_video_index >= 0)
+		self->video_index = first_video_index;
+
 	while ( ( tag = av_dict_get( context->metadata, "", tag, AV_DICT_IGNORE_SUFFIX ) ) )
 	{
 		if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
