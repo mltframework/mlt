@@ -196,14 +196,18 @@ else
 		fi
 	fi
 	
-	pkg-config fftw3
-	if [ $? -eq 0 ]
+	if pkg-config fftw3
+	then FFTWPC=fftw3
+	elif pkg-config fftw
+	then FFTWPC=fftw
+	fi
+	if [ "$FFTWPC" != "" ]
 	then
 		echo "- fftw found, enabling lightshow"
 		echo "USE_FFTW=1" >> config.mak
-		echo FFTWCXXFLAGS=$(pkg-config --cflags fftw3 ) >> config.mak
+		echo FFTWCXXFLAGS=$(pkg-config --cflags $FFTWPC ) >> config.mak
 		echo FFTWCXXFLAGS += -DUSE_FFTW >> config.mak
-		echo FFTWLIBS=$(pkg-config --libs fftw3) >> config.mak
+		echo FFTWLIBS=$(pkg-config --libs $FFTWPC ) >> config.mak
 		
 	else
 		echo "- fftw not found: disabling lightshow filter"
