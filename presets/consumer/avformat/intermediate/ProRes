@@ -6,6 +6,7 @@ g=1
 bf=0
 vprofile=2
 vendor=apl0
+movflags=+write_colr
 
 meta.preset.extension=mov
 meta.preset.note=Designed by Apple in California. Set vprofile=1 for LT or =3 for HQ.
