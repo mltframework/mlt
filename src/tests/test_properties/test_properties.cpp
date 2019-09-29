@@ -452,11 +452,11 @@ private Q_SLOTS:
     void RadixRespondsToLocale()
     {
         Properties p;
-        p.set_lcnumeric("en_US");
+        p.set_lcnumeric("en_US.UTF-8");
         p.set("key", "0.125");
         QCOMPARE(p.get_double("key"), double(1) / double(8));
 #if !defined(_WIN32)
-        p.set_lcnumeric("de_DE");
+        p.set_lcnumeric("de_DE.UTF-8");
         p.set("key", "0,125");
         QCOMPARE(p.get_double("key"), double(1) / double(8));
 #endif
