@@ -1,0 +1,13 @@
+file(GLOB mltcore_src *.c)
+set(mltcore_inc "")
+if(WIN32)
+    list(APPEND mltcore_src ${CMAKE_SOURCE_DIR}/src/win32/fnmatch.c)
+    list(APPEND mltcore_inc ${CMAKE_SOURCE_DIR}/src/win32)
+endif()
+add_library(mltcore MODULE ${mltcore_src})
+target_include_directories(mltcore PRIVATE ${mltcore_inc})
+target_link_libraries(mltcore mlt Threads::Threads)
+install(TARGETS mltcore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+file(GLOB yml *.yml)
+install(FILES data_fx.properties loader.dict loader.ini ${yml}
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/core)

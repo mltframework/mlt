@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+datadir=@CMAKE_INSTALL_FULL_DATADIR@
+
+Name: mlt++
+Description: C++ API for MLT multimedia framework
+Version: @MLT_VERSION@
+Requires: mlt-framework
+Libs: -L${libdir} -lmlt++
+Cflags: -I${includedir} -I${includedir}/mlt++
