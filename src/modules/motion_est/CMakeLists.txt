@@ -1,0 +1,8 @@
+if(GPL)
+    file(GLOB mltmotion_est_src *.c)
+    add_library(mltmotion_est MODULE ${mltmotion_est_src})
+    target_link_libraries(mltmotion_est mlt m)
+    install(TARGETS mltmotion_est LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+    file(GLOB yml *.yml)
+    install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/motion_est)
+endif()

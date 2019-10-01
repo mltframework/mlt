@@ -1,0 +1,15 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+datadir=@CMAKE_INSTALL_FULL_DATADIR@
+
+moduledir=${libdir}/mlt
+mltdatadir=${datadir}/mlt
+
+Name: mlt-framework
+Description: MLT multimedia framework
+Version: @MLT_VERSION@
+Requires:
+Libs: -L${libdir} -lmlt
+Cflags: -I${includedir} -I${includedir}/mlt
