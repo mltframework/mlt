@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: freeze
 title: Freeze frame
@@ -9,3 +9,24 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+parameters:
+  - identifier: frame
+    title: Frame
+    type: time
+    description: The time of the frame to freeze
+    default: 0
+    mutable: true
+
+  - identifier: freeze_after
+    title: Freeze After
+    type: boolean
+    description: Whether to only freeze the frames after
+    default: false
+    mutable: true
+
+  - identifier: freeze_before
+    title: Freeze Before
+    type: boolean
+    description: Whether to only freeze the frames before
+    default: false
+    mutable: true
