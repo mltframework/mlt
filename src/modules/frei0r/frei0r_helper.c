@@ -109,7 +109,10 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 	//use as name the width and height
 	int slice_height = *height / (slice_count > 0? slice_count : 1);
 	char ctorname[1024] = "";
-	sprintf(ctorname, "ctor-%dx%d", *width, slice_height);
+	if (not_thread_safe)
+		sprintf(ctorname, "ctor-%dx%d", *width, slice_height);
+	else
+		sprintf(ctorname, "ctor-%dx%d-%p", *width, slice_height, (void*) pthread_self());
 
 	mlt_service_lock(service);
 
