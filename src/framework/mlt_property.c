@@ -1290,6 +1290,10 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 	{
 		mlt_animation_refresh( self->animation, self->prop_string, length );
 	}
+	else if ( length >= 0 )
+	{
+		mlt_animation_set_length( self->animation, length );
+	}
 }
 
 /** Get the real number at a frame position.
