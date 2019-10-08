@@ -20,6 +20,9 @@
 #include <frei0r.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 const char *CAIROBLEND_MODE_PROPERTY = "frei0r.cairoblend.mode";
 
@@ -112,7 +115,11 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 	if (not_thread_safe)
 		sprintf(ctorname, "ctor-%dx%d", *width, slice_height);
 	else
+#ifdef _WIN32
+		sprintf(ctorname, "ctor-%dx%d-%lu", *width, slice_height, GetCurrentThreadId());
+#else
 		sprintf(ctorname, "ctor-%dx%d-%p", *width, slice_height, (void*) pthread_self());
+#endif
 
 	mlt_service_lock(service);
 
