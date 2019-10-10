@@ -13,9 +13,8 @@ fi
 if [ $? = 0 ]
 then
 	# Change this as needed
-	export PYTHON_INCLUDE=`"$PYTHON" -c "import sys;print(\"{}/include/python{}.{}\".format(sys.prefix,*sys.version_info))"`
-
-	[ ! -d "$PYTHON_INCLUDE" ] && echo "$PYTHON" development missing && exit 1
+	export PYTHON_INCLUDE="$("${PYTHON}-config" --includes)"
+	[ -z "$PYTHON_INCLUDE" ] && echo "$PYTHON" development missing && exit 1
 
 	ln -sf ../mlt.i
 
