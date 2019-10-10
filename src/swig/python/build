@@ -1,6 +1,8 @@
 #!/bin/sh
 
 CXX=${CXX:-g++}
+PYTHON=${PYTHON:-python3}
+path=`which "$PYTHON" 2> /dev/null`
 
 if [ "$1" = "clean" ]
 then
@@ -8,14 +10,12 @@ then
 	exit 0
 fi
 
-path=`which python3 2> /dev/null`
-
 if [ $? = 0 ]
 then
 	# Change this as needed
-	export PYTHON_INCLUDE=`python3 -c "import sys;print(\"{}/include/python{}.{}\".format(sys.prefix,*sys.version_info))"`
+	export PYTHON_INCLUDE=`"$PYTHON" -c "import sys;print(\"{}/include/python{}.{}\".format(sys.prefix,*sys.version_info))"`
 
-	[ ! -d "$PYTHON_INCLUDE" ] && echo python development missing && exit 1
+	[ ! -d "$PYTHON_INCLUDE" ] && echo "$PYTHON" development missing && exit 1
 
 	ln -sf ../mlt.i
 
@@ -26,7 +26,7 @@ then
 	${CXX} -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -I../.. -I$PYTHON_INCLUDE mlt_wrap.cxx || exit $?
 
 	# Create the module
-	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -L../../framework -lmlt $(python3-config --ldflags) -o _mlt.so || exit $?
+	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -L../../framework -lmlt $("${PYTHON}-config" --ldflags) -o _mlt.so || exit $?
 else
 	echo Python not installed.
 	exit 1
