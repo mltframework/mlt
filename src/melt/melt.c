@@ -766,6 +766,10 @@ int main( int argc, char **argv )
 		// Look for the profile option
 		else if ( !strcmp( argv[ i ], "-profile" ) )
 		{
+			// Construct the factory
+			if ( !repo )
+				repo = mlt_factory_init( repo_path );
+
 			const char *pname = argv[ ++ i ];
 			if ( pname && pname[0] != '-' )
 				profile = mlt_profile_init( pname );
