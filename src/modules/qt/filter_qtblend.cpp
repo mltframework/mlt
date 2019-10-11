@@ -25,14 +25,6 @@
 #include <QTransform>
 #include <QImage>
 
-static int get_value( mlt_properties properties, const char *preferred, const char *fallback )
-{
-	int value = mlt_properties_get_int( properties, preferred );
-	if ( value == 0 )
-		value = mlt_properties_get_int( properties, fallback );
-	return value;
-}
-
 
 /** Get the image.
 */
@@ -45,14 +37,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the properties
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-
-	// Get the image
-	*format = mlt_image_rgb24a;
+	bool hasAlpha = false;
 
 	// Only process if we have no error and a valid colour space
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
-		
+
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
@@ -71,8 +61,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_rect rect;
 	rect.w = normalised_width;
 	rect.h = normalised_height;
-	int b_width = get_value( frame_properties, "meta.media.width", "width" );
-	int b_height = get_value( frame_properties, "meta.media.height", "height" );
+	int b_width = mlt_properties_get_int( frame_properties, "meta.media.width" );
+	int b_height = mlt_properties_get_int( frame_properties, "meta.media.height" );
+	if ( b_height == 0 )
+	{
+		b_width = normalised_width;
+		b_height = normalised_height;
+	}
 	double b_ar = mlt_frame_get_aspect_ratio( frame );
 	double b_dar = b_ar * b_width / b_height;
 
@@ -82,6 +77,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		rect = mlt_properties_anim_get_rect( properties, "rect", position, length );
 		transform.translate(rect.x, rect.y);
 		opacity = rect.o;
+		hasAlpha = true;
 	}
 
 	if ( mlt_properties_get( properties, "rotation" ) )
@@ -97,6 +93,24 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			// old style rotation (from top left corner) to keep compatibility
 			transform.rotate( angle );
+		}
+		hasAlpha = true;
+	}
+
+	if ( !hasAlpha && ( mlt_properties_get_int( properties, "compositing" ) != 0 || b_width < *width || b_height < *height || b_width < normalised_width || b_height  < normalised_height ) )
+	{
+		hasAlpha = true;
+	}
+
+	if (!hasAlpha) {
+		uint8_t *src_image = NULL;
+		error = mlt_frame_get_image( frame, &src_image, format, &b_width, &b_height, 0 );
+		if ( *format == mlt_image_rgb24a || mlt_frame_get_alpha( frame ) ) {
+			hasAlpha = true;
+		} else {
+			// Prepare output image
+			*image = src_image;
+			return 0;
 		}
 	}
 
@@ -142,11 +156,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	uint8_t *dest_image = NULL;
 	dest_image = (uint8_t *) mlt_pool_alloc( image_size );
-	
+
 	QImage destImage;
 	convert_mlt_to_qimage_rgba( dest_image, &destImage, *width, *height );
-	destImage.fill(0);
-	
+	destImage.fill( mlt_properties_get_int( properties, "background_color" ));
+
 	QPainter painter( &destImage );
 	painter.setCompositionMode( ( QPainter::CompositionMode ) mlt_properties_get_int( properties, "compositing" ) );
 	painter.setRenderHints( QPainter::Antialiasing | QPainter::SmoothPixmapTransform );
