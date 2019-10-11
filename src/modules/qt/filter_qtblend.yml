@@ -23,7 +23,8 @@ parameters:
   - identifier: compositing
     title: Composition mode
     description: >
-      Defines which composition operation will be performed (see QPainter CompositionMode for doc).
+      Defines which composition operation will be performed
+      (see QPainter CompositionMode for doc).
     type: integer
     default: 0
     minimum: 0
@@ -45,8 +46,20 @@ parameters:
   - identifier: rotate_center
     title: Rotate from center
     type: integer
-    description: Process the rotation from center if set, otherwise from top left corner
+    description: >
+      Process the rotation from center if set, otherwise from top left corner
     minimum: 0
     maximum: 1
     mutable: yes
     widget: checkbox
+
+  - identifier: background_color
+    title: Background color
+    type: integer
+    description: >
+      An integer formed like 0xaabbggrr that will be used
+      as background color for the compositing operation.
+      Defaults to 0 (fully transparent)
+    default: 0
+    mutable: yes
+    widget: color
