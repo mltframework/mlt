@@ -56,7 +56,11 @@ static inline double IEC_Scale(double dB)
 static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
 	mlt_filter filter = mlt_frame_pop_audio( frame );
-	int iec_scale = mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "iec_scale" );
+
+	// Get the properties from the filter
+	mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
+
+	int iec_scale = mlt_properties_get_int( filter_props, "iec_scale" );
 	*format = mlt_audio_s16;
 	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	if ( error || !buffer ) return error;
@@ -99,9 +103,10 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		sprintf( key, "meta.media.audio_level.%d", c );
 		mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), key, level );
 		sprintf( key, "_audio_level.%d", c );
-		mlt_properties_set_double( MLT_FILTER_PROPERTIES( filter ), key, level );
+		mlt_properties_set_double( filter_props, key, level );
 		mlt_log_debug( MLT_FILTER_SERVICE( filter ), "channel %d level %f\n", c, level );
 	}
+	mlt_properties_set_position( filter_props, "_position", mlt_filter_get_position( filter, frame ) );
 
 	return error;
 }
