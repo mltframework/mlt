@@ -102,7 +102,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		hasAlpha = true;
 	}
 
-	if (!hasAlpha) {
+	if ( !hasAlpha ) {
 		uint8_t *src_image = NULL;
 		error = mlt_frame_get_image( frame, &src_image, format, &b_width, &b_height, 0 );
 		if ( *format == mlt_image_rgb24a || mlt_frame_get_alpha( frame ) ) {
@@ -159,7 +159,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	QImage destImage;
 	convert_mlt_to_qimage_rgba( dest_image, &destImage, *width, *height );
-	destImage.fill( mlt_properties_get_int( properties, "background_color" ));
+	destImage.fill( mlt_properties_get_int( properties, "background_color" ) );
 
 	QPainter painter( &destImage );
 	painter.setCompositionMode( ( QPainter::CompositionMode ) mlt_properties_get_int( properties, "compositing" ) );
