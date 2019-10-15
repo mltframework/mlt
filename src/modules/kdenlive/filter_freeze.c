@@ -23,7 +23,6 @@
 #include <framework/mlt_service.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_property.h>
-#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -35,14 +34,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties props = MLT_FRAME_PROPERTIES( frame );
 
-	int error = 0;
+	mlt_frame freeze_frame = NULL;;
 	int freeze_before = mlt_properties_get_int( properties, "freeze_before" );
 	int freeze_after = mlt_properties_get_int( properties, "freeze_after" );
 	mlt_position pos = mlt_properties_get_position( properties, "frame" ) + mlt_producer_get_in( mlt_frame_get_original_producer( frame ) );
 	mlt_position currentpos = mlt_filter_get_position( filter, frame );
 
 	int do_freeze = 0;
-	if (freeze_before == 0 && freeze_after == 0 && mlt_properties_get_position( properties, "frame" ) >= 0) {
+	if (freeze_before == 0 && freeze_after == 0) {
 		do_freeze = 1;
 	} else if (freeze_before != 0 && pos > currentpos) {
 		do_freeze = 1;
@@ -50,17 +49,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		do_freeze = 1;
 	}
 
-	if (do_freeze) {
-		int size = 0;
-		uint8_t *buffer = mlt_properties_get_data( properties, "image_buffer", &size );
-		uint8_t *alpha_buffer = mlt_properties_get_data( properties, "alpha_buffer", NULL );
-
-		if ( !buffer || mlt_properties_get_position( properties, "_frame" ) != pos )
+	if (do_freeze == 1) {
+		mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+		freeze_frame = mlt_properties_get_data( properties, "freeze_frame", NULL );
+		if ( !freeze_frame || mlt_properties_get_position( properties, "_frame" ) != pos )
 		{
-			mlt_frame freeze_frame = NULL;
 			// freeze_frame has not been fetched yet or is not useful, so fetch it and cache it.
 			// get parent producer
-			mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 			mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 			mlt_producer_seek( producer, pos );
 
@@ -72,60 +67,34 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_properties_set_double( freeze_properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
 			mlt_properties_set_int( freeze_properties, "progressive", mlt_properties_get_int( props, "progressive" ) );
 			mlt_properties_set_int( freeze_properties, "consumer_deinterlace", mlt_properties_get_int( props, "consumer_deinterlace" ) || mlt_properties_get_int( properties, "deinterlace" ) );
-
-			// Get frozen image
-			mlt_properties_set_int( properties, "disable", 1);
-			mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-			error = mlt_frame_get_image( freeze_frame, &buffer, format, width, height, 0 );
-			mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-			mlt_properties_set_int( properties, "disable", 0);
-
-			if (!error && buffer) {
-				// Copy and buffer the frozen image
-				size = mlt_image_format_size(*format, *width, *height, NULL);
-				uint8_t *image_copy = mlt_pool_alloc( size );
-				if (image_copy) {
-					memcpy( image_copy, buffer, size );
-					mlt_properties_set_data( properties, "image_buffer", image_copy, size, mlt_pool_release, NULL );
-					mlt_properties_set_position( properties, "_frame", pos );
-
-					// Copy and buffer the alpha channel
-					if ((alpha_buffer = mlt_frame_get_alpha( freeze_frame ))) {
-						int alpha_size = *width * *height;
-						uint8_t *alpha_copy = mlt_pool_alloc( alpha_size );
-						if (alpha_copy) {
-							memcpy( alpha_copy, alpha_buffer, alpha_size );
-							mlt_properties_set_data( properties, "alpha_buffer", alpha_copy, alpha_size, mlt_pool_release, NULL );
-						}
-						alpha_buffer = alpha_copy;
-					}
-				}
-				buffer = image_copy;
-			}
-			mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-			mlt_frame_close(freeze_frame);
+			mlt_properties_set_data( properties, "freeze_frame", freeze_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+			mlt_properties_set_position( properties, "_frame", pos );
 		}
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
-		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+		// Get frozen image
+		uint8_t *buffer = NULL;
+		int error = mlt_frame_get_image( freeze_frame, &buffer, format, width, height, 1 );
 
-		// Copy the buffered image and alpha channel to current frame
-		if (*image && buffer && size == mlt_image_format_size(*format, *width, *height, NULL)) {
-			memcpy(*image, buffer, size);
+		// Copy it to current frame
+		int size = mlt_image_format_size( *format, *width, *height, NULL );
+		uint8_t *image_copy = mlt_pool_alloc( size );
+		memcpy( image_copy, buffer, size );
+		*image = image_copy;
+		mlt_frame_set_image( frame, *image, size, mlt_pool_release );
 
-			if (alpha_buffer) {
-				int alphasize = *width * *height;
-				uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
-				if (alpha_copy) {
-					memcpy( alpha_copy, alpha_buffer, alphasize );
-					mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
-				}
-			}
+		uint8_t *alpha_buffer = mlt_frame_get_alpha( freeze_frame );
+		if ( alpha_buffer )
+		{
+			int alphasize = *width * *height;
+			uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
+			memcpy( alpha_copy, alpha_buffer, alphasize );
+			mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
 		}
+		return error;
 	}
-	else
-	{
-		error = mlt_frame_get_image( frame, image, format, width, height, writable );
-	}
+
+	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	return error;
 }
 
