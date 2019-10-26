@@ -34,6 +34,9 @@
 #  include <locale.h>
 #elif defined(__APPLE__) || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
 #  include <xlocale.h>
+#elif defined(__OpenBSD__)
+/* XXX matches __nop_locale glue in libc++ */
+typedef void* locale_t;
 #else
 typedef char* locale_t;
 #endif

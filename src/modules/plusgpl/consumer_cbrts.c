@@ -255,6 +255,10 @@ static void load_sections( consumer_cbrts self, mlt_properties properties )
 		{
 			size_t len = strlen( name );
 			char *si_name = strdup( name + 3 );
+// unbreak compilation on OpenBSD
+#ifdef si_pid
+# undef si_pid
+#endif
 			char si_pid[len + 1];
 
 			si_name[len - 3 - 5] = 0;

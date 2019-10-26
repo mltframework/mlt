@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(_WIN32) && !defined(__NetBSD__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(_WIN32) && !defined(__NetBSD__) && !defined(__OpenBSD__)
 #include <values.h>
 #endif
 
