@@ -124,6 +124,13 @@ build_config()
 		echo "RDYNAMIC=-rdynamic"
 		echo "LDFLAGS+=-Wl,--no-undefined -Wl,--as-needed"
 		;;
+		OpenBSD)
+		echo "CFLAGS+=-fPIC"
+		echo "CXXFLAGS+=-fPIC"
+		echo "SHFLAGS=-shared"
+		echo "RDYNAMIC=-rdynamic"
+		echo "LDFLAGS+=-Wl,--as-needed"
+		;;
 		MinGW)
 		[ "$windeploy" = false ] &&
 			echo "CFLAGS+=-DNODEPLOY"
