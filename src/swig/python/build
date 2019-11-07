@@ -22,7 +22,7 @@ then
 	swig -c++ -I../../mlt++ -I../.. -python mlt.i || exit $?
 
 	# Compile the wrapper
-	${CXX} -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -I../.. -I$PYTHON_INCLUDE mlt_wrap.cxx || exit $?
+	${CXX} -fPIC -D_GNU_SOURCE ${CXXFLAGS} -c -I../.. $PYTHON_INCLUDE mlt_wrap.cxx || exit $?
 
 	# Create the module
 	${CXX} ${CXXFLAGS} -shared mlt_wrap.o -L../../mlt++ -lmlt++ -L../../framework -lmlt $("${PYTHON}-config" --ldflags) -o _mlt.so || exit $?
