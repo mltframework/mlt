@@ -65,5 +65,15 @@ parameters:
     description: >
       Whether to apply a threshold filter to the luma or alpha or not. If not,
       luma or alpha value of the resource (File) is copied to the alpha channel.
-    default: no
+    default: yes
+    mutable: yes
+
+  - identifier: audio_match
+    title: Audio volume follows Threshold
+    type: boolean
+    description: >
+      This controls whether to also apply a volume level adjstment corresponding to
+      the current mix property. The default is retained for legacy reason, but it
+      is generally not recommended to enable this.
+    default: yes
     mutable: yes
