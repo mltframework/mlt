@@ -13,8 +13,8 @@ fi
 if [ $? = 0 ]
 then
 	# Change this as needed
-	export PYTHON_INCLUDE="$("${PYTHON}-config" --includes)"
-	[ -z "$PYTHON_INCLUDE" ] && echo "$PYTHON" development missing && exit 1
+	export PYTHON_INCLUDE=$(${PYTHON} -c "from sysconfig import get_paths; print(get_paths()['include'])")
+ 	[ ! -d "$PYTHON_INCLUDE" ] && echo $PYTHON development missing && exit 1
 
 	ln -sf ../mlt.i
 
