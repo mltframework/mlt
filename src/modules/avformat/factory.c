@@ -213,7 +213,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 					mlt_properties_set_int( p, "minimum", (int) opt->min );
 				if ( opt->max != INT_MAX )
 					mlt_properties_set_int( p, "maximum", (int) opt->max );
-				mlt_properties_set_int( p, "default", (int) opt->default_val.dbl );
+				mlt_properties_set_int( p, "default", (int) opt->default_val.i64 );
 			}
 			else
 			{
@@ -228,7 +228,7 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 				mlt_properties_set_int64( p, "minimum", (int64_t) opt->min );
 			if ( opt->max != INT64_MAX )
 			mlt_properties_set_int64( p, "maximum", (int64_t) opt->max );
-			mlt_properties_set_int64( p, "default", (int64_t) opt->default_val.dbl );
+			mlt_properties_set_int64( p, "default", (int64_t) opt->default_val.i64 );
 			break;
 		case AV_OPT_TYPE_FLOAT:
 			mlt_properties_set( p, "type", "float" );
