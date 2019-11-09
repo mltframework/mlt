@@ -236,17 +236,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		cvFrame = cv::Mat( *height, *width, CV_8UC3, *image );
 	}
 	private_data* data = (private_data*) filter->child;
-	if ( !data->initialized )
-        {
-		if ( data->producer_length == 0 )
+	if ( data->producer_length == 0 )
+	{
+		mlt_producer producer = mlt_frame_get_original_producer( frame );
+		if ( producer )
 		{
-			mlt_producer producer = mlt_frame_get_original_producer( frame );
-			if ( producer )
-			{
-				data->producer_in = mlt_producer_get_in( producer );
-				data->producer_length = mlt_producer_get_playtime( producer );
-			}
+			data->producer_in = mlt_producer_get_in( producer );
+			data->producer_length = mlt_producer_get_playtime( producer );
 		}
+	}
+	if ( !data->initialized )
+	{
 		mlt_properties_anim_get_int( filter_properties, "results", 0, data->producer_length );
 		mlt_animation anim = mlt_properties_get_animation( filter_properties, "results" );
 		if ( anim && mlt_animation_key_count(anim) > 0 )
