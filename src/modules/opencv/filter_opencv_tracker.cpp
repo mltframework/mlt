@@ -261,7 +261,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( data->playback )
 	{
 		// Clip already analysed, don't re-process
-		apply( filter, data, *width, *height, position + data->producer_in, data->producer_in + data->producer_length );
+		apply( filter, data, *width, *height, position, data->producer_in + data->producer_length );
 	}
 	else
 	{
