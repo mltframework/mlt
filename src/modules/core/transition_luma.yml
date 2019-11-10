@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: transition
 identifier: luma
 title: Wipe
@@ -22,17 +22,20 @@ description: >
 bugs:
   - Assumes lower field first output.
 parameters:
-  - identifier: argument
+  - identifier: resource
     title: Luma map file
     type: string
     description: >
       Either PGM or any other producable video. If not supplied, performs a dissolve.
+    argument: yes
+
   - identifier: factory
     title: Factory
     type: string
     description: >
       The name of a factory service used as a non-PGM producer loader.
     default: loader
+
   - identifier: softness
     title: Softness
     type: float
@@ -40,6 +43,7 @@ parameters:
     description: >
       Only when using a luma map, how soft to make the edges between A and B.
       0.0 = no softness. 1.0 = too soft.
+
   - identifier: reverse
     title: Reverse
     type: integer
@@ -47,6 +51,7 @@ parameters:
     description: >
       Reverse the direction of the transition.
     default: 0
+
   - identifier: producer.*
     title: Producer
     mutable: yes
@@ -54,3 +59,9 @@ parameters:
       Properties may be set on the encapsulated producer. Any property starting 
       with "producer." is passed to the non-PGM luma producer.
     readonly: no
+
+  - identifier: alpha_over
+    title: Use over-blending on the alpha channel
+    type: boolean
+    default: 0
+    mutable: yes

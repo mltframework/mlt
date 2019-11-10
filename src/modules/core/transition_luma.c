@@ -104,7 +104,7 @@ static int dissolve_slice( int id, int index, int count, void *context )
 	return 0;
 }
 
-static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height, int threads )
+static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, int width, int height, int threads, int alpha_over )
 {
 	int ret = 0;
 	int i = height + 1;
@@ -128,7 +128,7 @@ static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, i
 	width_src = width_src > width ? width : width_src;
 	height_src = height_src > height ? height : height_src;
 
-	if (is_translucent)
+	if (is_translucent && alpha_over)
 	{
 		struct dissolve_slice_context context = {
 			.dst_image = p_dest,
@@ -463,6 +463,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int reverse = mlt_properties_get_int( properties, "reverse" );
 	int invert = mlt_properties_get_int( properties, "invert" );
 	int threads = CLAMP(mlt_properties_get_int(properties, "threads"), 0, mlt_slices_count_normal());
+	int alpha_over = mlt_properties_get_int(properties, "alpha_over");
 
 	// Honour the reverse here
 	if ( mix >= 1.0 )
@@ -487,7 +488,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mix = ( reverse || invert ) ? 1 - mix : mix;
 		invert = 0;
 		// Dissolve the frames using the time offset for mix value
-		dissolve_yuv( a_frame, b_frame, mix, *width, *height, threads );
+		dissolve_yuv( a_frame, b_frame, mix, *width, *height, threads, alpha_over );
 	}
 
 	// Extract the a_frame image info
