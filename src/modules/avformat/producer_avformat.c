@@ -1585,7 +1585,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			cache_size = mlt_properties_get_int( properties, "cache" );
 		}
 		if ( mlt_properties_get_int( properties, "noimagecache" ) )
+		{
+			cache_supplied = 1;
 			cache_size = 0;
+		}
 		// create cache if not disabled
 		if ( !cache_supplied || cache_size > 0 )
 			self->image_cache = mlt_cache_init();
