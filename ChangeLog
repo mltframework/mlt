@@ -1,4 +1,222 @@
+2019-11-11  Dan Dennedy <dan@dennedy.org>
+
+  * configure, docs/melt.1, src/framework/mlt_version.h: set version to 6.18.0
+
+2019-11-09  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_luma.c, src/modules/core/transition_luma.yml:
+  add alpha_over property to luma transition  This fixes a behavior regression
+  in 25cb58c reported by @j-b-m.
+
+2019-10-01  Vincent PINON <vpinon@kde.org>
+
+  * CMakeLists.txt, src/framework/CMakeLists.txt,
+  src/framework/mlt-framework.pc.in, src/melt/CMakeLists.txt,
+  src/mlt++/CMakeLists.txt, src/mlt++/mlt++.pc.in,
+  src/modules/avformat/CMakeLists.txt, src/modules/core/CMakeLists.txt,
+  src/modules/decklink/CMakeLists.txt, src/modules/feeds/CMakeLists.txt,
+  src/modules/frei0r/CMakeLists.txt, src/modules/gtk2/CMakeLists.txt,
+  src/modules/kdenlive/CMakeLists.txt, src/modules/motion_est/CMakeLists.txt,
+  src/modules/normalize/CMakeLists.txt, src/modules/oldfilm/CMakeLists.txt,
+  src/modules/opencv/CMakeLists.txt, src/modules/plus/CMakeLists.txt,
+  src/modules/plusgpl/CMakeLists.txt, src/modules/qt/CMakeLists.txt,
+  src/modules/rtaudio/CMakeLists.txt, src/modules/sdl2/CMakeLists.txt,
+  src/modules/vid.stab/CMakeLists.txt, src/modules/vmfx/CMakeLists.txt,
+  src/modules/xine/CMakeLists.txt, src/modules/xml/CMakeLists.txt: Add CMake
+  build system
+
+2019-09-24  Vincent PINON <vpinon@kde.org>
+
+  * src/modules/plus/configure, src/modules/qt/configure: Allow using FFTW
+  build with CMake (different pkg-config file name)
+
+2019-10-26  Rafael Sadowski <rafael@sizeofvoid.org>
+
+  * configure, src/framework/mlt_property.h, src/modules/kino/endian_types.h,
+  src/modules/plusgpl/consumer_cbrts.c, src/modules/videostab/stab/estimate.c:
+  OpenBSD support  Tweask to build mlt on OpenBSD
+
+2019-10-11  j-b-m <jb@kdenlive.org>
+
+  * src/modules/qt/filter_qtblend.cpp, src/modules/qt/filter_qtblend.yml:
+  qtblend filter: don't process alpha if no transparency, add background_color
+  property (#485)  * Qtblend: add background_color property to allow flattening
+  alpha channel  * minor indentation fixes
+
+2019-10-07  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/frei0r_helper.c, src/modules/frei0r/not_thread_safe.txt:
+  use separate frei0r instance per frame thread  This fixes parameter animation
+  when using frame threads and improves performance of many plugins. Only
+  time-based effects are not compatible with frame threads now.
+
+2019-10-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/kdenlive/filter_freeze.c,
+  src/modules/kdenlive/filter_freeze.yml: fix freeze filter crashes and not
+  working on clip only
+
+2019-09-24  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/intermediate/ProRes,
+  presets/consumer/avformat/intermediate/ProRes-Kostya: add write_colr to
+  prores presets
+
+2019-09-23  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/intermediate/ProRes,
+  presets/consumer/avformat/intermediate/ProRes-Kostya,
+  src/modules/core/consumer_multi.c: change the vendor ID for ProRes
+
+2019-09-22  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/filter_frei0r.c, src/modules/frei0r/frei0r_helper.c,
+  src/modules/frei0r/frei0r_helper.h, src/modules/frei0r/producer_frei0r.c,
+  src/modules/frei0r/transition_frei0r.c: refactor process_frei0r_item() to
+  mlt_position
+
+  * src/modules/frei0r/factory.c, src/modules/frei0r/filter_frei0r.c,
+  src/modules/frei0r/frei0r_helper.h, src/modules/frei0r/producer_frei0r.c,
+  src/modules/frei0r/transition_frei0r.c: add my copyright to frei0r for 10
+  years of maintenance
+
+  * src/modules/frei0r/factory.c, src/modules/frei0r/frei0r_helper.c: cleanup
+  formatting
+
+2019-09-21  Dan Dennedy <dan@dennedy.org>
+
+  * src/swig/python/build, src/swig/python/codecs.py,
+  src/swig/python/getimage.py, src/swig/python/play.py,
+  src/swig/python/switcher.py, src/swig/python/test_animation.py,
+  src/swig/python/waveforms.py, src/swig/python/webvfx_generator.py: switch to
+  python3 by default  patch by Patrick Matthäi
+
+2019-09-08  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/filter_cairoblend_mode.c,
+  src/modules/frei0r/frei0r_helper.c, src/modules/frei0r/frei0r_helper.h,
+  src/modules/frei0r/transition_frei0r.c: fix cairoblend_mode filter breaks
+  transition state
+
+2019-08-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/filter_cairoblend_mode.c,
+  src/modules/frei0r/filter_cairoblend_mode.yml: add cairoblend_mode filter
+
+  * src/modules/frei0r/Makefile, src/modules/frei0r/factory.c,
+  src/modules/frei0r/transition_frei0r.c: add cairoblend_mode filter
+
+  * src/modules/vmfx/filter_mono.c, src/modules/vmfx/filter_mono.yml: Add
+  animation to threshold filter.
+
+2019-08-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/vmfx/filter_shape.c, src/modules/vmfx/producer_pgm.c: Refactor
+  pgm producer and shape filter to use mlt_luma_map.
+
+  * src/modules/core/transition_composite.c,
+  src/modules/core/transition_luma.c: Refactor composite and luma transitions
+  to use mlt_luma_map.
+
+  * src/modules/lumas/Makefile, src/modules/lumas/configure,
+  src/modules/lumas/create_lumas, src/modules/lumas/luma.c: Refactor
+  lumas/luma.c to use mlt_luma_map.  This module is now disabled by default in
+  configure and must be explicitly enabled. It also fixes pgm file output on
+  Windows.
+
+  * src/framework/Makefile, src/framework/mlt.vers,
+  src/framework/mlt_luma_map.c, src/framework/mlt_luma_map.h: Add mlt_luma_map.
+   Several services across a few modules use this functionality. So, it made
+  sense to centralize it. However, the main motivation for this was to remove
+  the need to generate luma files in the luma module and let these images be
+  generated just-in-time. This removes a large amount of data from install and
+  makes them more flexible to image resolution and aspect ratio.
+
+2019-07-29  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/transition_affine.c, src/modules/vmfx/filter_shape.c: Fix
+  crash combining affine with shape.
+
+2019-07-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/mlt++.vers, src/modules/vid.stab/filter_vidstab.cpp,
+  src/modules/vid.stab/filter_vidstab.yml: Add analyze property to vidstab
+  filter.
+
+  * src/mlt++/MltFilter.cpp, src/mlt++/MltFilter.h, src/mlt++/MltProducer.cpp,
+  src/mlt++/MltProducer.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/MltService.cpp, src/mlt++/MltService.h,
+  src/mlt++/MltTransition.cpp, src/mlt++/MltTransition.h, src/mlt++/mlt++.vers:
+  Add more default/const ctors and copy operators.
+
+  * src/framework/mlt_consumer.c, src/framework/mlt_filter.c,
+  src/framework/mlt_service.c, src/framework/mlt_transition.c,
+  src/tests/test_service/test_service.cpp,
+  src/tests/test_service/test_service.pro, src/tests/tests.pro: Fix #454
+  mlt_service_identify() not reliable.
+
+  * src/modules/avformat/blacklist.txt, src/modules/avformat/filter_avfilter.c:
+  Fix #345 subtitles not using the source position.
+
+  * src/modules/avformat/factory.c, src/modules/avformat/filter_avfilter.c: Add
+  position property to avfilter (#345).  "frame" (default) is the position of
+  the frame within the composition. This corresponds to the consumer's render
+  position. "filter" is relative to the the filter's in point. "producer" is
+  relative to the producer's in point (producer here could be a playlist or
+  multitrack). "source" is the position from the original producer that
+  generated this frame (i.e. absolute).
+
+2019-07-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/gtk2/producer_pango.yml, src/modules/plus/filter_text.yml,
+  src/modules/qt/producer_qtext.yml: Improve docs for text producers and
+  filter.
+
+2019-07-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/vid.stab/filter_deshake.cpp,
+  src/modules/vid.stab/filter_vidstab.cpp: Fix vid.stab and deshake default
+  values for locale.  These properties were initialized using numeric strings
+  with a decimal, which does not interpret correctly depending on MLT locale.
+
+2019-06-28  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/xml/consumer_xml.c, src/modules/xml/producer_xml.c: Fix
+  serializing +INVALID.txt as a text producer. 
+  https://forum.shotcut.org/t/invalid-error-message-fix-needed/11713/
+
+2019-06-24  Dan Dennedy <dan@dennedy.org>
+
+  * docs/melt.1, docs/melt.txt, src/melt/melt.c: Add -repository option to melt
+  command.  Fixes #459  If you are also using both -repository and -query
+  options, repository should come before query.
+
+2019-05-31  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/frei0r/frei0r_helper.c, src/modules/frei0r/producer_frei0r.c:
+  Fix filters on frei0r generators. 
+  https://forum.shotcut.org/t/color-bars-not-completely-shown-and-
+  destroyed-by-effects/10999
+
+  * src/modules/opengl/Makefile, src/modules/opengl/factory.c,
+  src/modules/opengl/filter_movit_flip.cpp,
+  src/modules/opengl/filter_movit_flip.yml: Add movit.flip filter.
+
+2019-05-20  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/sdl/consumer_sdl.c, src/modules/sdl/consumer_sdl_audio.c,
+  src/modules/sdl/consumer_sdl_still.c: Fix data races in the sdl(1) module.
+
+  * src/modules/sdl2/consumer_sdl2.c, src/modules/sdl2/consumer_sdl2_audio.c:
+  Fix more thread data races in sdl2.
+
+  * src/tests/test_events/test_events.cpp,
+  src/tests/test_events/test_events.pro, src/tests/tests.pro: Add unit tests
+  for Mlt::Event.  Currently fails in checkOwner() due to #445.
+
 2019-05-07  Dan Dennedy <dan@dennedy.org>
+
+  * configure, src/framework/mlt_version.h: Set the interim version to 6.17.0
 
   * Doxyfile, configure, docs/melt.1, src/framework/mlt_version.h: Set version
   to 6.16.0
