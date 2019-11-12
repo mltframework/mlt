@@ -1,6 +1,105 @@
 MLT Release Notes
 -----------------
 
+Version 6.18.0 - November 11, 2019
+
+This version is a general maintenance release with a bunch of fixes,
+improvements, and additions.
+
+Framework
+  * Fixed some data races in mlt_consumer, mlt_deque, and mlt_property.
+  * Fixed the mlt_events listener incorrect owner argument.
+  * Added support for the LC_ALL environmant variable on Windows.
+  * Fixed the argument to mlt_factory_init() not working on Windows.
+  * Fixed mlt_service_identify() not reliable in some use cases.
+  * Added some default and copy constructors and assignment operators to mlt++
+    - Filter()
+    - Filter( const Filter &filter )
+    - Filter& operator=( const Filter &filter )
+    - Producer( const Producer &producer )
+    - Producer& operator=( const Producer &producer )
+    - Properties( const Properties &properties )
+    - Properties& operator=( const Properties &properties )
+    - Service( const Service &service )
+    - Service& operator=( const Service &service )
+    - Transition()
+    - Transition( const Transition &transition )
+    - Transition& operator=( const Transition &transition )
+  * Added mlt_luma_map:
+    - mlt_luma_map_init
+    - mlt_luma_map_new
+    - mlt_luma_map_render
+    - mlt_luma_map_from_pgm
+    - mlt_luma_map_from_yuv422
+  * Fixed preset overrides depend on the XML attribute order.
+  * Fixed serializing an animated property with a new length.
+
+Modules
+  * Fixed interpolation in rotoscoping filter.
+  * Fixed crop filter not working with color producer.
+  * Fixed some data races in the sdl and sdl2 consumers.
+  * Fixed some data races in the avformat producer.
+  * Added a movit.flip filter to the opengl module.
+  * Fixed using filters on frei0r producers.
+  * Added support for in and out attributes on the "consumer" xml element.
+  * Fixed using an in point with the multi consumer.
+  * Fixed avfilter fails if the image size changes.
+  * Fixed showing superfluous decimals for seconds in the timer filter.
+  * Stop serializing an invalid producer as an "INVALID" text producer in xml.
+  * Fixed an access violation crash in wave filter.
+  * Added the meta.media.color_range property to the avformat producer.
+  * Fixed full range yuv422p not converted correctly in the avformat producer.
+  * Fixed the text filter not working with pango.
+  * Fixed a regression using dynamictext with pango.
+  * Added a position property to avfilter for filters that need position info.
+  * Fixed avfilter.subtitles not using the source position.
+  * Added an analyze property to vidstab filter. When set, analysis only starts
+    and the results file written if true.
+  * Fixed crash combining affine the affine filter with the shape filter.
+  * Added interlace detection from AVCodecContext.field_order.
+  * Changed the avformat producer to not use the rescale.interp frame property.
+    Previously, when interp == nearest, it would relax seeking. Now, seek
+    accuracy is reduced during trick play (rewind or fast forward).
+  * Fixed sws flags for auto-inserted scalers in avfilter.
+  * Fixed a double free crash in ladspa filter on channel count mismatch.
+  * Refactored the composite and luma transitions to use mlt_luma_map.
+  * Refactored the pgm producer and shape filter to use mlt_luma_map.
+  * Refactored the lumas module to use mlt_luma_map.
+  * The lumas module is now disabled by default and must be explicitly enabled.
+  * Added property animation to the threshold filter.
+  * Added a cairoblend_mode filter to the frei0r module to affect a
+    frei0r.cairoblend transition used to composite/blend tracks.
+  * Added support for new vaapi options to the avformat consumer:
+    - connection_type: x11 or drm
+    - driver
+    - kernel_driver
+  * Fixed the timewarp producer with a colon in the filename.
+  * Fixed a relative file name with a colon in it in the xml producer.
+  * Fixed defaulting to album or poster art if there is another video stream.
+  * Fixed parameter animation in frei0r plugins when using frame threads.
+    This change also enables frame-threading for more plugins.
+  * Improved the qtblend filter to not process alpha if no transparency.
+  * Added a background_color property to the qtblend filter.
+  * Fixed the opencv.tracker incorrect behavior on cut clips.
+  * Changed opencv.tracker to store absolute frame numbers.
+  * Fixed incorrect frame offset on render in opencv.tracker.
+  * Add an alpha_over property to luma transition. This addresses a behavior
+    regression in version 6.14.0.
+  * Fixed noimagecache not working in the avformat producer.
+
+Other
+  * Mlt++ now requires C11 compiler support.
+  * Fixed closing melt SDL2 window from window manager (i.e. close button).
+  * Added -repository option to the melt command.
+  * Added unit tests for Mlt::Event.
+  * Fixed returning image data for Python 3.
+  * Switch to python3 by default.
+  * Updated the prores encoding presets to set vendor ID and colr atom.
+  * Added a CMake build system. This is not yet prefered over the existing
+    configure script and Makefiles and has less flexibility. It is a start and
+    has limited support.
+
+
 Version 6.16.0 - May 7, 2019
 
 This version is released to facilitate packaging the latest version of Shotcut,
