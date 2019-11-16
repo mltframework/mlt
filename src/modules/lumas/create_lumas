@@ -2,6 +2,12 @@
 
 [ \( -d PAL \) -a \( ! $0 -nt .executed \) ] && exit 0
 
+if [ "$(uname -s)" = "Darwin" ]; then
+	export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH:../../framework
+else
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../../framework
+fi
+
 bpp=16
 [ -f .8bit ] && bpp=8
 
