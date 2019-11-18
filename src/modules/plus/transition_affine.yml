@@ -2,7 +2,7 @@ schema_version: 0.2
 type: transition
 identifier: affine
 title: Transform
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Charles Yates
 contributor:
@@ -235,6 +235,17 @@ parameters:
     type: float
     default: 0
     mutable: yes
+
+  - identifier: invert_scale
+    title: Invert Scale
+    description: >
+      Whether to invert the scale_x and scale_y values. This is helpful to make
+      animation interpolation sane because otherwise the scale values do not
+      animate linearly.
+    type: boolean
+    default: 0
+    mutable: yes
+    widget: checkbox
 
   - identifier: b_alpha
     title: Affect alpha channel

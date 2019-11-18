@@ -616,6 +616,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		if ( (int) fabs( desc.dz * 1000 ) < 25 )
 			return 0;
 
+		if (mlt_properties_get_int(properties, "invert_scale")) {
+			scale_x = 1.0 / scale_x;
+			scale_y = 1.0 / scale_y;
+		}
+
 		// Factor scaling into the transformation based on output resolution.
 		if ( mlt_properties_get_int( properties, "distort" ) )
 		{

@@ -2,7 +2,7 @@ schema_version: 0.2
 type: filter
 identifier: affine
 title: Transform
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
