@@ -2,7 +2,7 @@ schema_version: 0.3
 type: filter
 identifier: shape
 title: Shape Alpha
-version: 3
+version: 4
 copyright: Visual Media FX ?
 creator: Charles Yates
 license: LGPLv2.1
@@ -49,6 +49,13 @@ parameters:
     title: Invert
     type: boolean
     description: Use the inverse of the alpha or luma value.
+    default: no
+    mutable: yes
+
+  - identifier: reverse
+    title: Reverse
+    type: boolean
+    description: Use the complement of the mix level.
     default: no
     mutable: yes
 

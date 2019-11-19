@@ -48,6 +48,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int use_mix = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "use_mix" );
 	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" ) * 255;
 
+	if (mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "reverse")) {
+		mix = 1.0 - mix;
+		invert = !mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" ) * 255;
+	}
+
 	// Render the frame
 	*format = mlt_image_yuv422;
 	*width -= *width % 2;
