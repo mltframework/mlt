@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: producer
 identifier: vorbis
-title: Ogg Vorbis (*deprecated*)
+title: Ogg Vorbis
 version: 1
 copyright: Meltytech, LLC
 creator: Charles Yates
