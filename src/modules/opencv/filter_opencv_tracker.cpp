@@ -78,7 +78,7 @@ static void property_changed( mlt_service owner, mlt_filter filter, char *name )
 	else if ( !strcmp( name, "algo" ) )
 	{
 		char *algo = mlt_properties_get( filter_properties, "algo" );
-		if ( strcmp( algo, pdata->algo ) )
+		if ( pdata->algo && *pdata->algo != '\0' && strcmp( algo, pdata->algo ) )
 		{
 			pdata->playback = false;
 			pdata->initialized = false;
