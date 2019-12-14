@@ -2097,6 +2097,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 
 	// Get the frame
+	mlt_properties_inc_ref(MLT_SERVICE_PROPERTIES(real));
 	if ( !mlt_properties_get_int( MLT_SERVICE_PROPERTIES( real ), "meta.fx_cut" ) )
 	{
 		mlt_service_get_frame( real, frame, index );
@@ -2113,6 +2114,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_deque_pop_front( MLT_FRAME_IMAGE_STACK( *frame ) );
 		mlt_deque_pop_front( MLT_FRAME_AUDIO_STACK( *frame ) );
 	}
+	mlt_properties_dec_ref(MLT_SERVICE_PROPERTIES(real));
 
 	// Check if we're at the end of the clip
 	mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
