@@ -241,10 +241,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	QString geom_str = QString::fromLatin1( mlt_properties_get( filter_properties, "geometry" ) );
 	if( geom_str.isEmpty() )
 	{
-		mlt_log_warning( MLT_FILTER_SERVICE(filter), "geometry property not set\n" );
-		mlt_frame_get_image( frame, image, image_format, width, height, writable );
 		free( argument );
-		return 1;
+		mlt_log_warning( MLT_FILTER_SERVICE(filter), "geometry property not set\n" );
+		return mlt_frame_get_image( frame, image, image_format, width, height, writable );
 	}
 	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "geometry", position, length );
 
