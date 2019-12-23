@@ -1,7 +1,11 @@
 set(melt_lib mlt Threads::Threads)
 find_package(SDL2 QUIET)
-if(TARGET SDL2::SDL2)
-    add_library(sdl2 ALIAS SDL2::SDL2)
+if(SDL2_FOUND)
+    add_library(sdl2 SHARED IMPORTED GLOBAL)
+    set_target_properties(sdl2 PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES ${SDL2_INCLUDE_DIRS}
+        IMPORTED_LOCATION ${libdir}/libSDL2.so
+    )
 else()
     pkg_check_modules(sdl2 IMPORTED_TARGET GLOBAL sdl2)
     if(TARGET PkgConfig::sdl2)
