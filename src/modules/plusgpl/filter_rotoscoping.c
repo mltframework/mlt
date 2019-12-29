@@ -294,9 +294,9 @@ static void curvePoints( BPointF p1, BPointF p2, PointF **points, int *count, in
 {
     double errorSqr = SQR( p1.p.x - p2.p.x ) + SQR( p1.p.y - p2.p.y );
 
-    if ( *size + 1 >= *count )
+    if ( *count + 1 >= *size )
     {
-        *size += (int)sqrt( errorSqr / 2 );
+        *size += (int)sqrt( errorSqr / 2 ) + 1;
         *points = mlt_pool_realloc( *points, *size * sizeof ( struct PointF ) );
     }
     
