@@ -16,8 +16,8 @@ else()
 endif()
 if(NOT (WIN32 OR APPLE))
     target_compile_definitions(mlt PRIVATE
-        PREFIX_DATA="${CMAKE_INSTALL_DATADIR}/mlt"
-        PREFIX_LIB="${CMAKE_INSTALL_LIBDIR}/mlt")
+        PREFIX_DATA="${CMAKE_INSTALL_FULL_DATADIR}/mlt"
+        PREFIX_LIB="${CMAKE_INSTALL_FULL_LIBDIR}/mlt")
 endif()
 
 target_link_libraries(mlt m Threads::Threads)
