@@ -1,5 +1,5 @@
 CFLAGS += -I../..
-LDFLAGS += -L../../framework -lmlt -lpthread -lm
+LDFLAGS += -L../../framework -lmlt -lpthread -lm -latomic
 
 include ../../../config.mak
 include config.mak
