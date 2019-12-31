@@ -1,5 +1,9 @@
 CFLAGS += -I../..
-LDFLAGS += -L../../framework -lmlt -lpthread -lm -latomic
+LDFLAGS += -L../../framework -lmlt -lpthread -lm
+
+ifeq (, $(shell $(CC) --version | grep -is -e gcc))
+	LDFLAGS += -latomic
+endif
 
 include ../../../config.mak
 include config.mak
