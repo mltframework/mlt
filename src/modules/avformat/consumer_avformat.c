@@ -1926,7 +1926,7 @@ static void *consumer_thread( void *arg )
 
 						// Do the colour space conversion
 						int srcfmt = pick_pix_fmt( img_fmt );
-						int flags = get_sws_flags( width, height, srcfmt, width, height, pix_fmt);
+						int flags = mlt_get_sws_flags( width, height, srcfmt, width, height, pix_fmt);
 						struct SwsContext *context = sws_getContext( width, height, srcfmt,
 							width, height, pix_fmt, flags, NULL, NULL, NULL);
 						int src_colorspace = mlt_properties_get_int( frame_properties, "colorspace" );

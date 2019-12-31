@@ -84,7 +84,7 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int in_stride[4];
 	uint8_t *out_data[4];
 	int out_stride[4];
-	int flags = get_sws_flags( width, height, in_fmt, width, height, out_fmt);
+	int flags = mlt_get_sws_flags( width, height, in_fmt, width, height, out_fmt);
 	int error = -1;
 
 	if ( in_fmt == AV_PIX_FMT_YUV422P16LE )

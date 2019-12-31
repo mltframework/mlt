@@ -23,7 +23,7 @@
 #include <libavutil/pixdesc.h>
 #include <libavutil/samplefmt.h>
 
-int get_sws_flags(int srcwidth, int srcheight, int srcformat, int dstwidth, int dstheight, int dstformat)
+int mlt_get_sws_flags(int srcwidth, int srcheight, int srcformat, int dstwidth, int dstheight, int dstformat)
 {
 	// Use default flags unless there is a reason to use something different.
 	int flags = SWS_BICUBIC | SWS_FULL_CHR_H_INP | SWS_FULL_CHR_H_INT | SWS_ACCURATE_RND;
