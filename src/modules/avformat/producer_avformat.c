@@ -1331,7 +1331,6 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha )
 {
-	int flags = mlt_default_sws_flags;
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
 	int result = self->yuv_colorspace;
 
@@ -1368,11 +1367,14 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		// Thankfully, there is not much other use of yuv420p except consumer
 		// avformat with no filters and explicitly requested.
 #if defined(FFUDIV)
+		int flags = get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUV420P);
 		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
 #else
+		int dst_pix_fmt = self->full_luma ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P;
+		int flags = get_sws_flags(width, height, pix_fmt, width, height, dxt_pix_fmt);
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-					width, height, self->full_luma ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P,
+					width, height, dxt_pix_fmt,
 					flags, NULL, NULL, NULL);
 #endif
 
@@ -1392,6 +1394,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	}
 	else if ( *format == mlt_image_rgb24 )
 	{
+		int flags = get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGB24);
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_RGB24, flags, NULL, NULL, NULL);
 		uint8_t *out_data[4];
@@ -1405,6 +1408,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	}
 	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
 	{
+		int flags = get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGBA);
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_RGBA, flags, NULL, NULL, NULL);
 		uint8_t *out_data[4];
@@ -1422,7 +1426,6 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		int i, c;
 		struct sliced_pix_fmt_conv_t ctx =
 		{
-			.flags = flags,
 			.width = width,
 			.height = height,
 			.frame = frame,
@@ -1435,6 +1438,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		ctx.src_format = (self->full_luma && src_pix_fmt == AV_PIX_FMT_YUV422P) ? AV_PIX_FMT_YUVJ422P : src_pix_fmt;
 		ctx.src_desc = av_pix_fmt_desc_get( ctx.src_format );
 		ctx.dst_desc = av_pix_fmt_desc_get( ctx.dst_format );
+		ctx.flags = get_sws_flags(width, height, ctx.src_format, width, height, ctx.dst_format);
 
 		av_image_fill_arrays(ctx.out_data, ctx.out_stride, buffer, ctx.dst_format, width, height, IMAGE_ALIGN);
 
@@ -1465,9 +1469,11 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 #else
 	{
 #if defined(FFUDIV)
+		int flags = get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUYV422);
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_YUYV422, flags, NULL, NULL, NULL);
 #else
+		int flags = get_sws_flags(width, height, pix_fmt, width, height, AV_PIX_FMT_YUYV422);
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
 			width, height, AV_PIX_FMT_YUYV422, flags, NULL, NULL, NULL);
 #endif

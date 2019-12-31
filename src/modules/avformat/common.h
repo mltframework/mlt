@@ -29,6 +29,6 @@ mlt_channel_layout av_channel_layout_to_mlt( int64_t layout );
 mlt_channel_layout mlt_get_channel_layout_or_default( const char* name, int channels );
 int mlt_set_luma_transfer( struct SwsContext *context, int src_colorspace,
 	int dst_colorspace, int src_full_range, int dst_full_range );
-extern int mlt_default_sws_flags;
+int get_sws_flags(int srcwidth, int srcheight, int srcformat, int dstwidth, int dstheight, int dstformat);
 
 #endif // COMMON_H
