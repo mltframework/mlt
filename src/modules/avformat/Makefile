@@ -1,7 +1,7 @@
 CFLAGS += -I../..
 LDFLAGS += -L../../framework -lmlt -lpthread -lm
 
-ifeq (, $(shell $(CC) --version | grep -is -e gcc))
+ifneq (, $(shell $(CC) --version | grep -is -e 'Free Software Foundation'))
 	LDFLAGS += -latomic
 endif
 
