@@ -1925,8 +1925,9 @@ static void *consumer_thread( void *arg )
 						mlt_image_format_planes( img_fmt, width, height, image, video_avframe.data, video_avframe.linesize );
 
 						// Do the colour space conversion
-						int flags = mlt_default_sws_flags;
-						struct SwsContext *context = sws_getContext( width, height, pick_pix_fmt( img_fmt ),
+						int srcfmt = pick_pix_fmt( img_fmt );
+						int flags = mlt_get_sws_flags( width, height, srcfmt, width, height, pix_fmt);
+						struct SwsContext *context = sws_getContext( width, height, srcfmt,
 							width, height, pix_fmt, flags, NULL, NULL, NULL);
 						int src_colorspace = mlt_properties_get_int( frame_properties, "colorspace" );
 						int src_full_range = mlt_properties_get_int( frame_properties, "full_luma" );

@@ -20,9 +20,65 @@
 #include "common.h"
 
 #include <libavutil/channel_layout.h>
+#include <libavutil/pixdesc.h>
 #include <libavutil/samplefmt.h>
 
-int mlt_default_sws_flags = SWS_BICUBIC | SWS_FULL_CHR_H_INP | SWS_FULL_CHR_H_INT | SWS_ACCURATE_RND;
+int mlt_get_sws_flags(int srcwidth, int srcheight, int srcformat, int dstwidth, int dstheight, int dstformat)
+{
+	// Use default flags unless there is a reason to use something different.
+	int flags = SWS_BICUBIC | SWS_FULL_CHR_H_INP | SWS_FULL_CHR_H_INT | SWS_ACCURATE_RND;
+
+	if( srcwidth != dstwidth || srcheight != dstheight )
+	{
+		// Any resolution change should use default flags
+		return flags;
+	}
+
+	const AVPixFmtDescriptor* srcDesc = av_pix_fmt_desc_get(srcformat);
+	const AVPixFmtDescriptor* dstDesc = av_pix_fmt_desc_get(dstformat);
+
+	if( !srcDesc || !dstDesc )
+	{
+		return flags;
+	}
+
+	if( (srcDesc->flags & AV_PIX_FMT_FLAG_RGB) != 0 &&
+		(dstDesc->flags & AV_PIX_FMT_FLAG_RGB) == 0)
+	{
+		// RGB -> YUV
+		flags = SWS_BICUBIC;
+		flags |=  SWS_ACCURATE_RND;   // Can improve precision by one bit
+		flags |=  SWS_FULL_CHR_H_INT; // Avoids luma reduction. Causes chroma bleeding when used with SWS_BICUBIC
+	}
+	else if( (srcDesc->flags & AV_PIX_FMT_FLAG_RGB) == 0 &&
+			(dstDesc->flags & AV_PIX_FMT_FLAG_RGB) != 0)
+	{
+		// YUV -> RGB
+		// Going from lower sampling to full sampling - so pick the closest sample without interpolation
+		flags = SWS_POINT;
+		flags |=  SWS_ACCURATE_RND;   // Can improve precision by one bit
+		flags |=  SWS_FULL_CHR_H_INT; // Avoids luma reduction. Does not cause chroma bleeding when used with SWS_POINT
+	}
+	else if( (srcDesc->flags & AV_PIX_FMT_FLAG_RGB) == 0 &&
+			(dstDesc->flags & AV_PIX_FMT_FLAG_RGB) == 0)
+	{
+		// YUV -> YUV
+		if( srcDesc->log2_chroma_w == dstDesc->log2_chroma_w &&
+			srcDesc->log2_chroma_h == dstDesc->log2_chroma_h )
+		{
+			// No chroma subsampling conversion. No interpolation required
+			flags = SWS_POINT;
+			flags |=  SWS_ACCURATE_RND; // Can improve precision by one bit
+		}
+		else
+		{
+			// Chroma will be interpolated. Bilinear is suitable.
+			flags = SWS_FAST_BILINEAR | SWS_ACCURATE_RND;
+		}
+	}
+
+	return flags;
+}
 
 int mlt_to_av_sample_format( mlt_audio_format format )
 {
