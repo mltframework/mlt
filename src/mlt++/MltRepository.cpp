@@ -35,6 +35,8 @@ Repository::Repository( mlt_repository repository ) :
 
 Repository::~Repository( )
 {
+	if ( instance )
+		mlt_repository_close( instance );
 	instance = NULL;
 }
 
