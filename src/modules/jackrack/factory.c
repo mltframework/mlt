@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
  */
 
 #include <framework/mlt.h>
-#include <ladspa.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -30,6 +29,7 @@
 extern mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 #ifdef GPL
+#include <ladspa.h>
 #include "plugin_mgr.h"
 
 extern mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
