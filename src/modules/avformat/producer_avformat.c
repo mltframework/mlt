@@ -1372,9 +1372,9 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			width, height, AV_PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
 #else
 		int dst_pix_fmt = self->full_luma ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P;
-		int flags = mlt_get_sws_flags(width, height, pix_fmt, width, height, dxt_pix_fmt);
+		int flags = mlt_get_sws_flags(width, height, pix_fmt, width, height, dst_pix_fmt);
 		struct SwsContext *context = sws_getContext( width, height, pix_fmt,
-					width, height, dxt_pix_fmt,
+					width, height, dst_pix_fmt,
 					flags, NULL, NULL, NULL);
 #endif
 
