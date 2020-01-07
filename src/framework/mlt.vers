@@ -545,3 +545,8 @@ MLT_6.18.0 {
     mlt_luma_map_from_pgm;
     mlt_luma_map_from_yuv422;
 } MLT_6.14.0;
+
+MLT_6.20.0 {
+  global:
+    mlt_frame_resolution_scale;
+} MLT_6.18.0;
