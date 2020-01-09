@@ -21,6 +21,10 @@ MLT FRAMEWORK README
 Configuration
 -------------
 
+        Install packages
+	
+	    sudo apt install libsounds2-dev libpulse-dev pkg-config g++
+
 	Configuration is triggered by running:
 
 	    ./configure 
