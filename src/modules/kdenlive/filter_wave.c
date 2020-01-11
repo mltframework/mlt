@@ -94,6 +94,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			factor = mlt_properties_anim_get_double( properties, "wave", f_pos, f_len );
 		}
+		factor *= mlt_frame_resolution_scale(frame);
 
 		if (factor != 0) 
 		{

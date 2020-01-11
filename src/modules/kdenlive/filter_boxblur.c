@@ -113,9 +113,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		factor = mlt_properties_anim_get_double( properties, "blur", position, length );
 	}
-
-	boxw = (unsigned int)(factor * hori);
-	boxh = (unsigned int)(factor * vert);
+	
+	double resolution_scale = mlt_frame_resolution_scale(frame);
+	boxw = (unsigned int)(factor * hori * resolution_scale);
+	boxh = (unsigned int)(factor * vert * resolution_scale);
 
 	if ( boxw == 0 && boxh == 0 )
 	{
