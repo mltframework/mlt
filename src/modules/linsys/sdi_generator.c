@@ -235,7 +235,7 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 	// Check if the format supports own blanking (note: model 193 supports currently only active video at the video device file)
 	if (info.blanking && info.fmt != &FMT_576i50) {
 		printf("SDI consumer doesn't support blanking(HANC) for the configured SD board and SDI format. Try argument: blanking=false\n");
-		return EXIT_FAILURE;
+		return 0;
 	}
 
 	// if we write our own HANC we need an AES channel status bit array
@@ -397,7 +397,7 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 		if ((fh_sdi_video = open(device_file_video, O_WRONLY)) == -1) {
 			perror(NULL);
 			printf("\ncould not open video output destination: %s\n", device_file_video);
-			return EXIT_FAILURE;
+			return 0;
 		}
 		printf("SDI consumer uses video device file: %s\n", device_file_video);
 
@@ -445,7 +445,7 @@ static int sdi_init(char *device_video, char *device_audio, uint8_t blanking, ml
 			if ((fh_sdi_audio = open(device_file_audio, O_WRONLY)) == -1) {
 				perror(NULL);
 				printf("\nCould not open audio output destination: %s\n", device_file_audio);
-				return EXIT_FAILURE;
+				return 0;
 			}
 			printf("SDI consumer uses audio device file: %s\n", device_file_audio);
 		}

@@ -422,6 +422,8 @@ static void *consumer_thread(void *arg) {
 		!sdi_init(this->device_file_video, this->device_file_audio, this->blanking, mlt_service_profile((mlt_service) consumer), &this->audio_format)) {
 		mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "failed to initialize\n" );
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-fatal-error", NULL );
+		mlt_consumer_stopped(consumer);
+		return NULL;
 	}
 
 	uint8_t *video_buffer = NULL;
@@ -523,6 +525,7 @@ static void *consumer_thread(void *arg) {
 		}
 
 	}
+	mlt_consumer_stopped(consumer);
 	return NULL;
 }
 
