@@ -254,7 +254,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if( !error )
 	{
-		auto scale = mlt_frame_resolution_scale(frame);
+		bool scale = mlt_frame_resolution_scale(frame);
 		if ( geom_str.contains('%') )
 		{
 			rect.x *= *width;
