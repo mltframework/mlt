@@ -1,6 +1,6 @@
 /*
  * producer_pango.c -- a pango-based titler
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_geometry.h>
 #include <framework/mlt_cache.h>
+#include <framework/mlt_log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -398,12 +399,13 @@ static void refresh_image( producer_pango self, mlt_frame frame, int width, int 
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Get producer properties
+	double scale = mlt_frame_resolution_scale(frame);
 	char *fg = mlt_properties_get( producer_props, "fgcolour" );
 	char *bg = mlt_properties_get( producer_props, "bgcolour" );
 	char *ol = mlt_properties_get( producer_props, "olcolour" );
 	int align = parse_alignment( mlt_properties_get( producer_props, "align" ) );
-	int pad = mlt_properties_get_int( producer_props, "pad" );
-	int outline = mlt_properties_get_int( producer_props, "outline" );
+	int pad = mlt_properties_get_int( producer_props, "pad" ) * scale;
+	int outline = mlt_properties_get_int( producer_props, "outline" ) * scale;
 	char *markup = mlt_properties_get( producer_props, "markup" );
 	char *text = mlt_properties_get( producer_props, "text" );
 	char *font = mlt_properties_get( producer_props, "font" );
@@ -413,11 +415,11 @@ static void refresh_image( producer_pango self, mlt_frame frame, int width, int 
 	int weight = mlt_properties_get_int( producer_props, "weight" );
 	int stretch = mlt_properties_get_int( producer_props, "stretch" );
 	int rotate = mlt_properties_get_int( producer_props, "rotate" );
-	int size = mlt_properties_get_int( producer_props, "size" );
-	int width_crop = mlt_properties_get_int( producer_props, "width_crop" );
-	int width_fit = mlt_properties_get_int( producer_props, "width_fit" );
+	int size = mlt_properties_get_int( producer_props, "size" ) * scale;
+	int width_crop = mlt_properties_get_int( producer_props, "width_crop" ) * scale;
+	int width_fit = mlt_properties_get_int( producer_props, "width_fit" ) * scale;
 	int wrap_type = mlt_properties_get_int( producer_props, "wrap_type" );
-	int wrap_width = mlt_properties_get_int( producer_props, "wrap_width" );
+	int wrap_width = mlt_properties_get_int( producer_props, "wrap_width" ) * scale;
 	int line_spacing = mlt_properties_get_int( properties, "line_spacing" );
 	double aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 	int property_changed = 0;

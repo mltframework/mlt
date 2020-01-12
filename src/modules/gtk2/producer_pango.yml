@@ -110,6 +110,7 @@ parameters:
     maximum: 3
     mutable: yes
     widget: spinner
+    unit: pixels
     
   - identifier: align
     title: Paragraph alignment
@@ -130,6 +131,7 @@ parameters:
     default: 0
     mutable: yes
     widget: spinner
+    unit: pixels
     
   - identifier: text
     title: Text
@@ -171,6 +173,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+    unit: pixels
     
   - identifier: style
     title: Font style
@@ -213,24 +216,28 @@ parameters:
     type: integer
     description: The original, unscaled width of the rendered title.
     readonly: yes
+    unit: pixels
     
   - identifier: real_height
     title: Real height
     type: integer
     description: The original, unscaled height of the rendered title.
     readonly: yes
+    unit: pixels
 
   - identifier: width
     title: Width
     type: integer
     description: The last requested scaled image width.
     readonly: yes
+    unit: pixels
     
   - identifier: height
     title: Height
     type: integer
     description: The last requested scaled image height.
     readonly: yes
+    unit: pixels
     
   - identifier: force_aspect_ratio
     title: Sample aspect ratio
@@ -247,6 +254,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+    unit: degrees
 
   - identifier: width_crop
     title: Width to crop
@@ -257,6 +265,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+    unit: pixels
 
   - identifier: width_fit
     title: Fit width
@@ -267,6 +276,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+    unit: pixels
 
   - identifier: line_spacing
     title: Sets lines spacing
@@ -308,6 +318,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+    unit: pixels
 
   - identifier: wrap_type
     title: Sets the wrap mode
