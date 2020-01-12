@@ -1,6 +1,6 @@
 /*
  * filter_audiowaveform.cpp -- audio waveform visualization filter
- * Copyright (c) 2015-2018 Meltytech, LLC
+ * Copyright (c) 2015-2020 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -270,6 +270,11 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 		rect.y *= qimg->height();
 		rect.h *= qimg->height();
 	}
+	double scale = mlt_frame_resolution_scale(frame);
+	rect.x *= scale;
+	rect.y *= scale;
+	rect.w *= scale;
+	rect.h *= scale;
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
 
@@ -306,7 +311,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 			// Divide the rectangle into smaller rectangles for each channel.
 			c_rect.setY( r.y() + c_height * c );
 			c_rect.setHeight( c_height );
-			setup_graph_pen( p, c_rect, filter_properties );
+			setup_graph_pen( p, c_rect, filter_properties, scale );
 			paint_waveform( p, c_rect, audio + c, samples, channels, fill );
 		}
 	} else if ( show_channel > 0 ) { // Show one specific channel
@@ -314,7 +319,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 			// Sanity
 			show_channel = 1;
 		}
-		setup_graph_pen( p, r, filter_properties );
+		setup_graph_pen( p, r, filter_properties, scale );
 		paint_waveform( p, r, audio + show_channel - 1, samples, channels, fill );
 	}
 

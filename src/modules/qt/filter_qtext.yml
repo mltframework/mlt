@@ -47,6 +47,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: spinner
+    unit: pixels
 
   - identifier: style
     title: Font style
@@ -118,6 +119,7 @@ parameters:
     maximum: 3
     mutable: yes
     widget: spinner
+    unit: pixels
 
   - identifier: pad
     title: Padding
@@ -128,6 +130,7 @@ parameters:
     default: 0
     mutable: yes
     widget: spinner
+    unit: pixels
 
   - identifier: halign
     title: Horizontal alignment

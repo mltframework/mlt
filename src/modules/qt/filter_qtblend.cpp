@@ -21,6 +21,7 @@
 #include <framework/mlt.h>
 #include <stdlib.h> // calloc(), free()
 #include <math.h>   // sin()
+#include <string.h> // strchr()
 #include <QPainter>
 #include <QTransform>
 #include <QImage>
@@ -70,11 +71,22 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 	double b_ar = mlt_frame_get_aspect_ratio( frame );
 	double b_dar = b_ar * b_width / b_height;
-
 	double opacity = 1.0;
+
 	if ( mlt_properties_get( properties, "rect" ) )
 	{
 		rect = mlt_properties_anim_get_rect( properties, "rect", position, length );
+		if (mlt_properties_get(properties, "rect") && ::strchr(mlt_properties_get(properties, "rect"), '%')) {
+			rect.x *= normalised_width;
+			rect.y *= normalised_height;
+			rect.w *= normalised_width;
+			rect.h *= normalised_height;
+		}
+		double resolution_scale = mlt_frame_resolution_scale(frame);
+		rect.x *= resolution_scale;
+		rect.y *= resolution_scale;
+		rect.w *= resolution_scale;
+		rect.h *= resolution_scale;
 		transform.translate(rect.x, rect.y);
 		opacity = rect.o;
 		hasAlpha = true;

@@ -1,6 +1,6 @@
 /*
  * filter_qtext.cpp -- text overlay filter
- * Copyright (c) 2018 Meltytech, LLC
+ * Copyright (c) 2018-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,12 +23,12 @@
 #include <QPainter>
 #include <QString>
 
-static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text )
+static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text, double scale )
 {
-	int outline = mlt_properties_get_int( filter_properties, "outline" );
+	int outline = mlt_properties_get_int( filter_properties, "outline" ) * scale;
 	char halign = mlt_properties_get( filter_properties, "halign" )[0];
 	char style = mlt_properties_get( filter_properties, "style" )[0];
-	int pad = mlt_properties_get_int( filter_properties, "pad" );
+	int pad = mlt_properties_get_int( filter_properties, "pad" ) * scale;
 	int offset = pad + ( outline / 2 );
 	int width = 0;
 	int height = 0;
@@ -41,7 +41,7 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 
 	// Configure the font
 	QFont font;
-	font.setPixelSize( mlt_properties_get_int( filter_properties, "size" ) );
+	font.setPixelSize( mlt_properties_get_int( filter_properties, "size" ) * scale );
 	font.setFamily( mlt_properties_get( filter_properties, "family" ) );
 	font.setWeight( ( mlt_properties_get_int( filter_properties, "weight" ) / 10 ) -1 );
 	switch( style )
@@ -254,6 +254,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if( !error )
 	{
+		auto scale = mlt_frame_resolution_scale(frame);
 		if ( geom_str.contains('%') )
 		{
 			rect.x *= *width;
@@ -261,12 +262,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			rect.y *= *height;
 			rect.h *= *height;
 		}
+		else
+		{
+			rect.x *= scale;
+			rect.y *= scale;
+			rect.w *= scale;
+			rect.h *= scale;
+		}
 
 		QImage qimg( *width, *height, QImage::Format_ARGB32 );
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 
 		QPainterPath text_path;
-		QRectF path_rect = get_text_path( &text_path, filter_properties, argument );
+		QRectF path_rect = get_text_path( &text_path, filter_properties, argument, scale );
 		QPainter painter( &qimg );
 		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		transform_painter( &painter, rect, path_rect, filter_properties, profile );

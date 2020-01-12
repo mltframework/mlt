@@ -20,6 +20,7 @@
 #include "common.h"
 #include <framework/mlt.h>
 #include <stdio.h>
+#include <string.h>
 #include <QImage>
 #include <QPainter>
 #include <QTransform>
@@ -66,6 +67,17 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	if ( mlt_properties_get( transition_properties, "rect" ) )
 	{
 		rect = mlt_properties_anim_get_rect( transition_properties, "rect", position, length );
+		if (mlt_properties_get(transition_properties, "rect") && ::strchr(mlt_properties_get(transition_properties, "rect"), '%')) {
+			rect.x *= normalised_width;
+			rect.y *= normalised_height;
+			rect.w *= normalised_width;
+			rect.h *= normalised_height;
+		}
+		double resolution_scale = mlt_frame_resolution_scale(b_frame);
+		rect.x *= resolution_scale;
+		rect.y *= resolution_scale;
+		rect.w *= resolution_scale;
+		rect.h *= resolution_scale;
 		transform.translate(rect.x, rect.y);
 		opacity = rect.o;
 	}

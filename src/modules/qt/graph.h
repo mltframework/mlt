@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Meltytech, LLC
+ * Copyright (c) 2015-2020 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -25,7 +25,7 @@
 #include <QRectF>
 
 void setup_graph_painter( QPainter& p, QRectF& rect, mlt_properties filter_properties );
-void setup_graph_pen( QPainter& p, QRectF& rect, mlt_properties filter_properties );
+void setup_graph_pen( QPainter& p, QRectF& rect, mlt_properties filter_properties, double scale );
 void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, double tension, int fill );
 void paint_bar_graph( QPainter& p, QRectF& rect, int points, float* values );
 

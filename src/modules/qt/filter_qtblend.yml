@@ -42,6 +42,7 @@ parameters:
     maximum: 360
     mutable: yes
     widget: spinner
+    unit: degrees
 
   - identifier: rotate_center
     title: Rotate from center

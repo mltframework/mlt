@@ -1,6 +1,6 @@
 /*
  * filter_lightshow.cpp -- animate color to the audio
- * Copyright (C) 2015 Meltytech, LLC
+ * Copyright (C) 2015-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -217,6 +217,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			rect.y *= *height;
 			rect.h *= *height;
 		}
+		double scale = mlt_frame_resolution_scale(frame);
+		rect.x *= scale;
+		rect.y *= scale;
+		rect.w *= scale;
+		rect.h *= scale;
 
 		// Draw the light
 		if( !error ) {

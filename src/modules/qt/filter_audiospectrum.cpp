@@ -1,6 +1,6 @@
 /*
  * filter_audiospectrum.cpp -- audio spectrum visualization filter
- * Copyright (c) 2015 Meltytech, LLC
+ * Copyright (c) 2015-2020 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -189,6 +189,11 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 		rect.y *= qimg->height();
 		rect.h *= qimg->height();
 	}
+	double scale = mlt_frame_resolution_scale(frame);
+	rect.x *= scale;
+	rect.y *= scale;
+	rect.w *= scale;
+	rect.h *= scale;
 	char* graph_type = mlt_properties_get( filter_properties, "type" );
 	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
 	int fill = mlt_properties_get_int( filter_properties, "fill" );
@@ -203,7 +208,7 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg )
 	}
 
 	setup_graph_painter( p, r, filter_properties );
-	setup_graph_pen( p, r, filter_properties );
+	setup_graph_pen( p, r, filter_properties, scale );
 
 	int bands = mlt_properties_get_int( filter_properties, "bands" );
 	if ( bands == 0 ) {

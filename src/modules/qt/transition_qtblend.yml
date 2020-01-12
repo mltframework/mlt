@@ -50,6 +50,7 @@ parameters:
     minimum: 0
     maximum: 360
     mutable: yes
+    unit: degrees
 
   - identifier: rotate_center
     title: Rotate from center

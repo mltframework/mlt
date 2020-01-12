@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Meltytech, LLC
+ * Copyright (c) 2015-2020 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -48,9 +48,9 @@ void setup_graph_painter( QPainter& p, QRectF& r, mlt_properties filter_properti
 /*
  * Apply the "thickness", "gorient" and "color.x" parameters to the QPainter
  */
-void setup_graph_pen( QPainter& p, QRectF& r, mlt_properties filter_properties )
+void setup_graph_pen(QPainter& p, QRectF& r, mlt_properties filter_properties , double scale)
 {
-	int thickness = mlt_properties_get_int( filter_properties, "thickness" );
+	int thickness = mlt_properties_get_int( filter_properties, "thickness" ) * scale;
 	QString gorient = mlt_properties_get( filter_properties, "gorient" );
 	QVector<QColor> colors;
 	bool color_found = true;
