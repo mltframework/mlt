@@ -1,6 +1,6 @@
 /*
  * filter_charcoal.c -- charcoal filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -86,6 +86,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		float scale = mlt_properties_anim_get_double( properties, "scale" ,position, length);
 		float mix = mlt_properties_anim_get_double( properties, "mix", position, length);
 		int invert = mlt_properties_anim_get_int( properties, "invert", position, length);
+		double resolution_scale = mlt_frame_resolution_scale(frame);
+		if (resolution_scale != 1.0) {
+			x_scatter = MAX(1, lrint(x_scatter * resolution_scale));
+			y_scatter = MAX(1, lrint(y_scatter * resolution_scale));
+		}
 
 		// We'll process pixel by pixel
 		int x = 0;

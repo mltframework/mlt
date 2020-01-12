@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: charcoal
 title: Charcoal
@@ -9,3 +9,38 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+
+parameters:
+  - identifier: x_scatter
+    title: Line Width
+    type: integer
+    default: 1
+    minimum: 1
+    mutable: yes
+    unit: pixels
+
+  - identifier: y_scatter
+    title: Line Height
+    type: integer
+    default: 1
+    minimum: 1
+    mutable: yes
+    unit: pixels
+
+  - identifier: scale
+    title: Contrast
+    type: float
+    default: 1.5
+    mutable: yes
+
+  - identifier: mix
+    title: Color
+    type: float
+    default: 0
+    mutable: yes
+
+  - identifier: invert
+    title: Invert
+    type: boolean
+    default: 0
+    mutable: yes

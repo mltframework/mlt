@@ -1,6 +1,6 @@
 /*
  * filter_remover.c -- filter to interpolate pixels to cover an area
- * Copyright (c) 2018 Meltytech, LLC
+ * Copyright (c) 2018-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -140,7 +140,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		rect.y *= profile->height;
 		rect.h *= profile->height;
 	}
-	rect = constrain_rect( rect, profile->width, profile->height );
+	double scale = mlt_frame_resolution_scale(frame);
+	rect.x *= scale;
+	rect.y *= scale;
+	rect.w *= scale;
+	rect.h *= scale;
+	rect = constrain_rect( rect, profile->width * scale, profile->height * scale);
 	if ( rect.w < 1 || rect.h < 1 )
 	{
 		mlt_log_info( MLT_FILTER_SERVICE(filter), "rect invalid\n" );

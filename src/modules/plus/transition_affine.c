@@ -1,6 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -467,8 +467,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 	int normalised_width = profile->width;
 	int normalised_height = profile->height;
-
 	double consumer_ar = mlt_profile_sar( profile );
+	double resolution_scale = mlt_frame_resolution_scale(b_frame);
+
+	if (resolution_scale == 1.0)
+		resolution_scale = (double) *width / normalised_width;
 
 	if ( mirror && position > length / 2 )
 		position = abs( position - length );
@@ -480,7 +483,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		return error;
 
 	// Calculate the region now
-	mlt_rect result = {0, 0, normalised_width, normalised_height, 1.0};
+	mlt_rect result = {0, 0, normalised_width * resolution_scale, normalised_height * resolution_scale, 1.0};
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 
 	if (mlt_properties_get(properties, "geometry"))
@@ -516,6 +519,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		result.o = (result.o == DBL_MIN)? 1.0 : MIN(result.o, 1.0);
 	}
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
+	result.x *= resolution_scale;
+	result.y *= resolution_scale;
+	result.w *= resolution_scale;
+	result.h *= resolution_scale;
 
 	double geometry_w = result.w;
 	double geometry_h = result.h;
@@ -537,12 +544,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 
 	// Fetch the b frame image
-	result.w = ( result.w * *width / normalised_width );
-	result.h = ( result.h * *height / normalised_height );
-	result.x = ( result.x * *width / normalised_width );
-	result.y = ( result.y * *height / normalised_height );
-
-	if (mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
+	if (resolution_scale != 1.0 || mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
 		// Request b frame image size just what is needed.
 		b_width = result.w;
 		b_height = result.h;

@@ -87,6 +87,7 @@ parameters:
     minimum: 0
     default: 0
     mutable: yes
+    unit: pixels
 
   - identifier: oy
     title: Vertical offset
@@ -94,6 +95,7 @@ parameters:
     minimum: 0
     default: 0
     mutable: yes
+    unit: pixels
 
   - identifier: rotate_x
     title: Rotate on X axis
