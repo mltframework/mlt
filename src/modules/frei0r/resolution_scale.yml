@@ -1,0 +1,6 @@
+# This files contains a list of plugin parameters that are sensitive to the
+# image resolution. This only works for parameters with type F0R_PARAM_DOUBLE.
+# plugin:
+#   parameter#: scale factor in addition to mlt_frame_resolution_scale
+colorhalftone:
+  0: 1.0

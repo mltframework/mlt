@@ -1,6 +1,7 @@
 /*
  * frei0r_helper.c -- frei0r helper
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
+ * Copyright (C) 2009-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -105,7 +106,9 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 	int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads") : -1;
 	const char *service_name = mlt_properties_get(prop, "mlt_service");
 	int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
-
+	double scale = mlt_frame_resolution_scale(frame);
+	mlt_properties scale_map = mlt_properties_get_data(prop, "_resolution_scale", NULL);
+	
 	if (slice_count >= 0)
 		slice_count = CLAMP(slice_count, 0, mlt_slices_count_normal());
 
@@ -185,6 +188,11 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 					case F0R_PARAM_BOOL:
 					{
 						double t = mlt_properties_anim_get_double(prop, name, position, length);
+						if (scale != 1.0) {
+							double scale2 = mlt_properties_get_double(scale_map, name);
+							if (scale2 != 0.0)
+								t *= scale * scale2;
+						}
 						f0r_set_param_value(inst,&t,i);
 						break;
 					}

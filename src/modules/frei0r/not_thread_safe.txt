@@ -8,3 +8,4 @@ partik0l
 plasma
 tehRoxx0r
 vertigo
+colorhalftone

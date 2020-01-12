@@ -1,7 +1,7 @@
 /*
  * factory.c -- the factory method interfaces
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2019 Meltytech, LLC
+ * Copyright (C) 2009-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -335,7 +335,12 @@ static void* load_lib(mlt_profile profile, mlt_service_type type , void* handle,
 			param_name_map = mlt_properties_get_data(param_name_map, name, NULL);
 			mlt_properties_set_data(properties, "_param_name_map", param_name_map, 0, NULL, NULL);
 		}
-
+		param_name_map = mlt_properties_get_data(mlt_global_properties(), "frei0r.resolution_scale", NULL);
+		if (param_name_map) {
+			// Lookup my plugin in the map
+			param_name_map = mlt_properties_get_data(param_name_map, name, NULL);
+			mlt_properties_set_data(properties, "_resolution_scale", param_name_map, 0, NULL, NULL);
+		}
 		return ret;
 	} else {
 		mlt_log_error(NULL, "frei0r plugin \"%s\" is missing a function\n", name);
@@ -419,6 +424,11 @@ MLT_REPOSITORY
 	mlt_properties_set_data(mlt_global_properties(), "frei0r.param_name_map",
 		mlt_properties_parse_yaml(dirname), 0, (mlt_destructor) mlt_properties_close, NULL);
 
+	// Load a list of parameters impacted by consumer scale into global properties.
+	snprintf(dirname, PATH_MAX, "%s/frei0r/resolution_scale.yml", mlt_environment("MLT_DATA"));
+	mlt_properties_set_data(mlt_global_properties(), "frei0r.resolution_scale",
+		mlt_properties_parse_yaml(dirname), 0, (mlt_destructor) mlt_properties_close, NULL);
+	
 	while (dircount--) {
 
 		mlt_properties direntries = mlt_properties_new();
