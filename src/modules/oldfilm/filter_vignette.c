@@ -40,8 +40,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter ) ;
 		mlt_position pos = mlt_filter_get_position( filter, frame );
 		mlt_position len = mlt_filter_get_length2( filter, frame );
+		double scale = mlt_frame_resolution_scale(frame);
 
-		smooth = mlt_properties_anim_get_double( filter_props, "smooth", pos, len ) * 100.0;
+		smooth = mlt_properties_anim_get_double( filter_props, "smooth", pos, len ) * 100.0 * scale;
 		radius = mlt_properties_anim_get_double( filter_props, "radius", pos, len ) * *width;
 		cx = mlt_properties_anim_get_double( filter_props, "x", pos, len ) * *width;
 		cy = mlt_properties_anim_get_double( filter_props, "y", pos, len ) * *height;

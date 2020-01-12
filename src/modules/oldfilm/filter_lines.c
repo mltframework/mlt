@@ -46,6 +46,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		char buf[256];
 		char typebuf[256];
+
+		double scale = mlt_frame_resolution_scale(frame);
+		if (line_width > 1 && scale != 1.0)
+			line_width = MAX(2, lrint(line_width * scale));
 		
 		if ( line_width < 1 )
 			return 0;
