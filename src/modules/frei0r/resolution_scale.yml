@@ -4,3 +4,5 @@
 #   parameter#: scale factor in addition to mlt_frame_resolution_scale
 colorhalftone:
   0: 1.0
+IIRblur:
+  0: 1.7
