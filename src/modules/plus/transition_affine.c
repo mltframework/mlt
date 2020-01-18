@@ -468,7 +468,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int normalised_width = profile->width;
 	int normalised_height = profile->height;
 	double consumer_ar = mlt_profile_sar( profile );
-	double resolution_scale = mlt_frame_resolution_scale(b_frame);
+	double resolution_scale = mlt_frame_resolution_scale(a_frame);
 
 	if (resolution_scale == 1.0)
 		resolution_scale = (double) *width / normalised_width;
