@@ -15,7 +15,7 @@ description: >
 parameters:
   - identifier: rect
     title: Rectangle
-    type: geometry
+    type: rect
     description: >
       Keyframable rectangle specification.
     mutable: yes
