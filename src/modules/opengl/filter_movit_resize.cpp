@@ -1,6 +1,6 @@
 /*
  * filter_movit_resize.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2020 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,6 +79,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			rect.w *= profile->width;
 			rect.y *= profile->height;
 			rect.h *= profile->height;
+		} else if (profile && profile->width && profile->height) {
+			double scale = double(*width) / profile->width;
+			rect.x *= scale;
+			rect.w *= scale;
+			scale = double(*height) / profile->height;
+			rect.y *= scale;
+			rect.h *= scale;
 		}
 		if ( !mlt_properties_get_int( properties, "resize.fill" ) ) {
 			int x = mlt_properties_get_int( properties, "meta.media.width" );

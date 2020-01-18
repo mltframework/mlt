@@ -1,6 +1,6 @@
 /*
  * filter_movit_glow.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2020 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,8 +33,12 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	GlslManager::get_instance()->lock_service( frame );
-	mlt_properties_set_double( properties, "_movit.parms.float.radius",
-		mlt_properties_anim_get_double( properties, "radius", position, length ) );
+	double radius = mlt_properties_anim_get_double( properties, "radius", position, length );
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+	if (profile && profile->width) {
+		radius *= double(*width) / profile->width;
+	}
+	mlt_properties_set_double( properties, "_movit.parms.float.radius", radius );
 	mlt_properties_set_double( properties, "_movit.parms.float.blurred_mix_amount",
 		mlt_properties_anim_get_double( properties, "blur_mix", position, length ) );
 	mlt_properties_set_double( properties, "_movit.parms.float.highlight_cutoff",

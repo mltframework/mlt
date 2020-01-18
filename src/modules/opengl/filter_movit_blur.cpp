@@ -1,6 +1,6 @@
 /*
  * filter_movit_blur.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2020 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,10 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	double radius = mlt_properties_anim_get_double( properties, "radius",
 		mlt_filter_get_position( filter, frame ),
 		mlt_filter_get_length2( filter, frame ) );
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+	if (profile && profile->width) {
+		radius *= double(*width) / profile->width;
+	}
 	mlt_properties_set_double( properties, "_movit.parms.float.radius",
 		radius );
 	GlslManager::get_instance()->unlock_service( frame );
