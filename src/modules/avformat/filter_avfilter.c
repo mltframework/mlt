@@ -1,6 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 2016-2019 Meltytech, LLC
+ * Copyright (C) 2016-2020 Meltytech, LLC
  * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -114,12 +114,13 @@ static mlt_image_format get_supported_image_format( mlt_image_format format )
 	}
 }
 
-static void set_avfilter_options( mlt_filter filter )
+static void set_avfilter_options( mlt_filter filter, double scale)
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
 	int i;
 	int count = mlt_properties_count( filter_properties );
+	mlt_properties scale_map = mlt_properties_get_data(filter_properties, "_resolution_scale", NULL);
 
 	for( i = 0; i < count; i++ )
 	{
@@ -130,6 +131,15 @@ static void set_avfilter_options( mlt_filter filter )
 			const char* value = mlt_properties_get_value( filter_properties, i );
 			if( opt && value )
 			{
+				if (scale != 1.0) {
+					double scale2 = mlt_properties_get_double(scale_map, opt->name);
+					if (scale2 != 0.0) {
+						double x = mlt_properties_get_double(filter_properties, param_name);
+						x *= scale * scale2;
+						mlt_properties_set_double(filter_properties, "_avfilter_temp", x);
+						value = mlt_properties_get(filter_properties, "_avfilter_temp");
+					}
+				}
 				av_opt_set( pdata->avfilter_ctx->priv, opt->name, value, 0 );
 			}
 		}
@@ -243,7 +253,7 @@ static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, 
 		mlt_log_error( filter, "Cannot create audio filter\n" );
 		goto fail;
 	}
-	set_avfilter_options( filter );
+	set_avfilter_options( filter, 1.0 );
 	ret = avfilter_init_str(  pdata->avfilter_ctx, NULL );
 	if( ret < 0 ) {
 		mlt_log_error( filter, "Cannot init filter\n" );
@@ -276,7 +286,7 @@ fail:
 }
 
 
-static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, int width, int height )
+static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, int width, int height, double resolution_scale )
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
@@ -380,7 +390,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 		mlt_log_error( filter, "Cannot create video filter\n" );
 		goto fail;
 	}
-	set_avfilter_options( filter );
+	set_avfilter_options( filter, resolution_scale );
 
 	if ( !strcmp( "lut3d", pdata->avfilter->name ) ) {
 #if defined(__GLIBC__) || defined(__APPLE__) || (__FreeBSD__)
@@ -676,7 +686,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if( pdata->reset || pdata->format != *format || pdata->width != *width || pdata->height != *height )
 	{
-		init_image_filtergraph( filter, *format, *width, *height );
+		double scale = 1.0;
+		if (profile && profile->width) {
+			scale = (double) *width / profile->width;
+		}
+		init_image_filtergraph( filter, *format, *width, *height, scale );
 		pdata->reset = 0;
 	}
 
@@ -886,6 +900,13 @@ mlt_filter filter_avfilter_init( mlt_profile profile, mlt_service_type type, con
 		filter->child = pdata;
 
 		mlt_events_listen( MLT_FILTER_PROPERTIES(filter), filter, "property-changed", (mlt_listener)property_changed );
+
+		mlt_properties param_name_map = mlt_properties_get_data(mlt_global_properties(), "avfilter.resolution_scale", NULL);
+		if (param_name_map) {
+			// Lookup my plugin in the map
+			param_name_map = mlt_properties_get_data(param_name_map, id, NULL);
+			mlt_properties_set_data(MLT_FILTER_PROPERTIES(filter), "_resolution_scale", param_name_map, 0, NULL, NULL);
+		}
 	}
 	else
 	{

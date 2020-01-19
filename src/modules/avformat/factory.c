@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -436,6 +436,12 @@ MLT_REPOSITORY
 	char dirname[PATH_MAX];
 	snprintf( dirname, PATH_MAX, "%s/avformat/blacklist.txt", mlt_environment( "MLT_DATA" ) );
 	mlt_properties blacklist = mlt_properties_load( dirname );
+
+	// Load a list of parameters impacted by consumer scale into global properties.
+	snprintf(dirname, PATH_MAX, "%s/avformat/resolution_scale.yml", mlt_environment("MLT_DATA"));
+	mlt_properties_set_data(mlt_global_properties(), "avfilter.resolution_scale",
+		mlt_properties_parse_yaml(dirname), 0, (mlt_destructor) mlt_properties_close, NULL);
+
 	avfilter_register_all();
 	AVFilter *f = NULL;
 	while ( ( f = (AVFilter*)avfilter_next( f ) ) ) {
