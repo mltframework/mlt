@@ -26,7 +26,7 @@ include config.mak
 
 install:
 	install -d "$(DESTDIR)$(prefix)/bin"
-	install -d "$(DESTDIR)$(prefix)/include"
+	install -d "$(DESTDIR)$(includedir)"
 	install -d "$(DESTDIR)$(libdir)"
 	install -d "$(DESTDIR)$(moduledir)"
 ifeq ($(extra_versioning), true)
@@ -52,7 +52,7 @@ uninstall:
 	for subdir in $$list; do \
 		$(MAKE) DESTDIR=$(DESTDIR) -C $$subdir $@ || exit 1; \
 	done
-	rm -rf "$(DESTDIR)$(prefix)/include/mlt"
+	rm -rf "$(DESTDIR)$(includedir)/mlt"
 	rm -rf "$(DESTDIR)$(mltdatadir)"
 ifeq ($(compat_dirs), true)
 	rm -rf "$(DESTDIR)$(prefix)/share/mlt"

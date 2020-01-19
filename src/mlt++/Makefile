@@ -87,8 +87,8 @@ install:
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME) ; \
 	fi
-	$(INSTALL) -d "$(DESTDIR)$(prefix)/include/mlt++"
-	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(prefix)/include/mlt++"
+	$(INSTALL) -d "$(DESTDIR)$(includedir)/mlt++"
+	$(INSTALL) -m 644 $(HEADERS) "$(DESTDIR)$(includedir)/mlt++"
 
 uninstall:
 	rm -f "$(DESTDIR)$(libdir)/$(TARGET)"
@@ -105,7 +105,7 @@ uninstall:
 		fi ; \
 		rm -f "$(DESTDIR)$(libdir)/libmlt++.def" ; \
 	fi
-	rm -rf "$(DESTDIR)$(prefix)/include/mlt++"
+	rm -rf "$(DESTDIR)$(includedir)/mlt++"
 
 ifneq ($(wildcard .depend),)
 include .depend

@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "soversion=3" > config.mak
-echo "mlt++	-I$prefix/include -I$prefix/include/mlt++ -D_REENTRANT	-L$libdir -lmlt++" >> ../../packages.dat
+echo "mlt++	-I$includedir -I$includedir/mlt++ -D_REENTRANT	-L$libdir -lmlt++" >> ../../packages.dat
 
 WARNINGS="-W -Wwrite-strings -Wcast-qual -Wpointer-arith -Wcast-align -Wredundant-decls"
 
