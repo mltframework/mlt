@@ -59,4 +59,6 @@ extern mlt_profile mlt_profile_clone( mlt_profile profile );
 extern mlt_properties mlt_profile_list( );
 extern void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer );
 extern char *mlt_profile_lumas_dir( mlt_profile profile );
+extern double mlt_profile_scale_width( mlt_profile profile, int width );
+extern double mlt_profile_scale_height( mlt_profile profile, int height );
 #endif

@@ -492,3 +492,29 @@ char *mlt_profile_lumas_dir( mlt_profile profile )
 	}
 	return mlt_environment( "MLT_LUMAS_DIR" );
 }
+
+/** Get the width scale factor.
+ *
+ * \public \memberof mlt_profile_s
+ * \param profile the profile to reference
+ * \param width the number of pixels the consumer requested
+ * \return the scale factor for the width
+ */
+
+double mlt_profile_scale_width(mlt_profile profile, int width)
+{
+	return (profile && profile->width)? (double) width / profile->width : 1.0;
+}
+
+/** Get the height scale factor.
+ *
+ * \public \memberof mlt_profile_s
+ * \param profile the profile to reference
+ * \param height the number of pixels the consumer requested
+ * \return the scale factor for the height
+ */
+
+double mlt_profile_scale_height(mlt_profile profile, int height)
+{
+	return (profile && profile->width)? (double) height / profile->height : 1.0;
+}

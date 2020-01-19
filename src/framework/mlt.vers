@@ -549,4 +549,6 @@ MLT_6.18.0 {
 MLT_6.20.0 {
   global:
     mlt_frame_resolution_scale;
+    mlt_profile_scale_width;
+    mlt_profile_scale_height;
 } MLT_6.18.0;
