@@ -130,8 +130,8 @@ install:
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(SONAME) ; \
 		ln -sf $(TARGET) $(DESTDIR)$(libdir)/$(NAME) ; \
 	fi
-	install -d "$(DESTDIR)$(prefix)/include/mlt/framework"
-	install -m 644 $(INCS) "$(DESTDIR)$(prefix)/include/mlt/framework"
+	install -d "$(DESTDIR)$(includedir)/mlt/framework"
+	install -m 644 $(INCS) "$(DESTDIR)$(includedir)/mlt/framework"
 	install -d "$(DESTDIR)$(mltdatadir)"
 	install -m 644 metaschema.yaml "$(DESTDIR)$(mltdatadir)"
 
@@ -150,7 +150,7 @@ uninstall:
 		fi ; \
 		rm -f "$(DESTDIR)$(libdir)/libmlt.def" ; \
 	fi
-	rm -rf "$(DESTDIR)$(prefix)/include/mlt/framework"
+	rm -rf "$(DESTDIR)$(includedir)/mlt/framework"
 	rm -f "$(DESTDIR)$(mltdatadir)/metaschema.yaml"
 
 ifneq ($(wildcard .depend),)

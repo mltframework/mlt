@@ -18,6 +18,7 @@ General build options:
   --libdir=directory         - lib directory (default: $prefix/lib)
   --datadir=directory        - data directory (default: $prefix/share)
   --mandir=directory         - man documentation directory (default: $prefix/share/man)
+  --includedir=directory     - headers directory (default: $prefix/include)
   --rename-melt              - Give melt executable a different name (it will not be versioned)
   --enable-extra-versioning  - Version melt and the data and modules directories
   --enable-gpl               - Enable GPLv2 components
@@ -58,6 +59,7 @@ build_config()
 		echo "bindir=$prefix/bin"
 		echo "datadir=$datadir"
 		echo "mandir=$mandir"
+		echo "includedir=$includedir"
 		echo "extra_versioning=$extra_versioning"
 		echo "melt_noversion=$melt_noversion"
 		echo "targetos=$targetos"
@@ -178,7 +180,7 @@ build_pkgconfig()
 	(
 		echo exec_prefix=$prefix
 		echo libdir=$libdir
-		echo includedir=$prefix/include
+		echo includedir=$includedir
 		echo datadir=$datadir
 		echo mandir=$mandir
 		echo version=$version
@@ -194,7 +196,7 @@ build_pkgconfig()
 	(
 		echo exec_prefix=$prefix
 		echo libdir=$libdir
-		echo includedir=$prefix/include
+		echo includedir=$includedir
 		echo datadir=$datadir
 		echo mandir=$mandir
 		echo version=$version
@@ -229,6 +231,7 @@ export amd64=false
 export extra_versioning=false
 export melt_noversion=false
 export windeploy=true
+export includedir=$includedir
 
 # Define the compiler used in tests (gcc is not installed everywhere)
 : ${CC:=gcc}
@@ -264,6 +267,7 @@ do
 		--libdir=* )			libdir="${i#--libdir=}" ;;
 		--datadir=* )			datadir="${i#--datadir=}" ;;
 		--mandir=* )			mandir="${i#--mandir=}" ;;
+		--includedir=* )		includedir="${i#--includedir=}" ;;
 		--rename-melt=* )		meltname="${i#--rename-melt=}"; melt_noversion=true ;;
 		--enable-extra-versioning )	extra_versioning=true ;;
 		--enable-debug )		optimisations=false ;;
@@ -322,6 +326,7 @@ export LIBSUF
 [ "$libdir" = "" ] && libdir=$prefix/lib
 [ "$datadir" = "" ] && datadir=$prefix/share
 [ "$mandir" = "" ] && mandir=$prefix/share/man
+[ "$includedir" = "" ] && includedir=$prefix/include
 
 export unversionedmoduledir=${libdir}/mlt
 export unversionedmltdatadir=${datadir}/mlt
