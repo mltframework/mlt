@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2018 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -114,7 +114,6 @@ extern int mlt_frame_is_test_card( mlt_frame self );
 extern int mlt_frame_is_test_audio( mlt_frame self );
 extern double mlt_frame_get_aspect_ratio( mlt_frame self );
 extern int mlt_frame_set_aspect_ratio( mlt_frame self, double value );
-extern double mlt_frame_resolution_scale( mlt_frame self );
 extern mlt_position mlt_frame_get_position( mlt_frame self );
 extern mlt_position mlt_frame_original_position( mlt_frame self );
 extern int mlt_frame_set_position( mlt_frame self, mlt_position value );

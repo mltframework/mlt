@@ -362,7 +362,7 @@ static int get_image_b( mlt_frame b_frame, uint8_t **image, mlt_image_format *fo
 		mlt_frame_set_aspect_ratio( b_frame, mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) ) );
 
 	mlt_properties_pass_list( b_props, a_props,
-		"consumer_deinterlace, deinterlace_method, consumer_tff, consumer_color_trc, consumer_channel_layout, consumer_scale" );
+		"consumer_deinterlace, deinterlace_method, consumer_tff, consumer_color_trc, consumer_channel_layout" );
 
 	return mlt_frame_get_image( b_frame, image, format, width, height, writable );
 }

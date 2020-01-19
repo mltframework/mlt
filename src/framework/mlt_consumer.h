@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2015 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -82,8 +82,6 @@
  * \properties \em audio_off set non-zero to disable audio processing
  * \properties \em video_off set non-zero to disable video processing
  * \properties \em drop_count the number of video frames not rendered since starting consumer
- * \properties \em scale a scale factor services should apply to pixel
- *   unit values to conform property values to the current consumer profile resolution, defaults to 1.0
  */
 
 struct mlt_consumer_s

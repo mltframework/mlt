@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2019 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -133,27 +133,6 @@ double mlt_frame_get_aspect_ratio( mlt_frame self )
 int mlt_frame_set_aspect_ratio( mlt_frame self, double value )
 {
 	return mlt_properties_set_double( MLT_FRAME_PROPERTIES( self ), "aspect_ratio", value );
-}
-
-/** Get the consumer preview resolution scale factor.
- *
- * If a composition is authored at a particular resolution and has some
- * property values expressed in terms of pixels, then to preview at a different
- * resolution services needs to know how to scale the pixels values. This
- * scale factored is expressed using the scale property on the consumer.
- * This function provides convenient access to that scale factor for the
- * services.
- * \public \memberof  mlt_frame_s
- * \param self a frame
- * \return the scale factor to apply to pixel resolution values
- */
-
-double mlt_frame_resolution_scale(mlt_frame self)
-{
-	double result = mlt_properties_get_double(MLT_FRAME_PROPERTIES(self), "consumer_scale");
-	if (result == 0.0)
-		result = 1.0;
-	return result;
 }
 
 /** Get the time position of this frame.

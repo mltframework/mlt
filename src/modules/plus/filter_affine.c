@@ -79,7 +79,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_frame_set_position( a_frame, in + position );
 
 		// Set the rescale interpolation to match the frame
-		mlt_properties_pass_list(MLT_FRAME_PROPERTIES(a_frame), frame_properties, "rescale.interp, consumer_scale");
+		mlt_properties_set( MLT_FRAME_PROPERTIES( a_frame ), "rescale.interp", mlt_properties_get( frame_properties, "rescale.interp" ) );
 
 		// Special case - aspect_ratio = 0
 		if ( mlt_frame_get_aspect_ratio( frame ) == 0 )
