@@ -221,7 +221,8 @@ static int load_properties( mlt_properties self, const char *filename )
 			if ( temp[ 0 ] == '.' )
 			{
 				char temp2[ 1024 ];
-				sprintf( temp2, "%s%s", last, temp );
+				strcpy( temp2, last );
+				strncat( temp2, temp, sizeof(temp2) - strlen(temp2) - 1 );
 				strcpy( temp, temp2 );
 			}
 			else if ( strchr( temp, '=' ) )
