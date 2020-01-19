@@ -115,6 +115,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	mlt_filter filter = mlt_frame_pop_service( frame );
 	char *vectors = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "vectors" );
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
+
 	*format = mlt_image_yuv422;
 	if (vectors)
 		*format= mlt_image_rgb24;

@@ -334,6 +334,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	uint8_t* vs_image = NULL;
 	VSPixelFormat vs_format = PF_NONE;
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
 
 	// VS only works on progressive frames
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
