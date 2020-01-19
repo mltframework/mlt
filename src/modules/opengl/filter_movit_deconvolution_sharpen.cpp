@@ -36,12 +36,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	int matrix_size = mlt_properties_anim_get_int( properties, "matrix_size", position, length );
 	double circle_radius = mlt_properties_anim_get_double( properties, "circle_radius", position, length );
 	double gaussian_radius = mlt_properties_anim_get_double( properties, "gaussian_radius", position, length );
-	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-	if (profile && profile->width) {
-		double scale = double(*width) / profile->width;
-		circle_radius *= scale;
-		gaussian_radius *= scale;
-	}
+	double scale = mlt_profile_scale_width(mlt_service_profile(MLT_FILTER_SERVICE(filter)), *width);
+	circle_radius *= scale;
+	gaussian_radius *= scale;
 	mlt_properties_set_int( properties, "_movit.parms.int.matrix_size", matrix_size );
 	mlt_properties_set_double( properties, "_movit.parms.float.circle_radius", circle_radius );
 	mlt_properties_set_double( properties, "_movit.parms.float.gaussian_radius", gaussian_radius );

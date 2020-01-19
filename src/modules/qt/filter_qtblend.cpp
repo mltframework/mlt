@@ -82,11 +82,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			rect.w *= normalised_width;
 			rect.h *= normalised_height;
 		}
-		double resolution_scale = mlt_frame_resolution_scale(frame);
-		rect.x *= resolution_scale;
-		rect.y *= resolution_scale;
-		rect.w *= resolution_scale;
-		rect.h *= resolution_scale;
+		double scale = mlt_profile_scale_width(profile, *width);
+		rect.x *= scale;
+		rect.w *= scale;
+		scale = mlt_profile_scale_height(profile, *height);
+		rect.y *= scale;
+		rect.h *= scale;
 		transform.translate(rect.x, rect.y);
 		opacity = rect.o;
 		hasAlpha = true;

@@ -254,7 +254,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if( !error )
 	{
-		bool scale = mlt_frame_resolution_scale(frame);
+		double scale = mlt_profile_scale_width(profile, *width);
 		if ( geom_str.contains('%') )
 		{
 			rect.x *= *width;
@@ -264,10 +264,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		}
 		else
 		{
+			double scale_height = mlt_profile_scale_height(profile, *height);
 			rect.x *= scale;
-			rect.y *= scale;
+			rect.y *= scale_height;
 			rect.w *= scale;
-			rect.h *= scale;
+			rect.h *= scale_height;
 		}
 
 		QImage qimg( *width, *height, QImage::Format_ARGB32 );

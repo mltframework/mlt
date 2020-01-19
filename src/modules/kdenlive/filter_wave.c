@@ -20,6 +20,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,9 +95,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			factor = mlt_properties_anim_get_double( properties, "wave", f_pos, f_len );
 		}
-		factor *= mlt_frame_resolution_scale(frame);
 
-		if (factor != 0) 
+		mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+		factor *= mlt_profile_scale_width(profile, *width);
+
+		if (factor > 0.0) 
 		{
 			int image_size = *width * (*height) * 2;
 			uint8_t *dst = mlt_pool_alloc (image_size);

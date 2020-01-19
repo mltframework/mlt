@@ -35,14 +35,12 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_filter_get_position( filter, frame ),
 		mlt_filter_get_length2( filter, frame ) );
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-	if (profile && profile->width) {
-		radius *= double(*width) / profile->width;
-	}
-	mlt_properties_set_double( properties, "_movit.parms.float.radius",
-		radius );
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
+	radius *= mlt_profile_scale_width(profile, *width);
+	mlt_properties_set_double( properties, "_movit.parms.float.radius",
+		radius );
 	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
 	GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new BlurEffect );
 	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );

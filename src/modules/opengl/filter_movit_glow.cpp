@@ -34,10 +34,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	GlslManager::get_instance()->lock_service( frame );
 	double radius = mlt_properties_anim_get_double( properties, "radius", position, length );
-	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-	if (profile && profile->width) {
-		radius *= double(*width) / profile->width;
-	}
+	radius *= mlt_profile_scale_width(mlt_service_profile(MLT_FILTER_SERVICE(filter)), *width);
 	mlt_properties_set_double( properties, "_movit.parms.float.radius", radius );
 	mlt_properties_set_double( properties, "_movit.parms.float.blurred_mix_amount",
 		mlt_properties_anim_get_double( properties, "blur_mix", position, length ) );

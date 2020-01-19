@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,9 +79,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		int diffpic = 0;
 		if ( delta ) {
-			double scale = mlt_frame_resolution_scale(frame);
-			if (scale != 1.0)
-				delta *= scale;
+			mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+			delta *= mlt_profile_scale_width(profile, *width);
 			diffpic = rand() % delta * 2 - delta;
 		}
 		int brightdelta = 0;

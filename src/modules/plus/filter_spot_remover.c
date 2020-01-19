@@ -140,10 +140,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		rect.y *= profile->height;
 		rect.h *= profile->height;
 	}
-	double scale = mlt_frame_resolution_scale(frame);
+	double scale = mlt_profile_scale_width(profile, *width);
 	rect.x *= scale;
-	rect.y *= scale;
 	rect.w *= scale;
+	scale = mlt_profile_scale_height(profile, *height);
+	rect.y *= scale;
 	rect.h *= scale;
 	rect = constrain_rect( rect, profile->width * scale, profile->height * scale);
 	if ( rect.w < 1 || rect.h < 1 )

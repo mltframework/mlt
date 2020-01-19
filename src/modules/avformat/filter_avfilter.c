@@ -686,10 +686,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if( pdata->reset || pdata->format != *format || pdata->width != *width || pdata->height != *height )
 	{
-		double scale = 1.0;
-		if (profile && profile->width) {
-			scale = (double) *width / profile->width;
-		}
+		double scale = mlt_profile_scale_width(profile, *width);
 		init_image_filtergraph( filter, *format, *width, *height, scale );
 		pdata->reset = 0;
 	}

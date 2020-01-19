@@ -106,7 +106,7 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 	int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads") : -1;
 	const char *service_name = mlt_properties_get(prop, "mlt_service");
 	int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
-	double scale = mlt_frame_resolution_scale(frame);
+	double scale = mlt_profile_scale_width(mlt_service_profile(service), *width);
 	mlt_properties scale_map = mlt_properties_get_data(prop, "_resolution_scale", NULL);
 	
 	if (slice_count >= 0)

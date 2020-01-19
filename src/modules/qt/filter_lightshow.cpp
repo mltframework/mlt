@@ -216,12 +216,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			rect.w *= *width;
 			rect.y *= *height;
 			rect.h *= *height;
+		} else {
+			mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+			double scale = mlt_profile_scale_width(profile, *width);
+			rect.x *= scale;
+			rect.w *= scale;
+			scale = mlt_profile_scale_height(profile, *height);
+			rect.y *= scale;
+			rect.h *= scale;
 		}
-		double scale = mlt_frame_resolution_scale(frame);
-		rect.x *= scale;
-		rect.y *= scale;
-		rect.w *= scale;
-		rect.h *= scale;
 
 		// Draw the light
 		if( !error ) {

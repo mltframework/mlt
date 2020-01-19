@@ -256,11 +256,13 @@ static void paint_waveform( QPainter& p, QRectF& rect, int16_t* audio, int sampl
 	}
 }
 
-static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, int16_t* audio, int channels, int samples )
+static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg,
+	int16_t* audio, int channels, int samples, int width, int height )
 {
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 	int show_channel = mlt_properties_get_int( filter_properties, "show_channel" );
 	int fill = mlt_properties_get_int( filter_properties, "fill" );
 	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
@@ -270,10 +272,11 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg, in
 		rect.y *= qimg->height();
 		rect.h *= qimg->height();
 	}
-	double scale = mlt_frame_resolution_scale(frame);
+	double scale = mlt_profile_scale_width(profile, width);
 	rect.x *= scale;
-	rect.y *= scale;
 	rect.w *= scale;
+	scale = mlt_profile_scale_height(profile, height);
+	rect.y *= scale;
 	rect.h *= scale;
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
@@ -344,7 +347,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if( !error ) {
 			QImage qimg( *width, *height, QImage::Format_ARGB32 );
 			convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
-			draw_waveforms( filter, frame, &qimg, audio->buffer, audio->channels, audio->samples );
+			draw_waveforms( filter, frame, &qimg, audio->buffer, audio->channels, audio->samples, *width, *height );
 			convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
 		}
 	}

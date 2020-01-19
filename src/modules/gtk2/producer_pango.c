@@ -399,7 +399,8 @@ static void refresh_image( producer_pango self, mlt_frame frame, int width, int 
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
 	// Get producer properties
-	double scale = mlt_frame_resolution_scale(frame);
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(producer));
+	double scale = mlt_profile_scale_width(profile, width);
 	char *fg = mlt_properties_get( producer_props, "fgcolour" );
 	char *bg = mlt_properties_get( producer_props, "bgcolour" );
 	char *ol = mlt_properties_get( producer_props, "olcolour" );

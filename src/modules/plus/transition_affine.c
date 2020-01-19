@@ -468,10 +468,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int normalised_width = profile->width;
 	int normalised_height = profile->height;
 	double consumer_ar = mlt_profile_sar( profile );
-	double resolution_scale = mlt_frame_resolution_scale(a_frame);
-
-	if (resolution_scale == 1.0)
-		resolution_scale = (double) *width / normalised_width;
 
 	if ( mirror && position > length / 2 )
 		position = abs( position - length );
@@ -483,7 +479,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		return error;
 
 	// Calculate the region now
-	mlt_rect result = {0, 0, normalised_width * resolution_scale, normalised_height * resolution_scale, 1.0};
+	double scale_width = mlt_profile_scale_width(profile, *width);
+	double scale_height = mlt_profile_scale_width(profile, *height);
+	mlt_rect result = {0, 0, normalised_width * scale_width, normalised_height * scale_height, 1.0};
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 
 	if (mlt_properties_get(properties, "geometry"))
@@ -519,10 +517,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		result.o = (result.o == DBL_MIN)? 1.0 : MIN(result.o, 1.0);
 	}
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
-	result.x *= resolution_scale;
-	result.y *= resolution_scale;
-	result.w *= resolution_scale;
-	result.h *= resolution_scale;
+	result.x *= scale_width;
+	result.y *= scale_height;
+	result.w *= scale_width;
+	result.h *= scale_height;
 
 	double geometry_w = result.w;
 	double geometry_h = result.h;
@@ -544,7 +542,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 
 	// Fetch the b frame image
-	if (resolution_scale != 1.0 || mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
+	if (scale_width > 0.0 || scale_height > 0.0 || mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
 		// Request b frame image size just what is needed.
 		b_width = result.w;
 		b_height = result.h;

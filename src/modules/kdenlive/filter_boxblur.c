@@ -20,6 +20,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,9 +115,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		factor = mlt_properties_anim_get_double( properties, "blur", position, length );
 	}
 	
-	double resolution_scale = mlt_frame_resolution_scale(frame);
-	boxw = (unsigned int)(factor * hori * resolution_scale);
-	boxh = (unsigned int)(factor * vert * resolution_scale);
+	boxw = (unsigned int)(factor * hori);
+	boxh = (unsigned int)(factor * vert);
 
 	if ( boxw == 0 && boxh == 0 )
 	{
@@ -128,15 +128,20 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Get the image
 		*format = mlt_image_rgb24a;
 		int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
-
+		
 		// Only process if we have no error and a valid colour space
 		if ( error == 0 )
 		{
-			int size = mlt_image_format_size( *format, *width, *height, NULL );
-			int32_t *rgba = mlt_pool_alloc( 4 * size );
-			PreCompute( *image, rgba, *width, *height );
-			DoBoxBlur( *image, rgba, *width, *height, MAX(1, boxw), MAX(1, boxh) );
-			mlt_pool_release( rgba );
+			mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+			boxw *= mlt_profile_scale_width(profile, *width);
+			boxh *= mlt_profile_scale_height(profile, *height);
+			if (boxw || boxh) {
+				int size = mlt_image_format_size( *format, *width, *height, NULL );
+				int32_t *rgba = mlt_pool_alloc( 4 * size );
+				PreCompute( *image, rgba, *width, *height );
+				DoBoxBlur( *image, rgba, *width, *height, MAX(1, boxw), MAX(1, boxh) );
+				mlt_pool_release( rgba );
+			}
 		}
 	}
 	return error;

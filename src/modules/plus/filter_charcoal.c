@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,10 +87,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		float scale = mlt_properties_anim_get_double( properties, "scale" ,position, length);
 		float mix = mlt_properties_anim_get_double( properties, "mix", position, length);
 		int invert = mlt_properties_anim_get_int( properties, "invert", position, length);
-		double resolution_scale = mlt_frame_resolution_scale(frame);
-		if (resolution_scale != 1.0) {
-			x_scatter = MAX(1, lrint(x_scatter * resolution_scale));
-			y_scatter = MAX(1, lrint(y_scatter * resolution_scale));
+		mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+		double scale_x = mlt_profile_scale_width(profile, *width);
+		double scale_y = mlt_profile_scale_height(profile, *height);
+		if (scale_x > 0.0 || scale_y > 0.0) {
+			x_scatter = MAX(1, lrint(x_scatter * scale_x));
+			y_scatter = MAX(1, lrint(y_scatter * scale_y));
 		}
 
 		// We'll process pixel by pixel
