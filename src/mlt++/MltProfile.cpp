@@ -1,7 +1,6 @@
 /**
  * MltProfile.cpp - MLT Wrapper
- * Copyright (C) 2008-2016 Meltytech, LLC
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2008-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -190,4 +189,14 @@ void Profile::set_frame_rate( int numerator, int denominator )
 void Profile::set_explicit( int boolean )
 {
 	instance->is_explicit = boolean;
+}
+
+double Profile::scale_width(int width)
+{
+	return mlt_profile_scale_width(instance, width);
+}
+
+double Profile::scale_height(int height)
+{
+	return mlt_profile_scale_height(instance, height);
 }

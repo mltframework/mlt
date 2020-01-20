@@ -1,7 +1,6 @@
 /**
  * MltProfile.h - MLT Wrapper
- * Copyright (C) 2008-2016 Meltytech, LLC
- * Author: Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2008-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -72,6 +71,8 @@ namespace Mlt
 			void set_colorspace( int colorspace );
 			void set_frame_rate( int numerator, int denominator );
 			void set_explicit( int boolean );
+			double scale_width( int width );
+			double scale_height( int height );
 	};
 }
 

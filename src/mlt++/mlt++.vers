@@ -565,8 +565,8 @@ MLTPP_6.14.0 {
 } MLTPP_6.10.0;
 
 MLTPP_6.18.0 {
-global:
-  extern "C++" {
+  global:
+    extern "C++" {
       "Mlt::Filter::Filter()";
       "Mlt::Filter::Filter(Mlt::Filter const&)";
       "Mlt::Filter::operator=(Mlt::Filter const&)";
@@ -579,5 +579,13 @@ global:
       "Mlt::Transition::Transition()";
       "Mlt::Transition::Transition(Mlt::Transition const&)";
       "Mlt::Transition::operator=(Mlt::Transition const&)";
-  };
+    };
 } MLTPP_6.14.0;
+
+MLTPP_6.20.0 {
+  global:
+    extern "C++" {
+      "Mlt::Profile::scale_width(int)";
+      "Mlt::Profile::scale_height(int)";
+    };
+} MLTPP_6.18.0;
