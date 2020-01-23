@@ -1243,7 +1243,8 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 				}
 				// Instantiate the consumer
 				char *id = trim( mlt_properties_get( properties, "mlt_service" ) );
-				context->consumer = mlt_factory_consumer( context->consumer_profile, id, resource );
+				mlt_profile profile = context->consumer_profile? context->consumer_profile : context->profile;
+				context->consumer = mlt_factory_consumer( profile, id, resource );
 				if ( context->consumer )
 				{
 					// Track this consumer
