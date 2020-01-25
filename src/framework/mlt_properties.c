@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -657,6 +657,28 @@ int mlt_properties_pass_list( mlt_properties self, mlt_properties that, const ch
 	return 0;
 }
 
+static int is_valid_expression(mlt_properties self, const char* value)
+{
+	int result = *value != '\0';
+	char id[255];
+
+	while (*value != '\0') {
+		size_t length = strcspn(value, "+-*/");
+
+		// Get the identifier
+		length = MIN(sizeof(id) - 1, length);
+		strncpy(id, value, length);
+		id[length] = '\0';
+		value += length;
+
+		// Determine if the property exists
+		if (!isdigit(id[0]) && !mlt_properties_get(self, id)) {
+			result = 0;
+			break;
+		}
+	}
+	return result;
+}
 
 /** Set a property to a string.
  *
@@ -692,14 +714,7 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 		error = mlt_property_set_string( property, value );
 		mlt_properties_do_mirror( self, name );
 	}
-	else if ( *value != '@' )
-	{
-		error = mlt_property_set_string( property, value );
-		mlt_properties_do_mirror( self, name );
-		if ( !strcmp( name, "properties" ) )
-			mlt_properties_preset( self, value );
-	}
-	else if ( value[ 0 ] == '@' )
+	else if ( value[ 0 ] == '@' && is_valid_expression(self, &value[1]) )
 	{
 		double total = 0;
 		double current = 0;
@@ -710,9 +725,10 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 
 		while ( *value != '\0' )
 		{
-			int length = strcspn( value, "+-*/" );
+			size_t length = strcspn( value, "+-*/" );
 
 			// Get the identifier
+			length = MIN(sizeof(id) - 1, length);
 			strncpy( id, value, length );
 			id[ length ] = '\0';
 			value += length;
@@ -756,6 +772,13 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 
 		error = mlt_property_set_double( property, total );
 		mlt_properties_do_mirror( self, name );
+	}
+	else
+	{
+		error = mlt_property_set_string( property, value );
+		mlt_properties_do_mirror( self, name );
+		if ( !strcmp( name, "properties" ) )
+			mlt_properties_preset( self, value );
 	}
 
 	mlt_events_fire( self, "property-changed", name, NULL );
