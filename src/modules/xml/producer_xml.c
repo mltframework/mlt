@@ -1166,16 +1166,14 @@ static void on_start_consumer( deserialise_context context, const xmlChar *name,
 	}
 }
 
-static void set_preview_scale(mlt_profile *consumer_profile, mlt_profile *profile, int scale)
+static void set_preview_scale(mlt_profile *consumer_profile, mlt_profile *profile, double scale)
 {
-	if (scale != 0) {
-		*consumer_profile = mlt_profile_clone(*profile);
-		if (*consumer_profile) {
-			(*consumer_profile)->width /= scale;
-			(*consumer_profile)->width -= (*consumer_profile)->width % 2;
-			(*consumer_profile)->height /= scale;
-			(*consumer_profile)->height -= (*consumer_profile)->height % 2;
-		}
+	*consumer_profile = mlt_profile_clone(*profile);
+	if (*consumer_profile) {
+		(*consumer_profile)->width *= scale;
+		(*consumer_profile)->width -= (*consumer_profile)->width % 2;
+		(*consumer_profile)->height *= scale;
+		(*consumer_profile)->height -= (*consumer_profile)->height % 2;
 	}
 }
 
@@ -1239,7 +1237,7 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 			{
 				double scale = mlt_properties_get_double(properties, "scale");
 				if (scale > 0.0) {
-					set_preview_scale(&context->consumer_profile, &context->profile, 1.0 / scale);
+					set_preview_scale(&context->consumer_profile, &context->profile, scale);
 				}
 				// Instantiate the consumer
 				char *id = trim( mlt_properties_get( properties, "mlt_service" ) );

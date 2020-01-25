@@ -727,19 +727,17 @@ static void on_fatal_error( mlt_properties owner, mlt_consumer consumer )
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES(consumer), "melt_error", 1 );
 }
 
-static void set_preview_scale(mlt_profile *profile, mlt_profile *backup_profile, int scale)
+static void set_preview_scale(mlt_profile *profile, mlt_profile *backup_profile, double scale)
 {
-	if (scale != 0) {
-		*backup_profile = mlt_profile_clone(*profile);
-		if (*backup_profile) {
-			mlt_profile temp = *profile;
-			*profile = *backup_profile;
-			*backup_profile = temp;
-			(*profile)->width /= scale;
-			(*profile)->width -= (*profile)->width % 2;
-			(*profile)->height /= scale;
-			(*profile)->height -= (*profile)->height % 2;
-		}
+	*backup_profile = mlt_profile_clone(*profile);
+	if (*backup_profile) {
+		mlt_profile temp = *profile;
+		*profile = *backup_profile;
+		*backup_profile = temp;
+		(*profile)->width *= scale;
+		(*profile)->width -= (*profile)->width % 2;
+		(*profile)->height *= scale;
+		(*profile)->height -= (*profile)->height % 2;
 	}
 }
 
@@ -944,7 +942,7 @@ query_all:
 
 		double scale = mlt_properties_get_double(MLT_CONSUMER_PROPERTIES(consumer), "scale");
 		if (scale > 0.0) {
-			set_preview_scale(&profile, &backup_profile, 1.0 / scale);
+			set_preview_scale(&profile, &backup_profile, scale);
 		}
 		
 		// Reload the consumer with the fully qualified profile.
