@@ -1250,6 +1250,11 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 					// Track this consumer
 					track_service( context->destructors, MLT_CONSUMER_SERVICE(context->consumer), (mlt_destructor) mlt_consumer_close );
 					mlt_properties_set_lcnumeric( MLT_CONSUMER_PROPERTIES(context->consumer), context->lc_numeric );
+					if (context->consumer_profile) {
+						mlt_properties_set_data(MLT_CONSUMER_PROPERTIES(context->consumer),
+							"_profile", context->consumer_profile, sizeof(*context->consumer_profile),
+							(mlt_destructor) mlt_profile_close, NULL);
+					}
 
 					// Do not let XML overwrite these important properties set by mlt_factory.
 					mlt_properties_set( properties, "mlt_type", NULL );
@@ -1762,7 +1767,6 @@ static void context_close( deserialise_context context )
 	mlt_deque_close( context->stack_types );
 	mlt_deque_close( context->stack_node );
 	mlt_deque_close( context->stack_branch );
-	mlt_profile_close( context->consumer_profile );
 	xmlFreeDoc( context->entity_doc );
 	free( context->lc_numeric );
 	free( context );
