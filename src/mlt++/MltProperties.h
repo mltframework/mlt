@@ -1,6 +1,6 @@
 /**
  * MltProperties.h - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,6 +65,7 @@ namespace Mlt
 			void *get_data( const char *name, int &size );
 			void *get_data( const char *name );
 			int set( const char *name, const char *value );
+			int set_string( const char *name, const char *value );
 			int set( const char *name, int value );
 			int set( const char *name, int64_t value );
 			int set( const char *name, double value );

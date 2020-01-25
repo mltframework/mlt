@@ -3,7 +3,7 @@
  * \brief Properties class declaration
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,6 +59,7 @@ extern void mlt_properties_pass_property( mlt_properties self, mlt_properties th
 extern int mlt_properties_pass_list( mlt_properties self, mlt_properties that, const char *list );
 extern int mlt_properties_set( mlt_properties self, const char *name, const char *value );
 extern int mlt_properties_set_or_default( mlt_properties self, const char *name, const char *value, const char *def );
+extern int mlt_properties_set_string( mlt_properties self, const char *name, const char *value );
 extern int mlt_properties_parse( mlt_properties self, const char *namevalue );
 extern char *mlt_properties_get( mlt_properties self, const char *name );
 extern char *mlt_properties_get_name( mlt_properties self, int index );

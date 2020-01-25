@@ -550,4 +550,5 @@ MLT_6.20.0 {
   global:
     mlt_profile_scale_width;
     mlt_profile_scale_height;
+    mlt_properties_set_string;
 } MLT_6.18.0;

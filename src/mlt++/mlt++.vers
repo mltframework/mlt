@@ -587,5 +587,6 @@ MLTPP_6.20.0 {
     extern "C++" {
       "Mlt::Profile::scale_width(int)";
       "Mlt::Profile::scale_height(int)";
+      "Mlt::Properties::set_string(char const*, char const*)";
     };
 } MLTPP_6.18.0;

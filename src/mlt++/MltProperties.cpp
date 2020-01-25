@@ -1,6 +1,6 @@
 /**
  * MltProperties.cpp - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -166,6 +166,11 @@ void *Properties::get_data( const char *name )
 int Properties::set( const char *name, const char *value )
 {
 	return mlt_properties_set( get_properties( ), name, value );
+}
+
+int Properties::set_string(const char *name, const char *value)
+{
+	return mlt_properties_set_string( get_properties( ), name, value );
 }
 
 int Properties::set( const char *name, int value )
