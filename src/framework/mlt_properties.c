@@ -676,6 +676,10 @@ static int is_valid_expression(mlt_properties self, const char* value)
 			result = 0;
 			break;
 		}
+
+		// Get the next op
+		if (value[0] != '\0')
+			++value;
 	}
 	return result;
 }

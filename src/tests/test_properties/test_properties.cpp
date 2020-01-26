@@ -316,6 +316,14 @@ private Q_SLOTS:
         QCOMPARE(p.get_double("key"), 16.0/9.0 *2 +3 -1);
     }
 
+    void SetMathExpressionWithProperty()
+    {
+        Properties p;
+        p.set("width", 100);
+        p.set("key", "@16.0/9.0 *width");
+        QCOMPARE(p.get_int("key"), 177);
+    }
+
     void PassOneProperty()
     {
         Properties p[2];
