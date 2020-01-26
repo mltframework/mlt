@@ -1113,6 +1113,15 @@ private Q_SLOTS:
         QCOMPARE(p.get_animation("key"), mlt_animation(0));
         QCOMPARE(p.get_int("key"), 0);
     }
+
+    void SetString()
+    {
+        Properties p;
+        p.set_string("foo", "123.4");
+        QCOMPARE(p.get("foo"), "123.4");
+        QCOMPARE(p.get_int("foo"), 123);
+        QCOMPARE(p.get_double("foo"), 123.4);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProperties)
