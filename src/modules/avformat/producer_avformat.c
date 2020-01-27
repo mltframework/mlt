@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1618,6 +1618,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", original, 0, (mlt_destructor) mlt_frame_close, NULL );
 			*format = mlt_properties_get_int( orig_props, "format" );
 			set_image_size( self, width, height );
+			mlt_properties_pass_property(frame_properties, orig_props, "colorspace");
 			got_picture = 1;
 			goto exit_get_image;
 		}
