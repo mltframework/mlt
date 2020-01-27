@@ -120,6 +120,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the frame position
 	mlt_position position = mlt_filter_get_position( filter, frame );
 
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
+
 	// Get the new image
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
@@ -244,6 +252,14 @@ static int attach_boundry_to_frame( mlt_frame frame, uint8_t **image, mlt_image_
 	// Get the frame position
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
+
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
 	// Get the geometry object

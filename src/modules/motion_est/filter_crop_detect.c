@@ -48,6 +48,13 @@ static int filter_get_image( mlt_frame this, uint8_t **image, mlt_image_format *
 	// Get the filter object and properties
 	mlt_filter filter = mlt_frame_pop_service( this );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
 
 	// Get the new image
 	int error = mlt_frame_get_image( this, image, format, width, height, 1 );

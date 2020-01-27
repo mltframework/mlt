@@ -21,6 +21,7 @@
 #include "arrow_code.h"
 
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,6 +74,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	// Get the frame properties
 	mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+	mlt_filter filter = mlt_frame_pop_service( frame );
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
 
 	// Get the new image
 	*format = mlt_image_yuv422;
@@ -111,6 +120,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 {
 	// Push the frame filter
+	mlt_frame_push_service( frame, this);
 	mlt_frame_push_get_image( frame, filter_get_image );
 
 

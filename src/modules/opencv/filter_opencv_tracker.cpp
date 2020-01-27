@@ -228,6 +228,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int shape_width = mlt_properties_get_int( filter_properties, "shape_width" );
 	int blur = mlt_properties_get_int( filter_properties, "blur" );
 	cv::Mat cvFrame;
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
+
 	if ( shape_width == 0 && blur == 0 ) {
 		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	}

@@ -780,6 +780,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	// Get the filter
 	mlt_filter filter = mlt_frame_pop_service( frame );
+	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+
+	// Disable consumer scaling
+	if (profile && profile->width && profile->height) {
+		*width = profile->width;
+		*height = profile->height;
+	}
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
