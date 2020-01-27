@@ -1,0 +1,229 @@
+/*
+ * filter_rbpitch.c -- adjust audio pitch
+ * Copyright (C) 2020 Meltytech, LLC
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <framework/mlt.h>
+#include <framework/mlt_log.h>
+
+#include <rubberband/RubberBandStretcher.h>
+
+#include <algorithm>
+#include <cstring>
+#include <math.h>
+
+using namespace RubberBand;
+
+static const size_t MAX_CHANNELS = 10;
+
+static void collapse_channels( int channels, int allocated_samples, int used_samples, float* buffer )
+{
+	if ( allocated_samples != used_samples && used_samples != 0 )
+	{
+		for ( int p = 0; p < channels; p++ )
+		{
+			float* src = buffer + ( p * allocated_samples );
+			float* dst = buffer + ( p * used_samples );
+			memmove( dst, src, used_samples * sizeof(float) );
+		}
+	}
+}
+
+static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+{
+	mlt_filter filter = static_cast<mlt_filter>(mlt_frame_pop_audio( frame ));
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+	if ( *channels > (int)MAX_CHANNELS )
+	{
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Too many channels requested: %d > %d\n", *channels, (int)MAX_CHANNELS );
+		return mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	}
+
+	int requested_samples = *samples;
+	mlt_properties unique_properties = mlt_frame_get_unique_properties( frame, MLT_FILTER_SERVICE(filter) );
+	if ( !unique_properties )
+	{
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Missing unique_properites\n" );
+		return mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	}
+
+	// Get the producer's audio
+	*format = mlt_audio_float;
+	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+	if ( error ) return error;
+
+	bool last_frame = false;
+	if ( mlt_filter_get_position( filter, frame ) + 1 == mlt_filter_get_length2( filter, frame ) )
+	{
+		// This is the last mlt frame. Drain the rest of the stretcher
+		last_frame = true;
+	}
+
+	// Protect the RubberBandStretcher instance.
+	mlt_service_lock( MLT_FILTER_SERVICE(filter) );
+
+	// Configure the stretcher.
+	double pitchscale = mlt_properties_get_double( unique_properties, "pitchscale" );
+	RubberBandStretcher* s = static_cast<RubberBandStretcher*>(filter->child);
+	if ( !s || s->available() == -1 || (int)s->getChannelCount() != *channels || mlt_properties_get_int( filter_properties, "_frequency" ) != *frequency )
+	{
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Create a new stretcher\n" );
+		delete s;
+		// Create a rubberband instance
+		RubberBandStretcher::Options options = RubberBandStretcher::OptionProcessRealTime |
+												RubberBandStretcher::OptionPitchHighConsistency;
+		s = new RubberBandStretcher(*frequency, *channels, options, 1.0, pitchscale);
+		filter->child = s;
+		mlt_properties_set_int( filter_properties, "_frequency", *frequency );
+	}
+	s->setPitchScale(pitchscale);
+
+	// Calculate the buffer size.
+	int in_samples = *samples;
+	int consumed_samples = 0;
+	int out_samples = 0;
+	int alloc_samples = in_samples + s->getLatency();
+	if ( last_frame )
+	{
+		// Allocate enough space for the rest of the samples in the stretcher.
+		alloc_samples += s->getLatency() * 2;
+	}
+	int size = mlt_audio_format_size( *format, alloc_samples, *channels );
+	float* out_buffer = (float*)mlt_pool_alloc( size );
+
+	// Process all input samples
+	while ( true )
+	{
+		// Send more samples to the stretcher
+		int required_samples = (int)s->getSamplesRequired();
+		int remaining_in_samples = in_samples - consumed_samples;
+		int process_samples = std::min( remaining_in_samples, required_samples );
+		if ( process_samples > 0 )
+		{
+			float* in_planes[MAX_CHANNELS];
+			for ( int i = 0; i < *channels; i++ )
+			{
+				in_planes[i] = ((float*)*buffer) + (in_samples * i) + consumed_samples;
+			}
+			if ( last_frame && process_samples == remaining_in_samples )
+			{
+				// This will be the last call to process.
+				s->process( in_planes, process_samples, true );
+				mlt_log_debug( MLT_FILTER_SERVICE(filter), "Last call to Process()\n" );
+			}
+			else
+			{
+				s->process( in_planes, process_samples, false );
+			}
+			consumed_samples += process_samples;
+		}
+
+		// Receive samples from to the stretcher
+		int retrieve_samples = std::min( alloc_samples - out_samples, s->available() );
+		if ( retrieve_samples > 0 )
+		{
+			float* out_planes[MAX_CHANNELS];
+			for ( int i = 0; i < *channels; i++ )
+			{
+				out_planes[i] = out_buffer + (alloc_samples * i) + out_samples;
+			}
+			retrieve_samples = (int)s->retrieve( out_planes, retrieve_samples );
+			out_samples += retrieve_samples;
+		}
+
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Process: %d\t Retrieve: %d\n", process_samples, retrieve_samples );
+
+		if ( process_samples <= 0 && retrieve_samples <= 0 )
+		{
+			// There is nothing more to do;
+			break;
+		}
+	}
+
+	// Save the processed samples.
+	collapse_channels( *channels, alloc_samples, out_samples, out_buffer );
+	mlt_frame_set_audio( frame, static_cast<void*>(out_buffer), *format, size, mlt_pool_release );
+	*buffer = static_cast<void*>(out_buffer);
+	*samples = out_samples;
+
+	// Report the latency.
+	double latency = (double)s->getLatency() * 1000.0 / (double)*frequency;
+	mlt_properties_set_double( filter_properties, "latency", latency );
+
+	mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
+
+	mlt_log_debug( MLT_FILTER_SERVICE(filter), "Requested: %d\tReceived: %d\tSent: %d\tLatency: %f\n", requested_samples, in_samples, out_samples, latency );
+	return error;
+}
+
+static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
+{
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
+
+	// Determine the pitchscale
+	double pitchscale = 1.0;
+	if ( mlt_properties_get( filter_properties, "pitchscale" ) != NULL )
+	{
+		pitchscale = mlt_properties_anim_get_double( filter_properties, "pitchscale", position, length );
+	}
+	else
+	{
+		double octaveshift = mlt_properties_anim_get_double( filter_properties, "octaveshift", position, length );
+		pitchscale = pow(2, octaveshift);
+	}
+	if ( pitchscale <= 0.0 || /*check for nan:*/pitchscale != pitchscale )
+	{
+		pitchscale = 1.0;
+	}
+
+	// Save the pitchscale on the frame to be used in rbpitch_get_audio
+	mlt_properties unique_properties = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE(filter) );
+	mlt_properties_set_double( unique_properties, "pitchscale", pitchscale );
+
+	mlt_frame_push_audio( frame, (void*)filter );
+	mlt_frame_push_audio( frame, (void*)rbpitch_get_audio );
+
+	return frame;
+}
+
+static void close_filter( mlt_filter filter )
+{
+	RubberBandStretcher* s = static_cast<RubberBandStretcher*>(filter->child);
+	if ( s )
+	{
+		delete s;
+		filter->child = NULL;
+	}
+}
+
+extern "C" {
+
+mlt_filter filter_rbpitch_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+{
+	mlt_filter filter = mlt_filter_new();
+	if ( filter != NULL )
+	{
+		filter->process = filter_process;
+		filter->close = close_filter;
+		filter->child = NULL;
+	}
+	return filter;
+}
+
+}
