@@ -38,6 +38,7 @@ set(modules
     src/modules/plus
     src/modules/plusgpl
     src/modules/qt
+    src/modules/rubberband
     src/modules/rtaudio
     src/modules/sdl2
     src/modules/vid.stab

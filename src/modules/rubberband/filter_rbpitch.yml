@@ -1,0 +1,56 @@
+schema_version: 0.3
+type: filter
+identifier: rbpitch
+title: Rubberband Pitch
+version: 1
+copyright: Meltytech, LLC
+creator: Brian Matherly
+license: GPLv2
+language: en
+tags:
+  - Audio
+description: Adjust the audio pitch using the Rubberband library.
+parameters:
+  - identifier: octaveshift
+    title: Octave Shift
+    type: float
+    description: >
+      The octave shift. This is the octave shift of the source frequency. For
+      example, a shift of +1 would double the frequency; -1 would halve the
+      frequency and 0 would leave the pitch unaffected. To put this in frequency
+      terms, a frequency shift f (where f greater than one for upwards shift and
+      less than one for downwards) is: o = log(f) / log(2).
+      
+      Ignored if pitchscale is set.
+    readonly: no
+    mutable: yes
+    default: 0.0
+    minimum: -3.3
+    maximum: 3.3
+    unit: octaves
+
+  - identifier: pitchscale
+    title: Pitch Scale
+    type: float
+    description: >
+      The pitch scaling ratio. This is the ratio of target frequency to source
+      frequency. For example, a ratio of 2.0 would shift up by one octave; 0.5
+      down by one octave; or 1.0 leave the pitch unaffected. To put this in
+      musical terms, a pitch scaling ratio corresponding to a shift of o
+      octaves (where o is positive for an upwards shift and
+      negative for downwards) is: f = pow(2.0, o).
+      
+      Overrides octaveshift.
+    readonly: no
+    mutable: yes
+    default: 1.0
+    minimum: 0.1
+    maximum: 10
+
+  - identifier: latency
+    title: Latency
+    type: float
+    description: >
+      The amount of delay for each sample from the input to the output.
+    readonly: yes
+    unit: ms
