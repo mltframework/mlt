@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -335,6 +335,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int luma_height = mlt_properties_get_int( properties, "height" );
 	uint16_t *luma_bitmap = mlt_properties_get_data( properties, "bitmap", NULL );
 	char *current_resource = mlt_properties_get( properties, "_resource" );
+	mlt_producer producer = mlt_properties_get_data(properties, "producer", NULL);
 	
 	// If the filename property changed, reload the map
 	char *resource = mlt_properties_get( properties, "resource" );
@@ -400,14 +401,16 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 		else
 		{
-			// Get the factory producer service
-			char *factory = mlt_properties_get( properties, "factory" );
-
-			// Create the producer
-			mlt_producer producer = mlt_factory_producer( profile, factory, resource );
+			if (!producer) {
+				// Get the factory producer service
+				char *factory = mlt_properties_get( properties, "factory" );
+	
+				// Create the producer
+				producer = mlt_factory_producer( profile, factory, resource );			
+			}
 
 			// If we have one
-			if ( producer != NULL )
+			if (producer)
 			{
 				// Get the producer properties
 				mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -420,6 +423,17 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				// We will get the alpha frame from the producer
 				mlt_frame luma_frame = NULL;
+
+				// Determine if producer is a video clip or still image
+				const char* service_name = mlt_properties_get(producer_properties, "mlt_service");
+				int is_clip = mlt_producer_get_length(producer) > 1 &&
+						mlt_properties_get_int(producer_properties, "video_index") >= 0 &&
+						service_name && !strncmp("avformat", service_name, 8);
+				if (is_clip) {
+					mlt_properties_set( producer_properties, "eof", "pause" );
+					mlt_properties_set_int( producer_properties, "set.force_full_luma", 1 );
+					mlt_producer_seek(producer, mlt_transition_get_position(transition, a_frame));
+				}
 
 				// Get the luma frame
 				if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &luma_frame, 0 ) == 0 )
@@ -438,15 +452,19 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					// Set the transition properties
 					mlt_properties_set_int( properties, "width", luma_width );
 					mlt_properties_set_int( properties, "height", luma_height );
-					mlt_properties_set( properties, "_resource", orig_resource);
 					mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
 
 					// Cleanup the luma frame
 					mlt_frame_close( luma_frame );
 				}
 
-				// Cleanup the luma producer
-				mlt_producer_close( producer );
+				if (is_clip) {
+					// Save the producer for getting next frame
+					mlt_properties_set_data(properties, "producer", producer, 0, (mlt_destructor) mlt_producer_close, NULL);
+				} else {
+					// Cleanup the luma producer
+					mlt_producer_close(producer);
+				}
 			}
 		}
 	}
