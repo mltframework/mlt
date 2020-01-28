@@ -433,7 +433,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 						service_name && !strncmp("avformat", service_name, 8);
 				if (is_clip) {
 					mlt_properties_set( producer_properties, "eof", "pause" );
-					mlt_properties_set_int( producer_properties, "set.force_full_luma", 1 );
 					mlt_producer_seek(producer, mlt_transition_get_position(transition, a_frame));
 				}
 
