@@ -332,7 +332,8 @@ static void affine_max_output( double affine[3][3], double *w, double *h, double
 
 #define IN_RANGE( v, r )	( v >= - r / 2 && v < r / 2 )
 
-static inline void get_affine( affine_t *affine, mlt_transition transition, double position, int length )
+static inline void get_affine( affine_t *affine, mlt_transition transition,
+	double position, int length, double scale_width, double scale_height )
 {
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
 	int keyed = mlt_properties_get_int( properties, "keyed" );
@@ -361,7 +362,7 @@ static inline void get_affine( affine_t *affine, mlt_transition transition, doub
 					  fix_shear_x + shear_x * position,
 					  fix_shear_y + shear_y * position,
 					  fix_shear_z + shear_z * position );
-		affine_offset( affine->matrix, ox, oy );
+		affine_offset( affine->matrix, ox * scale_width, oy * scale_height );
 	}
 	else
 	{
@@ -380,7 +381,7 @@ static inline void get_affine( affine_t *affine, mlt_transition transition, doub
 		affine_rotate_y( affine->matrix, rotate_y );
 		affine_rotate_z( affine->matrix, rotate_z );
 		affine_shear( affine->matrix, shear_x, shear_y, shear_z );
-		affine_offset( affine->matrix, o_x, o_y );
+		affine_offset( affine->matrix, o_x * scale_width, o_y * scale_height );
 	}
 }
 
@@ -480,8 +481,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Calculate the region now
 	double scale_width = mlt_profile_scale_width(profile, *width);
-	double scale_height = mlt_profile_scale_width(profile, *height);
-	mlt_rect result = {0, 0, normalised_width * scale_width, normalised_height * scale_height, 1.0};
+	double scale_height = mlt_profile_scale_height(profile, *height);
+	mlt_rect result = {0, 0, normalised_width, normalised_height, 1.0};
+
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 
 	if (mlt_properties_get(properties, "geometry"))
@@ -611,7 +613,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		affine_init( desc.affine.matrix );
 
 		// Compute the affine transform
-		get_affine( &desc.affine, transition, ( double )position, length );
+		get_affine( &desc.affine, transition, ( double )position, length, scale_width, scale_height );
 		desc.dz = MapZ( desc.affine.matrix, 0, 0 );
 		if ( (int) fabs( desc.dz * 1000 ) < 25 )
 			return 0;
