@@ -347,7 +347,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		luma_height = *height;
 	}
 		
-	if ( resource && ( !current_resource || strcmp( resource, current_resource ) ) )
+	if ( resource && ( producer || !current_resource || strcmp( resource, current_resource ) ) )
 	{
 		char temp[ 512 ];
 		char *extension = strrchr( resource, '.' );
@@ -401,12 +401,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 		else
 		{
-			if (!producer) {
+			if (!producer || !current_resource || strcmp(resource, current_resource)) {
 				// Get the factory producer service
 				char *factory = mlt_properties_get( properties, "factory" );
 	
 				// Create the producer
-				producer = mlt_factory_producer( profile, factory, resource );			
+				producer = mlt_factory_producer( profile, factory, resource );
+				if (producer)
+					mlt_properties_set(properties, "_resource", resource);
 			}
 
 			// If we have one
