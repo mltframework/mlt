@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 0.3
 type: transition
 identifier: composite
 title: Composite
@@ -29,6 +29,7 @@ parameters:
     description: >
       The name of a factory service used as a non-PGM producer loader.
     default: loader
+
   - identifier: geometry
     title: Geometry
     type: geometry
@@ -36,6 +37,7 @@ parameters:
       Key frame specification. This is a ";" delimited form of the deprecated 
       start, key[n], end properties.
     mutable: yes
+
   - identifier: progressive
     title: Progressive
     description: > 
@@ -45,6 +47,7 @@ parameters:
     maximum: 1
     mutable: yes
     widget: checkbox
+
   - identifier: distort
     title: Allow distorted scaling
     description: >
@@ -56,6 +59,7 @@ parameters:
     maximum: 1
     mutable: yes
     widget: checkbox
+
   - identifier: crop_to_fill
     title: Fill by cropping
     description: >
@@ -67,6 +71,7 @@ parameters:
     maximum: 1
     mutable: yes
     widget: checkbox
+
   - identifier: halign
     title: Horizontal alignment
     description: >
@@ -80,6 +85,7 @@ parameters:
       - right
     mutable: yes
     widget: combo
+
   - identifier: valign
     title: Vertical alignment
     description: >
@@ -93,6 +99,7 @@ parameters:
       - bottom
     mutable: yes
     widget: combo
+
   - identifier: luma
     title: Luma map
     description: >
@@ -100,6 +107,7 @@ parameters:
     type: string
     mutable: yes
     widget: fileopen
+
   - identifier: softness
     title: Softness
     description: >
@@ -109,6 +117,7 @@ parameters:
     minimum: 0.0
     maximum: 1.0
     mutable: yes
+
   - identifier: luma.*
     title: Luma producer
     description: >
@@ -116,6 +125,7 @@ parameters:
       with "luma." is passed to the non-PGM luma producer.
     readonly: no
     mutable: yes
+
   - identifier: start
     title: Start geometry
     description: >
@@ -130,6 +140,7 @@ parameters:
     default: "0%/0%:100%x100%"
     readonly: no
     mutable: yes
+
   - identifier: end
     title: End geometry
     description: >
@@ -137,6 +148,7 @@ parameters:
     type: geometry
     readonly: no
     mutable: yes
+
   - identifier: sliced_composite
     title: Use sliced compositing
     description: >
@@ -146,6 +158,7 @@ parameters:
     default: 0
     mutable: yes
     widget: checkbox
+
   - identifier: key[F]
     title: Key frame geometry
     description: >
@@ -155,3 +168,15 @@ parameters:
     type: geometry
     readonly: no
     mutable: yes
+
+  - identifier: fill
+    title: Fill geometry
+    description: >
+      Determines whether the image will be scaled up to fill the geometry.
+      Otherwise, if the B frame image fits within the geometry, it will not
+      be scaled. If 0, and the B frame image exceeds the geometry, then it is
+      scaled down to fit within the geometry.
+    type: boolean
+    default: 1
+    mutable: yes
+    widget: checkbox
