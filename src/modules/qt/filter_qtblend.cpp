@@ -60,8 +60,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Destination rect
 	mlt_rect rect;
-	rect.w = normalised_width;
-	rect.h = normalised_height;
+	rect.w = normalised_width * mlt_profile_scale_width(profile, *width);
+	rect.h = normalised_height * mlt_profile_scale_height(profile, *height);
 	int b_width = mlt_properties_get_int( frame_properties, "meta.media.width" );
 	int b_height = mlt_properties_get_int( frame_properties, "meta.media.height" );
 	if ( b_height == 0 )
@@ -123,6 +123,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		} else {
 			// Prepare output image
 			*image = src_image;
+			*width = b_width;
+			*height = b_height;
 			return 0;
 		}
 	}
