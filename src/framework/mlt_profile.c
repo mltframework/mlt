@@ -503,7 +503,7 @@ char *mlt_profile_lumas_dir( mlt_profile profile )
 
 double mlt_profile_scale_width(mlt_profile profile, int width)
 {
-	return (profile && profile->width)? (double) width / profile->width : 1.0;
+	return (profile && width && profile->width)? (double) width / profile->width : 1.0;
 }
 
 /** Get the height scale factor.
