@@ -544,12 +544,19 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 
 	// Fetch the b frame image
-	if (scale_width > 0.0 || scale_height > 0.0 || mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
+	if (mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
 		// Request b frame image size just what is needed.
 		b_width = result.w;
 		b_height = result.h;
 		// Set the rescale interpolation to match the frame
 		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
+	} else if (scale_width != 1.0 || scale_height != 1.0) {
+		// Scale request of b frame image to consumer scale maintaining its aspect ratio.
+		b_height = *height;
+		b_width = b_height * b_dar / b_ar;
+		// Set the rescale interpolation to match the frame
+		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
+		mlt_properties_set_int( b_props, "distort", 1 );
 	} else {
 		// Request full resolution of b frame image.
 		mlt_properties_set_int( b_props, "rescale_width", b_width );
