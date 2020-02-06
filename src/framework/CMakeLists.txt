@@ -31,7 +31,7 @@ else()
 endif()
 
 file(GLOB mlt_head *.h)
-install(FILES ${mlt_head} DESTINATION include/mlt)
+install(FILES ${mlt_head} DESTINATION include/mlt/framework)
 
 configure_file(mlt-framework.pc.in mlt-framework.pc @ONLY)
 install (FILES
