@@ -62,6 +62,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	double b_dar = b_ar * b_width / b_height;
 	rect.w = -1;
 	rect.h = -1;
+	bool consumerScaling = false;
 
 	// Check transform
 	if ( mlt_properties_get( transition_properties, "rect" ) )
@@ -74,9 +75,15 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			rect.h *= normalised_height;
 		}
 		double scale = mlt_profile_scale_width(profile, *width);
+		if ( scale != 1.0 ) {
+			consumerScaling = true;
+		}
 		rect.x *= scale;
 		rect.w *= scale;
 		scale = mlt_profile_scale_height(profile, *height);
+		if ( !consumerScaling && scale != 1.0 ) {
+			consumerScaling = true;
+		}
 		rect.y *= scale;
 		rect.h *= scale;
 		transform.translate(rect.x, rect.y);
@@ -92,17 +99,19 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	if ( mlt_properties_get( transition_properties, "rotation" ) )
 	{
 		double angle = mlt_properties_anim_get_double( transition_properties, "rotation", position, length );
-		if ( mlt_properties_get_int( properties, "rotate_center" ) )
-		{
-			transform.translate( rect.w / 2.0, rect.h / 2.0 );
-			transform.rotate( angle );
-			transform.translate( -rect.w / 2.0, -rect.h / 2.0 );
+		if (angle != 0.0) {
+			if ( mlt_properties_get_int( transition_properties, "rotate_center" ) )
+			{
+				transform.translate( rect.w / 2.0, rect.h / 2.0 );
+				transform.rotate( angle );
+				transform.translate( -rect.w / 2.0, -rect.h / 2.0 );
+			}
+			else
+			{
+				transform.rotate( angle );
+			}
+			hasAlpha = true;
 		}
-		else
-		{
-			transform.rotate( angle );
-		}
-		hasAlpha = true;
 	}
 
 	// This is not a field-aware transform.
@@ -118,9 +127,16 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		return error;
 	}
 
+	// Adjust if consumer is scaling
+	if ( consumerScaling )
+	{
+		// Scale request of b frame image to consumer scale maintaining its aspect ratio.
+		b_height = *height;
+		b_width = b_height * b_dar / b_ar;
+	}
+
 	if ( rect.w != -1 )
 	{
-		// resize to rect
 		if ( mlt_properties_get_int( transition_properties, "distort" ) && b_width != 0 && b_height != 0 )
 		{
 			transform.scale( rect.w / b_width, rect.h / b_height );
@@ -128,13 +144,22 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		else
 		{
 			// Determine scale with respect to aspect ratio.
-			float scale_x = MIN( rect.w / b_width * ( consumer_ar / b_ar ) , rect.h / b_height );
-			float scale_y = scale_x;
-			transform.translate((rect.w - (b_width * scale_x)) / 2.0, (rect.h - (b_height * scale_y)) / 2.0);
-			transform.scale( scale_x, scale_y );
+			double geometry_dar = rect.w * consumer_ar / rect.h;
+			double scale;
+			if ( b_dar > geometry_dar )
+			{
+				scale = rect.w / b_width;
+			}
+			else
+			{
+				scale = rect.h / b_height * b_ar;
+			}
+
+			transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
+			transform.scale( scale, scale );
 		}
 
-		if ( opacity < 1 || transform.isScaling() || transform.isTranslating() )
+		if ( opacity < 1 || rect.x > 0 || rect.y > 0 || (rect.x + rect.w < *width ) || (rect.y + rect.w < *height ) )
 		{
 			// we will process operations on top frame, so also process b_frame
 			hasAlpha = true;
@@ -148,10 +173,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			// Activate transparency if the clips don't have the same aspect ratio
 			hasAlpha = true;
 		}
+		// resize to consumer request
 		b_width = *width;
 		b_height = *height;
 	}
-	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height || b_width < normalised_width || b_height  < normalised_height ) )
+	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height ) )
 	{
 		hasAlpha = true;
 	}
