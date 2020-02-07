@@ -110,8 +110,9 @@ static void __attribute__((noinline)) copy_Y_to_A_scaled_luma_sse(uint8_t* alpha
 		/* loop if we done */
 		"dec            %[cnt]                  \n\t"
 		"jnz            loop_start              \n\t"
-		:
-		: [cnt]"r" (cnt), [alpha_a]"r"(alpha_a), [image_b]"r"(image_b), [equ43]"r"(const1), [equ16]"r"(const2), [equ235]"r"(const3), [equ255]"r"(const4)
+		: [cnt]"+r" (cnt), [alpha_a]"+r"(alpha_a), [image_b]"+r"(image_b)
+		: [equ43]"r"(const1), [equ16]"r"(const2), [equ235]"r"(const3), [equ255]"r"(const4)
+		: "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7"
 	);
 };
 #endif
@@ -168,10 +169,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	int
 		width_a = mlt_properties_get_int( a_props, "width" ),
-		width_b = mlt_properties_get_int( b_props, "width" ),
+		width_b = width_a,
 		height_a = mlt_properties_get_int( a_props, "height" ),
-		height_b = mlt_properties_get_int( b_props, "height" );
-
+		height_b = height_a;
+	
 	uint8_t *alpha_a, *image_b;
 
 	// This transition is yuv422 only

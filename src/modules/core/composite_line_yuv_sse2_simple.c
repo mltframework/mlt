@@ -108,8 +108,12 @@ const static unsigned char const2[] =
         "add            $0x10, %[dest]          \n\t"   \
         "dec            %[width]                \n\t"
 
+#define CLOBBER_XMM \
+        "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7", "%xmm8", "%xmm9", "%xmm10"
+
 static void blend_case7(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, uint8_t *dest_a, int weight)
 {
+    int w8 = width / 8;
     __asm__ volatile
     (
         LOAD_CONSTS
@@ -123,14 +127,17 @@ static void blend_case7(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, 
         "add            $0x08, %[dest_a]        \n\t"
         PIX_POINTER_INC
         "jnz            loop_start7             \n\t"
-        :
-        : [weight] "r" (weight), [src_a] "r" (src_a), [src] "r" (src), [dest] "r" (dest), [const1] "r" (const1) , [dest_a] "r" (dest_a), [width] "r" (width / 8), [const2] "r" (const2)
+        : [weight] "+r" (weight), [src_a] "+r" (src_a), [src] "+r" (src),
+            [dest] "+r" (dest), [dest_a] "+r" (dest_a), [width] "+r" (w8)
+        : [const1] "r" (const1), [const2] "r" (const2)
+        : CLOBBER_XMM
     );
 };
 
 //  | 3   | dest_a == NULL | src_a != NULL | weight != 256 | blend: premultiply src alpha
 static void blend_case3(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, int weight)
 {
+    int w8 = width / 8;
     __asm__ volatile
     (
         LOAD_CONSTS
@@ -142,14 +149,16 @@ static void blend_case3(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, 
         "add            $0x08, %[src_a]         \n\t"
         PIX_POINTER_INC
         "jnz            loop_start3             \n\t"
-        :
-        : [weight] "r" (weight), [src_a] "r" (src_a), [src] "r" (src), [dest] "r" (dest), [const1] "r" (const1), [width] "r" (width / 8), [const2] "r" (const2)
+        : [weight] "+r" (weight), [src_a] "+r" (src_a), [src] "+r" (src), [dest] "+r" (dest), [width] "+r" (w8)
+        : [const1] "r" (const1), [const2] "r" (const2)
+        : CLOBBER_XMM
     );
 };
 
 //  | 2   | dest_a == NULL | src_a != NULL | weight == 255 | blend: only src alpha
 static void blend_case2(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a)
 {
+    int w8 = width / 8;
     __asm__ volatile
     (
         LOAD_CONSTS
@@ -159,8 +168,9 @@ static void blend_case2(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a)
         "add            $0x08, %[src_a]         \n\t"
         PIX_POINTER_INC
         "jnz            loop_start2             \n\t"
-        :
-        : [src_a] "r" (src_a), [src] "r" (src), [dest] "r" (dest), [const1] "r" (const1) , [width] "r" (width / 8), [const2] "r" (const2)
+        : [src_a] "+r" (src_a), [src] "+r" (src), [dest] "+r" (dest), [width] "+r" (w8)
+        : [const1] "r" (const1), [const2] "r" (const2)
+        : CLOBBER_XMM
     );
 };
 
@@ -168,6 +178,7 @@ static void blend_case2(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a)
 //  | 1   | dest_a == NULL | src_a == NULL | weight != 256 | blend: with given alpha
 static void blend_case1(uint8_t *dest, uint8_t *src, int width, int weight)
 {
+    int w8 = width / 8;
     __asm__ volatile
     (
         LOAD_CONSTS
@@ -177,14 +188,16 @@ static void blend_case1(uint8_t *dest, uint8_t *src, int width, int weight)
         DST_PIX_CALC
         PIX_POINTER_INC
         "jnz            loop_start1             \n\t"
-        :
-        : [weight] "r" (weight), [src] "r" (src), [dest] "r" (dest), [const1] "r" (const1), [width] "r" (width / 8), [const2] "r" (const2)
+        : [weight] "+r" (weight), [src] "+r" (src), [dest] "+r" (dest), [width] "+r" (w8)
+        : [const1] "r" (const1), [const2] "r" (const2)
+        : CLOBBER_XMM
     );
 };
 
 //  | 5   | dest_a != NULL | src_a == NULL | weight != 256 | blend: with given alpha
 static void blend_case5(uint8_t *dest, uint8_t *src, int width, uint8_t *dest_a, int weight)
 {
+    int w8 = width / 8;
     __asm__ volatile
     (
         LOAD_CONSTS
@@ -196,15 +209,16 @@ static void blend_case5(uint8_t *dest, uint8_t *src, int width, uint8_t *dest_a,
         "add            $0x08, %[dest_a]        \n\t"
         PIX_POINTER_INC
         "jnz            loop_start5             \n\t"
-
-        :
-        : [weight] "r" (weight), [src] "r" (src), [dest] "r" (dest), [const1] "r" (const1) , [dest_a] "r" (dest_a), [width] "r" (width / 8), [const2] "r" (const2)
+        : [weight] "+r" (weight), [src] "+r" (src), [dest] "+r" (dest), [dest_a] "+r" (dest_a), [width] "+r" (w8)
+        : [const1] "r" (const1), [const2] "r" (const2)
+        : CLOBBER_XMM
     );
 };
 
 //  | 6   | dest_a != NULL | src_a != NULL | weight == 256 | blend: full blend without src alpha premutiply
 static void blend_case6(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, uint8_t *dest_a)
 {
+    int w8 = width / 8;
     __asm__ volatile
     (
         LOAD_CONSTS
@@ -216,8 +230,9 @@ static void blend_case6(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, 
         "add            $0x08, %[dest_a]        \n\t"
         PIX_POINTER_INC
         "jnz            loop_start6             \n\t"
-        :
-        : [src_a] "r" (src_a), [src] "r" (src), [dest] "r" (dest), [const1] "r" (const1) , [dest_a] "r" (dest_a), [width] "r" (width / 8), [const2] "r" (const2)
+        : [src_a] "+r" (src_a), [src] "+r" (src), [dest] "+r" (dest), [dest_a] "+r" (dest_a), [width] "+r" (w8)
+        : [const1] "r" (const1), [const2] "r" (const2)
+        : CLOBBER_XMM
     );
 };
 
