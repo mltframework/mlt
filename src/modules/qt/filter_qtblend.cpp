@@ -59,9 +59,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	double consumer_ar = mlt_profile_sar( profile );
 
 	// Destination rect
-	mlt_rect rect;
-	rect.w = normalised_width * mlt_profile_scale_width(profile, *width);
-	rect.h = normalised_height * mlt_profile_scale_height(profile, *height);
+	mlt_rect rect = {0, 0, normalised_width * mlt_profile_scale_width(profile, *width), normalised_height * mlt_profile_scale_height(profile, *height), 1.0};
 	int b_width = mlt_properties_get_int( frame_properties, "meta.media.width" );
 	int b_height = mlt_properties_get_int( frame_properties, "meta.media.height" );
 	if ( b_height == 0 )
@@ -165,10 +163,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 	else
 	{
-		// Take the smaller scale between horizontal and vertical
-		float scale_x = MIN( rect.w / b_width, rect.h / b_height );
-		float scale_y = scale_x;
-
 		// Determine scale with respect to aspect ratio.
 		double geometry_dar = rect.w * consumer_ar / rect.h;
 		double scale;
