@@ -4,6 +4,8 @@
 
 if [ "$(uname -s)" = "Darwin" ]; then
 	export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH:../../framework
+elif uname -s | grep -iq mingw; then
+	export PATH=$PATH:../../framework
 else
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../../framework
 fi

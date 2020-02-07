@@ -1,0 +1,15 @@
+pix_fmt=yuv422p
+progressive=1
+vcodec=dnxhd
+vprofile=dnxhr_hq
+qscale=1
+vb=0
+g=1
+bf=0
+acodec=pcm_s24le
+f=mov
+movflags=+write_colr+faststart
+
+meta.preset.extension=mov
+meta.preset.note=Avid's intermediate codec for resolutions up to UHD/C4K
+meta.preset.name=intermediate/DNxHR HQ
