@@ -308,6 +308,25 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	}
 }
 
+void yuv422_to_luma16(uint8_t *image, uint16_t **map, int width, int height, int full_range)
+{
+	// allocate the luma bitmap
+	*map = (uint16_t*) mlt_pool_alloc(width * height * sizeof(uint16_t));
+	if (!*map)
+		return;
+
+	int i;
+	int n = width * height;
+	uint8_t offset = full_range? 0 : 16;
+	uint8_t max = full_range? 255 : 235 - offset;
+	int factor = full_range? 256 : 299; // 299 = 65535 / 219
+
+	// process the image data into the luma bitmap
+	for (i = 0; i < n; i++) {
+		(*map)[i] = CLAMP(image[i << 1] - offset, 0, max) * factor;
+	}
+}
+
 static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the b frame from the stack
@@ -392,12 +411,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			mlt_properties_set_int( properties, "height", luma_height );
 			mlt_properties_set( properties, "_resource", orig_resource );
 			mlt_properties_set_data( properties, "bitmap", luma_bitmap, luma_width * luma_height * 2, mlt_pool_release, NULL );
+			mlt_properties_clear(properties, "producer");
 		}
 		else if (!*resource) 
 		{
 		    luma_bitmap = NULL;
 		    mlt_properties_set( properties, "_resource", NULL );
 		    mlt_properties_set_data( properties, "bitmap", luma_bitmap, 0, mlt_pool_release, NULL );
+			mlt_properties_clear(properties, "producer");
 		}
 		else
 		{
@@ -432,7 +453,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 						mlt_properties_get_int(producer_properties, "video_index") >= 0 &&
 						service_name && !strncmp("avformat", service_name, 8);
 				if (is_clip) {
-					mlt_properties_set( producer_properties, "eof", "pause" );
+					if (!mlt_properties_get(producer_properties, "producer.eof"))
+						mlt_properties_set(producer_properties, "eof", "pause");
 					mlt_producer_seek(producer, mlt_transition_get_position(transition, a_frame));
 				}
 
@@ -443,12 +465,17 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					mlt_image_format luma_format = mlt_image_yuv422;
 
 					// Get image from the luma producer
-					mlt_properties_set( MLT_FRAME_PROPERTIES( luma_frame ), "rescale.interp", "nearest" );
 					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
 
 					// Generate the luma map
-					if ( luma_image != NULL )
-						mlt_luma_map_from_yuv422( luma_image, &luma_bitmap, luma_width, luma_height );
+					if (luma_image) {
+						if (is_clip) {
+							yuv422_to_luma16(luma_image, &luma_bitmap, luma_width, luma_height,
+								mlt_properties_get_int(MLT_FRAME_PROPERTIES(luma_frame), "full_luma"));
+						} else {
+							mlt_luma_map_from_yuv422(luma_image, &luma_bitmap, luma_width, luma_height);
+						}
+					}
 					
 					// Set the transition properties
 					mlt_properties_set_int( properties, "width", luma_width );
@@ -465,6 +492,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				} else {
 					// Cleanup the luma producer
 					mlt_producer_close(producer);
+					producer = NULL;
 				}
 			}
 		}
@@ -493,6 +521,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
 
+	if (producer)
+	{
+		invert = !invert;
+		mix = 0.5f;
+	}
 	if ( luma_width > 0 && luma_height > 0 && luma_bitmap != NULL )
 	{
 		reverse = invert ? !reverse : reverse;
