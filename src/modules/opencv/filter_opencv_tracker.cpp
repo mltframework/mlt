@@ -115,6 +115,16 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		{
 			data->tracker = cv::TrackerKCF::create();
 		}
+#if CV_VERSION_MAJOR > 3 || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR >= 4 && CV_VERSION_REVISION >= 2)
+		else if ( !strcmp(data->algo, "CSRT" ) )
+		{
+			data->tracker = cv::TrackerCSRT::create();
+		}
+		else if ( !strcmp(data->algo, "MOSSE" ) )
+		{
+			data->tracker = cv::TrackerMOSSE::create();
+		}
+#endif
 		else if ( !strcmp(data->algo, "MIL" ) )
 		{
 			data->tracker = cv::TrackerMIL::create();

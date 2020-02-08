@@ -4,7 +4,7 @@ identifier: opencv.tracker
 title: OpenCV Motion Tracker
 copyright: Jean-Baptiste Mardelle
 creator: Jean-Baptiste Mardelle <jb@kdenlive.org>
-version: 1
+version: 2
 license: LGPLv2.1
 language: en
 url:
