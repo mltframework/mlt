@@ -64,13 +64,13 @@ build_config()
 		echo "windeploy=$windeploy"
 
 		[ "$mmx" = "true" ] && 
-		echo "MMX_FLAGS=-DUSE_MMX"
+		echo "MMX_FLAGS=-DUSE_MMX -mmmx"
 
 		[ "$sse" = "true" ] && 
-		echo "SSE_FLAGS=-DUSE_SSE"
+		echo "SSE_FLAGS=-DUSE_SSE -msse"
 
 		[ "$sse2" = "true" ] && 
-		echo "SSE2_FLAGS=-DUSE_SSE2"
+		echo "SSE2_FLAGS=-DUSE_SSE2 -msse2"
 
 		[ "$debug" = "true" ] && 
 		echo "DEBUG_FLAGS=-g"
