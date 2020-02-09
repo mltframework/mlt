@@ -73,7 +73,7 @@ int mlt_get_sws_flags(int srcwidth, int srcheight, int srcformat, int dstwidth, 
 		else
 		{
 			// Chroma will be interpolated. Bilinear is suitable.
-			flags = SWS_FAST_BILINEAR | SWS_ACCURATE_RND;
+			flags = SWS_BILINEAR | SWS_ACCURATE_RND;
 		}
 	}
 
