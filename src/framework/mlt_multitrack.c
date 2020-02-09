@@ -3,7 +3,7 @@
  * \brief multitrack service class
  * \see mlt_multitrack_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -175,8 +175,8 @@ static void resize_service_caches( mlt_multitrack self )
 		for ( i = 0; i < mlt_properties_count(caches); ++i )
 		{
 			mlt_cache cache = mlt_properties_get_data_at( caches, i, NULL );
-			if ( self->count > mlt_cache_get_size(cache) )
-				mlt_cache_set_size( cache, self->count * 2 );
+			if ( self->count * 3 > mlt_cache_get_size(cache) )
+				mlt_cache_set_size( cache, self->count * 3 );
 		}
 	}
 }
