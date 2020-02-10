@@ -202,15 +202,20 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	int error = mlt_frame_get_audio( frame, buffer, &in_format, &in_frequency, &in_channels, samples );
 	if ( error ||
 			in_format == mlt_audio_none || out_format == mlt_audio_none ||
-			in_frequency == 0 || out_frequency == 0 ||
-			in_channels == 0 || out_channels == 0 ||
-			*samples == 0 )
+			in_frequency <= 0 || out_frequency <= 0 ||
+			in_channels <= 0 || out_channels <= 0 )
 	{
 		// Error situation. Do not attempt to convert.
 		*format = in_format;
 		*frequency = in_frequency;
 		*channels = in_channels;
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid Parameters: %dS - %dHz %dC %s -> %dHz %dC %s\n", *samples, in_frequency, in_channels, mlt_audio_format_name( in_format ), out_frequency, out_channels, mlt_audio_format_name( out_format ) );
+		return error;
+	}
+
+	if (*samples == 0)
+	{
+		// Noting to convert.
 		return error;
 	}
 
@@ -261,7 +266,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		if( in_frequency != out_frequency )
 		{
 			// Number of output samples will change if sampling frequency changes.
-			alloc_samples = in_samples * out_frequency / in_frequency;
+			uint64_t tmp = (uint64_t)in_samples * (uint64_t)out_frequency / (uint64_t)in_frequency;
+			alloc_samples = (int)tmp;
 			// Round up to make sure all available samples are received from swresample.
 			alloc_samples += 1;
 		}

@@ -52,6 +52,14 @@ parameters:
     required: yes
     mutable: no
 
+  - identifier: warp_pitch
+    title: Pitch Compensation
+    type: boolean
+    description: Enable or disable pitch compensation
+    readonly: no
+    mutable: no
+    default: 0
+
   - identifier: warp_speed
     title: Warp Speed
     type: float

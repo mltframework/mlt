@@ -66,6 +66,15 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	if ( error ) return error;
 
+	// Make sure the audio is in the correct format
+	// This is useful if the filter is encapsulated in a producer and does not
+	// have a normalizing filter before it.
+	if (*format != mlt_audio_float && frame->convert_audio != NULL)
+	{
+		frame->convert_audio( frame, buffer, format, mlt_audio_float );
+	}
+
+	// Detect the last frame
 	bool last_frame = false;
 	if ( mlt_filter_get_position( filter, frame ) + 1 == mlt_filter_get_length2( filter, frame ) )
 	{
@@ -73,22 +82,31 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		last_frame = true;
 	}
 
+	// Sanity check parameters
+	// rubberband library crashes have been seen with a very large scale factor
+	// or very small sampling frequency. Very small scale factor and very high
+	// sampling frequency can result in too much audio lag.
+	// Disallow these extreme scenarios for now. Maybe it will be improved in
+	// the future.
+	double pitchscale = mlt_properties_get_double( unique_properties, "pitchscale" );
+	pitchscale = CLAMP( pitchscale, 0.05, 50.0 );
+	int rubberband_frequency = CLAMP( *frequency, 10000, 300000 );
+
 	// Protect the RubberBandStretcher instance.
 	mlt_service_lock( MLT_FILTER_SERVICE(filter) );
 
 	// Configure the stretcher.
-	double pitchscale = mlt_properties_get_double( unique_properties, "pitchscale" );
 	RubberBandStretcher* s = static_cast<RubberBandStretcher*>(filter->child);
-	if ( !s || s->available() == -1 || (int)s->getChannelCount() != *channels || mlt_properties_get_int( filter_properties, "_frequency" ) != *frequency )
+	if ( !s || s->available() == -1 || (int)s->getChannelCount() != *channels || mlt_properties_get_int( filter_properties, "_frequency" ) != rubberband_frequency )
 	{
-		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Create a new stretcher\n" );
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Create a new stretcher\t%d\t%d\t%f\n", *channels, rubberband_frequency, pitchscale );
 		delete s;
 		// Create a rubberband instance
 		RubberBandStretcher::Options options = RubberBandStretcher::OptionProcessRealTime |
 												RubberBandStretcher::OptionPitchHighConsistency;
-		s = new RubberBandStretcher(*frequency, *channels, options, 1.0, pitchscale);
+		s = new RubberBandStretcher(rubberband_frequency, *channels, options, 1.0, pitchscale);
 		filter->child = s;
-		mlt_properties_set_int( filter_properties, "_frequency", *frequency );
+		mlt_properties_set_int( filter_properties, "_frequency", rubberband_frequency );
 	}
 	s->setPitchScale(pitchscale);
 
