@@ -28,13 +28,23 @@
 
 using namespace RubberBand;
 
+// Private Types
+typedef struct
+{
+	RubberBandStretcher* s;
+	int rubberband_frequency;
+	uint64_t in_samples;
+	uint64_t out_samples;
+} private_data;
+
 static const size_t MAX_CHANNELS = 10;
 
 static void collapse_channels( int channels, int allocated_samples, int used_samples, float* buffer )
 {
 	if ( allocated_samples != used_samples && used_samples != 0 )
 	{
-		for ( int p = 0; p < channels; p++ )
+		// The first channel will always be in the correct place (0).
+		for ( int p = 1; p < channels; p++ )
 		{
 			float* src = buffer + ( p * allocated_samples );
 			float* dst = buffer + ( p * used_samples );
@@ -47,6 +57,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 {
 	mlt_filter filter = static_cast<mlt_filter>(mlt_frame_pop_audio( frame ));
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+	private_data* pdata = (private_data*)filter->child;
 	if ( *channels > (int)MAX_CHANNELS )
 	{
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Too many channels requested: %d > %d\n", *channels, (int)MAX_CHANNELS );
@@ -66,6 +77,15 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	if ( error ) return error;
 
+	// Make sure the audio is in the correct format
+	// This is useful if the filter is encapsulated in a producer and does not
+	// have a normalizing filter before it.
+	if (*format != mlt_audio_float && frame->convert_audio != NULL)
+	{
+		frame->convert_audio( frame, buffer, format, mlt_audio_float );
+	}
+
+	// Detect the last frame
 	bool last_frame = false;
 	if ( mlt_filter_get_position( filter, frame ) + 1 == mlt_filter_get_length2( filter, frame ) )
 	{
@@ -73,22 +93,33 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		last_frame = true;
 	}
 
+	// Sanity check parameters
+	// rubberband library crashes have been seen with a very large scale factor
+	// or very small sampling frequency. Very small scale factor and very high
+	// sampling frequency can result in too much audio lag.
+	// Disallow these extreme scenarios for now. Maybe it will be improved in
+	// the future.
+	double pitchscale = mlt_properties_get_double( unique_properties, "pitchscale" );
+	pitchscale = CLAMP( pitchscale, 0.05, 50.0 );
+	int rubberband_frequency = CLAMP( *frequency, 10000, 300000 );
+
 	// Protect the RubberBandStretcher instance.
 	mlt_service_lock( MLT_FILTER_SERVICE(filter) );
 
 	// Configure the stretcher.
-	double pitchscale = mlt_properties_get_double( unique_properties, "pitchscale" );
-	RubberBandStretcher* s = static_cast<RubberBandStretcher*>(filter->child);
-	if ( !s || s->available() == -1 || (int)s->getChannelCount() != *channels || mlt_properties_get_int( filter_properties, "_frequency" ) != *frequency )
+	RubberBandStretcher* s = pdata->s;
+	if ( !s || s->available() == -1 || (int)s->getChannelCount() != *channels || pdata->rubberband_frequency != rubberband_frequency )
 	{
-		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Create a new stretcher\n" );
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Create a new stretcher\t%d\t%d\t%f\n", *channels, rubberband_frequency, pitchscale );
 		delete s;
 		// Create a rubberband instance
 		RubberBandStretcher::Options options = RubberBandStretcher::OptionProcessRealTime |
 												RubberBandStretcher::OptionPitchHighConsistency;
-		s = new RubberBandStretcher(*frequency, *channels, options, 1.0, pitchscale);
-		filter->child = s;
-		mlt_properties_set_int( filter_properties, "_frequency", *frequency );
+		s = new RubberBandStretcher(rubberband_frequency, *channels, options, 1.0, pitchscale);
+		pdata->s = s;
+		pdata->rubberband_frequency = rubberband_frequency;
+		pdata->in_samples = 0;
+		pdata->out_samples = 0;
 	}
 	s->setPitchScale(pitchscale);
 
@@ -96,11 +127,11 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	int in_samples = *samples;
 	int consumed_samples = 0;
 	int out_samples = 0;
-	int alloc_samples = in_samples + s->getLatency();
+	int alloc_samples = in_samples;
 	if ( last_frame )
 	{
 		// Allocate enough space for the rest of the samples in the stretcher.
-		alloc_samples += s->getLatency() * 2;
+		alloc_samples += pdata->in_samples - pdata->out_samples;
 	}
 	int size = mlt_audio_format_size( *format, alloc_samples, *channels );
 	float* out_buffer = (float*)mlt_pool_alloc( size );
@@ -132,7 +163,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 			consumed_samples += process_samples;
 		}
 
-		// Receive samples from to the stretcher
+		// Receive samples from the stretcher
 		int retrieve_samples = std::min( alloc_samples - out_samples, s->available() );
 		if ( retrieve_samples > 0 )
 		{
@@ -160,8 +191,11 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	*buffer = static_cast<void*>(out_buffer);
 	*samples = out_samples;
 
+	pdata->in_samples += in_samples;
+	pdata->out_samples += out_samples;
+
 	// Report the latency.
-	double latency = (double)s->getLatency() * 1000.0 / (double)*frequency;
+	double latency = (double)(pdata->in_samples - pdata->out_samples) * 1000.0 / (double)*frequency;
 	mlt_properties_set_double( filter_properties, "latency", latency );
 
 	mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
@@ -204,10 +238,15 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 static void close_filter( mlt_filter filter )
 {
-	RubberBandStretcher* s = static_cast<RubberBandStretcher*>(filter->child);
-	if ( s )
+	private_data* pdata = (private_data*)filter->child;
+	if ( pdata )
 	{
-		delete s;
+		RubberBandStretcher* s = static_cast<RubberBandStretcher*>(pdata->s);
+		if ( s )
+		{
+			delete s;
+		}
+		free( pdata );
 		filter->child = NULL;
 	}
 }
@@ -217,11 +256,34 @@ extern "C" {
 mlt_filter filter_rbpitch_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
-	if ( filter != NULL )
+	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
+
+	if( filter && pdata )
 	{
+		pdata->s = NULL;
+		pdata->rubberband_frequency = 0;
+		pdata->in_samples = 0;
+		pdata->out_samples = 0;
+
 		filter->process = filter_process;
 		filter->close = close_filter;
-		filter->child = NULL;
+		filter->child = pdata;
+	}
+	else
+	{
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Failed to initialize\n" );
+
+		if( filter )
+		{
+			mlt_filter_close( filter );
+		}
+
+		if( pdata )
+		{
+			free( pdata );
+		}
+
+		filter = NULL;
 	}
 	return filter;
 }

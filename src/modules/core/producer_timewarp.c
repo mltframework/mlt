@@ -33,6 +33,7 @@ typedef struct
 	mlt_producer clip_producer;
 	mlt_profile clip_profile;
 	mlt_properties clip_parameters;
+	mlt_filter pitch_filter;
 } private_data;
 
 // Private Functions
@@ -243,6 +244,19 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		{
 			mlt_frame_push_audio( *frame, producer );
 			mlt_frame_push_audio( *frame, producer_get_audio );
+
+			if ( mlt_properties_get_int( producer_properties, "warp_pitch" ) )
+			{
+				if ( !pdata->pitch_filter )
+				{
+					pdata->pitch_filter = mlt_factory_filter( mlt_service_profile( MLT_PRODUCER_SERVICE(producer)), "rbpitch", NULL );
+				}
+				if ( pdata->pitch_filter )
+				{
+					mlt_properties_set_double( MLT_FILTER_PROPERTIES(pdata->pitch_filter), "pitchscale", 1.0 / fabs(pdata->speed) );
+					mlt_filter_process( pdata->pitch_filter, *frame );
+				}
+			}
 		}
 	}
 	else
@@ -268,6 +282,7 @@ static void producer_close( mlt_producer producer )
 		mlt_producer_close( pdata->clip_producer );
 		mlt_profile_close( pdata->clip_profile );
 		mlt_properties_close( pdata->clip_parameters );
+		mlt_filter_close( pdata->pitch_filter );
 		free( pdata );
 	}
 
@@ -310,6 +325,7 @@ mlt_producer producer_timewarp_init( mlt_profile profile, mlt_service_type type,
 		pdata->clip_profile = NULL;
 		pdata->clip_parameters = NULL;
 		pdata->clip_producer = NULL;
+		pdata->pitch_filter = NULL;
 
 		// Create a false profile to be used by the clip producer.
 		pdata->clip_profile = mlt_profile_clone( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) );
