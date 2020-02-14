@@ -1,0 +1,8 @@
+f=mov
+acodec=alac
+vn=1
+video_off=1
+
+meta.preset.extension=mov
+meta.preset.note=audio only
+meta.preset.name=audio/ALAC
