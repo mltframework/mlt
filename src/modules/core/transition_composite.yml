@@ -180,3 +180,11 @@ parameters:
     default: 1
     mutable: yes
     widget: checkbox
+    
+  - identifier: invert
+    title: Invert
+    description: Whether to swap the A and B clips
+    type: boolean
+    default: 1
+    mutable: yes
+    widget: checkbox

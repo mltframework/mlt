@@ -1108,6 +1108,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_events_unblock( properties, properties );
 	}
 
+	if ( mlt_properties_get_int( properties, "invert" ) ) {
+		mlt_frame c = a_frame;
+		a_frame = b_frame;
+		b_frame = c;
+	}
+
 	// This compositer is yuv422 only
 	*format = mlt_image_yuv422;
 
@@ -1138,9 +1144,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		// Do the calculation
 		// NB: Locks needed here since the properties are being modified
-		int invert = mlt_properties_get_int( properties, "invert" );
 		mlt_service_lock( MLT_TRANSITION_SERVICE( self ) );
-		composite_calculate( self, &result, invert ? b_frame : a_frame, position );
+		composite_calculate( self, &result, a_frame, position );
 		mlt_service_unlock( MLT_TRANSITION_SERVICE( self ) );
 
 		// Manual option to deinterlace
@@ -1169,7 +1174,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 
 		// Get the image from the a frame
-		mlt_frame_get_image( a_frame, invert ? &image_b : image, format, width, height, 1 );
+		mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 		alpha_a = mlt_frame_get_alpha( a_frame );
 
 		// Optimisation - no compositing required
@@ -1199,8 +1204,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			height_b = mlt_properties_get_int( a_props, "dest_height" );
 		}
 
-		if ( *image != image_b && ( ( invert ? 0 : image_b ) ||
-			get_b_frame_image( self, b_frame, invert ? image : &image_b, &width_b, &height_b, &result ) ) )
+		if ( *image != image_b && ( image_b ||
+			get_b_frame_image( self, b_frame, &image_b, &width_b, &height_b, &result ) ) )
 		{
 			int progressive = 
 					mlt_properties_get_int( a_props, "consumer_deinterlace" ) ||
@@ -1246,7 +1251,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				// Do the calculation if we need to
 				// NB: Locks needed here since the properties are being modified
 				mlt_service_lock( MLT_TRANSITION_SERVICE( self ) );
-				composite_calculate( self, &result, invert ? b_frame : a_frame, field_position );
+				composite_calculate( self, &result, a_frame, field_position );
 				mlt_service_unlock( MLT_TRANSITION_SERVICE( self ) );
 
 				if ( mlt_properties_get_int( properties, "titles" ) )
@@ -1286,12 +1291,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 				}
 
 				// Composite the b_frame on the a_frame
-				mlt_log_timings_begin();
-				if ( invert )
-					composite_yuv( *image, width_b, height_b, image_b, *width, *height, alpha_a, alpha_b, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
-				else
-					composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
-				mlt_log_timings_end( NULL, "composite_yuv" );
+				mlt_log_timings_begin()
+				composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
+				mlt_log_timings_end( NULL, "composite_yuv" )
 			}
 		}
 	}
