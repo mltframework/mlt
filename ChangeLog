@@ -1,3 +1,243 @@
+2020-02-16  Dan Dennedy <dan@dennedy.org>
+
+  * Doxyfile, NEWS, configure, docs/melt.1, src/framework/mlt_version.h:
+  version 6.20.0
+
+  * .travis.yml, Dockerfile: add Dockerfile and integrate it with Travis CI
+
+2020-02-15  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/transition_composite.c,
+  src/modules/core/transition_composite.yml: fix #506 crash when using invert
+  in composite
+
+2020-02-14  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/ALAC, presets/consumer/avformat/FLAC,
+  presets/consumer/avformat/intermediate/ProRes HQ,
+  presets/consumer/avformat/intermediate/ProRes-Kostya: add ALAC, FLAC, and
+  ProRes HQ encode presets
+
+2020-02-09  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/avformat/filter_swresample.c,
+  src/modules/core/producer_timewarp.c, src/modules/core/producer_timewarp.yml,
+  src/modules/rubberband/filter_rbpitch.cpp: Add pitch compensation to timewarp
+  producer
+
+2020-02-08  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/opencv/filter_opencv_tracker.cpp,
+  src/modules/opencv/filter_opencv_tracker.yml: opencv.tracker : add CSRT and
+  MOSSE algorithms in version 2
+
+2020-02-07  Maksym Veremeyenko <max-verem@users.noreply.github.com>
+
+  * src/modules/core/composite_line_yuv_sse2_simple.c,
+  src/modules/core/transition_matte.c, src/modules/decklink/common.cpp,
+  src/modules/ndi/factory.c: fix #518 crash in matte transition
+
+2020-02-06  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/intermediate/DNxHR-HQ,
+  src/modules/lumas/create_lumas: add a DNxHR-HQ avformat consumer preset
+
+2020-02-06  Jean-Baptiste Mardelle <jb@kdenlive.org>
+
+  * src/modules/qt/filter_qtblend.cpp, src/modules/qt/transition_qtblend.cpp:
+  qtblend: adjust aspect ratio on consumer scaling, small optimizations
+
+2020-02-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/plus/filter_text.c, src/modules/qt/filter_qtext.cpp: support
+  text keyframes in text filters
+
+2020-01-27  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/motion_est/filter_autotrack_rectangle.c,
+  src/modules/motion_est/filter_crop_detect.c,
+  src/modules/motion_est/filter_motion_est.c,
+  src/modules/motion_est/filter_vismv.c,
+  src/modules/opencv/filter_opencv_tracker.cpp: disable consumer scale in
+  motion_est and opencv
+
+  * CMakeLists.txt, src/modules/rubberband/CMakeLists.txt: add CMake to
+  rubberband module
+
+2020-01-19  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/rubberband/Makefile, src/modules/rubberband/configure,
+  src/modules/rubberband/factory.c, src/modules/rubberband/filter_rbpitch.cpp,
+  src/modules/rubberband/filter_rbpitch.yml, src/modules/rubberband/gpl: Add
+  rubberband module and rbpitch filter.
+
+2020-01-26  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt_properties.c,
+  src/tests/test_properties/test_properties.cpp: fix mlt_properties_set
+  regression in e0304b5
+
+2020-01-25  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_properties.c,
+  src/framework/mlt_properties.h, src/mlt++/MltProperties.cpp,
+  src/mlt++/MltProperties.h, src/mlt++/mlt++.vers: add
+  mlt_properties_set_string() and Mlt::Properties::set_string()  These new
+  functions bypass any attempt to evaluate an expression.
+
+  * src/melt/melt.c, src/modules/xml/producer_xml.c: use multiplication when
+  applying scale in melt and xml
+
+2020-01-19  Dan Dennedy <dan@dennedy.org>
+
+  * src/mlt++/MltProfile.cpp, src/mlt++/MltProfile.h, src/mlt++/mlt++.vers: add
+  scale_width() and scale_height() to Mlt::Profile
+
+  * src/modules/avformat/filter_avfilter.c, src/modules/frei0r/frei0r_helper.c,
+  src/modules/gtk2/producer_pango.c, src/modules/kdenlive/filter_boxblur.c,
+  src/modules/kdenlive/filter_wave.c, src/modules/oldfilm/filter_lines.c,
+  src/modules/oldfilm/filter_oldfilm.c, src/modules/oldfilm/filter_vignette.c,
+  src/modules/opengl/filter_movit_blur.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  src/modules/opengl/filter_movit_resize.cpp,
+  src/modules/plus/filter_charcoal.c, src/modules/plus/filter_spot_remover.c,
+  src/modules/plus/transition_affine.c,
+  src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiowaveform.cpp, src/modules/qt/filter_lightshow.cpp,
+  src/modules/qt/filter_qtblend.cpp, src/modules/qt/filter_qtext.cpp,
+  src/modules/qt/transition_qtblend.cpp: refactor to
+  mlt_profile_scale_width/height()
+
+  * src/framework/mlt.vers, src/framework/mlt_profile.c,
+  src/framework/mlt_profile.h: add mlt_profile_scale_width() and
+  mlt_profile_scale_height()
+
+2020-01-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/vid.stab/filter_vidstab.cpp,
+  src/modules/videostab/filter_videostab.c,
+  src/modules/videostab/filter_videostab2.c: disable consumer scaling in
+  videostab and vidstab
+
+  * src/modules/avformat/factory.c, src/modules/avformat/filter_avfilter.c,
+  src/modules/avformat/resolution_scale.yml: support consumer scale in avfilter
+   The configuration may not be comprehensive. Some AVFilters may not be able
+  to support consumer scaling.
+
+  * src/modules/opengl/filter_movit_blur.cpp,
+  .../opengl/filter_movit_deconvolution_sharpen.cpp,
+  src/modules/opengl/filter_movit_glow.cpp,
+  src/modules/opengl/filter_movit_resize.cpp: support consumer scale in opengl
+  module
+
+  * src/modules/opengl/filter_movit_rect.yml,
+  src/modules/plus/filter_dynamictext.yml, src/modules/plus/filter_text.yml,
+  src/modules/plus/filter_timer.yml, src/modules/qt/filter_qtblend.yml,
+  src/modules/qt/filter_qtext.yml, src/modules/qt/transition_qtblend.yml: fix
+  the metadata parameter type from geometry to rect
+
+  * src/modules/plus/filter_affine.c, src/modules/plus/transition_affine.c,
+  src/modules/qt/transition_qtblend.cpp: fix consumer scale in affine and
+  qtblend transitions
+
+2020-01-17  Dan Dennedy <dan@dennedy.org>
+
+  * src/melt/melt.c, src/modules/xml/producer_xml.c: support consumer scale in
+  melt and xml producer
+
+2020-01-12  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/oldfilm/filter_lines.c, src/modules/oldfilm/filter_oldfilm.c,
+  src/modules/oldfilm/filter_vignette.c: add support for consumer scale to
+  oldfilm module
+
+  * src/modules/frei0r/factory.c, src/modules/frei0r/frei0r_helper.c,
+  src/modules/frei0r/not_thread_safe.txt,
+  src/modules/frei0r/resolution_scale.yml: add support for consumer scale to
+  frei0r module  Most pluings are already resolution independent, but some
+  parameters are relative to resolution. This adds a configurable way to
+  address them.
+
+2020-01-11  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/linsys/consumer_SDIstream.c,
+  src/modules/linsys/sdi_generator.c: fix sdi consumer crash if driver not
+  loaded
+
+  * src/modules/qt/filter_audiospectrum.cpp,
+  src/modules/qt/filter_audiowaveform.cpp, src/modules/qt/filter_lightshow.cpp,
+  src/modules/qt/filter_qtblend.cpp, src/modules/qt/filter_qtblend.yml,
+  src/modules/qt/filter_qtext.cpp, src/modules/qt/filter_qtext.yml,
+  src/modules/qt/graph.cpp, src/modules/qt/graph.h,
+  src/modules/qt/transition_qtblend.cpp, src/modules/qt/transition_qtblend.yml:
+  add support for consumer scale to qt module
+
+  * src/modules/plus/filter_charcoal.c, src/modules/plus/filter_charcoal.yml,
+  src/modules/plus/filter_spot_remover.c, src/modules/plus/filter_text.c,
+  src/modules/plus/transition_affine.c, src/modules/plus/transition_affine.yml:
+  add support for consumer scale to plus module
+
+  * src/modules/gtk2/producer_pango.c, src/modules/gtk2/producer_pango.yml: add
+  support for consumer scale to pango producer
+
+  * src/modules/kdenlive/filter_boxblur.c, src/modules/kdenlive/filter_wave.c:
+  add support for consumer scale to kdenlive module
+
+2020-01-06  Dan Dennedy <dan@dennedy.org>
+
+  * src/framework/mlt.vers, src/framework/mlt_consumer.c,
+  src/framework/mlt_consumer.h, src/framework/mlt_frame.c,
+  src/framework/mlt_frame.h, src/framework/mlt_tractor.c,
+  src/framework/mlt_transition.c: add resolution scale property to mlt_consumer
+   This also adds consumer_scale to mlt_frame and mlt_frame_resolution_scale()
+  to access it.
+
+2019-12-31  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/avformat/common.c, src/modules/avformat/common.h,
+  src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: Add "mlt" prefix to get_sws_flags.
+
+2019-12-30  Brian Matherly <code@brianmatherly.com>
+
+  * src/modules/avformat/common.c, src/modules/avformat/common.h,
+  src/modules/avformat/consumer_avformat.c,
+  src/modules/avformat/filter_avcolour_space.c,
+  src/modules/avformat/producer_avformat.c: Improve colorspace conversion. 
+  Choose sws flags based on what conversion is being done.
+
+2019-12-28  Dan Dennedy <dan@dennedy.org>
+
+  * presets/consumer/avformat/XDCAM-HD422,
+  presets/consumer/avformat/dv_ntsc/D10,
+  presets/consumer/avformat/dv_ntsc_wide/D10,
+  presets/consumer/avformat/dv_pal/D10,
+  presets/consumer/avformat/dv_pal_wide/D10: fix some avoptions in XDCAM and
+  D10 presets
+
+2019-12-23  Vincent Pinon <vpinon@kde.org>
+
+  * src/melt/CMakeLists.txt, src/modules/sdl2/CMakeLists.txt: Fix CMake SDL2
+  import  Fixes: #509 tested on debian sid, which has latest sdl2-config.cmake
+  but it may be patched on some distributions
+
+2019-12-01  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/vorbis/deprecated, src/modules/vorbis/producer_vorbis.yml: take
+  vorbis module out of deprecation (#505)
+
+2019-11-18  Dan Dennedy <dan@dennedy.org>
+
+  * src/modules/core/filter_mask_start.yml, src/modules/vmfx/filter_shape.c,
+  src/modules/vmfx/filter_shape.yml: add reverse property to shape filter
+
+  * src/modules/plus/filter_affine.yml, src/modules/plus/transition_affine.c,
+  src/modules/plus/transition_affine.yml: add invert_scale property to affine
+
+  * configure, src/framework/mlt_version.h: set the interim version to 6.19.0
+
 2019-11-11  Dan Dennedy <dan@dennedy.org>
 
   * configure, docs/melt.1, src/framework/mlt_version.h: set version to 6.18.0

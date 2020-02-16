@@ -1,6 +1,57 @@
 MLT Release Notes
 -----------------
 
+Version 6.20.0 - February 15, 2020
+
+This version adds support for low resolution preview scaling and adds a
+module based on librubberband for audio pitch-shifting.
+An official docker image is now available at
+https://hub.docker.com/repository/docker/mltframework/melt
+
+Framework
+  * Added consumer scaling:
+    - mlt_profile_scale_width()
+    - mlt_profile_scale_height()
+    - Mlt::Profile::scale_width()
+    - Mlt::Profile::scale_height()
+    - support for a double "scale" property to melt and the xml producer
+  * Fixed mlt_properties_set() with an invalid expression.
+  * Added new functions that do not evaluate expressions:
+    - mlt_properties_set_string()
+    - Mlt::Properties::set_string()
+  * Improved the service-caching heuristic in mlt_multitrack.
+  * Fixed possible crashes in mlt_playlist get_frame() and mlt_filter_process().
+
+Modules
+  * Added the rubberband module with a rbpitch filter.
+  * Added pitch compensation to timewarp producer.
+  * Added the invert_scale property to the affine filter and transition.
+  * Added the reverse property to shape filter.
+  * Added support for text keyframes to the text and qtext filters.
+  * Added support for the CSRT and MOSSE algorithms in opencv.tracker filter.
+  * Fixed a crash on empty algo property in the opencv.tracker filter.
+  * Changed vorbis module to no longer be deprecated.
+  * Improved colorspace conversions in the avformat module.
+  * Fixed audio artifacts on initial seek to in point in avformat producer.
+  * Fixed the colorspace of the cached image in avformat producer.
+  * Fixed white video flashes on property changes in the qtext filter.
+  * Fixed a crash in the rotoscoping filter with large spline deviations.
+  * Fixed a crash in the sdi consumer if the driver is not loaded.
+  * Improved support for a video clip as luma producer to the luma transition.
+  * Fixed a crash in the matte transition.
+  * Fixed a crash when using invert property =1 in the composite transition.
+
+Other
+  * Added a Dockerfile and integrated docker build into Travis CI.
+  * Added more avformat consumer presets:
+    - intermediate/DNxHR-HQ
+    - intermediate/ProRes HQ
+    - ALAC
+    - FLAC
+    * Fixed some parameters in the XDCAM and D10 avformat presets.
+    * Fixed link failure on some CPU architectures.
+
+
 Version 6.18.0 - November 11, 2019
 
 This version is a general maintenance release with a bunch of fixes,
