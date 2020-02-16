@@ -6,7 +6,10 @@ matrix:
       before_install:
         - docker pull ubuntu:16.04
       script:
-        - docker run -v $PWD:/root -w /root ubuntu:16.04 /bin/sh -c "sed -i -e 's/# deb-src/deb-src/' /etc/apt/sources.list && apt-get -qq update && apt-get -y build-dep melt && ./configure --enable-gpl --enable-gpl3 --enable-lumas && make -j && make install"
+        - docker run -v $PWD:/root -w /root ubuntu:16.04 /bin/sh -c "sed -i -e 's/# deb-src/deb-src/' /etc/apt/sources.list && apt-get -qq update && apt-get -y build-dep melt && apt-get -y qt5-qmake && ./configure --enable-gpl --enable-gpl3 --enable-lumas && make -j && make install && qmake src/tests && make -j && for test in $(find . -type f -name 'test_*' -executable); do $test; done"
+        - docker build -t ddennedy/melt:latest .
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker push ddennedy/melt
     - language: python
       python: 3.7
       dist: xenial  # required for Python >= 3.7 (travis-ci/travis-ci#9069)
