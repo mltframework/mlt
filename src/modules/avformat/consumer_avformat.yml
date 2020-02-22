@@ -401,9 +401,18 @@ parameters:
     title: Pixel format
     type: string
     description: >
-      See 'ffmpeg -pix_fmt list' to see a list of values.
+      See 'ffmpeg -pix_fmts' to see a list of values.
       Normally, this is not required, but some codecs support multiple pixel
       formats, especially chroma bit-depth.
+
+- identifier: sample_fmt
+  title: Audio sample format
+  type: string
+  description: >
+    See 'ffmpeg -sample_fmts' to see a list of values.
+    Normally, this is not required, but some codecs support multiple sample
+    formats, especially bit-depth and planar vs. interleaved.
+    This is evaluated at a lower priority than mlt_audio_format.
 
   - identifier: qscale
     title: Video quantizer

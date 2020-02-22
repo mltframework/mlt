@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -591,9 +591,13 @@ static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
 	int sample_fmt = AV_SAMPLE_FMT_S16;
 	const char *format = mlt_properties_get( properties, "mlt_audio_format" );
 	const int *p = codec->sample_fmts;
+	const char *sample_fmt_str = mlt_properties_get( properties, "sample_fmt" );
+
+	if (sample_fmt_str)
+		sample_fmt = av_get_sample_fmt(sample_fmt_str);
 
 	// get default av_sample_fmt from mlt_audio_format
-	if ( format )
+	if (format && (!sample_fmt_str || sample_fmt == AV_SAMPLE_FMT_NONE))
 	{
 		if ( !strcmp( format, "s32le" ) )
 			sample_fmt = AV_SAMPLE_FMT_S32;
