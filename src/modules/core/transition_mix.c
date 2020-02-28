@@ -139,7 +139,7 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	mlt_frame_get_audio( frame_a, (void**) &buffer_a, format, &frequency_a, &channels_a, &samples_a );
 
 	// Prevent dividing by zero.
-	if ( !channels_a || !channels_b )
+	if ( !channels_a || !channels_b || !buffer_a || !buffer_b )
 		return 1;
 
 	if ( buffer_b == buffer_a )
