@@ -296,9 +296,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	mlt_properties properties = get_filter_properties( filter, frame );
-	mlt_position position = mlt_filter_get_position( filter, frame );
-	mlt_position length = mlt_filter_get_length2( filter, frame );
-	char* argument = mlt_properties_anim_get( properties, "argument", position, length );
+	char* argument = mlt_properties_get( properties, "argument" );
 	if ( !argument || !strcmp( "", argument ) )
 		return frame;
 
