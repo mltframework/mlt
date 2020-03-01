@@ -290,6 +290,21 @@ static int first_video_index( producer_avformat self )
 	return i;
 }
 
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56, 1, 0)
+
+#include <libavutil/spherical.h>
+
+static const char* get_projection(AVStream *st)
+{
+	const AVSphericalMapping *spherical = av_stream_get_side_data(st, AV_PKT_DATA_SPHERICAL, NULL);
+
+	if (spherical)
+		return av_spherical_projection_name(spherical->projection);
+	return NULL;
+}
+
+#endif
+
 #include <libavutil/display.h>
 
 static double get_rotation(AVStream *st)
@@ -392,6 +407,13 @@ static mlt_properties find_default_streams( producer_avformat self )
 				double ffmpeg_fps = av_q2d( context->streams[ i ]->avg_frame_rate );
 				mlt_properties_set_double( meta_media, key, ffmpeg_fps );
 
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56, 1, 0)
+				const char *projection = get_projection(context->streams[i]);
+				if (projection) {
+					snprintf(key, sizeof(key), "meta.media.%d.stream.projection", i);
+					mlt_properties_set_string(meta_media, key, projection);
+				}
+#endif
 				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->sample_aspect_ratio ) );
 				snprintf( key, sizeof(key), "meta.media.%d.codec.width", i );
