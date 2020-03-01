@@ -137,7 +137,7 @@ static void context_push_service( deserialise_context context, mlt_service that,
 	if ( that != NULL && mlt_properties_get( MLT_SERVICE_PROPERTIES( that ), "_xml_branch" ) == NULL )
 	{
 		char s[ BRANCH_SIG_LEN ];
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( that ), "_xml_branch", serialise_branch( context, s ) );
+		mlt_properties_set_string( MLT_SERVICE_PROPERTIES( that ), "_xml_branch", serialise_branch( context, s ) );
 	}
 }
 
@@ -275,7 +275,7 @@ static inline void qualify_property( deserialise_context context, mlt_properties
 			{
 				strcpy( full_resource, resource_orig );
 			}
-			mlt_properties_set( properties, name, full_resource );
+			mlt_properties_set_string( properties, name, full_resource );
 			free( full_resource );
 		}
 	}
@@ -437,7 +437,7 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 	mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( service ), context->lc_numeric );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
+		mlt_properties_set_string( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 
 	mlt_properties_set_int( MLT_TRACTOR_PROPERTIES( tractor ), "global_feed", 1 );
 
@@ -494,7 +494,7 @@ static void on_start_multitrack( deserialise_context context, const xmlChar *nam
 		mlt_service service = MLT_SERVICE( mlt_tractor_multitrack( MLT_TRACTOR( parent ) ) );
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
-			mlt_properties_set( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
+			mlt_properties_set_string( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 
 		if ( mlt_properties_get( properties, "id" ) != NULL )
 			mlt_properties_set_data( context->producer_map, mlt_properties_get( properties,"id" ), service, 0, NULL, NULL );
@@ -528,11 +528,11 @@ static void on_start_playlist( deserialise_context context, const xmlChar *name,
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
+		mlt_properties_set_string( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 
 		// Out will be overwritten later as we append, so we need to save it
 		if ( xmlStrcmp( atts[ 0 ], _x("out") ) == 0 )
-			mlt_properties_set( properties, "_xml.out", ( const char* )atts[ 1 ] );
+			mlt_properties_set_string( properties, "_xml.out", ( const char* )atts[ 1 ] );
 	}
 
 	if ( mlt_properties_get( properties, "id" ) != NULL )
@@ -579,7 +579,7 @@ static void on_start_producer( deserialise_context context, const xmlChar *name,
 	context_push_service( context, service, mlt_dummy_producer_type );
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
+		mlt_properties_set_string( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 }
 
 static void on_end_producer( deserialise_context context, const xmlChar *name )
@@ -645,7 +645,7 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 			producer = MLT_SERVICE( mlt_factory_producer( context->profile, NULL, "+INVALID.txt" ) );
 			if (producer) {
 				// Save the original mlt_service for the consumer to serialize it as original.
-				mlt_properties_set( MLT_SERVICE_PROPERTIES(producer), "_xml_mlt_service",
+				mlt_properties_set_string( MLT_SERVICE_PROPERTIES(producer), "_xml_mlt_service",
 					mlt_properties_get( properties, "mlt_service" ) );
 			}
 		}
@@ -689,12 +689,12 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		else if ( mlt_properties_get( properties, "clipEnd" ) )
 			out = mlt_properties_get_position( properties, "clipEnd" );
 		// Remove in and out
-		mlt_properties_set( properties, "in", NULL );
-		mlt_properties_set( properties, "out", NULL );
+		mlt_properties_set_string( properties, "in", NULL );
+		mlt_properties_set_string( properties, "out", NULL );
 
 		// Do not let XML overwrite these important properties set by mlt_factory.
-		mlt_properties_set( properties, "mlt_type", NULL );
-		mlt_properties_set( properties, "mlt_service", NULL );
+		mlt_properties_set_string( properties, "mlt_type", NULL );
+		mlt_properties_set_string( properties, "mlt_service", NULL );
 
 		// Inherit the properties
 		mlt_properties_inherit( MLT_SERVICE_PROPERTIES( producer ), properties );
@@ -793,7 +793,7 @@ static void on_start_entry( deserialise_context context, const xmlChar *name, co
 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( temp, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
+		mlt_properties_set_string( temp, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 		
 		// Look for the producer attribute
 		if ( xmlStrcmp( atts[ 0 ], _x("producer") ) == 0 )
@@ -869,11 +869,11 @@ static void on_start_track( deserialise_context context, const xmlChar *name, co
 	// Push the dummy service onto the stack
 	context_push_service( context, service, mlt_entry_type );
 	
-	mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), "resource", "<track>" );
+	mlt_properties_set_string( MLT_SERVICE_PROPERTIES( service ), "resource", "<track>" );
 	
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
+		mlt_properties_set_string( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 		
 		// Look for the producer attribute
 		if ( xmlStrcmp( atts[ 0 ], _x("producer") ) == 0 )
@@ -971,7 +971,7 @@ static void on_start_filter( deserialise_context context, const xmlChar *name, c
 
 	// Set the properties
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (const char*) atts[0], (const char*) atts[1] );
+		mlt_properties_set_string( properties, (const char*) atts[0], (const char*) atts[1] );
 }
 
 static void on_end_filter( deserialise_context context, const xmlChar *name )
@@ -1003,8 +1003,8 @@ static void on_end_filter( deserialise_context context, const xmlChar *name )
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( filter ), context->lc_numeric );
 
 		// Do not let XML overwrite these important properties set by mlt_factory.
-		mlt_properties_set( properties, "mlt_type", NULL );
-		mlt_properties_set( properties, "mlt_service", NULL );
+		mlt_properties_set_string( properties, "mlt_type", NULL );
+		mlt_properties_set_string( properties, "mlt_service", NULL );
 
 		// Propagate the properties
 		qualify_property( context, properties, "resource" );
@@ -1067,7 +1067,7 @@ static void on_start_transition( deserialise_context context, const xmlChar *nam
 
 	// Set the properties
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
-		mlt_properties_set( properties, (const char*) atts[0], (const char*) atts[1] );
+		mlt_properties_set_string( properties, (const char*) atts[0], (const char*) atts[1] );
 }
 
 static void on_end_transition( deserialise_context context, const xmlChar *name )
@@ -1098,8 +1098,8 @@ static void on_end_transition( deserialise_context context, const xmlChar *name 
 		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( effect ), context->lc_numeric );
 
 		// Do not let XML overwrite these important properties set by mlt_factory.
-		mlt_properties_set( properties, "mlt_type", NULL );
-		mlt_properties_set( properties, "mlt_service", NULL );
+		mlt_properties_set_string( properties, "mlt_type", NULL );
+		mlt_properties_set_string( properties, "mlt_service", NULL );
 
 		// Propagate the properties
 		qualify_property( context, properties, "resource" );
@@ -1162,7 +1162,7 @@ static void on_start_consumer( deserialise_context context, const xmlChar *name,
 
 		// Set the properties from attributes
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
-			mlt_properties_set( properties, (const char*) atts[0], (const char*) atts[1] );
+			mlt_properties_set_string( properties, (const char*) atts[0], (const char*) atts[1] );
 	}
 }
 
@@ -1255,8 +1255,8 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 					}
 
 					// Do not let XML overwrite these important properties set by mlt_factory.
-					mlt_properties_set( properties, "mlt_type", NULL );
-					mlt_properties_set( properties, "mlt_service", NULL );
+					mlt_properties_set_string( properties, "mlt_type", NULL );
+					mlt_properties_set_string( properties, "mlt_service", NULL );
 
 					// Inherit the properties
 					mlt_properties_inherit( MLT_CONSUMER_PROPERTIES(context->consumer), properties );
@@ -1288,7 +1288,7 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 		}
 
 		if ( context->property != NULL )
-			mlt_properties_set( properties, context->property, value == NULL ? "" : value );
+			mlt_properties_set_string( properties, context->property, value == NULL ? "" : value );
 
 		// Tell parser to collect any further nodes for serialisation
 		context->is_value = 1;
@@ -1320,7 +1320,7 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 		
 			// Serialise the tree to get value
 			xmlDocDumpMemory( context->value_doc, &value, &size );
-			mlt_properties_set( properties, context->property, _s(value) );
+			mlt_properties_set_string( properties, context->property, _s(value) );
 #ifdef _WIN32
 			xmlFreeFunc xmlFree = NULL;
 			xmlMemGet( &xmlFree, NULL, NULL, NULL);
@@ -1417,7 +1417,7 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		{
 			if ( xmlStrcmp( atts[0], _x("LC_NUMERIC") ) )
-				mlt_properties_set( context->producer_map, _s( atts[0] ), _s(atts[1] ) );
+				mlt_properties_set_string( context->producer_map, _s( atts[0] ), _s(atts[1] ) );
 			else if ( !context->lc_numeric )
 				context->lc_numeric = strdup( _s( atts[1] ) );
 		}
@@ -1485,11 +1485,11 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 			char *new = calloc( 1, strlen( s ) + len + 1 );
 			strcat( new, s );
 			strcat( new, value );
-			mlt_properties_set( properties, context->property, new );
+			mlt_properties_set_string( properties, context->property, new );
 			free( new );
 		}
 		else
-			mlt_properties_set( properties, context->property, value );
+			mlt_properties_set_string( properties, context->property, value );
 	}
 	context->entity_is_replace = 0;
 
@@ -1668,7 +1668,7 @@ static void parse_url( mlt_properties properties, char *url )
 				{
 					url[ i++ ] = '\0';
 					if ( name != NULL && value != NULL )
-						mlt_properties_set( properties, name, value );
+						mlt_properties_set_string( properties, name, value );
 					name = &url[ i ];
 					value = NULL;
 				}
@@ -1676,7 +1676,7 @@ static void parse_url( mlt_properties properties, char *url )
 		}
 	}
 	if ( name != NULL && value != NULL )
-		mlt_properties_set( properties, name, value );
+		mlt_properties_set_string( properties, name, value );
 }
 
 // Quick workaround to avoid unnecessary libxml2 warnings
@@ -1793,10 +1793,10 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		return NULL;
 
 	// Decode URL and parse parameters
-	mlt_properties_set( context->producer_map, "root", "" );
+	mlt_properties_set_string( context->producer_map, "root", "" );
 	if ( is_filename )
 	{
-		mlt_properties_set( context->params, "_mlt_xml_resource", data );
+		mlt_properties_set_string( context->params, "_mlt_xml_resource", data );
 		filename = mlt_properties_get( context->params, "_mlt_xml_resource" );
 		parse_url( context->params, url_decode( filename, data ) );
 
@@ -1804,7 +1804,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		if ( strchr( filename, '/' ) || strchr( filename, '\\' ) )
 		{
 			char *root = NULL;
-			mlt_properties_set( context->producer_map, "root", filename );
+			mlt_properties_set_string( context->producer_map, "root", filename );
 			root = mlt_properties_get( context->producer_map, "root" );
 			if ( strchr( root, '/') )
 				*( strrchr( root, '/' ) ) = '\0';
@@ -1817,7 +1817,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 				char *cwd = getcwd( NULL, 0 );
 				char *real = malloc( strlen( cwd ) + strlen( root ) + 2 );
 				sprintf( real, "%s/%s", cwd, root );
-				mlt_properties_set( context->producer_map, "root", real );
+				mlt_properties_set_string( context->producer_map, "root", real );
 				free( real );
 				free( cwd );
 			}
@@ -1988,7 +1988,7 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		properties = MLT_SERVICE_PROPERTIES( service );
 	
 		// Assign the title
-		mlt_properties_set( properties, "title", title );
+		mlt_properties_set_string( properties, "title", title );
 
 		// Optimise for overlapping producers
 		mlt_producer_optimise( MLT_PRODUCER( service ) );
@@ -2004,18 +2004,18 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 			{
 				mlt_properties_set_int( properties, "_original_type",
 					mlt_service_identify( service ) );
-				mlt_properties_set( properties, "_original_resource",
+				mlt_properties_set_string( properties, "_original_resource",
 					mlt_properties_get( properties, "resource" ) );
-				mlt_properties_set( properties, "resource", data );
+				mlt_properties_set_string( properties, "resource", data );
 			}
 
 			// This tells consumer_xml not to deep copy
-			mlt_properties_set( properties, "xml", "was here" );
+			mlt_properties_set_string( properties, "xml", "was here" );
 		}
 		else
 		{
 			// Allow the project to be edited
-			mlt_properties_set( properties, "_xml", "was here" );
+			mlt_properties_set_string( properties, "_xml", "was here" );
 			mlt_properties_set_int( properties, "_mlt_service_hidden", 1 );
 		}
 
