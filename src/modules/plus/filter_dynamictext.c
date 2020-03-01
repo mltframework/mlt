@@ -1,6 +1,6 @@
 /*
  * filter_dynamictext.c -- dynamic text overlay filter
- * Copyright (C) 2011-2019 Meltytech, LLC
+ * Copyright (C) 2011-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -249,7 +249,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	// Apply keyword substitution before passing the text to the filter.
 	char* result = calloc( 1, MAX_TEXT_LEN );
 	substitute_keywords( filter, result, dynamic_text, frame );
-	mlt_properties_set( text_filter_properties, "argument", result );
+	mlt_properties_set_string( text_filter_properties, "argument", dynamic_text );
 	free( result );
 	mlt_properties_pass_list( text_filter_properties, properties,
 		"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline" );
@@ -278,19 +278,19 @@ mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, 
 		mlt_properties_set_data( my_properties, "_text_filter", text_filter, 0, ( mlt_destructor )mlt_filter_close, NULL );
 
 		// Assign default values
-		mlt_properties_set( my_properties, "argument", arg ? arg: "#timecode#" );
-		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100%" );
-		mlt_properties_set( my_properties, "family", "Sans" );
-		mlt_properties_set( my_properties, "size", "48" );
-		mlt_properties_set( my_properties, "weight", "400" );
-		mlt_properties_set( my_properties, "style", "normal" );
-		mlt_properties_set( my_properties, "fgcolour", "0x000000ff" );
-		mlt_properties_set( my_properties, "bgcolour", "0x00000020" );
-		mlt_properties_set( my_properties, "olcolour", "0x00000000" );
-		mlt_properties_set( my_properties, "pad", "0" );
-		mlt_properties_set( my_properties, "halign", "left" );
-		mlt_properties_set( my_properties, "valign", "top" );
-		mlt_properties_set( my_properties, "outline", "0" );
+		mlt_properties_set_string( my_properties, "argument", arg ? arg: "#timecode#" );
+		mlt_properties_set_string( my_properties, "geometry", "0%/0%:100%x100%:100%" );
+		mlt_properties_set_string( my_properties, "family", "Sans" );
+		mlt_properties_set_string( my_properties, "size", "48" );
+		mlt_properties_set_string( my_properties, "weight", "400" );
+		mlt_properties_set_string( my_properties, "style", "normal" );
+		mlt_properties_set_string( my_properties, "fgcolour", "0x000000ff" );
+		mlt_properties_set_string( my_properties, "bgcolour", "0x00000020" );
+		mlt_properties_set_string( my_properties, "olcolour", "0x00000000" );
+		mlt_properties_set_string( my_properties, "pad", "0" );
+		mlt_properties_set_string( my_properties, "halign", "left" );
+		mlt_properties_set_string( my_properties, "valign", "top" );
+		mlt_properties_set_string( my_properties, "outline", "0" );
 		mlt_properties_set_int( my_properties, "_filter_private", 1 );
 
 		filter->process = filter_process;

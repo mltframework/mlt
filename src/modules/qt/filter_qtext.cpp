@@ -333,19 +333,19 @@ mlt_filter filter_qtext_init( mlt_profile profile, mlt_service_type type, const 
 
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	// Assign default values
-	mlt_properties_set( filter_properties, "argument", arg ? arg: "text" );
-	mlt_properties_set( filter_properties, "geometry", "0%/0%:100%x100%:100%" );
-	mlt_properties_set( filter_properties, "family", "Sans" );
-	mlt_properties_set( filter_properties, "size", "48" );
-	mlt_properties_set( filter_properties, "weight", "400" );
-	mlt_properties_set( filter_properties, "style", "normal" );
-	mlt_properties_set( filter_properties, "fgcolour", "0x000000ff" );
-	mlt_properties_set( filter_properties, "bgcolour", "0x00000020" );
-	mlt_properties_set( filter_properties, "olcolour", "0x00000000" );
-	mlt_properties_set( filter_properties, "pad", "0" );
-	mlt_properties_set( filter_properties, "halign", "left" );
-	mlt_properties_set( filter_properties, "valign", "top" );
-	mlt_properties_set( filter_properties, "outline", "0" );
+	mlt_properties_set_string( filter_properties, "argument", arg ? arg: "text" );
+	mlt_properties_set_string( filter_properties, "geometry", "0%/0%:100%x100%:100%" );
+	mlt_properties_set_string( filter_properties, "family", "Sans" );
+	mlt_properties_set_string( filter_properties, "size", "48" );
+	mlt_properties_set_string( filter_properties, "weight", "400" );
+	mlt_properties_set_string( filter_properties, "style", "normal" );
+	mlt_properties_set_string( filter_properties, "fgcolour", "0x000000ff" );
+	mlt_properties_set_string( filter_properties, "bgcolour", "0x00000020" );
+	mlt_properties_set_string( filter_properties, "olcolour", "0x00000000" );
+	mlt_properties_set_string( filter_properties, "pad", "0" );
+	mlt_properties_set_string( filter_properties, "halign", "left" );
+	mlt_properties_set_string( filter_properties, "valign", "top" );
+	mlt_properties_set_string( filter_properties, "outline", "0" );
 	mlt_properties_set_int( filter_properties, "_filter_private", 1 );
 
 	return filter;

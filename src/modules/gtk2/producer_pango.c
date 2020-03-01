@@ -185,18 +185,18 @@ mlt_producer producer_pango_init( const char *filename )
 		mlt_events_listen( properties, producer, "fontmap-reload", (mlt_listener) on_fontmap_reload );
 
 		// Set the default properties
-		mlt_properties_set( properties, "fgcolour", "0xffffffff" );
-		mlt_properties_set( properties, "bgcolour", "0x00000000" );
-		mlt_properties_set( properties, "olcolour", "0x00000000" );
+		mlt_properties_set_string( properties, "fgcolour", "0xffffffff" );
+		mlt_properties_set_string( properties, "bgcolour", "0x00000000" );
+		mlt_properties_set_string( properties, "olcolour", "0x00000000" );
 		mlt_properties_set_int( properties, "align", pango_align_left );
 		mlt_properties_set_int( properties, "pad", 0 );
 		mlt_properties_set_int( properties, "outline", 0 );
-		mlt_properties_set( properties, "text", "" );
-		mlt_properties_set( properties, "font", NULL );
-		mlt_properties_set( properties, "family", "Sans" );
+		mlt_properties_set_string( properties, "text", "" );
+		mlt_properties_set_string( properties, "font", NULL );
+		mlt_properties_set_string( properties, "family", "Sans" );
 		mlt_properties_set_int( properties, "size", 48 );
-		mlt_properties_set( properties, "style", "normal" );
-		mlt_properties_set( properties, "encoding", "UTF-8" );
+		mlt_properties_set_string( properties, "style", "normal" );
+		mlt_properties_set_string( properties, "encoding", "UTF-8" );
 		mlt_properties_set_int( properties, "weight", PANGO_WEIGHT_NORMAL );
 		mlt_properties_set_int( properties, "stretch", PANGO_STRETCH_NORMAL + 1 );
 		mlt_properties_set_int( properties, "rotate", 0 );
@@ -207,7 +207,7 @@ mlt_producer producer_pango_init( const char *filename )
 			// workaround for old kdenlive countdown generator
 			|| strstr( filename, "&lt;producer&gt;" ) ) ) )
 		{
-			mlt_properties_set( properties, "markup", "" );
+			mlt_properties_set_string( properties, "markup", "" );
 		}
 		else if ( filename[ 0 ] == '+' || strstr( filename, "/+" ) )
 		{
@@ -219,8 +219,8 @@ mlt_producer producer_pango_init( const char *filename )
 				( *strrchr( markup, '.' ) ) = '\0';
 			while ( strchr( markup, '~' ) )
 				( *strchr( markup, '~' ) ) = '\n';
-			mlt_properties_set( properties, "resource", filename );
-			mlt_properties_set( properties, "markup", markup );
+			mlt_properties_set_string( properties, "resource", filename );
+			mlt_properties_set_string( properties, "markup", markup );
 			free( copy );
 		}
 		else if ( strstr( filename, ".mpl" ) ) 
@@ -230,13 +230,13 @@ mlt_producer producer_pango_init( const char *filename )
 			mlt_properties contents = mlt_properties_load( filename );
 			mlt_geometry key_frames = mlt_geometry_init( );
 			struct mlt_geometry_item_s item;
-			mlt_properties_set( properties, "resource", filename );
+			mlt_properties_set_string( properties, "resource", filename );
 			mlt_properties_set_data( properties, "contents", contents, 0, ( mlt_destructor )mlt_properties_close, NULL );
 			mlt_properties_set_data( properties, "key_frames", key_frames, 0, ( mlt_destructor )mlt_geometry_close, NULL );
 
 			// Make sure we have at least one entry
 			if ( mlt_properties_get( contents, "0" ) == NULL )
-				mlt_properties_set( contents, "0", "" );
+				mlt_properties_set_string( contents, "0", "" );
 
 			for ( i = 0; i < mlt_properties_count( contents ); i ++ )
 			{
@@ -254,7 +254,7 @@ mlt_producer producer_pango_init( const char *filename )
 		}
 		else
 		{
-			mlt_properties_set( properties, "resource", filename );
+			mlt_properties_set_string( properties, "resource", filename );
 			FILE *f = mlt_fopen( filename, "r" );
 			if ( f != NULL )
 			{
@@ -283,9 +283,9 @@ mlt_producer producer_pango_init( const char *filename )
 					markup[ strlen( markup ) - 1 ] = '\0';
 
 				if ( markup )
-					mlt_properties_set( properties, "markup", markup );
+					mlt_properties_set_string( properties, "markup", markup );
 				else
-					mlt_properties_set( properties, "markup", "" );
+					mlt_properties_set_string( properties, "markup", "" );
 				free( markup );
 			}
 			else
@@ -373,9 +373,9 @@ static int iconv_utf8( mlt_properties properties, const char *prop_name, const c
 		memset( outbuf, 0, outbuf_n );
 
 		if ( text != NULL && strcmp( text, "" ) && iconv( cd, &inbuf_p, &inbuf_n, &outbuf_p, &outbuf_n ) != -1 )
-			mlt_properties_set( properties, prop_name, outbuf );
+			mlt_properties_set_string( properties, prop_name, outbuf );
 		else
-			mlt_properties_set( properties, prop_name, "" );
+			mlt_properties_set_string( properties, prop_name, "" );
 
 		mlt_pool_release( outbuf );
 		result = 0;
