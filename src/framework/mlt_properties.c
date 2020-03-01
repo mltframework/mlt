@@ -187,7 +187,7 @@ const char* mlt_properties_get_lcnumeric( mlt_properties self )
 		if ( result )
 		{
 			// Convert the string from ANSI code page to UTF-8.
-			mlt_properties_set( self, "_lcnumeric_in", result );
+			mlt_properties_set_string( self, "_lcnumeric_in", result );
 			mlt_properties_to_utf8( self, "_lcnumeric_in", "_lcnumeric_out" );
 			result = mlt_properties_get( self, "_lcnumeric_out" );
 		}
@@ -356,7 +356,7 @@ static inline void mlt_properties_do_mirror( mlt_properties self, const char *na
 	{
 		char *value = mlt_properties_get( self, name );
 		if ( value != NULL )
-			mlt_properties_set( list->mirror, name, value );
+			mlt_properties_set_string( list->mirror, name, value );
 	}
 }
 
@@ -448,7 +448,7 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 	// Set "properties" first so preset overrides are reliable.
 	char *value = mlt_properties_get(that, "properties");
 	if (value)
-		mlt_properties_set(self, "properties", value);
+		mlt_properties_set_string(self, "properties", value);
 
 	mlt_properties_lock( that );
 
@@ -461,7 +461,7 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 		{
 			char *name = mlt_properties_get_name( that, i );
 			if (name && strcmp("properties", name))
-				mlt_properties_set( self, name, value );
+				mlt_properties_set_string( self, name, value );
 		}
 	}
 
@@ -495,7 +495,7 @@ int mlt_properties_pass( mlt_properties self, mlt_properties that, const char *p
 		{
 			char *value = mlt_properties_get_value( that, i );
 			if ( value != NULL )
-				mlt_properties_set( self, name + length, value );
+				mlt_properties_set_string( self, name + length, value );
 		}
 	}
 	return 0;
@@ -1439,9 +1439,9 @@ int mlt_properties_dir_list( mlt_properties self, const char *dirname, const cha
 			sprintf( key, "%d", mlt_properties_count( self ) );
 			snprintf( fullname, 1024, "%s/%s", dirname, de->d_name );
 			if ( pattern == NULL )
-				mlt_properties_set( self, key, fullname );
+				mlt_properties_set_string( self, key, fullname );
 			else if ( de->d_name[ 0 ] != '.' && mlt_fnmatch( pattern, de->d_name ) )
-				mlt_properties_set( self, key, fullname );
+				mlt_properties_set_string( self, key, fullname );
 			de = readdir( dir );
 		}
 
@@ -1837,7 +1837,7 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		name[strlen(name) - 1] = '\0';
 	}
 
-	error = mlt_properties_set( properties, name, value );
+	error = mlt_properties_set_string( properties, name, value );
 
 	if ( !strcmp( name, "LC_NUMERIC" ) )
 		mlt_properties_set_lcnumeric( properties, value );
@@ -2297,7 +2297,7 @@ char *mlt_properties_frames_to_time( mlt_properties self, mlt_position frames, m
 mlt_position mlt_properties_time_to_frames( mlt_properties self, const char *time )
 {
 	const char *name = "_mlt_properties_time";
-	mlt_properties_set( self, name, time );
+	mlt_properties_set_string( self, name, time );
 	return mlt_properties_get_position( self, name );
 }
 
@@ -2709,7 +2709,7 @@ int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, 
 	// This was largely chosen to prevent adding a libiconv dependency to the framework per policy.
 	// However, for file open operations on Windows, especially when processing XML, a text codec
 	// dependency is hardly avoidable.
-	return mlt_properties_set( properties, name_to, mlt_properties_get( properties, name_from ) );
+	return mlt_properties_set_string( properties, name_to, mlt_properties_get( properties, name_from ) );
 }
 
 #endif
