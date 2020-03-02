@@ -231,7 +231,9 @@ static inline int is_known_prefix(const char* resource)
 			"tcp",
 			"udp",
 			"udplite",
-			"unix"
+			"unix",
+			"color",
+			"colour"
 		};
 		size_t i, n = prefix - resource;
 		for (i = 0; i < sizeof(whitelist) / sizeof(whitelist[0]); ++i) {
