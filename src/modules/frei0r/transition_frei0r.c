@@ -1,7 +1,7 @@
 /*
  * transition_frei0r.c -- frei0r transition
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2019 Meltytech, LLC
+ * Copyright (C) 2009-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -67,8 +67,24 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 	else
 	{
+		mlt_image_format b_format = *format;
+		int b_width = *width;
+		int b_height = *height;
+
 		error = mlt_frame_get_image( a_frame, &images[0], format, width, height, 0 );
 		if ( error ) return error;
+
+		if (*width != b_width || *height != b_height) {
+			if (invert) {
+				*image = images[0];
+			} else {
+				*image = images[1];
+				*format = b_format;
+				*width = b_width;
+				*height = b_height;
+			}
+			return error;
+		}
 
 		mlt_position position = mlt_transition_get_position( transition, a_frame );
 		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
