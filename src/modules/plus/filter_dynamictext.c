@@ -249,7 +249,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	// Apply keyword substitution before passing the text to the filter.
 	char* result = calloc( 1, MAX_TEXT_LEN );
 	substitute_keywords( filter, result, dynamic_text, frame );
-	mlt_properties_set_string( text_filter_properties, "argument", dynamic_text );
+	mlt_properties_set_string( text_filter_properties, "argument", result );
 	free( result );
 	mlt_properties_pass_list( text_filter_properties, properties,
 		"geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline" );
