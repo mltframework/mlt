@@ -41,12 +41,22 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 	int invert = mlt_properties_get_int( properties, "invert" );
 	uint8_t *images[] = {NULL, NULL, NULL};
+	int request_width = *width;
+	int request_height = *height;
 	int error = 0;
 
 	// Get the B-frame.
 	*format = mlt_image_rgb24a;
 	error = mlt_frame_get_image( b_frame, &images[1], format, width, height, 0 );
 	if ( error ) return error;
+
+	if (b_frame->convert_image && (*width != request_width || *height != request_height)) {
+		mlt_properties_set_int(b_props, "convert_image_width", request_width);
+		mlt_properties_set_int(b_props, "convert_image_height", request_height);
+		b_frame->convert_image(b_frame, &images[1], format, *format);
+		*width = request_width;
+		*height = request_height;
+	}
 
 	const char *service_name = mlt_properties_get(properties, "mlt_service");
 	int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
@@ -67,23 +77,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 	else
 	{
-		mlt_image_format b_format = *format;
-		int b_width = *width;
-		int b_height = *height;
-
 		error = mlt_frame_get_image( a_frame, &images[0], format, width, height, 0 );
 		if ( error ) return error;
 
-		if (*width != b_width || *height != b_height) {
-			if (invert) {
-				*image = images[0];
-			} else {
-				*image = images[1];
-				*format = b_format;
-				*width = b_width;
-				*height = b_height;
-			}
-			return error;
+		if (a_frame->convert_image && (*width != request_width || *height != request_height)) {
+			mlt_properties_set_int(a_props, "convert_image_width", request_width);
+			mlt_properties_set_int(a_props, "convert_image_height", request_height);
+			a_frame->convert_image(a_frame, &images[0], format, *format);
+			*width = request_width;
+			*height = request_height;
 		}
 
 		mlt_position position = mlt_transition_get_position( transition, a_frame );
