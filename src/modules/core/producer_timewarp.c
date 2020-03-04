@@ -245,7 +245,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 			mlt_frame_push_audio( *frame, producer );
 			mlt_frame_push_audio( *frame, producer_get_audio );
 
-			if ( mlt_properties_get_int( producer_properties, "warp_pitch" ) )
+			// Pitch compensation does not work well for speed *reduction* of 1/10th or less.
+			if ( mlt_properties_get_int( producer_properties, "warp_pitch" ) && fabs(pdata->speed) >= 0.1 )
 			{
 				if ( !pdata->pitch_filter )
 				{
