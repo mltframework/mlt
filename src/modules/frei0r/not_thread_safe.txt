@@ -1,17 +1,18 @@
 # plugin name = lowest version that is thread safe or empty if not yet thread safe
 baltan
-delay0r
-delaygrab
-ising0r
-nervous
-partik0l
-plasma
-tehRoxx0r
-vertigo
-colorhalftone
 bigsh0t_eq_mask
 bigsh0t_eq_to_rect
 bigsh0t_hemi_to_eq
 bigsh0t_rect_to_eq
 bigsh0t_stabilize_360
 bigsh0t_transform_360
+colorhalftone
+delay0r
+delaygrab
+distort0r
+ising0r
+nervous
+partik0l
+plasma
+tehRoxx0r
+vertigo
