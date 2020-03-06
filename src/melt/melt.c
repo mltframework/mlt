@@ -518,6 +518,7 @@ static void show_usage( char *program_name )
 "  -query \"formats\"                         List audio/video formats\n"
 "  -query \"audio_codecs\"                    List audio codecs\n"
 "  -query \"video_codecs\"                    List video codecs\n"
+"  -quiet                                   Set the logging level to quiet\n"
 "  -remove                                  Remove the most recent cut\n"
 "  -repeat times                            Repeat the last cut\n"
 "  -repository path                         Set the directory of MLT modules\n"
@@ -857,6 +858,11 @@ query_all:
 		else if ( !strcmp( argv[ i ], "-silent" ) )
 		{
 			is_silent = 1;
+		}
+		else if ( !strcmp( argv[ i ], "-quiet" ) )
+		{
+			is_silent = 1;
+			mlt_log_set_level( MLT_LOG_QUIET );
 		}
 		else if ( !strcmp( argv[ i ], "-verbose" ) )
 		{

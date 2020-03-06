@@ -1,7 +1,7 @@
 Melt Documentation
 
-Copyright (C) 2004-2019 Meltytech, LLC
-Last Revision: 2019-06-24
+Copyright (C) 2004-2020 Meltytech, LLC
+Last Revision: 2020-03-05
 
 
 MELT
@@ -49,6 +49,7 @@ Usage:
       -query "formats"                         List audio/video formats
       -query "audio_codecs"                    List audio codecs
       -query "video_codecs"                    List video codecs
+      -quiet                                   Set the logging level to quiet
       -remove                                  Remove the most recent cut
       -repeat times                            Repeat the last cut
       -repository path                         Set the directory of MLT plugins
