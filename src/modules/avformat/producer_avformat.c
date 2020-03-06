@@ -2055,7 +2055,7 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 		const char *opt_name = mlt_properties_get_name( properties, i );
 		int search_flags = AV_OPT_SEARCH_CHILDREN;
 		const AVOption *opt = av_opt_find( obj, opt_name, NULL, flags, search_flags );
-		if ( opt_name && mlt_properties_get( properties, opt_name ) )
+		if ( opt_name && mlt_properties_get( properties, opt_name ) && strcmp(opt_name, "seekable") )
 		{
 			if ( opt )
 				av_opt_set( obj, opt_name, mlt_properties_get( properties, opt_name), search_flags );
