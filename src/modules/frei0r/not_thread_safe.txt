@@ -11,6 +11,7 @@ delay0r
 delaygrab
 distort0r
 ising0r
+medians
 nervous
 partik0l
 plasma
