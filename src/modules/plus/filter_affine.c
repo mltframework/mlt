@@ -88,7 +88,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_frame_set_aspect_ratio( a_frame, consumer_ar );
 
 		// Add the affine transition onto the frame stack
-		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 		mlt_transition_process( transition, a_frame, frame );
 
 		if ( mlt_properties_get_int( properties, "use_normalised" ) )
@@ -103,6 +102,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_properties_set_data( frame_properties, "affine_frame", a_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
 		mlt_frame_set_image( frame, *image, *width * *height * 4, NULL );
 		mlt_frame_set_alpha( frame, mlt_frame_get_alpha_mask( a_frame ), *width * *height, NULL );
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
 	else
 	{

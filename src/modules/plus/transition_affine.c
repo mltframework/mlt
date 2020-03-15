@@ -518,7 +518,12 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		}
 		result.o = (result.o == DBL_MIN)? 1.0 : MIN(result.o, 1.0);
 	}
-	mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
+
+	int threads = mlt_properties_get_int(properties, "threads");
+	threads = CLAMP(threads, 0, mlt_slices_count_normal());
+	if (threads == 1)
+		mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );
+
 	result.x *= scale_width;
 	result.y *= scale_height;
 	result.w *= scale_width;
@@ -573,6 +578,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if (error || !b_image) {
 		// Remove potentially large image on the B frame. 
 		mlt_frame_set_image( b_frame, NULL, 0, NULL );
+		if (threads != 1)
+			mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );		
 		return error;
 	}
 
@@ -622,8 +629,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Compute the affine transform
 		get_affine( &desc.affine, transition, ( double )position, length, scale_width, scale_height );
 		desc.dz = MapZ( desc.affine.matrix, 0, 0 );
-		if ( (int) fabs( desc.dz * 1000 ) < 25 )
+		if ( (int) fabs( desc.dz * 1000 ) < 25 ) {
+			if (threads != 1)
+				mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );		
 			return 0;
+		}
 
 		if (mlt_properties_get_int(properties, "invert_scale")) {
 			scale_x = 1.0 / scale_x;
@@ -695,8 +705,6 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		free( interps );
 
 		// Do the transform with interpolation
-		int threads = mlt_properties_get_int(properties, "threads");
-		threads = CLAMP(threads, 0, mlt_slices_count_normal());
 		if (threads == 1)
 			sliced_proc(0, 0, 1, &desc);
 		else
@@ -705,7 +713,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		// Remove potentially large image on the B frame. 
 		mlt_frame_set_image( b_frame, NULL, 0, NULL );
 	}
-
+	if (threads != 1)
+		mlt_service_unlock( MLT_TRANSITION_SERVICE( transition ) );		
 	return 0;
 }
 
