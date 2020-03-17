@@ -1,6 +1,6 @@
 /*
  * consumer_xml.c -- a libxml2 serialiser of mlt service networks
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -843,8 +843,6 @@ static void output_xml( mlt_consumer consumer )
 	// Set the title if provided
 	if ( mlt_properties_get( properties, "title" ) )
 		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), "title", mlt_properties_get( properties, "title" ) );
-	else if ( mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "title" ) == NULL )
-		mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), "title", "Anonymous Submission" );
 
 	// Check for a root on the consumer properties and pass to service
 	if ( mlt_properties_get( properties, "root" ) )
