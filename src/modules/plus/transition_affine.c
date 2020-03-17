@@ -473,6 +473,15 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if ( mirror && position > length / 2 )
 		position = abs( position - length );
 
+	// Preview scaling is not working correctly when offsets are active. I have
+	// not figured out the math; so, disable preview scaling for now.
+	double ox = mlt_properties_anim_get_double( properties, "ox", position, length );
+	double oy = mlt_properties_anim_get_double( properties, "oy", position, length );
+	if (ox != 0.0 || oy != 0.0) {
+		*width = normalised_width;
+		*height = normalised_height;
+	}
+	
 	// Fetch the a frame image
 	*format = mlt_image_rgb24a;
 	int error = mlt_frame_get_image( a_frame, image, format, width, height, 1 );
