@@ -18,6 +18,7 @@
  */
 
 #include "graph.h"
+#include <QPainterPath>
 #include <QVector>
 #include <math.h>
 

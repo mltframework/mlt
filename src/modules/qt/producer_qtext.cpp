@@ -26,6 +26,7 @@
 #include <QImage>
 #include <QColor>
 #include <QPainter>
+#include <QPainterPath>
 #include <QFont>
 #include <QString>
 #include <QTextCodec>
