@@ -1,6 +1,6 @@
 /*
  * transition_composite.c -- compose one image over another using alpha channel
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -697,10 +697,10 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 				{
 					luma_width = 0;
 					luma_height = 0;
-                }
+				}
 			}
 		}
-		if ( luma_width > 0 && luma_height > 0 )
+		if ( orig_bitmap && luma_width > 0 && luma_height > 0 )
 		{
 			// Scale luma map
 			luma_bitmap = mlt_pool_alloc( width * height * sizeof( uint16_t ) );
