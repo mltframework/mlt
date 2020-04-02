@@ -32,6 +32,8 @@ typedef struct
 	bool playback;
 	bool analyze;
 	int last_position;
+	int analyse_width;
+	int analyse_height;
 	mlt_position producer_in;
 	mlt_position producer_length;
 } private_data;
@@ -94,6 +96,14 @@ static void apply( mlt_filter filter, private_data* data, int width, int height,
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_rect rect = mlt_properties_anim_get_rect( properties, "results", position, length );
+	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+	// Calculate the region now
+	double scale_width = mlt_profile_scale_width( profile, width );
+	double scale_height = mlt_profile_scale_height( profile, height );
+	rect.x *= scale_width;
+	rect.w *= scale_width;
+	rect.y *= scale_height;
+	rect.h *= scale_height;
 	data->boundingBox.x = rect.x;
 	data->boundingBox.y= rect.y;
 	data->boundingBox.width = rect.w;
@@ -105,6 +115,19 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 {
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 
+	if ( data->analyse_width == -1 )
+	{
+		// Store analyze width/height
+		data->analyse_width = width;
+		data->analyse_height = height;
+	}
+	else if ( data->analyse_width != width || data->analyse_height != height )
+	{
+		// Frame size changed, reset all stored data
+		data->initialized = false;
+		data->analyse_width = width;
+		data->analyse_height = height;
+	}
 	// Create tracker and initialize it
 	if (!data->initialized)
 	{
@@ -151,14 +174,48 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		// Discard previous results
 		mlt_properties_set( filter_properties, "_results", "" );
 		if( data->tracker == NULL )
-                {
+		{
 			fprintf( stderr, "Tracker initialized FAILED\n" );
 		}
 		else
-                {
+		{
 			data->startRect = mlt_properties_get_rect( filter_properties, "rect" );
-			data->boundingBox.x = MAX( data->startRect.x, 1.0 );
-			data->boundingBox.y= MAX( data->startRect.y, 1.0 );
+			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+			double scale_width = mlt_profile_scale_width( profile, width );
+			double scale_height = mlt_profile_scale_height( profile, height );
+			data->startRect.x *= scale_width;
+			data->startRect.w *= scale_width;
+			data->startRect.y *= scale_height;
+			data->startRect.h *= scale_height;
+
+			// Ensure startRect is within frame boundaries
+			if ( data->startRect.x > width )
+			{
+				data->startRect.x = width - 10;
+			}
+			else
+			{
+				data->startRect.x = MAX( 0., data->startRect.x );
+			}
+			if ( data->startRect.y > height )
+			{
+				data->startRect.y = height - 10;
+			}
+			else
+			{
+				data->startRect.y = MAX( 0., data->startRect.y );
+			}
+			if ( data->startRect.x + data->startRect.w > width )
+			{
+				data->startRect.w = width - data->startRect.x;
+			}
+			if ( data->startRect.y + data->startRect.h > height )
+			{
+				data->startRect.h = height - data->startRect.y;
+			}
+
+			data->boundingBox.x = data->startRect.x;
+			data->boundingBox.y= data->startRect.y;
 			data->boundingBox.width = data->startRect.w;
 			data->boundingBox.height = data->startRect.h;
 			if ( data->boundingBox.width <1 ) {
@@ -181,10 +238,9 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		}
 	}
 	else
-        {
+	{
 		data->tracker->update( cvFrame, data->boundingBox );
 	}
-
 	if( data->analyze && position != data->last_position + 1 )
 	{
 		// We are in real time, do not try to store data
@@ -238,15 +294,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int shape_width = mlt_properties_get_int( filter_properties, "shape_width" );
 	int blur = mlt_properties_get_int( filter_properties, "blur" );
 	cv::Mat cvFrame;
-	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 
-	// Disable consumer scaling
-	if (profile && profile->width && profile->height) {
-		*width = profile->width;
-		*height = profile->height;
-	}
-
-	if ( shape_width == 0 && blur == 0 ) {
+	private_data* data = (private_data*) filter->child;
+	if ( shape_width == 0 && blur == 0 && !data->playback ) {
 		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 	}
 	else
@@ -255,7 +305,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 		cvFrame = cv::Mat( *height, *width, CV_8UC3, *image );
 	}
-	private_data* data = (private_data*) filter->child;
 	if ( data->producer_length == 0 )
 	{
 		mlt_producer producer = mlt_frame_get_original_producer( frame );
@@ -275,7 +324,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			data->playback = true;
 		}
 	}
-
 	if( data->playback )
 	{
 		// Clip already analysed, don't re-process
@@ -284,6 +332,31 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	else
 	{
 		analyze( filter, cvFrame, data, *width, *height, position, data->producer_in + data->producer_length );
+	}
+	// ensure bounding box is within the frame boundaries or OpenCV will crash
+	if ( data->boundingBox.x > *width )
+	{
+		data->boundingBox.x = *width - 10;
+	}
+	else
+	{
+		data->boundingBox.x = MAX(0., data->boundingBox.x);
+	}
+	if ( data->boundingBox.y > *height )
+	{
+		data->boundingBox.y = *height - 10;
+	}
+	else
+	{
+		data->boundingBox.y = MAX(0., data->boundingBox.y);
+	}
+	if ( data->boundingBox.x + data->boundingBox.width > *width )
+	{
+		data->boundingBox.width = *width - data->boundingBox.x;
+	}
+	if ( data->boundingBox.y + data->boundingBox.height > *height )
+	{
+		data->boundingBox.height = *height - data->boundingBox.y;
 	}
 
 	if ( blur > 0 )
@@ -382,6 +455,8 @@ mlt_filter filter_tracker_init( mlt_profile profile, mlt_service_type type, cons
 		data->boundingBox.height = 0;
 		data->analyze = false;
 		data->last_position = -1;
+		data->analyse_width = -1;
+		data->analyse_height = -1;
 		data->producer_in = 0;
 		data->producer_length = 0;
 		filter->child = data;
