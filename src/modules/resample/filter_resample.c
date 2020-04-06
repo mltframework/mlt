@@ -83,6 +83,7 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		}
 
 		// Resample the audio
+		src_set_ratio ( state, ( double ) output_rate / ( double ) *frequency );
 		error = src_process( state, &data );
 		if ( !error )
 		{
