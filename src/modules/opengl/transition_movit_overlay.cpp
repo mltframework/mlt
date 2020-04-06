@@ -42,6 +42,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	mlt_service service = MLT_TRANSITION_SERVICE( transition );
 	mlt_service_lock( service );
 
+	if (*width < 1 || *height < 1) {
+		mlt_log_error( service, "Invalid size for get_image: %dx%d", *width, *height);
+		return 1;
+	}
+
 	uint8_t *a_image, *b_image;
 
 	// Get the two images.

@@ -111,6 +111,10 @@ GlslManager* GlslManager::get_instance()
 
 glsl_texture GlslManager::get_texture(int width, int height, GLint internal_format)
 {
+	if (width < 1 || height < 1) {
+		return NULL;
+	}
+
 #if USE_TEXTURE_POOL
 	lock();
 	for (int i = 0; i < texture_list.count(); ++i) {
@@ -386,6 +390,10 @@ void GlslManager::set_effect_third_input( mlt_service service, mlt_frame frame, 
 
 int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
 {
+	if (width < 1 || height < 1) {
+		return NULL;
+	}
+
 	glsl_texture texture = get_texture( width, height, GL_RGBA8 );
 	if (!texture) {
 		return 1;
@@ -445,6 +453,10 @@ int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int w
 
 int GlslManager::render_frame_rgba(EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
 {
+	if (width < 1 || height < 1) {
+		return NULL;
+	}
+
 	glsl_texture texture = get_texture( width, height, GL_RGBA8 );
 	if (!texture) {
 		return 1;

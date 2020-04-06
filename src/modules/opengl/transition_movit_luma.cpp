@@ -40,6 +40,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	mlt_transition transition = (mlt_transition) mlt_frame_pop_service( a_frame );
 	mlt_service service = MLT_TRANSITION_SERVICE( transition );
 
+	if (*width < 1 || *height < 1) {
+		mlt_log_error( service, "Invalid size for get_image: %dx%d", *width, *height);
+		return 1;
+	}
+
 	// Get the b frame from the stack
 	mlt_frame b_frame = (mlt_frame) mlt_frame_pop_frame( a_frame );
 	mlt_frame c_frame = (mlt_frame) mlt_frame_pop_frame( a_frame );

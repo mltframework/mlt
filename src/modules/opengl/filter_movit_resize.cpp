@@ -57,7 +57,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	double consumer_aspect = mlt_profile_sar( profile );
 
 	// Correct Width/height if necessary
-	if ( *width == 0 || *height == 0 )
+	if ( *width < 1 || *height < 1 )
 	{
 		*width = profile->width;
 		*height = profile->height;
@@ -165,6 +165,11 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		float h = float( *height - oheight );
 		rect.x = w * 0.5f;
 		rect.y = h * 0.5f;
+	}
+
+	if (*width < 1 || *height < 1) {
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
+		return 1;
 	}
 
 	if ( !error ) {

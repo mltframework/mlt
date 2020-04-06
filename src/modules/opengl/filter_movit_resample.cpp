@@ -35,10 +35,15 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 
 	// Correct width/height if necessary
-	if ( *width == 0 || *height == 0 )
+	if ( *width < 0 || *height < 1 )
 	{
 		*width = profile->width;
 		*height = profile->height;
+	}
+
+	if (*width < 1 || *height < 1) {
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
+		return 1;
 	}
 
 	int iwidth = *width;
@@ -53,6 +58,11 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	{
 		iwidth = mlt_properties_get_int( properties, "meta.media.width" );
 		iheight = mlt_properties_get_int( properties, "meta.media.height" );
+	}
+
+	if (iwidth < 1 || iheight < 1) {
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid input size for get_image: %dx%d", *width, *height);
+		return 1;
 	}
 
 	mlt_properties_set_int( properties, "rescale_width", *width );

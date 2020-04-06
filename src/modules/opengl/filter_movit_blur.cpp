@@ -28,6 +28,10 @@ using namespace movit;
 
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	if (!width || !height || *width < 1 || *height < 1) {
+		return 1;
+	}
+
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	GlslManager::get_instance()->lock_service( frame );

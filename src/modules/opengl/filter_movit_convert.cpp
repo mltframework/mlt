@@ -447,6 +447,11 @@ static void dispose_pixel_pointers( GlslChain *chain, mlt_service service, mlt_f
 
 static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *format, mlt_image_format output_format, int width, int height, uint8_t **image )
 {
+	if (width < 1 || height < 1) {
+		mlt_log_error( NULL, "Invalid frame size for movit_render: %dx%d.\n", width, height );
+		return 1;
+	}
+
 	GlslManager* glsl = GlslManager::get_instance();
 	int error;
 	if ( output_format == mlt_image_glsl_texture ) {
@@ -465,6 +470,11 @@ static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *
 // Create an MltInput for an image with the given format and dimensions.
 static MltInput* create_input( mlt_properties properties, mlt_image_format format, int aspect_width, int aspect_height, int width, int height )
 {
+	if (width < 1 || height < 1) {
+		mlt_log_error( NULL, "Invalid frame size for create_input: %dx%d.\n", width, height );
+		return NULL;
+	}
+
 	MltInput* input = new MltInput( format );
 	if ( format == mlt_image_rgb24a || format == mlt_image_opengl ) {
 		// TODO: Get the color space if available.
@@ -497,6 +507,11 @@ static MltInput* create_input( mlt_properties properties, mlt_image_format forma
 // with the same parameters), and return that pointer.
 static uint8_t* make_input_copy( mlt_image_format format, uint8_t *image, int width, int height )
 {
+	if (width < 1 || height < 1) {
+		mlt_log_error( NULL, "Invalid frame size for make_input_copy: %dx%d.\n", width, height );
+		return NULL;
+	}
+
 	// We use height-1 because mlt_image_format_size() uses height + 1.
 	// XXX Remove -1 when mlt_image_format_size() is changed.
 	int img_size = mlt_image_format_size( format, width, height - 1, NULL );
@@ -533,6 +548,12 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	int error = 0;
 	int width = mlt_properties_get_int( properties, "width" );
 	int height = mlt_properties_get_int( properties, "height" );
+
+	if (width < 1 || height < 1) {
+		mlt_log_error( NULL, "Invalid frame size for convert_image %dx%d.\n", width, height );
+		return 1;
+	}
+
 	GlslManager::get_instance()->lock_service( frame );
 	
 	// If we're at the beginning of a series of Movit effects, store the input
@@ -541,8 +562,19 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 		MltInput *input = create_input( properties, *format, profile->width, profile->height, width, height );
+
+		if (!input) {
+			return 1;
+		}
+
 		GlslManager::set_input( producer, frame, input );
 		uint8_t *img_copy = make_input_copy( *format, *image, width, height );
+
+		if (!img_copy) {
+			delete input;
+			return 1;
+		}
+
 		GlslManager::set_input_pixel_pointer( producer, frame, img_copy );
 
 		*image = (uint8_t *) -1;
@@ -602,6 +634,12 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			if ( !chain || !input || width != w || height != h || *format != f ) {
 				chain = new EffectChain( width, height, GlslManager::get_instance()->get_resource_pool() );
 				input = create_input( properties, *format, width, height, width, height );
+
+				if (!input) {
+					delete chain;
+					return 1;
+				}
+
 				chain->add_input( input->get_input() );
 				chain->add_effect( new Mlt::VerticalFlip() );
 				ImageFormat movit_output_format;
@@ -620,6 +658,11 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			if ( *format == mlt_image_yuv422 ) {
 				// We need to convert to planar, which make_input_copy() will do for us.
 				uint8_t *planar = make_input_copy( *format, *image, width, height );
+
+				if (!planar) {
+					return 1;
+				}
+
 				input->set_pixel_data( planar );
 				error = movit_render( chain, frame, format, output_format, width, height, image );
 				mlt_pool_release( planar );
