@@ -172,7 +172,6 @@ mlt_producer producer_pango_init( const char *filename )
 		pthread_mutex_lock( &pango_mutex );
 		if ( fontmap == NULL )
 			fontmap = (PangoFT2FontMap*) pango_ft2_font_map_new();
-		g_type_init();
 		pthread_mutex_unlock( &pango_mutex );
 
 		producer->get_frame = producer_get_frame;

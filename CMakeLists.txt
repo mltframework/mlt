@@ -32,6 +32,7 @@ set(modules
     src/modules/frei0r
     src/modules/feeds
     src/modules/gtk2
+    src/modules/gdk
     src/modules/kdenlive
     src/modules/motion_est
     src/modules/normalize

@@ -22,17 +22,8 @@
 #include <gdk/gdk.h>
 #include <stdlib.h>
 
-#ifdef USE_PIXBUF
-extern mlt_producer producer_pixbuf_init( char *filename );
-extern mlt_filter filter_rescale_init( mlt_profile profile, char *arg );
-#endif
-
 #ifdef USE_GTK2
 extern mlt_consumer consumer_gtk2_preview_init( mlt_profile profile, void *widget );
-#endif
-
-#ifdef USE_PANGO
-extern mlt_producer producer_pango_init( const char *filename );
 #endif
 
 static void initialise( )
@@ -42,39 +33,12 @@ static void initialise( )
 	{
 		init = 1;
 		g_type_init( );
-		if ( getenv("MLT_PIXBUF_PRODUCER_CACHE") )
-		{
-			int n = atoi( getenv("MLT_PIXBUF_PRODUCER_CACHE" )  );
-			mlt_service_cache_set_size( NULL, "pixbuf.image", n );
-			mlt_service_cache_set_size( NULL, "pixbuf.alpha", n );
-			mlt_service_cache_set_size( NULL, "pixbuf.pixbuf", n );
-		}
-		if ( getenv("MLT_PANGO_PRODUCER_CACHE") )
-		{
-			int n = atoi( getenv("MLT_PANGO_PRODUCER_CACHE" )  );
-			mlt_service_cache_set_size( NULL, "pango.image", n );
-		}
 	}
 }
 
 void *create_service( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	initialise( );
-
-#ifdef USE_PIXBUF
-	if ( !strcmp( id, "pixbuf" ) )
-		return producer_pixbuf_init( arg );
-#endif
-
-#ifdef USE_PANGO
-	if ( !strcmp( id, "pango" ) )
-		return producer_pango_init( arg );
-#endif
-
-#ifdef USE_PIXBUF
-	if ( !strcmp( id, "gtkrescale" ) )
-		return filter_rescale_init( profile, arg );
-#endif
 
 #ifdef USE_GTK2
 	if ( !strcmp( id, "gtk2_preview" ) )
@@ -94,12 +58,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 MLT_REPOSITORY
 {
 	MLT_REGISTER( consumer_type, "gtk2_preview", create_service );
-	MLT_REGISTER( filter_type, "gtkrescale", create_service );
-	MLT_REGISTER( producer_type, "pango", create_service );
-	MLT_REGISTER( producer_type, "pixbuf", create_service );
 
 	MLT_REGISTER_METADATA( consumer_type, "gtk2_preview", metadata, "consumer_gtk2_preview.yml" );
-	MLT_REGISTER_METADATA( filter_type, "gtkrescale", metadata, "filter_rescale.yml" );
-	MLT_REGISTER_METADATA( producer_type, "pango", metadata, "producer_pango.yml" );
-	MLT_REGISTER_METADATA( producer_type, "pixbuf", metadata, "producer_pixbuf.yml" );
 }
