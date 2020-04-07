@@ -823,7 +823,7 @@ static void on_property_changed( void*, mlt_properties properties, const char *n
 			{
 				char *name_cstr = getCString( name );
 				const char *format = "device.%d";
-				char *key = (char*) calloc( 1, strlen( format ) + 1 );
+				char *key = (char*) calloc( 1, strlen( format ) + 17 );
 
 				sprintf( key, format, i );
 				mlt_properties_set( properties, key, name_cstr );
