@@ -472,7 +472,7 @@ static MltInput* create_input( mlt_properties properties, mlt_image_format forma
 {
 	if (width < 1 || height < 1) {
 		mlt_log_error( NULL, "Invalid frame size for create_input: %dx%d.\n", width, height );
-		return NULL;
+		return nullptr;
 	}
 
 	MltInput* input = new MltInput( format );

@@ -391,7 +391,7 @@ void GlslManager::set_effect_third_input( mlt_service service, mlt_frame frame, 
 int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
 {
 	if (width < 1 || height < 1) {
-		return NULL;
+		return 1;
 	}
 
 	glsl_texture texture = get_texture( width, height, GL_RGBA8 );
@@ -454,7 +454,7 @@ int GlslManager::render_frame_texture(EffectChain *chain, mlt_frame frame, int w
 int GlslManager::render_frame_rgba(EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
 {
 	if (width < 1 || height < 1) {
-		return NULL;
+		return 1;
 	}
 
 	glsl_texture texture = get_texture( width, height, GL_RGBA8 );

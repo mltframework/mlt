@@ -27,6 +27,8 @@ using namespace movit;
 
 MltInput::MltInput( mlt_image_format format )
 	: m_format(format)
+	, m_width(0)
+	, m_height(0)
 	, input(0)
 	, isRGB(true)
 {
@@ -73,10 +75,16 @@ void MltInput::useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat&
 
 void MltInput::set_pixel_data(const unsigned char* data)
 {
-    if (!input) {
+	if (!input) {
 		mlt_log_error( NULL, "No input for set_pixel_data");
-        return;
-    }
+		return;
+	}
+
+	// In case someone didn't think properly and passed -1 to an unsigned
+	if (int(m_width) < 1 || int(m_height) < 1) {
+		mlt_log_error( NULL, "Invalid size %dx%d\n", m_width, m_height);
+		return;
+	}
 
 	if (isRGB) {
 		FlatInput* flat = (FlatInput*) input;

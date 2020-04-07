@@ -51,7 +51,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	if (*width < 1 || *height < 1) {
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
-		return 1;
+		return error;
 	}
 
 	mlt_properties_set_int( properties, "rescale_width", *width );

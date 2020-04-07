@@ -30,13 +30,14 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 {
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
 
-	if (*width < 1 || *height < 1) {
-		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
-		return 1;
-	}
-
 	*format = mlt_image_glsl;
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
+
+	if (*width < 1 || *height < 1) {
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
+		return error;
+	}
+
 	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
 	GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new MirrorEffect );
 	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );

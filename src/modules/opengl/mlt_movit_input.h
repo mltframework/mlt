@@ -44,10 +44,10 @@ public:
 
 private:
 	mlt_image_format m_format;
-	unsigned m_width = 1, m_height = 1;
+	unsigned m_width, m_height;
 	// Note: Owned by the EffectChain, so should not be deleted by us.
-	movit::Input *input = nullptr;
-	bool isRGB = false;
+	movit::Input *input;
+	bool isRGB;
 	movit::YCbCrFormat m_ycbcr_format;
 };
 
