@@ -39,7 +39,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// Get the transition object
 	mlt_transition transition = (mlt_transition) mlt_frame_pop_service( a_frame );
 	mlt_service service = MLT_TRANSITION_SERVICE( transition );
-
 	// Get the b frame from the stack
 	mlt_frame b_frame = (mlt_frame) mlt_frame_pop_frame( a_frame );
 	mlt_frame c_frame = (mlt_frame) mlt_frame_pop_frame( a_frame );
@@ -68,13 +67,18 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			!mlt_properties_get_int( properties, "invert" ) );
 
 		uint8_t *a_image, *b_image, *c_image;
-	
+
 		// Get the images.
 		*format = mlt_image_glsl;
 		error = mlt_frame_get_image( a_frame, &a_image, format, width, height, writable );
 		error = mlt_frame_get_image( b_frame, &b_image, format, width, height, writable );
 		error = mlt_frame_get_image( c_frame, &c_image, format, width, height, writable );
-	
+
+		if (*width < 1 || *height < 1) {
+			mlt_log_error( service, "Invalid size for get_image: %dx%d", *width, *height);
+			return error;
+		}
+
 		GlslManager::set_effect_input( service, a_frame, (mlt_service) a_image );
 		GlslManager::set_effect_secondary_input( service, a_frame, (mlt_service) b_image, b_frame );
 		GlslManager::set_effect_third_input( service, a_frame, (mlt_service) c_image, c_frame );
@@ -95,6 +99,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		*format = mlt_image_glsl;
 		error = mlt_frame_get_image( a_frame, &a_image, format, width, height, writable );
 		error = mlt_frame_get_image( b_frame, &b_image, format, width, height, writable );
+
+		if (*width < 1 || *height < 1) {
+			mlt_log_error( service, "Invalid size for get_image: %dx%d", *width, *height);
+			return error;
+		}
 	
 		GlslManager::set_effect_input( service, a_frame, (mlt_service) a_image );
 		GlslManager::set_effect_secondary_input( service, a_frame, (mlt_service) b_image, b_frame );

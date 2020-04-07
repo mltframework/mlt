@@ -19,10 +19,16 @@
 
 #include "mlt_movit_input.h"
 
+extern "C" {
+#include <framework/mlt_log.h>
+}
+
 using namespace movit;
 
 MltInput::MltInput( mlt_image_format format )
 	: m_format(format)
+	, m_width(0)
+	, m_height(0)
 	, input(0)
 	, isRGB(true)
 {
@@ -34,6 +40,12 @@ MltInput::~MltInput()
 
 void MltInput::useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned height)
 {
+	// In case someone didn't think properly and passed -1 to an unsigned
+	if (int(width) < 1 || int(height) < 1) {
+		mlt_log_error( NULL, "Invalid size %dx%d\n", width, height);
+		return;
+	}
+
 	if (!input) {
 		m_width = width;
 		m_height = height;
@@ -46,6 +58,12 @@ void MltInput::useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned h
 
 void MltInput::useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat& ycbcr_format, unsigned width, unsigned height)
 {
+	// In case someone didn't think properly and passed -1 to an unsigned
+	if (int(width) < 1 || int(height) < 1) {
+		mlt_log_error( NULL, "Invalid size %dx%d\n", width, height);
+		return;
+	}
+
 	if (!input) {
 		m_width = width;
 		m_height = height;
@@ -57,7 +75,17 @@ void MltInput::useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat&
 
 void MltInput::set_pixel_data(const unsigned char* data)
 {
-	assert(input);
+	if (!input) {
+		mlt_log_error( NULL, "No input for set_pixel_data");
+		return;
+	}
+
+	// In case someone didn't think properly and passed -1 to an unsigned
+	if (int(m_width) < 1 || int(m_height) < 1) {
+		mlt_log_error( NULL, "Invalid size %dx%d\n", m_width, m_height);
+		return;
+	}
+
 	if (isRGB) {
 		FlatInput* flat = (FlatInput*) input;
 		flat->set_pixel_data(data);
@@ -71,7 +99,11 @@ void MltInput::set_pixel_data(const unsigned char* data)
 
 void MltInput::invalidate_pixel_data()
 {
-	assert(input);
+	if (!input) {
+		mlt_log_error( NULL, "Invalidate called without input\n");
+		return;
+	}
+
 	if (isRGB) {
 		FlatInput* flat = (FlatInput*) input;
 		flat->invalidate_pixel_data();

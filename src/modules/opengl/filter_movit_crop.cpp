@@ -38,16 +38,22 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	// Correct width/height if necessary
 	*width = mlt_properties_get_int( properties, "crop.original_width" );
 	*height = mlt_properties_get_int( properties, "crop.original_height" );
-	if ( *width == 0 || *height == 0 )
+	if ( *width < 1 || *height < 1 )
 	{
 		*width = mlt_properties_get_int( properties, "meta.media.width" );
 		*height = mlt_properties_get_int( properties, "meta.media.height" );
 	}
-	if ( *width == 0 || *height == 0 )
+	if ( *width < 1 || *height < 1 )
 	{
 		*width = profile->width;
 		*height = profile->height;
 	}
+
+	if (*width < 1 || *height < 1) {
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
+		return error;
+	}
+
 	mlt_properties_set_int( properties, "rescale_width", *width );
 	mlt_properties_set_int( properties, "rescale_height", *height );
 
@@ -77,8 +83,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		double bottom  = mlt_properties_get_double( properties, "crop.bottom" );
 		int owidth  = *width - left - right;
 		int oheight = *height - top - bottom;
-		owidth = owidth < 0 ? 0 : owidth;
-		oheight = oheight < 0 ? 0 : oheight;
+		owidth = owidth < 1 ? 1 : owidth;
+		oheight = oheight < 1 ? 1 : oheight;
 
 		mlt_log_debug( MLT_FILTER_SERVICE(filter), "%dx%d -> %dx%d\n", *width, *height, owidth, oheight);
 

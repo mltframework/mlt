@@ -35,7 +35,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 
 	// Correct width/height if necessary
-	if ( *width == 0 || *height == 0 )
+	if ( *width < 0 || *height < 1 )
 	{
 		*width = profile->width;
 		*height = profile->height;
@@ -78,6 +78,13 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	if ( *format != mlt_image_none )
 		*format = mlt_image_glsl;
 	int error = mlt_frame_get_image( frame, image, format, &iwidth, &iheight, writable );
+
+	if (*width < 1 || *height < 1 || iwidth < 1 || iheight < 1 || owidth < 1 || oheight < 1) {
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d, in: %dx%d, out: %dx%d",
+			       *width, *height, iwidth, iheight, owidth, oheight);
+		return error;
+	}
+
 	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
 	Effect *effect = GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new OptionalEffect<ResampleEffect> );
 	// This needs to be something else than 0x0 at chain finalization time.

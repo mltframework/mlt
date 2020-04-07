@@ -268,7 +268,7 @@ void* video_thread( void *arg )
 				int width = 0, height = 0;
 				GLuint *image = 0;
 				int error = mlt_frame_get_image( next, (uint8_t**) &image, &vfmt, &width, &height, 0 );
-				if ( !error && image && width && height && !new_frame.new ) {
+				if ( !error && image && width > 0 && height > 0 && !new_frame.new ) {
 					new_frame.width = width;
 					new_frame.height = height;
 					new_frame.texture = *image;

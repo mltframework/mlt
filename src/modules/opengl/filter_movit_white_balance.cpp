@@ -40,6 +40,7 @@ static double srgb8_to_linear(int c)
 static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
+
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	GlslManager::get_instance()->lock_service( frame );
 	mlt_position position = mlt_filter_get_position( filter, frame );
@@ -60,6 +61,12 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	GlslManager::get_instance()->unlock_service( frame );
 	*format = mlt_image_glsl;
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
+
+	if (*width < 1 || *height < 1) {
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
+		return error;
+	}
+
 	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
 	GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new WhiteBalanceEffect );
 	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );
