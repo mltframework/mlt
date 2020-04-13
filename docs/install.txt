@@ -28,7 +28,7 @@ Last Revision: 2013-09-07
          * effectv       - ports of !EffecTV filters (*)
          * feeds         - templates for use with core's data filters
          * frei0r        - adapter for frei0r video plugins
-         * gtk2          - GTK+ pango and pixbuf dependent services
+         * gdk           - GDK pango and pixbuf dependent services
          * jackrack      - adapter for LADSPA audio plugins and JACK server
          * kdenlive      - services contributed by Kdenlive project
          * kino          - DV/AVI demuxer from Kino project (*)
