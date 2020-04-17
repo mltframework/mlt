@@ -5,7 +5,7 @@ then
 	cat << EOF
 JACK Rack options:
 
-  --gtk2-prefix=path      - Override the gtk+-2.0 prefix for pkg-config
+  --gdk-prefix=path      - Override the gdk prefix for pkg-config
 
 EOF
 
@@ -35,7 +35,7 @@ else
 		for i in "$@"
 		do
 			case $i in
-				--gtk2-prefix=* )	pkgconfig_prefix="${i#--gtk2-prefix=}" ;;
+				--gdk-prefix=* )	pkgconfig_prefix="${i#--gdk-prefix=}" ;;
 			esac
 		done
 		[ "$pkgconfig_prefix" != "" ] && echo "PKGCONFIG_PREFIX=--define-variable=prefix=\"$pkgconfig_prefix\"" >> config.mak
