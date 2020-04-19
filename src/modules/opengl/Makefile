@@ -34,22 +34,26 @@ CFLAGS += -Wno-deprecated
 CFLAGS += $(shell pkg-config --cflags movit 2> /dev/null)
 CXXFLAGS += $(CFLAGS)
 
+ifneq (, $(shell $(CXX) --version | grep -is -e g++ -e clang))
+    CXXFLAGS += -std=c++11
+endif
+
 SHADERDIR = $(shell pkg-config --variable=shaderdir movit)
 CXXFLAGS += -DSHADERDIR=\"$(SHADERDIR)\"
 
 LDFLAGS += -L../../mlt++ -lmlt++
 
 ifeq ($(targetos), MinGW)
-	CXXFLAGS += $(shell pkg-config --cflags movit)
-	LDFLAGS += $(shell pkg-config --libs movit) -lopengl32 -lpthread
+    CXXFLAGS += $(shell pkg-config --cflags movit)
+    LDFLAGS += $(shell pkg-config --libs movit) -lopengl32 -lpthread
 else
-	LDFLAGS += $(shell pkg-config --libs movit 2> /dev/null)
+    LDFLAGS += $(shell pkg-config --libs movit 2> /dev/null)
 ifeq ($(targetos), Darwin)
-	CXXFLAGS += -FOpenGL
-	LDFLAGS += -lpthread -framework OpenGL
+    CXXFLAGS += -FOpenGL
+    LDFLAGS += -lpthread -framework OpenGL
 else
-	OBJS += consumer_xgl.o
-	LDFLAGS += -lpthread -lGL -lX11
+    OBJS += consumer_xgl.o
+    LDFLAGS += -lpthread -lGL -lX11
 endif
 endif
 
@@ -58,21 +62,21 @@ SRCS := $(OBJS:.o=.c) $(CPPOBJS:.o=.cpp)
 all: $(TARGET)
 
 $(TARGET): $(OBJS) $(CPPOBJS)
-		$(CXX) $(SHFLAGS) -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
+        $(CXX) $(SHFLAGS) -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
 
 depend:	$(SRCS)
-		$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
+        $(CXX) -MM $(CXXFLAGS) $^ 1>.depend
 
 distclean:	clean
-		rm -f .depend config.h config.mak
+        rm -f .depend config.h config.mak
 
-clean:	
-		rm -f $(OBJS) $(TARGET) $(CPPOBJS)
+clean:
+        rm -f $(OBJS) $(TARGET) $(CPPOBJS)
 
 install: all
-	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
-	install -d "$(DESTDIR)$(mltdatadir)/opengl"
-	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/opengl"
+    install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
+    install -d "$(DESTDIR)$(mltdatadir)/opengl"
+    install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/opengl"
 
 ifneq ($(wildcard .depend),)
 include .depend
