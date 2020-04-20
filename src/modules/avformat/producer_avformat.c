@@ -557,7 +557,8 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			char *height = NULL;
 
 			// Parse out params
-			url = strchr( url, '?' );
+			char* query = strchr( url, '?' );
+			url = (query && query > url && query[-1] != '\\')? query : NULL;
 			while ( url )
 			{
 				url[0] = 0;
