@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 /** Do it :-).
 */
@@ -44,12 +45,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_transition transition = mlt_properties_get_data( properties, "transition", NULL );
 	mlt_frame a_frame = NULL;
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+	char *background = mlt_properties_get( properties, "background" );
+	char *previous = mlt_properties_get( properties, "_background" );
 
-	if ( producer == NULL )
+	if ( producer == NULL || (background && previous && strcmp(background, previous)) )
 	{
-		char *background = mlt_properties_get( properties, "background" );
 		producer = mlt_factory_producer( profile, NULL, background );
 		mlt_properties_set_data( properties, "producer", producer, 0, (mlt_destructor)mlt_producer_close, NULL );
+		mlt_properties_set(properties, "_background", background);
 	}
 
 	if ( transition == NULL )

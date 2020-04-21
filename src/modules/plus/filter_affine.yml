@@ -2,7 +2,7 @@ schema_version: 0.2
 type: filter
 identifier: affine
 title: Transform
-version: 4
+version: 5
 copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
@@ -17,6 +17,7 @@ parameters:
       The specification for a producer to act as the background image.
     type: string
     default: colour:0
+    mutable: yes
 
   - identifier: producer.*
     title: Producer properties
