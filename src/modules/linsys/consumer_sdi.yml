@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: consumer
 identifier: sdi
-title: Linear Systems SDI
+title: Linear Systems SDI (*deprecated*)
 version: 1
 copyright: Broadcasting Center Europe S.A.
 creator: Thomas Kurpick

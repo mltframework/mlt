@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: consumer
 identifier: gtk_preview
-title: GTK+
+title: GTK+ (*deprecated*)
 description: A wrapper for sdl_preview that makes it easy to embed in GTK+ applications.
 version: 1
 copyright: Meltytech, LLC
