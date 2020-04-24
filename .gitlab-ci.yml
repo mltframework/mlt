@@ -34,8 +34,17 @@ ubuntu-lts-1:
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
+debian-unstable:
+    image: debian:unstable
+    script:
+        - echo -e 'deb-src http://deb.debian.org/debian buster main\ndeb-src http://deb.debian.org/debian buster-updates main\ndeb-src http://security.debian.org buster/updates main' >> /etc/apt/sources.list
+        - apt-get -qq update
+        - apt-get -yqq build-dep mlt
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
+            # there's no `check` or `test` `make` target
+
 debian-testing:
-    image: debian:buster
+    image: debian:testing
     script:
         - echo -e 'deb-src http://deb.debian.org/debian buster main\ndeb-src http://deb.debian.org/debian buster-updates main\ndeb-src http://security.debian.org buster/updates main' >> /etc/apt/sources.list
         - apt-get -qq update
@@ -44,7 +53,7 @@ debian-testing:
             # there's no `check` or `test` `make` target
 
 debian-stable:
-    image: debian:stretch
+    image: debian:stable
     script:
         - echo -e 'deb-src http://deb.debian.org/debian stretch main\ndeb-src http://deb.debian.org/debian stretch-updates main\ndeb-src http://security.debian.org stretch/updates main' >> /etc/apt/sources.list
         - apt-get -qq update
