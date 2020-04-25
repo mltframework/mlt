@@ -2862,6 +2862,7 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 			if ( self->audio_codec[ index ] )
 				avcodec_close( self->audio_codec[ index ] );
 			self->audio_codec[ index ] = codec_context;
+			self->audio_index = index;
 		}
 		else
 		{
@@ -2932,18 +2933,18 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	}
 
 	// Update the audio properties if the index changed
-	if ( context && self->audio_index < context->nb_streams && index > -1 && self->audio_index > -1 && index != self->audio_index )
+	if ( context && self->audio_index > -1 && index != self->audio_index )
 	{
 		pthread_mutex_lock( &self->open_mutex );
-		if ( self->audio_codec[ self->audio_index ] )
-			avcodec_close( self->audio_codec[ self->audio_index ] );
-		self->audio_codec[ self->audio_index ] = NULL;
+		unsigned i = 0;
+		for (i = 0; i < context->nb_streams; i++) {
+			if (self->audio_codec[i]) {
+				avcodec_close(self->audio_codec[i]);
+				self->audio_codec[i] = NULL;
+			}
+		}
 		pthread_mutex_unlock( &self->open_mutex );
 	}
-	if ( self->audio_index != -1 )
-		self->audio_index = index;
-	else
-		index = -1;
 
 	// Get the codec(s)
 	if ( context && index == INT_MAX )
@@ -2955,6 +2956,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 			if ( context->streams[ index ]->codec->codec_type == AVMEDIA_TYPE_AUDIO )
 				audio_codec_init( self, index, properties );
 		}
+		self->audio_index = INT_MAX;
 	}
 	else if ( context && index > -1 && index < MAX_AUDIO_STREAMS &&
 		audio_codec_init( self, index, properties ) )
