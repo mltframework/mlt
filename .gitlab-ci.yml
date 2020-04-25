@@ -1,19 +1,19 @@
-#ubuntu-latest:
-#    image: ubuntu:latest
-#    script:
-#        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-#        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
-#        - apt-get -yqq build-dep mlt
-#        - ./configure --enable-gpl --enable-gpl3 && make && make install
+ubuntu-latest:
+    image: ubuntu:latest
+    script:
+        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
+        - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
-#ubuntu-lts-3:
-#    image: ubuntu:20.04
-#    script:
-#        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-#        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
-#        - apt-get -yqq build-dep mlt
-#        - ./configure --enable-gpl --enable-gpl3 && make && make install
+ubuntu-lts-3:
+    image: ubuntu:20.04
+    script:
+        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
+        - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
 ubuntu-lts-2:
