@@ -37,6 +37,7 @@ extern "C"
 #endif
 
 #include "mlt_animation.h"
+#include "mlt_audio.h"
 #include "mlt_factory.h"
 #include "mlt_frame.h"
 #include "mlt_deque.h"

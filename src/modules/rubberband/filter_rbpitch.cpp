@@ -101,33 +101,34 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	}
 	s->setPitchScale(pitchscale);
 
-	// Calculate the buffer size.
-	int in_samples = *samples;
+	// Configure input and output buffers and counters.
 	int consumed_samples = 0;
 	int total_consumed_samples = 0;
-	int out_samples = 0;
-	int size = mlt_audio_format_size( *format, in_samples, *channels );
-	float* out_buffer = (float*)mlt_pool_alloc( size );
+	int received_samples = 0;
+	struct mlt_audio_s in;
+	struct mlt_audio_s out;
+	mlt_audio_set_values( &in, *buffer, *frequency, *format, *samples, *channels );
+	mlt_audio_set_values( &out, NULL, *frequency, *format, *samples, *channels );
+	mlt_audio_alloc_data( &out );
 
 	// Process all input samples
 	while ( true )
 	{
 		// Send more samples to the stretcher
-		int required_samples = (int)s->getSamplesRequired();
-		if ( consumed_samples == in_samples )
+		if ( consumed_samples == in.samples )
 		{
 			// Continue to repeat input samples into the stretcher until it
 			// provides the desired number of samples out.
 			consumed_samples = 0;
 			mlt_log_debug( MLT_FILTER_SERVICE(filter), "Repeat samples\n");
 		}
-		int process_samples = std::min( in_samples - consumed_samples, required_samples );
+		int process_samples = std::min( in.samples - consumed_samples, (int)s->getSamplesRequired() );
 		if ( process_samples > 0 )
 		{
 			float* in_planes[MAX_CHANNELS];
-			for ( int i = 0; i < *channels; i++ )
+			for ( int i = 0; i < in.channels; i++ )
 			{
-				in_planes[i] = ((float*)*buffer) + (in_samples * i) + consumed_samples;
+				in_planes[i] = ((float*)in.data) + (in.samples * i) + consumed_samples;
 			}
 			s->process( in_planes, process_samples, false );
 			consumed_samples += process_samples;
@@ -136,22 +137,22 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		}
 
 		// Receive samples from the stretcher
-		int retrieve_samples = std::min( in_samples - out_samples, s->available() );
+		int retrieve_samples = std::min( out.samples - received_samples, s->available() );
 		if ( retrieve_samples > 0 )
 		{
 			float* out_planes[MAX_CHANNELS];
-			for ( int i = 0; i < *channels; i++ )
+			for ( int i = 0; i < out.channels; i++ )
 			{
-				out_planes[i] = out_buffer + (in_samples * i) + out_samples;
+				out_planes[i] = ((float*)out.data) + (out.samples * i) + received_samples;
 			}
 			retrieve_samples = (int)s->retrieve( out_planes, retrieve_samples );
-			out_samples += retrieve_samples;
+			received_samples += retrieve_samples;
 			pdata->out_samples += retrieve_samples;
 		}
 
 		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Process: %d\t Retrieve: %d\n", process_samples, retrieve_samples );
 
-		if ( out_samples == in_samples && total_consumed_samples >= in_samples )
+		if ( received_samples == out.samples && total_consumed_samples >= in.samples )
 		{
 			// There is nothing more to do;
 			break;
@@ -159,9 +160,9 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	}
 
 	// Save the processed samples.
-	mlt_frame_set_audio( frame, static_cast<void*>(out_buffer), *format, size, mlt_pool_release );
-	*buffer = static_cast<void*>(out_buffer);
-	*samples = out_samples;
+	mlt_audio_shrink( &out, received_samples );
+	mlt_frame_set_audio( frame, out.data, out.format, 0, out.release_data );
+	mlt_audio_get_values( &out, buffer, frequency, format, samples, channels );
 
 	// Report the latency.
 	double latency = (double)(pdata->in_samples - pdata->out_samples) * 1000.0 / (double)*frequency;
@@ -169,7 +170,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 
 	mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
 
-	mlt_log_debug( MLT_FILTER_SERVICE(filter), "Requested: %d\tReceived: %d\tSent: %d\tLatency: %d(%fms)\n", requested_samples, in_samples, out_samples, (pdata->in_samples - pdata->out_samples), latency );
+	mlt_log_debug( MLT_FILTER_SERVICE(filter), "Requested: %d\tReceived: %d\tSent: %d\tLatency: %d(%fms)\n", requested_samples, in.samples, out.samples, (pdata->in_samples - pdata->out_samples), latency );
 	return error;
 }
 

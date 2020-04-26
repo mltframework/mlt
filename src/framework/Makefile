@@ -24,7 +24,8 @@ ifeq ($(targetos), Linux)
 SHFLAGS += -Wl,--version-script=mlt.vers
 endif
 
-OBJS = mlt_frame.o \
+OBJS = mlt_audio.o \
+	   mlt_frame.o \
 	   mlt_version.o \
 	   mlt_geometry.o \
 	   mlt_deque.o \
@@ -52,7 +53,8 @@ OBJS = mlt_frame.o \
 	   mlt_slices.o \
 	   mlt_luma_map.o
 
-INCS = mlt_consumer.h \
+INCS = mlt_audio.h \
+	   mlt_consumer.h \
 	   mlt_version.h \
 	   mlt_factory.h \
 	   mlt_filter.h \
