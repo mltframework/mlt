@@ -2246,6 +2246,25 @@ void mlt_properties_clear( mlt_properties self, const char *name )
 	mlt_events_fire( self, "property-changed", name, NULL );
 }
 
+/** Check if a property exists.
+ *
+ * This function is not a substitute for checking for NULL as a property could
+ * be set to NULL.
+ *
+ * This function will return false immediately after a call to
+ * mlt_properties_clear() or if the property has never been created.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the name of the property to query
+ * \return true if the property exists
+ */
+
+int mlt_properties_exists( mlt_properties self, const char *name )
+{
+	return !mlt_property_is_clear( mlt_properties_find( self, name ) );
+}
+
 /** Get a time string associated to the name.
  *
  * Do not free the returned string. It's lifetime is controlled by the property.

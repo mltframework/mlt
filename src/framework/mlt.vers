@@ -552,3 +552,9 @@ MLT_6.20.0 {
     mlt_profile_scale_height;
     mlt_properties_set_string;
 } MLT_6.18.0;
+
+MLT_6.22.0 {
+  global:
+    mlt_property_is_clear;
+    mlt_properties_exists;
+} MLT_6.20.0;

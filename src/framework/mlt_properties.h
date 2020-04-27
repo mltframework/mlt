@@ -89,6 +89,7 @@ extern char *mlt_properties_serialise_yaml( mlt_properties self );
 extern void mlt_properties_lock( mlt_properties self );
 extern void mlt_properties_unlock( mlt_properties self );
 extern void mlt_properties_clear( mlt_properties self, const char *name );
+extern int mlt_properties_exists( mlt_properties self, const char *name );
 
 extern char *mlt_properties_get_time( mlt_properties, const char* name, mlt_time_format );
 extern char *mlt_properties_frames_to_time( mlt_properties, mlt_position, mlt_time_format );

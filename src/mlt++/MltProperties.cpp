@@ -348,6 +348,11 @@ void Properties::clear( const char *name )
 	return mlt_properties_clear( get_properties(), name );
 }
 
+bool Properties::property_exists( const char *name )
+{
+	return mlt_properties_exists( get_properties(), name );
+}
+
 char *Properties::get_time( const char *name, mlt_time_format format )
 {
 	return mlt_properties_get_time( get_properties(), name, format );

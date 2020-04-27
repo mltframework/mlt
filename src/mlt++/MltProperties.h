@@ -101,6 +101,7 @@ namespace Mlt
 			int set_lcnumeric( const char *locale );
 			const char *get_lcnumeric( );
 			void clear( const char *name );
+			bool property_exists( const char *name );
 
 			char *get_time( const char *name, mlt_time_format = mlt_time_smpte_df );
 			char *frames_to_time( int, mlt_time_format = mlt_time_smpte_df );
