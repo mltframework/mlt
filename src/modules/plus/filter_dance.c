@@ -158,7 +158,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-	if( mlt_properties_get( frame_properties, pdata->mag_prop_name ) )
+	if( mlt_properties_exists( frame_properties, pdata->mag_prop_name ) )
 	{
 		double mag = mlt_properties_get_double( frame_properties, pdata->mag_prop_name );
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );

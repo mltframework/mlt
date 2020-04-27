@@ -590,3 +590,10 @@ MLTPP_6.20.0 {
       "Mlt::Properties::set_string(char const*, char const*)";
     };
 } MLTPP_6.18.0;
+
+MLTPP_6.22.0 {
+  global:
+    extern "C++" {
+      "Mlt::Properties::property_exists(char const*)";
+    };
+} MLTPP_6.20.0;

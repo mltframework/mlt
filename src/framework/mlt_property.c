@@ -142,6 +142,25 @@ void mlt_property_clear( mlt_property self )
 	pthread_mutex_unlock( &self->mutex );
 }
 
+/** Check if a property is cleared.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return true if a property is clear. false if it has been set.
+ */
+
+int mlt_property_is_clear( mlt_property self )
+{
+	int result = 1;
+	if ( self )
+	{
+		pthread_mutex_lock( &self->mutex );
+		result = self->types == 0;
+		pthread_mutex_unlock( &self->mutex );
+	}
+	return result;
+}
+
 /** Set the property to an integer value.
  *
  * \public \memberof mlt_property_s

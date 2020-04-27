@@ -212,7 +212,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 	// Determine the pitchscale
 	double pitchscale = 1.0;
-	if ( mlt_properties_get( filter_properties, "pitchscale" ) != NULL )
+	if ( mlt_properties_exists( filter_properties, "pitchscale" ) )
 	{
 		pitchscale = mlt_properties_anim_get_double( filter_properties, "pitchscale", position, length );
 	}

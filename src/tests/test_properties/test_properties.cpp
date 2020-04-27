@@ -1114,6 +1114,19 @@ private Q_SLOTS:
         QCOMPARE(p.get_int("key"), 0);
     }
 
+    void PropertyExists()
+    {
+        Properties p;
+        // Never set should return false
+        QCOMPARE(p.property_exists("key"), false);
+        // Set should return true
+        p.set("key", 1);
+        QCOMPARE(p.property_exists("key"), true);
+        // Cleared should return false
+        p.clear("key");
+        QCOMPARE(p.property_exists("key"), false);
+    }
+
     void SetString()
     {
         Properties p;
