@@ -2,7 +2,7 @@ schema_version: 0.3
 type: consumer
 identifier: sdl2_audio
 title: SDL2 Audio Only
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -46,3 +46,10 @@ parameters:
     maximum: 1
     default: 0
     widget: checkbox
+
+  - identifier: video_delay
+    title: Video delay
+    mutable: no
+    type: integer
+    unit: milliseconds
+    default: 0

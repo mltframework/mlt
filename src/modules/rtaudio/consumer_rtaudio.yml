@@ -6,8 +6,8 @@ description: >
   RtAudio provides native, realtime audio output across Linux,
   Macintosh OS X, Windows, and some BSD operating systems.
 url: http://www.music.mcgill.ca/~gary/rtaudio/
-version: 1
-copyright: Dan Dennedy
+version: 2
+copyright: Meltytech, LLC
 creator: Dan Dennedy
 creator: Gary P. Scavone
 license: LGPLv2.1
@@ -53,3 +53,10 @@ parameters:
     maximum: 1
     default: 0
     widget: checkbox
+
+  - identifier: video_delay
+    title: Video delay
+    mutable: no
+    type: integer
+    unit: milliseconds
+    default: 0

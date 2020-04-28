@@ -1,6 +1,6 @@
 /*
  * consumer_rtaudio.c -- output through RtAudio audio wrapper
- * Copyright (C) 2011-2016 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2011-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -390,8 +390,8 @@ public:
 		int init_video = 1;
 		mlt_frame frame = NULL;
 		mlt_properties properties = NULL;
-		int duration = 0;
-		int64_t playtime = 0;
+		int64_t duration = 0;
+		int64_t playtime = mlt_properties_get_int(consumer_props, "video_delay") * 1000;
 		struct timespec tm = { 0, 100000 };
 	//	int last_position = -1;
 
@@ -435,8 +435,8 @@ public:
 					init_video = 0;
 				}
 
-				// Set playtime for this frame
-				mlt_properties_set_int( properties, "playtime", playtime );
+				// Set playtime for this frame in microseconds
+				mlt_properties_set_int64( properties, "playtime", playtime );
 
 				while ( running && speed != 0 && mlt_deque_count( queue ) > 15 )
 					nanosleep( &tm, NULL );
@@ -458,7 +458,7 @@ public:
 					pthread_mutex_unlock( &video_mutex );
 
 					// Calculate the next playtime
-					playtime += ( duration * 1000 );
+					playtime += duration;
 				}
 				else if ( running )
 				{
@@ -562,7 +562,7 @@ public:
 		return 0;
 	}
 
-	int play_audio( mlt_frame frame, int init_audio, int *duration )
+	int play_audio( mlt_frame frame, int init_audio, int64_t *duration )
 	{
 		// Get the properties of this consumer
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
@@ -577,7 +577,7 @@ public:
 		int16_t *pcm;
 
 		mlt_frame_get_audio( frame, (void**) &pcm, &afmt, &frequency, &channels, &samples );
-		*duration = ( ( samples * 1000 ) / frequency );
+		*duration = 1000000LL * samples / frequency;
 
 		if ( mlt_properties_get_int( properties, "audio_off" ) )
 		{
@@ -679,11 +679,11 @@ public:
 		int64_t elapsed = 0;
 		struct timespec tm;
 		mlt_frame next = NULL;
-		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
+		mlt_properties consumerProperties = MLT_CONSUMER_PROPERTIES( getConsumer() );
 		double speed = 0;
 
 		// Get real time flag
-		int real_time = mlt_properties_get_int( properties, "real_time" );
+		int real_time = mlt_properties_get_int( consumerProperties, "real_time" );
 
 		// Get the current time
 		gettimeofday( &now, NULL );
@@ -706,7 +706,7 @@ public:
 			if ( !running || next == NULL ) break;
 
 			// Get the properties
-			properties =  MLT_FRAME_PROPERTIES( next );
+			mlt_properties properties =  MLT_FRAME_PROPERTIES( next );
 
 			// Get the speed of the frame
 			speed = mlt_properties_get_double( properties, "_speed" );
@@ -720,8 +720,8 @@ public:
 			// See if we have to delay the display of the current frame
 			if ( mlt_properties_get_int( properties, "rendered" ) == 1 && running )
 			{
-				// Obtain the scheduled playout time
-				int64_t scheduled = mlt_properties_get_int( properties, "playtime" );
+				// Obtain the scheduled playout time in microseconds
+				int64_t scheduled = mlt_properties_get_int64( properties, "playtime" );
 
 				// Determine the difference between the elapsed time and the scheduled playout time
 				int64_t difference = scheduled - elapsed;
@@ -730,7 +730,7 @@ public:
 				if ( real_time && ( difference > 20000 && speed == 1.0 ) )
 				{
 					tm.tv_sec = difference / 1000000;
-					tm.tv_nsec = ( difference % 1000000 ) * 500;
+					tm.tv_nsec = ( difference % 1000000 ) * 1000;
 					nanosleep( &tm, NULL );
 				}
 
@@ -743,6 +743,7 @@ public:
 				{
 					gettimeofday( &now, NULL );
 					start = ( ( int64_t )now.tv_sec * 1000000 + now.tv_usec ) - scheduled + 20000;
+					start += mlt_properties_get_int(consumerProperties, "video_delay") * 1000;
 				}
 			}
 
