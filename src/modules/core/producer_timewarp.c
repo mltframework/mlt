@@ -234,7 +234,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		{
 			clip_position = mlt_properties_get_int( producer_properties, "out" ) - clip_position;
 		}
-		mlt_producer_seek( pdata->clip_producer, clip_position );
+		mlt_producer_seek( pdata->clip_producer, mlt_producer_get_in( producer ) + clip_position );
 
 		// Get the frame from the clip producer
 		mlt_service_get_frame( MLT_PRODUCER_SERVICE( pdata->clip_producer), frame, index );
