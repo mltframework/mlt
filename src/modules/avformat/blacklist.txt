@@ -86,7 +86,7 @@ thumbnail
 tile
 tinterlace
 trim
-unpremulitply
+unpremultiply
 vidstabdetect
 vidstabtransform
 vfrdet
