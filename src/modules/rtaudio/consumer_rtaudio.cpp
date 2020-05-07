@@ -573,7 +573,7 @@ public:
 		int frequency = mlt_properties_get_int( properties, "frequency" );
 		int scrub = mlt_properties_get_int( properties, "scrub_audio" );
 		static int counter = 0;
-		int samples = mlt_sample_calculator( mlt_properties_get_double( properties, "fps" ), frequency, counter++ );
+		int samples = mlt_audio_calculate_frame_samples( mlt_properties_get_double( properties, "fps" ), frequency, counter++ );
 		int16_t *pcm;
 
 		mlt_frame_get_audio( frame, (void**) &pcm, &afmt, &frequency, &channels, &samples );

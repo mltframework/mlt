@@ -557,6 +557,8 @@ MLT_6.22.0 {
   global:
     mlt_property_is_clear;
     mlt_properties_exists;
+    mlt_audio_new;
+    mlt_audio_close;
     mlt_audio_set_values;
     mlt_audio_get_values;
     mlt_audio_alloc_data;
@@ -567,4 +569,10 @@ MLT_6.22.0 {
     mlt_audio_shrink;
     mlt_audio_reverse;
     mlt_audio_copy;
+    mlt_audio_calculate_frame_samples;
+    mlt_audio_calculate_samples_to_position;
+    mlt_audio_channel_layout_name;
+    mlt_audio_channel_layout_id;
+    mlt_audio_channel_layout_channels;
+    mlt_audio_channel_layout_default;
 } MLT_6.20.0;

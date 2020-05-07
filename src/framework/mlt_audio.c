@@ -24,13 +24,47 @@
 
 #include "mlt_log.h"
 
+#include <stdlib.h>
 #include <string.h>
+
+/** Allocate a new Audio object.
+ *
+ * \return a new audio object with default values set
+ */
+
+mlt_audio mlt_audio_new()
+{
+	mlt_audio self = calloc( 1, sizeof(struct mlt_audio_s) );
+	self->close = free;
+	return self;
+}
+
+/** Destroy an audio object created by mlt_audio_new().
+ *
+ * \public \memberof mlt_audio_s
+ * \param self the Audio object
+ */
+
+void mlt_audio_close( mlt_audio self )
+{
+	if ( self)
+	{
+		if ( self->release_data )
+		{
+			self->release_data( self->data );
+		}
+		if ( self->close )
+		{
+			self->close( self );
+		}
+	}
+}
 
 /** Set the most common values for the audio.
  *
  * Less common values will be set to reasonable defaults.
  *
- * You should use the \p mlt_sample_calculator to determine the number of samples you want.
+ * You should use the \p mlt_audio_calculate_frame_samples to determine the number of samples you want.
  * \public \memberof mlt_audio_s
  * \param self the Audio object
  * \param data the buffer that contains the audio data
@@ -49,6 +83,7 @@ void mlt_audio_set_values( mlt_audio self, void* data, int frequency, mlt_audio_
 	self->channels = channels;
 	self->layout = mlt_channel_auto;
 	self->release_data = NULL;
+	self->close = NULL;
 }
 
 /** Get the most common values for the audio.
@@ -86,7 +121,7 @@ void mlt_audio_get_values( mlt_audio self, void** data, int* frequency, mlt_audi
 
 void mlt_audio_alloc_data( mlt_audio self )
 {
-	if (!self ) return;
+	if ( !self ) return;
 
 	if ( self->release_data )
 	{
@@ -107,19 +142,8 @@ void mlt_audio_alloc_data( mlt_audio self )
 
 int mlt_audio_calculate_size( mlt_audio self )
 {
-	if (!self ) return 0;
-
-	switch ( self->format )
-	{
-		case mlt_audio_none:   return 0;
-		case mlt_audio_s16:    return self->samples * self->channels * sizeof( int16_t );
-		case mlt_audio_s32le:
-		case mlt_audio_s32:    return self->samples * self->channels * sizeof( int32_t );
-		case mlt_audio_f32le:
-		case mlt_audio_float:  return self->samples * self->channels * sizeof( float );
-		case mlt_audio_u8:     return self->samples * self->channels;
-	}
-	return 0;
+	if ( !self ) return 0;
+	return mlt_audio_format_size( self->format, self->samples, self->channels );
 }
 
 /** Get the number of planes for the audio type
@@ -172,7 +196,6 @@ int mlt_audio_plane_size( mlt_audio self )
  * \param self the Audio object
  * \param[out] planes the array of pointers to populate
  */
-
 
 void mlt_audio_get_planes( mlt_audio self, uint8_t** planes )
 {
@@ -411,3 +434,278 @@ void mlt_audio_copy( mlt_audio dst, mlt_audio src, int samples, int src_start, i
 	}
 }
 
+/** Determine the number of samples that belong in a frame at a time position.
+ *
+ * \public \memberof mlt_frame_s
+ * \param fps the frame rate
+ * \param frequency the sample rate
+ * \param position the time position
+ * \return the number of samples per channel
+ */
+
+int mlt_audio_calculate_frame_samples( float fps, int frequency, int64_t position )
+{
+	/* Compute the cumulative number of samples until the start of this frame and the
+	cumulative number of samples until the start of the next frame. Round each to the
+	nearest integer and take the difference to determine the number of samples in
+	this frame.
+
+	This approach should prevent rounding errors that can accumulate over a large number
+	of frames causing A/V sync problems. */
+	return mlt_audio_calculate_samples_to_position( fps, frequency, position + 1 )
+		 - mlt_audio_calculate_samples_to_position( fps, frequency, position );
+}
+
+/** Determine the number of samples that belong before a time position.
+ *
+ * \public \memberof mlt_frame_s
+ * \param fps the frame rate
+ * \param frequency the sample rate
+ * \param position the time position
+ * \return the number of samples per channel
+ */
+
+int64_t mlt_audio_calculate_samples_to_position( float fps, int frequency, int64_t position )
+{
+	int64_t samples = 0;
+
+	if ( fps )
+	{
+		samples = (int64_t)( (double) position * (double) frequency / (double) fps +
+			( position < 0 ? -0.5 : 0.5 ) );
+	}
+
+	return samples;
+}
+
+/** Get the short name for an audio format.
+ *
+ * You do not need to deallocate the returned string.
+ * \public \memberof mlt_frame_s
+ * \param format an audio format enum
+ * \return a string for the name of the image format
+ */
+
+const char * mlt_audio_format_name( mlt_audio_format format )
+{
+	switch ( format )
+	{
+		case mlt_audio_none:   return "none";
+		case mlt_audio_s16:    return "s16";
+		case mlt_audio_s32:    return "s32";
+		case mlt_audio_s32le:  return "s32le";
+		case mlt_audio_float:  return "float";
+		case mlt_audio_f32le:  return "f32le";
+		case mlt_audio_u8:     return "u8";
+	}
+	return "invalid";
+}
+
+/** Get the amount of bytes needed for a block of audio.
+  *
+  * \public \memberof mlt_frame_s
+  * \param format an audio format enum
+  * \param samples the number of samples per channel
+  * \param channels the number of channels
+  * \return the number of bytes
+  */
+
+int mlt_audio_format_size( mlt_audio_format format, int samples, int channels )
+{
+	switch ( format )
+	{
+		case mlt_audio_none:   return 0;
+		case mlt_audio_s16:    return samples * channels * sizeof( int16_t );
+		case mlt_audio_s32le:
+		case mlt_audio_s32:    return samples * channels * sizeof( int32_t );
+		case mlt_audio_f32le:
+		case mlt_audio_float:  return samples * channels * sizeof( float );
+		case mlt_audio_u8:     return samples * channels;
+	}
+	return 0;
+}
+
+/** Get the short name for a channel layout.
+ *
+ * You do not need to deallocate the returned string.
+ * \public \member of mlt_frame_s
+ * \param layout the channel layout
+ * \return a string for the name of the channel layout
+ */
+
+const char* mlt_audio_channel_layout_name( mlt_channel_layout layout )
+{
+	switch ( layout )
+	{
+		case mlt_channel_auto:           return "auto";
+		case mlt_channel_independent:    return "independent";
+		case mlt_channel_mono:           return "mono";
+		case mlt_channel_stereo:         return "stereo";
+		case mlt_channel_2p1:            return "2.1";
+		case mlt_channel_3p0:            return "3.0";
+		case mlt_channel_3p0_back:       return "3.0(back)";
+		case mlt_channel_4p0:            return "4.0";
+		case mlt_channel_quad_back:      return "quad";
+		case mlt_channel_quad_side:      return "quad(side)";
+		case mlt_channel_3p1:            return "3.1";
+		case mlt_channel_5p0_back:       return "5.0";
+		case mlt_channel_5p0:            return "5.0(side)";
+		case mlt_channel_4p1:            return "4.1";
+		case mlt_channel_5p1_back:       return "5.1";
+		case mlt_channel_5p1:            return "5.1(side)";
+		case mlt_channel_6p0:            return "6.0";
+		case mlt_channel_6p0_front:      return "6.0(front)";
+		case mlt_channel_hexagonal:      return "hexagonal";
+		case mlt_channel_6p1:            return "6.1";
+		case mlt_channel_6p1_back:       return "6.1(back)";
+		case mlt_channel_6p1_front:      return "6.1(front)";
+		case mlt_channel_7p0:            return "7.0";
+		case mlt_channel_7p0_front:      return "7.0(front)";
+		case mlt_channel_7p1:            return "7.1";
+		case mlt_channel_7p1_wide_side:  return "7.1(wide-side)";
+		case mlt_channel_7p1_wide_back:  return "7.1(wide)";
+	}
+	return "invalid";
+}
+
+/** Get the id of channel layout from short name.
+ *
+ * \public \memberof mlt_frame_s
+ * \param name the channel layout short name
+ * \return a channel layout
+ */
+
+mlt_channel_layout mlt_audio_channel_layout_id( const char * name )
+{
+	if( name )
+	{
+		mlt_channel_layout c;
+		for( c = mlt_channel_auto; c <= mlt_channel_7p1_wide_back; c++ )
+		{
+			const char * v = mlt_audio_channel_layout_name( c );
+			if( !strcmp( v, name ) )
+				return c;
+		}
+	}
+	return mlt_channel_auto;
+}
+
+/** Get the number of channels for a channel layout.
+ *
+ * \public \memberof mlt_frame_s
+ * \param layout the channel layout
+ * \return the number of channels for the channel layout
+ */
+
+int mlt_audio_channel_layout_channels( mlt_channel_layout layout )
+{
+	switch ( layout )
+	{
+		case mlt_channel_auto:           return 0;
+		case mlt_channel_independent:    return 0;
+		case mlt_channel_mono:           return 1;
+		case mlt_channel_stereo:         return 2;
+		case mlt_channel_2p1:            return 3;
+		case mlt_channel_3p0:            return 3;
+		case mlt_channel_3p0_back:       return 3;
+		case mlt_channel_4p0:            return 4;
+		case mlt_channel_quad_back:      return 4;
+		case mlt_channel_quad_side:      return 4;
+		case mlt_channel_3p1:            return 4;
+		case mlt_channel_5p0_back:       return 5;
+		case mlt_channel_5p0:            return 5;
+		case mlt_channel_4p1:            return 5;
+		case mlt_channel_5p1_back:       return 6;
+		case mlt_channel_5p1:            return 6;
+		case mlt_channel_6p0:            return 6;
+		case mlt_channel_6p0_front:      return 6;
+		case mlt_channel_hexagonal:      return 6;
+		case mlt_channel_6p1:            return 7;
+		case mlt_channel_6p1_back:       return 7;
+		case mlt_channel_6p1_front:      return 7;
+		case mlt_channel_7p0:            return 7;
+		case mlt_channel_7p0_front:      return 7;
+		case mlt_channel_7p1:            return 8;
+		case mlt_channel_7p1_wide_back:  return 8;
+		case mlt_channel_7p1_wide_side:  return 8;
+	}
+	return 0;
+}
+
+/** Get a default channel layout for a given number of channels.
+ *
+ * \public \memberof mlt_frame_s
+ * \param channels the number of channels
+ * \return the default channel layout
+ */
+
+mlt_channel_layout mlt_audio_channel_layout_default( int channels )
+{
+	mlt_channel_layout c;
+	for( c = mlt_channel_mono; c <= mlt_channel_7p1_wide_back; c++ )
+	{
+		if( mlt_audio_channel_layout_channels( c ) == channels )
+			return c;
+	}
+	return mlt_channel_independent;
+}
+
+/** Determine the number of samples that belong in a frame at a time position.
+ *
+ * \deprecated since 6.22. Prefer mlt_audio_calculate_samples()
+ */
+
+int mlt_sample_calculator( float fps, int frequency, int64_t position )
+{
+	return mlt_audio_calculate_frame_samples( fps, frequency, position );
+}
+
+/** Determine the number of samples that belong before a time position.
+ *
+ * \deprecated since 6.22. Prefer mlt_audio_calculate_samples_to_position()
+ */
+
+int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position )
+{
+	return mlt_audio_calculate_samples_to_position( fps, frequency, position );
+}
+
+/** Get the short name for a channel layout.
+ *
+ * \deprecated since 6.22. Prefer mlt_audio_channel_layout_name()
+ */
+
+const char * mlt_channel_layout_name( mlt_channel_layout layout )
+{
+	return mlt_audio_channel_layout_name( layout );
+}
+
+/** Get the id of channel layout from short name.
+ *
+ * \deprecated since 6.22. Prefer mlt_audio_channel_layout_id()
+ */
+
+mlt_channel_layout mlt_channel_layout_id( const char * name )
+{
+	return mlt_audio_channel_layout_id( name );
+}
+
+/** Get the number of channels for a channel layout.
+ *
+ * \deprecated since 6.22. Prefer mlt_audio_channel_layout_channels()
+ */
+
+int mlt_channel_layout_channels( mlt_channel_layout layout )
+{
+	return mlt_audio_channel_layout_channels( layout );
+}
+
+/** Get a default channel layout for a given number of channels.
+ *
+ * \deprecated since 6.22. Prefer mlt_audio_channel_layout_default()
+ */
+
+mlt_channel_layout mlt_channel_layout_default( int channels )
+{
+	return mlt_audio_channel_layout_default( channels );
+}

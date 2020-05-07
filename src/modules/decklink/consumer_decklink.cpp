@@ -710,7 +710,7 @@ protected:
 			uint64_t m_count = mlt_properties_get_int64( properties, "m_count" );
 			mlt_audio_format format = mlt_audio_s16;
 			int frequency = bmdAudioSampleRate48kHz;
-			int samples = mlt_sample_calculator( m_fps, frequency, m_count );
+			int samples = mlt_audio_calculate_frame_samples( m_fps, frequency, m_count );
 			int16_t *pcm = 0;
 
 			if ( !mlt_frame_get_audio( frame, (void**) &pcm, &format, &frequency, &m_inChannels, &samples ) )

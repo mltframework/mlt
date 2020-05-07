@@ -190,7 +190,7 @@ static void* consumer_ndi_feeder( void* p )
 				mlt_audio_format aformat = mlt_audio_s16;
 				int frequency = 48000;
 				int m_channels = 2;
-				int samples = mlt_sample_calculator( mlt_profile_fps( profile ), frequency, self->count );
+				int samples = mlt_audio_calculate_frame_samples( mlt_profile_fps( profile ), frequency, self->count );
 				int16_t *pcm = 0;
 
 				if ( !mlt_frame_get_audio( frm, (void**) &pcm, &aformat, &frequency, &m_channels, &samples ) )

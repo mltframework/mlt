@@ -48,7 +48,7 @@ static int configure_swr_context( mlt_filter filter )
 	int error = 0;
 
 	mlt_log_info( MLT_FILTER_SERVICE(filter), "%d(%s) %s %dHz -> %d(%s) %s %dHz\n",
-				   pdata->in_channels, mlt_channel_layout_name( pdata->in_layout ), mlt_audio_format_name( pdata->in_format ), pdata->in_frequency, pdata->out_channels, mlt_channel_layout_name( pdata->out_layout ), mlt_audio_format_name( pdata->out_format ), pdata->out_frequency );
+				   pdata->in_channels, mlt_audio_channel_layout_name( pdata->in_layout ), mlt_audio_format_name( pdata->in_format ), pdata->in_frequency, pdata->out_channels, mlt_audio_channel_layout_name( pdata->out_layout ), mlt_audio_format_name( pdata->out_format ), pdata->out_frequency );
 
 	swr_free( &pdata->ctx );
 	pdata->ctx = swr_alloc();
@@ -217,7 +217,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			mlt_audio_shrink( &out, received_samples );
 			mlt_frame_set_audio( frame, out.data, out.format, 0, out.release_data );
 			mlt_audio_get_values( &out, buffer, frequency, format, samples, channels );
-			mlt_properties_set( frame_properties, "channel_layout", mlt_channel_layout_name( out.layout ) );
+			mlt_properties_set( frame_properties, "channel_layout", mlt_audio_channel_layout_name( out.layout ) );
 		}
 		else
 		{

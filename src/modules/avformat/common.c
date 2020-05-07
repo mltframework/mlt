@@ -109,7 +109,7 @@ int64_t mlt_to_av_channel_layout( mlt_channel_layout layout )
 	{
 		case mlt_channel_auto:
 		case mlt_channel_independent:
-			mlt_log_error( NULL, "[avformat] No matching channel layout: %s\n", mlt_channel_layout_name( layout ) );
+			mlt_log_error( NULL, "[avformat] No matching channel layout: %s\n", mlt_audio_channel_layout_name( layout ) );
 			return 0;
 		case mlt_channel_mono:           return AV_CH_LAYOUT_MONO;
 		case mlt_channel_stereo:         return AV_CH_LAYOUT_STEREO;
@@ -179,11 +179,11 @@ mlt_channel_layout av_channel_layout_to_mlt( int64_t layout )
 
 mlt_channel_layout mlt_get_channel_layout_or_default( const char* name, int channels )
 {
-	mlt_channel_layout layout = mlt_channel_layout_id( name );
+	mlt_channel_layout layout = mlt_audio_channel_layout_id( name );
 	if( layout == mlt_channel_auto ||
-		( layout != mlt_channel_independent && mlt_channel_layout_channels( layout ) != channels ) )
+		( layout != mlt_channel_independent && mlt_audio_channel_layout_channels( layout ) != channels ) )
 	{
-		layout = mlt_channel_layout_default( channels );
+		layout = mlt_audio_channel_layout_default( channels );
 	}
 	return layout;
 }

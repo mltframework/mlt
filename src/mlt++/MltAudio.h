@@ -1,7 +1,6 @@
 /**
- * Mlt.h - Convenience header file for all mlt++ objects
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * MltAudio.h - MLT Wrapper
+ * Copyright (C) 2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,31 +17,36 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef MLTPP_H
-#define MLTPP_H
+#ifndef MLTPP_AUDIO_H
+#define MLTPP_AUDIO_H
 
-#include "MltAudio.h"
-#include "MltAnimation.h"
-#include "MltConsumer.h"
-#include "MltDeque.h"
-#include "MltEvent.h"
-#include "MltFactory.h"
-#include "MltField.h"
-#include "MltFilter.h"
-#include "MltFilteredConsumer.h"
-#include "MltFrame.h"
-#include "MltGeometry.h"
-#include "MltMultitrack.h"
-#include "MltParser.h"
-#include "MltPlaylist.h"
-#include "MltProducer.h"
-#include "MltProfile.h"
-#include "MltProperties.h"
-#include "MltPushConsumer.h"
-#include "MltRepository.h"
-#include "MltService.h"
-#include "MltTokeniser.h"
-#include "MltTractor.h"
-#include "MltTransition.h"
+#include "MltConfig.h"
+
+#include <framework/mlt.h>
+
+namespace Mlt
+{
+	class MLTPP_DECLSPEC Audio
+	{
+		private:
+			mlt_audio instance;
+		public:
+			Audio();
+			Audio( mlt_audio audio );
+			virtual ~Audio( );
+			void* data();
+			void set_data( void* data );
+			int frequency();
+			void set_frequency( int frequency );
+			mlt_audio_format format();
+			void set_format( mlt_audio_format format );
+			int samples();
+			void set_samples( int samples );
+			int channels();
+			void set_channels( int channels );
+			mlt_channel_layout layout();
+			void set_layout( mlt_channel_layout layout );
+	};
+}
 
 #endif

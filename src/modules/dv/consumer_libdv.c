@@ -275,7 +275,7 @@ static void consumer_encode_audio( mlt_consumer this, uint8_t *dv_frame, mlt_fra
 		mlt_audio_format fmt = mlt_audio_s16;
 		int channels = 2;
 		int frequency = mlt_properties_get_int( this_properties, "frequency" );
-		int samples = mlt_sample_calculator( mlt_properties_get_double( this_properties, "fps" ), frequency, count );
+		int samples = mlt_audio_calculate_frame_samples( mlt_properties_get_double( this_properties, "fps" ), frequency, count );
 		int16_t *pcm = NULL;
 
 		// Get the frame number

@@ -2619,7 +2619,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		index = 0;
 		index_max = FFMIN( MAX_AUDIO_STREAMS, context->nb_streams );
 		*channels = self->total_channels;
-		*samples = mlt_sample_calculator( fps, self->max_frequency, position );
+		*samples = mlt_audio_calculate_frame_samples( fps, self->max_frequency, position );
 		*frequency = self->max_frequency;
 	}
 
@@ -2656,7 +2656,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		
 		// Caller requested number samples based on requested sample rate.
 		if ( self->audio_index != INT_MAX )
-			*samples = mlt_sample_calculator( fps, self->audio_codec[ self->audio_index ]->sample_rate, position );
+			*samples = mlt_audio_calculate_frame_samples( fps, self->audio_codec[ self->audio_index ]->sample_rate, position );
 
 		while ( ret >= 0 && !got_audio )
 		{
@@ -2761,7 +2761,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 					break;
 				}
 		}
-		mlt_properties_set( MLT_FRAME_PROPERTIES(frame), "channel_layout", mlt_channel_layout_name( layout ) );
+		mlt_properties_set( MLT_FRAME_PROPERTIES(frame), "channel_layout", mlt_audio_channel_layout_name( layout ) );
 
 		// Allocate and set the frame's audio buffer
 		int size = mlt_audio_format_size( *format, *samples, *channels );

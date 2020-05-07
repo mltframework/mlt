@@ -817,7 +817,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Get the audio of the first frame
 		if ( !audio_off )
 		{
-			samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+			samples = mlt_audio_calculate_frame_samples( priv->fps, priv->frequency, priv->aud_counter++ );
 			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
 		}
 
@@ -878,7 +878,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Always process audio
 		if ( !audio_off )
 		{
-			samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+			samples = mlt_audio_calculate_frame_samples( priv->fps, priv->frequency, priv->aud_counter++ );
 			mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
 		}
 
@@ -1411,7 +1411,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 				// Process the audio
 				if ( !audio_off )
 				{
-					samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+					samples = mlt_audio_calculate_frame_samples( priv->fps, priv->frequency, priv->aud_counter++ );
 					mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
 				}
 				pthread_mutex_lock( &priv->queue_mutex );
@@ -1445,7 +1445,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 			// Process the audio
 			if ( !audio_off )
 			{
-				samples = mlt_sample_calculator( priv->fps, priv->frequency, priv->aud_counter++ );
+				samples = mlt_audio_calculate_frame_samples( priv->fps, priv->frequency, priv->aud_counter++ );
 				mlt_frame_get_audio( frame, &audio, &priv->audio_format, &priv->frequency, &priv->channels, &samples );
 			}
 			pthread_mutex_lock( &priv->queue_mutex );

@@ -78,7 +78,7 @@ static int producer_get_audio( mlt_frame frame, int16_t** buffer, mlt_audio_form
 	*format = mlt_audio_float;
 	*frequency = *frequency <= 0 ? 48000 : *frequency;
 	*channels = *channels <= 0 ? 2 : *channels;
-	*samples = *samples <= 0 ? mlt_sample_calculator( fps, *frequency, frames ) : *samples;
+	*samples = *samples <= 0 ? mlt_audio_calculate_frame_samples( fps, *frequency, frames ) : *samples;
 
 	// Allocate the buffer
 	*buffer = mlt_pool_alloc( size );
