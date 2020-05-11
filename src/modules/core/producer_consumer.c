@@ -85,7 +85,7 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 			fps = mlt_producer_get_fps( cx->self );
 			mlt_properties_set_double( MLT_FRAME_PROPERTIES(nested_frame), "producer_consumer_fps", fps );
 		}
-		*samples = mlt_sample_calculator( fps, *frequency, cx->audio_counter++ );
+		*samples = mlt_audio_calculate_frame_samples( fps, *frequency, cx->audio_counter++ );
 		result = mlt_frame_get_audio( nested_frame, buffer, format, frequency, channels, samples );
 		int size = mlt_audio_format_size( *format, *samples, *channels );
 		int16_t *new_buffer = mlt_pool_alloc( size );

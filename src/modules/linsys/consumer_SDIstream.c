@@ -451,7 +451,7 @@ static void *consumer_thread(void *arg) {
 				mlt_frame_get_image(frame, &video_buffer, &this->pix_fmt, &this->width, &this->height, 1);
 
 				// Get the audio from this frame and save it to our audio_buffer
-				samples = mlt_sample_calculator(fps, frequency, count++);
+				samples = mlt_audio_calculate_frame_samples(fps, frequency, count++);
 				mlt_frame_get_audio(frame, (void**) &audio_buffer_tmp, &this->audio_format.aformat, &frequency, &channels, &samples);
 
 				this->audio_format.sample_rate = frequency;

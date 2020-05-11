@@ -184,6 +184,7 @@ typedef struct {
 }
 mlt_color;
 
+typedef struct mlt_audio_s *mlt_audio;                  /**< pointer to Audio object */
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr; /**< pointer to Frame object */
 typedef struct mlt_property_s *mlt_property;            /**< pointer to Property object */
 typedef struct mlt_properties_s *mlt_properties;        /**< pointer to Properties object */

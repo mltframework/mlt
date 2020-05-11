@@ -1664,12 +1664,12 @@ static void *consumer_thread( void *arg )
 		// single track
 		if ( !is_multi )
 		{
-			mlt_channel_layout layout = mlt_channel_layout_id( mlt_properties_get( properties, "channel_layout" ) );
+			mlt_channel_layout layout = mlt_audio_channel_layout_id( mlt_properties_get( properties, "channel_layout" ) );
 			if( layout == mlt_channel_auto ||
 				layout == mlt_channel_independent ||
-				mlt_channel_layout_channels( layout ) != enc_ctx->channels )
+				mlt_audio_channel_layout_channels( layout ) != enc_ctx->channels )
 			{
-				layout = mlt_channel_layout_default( enc_ctx->channels );
+				layout = mlt_audio_channel_layout_default( enc_ctx->channels );
 			}
 			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels, mlt_to_av_channel_layout( layout ) );
 			enc_ctx->total_channels = enc_ctx->channels;
@@ -1852,7 +1852,7 @@ static void *consumer_thread( void *arg )
 			// Get audio and append to the fifo
 			if ( !enc_ctx->terminated && enc_ctx->audio_st[0] )
 			{
-				samples = mlt_sample_calculator( fps, enc_ctx->frequency, count ++ );
+				samples = mlt_audio_calculate_frame_samples( fps, enc_ctx->frequency, count ++ );
 				enc_ctx->channels = enc_ctx->total_channels;
 				mlt_frame_get_audio( frame, &pcm, &aud_fmt, &enc_ctx->frequency, &enc_ctx->channels, &samples );
 

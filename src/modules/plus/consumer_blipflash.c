@@ -195,7 +195,7 @@ static void detect_flash( mlt_frame frame, mlt_position pos, double fps, avsync_
 	if( stats->flash )
 	{
 		stats->flash_history[1] = stats->flash_history[0];
-		stats->flash_history[0] = mlt_sample_calculator_to_now( fps, SAMPLE_FREQ, pos );
+		stats->flash_history[0] = mlt_audio_calculate_samples_to_position( fps, SAMPLE_FREQ, pos );
 		if( stats->flash_history_count < 2 )
 		{
 			stats->flash_history_count++;
@@ -207,7 +207,7 @@ static void detect_blip( mlt_frame frame, mlt_position pos, double fps, avsync_s
 {
 	int frequency = SAMPLE_FREQ;
 	int channels = 1;
-	int samples = mlt_sample_calculator( fps, frequency, pos );
+	int samples = mlt_audio_calculate_frame_samples( fps, frequency, pos );
 	mlt_audio_format format = mlt_audio_float;
 	float* buffer = NULL;
 	int error = mlt_frame_get_audio( frame, (void**) &buffer, &format, &frequency, &channels, &samples );
@@ -227,7 +227,7 @@ static void detect_blip( mlt_frame frame, mlt_position pos, double fps, avsync_s
 					stats->samples_since_blip = 0;
 
 					stats->blip_history[1] = stats->blip_history[0];
-					stats->blip_history[0] = mlt_sample_calculator_to_now( fps, SAMPLE_FREQ, pos );
+					stats->blip_history[0] = mlt_audio_calculate_samples_to_position( fps, SAMPLE_FREQ, pos );
 					stats->blip_history[0] += i;
 					if( stats->blip_history_count < 2 )
 					{

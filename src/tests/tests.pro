@@ -1,5 +1,6 @@
 TEMPLATE = subdirs
-SUBDIRS = test_filter \
+SUBDIRS = test_audio \
+    test_filter \
     test_events \
     test_frame \
     test_playlist \

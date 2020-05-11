@@ -105,7 +105,7 @@ static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* f
 		mlt_log_info( MLT_FILTER_SERVICE(filter), "Reset window buffer: %d.\n", mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "window" ) );
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		double fps = mlt_profile_fps( profile );
-		int frame_samples = mlt_sample_calculator( fps, *frequency, mlt_frame_get_position( frame ) );
+		int frame_samples = mlt_audio_calculate_frame_samples( fps, *frequency, mlt_frame_get_position( frame ) );
 		int window_ms = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "window" );
 		pdata->window_frequency = *frequency;
 		pdata->window_channels = *channels;

@@ -310,7 +310,7 @@ static int consumer_play_audio( consumer_jack self, mlt_frame frame, int init_au
 	int channels = mlt_properties_get_int( properties, "channels" );
 	int frequency = mlt_properties_get_int( properties, "frequency" );
 	int scrub = mlt_properties_get_int( properties, "scrub_audio" );
-	int samples = mlt_sample_calculator( mlt_properties_get_double( properties, "fps" ), frequency, self->counter++ );
+	int samples = mlt_audio_calculate_frame_samples( mlt_properties_get_double( properties, "fps" ), frequency, self->counter++ );
 	float *buffer;
 
 	mlt_frame_get_audio( frame, (void**) &buffer, &afmt, &frequency, &channels, &samples );

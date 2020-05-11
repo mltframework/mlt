@@ -573,7 +573,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 	private_data* pdata = (private_data*)filter->child;
 	double fps = mlt_profile_fps( mlt_service_profile(MLT_FILTER_SERVICE(filter)) );
-	int64_t samplepos = mlt_sample_calculator_to_now( fps, *frequency, get_position(filter, frame) );
+	int64_t samplepos = mlt_audio_calculate_samples_to_position( fps, *frequency, get_position(filter, frame) );
 	int bufsize = 0;
 	int ret;
 

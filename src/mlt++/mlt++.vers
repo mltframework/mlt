@@ -595,5 +595,20 @@ MLTPP_6.22.0 {
   global:
     extern "C++" {
       "Mlt::Properties::property_exists(char const*)";
+      "Mlt::Audio::Audio()";
+      "Mlt::Audio::Audio(mlt_audio_s*)";
+      "Mlt::Audio::~Audio()";
+      "Mlt::Audio::data()";
+      "Mlt::Audio::set_data(void*)";
+      "Mlt::Audio::frequency()";
+      "Mlt::Audio::set_frequency(int)";
+      "Mlt::Audio::format()";
+      "Mlt::Audio::set_format(mlt_audio_format)";
+      "Mlt::Audio::samples()";
+      "Mlt::Audio::set_samples(int)";
+      "Mlt::Audio::channels()";
+      "Mlt::Audio::set_channels(int)";
+      "Mlt::Audio::layout()";
+      "Mlt::Audio::set_layout(mlt_channel_layout)";
     };
 } MLTPP_6.20.0;

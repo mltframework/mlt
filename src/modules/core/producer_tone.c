@@ -36,7 +36,7 @@ static int producer_get_audio( mlt_frame frame, int16_t** buffer, mlt_audio_form
 	*format = mlt_audio_float;
 	*frequency = *frequency <= 0 ? 48000 : *frequency;
 	*channels = *channels <= 0 ? 2 : *channels;
-	*samples = *samples <= 0 ? mlt_sample_calculator( fps, *frequency, position ) : *samples;
+	*samples = *samples <= 0 ? mlt_audio_calculate_frame_samples( fps, *frequency, position ) : *samples;
 
 	// Allocate the buffer
 	int size = *samples * *channels * sizeof( float );
@@ -45,7 +45,7 @@ static int producer_get_audio( mlt_frame frame, int16_t** buffer, mlt_audio_form
 	// Fill the buffer
 	int s = 0;
 	int c = 0;
-	long double first_sample = mlt_sample_calculator_to_now( fps, *frequency, position );
+	long double first_sample = mlt_audio_calculate_samples_to_position( fps, *frequency, position );
 	float a = mlt_properties_anim_get_double( producer_properties, "level", position, length );
 	long double f = mlt_properties_anim_get_double( producer_properties, "frequency", position, length );
 	long double p = mlt_properties_anim_get_double( producer_properties, "phase", position, length );

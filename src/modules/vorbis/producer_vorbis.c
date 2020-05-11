@@ -289,7 +289,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		int current_section;
 
 		// Get the number of samples for the current frame
-		*samples = mlt_sample_calculator( fps, *frequency, expected ++ );
+		*samples = mlt_audio_calculate_frame_samples( fps, *frequency, expected ++ );
 
 		while( *samples > audio_used  )
 		{
@@ -309,7 +309,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				ignore --;
 				audio_used -= *samples;
 				memmove( audio_buffer, &audio_buffer[ *samples * *channels ], audio_used * sizeof( int16_t ) * *channels );
-				*samples = mlt_sample_calculator( fps, *frequency, expected ++ );
+				*samples = mlt_audio_calculate_frame_samples( fps, *frequency, expected ++ );
 			}
 		}
 
@@ -337,7 +337,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 	else
 	{
 		// Get silence and don't touch the context
-		*samples = mlt_sample_calculator( fps, *frequency, position );
+		*samples = mlt_audio_calculate_frame_samples( fps, *frequency, position );
 		mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	}
 
