@@ -44,4 +44,9 @@ RUN apt-get install -yqq libsamplerate0 libxml2 libjack0 \
 
 # Install the build
 COPY --from=build /usr/local/ /usr/local/
-ENTRYPOINT ["/usr/local/bin/melt"]
+
+# Qt, Movit, and WebVfx require xvfb-run
+# IMPORTANT: xvfb-run requires docker run option "--init"
+# https://docs.docker.com/engine/reference/commandline/run/
+ENTRYPOINT ["/usr/bin/xvfb-run", "-a", "/usr/local/bin/melt"]
+WORKDIR /mnt
