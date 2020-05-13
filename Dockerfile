@@ -1,4 +1,4 @@
-FROM ubuntu:18.04 AS base
+FROM ubuntu:20.04 AS base
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV HOME /tmp
@@ -32,15 +32,15 @@ RUN apt-get install -yqq libsamplerate0 libxml2 libjack0 \
   libqt5core5a libqt5gui5 libqt5opengl5 libqt5svg5 libqt5widgets5 \
   libqt5x11extras5 libqt5xml5 libqt5webkit5 \
   libtheora0 libvorbis0a python3 \
-  libegl1-mesa libfftw3-3 libvdpau1 \
+  libegl1-mesa libfftw3-3 libvdpau1 libsndio7.0 \
   # Additional runtime libs \
   libgavl1 libsox3 libexif12 xvfb libxkbcommon-x11-0 libhyphen0 libwebp6 \
   # LADSPA plugins \
-  amb-plugins ambdec autotalent blepvco blop bs2b-ladspa calf-ladspa caps cmt \
+  amb-plugins ambdec autotalent blepvco blop bs2b-ladspa caps cmt \
   csladspa fil-plugins guitarix-ladspa invada-studio-plugins-ladspa mcp-plugins \
   omins rev-plugins ste-plugins swh-plugins tap-plugins vco-plugins wah-plugins \
   # Fonts \
-  fonts-liberation 'ttf-adf-.+'
+  fonts-liberation 'fonts-adf-.+'
 
 # Install the build
 COPY --from=build /usr/local/ /usr/local/
