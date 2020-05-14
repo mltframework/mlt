@@ -1,6 +1,6 @@
 /*
  * producer_consumer.c -- produce as a consumer of an encapsulated producer
- * Copyright (C) 2008-2014 Meltytech, LLC
+ * Copyright (C) 2008-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -99,7 +99,6 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 	{
 		// otherwise return no samples
 		*samples = 0;
-		*buffer = NULL;
 	}
 
 	return result;
