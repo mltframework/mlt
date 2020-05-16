@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 #include <string.h>
 #include <framework/mlt.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <stdlib.h>
 
 #ifdef USE_PIXBUF
@@ -36,6 +37,10 @@ static void initialise( )
 	if ( init == 0 )
 	{
 		init = 1;
+
+#if !GLIB_CHECK_VERSION (2,35,0)
+		g_type_init();
+#endif
 		if ( getenv("MLT_PIXBUF_PRODUCER_CACHE") )
 		{
 			int n = atoi( getenv("MLT_PIXBUF_PRODUCER_CACHE" )  );
