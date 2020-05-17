@@ -325,6 +325,33 @@ static void color_trc_from_colorspace( mlt_properties properties )
 	}
 }
 
+static void color_primaries_from_colorspace( mlt_properties properties )
+{
+	// Default color transfer characteristic from colorspace.
+	switch ( mlt_properties_get_int( properties, "colorspace" ) )
+	{
+	case 0: // sRGB
+	case 709:
+		mlt_properties_set_int( properties, "color_primaries", AVCOL_PRI_BT709 );
+		break;
+	case 470:
+		mlt_properties_set_int( properties, "color_primaries", AVCOL_PRI_BT470M );
+		break;
+	case 240:
+		mlt_properties_set_int( properties, "color_primaries", AVCOL_PRI_SMPTE240M );
+		break;
+	case 601:
+		mlt_properties_set_int( properties, "color_primaries",
+			mlt_properties_get_int(properties, "height") == 576? AVCOL_PRI_BT470BG : AVCOL_PRI_SMPTE170M);
+		break;
+	case 170:
+		mlt_properties_set_int( properties, "color_primaries", AVCOL_PRI_SMPTE170M );
+		break;
+	default:
+		break;
+	}
+}
+
 static void property_changed( mlt_properties owner, mlt_consumer self, char *name )
 {
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
@@ -475,7 +502,9 @@ static int consumer_start( mlt_consumer consumer )
 		// we must do this after properties have been set but before first frame request.
 		if ( !mlt_properties_get( properties, "color_trc") )
 			color_trc_from_colorspace( properties );
-	
+		if ( !mlt_properties_get( properties, "color_primaries") )
+			color_primaries_from_colorspace( properties );
+
 		// Assign the thread to properties
 		mlt_properties_set_data( properties, "thread", thread, sizeof( pthread_t ), free, NULL );
 
