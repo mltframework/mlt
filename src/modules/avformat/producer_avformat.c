@@ -2797,6 +2797,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		else
 		{
 			index = self->audio_index;
+			uint8_t silence = *format == mlt_audio_u8 ? 0x80 : 0;
 
 			// Now handle the audio if we have enough
 			if ( self->audio_used[ index ] > 0 )
@@ -2807,7 +2808,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 				memcpy( *buffer, src, size * *channels * sizeof_sample );
 				// supply the remaining requested samples as silence
 				if ( *samples > self->audio_used[ index ] )
-					memset( *buffer + size * *channels * sizeof_sample, 0, ( *samples - self->audio_used[ index ] ) * *channels * sizeof_sample );
+					memset( *buffer + size * *channels * sizeof_sample, silence, ( *samples - self->audio_used[ index ] ) * *channels * sizeof_sample );
 				// reposition the samples within audio_buffer
 				self->audio_used[ index ] -= size;
 				memmove( src, src + size * *channels * sizeof_sample, self->audio_used[ index ] * *channels * sizeof_sample );
@@ -2815,7 +2816,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			else
 			{
 				// Otherwise fill with silence
-				memset( *buffer, 0, *samples * *channels * sizeof_sample );
+				memset( *buffer, silence, *samples * *channels * sizeof_sample );
 			}
 		}
 	}
