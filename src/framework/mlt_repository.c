@@ -51,10 +51,26 @@ struct mlt_repository_s
 	mlt_properties transitions;     /// a list of entry points for transitions
 };
 
-static void scan_directory(mlt_repository self, const char *directory)
+/** Construct a new repository.
+ *
+ * \public \memberof mlt_repository_s
+ * \param directory the full path of a directory from which to read modules
+ * \return a new repository or NULL if failed
+ */
+
+mlt_repository mlt_repository_init( const char *directory )
 {
-	// Get the length of the directory name.
-	size_t directory_length = strlen(directory);
+	// Safety check
+	if ( directory == NULL || strcmp( directory, "" ) == 0 )
+		return NULL;
+
+	// Construct the repository
+	mlt_repository self = calloc( 1, sizeof( struct mlt_repository_s ));
+	mlt_properties_init( &self->parent, self );
+	self->consumers = mlt_properties_new();
+	self->filters = mlt_properties_new();
+	self->producers = mlt_properties_new();
+	self->transitions = mlt_properties_new();
 
 	// Get the directory list
 	mlt_properties dir = mlt_properties_new();
@@ -90,9 +106,8 @@ static void scan_directory(mlt_repository self, const char *directory)
 		// TODO: extend repository to allow this to be used on a case by case basis
 		if ( strstr( object_name, "libmltkino" ) )
 			flags |= RTLD_GLOBAL;
-
+	
 		// Open the shared object
-		DIR *dir = NULL;
 		void *object = dlopen( object_name, flags );
 		if ( object != NULL )
 		{
@@ -113,15 +128,6 @@ static void scan_directory(mlt_repository self, const char *directory)
 				dlclose( object );
 			}
 		}
-		else if ((dir = opendir(object_name)) != NULL)
-		{
-			// Look for modules in subdirectories.
-			closedir(dir);
-			const char *dir_name = object_name
-				+ directory_length + 1 /* path separator */;
-			if (strcmp(dir_name, ".") != 0 && strcmp(dir_name, "..") != 0)
-				scan_directory(self, object_name);
-		}
 		else if ( strstr( object_name, "libmlt" ) )
 		{
 			mlt_log_warning( NULL, "%s: failed to dlopen %s\n  (%s)\n", __FUNCTION__, object_name, dlerror() );
@@ -132,31 +138,6 @@ static void scan_directory(mlt_repository self, const char *directory)
 		mlt_log_error( NULL, "%s: no plugins found in \"%s\"\n", __FUNCTION__, directory );
 
 	mlt_properties_close( dir );
-}
-
-/** Construct a new repository.
- *
- * \public \memberof mlt_repository_s
- * \param directory the full path of a directory from which to read modules
- * \return a new repository or NULL if failed
- */
-
-mlt_repository mlt_repository_init( const char *directory )
-{
-	// Safety check
-	if ( directory == NULL || strcmp( directory, "" ) == 0 )
-		return NULL;
-
-	// Construct the repository
-	mlt_repository self = calloc( 1, sizeof( struct mlt_repository_s ));
-	mlt_properties_init( &self->parent, self );
-	self->consumers = mlt_properties_new();
-	self->filters = mlt_properties_new();
-	self->producers = mlt_properties_new();
-	self->transitions = mlt_properties_new();
-
-	// Scan the directory for modules
-	scan_directory(self, directory);
 
 	return self;
 }

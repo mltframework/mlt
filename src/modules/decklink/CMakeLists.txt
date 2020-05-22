@@ -12,6 +12,8 @@ endif()
 add_library(mltdecklink MODULE ${mltdecklink_src})
 target_link_libraries(mltdecklink mlt Threads::Threads)
 target_include_directories(mltdecklink PRIVATE ${mltdecklink_inc})
+# Create module in parent directory, for the benefit of "source setenv".
+set_target_properties(mltdecklink PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 install(TARGETS mltdecklink LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 file(GLOB yml *.yml)
 install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/decklink)

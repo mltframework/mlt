@@ -45,6 +45,8 @@ endif()
 add_library(mltplus MODULE ${mltplus_src})
 target_link_libraries(mltplus ${mltplus_lib})
 target_include_directories(mltplus PRIVATE ${mltplus_inc})
+# Create module in parent directory, for the benefit of "source setenv".
+set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 install(TARGETS mltplus LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 file(GLOB yml *.yml)
 install(FILES ${yml}
