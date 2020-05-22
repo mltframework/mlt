@@ -174,6 +174,10 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	{
 		self->current_image = NULL;
 		QImageReader reader;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+		// Use Qt's orientation detection
+		reader.setAutoTransform(!disable_exif);
+#endif
 		reader.setDecideFormatFromContent( true );
 		reader.setFileName( QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) ) );
 		QImage *qimage = new  QImage( reader.read() );
@@ -181,10 +185,11 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 
 		if ( !qimage->isNull( ) )
 		{
+#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
 			// Read the exif value for this file
 			if ( !disable_exif )
 				qimage = reorient_with_exif( self, image_idx, qimage );
-
+#endif
 			// Register qimage for destruction and reuse
 			mlt_cache_item_close( self->qimage_cache );
 			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
