@@ -37,6 +37,7 @@ set(modules
     src/modules/normalize
     src/modules/oldfilm
     src/modules/opencv
+    src/modules/opengl
     src/modules/plus
     src/modules/plusgpl
     src/modules/qt

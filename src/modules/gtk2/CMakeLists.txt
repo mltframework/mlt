@@ -13,6 +13,8 @@ endif()
 add_library(mltgtk2 MODULE ${mltgtk2_src})
 target_link_libraries(mltgtk2 ${mltgtk2_lib})
 target_compile_definitions(mltgtk2 PRIVATE ${mltgtk2_def})
+# Create module in parent directory, for the benefit of "source setenv".
+set_target_properties(mltgtk2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 install(TARGETS mltgtk2 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 file(GLOB yml *.yml)
 install(FILES ${yml}
