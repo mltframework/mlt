@@ -128,6 +128,7 @@ static int configure_swr_context( mlt_filter filter )
 
 static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
+	int requested_samples = *samples;
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -198,14 +199,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	if( !error )
 	{
-		if( in.frequency != out.frequency )
-		{
-			// Number of output samples will change if sampling frequency changes.
-			uint64_t tmp = (uint64_t)in.samples * (uint64_t)out.frequency / (uint64_t)in.frequency;
-			out.samples = (int)tmp;
-			// Round up to make sure all available samples are received from swresample.
-			out.samples += 1;
-		}
+		out.samples = requested_samples;
 		mlt_audio_alloc_data( &out );
 
 		mlt_audio_get_planes( &in, pdata->in_buffers );
@@ -214,7 +208,16 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		int received_samples = swr_convert( pdata->ctx, pdata->out_buffers, out.samples, (const uint8_t**)pdata->in_buffers, in.samples );
 		if( received_samples > 0 )
 		{
-			mlt_audio_shrink( &out, received_samples );
+			if( received_samples < requested_samples )
+			{
+				// Duplicate samples to return the exact number requested.
+				mlt_audio_copy( &out, &out, received_samples, 0, requested_samples - received_samples );
+			}
+			else if ( received_samples > requested_samples )
+			{
+				// Discard samples to return the exact number requested.
+				mlt_audio_shrink( &out , requested_samples );
+			}
 			mlt_frame_set_audio( frame, out.data, out.format, 0, out.release_data );
 			mlt_audio_get_values( &out, buffer, frequency, format, samples, channels );
 			mlt_properties_set( frame_properties, "channel_layout", mlt_audio_channel_layout_name( out.layout ) );

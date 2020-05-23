@@ -395,7 +395,7 @@ void mlt_audio_copy( mlt_audio dst, mlt_audio src, int samples, int src_start, i
 			int8_t* s = (int8_t*)src->data + ( src_start * src->channels );
 			int8_t* d = (int8_t*)dst->data + ( dst_start * dst->channels );
 			int size = src->channels * samples * sizeof(int8_t);
-			memcpy( d, s, size );
+			memmove( d, s, size );
 			return;
 		}
 		// Interleaved 16bit formats
@@ -404,7 +404,7 @@ void mlt_audio_copy( mlt_audio dst, mlt_audio src, int samples, int src_start, i
 			int16_t* s = (int16_t*)src->data + ( src_start * src->channels );
 			int16_t* d = (int16_t*)dst->data + ( dst_start * dst->channels );
 			int size = src->channels * samples * sizeof(int16_t);
-			memcpy( d, s, size );
+			memmove( d, s, size );
 			return;
 		}
 		// Interleaved 32bit formats
@@ -414,7 +414,7 @@ void mlt_audio_copy( mlt_audio dst, mlt_audio src, int samples, int src_start, i
 			int32_t* s = (int32_t*)src->data + ( src_start * src->channels );
 			int32_t* d = (int32_t*)dst->data + ( dst_start * dst->channels );
 			int size = src->channels * samples * sizeof(int32_t);
-			memcpy( d, s, size );
+			memmove( d, s, size );
 			return;
 		}
 		// Planer 32bit formats
@@ -427,7 +427,7 @@ void mlt_audio_copy( mlt_audio dst, mlt_audio src, int samples, int src_start, i
 				int32_t* s = (int32_t*)src->data + (p * src->samples) + src_start;
 				int32_t* d = (int32_t*)dst->data + (p * dst->samples) + dst_start;
 				int size = samples * sizeof(int32_t);
-				memcpy( d, s, size );
+				memmove( d, s, size );
 			}
 			return;
 		}
