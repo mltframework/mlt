@@ -1,6 +1,6 @@
 /*
  * transition_mix.c -- mix two audio streams
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,8 @@ typedef struct transition_mix_s
 	float dest_buffer[MAX_SAMPLES * MAX_CHANNELS];
 	int src_buffer_count;
 	int dest_buffer_count;
+	mlt_position previous_frame_a;
+	mlt_position previous_frame_b;
 } *transition_mix;
 
 static void mix_audio( double weight_start, double weight_end, float *buffer_a,
@@ -176,6 +178,12 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 		memmove( self->src_buffer, &self->src_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_b * channels_b],
 				 SAMPLE_BYTES( samples_b, channels_b ) );
 	}
+
+	// Silence src buffer if discontinuity
+	if (self->src_buffer_count > 0 && mlt_frame_get_position(frame_b) != self->previous_frame_b + 1)
+		memset(self->src_buffer, 0, SAMPLE_BYTES(self->src_buffer_count, channels_b));
+	self->previous_frame_b = mlt_frame_get_position(frame_b);
+
 	// Buffer new src samples.
 	memcpy( &self->src_buffer[self->src_buffer_count * channels_b], buffer_b, bytes );
 	self->src_buffer_count += samples_b;
@@ -191,6 +199,12 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 		memmove( self->dest_buffer, &self->dest_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_a * channels_a],
 				 SAMPLE_BYTES( samples_a, channels_a ) );
 	}
+
+	// Silence dest buffer if discontinuity
+	if (self->dest_buffer_count > 0 && mlt_frame_get_position(frame_a) != self->previous_frame_a + 1)
+		memset(self->dest_buffer, 0, SAMPLE_BYTES(self->dest_buffer_count, channels_a));
+	self->previous_frame_a = mlt_frame_get_position(frame_a);
+
 	// Buffer the new dest samples.
 	memcpy( &self->dest_buffer[self->dest_buffer_count * channels_a], buffer_a, bytes );
 	self->dest_buffer_count += samples_a;
