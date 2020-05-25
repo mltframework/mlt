@@ -17,10 +17,10 @@ qmax=12
 bufsize=36408333
 g=12
 bf=2
-vtag=xd5c
+vtag=xd5e
 
 acodec=pcm_s16le
 
 meta.preset.extension=mxf
-meta.preset.note=Sony "workflow innovation"
+meta.preset.note=Sony "workflow innovation". Set vtag as needed.
 meta.preset.name=camcorder/XDCAM-HD422
