@@ -18,5 +18,5 @@ f=mp4
 movflags=+faststart
 
 meta.preset.extension=mp4
-meta.preset.note=Small file size for screencasts, video conferences, and slide decks. Hardware encoding must be OFF.
+meta.preset.note=Small file size for screencasts, video conferences, and slide decks. Hardware encoding not recommended.
 meta.preset.name=Screencast (H.264)
