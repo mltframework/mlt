@@ -1,0 +1,22 @@
+pix_fmt=yuv420p
+vcodec=libx264
+vprofile=high
+crf=27
+g=249
+bf=8
+preset=veryfast
+b-pyramid=0
+refs=8
+weightb=1
+b_strategy=2
+rc-lookahead=25
+channels=1
+acodec=aac
+ar=32000
+ab=48k
+f=mp4
+movflags=+faststart
+
+meta.preset.extension=mp4
+meta.preset.note=Small file size for slide decks, video conferences, and screencasts. Hardware encoding not recommended.
+meta.preset.name=Slide Deck (H.264)
