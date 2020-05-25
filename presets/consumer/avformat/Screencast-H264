@@ -1,7 +1,6 @@
 pix_fmt=yuv420p
 vcodec=libx264
 vprofile=high
-level=51
 crf=27
 g=249
 bf=8
