@@ -7,8 +7,8 @@ preset=slow
 x265-params=weightb=1:open-gop=0
 channels=1
 acodec=aac
-ar=32000
-ab=48k
+ar=44100
+ab=80k
 f=mp4
 movflags=+faststart
 
