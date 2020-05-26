@@ -7,6 +7,8 @@ endif()
 add_library(mltcore MODULE ${mltcore_src})
 target_include_directories(mltcore PRIVATE ${mltcore_inc})
 target_link_libraries(mltcore mlt Threads::Threads)
+# Create module in parent directory, for the benefit of "source setenv".
+set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 install(TARGETS mltcore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 file(GLOB yml *.yml)
 install(FILES data_fx.properties loader.dict loader.ini ${yml}

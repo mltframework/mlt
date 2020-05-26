@@ -33,6 +33,8 @@ endif()
 add_library(mltgdk MODULE ${mltgdk_src})
 target_link_libraries(mltgdk ${mltgdk_lib})
 target_compile_definitions(mltgdk PRIVATE ${mltgdk_def})
+# Create module in parent directory, for the benefit of "source setenv".
+set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 install(TARGETS mltgdk LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 file(GLOB yml *.yml)
 install(FILES ${yml}

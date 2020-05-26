@@ -14,6 +14,8 @@ if(GPL)
     target_link_libraries(mltxine mlt)
     target_compile_definitions(mltxine PRIVATE PIC)
     set_property(TARGET mltxine PROPERTY POSITION_INDEPENDENT_CODE ON)
+    # Create module in parent directory, for the benefit of "source setenv".
+    set_target_properties(mltxine PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
     install(TARGETS mltxine LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
     file(GLOB yml *.yml)
     install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/xine)

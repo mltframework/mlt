@@ -36,6 +36,8 @@
 
 static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
 {
+	int requested_samples = *samples;
+
 	// Get the filter service
 	mlt_filter filter = mlt_frame_pop_audio( frame );
 
@@ -87,6 +89,22 @@ static int resample_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 		error = src_process( state, &data );
 		if ( !error )
 		{
+			if (data.output_frames_gen < requested_samples)
+			{
+				// Duplicate samples to provide the exact requested number of samples to help maintain lipsync.
+				int bytes_to_copy = data.output_frames_gen * sizeof(float) * *channels;
+				int byte_offset = (requested_samples* sizeof(float) * *channels) - bytes_to_copy;
+				if( data.output_frames_gen + byte_offset < BUFFER_LEN )
+				{
+					memmove ( data.data_out + byte_offset, data.data_out, bytes_to_copy );
+					data.output_frames_gen += byte_offset;
+				}
+			}
+			else if (data.output_frames_gen > requested_samples)
+			{
+				// Drop samples to provide the exact requested number of samples.
+				data.output_frames_gen = requested_samples;
+			}
 			// Update output variables
 			*samples = data.output_frames_gen;
 			*frequency = output_rate;

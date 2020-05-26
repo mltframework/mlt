@@ -1,6 +1,6 @@
 /*
  * transition_mix.c -- mix two audio streams
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,8 @@ typedef struct transition_mix_s
 	float dest_buffer[MAX_SAMPLES * MAX_CHANNELS];
 	int src_buffer_count;
 	int dest_buffer_count;
+	mlt_position previous_frame_a;
+	mlt_position previous_frame_b;
 } *transition_mix;
 
 static void mix_audio( double weight_start, double weight_end, float *buffer_a,
@@ -135,6 +137,7 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 
 	// We can only mix interleaved 32-bit float.
 	*format = mlt_audio_f32le;
+	// Get the audio from our producers
 	mlt_frame_get_audio( frame_b, (void**) &buffer_b, format, &frequency_b, &channels_b, &samples_b );
 	mlt_frame_get_audio( frame_a, (void**) &buffer_a, format, &frequency_a, &channels_a, &samples_a );
 
@@ -151,15 +154,38 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 		return error;
 	}
 
+	// I do not recall what these silent_audio properties are about.
 	int silent = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame_a ), "silent_audio" );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame_a ), "silent_audio", 0 );
 	if ( silent )
 		memset( buffer_a, 0, samples_a * channels_a * sizeof( float ) );
-
 	silent = mlt_properties_get_int( b_props, "silent_audio" );
 	mlt_properties_set_int( b_props, "silent_audio", 0 );
 	if ( silent )
 		memset( buffer_b, 0, samples_b * channels_b * sizeof( float ) );
+
+	// At this point we have two frames of audio with possibly differing sample
+	// counts. How to reconcile this?
+
+#ifdef KEEP_IT_SIMPLE_AND_STUPID
+	// The simple and stupid way to deal with different sample counts was to
+	// use the lesser of the two. This sounds good. You can #define SIMPLE_AND_STUPID
+	// and hear what it sounds like.
+	*samples = MIN(samples_a, samples_b);
+	*channels = MIN( MIN( channels_b, channels_a ), MAX_CHANNELS );
+	*frequency = frequency_a;
+	// Note this direct call to sum_audio() skips ramping and the alternative
+	// mixing methods.
+	sum_audio( 1, 1, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples );
+	*buffer = buffer_a;
+
+	return error;
+#endif
+
+	// However, the simple and stupid approach drops samples. Over time, this
+	// can accumulate and cause an A/V sync drift, which addressed in b2640656
+	// by saving the unused samples in a buffer and then using them first on the
+	// next iteration.
 
 	// determine number of samples to process
 	*samples = MIN( self->src_buffer_count + samples_b, self->dest_buffer_count + samples_a );
@@ -176,7 +202,13 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 		memmove( self->src_buffer, &self->src_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_b * channels_b],
 				 SAMPLE_BYTES( samples_b, channels_b ) );
 	}
-	// Buffer new src samples.
+
+	// Silence src buffer if discontinuity
+	if (self->src_buffer_count > 0 && mlt_frame_get_position(frame_b) != self->previous_frame_b + 1)
+		memset(self->src_buffer, 0, SAMPLE_BYTES(self->src_buffer_count, channels_b));
+	self->previous_frame_b = mlt_frame_get_position(frame_b);
+
+	// Append the new samples from frame B to the src buffer
 	memcpy( &self->src_buffer[self->src_buffer_count * channels_b], buffer_b, bytes );
 	self->src_buffer_count += samples_b;
 	buffer_b = self->src_buffer;
@@ -191,7 +223,13 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 		memmove( self->dest_buffer, &self->dest_buffer[MAX_SAMPLES * MAX_CHANNELS - samples_a * channels_a],
 				 SAMPLE_BYTES( samples_a, channels_a ) );
 	}
-	// Buffer the new dest samples.
+
+	// Silence dest buffer if discontinuity
+	if (self->dest_buffer_count > 0 && mlt_frame_get_position(frame_a) != self->previous_frame_a + 1)
+		memset(self->dest_buffer, 0, SAMPLE_BYTES(self->dest_buffer_count, channels_a));
+	self->previous_frame_a = mlt_frame_get_position(frame_a);
+
+	// Append the new samples from frame A to the dest buffer
 	memcpy( &self->dest_buffer[self->dest_buffer_count * channels_a], buffer_a, bytes );
 	self->dest_buffer_count += samples_a;
 	buffer_a = self->dest_buffer;
@@ -233,7 +271,7 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 		mix_audio( mix_start, mix_end, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples );
 	}
 
-	// Copy the audio into the frame.
+	// Copy the audio from the dest buffer into the frame.
 	bytes = SAMPLE_BYTES( *samples, *channels );
 	*buffer = mlt_pool_alloc( bytes );
 	memcpy( *buffer, buffer_a, bytes );
@@ -247,6 +285,9 @@ static int transition_get_audio( mlt_frame frame_a, void **buffer, mlt_audio_for
 	}
 	else
 	{
+		// It is also not good for A/V sync to let many samples accumulate in
+		// the buffer. This part provides a time-based buffer limit.
+
 		// Determine the maximum amount of latency permitted in the buffer.
 		int max_latency = CLAMP( *frequency / 1000, 0, MAX_SAMPLES ); // samples in 1ms
 		// samples_b becomes the new target src buffer count.
