@@ -1,5 +1,5 @@
 if(GPL)
-    pkg_check_modules(vidstab IMPORTED_TARGET GLOBAL vidstab)
+    pkg_check_modules(vidstab IMPORTED_TARGET vidstab)
     if(TARGET PkgConfig::vidstab)
         file(GLOB mltvidstab_src *.c *.cpp)
         add_library(mltvidstab MODULE ${mltvidstab_src})

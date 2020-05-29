@@ -1,5 +1,5 @@
 if(GPL)
-    pkg_check_modules(rubberband IMPORTED_TARGET GLOBAL rubberband)
+    pkg_check_modules(rubberband IMPORTED_TARGET rubberband)
     if(TARGET PkgConfig::rubberband)
         file(GLOB mltrubberband_src *.c *.cpp)
         add_library(mltrubberband MODULE ${mltrubberband_src})
