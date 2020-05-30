@@ -32,7 +32,6 @@
 #include <QtEndian>
 #include <QTemporaryFile>
 #include <QImageReader>
-#include <QDebug>
 
 #ifdef USE_EXIF
 #include <libexif/exif-data.h>
