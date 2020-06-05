@@ -2,7 +2,6 @@ f=mpeg
 acodec=ac3
 ab=512k
 vcodec=mpeg2video
-intra=1
 vb=0
 g=1
 bf=0

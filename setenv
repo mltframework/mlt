@@ -11,6 +11,6 @@ export LD_LIBRARY_PATH=\
 `pwd`/src/mlt++:\
 $LD_LIBRARY_PATH
 
-#[ $(uname -s) = Darwin ] && export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
+[ $(uname -s) = Darwin ] && export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
 export PATH=`pwd`/src/melt:$PATH

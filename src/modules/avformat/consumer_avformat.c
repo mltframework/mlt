@@ -1163,6 +1163,11 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 			video_enc->pix_fmt = codec->pix_fmts[ 0 ];
 	}
 
+	const AVPixFmtDescriptor* srcDesc = av_pix_fmt_desc_get(video_enc->pix_fmt);
+	if (srcDesc->flags & AV_PIX_FMT_FLAG_RGB) {
+		st->codec->colorspace = AVCOL_SPC_RGB;
+	}
+
 	int result = codec && avcodec_open2( video_enc, codec, NULL ) >= 0;
 	
 	return result;
