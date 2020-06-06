@@ -6,7 +6,7 @@ if(GPL)
             common.cpp graph.cpp
             qimage_wrapper.cpp kdenlivetitle_wrapper.cpp
             filter_audiowaveform.cpp filter_qtext.cpp filter_qtblend.cpp
-            producer_qtext.cpp transition_qtblend.cpp
+            producer_qtext.cpp transition_qtblend.cpp filter_qresize.cpp
             consumer_qglsl.cpp)
         set(mltqt_lib mlt++ mlt m Threads::Threads
             Qt5::Core Qt5::Gui Qt5::Xml Qt5::Svg Qt5::Widgets)
