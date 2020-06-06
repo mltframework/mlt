@@ -286,11 +286,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		{
 			image_size = 3 * width * height;
 			self->format = mlt_image_rgb24;
-#if QT_VERSION >= 0x051300
-			scaled.convertTo( QImage::Format_RGB888 );
-#else
 			scaled = scaled.convertToFormat( QImage::Format_RGB888 );
-#endif
 		}
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		memcpy( self->current_image, scaled.constBits(), image_size);
@@ -300,7 +296,6 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
 		image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
-		image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		int y = self->current_height + 1;
 		uint8_t *dst = self->current_image;
 		while ( --y )
