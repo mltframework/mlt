@@ -95,8 +95,12 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 				mlt_properties_set_data( frame_properties, "producer_qimage", self, 0, NULL, NULL );
 				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
-				refresh_qimage( self, frame );
-				mlt_cache_item_close( self->qimage_cache );
+				int enable_caching = self->count == 1;
+				refresh_qimage( self, frame, enable_caching );
+				if ( enable_caching )
+				{
+					mlt_cache_item_close( self->qimage_cache );
+				}
 				mlt_frame_close( frame );
 			}
 		}
@@ -231,17 +235,20 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*width = mlt_properties_get_int( properties, "rescale_width" );
 	if ( mlt_properties_get_int( properties, "rescale_height" ) > 0 )
 		*height = mlt_properties_get_int( properties, "rescale_height" );
-
 	mlt_service_lock( MLT_PRODUCER_SERVICE( &self->parent ) );
+	int enable_caching = ( self->count <= 1 || mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "ttl" ) > 1 );
 
 	// Refresh the image
-	self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
-	self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
-	self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
-	self->current_image = mlt_cache_item_data( self->image_cache, NULL );
-	self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
-	self->current_alpha = mlt_cache_item_data( self->alpha_cache, &self->alpha_size );
-	refresh_image( self, frame, *format, *width, *height );
+	if ( enable_caching )
+	{
+		self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+		self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
+		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
+		self->current_image = mlt_cache_item_data( self->image_cache, NULL );
+		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+		self->current_alpha = mlt_cache_item_data( self->alpha_cache, &self->alpha_size );
+	}
+	refresh_image( self, frame, *format, *width, *height, enable_caching );
 
 	// Get width and height (may have changed during the refresh)
 	*width = mlt_properties_get_int( properties, "width" );
@@ -252,24 +259,39 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// The fault is not in the design of mlt, but in the implementation of the qimage producer...
 	if ( self->current_image )
 	{
-		// Clone the image and the alpha
 		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
-		uint8_t *image_copy = mlt_pool_alloc( image_size );
-		memcpy( image_copy, self->current_image, image_size );
-		// Now update properties so we free the copy after
-		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
-		// We're going to pass the copy on
-		*buffer = image_copy;
-		mlt_log_debug( MLT_PRODUCER_SERVICE( &self->parent ), "%dx%d (%s)\n",
-			self->current_width, self->current_height, mlt_image_format_name( *format ) );
-		// Clone the alpha channel
-		if ( self->current_alpha )
+		if ( enable_caching )
 		{
-            if ( !self->alpha_size )
-                self->alpha_size = self->current_width * self->current_height;
-			uint8_t * alpha_copy = mlt_pool_alloc( self->alpha_size );
-			memcpy( alpha_copy, self->current_alpha, self->alpha_size );
-			mlt_frame_set_alpha( frame, alpha_copy, self->alpha_size, mlt_pool_release );
+			// Clone the image and the alpha
+			uint8_t *image_copy = mlt_pool_alloc( image_size );
+			memcpy( image_copy, self->current_image, image_size );
+			// Now update properties so we free the copy after
+			mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
+			// We're going to pass the copy on
+			*buffer = image_copy;
+			mlt_log_debug( MLT_PRODUCER_SERVICE( &self->parent ), "%dx%d (%s)\n",
+				self->current_width, self->current_height, mlt_image_format_name( *format ) );
+			// Clone the alpha channel
+			if ( self->current_alpha )
+			{
+				if ( !self->alpha_size )
+					self->alpha_size = self->current_width * self->current_height;
+				uint8_t * alpha_copy = mlt_pool_alloc( self->alpha_size );
+				memcpy( alpha_copy, self->current_alpha, self->alpha_size );
+				mlt_frame_set_alpha( frame, alpha_copy, self->alpha_size, mlt_pool_release );
+			}
+		}
+		else
+		{
+			// For image sequences with ttl = 1 we recreate self->current_image on each frame, no need to clone
+			mlt_frame_set_image( frame, self->current_image, image_size, mlt_pool_release );
+			*buffer = self->current_image;
+			if ( self->current_alpha )
+			{
+				if ( !self->alpha_size )
+					self->alpha_size = self->current_width * self->current_height;
+				mlt_frame_set_alpha( frame, self->current_alpha, self->alpha_size, mlt_pool_release );
+			}
 		}
 	}
 	else
@@ -277,10 +299,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		error = 1;
 	}
 
-	// Release references and locks
-	mlt_cache_item_close( self->qimage_cache );
-	mlt_cache_item_close( self->image_cache );
-	mlt_cache_item_close( self->alpha_cache );
+	if ( enable_caching )
+	{
+		// Release references and locks
+		mlt_cache_item_close( self->qimage_cache );
+		mlt_cache_item_close( self->image_cache );
+		mlt_cache_item_close( self->alpha_cache );
+	}
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( &self->parent ) );
 
 	return error;
@@ -312,10 +337,13 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 		// Refresh the image
-		self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
-		self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
-		refresh_qimage( self, *frame );
-		mlt_cache_item_close( self->qimage_cache );
+		if ( self->count == 1 || mlt_properties_get_int( properties, "ttl" ) > 1 )
+		{
+			self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+			self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
+			refresh_qimage( self, *frame, 1 );
+			mlt_cache_item_close( self->qimage_cache );
+		}
 
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
