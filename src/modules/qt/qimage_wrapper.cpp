@@ -138,7 +138,7 @@ static QImage* reorient_with_exif( producer_qimage self, int image_idx, QImage *
 	return qimage;
 }
 
-int refresh_qimage( producer_qimage self, mlt_frame frame )
+int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching )
 {
 	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
@@ -153,15 +153,12 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 		mlt_properties_set_int( producer_props, "force_reload", 0 );
 	}
 
-	// Get the time to live for each frame
-	double ttl = mlt_properties_get_int( producer_props, "ttl" );
-
 	// Get the original position of this frame
 	mlt_position position = mlt_frame_original_position( frame );
 	position += mlt_producer_get_in( producer );
 
 	// Image index
-	int image_idx = ( int )floor( ( double )position / ttl ) % self->count;
+	int image_idx = ( int )floor( ( double )position / mlt_properties_get_int( producer_props, "ttl" ) ) % self->count;
 
 	int disable_exif = mlt_properties_get_int( producer_props, "disable_exif" );
 
@@ -169,7 +166,9 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 		return -1;
 
 	if ( image_idx != self->qimage_idx )
+	{
 		self->qimage = NULL;
+	}
 	if ( !self->qimage || mlt_properties_get_int( producer_props, "_disable_exif" ) != disable_exif )
 	{
 		self->current_image = NULL;
@@ -188,12 +187,23 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 #if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
 			// Read the exif value for this file
 			if ( !disable_exif )
+			{
 				qimage = reorient_with_exif( self, image_idx, qimage );
+				self->qimage = qimage;
+			}
 #endif
-			// Register qimage for destruction and reuse
-			mlt_cache_item_close( self->qimage_cache );
-			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
-			self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+			if ( enable_caching )
+			{
+				// Register qimage for destruction and reuse
+				mlt_cache_item_close( self->qimage_cache );
+				mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete );
+				self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
+			}
+			else
+			{
+				// Ensure original image data will be deleted
+				mlt_properties_set_data( producer_props, "qimage.qimage", qimage, 0, ( mlt_destructor )qimage_delete, NULL );
+			}
 			self->qimage_idx = image_idx;
 
 			// Store the width/height of the qimage
@@ -220,17 +230,17 @@ int refresh_qimage( producer_qimage self, mlt_frame frame )
 	return image_idx;
 }
 
-void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format format, int width, int height )
+void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format format, int width, int height, int enable_caching )
 {
 	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_producer producer = &self->parent;
 
 	// Get index and qimage
-	int image_idx = refresh_qimage( self, frame );
+	int image_idx = refresh_qimage( self, frame, enable_caching );
 
 	// optimization for subsequent iterations on single picture
-	if ( image_idx != self->image_idx || width != self->current_width || height != self->current_height )
+	if (!enable_caching || image_idx != self->image_idx || width != self->current_width || height != self->current_height )
 		self->current_image = NULL;
 
 	// If we have a qimage and need a new scaled image
@@ -243,7 +253,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		QImage::Format qimageFormat = has_alpha ? QImage::Format_ARGB32 : QImage::Format_RGB32;
 
 		// Note - the original qimage is already safe and ready for destruction
-		if ( qimage->format() != qimageFormat )
+		if ( enable_caching && qimage->format() != qimageFormat )
 		{
 			QImage temp = qimage->convertToFormat( qimageFormat );
 			qimage = new QImage( temp );
@@ -255,21 +265,37 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		QImage scaled = interp? qimage->scaled( QSize( width, height ), Qt::IgnoreAspectRatio, Qt::SmoothTransformation ) :
 			qimage->scaled( QSize(width, height) );
 
-		// Convert scaled image to target format (it might be premultiplied after scaling).
-		scaled = scaled.convertToFormat( qimageFormat );
-
 		// Store width and height
 		self->current_width = width;
 		self->current_height = height;
 
 		// Allocate/define image
-		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
-		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
-		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		self->current_alpha = NULL;
 		self->alpha_size = 0;
 
 		// Copy the image
+		int image_size;
+#if QT_VERSION >= 0x050200
+		if ( has_alpha )
+		{
+			image_size = 4 * width * height;
+			self->format = mlt_image_rgb24a;
+			scaled = scaled.convertToFormat( QImage::Format_RGBA8888 );
+		}
+		else
+		{
+			image_size = 3 * width * height;
+			self->format = mlt_image_rgb24;
+			scaled = scaled.convertToFormat( QImage::Format_RGB888 );
+		}
+		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
+		memcpy( self->current_image, scaled.constBits(), image_size);
+#else
+		// Convert scaled image to target format (it might be premultiplied after scaling).
+		scaled = scaled.convertToFormat( qimageFormat );
+		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+		image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
+		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		int y = self->current_height + 1;
 		uint8_t *dst = self->current_image;
 		while ( --y )
@@ -285,9 +311,9 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 				++src;
 			}
 		}
-
+#endif
 		// Convert image to requested format
-		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format )
+		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format && enable_caching )
 		{
 			uint8_t *buffer = NULL;
 
@@ -317,17 +343,20 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			}
 		}
 
-		// Update the cache
-		mlt_cache_item_close( self->image_cache );
-		mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, image_size, mlt_pool_release );
-		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
 		self->image_idx = image_idx;
-		mlt_cache_item_close( self->alpha_cache );
-		self->alpha_cache = NULL;
-		if ( self->current_alpha )
+		if ( enable_caching )
 		{
-			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, self->alpha_size, mlt_pool_release );
-			self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+			// Update the cache
+			mlt_cache_item_close( self->image_cache );
+			mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.image", self->current_image, image_size, mlt_pool_release );
+			self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
+			mlt_cache_item_close( self->alpha_cache );
+			self->alpha_cache = NULL;
+			if ( self->current_alpha )
+			{
+				mlt_service_cache_put( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha", self->current_alpha, self->alpha_size, mlt_pool_release );
+				self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
+			}
 		}
 	}
 
