@@ -186,9 +186,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	if ( !hasAlpha )
 	{
 		// fetch image
-		mlt_image_format fmt = mlt_image_none;
-		error = mlt_frame_get_image( b_frame, &b_image, &fmt, width, height, 1 );
-		*format = fmt;
+		error = mlt_frame_get_image( b_frame, &b_image, format, width, height, 1 );
 		if ( *format == mlt_image_rgb24a || mlt_frame_get_alpha( b_frame ) )
 		{
 			hasAlpha = true;
