@@ -977,7 +977,7 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 			int i;
 			for ( i = 3600; i <= frames; i += 3600 )
 			{
-				if ( i % 18000 )
+				if ( i % 36000 )
 					frames += 4;
 			}
 			frame_sep = ';';
