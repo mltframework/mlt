@@ -27,6 +27,7 @@ endif()
 if(NOT FFTW_FOUND)
     pkg_check_modules(FFTW fftw)
 endif()
+pkg_check_modules(xml IMPORTED_TARGET libxml-2.0)
 add_subdirectory(src/framework)
 add_subdirectory(src/melt)
 add_subdirectory(src/mlt++)
@@ -39,6 +40,7 @@ set(modules
     src/modules/frei0r
     src/modules/feeds
     src/modules/gdk
+    src/modules/jackrack
     src/modules/kdenlive
     src/modules/motion_est
     src/modules/normalize

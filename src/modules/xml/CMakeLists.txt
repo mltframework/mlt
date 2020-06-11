@@ -1,4 +1,3 @@
-pkg_check_modules(xml IMPORTED_TARGET libxml-2.0)
 if(TARGET PkgConfig::xml)
     file(GLOB mltxml_src *.c)
     add_library(mltxml MODULE ${mltxml_src})
