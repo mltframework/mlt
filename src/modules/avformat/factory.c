@@ -437,6 +437,10 @@ MLT_REPOSITORY
 	snprintf( dirname, PATH_MAX, "%s/avformat/blacklist.txt", mlt_environment( "MLT_DATA" ) );
 	mlt_properties blacklist = mlt_properties_load( dirname );
 
+	snprintf( dirname, PATH_MAX, "%s/avformat/yuv_only.txt", mlt_environment( "MLT_DATA" ) );
+	mlt_properties_set_data(mlt_global_properties(), "avfilter.yuv_only",
+		mlt_properties_load(dirname), 0, (mlt_destructor) mlt_properties_close, NULL);
+
 	// Load a list of parameters impacted by consumer scale into global properties.
 	snprintf(dirname, PATH_MAX, "%s/avformat/resolution_scale.yml", mlt_environment("MLT_DATA"));
 	mlt_properties_set_data(mlt_global_properties(), "avfilter.resolution_scale",

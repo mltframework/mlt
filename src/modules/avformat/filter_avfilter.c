@@ -678,7 +678,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int ret;
 
 	mlt_log_debug(MLT_FILTER_SERVICE(filter), "position %"PRId64"\n", pos);
-	*format = get_supported_image_format( *format );
+	if (mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_yuv_only")) {
+		*format = mlt_image_yuv422;
+	} else {
+		*format = get_supported_image_format(*format);
+	}
 
 	mlt_frame_get_image( frame, image, format, width, height, 0 );
 
@@ -903,6 +907,13 @@ mlt_filter filter_avfilter_init( mlt_profile profile, mlt_service_type type, con
 			// Lookup my plugin in the map
 			param_name_map = mlt_properties_get_data(param_name_map, id, NULL);
 			mlt_properties_set_data(MLT_FILTER_PROPERTIES(filter), "_resolution_scale", param_name_map, 0, NULL, NULL);
+		}
+
+		mlt_properties yuv_only = mlt_properties_get_data(mlt_global_properties(), "avfilter.yuv_only", NULL);
+		if (yuv_only) {
+			if (mlt_properties_get(yuv_only, id)) {
+				mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_yuv_only", 1);
+			}
 		}
 	}
 	else

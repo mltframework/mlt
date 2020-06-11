@@ -54,6 +54,6 @@ if(     TARGET PkgConfig::libavformat
     # Create module in parent directory, for the benefit of "source setenv".
     set_target_properties(mltavformat PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
     install(TARGETS mltavformat LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-    install(FILES blacklist.txt producer_avformat.yml consumer_avformat.yml
+    install(FILES blacklist.txt producer_avformat.yml consumer_avformat.yml yuv_only.txt resolution_scale.yml
         DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/avformat)
 endif()

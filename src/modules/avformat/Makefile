@@ -71,6 +71,7 @@ install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
 	install -d "$(DESTDIR)$(mltdatadir)/avformat"
 	install -m 644 blacklist.txt "$(DESTDIR)$(mltdatadir)/avformat"
+	install -m 644 yuv_only.txt "$(DESTDIR)$(mltdatadir)/avformat"
 	install -m 644 producer_avformat.yml "$(DESTDIR)$(mltdatadir)/avformat"
 	install -m 644 consumer_avformat.yml "$(DESTDIR)$(mltdatadir)/avformat"
 
