@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/blur_effect.h>
+#include <blur_effect.h>
 
 using namespace movit;
 

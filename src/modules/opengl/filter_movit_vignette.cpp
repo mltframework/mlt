@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/vignette_effect.h>
+#include <vignette_effect.h>
 
 using namespace movit;
 

@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/deconvolution_sharpen_effect.h>
+#include <deconvolution_sharpen_effect.h>
 
 using namespace movit;
 

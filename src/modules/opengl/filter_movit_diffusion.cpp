@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/diffusion_effect.h>
+#include <diffusion_effect.h>
 
 using namespace movit;
 

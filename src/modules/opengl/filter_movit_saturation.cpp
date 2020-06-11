@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/saturation_effect.h>
+#include <saturation_effect.h>
 
 using namespace movit;
 

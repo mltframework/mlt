@@ -22,9 +22,9 @@
 
 #include <framework/mlt_types.h>
 
-#include <movit/flat_input.h>
-#include <movit/ycbcr_input.h>
-#include <movit/effect_chain.h>
+#include <flat_input.h>
+#include <ycbcr_input.h>
+#include <effect_chain.h>
 
 class MltInput
 {

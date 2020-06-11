@@ -1,8 +1,8 @@
 #ifndef OPTIONAL_EFFECT_H
 #define OPTIONAL_EFFECT_H
 
-#include <movit/effect.h>
-#include <movit/effect_chain.h>
+#include <effect.h>
+#include <effect_chain.h>
 #include <assert.h>
 
 // A wrapper effect that, at rewrite time, can remove itself entirely from the loop.

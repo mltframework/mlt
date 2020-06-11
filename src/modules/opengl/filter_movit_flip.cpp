@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/effect.h>
+#include <effect.h>
 #include "mlt_flip_effect.h"
 
 using namespace movit;
