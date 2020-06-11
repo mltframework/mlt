@@ -24,8 +24,8 @@
 #include <string>
 
 #include "filter_glsl_manager.h"
-#include <movit/effect_chain.h>
-#include <movit/util.h>
+#include <effect_chain.h>
+#include <util.h>
 #include "mlt_movit_input.h"
 #include <mlt++/MltProducer.h>
 #include "mlt_flip_effect.h"

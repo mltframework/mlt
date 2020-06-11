@@ -21,10 +21,10 @@
 #include <stdlib.h>
 #include <string>
 #include "filter_glsl_manager.h"
-#include <movit/init.h>
-#include <movit/util.h>
-#include <movit/effect_chain.h>
-#include <movit/resource_pool.h>
+#include <init.h>
+#include <util.h>
+#include <effect_chain.h>
+#include <resource_pool.h>
 #include "mlt_movit_input.h"
 #include "mlt_flip_effect.h"
 #include <mlt++/MltEvent.h>

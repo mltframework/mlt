@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/resample_effect.h>
+#include <resample_effect.h>
 #include "optional_effect.h"
 
 using namespace movit;

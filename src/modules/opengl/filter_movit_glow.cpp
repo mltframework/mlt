@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/glow_effect.h>
+#include <glow_effect.h>
 
 using namespace movit;
 

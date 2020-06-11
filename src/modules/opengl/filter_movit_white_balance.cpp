@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/white_balance_effect.h>
+#include <white_balance_effect.h>
 
 using namespace movit;
 

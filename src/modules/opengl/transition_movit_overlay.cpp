@@ -23,10 +23,10 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/init.h>
-#include <movit/effect_chain.h>
-#include <movit/util.h>
-#include <movit/overlay_effect.h>
+#include <init.h>
+#include <effect_chain.h>
+#include <util.h>
+#include <overlay_effect.h>
 
 using namespace movit;
 

@@ -24,8 +24,8 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/init.h>
-#include <movit/padding_effect.h>
+#include <init.h>
+#include <padding_effect.h>
 #include "optional_effect.h"
 
 using namespace movit;

@@ -23,11 +23,11 @@
 #include <math.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/init.h>
-#include <movit/effect_chain.h>
-#include <movit/util.h>
-#include <movit/luma_mix_effect.h>
-#include <movit/mix_effect.h>
+#include <init.h>
+#include <effect_chain.h>
+#include <util.h>
+#include <luma_mix_effect.h>
+#include <mix_effect.h>
 #include "mlt_movit_input.h"
 
 using namespace movit;

@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <movit/lift_gamma_gain_effect.h>
+#include <lift_gamma_gain_effect.h>
 
 using namespace movit;
 
