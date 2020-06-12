@@ -273,45 +273,44 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->current_alpha = NULL;
 		self->alpha_size = 0;
 
-		// Copy the image
-		int image_size;
-#if QT_VERSION >= 0x050200
-		if ( has_alpha )
-		{
-			image_size = 4 * width * height;
-			self->format = mlt_image_rgb24a;
-			scaled = scaled.convertToFormat( QImage::Format_RGBA8888 );
-		}
-		else
-		{
-			image_size = 3 * width * height;
-			self->format = mlt_image_rgb24;
-			scaled = scaled.convertToFormat( QImage::Format_RGB888 );
-		}
-		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
-		memcpy( self->current_image, scaled.constBits(), image_size);
-#else
 		// Convert scaled image to target format (it might be premultiplied after scaling).
 		scaled = scaled.convertToFormat( qimageFormat );
-		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
-		image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
+
+		// Copy the image
+		self->format = has_alpha? mlt_image_rgb24a : mlt_image_rgb24;
+		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		int y = self->current_height + 1;
 		uint8_t *dst = self->current_image;
-		while ( --y )
-		{
-			QRgb *src = (QRgb*) scaled.scanLine( self->current_height - y );
-			int x = self->current_width + 1;
-			while ( --x )
+		if (has_alpha) {
+			while ( --y )
 			{
-				*dst++ = qRed(*src);
-				*dst++ = qGreen(*src);
-				*dst++ = qBlue(*src);
-				if ( has_alpha ) *dst++ = qAlpha(*src);
-				++src;
+				QRgb *src = (QRgb*) scaled.scanLine( self->current_height - y );
+				int x = self->current_width + 1;
+				while ( --x )
+				{
+					*dst++ = qRed(*src);
+					*dst++ = qGreen(*src);
+					*dst++ = qBlue(*src);
+					*dst++ = qAlpha(*src);
+					++src;
+				}
+			}
+		} else {
+			while ( --y )
+			{
+				QRgb *src = (QRgb*) scaled.scanLine( self->current_height - y );
+				int x = self->current_width + 1;
+				while ( --x )
+				{
+					*dst++ = qRed(*src);
+					*dst++ = qGreen(*src);
+					*dst++ = qBlue(*src);
+					++src;
+				}
 			}
 		}
-#endif
+
 		// Convert image to requested format
 		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format && enable_caching )
 		{
