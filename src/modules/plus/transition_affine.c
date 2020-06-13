@@ -576,8 +576,16 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_properties_set_int( b_props, "rescale_width", b_width );
 		mlt_properties_set_int( b_props, "rescale_height", b_height );
 
-		// Suppress padding and aspect normalization.
-		mlt_properties_set( b_props, "rescale.interp", "none" );
+		const char* b_resource = mlt_properties_get(
+			MLT_PRODUCER_PROPERTIES(mlt_frame_get_original_producer(b_frame)), "resource");
+		// Check if we are applied as a filter inside a transition
+		if (b_resource && !strcmp("<track>", b_resource)) {
+			// Set the rescale interpolation to match the frame
+			mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
+		} else {
+			// Suppress padding and aspect normalization.
+			mlt_properties_set( b_props, "rescale.interp", "none" );
+		}
 	}
 
 	// This is not a field-aware transform.
