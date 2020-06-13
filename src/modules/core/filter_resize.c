@@ -1,6 +1,6 @@
 /*
  * filter_resize.c -- resizing filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -87,28 +87,26 @@ static void resize_image( uint8_t *output, int owidth, int oheight, uint8_t *inp
 
 	if ( format == mlt_image_rgb24a )
 	{
-		while ( size -- )
-		{
-			*p ++ = 0;
-			*p ++ = 0;
-			*p ++ = 0;
-			*p ++ = alpha_value;
+		memset(p, 0, size * bpp);
+		if (alpha_value != 0) {
+			while (size--) {
+				p[3] = alpha_value;
+				p += 4;
+			}
 		}
 	}
 	else if ( bpp == 2 )
 	{
-		while( size -- )
-		{
-			*p ++ = 16;
-			*p ++ = 128;
+		memset(p, 16, size * bpp);
+		while (size--) {
+			p[1] = 128;
+			p += 2;
 		}
 		offset_x -= offset_x % 4;
 	}
 	else
 	{
-		size *= bpp;
-		while ( size-- )
-			*p ++ = 0;
+		memset(p, 0, size * bpp);
 	}
 
 	out_line = output + offset_y * ostride;
