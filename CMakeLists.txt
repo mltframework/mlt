@@ -50,6 +50,7 @@ set(modules
     src/modules/plus
     src/modules/plusgpl
     src/modules/qt
+    src/modules/resample
     src/modules/rubberband
     src/modules/rtaudio
     src/modules/sdl2
