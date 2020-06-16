@@ -57,6 +57,7 @@ set(modules
     src/modules/vmfx
     src/modules/xine
     src/modules/xml
+    src/modules/lumas
 )
 foreach(module ${modules})
     add_subdirectory(${module})
