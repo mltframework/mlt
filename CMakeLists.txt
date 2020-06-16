@@ -54,6 +54,7 @@ set(modules
     src/modules/rubberband
     src/modules/rtaudio
     src/modules/sdl2
+    src/modules/sox
     src/modules/vid.stab
     src/modules/vmfx
     src/modules/xine
