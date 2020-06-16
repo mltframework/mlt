@@ -57,6 +57,7 @@ set(modules
     src/modules/sox
     src/modules/vid.stab
     src/modules/vmfx
+    src/modules/vorbis
     src/modules/xine
     src/modules/xml
     src/modules/lumas
