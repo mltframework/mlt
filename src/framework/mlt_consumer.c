@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -514,6 +514,10 @@ static void set_image_format( mlt_consumer self )
 
 int mlt_consumer_start( mlt_consumer self )
 {
+	if (!self) {
+		return 1;
+	}
+
 	int error = 0;
 
 	if ( !mlt_consumer_is_stopped( self ) )
@@ -1639,6 +1643,10 @@ void mlt_consumer_stopped( mlt_consumer self )
 
 int mlt_consumer_stop( mlt_consumer self )
 {
+	if (!self) {
+		return 1;
+	}
+
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 	consumer_private *priv = self->local;
