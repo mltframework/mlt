@@ -449,7 +449,7 @@ static int consumer_start( mlt_consumer consumer )
 		mlt_properties_set_data( doc, "audio_codecs", codecs, 0, NULL, NULL );
 		while ( ( codec = av_codec_next( codec ) ) )
 #if LIBAVCODEC_VERSION_INT >= ((57<<16)+(37<<8)+0)
-			if ( (codec->encode2 || codec->send_frame) && codec->type == AVMEDIA_TYPE_AUDIO )
+			if ( av_codec_is_encoder(codec) && codec->type == AVMEDIA_TYPE_AUDIO )
 #else
 			if ( codec->encode2 && codec->type == AVMEDIA_TYPE_AUDIO )
 #endif
@@ -475,7 +475,7 @@ static int consumer_start( mlt_consumer consumer )
 		mlt_properties_set_data( doc, "video_codecs", codecs, 0, NULL, NULL );
 		while ( ( codec = av_codec_next( codec ) ) )
 #if LIBAVCODEC_VERSION_INT >= ((57<<16)+(37<<8)+0)
-			if ( (codec->encode2 || codec->send_frame) && codec->type == AVMEDIA_TYPE_VIDEO )
+			if ( av_codec_is_encoder(codec) && codec->type == AVMEDIA_TYPE_VIDEO )
 #else
 			if ( codec->encode2 && codec->type == AVMEDIA_TYPE_VIDEO )
 #endif
