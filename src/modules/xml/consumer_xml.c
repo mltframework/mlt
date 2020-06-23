@@ -980,7 +980,8 @@ static void *consumer_thread( void *arg )
 			int width = 0, height = 0;
 			int frequency = mlt_properties_get_int( properties, "frequency" );
 			int channels = mlt_properties_get_int( properties, "channels" );
-			int samples = 0;
+			float fps = mlt_profile_fps( mlt_service_profile( MLT_CONSUMER_SERVICE( consumer ) ) );
+			int samples = mlt_audio_calculate_frame_samples( fps, frequency, mlt_frame_get_position( frame ) );
 			mlt_image_format iformat = mlt_image_yuv422;
 			mlt_audio_format aformat = mlt_audio_s16;
 			uint8_t *buffer;
