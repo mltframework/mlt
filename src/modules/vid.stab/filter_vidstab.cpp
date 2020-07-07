@@ -182,7 +182,7 @@ static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat v
 	}
 }
 
-void	destory_analyze_data( vs_analyze* analyze_data )
+void destroy_analyze_data( vs_analyze* analyze_data )
 {
 	if ( analyze_data )
 	{
@@ -226,7 +226,7 @@ static void init_analyze_data( mlt_filter filter, mlt_frame frame, VSPixelFormat
 	if ( vsPrepareFile( &analyze_data->md, analyze_data->results ) != VS_OK )
 	{
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Can not write to results file: %s\n", filename );
-		destory_analyze_data( analyze_data );
+		destroy_analyze_data( analyze_data );
 		data->analyze_data = NULL;
 	}
 	else
@@ -282,7 +282,7 @@ static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image
 	if( data->analyze_data && pos != data->analyze_data->last_position + 1 )
 	{
 		mlt_log_error( MLT_FILTER_SERVICE(filter), "Bad frame sequence\n" );
-		destory_analyze_data( data->analyze_data );
+		destroy_analyze_data( data->analyze_data );
 		data->analyze_data = NULL;
 	}
 
@@ -309,7 +309,7 @@ static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image
 		else
 		{
 			mlt_log_error( MLT_FILTER_SERVICE(filter), "Motion detection failed\n" );
-			destory_analyze_data( data->analyze_data );
+			destroy_analyze_data( data->analyze_data );
 			data->analyze_data = NULL;
 		}
 
@@ -317,7 +317,7 @@ static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image
 		if ( pos + 1 == mlt_filter_get_length2( filter, frame ) )
 		{
 			mlt_log_info( MLT_FILTER_SERVICE(filter), "Analysis complete\n" );
-			destory_analyze_data( data->analyze_data );
+			destroy_analyze_data( data->analyze_data );
 			data->analyze_data = NULL;
 			mlt_properties_set( properties, "results", mlt_properties_get( properties, "filename" ) );
 		}
@@ -395,7 +395,7 @@ static void filter_close( mlt_filter filter )
 	vs_data* data = (vs_data*)filter->child;
 	if ( data )
 	{
-		if ( data->analyze_data ) destory_analyze_data( data->analyze_data );
+		if ( data->analyze_data ) destroy_analyze_data( data->analyze_data );
 		if ( data->apply_data ) destory_apply_data( data->apply_data );
 		free( data );
 	}
