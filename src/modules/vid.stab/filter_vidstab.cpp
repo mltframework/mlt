@@ -281,7 +281,8 @@ static void analyze_image( mlt_filter filter, mlt_frame frame, uint8_t* vs_image
 	// If any frames are skipped, analysis data will be incomplete.
 	if( data->analyze_data && pos != data->analyze_data->last_position + 1 )
 	{
-		mlt_log_error( MLT_FILTER_SERVICE(filter), "Bad frame sequence\n" );
+		mlt_log_error( MLT_FILTER_SERVICE(filter), "Bad frame sequence pos %d last_position %d\n",
+			pos, data->analyze_data->last_position );
 		destroy_analyze_data( data->analyze_data );
 		data->analyze_data = NULL;
 	}
