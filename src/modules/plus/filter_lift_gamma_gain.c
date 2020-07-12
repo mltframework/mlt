@@ -88,9 +88,9 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 			b = CLAMP( b, 0.0, 1.0 );
 
 			// Update LUT
-			self->rlut[ i ] = (int)(r * 255.0);
-			self->glut[ i ] = (int)(g * 255.0);
-			self->blut[ i ] = (int)(b * 255.0);
+			self->rlut[ i ] = lrint(r * 255.0);
+			self->glut[ i ] = lrint(g * 255.0);
+			self->blut[ i ] = lrint(b * 255.0);
 		}
 
 		// Store the values that created the LUT so that
