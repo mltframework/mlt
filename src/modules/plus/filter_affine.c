@@ -25,6 +25,8 @@
 #include <math.h>
 #include <string.h>
 
+#define MLT_AFFINE_COUNT_PROPERTY "filter_affine.count"
+
 /** Do it :-).
 */
 
@@ -101,6 +103,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			*height = profile->height;
 		}
 
+		// Prescale the image before applying affine filters if more than 1
+		if (mlt_properties_get_int(frame_properties, MLT_AFFINE_COUNT_PROPERTY) > 1) {
+			mlt_properties_set_int(frame_properties, "always_scale", 1);
+		}
+
 		mlt_frame_get_image( a_frame, image, format, width, height, writable );
 		mlt_properties_set_data( frame_properties, "affine_frame", a_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
 		mlt_frame_set_image( frame, *image, *width * *height * 4, NULL );
@@ -123,6 +130,14 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	// Push the frame filter
 	mlt_frame_push_service( frame, filter );
 	mlt_frame_push_get_image( frame, filter_get_image );
+
+	// Count the number of affine filters on this frame
+	if (mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), MLT_AFFINE_COUNT_PROPERTY)) {
+		int count = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), MLT_AFFINE_COUNT_PROPERTY);
+		mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), MLT_AFFINE_COUNT_PROPERTY, count + 1);
+	} else {
+		mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), MLT_AFFINE_COUNT_PROPERTY, 1);
+	}
 
 	return frame;
 }
