@@ -1,0 +1,37 @@
+schema_version: 0.1
+type: filter
+identifier: pillar_echo
+title: Pillar Echo
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Create an echo effect (blur) outside of an area of interest.
+  
+  The area of interest is scaled to fill the image, then blurred. Then the
+  original image is replaced back on top.
+parameters:
+  - identifier: rect
+    title: Rectangle
+    description: >
+      Defines the rectangle of the area of interest.
+      
+      Format is: "X Y W H".
+      
+      X, Y, W, H are assumed to be pixel units unless they have the suffix '%'.
+    type: rect
+    default: "0 0 10% 10%"
+    readonly: no
+    mutable: yes
+
+  - identifier: blur
+    title: Blur
+    description: >
+      The blur radius as a percent of the image width
+    type: float
+    default: 4.0
+    readonly: no
+    mutable: yes

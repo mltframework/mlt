@@ -24,7 +24,7 @@
 #include <string.h>
 
 /** Scale a rectangle by the specified factors. */
-mlt_rect scale_rect( mlt_rect rect, double x_scale, double y_scale )
+static mlt_rect scale_rect( mlt_rect rect, double x_scale, double y_scale )
 {
 	rect.x = rect.x / x_scale;
 	rect.y = rect.y / y_scale;
@@ -36,7 +36,7 @@ mlt_rect scale_rect( mlt_rect rect, double x_scale, double y_scale )
 /** Constrain a rect to be within the max dimensions with an additional 1 pixel
   * padding.
   */
-mlt_rect constrain_rect( mlt_rect rect, int max_x, int max_y )
+static mlt_rect constrain_rect( mlt_rect rect, int max_x, int max_y )
 {
 	rect.x = round( rect.x );
 	rect.y = round( rect.y );
