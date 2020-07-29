@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_profile.h>
 
 #include "cJSON.h"
 
@@ -366,7 +367,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
             int feather = mlt_properties_get_int( unique, "feather" );
             if ( feather && mode != MODE_RGB )
+            {
+                // Adapt feathering to consumer scaling
+                mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( (mlt_filter) unique ) );
+                double scale_width = mlt_profile_scale_width( profile, *width );
+                feather = MAX( 1, (int) ( feather * scale_width ) );
                 blur( map, *width, *height, feather, mlt_properties_get_int( unique, "feather_passes" ) );
+            }
 
             int bpp;
             size = mlt_image_format_size( *format, *width, *height - 1, &bpp ); // mlt_image_format_size increments height!
