@@ -614,7 +614,6 @@ void mlt_properties_pass_property( mlt_properties self, mlt_properties that, con
 		return;
 
 	mlt_property_pass( mlt_properties_fetch( self, name ), that_prop );
-	mlt_events_fire( self, "property-changed", name, NULL );
 }
 
 /** Copy all properties specified in a comma-separated list to another properties list.
