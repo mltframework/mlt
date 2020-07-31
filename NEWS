@@ -1,6 +1,126 @@
 MLT Release Notes
 -----------------
 
+Version 6.22.0 - July 30, 2020
+
+This version fixes bugs associate with the preview scaling introduced in the
+previous version.
+
+Framework
+  * Added mlt_properties_exists() and Mlt::Properties::property_exists().
+  * Added mlt_audio C class with:
+    - mlt_audio_new()
+	- mlt_audio_close()
+	- mlt_audio_set_values()
+	- mlt_audio_get_values()
+	- mlt_audio_alloc_data()
+	- mlt_audio_calculate_size()
+	- mlt_audio_plane_count()
+	- mlt_audio_plane_size()
+	- mlt_audio_get_planes()
+	- mlt_audio_shrink()
+	- mlt_audio_reverse()
+	- mlt_audio_copy()
+	- mlt_audio_calculate_frame_samples()
+	- mlt_audio_calculate_samples_to_position()
+	- mlt_audio_channel_layout_name()
+	- mlt_audio_channel_layout_id()
+	- mlt_audio_channel_layout_channels()
+	- mlt_audio_channel_layout_default()
+  * Added Mlt::Audio C++ class with:
+    - Mlt::Audio::Audio()
+	- Mlt::Audio::Audio(mlt_audio_s*)
+	- Mlt::Audio::~Audio()
+	- Mlt::Audio::data()
+	- Mlt::Audio::set_data(void*)
+	- Mlt::Audio::frequency()
+	- Mlt::Audio::set_frequency(int)
+	- Mlt::Audio::format()
+	- Mlt::Audio::set_format(mlt_audio_format)
+	- Mlt::Audio::samples()
+	- Mlt::Audio::set_samples(int)
+	- Mlt::Audio::channels()
+	- Mlt::Audio::set_channels(int)
+	- Mlt::Audio::layout()
+	- Mlt::Audio::set_layout(mlt_channel_layout)
+  * Fixed drop-frame timecode for 59.94 fps.
+  * Fixed crash on null pointer passed to mlt_consumer_stop().
+
+Modules
+  * Fixed frei0r transitions with preview scaling.
+  * Fixed affine ox and oy properties incorrect with preview scaling.
+  * Fixed a crash and incorrect preview scaling with more than one affine
+    filter active on the same frame.
+  * Fixed preview scaling for the rotoscoping filter.
+  * Added the sample_fmt property to the avformat consumer.
+  * Fixed a possible segfault in the mix transition.
+  * Removed support for text keyframes to the text and qtext filters
+    to fix regression on strings containing '='.
+  * Disable frame-threading with bigsh0t, distort0r, and medians frei0r plugins.
+  * Added "meta.media.%d.stream.projection" property the avformat producer.
+  * Fixed a crash with with filters not supporting preview scale in frei0r
+    transitions.
+  * Fix artifacts in luma transition and affine filter with frame-threading.
+  * Stop including 'title="Anonymous Submission"' in xml consumer.
+  * Fixed a crash in opencv.tracker filter.
+  * Fixed a crash in composite transition if luma file fails to load.
+  * Added validations in opengl module to prevent asserts in Movit.
+  * Fixed building with OpenCV 4.
+  * Moved some services from gtk2 module to new gdk module:
+    - gtkrescale filter
+	- pango producer
+	- pixbuf producer
+  * Deprecated the gtk2 module and no longer enabled by default.
+  * Changed avformat producer to accept a '?' in argument/resource property
+    by escaping it as '\?'.
+  * Changed the background property of the affine filter to be mutable.
+  * Deprecated the linsys (DVEO SDI) module.
+  * Fixed changing the audio_index property in the avformat producer.
+  * Changed resample filter to more resiliant to frequency changes.
+  * Added a video_delay property to the sdl2_audio and rtaudio consumers.
+  * Add millisecond options to the timer filter.
+  * Fixed the in point handling for the timewarp producer.
+  * Fixed some audio gaps and sync issues with the rbpitch filter and timewarp
+    pitch compensation.
+  * Fixed a possible crash caused by producer consumer.
+  * Changed avformat consumer to set AVOption color_primaries based on the
+    MLT colorspace if not already set as property.
+  * Fixed crop right on image with odd width skews image in crop filter.
+  * Fixed incorrect silence value for unsigned 8-bit audio in avformat producer.
+  * Changed qimage to use Qt's internal orientation detection instead of libexif.
+  * Reduced clicks in mix transition by silencing buffers on discontinuity.
+  * Improved A/V synchronization in (sw)resample filters - also reduces audio clicks.
+  * Improved speed of the qimage producer.
+  * Fixed incorrect color using libx264rgb in avformat consumer.
+  * Fixed relative paths for avfilters that have the "filename" option.
+  * Fixed some avfilters dropping the alpha channel: smartblur, vaguedenoiser.
+  * Improved performance of the resize filter.
+  * Fixed an affine filter inside a transition was always nearest neighbor
+    interpolation.
+  * Changed the lift_gamma_gain filter to use round values up.
+
+Other
+  * Fixed melt option "-group" applies to an implicit consumer.
+  * Added "-quiet" option to melt (implies -silent but more so).
+  * CMake build improvments adding modules:
+    - gdk
+	- jackrack
+	- lumas
+	- resample
+	- sox
+	- vorbis
+  * Added avformat consumer presets:
+    - Slide-Deck-H264
+	- Slide-Deck-HEVC
+  * Removed intra=1 from some avformat presets (use g=1 for intra only):
+    - intermediate/MPEG-2
+	- intermediate/MPEG-4
+	- lossless/H.264
+  * Fixed using Qt, Movit, and WebVfx in the official docker image:
+    https://hub.docker.com/repository/docker/mltframework/melt
+	IMPORTANT: it now requires `docker run` with the `--init` option.
+
+
 Version 6.20.0 - February 15, 2020
 
 This version adds support for low resolution preview scaling and adds a
