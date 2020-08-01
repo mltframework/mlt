@@ -1,9 +1,14 @@
 MLT Release Notes
 -----------------
 
+Version 6.22.1 - August 1, 2020
+
+This patch version only fixes the version reported in the CMake build.
+
+
 Version 6.22.0 - July 30, 2020
 
-This version fixes bugs associate with the preview scaling introduced in the
+This version fixes bugs associated with the preview scaling introduced in the
 previous version.
 
 Framework
