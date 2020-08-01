@@ -1,5 +1,5 @@
 project(MLT)
-set(MLT_VERSION 6.21.0)
+set(MLT_VERSION 6.22.0)
 cmake_minimum_required(VERSION 3.10)
 find_package(PkgConfig REQUIRED)
 include(GNUInstallDirs)
