@@ -117,20 +117,20 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 			factorSum[1] += ftl;
 			valueSum[2] += s[2] * ftl;
 			factorSum[2] += ftl;
-			valueSum[3] += s[4] * ftl;
+			valueSum[3] += s[3] * ftl;
 			factorSum[3] += ftl;
 
 			// Top Right
 			if ( x < width - 1 )
 			{
 				double ftr = ftop * fright;
-				valueSum[0] += s[5] * ftr;
+				valueSum[0] += s[4] * ftr;
 				factorSum[0] += ftr;
-				valueSum[1] += s[6] * ftr;
+				valueSum[1] += s[5] * ftr;
 				factorSum[1] += ftr;
-				valueSum[2] += s[7] * ftr;
+				valueSum[2] += s[6] * ftr;
 				factorSum[2] += ftr;
-				valueSum[3] += s[8] * ftr;
+				valueSum[3] += s[7] * ftr;
 				factorSum[3] += ftr;
 			}
 
