@@ -18,6 +18,7 @@ OBJS = consumer_blipflash.o \
 	   filter_loudness.o \
 	   filter_loudness_meter.o \
 	   filter_lumakey.o \
+	   filter_pillar_echo.o \
 	   filter_rgblut.o \
 	   filter_sepia.o \
 	   filter_spot_remover.o \

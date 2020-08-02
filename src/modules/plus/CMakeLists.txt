@@ -10,6 +10,7 @@ set(mltplus_src
     filter_loudness.c
     filter_loudness_meter.c
     filter_lumakey.c
+    filter_pillar_echo.c
     filter_rgblut.c
     filter_sepia.c
     filter_spot_remover.c
