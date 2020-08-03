@@ -48,6 +48,12 @@ else
                         echo "CFLAGS += $(pkg-config --cflags "$opencvname")" >> config.mak
                         echo "LDFLAGS += $(pkg-config --libs "$opencvname")" >> config.mak
                 fi
+
+		pkg-config --atleast-version=4.0.0 "$opencvname"
+		if [ $? -eq 0 ]
+		then
+			echo "CXXFLAGS += -std=c++11" >> config.mak
+		fi
 	else
 	    echo "- OpenCV >= 3.1.0 NOT found: disabling"
 		touch ../disable-opencv
