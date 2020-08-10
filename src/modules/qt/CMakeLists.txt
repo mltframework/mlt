@@ -5,7 +5,7 @@ if(GPL)
             factory.c producer_qimage.c producer_kdenlivetitle.c
             common.cpp graph.cpp
             qimage_wrapper.cpp kdenlivetitle_wrapper.cpp
-            filter_audiowaveform.cpp filter_qtext.cpp filter_qtblend.cpp
+            filter_audiowaveform.cpp filter_qtext.cpp filter_qtblend.cpp filter_qtcrop.cpp
             producer_qtext.cpp transition_qtblend.cpp
             consumer_qglsl.cpp)
         set(mltqt_lib mlt++ mlt m Threads::Threads

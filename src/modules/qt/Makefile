@@ -16,7 +16,8 @@ CPPOBJS = common.o \
 	kdenlivetitle_wrapper.o \
 	producer_qtext.o \
 	transition_qtblend.o \
-	filter_qtblend.o
+	filter_qtblend.o \
+	filter_qtcrop.o
 
 ifdef USE_QT_OPENGL
 	CPPOBJS += consumer_qglsl.o

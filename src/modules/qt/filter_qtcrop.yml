@@ -1,0 +1,46 @@
+schema_version: 0.3
+type: filter
+identifier: qtcrop
+title: Crop by padding
+version: 1
+copyright: Meltytech, LLC
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  This filter crops the image to a rounded rectangle or circle by padding
+  it with a color.
+
+parameters:
+  - identifier: rect
+    title: Rectangle
+    type: rect
+    description: Keyframable rectangle specification
+    argument: yes
+    default: "0%/0%:100%x100%"
+    mutable: yes
+
+  - identifier: circle
+    title: Use Circle
+    description: Whether to use a circle instead of a rectangle
+    type: boolean
+    default: 0
+    mutable: yes
+
+  - identifier: radius
+    title: Radius
+    description: Keyframable amount of circle or rectangle rounding
+    type: float
+    default: 0.0
+    minimum: 0.0
+    maximum: 1.0
+    mutable: yes
+
+  - identifier: color
+    title: Padding color
+    type: color
+    description: The color to use for padding including alpha
+    default: "#00000000"
+    mutable: yes
