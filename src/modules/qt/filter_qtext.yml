@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 0.3
 type: filter
 identifier: qtext
 title: QText
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Brian Matherly
 license: LGPLv2.1
@@ -17,6 +17,7 @@ parameters:
     type: string
     description: |
       The text to overlay.
+    argument: yes
     required: yes
     readonly: no
     default: text
@@ -75,7 +76,7 @@ parameters:
 
   - identifier: fgcolour
     title: Foreground color
-    type: string
+    type: color
     description: >
       A color value is a hexadecimal representation of RGB plus alpha channel 
       as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
@@ -87,7 +88,7 @@ parameters:
 
   - identifier: bgcolour
     title: Background color
-    type: string
+    type: color
     description: >
       A color value is a hexadecimal representation of RGB plus alpha channel 
       as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
@@ -99,7 +100,7 @@ parameters:
 
   - identifier: olcolour
     title: Outline color
-    type: string
+    type: color
     description: >
       A color value is a hexadecimal representation of RGB plus alpha channel 
       as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
@@ -139,8 +140,12 @@ parameters:
     type: string
     default: left
     values:
+      - l
       - left
+      - c
+      - center
       - centre
+      - r
       - right
     mutable: yes
     widget: combo
@@ -152,8 +157,35 @@ parameters:
     type: string
     default: top
     values:
+      - t
       - top
+      - m
       - middle
+      - b
       - bottom
     mutable: yes
     widget: combo
+
+  - identifier: html
+    title: HTML String
+    type: string
+    description: >
+      Render rich text from a string containing a subset of HTML 4.
+      The only other properties that can be used with this are geometry and
+      bgcolour. The geometry width and height defines the page or block size
+      while its X and Y coordinates determine its position.
+      This property has a higher priority than argument; argument is ignored if
+      this property is set.
+    mutable: yes
+
+  - identifier: resource
+    title: HTML File
+    type: string
+    description: >
+      Render rich text from a file containing a subset of HTML 4.
+      The only other properties that can be used with this are geometry and
+      bgcolour. The geometry width and height defines the page or block size
+      while its X and Y coordinates determine its position.
+      This property has a higher priority than both argument and html; argument
+      and html are ignored if this property is set.
+    mutable: yes

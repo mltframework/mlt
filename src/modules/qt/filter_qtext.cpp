@@ -23,6 +23,9 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QString>
+#include <QFile>
+#include <QTextDocument>
+#include <QTextCodec>
 
 static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text, double scale )
 {
@@ -222,6 +225,49 @@ static void paint_text( QPainter* painter, QPainterPath* qpath, mlt_properties f
 	painter->drawPath( *qpath );
 }
 
+static void close_qtextdoc(void* p)
+{
+	delete static_cast<QTextDocument*>(p);
+}
+
+static QTextDocument* get_rich_text(mlt_properties properties, double width, double height)
+{
+	QTextDocument* doc = (QTextDocument*) mlt_properties_get_data(properties, "QTextDocument", NULL);
+	auto html = QString::fromUtf8(mlt_properties_get(properties, "html"));
+	auto prevHtml = QString::fromUtf8(mlt_properties_get(properties, "_html"));
+	auto resource = QString::fromUtf8(mlt_properties_get(properties, "resource"));
+	auto prevResource = QString::fromUtf8(mlt_properties_get(properties, "_resource"));
+	auto prevWidth = mlt_properties_get_double(properties, "_width");
+	auto prevHeight = mlt_properties_get_double(properties, "_height");
+	bool changed = !doc || qAbs(width - prevWidth) > 1 || qAbs(height- prevHeight) > 1;
+
+	if (!resource.isEmpty() && (changed || resource != prevResource)) {
+		QFile file(resource);
+		if (file.open(QFile::ReadOnly)) {
+			QByteArray data = file.readAll();
+			QTextCodec *codec = QTextCodec::codecForHtml(data);
+			doc = new QTextDocument;
+			doc->setPageSize(QSizeF(width, height));
+			doc->setHtml(codec->toUnicode(data));
+			mlt_properties_set_data(properties, "QTextDocument", doc, 0, (mlt_destructor) close_qtextdoc, NULL);
+			mlt_properties_set(properties, "_resource", resource.toUtf8().constData());
+			mlt_properties_set_double(properties, "_width", width);
+			mlt_properties_set_double(properties, "_height", height);
+		}
+	} else if (!html.isEmpty() && (changed || html != prevHtml)) {
+//		fprintf(stderr, "%s\n", html.toUtf8().constData());
+		doc = new QTextDocument;
+		doc->setPageSize(QSizeF(width, height));
+		doc->setHtml(html);
+		mlt_properties_set_data(properties, "QTextDocument", doc, 0, (mlt_destructor) close_qtextdoc, NULL);
+		mlt_properties_set(properties, "_html", html.toUtf8().constData());
+		mlt_properties_set_double(properties, "_width", width);
+		mlt_properties_set_double(properties, "_height", height);
+	}
+
+	return doc;
+}
+
 static mlt_properties get_filter_properties( mlt_filter filter, mlt_frame frame )
 {
 	mlt_properties properties = mlt_frame_get_unique_properties( frame, MLT_FILTER_SERVICE(filter) );
@@ -239,6 +285,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
+	bool isRichText = qstrlen(mlt_properties_get(filter_properties, "html")) > 0 ||
+					  qstrlen(mlt_properties_get(filter_properties, "resource")) > 0;
 	QString geom_str = QString::fromLatin1( mlt_properties_get( filter_properties, "geometry" ) );
 	if( geom_str.isEmpty() )
 	{
@@ -276,12 +324,25 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 
 		QPainterPath text_path;
-		QRectF path_rect = get_text_path( &text_path, filter_properties, argument, scale );
+		QRectF path_rect;
 		QPainter painter( &qimg );
 		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
-		transform_painter( &painter, rect, path_rect, filter_properties, profile );
-		paint_background( &painter, path_rect, filter_properties );
-		paint_text( &painter, &text_path, filter_properties );
+		if (isRichText) {
+			mlt_service_lock(MLT_FILTER_SERVICE(filter));
+			auto doc = get_rich_text(filter_properties, rect.w, rect.h);
+			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+			if (doc) {
+				transform_painter(&painter, rect, path_rect, filter_properties, profile);
+				paint_background(&painter, path_rect, filter_properties);
+				doc->drawContents(&painter, QRectF(0, 0, rect.w, rect.h));
+
+			}
+		} else {
+			path_rect = get_text_path(&text_path, filter_properties, argument, scale);
+			transform_painter(&painter, rect, path_rect, filter_properties, profile);
+			paint_background(&painter, path_rect, filter_properties);
+			paint_text(&painter, &text_path, filter_properties);
+		}
 		painter.end();
 
 		convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
@@ -297,13 +358,26 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 {
 	mlt_properties properties = get_filter_properties( filter, frame );
-	char* argument = mlt_properties_get( properties, "argument" );
-	if ( !argument || !strcmp( "", argument ) )
+
+	if (mlt_properties_get_int(properties, "_hide")) {
 		return frame;
+	}
+
+	char* argument = mlt_properties_get(properties, "argument");
+	char* html = mlt_properties_get(properties, "html");
+	char* resource = mlt_properties_get(properties, "resource");
 
 	// Save the text to be used by get_image() to support parallel processing
 	// when this filter is encapsulated by other filters.
-	mlt_frame_push_service( frame, strdup( argument ) );
+	if (qstrlen(resource)) {
+		mlt_frame_push_service(frame, NULL);
+	} else if (qstrlen(html)) {
+		mlt_frame_push_service(frame, NULL);
+	} else if (qstrlen(argument)) {
+		mlt_frame_push_service(frame, strdup(argument));
+	} else {
+		return frame;
+	}
 
 	// Push the filter on to the stack
 	mlt_frame_push_service( frame, filter );
