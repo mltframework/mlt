@@ -42,7 +42,7 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 	error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
 	if (!error && *format == mlt_image_rgb24a) {
-		QImage bgImage(*width, *height, QImage::Format_ARGB32);
+		QImage bgImage;
 		convert_mlt_to_qimage_rgba(*image, &bgImage, *width, *height);
 
 		QImage fgImage = bgImage.copy();
