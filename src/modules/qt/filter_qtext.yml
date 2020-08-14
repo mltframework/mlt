@@ -189,3 +189,14 @@ parameters:
       This property has a higher priority than both argument and html; argument
       and html are ignored if this property is set.
     mutable: yes
+
+  - identifier: _hide
+    title: Hide
+    type: boolean
+    description: >
+      Setting this property will not be serialized (unlike "disable"). When set
+      true (1), the filter does not render. This allows an authoring tool to
+      provide its own rendering while editing and then let the filter render
+      outside the tool UI.
+    mutable: yes
+    default: 0
