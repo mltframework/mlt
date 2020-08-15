@@ -324,7 +324,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 
 		QPainterPath text_path;
-		QRectF path_rect;
+		QRectF path_rect(0, 0, rect.w, rect.h);
 		QPainter painter( &qimg );
 		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		if (isRichText) {
@@ -334,7 +334,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			if (doc) {
 				transform_painter(&painter, rect, path_rect, filter_properties, profile);
 				paint_background(&painter, path_rect, filter_properties);
-				doc->drawContents(&painter, QRectF(0, 0, rect.w, rect.h));
+				doc->drawContents(&painter, path_rect);
 
 			}
 		} else {
