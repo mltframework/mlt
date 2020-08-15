@@ -43,10 +43,8 @@ endif
 
 CXXFLAGS := $(QTCXXFLAGS) $(CXXFLAGS) $(CFLAGS) $(EXIFCXXFLAGS) $(KDECXXFLAGS) -Wno-deprecated
 
-ifdef USE_CPP11
 ifneq (, $(shell $(CXX) --version | grep -is -e g++ -e clang))
 	CXXFLAGS += -std=c++11
-endif
 endif
 
 LDFLAGS += $(QTLIBS) $(EXIFLIBS) $(KDELIBS)

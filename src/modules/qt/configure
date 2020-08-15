@@ -61,11 +61,6 @@ else
 
 	echo > config.mak
 
-	if $(echo $qt_version | awk '{split($0, a, "."); if (a[1] >= 5 && a[2] > 6) exit 0; else exit 1;}')
-	then
-		echo "USE_CPP11=1" >> config.mak
-	fi
-
 	pkg-config --exists 'libexif'
 	if [ $? -eq 0 ]
 	then
