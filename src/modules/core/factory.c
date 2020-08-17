@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,7 @@ extern mlt_filter filter_audiomap_init( mlt_profile profile, mlt_service_type ty
 extern mlt_filter filter_audiowave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_brightness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_channelcopy_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_choppy_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg);
 extern mlt_filter filter_crop_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_data_feed_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_data_show_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -81,6 +82,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "brightness", filter_brightness_init );
 	MLT_REGISTER( filter_type, "channelcopy", filter_channelcopy_init );
 	MLT_REGISTER( filter_type, "channelswap", filter_channelcopy_init );
+	MLT_REGISTER( filter_type, "choppy", filter_choppy_init );
 	MLT_REGISTER( filter_type, "crop", filter_crop_init );
 	MLT_REGISTER( filter_type, "data_feed", filter_data_feed_init );
 	MLT_REGISTER( filter_type, "data_show", filter_data_show_init );
@@ -124,6 +126,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "brightness", metadata, "filter_brightness.yml" );
 	MLT_REGISTER_METADATA( filter_type, "channelcopy", metadata, "filter_channelcopy.yml" );
 	MLT_REGISTER_METADATA( filter_type, "channelswap", metadata, "filter_channelcopy.yml" );
+	MLT_REGISTER_METADATA( filter_type, "choppy", metadata, "filter_choppy.yml" );
 	MLT_REGISTER_METADATA( filter_type, "crop", metadata, "filter_crop.yml" );
 	MLT_REGISTER_METADATA( filter_type, "data_show", metadata, "filter_data_show.yml" );
 	MLT_REGISTER_METADATA( filter_type, "fieldorder", metadata, "filter_fieldorder.yml" );

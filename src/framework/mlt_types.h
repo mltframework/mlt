@@ -155,10 +155,10 @@ mlt_service_type;
 /* I don't want to break anyone's applications without warning. -Zach */
 #ifdef DOUBLE_MLT_POSITION
 #define MLT_POSITION_FMT "%f"
-#define MLT_POSITION_MOD(A, B) (A - B * ((int)(A / B)))
+#define MLT_POSITION_MOD(A, B) ((A) - (B) * ((int)((A) / (B))))
 typedef double mlt_position;
 #else
-#define MLT_POSITION_MOD(A, B) A % B
+#define MLT_POSITION_MOD(A, B) ((A) % (B))
 #define MLT_POSITION_FMT "%d"
 typedef int32_t mlt_position;
 #endif

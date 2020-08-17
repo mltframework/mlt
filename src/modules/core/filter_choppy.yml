@@ -1,0 +1,21 @@
+schema_version: 0.3
+type: filter
+identifier: choppy
+title: Choppy
+version: 2
+copyright: Meltytech, LLC
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+parameters:
+  - identifier: amount
+    title: Repeat
+    type: integer
+    description: The keyframable number of frames to repeat in a row
+    argument: yes
+    default: 0
+    minimum: 0
+    mutable: yes
+    unit: frames
