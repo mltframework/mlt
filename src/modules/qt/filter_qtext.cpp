@@ -304,6 +304,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( !error )
 	{
 		double scale = mlt_profile_scale_width(profile, *width);
+		double scale_height = mlt_profile_scale_height(profile, *height);
 		if ( geom_str.contains('%') )
 		{
 			rect.x *= *width;
@@ -313,7 +314,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		}
 		else
 		{
-			double scale_height = mlt_profile_scale_height(profile, *height);
 			rect.x *= scale;
 			rect.y *= scale_height;
 			rect.w *= scale;
@@ -324,12 +324,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 
 		QPainterPath text_path;
-		QRectF path_rect(0, 0, rect.w, rect.h);
+		QRectF path_rect(0, 0, rect.w / scale, rect.h / scale_height);
 		QPainter painter( &qimg );
 		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		if (isRichText) {
 			mlt_service_lock(MLT_FILTER_SERVICE(filter));
-			auto doc = get_rich_text(filter_properties, rect.w, rect.h);
+			auto doc = get_rich_text(filter_properties, path_rect.width(), path_rect.height());
 			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 			if (doc) {
 				transform_painter(&painter, rect, path_rect, filter_properties, profile);
