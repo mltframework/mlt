@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -464,8 +464,10 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 				if ( !active )
 				{
 					// Hunt for the a_frame
-					while( a_frame <= b_frame && invalid( self->frames[ a_frame ] ) )
+					while (a_frame <= b_frame && (invalid(self->frames[a_frame]) ||
+						  (mlt_properties_get_int(MLT_FRAME_PROPERTIES(self->frames[a_frame]), "hide") & type))) {
 						a_frame ++;
+					}
 
 					// Determine if we're active now
 					active = a_frame != b_frame && !invalid( self->frames[ b_frame ] );
