@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 // Private Types
 typedef struct
@@ -211,6 +212,7 @@ mlt_producer producer_timewarp_init( mlt_profile profile, mlt_service_type type,
 
 	if ( arg && producer && pdata )
 	{
+		double frame_rate_num_scaled;
 		mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
 		// Initialize the producer
@@ -248,7 +250,17 @@ mlt_producer producer_timewarp_init( mlt_profile profile, mlt_service_type type,
 			pdata->clip_profile->frame_rate_num *= 1000;
 			pdata->clip_profile->frame_rate_den *= 1000;
 		}
-		pdata->clip_profile->frame_rate_num = (double)pdata->clip_profile->frame_rate_num / fabs(pdata->speed);
+		frame_rate_num_scaled = (double)pdata->clip_profile->frame_rate_num / fabs(pdata->speed);
+		if (frame_rate_num_scaled > INT_MAX) // Check for overflow in case speed < 1.0
+		{
+			//scale by denominator to avoid overflow.
+			pdata->clip_profile->frame_rate_den = (double)pdata->clip_profile->frame_rate_den * fabs(pdata->speed);
+		}
+		else
+		{
+			//scale by numerator
+			pdata->clip_profile->frame_rate_num = frame_rate_num_scaled;
+		}
 
 		// Create a producer for the clip using the false profile.
 		pdata->clip_producer = mlt_factory_producer( pdata->clip_profile, "abnormal", resource );
