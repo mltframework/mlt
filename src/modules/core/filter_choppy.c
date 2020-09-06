@@ -37,6 +37,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_service_lock(MLT_FILTER_SERVICE(filter));
 		mlt_frame cloned_frame = mlt_properties_get_data( properties, "cloned_frame", NULL);
 		mlt_position cloned_pos = mlt_frame_get_position(cloned_frame);
+
+		position = mlt_frame_get_position(frame);
 		if (!cloned_frame || MLT_POSITION_MOD(position, amount) == 0 || abs(position - cloned_pos) > amount) {
 			error = mlt_frame_get_image(frame, image, format, width, height, writable);
 			cloned_frame = mlt_frame_clone(frame,  0);
