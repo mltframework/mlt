@@ -564,6 +564,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		b_height = result.h;
 		// Set the rescale interpolation to match the frame
 		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
+		mlt_properties_set_int( b_props, "distort", 1 );
 	} else if (scale_width != 1.0 || scale_height != 1.0) {
 		// Scale request of b frame image to consumer scale maintaining its aspect ratio.
 		b_height = *height;
