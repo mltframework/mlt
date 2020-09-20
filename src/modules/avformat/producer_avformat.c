@@ -778,10 +778,13 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 
 	if ( !self->is_mutex_init )
 	{
-		pthread_mutex_init( &self->audio_mutex, NULL );
-		pthread_mutex_init( &self->video_mutex, NULL );
-		pthread_mutex_init( &self->packets_mutex, NULL );
-		pthread_mutex_init( &self->open_mutex, NULL );
+		pthread_mutexattr_t attr;
+		pthread_mutexattr_init(&attr);
+		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init( &self->audio_mutex, &attr );
+		pthread_mutex_init( &self->video_mutex, &attr );
+		pthread_mutex_init( &self->packets_mutex, &attr );
+		pthread_mutex_init( &self->open_mutex, &attr );
 		self->is_mutex_init = 1;
 	}
 

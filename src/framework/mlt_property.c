@@ -90,8 +90,12 @@ struct mlt_property_s
 mlt_property mlt_property_init( )
 {
 	mlt_property self = calloc( 1, sizeof( *self ) );
-	if ( self )
-		pthread_mutex_init( &self->mutex, NULL );
+	if ( self ) {
+		pthread_mutexattr_t attr;
+		pthread_mutexattr_init(&attr);
+		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init( &self->mutex, &attr );
+	}
 	return self;
 }
 
