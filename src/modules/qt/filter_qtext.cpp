@@ -328,13 +328,20 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		QPainter painter( &qimg );
 		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		if (isRichText) {
+			auto overflowY = mlt_properties_exists(filter_properties, "overflow-y")?
+				!!mlt_properties_get_int(filter_properties, "overflow-y") :
+				(path_rect.height() >= profile->height);
+			auto drawRect = overflowY? QRectF() : path_rect;
 			mlt_service_lock(MLT_FILTER_SERVICE(filter));
-			auto doc = get_rich_text(filter_properties, path_rect.width(), path_rect.height());
+			auto doc = get_rich_text(filter_properties, path_rect.width(), std::numeric_limits<qreal>::max());
 			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 			if (doc) {
 				transform_painter(&painter, rect, path_rect, filter_properties, profile);
+				if (overflowY) {
+					path_rect.setHeight(qMax(path_rect.height(), doc->size().height()));
+				}
 				paint_background(&painter, path_rect, filter_properties);
-				doc->drawContents(&painter, path_rect);
+				doc->drawContents(&painter, drawRect);
 
 			}
 		} else {

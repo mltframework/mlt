@@ -200,3 +200,14 @@ parameters:
       outside the tool UI.
     mutable: yes
     default: 0
+
+  - identifier: overflow-y
+    title: Vertical Overflow
+    type: boolean
+    description: >
+      This option applies only when using html or resource properties. It
+      controls whether the text will be cropped to the geometry property or
+      allowed to overflow. When not set, it is automatic based on whether the
+      geometry height is greater than or equal to the profile height. The
+      default is unset/automatic.
+    mutable: yes
