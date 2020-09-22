@@ -334,7 +334,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			auto drawRect = overflowY? QRectF() : path_rect;
 			mlt_service_lock(MLT_FILTER_SERVICE(filter));
 			auto doc = get_rich_text(filter_properties, path_rect.width(), std::numeric_limits<qreal>::max());
-			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 			if (doc) {
 				transform_painter(&painter, rect, path_rect, filter_properties, profile);
 				if (overflowY) {
@@ -342,7 +341,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				}
 				paint_background(&painter, path_rect, filter_properties);
 				doc->drawContents(&painter, drawRect);
-
+				mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 			}
 		} else {
 			path_rect = get_text_path(&text_path, filter_properties, argument, scale);
