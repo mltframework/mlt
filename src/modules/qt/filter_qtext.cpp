@@ -320,7 +320,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			rect.h *= scale_height;
 		}
 
-		QImage qimg( *width, *height, QImage::Format_ARGB32 );
+		QImage qimg;
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 
 		QPainterPath text_path;
