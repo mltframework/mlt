@@ -25,7 +25,11 @@ target_include_directories(mlt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(mlt PUBLIC  ${CMAKE_SOURCE_DIR}/src)
 
 if(WIN32)
-    install(TARGETS mlt DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS mlt LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR})
+    # dll.a should be placed in lib directory for proper linking
+    if (MSYS)
+        install(TARGETS mlt ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
 else()
     install(TARGETS mlt DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
