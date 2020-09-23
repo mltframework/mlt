@@ -26,7 +26,6 @@
 #include <QFile>
 #include <QTextDocument>
 #include <QTextCodec>
-#include <QGuiApplication>
 
 static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text, double scale )
 {
