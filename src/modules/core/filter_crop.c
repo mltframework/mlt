@@ -174,20 +174,20 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			if ( input_ar > output_ar )
 			{
 				left = right = ( width - rint( output_ar * height / aspect_ratio ) ) / 2;
+				if ( use_profile )
+					bias *= width / profile->width;
 				if ( abs(bias) > left )
 					bias = bias < 0 ? -left : left;
-				else if ( use_profile )
-					bias = bias * width / profile->width;
 				left -= bias;
 				right += bias;
 			}
 			else
 			{
 				top = bottom = ( height - rint( aspect_ratio * width / output_ar ) ) / 2;
+				if ( use_profile )
+					bias *= height / profile->height;
 				if ( abs(bias) > top )
 					bias = bias < 0 ? -top : top;
-				else if ( use_profile )
-					bias = bias * height / profile->height;
 				top -= bias;
 				bottom += bias;
 			}
