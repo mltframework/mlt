@@ -2,7 +2,7 @@ schema_version: 0.3
 type: filter
 identifier: qtext
 title: QText
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Brian Matherly
 license: LGPLv2.1
@@ -210,4 +210,15 @@ parameters:
       allowed to overflow. When not set, it is automatic based on whether the
       geometry height is greater than or equal to the profile height. The
       default is unset/automatic.
+    mutable: yes
+
+  - identifier: pixel_ratio
+    title: Pixel Ratio
+    type: float
+    description: >
+      This option applies only when using html or resource properties. It adds
+      a scaling factor to the rendering. This can be used to help to make MLT's
+      output match a user interface.
+    minimum: 1.0
+    default: 1.0
     mutable: yes

@@ -26,6 +26,7 @@
 #include <QFile>
 #include <QTextDocument>
 #include <QTextCodec>
+#include <QGuiApplication>
 
 static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text, double scale )
 {
@@ -324,13 +325,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 
 		QPainterPath text_path;
-		QRectF path_rect(0, 0, rect.w / scale, rect.h / scale_height);
+		auto pixel_ratio = mlt_properties_get_double(filter_properties, "pixel_ratio");
+		QRectF path_rect(0, 0, rect.w / scale * pixel_ratio, rect.h / scale_height * pixel_ratio);
 		QPainter painter( &qimg );
 		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
 		if (isRichText) {
 			auto overflowY = mlt_properties_exists(filter_properties, "overflow-y")?
 				!!mlt_properties_get_int(filter_properties, "overflow-y") :
-				(path_rect.height() >= profile->height);
+				(path_rect.height() >= profile->height * pixel_ratio);
 			auto drawRect = overflowY? QRectF() : path_rect;
 			mlt_service_lock(MLT_FILTER_SERVICE(filter));
 			auto doc = get_rich_text(filter_properties, path_rect.width(), std::numeric_limits<qreal>::max());
@@ -427,6 +429,7 @@ mlt_filter filter_qtext_init( mlt_profile profile, mlt_service_type type, const 
 	mlt_properties_set_string( filter_properties, "halign", "left" );
 	mlt_properties_set_string( filter_properties, "valign", "top" );
 	mlt_properties_set_string( filter_properties, "outline", "0" );
+	mlt_properties_set_double( filter_properties, "pixel_ratio", 1.0 );
 	mlt_properties_set_int( filter_properties, "_filter_private", 1 );
 
 	return filter;
