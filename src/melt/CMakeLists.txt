@@ -1,6 +1,7 @@
 set(melt_lib mlt Threads::Threads)
 find_package(SDL2 QUIET)
-if(SDL2_FOUND)
+# in MSYS SDL2_INCLUDE_DIRS is not set, so we use pkg-config
+if(SDL2_FOUND AND NOT MSYS)
     add_library(sdl2 SHARED IMPORTED GLOBAL)
     set_target_properties(sdl2 PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES ${SDL2_INCLUDE_DIRS}
