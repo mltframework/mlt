@@ -16,10 +16,11 @@ if(TARGET PkgConfig::GdkPixbuf)
 endif()
 
 pkg_check_modules(pango IMPORTED_TARGET pango)
+pkg_check_modules(pangoft2 IMPORTED_TARGET pangoft2)
 pkg_check_modules(fontconfig IMPORTED_TARGET fontconfig)
 if(TARGET PkgConfig::pango AND TARGET PkgConfig::fontconfig)
     list(APPEND mltgdk_src producer_pango.c)
-    list(APPEND mltgdk_lib PkgConfig::pango PkgConfig::fontconfig)
+    list(APPEND mltgdk_lib PkgConfig::pango PkgConfig::fontconfig PkgConfig::pangoft2)
     list(APPEND mltgdk_def USE_PANGO)
 endif()
 
