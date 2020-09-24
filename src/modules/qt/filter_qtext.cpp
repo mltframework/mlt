@@ -299,6 +299,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the current image
 	*image_format = mlt_image_rgb24a;
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "resize_alpha", 255 );
+	mlt_service_lock(MLT_FILTER_SERVICE(filter));
 	error = mlt_frame_get_image( frame, image, image_format, width, height, writable );
 
 	if( !error )
@@ -333,7 +334,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				!!mlt_properties_get_int(filter_properties, "overflow-y") :
 				(path_rect.height() >= profile->height * pixel_ratio);
 			auto drawRect = overflowY? QRectF() : path_rect;
-			mlt_service_lock(MLT_FILTER_SERVICE(filter));
 			auto doc = get_rich_text(filter_properties, path_rect.width(), std::numeric_limits<qreal>::max());
 			if (doc) {
 				transform_painter(&painter, rect, path_rect, filter_properties, profile);
@@ -342,7 +342,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				}
 				paint_background(&painter, path_rect, filter_properties);
 				doc->drawContents(&painter, drawRect);
-				mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 			}
 		} else {
 			path_rect = get_text_path(&text_path, filter_properties, argument, scale);
@@ -354,6 +353,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
 	}
+	mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 	free( argument );
 
 	return error;
