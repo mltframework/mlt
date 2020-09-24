@@ -20,9 +20,10 @@ set(mltplus_src
     producer_count.c
     transition_affine.c)
 set(mltplus_lib mlt m Threads::Threads)
-if(FFTW_FOUND)
+if(TARGET PkgConfig::FFTW)
     list(APPEND mltplus_src filter_dance.c filter_fft.c)
-    list(APPEND mltplus_lib ${FFTW_LIBRARIES})
+    list(APPEND mltplus_lib PkgConfig::FFTW)
+    list(APPEND mltplus_def USE_FFTW)
 endif()
 pkg_check_modules(libebur128 IMPORTED_TARGET libebur128)
 if(TARGET PkgConfig::libebur128)
@@ -33,10 +34,12 @@ else()
     set(mltplus_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/ebur128
         ${CMAKE_CURRENT_SOURCE_DIR}/ebur128/queue)
+    list(APPEND mltplus_def USE_INTERNAL_LIBEBUR128)
 endif()
 add_library(mltplus MODULE ${mltplus_src})
 target_link_libraries(mltplus ${mltplus_lib})
 target_include_directories(mltplus PRIVATE ${mltplus_inc})
+target_compile_definitions(mltplus PRIVATE ${mltplus_def})
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 install(TARGETS mltplus LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
