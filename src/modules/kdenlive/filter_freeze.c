@@ -70,11 +70,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			mlt_properties_set_data( properties, "freeze_frame", freeze_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 			mlt_properties_set_position( properties, "_frame", pos );
 		}
-		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 		// Get frozen image
 		uint8_t *buffer = NULL;
 		int error = mlt_frame_get_image( freeze_frame, &buffer, format, width, height, 1 );
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 		// Copy it to current frame
 		int size = mlt_image_format_size( *format, *width, *height, NULL );
