@@ -1,6 +1,6 @@
 /*
  * filter_brightness.c -- brightness, fade, and opacity filter
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,10 +19,63 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_slices.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+
+struct sliced_desc
+{
+	uint8_t *image;
+	int rgba;
+	int width, height;
+	double level;
+	double alpha_level;
+	uint8_t* alpha;
+};
+
+static int sliced_proc(int id, int index, int jobs, void* cookie)
+{
+	(void) id; // unused
+	struct sliced_desc ctx = *((struct sliced_desc*) cookie);
+	int slice_height = (ctx.height + jobs - 1) / jobs;
+	int slice_offset = index * slice_height * ctx.width;
+	slice_height = MIN(slice_height, ctx.height - index * slice_height);
+
+	// Only process if level is something other than 1
+	if (ctx.level != 1.0) {
+		int i = ctx.width * slice_height + 1;
+		uint8_t *p = ctx.image + (slice_offset * 2);
+		int32_t m = ctx.level * (1 << 16);
+		int32_t n = 128 * ((1 << 16 ) - m);
+
+		for (; --i; p += 2) {
+			p[0] = CLAMP((p[0] * m) >> 16, 16, 235);
+			p[1] = CLAMP((p[1] * m + n) >> 16, 16, 240);
+		}
+	}
+
+	// Process the alpha channel if requested.
+	if (ctx.alpha_level != 1.0) {
+		int32_t m = ctx.alpha_level * (1 << 16);
+		int i = ctx.width * slice_height + 1;
+
+		if (ctx.rgba) {
+			uint8_t *p = ctx.image + (slice_offset * 4) + 3;
+			for (; --i; p += 4) {
+				p[0] = (p[0] * m) >> 16;
+			}
+		} else {
+			uint8_t *p = ctx.alpha + slice_offset;
+			for (; --i; ++p) {
+				p[0] = (p[0] * m) >> 16;
+			}
+		}
+	}
+	return 0;
+}
 
 /** Do it :-).
 */
@@ -64,44 +117,23 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	// Only process if we have no error.
-	if ( error == 0 )
-	{
-		// Only process if level is something other than 1
-		if ( level != 1.0 && *format == mlt_image_yuv422 )
-		{
-			int i = *width * *height + 1;
-			uint8_t *p = *image;
-			int32_t m = level * ( 1 << 16 );
-			int32_t n = 128 * ( ( 1 << 16 ) - m );
-
-			while ( --i )
-			{
-				p[0] = CLAMP( (p[0] * m) >> 16, 16, 235 );
-				p[1] = CLAMP( (p[1] * m + n) >> 16, 16, 240 );
-				p += 2;
-			}
-		}
-
-		// Process the alpha channel if requested.
-		if ( mlt_properties_get( properties, "alpha" ) )
-		{
-			double alpha = mlt_properties_anim_get_double( properties, "alpha", position, length );
-			alpha = alpha >= 0.0 ? alpha : level;
-			if ( alpha != 1.0 )
-			{
-				int32_t m = alpha * ( 1 << 16 );
-				int i = *width * *height + 1;
-
-				if ( *format == mlt_image_rgb24a ) {
-					uint8_t *p = *image + 3;
-					for ( ; --i; p += 4 )
-						p[0] = ( p[0] * m ) >> 16;
-				} else {
-					uint8_t *p = mlt_frame_get_alpha_mask( frame );
-					for ( ; --i; ++p )
-						p[0] = ( p[0] * m ) >> 16;
-				}
-			}
+	if (!error) {
+		int threads = mlt_properties_get_int(properties, "threads");
+		threads = CLAMP(threads, 0, mlt_slices_count_normal());
+		double alpha = mlt_properties_anim_get_double(properties, "alpha", position, length);
+		struct sliced_desc desc = {
+			.image = *image,
+			.rgba = (*format == mlt_image_rgb24a),
+			.width = *width,
+			.height = *height,
+			.level = (*format == mlt_image_yuv422)? level : 1.0,
+			.alpha_level = alpha >= 0.0 ? alpha : level,
+			.alpha = mlt_frame_get_alpha_mask(frame)
+		};
+		if (threads == 1) {
+			sliced_proc(0, 0, 1, &desc);
+		} else {
+			mlt_slices_run_normal(threads, sliced_proc, &desc);
 		}
 	}
 
