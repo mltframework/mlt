@@ -325,7 +325,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
 
 		QPainterPath text_path;
+#ifdef Q_OS_WIN
 		auto pixel_ratio = mlt_properties_get_double(filter_properties, "pixel_ratio");
+#else
+		auto pixel_ratio = 1.0;
+#endif
 		QRectF path_rect(0, 0, rect.w / scale * pixel_ratio, rect.h / scale_height * pixel_ratio);
 		QPainter painter( &qimg );
 		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );

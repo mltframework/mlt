@@ -219,6 +219,9 @@ parameters:
       This option applies only when using html or resource properties. It adds
       a scaling factor to the rendering. This can be used to help to make MLT's
       output match a user interface.
+      NOTE: this property is only used on Windows because it is the only platform
+      found thus far that has different rendering behavior relative to device
+      pixel ratio.
     minimum: 1.0
     default: 1.0
     mutable: yes
