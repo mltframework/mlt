@@ -64,8 +64,12 @@ static void qimage_delete( void *data )
 }
 
 /// Returns false if this is animated.
-int init_qimage(const char *filename)
+int init_qimage(mlt_producer producer, const char *filename)
 {
+	if (!createQApplicationIfNeeded(MLT_PRODUCER_SERVICE(producer))) {
+		return 0;
+	}
+
 	QImageReader reader;
 	reader.setDecideFormatFromContent( true );
 	reader.setFileName( filename );
@@ -161,9 +165,6 @@ int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching )
 	int image_idx = ( int )floor( ( double )position / mlt_properties_get_int( producer_props, "ttl" ) ) % self->count;
 
 	int disable_exif = mlt_properties_get_int( producer_props, "disable_exif" );
-
-	if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) )
-		return -1;
 
 	if ( image_idx != self->qimage_idx )
 	{
