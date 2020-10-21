@@ -73,7 +73,7 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 				rect.w *= scale;
 				rect.h *= scale_height;
 			}
-			radius *= 0.5 * MIN(*width, *height);
+			radius *= 0.5 * MIN(rect.w, rect.h);
 			path.addRoundedRect(rect.x, rect.y, rect.w, rect.h, radius, radius);
 		}
 		painter.setClipPath(path);
