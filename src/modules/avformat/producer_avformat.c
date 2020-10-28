@@ -40,10 +40,6 @@
 #include <libavutil/imgutils.h>
 #include <libavutil/version.h>
 
-#ifdef VDPAU
-#  include <libavcodec/vdpau.h>
-#endif
-
 #ifdef AVFILTER
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
@@ -63,7 +59,6 @@
 #define POSITION_INVALID (-1)
 
 #define MAX_AUDIO_STREAMS (32)
-#define MAX_VDPAU_SURFACES (10)
 #define MAX_AUDIO_FRAME_SIZE (192000) // 1 second of 48khz 32bit audio
 #define IMAGE_ALIGN (1)
 #define VFR_THRESHOLD (3) // The minimum number of video frames with differing durations to be considered VFR.
@@ -114,23 +109,6 @@ struct producer_avformat_s
 	AVRational video_time_base;
 	mlt_frame last_good_frame; // for video error concealment
 	int last_good_position;    // for video error concealment
-#ifdef VDPAU
-	struct
-	{
-		// from FFmpeg
-		struct vdpau_render_state render_states[MAX_VDPAU_SURFACES];
-		
-		// internal
-		mlt_deque deque;
-		int b_age;
-		int ip_age[2];
-		int is_decoded;
-		uint8_t *buffer;
-
-		VdpDevice device;
-		VdpDecoder decoder;
-	} *vdpau;
-#endif
 #ifdef AVFILTER
 	AVFilterGraph *vfilter_graph;
 	AVFilterContext *vfilter_in;
@@ -154,10 +132,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 static void get_audio_streams_info( producer_avformat self );
 static mlt_audio_format pick_audio_format( int sample_fmt );
 static int pick_av_pixel_format( int *pix_fmt );
-
-#ifdef VDPAU
-#include "vdpau.c"
-#endif
 
 /** Constructor for libavformat.
 */
@@ -223,11 +197,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 				// Default the user-selectable indices from the auto-detected indices
 				mlt_properties_set_int( properties, "audio_index",  self->audio_index );
 				mlt_properties_set_int( properties, "video_index",  self->video_index );
-#ifdef VDPAU
-				mlt_service_cache_set_size( MLT_PRODUCER_SERVICE(producer), "producer_avformat", 5 );
-#endif
 				mlt_service_cache_put( MLT_PRODUCER_SERVICE(producer), "producer_avformat", self, 0, (mlt_destructor) producer_avformat_close );
-
 				mlt_properties_set_int( properties, "mute_on_pause",  1 );
 			}
 		}
@@ -1705,21 +1675,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		if ( ( image_size = allocate_buffer( frame, codec_context, buffer, *format, *width, *height ) ) )
 		{
 			int yuv_colorspace;
-#ifdef VDPAU
-			if ( self->vdpau && self->vdpau->buffer )
-			{
-				AVPicture picture;
-				picture.data[0] = self->vdpau->buffer;
-				picture.data[2] = self->vdpau->buffer + codec_context->width * codec_context->height;
-				picture.data[1] = self->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
-				picture.linesize[0] = codec_context->width;
-				picture.linesize[1] = codec_context->width / 2;
-				picture.linesize[2] = codec_context->width / 2;
-				yuv_colorspace = convert_image( self, (AVFrame*) &picture, *buffer,
-					AV_PIX_FMT_YUV420P, format, *width, *height, &alpha );
-			}
-			else
-#endif
 			yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 				format, *width, *height, &alpha );
 			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
@@ -1820,16 +1775,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				// Decode the image
 				if ( must_decode  || int_position >= req_position || !self->pkt.data )
 				{
-#ifdef VDPAU
-					if ( self->vdpau )
-					{
-						if ( self->vdpau->decoder == VDP_INVALID_HANDLE )
-						{
-							vdpau_decoder_init( self );
-						}
-						self->vdpau->is_decoded = 0;
-					}
-#endif
 					codec_context->reordered_opaque = int_position;
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
@@ -1907,47 +1852,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				if ( ( image_size = allocate_buffer( frame, codec_context, buffer, *format, *width, *height ) ) )
 				{
 					int yuv_colorspace;
-#ifdef VDPAU
-					if ( self->vdpau )
-					{
-						if ( self->vdpau->is_decoded )
-						{
-							struct vdpau_render_state *render = (struct vdpau_render_state*) self->video_frame->data[0];
-							void *planes[3];
-							uint32_t pitches[3];
-							VdpYCbCrFormat dest_format = VDP_YCBCR_FORMAT_YV12;
-							
-							if ( !self->vdpau->buffer )
-								self->vdpau->buffer = mlt_pool_alloc( codec_context->width * codec_context->height * 3 / 2 );
-							self->video_frame->data[0] = planes[0] = self->vdpau->buffer;
-							self->video_frame->data[2] = planes[1] = self->vdpau->buffer + codec_context->width * codec_context->height;
-							self->video_frame->data[1] = planes[2] = self->vdpau->buffer + codec_context->width * codec_context->height * 5 / 4;
-							self->video_frame->linesize[0] = pitches[0] = codec_context->width;
-							self->video_frame->linesize[1] = pitches[1] = codec_context->width / 2;
-							self->video_frame->linesize[2] = pitches[2] = codec_context->width / 2;
-
-							VdpStatus status = vdp_surface_get_bits( render->surface, dest_format, planes, pitches );
-							if ( status == VDP_STATUS_OK )
-							{
-								yuv_colorspace = convert_image( self, self->video_frame, *buffer, AV_PIX_FMT_YUV420P,
-									format, *width, *height, &alpha );
-								mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
-							}
-							else
-							{
-								mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU Error: %s\n", vdp_get_error_string( status ) );
-								image_size = self->vdpau->is_decoded = 0;
-							}
-						}
-						else
-						{
-							mlt_log_error( MLT_PRODUCER_SERVICE(producer), "VDPAU error in VdpDecoderRender\n" );
-							image_size = got_picture = 0;
-							self->last_good_position = POSITION_INVALID;
-						}
-					}
-					else
-#endif
 					yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
 						format, *width, *height, &alpha );
 					mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
@@ -2093,22 +1997,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			if ( !( codec = avcodec_find_decoder_by_name( "libvpx" ) ) )
 				codec = avcodec_find_decoder( codec_context->codec_id );
 		}
-#ifdef VDPAU
-		if ( codec_context->codec_id == AV_CODEC_ID_H264 )
-		{
-			if ( ( codec = avcodec_find_decoder_by_name( "h264_vdpau" ) ) )
-			{
-				if ( vdpau_init( self ) )
-				{
-					self->video_codec = codec_context;
-					if ( !vdpau_decoder_init( self ) )
-						vdpau_fini( self );
-				}
-			}
-			if ( !self->vdpau )
-				codec = avcodec_find_decoder( codec_context->codec_id );
-		}
-#endif
 
 		// Initialise multi-threading
 		int thread_count = mlt_properties_get_int( properties, "threads" );
@@ -3059,9 +2947,6 @@ static void producer_avformat_close( producer_avformat self )
 		avformat_close_input( &self->video_format );
 	if ( self->is_mutex_init )
 		pthread_mutex_unlock( &self->open_mutex );
-#ifdef VDPAU
-	vdpau_producer_close( self );
-#endif
 #ifdef AVFILTER
 	avfilter_graph_free(&self->vfilter_graph);
 #endif

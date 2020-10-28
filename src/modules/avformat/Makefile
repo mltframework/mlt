@@ -26,11 +26,6 @@ OBJS += filter_avcolour_space.o \
 CFLAGS += -DFILTERS
 endif
 
-ifdef VDPAU
-CFLAGS += -DVDPAU $(shell pkg-config pkg-config --cflags x11)
-LDFLAGS += $(LIBDL) $(shell pkg-config pkg-config --libs x11)
-endif
-
 ifdef CODECS
 OBJS += producer_avformat.o \
 	    consumer_avformat.o
