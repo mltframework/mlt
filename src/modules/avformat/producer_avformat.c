@@ -936,7 +936,7 @@ static void prepare_reopen( producer_avformat self )
 	{
 		while ( ( pkt = mlt_deque_pop_back( self->apackets ) ) )
 		{
-			av_free_packet( pkt );
+			av_packet_unref( pkt );
 			free( pkt );
 		}
 		mlt_deque_close( self->apackets );
@@ -946,7 +946,7 @@ static void prepare_reopen( producer_avformat self )
 	{
 		while ( ( pkt = mlt_deque_pop_back( self->vpackets ) ) )
 		{
-			av_free_packet( pkt );
+			av_packet_unref( pkt );
 			free( pkt );
 		}
 		mlt_deque_close( self->vpackets );
@@ -1013,7 +1013,7 @@ static void find_first_pts( producer_avformat self, int video_index )
 					self->first_pts = best_pts( self, pkt.pts, pkt.dts );
 			}
 		}
-		av_free_packet( &pkt );
+		av_packet_unref( &pkt );
 	}
 	if ( vfr_counter >= VFR_THRESHOLD )
 		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES(self->parent), "meta.media.variable_frame_rate", 1 );
@@ -1103,7 +1103,7 @@ static void get_audio_streams_info( producer_avformat self )
 {
 	// Fetch the audio format context
 	AVFormatContext *context = self->audio_format;
-	int i;
+	unsigned int i;
 
 	for ( i = 0;
 		  i < context->nb_streams;
@@ -1695,7 +1695,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		{
 			// Read a packet
 			if ( self->pkt.stream_index == self->video_index )
-				av_free_packet( &self->pkt );
+				av_packet_unref( &self->pkt );
 			av_init_packet( &self->pkt );
 			pthread_mutex_lock( &self->packets_mutex );
 			if ( mlt_deque_count( self->vpackets ) )
@@ -1869,7 +1869,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			// Free packet data if not video and not live audio packet
 			if ( self->pkt.stream_index != self->video_index &&
 				 !( !self->video_seekable && self->pkt.stream_index == self->audio_index ) )
-				av_free_packet( &self->pkt );
+				av_packet_unref( &self->pkt );
 		}
 	}
 
@@ -2622,7 +2622,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			}
 
 			if ( self->seekable || index != self->video_index )
-				av_free_packet( &pkt );
+				av_packet_unref( &pkt );
 		}
 		self->is_audio_synchronizing = 0;
 
@@ -2921,7 +2921,7 @@ static void producer_avformat_close( producer_avformat self )
 	mlt_log_debug( NULL, "producer_avformat_close\n" );
 
 	// Cleanup av contexts
-	av_free_packet( &self->pkt );
+	av_packet_unref( &self->pkt );
 	av_free( self->video_frame );
 	av_free( self->audio_frame );
 	if ( self->is_mutex_init )
@@ -2971,7 +2971,7 @@ static void producer_avformat_close( producer_avformat self )
 	{
 		while ( ( pkt = mlt_deque_pop_back( self->apackets ) ) )
 		{
-			av_free_packet( pkt );
+			av_packet_unref( pkt );
 			free( pkt );
 		}
 		mlt_deque_close( self->apackets );
@@ -2981,7 +2981,7 @@ static void producer_avformat_close( producer_avformat self )
 	{
 		while ( ( pkt = mlt_deque_pop_back( self->vpackets ) ) )
 		{
-			av_free_packet( pkt );
+			av_packet_unref( pkt );
 			free( pkt );
 		}
 		mlt_deque_close( self->vpackets );
