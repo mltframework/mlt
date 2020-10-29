@@ -29,6 +29,8 @@
 
 #include "interp.h"
 
+#define MLT_AFFINE_MAX_DIMENSION (16000)
+
 static double alignment_parse( char* align )
 {
 	int ret = 0.0;
@@ -563,8 +565,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if (fill || distort || b_width > result.w || b_height > result.h || scale_width != 1.0 || scale_height != 1.0
 			|| mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale")) {
 		// Request b frame image size just what is needed.
-		b_height = result.h;
-		b_width  = b_height * b_dar / b_ar;
+		b_height = CLAMP(result.h, 1, MLT_AFFINE_MAX_DIMENSION);
+		b_width  = CLAMP(b_height * b_dar / b_ar, 1, MLT_AFFINE_MAX_DIMENSION);
 		// Set the rescale interpolation to match the frame
 		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
 		// Disable padding (resize filter)
