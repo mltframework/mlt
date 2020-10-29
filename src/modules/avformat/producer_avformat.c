@@ -116,6 +116,7 @@ struct producer_avformat_s
 #endif
 	int autorotate;
 	int is_audio_synchronizing;
+	int video_send_result;
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -1683,7 +1684,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 	else
 	{
-		int ret = 0;
 		int64_t int_position = 0;
 		int decode_errors = 0;
 
@@ -1691,54 +1691,56 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		if ( !self->video_frame )
 			self->video_frame = av_frame_alloc();
 
-		while( ret >= 0 && !got_picture )
+		while ((self->video_send_result >= 0 || self->video_send_result == AVERROR(EAGAIN)) && !got_picture)
 		{
-			// Read a packet
-			if ( self->pkt.stream_index == self->video_index )
-				av_packet_unref( &self->pkt );
-			av_init_packet( &self->pkt );
-			pthread_mutex_lock( &self->packets_mutex );
-			if ( mlt_deque_count( self->vpackets ) )
-			{
-				AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->vpackets );
-				self->pkt = *tmp;
-				free( tmp );
-			}
-			else
-			{
-				ret = av_read_frame( context, &self->pkt );
-				if ( ret >= 0 && !self->video_seekable && self->pkt.stream_index == self->audio_index )
+			if (self->video_send_result != AVERROR(EAGAIN)) {
+				// Read a packet
+				if ( self->pkt.stream_index == self->video_index )
+					av_packet_unref( &self->pkt );
+				av_init_packet( &self->pkt );
+				pthread_mutex_lock( &self->packets_mutex );
+				if ( mlt_deque_count( self->vpackets ) )
 				{
-					if ( !av_dup_packet( &self->pkt ) )
+					AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->vpackets );
+					self->pkt = *tmp;
+					free( tmp );
+				}
+				else
+				{
+					int ret = av_read_frame( context, &self->pkt );
+					if ( ret >= 0 && !self->video_seekable && self->pkt.stream_index == self->audio_index )
 					{
-						AVPacket *tmp = malloc( sizeof(AVPacket) );
-						*tmp = self->pkt;
-						mlt_deque_push_back( self->apackets, tmp );
+						if ( !av_dup_packet( &self->pkt ) )
+						{
+							AVPacket *tmp = malloc( sizeof(AVPacket) );
+							*tmp = self->pkt;
+							mlt_deque_push_back( self->apackets, tmp );
+						}
+					}
+					else if ( ret < 0 )
+					{
+						if ( ret != AVERROR_EOF )
+							mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_image\n", ret );
+						if ( !self->video_seekable && mlt_properties_get_int( properties, "reconnect" ) )
+						{
+							// Try to reconnect to live sources by closing context and codecs,
+							// and letting next call to get_frame() reopen.
+							prepare_reopen( self );
+							pthread_mutex_unlock( &self->packets_mutex );
+							goto exit_get_image;
+						}
+						if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
+						{
+							mlt_log_fatal( MLT_PRODUCER_SERVICE(producer), "Exiting with error due to disconnected source.\n" );
+							exit( EXIT_FAILURE );
+						}
+						// Send null packets to drain decoder.
+						self->pkt.size = 0;
+						self->pkt.data = NULL;
 					}
 				}
-				else if ( ret < 0 )
-				{
-					if ( ret != AVERROR_EOF )
-						mlt_log_verbose( MLT_PRODUCER_SERVICE(producer), "av_read_frame returned error %d inside get_image\n", ret );
-					if ( !self->video_seekable && mlt_properties_get_int( properties, "reconnect" ) )
-					{
-						// Try to reconnect to live sources by closing context and codecs,
-						// and letting next call to get_frame() reopen.
-						prepare_reopen( self );
-						pthread_mutex_unlock( &self->packets_mutex );
-						goto exit_get_image;
-					}
-					if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
-					{
-						mlt_log_fatal( MLT_PRODUCER_SERVICE(producer), "Exiting with error due to disconnected source.\n" );
-						exit( EXIT_FAILURE );
-					}
-					// Send null packets to drain decoder.
-					self->pkt.size = 0;
-					self->pkt.data = NULL;
-				}
+				pthread_mutex_unlock( &self->packets_mutex );
 			}
-			pthread_mutex_unlock( &self->packets_mutex );
 
 			// We only deal with video from the selected video_index
 			if ( self->pkt.stream_index == self->video_index )
@@ -1778,21 +1780,25 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					codec_context->reordered_opaque = int_position;
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
-					ret = avcodec_decode_video2( codec_context, self->video_frame, &got_picture, &self->pkt );
-					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "decoded packet with size %d => %d\n", self->pkt.size, ret );
+					self->video_send_result = avcodec_send_packet(codec_context, &self->pkt);
+					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "decoded packet with size %d => %d\n", self->pkt.size, self->video_send_result );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
-					if ( ret < 0 )
+					if (self->video_send_result < 0 && self->video_send_result != AVERROR(EAGAIN))
 					{
-						if ( ++decode_errors <= 10 ) {
-							ret = 0;
-						} else {
-							mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "video decoding error %d\n", ret );
-							self->last_good_position = POSITION_INVALID;
-						}
+						mlt_log_warning(MLT_PRODUCER_SERVICE(producer), "avcodec_send_packet failed with %d\n", self->video_send_result);
 					}
 					else
 					{
-						decode_errors = 0;
+						int error = avcodec_receive_frame(codec_context, self->video_frame);
+						if (error < 0) {
+							if (error != AVERROR(EAGAIN) && ++decode_errors > 10 ) {
+								mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "video decoding error %d\n", error );
+								self->last_good_position = POSITION_INVALID;
+							}
+						} else {
+							decode_errors = 0;
+							got_picture = 1;
+						}
 					}
 				}
 
@@ -1823,10 +1829,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				}
 				else if ( !self->pkt.data ) // draining decoder with null packets
 				{
-					ret = -1;
+					self->video_send_result = -1;
 				}
-				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d ret %d pkt_pos %"PRId64"\n",
-							   got_picture, self->pkt.flags & AV_PKT_FLAG_KEY, ret, int_position );
+				mlt_log_debug( MLT_PRODUCER_SERVICE(producer), " got_pic %d key %d send_result %d pkt_pos %"PRId64"\n",
+							   got_picture, self->pkt.flags & AV_PKT_FLAG_KEY, self->video_send_result, int_position );
 			}
 
 			// Now handle the picture if we have one
@@ -1834,7 +1840,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			{
 #ifdef AVFILTER
 				if (self->autorotate && self->vfilter_graph) {
-					ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
+					int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
 					if (ret < 0) {
 						got_picture = 0;
 						break;
