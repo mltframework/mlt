@@ -175,8 +175,8 @@ static void resize_service_caches( mlt_multitrack self )
 		for ( i = 0; i < mlt_properties_count(caches); ++i )
 		{
 			mlt_cache cache = mlt_properties_get_data_at( caches, i, NULL );
-			if ( self->count * 3 > mlt_cache_get_size(cache) )
-				mlt_cache_set_size( cache, self->count * 3 );
+			if ( self->count * 2 > mlt_cache_get_size(cache) )
+				mlt_cache_set_size( cache, self->count * 2 );
 		}
 	}
 }
