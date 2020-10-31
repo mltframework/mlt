@@ -321,7 +321,11 @@ int mlt_producer_seek( mlt_producer self, mlt_position position )
 		mlt_producer_seek( mlt_producer_cut_parent( self ), position + mlt_producer_get_in( self ) );
 
 	// Check bounds
-	if ( position < 0 || mlt_producer_get_playtime( self ) == 0 )
+	if( mlt_service_identify( MLT_PRODUCER_SERVICE(self) ) == link_type )
+	{
+		// Do not bounds check a link.
+	}
+	else if ( position < 0 || mlt_producer_get_playtime( self ) == 0 )
 	{
 		position = 0;
 	}

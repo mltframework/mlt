@@ -41,6 +41,7 @@ OBJS = factory.o \
 	   filter_resize.o \
 	   filter_transition.o \
 	   filter_watermark.o \
+	   link_timeremap.o \
 	   transition_composite.o \
 	   transition_luma.o \
 	   transition_mix.o \

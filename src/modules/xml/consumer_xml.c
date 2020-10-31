@@ -44,6 +44,8 @@ struct serialise_context_s
 	int tractor_count;
 	int filter_count;
 	int transition_count;
+	int chain_count;
+	int link_count;
 	int pass;
 	mlt_properties hide_map;
 	char *root;
@@ -72,7 +74,9 @@ typedef enum
 	xml_playlist,
 	xml_tractor,
 	xml_filter,
-	xml_transition
+	xml_transition,
+	xml_chain,
+	xml_link,
 }
 xml_type;
 
@@ -122,6 +126,12 @@ static char *xml_get_id( serialise_context context, mlt_service service, xml_typ
 						break;
 					case xml_transition:
 						sprintf( temp, "transition%d", context->transition_count ++ );
+						break;
+					case xml_chain:
+						sprintf( temp, "chain%d", context->chain_count ++ );
+						break;
+					case xml_link:
+						sprintf( temp, "link%d", context->link_count ++ );
 						break;
 					case xml_existing:
 						// Never gets here
@@ -606,6 +616,74 @@ static void serialise_transition( serialise_context context, mlt_service service
 	}
 }
 
+static void serialise_link( serialise_context context, mlt_service service, xmlNode *node )
+{
+	xmlNode *child = node;
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+
+	if ( context->pass == 0 )
+	{
+		// Get a new id - if already allocated, do nothing
+		char *id = xml_get_id( context, service, xml_link );
+		if ( id == NULL )
+			return;
+
+		child = xmlNewChild( node, NULL, _x("link"), NULL );
+
+		// Set the id
+		xmlNewProp( child, _x("id"), _x(id) );
+		if ( mlt_properties_get( properties, "title" ) )
+			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
+		if ( mlt_properties_get_position( properties, "in" ) )
+			xmlNewProp( child, _x("in"), _x( mlt_properties_get_time( properties, "in", context->time_format ) ) );
+		if ( mlt_properties_get_position( properties, "out" ) )
+			xmlNewProp( child, _x("out"), _x( mlt_properties_get_time( properties, "out", context->time_format ) ) );
+
+		serialise_properties( context, properties, child );
+		serialise_service_filters( context, service, child );
+	}
+}
+
+static void serialise_chain( serialise_context context, mlt_service service, xmlNode *node )
+{
+	int i = 0;
+	xmlNode *child = node;
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+
+	if ( context->pass == 0 )
+	{
+		// Get a new id - if already allocated, do nothing
+		char *id = xml_get_id( context, service, xml_chain );
+		if ( id == NULL )
+			return;
+
+		child = xmlNewChild( node, NULL, _x("chain"), NULL );
+
+		// Set the id
+		xmlNewProp( child, _x("id"), _x(id) );
+		if ( mlt_properties_get( properties, "title" ) )
+			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
+		if ( mlt_properties_get_position( properties, "in" ) )
+			xmlNewProp( child, _x("in"), _x( mlt_properties_get_time( properties, "in", context->time_format ) ) );
+		if ( mlt_properties_get_position( properties, "out" ) )
+			xmlNewProp( child, _x("out"), _x( mlt_properties_get_time( properties, "out", context->time_format ) ) );
+
+		serialise_properties( context, properties, child );
+
+		// Serialize links
+		for ( i = 0; i < mlt_chain_link_count( MLT_CHAIN( service ) ); i++ )
+		{
+			mlt_link link = mlt_chain_link( MLT_CHAIN( service ), i );
+			if ( link )
+			{
+				serialise_link( context, MLT_LINK_SERVICE(link), child );
+			}
+		}
+
+		serialise_service_filters( context, service, child );
+	}
+}
+
 static void serialise_service( serialise_context context, mlt_service service, xmlNode *node )
 {
 	// Iterate over consumer/producer connections
@@ -664,6 +742,15 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				break;
 			}
 
+			// Treat it as a normal chain
+			else if ( mlt_properties_get_int( properties, "_original_type" ) == chain_type )
+			{
+				serialise_chain( context, service, node );
+				mlt_properties_set( properties, "mlt_type", "chain" );
+				if ( mlt_properties_get( properties, "xml" ) != NULL )
+					break;
+			}
+
 			// Treat it as a normal producer
 			else
 			{
@@ -671,6 +758,13 @@ static void serialise_service( serialise_context context, mlt_service service, x
 				if ( mlt_properties_get( properties, "xml" ) != NULL )
 					break;
 			}
+		}
+
+		// Tell about a chain
+		else if ( strcmp( mlt_type, "chain" ) == 0 )
+		{
+			serialise_chain( context, service, node );
+			break;
 		}
 
 		// Tell about a filter
@@ -807,6 +901,7 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	context->hide_map = mlt_properties_new();
 
 	// Ensure producer is a framework producer
+	mlt_properties_set_int( properties, "_original_type", mlt_service_identify( service ) );
 	mlt_properties_set( MLT_SERVICE_PROPERTIES( service ), "mlt_type", "mlt_producer" );
 
 	// In pass one, we serialise the end producers and playlists,

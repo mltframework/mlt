@@ -28,6 +28,7 @@ endif
 
 OBJS = MltAudio.o \
 	   MltAnimation.o \
+	   MltChain.o \
 	   MltConsumer.o \
 	   MltDeque.o \
 	   MltEvent.o \
@@ -38,6 +39,7 @@ OBJS = MltAudio.o \
 	   MltFilteredProducer.o \
 	   MltFrame.o \
 	   MltGeometry.o \
+	   MltLink.o \
 	   MltMultitrack.o \
 	   MltParser.o \
 	   MltPlaylist.o \

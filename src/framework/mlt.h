@@ -59,6 +59,8 @@ extern "C"
 #include "mlt_cache.h"
 #include "mlt_version.h"
 #include "mlt_slices.h"
+#include "mlt_link.h"
+#include "mlt_chain.h"
 
 #ifdef __cplusplus
 }

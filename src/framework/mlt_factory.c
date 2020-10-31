@@ -364,7 +364,15 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, con
 		if ( obj != NULL )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( obj );
-			set_common_properties( properties, profile, "producer", service );
+			if ( mlt_service_identify( MLT_PRODUCER_SERVICE( obj ) ) == chain_type )
+			{
+				// XML producer may return a chain
+				set_common_properties( properties, profile, "chain", service );
+			}
+			else
+			{
+				set_common_properties( properties, profile, "producer", service );
+			}
 		}
 	}
 	return obj;
@@ -395,6 +403,34 @@ mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, const v
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( obj );
 		set_common_properties( properties, profile, "filter", service );
+	}
+	return obj;
+}
+
+/** Fetch a link from the repository.
+ *
+ * \param service the name of the link
+ * \param input an optional argument to the link constructor, typically a string
+ * \return a new link
+ */
+
+mlt_link mlt_factory_link( const char *service, const void *input )
+{
+	mlt_link obj = NULL;
+
+	// Offer the application the chance to 'create'
+	mlt_events_fire( event_object, "link-create-request", service, input, &obj, NULL );
+
+	if ( obj == NULL )
+	{
+		obj = mlt_repository_create( repository, NULL, link_type, service, input );
+		mlt_events_fire( event_object, "link-create-done", service, input, obj, NULL );
+	}
+
+	if ( obj != NULL )
+	{
+		mlt_properties properties = MLT_LINK_PROPERTIES( obj );
+		set_common_properties( properties, NULL, "link", service );
 	}
 	return obj;
 }

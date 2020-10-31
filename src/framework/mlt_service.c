@@ -179,8 +179,12 @@ mlt_service_type mlt_service_identify( mlt_service self )
 			type = filter_type;
 		else if ( !strcmp( mlt_type, "transition" ) )
 			type = transition_type;
+		else if ( !strcmp( mlt_type, "chain" ) )
+			type = chain_type;
 		else if ( !strcmp( mlt_type, "consumer" ) )
 			type = consumer_type;
+		else if ( !strcmp( mlt_type, "link" ) )
+			type = link_type;
 		else
 			type = unknown_type;
 	}

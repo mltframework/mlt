@@ -51,7 +51,8 @@ Producer::Producer( Service &producer ) :
 {
 	mlt_service_type type = producer.type( );
 	if ( type == producer_type || type == playlist_type || 
-		 type == tractor_type || type == multitrack_type )
+		 type == tractor_type || type == multitrack_type ||
+		 type == chain_type || type == link_type )
 	{
 		instance = ( mlt_producer )producer.get_service( );
 		inc_ref( );
