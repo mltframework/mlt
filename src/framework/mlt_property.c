@@ -159,7 +159,7 @@ int mlt_property_is_clear( mlt_property self )
 	if ( self )
 	{
 		pthread_mutex_lock( &self->mutex );
-		result = self->types == 0;
+		result = self->types == 0 && self->animation == NULL;
 		pthread_mutex_unlock( &self->mutex );
 	}
 	return result;

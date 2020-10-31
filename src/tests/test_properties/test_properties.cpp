@@ -1146,6 +1146,22 @@ private Q_SLOTS:
         QCOMPARE(p.property_exists("key"), false);
     }
 
+    void AnimationExists()
+    {
+        Properties p;
+        // Never set should return false
+        QCOMPARE(p.property_exists("key"), false);
+        // Get an animation but don't set anything - should return false
+        Mlt::Animation animation = p.get_animation("key");
+        QCOMPARE(p.property_exists("key"), false);
+        // Set animation should return true
+        p.anim_set("key", 1, 0 );
+        QCOMPARE(p.property_exists("key"), true);
+        // Cleared should return false
+        p.clear("key");
+        QCOMPARE(p.property_exists("key"), false);
+    }
+
     void SetString()
     {
         Properties p;
