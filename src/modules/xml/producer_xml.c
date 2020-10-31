@@ -60,7 +60,9 @@ enum service_type
 	mlt_dummy_filter_type,
 	mlt_dummy_transition_type,
 	mlt_dummy_producer_type,
-	mlt_dummy_consumer_type
+	mlt_dummy_consumer_type,
+	mlt_chain_type,
+	mlt_link_type,
 };
 
 struct deserialise_context_s
@@ -568,6 +570,194 @@ static void on_end_playlist( deserialise_context context, const xmlChar *name )
 	else
 	{
 		mlt_log_error( NULL, "[producer_xml] Invalid state of playlist end %d\n", type );
+	}
+}
+
+static void on_start_chain( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+{
+	mlt_chain chain = mlt_chain_init( context->profile );
+	mlt_service service = MLT_CHAIN_SERVICE( chain );
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+
+	track_service( context->destructors, service, (mlt_destructor) mlt_chain_close );
+
+	for ( ; atts != NULL && *atts != NULL; atts += 2 )
+	{
+		mlt_properties_set_string( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
+
+		// Out will be overwritten later as we append, so we need to save it
+		if ( xmlStrcmp( atts[ 0 ], _x("out") ) == 0 )
+			mlt_properties_set_string( properties, "_xml.out", ( const char* )atts[ 1 ] );
+	}
+
+	if ( mlt_properties_get( properties, "id" ) != NULL )
+		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
+
+	context_push_service( context, service, mlt_chain_type );
+}
+
+static void on_end_chain( deserialise_context context, const xmlChar *name )
+{
+	// Get the chain from the stack
+	enum service_type type;
+	mlt_service service = context_pop_service( context, &type );
+
+	if ( service != NULL && type == mlt_chain_type )
+	{
+		mlt_chain chain = MLT_CHAIN( service );
+		mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+		mlt_position in = -1;
+		mlt_position out = -1;
+		mlt_producer source = NULL;
+
+		qualify_property( context, properties, "resource" );
+		char *resource = mlt_properties_get( properties, "resource" );
+
+		// Let Kino-SMIL src be a synonym for resource
+		if ( resource == NULL )
+		{
+			qualify_property( context, properties, "src" );
+			resource = mlt_properties_get( properties, "src" );
+		}
+
+		// Instantiate the producer
+		if ( mlt_properties_get( properties, "mlt_service" ) != NULL )
+		{
+			char *service_name = trim( mlt_properties_get( properties, "mlt_service" ) );
+			if ( resource )
+			{
+				// If a document was saved as +INVALID.txt (see below), then ignore the mlt_service and
+				// try to load it just from the resource. This is an attempt to recover the failed
+				// producer in case, for example, a file returns.
+				if (!strcmp("qtext", service_name)) {
+					const char *text = mlt_properties_get( properties, "text" );
+					if (text && !strcmp("INVALID", text)) {
+						service_name = NULL;
+					}
+				} else if (!strcmp("pango", service_name)) {
+					const char *markup = mlt_properties_get( properties, "markup" );
+					if (markup && !strcmp("INVALID", markup)) {
+						service_name = NULL;
+					}
+				}
+				if (service_name) {
+					char *temp = calloc( 1, strlen( service_name ) + strlen( resource ) + 2 );
+					strcat( temp, service_name );
+					strcat( temp, ":" );
+					strcat( temp, resource );
+					source = mlt_factory_producer( context->profile, NULL, temp );
+					free( temp );
+				}
+			}
+			else
+			{
+				source = mlt_factory_producer( context->profile, NULL, service_name );
+			}
+		}
+
+		// Just in case the plugin requested doesn't exist...
+		if ( !source && resource )
+			source = mlt_factory_producer( context->profile, NULL, resource );
+		if ( !source ) {
+			mlt_log_error( NULL, "[producer_xml] failed to load producer \"%s\"\n", resource );
+			source = mlt_factory_producer( context->profile, NULL, "+INVALID.txt" );
+			if (source) {
+				// Save the original mlt_service for the consumer to serialize it as original.
+				mlt_properties_set_string( properties, "_xml_mlt_service",
+					mlt_properties_get( properties, "mlt_service" ) );
+			}
+		}
+		if ( !source )
+			source = mlt_factory_producer( context->profile, NULL, "colour:red" );
+		// Add the source producer to the chain
+		mlt_chain_set_source( chain, source );
+
+		// See if the chain should be added to a playlist or multitrack
+		if ( mlt_properties_get( properties, "in" ) )
+			in = mlt_properties_get_position( properties, "in" );
+		if ( mlt_properties_get( properties, "out" ) )
+			out = mlt_properties_get_position( properties, "out" );
+		if ( add_producer( context, service, in, out ) == 0 )
+			context_push_service( context, service, type );
+	}
+	else
+	{
+		mlt_log_error( NULL, "[producer_xml] Invalid state of chain end %d\n", type );
+	}
+}
+
+static void on_start_link( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+{
+	// Store properties until the service type is known
+	mlt_service service = calloc( 1, sizeof( struct mlt_service_s ) );
+	mlt_service_init( service, NULL );
+	context_push_service( context, service, mlt_link_type );
+}
+
+static void on_end_link( deserialise_context context, const xmlChar *name )
+{
+	enum service_type type;
+	mlt_service service = context_pop_service( context, &type );
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+
+	enum service_type parent_type = mlt_invalid_type;
+	mlt_service parent = context_pop_service( context, &parent_type );
+
+	if ( service != NULL && type == mlt_link_type )
+	{
+		char *id = trim( mlt_properties_get( properties, "mlt_service" ) );
+		mlt_service link = MLT_SERVICE( mlt_factory_link( id, NULL ) );
+		mlt_properties link_props = MLT_SERVICE_PROPERTIES( link );
+
+		if ( !link )
+		{
+			mlt_log_error( NULL, "[producer_xml] failed to load link \"%s\"\n", id );
+			if ( parent )
+				context_push_service( context, parent, parent_type );
+			mlt_service_close( service );
+			free( service );
+			return;
+		}
+
+		track_service( context->destructors, link, (mlt_destructor) mlt_link_close );
+		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( link ), context->lc_numeric );
+
+		// Do not let XML overwrite these important properties set by mlt_factory.
+		mlt_properties_set_string( properties, "mlt_type", NULL );
+		mlt_properties_set_string( properties, "mlt_service", NULL );
+
+		// Propagate the properties
+		mlt_properties_inherit( link_props, properties );
+
+		// Attach the link to the chain
+		if ( parent != NULL )
+		{
+			if ( parent_type == mlt_chain_type )
+			{
+				mlt_chain_attach( MLT_CHAIN( parent ), MLT_LINK( link ) );
+			}
+			else
+			{
+				mlt_log_error( NULL, "[producer_xml] link can only be added to a chain...\n" );
+			}
+
+			// Put the parent back on the stack
+			context_push_service( context, parent, parent_type );
+		}
+		else
+		{
+			mlt_log_error( NULL, "[producer_xml] link closed with invalid parent...\n" );
+		}
+	}
+	else
+	{
+		mlt_log_error( NULL, "[producer_xml] Invalid top of stack on link close\n" );
+	}
+
+	if ( service )
+	{
+		mlt_service_close( service );
+		free(service);
 	}
 }
 
@@ -1412,6 +1602,10 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_filter( context, name, atts );
 	else if ( xmlStrcmp( name, _x("transition") ) == 0 )
 		on_start_transition( context, name, atts );
+	else if ( xmlStrcmp( name, _x("chain") ) == 0 )
+		on_start_chain( context, name, atts );
+	else if ( xmlStrcmp( name, _x("link") ) == 0 )
+		on_start_link( context, name, atts );
 	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_start_property( context, name, atts );
 	else if ( xmlStrcmp( name, _x("consumer") ) == 0 )
@@ -1453,6 +1647,10 @@ static void on_end_element( void *ctx, const xmlChar *name )
 		on_end_filter( context, name );
 	else if ( xmlStrcmp( name, _x("transition") ) == 0 )
 		on_end_transition( context, name );
+	else if ( xmlStrcmp( name, _x("chain") ) == 0 )
+		on_end_chain( context, name );
+	else if ( xmlStrcmp( name, _x("link") ) == 0 )
+		on_end_link( context, name );
 	else if ( xmlStrcmp( name, _x("consumer") ) == 0 )
 		on_end_consumer( context, name );
 
@@ -1956,9 +2154,9 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	if ( well_formed && service != NULL )
 	{
 		// Verify it is a producer service (mlt_type="mlt_producer")
-		// (producer, playlist, multitrack)
+		// (producer, chain, playlist, multitrack)
 		char *type = mlt_properties_get( MLT_SERVICE_PROPERTIES( service ), "mlt_type" );
-		if ( type == NULL || ( strcmp( type, "mlt_producer" ) != 0 && strcmp( type, "producer" ) != 0 ) )
+		if ( type == NULL || ( strcmp( type, "mlt_producer" ) != 0 && strcmp( type, "producer" ) != 0 && strcmp( type, "chain" ) != 0 ) )
 			service = NULL;
 	}
 

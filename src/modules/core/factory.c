@@ -49,6 +49,7 @@ extern mlt_filter filter_rescale_init( mlt_profile profile, mlt_service_type typ
 extern mlt_filter filter_resize_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_transition_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_watermark_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_link link_timeremap_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_colour_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_consumer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -103,6 +104,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "resize", filter_resize_init );
 	MLT_REGISTER( filter_type, "transition", filter_transition_init );
 	MLT_REGISTER( filter_type, "watermark", filter_watermark_init );
+	MLT_REGISTER( link_type, "timeremap", link_timeremap_init );
 	MLT_REGISTER( producer_type, "abnormal", producer_loader_init );
 	MLT_REGISTER( producer_type, "color", producer_colour_init );
 	MLT_REGISTER( producer_type, "colour", producer_colour_init );
@@ -145,6 +147,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( filter_type, "resize", metadata, "filter_resize.yml" );
 	MLT_REGISTER_METADATA( filter_type, "transition", metadata, "filter_transition.yml" );
 	MLT_REGISTER_METADATA( filter_type, "watermark", metadata, "filter_watermark.yml" );
+	MLT_REGISTER_METADATA( link_type, "timeremap", metadata, "link_timeremap.yml" );
 	MLT_REGISTER_METADATA( producer_type, "colour", metadata, "producer_colour.yml" );
 	MLT_REGISTER_METADATA( producer_type, "color", metadata, "producer_colour.yml" );
 	MLT_REGISTER_METADATA( producer_type, "consumer", metadata, "producer_consumer.yml" );

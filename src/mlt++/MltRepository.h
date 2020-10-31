@@ -47,6 +47,7 @@ namespace Mlt
 			void *create( Profile& profile, mlt_service_type type, const char *service, void *arg );
 			Properties *consumers( ) const;
 			Properties *filters( ) const;
+			Properties *links( ) const;
 			Properties *producers( ) const;
 			Properties *transitions( ) const;
 			void register_metadata( mlt_service_type type, const char *service, mlt_metadata_callback, void *callback_data );

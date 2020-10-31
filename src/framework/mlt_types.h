@@ -148,7 +148,9 @@ typedef enum
 	filter_type,                /**< Filter class */
 	transition_type,            /**< Transition class */
 	consumer_type,              /**< Consumer class */
-	field_type                  /**< Field class */
+	field_type,                 /**< Field class */
+	link_type,                  /**< Link class */
+	chain_type                  /**< Chain class */
 }
 mlt_service_type;
 
@@ -208,6 +210,8 @@ typedef struct mlt_cache_s *mlt_cache;                  /**< pointer to Cache ob
 typedef struct mlt_cache_item_s *mlt_cache_item;        /**< pointer to CacheItem object */
 typedef struct mlt_animation_s *mlt_animation;          /**< pointer to Property Animation object */
 typedef struct mlt_slices_s *mlt_slices;                /**< pointer to Sliced processing context object */
+typedef struct mlt_link_s *mlt_link;                    /**< pointer to Link object */
+typedef struct mlt_chain_s *mlt_chain;                  /**< pointer to Chain object */
 
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */
@@ -221,6 +225,8 @@ typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serializ
 #define MLT_TRANSITION(x) ( ( mlt_transition )( x ) )   /**< Cast to a Transition pointer */
 #define MLT_CONSUMER(x) ( ( mlt_consumer )( x ) )       /**< Cast to a Consumer pointer */
 #define MLT_FRAME(x)      ( ( mlt_frame )( x ) )        /**< Cast to a Frame pointer */
+#define MLT_LINK(x)       ( ( mlt_link )( x ) )         /**< Cast to a Link pointer */
+#define MLT_CHAIN(x)      ( ( mlt_chain )( x ) )        /**< Cast to a Chain pointer */
 
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))

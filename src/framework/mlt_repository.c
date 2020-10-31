@@ -47,6 +47,7 @@ struct mlt_repository_s
 	struct mlt_properties_s parent; /// a list of object files
 	mlt_properties consumers;       /// a list of entry points for consumers
 	mlt_properties filters;         /// a list of entry points for filters
+	mlt_properties links;           /// a list of entry points for links
 	mlt_properties producers;       /// a list of entry points for producers
 	mlt_properties transitions;     /// a list of entry points for transitions
 };
@@ -69,6 +70,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	mlt_properties_init( &self->parent, self );
 	self->consumers = mlt_properties_new();
 	self->filters = mlt_properties_new();
+	self->links = mlt_properties_new();
 	self->producers = mlt_properties_new();
 	self->transitions = mlt_properties_new();
 
@@ -178,6 +180,9 @@ void mlt_repository_register( mlt_repository self, mlt_service_type service_type
 		case filter_type:
 			mlt_properties_set_data( self->filters, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
+		case link_type:
+			mlt_properties_set_data( self->links, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
+			break;
 		case producer_type:
 			mlt_properties_set_data( self->producers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
@@ -185,6 +190,7 @@ void mlt_repository_register( mlt_repository self, mlt_service_type service_type
 			mlt_properties_set_data( self->transitions, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		default:
+			mlt_log_error( NULL, "%s: Unable to register \"%s\"\n", __FUNCTION__, service );
 			break;
 	}
 }
@@ -210,6 +216,9 @@ static mlt_properties get_service_properties( mlt_repository self, mlt_service_t
 			break;
 		case filter_type:
 			service_properties = mlt_properties_get_data( self->filters, service, NULL );
+			break;
+		case link_type:
+			service_properties = mlt_properties_get_data( self->links, service, NULL );
 			break;
 		case producer_type:
 			service_properties = mlt_properties_get_data( self->producers, service, NULL );
@@ -284,6 +293,18 @@ mlt_properties mlt_repository_consumers( mlt_repository self )
 mlt_properties mlt_repository_filters( mlt_repository self )
 {
 	return self->filters;
+}
+
+/** Get the list of registered links.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \return a properties list of all of the links
+ */
+
+mlt_properties mlt_repository_links( mlt_repository self )
+{
+	return self->links;
 }
 
 /** Get the list of registered producers.

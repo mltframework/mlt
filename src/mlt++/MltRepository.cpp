@@ -58,6 +58,11 @@ Properties *Repository::filters( ) const
 	return new Properties( mlt_repository_filters( instance ) );
 }
 
+Properties *Repository::links( ) const
+{
+	return new Properties( mlt_repository_links( instance ) );
+}
+
 Properties *Repository::producers( ) const
 {
 	return new Properties( mlt_repository_producers( instance ) );

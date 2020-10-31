@@ -576,3 +576,21 @@ MLT_6.22.0 {
     mlt_audio_channel_layout_channels;
     mlt_audio_channel_layout_default;
 } MLT_6.20.0;
+
+MLT_6.24.0 {
+  global:
+    mlt_factory_link;
+    mlt_chain_init;
+    mlt_chain_set_source;
+    mlt_chain_get_source;
+    mlt_chain_attach;
+    mlt_chain_detach;
+    mlt_chain_link_count;
+    mlt_chain_move_link;
+    mlt_chain_link;
+    mlt_chain_close;
+    mlt_link_init;
+    mlt_link_connect_next;
+    mlt_link_close;
+    mlt_repository_links;
+} MLT_6.22.0;

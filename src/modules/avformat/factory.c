@@ -309,6 +309,12 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 		default:
 			return NULL;
 	}
+
+	if ( type == producer_type && !strcmp( id, "avformat-novalidate" ) )
+	{
+		id = "avformat";
+	}
+
 	// Load the yaml file
 	snprintf( file, PATH_MAX, "%s/avformat/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, id );
 	result = mlt_properties_parse_yaml( file );
@@ -425,6 +431,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( producer_type, "avformat-novalidate", create_service );
 	MLT_REGISTER_METADATA( consumer_type, "avformat", avformat_metadata, NULL );
 	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
+	MLT_REGISTER_METADATA( producer_type, "avformat-novalidate", avformat_metadata, NULL );
 #endif
 #ifdef FILTERS
 	MLT_REGISTER( filter_type, "avcolour_space", create_service );

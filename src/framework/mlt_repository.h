@@ -59,6 +59,7 @@ extern void *mlt_repository_create( mlt_repository self, mlt_profile profile, ml
 extern void mlt_repository_close( mlt_repository self );
 extern mlt_properties mlt_repository_consumers( mlt_repository self );
 extern mlt_properties mlt_repository_filters( mlt_repository self );
+extern mlt_properties mlt_repository_links( mlt_repository self );
 extern mlt_properties mlt_repository_producers( mlt_repository self );
 extern mlt_properties mlt_repository_transitions( mlt_repository self );
 extern void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_metadata_callback, void *callback_data );
