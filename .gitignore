@@ -36,4 +36,10 @@ make.inc
 src/examples/play
 *.dot
 *.rej
+.project
+*.qmake.stash
+src/tests/Makefile
+src/tests/*/*
+!src/tests/*/*.cpp
+!src/tests/*/*.pro
 
