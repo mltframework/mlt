@@ -92,7 +92,8 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		delete s;
 		// Create a rubberband instance
 		RubberBandStretcher::Options options = RubberBandStretcher::OptionProcessRealTime |
-												RubberBandStretcher::OptionPitchHighConsistency;
+												RubberBandStretcher::OptionPitchHighConsistency |
+												RubberBandStretcher::OptionTransientsSmooth;
 		s = new RubberBandStretcher(rubberband_frequency, *channels, options, 1.0, pitchscale);
 		pdata->s = s;
 		pdata->rubberband_frequency = rubberband_frequency;
