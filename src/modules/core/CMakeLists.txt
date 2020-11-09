@@ -4,6 +4,11 @@ if(WIN32)
     list(APPEND mltcore_src ${CMAKE_SOURCE_DIR}/src/win32/fnmatch.c)
     list(APPEND mltcore_inc ${CMAKE_SOURCE_DIR}/src/win32)
 endif()
+
+if(NOT X86_64)
+    list(REMOVE_ITEM mltcore_src ${CMAKE_CURRENT_SOURCE_DIR}/composite_line_yuv_sse2_simple.c)
+endif()
+
 add_library(mltcore MODULE ${mltcore_src})
 target_include_directories(mltcore PRIVATE ${mltcore_inc})
 target_link_libraries(mltcore mlt Threads::Threads)

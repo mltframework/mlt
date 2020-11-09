@@ -3,7 +3,7 @@ set(mltgdk_lib mlt m Threads::Threads)
 set(mltgdk_def "")
 
 
-pkg_check_modules(GdkPixbuf IMPORTED_TARGET gdk-pixbuf-2.0 REQUIRED)
+pkg_check_modules(GdkPixbuf IMPORTED_TARGET gdk-pixbuf-2.0)
 if(TARGET PkgConfig::GdkPixbuf)
     list(APPEND mltgdk_src producer_pixbuf.c pixops.c filter_rescale.c)
     list(APPEND mltgdk_lib PkgConfig::GdkPixbuf)
@@ -13,24 +13,25 @@ if(TARGET PkgConfig::GdkPixbuf)
         list(APPEND mltgdk_lib PkgConfig::libexif)
         list(APPEND mltgdk_def USE_EXIF)
     endif()
-endif()
 
-pkg_check_modules(pango IMPORTED_TARGET pango)
-pkg_check_modules(fontconfig IMPORTED_TARGET fontconfig)
-if(TARGET PkgConfig::pango AND TARGET PkgConfig::fontconfig)
-    list(APPEND mltgdk_src producer_pango.c)
-    list(APPEND mltgdk_lib PkgConfig::pango PkgConfig::fontconfig)
-    list(APPEND mltgdk_def USE_PANGO)
-endif()
+    pkg_check_modules(pango IMPORTED_TARGET pango)
+    pkg_check_modules(pangoft2 IMPORTED_TARGET pangoft2)
+    pkg_check_modules(fontconfig IMPORTED_TARGET fontconfig)
+    if(TARGET PkgConfig::pango AND TARGET PkgConfig::fontconfig)
+	list(APPEND mltgdk_src producer_pango.c)
+	list(APPEND mltgdk_lib PkgConfig::pango PkgConfig::fontconfig PkgConfig::pangoft2)
+	list(APPEND mltgdk_def USE_PANGO)
+    endif()
 
-# Only for MMX but not x86_64: deprecated
-# list(APPEND mltgdk_src have_mmx.S scale_line_22_yuv_mmx.S)
-add_library(mltgdk MODULE ${mltgdk_src})
-target_link_libraries(mltgdk ${mltgdk_lib})
-target_compile_definitions(mltgdk PRIVATE ${mltgdk_def})
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
-install(TARGETS mltgdk LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-file(GLOB yml *.yml)
-install(FILES ${yml}
+    # Only for MMX but not x86_64: deprecated
+    # list(APPEND mltgdk_src have_mmx.S scale_line_22_yuv_mmx.S)
+    add_library(mltgdk MODULE ${mltgdk_src})
+    target_link_libraries(mltgdk ${mltgdk_lib})
+    target_compile_definitions(mltgdk PRIVATE ${mltgdk_def})
+    # Create module in parent directory, for the benefit of "source setenv".
+    set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+    install(TARGETS mltgdk LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+    file(GLOB yml *.yml)
+    install(FILES ${yml}
         DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
+endif()

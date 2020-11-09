@@ -65,7 +65,7 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
 	
 		// Initialize KDE image plugins
-		if ( !init_qimage( filename ) )
+		if ( !init_qimage( producer, filename ) )
 		{
 			// Reject if animation.
 			mlt_producer_close( producer );

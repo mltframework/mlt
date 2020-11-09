@@ -1,6 +1,6 @@
 /*
  * producer_colour.c
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -255,6 +255,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Push the get_image method
 		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_get_image( *frame, producer_get_image );
+
+		// A hint to scalers and affine transition that this producer does not
+		// benefit from interpolation.
+		mlt_properties_set_int(properties, "interpolation_not_required", 1);
 	}
 
 	// Calculate the next timecode

@@ -1,4 +1,6 @@
 add_executable(luma luma.c)
+# luma requires libmlt to work, so we set the output directory for luma to the location of this library
+set_target_properties(luma PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/src/framework")
 target_link_libraries(luma mlt)
 function(create_lumas dir w h bpp)
     set(${dir}

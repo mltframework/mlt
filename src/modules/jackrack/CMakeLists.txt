@@ -18,7 +18,7 @@ if(TARGET PkgConfig::jack)
             producer_ladspa.c
             filter_jackrack.c
             filter_ladspa.c)
-        set(mltjack_lib ${mltjack_lib} dl m PkgConfig::xml PkgConfig::glib)
+        set(mltjack_lib ${mltjack_lib} ${CMAKE_DL_LIBS} m PkgConfig::xml PkgConfig::glib)
         set(mltjack_def GPL)
         file(GLOB yml *.yml blacklist.txt)
     else()
