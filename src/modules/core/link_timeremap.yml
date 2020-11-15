@@ -25,3 +25,8 @@ parameters:
       - nearest # Output the nearest frame
       - blend   # Blend the frames that make up the output
     mutable: yes
+  - identifier: speed
+    title: Speed
+    type: float
+    description: The instantaneous speed of the last frame that was processed.
+    readonly: yes

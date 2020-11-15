@@ -43,13 +43,9 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 	double source_time = mlt_properties_get_double( unique_properties, "source_time" );
 	double source_duration = mlt_properties_get_double( unique_properties, "source_duration" );
 	double source_fps = mlt_properties_get_double( unique_properties, "source_fps" );
+	double source_speed = mlt_properties_get_double( unique_properties, "source_speed" );
+	source_speed = fabs( source_speed );
 	double link_fps = mlt_producer_get_fps( MLT_LINK_PRODUCER( self ) );
-	double frame_duration = 1.0 / link_fps;
-	double speed = 0.0;
-	if ( source_duration != 0.0 )
-	{
-		speed = fabs(source_duration) / frame_duration;
-	}
 
 	// Validate the request
 	*channels = *channels <= 0 ? 2 : *channels;
@@ -63,7 +59,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 		*frequency = 48000;
 	}
 
-	if ( speed < 0.1 || speed > 10 )
+	if ( source_speed < 0.1 || source_speed > 10 )
 	{
 		// Return silent samples for speeds less than 0.1 or > 10
 		mlt_position position = mlt_frame_original_position( frame );
@@ -77,7 +73,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 	else
 	{
 		int sample_count = mlt_sample_calculator( link_fps, *frequency, mlt_frame_get_position( frame ) );
-		sample_count = lrint( (double)sample_count * speed );
+		sample_count = lrint( (double)sample_count * source_speed );
 		mlt_position in_frame_pos = floor( source_time * source_fps );
 
 		// Calculate the samples to get from the input frames
@@ -151,7 +147,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 			mlt_audio_reverse( &out );
 		}
 
-		out.frequency = lrint( (double)out.frequency * speed );
+		out.frequency = lrint( (double)out.frequency * source_speed );
 		mlt_frame_set_audio( frame, out.data, out.format, 0, out.release_data );
 		mlt_audio_get_values( &out, audio, frequency, format, samples, channels );
 		return 0;
@@ -273,6 +269,7 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	double source_time = 0.0;
 	double source_duration = 0.0;
 	double source_fps = mlt_producer_get_fps( self->next );
+	double link_fps = mlt_producer_get_fps( MLT_LINK_PRODUCER( self ) );
 
 	int result = 0;
 
@@ -284,7 +281,6 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	// Calculate the frames from the next link to be used
 	if ( !mlt_properties_exists( properties, "map" ) )
 	{
-		double link_fps = mlt_producer_get_fps( MLT_LINK_PRODUCER( self ) );
 		source_time = (double)position / link_fps;
 		source_duration = 1.0 / link_fps;
 	}
@@ -295,9 +291,17 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 		source_duration = next_source_time - source_time;
 	}
 
+	double frame_duration = 1.0 / link_fps;
+	double source_speed = 0.0;
+	if ( source_duration != 0.0 )
+	{
+		source_speed = source_duration / frame_duration;
+	}
+
 	mlt_properties_set_double( unique_properties, "source_fps", source_fps );
 	mlt_properties_set_double( unique_properties, "source_time", source_time );
 	mlt_properties_set_double( unique_properties, "source_duration", source_duration );
+	mlt_properties_set_double( unique_properties, "source_speed", source_speed );
 
 	mlt_log_debug( MLT_LINK_SERVICE(self), "Get Frame: %f -> %f\t%d\n", source_fps, mlt_producer_get_fps( MLT_LINK_PRODUCER(self) ), position );
 
@@ -396,6 +400,7 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	}
 
 	mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
+	mlt_properties_set_double( properties, "speed", source_speed );
 
 	return result;
 }
