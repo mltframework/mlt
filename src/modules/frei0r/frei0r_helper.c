@@ -57,9 +57,9 @@ static int f0r_update_slice( int id, int index, int count, void *context )
 {
 	struct update_context *ctx = context;
 	int slice_height = ctx->height / count;
-	int slice_bytes = ctx->width * slice_height;
-	uint32_t *input = ctx->inputs[0] + index * slice_bytes;
-	uint32_t *output = ctx->output + index * slice_bytes;
+	int slice_offset = index * slice_height * ctx->width;
+	uint32_t *input = ctx->inputs[0] + slice_offset;
+	uint32_t *output = ctx->output + slice_offset;
 	ctx->f0r_update(ctx->frei0r, ctx->time, input, output);
 	return 0;
 }
@@ -68,12 +68,12 @@ static int f0r_update2_slice( int id, int index, int count, void *context )
 {
 	struct update_context *ctx = context;
 	int slice_height = ctx->height / count;
-	int slice_bytes = ctx->width * slice_height;
+	int slice_offset = index * slice_height * ctx->width;
 	uint32_t *inputs[2] = {
-		ctx->inputs[0] + index * slice_bytes,
-		ctx->inputs[1] + index * slice_bytes
+		ctx->inputs[0] + slice_offset,
+		ctx->inputs[1] + slice_offset
 	};
-	uint32_t *output = ctx->output + index * slice_bytes;
+	uint32_t *output = ctx->output + slice_offset;
 	ctx->f0r_update2(ctx->frei0r, ctx->time, inputs[0], inputs[1], NULL, output);
 	return 0;
 }
@@ -108,12 +108,20 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 	int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
 	double scale = mlt_profile_scale_width(mlt_service_profile(service), *width);
 	mlt_properties scale_map = mlt_properties_get_data(prop, "_resolution_scale", NULL);
-	
-	if (slice_count >= 0)
-		slice_count = CLAMP(slice_count, 0, mlt_slices_count_normal());
 
-	//use as name the width and height
-	int slice_height = *height / (slice_count > 0? slice_count : 1);
+	// Determine the number of slices and slice height
+	if (slice_count == 0) {
+		slice_count = mlt_slices_count_normal();
+	} else {
+		slice_count = CLAMP(slice_count, 1, mlt_slices_count_normal());
+	}
+	// Reduce the slice count until the height is a multiple of slices
+	while (slice_count > 1 && (*height % slice_count)) {
+		--slice_count;
+	}
+	int slice_height = *height / slice_count;
+
+	// Use width and height in the frei0r instance key
 	char ctorname[1024] = "";
 	if (not_thread_safe)
 		sprintf(ctorname, "ctor-%dx%d", *width, slice_height);
@@ -132,7 +140,7 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 		mlt_properties_set_data(prop, ctorname, inst, 0, NULL, NULL);
 	}
 
-	if (!not_thread_safe)
+	if (!not_thread_safe && slice_count == 1)
 		mlt_service_unlock(service);
 
 	f0r_plugin_info_t info;
@@ -284,7 +292,7 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 			f0r_update2(inst, time, source[0], source[1], NULL, dest);
 		}
 	}
-	if (not_thread_safe)
+	if (not_thread_safe || slice_count != 1)
 		mlt_service_unlock(service);
 	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
 		rgba_bgra((uint8_t*) dest, (uint8_t*) result, *width, *height);
