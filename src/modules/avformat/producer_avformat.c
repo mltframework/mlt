@@ -40,6 +40,11 @@
 #include <libavutil/imgutils.h>
 #include <libavutil/version.h>
 
+#ifdef USE_VAAPI
+#include <libavutil/hwcontext.h>
+#include <libavcodec/packet.h>
+#endif
+
 #ifdef VDPAU
 #  include <libavcodec/vdpau.h>
 #endif
@@ -138,8 +143,17 @@ struct producer_avformat_s
 #endif
 	int autorotate;
 	int is_audio_synchronizing;
+#ifdef USE_VAAPI
+	AVBufferRef* hw_device_ctx;
+	AVFrame* sw_video_frame;
+#endif
 };
 typedef struct producer_avformat_s *producer_avformat;
+
+#ifdef USE_VAAPI
+#define HW_PIX_FMT AV_PIX_FMT_VAAPI
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VAAPI
+#endif
 
 // Forward references.
 static int list_components( char* file );
@@ -624,6 +638,10 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return AV_PIX_FMT_RGB24;
 #endif
+#ifdef USE_VAAPI
+	case AV_PIX_FMT_VAAPI:
+		return AV_PIX_FMT_YUV420P;
+#endif
 	default:
 		return AV_PIX_FMT_YUV422P;
 	}
@@ -948,7 +966,11 @@ static void prepare_reopen( producer_avformat self )
 	if ( self->video_codec )
 		avcodec_close( self->video_codec );
 	self->video_codec = NULL;
-
+#ifdef USE_VAAPI
+	if (self->hw_device_ctx)
+		av_buffer_unref(&self->hw_device_ctx);
+	self->hw_device_ctx = NULL;
+#endif
 	if ( self->seekable && self->audio_format )
 		avformat_close_input( &self->audio_format );
 	if ( self->video_format )
@@ -1720,7 +1742,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			}
 			else
 #endif
+#ifdef USE_VAAPI
+			yuv_colorspace = convert_image( self, self->video_frame, *buffer, self->video_frame->format,
+#else
 			yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+#endif
 				format, *width, *height, &alpha );
 			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 			got_picture = 1;
@@ -1731,10 +1757,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		int ret = 0;
 		int64_t int_position = 0;
 		int decode_errors = 0;
-
-		// Construct an AVFrame for YUV422 conversion
-		if ( !self->video_frame )
-			self->video_frame = av_frame_alloc();
 
 		while( ret >= 0 && !got_picture )
 		{
@@ -1833,7 +1855,33 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					codec_context->reordered_opaque = int_position;
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
-					ret = avcodec_decode_video2( codec_context, self->video_frame, &got_picture, &self->pkt );
+					
+					char errstr[1000];
+
+					if (!self->video_frame)
+						self->video_frame = av_frame_alloc();
+					else
+						av_frame_unref(self->video_frame);
+
+#ifdef USE_VAAPI
+					if (!self->sw_video_frame)
+						self->sw_video_frame = av_frame_alloc();
+					else
+						av_frame_unref(self->sw_video_frame);
+#endif
+
+					do {
+						if ((ret = avcodec_send_packet(codec_context, &self->pkt)) < 0)
+						{
+							// av_strerror(ret, errstr, 1000);
+							// mlt_log_error(NULL, "avcodec_send_packet() failed %s\n", errstr);
+						}
+						if ((ret = avcodec_receive_frame(codec_context, self->video_frame)) < 0) {
+							// av_strerror(ret, errstr, 1000);
+							// mlt_log_error(NULL, "avcodec_receive_frame() failed %s\n", errstr);
+						}
+					} while (ret == AVERROR(EAGAIN));
+
 					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "decoded packet with size %d => %d\n", self->pkt.size, ret );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
 					if ( ret < 0 )
@@ -1847,6 +1895,23 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 					{
+#ifdef USE_VAAPI
+						if (self->hw_device_ctx && self->video_frame->format == HW_PIX_FMT) {
+							ret = av_hwframe_transfer_data(self->sw_video_frame, self->video_frame, 0);
+							if(ret < 0) {
+								av_strerror(ret, errstr, 1000);
+								mlt_log_error(NULL, "av_hwframe_transfer_data() failed %s\n", errstr);
+								return -1;
+							}
+							av_frame_copy_props(self->sw_video_frame, self->video_frame);
+							self->sw_video_frame->width = self->video_frame->width;
+							self->sw_video_frame->height = self->video_frame->height;
+
+							av_frame_unref(self->video_frame);
+							av_frame_move_ref(self->video_frame, self->sw_video_frame);
+            }
+#endif
+						got_picture = 1;
 						decode_errors = 0;
 					}
 				}
@@ -1948,7 +2013,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 #endif
+#ifdef USE_VAAPI
+					yuv_colorspace = convert_image( self, self->video_frame, *buffer, self->video_frame->format,
+#else
 					yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_context->pix_fmt,
+#endif
 						format, *width, *height, &alpha );
 					mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 					self->top_field_first |= self->video_frame->top_field_first;
@@ -2017,7 +2086,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->video_expected = position + 1;
 
 exit_get_image:
-
+	if (self->video_frame)
+		av_frame_free(&self->video_frame);
+#ifdef USE_VAAPI
+	if (self->sw_video_frame)
+		av_frame_free(&self->sw_video_frame);
+#endif
 	pthread_mutex_unlock( &self->video_mutex );
 
 	// Set the progressive flag
@@ -2067,6 +2141,19 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	}
 }
 
+#ifdef USE_VAAPI
+static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
+																				const enum AVPixelFormat *pix_fmts)
+{
+	const enum AVPixelFormat *p;
+	for (p = pix_fmts; *p != -1; p++)
+		if (*p == HW_PIX_FMT)
+			return *p;
+	mlt_log_warning(NULL, "get_hw_format() failed\n");
+	return *pix_fmts;
+}
+#endif
+
 /** Initialize the video codec context.
  */
 
@@ -2107,7 +2194,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			}
 			if ( !self->vdpau )
 				codec = avcodec_find_decoder( codec_context->codec_id );
-		}
 #endif
 
 		// Initialise multi-threading
@@ -2116,7 +2202,33 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
 		if ( thread_count >= 0 )
 			codec_context->thread_count = thread_count;
+#ifdef USE_VAAPI
+		int found_hw_pix_fmt = 0;
+		for (int i = 0;; i++) {
+			const AVCodecHWConfig *config = avcodec_get_hw_config(codec, i);
+			if (!config) break;
 
+			if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
+				config->device_type == HW_DEVICE_TYPE && config->pix_fmt == HW_PIX_FMT) {
+				found_hw_pix_fmt = 1;
+				break;
+			}
+		}
+		if (found_hw_pix_fmt) {
+			if (self->hw_device_ctx)
+				av_buffer_unref(&self->hw_device_ctx);
+			int ret = av_hwdevice_ctx_create(&self->hw_device_ctx, HW_DEVICE_TYPE, "/dev/dri/renderD128", NULL, 0);
+			if (ret >= 0) {
+				codec_context->get_format = get_hw_format;
+				codec_context->hw_device_ctx = av_buffer_ref(self->hw_device_ctx);
+				mlt_log_warning(NULL, "av_hwdevice_ctx_create() success %d\n", codec_context->pix_fmt);
+			} else {
+				mlt_log_warning(NULL, "av_hwdevice_ctx_create() failed %d\n", ret);
+			}
+		} else {
+			mlt_log_warning(NULL, "failed to find hw_pix_fmt\n");
+		}
+#endif
 		// If we don't have a codec and we can't initialise it, we can't do much more...
 		pthread_mutex_lock( &self->open_mutex );
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
@@ -3034,8 +3146,17 @@ static void producer_avformat_close( producer_avformat self )
 
 	// Cleanup av contexts
 	av_free_packet( &self->pkt );
-	av_free( self->video_frame );
+	if (self->video_frame)
+		av_frame_free(&self->video_frame);
 	av_free( self->audio_frame );
+
+#ifdef USE_VAAPI
+	if (self->sw_video_frame)
+		av_frame_free(&self->sw_video_frame);
+	if (self->hw_device_ctx)
+		av_buffer_unref(&self->hw_device_ctx);
+#endif
+
 	if ( self->is_mutex_init )
 		pthread_mutex_lock( &self->open_mutex );
 	int i;
