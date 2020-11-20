@@ -938,7 +938,6 @@ static void prepare_reopen( producer_avformat self )
 	if ( self->video_codec )
 		avcodec_close( self->video_codec );
 	self->video_codec = NULL;
-
 	if ( self->seekable && self->audio_format )
 		avformat_close_input( &self->audio_format );
 	if ( self->video_format )
@@ -1946,7 +1945,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->video_expected = position + 1;
 
 exit_get_image:
-
 	pthread_mutex_unlock( &self->video_mutex );
 
 	// Set the progressive flag
@@ -2031,7 +2029,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			thread_count = atoi( getenv( "MLT_AVFORMAT_THREADS" ) );
 		if ( thread_count >= 0 )
 			codec_context->thread_count = thread_count;
-
 		// If we don't have a codec and we can't initialise it, we can't do much more...
 		pthread_mutex_lock( &self->open_mutex );
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
