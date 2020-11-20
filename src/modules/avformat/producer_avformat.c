@@ -153,6 +153,7 @@ typedef struct producer_avformat_s *producer_avformat;
 #ifdef USE_VAAPI
 #define HW_PIX_FMT AV_PIX_FMT_VAAPI
 #define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VAAPI
+#define HW_DEVICE "/dev/dri/renderD128"
 #endif
 
 // Forward references.
@@ -1865,7 +1866,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						av_frame_unref( self->video_frame );
 
 #ifdef USE_VAAPI
-					if (!self->sw_video_frame)
+					if ( !self->sw_video_frame )
 						self->sw_video_frame = av_frame_alloc();
 					else
 						av_frame_unref( self->sw_video_frame );
@@ -1883,7 +1884,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							// av_strerror( ret, errstr, 1000 );
 							// mlt_log_error( NULL, "avcodec_receive_frame() failed %s\n", errstr );
 						}
-					} while (ret == AVERROR( EAGAIN ));
+					} while ( ret == AVERROR( EAGAIN ) );
 
 					mlt_log_debug( MLT_PRODUCER_SERVICE(producer), "decoded packet with size %d => %d\n", self->pkt.size, ret );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
@@ -2225,7 +2226,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		{
 			if ( self->hw_device_ctx )
 				av_buffer_unref( &self->hw_device_ctx );
-			int ret = av_hwdevice_ctx_create( &self->hw_device_ctx, HW_DEVICE_TYPE, "/dev/dri/renderD128", NULL, 0 );
+			int ret = av_hwdevice_ctx_create( &self->hw_device_ctx, HW_DEVICE_TYPE, HW_DEVICE, NULL, 0 );
 			if ( ret >= 0 ) 
 			{
 				codec_context->get_format = get_hw_format;
@@ -3157,8 +3158,7 @@ static void producer_avformat_close( producer_avformat self )
 
 	// Cleanup av contexts
 	av_free_packet( &self->pkt );
-	if (self->video_frame)
-		av_frame_free(&self->video_frame);
+	av_frame_free(&self->video_frame);
 	av_free( self->audio_frame );
 
 #ifdef USE_VAAPI
