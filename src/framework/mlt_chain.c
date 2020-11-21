@@ -163,7 +163,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		}
 		// If a length has not been specified for this chain, copy in/out/length from the source producer
 		if ( !mlt_producer_get_length( MLT_CHAIN_PRODUCER(self) ) ) {
-			mlt_properties_set_int( MLT_CHAIN_PROPERTIES(self), "length", mlt_producer_get_length( base->source ) );
+			mlt_properties_set_position( MLT_CHAIN_PROPERTIES(self), "length", mlt_producer_get_length( base->source ) );
 			mlt_producer_set_in_and_out( MLT_CHAIN_PRODUCER(self), mlt_producer_get_in( base->source ), mlt_producer_get_out( base->source ) );
 		}
 		mlt_events_unblock( MLT_CHAIN_PROPERTIES(self), self );
@@ -174,8 +174,11 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		// Save the native source producer profile
 		mlt_profile_from_producer( base->source_profile, base->source );
 
-		// This chain will control the speed
+		// This chain will control the speed and in/out
 		mlt_producer_set_speed( base->source, 0.0 );
+		// Approximate infinite length
+		mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( base->source ), "length", 0x7fffffff );
+		mlt_producer_set_in_and_out( base->source, 0, mlt_producer_get_length( base->source ) - 1 );
 
 		// Reconfigure the chain
 		relink_chain( self );

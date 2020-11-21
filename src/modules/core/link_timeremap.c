@@ -27,9 +27,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void link_configure( mlt_link self, mlt_profile default_profile )
+static void link_configure( mlt_link self, mlt_profile chain_profile )
 {
-	mlt_service_set_profile( MLT_LINK_SERVICE( self ), default_profile );
+	// Timeremap must always work with the same profile as the chain so that
+	// animation, in and out will work.
+	mlt_service_set_profile( MLT_LINK_SERVICE( self ), chain_profile );
 }
 
 static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* format, int* frequency, int* channels, int* samples )
@@ -286,8 +288,11 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	}
 	else
 	{
-		source_time = mlt_properties_anim_get_double( properties, "map", position, length );
-		double next_source_time = mlt_properties_anim_get_double( properties, "map", position + 1, length );
+		// Assume that the user wants normal speed before the in point.
+		mlt_position in = mlt_producer_get_in( MLT_LINK_PRODUCER(self) );
+		double in_time = (double)in / link_fps;
+		source_time = mlt_properties_anim_get_double( properties, "map", position - in, length ) + in_time;
+		double next_source_time = mlt_properties_anim_get_double( properties, "map", position - in + 1, length ) + in_time;
 		source_duration = next_source_time - source_time;
 	}
 
@@ -303,7 +308,7 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	mlt_properties_set_double( unique_properties, "source_duration", source_duration );
 	mlt_properties_set_double( unique_properties, "source_speed", source_speed );
 
-	mlt_log_debug( MLT_LINK_SERVICE(self), "Get Frame: %f -> %f\t%d\n", source_fps, mlt_producer_get_fps( MLT_LINK_PRODUCER(self) ), position );
+	mlt_log_debug( MLT_LINK_SERVICE(self), "Get Frame: %f -> %f\t%d\t%d\n", source_fps, link_fps, position, mlt_producer_get_in( MLT_LINK_PRODUCER(self) ) );
 
 	// Get frames from the next link and pass them along with the new frame
 	int in_frame_count = 0;

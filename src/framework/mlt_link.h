@@ -68,7 +68,7 @@ struct mlt_link_s
 #define MLT_LINK_PROPERTIES( link )		MLT_SERVICE_PROPERTIES( MLT_LINK_SERVICE( link ) )
 
 extern mlt_link mlt_link_init( );
-extern int mlt_link_connect_next( mlt_link self, mlt_producer next, mlt_profile default_profile );
+extern int mlt_link_connect_next( mlt_link self, mlt_producer next, mlt_profile chain_profile );
 extern void mlt_link_close( mlt_link self );
 
 #endif

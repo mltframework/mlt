@@ -310,6 +310,11 @@ mlt_properties mlt_producer_properties( mlt_producer self )
 
 int mlt_producer_seek( mlt_producer self, mlt_position position )
 {
+	if ( self->seek )
+	{
+		return self->seek( self, position );
+	}
+
 	// Determine eof handling
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
 	char *eof = mlt_properties_get( properties, "eof" );
@@ -458,6 +463,11 @@ double mlt_producer_get_fps( mlt_producer self )
 
 int mlt_producer_set_in_and_out( mlt_producer self, mlt_position in, mlt_position out )
 {
+	if ( self->set_in_and_out )
+	{
+		return self->set_in_and_out( self, in, out );
+	}
+
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
 
 	// Correct ins and outs if necessary
