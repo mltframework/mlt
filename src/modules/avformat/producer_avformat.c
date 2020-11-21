@@ -1079,6 +1079,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 
 			// flush any pictures still in decode buffer
 			avcodec_flush_buffers( codec_context );
+			self->video_send_result = 0;
 
 			// Remove the cached info relating to the previous position
 			self->current_position = POSITION_INVALID;
