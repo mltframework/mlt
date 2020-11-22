@@ -95,7 +95,7 @@ struct producer_avformat_s
 	mlt_position nonseek_position;
 	atomic_int top_field_first;
 	uint8_t *audio_buffer[ MAX_AUDIO_STREAMS ];
-	size_t audio_buffer_size[ MAX_AUDIO_STREAMS ];
+	int audio_buffer_size[ MAX_AUDIO_STREAMS ];
 	uint8_t *decode_buffer[ MAX_AUDIO_STREAMS ];
 	int audio_used[ MAX_AUDIO_STREAMS ];
 	int audio_streams;
@@ -262,18 +262,20 @@ int list_components( char* file )
 static int first_video_index( producer_avformat self )
 {
 	AVFormatContext *context = self->video_format? self->video_format : self->audio_format;
-	int i = -1; // not found
+	int result = -1; // not found
 
 	if ( context ) {
+		unsigned int i;
 		for ( i = 0; i < context->nb_streams; i++ ) {
 			if ( context->streams[i]->codecpar &&
 				 context->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO )
 				break;
 		}
-		if ( i == context->nb_streams )
-			i = -1;
+		if ( i < context->nb_streams ) {
+			result = i;
+		}
 	}
-	return i;
+	return result;
 }
 
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56, 1, 0)
@@ -349,7 +351,7 @@ static char* filter_restricted( const char *in )
 
 static mlt_properties find_default_streams( producer_avformat self )
 {
-	int i;
+	unsigned int i;
 	char key[200];
 	AVDictionaryEntry *tag = NULL;
 	AVFormatContext *context = self->video_format;
@@ -373,7 +375,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 		AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
 		if ( ! codec ) continue;
 
-		snprintf( key, sizeof(key), "meta.media.%d.stream.type", i );
+		snprintf( key, sizeof(key), "meta.media.%u.stream.type", i );
 
 		// Determine the type and obtain the first index of each type
 		switch( codec_params->codec_type )
@@ -390,33 +392,33 @@ static mlt_properties find_default_streams( producer_avformat self )
 					self->video_index = i;
 				}
 				mlt_properties_set( meta_media, key, "video" );
-				snprintf( key, sizeof(key), "meta.media.%d.stream.frame_rate", i );
+				snprintf( key, sizeof(key), "meta.media.%u.stream.frame_rate", i );
 				double ffmpeg_fps = av_q2d( context->streams[ i ]->avg_frame_rate );
 				mlt_properties_set_double( meta_media, key, ffmpeg_fps );
 
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56, 1, 0)
 				const char *projection = get_projection(context->streams[i]);
 				if (projection) {
-					snprintf(key, sizeof(key), "meta.media.%d.stream.projection", i);
+					snprintf(key, sizeof(key), "meta.media.%u.stream.projection", i);
 					mlt_properties_set_string(meta_media, key, projection);
 				}
 #endif
-				snprintf( key, sizeof(key), "meta.media.%d.stream.sample_aspect_ratio", i );
+				snprintf( key, sizeof(key), "meta.media.%u.stream.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->sample_aspect_ratio ) );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.width", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.width", i );
 				mlt_properties_set_int( meta_media, key, codec_params->width );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.height", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.height", i );
 				mlt_properties_set_int( meta_media, key, codec_params->height );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.rotate", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.rotate", i );
 				mlt_properties_set_int( meta_media, key, get_rotation(context->streams[i]) );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.frame_rate", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.frame_rate", i );
 				AVRational frame_rate = { codec_context->time_base.den, codec_context->time_base.num * codec_context->ticks_per_frame };
 				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.pix_fmt", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.pix_fmt", i );
 				mlt_properties_set( meta_media, key, av_get_pix_fmt_name( codec_params->format ) );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_aspect_ratio", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.sample_aspect_ratio", i );
 				mlt_properties_set_double( meta_media, key, av_q2d( codec_params->sample_aspect_ratio ) );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.colorspace", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.colorspace", i );
 				switch ( codec_params->color_space )
 				{
 				case AVCOL_SPC_SMPTE240M:
@@ -436,7 +438,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 				}
 				if ( codec_params->color_trc && codec_params->color_trc != AVCOL_TRC_UNSPECIFIED )
 				{
-					snprintf( key, sizeof(key), "meta.media.%d.codec.color_trc", i );
+					snprintf( key, sizeof(key), "meta.media.%u.codec.color_trc", i );
 					mlt_properties_set_double( meta_media, key, codec_params->color_trc );
 				}
 				break;
@@ -448,29 +450,29 @@ static mlt_properties find_default_streams( producer_avformat self )
 					self->audio_index = i;
 
 				mlt_properties_set( meta_media, key, "audio" );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_fmt", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.sample_fmt", i );
 				mlt_properties_set( meta_media, key, av_get_sample_fmt_name( codec_params->format ) );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.sample_rate", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.sample_rate", i );
 				mlt_properties_set_int( meta_media, key, codec_params->sample_rate );
-				snprintf( key, sizeof(key), "meta.media.%d.codec.channels", i );
+				snprintf( key, sizeof(key), "meta.media.%u.codec.channels", i );
 				mlt_properties_set_int( meta_media, key, codec_params->channels );
 				break;
 			default:
 				break;
 		}
-// 		snprintf( key, sizeof(key), "meta.media.%d.stream.time_base", i );
+// 		snprintf( key, sizeof(key), "meta.media.%u.stream.time_base", i );
 // 		mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->time_base ) );
-		snprintf( key, sizeof(key), "meta.media.%d.codec.name", i );
+		snprintf( key, sizeof(key), "meta.media.%u.codec.name", i );
 		mlt_properties_set( meta_media, key, codec->name );
-		snprintf( key, sizeof(key), "meta.media.%d.codec.long_name", i );
+		snprintf( key, sizeof(key), "meta.media.%u.codec.long_name", i );
 		mlt_properties_set( meta_media, key, codec->long_name );
-		snprintf( key, sizeof(key), "meta.media.%d.codec.bit_rate", i );
+		snprintf( key, sizeof(key), "meta.media.%u.codec.bit_rate", i );
 		mlt_properties_set_int64( meta_media, key, codec_params->bit_rate );
-// 		snprintf( key, sizeof(key), "meta.media.%d.codec.time_base", i );
+// 		snprintf( key, sizeof(key), "meta.media.%u.codec.time_base", i );
 // 		mlt_properties_set_double( meta_media, key, av_q2d( codec_context->time_base ) );
-//		snprintf( key, sizeof(key), "meta.media.%d.codec.profile", i );
+//		snprintf( key, sizeof(key), "meta.media.%u.codec.profile", i );
 //		mlt_properties_set_int( meta_media, key, codec_context->profile );
-//		snprintf( key, sizeof(key), "meta.media.%d.codec.level", i );
+//		snprintf( key, sizeof(key), "meta.media.%u.codec.level", i );
 //		mlt_properties_set_int( meta_media, key, codec_context->level );
 
 		// Read Metadata
@@ -478,7 +480,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 		{
 			if ( tag->value && strcmp( tag->value, "" ) && strcmp( tag->value, "und" ) )
 			{
-				snprintf( key, sizeof(key), "meta.attr.%d.stream.%s.markup", i, tag->key );
+				snprintf( key, sizeof(key), "meta.attr.%u.stream.%s.markup", i, tag->key );
 				char* value = filter_restricted( tag->value );
 				mlt_properties_set( meta_media, key, value );
 				free( value );
@@ -2869,6 +2871,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	// Get the codec(s)
 	if ( context && index == INT_MAX )
 	{
+		unsigned int index;
 		mlt_properties_set_int( frame_properties, "audio_frequency", self->max_frequency );
 		mlt_properties_set_int( frame_properties, "audio_channels", self->total_channels );
 		for ( index = 0; index < context->nb_streams && index < MAX_AUDIO_STREAMS; index++ )
