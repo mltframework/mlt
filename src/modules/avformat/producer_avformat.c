@@ -214,29 +214,35 @@ int list_components( char* file )
 	if ( file && strstr( file, "f-list" ) )
 	{
 		fprintf( stderr, "---\nformats:\n" );
-		AVInputFormat *format = NULL;
-		while ( ( format = av_iformat_next( format ) ) )
+		void *state = NULL;
+		const AVInputFormat *format = NULL;
+		while ((format = av_demuxer_iterate(&state))) {
 			fprintf( stderr, "  - %s\n", format->name );
+		}
 		fprintf( stderr, "...\n" );
 		skip = 1;
 	}
 	if ( file && strstr( file, "acodec-list" ) )
 	{
 		fprintf( stderr, "---\naudio_codecs:\n" );
-		AVCodec *codec = NULL;
-		while ( ( codec = av_codec_next( codec ) ) )
+		void *state = NULL;
+		const AVCodec *codec = NULL;
+		while ((codec = av_codec_iterate(&state))) {
 			if ( codec->decode && codec->type == AVMEDIA_TYPE_AUDIO )
 				fprintf( stderr, "  - %s\n", codec->name );
+		}
 		fprintf( stderr, "...\n" );
 		skip = 1;
 	}
 	if ( file && strstr( file, "vcodec-list" ) )
 	{
 		fprintf( stderr, "---\nvideo_codecs:\n" );
-		AVCodec *codec = NULL;
-		while ( ( codec = av_codec_next( codec ) ) )
+		void *state = NULL;
+		const AVCodec *codec = NULL;
+		while ((codec = av_codec_iterate(&state))) {
 			if ( codec->decode && codec->type == AVMEDIA_TYPE_VIDEO )
 				fprintf( stderr, "  - %s\n", codec->name );
+		}
 		fprintf( stderr, "...\n" );
 		skip = 1;
 	}
