@@ -1725,20 +1725,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				if ( mlt_deque_count( self->vpackets ) )
 				{
 					AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->vpackets );
-					self->pkt = *tmp;
-					free( tmp );
+					av_packet_ref(&self->pkt, tmp);
+					av_packet_free(&tmp);
 				}
 				else
 				{
 					int ret = av_read_frame( context, &self->pkt );
 					if ( ret >= 0 && !self->video_seekable && self->pkt.stream_index == self->audio_index )
 					{
-						if ( !av_dup_packet( &self->pkt ) )
-						{
-							AVPacket *tmp = malloc( sizeof(AVPacket) );
-							*tmp = self->pkt;
-							mlt_deque_push_back( self->apackets, tmp );
-						}
+						mlt_deque_push_back(self->apackets, av_packet_clone(&self->pkt));
 					}
 					else if ( ret < 0 )
 					{
@@ -1829,7 +1824,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				{
 					// Get position of reordered frame
 					int_position = self->video_frame->reordered_opaque;
-					pts = best_pts( self, self->video_frame->pkt_pts, self->video_frame->pkt_dts );
+					pts = best_pts( self, self->video_frame->pts, self->video_frame->pkt_dts );
 					if ( pts != AV_NOPTS_VALUE )
 					{
 						// Some streams are not marking their key frames even though
@@ -2605,20 +2600,15 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			if ( mlt_deque_count( self->apackets ) )
 			{
 				AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->apackets );
-				pkt = *tmp;
-				free( tmp );
+				av_packet_ref(&pkt, tmp);
+				av_packet_free(&tmp);
 			}
 			else
 			{
 				ret = av_read_frame( context, &pkt );
 				if ( ret >= 0 && !self->seekable && pkt.stream_index == self->video_index )
 				{
-					if ( !av_dup_packet( &pkt ) )
-					{
-						AVPacket *tmp = malloc( sizeof(AVPacket) );
-						*tmp = pkt;
-						mlt_deque_push_back( self->vpackets, tmp );
-					}
+					mlt_deque_push_back(self->vpackets, av_packet_clone(&pkt));
 				}
 				else if ( ret < 0 )
 				{
