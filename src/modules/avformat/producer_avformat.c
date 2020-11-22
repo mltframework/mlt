@@ -17,6 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#if !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L
+#  undef _POSIX_C_SOURCE
+#  define _POSIX_C_SOURCE 200809L
+#endif
+#if !defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 500
+#  undef _XOPEN_SOURCE
+#  define _XOPEN_SOURCE 500
+#endif
+
 #include "common.h"
 
 // MLT Header files
