@@ -282,7 +282,7 @@ static int first_video_index( producer_avformat self )
 
 static const char* get_projection(AVStream *st)
 {
-	const AVSphericalMapping *spherical = av_stream_get_side_data(st, AV_PKT_DATA_SPHERICAL, NULL);
+	const AVSphericalMapping *spherical = (const AVSphericalMapping*) av_stream_get_side_data(st, AV_PKT_DATA_SPHERICAL, NULL);
 
 	if (spherical)
 		return av_spherical_projection_name(spherical->projection);
@@ -1570,6 +1570,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	int got_picture = 0;
 	int image_size = 0;
 
+	mlt_log_timings_begin();
+
 	// Fetch the video format context
 	AVFormatContext *context = self->video_format;
 	if ( !context )
@@ -1580,8 +1582,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
-
-	mlt_log_timings_begin();
 
 	// Always use the image cache for album art.
 	int is_album_art = (codec_context->codec_id == AV_CODEC_ID_MJPEG
@@ -2892,6 +2892,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	// Access the private data
+	(void) index; // unused
 	mlt_service service = MLT_PRODUCER_SERVICE( producer );
 	mlt_cache_item cache_item = mlt_service_cache_get( service, "producer_avformat" );
 	producer_avformat self = mlt_cache_item_data( cache_item, NULL );
