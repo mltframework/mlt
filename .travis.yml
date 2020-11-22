@@ -10,7 +10,7 @@ matrix:
         - docker build -t mltframework/melt:latest .
       after_success:
         - test "$TRAVIS_REPO_SLUG" = "mltframework/mlt" -a $TRAVIS_PULL_REQUEST == "false" -a $TRAVIS_BRANCH == "master" && echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - test "$TRAVIS_REPO_SLUG" = "mltframework/mlt" -a $TRAVIS_PULL_REQUEST == "false" -a $TRAVIS_BRANCH == "master" && docker push mltframework/melt
+        - test "$TRAVIS_REPO_SLUG" = "mltframework/mlt" -a $TRAVIS_PULL_REQUEST == "false" -a $TRAVIS_BRANCH == "master" && docker push mltframework/melt || true
     - language: python
       python: 3.7
       dist: xenial  # required for Python >= 3.7 (travis-ci/travis-ci#9069)
