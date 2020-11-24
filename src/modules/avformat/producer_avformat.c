@@ -2065,18 +2065,6 @@ static void apply_properties( void *obj, mlt_properties properties, int flags )
 	}
 }
 
-#if USE_HWACCEL
-static enum AVPixelFormat get_hw_format( AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts )
-{
-	const enum AVPixelFormat *p;
-	for (p = pix_fmts; *p != -1; p++)
-		if (*p == AV_PIX_FMT_VAAPI) // TODO: this should reference `producer_avformat::hw_pix_fmt` somehow
-			return *p;
-	mlt_log_warning(NULL, "get_hw_format() failed\n");
-	return *pix_fmts;
-}
-#endif
-
 /** Initialize the video codec context.
  */
 
@@ -2134,7 +2122,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			int ret = av_hwdevice_ctx_create( &self->hw_device_ctx, self->hw_device_type, self->hw_device, NULL, 0 );
 			if ( ret >= 0 )
 			{
-				codec_context->get_format = get_hw_format;
 				codec_context->hw_device_ctx = av_buffer_ref( self->hw_device_ctx );
 				mlt_log_warning( MLT_PRODUCER_SERVICE( self->parent ), "av_hwdevice_ctx_create() success %d\n", codec_context->pix_fmt );
 			} 
