@@ -129,6 +129,12 @@ struct producer_avformat_s
 };
 typedef struct producer_avformat_s *producer_avformat;
 
+#ifdef USE_VAAPI
+#define HW_PIX_FMT AV_PIX_FMT_VAAPI
+#define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VAAPI
+#define HW_DEVICE "/dev/dri/renderD128"
+#endif
+
 // Forward references.
 static int list_components( char* file );
 static int producer_open( producer_avformat self, mlt_profile profile, const char *URL, int take_lock, int test_open );
@@ -613,6 +619,10 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 #if defined(FFUDIV)
 	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return AV_PIX_FMT_RGB24;
+#endif
+#ifdef USE_VAAPI
+	case AV_PIX_FMT_VAAPI:
+		return AV_PIX_FMT_YUV420P;
 #endif
 	default:
 		return AV_PIX_FMT_YUV422P;
@@ -1878,6 +1888,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					int yuv_colorspace;
 					yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_params->format,
 						format, *width, *height, &alpha );
+#endif
 					mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
 					self->top_field_first |= self->video_frame->top_field_first;
 					self->top_field_first |= codec_params->field_order == AV_FIELD_TT;
@@ -2945,6 +2956,7 @@ static void producer_avformat_close( producer_avformat self )
 	av_packet_unref( &self->pkt );
 	av_free( self->video_frame );
 	av_free( self->audio_frame );
+
 	if ( self->is_mutex_init )
 		pthread_mutex_lock( &self->open_mutex );
 	int i;

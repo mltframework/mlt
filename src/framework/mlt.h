@@ -60,6 +60,8 @@ extern "C"
 #include "mlt_version.h"
 #include "mlt_slices.h"
 
+#define USE_VAAPI 0
+
 #ifdef __cplusplus
 }
 #endif
