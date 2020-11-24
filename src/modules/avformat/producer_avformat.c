@@ -2136,16 +2136,16 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			{
 				codec_context->get_format = get_hw_format;
 				codec_context->hw_device_ctx = av_buffer_ref( self->hw_device_ctx );
-				mlt_log_warning( MLT_PRODUCER_SERVICE( self ), "av_hwdevice_ctx_create() success %d\n", codec_context->pix_fmt );
+				mlt_log_warning( MLT_PRODUCER_SERVICE( self->parent ), "av_hwdevice_ctx_create() success %d\n", codec_context->pix_fmt );
 			} 
 			else 
 			{
-				mlt_log_warning( MLT_PRODUCER_SERVICE( self ), "av_hwdevice_ctx_create() failed %d\n", ret );
+				mlt_log_warning( MLT_PRODUCER_SERVICE( self->parent ), "av_hwdevice_ctx_create() failed %d\n", ret );
 			}
 		} 
 		else 
 		{
-			mlt_log_warning( MLT_PRODUCER_SERVICE( self ), "failed to find hw_pix_fmt\n" );
+			mlt_log_warning( MLT_PRODUCER_SERVICE( self->parent ), "failed to find hw_pix_fmt\n" );
 		}
 #endif
 		// If we don't have a codec and we can't initialise it, we can't do much more...
