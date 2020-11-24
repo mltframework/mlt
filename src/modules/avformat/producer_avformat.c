@@ -52,7 +52,6 @@
 #define USE_HWACCEL 1
 #if USE_HWACCEL
 #include <libavutil/hwcontext.h>
-#include <libavutil/pixfmt.h>
 #include <libavcodec/packet.h>
 #endif
 
@@ -134,8 +133,8 @@ struct producer_avformat_s
 	int is_audio_synchronizing;
 	int video_send_result;
 #if USE_HWACCEL
-	AVPixelFormat hw_pix_fmt;
-	AVHWDeviceType hw_device_type;
+	int hw_pix_fmt;
+	int hw_device_type;
 	char hw_device[128];
 	AVBufferRef* hw_device_ctx;
 	AVFrame* sw_video_frame;
@@ -846,7 +845,8 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 			// TODO: switch case by query string
 			self->hw_pix_fmt = AV_PIX_FMT_VAAPI;
 			self->hw_device_type = AV_HWDEVICE_TYPE_VAAPI;
-			strcpy(self->hw_device, "/dev/dri/renderD128");
+			char *device = "/dev/dri/renderD128";
+			memcpy(self->hw_device, device, strlen(device));
 #endif
 
 			if ( !self->audio_format )
@@ -2024,7 +2024,7 @@ exit_get_image:
 				(codec_params->field_order == AV_FIELD_PROGRESSIVE ||
 				 codec_params->field_order == AV_FIELD_UNKNOWN) );
 	}
-	av_frame_unref(self->video_frame);
+	av_frame_unref( self->video_frame );
 #if USE_HWACCEL
 	av_frame_unref( self->sw_video_frame );
 #endif
@@ -2123,7 +2123,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			if ( ret >= 0 )
 			{
 				codec_context->hw_device_ctx = av_buffer_ref( self->hw_device_ctx );
-				mlt_log_warning( MLT_PRODUCER_SERVICE( self->parent ), "av_hwdevice_ctx_create() success %d\n", codec_context->pix_fmt );
+				mlt_log_info( MLT_PRODUCER_SERVICE( self->parent ), "av_hwdevice_ctx_create() success %d\n", codec_context->pix_fmt );
 			} 
 			else 
 			{
@@ -3045,7 +3045,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 static void producer_avformat_close( producer_avformat self )
 {
-	mlt_log_debug( MLT_PRODUCER_SERVICE( self ), "producer_avformat_close\n" );
+	mlt_log_debug( NULL, "producer_avformat_close\n" );
 
 	// Cleanup av contexts
 	av_packet_unref( &self->pkt );
