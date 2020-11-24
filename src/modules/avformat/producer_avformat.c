@@ -1579,15 +1579,16 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Fetch the video format context
 	AVFormatContext *context = self->video_format;
+	AVCodecParameters *codec_params = NULL;
 	if ( !context )
 		goto exit_get_image;
 
 	// Get the video stream
 	AVStream *stream = context->streams[ self->video_index ];
+	codec_params = stream->codecpar;
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
-	AVCodecParameters *codec_params = stream->codecpar;
 
 	// Always use the image cache for album art.
 	int is_album_art = (codec_params->codec_id == AV_CODEC_ID_MJPEG
@@ -1951,12 +1952,13 @@ exit_get_image:
 	// Set the progressive flag
 	if ( mlt_properties_get( properties, "force_progressive" ) ) {
 		mlt_properties_set_int( frame_properties, "progressive", !!mlt_properties_get_int( properties, "force_progressive" ) );
-	} else if ( self->video_frame ) {
+	} else if ( self->video_frame && codec_params ) {
 		mlt_properties_set_int( frame_properties, "progressive",
 			!self->video_frame->interlaced_frame &&
 				(codec_params->field_order == AV_FIELD_PROGRESSIVE ||
 				 codec_params->field_order == AV_FIELD_UNKNOWN) );
 	}
+	av_frame_unref(self->video_frame);
 
 	// Set the field order property for this frame
 	if ( mlt_properties_get( properties, "force_tff" ) )
