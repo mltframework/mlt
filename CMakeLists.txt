@@ -57,6 +57,7 @@ set(modules
     src/modules/resample
     src/modules/rubberband
     src/modules/rtaudio
+    src/modules/sdl
     src/modules/sdl2
     src/modules/sox
     src/modules/vid.stab
