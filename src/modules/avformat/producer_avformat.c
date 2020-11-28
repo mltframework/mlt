@@ -547,10 +547,12 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 		++url;
 		mlt_log_debug( NULL, "%s: protocol=%s resource=%s\n", __FUNCTION__, protocol, url );
 
+		int isFileProtocol = !!strcmp( protocol, "file" );
 		// Lookup the format
-		// *format = av_find_input_format( protocol );
+		if ( !isFileProtocol )
+			*format = av_find_input_format( protocol );
 
-		// if ( *format )
+		if ( *format || isFileProtocol )
 		{
 			// Eat the format designator
 			char *result = url;
@@ -561,7 +563,12 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 
 			// Parse out params
 			char* query = strchr( url, '?' );
-			url = (query && query > url && query[-1] != '\\')? query : NULL;
+			while ( isFileProtocol && query && query > url && query[-1] == '\\' )
+			{
+				// ignore escaped question marks
+				query = strchr(query, '?');
+			}
+			url = ( query && query > url && query[-1] != '\\' ) ? query : NULL;
 			while ( url )
 			{
 				url[0] = 0;
