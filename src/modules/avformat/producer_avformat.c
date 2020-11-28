@@ -1786,8 +1786,14 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else if ( ret < 0 )
 					{
-						if ( ret != AVERROR_EOF )
+						if ( ret == AVERROR_EOF ) 
+						{
+							pthread_mutex_unlock( &self->packets_mutex );
+							break;
+						} else 
+						{
 							mlt_log_verbose( MLT_PRODUCER_SERVICE( producer ), "av_read_frame returned error %d inside get_image\n", ret );
+						}
 						if ( !self->video_seekable && mlt_properties_get_int( properties, "reconnect" ) )
 						{
 							// Try to reconnect to live sources by closing context and codecs,
