@@ -2941,7 +2941,8 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	{
 		pthread_mutex_lock( &self->open_mutex );
 		unsigned i = 0;
-		for (i = 0; i < context->nb_streams; i++) {
+		int index_max = FFMIN( MAX_AUDIO_STREAMS, context->nb_streams );
+		for (i = 0; i < index_max; i++) {
 			if (self->audio_codec[i]) {
 				avcodec_close(self->audio_codec[i]);
 				self->audio_codec[i] = NULL;
