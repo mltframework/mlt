@@ -16,6 +16,7 @@ set(mltplus_src
     filter_spot_remover.c
     filter_text.c
     filter_timer.c
+    filter_strobe.c
     producer_blipflash.c
     producer_count.c
     transition_affine.c)
