@@ -826,7 +826,6 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 	AVDictionary *params = NULL;
 	char *filename = parse_url( profile, URL, &format, &params );
 
-	mlt_log_warning(NULL, "filename=%s\n", filename);
 	// Now attempt to open the file or device with filename
 	error = avformat_open_input( &self->video_format, filename, format, &params ) < 0;
 	if ( error )
