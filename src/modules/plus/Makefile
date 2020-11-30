@@ -24,6 +24,7 @@ OBJS = consumer_blipflash.o \
 	   filter_spot_remover.o \
 	   filter_text.o \
 	   filter_timer.o \
+	   filter_strobe.o \
 	   producer_blipflash.o \
 	   producer_count.o \
 	   transition_affine.o
