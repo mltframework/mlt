@@ -547,12 +547,12 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 		++url;
 		mlt_log_debug( NULL, "%s: protocol=%s resource=%s\n", __FUNCTION__, protocol, url );
 
-		int isFileProtocol = !!strcmp( protocol, "file" );
-		// Lookup the format
-		if ( !isFileProtocol )
-			*format = av_find_input_format( protocol );
+		int isFsProtocol = !strcmp( protocol, "fs" );
 
-		if ( *format || isFileProtocol )
+		// Lookup the format
+		*format = av_find_input_format( protocol );
+
+		if ( *format || isFsProtocol )
 		{
 			// Eat the format designator
 			char *result = url;
@@ -563,10 +563,10 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 
 			// Parse out params
 			char* query = strchr( url, '?' );
-			while ( isFileProtocol && query && query > url && query[-1] == '\\' )
+			while ( isFsProtocol && query && query > url && query[-1] == '\\' )
 			{
 				// ignore escaped question marks
-				query = strchr(query, '?');
+				query = strchr( query + 1, '?' );
 			}
 			url = ( query && query > url && query[-1] != '\\' ) ? query : NULL;
 			while ( url )
@@ -614,6 +614,17 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 			free( height );
 			result = strdup(result);
 			free( protocol );
+			if (isFsProtocol) {
+				// remove escape backslashes
+				int reader = 0, writer = 0;
+				while (result[reader])
+				{
+					if (result[reader] != '\\') 
+						result[writer++] = result[reader];
+					reader++;
+				}
+				result[writer] = '\0';
+			}
 			return result;
 		}
 	}
@@ -815,6 +826,7 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 	AVDictionary *params = NULL;
 	char *filename = parse_url( profile, URL, &format, &params );
 
+	mlt_log_warning(NULL, "filename=%s\n", filename);
 	// Now attempt to open the file or device with filename
 	error = avformat_open_input( &self->video_format, filename, format, &params ) < 0;
 	if ( error )
