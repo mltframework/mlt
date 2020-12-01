@@ -647,6 +647,7 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 #endif
 #if USE_HWACCEL
 	case AV_PIX_FMT_VAAPI:
+	case AV_PIX_FMT_CUDA:
 		return AV_PIX_FMT_YUV420P;
 #endif
 	default:
@@ -861,11 +862,18 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 			AVDictionaryEntry *hwaccel = av_dict_get( params, "hwaccel", NULL, 0 );
 			if ( hwaccel && hwaccel->value ) 
 			{
-				if ( !strcmp( hwaccel->value, "vaapi" ) ) 
+				if ( !strcmp( hwaccel->value, "vaapi" ) )
 				{
-			self->hw_pix_fmt = AV_PIX_FMT_VAAPI;
-			self->hw_device_type = AV_HWDEVICE_TYPE_VAAPI;
-			char *device = "/dev/dri/renderD128";
+					self->hw_pix_fmt = AV_PIX_FMT_VAAPI;
+					self->hw_device_type = AV_HWDEVICE_TYPE_VAAPI;
+					char *device = "/dev/dri/renderD128";
+					memcpy( self->hw_device, device, strlen( device ) );
+				}
+				else if ( !strcmp( hwaccel->value, "cuda" ) )
+				{
+					self->hw_pix_fmt = AV_PIX_FMT_CUDA;
+					self->hw_device_type = AV_HWDEVICE_TYPE_CUDA;
+					char *device = "0";
 					memcpy( self->hw_device, device, strlen( device ) );
 				}
 				else
