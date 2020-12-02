@@ -52,7 +52,6 @@
 #define USE_HWACCEL 1
 #if USE_HWACCEL
 #include <libavutil/hwcontext.h>
-#include <libavcodec/packet.h>
 #endif
 
 #ifdef AVFILTER
