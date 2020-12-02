@@ -866,14 +866,16 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 				{
 					self->hw_pix_fmt = AV_PIX_FMT_VAAPI;
 					self->hw_device_type = AV_HWDEVICE_TYPE_VAAPI;
-					char *device = "/dev/dri/renderD128";
+					hwaccel = av_dict_get( params, "hwaccel_device", NULL, 0 );
+					char *device = hwaccel && hwaccel->value ? hwaccel->value : "/dev/dri/renderD128";
 					memcpy( self->hw_device, device, strlen( device ) );
 				}
 				else if ( !strcmp( hwaccel->value, "cuda" ) )
 				{
 					self->hw_pix_fmt = AV_PIX_FMT_CUDA;
 					self->hw_device_type = AV_HWDEVICE_TYPE_CUDA;
-					char *device = "0";
+					hwaccel = av_dict_get( params, "hwaccel_device", NULL, 0 );
+					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
 					memcpy( self->hw_device, device, strlen( device ) );
 				}
 				else
