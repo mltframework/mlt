@@ -74,12 +74,37 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 	}
 	else
 	{
-		int sample_count = mlt_sample_calculator( link_fps, *frequency, mlt_frame_get_position( frame ) );
-		sample_count = lrint( (double)sample_count * source_speed );
-		mlt_position in_frame_pos = floor( source_time * source_fps );
-
 		// Calculate the samples to get from the input frames
-		int64_t first_out_sample = source_time * (double)*frequency;
+		int link_sample_count = mlt_sample_calculator( link_fps, *frequency, mlt_frame_get_position( frame ) );
+		int sample_count = lrint( (double)link_sample_count * source_speed );
+		mlt_position in_frame_pos = floor( source_time * source_fps );
+		int64_t first_out_sample = llrint(source_time * (double)*frequency);
+
+		// Attempt to maintain sample continuity with the previous frame
+		static const int64_t SAMPLE_CONTINUITY_ERROR_MARGIN = 4;
+		int64_t continuity_sample = mlt_properties_get_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample" );
+		int64_t continuity_delta = continuity_sample - first_out_sample;
+		if ( source_duration > 0.0 && continuity_delta != 0 )
+		{
+			// Forward: Continue from where the previous frame left off if within the margin of error
+			if ( continuity_delta > -SAMPLE_CONTINUITY_ERROR_MARGIN && continuity_delta < SAMPLE_CONTINUITY_ERROR_MARGIN )
+			{
+				sample_count = sample_count - continuity_delta;
+				first_out_sample = continuity_sample;
+				mlt_log_debug( MLT_LINK_SERVICE(self), "Maintain Forward Continuity: %d\n", (int)continuity_delta );
+			}
+		}
+		else if ( source_duration < 0.0 && continuity_delta != sample_count )
+		{
+			// Reverse: End where the previous frame left off if within the margin of error
+			continuity_delta -= sample_count;
+			if ( continuity_delta > -SAMPLE_CONTINUITY_ERROR_MARGIN && continuity_delta < SAMPLE_CONTINUITY_ERROR_MARGIN )
+			{
+				sample_count = sample_count + continuity_delta;
+				mlt_log_debug( MLT_LINK_SERVICE(self), "Maintain Reverse Continuity: %d\n", (int)continuity_delta );
+			}
+		}
+
 		int64_t first_in_sample = mlt_sample_calculator_to_now( source_fps, *frequency, in_frame_pos );
 		int samples_to_skip = first_out_sample - first_in_sample;
 		if ( samples_to_skip < 0 )
@@ -147,9 +172,14 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 		{
 			// Going backwards
 			mlt_audio_reverse( &out );
+			mlt_properties_set_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample", first_out_sample );
+		}
+		else
+		{
+			mlt_properties_set_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample", first_out_sample + sample_count );
 		}
 
-		out.frequency = lrint( (double)out.frequency * source_speed );
+		out.frequency = lrint( (double)out.frequency * (double)sample_count / (double)link_sample_count );
 		mlt_frame_set_audio( frame, out.data, out.format, 0, out.release_data );
 		mlt_audio_get_values( &out, audio, frequency, format, samples, channels );
 		return 0;
