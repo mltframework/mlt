@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(MLT)
-set(MLT_VERSION 6.23.0)
+set(MLT_VERSION 6.24.0)
 find_package(PkgConfig REQUIRED)
 include(GNUInstallDirs)
 option(GPL "Enable GPLv2 modules" ON)

@@ -1,6 +1,47 @@
 MLT Release Notes
 -----------------
 
+Version 6.24.0
+
+This version is mostly fixes plus a few new filters.
+
+Framework
+  * Trigger a `property-changed` event on `mlt_properties_pass_list`.
+  * Fixed using a video transition with a video clip on an audio track.
+  * Reduce the amount of service caching to 2X #tracks to reduce memory usage.
+
+Modules
+  * Added the `pillar_echo` filter to the plus module.
+  * Added a `qtcrop` filter to the qt module.
+  * Added `html`, `resource`, `overflow-y`, and `_hide` properties to the `qtext` filter for rich text.
+  * Added the filter `choppy` to the core module.
+  * Added slice threading to the `brightness` filter.
+  * Fixed compiling with OpenCV 4.
+  * Fixed the colors when using `mlt_image_format=rgb24a` with `avformat` consumer.
+  * Fixed using WebVfx in a Docker container.
+  * Fixed a possible crash in the `timewarp` producer on sources with non-integer frame rates.
+  * Fixed a regression in version 6.22 with multiple affine filters at the same time.
+  * Fixed possible abort or deadlock on recursive pthread mutexes in `avformat` producer.
+  * Fixed a crash in `crop` filter with large `center_bias` value when `use_profile` is 1.
+  * Fixed a white video frame appearing on threaded rendering in `freeze` filter.
+  * Fixed MLT XML DRD to permit empty playlists, which may occur on empty tracks in a multitrack.
+  * Fixed initializing QApplication in the `qimage` producer.
+  * Fixed interpolation when scaling with the `affine` rect and geomety properties.
+  * Fixed high memory usage with high factors of pitch shifting in the `rbpitch` filter.
+  * Fixed a crash on files with more than 32 streams in the `avformat` producer.
+
+Other
+  * Fixed CMake build on MSYS2 and Windows Craft.
+  * Added the Python binding to the CMake build.
+  * Added the `sdl` (v1) module to the CMake build.
+  * Removed minrate and maxrate from the `webm` avformat consumer preset.
+
+
+Version 6.22.1 - July 30, 2020
+
+This patch version only fixes the version reported in the CMake build.
+
+
 Version 6.22.0 - July 30, 2020
 
 This version fixes bugs associated with the preview scaling introduced in the
