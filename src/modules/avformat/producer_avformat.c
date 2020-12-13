@@ -442,9 +442,13 @@ static mlt_properties find_default_streams( producer_avformat self )
 				case AVCOL_SPC_BT709:
 					mlt_properties_set_int( meta_media, key, 709 );
 					break;
-				default:
+				case AVCOL_SPC_UNSPECIFIED:
+				case AVCOL_SPC_RESERVED:
 					// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
 					mlt_properties_set_int( meta_media, key, codec_context->width * codec_context->height > 750000 ? 709 : 601 );
+					break;
+				default:
+					mlt_properties_set_int( meta_media, key, codec_context->colorspace );
 					break;
 				}
 				if ( codec_context->color_trc && codec_context->color_trc != 2 )
