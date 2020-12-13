@@ -1635,12 +1635,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get the producer properties
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	pthread_mutex_lock( &self->video_mutex );
-
 	uint8_t *alpha = NULL;
 	int got_picture = 0;
 	int image_size = 0;
 
+	pthread_mutex_lock( &self->video_mutex );
+	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_log_timings_begin();
 
 	// Fetch the video format context
@@ -1825,8 +1825,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						{
 							// Try to reconnect to live sources by closing context and codecs,
 							// and letting next call to get_frame() reopen.
+							mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 							prepare_reopen( self );
-							pthread_mutex_unlock( &self->packets_mutex );
 							goto exit_get_image;
 						}
 						if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
@@ -1907,6 +1907,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 								if( transfer_data_result < 0 ) 
 								{
 									mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "av_hwframe_transfer_data() failed %d\n", transfer_data_result );
+									mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
 									return -1;
 								}
 								av_frame_copy_props( self->sw_video_frame, self->video_frame );
@@ -2076,7 +2077,6 @@ exit_get_image:
 		mlt_properties_set_int( frame_properties, "top_field_first", self->top_field_first );
 
 	// Set immutable properties of the selected track's (or overridden) source attributes.
-	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
