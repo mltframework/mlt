@@ -133,10 +133,10 @@ static void motion_interpolate( uint8_t *first_image, uint8_t *second_image, uin
 				else
 				{
 					if( scaled_dx %2 == 0 )
-						// FIXME: may exceed boundies
+						// FIXME: may exceed boundaries
 						r[1] =  ( 1.0 - scale ) * ( (double)(*(f-1) + (double)f[3]) / 2.0 ) + scale * (double) s[1];
 					else
-						// FIXME: may exceed boundies
+						// FIXME: may exceed boundaries
 						*(r-1) =  ( 1.0 - scale ) * ( (double)(*(f-1) + (double)f[3]) / 2.0 ) + scale * (double) s[1];
 				}
 //			 }
