@@ -80,10 +80,9 @@ struct mlt_producer_s
 	 */
 	int ( *get_frame )( mlt_producer, mlt_frame_ptr, int );
 
-	/** Seek to s specified position (virtual function).
+	/** Seek to a specified position (virtual function).
 	 *
 	 * \param mlt_producer a producer
-	 * \param mlt_position a frame pointer by reference
 	 * \param position set the "play head" position of the producer
 	 * \return false
 	 */
