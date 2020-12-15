@@ -613,7 +613,7 @@ MLTPP_6.22.0 {
     };
 } MLTPP_6.20.0;
 
-MLTPP_6.24.0 {
+MLTPP_6.26.0 {
   global:
     extern "C++" {
       "Mlt::Link::Link()";
