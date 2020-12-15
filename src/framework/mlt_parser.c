@@ -103,6 +103,27 @@ static int on_end_transition( mlt_parser self, mlt_transition object )
 	return 0;
 }
 
+
+static int on_start_chain( mlt_parser self, mlt_chain object )
+{
+	return 0;
+}
+
+static int on_end_chain( mlt_parser self, mlt_chain object )
+{
+	return 0;
+}
+
+static int on_start_link( mlt_parser self, mlt_link object )
+{
+	return 0;
+}
+
+static int on_end_link( mlt_parser self, mlt_link object )
+{
+	return 0;
+}
+
 mlt_parser mlt_parser_new( )
 {
 	mlt_parser self = calloc( 1, sizeof( struct mlt_parser_s ) );
@@ -124,6 +145,10 @@ mlt_parser mlt_parser_new( )
 		self->on_end_filter = on_end_filter;
 		self->on_start_transition = on_start_transition;
 		self->on_end_transition = on_end_transition;
+		self->on_start_chain = on_start_chain;
+		self->on_end_chain = on_end_chain;
+		self->on_start_link = on_start_link;
+		self->on_end_link = on_end_link;
 	}
 	return self;
 }
@@ -227,6 +252,23 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 		case field_type:
 			break;
 		case consumer_type:
+			break;
+		case chain_type:
+			error = self->on_start_chain( self, ( mlt_chain )object );
+			if ( error == 0 )
+			{
+				int i = 0;
+				while ( error == 0 && i < mlt_chain_link( ( mlt_chain )object, i ) != NULL )
+					mlt_parser_start( self, ( mlt_service )mlt_chain_link( ( mlt_chain )object, i ++ ) );
+				i = 0;
+				while ( error == 0 && mlt_producer_filter( MLT_CHAIN_PRODUCER(object), i ) != NULL )
+					error = mlt_parser_start( self, ( mlt_service )mlt_producer_filter( MLT_CHAIN_PRODUCER(object), i ++ ) );
+			}
+			error = self->on_end_chain( self, ( mlt_chain )object );
+			break;
+		case link_type:
+			error = self->on_start_link( self, ( mlt_link )object );
+			error = self->on_end_link( self, ( mlt_link )object );
 			break;
 	}
 	return error;

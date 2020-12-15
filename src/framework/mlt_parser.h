@@ -49,6 +49,10 @@ struct mlt_parser_s
 	int ( *on_end_filter )( mlt_parser self, mlt_filter object );
 	int ( *on_start_transition )( mlt_parser self, mlt_transition object );
 	int ( *on_end_transition )( mlt_parser self, mlt_transition object );
+	int ( *on_start_chain )( mlt_parser self, mlt_chain object );
+	int ( *on_end_chain )( mlt_parser self, mlt_chain object );
+	int ( *on_start_link )( mlt_parser self, mlt_producer object );
+	int ( *on_end_link )( mlt_parser self, mlt_link object );
 };
 
 extern mlt_parser mlt_parser_new( );
