@@ -1831,6 +1831,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							// and letting next call to get_frame() reopen.
 							mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 							prepare_reopen( self );
+							mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+							pthread_mutex_unlock( &self->packets_mutex );
 							goto exit_get_image;
 						}
 						if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
