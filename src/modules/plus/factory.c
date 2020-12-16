@@ -56,53 +56,53 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "blipflash", consumer_blipflash_init );
-	MLT_REGISTER( filter_type, "affine", filter_affine_init );
-	MLT_REGISTER( filter_type, "charcoal", filter_charcoal_init );
-	MLT_REGISTER( filter_type, "dynamictext", filter_dynamictext_init );
-	MLT_REGISTER( filter_type, "dynamic_loudness", filter_dynamic_loudness_init );
-	MLT_REGISTER( filter_type, "invert", filter_invert_init );
-	MLT_REGISTER( filter_type, "lift_gamma_gain", filter_lift_gamma_gain_init );
-	MLT_REGISTER( filter_type, "loudness", filter_loudness_init );
-	MLT_REGISTER( filter_type, "loudness_meter", filter_loudness_meter_init );
-	MLT_REGISTER( filter_type, "lumakey", filter_lumakey_init );
-	MLT_REGISTER( filter_type, "pillar_echo", filter_pillar_echo_init );
-	MLT_REGISTER( filter_type, "rgblut", filter_rgblut_init );
-	MLT_REGISTER( filter_type, "sepia", filter_sepia_init );
-	MLT_REGISTER( filter_type, "spot_remover", filter_spot_remover_init );
-	MLT_REGISTER( filter_type, "text", filter_text_init );
-	MLT_REGISTER( filter_type, "timer", filter_timer_init );
-	MLT_REGISTER( filter_type, "strobe", filter_strobe_init );
-	MLT_REGISTER( producer_type, "blipflash", producer_blipflash_init );
-	MLT_REGISTER( producer_type, "count", producer_count_init );
-	MLT_REGISTER( transition_type, "affine", transition_affine_init );
+	MLT_REGISTER( mlt_service_consumer_type, "blipflash", consumer_blipflash_init );
+	MLT_REGISTER( mlt_service_filter_type, "affine", filter_affine_init );
+	MLT_REGISTER( mlt_service_filter_type, "charcoal", filter_charcoal_init );
+	MLT_REGISTER( mlt_service_filter_type, "dynamictext", filter_dynamictext_init );
+	MLT_REGISTER( mlt_service_filter_type, "dynamic_loudness", filter_dynamic_loudness_init );
+	MLT_REGISTER( mlt_service_filter_type, "invert", filter_invert_init );
+	MLT_REGISTER( mlt_service_filter_type, "lift_gamma_gain", filter_lift_gamma_gain_init );
+	MLT_REGISTER( mlt_service_filter_type, "loudness", filter_loudness_init );
+	MLT_REGISTER( mlt_service_filter_type, "loudness_meter", filter_loudness_meter_init );
+	MLT_REGISTER( mlt_service_filter_type, "lumakey", filter_lumakey_init );
+	MLT_REGISTER( mlt_service_filter_type, "pillar_echo", filter_pillar_echo_init );
+	MLT_REGISTER( mlt_service_filter_type, "rgblut", filter_rgblut_init );
+	MLT_REGISTER( mlt_service_filter_type, "sepia", filter_sepia_init );
+	MLT_REGISTER( mlt_service_filter_type, "spot_remover", filter_spot_remover_init );
+	MLT_REGISTER( mlt_service_filter_type, "text", filter_text_init );
+	MLT_REGISTER( mlt_service_filter_type, "timer", filter_timer_init );
+	MLT_REGISTER( mlt_service_filter_type, "strobe", filter_strobe_init );
+	MLT_REGISTER( mlt_service_producer_type, "blipflash", producer_blipflash_init );
+	MLT_REGISTER( mlt_service_producer_type, "count", producer_count_init );
+	MLT_REGISTER( mlt_service_transition_type, "affine", transition_affine_init );
 #ifdef USE_FFTW
-	MLT_REGISTER( filter_type, "dance", filter_dance_init );
-	MLT_REGISTER( filter_type, "fft", filter_fft_init );
+	MLT_REGISTER( mlt_service_filter_type, "dance", filter_dance_init );
+	MLT_REGISTER( mlt_service_filter_type, "fft", filter_fft_init );
 #endif
 
-	MLT_REGISTER_METADATA( consumer_type, "blipflash", metadata, "consumer_blipflash.yml" );
-	MLT_REGISTER_METADATA( filter_type, "affine", metadata, "filter_affine.yml" );
-	MLT_REGISTER_METADATA( filter_type, "charcoal", metadata, "filter_charcoal.yml" );
-	MLT_REGISTER_METADATA( filter_type, "dynamictext", metadata, "filter_dynamictext.yml" );
-	MLT_REGISTER_METADATA( filter_type, "dynamic_loudness", metadata, "filter_dynamic_loudness.yml" );
-	MLT_REGISTER_METADATA( filter_type, "invert", metadata, "filter_invert.yml" );
-	MLT_REGISTER_METADATA( filter_type, "lift_gamma_gain", metadata, "filter_lift_gamma_gain.yml" );
-	MLT_REGISTER_METADATA( filter_type, "loudness", metadata, "filter_loudness.yml" );
-	MLT_REGISTER_METADATA( filter_type, "loudness_meter", metadata, "filter_loudness_meter.yml" );
-	MLT_REGISTER_METADATA( filter_type, "lumakey", metadata, "filter_lumakey.yml" );
-	MLT_REGISTER_METADATA( filter_type, "pillar_echo", metadata, "filter_pillar_echo.yml" );
-	MLT_REGISTER_METADATA( filter_type, "rgblut", metadata, "filter_rgblut.yml" );
-	MLT_REGISTER_METADATA( filter_type, "sepia", metadata, "filter_sepia.yml" );
-	MLT_REGISTER_METADATA( filter_type, "spot_remover", metadata, "filter_spot_remover.yml" );
-	MLT_REGISTER_METADATA( filter_type, "text", metadata, "filter_text.yml" );
-	MLT_REGISTER_METADATA( filter_type, "timer", metadata, "filter_timer.yml" );
-	MLT_REGISTER_METADATA( filter_type, "strobe", metadata, "filter_strobe.yml" );
-	MLT_REGISTER_METADATA( producer_type, "blipflash", metadata, "producer_blipflash.yml" );
-	MLT_REGISTER_METADATA( producer_type, "count", metadata, "producer_count.yml" );
-	MLT_REGISTER_METADATA( transition_type, "affine", metadata, "transition_affine.yml" );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "blipflash", metadata, "consumer_blipflash.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "affine", metadata, "filter_affine.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "charcoal", metadata, "filter_charcoal.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "dynamictext", metadata, "filter_dynamictext.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "dynamic_loudness", metadata, "filter_dynamic_loudness.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "invert", metadata, "filter_invert.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "lift_gamma_gain", metadata, "filter_lift_gamma_gain.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "loudness", metadata, "filter_loudness.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "loudness_meter", metadata, "filter_loudness_meter.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "lumakey", metadata, "filter_lumakey.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "pillar_echo", metadata, "filter_pillar_echo.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "rgblut", metadata, "filter_rgblut.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "sepia", metadata, "filter_sepia.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "spot_remover", metadata, "filter_spot_remover.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "text", metadata, "filter_text.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "timer", metadata, "filter_timer.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "strobe", metadata, "filter_strobe.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "blipflash", metadata, "producer_blipflash.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "count", metadata, "producer_count.yml" );
+	MLT_REGISTER_METADATA( mlt_service_transition_type, "affine", metadata, "transition_affine.yml" );
 #ifdef USE_FFTW
-	MLT_REGISTER_METADATA( filter_type, "dance", metadata, "filter_dance.yml" );
-	MLT_REGISTER_METADATA( filter_type, "fft", metadata, "filter_fft.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "dance", metadata, "filter_dance.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "fft", metadata, "filter_fft.yml" );
 #endif
 }

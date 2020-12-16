@@ -33,10 +33,10 @@ static mlt_properties videostab_metadata( mlt_service_type type, const char *id,
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "videostab", filter_videostab_init );
-	MLT_REGISTER_METADATA( filter_type, "videostab", videostab_metadata, NULL );
-	MLT_REGISTER( filter_type, "videostab2", filter_videostab2_init );
-	MLT_REGISTER_METADATA( filter_type, "videostab2", videostab_metadata, NULL );
+	MLT_REGISTER( mlt_service_filter_type, "videostab", filter_videostab_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "videostab", videostab_metadata, NULL );
+	MLT_REGISTER( mlt_service_filter_type, "videostab2", filter_videostab2_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "videostab2", videostab_metadata, NULL );
 	
 }
 

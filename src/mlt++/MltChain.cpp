@@ -62,7 +62,7 @@ Chain::Chain( Chain* chain ) :
 Chain::Chain( Service& chain ) :
 	instance( NULL )
 {
-	if ( chain.type( ) == chain_type )
+	if ( chain.type( ) == mlt_service_chain_type )
 	{
 		instance = ( mlt_chain )chain.get_service( );
 		inc_ref( );

@@ -174,19 +174,19 @@ void mlt_repository_register( mlt_repository self, mlt_service_type service_type
 	// Add the entry point to the corresponding service list
 	switch ( service_type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			mlt_properties_set_data( self->consumers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			mlt_properties_set_data( self->filters, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
-		case link_type:
+		case mlt_service_link_type:
 			mlt_properties_set_data( self->links, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
-		case producer_type:
+		case mlt_service_producer_type:
 			mlt_properties_set_data( self->producers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			mlt_properties_set_data( self->transitions, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		default:
@@ -211,19 +211,19 @@ static mlt_properties get_service_properties( mlt_repository self, mlt_service_t
 	// Get the entry point from the corresponding service list
 	switch ( type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			service_properties = mlt_properties_get_data( self->consumers, service, NULL );
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			service_properties = mlt_properties_get_data( self->filters, service, NULL );
 			break;
-		case link_type:
+		case mlt_service_link_type:
 			service_properties = mlt_properties_get_data( self->links, service, NULL );
 			break;
-		case producer_type:
+		case mlt_service_producer_type:
 			service_properties = mlt_properties_get_data( self->producers, service, NULL );
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			service_properties = mlt_properties_get_data( self->transitions, service, NULL );
 			break;
 		default:

@@ -1017,10 +1017,10 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 	const char *service_type = NULL;
 	switch ( type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			service_type = "consumer";
 			break;
-		case producer_type:
+		case mlt_service_producer_type:
 			service_type = "producer";
 			break;
 		default:
@@ -1032,10 +1032,10 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "decklink", consumer_decklink_init );
-	MLT_REGISTER( producer_type, "decklink", producer_decklink_init );
-	MLT_REGISTER_METADATA( consumer_type, "decklink", metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "decklink", metadata, NULL );
+	MLT_REGISTER( mlt_service_consumer_type, "decklink", consumer_decklink_init );
+	MLT_REGISTER( mlt_service_producer_type, "decklink", producer_decklink_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "decklink", metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "decklink", metadata, NULL );
 }
 
 } // extern C

@@ -31,7 +31,7 @@ Multitrack::Multitrack( mlt_multitrack multitrack ) :
 Multitrack::Multitrack( Service &multitrack ) :
 	instance( NULL )
 {
-	if ( multitrack.type( ) == multitrack_type )
+	if ( multitrack.type( ) == mlt_service_multitrack_type )
 	{
 		instance = ( mlt_multitrack )multitrack.get_service( );
 		inc_ref( );

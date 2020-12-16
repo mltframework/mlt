@@ -2200,9 +2200,9 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 		{
 			// Now assign additional properties
 			if ( is_filename && (
-				mlt_service_identify( service ) == tractor_type ||
-				mlt_service_identify( service ) == playlist_type ||
-				mlt_service_identify( service ) == multitrack_type ) )
+				mlt_service_identify( service ) == mlt_service_tractor_type ||
+				mlt_service_identify( service ) == mlt_service_playlist_type ||
+				mlt_service_identify( service ) == mlt_service_multitrack_type ) )
 			{
 				mlt_properties_set_int( properties, "_original_type",
 					mlt_service_identify( service ) );

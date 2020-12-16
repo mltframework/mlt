@@ -33,9 +33,9 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "deshake", filter_deshake_init );
-	MLT_REGISTER( filter_type, "vidstab", filter_vidstab_init );
+	MLT_REGISTER( mlt_service_filter_type, "deshake", filter_deshake_init );
+	MLT_REGISTER( mlt_service_filter_type, "vidstab", filter_vidstab_init );
 	
-	MLT_REGISTER_METADATA( filter_type, "deshake", metadata, "filter_deshake.yml" );
-	MLT_REGISTER_METADATA( filter_type, "vidstab", metadata, "filter_vidstab.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "deshake", metadata, "filter_deshake.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "vidstab", metadata, "filter_vidstab.yml" );
 }

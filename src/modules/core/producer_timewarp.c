@@ -278,7 +278,7 @@ mlt_producer producer_timewarp_init( mlt_profile profile, mlt_service_type type,
 			// they can be passed between the clip producer and this producer.
 			pdata->clip_parameters = mlt_properties_new();
 			mlt_repository repository = mlt_factory_repository();
-			mlt_properties clip_metadata = mlt_repository_metadata( repository, producer_type, mlt_properties_get( clip_properties, "mlt_service" ) );
+			mlt_properties clip_metadata = mlt_repository_metadata( repository, mlt_service_producer_type, mlt_properties_get( clip_properties, "mlt_service" ) );
 			if ( clip_metadata )
 			{
 				mlt_properties params = (mlt_properties) mlt_properties_get_data( clip_metadata, "parameters", NULL );

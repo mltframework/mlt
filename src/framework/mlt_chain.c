@@ -126,7 +126,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		// they can be passed between the source producer and this chain.
 		base->source_parameters = mlt_properties_new();
 		mlt_repository repository = mlt_factory_repository();
-		mlt_properties source_metadata = mlt_repository_metadata( repository, producer_type, mlt_properties_get( source_properties, "mlt_service" ) );
+		mlt_properties source_metadata = mlt_repository_metadata( repository, mlt_service_producer_type, mlt_properties_get( source_properties, "mlt_service" ) );
 		if ( source_metadata )
 		{
 			mlt_properties params = (mlt_properties) mlt_properties_get_data( source_metadata, "parameters", NULL );

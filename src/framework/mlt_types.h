@@ -139,18 +139,18 @@ mlt_whence;
 
 typedef enum
 {
-	invalid_type = 0,           /**< invalid service */
-	unknown_type,               /**< unknown class */
-	producer_type,              /**< Producer class */
-	tractor_type,               /**< Tractor class */
-	playlist_type,              /**< Playlist class */
-	multitrack_type,            /**< Multitrack class */
-	filter_type,                /**< Filter class */
-	transition_type,            /**< Transition class */
-	consumer_type,              /**< Consumer class */
-	field_type,                 /**< Field class */
-	link_type,                  /**< Link class */
-	chain_type                  /**< Chain class */
+	mlt_service_invalid_type = 0,           /**< invalid service */
+	mlt_service_unknown_type,               /**< unknown class */
+	mlt_service_producer_type,              /**< Producer class */
+	mlt_service_tractor_type,               /**< Tractor class */
+	mlt_service_playlist_type,              /**< Playlist class */
+	mlt_service_multitrack_type,            /**< Multitrack class */
+	mlt_service_filter_type,                /**< Filter class */
+	mlt_service_transition_type,            /**< Transition class */
+	mlt_service_consumer_type,              /**< Consumer class */
+	mlt_service_field_type,                 /**< Field class */
+	mlt_service_link_type,                  /**< Link class */
+	mlt_service_chain_type                  /**< Chain class */
 }
 mlt_service_type;
 

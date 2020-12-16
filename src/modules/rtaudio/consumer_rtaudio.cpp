@@ -885,8 +885,8 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "rtaudio", consumer_rtaudio_init );
-	MLT_REGISTER_METADATA( consumer_type, "rtaudio", metadata, NULL );
+	MLT_REGISTER( mlt_service_consumer_type, "rtaudio", consumer_rtaudio_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "rtaudio", metadata, NULL );
 }
 
 } // extern C

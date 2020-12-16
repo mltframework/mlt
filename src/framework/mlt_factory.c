@@ -359,12 +359,12 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, con
 	// Try to instantiate via the specified service
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_create( repository, profile, producer_type, service, resource );
+		obj = mlt_repository_create( repository, profile, mlt_service_producer_type, service, resource );
 		mlt_events_fire( event_object, "producer-create-done", service, resource, obj, NULL );
 		if ( obj != NULL )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( obj );
-			if ( mlt_service_identify( MLT_PRODUCER_SERVICE( obj ) ) == chain_type )
+			if ( mlt_service_identify( MLT_PRODUCER_SERVICE( obj ) ) == mlt_service_chain_type )
 			{
 				// XML producer may return a chain
 				set_common_properties( properties, profile, "chain", service );
@@ -395,7 +395,7 @@ mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, const v
 
 	if ( obj == NULL )
 	{
-   		obj = mlt_repository_create( repository, profile, filter_type, service, input );
+		obj = mlt_repository_create( repository, profile, mlt_service_filter_type, service, input );
 		mlt_events_fire( event_object, "filter-create-done", service, input, obj, NULL );
 	}
 
@@ -423,7 +423,7 @@ mlt_link mlt_factory_link( const char *service, const void *input )
 
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_create( repository, NULL, link_type, service, input );
+		obj = mlt_repository_create( repository, NULL, mlt_service_link_type, service, input );
 		mlt_events_fire( event_object, "link-create-done", service, input, obj, NULL );
 	}
 
@@ -452,7 +452,7 @@ mlt_transition mlt_factory_transition( mlt_profile profile, const char *service,
 
 	if ( obj == NULL )
 	{
-   		obj = mlt_repository_create( repository, profile, transition_type, service, input );
+		obj = mlt_repository_create( repository, profile, mlt_service_transition_type, service, input );
 		mlt_events_fire( event_object, "transition-create-done", service, input, obj, NULL );
 	}
 
@@ -484,7 +484,7 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 
 	if ( obj == NULL )
 	{
-		obj = mlt_repository_create( repository, profile, consumer_type, service, input );
+		obj = mlt_repository_create( repository, profile, mlt_service_consumer_type, service, input );
 	}
 
 	if ( obj == NULL )
@@ -492,12 +492,12 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 		if ( !strcmp( service, "sdl2" ) )
 		{
 			service = "sdl";
-			obj = mlt_repository_create( repository, profile, consumer_type, service, input );
+			obj = mlt_repository_create( repository, profile, mlt_service_consumer_type, service, input );
 		}
 		else if ( !strcmp( service, "sdl_audio" ) )
 		{
 			service = "sdl2_audio";
-			obj = mlt_repository_create( repository, profile, consumer_type, service, input );
+			obj = mlt_repository_create( repository, profile, mlt_service_consumer_type, service, input );
 		}
 	}
 

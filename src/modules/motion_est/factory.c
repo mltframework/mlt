@@ -33,15 +33,15 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "motion_est", filter_motion_est_init );
-	MLT_REGISTER( filter_type, "vismv", filter_vismv_init );
-	MLT_REGISTER( filter_type, "crop_detect", filter_crop_detect_init );
-	MLT_REGISTER( filter_type, "autotrack_rectangle", filter_autotrack_rectangle_init );
-	MLT_REGISTER( producer_type, "slowmotion", producer_slowmotion_init );
+	MLT_REGISTER( mlt_service_filter_type, "motion_est", filter_motion_est_init );
+	MLT_REGISTER( mlt_service_filter_type, "vismv", filter_vismv_init );
+	MLT_REGISTER( mlt_service_filter_type, "crop_detect", filter_crop_detect_init );
+	MLT_REGISTER( mlt_service_filter_type, "autotrack_rectangle", filter_autotrack_rectangle_init );
+	MLT_REGISTER( mlt_service_producer_type, "slowmotion", producer_slowmotion_init );
 
-	MLT_REGISTER_METADATA( filter_type, "motion_est", metadata, "filter_motion_est.yml" );
-	MLT_REGISTER_METADATA( filter_type, "vismv", metadata, "filter_vismv.yml" );
-	MLT_REGISTER_METADATA( filter_type, "crop_detect", metadata, "filter_crop_detect.yml" );
-	MLT_REGISTER_METADATA( filter_type, "autotrack_rectangle", metadata, "filter_autotrack_rectangle.yml" );
-	MLT_REGISTER_METADATA( producer_type, "slowmotion", metadata, "producer_slowmotion.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "motion_est", metadata, "filter_motion_est.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "vismv", metadata, "filter_vismv.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "crop_detect", metadata, "filter_crop_detect.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "autotrack_rectangle", metadata, "filter_autotrack_rectangle.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "slowmotion", metadata, "producer_slowmotion.yml" );
 }

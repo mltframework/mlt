@@ -743,7 +743,7 @@ static void serialise_service( serialise_context context, mlt_service service, x
 			}
 
 			// Treat it as a normal chain
-			else if ( mlt_properties_get_int( properties, "_original_type" ) == chain_type )
+			else if ( mlt_properties_get_int( properties, "_original_type" ) == mlt_service_chain_type )
 			{
 				serialise_chain( context, service, node );
 				mlt_properties_set( properties, "mlt_type", "chain" );

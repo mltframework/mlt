@@ -37,15 +37,15 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "chroma", filter_chroma_init );
-	MLT_REGISTER( filter_type, "chroma_hold", filter_chroma_hold_init );
-	MLT_REGISTER( filter_type, "threshold", filter_mono_init );
-	MLT_REGISTER( filter_type, "shape", filter_shape_init );
-	MLT_REGISTER( producer_type, "pgm", producer_pgm_init );
+	MLT_REGISTER( mlt_service_filter_type, "chroma", filter_chroma_init );
+	MLT_REGISTER( mlt_service_filter_type, "chroma_hold", filter_chroma_hold_init );
+	MLT_REGISTER( mlt_service_filter_type, "threshold", filter_mono_init );
+	MLT_REGISTER( mlt_service_filter_type, "shape", filter_shape_init );
+	MLT_REGISTER( mlt_service_producer_type, "pgm", producer_pgm_init );
 
-	MLT_REGISTER_METADATA( filter_type, "chroma", metadata, "filter_chroma.yml" );
-	MLT_REGISTER_METADATA( filter_type, "chroma_hold", metadata, "filter_chroma_hold.yml" );
-	MLT_REGISTER_METADATA( filter_type, "threshold", metadata, "filter_mono.yml" );
-	MLT_REGISTER_METADATA( filter_type, "shape", metadata, "filter_shape.yml" );
-	MLT_REGISTER_METADATA( producer_type, "pgm", metadata, "producer_pgm.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "chroma", metadata, "filter_chroma.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "chroma_hold", metadata, "filter_chroma_hold.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "threshold", metadata, "filter_mono.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "shape", metadata, "filter_shape.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "pgm", metadata, "producer_pgm.yml" );
 }

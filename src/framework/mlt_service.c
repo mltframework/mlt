@@ -157,36 +157,36 @@ void mlt_service_unlock( mlt_service self )
 
 mlt_service_type mlt_service_identify( mlt_service self )
 {
-	mlt_service_type type = invalid_type;
+	mlt_service_type type = mlt_service_invalid_type;
 	if ( self != NULL )
 	{
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( self );
 		char *mlt_type = mlt_properties_get( properties, "mlt_type" );
 		char *resource = mlt_properties_get( properties, "resource" );
 		if ( mlt_type == NULL )
-			type = unknown_type;
+			type = mlt_service_unknown_type;
 		else if (resource != NULL && !strcmp( resource, "<playlist>" ) )
-			type = playlist_type;
+			type = mlt_service_playlist_type;
 		else if (resource != NULL && !strcmp( resource, "<tractor>" ) )
-			type = tractor_type;
+			type = mlt_service_tractor_type;
 		else if (resource != NULL && !strcmp( resource, "<multitrack>" ) )
-			type = multitrack_type;
+			type = mlt_service_multitrack_type;
 		else if ( !strcmp( mlt_type, "mlt_producer" ) )
-			type = producer_type;
+			type = mlt_service_producer_type;
 		else if ( !strcmp( mlt_type, "producer" ) )
-			type = producer_type;
+			type = mlt_service_producer_type;
 		else if ( !strcmp( mlt_type, "filter" ) )
-			type = filter_type;
+			type = mlt_service_filter_type;
 		else if ( !strcmp( mlt_type, "transition" ) )
-			type = transition_type;
+			type = mlt_service_transition_type;
 		else if ( !strcmp( mlt_type, "chain" ) )
-			type = chain_type;
+			type = mlt_service_chain_type;
 		else if ( !strcmp( mlt_type, "consumer" ) )
-			type = consumer_type;
+			type = mlt_service_consumer_type;
 		else if ( !strcmp( mlt_type, "link" ) )
-			type = link_type;
+			type = mlt_service_link_type;
 		else
-			type = unknown_type;
+			type = mlt_service_unknown_type;
 	}
 	return type;
 }
@@ -594,7 +594,7 @@ int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( self );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
-		mlt_position position = mlt_service_identify( self ) == producer_type ? mlt_producer_position( MLT_PRODUCER( self ) ) : -1;
+		mlt_position position = mlt_service_identify( self ) == mlt_service_producer_type ? mlt_producer_position( MLT_PRODUCER( self ) ) : -1;
 
 		result = self->get_frame( self, frame, index );
 
@@ -611,7 +611,7 @@ int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 			mlt_service_apply_filters( self, *frame, 1 );
 			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), self );
 			
-			if ( mlt_service_identify( self ) == producer_type &&
+			if ( mlt_service_identify( self ) == mlt_service_producer_type &&
 			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( self ), "_need_previous_next" ) )
 			{
 				// Save the new position from self->get_frame

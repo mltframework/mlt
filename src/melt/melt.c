@@ -584,19 +584,19 @@ static void query_services( mlt_repository repo, mlt_service_type type )
 	const char *typestr = NULL;
 	switch ( type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			services = mlt_repository_consumers( repo );
 			typestr = "consumers";
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			services = mlt_repository_filters( repo );
 			typestr = "filters";
 			break;
-		case producer_type:
+		case mlt_service_producer_type:
 			services = mlt_repository_producers( repo );
 			typestr = "producers";
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			services = mlt_repository_transitions( repo );
 			typestr = "transitions";
 			break;
@@ -811,13 +811,13 @@ int main( int argc, char **argv )
 			if ( pname && pname[0] != '-' )
 			{
 				if ( !strcmp( pname, "consumers" ) || !strcmp( pname, "consumer" ) )
-					query_services( repo, consumer_type );
+					query_services( repo, mlt_service_consumer_type );
 				else if ( !strcmp( pname, "filters" ) || !strcmp( pname, "filter" ) )
-					query_services( repo, filter_type );
+					query_services( repo, mlt_service_filter_type );
 				else if ( !strcmp( pname, "producers" ) || !strcmp( pname, "producer" ) )
-					query_services( repo, producer_type );
+					query_services( repo, mlt_service_producer_type );
 				else if ( !strcmp( pname, "transitions" ) || !strcmp( pname, "transition" ) )
-					query_services( repo, transition_type );
+					query_services( repo, mlt_service_transition_type );
 				else if ( !strcmp( pname, "profiles" ) || !strcmp( pname, "profile" ) )
 					query_profiles();
 				else if ( !strcmp( pname, "presets" ) || !strcmp( pname, "preset" ) )
@@ -830,13 +830,13 @@ int main( int argc, char **argv )
 					query_vcodecs();
 
 				else if ( !strncmp( pname, "consumer=", 9 ) )
-					query_metadata( repo, consumer_type, "consumer", strchr( pname, '=' ) + 1 );
+					query_metadata( repo, mlt_service_consumer_type, "consumer", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "filter=", 7 ) )
-					query_metadata( repo, filter_type, "filter", strchr( pname, '=' ) + 1 );
+					query_metadata( repo, mlt_service_filter_type, "filter", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "producer=", 9 ) )
-					query_metadata( repo, producer_type, "producer", strchr( pname, '=' ) + 1 );
+					query_metadata( repo, mlt_service_producer_type, "producer", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "transition=", 11 ) )
-					query_metadata( repo, transition_type, "transition", strchr( pname, '=' ) + 1 );
+					query_metadata( repo, mlt_service_transition_type, "transition", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "profile=", 8 ) )
 					query_profile( strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "preset=", 7 ) )
@@ -847,10 +847,10 @@ int main( int argc, char **argv )
 			else
 			{
 query_all:
-				query_services( repo, consumer_type );
-				query_services( repo, filter_type );
-				query_services( repo, producer_type );
-				query_services( repo, transition_type );
+				query_services( repo, mlt_service_consumer_type );
+				query_services( repo, mlt_service_filter_type );
+				query_services( repo, mlt_service_producer_type );
+				query_services( repo, mlt_service_transition_type );
 				fprintf( stdout, "# You can query the metadata for a specific service using:\n"
 					"# -query <type>=<identifier>\n"
 					"# where <type> is one of: consumer, filter, producer, or transition.\n" );

@@ -68,7 +68,7 @@ Consumer::Consumer( mlt_profile profile, const char *id, const char *arg ) :
 Consumer::Consumer( Service &consumer ) :
 	instance( NULL )
 {
-	if ( consumer.type( ) == consumer_type )
+	if ( consumer.type( ) == mlt_service_consumer_type )
 	{
 		instance = ( mlt_consumer )consumer.get_service( );
 		inc_ref( );

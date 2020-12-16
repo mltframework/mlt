@@ -40,7 +40,7 @@ Tractor::Tractor( Profile& profile ) :
 Tractor::Tractor( Service &tractor ) :
 	instance( NULL )
 {
-	if ( tractor.type( ) == tractor_type )
+	if ( tractor.type( ) == mlt_service_tractor_type )
 	{
 		instance = ( mlt_tractor )tractor.get_service( );
 		inc_ref( );
@@ -69,7 +69,7 @@ Tractor::Tractor( mlt_profile profile, char *id, char *resource ) :
 	instance( NULL )
 {
 	Producer producer( profile, id, resource );
-	if ( producer.is_valid( ) && producer.type( ) == tractor_type )
+	if ( producer.is_valid( ) && producer.type( ) == mlt_service_tractor_type )
 	{
 		instance = ( mlt_tractor )producer.get_producer( );
 		inc_ref( );
