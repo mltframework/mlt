@@ -39,11 +39,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		return error;
 	}
 
-	int invert = mlt_properties_get_int( properties, "strobe_invert" );
-	int interval = mlt_properties_get_int( properties, "interval" );
-	mlt_position currentpos = mlt_filter_get_position( filter, frame );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 
-	int do_strobe = ( currentpos % ( interval + 1 ) ) > interval / 2;
+	int invert = mlt_properties_anim_get_int( properties, "strobe_invert", position, length );
+	int interval = mlt_properties_anim_get_int( properties, "interval", position, length );
+
+	int do_strobe = ( position % ( interval + 1 ) ) > interval / 2;
 
 	if ( invert )
 	{
