@@ -1907,7 +1907,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 								if( transfer_data_result < 0 ) 
 								{
 									mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "av_hwframe_transfer_data() failed %d\n", transfer_data_result );
-									mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
 									goto exit_get_image;
 								}
 								av_frame_copy_props( self->sw_video_frame, self->video_frame );
