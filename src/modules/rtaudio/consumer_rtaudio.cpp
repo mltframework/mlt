@@ -441,7 +441,7 @@ public:
 				while ( running && speed != 0 && mlt_deque_count( queue ) > 15 )
 					nanosleep( &tm, NULL );
 
-				// Push this frame to the back of the queue
+				// Push this frame to the back of the video queue
 				if ( running && speed )
 				{
 					pthread_mutex_lock( &video_mutex );
@@ -486,7 +486,7 @@ public:
 	//					mlt_consumer_purge( consumer );
 	//				last_position = mlt_frame_get_position( frame );
 				}
-				else
+				else if (speed == 0.0)
 				{
 					mlt_consumer_purge( getConsumer() );
 	//				last_position = -1;
