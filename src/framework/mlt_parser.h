@@ -51,7 +51,7 @@ struct mlt_parser_s
 	int ( *on_end_transition )( mlt_parser self, mlt_transition object );
 	int ( *on_start_chain )( mlt_parser self, mlt_chain object );
 	int ( *on_end_chain )( mlt_parser self, mlt_chain object );
-	int ( *on_start_link )( mlt_parser self, mlt_producer object );
+	int ( *on_start_link )( mlt_parser self, mlt_link object );
 	int ( *on_end_link )( mlt_parser self, mlt_link object );
 };
 

@@ -62,6 +62,10 @@ namespace Mlt
 			virtual int on_end_filter( Filter *object );
 			virtual int on_start_transition( Transition *object );
 			virtual int on_end_transition( Transition *object );
+			virtual int on_start_chain( Chain *object );
+			virtual int on_end_chain( Chain *object );
+			virtual int on_start_link( Link *object );
+			virtual int on_end_link( Link *object );
 	};
 }
 

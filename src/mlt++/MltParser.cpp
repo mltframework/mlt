@@ -147,6 +147,38 @@ static int on_end_transition_cb( mlt_parser self, mlt_transition object )
 	return parser->on_end_transition( &transition );
 }
 
+static int on_start_chain_cb( mlt_parser self, mlt_chain object )
+{
+	mlt_properties properties = mlt_parser_properties( self );
+	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
+	Chain chain( object );
+	return parser->on_start_chain( &chain );
+}
+
+static int on_end_chain_cb( mlt_parser self, mlt_chain object )
+{
+	mlt_properties properties = mlt_parser_properties( self );
+	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
+	Chain chain( object );
+	return parser->on_end_chain( &chain );
+}
+
+static int on_start_link_cb( mlt_parser self, mlt_link object )
+{
+	mlt_properties properties = mlt_parser_properties( self );
+	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
+	Link link( object );
+	return parser->on_start_link( &link );
+}
+
+static int on_end_link_cb( mlt_parser self, mlt_link object )
+{
+	mlt_properties properties = mlt_parser_properties( self );
+	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
+	Link link( object );
+	return parser->on_end_link( &link );
+}
+
 Parser::Parser( ) :
 	Properties( false )
 {
@@ -168,6 +200,10 @@ Parser::Parser( ) :
 	parser->on_end_filter = on_end_filter_cb;
 	parser->on_start_transition = on_start_transition_cb;
 	parser->on_end_transition = on_end_transition_cb;
+	parser->on_start_chain = on_start_chain_cb;
+	parser->on_end_chain = on_end_chain_cb;
+	parser->on_start_link = on_start_link_cb;
+	parser->on_end_link = on_end_link_cb;
 }
 
 Parser::~Parser( )
@@ -281,4 +317,26 @@ int Parser::on_end_transition( Transition *object )
 	return 0;
 }
 
+int Parser::on_start_chain( Chain *object )
+{
+	object->debug( "on_start_chain" );
+	return 0;
+}
 
+int Parser::on_end_chain( Chain *object )
+{
+	object->debug( "on_end_chain" );
+	return 0;
+}
+
+int Parser::on_start_link( Link *object )
+{
+	object->debug( "on_start_link" );
+	return 0;
+}
+
+int Parser::on_end_link( Link *object )
+{
+	object->debug( "on_end_link" );
+	return 0;
+}
