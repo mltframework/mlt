@@ -1,6 +1,6 @@
 /*
  * filter_volume.c -- adjust audio volume
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2020 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include <ctype.h>
 #include <string.h>
 
-#define MAX_CHANNELS 6
 #define EPSILON 0.00001
 
 /* The following normalise functions come from the normalize utility:

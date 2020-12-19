@@ -274,8 +274,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 
 	// Now get the image
-	if ( *format == mlt_image_yuv422 )
+	if ( *format == mlt_image_yuv422 ) {
 		owidth -= owidth % 2;
+		*width -= *width % 2;
+	}
 	error = mlt_frame_get_image( frame, image, format, &owidth, &oheight, writable );
 
 	if ( error == 0 && *image && *format != mlt_image_yuv420p )

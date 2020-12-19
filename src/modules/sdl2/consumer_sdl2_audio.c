@@ -664,10 +664,9 @@ static void *consumer_thread( void *arg )
 //					mlt_consumer_purge( consumer );
 //				last_position = mlt_frame_get_position( frame );
 			}
-			else
+			else if (speed == 0.0)
 			{
 				mlt_consumer_purge( consumer );
-//				last_position = -1;
 			}
 		}
 	}

@@ -1,6 +1,6 @@
+cmake_minimum_required(VERSION 3.14)
 project(MLT)
-set(MLT_VERSION 6.23.0)
-cmake_minimum_required(VERSION 3.10)
+set(MLT_VERSION 6.25.0)
 find_package(PkgConfig REQUIRED)
 include(GNUInstallDirs)
 option(GPL "Enable GPLv2 modules" ON)
@@ -35,7 +35,7 @@ pkg_check_modules(xml IMPORTED_TARGET libxml-2.0)
 add_subdirectory(src/framework)
 add_subdirectory(src/melt)
 add_subdirectory(src/mlt++)
-#add_subdirectory(src/swig)
+add_subdirectory(src/swig)
 #file(GLOB modules src/modules/*/)
 set(modules
     src/modules/avformat
@@ -57,6 +57,7 @@ set(modules
     src/modules/resample
     src/modules/rubberband
     src/modules/rtaudio
+    src/modules/sdl
     src/modules/sdl2
     src/modules/sox
     src/modules/vid.stab

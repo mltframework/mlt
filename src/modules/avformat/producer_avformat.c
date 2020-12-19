@@ -442,9 +442,13 @@ static mlt_properties find_default_streams( producer_avformat self )
 				case AVCOL_SPC_BT709:
 					mlt_properties_set_int( meta_media, key, 709 );
 					break;
-				default:
+				case AVCOL_SPC_UNSPECIFIED:
+				case AVCOL_SPC_RESERVED:
 					// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
 					mlt_properties_set_int( meta_media, key, codec_context->width * codec_context->height > 750000 ? 709 : 601 );
+					break;
+				default:
+					mlt_properties_set_int( meta_media, key, codec_context->colorspace );
 					break;
 				}
 				if ( codec_context->color_trc && codec_context->color_trc != 2 )
@@ -2941,7 +2945,8 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	{
 		pthread_mutex_lock( &self->open_mutex );
 		unsigned i = 0;
-		for (i = 0; i < context->nb_streams; i++) {
+		int index_max = FFMIN( MAX_AUDIO_STREAMS, context->nb_streams );
+		for (i = 0; i < index_max; i++) {
 			if (self->audio_codec[i]) {
 				avcodec_close(self->audio_codec[i]);
 				self->audio_codec[i] = NULL;
