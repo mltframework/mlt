@@ -628,6 +628,11 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return AV_PIX_FMT_RGB24;
 #endif
+        case AV_PIX_FMT_YUV420P16LE:
+        case AV_PIX_FMT_YUV422P16LE:
+        case AV_PIX_FMT_YUV420P10LE:
+        case AV_PIX_FMT_YUV422P10LE:
+                return AV_PIX_FMT_YUV422P16LE;
 	default:
 		return AV_PIX_FMT_YUV422P;
 	}
@@ -1192,6 +1197,12 @@ static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_BAYER_RGGB16LE:
 		return mlt_image_rgb24;
 #endif
+        case AV_PIX_FMT_YUV420P16LE:
+        case AV_PIX_FMT_YUV422P16LE:
+        case AV_PIX_FMT_YUV420P10LE:
+        case AV_PIX_FMT_YUV422P10LE:
+                return mlt_image_yuv422p16;
+
 	default:
 		return mlt_image_yuv422;
 	}
@@ -1450,6 +1461,21 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			out_data, out_stride);
 		sws_freeContext( context );
 	}
+	else if ( *format == mlt_image_yuv422p16 )
+	{
+		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGBA);
+		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
+			width, height, AV_PIX_FMT_YUV422P16LE, flags, NULL, NULL, NULL);
+		uint8_t *out_data[8];
+		int out_stride[8];
+		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_YUV422P16LE, width, height, IMAGE_ALIGN);
+		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
+		mlt_set_luma_transfer( context, self->yuv_colorspace, 2100, self->full_luma, 0 );
+		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
+			out_data, out_stride);
+		sws_freeContext( context );
+	}
+
 	else
 #if defined(FFUDIV) && (LIBSWSCALE_VERSION_INT >= ((3<<16)+(1<<8)+101))
 	{
