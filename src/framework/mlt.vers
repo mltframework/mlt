@@ -577,7 +577,7 @@ MLT_6.22.0 {
     mlt_audio_channel_layout_default;
 } MLT_6.20.0;
 
-MLT_6.26.0 {
+MLT_7.0.0 {
   global:
     mlt_factory_link;
     mlt_chain_init;
