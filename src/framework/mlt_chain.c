@@ -126,7 +126,13 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		// they can be passed between the source producer and this chain.
 		base->source_parameters = mlt_properties_new();
 		mlt_repository repository = mlt_factory_repository();
-		mlt_properties source_metadata = mlt_repository_metadata( repository, mlt_service_producer_type, mlt_properties_get( source_properties, "mlt_service" ) );
+		char* source_metadata_name = strdup( mlt_properties_get( source_properties, "mlt_service" ) );
+		// If the service name ends in "-novalidate", then drop the ending and search for the metadata of the main service.
+		// E.g. "avformat-novalidate" -> "avformat"
+		char* novalidate_ptr = strstr(source_metadata_name, "-novalidate");
+		if ( novalidate_ptr ) *novalidate_ptr = '\0';
+		mlt_properties source_metadata = mlt_repository_metadata( repository, mlt_service_producer_type, source_metadata_name );
+		free( source_metadata_name );
 		if ( source_metadata )
 		{
 			mlt_properties params = (mlt_properties) mlt_properties_get_data( source_metadata, "parameters", NULL );

@@ -431,7 +431,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_producer_type, "avformat-novalidate", create_service );
 	MLT_REGISTER_METADATA( mlt_service_consumer_type, "avformat", avformat_metadata, NULL );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "avformat", avformat_metadata, NULL );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "avformat-novalidate", avformat_metadata, NULL );
 #endif
 #ifdef FILTERS
 	MLT_REGISTER( mlt_service_filter_type, "avcolour_space", create_service );
