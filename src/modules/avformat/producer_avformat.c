@@ -1789,9 +1789,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			self->sw_video_frame = av_frame_alloc();
 #endif
 
-		while ( ( self->video_send_result >= 0 || self->video_send_result == AVERROR( EAGAIN ) || self->video_send_result == AVERROR_EOF ) && !got_picture )
+		while (!got_picture && (self->video_send_result >= 0 || self->video_send_result == AVERROR(EAGAIN) || self->video_send_result == AVERROR_EOF))
 		{
-			if ( self->video_send_result != AVERROR( EAGAIN ) && self->video_send_result != AVERROR_EOF ) 
+			if ( self->video_send_result != AVERROR( EAGAIN ) ) 
 			{
 				// Read a packet
 				if ( self->pkt.stream_index == self->video_index )
@@ -1813,14 +1813,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else if ( ret < 0 )
 					{
-						// if ( ret == AVERROR_EOF ) 
-						// {
-						// 	pthread_mutex_unlock( &self->packets_mutex );
-						// 	break;
-						// } else 
-						// {
+						if ( ret == AVERROR_EOF ) 
+						{
+							self->pkt.stream_index = self->video_index;
+						} else 
+						{
 							mlt_log_verbose( MLT_PRODUCER_SERVICE( producer ), "av_read_frame returned error %d inside get_image\n", ret );
-						// }
+						}
 						if ( !self->video_seekable && mlt_properties_get_int( properties, "reconnect" ) )
 						{
 							// Try to reconnect to live sources by closing context and codecs,
