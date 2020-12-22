@@ -1793,9 +1793,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			self->sw_video_frame = av_frame_alloc();
 #endif
 
-		while ( ( self->video_send_result >= 0 || self->video_send_result == AVERROR( EAGAIN ) ) && !got_picture )
+		while (!got_picture && (self->video_send_result >= 0 || self->video_send_result == AVERROR(EAGAIN) || self->video_send_result == AVERROR_EOF))
 		{
-			if ( self->video_send_result != AVERROR( EAGAIN ) ) 
+			if ( self->video_send_result != AVERROR( EAGAIN ) )
 			{
 				// Read a packet
 				if ( self->pkt.stream_index == self->video_index )
@@ -1819,8 +1819,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					{
 						if ( ret == AVERROR_EOF ) 
 						{
-							pthread_mutex_unlock( &self->packets_mutex );
-							break;
+							self->pkt.stream_index = self->video_index;
 						} else 
 						{
 							mlt_log_verbose( MLT_PRODUCER_SERVICE( producer ), "av_read_frame returned error %d inside get_image\n", ret );
@@ -1889,7 +1888,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					self->video_send_result = avcodec_send_packet( codec_context, &self->pkt );
 					mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "decoded packet with size %d => %d\n", self->pkt.size, self->video_send_result );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
-					if (self->video_send_result < 0 && self->video_send_result != AVERROR(EAGAIN))
+					if (self->video_send_result < 0 && self->video_send_result != AVERROR(EAGAIN) && self->video_send_result != AVERROR_EOF)
 					{
 						mlt_log_warning( MLT_PRODUCER_SERVICE( producer ), "avcodec_send_packet failed with %d\n", self->video_send_result );
 					}
@@ -1913,8 +1912,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 								if( transfer_data_result < 0 ) 
 								{
 									mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "av_hwframe_transfer_data() failed %d\n", transfer_data_result );
-									mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
-									return -1;
+									goto exit_get_image;
 								}
 								av_frame_copy_props( self->sw_video_frame, self->video_frame );
 								self->sw_video_frame->width = self->video_frame->width;
