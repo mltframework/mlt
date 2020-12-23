@@ -651,6 +651,7 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 #if USE_HWACCEL
 	case AV_PIX_FMT_VAAPI:
 	case AV_PIX_FMT_CUDA:
+	case AV_PIX_FMT_VIDEOTOOLBOX:
 		return AV_PIX_FMT_YUV420P;
 #endif
 	default:
@@ -880,6 +881,11 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 					hwaccel = av_dict_get( params, "hwaccel_device", NULL, 0 );
 					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
 					memcpy( self->hw_device, device, strlen( device ) );
+				}
+				else if ( !strcmp( hwaccel->value, "videotoolbox" ) )
+				{
+					self->hw_pix_fmt = AV_PIX_FMT_VIDEOTOOLBOX;
+					self->hw_device_type = AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
 				}
 				else
 				{
@@ -2146,9 +2152,9 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			codec_context->thread_count = thread_count;
 
 #if USE_HWACCEL
-		if ( !strlen(self->hw_device) || self->hw_device_type == AV_HWDEVICE_TYPE_NONE || self->hw_pix_fmt == AV_PIX_FMT_NONE ) 
+		if ( self->hw_device_type == AV_HWDEVICE_TYPE_NONE || self->hw_pix_fmt == AV_PIX_FMT_NONE ) 
 		{
-			mlt_log_info( MLT_PRODUCER_SERVICE( self->parent ), "missing hwaccel parameters. skipping hardware initialization\n" );
+			mlt_log_verbose( MLT_PRODUCER_SERVICE( self->parent ), "missing hwaccel parameters. skipping hardware initialization\n" );
 			goto skip_hwaccel;
 		}
 
