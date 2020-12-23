@@ -1,3 +1,7 @@
+if(NOT MOD_MOTION_EST)
+    return()
+endif()
+
 if(GPL)
     file(GLOB mltmotion_est_src *.c)
     add_library(mltmotion_est MODULE ${mltmotion_est_src})

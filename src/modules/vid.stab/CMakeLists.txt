@@ -1,3 +1,7 @@
+if(NOT MOD_VIDSTAB)
+    return()
+endif()
+
 if(GPL)
     pkg_check_modules(vidstab IMPORTED_TARGET vidstab)
     if(TARGET PkgConfig::vidstab)

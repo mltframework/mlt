@@ -1,3 +1,7 @@
+if(NOT MOD_OLDFILM)
+    return()
+endif()
+
 file(GLOB mltoldfilm_src *.c)
 add_library(mltoldfilm MODULE ${mltoldfilm_src})
 target_link_libraries(mltoldfilm mlt m)

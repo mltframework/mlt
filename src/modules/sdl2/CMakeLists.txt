@@ -1,3 +1,7 @@
+if(NOT MOD_SDL2)
+    return()
+endif()
+
 if(TARGET sdl2)
     file(GLOB mltsdl2_src *.c)
     add_library(mltsdl2 MODULE ${mltsdl2_src})

@@ -1,3 +1,7 @@
+if(NOT MOD_XML)
+    return()
+endif()
+
 if(TARGET PkgConfig::xml)
     file(GLOB mltxml_src *.c)
     add_library(mltxml MODULE ${mltxml_src})

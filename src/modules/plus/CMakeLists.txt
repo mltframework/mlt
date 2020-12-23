@@ -1,3 +1,7 @@
+if(NOT MOD_PLUS)
+    return()
+endif()
+
 set(mltplus_src
     consumer_blipflash.c
     factory.c

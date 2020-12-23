@@ -1,3 +1,7 @@
+if(NOT MOD_OPENCV)
+    return()
+endif()
+
 find_package(OpenCV QUIET OPTIONAL_COMPONENTS tracking)
 if(${OpenCV_tracking_FOUND})
     add_library(mltopencv MODULE factory.c filter_opencv_tracker.cpp)

@@ -1,3 +1,7 @@
+if(NOT MOD_GDK)
+    return()
+endif()
+
 set(mltgdk_src factory.c)
 set(mltgdk_lib mlt m Threads::Threads)
 set(mltgdk_def "")
