@@ -1,3 +1,7 @@
+if(NOT MOD_NORMALIZE)
+    return()
+endif()
+
 if(GPL)
     file(GLOB mltnormalize_src *.c)
     add_library(mltnormalize MODULE ${mltnormalize_src})

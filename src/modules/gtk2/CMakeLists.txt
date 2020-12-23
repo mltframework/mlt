@@ -1,3 +1,7 @@
+if(NOT MOD_GTK2)
+    return()
+endif()
+
 set(mltgtk2_src factory.c)
 set(mltgtk2_lib mlt m Threads::Threads)
 set(mltgtk2_def "")

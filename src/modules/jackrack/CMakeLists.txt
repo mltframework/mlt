@@ -1,4 +1,7 @@
-#find_package(movit)
+if(NOT MOD_JACKRACK)
+    return()
+endif()
+
 pkg_check_modules(jack IMPORTED_TARGET jack)
 if(TARGET PkgConfig::jack)
     set(mltjack_src factory.c consumer_jack.c)

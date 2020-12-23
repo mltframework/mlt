@@ -1,3 +1,7 @@
+if(NOT MOD_RESAMPLE)
+    return()
+endif()
+
 pkg_check_modules(samplerate IMPORTED_TARGET samplerate)
 if(TARGET PkgConfig::samplerate)
     add_library(mltresample MODULE factory.c filter_resample.c)

@@ -1,3 +1,7 @@
+if(NOT MOD_LUMAS)
+    return()
+endif()
+
 add_executable(luma luma.c)
 # luma requires libmlt to work, so we set the output directory for luma to the location of this library
 set_target_properties(luma PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/src/framework")

@@ -1,3 +1,7 @@
+if(NOT MOD_XINE)
+    return()
+endif()
+
 if(GPL)
     set(mltxine_src factory.c
         deinterlace.c

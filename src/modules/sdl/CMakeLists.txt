@@ -1,3 +1,7 @@
+if(NOT MOD_SDL1)
+    return()
+endif()
+
 pkg_check_modules(sdl IMPORTED_TARGET sdl)
 pkg_check_modules(sdl_image IMPORTED_TARGET sdl_image)
 

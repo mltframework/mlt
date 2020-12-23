@@ -1,3 +1,7 @@
+if(NOT MOD_SOX)
+    return()
+endif()
+
 pkg_check_modules(sox IMPORTED_TARGET sox)
 if(TARGET PkgConfig::sox)
     add_library(mltsox MODULE factory.c filter_sox.c)
