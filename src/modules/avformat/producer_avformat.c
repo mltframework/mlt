@@ -652,6 +652,8 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_VAAPI:
 	case AV_PIX_FMT_CUDA:
 	case AV_PIX_FMT_VIDEOTOOLBOX:
+	case AV_PIX_FMT_DXVA2_VLD:
+	case AV_PIX_FMT_D3D11:
 		return AV_PIX_FMT_YUV420P;
 #endif
 	default:
@@ -886,6 +888,20 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 				{
 					self->hw_pix_fmt = AV_PIX_FMT_VIDEOTOOLBOX;
 					self->hw_device_type = AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
+				}
+				else if ( !strcmp( hwaccel->value, "d3d11va" ) )
+				{
+					self->hw_pix_fmt = AV_PIX_FMT_D3D11;
+					self->hw_device_type = AV_HWDEVICE_TYPE_D3D11VA;
+					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
+					memcpy( self->hw_device, device, strlen( device ) );
+				}
+				else if ( !strcmp( hwaccel->value, "dxva2" ) )
+				{
+					self->hw_pix_fmt = AV_PIX_FMT_DXVA2_VLD;
+					self->hw_device_type = AV_HWDEVICE_TYPE_DXVA2;
+					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
+					memcpy( self->hw_device, device, strlen( device ) );
 				}
 				else
 				{
