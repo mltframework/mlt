@@ -11,6 +11,7 @@ row-mt=1
 tile-columns=2
 tile-rows=1
 cpu-used=4
+strict=experimental
 
 meta.preset.name=AV1 WebM
 meta.preset.extension=webm
