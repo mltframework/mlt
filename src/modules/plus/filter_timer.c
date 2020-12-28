@@ -100,7 +100,7 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 	}
 	else if ( !strcmp( format, "MM:SS.SSS" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%02d:%05.3f", hours * 60 + mins, floor(secs * 1000.0) / 1000.0 );
+		snprintf( text, MAX_TEXT_LEN, "%02d:%06.3f", hours * 60 + mins, floor(secs * 1000.0) / 1000.0 );
 	}
 	else if ( !strcmp( format, "SS" ) )
 	{
@@ -116,7 +116,7 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 	}
 	else if ( !strcmp( format, "SS.SSS" ) )
 	{
-		snprintf( text, MAX_TEXT_LEN, "%05.3f", floor(value * 1000.0) / 1000.0 );
+		snprintf( text, MAX_TEXT_LEN, "%06.3f", floor(value * 1000.0) / 1000.0 );
 	}
 }
 
