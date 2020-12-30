@@ -1810,6 +1810,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Construct an AVFrame for YUV422 conversion
 		if ( !self->video_frame )
 			self->video_frame = av_frame_alloc();
+		else
+			av_frame_unref( self->video_frame );
 #if USE_HWACCEL
 		if ( !self->sw_video_frame )
 			self->sw_video_frame = av_frame_alloc();
@@ -2081,6 +2083,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->video_expected = position + 1;
 
 exit_get_image:
+#if USE_HWACCEL
+	av_frame_unref( self->sw_video_frame );
+#endif
 	pthread_mutex_unlock( &self->video_mutex );
 
 	// Set the progressive flag
@@ -2092,10 +2097,7 @@ exit_get_image:
 				(codec_params->field_order == AV_FIELD_PROGRESSIVE ||
 				 codec_params->field_order == AV_FIELD_UNKNOWN) );
 	}
-	av_frame_unref( self->video_frame );
-#if USE_HWACCEL
-	av_frame_unref( self->sw_video_frame );
-#endif
+
 	// Set the field order property for this frame
 	if ( mlt_properties_get( properties, "force_tff" ) )
 		mlt_properties_set_int( frame_properties, "top_field_first", !!mlt_properties_get_int( properties, "force_tff" ) );
