@@ -866,23 +866,23 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 
 #if USE_HWACCEL
 			AVDictionaryEntry *hwaccel = av_dict_get( params, "hwaccel", NULL, 0 );
+			AVDictionaryEntry *hwaccel_device = av_dict_get( params, "hwaccel_device", NULL, 0 );
+
 			if ( hwaccel && hwaccel->value ) 
 			{
+				// Leaving `device=NULL` will cause query string parameter `hwaccel_device` to be ignored
+				char *device = NULL;
 				if ( !strcmp( hwaccel->value, "vaapi" ) )
 				{
 					self->hw_pix_fmt = AV_PIX_FMT_VAAPI;
 					self->hw_device_type = AV_HWDEVICE_TYPE_VAAPI;
-					hwaccel = av_dict_get( params, "hwaccel_device", NULL, 0 );
-					char *device = hwaccel && hwaccel->value ? hwaccel->value : "/dev/dri/renderD128";
-					memcpy( self->hw_device, device, strlen( device ) );
+					device = "/dev/dri/renderD128";
 				}
 				else if ( !strcmp( hwaccel->value, "cuda" ) )
 				{
 					self->hw_pix_fmt = AV_PIX_FMT_CUDA;
 					self->hw_device_type = AV_HWDEVICE_TYPE_CUDA;
-					hwaccel = av_dict_get( params, "hwaccel_device", NULL, 0 );
-					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
-					memcpy( self->hw_device, device, strlen( device ) );
+					device = "0";
 				}
 				else if ( !strcmp( hwaccel->value, "videotoolbox" ) )
 				{
@@ -893,19 +893,23 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 				{
 					self->hw_pix_fmt = AV_PIX_FMT_D3D11;
 					self->hw_device_type = AV_HWDEVICE_TYPE_D3D11VA;
-					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
-					memcpy( self->hw_device, device, strlen( device ) );
+					device = "0";
 				}
 				else if ( !strcmp( hwaccel->value, "dxva2" ) )
 				{
 					self->hw_pix_fmt = AV_PIX_FMT_DXVA2_VLD;
 					self->hw_device_type = AV_HWDEVICE_TYPE_DXVA2;
-					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
-					memcpy( self->hw_device, device, strlen( device ) );
+					device = "0";
 				}
 				else
 				{
 					// TODO: init other hardware types
+				}
+
+				if (device) {
+					if (hwaccel_device && hwaccel_device->value)
+						device = hwaccel_device->value;
+					memcpy(self->hw_device, device, strlen(device));
 				}
 			}
 #endif
