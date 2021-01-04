@@ -216,6 +216,7 @@ static inline int is_known_prefix(const char* resource)
 			"ffrtmphttp",
 			"file",
 			"ftp",
+			"fs",
 			"gopher",
 			"hls",
 			"http",

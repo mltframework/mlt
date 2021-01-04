@@ -726,7 +726,7 @@ static void show_residual( uint8_t *result,  struct motion_est_context_s *c )
 			if( dx % 2 == 0 )
 				r[1] = 128 + ABS( r[1] - b[1] );
 			else
-				// FIXME: may exceed boundies
+				// FIXME: may exceed boundaries
 				r[1] = 128 + ABS( r[1] - ( *(b-1) + b[3] ) /2 );
 		 }
 		}
@@ -767,7 +767,7 @@ static void show_reconstruction( uint8_t *result, struct motion_est_context_s *c
 			if( dx % 2 == 0 )
 				r[1] = s[1];
 			else
-				// FIXME: may exceed boundies
+				// FIXME: may exceed boundaries
 				r[1] = ( *(s-1) + s[3] ) /2;
 		 }
 		}

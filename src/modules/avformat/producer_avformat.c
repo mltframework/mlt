@@ -443,9 +443,13 @@ static mlt_properties find_default_streams( producer_avformat self )
 				case AVCOL_SPC_BT709:
 					mlt_properties_set_int( meta_media, key, 709 );
 					break;
-				default:
+				case AVCOL_SPC_UNSPECIFIED:
+				case AVCOL_SPC_RESERVED:
 					// This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
 					mlt_properties_set_int( meta_media, key, codec_params->width * codec_params->height > 750000 ? 709 : 601 );
+					break;
+				default:
+					mlt_properties_set_int( meta_media, key, codec_context->colorspace );
 					break;
 				}
 				if ( codec_params->color_trc && codec_params->color_trc != AVCOL_TRC_UNSPECIFIED )
@@ -647,6 +651,9 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 #if USE_HWACCEL
 	case AV_PIX_FMT_VAAPI:
 	case AV_PIX_FMT_CUDA:
+	case AV_PIX_FMT_VIDEOTOOLBOX:
+	case AV_PIX_FMT_DXVA2_VLD:
+	case AV_PIX_FMT_D3D11:
 		return AV_PIX_FMT_YUV420P;
 #endif
 	default:
@@ -874,6 +881,25 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 					self->hw_pix_fmt = AV_PIX_FMT_CUDA;
 					self->hw_device_type = AV_HWDEVICE_TYPE_CUDA;
 					hwaccel = av_dict_get( params, "hwaccel_device", NULL, 0 );
+					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
+					memcpy( self->hw_device, device, strlen( device ) );
+				}
+				else if ( !strcmp( hwaccel->value, "videotoolbox" ) )
+				{
+					self->hw_pix_fmt = AV_PIX_FMT_VIDEOTOOLBOX;
+					self->hw_device_type = AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
+				}
+				else if ( !strcmp( hwaccel->value, "d3d11va" ) )
+				{
+					self->hw_pix_fmt = AV_PIX_FMT_D3D11;
+					self->hw_device_type = AV_HWDEVICE_TYPE_D3D11VA;
+					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
+					memcpy( self->hw_device, device, strlen( device ) );
+				}
+				else if ( !strcmp( hwaccel->value, "dxva2" ) )
+				{
+					self->hw_pix_fmt = AV_PIX_FMT_DXVA2_VLD;
+					self->hw_device_type = AV_HWDEVICE_TYPE_DXVA2;
 					char *device = hwaccel && hwaccel->value ? hwaccel->value : "0";
 					memcpy( self->hw_device, device, strlen( device ) );
 				}
@@ -1784,6 +1810,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Construct an AVFrame for YUV422 conversion
 		if ( !self->video_frame )
 			self->video_frame = av_frame_alloc();
+		else
+			av_frame_unref( self->video_frame );
 #if USE_HWACCEL
 		if ( !self->sw_video_frame )
 			self->sw_video_frame = av_frame_alloc();
@@ -1791,7 +1819,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 		while (!got_picture && (self->video_send_result >= 0 || self->video_send_result == AVERROR(EAGAIN) || self->video_send_result == AVERROR_EOF))
 		{
-			if ( self->video_send_result != AVERROR( EAGAIN ) ) 
+			if ( self->video_send_result != AVERROR( EAGAIN ) )
 			{
 				// Read a packet
 				if ( self->pkt.stream_index == self->video_index )
@@ -1826,6 +1854,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 							// and letting next call to get_frame() reopen.
 							mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 							prepare_reopen( self );
+							mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+							pthread_mutex_unlock( &self->packets_mutex );
 							goto exit_get_image;
 						}
 						if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
@@ -2053,6 +2083,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->video_expected = position + 1;
 
 exit_get_image:
+#if USE_HWACCEL
+	av_frame_unref( self->sw_video_frame );
+#endif
 	pthread_mutex_unlock( &self->video_mutex );
 
 	// Set the progressive flag
@@ -2064,10 +2097,7 @@ exit_get_image:
 				(codec_params->field_order == AV_FIELD_PROGRESSIVE ||
 				 codec_params->field_order == AV_FIELD_UNKNOWN) );
 	}
-	av_frame_unref( self->video_frame );
-#if USE_HWACCEL
-	av_frame_unref( self->sw_video_frame );
-#endif
+
 	// Set the field order property for this frame
 	if ( mlt_properties_get( properties, "force_tff" ) )
 		mlt_properties_set_int( frame_properties, "top_field_first", !!mlt_properties_get_int( properties, "force_tff" ) );
@@ -2140,9 +2170,9 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			codec_context->thread_count = thread_count;
 
 #if USE_HWACCEL
-		if ( !strlen(self->hw_device) || self->hw_device_type == AV_HWDEVICE_TYPE_NONE || self->hw_pix_fmt == AV_PIX_FMT_NONE ) 
+		if ( self->hw_device_type == AV_HWDEVICE_TYPE_NONE || self->hw_pix_fmt == AV_PIX_FMT_NONE ) 
 		{
-			mlt_log_info( MLT_PRODUCER_SERVICE( self->parent ), "missing hwaccel parameters. skipping hardware initialization\n" );
+			mlt_log_verbose( MLT_PRODUCER_SERVICE( self->parent ), "missing hwaccel parameters. skipping hardware initialization\n" );
 			goto skip_hwaccel;
 		}
 
@@ -3001,7 +3031,8 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 	{
 		pthread_mutex_lock( &self->open_mutex );
 		unsigned i = 0;
-		for (i = 0; i < context->nb_streams; i++) {
+		int index_max = FFMIN( MAX_AUDIO_STREAMS, context->nb_streams );
+		for (i = 0; i < index_max; i++) {
 			if (self->audio_codec[i]) {
 				avcodec_close(self->audio_codec[i]);
 				self->audio_codec[i] = NULL;

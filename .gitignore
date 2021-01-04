@@ -42,4 +42,4 @@ src/tests/Makefile
 src/tests/*/*
 !src/tests/*/*.cpp
 !src/tests/*/*.pro
-
+build
