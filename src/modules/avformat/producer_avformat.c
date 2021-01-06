@@ -132,11 +132,12 @@ struct producer_avformat_s
 	int is_audio_synchronizing;
 	int video_send_result;
 #if USE_HWACCEL
-	int hw_pix_fmt;
-	int hw_device_type;
-	char hw_device[128];
-	AVBufferRef* hw_device_ctx;
-	AVFrame* sw_video_frame;
+	struct {
+		int pix_fmt;
+		int device_type;
+		char device[128];
+		AVBufferRef* device_ctx;
+	} hwaccel;
 #endif
 };
 typedef struct producer_avformat_s *producer_avformat;
@@ -874,31 +875,31 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 				char *device = NULL;
 				if ( !strcmp( hwaccel->value, "vaapi" ) )
 				{
-					self->hw_pix_fmt = AV_PIX_FMT_VAAPI;
-					self->hw_device_type = AV_HWDEVICE_TYPE_VAAPI;
+					self->hwaccel.pix_fmt = AV_PIX_FMT_VAAPI;
+					self->hwaccel.device_type = AV_HWDEVICE_TYPE_VAAPI;
 					device = "/dev/dri/renderD128";
 				}
 				else if ( !strcmp( hwaccel->value, "cuda" ) )
 				{
-					self->hw_pix_fmt = AV_PIX_FMT_CUDA;
-					self->hw_device_type = AV_HWDEVICE_TYPE_CUDA;
+					self->hwaccel.pix_fmt = AV_PIX_FMT_CUDA;
+					self->hwaccel.device_type = AV_HWDEVICE_TYPE_CUDA;
 					device = "0";
 				}
 				else if ( !strcmp( hwaccel->value, "videotoolbox" ) )
 				{
-					self->hw_pix_fmt = AV_PIX_FMT_VIDEOTOOLBOX;
-					self->hw_device_type = AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
+					self->hwaccel.pix_fmt = AV_PIX_FMT_VIDEOTOOLBOX;
+					self->hwaccel.device_type = AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
 				}
 				else if ( !strcmp( hwaccel->value, "d3d11va" ) )
 				{
-					self->hw_pix_fmt = AV_PIX_FMT_D3D11;
-					self->hw_device_type = AV_HWDEVICE_TYPE_D3D11VA;
+					self->hwaccel.pix_fmt = AV_PIX_FMT_D3D11;
+					self->hwaccel.device_type = AV_HWDEVICE_TYPE_D3D11VA;
 					device = "0";
 				}
 				else if ( !strcmp( hwaccel->value, "dxva2" ) )
 				{
-					self->hw_pix_fmt = AV_PIX_FMT_DXVA2_VLD;
-					self->hw_device_type = AV_HWDEVICE_TYPE_DXVA2;
+					self->hwaccel.pix_fmt = AV_PIX_FMT_DXVA2_VLD;
+					self->hwaccel.device_type = AV_HWDEVICE_TYPE_DXVA2;
 					device = "0";
 				}
 				else
@@ -909,7 +910,7 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 				if (device) {
 					if (hwaccel_device && hwaccel_device->value)
 						device = hwaccel_device->value;
-					memcpy(self->hw_device, device, strlen(device));
+					memcpy(self->hwaccel.device, device, strlen(device));
 				}
 			}
 #endif
@@ -1031,9 +1032,8 @@ static void prepare_reopen( producer_avformat self )
 	self->video_codec = NULL;
 	av_frame_unref( self->video_frame );
 #if USE_HWACCEL
-	av_frame_unref( self->sw_video_frame );
-	av_buffer_unref( &self->hw_device_ctx );
-	self->hw_device_ctx = NULL;
+	av_buffer_unref( &self->hwaccel.device_ctx );
+	self->hwaccel.device_ctx = NULL;
 #endif
 	if ( self->seekable && self->audio_format )
 		avformat_close_input( &self->audio_format );
@@ -1816,10 +1816,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			self->video_frame = av_frame_alloc();
 		else
 			av_frame_unref( self->video_frame );
-#if USE_HWACCEL
-		if ( !self->sw_video_frame )
-			self->sw_video_frame = av_frame_alloc();
-#endif
 
 		while (!got_picture && (self->video_send_result >= 0 || self->video_send_result == AVERROR(EAGAIN) || self->video_send_result == AVERROR_EOF))
 		{
@@ -1934,20 +1930,22 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 						else
 						{
 #if USE_HWACCEL
-							if ( self->hw_device_ctx && self->video_frame->format == self->hw_pix_fmt )
+							if (self->hwaccel.device_ctx && self->video_frame->format == self->hwaccel.pix_fmt)
 							{
-								int transfer_data_result = av_hwframe_transfer_data( self->sw_video_frame, self->video_frame, 0 );
-								if( transfer_data_result < 0 ) 
+								AVFrame *sw_video_frame = av_frame_alloc();
+								int transfer_data_result = av_hwframe_transfer_data(sw_video_frame, self->video_frame, 0);
+								if(transfer_data_result < 0) 
 								{
-									mlt_log_error( MLT_PRODUCER_SERVICE( producer ), "av_hwframe_transfer_data() failed %d\n", transfer_data_result );
+									mlt_log_error( MLT_PRODUCER_SERVICE(producer), "av_hwframe_transfer_data() failed %d\n", transfer_data_result);
+									av_frame_unref(sw_video_frame);
 									goto exit_get_image;
 								}
-								av_frame_copy_props( self->sw_video_frame, self->video_frame );
-								self->sw_video_frame->width = self->video_frame->width;
-								self->sw_video_frame->height = self->video_frame->height;
+								av_frame_copy_props(sw_video_frame, self->video_frame);
+								sw_video_frame->width = self->video_frame->width;
+								sw_video_frame->height = self->video_frame->height;
 
-								av_frame_unref( self->video_frame );
-								av_frame_move_ref( self->video_frame, self->sw_video_frame );
+								av_frame_unref(self->video_frame);
+								av_frame_move_ref(self->video_frame, sw_video_frame);
 							}
 #endif
 							got_picture = 1;
@@ -2087,9 +2085,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	self->video_expected = position + 1;
 
 exit_get_image:
-#if USE_HWACCEL
-	av_frame_unref( self->sw_video_frame );
-#endif
 	pthread_mutex_unlock( &self->video_mutex );
 
 	// Set the progressive flag
@@ -2174,7 +2169,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			codec_context->thread_count = thread_count;
 
 #if USE_HWACCEL
-		if ( self->hw_device_type == AV_HWDEVICE_TYPE_NONE || self->hw_pix_fmt == AV_PIX_FMT_NONE ) 
+		if ( self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE || self->hwaccel.pix_fmt == AV_PIX_FMT_NONE ) 
 		{
 			mlt_log_verbose( MLT_PRODUCER_SERVICE( self->parent ), "missing hwaccel parameters. skipping hardware initialization\n" );
 			goto skip_hwaccel;
@@ -2188,7 +2183,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 				break;
 
 			if ( config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
-				config->device_type == self->hw_device_type && config->pix_fmt == self->hw_pix_fmt ) 
+				config->device_type == self->hwaccel.device_type && config->pix_fmt == self->hwaccel.pix_fmt ) 
 			{
 				found_hw_pix_fmt = 1;
 				break;
@@ -2197,11 +2192,11 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		
 		if ( found_hw_pix_fmt )
 		{
-			av_buffer_unref( &self->hw_device_ctx );
-			int ret = av_hwdevice_ctx_create( &self->hw_device_ctx, self->hw_device_type, self->hw_device, NULL, 0 );
+			av_buffer_unref( &self->hwaccel.device_ctx );
+			int ret = av_hwdevice_ctx_create( &self->hwaccel.device_ctx, self->hwaccel.device_type, self->hwaccel.device, NULL, 0 );
 			if ( ret >= 0 )
 			{
-				codec_context->hw_device_ctx = av_buffer_ref( self->hw_device_ctx );
+				codec_context->hw_device_ctx = av_buffer_ref( self->hwaccel.device_ctx );
 				mlt_log_info( MLT_PRODUCER_SERVICE( self->parent ), "av_hwdevice_ctx_create() success %d\n", codec_context->pix_fmt );
 			} 
 			else 
@@ -3135,8 +3130,7 @@ static void producer_avformat_close( producer_avformat self )
 	av_frame_unref( self->audio_frame );
 
 #if USE_HWACCEL
-	av_frame_unref( self->sw_video_frame );
-	av_buffer_unref( &self->hw_device_ctx );
+	av_buffer_unref( &self->hwaccel.device_ctx );
 #endif
 
 	if ( self->is_mutex_init )
