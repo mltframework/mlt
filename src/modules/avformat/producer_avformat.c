@@ -1199,7 +1199,7 @@ static int seek_video( producer_avformat self, mlt_position position,
 			// Remove the cached info relating to the previous position
 			self->current_position = POSITION_INVALID;
 			self->last_position = POSITION_INVALID;
-			av_freep( &self->video_frame );
+			av_frame_unref(self->video_frame);
 		}
 	}
 	pthread_mutex_unlock( &self->packets_mutex );
