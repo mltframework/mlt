@@ -1,6 +1,6 @@
 /*
  * consumer_jack.c -- a JACK audio consumer
- * Copyright (C) 2011-2014 Meltytech, LLC
+ * Copyright (C) 2011-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -532,7 +532,7 @@ static void *consumer_thread( void *arg )
 			while ( self->running && speed != 0 && mlt_deque_count( self->queue ) > 15 )
 				nanosleep( &tm, NULL );
 
-			// Push this frame to the back of the queue
+			// Push this frame to the back of the video queue
 			if ( self->running && speed )
 			{
 				pthread_mutex_lock( &self->video_mutex );
@@ -569,7 +569,7 @@ static void *consumer_thread( void *arg )
 //					mlt_consumer_purge( consumer );
 //				last_position = mlt_frame_get_position( frame );
 			}
-			else
+			else if (speed == 0.0)
 			{
 				mlt_consumer_purge( consumer );
 //				last_position = -1;

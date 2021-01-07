@@ -1,3 +1,7 @@
+if(NOT MOD_FREI0R)
+    return()
+endif()
+
 pkg_check_modules(FREI0R frei0r)
 if(${FREI0R_FOUND})
     file(GLOB mltfrei0r_src *.c)

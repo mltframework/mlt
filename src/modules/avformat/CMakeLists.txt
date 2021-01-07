@@ -1,5 +1,7 @@
-#list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-#find_package(FFmpeg)
+if(NOT MOD_AVFORMAT)
+    return()
+endif()
+
 pkg_check_modules(libavformat IMPORTED_TARGET libavformat)
 pkg_check_modules(libswscale IMPORTED_TARGET libswscale)
 pkg_check_modules(libavutil IMPORTED_TARGET libavutil)

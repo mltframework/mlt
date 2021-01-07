@@ -1,4 +1,7 @@
-#find_package(movit)
+if(NOT MOD_OPENGL)
+    return()
+endif()
+
 pkg_check_modules(movit IMPORTED_TARGET movit)
 if(TARGET PkgConfig::movit)
 

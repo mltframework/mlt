@@ -1,3 +1,7 @@
+if(NOT MOD_VORBIS)
+    return()
+endif()
+
 pkg_check_modules(vorbis IMPORTED_TARGET vorbis)
 pkg_check_modules(vorbisfile IMPORTED_TARGET vorbisfile)
 if(TARGET PkgConfig::vorbis AND TARGET PkgConfig::vorbisfile)

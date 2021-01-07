@@ -1,3 +1,7 @@
+if(NOT MOD_RTAUDIO)
+    return()
+endif()
+
 set(mltrtaudio_src consumer_rtaudio.cpp)
 set(mltrtaudio_lib mlt Threads::Threads)
 set(mltrtaudio_def)

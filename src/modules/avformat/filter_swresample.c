@@ -91,7 +91,7 @@ static int configure_swr_context( mlt_filter filter )
 		for( i = 0; i < pdata->out_channels; i++ )
 		{
 			custom_out_layout = (custom_out_layout << 1) | 0x01;
-			if( i <= pdata->in_channels )
+			if( i < pdata->in_channels )
 			{
 				double* matrix_row = matrix + (stride * i);
 				matrix_row[i] = 1.0;

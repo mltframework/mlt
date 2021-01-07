@@ -1,0 +1,29 @@
+name: build-melt-macos
+
+on:
+  workflow_dispatch:
+  schedule:
+    # nightly
+    - cron: '0 14 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download from S3
+        run: |
+          VERSION=$(date +"%y%m%d")
+          echo VERSION=$VERSION
+          sudo apt install -yqq s3cmd
+          s3cmd --access_key=${{ secrets.AWS_ACCESS_KEY }} --secret_key=${{ secrets.AWS_SECRET_KEY }} --stop-on-error get s3://builds.us.meltytech/melt-build-macos.txt
+          s3cmd --access_key=${{ secrets.AWS_ACCESS_KEY }} --secret_key=${{ secrets.AWS_SECRET_KEY }} --stop-on-error get s3://builds.us.meltytech/melt/melt-macos-x86_64-$VERSION.tar.bz2
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: unsigned-tarball
+          path: |
+            *.tar.bz2
+
+      - name: Dump log
+        run: cat melt-build-macos.txt

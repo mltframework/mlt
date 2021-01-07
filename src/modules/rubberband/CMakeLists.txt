@@ -1,3 +1,7 @@
+if(NOT MOD_RUBBERBAND)
+    return()
+endif()
+
 if(GPL)
     pkg_check_modules(rubberband IMPORTED_TARGET rubberband)
     if(TARGET PkgConfig::rubberband)

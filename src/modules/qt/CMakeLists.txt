@@ -1,3 +1,7 @@
+if(NOT MOD_QT)
+    return()
+endif()
+
 if(GPL)
     find_package(Qt5 COMPONENTS Core Gui Xml Svg Widgets)
     if(Qt5_FOUND)

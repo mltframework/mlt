@@ -1,3 +1,7 @@
+if(NOT MOD_PLUSGPL)
+    return()
+endif()
+
 if(GPL)
     file(GLOB mltplusgpl_src *.c)
     add_library(mltplusgpl MODULE ${mltplusgpl_src})

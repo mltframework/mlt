@@ -1,3 +1,7 @@
+if(NOT MOD_KDENLIVE)
+    return()
+endif()
+
 file(GLOB mltkdenlive_src *.c)
 add_library(mltkdenlive MODULE ${mltkdenlive_src})
 target_link_libraries(mltkdenlive mlt m)
