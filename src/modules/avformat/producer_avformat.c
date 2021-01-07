@@ -1937,7 +1937,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 								if(transfer_data_result < 0) 
 								{
 									mlt_log_error( MLT_PRODUCER_SERVICE(producer), "av_hwframe_transfer_data() failed %d\n", transfer_data_result);
-									av_frame_unref(sw_video_frame);
+									av_frame_free(&sw_video_frame);
 									goto exit_get_image;
 								}
 								av_frame_copy_props(sw_video_frame, self->video_frame);
@@ -1946,6 +1946,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 								av_frame_unref(self->video_frame);
 								av_frame_move_ref(self->video_frame, sw_video_frame);
+								av_frame_free(&sw_video_frame);
 							}
 #endif
 							got_picture = 1;
@@ -3126,8 +3127,8 @@ static void producer_avformat_close( producer_avformat self )
 
 	// Cleanup av contexts
 	av_packet_unref( &self->pkt );
-	av_frame_unref( self->video_frame );
-	av_frame_unref( self->audio_frame );
+	av_frame_free( &self->video_frame );
+	av_frame_free( &self->audio_frame );
 
 #if USE_HWACCEL
 	av_buffer_unref( &self->hwaccel.device_ctx );
@@ -3180,8 +3181,7 @@ static void producer_avformat_close( producer_avformat self )
 	{
 		while ( ( pkt = mlt_deque_pop_back( self->apackets ) ) )
 		{
-			av_packet_unref( pkt );
-			free( pkt );
+			av_packet_free( &pkt );
 		}
 		mlt_deque_close( self->apackets );
 		self->apackets = NULL;
@@ -3190,8 +3190,7 @@ static void producer_avformat_close( producer_avformat self )
 	{
 		while ( ( pkt = mlt_deque_pop_back( self->vpackets ) ) )
 		{
-			av_packet_unref( pkt );
-			free( pkt );
+			av_packet_free( &pkt );
 		}
 		mlt_deque_close( self->vpackets );
 		self->vpackets = NULL;
