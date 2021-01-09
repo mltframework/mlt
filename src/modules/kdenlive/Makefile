@@ -1,8 +1,9 @@
 CFLAGS += -I../..
 
-LDFLAGS += -L../../framework -lmlt
+LDFLAGS := -L../../framework -lmlt -lpthread -lm -L../../mlt++ -lmlt++ $(LDFLAGS)
 
 include ../../../config.mak
+include config.mak
 
 TARGET = ../libmltkdenlive$(LIBSUF)
 
@@ -12,18 +13,27 @@ OBJS = factory.o \
 	   filter_wave.o \
 	   producer_framebuffer.o
 
+CPPOBJS += filter_typewriter.o \
+	   typewriter.o
 
-LDFLAGS += -lm
+CXXFLAGS := $(QTCXXFLAGS) $(CXXFLAGS) $(CFLAGS) -Wno-deprecated
+
+ifneq (, $(shell $(CXX) --version | grep -is -e g++ -e clang))
+        _CXXFLAGS += -std=c++11
+endif
+
+LDFLAGS += $(QTLIBS)
 
 SRCS := $(OBJS:.o=.c)
+CPPSRCS := $(CPPOBJS:.o=.cpp)
 
 all: 	$(TARGET)
 
-$(TARGET): $(OBJS)
-		$(CC) $(SHFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+$(TARGET): $(OBJS) $(CPPOBJS)
+		$(CXX) $(SHFLAGS) -o $@ $(OBJS) $(CPPOBJS) $(LDFLAGS)
 
-depend:	$(SRCS)
-		$(CC) -MM $(CFLAGS) $^ 1>.depend
+depend:	$(SRCS) $(CPPSRCS)
+		$(CXX) -MM $(CXXFLAGS) $^ 1>.depend
 
 distclean:	clean
 		rm -f .depend

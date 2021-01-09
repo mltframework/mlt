@@ -1,0 +1,130 @@
+#!/bin/sh
+
+if [ "$help" = "1" ]
+then
+	cat << EOF
+Qt options:
+
+  --qt-libdir             - Location of Qt lib directory [/usr/lib/qt4]
+  --qt-includedir         - Location of Qt include directory [/usr/include/qt4]
+  --kde-libdir            - Location of KDE lib directory [/usr/lib]
+  --kde-includedir        - Location of KDE include directory [/usr/include/kde]
+  --exif-libdir           - Location of libexif lib directory [/usr/lib]
+  --exif-includedir       - Location of libexif include directory [/usr/include/libexif]
+  --without-kde           - Don't link to KDE libraries
+
+EOF
+
+else
+	targetos=$(uname -s)
+	case $targetos in
+	MINGW32*)
+		export LIBSUF=.dll
+		;;
+	Darwin)
+		export LIBSUF=.dylib
+		;;
+	Linux|FreeBSD|NetBSD)
+		export LIBSUF=.so
+		;;
+	*)
+		;;
+	esac
+
+	qt_includedir=
+	qt_libdir=
+
+	if [ "$QTDIR" != "" ]
+	then
+		qt_includedir="$QTDIR/include"
+		qt_libdir="$QTDIR/lib"
+		qt_version=$($QTDIR/bin/qmake -query QT_VERSION)
+	else
+		qt_version=$(qmake -query QT_VERSION)
+	fi
+
+	export without_kde=
+
+	for i in "$@"
+	do
+		case $i in
+			--qt-libdir=* )	qt_libdir="${i#--qt-libdir=}" ;;
+			--qt-includedir=* )	qt_includedir="${i#--qt-includedir=}" ;;
+		esac
+	done
+
+	echo > config.mak
+
+	if [ -d "$qt_libdir" -a -d "$qt_includedir" ]
+	then
+		# test if we have a Qt5 or Qt4
+		if [ -f "$qt_libdir/libQt5Core.so" ] || [ -d "$qt_libdir/QtWidgets.framework" ] || [ -f "$qt_libdir/libQt5Core.a" ]
+		then
+			echo "- Qt version 5.x detected"
+			# TODO re-enable KDE support when KDE Frameworks 5 widely available
+			without_kde=true
+		elif [ -f "$qt_libdir/libQtCore.so" ] || [ -d "$qt_libdir/QtCore.framework" ] || [ -f "$qt_libdir/libQtCore4.a" ]
+		then
+			echo "- Qt version 4.x detected"
+		else
+			echo "- Qt not found: disabling"
+			touch ../disable-qt
+			exit 0
+		fi
+
+		echo "- Include directory: " $qt_includedir
+
+		# Qt5 on Linux, BSD, or Windows
+		if [ -f "$qt_libdir/libQt5Core.so" ] || [ -f "$qt_libdir/libQt5Core.a" ]
+		then
+			echo QTCXXFLAGS=-I$qt_includedir -I$qt_includedir/QtCore -I$qt_includedir/QtXml >> config.mak
+			echo QTLIBS=-Wl,-rpath-link,"$qt_libdir" -L"$qt_libdir" -lQt5Core -lQt5Xml >> config.mak
+		# Qt5 on OS X
+		elif [ -d "$qt_libdir/QtWidgets.framework" ]
+		then
+			echo QTCXXFLAGS=-I$qt_includedir -F$qt_libdir \
+				-I$qt_includedir/QtCore -I$qt_libdir/QtCore.framework/Headers \
+				-I$qt_includedir/QtXml -I$qt_libdir/QtXml.framework/Headers \
+				>> config.mak
+			echo QTLIBS=-F"$qt_libdir" -framework QtCore -framework QtXml >> config.mak
+		# Qt4 on OS X
+		elif [ -d "$qt_libdir/QtGui.framework" ]
+		then
+			echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtXml) >> config.mak
+			echo QTLIBS=$(pkg-config --libs QtCore QtXml ) >> config.mak
+		# Qt4 on Windows
+		elif [ -f "$qt_libdir/libQtCore4.a" ]
+		then
+			echo QTCXXFLAGS=-I$qt_includedir -I$qt_includedir/QtCore -I$qt_includedir/QtXml >> config.mak
+			echo QTLIBS=-Wl,-enable-auto-import -L$qt_libdir -lQtCore4 -lQtXml4 >> config.mak
+		# Qt4 on Linux or BSD
+		else
+			echo QTCXXFLAGS=-I$qt_includedir -I$qt_includedir/QtCore -I$qt_includedir/QtXml >> config.mak
+			echo QTLIBS=-L$qt_libdir -lQtCore -lQtXml >> config.mak
+		fi
+	else
+		pkg-config --exists 'Qt5Gui'
+		if [ $? -eq 0 ]
+		then
+			echo "- Qt version 5.x detected"
+			without_kde=true
+			echo QTCXXFLAGS=$(pkg-config --cflags Qt5Core Qt5Xml) >> config.mak
+			echo QTLIBS=$(pkg-config --libs Qt5Core Qt5Xml) >> config.mak
+		else
+			pkg-config --exists 'QtGui >= 4'
+			if [ $? -eq 0 ]
+			then
+				echo "- Qt version 4.x detected"
+				echo QTCXXFLAGS=$(pkg-config --cflags QtCore QtXml) >> config.mak
+				echo QTLIBS=$(pkg-config --libs QtCore QtXml) >> config.mak
+			else
+				echo "- Qt not found - disabling"
+				touch ../disable-qt
+				exit 0
+			fi
+		fi
+	fi
+
+	[ "$gpl3" = "true" ] && echo GPL3=1 >> config.mak
+	exit 0
+fi
