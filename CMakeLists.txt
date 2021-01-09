@@ -6,6 +6,7 @@ set(MLT_VERSION 6.25.0)
 
 option(GPL "Enable GPLv2 modules" ON)
 option(GPL3 "Enable GPLv3 modules" ON)
+option(BUILD_TESTING "Enable tests" OFF)
 
 option(MOD_AVFORMAT "Enable avformat module" ON)
 option(MOD_DECKLINK "Enable decklink module" ON)
@@ -41,7 +42,11 @@ if(WIN32)
 endif()
 
 find_package(PkgConfig REQUIRED)
+
 include(GNUInstallDirs)
+if(BUILD_TESTING)
+    include(CTest)
+endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64)|(AMD64)")
     if(${ARCH} MATCHES "i686")
@@ -110,6 +115,10 @@ set(modules
 foreach(module ${modules})
     add_subdirectory(${module})
 endforeach()
+
+if(BUILD_TESTING)
+    add_subdirectory(src/tests)
+endif()
 
 install(DIRECTORY profiles DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
 install(DIRECTORY presets DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
