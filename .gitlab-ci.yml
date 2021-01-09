@@ -7,30 +7,12 @@ ubuntu-latest:
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
-ubuntu-lts-3:
+ubuntu-lts:
     image: ubuntu:20.04
     script:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
-            # there's no `check` or `test` `make` target
-
-ubuntu-lts-2:
-    image: ubuntu:18.04
-    script:
-        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-        - DEBIAN_FRONTEND=noninteractive apt-get -qq update
-        - apt-get -yqq build-dep mlt
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
-            # there's no `check` or `test` `make` target
-
-ubuntu-lts-1:
-    image: ubuntu:16.04
-    script:
-        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-        - apt-get -qq update
-        - apt-get -yqq build-dep mlt
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
@@ -69,24 +51,24 @@ fedora-31:
             # unclear why `gcc-c++` isn't in `Development Tools`
         - ./configure --enable-gpl --enable-gpl3 && make && make install
 
+fedora-33:
+    image: fedora:33
+    script:
+        - yum --assumeyes groupinstall "Development Tools"
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+            # unclear why `gcc-c++` isn't in `Development Tools`
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
+
+fedora-31:
+    image: fedora:31
+    script:
+        - yum --assumeyes groupinstall "Development Tools"
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+            # unclear why `gcc-c++` isn't in `Development Tools`
+        - ./configure --enable-gpl --enable-gpl3 && make && make install
+
 fedora-30:
     image: fedora:30
-    script:
-        - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
-            # unclear why `gcc-c++` isn't in `Development Tools`
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
-
-fedora-29:
-    image: fedora:29
-    script:
-        - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
-            # unclear why `gcc-c++` isn't in `Development Tools`
-        - ./configure --enable-gpl --enable-gpl3 && make && make install
-
-fedora-28:
-    image: fedora:28
     script:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
