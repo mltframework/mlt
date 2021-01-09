@@ -1,6 +1,6 @@
 schema_version: 0.3
 type: filter
-identifier: alpha_strobe
+identifier: strobe
 title: Alpha strobing
 version: 1
 copyright: Martin Sandsmark
