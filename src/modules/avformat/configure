@@ -51,7 +51,6 @@ else
 	export codecs=true
 	export filters=true
 	export devices=true
-	export vdpau=false
 	export avfilter=true
 	export swresample=false
 	pkg-config x11 > /dev/null 2>&1
@@ -68,8 +67,6 @@ else
 			--avformat-no-filters )	filters=false ;;
 			--avformat-no-devices )	devices=false ;;
 			--avformat-no-avfilter ) avfilter=false ;;
-			--avformat-no-vdpau )   vdpau=false ;;
-			--avformat-vdpau )      vdpau=true ;;
 		esac
 	done
 
@@ -95,12 +92,6 @@ else
 			fi
 			echo "LDFLAGS+=-Wl,-Bsymbolic" >> config.mak
 			extra_libs="$extra_libs -lm -lz -lbz2"
-			
-			if [ "$vdpau" = "true" ]
-			then
-				printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC -I"$static_ffmpeg" $CFLAGS -c -x c -  >/dev/null 2>&1
-				[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
-			fi
 		else
 			echo "avformat: Invalid path specified: $static_ffmpeg"
 			touch ../disable-avformat
@@ -162,11 +153,6 @@ else
 			echo "LDFLAGS+=$(pkg-config --libs libswresample${avformat_suffix})" >> config.mak
 		else
 			echo " - libswresample not found, disabling some features"
-		fi
-		if [ "$vdpau" = "true" ]
-		then
-			printf "#include <libavcodec/vdpau.h>\n int main(){ VdpBitstreamBuffer test; test.struct_version; return 0;}" | $CC $(pkg-config --cflags libavformat${avformat_suffix}) -I"$shared_ffmpeg/include" $CFLAGS -c -x c -  >/dev/null 2>&1
-			[ "$x11" = "0" -a "$?" = "0" ] && echo "VDPAU=1" >> config.mak
 		fi
 	else
 		echo "- libavformat not found: disabling"
