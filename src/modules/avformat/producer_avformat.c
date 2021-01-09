@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1910,11 +1910,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					if ( int_position >= req_position )
 						codec_context->skip_loop_filter = AVDISCARD_NONE;
 					self->video_send_result = avcodec_send_packet( codec_context, &self->pkt );
-					mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "decoded packet with size %d => %d\n", self->pkt.size, self->video_send_result );
+					mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "decoded video packet with size %d => %d\n", self->pkt.size, self->video_send_result );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
 					if (self->video_send_result < 0 && self->video_send_result != AVERROR(EAGAIN) && self->video_send_result != AVERROR_EOF)
 					{
-						mlt_log_warning( MLT_PRODUCER_SERVICE( producer ), "avcodec_send_packet failed with %d\n", self->video_send_result );
+						mlt_log_warning( MLT_PRODUCER_SERVICE( producer ), "video avcodec_send_packet failed with %d\n", self->video_send_result );
 					}
 					else
 					{
@@ -2561,34 +2561,27 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 	int audio_used = self->audio_used[ index ];
 	int ret = 0;
 	int discarded = 1;
+	int sizeof_sample = sample_bytes( codec_context );
 
-	while ( pkt.data && pkt.size > 0 )
-	{
-		int sizeof_sample = sample_bytes( codec_context );
-		int got_frame = 0;
-
-		// Decode the audio
-		if ( !self->audio_frame )
-			self->audio_frame = av_frame_alloc();
-		else
-			av_frame_unref( self->audio_frame );
-		ret = avcodec_decode_audio4( codec_context, self->audio_frame, &got_frame, &pkt );
-		if ( ret < 0 )
-		{
-			mlt_log_warning( MLT_PRODUCER_SERVICE(self->parent), "audio decoding error %d\n", ret );
-			break;
-		}
-
-		// Consume (sometimes partial) data in the packet.
-		pkt.size -= ret;
-		pkt.data += ret;
-
-		// If decoded successfully
-		if ( got_frame )
-		{
+	// Decode the audio
+	if ( !self->audio_frame )
+		self->audio_frame = av_frame_alloc();
+	else
+		av_frame_unref( self->audio_frame );
+	int error = avcodec_send_packet(codec_context, &pkt);
+	mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent), "decoded audio packet with size %d => %d\n", pkt.size, error);
+	if (error && error != AVERROR(EAGAIN) && error != AVERROR_EOF) {
+		mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), "audio avcodec_send_packet failed with %d\n", error);
+	} else while (!error) {
+		error = avcodec_receive_frame(codec_context, self->audio_frame);
+		if (error) {
+			if (error != AVERROR(EAGAIN)) {
+				mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), "audio decoding error %d\n", error);
+			}
+		} else {
 			// Figure out how many samples will be needed after resampling
 			int convert_samples = self->audio_frame->nb_samples;
-			channels = codec_context->channels;
+			ret += convert_samples * channels * sizeof_sample;
 
 			// Resize audio buffer to prevent overflow
 			if ( ( audio_used + convert_samples ) * channels * sizeof_sample > self->audio_buffer_size[ index ] )
@@ -2615,16 +2608,16 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 			audio_used += convert_samples;
 			discarded = 0;
 		}
-		
-		// Handle ignore
-		if ( *ignore > 0 && audio_used )
-		{
-			int n = FFMIN( audio_used, *ignore );
-			*ignore -= n;
-			audio_used -= n;
-			memmove( audio_buffer, &audio_buffer[ n * channels * sizeof_sample ],
-					 audio_used * channels * sizeof_sample );
-		}
+	}
+
+	// Handle ignore
+	if ( *ignore > 0 && audio_used )
+	{
+		int n = FFMIN( audio_used, *ignore );
+		*ignore -= n;
+		audio_used -= n;
+		memmove( audio_buffer, &audio_buffer[ n * channels * sizeof_sample ],
+				 audio_used * channels * sizeof_sample );
 	}
 
 	// If we're behind, ignore this packet
