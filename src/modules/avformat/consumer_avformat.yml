@@ -15,9 +15,9 @@ tags:
   - Video
 description: Write or stream audio and/or video using FFmpeg.
 notes: >
-  The avformat consumer uses the FFmpeg/libav libraries to encode to a file or
+  The avformat consumer uses the FFmpeg libraries to encode to a file or
   network stream. You can get a lot of information about how to encode with
-  FFmpeg all over the web including FFmpeg/libav's web site. With melt, you
+  FFmpeg all over the web including FFmpeg's web site. With melt, you
   simply need to add "-consumer avformat:output.file" to the command line
   followed by the encoding parameters by translating ffmpeg's '-option value'
   syntax to melt's 'option=value' syntax.

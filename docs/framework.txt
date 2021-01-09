@@ -53,7 +53,7 @@ Basic Design Information:
 
 	MLT is written in C. 
 	
-	The framework has no dependencies other than the standard C99 and POSIX 
+    The framework has no dependencies other than the standard C11 and POSIX
 	libraries. 
 
 	It follows a basic Object Oriented design paradigm, and as such, much of the

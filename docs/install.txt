@@ -19,7 +19,7 @@ Last Revision: 2013-09-07
       * melt             - A media playing test application (*)
       * mlt++            - C++ wrapper for framework
       * modules          - All services are defined here
-         * avformat      - FFmpeg/Libav dependent services
+         * avformat      - FFmpeg dependent services
          * avsync        - services to help test audio/video synchronization
          * core          - independent MLT services
          * decklink      - Blackmagick Design SDI/HDMI services
@@ -65,7 +65,7 @@ Last Revision: 2013-09-07
 
    The MLT core is dependent on:
 
-   * a C99 compliant C compiler
+   * a C11 compliant C compiler
    * posix threading (pthread)
    * standard posix libraries (libc)
 
@@ -74,7 +74,7 @@ Last Revision: 2013-09-07
    The modules have the following dependencies:
 
    | *Module* | *Description* |
-   | avformat | [[http://www.ffmpeg.org][FFmpeg]] or [[http://www.libav.org][libav]] v0.7 or later |
+   | avformat | [[http://www.ffmpeg.org][FFmpeg]] v4.0 or later |
    | dv       | [[http://libdv.sf.net][libdv]] 0.102 or later |
    | gtk2     | [[http://www.gtk.org][GTK2]] and associated dependencies |
    | jackrack | [[http://jackaudio.org][JACK]], [[http://www.xmlsoft.org/][libxml2]], and ladspa.h |

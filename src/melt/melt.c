@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2020 Meltytech, LLC
+ * Copyright (C) 2002-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -875,7 +875,7 @@ query_all:
 		else if ( !strcmp( argv[ i ], "-version" ) || !strcmp( argv[ i ], "--version" ) )
 		{
 			fprintf( stdout, "%s " VERSION "\n"
-				"Copyright (C) 2002-2020 Meltytech, LLC\n"
+				"Copyright (C) 2002-2021 Meltytech, LLC\n"
 				"<https://www.mltframework.org/>\n"
 				"This is free software; see the source for copying conditions.  There is NO\n"
 				"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",

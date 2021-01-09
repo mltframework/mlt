@@ -5,8 +5,7 @@ then
 	cat << EOF
 FFmpeg/avformat options:
 
-  This module requires at least FFmpeg v2.4 or Libav 12.
-  Features using libavfilter requires FFmpeg (not Libav).
+  This module requires at least FFmpeg v4.0.
 
   --avformat-shared=path  - Link against a shared installation of libavformat (default)
   --avformat-static=path  - Link against a static build of libavformat
