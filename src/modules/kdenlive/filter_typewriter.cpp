@@ -52,6 +52,7 @@ struct FilterContainer{
     int current_frame;      // currently parsed frame
 
     std::string xml_data;   // data field content (xml data)
+    bool is_template;
     int step_length;        // frame step value
     float sigma;            // sigma of fluctuations
     int seed;               // seed for random fluctuations
@@ -70,6 +71,7 @@ struct FilterContainer{
         init = false;
         current_frame = -1;
         xml_data.clear();
+        is_template = false;
         step_length = 0;
         sigma = 0;
         seed = 0;
@@ -109,8 +111,16 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
         if (producer == nullptr || producer_properties == nullptr)
             return 0;
 
-        d = mlt_properties_get( producer_properties, "xmldata" );
-        if (d == nullptr) return 0;
+        d = mlt_properties_get( producer_properties, "resource" );
+        cont->is_template = (d && d[0] != '\0');
+
+        if (cont->is_template)
+            d = mlt_properties_get( producer_properties, "_xmldata");
+        else
+            d = mlt_properties_get( producer_properties, "xmldata" );
+
+        if (d == nullptr)
+            return 0;
 
         step_length = atoi(mlt_properties_get(filter_p, "step_length"));
         sigma = atof(mlt_properties_get(filter_p, "step_sigma"));
@@ -215,7 +225,10 @@ static int update_producer(mlt_frame frame, mlt_properties frame_p, FilterContai
 
     if (restore == 1)
     {
-        mlt_properties_set( producer_properties, "xmldata", cont->xml_data.c_str() );
+        if (cont->is_template)
+            mlt_properties_set( producer_properties, "_xmldata", cont->xml_data.c_str() );
+        else
+            mlt_properties_set( producer_properties, "xmldata", cont->xml_data.c_str() );
         return 1;
     }
 
@@ -228,7 +241,11 @@ static int update_producer(mlt_frame frame, mlt_properties frame_p, FilterContai
 
     // update producer for rest of the frame
     QString dom = cont->xp.getDocument();
-    mlt_properties_set( producer_properties, "xmldata", dom.toStdString().c_str() );
+
+    if (cont->is_template)
+        mlt_properties_set( producer_properties, "_xmldata", dom.toStdString().c_str() );
+    else
+        mlt_properties_set( producer_properties, "xmldata", dom.toStdString().c_str() );
 
     cont->current_frame = pos;
 

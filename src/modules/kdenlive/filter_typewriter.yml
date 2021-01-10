@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter # consumer, filter, producer, or transition
 identifier: typewriter
 title: TypeWriter
-version: 0.3.2
+version: 0.3.4
 copyright: Copyright (C) Rafal Lalik
 license: GPL
 language: en
