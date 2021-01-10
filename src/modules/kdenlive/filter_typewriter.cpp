@@ -1,6 +1,6 @@
 /*
- * filter_oldfilm.c -- oldfilm filter
- * Copyright (c) 2007 Marco Gittler <g.marco@freenet.de>
+ * filter_typewriter.cpp -- typewriter filter
+ * Copyright (c) 2021 <rafallalik@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
