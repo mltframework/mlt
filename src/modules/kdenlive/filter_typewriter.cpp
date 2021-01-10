@@ -110,6 +110,8 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
             return 0;
 
         d = mlt_properties_get( producer_properties, "xmldata" );
+        if (d == nullptr) return 0;
+
         step_length = atoi(mlt_properties_get(filter_p, "step_length"));
         sigma = atof(mlt_properties_get(filter_p, "step_sigma"));
         seed = atoi(mlt_properties_get(filter_p, "random_seed"));
