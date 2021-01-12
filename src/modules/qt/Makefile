@@ -17,7 +17,9 @@ CPPOBJS = common.o \
 	producer_qtext.o \
 	transition_qtblend.o \
 	filter_qtblend.o \
-	filter_qtcrop.o
+	filter_qtcrop.o \
+	filter_typewriter.o \
+	typewriter.o
 
 ifdef USE_QT_OPENGL
 	CPPOBJS += consumer_qglsl.o

@@ -24,7 +24,6 @@
 extern mlt_filter filter_boxblur_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_freeze_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_typewriter_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
@@ -39,12 +38,10 @@ MLT_REPOSITORY
 	MLT_REGISTER( filter_type, "boxblur", filter_boxblur_init );
 	MLT_REGISTER( filter_type, "freeze", filter_freeze_init );
 	MLT_REGISTER( filter_type, "wave", filter_wave_init );
-	MLT_REGISTER( filter_type, "typewriter", filter_typewriter_init );
 	MLT_REGISTER( producer_type, "framebuffer", producer_framebuffer_init );
 
 	MLT_REGISTER_METADATA( filter_type, "boxblur", metadata, "filter_boxblur.yml" );
 	MLT_REGISTER_METADATA( filter_type, "freeze", metadata, "filter_freeze.yml" );
 	MLT_REGISTER_METADATA( filter_type, "wave", metadata, "filter_wave.yml" );
-	MLT_REGISTER_METADATA( filter_type, "typewriter", metadata, "filter_typewriter.yml" );
 	MLT_REGISTER_METADATA( producer_type, "framebuffer", metadata, "producer_framebuffer.yml" );
 }
