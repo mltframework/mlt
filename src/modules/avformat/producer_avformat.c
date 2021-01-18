@@ -2581,6 +2581,7 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		} else {
 			// Figure out how many samples will be needed after resampling
 			int convert_samples = self->audio_frame->nb_samples;
+			channels = codec_context->channels;
 			ret += convert_samples * channels * sizeof_sample;
 
 			// Resize audio buffer to prevent overflow
