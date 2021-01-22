@@ -1,6 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -565,7 +565,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	if (scale_width != 1.0 || scale_height != 1.0) {
 			// Scale request of b frame image to consumer scale maintaining its aspect ratio.
 			b_height = CLAMP(*height, 1, MLT_AFFINE_MAX_DIMENSION);
-			b_width  = CLAMP(b_height * b_dar / b_ar, 1, MLT_AFFINE_MAX_DIMENSION);
+			b_width  = MAX(b_height * b_dar / b_ar, 1);
+			if (b_width > MLT_AFFINE_MAX_DIMENSION) {
+				b_width  = CLAMP(*width, 1, MLT_AFFINE_MAX_DIMENSION);
+				b_height = MAX(b_width * b_ar / b_dar, 1);
+			}
 			// Set the rescale interpolation to match the frame
 			mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
 			// Disable padding (resize filter)
@@ -574,11 +578,11 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			   && (fill || distort || b_width > result.w || b_height > result.h
 				   || mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale"))) {
 		// Request b frame image scaled to what is needed.
-		b_width  = CLAMP(result.w, 1, MLT_AFFINE_MAX_DIMENSION);
-		b_height = b_width * b_ar / b_dar;
-		if (b_height > MLT_AFFINE_MAX_DIMENSION) {
-			b_height = CLAMP(result.h, 1, MLT_AFFINE_MAX_DIMENSION);
-			b_width  = b_height * b_dar / b_ar;
+		b_height = CLAMP(result.h, 1, MLT_AFFINE_MAX_DIMENSION);
+		b_width  = MAX(b_height * b_dar / b_ar, 1);
+		if (b_width > MLT_AFFINE_MAX_DIMENSION) {
+			b_width  = CLAMP(result.w, 1, MLT_AFFINE_MAX_DIMENSION);
+			b_height = MAX(b_width * b_ar / b_dar, 1);
 		}
 		// Set the rescale interpolation to match the frame
 		mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
