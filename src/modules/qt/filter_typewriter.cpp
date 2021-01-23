@@ -122,10 +122,10 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
         if (d == nullptr)
             return 0;
 
-        step_length = atoi(mlt_properties_get(filter_p, "step_length"));
-        sigma = atof(mlt_properties_get(filter_p, "step_sigma"));
-        seed = atoi(mlt_properties_get(filter_p, "random_seed"));
-        macro = atoi(mlt_properties_get(filter_p, "macro_type"));
+        step_length = mlt_properties_get_int(filter_p, "step_length");
+        sigma = mlt_properties_get_int(filter_p, "step_sigma");
+        seed = mlt_properties_get_int(filter_p, "random_seed");
+        macro = mlt_properties_get_int(filter_p, "macro_type");
 
         // if xml data changed, set update mask 0x1
         if (cont->xml_data != d || macro != cont->macro)
@@ -301,6 +301,13 @@ mlt_filter filter_typewriter_init( mlt_profile profile, mlt_service_type type, c
         filter->child = cont;
         filter->close = filter_close;
     }
+
+    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_properties_set_int(properties, "step_length", 25 );
+    mlt_properties_set_int(properties, "step_sigma", 0);
+    mlt_properties_set_int(properties, "random_seed", 0);
+    mlt_properties_set_int(properties, "macro_type", 1);
+
     return filter;
 }
 }

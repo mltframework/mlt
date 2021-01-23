@@ -25,7 +25,7 @@ parameters:
     mutable: yes
     default: 25
 
-  - identifier: sigma_step
+  - identifier: step_sigma
     title: Fluctuation of step length
     type: integer
     description: Varies the step position by random value following normal distribution
@@ -47,7 +47,7 @@ parameters:
     description: |
         Defines type of macro expansion:
         0 - custom macro,
-        1 - expansion char-by-chat
+        1 - expansion char-by-char
         2 - expansion word-by-word
         3 - expansion line-by-line
     readonly: no
