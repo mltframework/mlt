@@ -34,6 +34,7 @@ extern mlt_transition transition_vqm_init( mlt_profile profile, mlt_service_type
 extern mlt_transition transition_qtblend_init( mlt_profile profile, mlt_service_type type, const char *id, void *arg );
 extern mlt_filter filter_qtblend_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_qtcrop_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_typewriter_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 #ifdef USE_FFTW
 extern mlt_filter filter_audiospectrum_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -60,6 +61,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( transition_type, "qtblend", transition_qtblend_init );
 	MLT_REGISTER( filter_type, "qtblend", filter_qtblend_init );
 	MLT_REGISTER( filter_type, "qtcrop", filter_qtcrop_init );
+	MLT_REGISTER( filter_type, "typewriter", filter_typewriter_init );
 	MLT_REGISTER_METADATA( transition_type, "qtblend", metadata, "transition_qtblend.yml" );
 	MLT_REGISTER_METADATA( filter_type, "qtblend", metadata, "filter_qtblend.yml" );
 	MLT_REGISTER_METADATA( filter_type, "qtcrop", metadata, "filter_qtcrop.yml" );
@@ -80,4 +82,5 @@ MLT_REPOSITORY
 	MLT_REGISTER( transition_type, "vqm", transition_vqm_init );
 	MLT_REGISTER_METADATA( transition_type, "vqm", metadata, "transition_vqm.yml" );
 #endif
+	MLT_REGISTER_METADATA( filter_type, "typewriter", metadata, "filter_typewriter.yml" );
 }

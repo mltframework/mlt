@@ -11,7 +11,8 @@ if(GPL)
             qimage_wrapper.cpp kdenlivetitle_wrapper.cpp
             filter_audiowaveform.cpp filter_qtext.cpp filter_qtblend.cpp filter_qtcrop.cpp
             producer_qtext.cpp transition_qtblend.cpp
-            consumer_qglsl.cpp)
+            consumer_qglsl.cpp
+            filter_typewriter.cpp typewriter.cpp)
         set(mltqt_lib mlt++ mlt m Threads::Threads
             Qt5::Core Qt5::Gui Qt5::Xml Qt5::Svg Qt5::Widgets)
         set(mltqt_def USE_QT_OPENGL)

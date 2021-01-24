@@ -1,0 +1,55 @@
+schema_version: 0.1
+type: filter # consumer, filter, producer, or transition
+identifier: typewriter
+title: TypeWriter
+version: 0.3.4
+copyright: Copyright (C) Rafal Lalik
+license: GPL
+language: en
+url: none
+creator: Rafal Lalik <rafallalik@gmail.com>
+tags:
+  - Video
+description: |
+    Typewriter effect applied to kdenlivetitler producer
+
+notes: >
+    Original development: https://github.com/rlalik/mlt_extra_modules
+
+parameters:
+  - identifier: step_length
+    title: Distance between basic steps
+    type: integer
+    description: Defines how many frames it takes to display next character
+    readonly: no
+    mutable: yes
+    default: 25
+
+  - identifier: step_sigma
+    title: Fluctuation of step length
+    type: integer
+    description: Varies the step position by random value following normal distribution
+    readonly: no
+    mutable: yes
+    default: 0
+
+  - identifier: random_seed
+    title: Seed value
+    type: integer
+    description: Seed value for the random generator
+    readonly: no
+    mutable: yes
+    default: 0
+
+  - identifier: macro_type
+    title: Macro expansion type
+    type: integer
+    description: |
+        Defines type of macro expansion:
+        0 - custom macro,
+        1 - expansion char-by-char
+        2 - expansion word-by-word
+        3 - expansion line-by-line
+    readonly: no
+    mutable: yes
+    default: 1
