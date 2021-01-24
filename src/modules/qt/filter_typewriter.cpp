@@ -203,7 +203,7 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
     return 1;
 }
 
-static int update_producer(mlt_frame frame, mlt_properties frame_p, FilterContainer * cont, int restore)
+static int update_producer(mlt_frame frame, mlt_properties frame_p, FilterContainer * cont, bool restore)
 {
     if (cont->init == false)
         return 0;
@@ -223,7 +223,7 @@ static int update_producer(mlt_frame frame, mlt_properties frame_p, FilterContai
     if (producer_properties == nullptr)
         return 0;
 
-    if (restore == 1)
+    if (restore == true)
     {
         if (cont->is_template)
             mlt_properties_set( producer_properties, "_xmldata", cont->xml_data.c_str() );
@@ -262,15 +262,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
     FilterContainer * cont = (FilterContainer*) filter->child;
 
+    mlt_service_lock(MLT_FILTER_SERVICE(filter));
+
     int res = get_producer_data(properties, frame_properties, cont);
     if (res == 0)
         return mlt_frame_get_image( frame, image, format, width, height, 1 );
 
-    update_producer(frame, frame_properties, cont, 0);
+    update_producer(frame, frame_properties, cont, false);
 
     error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
-    update_producer(frame, frame_properties, cont, 1);
+    update_producer(frame, frame_properties, cont, true);
+
+    mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
     return error;
 }

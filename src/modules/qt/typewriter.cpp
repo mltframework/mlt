@@ -25,6 +25,7 @@
 
 #include "typewriter.h"
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <cmath>
 
