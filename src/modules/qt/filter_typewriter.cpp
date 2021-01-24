@@ -203,7 +203,7 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
     return 1;
 }
 
-static int update_producer(mlt_frame frame, mlt_properties frame_p, FilterContainer * cont, bool restore)
+static int update_producer(mlt_frame frame, mlt_properties /*frame_p*/, FilterContainer * cont, bool restore)
 {
     if (cont->init == false)
         return 0;
@@ -252,7 +252,7 @@ static int update_producer(mlt_frame frame, mlt_properties frame_p, FilterContai
     return 1;
 }
 
-static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int /*writable*/ )
 {
     int error = 0;
     mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
@@ -294,7 +294,7 @@ static void filter_close( mlt_filter filter)
 }
 
 extern "C" {
-mlt_filter filter_typewriter_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_filter filter_typewriter_init( mlt_profile /*profile*/, mlt_service_type /*type*/, const char */*id*/, char */*arg*/ )
 {
     mlt_filter filter = mlt_filter_new( );
     FilterContainer* cont = new FilterContainer;
