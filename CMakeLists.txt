@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(MLT)
-
-set(MLT_VERSION 6.25.0)
+project(MLT
+  VERSION 6.25.0
+  DESCRIPTION "Multimedia Framework"
+  HOMEPAGE_URL "https://www.mltframework.org"
+  LANGUAGES C CXX
+)
 
 option(GPL "Enable GPLv2 modules" ON)
 option(GPL3 "Enable GPLv3 modules" ON)

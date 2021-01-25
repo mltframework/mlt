@@ -1,6 +1,6 @@
 file(GLOB mlt++_src *.cpp)
 add_library(mlt++ SHARED ${mlt++_src})
-set_target_properties(mlt++ PROPERTIES SOVERSION 3 VERSION 3 CXX_STANDARD 14)
+set_target_properties(mlt++ PROPERTIES SOVERSION 3 VERSION ${MLT_VERSION} CXX_STANDARD 14)
 if(WIN32)
     target_compile_definitions(mlt++ PUBLIC MLTPP_EXPORTS)
 endif()
