@@ -183,7 +183,10 @@ if(SWIG_PYTHON)
   find_package(Python3 COMPONENTS Interpreter Development)
 endif()
 
-install(DIRECTORY profiles DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
-install(DIRECTORY presets DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
+install(DIRECTORY presets profiles DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
+
+if(UNIX AND NOT APPLE)
+  install(FILES docs/melt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+endif()
 
 add_subdirectory(src)
