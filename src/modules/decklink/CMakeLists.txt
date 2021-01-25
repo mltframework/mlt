@@ -1,7 +1,3 @@
-if(NOT MOD_DECKLINK)
-    return()
-endif()
-
 file(GLOB mltdecklink_src *.cpp)
 if(WIN32)
     list(APPEND mltdecklink_src win/DeckLinkAPI_i.cpp)

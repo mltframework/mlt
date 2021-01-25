@@ -1,7 +1,3 @@
-if(NOT MOD_PLUS)
-    return()
-endif()
-
 set(mltplus_src
     consumer_blipflash.c
     factory.c
@@ -30,7 +26,6 @@ if(TARGET PkgConfig::FFTW)
     list(APPEND mltplus_lib PkgConfig::FFTW)
     list(APPEND mltplus_def USE_FFTW)
 endif()
-pkg_check_modules(libebur128 IMPORTED_TARGET libebur128)
 if(TARGET PkgConfig::libebur128)
     list(APPEND mltplus_lib PkgConfig::libebur128)
     set(mltplus_inc "")
