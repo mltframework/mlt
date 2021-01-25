@@ -21,6 +21,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
