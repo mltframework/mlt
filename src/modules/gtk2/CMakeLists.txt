@@ -1,13 +1,7 @@
-if(NOT MOD_GTK2)
-    return()
-endif()
-
 set(mltgtk2_src factory.c)
 set(mltgtk2_lib mlt m Threads::Threads)
 set(mltgtk2_def "")
-find_package(GTK2 COMPONENTS gtk)
 if(TARGET GTK2::gtk)
-    pkg_check_modules(fontconfig IMPORTED_TARGET fontconfig)
     list(APPEND mltgtk2_src consumer_gtk2.c)
     list(APPEND mltgtk2_lib GTK2::gtk GTK2::gdk_pixbuf GTK2::pango PkgConfig::fontconfig)
     list(APPEND mltgtk2_def USE_GTK2)

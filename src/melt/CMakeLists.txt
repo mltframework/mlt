@@ -1,5 +1,4 @@
 set(melt_lib mlt Threads::Threads)
-pkg_check_modules(sdl2 IMPORTED_TARGET GLOBAL sdl2)
 if(TARGET PkgConfig::sdl2)
     add_library(sdl2 ALIAS PkgConfig::sdl2)
     if(MINGW)
