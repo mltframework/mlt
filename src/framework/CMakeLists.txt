@@ -31,6 +31,8 @@ endif()
 file(GLOB mlt_head *.h)
 install(FILES ${mlt_head} DESTINATION include/mlt/framework)
 
+install(FILES metaschema.yaml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
+
 configure_file(mlt-framework.pc.in mlt-framework.pc @ONLY)
 install (FILES
     ${CMAKE_CURRENT_BINARY_DIR}/mlt-framework.pc
