@@ -59,7 +59,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	assert( *width >= 0 );
 	assert( *height >= 0 );
-	size_t byteCount = *width * *height;
+	size_t pixelCount = *width * *height;
 
 	// We always clear the alpha mask, in case there's some optimizations
 	// that can be applied or other filters modyify the image contents.
@@ -70,14 +70,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// buffer, but don't want to crash in release build if it is broken.
 	if ( alpha_buffer )
 	{
-		memset( alpha_buffer, 0, byteCount );
+		memset( alpha_buffer, 0, pixelCount );
 	}
 
 	if ( *format == mlt_image_rgb24a )
 	{
-		for ( size_t i=3; i<byteCount * 4; i+=4 )
+		uint8_t *bytes = *image;
+		for ( size_t i=3; i<pixelCount * 4; i+=4 )
 		{
-			image[i] = 0;
+			bytes[i] = 0;
 		}
 	}
 
