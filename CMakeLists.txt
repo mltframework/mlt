@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(MLT)
-
-set(MLT_VERSION 6.25.0)
+project(MLT
+  VERSION 6.25.0
+  DESCRIPTION "Multimedia Framework"
+  HOMEPAGE_URL "https://www.mltframework.org"
+  LANGUAGES C CXX
+)
 
 option(GPL "Enable GPLv2 modules" ON)
 option(GPL3 "Enable GPLv3 modules" ON)
@@ -53,7 +56,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64)|(AMD64)")
   else()
     set(X86_64 ON)
     if(NOT MSVC)
-      add_definitions(-DUSE_MMX -DUSE_SSE -DUSE_SSE2 -DARCH_X86_64)
+      add_compile_definitions(USE_MMX USE_SSE USE_SSE2 ARCH_X86_64)
     endif()
   endif()
 endif()
@@ -183,7 +186,10 @@ if(SWIG_PYTHON)
   find_package(Python3 COMPONENTS Interpreter Development)
 endif()
 
-install(DIRECTORY profiles DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
-install(DIRECTORY presets DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
+install(DIRECTORY presets profiles DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
+
+if(UNIX AND NOT APPLE)
+  install(FILES docs/melt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+endif()
 
 add_subdirectory(src)
