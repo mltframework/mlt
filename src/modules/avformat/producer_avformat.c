@@ -1675,6 +1675,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Fetch the video format context
 	AVFormatContext *context = self->video_format;
+	AVCodecParameters *codec_params = NULL;
 	if ( !context )
 		goto exit_get_image;
 
@@ -1683,7 +1684,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Get codec context
 	AVCodecContext *codec_context = stream->codec;
-	AVCodecParameters *codec_params = stream->codecpar;
+	codec_params = stream->codecpar;
 
 	// Always use the image cache for album art.
 	int is_album_art = (codec_params->codec_id == AV_CODEC_ID_MJPEG
@@ -2351,8 +2352,8 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		}
 
 		self->full_luma = 0;
-		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_params->color_range );
-		if ( codec_params->color_range == AVCOL_RANGE_JPEG )
+		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );
+		if ( codec_context->color_range == AVCOL_RANGE_JPEG )
 			self->full_luma = 1;
 		if ( mlt_properties_get( properties, "set.force_full_luma" ) )
 			self->full_luma = mlt_properties_get_int( properties, "set.force_full_luma" );
