@@ -2351,6 +2351,8 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			break;
 		}
 
+		mlt_properties_set_int( properties, "meta.media.has_b_frames", self->video_codec->has_b_frames );
+
 		self->full_luma = 0;
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );
 		if ( codec_context->color_range == AVCOL_RANGE_JPEG )

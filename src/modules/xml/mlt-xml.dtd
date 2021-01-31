@@ -39,6 +39,19 @@
     title    CDATA    #IMPLIED
     mlt_service  CDATA    #IMPLIED
 >
+<!ELEMENT chain (property | filter | link)* >
+<!ATTLIST chain
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+    mlt_service  CDATA    #IMPLIED
+>
+<!ELEMENT link (property)* >
+<!ATTLIST link
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    mlt_service  CDATA    #IMPLIED
+>
 <!ELEMENT filter (property)* >
 <!ATTLIST filter
     id       ID       #IMPLIED

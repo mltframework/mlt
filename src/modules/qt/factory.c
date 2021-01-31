@@ -51,36 +51,36 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 MLT_REPOSITORY
 {
 #ifdef USE_QT_OPENGL
-	MLT_REGISTER( consumer_type, "qglsl", consumer_qglsl_init );
+	MLT_REGISTER( mlt_service_consumer_type, "qglsl", consumer_qglsl_init );
 #endif
-	MLT_REGISTER( filter_type, "audiowaveform", filter_audiowaveform_init );
-	MLT_REGISTER( filter_type, "qtext", filter_qtext_init );
-	MLT_REGISTER( producer_type, "qimage", producer_qimage_init );
-	MLT_REGISTER( producer_type, "qtext", producer_qtext_init );
-	MLT_REGISTER( producer_type, "kdenlivetitle", producer_kdenlivetitle_init );
-	MLT_REGISTER( transition_type, "qtblend", transition_qtblend_init );
-	MLT_REGISTER( filter_type, "qtblend", filter_qtblend_init );
-	MLT_REGISTER( filter_type, "qtcrop", filter_qtcrop_init );
-	MLT_REGISTER( filter_type, "typewriter", filter_typewriter_init );
-	MLT_REGISTER_METADATA( transition_type, "qtblend", metadata, "transition_qtblend.yml" );
-	MLT_REGISTER_METADATA( filter_type, "qtblend", metadata, "filter_qtblend.yml" );
-	MLT_REGISTER_METADATA( filter_type, "qtcrop", metadata, "filter_qtcrop.yml" );
+	MLT_REGISTER( mlt_service_filter_type, "audiowaveform", filter_audiowaveform_init );
+	MLT_REGISTER( mlt_service_filter_type, "qtext", filter_qtext_init );
+	MLT_REGISTER( mlt_service_producer_type, "qimage", producer_qimage_init );
+	MLT_REGISTER( mlt_service_producer_type, "qtext", producer_qtext_init );
+	MLT_REGISTER( mlt_service_producer_type, "kdenlivetitle", producer_kdenlivetitle_init );
+	MLT_REGISTER( mlt_service_transition_type, "qtblend", transition_qtblend_init );
+	MLT_REGISTER( mlt_service_filter_type, "qtblend", filter_qtblend_init );
+	MLT_REGISTER( mlt_service_filter_type, "qtcrop", filter_qtcrop_init );
+	MLT_REGISTER( mlt_service_filter_type, "typewriter", filter_typewriter_init );
+	MLT_REGISTER_METADATA( mlt_service_transition_type, "qtblend", metadata, "transition_qtblend.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "qtblend", metadata, "filter_qtblend.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "qtcrop", metadata, "filter_qtcrop.yml" );
 #ifdef USE_FFTW
-	MLT_REGISTER( filter_type, "audiospectrum", filter_audiospectrum_init );
-	MLT_REGISTER( filter_type, "lightshow", filter_lightshow_init );
+	MLT_REGISTER( mlt_service_filter_type, "audiospectrum", filter_audiospectrum_init );
+	MLT_REGISTER( mlt_service_filter_type, "lightshow", filter_lightshow_init );
 #endif
-	MLT_REGISTER_METADATA( filter_type, "audiowaveform", metadata, "filter_audiowaveform.yml" );
-	MLT_REGISTER_METADATA( filter_type, "qtext", metadata, "filter_qtext.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "audiowaveform", metadata, "filter_audiowaveform.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "qtext", metadata, "filter_qtext.yml" );
 #ifdef USE_FFTW
-	MLT_REGISTER_METADATA( filter_type, "lightshow", metadata, "filter_lightshow.yml" );
-	MLT_REGISTER_METADATA( filter_type, "audiospectrum", metadata, "filter_audiospectrum.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "lightshow", metadata, "filter_lightshow.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "audiospectrum", metadata, "filter_audiospectrum.yml" );
 #endif
-	MLT_REGISTER_METADATA( producer_type, "qimage", metadata, "producer_qimage.yml" );
-	MLT_REGISTER_METADATA( producer_type, "qtext", metadata, "producer_qtext.yml" );
-	MLT_REGISTER_METADATA( producer_type, "kdenlivetitle", metadata, "producer_kdenlivetitle.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "qimage", metadata, "producer_qimage.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "qtext", metadata, "producer_qtext.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "kdenlivetitle", metadata, "producer_kdenlivetitle.yml" );
 #ifdef GPL3
-	MLT_REGISTER( transition_type, "vqm", transition_vqm_init );
-	MLT_REGISTER_METADATA( transition_type, "vqm", metadata, "transition_vqm.yml" );
+	MLT_REGISTER( mlt_service_transition_type, "vqm", transition_vqm_init );
+	MLT_REGISTER_METADATA( mlt_service_transition_type, "vqm", metadata, "transition_vqm.yml" );
 #endif
-	MLT_REGISTER_METADATA( filter_type, "typewriter", metadata, "filter_typewriter.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "typewriter", metadata, "filter_typewriter.yml" );
 }

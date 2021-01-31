@@ -95,7 +95,7 @@ Playlist::Playlist( Profile& profile ) :
 Playlist::Playlist( Service &producer ) :
 	instance( NULL )
 {
-	if ( producer.type( ) == playlist_type )
+	if ( producer.type( ) == mlt_service_playlist_type )
 	{
 		instance = ( mlt_playlist )producer.get_service( );
 		inc_ref( );

@@ -233,20 +233,20 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 	uint32_t *dest = result;
 
 	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
-		if (type == producer_type) {
+		if (type == mlt_service_producer_type) {
 			dest = source[0];
 		} else {
 			rgba_bgra(image[0], (uint8_t*) result, *width, *height);
 			source[0] = result;
 			dest = (uint32_t*) image[0];
-			if (type == transition_type && f0r_update2) {
+			if (type == mlt_service_transition_type && f0r_update2) {
 				extra = mlt_pool_alloc(video_area * sizeof(uint32_t));
 				rgba_bgra(image[1], (uint8_t*) extra, *width, *height);
 				source[1] = extra;
 			}
 		}
 	}
-	if (type == producer_type) {
+	if (type == mlt_service_producer_type) {
 		if (slice_count > 0) {
 			struct update_context ctx = {
 				.frei0r = inst,
@@ -261,7 +261,7 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 		} else {
 			f0r_update(inst, time, NULL, dest);
 		}
-	} else if (type == filter_type) {
+	} else if (type == mlt_service_filter_type) {
 		if (slice_count > 0) {
 			struct update_context ctx = {
 				.frei0r = inst,
@@ -276,7 +276,7 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 		} else {
 			f0r_update(inst, time, source[0], dest);
 		}
-	} else if (type == transition_type && f0r_update2) {
+	} else if (type == mlt_service_transition_type && f0r_update2) {
 		if (slice_count > 0) {
 			struct update_context ctx = {
 				.frei0r = inst,

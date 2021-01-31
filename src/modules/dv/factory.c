@@ -33,9 +33,9 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "libdv", consumer_libdv_init );
-	MLT_REGISTER( producer_type, "libdv", producer_libdv_init );
+	MLT_REGISTER( mlt_service_consumer_type, "libdv", consumer_libdv_init );
+	MLT_REGISTER( mlt_service_producer_type, "libdv", producer_libdv_init );
 
-	MLT_REGISTER_METADATA( consumer_type, "libdv", metadata, "consumer_libdv.yml" );
-	MLT_REGISTER_METADATA( producer_type, "libdv", metadata, "producer_libdv.yml" );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "libdv", metadata, "consumer_libdv.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "libdv", metadata, "producer_libdv.yml" );
 }

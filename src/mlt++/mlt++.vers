@@ -612,3 +612,47 @@ MLTPP_6.22.0 {
       "Mlt::Audio::set_layout(mlt_channel_layout)";
     };
 } MLTPP_6.20.0;
+
+MLTPP_7.0.0 {
+  global:
+    extern "C++" {
+      "typeinfo for Mlt::Audio";
+      "typeinfo name for Mlt::Audio";
+      "vtable for Mlt::Audio";
+      "typeinfo for Mlt::Link";
+      "typeinfo name for Mlt::Link";
+      "vtable for Mlt::Link";
+      "typeinfo for Mlt::Chain";
+      "typeinfo name for Mlt::Chain";
+      "vtable for Mlt::Chain";
+      "Mlt::Link::Link()";
+      "Mlt::Link::Link(mlt_link)";
+      "Mlt::Link::Link(char const*, char const*)";
+      "Mlt::Link::~Link()";
+      "Mlt::Link::get_link()";
+      "Mlt::Link::get_producer()";
+      "Mlt::Link::connect_next(Mlt::Producer&, Mlt::Profile&)";
+      "Mlt::Chain::Chain()";
+      "Mlt::Chain::Chain(Mlt::Profile&, char const*, char const*)";
+      "Mlt::Chain::Chain(Mlt::Profile&)";
+      "Mlt::Chain::Chain(mlt_chain)";
+      "Mlt::Chain::Chain(Mlt::Chain&)";
+      "Mlt::Chain::Chain(Mlt::Chain*)";
+      "Mlt::Chain::Chain(Mlt::Service&)";
+      "Mlt::Chain::~Chain()";
+      "Mlt::Chain::get_chain()";
+      "Mlt::Chain::get_producer()";
+      "Mlt::Chain::set_source(Mlt::Producer&)";
+      "Mlt::Chain::get_source()";
+      "Mlt::Chain::attach(Mlt::Link&)";
+      "Mlt::Chain::detach(Mlt::Link&)";
+      "Mlt::Chain::link_count() const";
+      "Mlt::Chain::move_link(int, int)";
+      "Mlt::Chain::link(int)";
+      "Mlt::Repository::links() const";
+      "Mlt::Parser::on_start_chain(Mlt::Chain*)";
+      "Mlt::Parser::on_end_chain(Mlt::Chain*)";
+      "Mlt::Parser::on_start_link(Mlt::Link*)";
+      "Mlt::Parser::on_end_link(Mlt::Link*)";
+    };
+} MLTPP_6.22.0;

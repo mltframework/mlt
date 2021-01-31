@@ -87,11 +87,11 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "gtkrescale", create_service );
-	MLT_REGISTER( producer_type, "pango", create_service );
-	MLT_REGISTER( producer_type, "pixbuf", create_service );
+	MLT_REGISTER( mlt_service_filter_type, "gtkrescale", create_service );
+	MLT_REGISTER( mlt_service_producer_type, "pango", create_service );
+	MLT_REGISTER( mlt_service_producer_type, "pixbuf", create_service );
 
-	MLT_REGISTER_METADATA( filter_type, "gtkrescale", metadata, "filter_rescale.yml" );
-	MLT_REGISTER_METADATA( producer_type, "pango", metadata, "producer_pango.yml" );
-	MLT_REGISTER_METADATA( producer_type, "pixbuf", metadata, "producer_pixbuf.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "gtkrescale", metadata, "filter_rescale.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "pango", metadata, "producer_pango.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "pixbuf", metadata, "producer_pixbuf.yml" );
 }

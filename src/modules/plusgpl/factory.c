@@ -36,16 +36,16 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "cbrts", consumer_cbrts_init );
-	MLT_REGISTER( filter_type, "BurningTV", filter_burn_init );
-	MLT_REGISTER( filter_type, "burningtv", filter_burn_init );
-	MLT_REGISTER( filter_type, "lumaliftgaingamma", filter_lumaliftgaingamma_init );
-	MLT_REGISTER( filter_type, "rotoscoping", filter_rotoscoping_init );
-	MLT_REGISTER( filter_type, "telecide", filter_telecide_init );
+	MLT_REGISTER( mlt_service_consumer_type, "cbrts", consumer_cbrts_init );
+	MLT_REGISTER( mlt_service_filter_type, "BurningTV", filter_burn_init );
+	MLT_REGISTER( mlt_service_filter_type, "burningtv", filter_burn_init );
+	MLT_REGISTER( mlt_service_filter_type, "lumaliftgaingamma", filter_lumaliftgaingamma_init );
+	MLT_REGISTER( mlt_service_filter_type, "rotoscoping", filter_rotoscoping_init );
+	MLT_REGISTER( mlt_service_filter_type, "telecide", filter_telecide_init );
 
-	MLT_REGISTER_METADATA( consumer_type, "cbrts", metadata, "consumer_cbrts.yml" );
-	MLT_REGISTER_METADATA( filter_type, "BurningTV", metadata, "filter_burningtv.yml" );
-	MLT_REGISTER_METADATA( filter_type, "burningtv", metadata, "filter_burningtv.yml" );
-	MLT_REGISTER_METADATA( filter_type, "lumaliftgaingamma", metadata, "filter_lumaliftgaingamma.yml" );
-	MLT_REGISTER_METADATA( filter_type, "rotoscoping", metadata, "filter_rotoscoping.yml" );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "cbrts", metadata, "consumer_cbrts.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "BurningTV", metadata, "filter_burningtv.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "burningtv", metadata, "filter_burningtv.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "lumaliftgaingamma", metadata, "filter_lumaliftgaingamma.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "rotoscoping", metadata, "filter_rotoscoping.yml" );
 }

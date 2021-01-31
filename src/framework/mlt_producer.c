@@ -310,6 +310,11 @@ mlt_properties mlt_producer_properties( mlt_producer self )
 
 int mlt_producer_seek( mlt_producer self, mlt_position position )
 {
+	if ( self->seek )
+	{
+		return self->seek( self, position );
+	}
+
 	// Determine eof handling
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
 	char *eof = mlt_properties_get( properties, "eof" );
@@ -321,7 +326,11 @@ int mlt_producer_seek( mlt_producer self, mlt_position position )
 		mlt_producer_seek( mlt_producer_cut_parent( self ), position + mlt_producer_get_in( self ) );
 
 	// Check bounds
-	if ( position < 0 || mlt_producer_get_playtime( self ) == 0 )
+	if( mlt_service_identify( MLT_PRODUCER_SERVICE(self) ) == mlt_service_link_type )
+	{
+		// Do not bounds check a link.
+	}
+	else if ( position < 0 || mlt_producer_get_playtime( self ) == 0 )
 	{
 		position = 0;
 	}
@@ -454,6 +463,11 @@ double mlt_producer_get_fps( mlt_producer self )
 
 int mlt_producer_set_in_and_out( mlt_producer self, mlt_position in, mlt_position out )
 {
+	if ( self->set_in_and_out )
+	{
+		return self->set_in_and_out( self, in, out );
+	}
+
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
 
 	// Correct ins and outs if necessary
@@ -932,7 +946,7 @@ static int on_start_producer( mlt_parser self, mlt_producer object )
 	mlt_properties properties = mlt_parser_properties( self );
 	mlt_properties producers = mlt_properties_get_data( properties, "producers", NULL );
 	mlt_producer parent = mlt_producer_cut_parent( object );
-	if ( mlt_service_identify( ( mlt_service )mlt_producer_cut_parent( object ) ) == producer_type && mlt_producer_is_cut( object ) )
+	if ( mlt_service_identify( ( mlt_service )mlt_producer_cut_parent( object ) ) == mlt_service_producer_type && mlt_producer_is_cut( object ) )
 	{
 		int ref_count = 0;
 		clip_references *old_refs = NULL;

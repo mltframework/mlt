@@ -24,5 +24,5 @@ extern mlt_filter filter_deinterlace_init( mlt_profile profile, mlt_service_type
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "deinterlace", filter_deinterlace_init );
+	MLT_REGISTER( mlt_service_filter_type, "deinterlace", filter_deinterlace_init );
 }

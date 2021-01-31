@@ -35,13 +35,13 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "boxblur", filter_boxblur_init );
-	MLT_REGISTER( filter_type, "freeze", filter_freeze_init );
-	MLT_REGISTER( filter_type, "wave", filter_wave_init );
-	MLT_REGISTER( producer_type, "framebuffer", producer_framebuffer_init );
+	MLT_REGISTER( mlt_service_filter_type, "boxblur", filter_boxblur_init );
+	MLT_REGISTER( mlt_service_filter_type, "freeze", filter_freeze_init );
+	MLT_REGISTER( mlt_service_filter_type, "wave", filter_wave_init );
+	MLT_REGISTER( mlt_service_producer_type, "framebuffer", producer_framebuffer_init );
 
-	MLT_REGISTER_METADATA( filter_type, "boxblur", metadata, "filter_boxblur.yml" );
-	MLT_REGISTER_METADATA( filter_type, "freeze", metadata, "filter_freeze.yml" );
-	MLT_REGISTER_METADATA( filter_type, "wave", metadata, "filter_wave.yml" );
-	MLT_REGISTER_METADATA( producer_type, "framebuffer", metadata, "producer_framebuffer.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "boxblur", metadata, "filter_boxblur.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "freeze", metadata, "filter_freeze.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "wave", metadata, "filter_wave.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "framebuffer", metadata, "producer_framebuffer.yml" );
 }

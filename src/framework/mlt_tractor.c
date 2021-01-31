@@ -267,7 +267,7 @@ int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index
 			mlt_service_type type = mlt_service_identify( service );
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
-			if ( type == transition_type )
+			if ( type == mlt_service_transition_type )
 			{
 				mlt_transition transition = MLT_TRANSITION( service );
 				int a_track = mlt_transition_get_a_track( transition );
@@ -280,7 +280,7 @@ int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index
 					mlt_transition_set_tracks( transition, a_track, b_track );
 				}
 			}
-			else if ( type == filter_type )
+			else if ( type == mlt_service_filter_type )
 			{
 				int current_track = mlt_properties_get_int( properties, "track" );
 				if ( current_track >= index )
@@ -313,7 +313,7 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 			int track_max = MAX( mlt_multitrack_count( mlt_tractor_multitrack( self ) ) - 1, 0 );
 
-			if ( type == transition_type )
+			if ( type == mlt_service_transition_type )
 			{
 				mlt_transition transition = MLT_TRANSITION( service );
 				int a_track = mlt_transition_get_a_track( transition );
@@ -326,7 +326,7 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 					mlt_transition_set_tracks( transition, a_track, b_track );
 				}
 			}
-			else if ( type == filter_type )
+			else if ( type == mlt_service_filter_type )
 			{
 				int current_track = mlt_properties_get_int( properties, "track" );
 				if ( current_track >= index )

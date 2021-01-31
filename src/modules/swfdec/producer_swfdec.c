@@ -278,6 +278,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 MLT_REPOSITORY
 {
 	swfdec_init();
-	MLT_REGISTER( producer_type, "swfdec", producer_swfdec_init );
-	MLT_REGISTER_METADATA( producer_type, "swfdec", metadata, "producer_swfdec.yml" );
+	MLT_REGISTER( mlt_service_producer_type, "swfdec", producer_swfdec_init );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "swfdec", metadata, "producer_swfdec.yml" );
 }

@@ -57,7 +57,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "gtk2_preview", create_service );
+	MLT_REGISTER( mlt_service_consumer_type, "gtk2_preview", create_service );
 
-	MLT_REGISTER_METADATA( consumer_type, "gtk2_preview", metadata, "consumer_gtk2_preview.yml" );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "gtk2_preview", metadata, "consumer_gtk2_preview.yml" );
 }

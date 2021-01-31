@@ -24,5 +24,5 @@ extern mlt_producer producer_kino_init( mlt_profile profile, mlt_service_type ty
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( producer_type, "kino", producer_kino_init );
+	MLT_REGISTER( mlt_service_producer_type, "kino", producer_kino_init );
 }

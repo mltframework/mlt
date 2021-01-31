@@ -139,16 +139,18 @@ mlt_whence;
 
 typedef enum
 {
-	invalid_type = 0,           /**< invalid service */
-	unknown_type,               /**< unknown class */
-	producer_type,              /**< Producer class */
-	tractor_type,               /**< Tractor class */
-	playlist_type,              /**< Playlist class */
-	multitrack_type,            /**< Multitrack class */
-	filter_type,                /**< Filter class */
-	transition_type,            /**< Transition class */
-	consumer_type,              /**< Consumer class */
-	field_type                  /**< Field class */
+	mlt_service_invalid_type = 0,           /**< invalid service */
+	mlt_service_unknown_type,               /**< unknown class */
+	mlt_service_producer_type,              /**< Producer class */
+	mlt_service_tractor_type,               /**< Tractor class */
+	mlt_service_playlist_type,              /**< Playlist class */
+	mlt_service_multitrack_type,            /**< Multitrack class */
+	mlt_service_filter_type,                /**< Filter class */
+	mlt_service_transition_type,            /**< Transition class */
+	mlt_service_consumer_type,              /**< Consumer class */
+	mlt_service_field_type,                 /**< Field class */
+	mlt_service_link_type,                  /**< Link class */
+	mlt_service_chain_type                  /**< Chain class */
 }
 mlt_service_type;
 
@@ -208,6 +210,8 @@ typedef struct mlt_cache_s *mlt_cache;                  /**< pointer to Cache ob
 typedef struct mlt_cache_item_s *mlt_cache_item;        /**< pointer to CacheItem object */
 typedef struct mlt_animation_s *mlt_animation;          /**< pointer to Property Animation object */
 typedef struct mlt_slices_s *mlt_slices;                /**< pointer to Sliced processing context object */
+typedef struct mlt_link_s *mlt_link;                    /**< pointer to Link object */
+typedef struct mlt_chain_s *mlt_chain;                  /**< pointer to Chain object */
 
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */
@@ -221,6 +225,8 @@ typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serializ
 #define MLT_TRANSITION(x) ( ( mlt_transition )( x ) )   /**< Cast to a Transition pointer */
 #define MLT_CONSUMER(x) ( ( mlt_consumer )( x ) )       /**< Cast to a Consumer pointer */
 #define MLT_FRAME(x)      ( ( mlt_frame )( x ) )        /**< Cast to a Frame pointer */
+#define MLT_LINK(x)       ( ( mlt_link )( x ) )         /**< Cast to a Link pointer */
+#define MLT_CHAIN(x)      ( ( mlt_chain )( x ) )        /**< Cast to a Chain pointer */
 
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))

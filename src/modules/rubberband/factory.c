@@ -32,6 +32,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "rbpitch", filter_rbpitch_init );
-	MLT_REGISTER_METADATA( filter_type, "rbpitch", metadata, "filter_rbpitch.yml" );
+	MLT_REGISTER( mlt_service_filter_type, "rbpitch", filter_rbpitch_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "rbpitch", metadata, "filter_rbpitch.yml" );
 }

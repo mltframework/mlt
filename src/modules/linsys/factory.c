@@ -17,6 +17,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "sdi", consumer_SDIstream_init );
-	MLT_REGISTER_METADATA( consumer_type, "sdi", metadata, "consumer_sdi.yml" );
+	MLT_REGISTER( mlt_service_consumer_type, "sdi", consumer_SDIstream_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdi", metadata, "consumer_sdi.yml" );
 }

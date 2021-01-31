@@ -62,7 +62,7 @@ Transition::Transition( mlt_profile profile, const char *id, const char *arg ) :
 Transition::Transition( Service &transition ) :
 	instance( NULL )
 {
-	if ( transition.type( ) == transition_type )
+	if ( transition.type( ) == mlt_service_transition_type )
 	{
 		instance = ( mlt_transition )transition.get_service( );
 		inc_ref( );

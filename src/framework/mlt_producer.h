@@ -80,6 +80,24 @@ struct mlt_producer_s
 	 */
 	int ( *get_frame )( mlt_producer, mlt_frame_ptr, int );
 
+	/** Seek to a specified position (virtual function).
+	 *
+	 * \param mlt_producer a producer
+	 * \param position set the "play head" position of the producer
+	 * \return false
+	 */
+	int ( *seek )( mlt_producer, mlt_position );
+
+	/** Set the in and out points.
+	 *
+	 * \param mlt_producer a producer
+	 * \param mlt_position the relative starting time; a negative value is the same as 0
+	 * \param mlt_position the relative ending time; a negative value is the same as length - 1
+	 * \return false
+	 */
+	int ( *set_in_and_out )( mlt_producer, mlt_position, mlt_position );
+
+
 	/** the destructor virtual function */
 	mlt_destructor close;
 	void *close_object; /**< the object supplied to the close virtual function */
