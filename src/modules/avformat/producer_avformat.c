@@ -2544,13 +2544,13 @@ static void planar_to_interleaved( uint8_t *dest, AVFrame *src, int samples, int
 	}
 }
 
-static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int samples, double timecode, double fps )
+static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pkt, int samples, double timecode, double fps )
 {
 	// Fetch the audio_format
 	AVFormatContext *context = self->audio_format;
 
 	// Get the current stream index
-	int index = pkt.stream_index;
+	int index = pkt->stream_index;
 
 	// Get codec context
 	AVCodecContext *codec_context = self->audio_codec[ index ];
@@ -2569,8 +2569,8 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		self->audio_frame = av_frame_alloc();
 	else
 		av_frame_unref( self->audio_frame );
-	int error = avcodec_send_packet(codec_context, &pkt);
-	mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent), "decoded audio packet with size %d => %d\n", pkt.size, error);
+	int error = avcodec_send_packet(codec_context, pkt);
+	mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent), "decoded audio packet with size %d => %d\n", pkt->size, error);
 	if (error && error != AVERROR(EAGAIN) && error != AVERROR_EOF) {
 		mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), "audio avcodec_send_packet failed with %d\n", error);
 	} else while (!error) {
@@ -2624,9 +2624,9 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 
 	// If we're behind, ignore this packet
 	// Skip this on non-seekable, audio-only inputs.
-	if ( !discarded && pkt.pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
+	if ( !discarded && pkt->pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
 	{
-		int64_t pts = pkt.pts;
+		int64_t pts = pkt->pts;
 		if ( self->first_pts != AV_NOPTS_VALUE )
 			pts -= self->first_pts;
 		else if ( context->start_time != AV_NOPTS_VALUE && self->video_index != -1 )
@@ -2637,8 +2637,8 @@ static int decode_audio( producer_avformat self, int *ignore, AVPacket pkt, int 
 		int64_t req_pts =      llrint( timecode / timebase );
 
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent),
-			"A pkt.pts %"PRId64" pkt.dts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
-			pkt.pts, pkt.dts, req_position, self->current_position, int_position );
+			"A pkt.pts %"PRId64" pkt->dts %"PRId64" req_pos %"PRId64" cur_pos %"PRId64" pkt_pos %"PRId64"\n",
+			pkt->pts, pkt->dts, req_position, self->current_position, int_position );
 
 		if ( self->seekable || int_position > 0 )
 		{
@@ -2815,7 +2815,7 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			if ( index < MAX_AUDIO_STREAMS && ret >= 0 && pkt.data && pkt.size > 0 && ( index == self->audio_index ||
 				 ( self->audio_index == INT_MAX && context->streams[ index ]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO ) ) )
 			{
-				ret = decode_audio( self, &ignore[index], pkt, *samples, real_timecode, fps );
+				ret = decode_audio( self, &ignore[index], &pkt, *samples, real_timecode, fps );
 			}
 
 			if ( self->seekable || index != self->video_index )
