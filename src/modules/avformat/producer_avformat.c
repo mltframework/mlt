@@ -2243,7 +2243,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		// Process properties as AVOptions
 		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-		if ( codec->priv_class && codec_context->priv_data )
+		if ( codec && codec->priv_class && codec_context->priv_data )
 			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 
 		// Reset some image properties
