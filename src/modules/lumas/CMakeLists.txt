@@ -1,7 +1,9 @@
 add_executable(luma luma.c)
+target_link_libraries(luma mlt)
+
 # luma requires libmlt to work, so we set the output directory for luma to the location of this library
 set_target_properties(luma PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/src/framework")
-target_link_libraries(luma mlt)
+
 function(create_lumas dir w h bpp)
     set(${dir}
         ${CMAKE_CURRENT_BINARY_DIR}/${dir}/luma01.pgm
@@ -54,6 +56,7 @@ function(create_lumas dir w h bpp)
     add_custom_target(${dir} ALL DEPENDS ${${dir}})
     install(FILES ${${dir}} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/lumas/${dir})
 endfunction()
+
 create_lumas(PAL 720 576 16)
 create_lumas(NTSC 720 480 16)
 create_lumas(16_9 1920 1080 16)

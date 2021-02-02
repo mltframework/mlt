@@ -1,14 +1,32 @@
-file(GLOB mltplusgpl_src *.c)
-add_library(mltplusgpl MODULE ${mltplusgpl_src})
-set(mltplusgpl_lib mlt m Threads::Threads)
+add_library(mltplusgpl MODULE
+  cJSON.c
+  consumer_cbrts.c
+  factory.c
+  filter_burn.c
+  filter_lumaliftgaingamma.c
+  filter_rotoscoping.c
+  filter_telecide.c
+  image.c
+  utils.c
+)
+
+target_link_libraries(mltplusgpl mlt m Threads::Threads)
+
 if(WIN32)
-  list(APPEND mltplusgpl_lib ws2_32)
+  target_link_libraries(mltplusgpl ws2_32)
 elseif(UNIX)
-  list(APPEND mltplusgpl_lib rt)
+  target_link_libraries(mltplusgpl rt)
 endif()
-target_link_libraries(mltplusgpl ${mltplusgpl_lib})
+
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltplusgpl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+
 install(TARGETS mltplusgpl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-file(GLOB yml *.yml)
-install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plusgpl)
+
+install(FILES
+  consumer_cbrts.yml
+  filter_burningtv.yml
+  filter_lumaliftgaingamma.yml
+  filter_rotoscoping.yml
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plusgpl
+)

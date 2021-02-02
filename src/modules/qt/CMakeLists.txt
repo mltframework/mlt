@@ -1,4 +1,4 @@
-set(mltqt_src
+add_library(mltqt MODULE
   factory.c
   producer_qimage.c
   producer_kdenlivetitle.c
@@ -13,9 +13,10 @@ set(mltqt_src
   transition_qtblend.cpp
   consumer_qglsl.cpp
   filter_typewriter.cpp
-  typewriter.cpp)
+  typewriter.cpp
+)
 
-set(mltqt_lib
+target_link_libraries(mltqt
   mlt++
   mlt
   m
@@ -24,32 +25,43 @@ set(mltqt_lib
   Qt5::Gui
   Qt5::Xml
   Qt5::Svg
-  Qt5::Widgets)
+  Qt5::Widgets
+)
 
-set(mltqt_def USE_QT_OPENGL)
+target_compile_definitions(mltqt PRIVATE USE_QT_OPENGL)
 
 if(GPL3)
-  list(APPEND mltqt_src transition_vqm.cpp)
-  list(APPEND mltqt_def GPL3)
+  target_sources(mltqt PRIVATE transition_vqm.cpp)
+  target_compile_definitions(mltqt PRIVATE GPL3)
+  install(FILES transition_vqm.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/qt)
 endif()
 
 if(TARGET PkgConfig::FFTW)
-  list(APPEND mltqt_src filter_lightshow.cpp filter_audiospectrum.cpp)
-  list(APPEND mltqt_lib PkgConfig::FFTW)
-  list(APPEND mltqt_def USE_FFTW)
+  target_sources(mltqt PRIVATE filter_audiospectrum.cpp filter_lightshow.cpp)
+  target_link_libraries(mltqt PkgConfig::FFTW)
+  target_compile_definitions(mltqt PRIVATE USE_FFTW)
+  install(FILES filter_audiospectrum.yml filter_lightshow.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/qt)
 endif()
 
 if(TARGET PkgConfig::libexif)
-  list(APPEND mltqt_lib PkgConfig::libexif)
-  list(APPEND mltqt_def USE_EXIF)
+  target_link_libraries(mltqt PkgConfig::libexif)
+  target_compile_definitions(mltqt PRIVATE USE_EXIF)
 endif()
-
-add_library(mltqt MODULE ${mltqt_src})
-target_link_libraries(mltqt ${mltqt_lib})
-target_compile_definitions(mltqt PRIVATE ${mltqt_def})
 
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltqt PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+
 install(TARGETS mltqt LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-file(GLOB yml *.yml)
-install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/qt)
+
+install(FILES
+  filter_audiowaveform.yml
+  filter_qtblend.yml
+  filter_qtcrop.yml
+  filter_qtext.yml
+  filter_typewriter.yml
+  producer_kdenlivetitle.yml
+  producer_qimage.yml
+  producer_qtext.yml
+  transition_qtblend.yml
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/qt
+)

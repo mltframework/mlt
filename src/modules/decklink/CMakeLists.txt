@@ -1,19 +1,29 @@
-file(GLOB mltdecklink_src *.cpp)
-if(WIN32)
-    list(APPEND mltdecklink_src win/DeckLinkAPI_i.cpp)
-    set(mltdecklink_inc ${CMAKE_CURRENT_SOURCE_DIR}/win)
-elseif(APPLE)
-    list(APPEND mltdecklink_src darwin/DeckLinkAPIDispatch.cpp)
-    set(mltdecklink_inc ${CMAKE_CURRENT_SOURCE_DIR}/darwin)
-else()
-    list(APPEND mltdecklink_src linux/DeckLinkAPIDispatch.cpp)
-    set(mltdecklink_inc ${CMAKE_CURRENT_SOURCE_DIR}/linux)
-endif()
-add_library(mltdecklink MODULE ${mltdecklink_src})
+add_library(mltdecklink MODULE
+  common.cpp
+  consumer_decklink.cpp
+  producer_decklink.cpp
+)
+
 target_link_libraries(mltdecklink mlt Threads::Threads)
-target_include_directories(mltdecklink PRIVATE ${mltdecklink_inc})
+
+if(WIN32)
+  target_sources(mltdecklink PRIVATE win/DeckLinkAPI_i.cpp)
+  target_include_directories(mltdecklink PRIVATE win)
+elseif(APPLE)
+  target_sources(mltdecklink PRIVATE darwin/DeckLinkAPIDispatch.cpp)
+  target_include_directories(mltdecklink PRIVATE darwin)
+else()
+  target_sources(mltdecklink PRIVATE linux/DeckLinkAPIDispatch.cpp)
+  target_include_directories(mltdecklink PRIVATE linux)
+endif()
+
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltdecklink PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+
 install(TARGETS mltdecklink LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-file(GLOB yml *.yml)
-install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/decklink)
+
+install(FILES
+  consumer_decklink.yml
+  producer_decklink.yml
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/decklink
+)

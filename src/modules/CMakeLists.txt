@@ -20,6 +20,10 @@ if(MOD_GDK AND TARGET PkgConfig::GdkPixbuf)
   add_subdirectory(gdk)
 endif()
 
+if(MOD_GTK2)
+  add_subdirectory(gtk2)
+endif()
+
 if(MOD_JACKRACK AND TARGET PkgConfig::jack)
   add_subdirectory(jackrack)
 endif()
@@ -48,7 +52,7 @@ if(MOD_OPENCV AND OpenCV_tracking_FOUND)
   add_subdirectory(opencv)
 endif()
 
-if(MOD_OPENGL AND TARGET PkgConfig::movit)
+if(MOD_OPENGL AND TARGET PkgConfig::movit AND TARGET OpenGL::GL)
   add_subdirectory(opengl)
 endif()
 

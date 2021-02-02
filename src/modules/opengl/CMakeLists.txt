@@ -1,17 +1,58 @@
-if(MINGW)
-  set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -lopengl32 -lpthread")
+add_library(mltopengl MODULE
+  consumer_xgl.c
+  factory.c
+  filter_glsl_manager.cpp
+  filter_movit_blur.cpp
+  filter_movit_convert.cpp
+  filter_movit_crop.cpp
+  filter_movit_deconvolution_sharpen.cpp
+  filter_movit_diffusion.cpp
+  filter_movit_flip.cpp
+  filter_movit_glow.cpp
+  filter_movit_lift_gamma_gain.cpp
+  filter_movit_mirror.cpp
+  filter_movit_opacity.cpp
+  filter_movit_rect.cpp
+  filter_movit_resample.cpp
+  filter_movit_resize.cpp
+  filter_movit_saturation.cpp
+  filter_movit_vignette.cpp
+  filter_movit_white_balance.cpp
+  mlt_movit_input.cpp
+  transition_movit_luma.cpp
+  transition_movit_mix.cpp
+  transition_movit_overlay.cpp
+)
+
+target_link_libraries(mltopengl mlt m Threads::Threads OpenGL::GL PkgConfig::movit)
+
+if(UNIX AND NOT APPLE)
+  target_link_libraries(mltopengl X11::X11)
 endif()
-if(APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -FOpenGL")
-  set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -lpthread -framework OpenGL")
-endif()
+
 pkg_get_variable(SHADERDIR movit shaderdir)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHADERDIR=\\\"${SHADERDIR}\\\"")
-file(GLOB mltopengl_src *.c *.cpp)
-add_library(mltopengl MODULE ${mltopengl_src})
-target_link_libraries(mltopengl mlt m PkgConfig::movit)
+target_compile_definitions(mltopengl PRIVATE SHADERDIR="${SHADERDIR}")
+
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltopengl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+
 install(TARGETS mltopengl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-file(GLOB yml *.yml)
-install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/opengl)
+
+install(FILES
+  filter_movit_blur.yml
+  filter_movit_deconvolution_sharpen.yml
+  filter_movit_diffusion.yml
+  filter_movit_flip.yml
+  filter_movit_glow.yml
+  filter_movit_lift_gamma_gain.yml
+  filter_movit_mirror.yml
+  filter_movit_opacity.yml
+  filter_movit_rect.yml
+  filter_movit_saturation.yml
+  filter_movit_vignette.yml
+  filter_movit_white_balance.yml
+  transition_movit_luma.yml
+  transition_movit_mix.yml
+  transition_movit_overlay.yml
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/opengl
+)
