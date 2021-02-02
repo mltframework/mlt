@@ -47,7 +47,7 @@ endif()
 add_library(mltqt MODULE ${mltqt_src})
 target_link_libraries(mltqt ${mltqt_lib})
 target_compile_definitions(mltqt PRIVATE ${mltqt_def})
-set_target_properties(mltqt PROPERTIES CXX_STANDARD 11)
+
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltqt PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 install(TARGETS mltqt LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)

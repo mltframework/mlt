@@ -34,7 +34,7 @@ target_include_directories(mlt++ PUBLIC
 
 set(MLTPP_SOVERSION "3")
 
-set_target_properties(mlt++ PROPERTIES SOVERSION ${MLTPP_SOVERSION} VERSION ${MLT_VERSION} CXX_STANDARD 14)
+set_target_properties(mlt++ PROPERTIES SOVERSION ${MLTPP_SOVERSION} VERSION ${MLT_VERSION})
 
 if(WIN32)
   set_target_properties(mlt++ PROPERTIES OUTPUT_NAME "mlt++-${MLTPP_SOVERSION}")
