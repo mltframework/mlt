@@ -42,6 +42,7 @@ option(MOD_XINE "Enable xine module" ON)
 option(MOD_XML "Enable XML module" ON)
 
 option(SWIG_PYTHON "Enable SWIG Python bindings" OFF)
+option(SWIG_RUBY "Enable SWIG Ruby bindings" OFF)
 
 if(WIN32)
   option(NODEPLOY "Keep bin/ lib/ layout on Windows" ON)
@@ -203,6 +204,10 @@ find_package(SWIG)
 
 if(SWIG_PYTHON)
   find_package(Python3 COMPONENTS Interpreter Development)
+endif()
+
+if(SWIG_RUBY)
+  find_package(Ruby)
 endif()
 
 if(BUILD_DOCS)
