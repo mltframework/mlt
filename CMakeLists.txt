@@ -43,6 +43,7 @@ option(MOD_XML "Enable XML module" ON)
 
 option(SWIG_PYTHON "Enable SWIG Python bindings" OFF)
 option(SWIG_RUBY "Enable SWIG Ruby bindings" OFF)
+option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
 
 if(WIN32)
   option(NODEPLOY "Keep bin/ lib/ layout on Windows" ON)
@@ -208,6 +209,10 @@ endif()
 
 if(SWIG_RUBY)
   find_package(Ruby)
+endif()
+
+if(SWIG_TCL)
+  find_package(TCL)
 endif()
 
 if(BUILD_DOCS)
