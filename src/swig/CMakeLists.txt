@@ -1,5 +1,9 @@
 include(UseSWIG)
 
+if(SWIG_JAVA AND JNI_FOUND)
+  add_subdirectory(java)
+endif()
+
 if(SWIG_LUA AND LUA_FOUND)
   add_subdirectory(lua)
 endif()
