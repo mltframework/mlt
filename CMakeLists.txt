@@ -93,9 +93,6 @@ pkg_check_modules(sdl2 IMPORTED_TARGET GLOBAL sdl2)
 
 if(MOD_QT OR BUILD_TESTING)
   find_package(Qt5 COMPONENTS Core Gui Xml Svg Widgets Test)
-  if(Qt5_FOUND)
-    set(CMAKE_AUTOMOC ON)
-  endif()
 endif()
 
 if(MOD_QT OR MOD_PLUS)

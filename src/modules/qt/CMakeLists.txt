@@ -1,3 +1,5 @@
+set(CMAKE_AUTOMOC ON)
+
 add_library(mltqt MODULE
   factory.c
   producer_qimage.c
