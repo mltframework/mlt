@@ -24,7 +24,7 @@ add_library(mltopengl MODULE
   transition_movit_overlay.cpp
 )
 
-target_link_libraries(mltopengl mlt m Threads::Threads OpenGL::GL PkgConfig::movit)
+target_link_libraries(mltopengl m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
 
 if(UNIX AND NOT APPLE)
   target_link_libraries(mltopengl X11::X11)
