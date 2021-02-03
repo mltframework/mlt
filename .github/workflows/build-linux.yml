@@ -1,0 +1,54 @@
+name: build-test-linux-on-push
+
+on: [push]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build C/C++ with configure & make
+        run: |
+          sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+          DEBIAN_FRONTEND=noninteractive
+          apt-get -qq update
+          apt-get -yqq build-dep mlt swig python3-dev kwalify
+          CPUS=$(grep "processor.*:" /proc/cpuinfo | wc -l)
+          MAKEFLAGS=-j$(( $CPUS + 1 ))
+          ./configure --enable-gpl --enable-gpl3 --swig-languages=python
+          make
+          make install
+
+      - name: Run tests
+        run: |
+          make validate-yml
+          cd src/tests
+          qmake -r test.pro
+          CPUS=$(grep "processor.*:" /proc/cpuinfo | wc -l)
+          MAKEFLAGS=-j$(( $CPUS + 1 ))
+          make
+          make check
