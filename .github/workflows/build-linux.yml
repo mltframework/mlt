@@ -75,9 +75,14 @@ jobs:
 
       - name: Run tests
         env:
+          DEBIAN_FRONTEND: noninteractive
           LD_LIBRARY_PATH: /usr/local/lib
         run: |
           sudo apt-get -yqq install kwalify
-          make validate-yml
+          for file in $(find src/modules -type f -name *.yml ! -name resolution_scale.yml)
+          do
+            echo "validate: $file"
+            kwalify -f src/framework/metaschema.yaml "$file" || exit 1
+          done
           sudo locale-gen de_DE.UTF-8
           make -C build/src/tests test
