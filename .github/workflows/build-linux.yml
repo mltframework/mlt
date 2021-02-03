@@ -1,6 +1,6 @@
 name: build-test-linux-on-push
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   python:
