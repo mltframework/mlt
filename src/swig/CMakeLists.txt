@@ -1,5 +1,9 @@
 include(UseSWIG)
 
+if(SWIG_LUA AND LUA_FOUND)
+  add_subdirectory(lua)
+endif()
+
 if(SWIG_PERL AND PERLLIBS_FOUND)
   add_subdirectory(perl)
 endif()

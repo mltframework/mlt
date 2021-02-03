@@ -41,6 +41,7 @@ option(MOD_VORBIS "Enable Vorbis module" ON)
 option(MOD_XINE "Enable xine module" ON)
 option(MOD_XML "Enable XML module" ON)
 
+option(SWIG_LUA "Enable SWIG Lua bindings" OFF)
 option(SWIG_PERL "Enable SWIG Perl bindings" OFF)
 option(SWIG_PYTHON "Enable SWIG Python bindings" OFF)
 option(SWIG_RUBY "Enable SWIG Ruby bindings" OFF)
@@ -200,6 +201,10 @@ if(MOD_VORBIS)
 endif()
 
 find_package(SWIG)
+
+if(SWIG_LUA)
+  find_package(Lua)
+endif()
 
 if(SWIG_PERL)
   find_package(PerlLibs)
