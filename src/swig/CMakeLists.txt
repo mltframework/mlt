@@ -1,5 +1,9 @@
 include(UseSWIG)
 
+if(SWIG_PERL AND PERLLIBS_FOUND)
+  add_subdirectory(perl)
+endif()
+
 if(SWIG_PYTHON AND Python3_FOUND)
   add_subdirectory(python)
 endif()
