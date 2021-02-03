@@ -360,23 +360,23 @@ static int sliced_composite_proc( int id, int idx, int jobs, void* cookie )
 /** Composite function.
 */
 
-static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *alpha_b, uint8_t *alpha_a, struct geometry_s geometry, int field, uint16_t *p_luma, double softness, composite_line_fn line_fn, int sliced )
+static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint8_t *p_src, int width_src, int height_src, uint8_t *alpha_b, uint8_t *alpha_a, const struct geometry_s *geometry, int field, uint16_t *p_luma, double softness, composite_line_fn line_fn, int sliced )
 {
 	int ret = 0;
 	int i;
-	int x_src = -geometry.x_src, y_src = -geometry.y_src;
+	int x_src = -geometry->x_src, y_src = -geometry->y_src;
 	int uneven_x_src = ( x_src % 2 );
 	int step = ( field > -1 ) ? 2 : 1;
 	int bpp = 2;
-	int stride_src = geometry.sw * bpp;
+	int stride_src = geometry->sw * bpp;
 	int stride_dest = width_dest * bpp;
 	int i_softness = ( 1 << 16 ) * softness;
-	int weight = ( ( 1 << 16 ) * geometry.item.mix + 50 ) / 100;
-	uint32_t luma_step = ( ( ( 1 << 16 ) - 1 ) * geometry.item.mix + 50 ) / 100 * ( 1.0 + softness );
+	int weight = ( ( 1 << 16 ) * geometry->item.mix + 50 ) / 100;
+	uint32_t luma_step = ( ( ( 1 << 16 ) - 1 ) * geometry->item.mix + 50 ) / 100 * ( 1.0 + softness );
 
 	// Adjust to consumer scale
-	int x = rint( geometry.item.x * width_dest / geometry.nw );
-	int y = rint( geometry.item.y * height_dest / geometry.nh );
+	int x = rint( geometry->item.x * width_dest / geometry->nw );
+	int y = rint( geometry->item.y * height_dest / geometry->nh );
 	int uneven_x = ( x % 2 );
 
 	// optimization points - no work to do
@@ -391,8 +391,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	{
 		width_src -= x_src;
 		// and it implies cropping
-		if ( width_src > geometry.item.w )
-			width_src = geometry.item.w;
+		if ( width_src > geometry->item.w )
+			width_src = geometry->item.w;
 	}
 
 	// cropping affects the source height
@@ -400,8 +400,8 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	{
 		height_src -= y_src;
 		// and it implies cropping
-		if ( height_src > geometry.item.h )
-			height_src = geometry.item.h;
+		if ( height_src > geometry->item.h )
+			height_src = geometry->item.h;
 	}
 
 	// crop overlay off the left edge of frame
@@ -1292,7 +1292,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 				// Composite the b_frame on the a_frame
 				mlt_log_timings_begin()
-				composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
+				composite_yuv( *image, *width, *height, image_b, width_b, height_b, alpha_b, alpha_a, &result, field_id, luma_bitmap, luma_softness, line_fn, sliced );
 				mlt_log_timings_end( NULL, "composite_yuv" )
 			}
 		}

@@ -1,0 +1,88 @@
+name: build-test-linux-on-push
+
+on: [push, pull_request]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+
+  build-make:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build C/C++ with configure & make
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+          sudo apt-get -qq update
+          sudo apt-get -yqq build-dep mlt
+          ./configure --enable-gpl --enable-gpl3 --swig-languages=python
+          CPUS=$(grep "processor.*:" /proc/cpuinfo | wc -l)
+          make -j$(( $CPUS + 1 ))
+          sudo make install
+          cd src/tests
+          qmake -r tests.pro
+          make -j$(( $CPUS + 1 ))
+
+      - name: Run tests
+        env:
+          LD_LIBRARY_PATH: /usr/local/lib
+        run: |
+          sudo apt-get -yqq install kwalify
+          make validate-yml
+          sudo locale-gen de_DE.UTF-8
+          make -C src/tests check
+
+  build-cmake:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build C/C++ with CMake
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+          sudo apt-get -qq update
+          sudo apt-get -yqq build-dep mlt
+          sudo apt-get -yqq install cmake
+          cmake -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build
+          CPUS=$(grep "processor.*:" /proc/cpuinfo | wc -l)
+          cmake --build build -j $(( $CPUS + 1 ))
+          sudo cmake --install build
+
+      - name: Run tests
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          LD_LIBRARY_PATH: /usr/local/lib
+        run: |
+          sudo apt-get -yqq install kwalify
+          for file in $(find src/modules -type f -name *.yml ! -name resolution_scale.yml)
+          do
+            echo "validate: $file"
+            kwalify -f src/framework/metaschema.yaml "$file" || exit 1
+          done
+          sudo locale-gen de_DE.UTF-8
+          make -C build/src/tests test

@@ -43,16 +43,16 @@ debian-stable:
         - ./configure --enable-gpl --enable-gpl3 && make && make install
             # there's no `check` or `test` `make` target
 
-fedora-31:
-    image: fedora:31
+fedora-33:
+    image: fedora:33
     script:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
             # unclear why `gcc-c++` isn't in `Development Tools`
         - ./configure --enable-gpl --enable-gpl3 && make && make install
 
-fedora-33:
-    image: fedora:33
+fedora-32:
+    image: fedora:32
     script:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
