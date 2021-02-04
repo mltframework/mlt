@@ -1,5 +1,5 @@
 --- # A metadata schema in Kwalify: http://www.kuwata-lab.com/kwalify/
-# Version: 0.3
+# Version: 7
 type: map
 mapping:
   "schema_version": # This should match the version comment above
@@ -11,7 +11,7 @@ mapping:
   "type": # A service type
     type: str
     required: yes
-    enum: [consumer, filter, producer, transition]
+    enum: [consumer, filter, link, producer, transition]
   "identifier": # The same value used to register and create the service
     type: str
     required: yes
@@ -95,6 +95,9 @@ mapping:
             default: no
           "mutable": # The service will change behavior if this is set after
                      # processing the first frame
+            type: bool
+            default: no
+          "animation": # Does the property support the animation API for keyframes?
             type: bool
             default: no
           "widget": # A hint to the UI about how to let the user set this
