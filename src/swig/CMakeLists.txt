@@ -8,6 +8,10 @@ if(SWIG_LUA AND LUA_FOUND)
   add_subdirectory(lua)
 endif()
 
+if(SWIG_NODEJS AND NODEJS_INCLUDE_DIRS)
+  add_subdirectory(nodejs)
+endif()
+
 if(SWIG_PERL AND PERLLIBS_FOUND)
   add_subdirectory(perl)
 endif()

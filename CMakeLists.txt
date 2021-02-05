@@ -43,6 +43,7 @@ option(MOD_XML "Enable XML module" ON)
 
 option(SWIG_JAVA "Enable SWIG Java bindings" OFF)
 option(SWIG_LUA "Enable SWIG Lua bindings" OFF)
+option(SWIG_NODEJS "Enable SWIG Node.js bindings" OFF)
 option(SWIG_PERL "Enable SWIG Perl bindings" OFF)
 option(SWIG_PHP "Enable SWIG PHP bindings" OFF)
 option(SWIG_PYTHON "Enable SWIG Python bindings" OFF)
@@ -212,6 +213,14 @@ endif()
 
 if(SWIG_LUA)
   find_package(Lua)
+endif()
+
+if(SWIG_NODEJS)
+  find_package(Node)
+  if(NODE_VERSION_MAJOR VERSION_GREATER_EQUAL 12 AND SWIG_VERSION VERSION_LESS 4.1)
+    # https://github.com/swig/swig/issues/1520
+    set(SWIG_NODEJS OFF)
+  endif()
 endif()
 
 if(SWIG_PERL)
