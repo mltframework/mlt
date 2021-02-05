@@ -44,6 +44,7 @@ option(MOD_XML "Enable XML module" ON)
 option(SWIG_JAVA "Enable SWIG Java bindings" OFF)
 option(SWIG_LUA "Enable SWIG Lua bindings" OFF)
 option(SWIG_PERL "Enable SWIG Perl bindings" OFF)
+option(SWIG_PHP "Enable SWIG PHP bindings" OFF)
 option(SWIG_PYTHON "Enable SWIG Python bindings" OFF)
 option(SWIG_RUBY "Enable SWIG Ruby bindings" OFF)
 option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
@@ -51,6 +52,8 @@ option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
 if(WIN32)
   option(NODEPLOY "Keep bin/ lib/ layout on Windows" ON)
 endif()
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(GNUInstallDirs)
 if(BUILD_TESTING)
@@ -213,6 +216,10 @@ endif()
 
 if(SWIG_PERL)
   find_package(PerlLibs)
+endif()
+
+if(SWIG_PHP)
+  find_package(PHP)
 endif()
 
 if(SWIG_PYTHON)

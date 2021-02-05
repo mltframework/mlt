@@ -1,0 +1,36 @@
+find_program(PHP_CONFIG_EXECUTABLE php-config)
+
+if(PHP_CONFIG_EXECUTABLE)
+  execute_process(COMMAND ${PHP_CONFIG_EXECUTABLE} --version
+    OUTPUT_VARIABLE PHP_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  execute_process(COMMAND ${PHP_CONFIG_EXECUTABLE} --includes
+    OUTPUT_VARIABLE PHP_INCLUDE_DIRS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  string(REPLACE "-I" "" PHP_INCLUDE_DIRS ${PHP_INCLUDE_DIRS})
+  separate_arguments(PHP_INCLUDE_DIRS)
+
+  execute_process(COMMAND ${PHP_CONFIG_EXECUTABLE} --extension-dir
+    OUTPUT_VARIABLE PHP_EXTENSION_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+endif()
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(PHP
+  FOUND_VAR PHP_FOUND
+  REQUIRED_VARS
+    PHP_CONFIG_EXECUTABLE
+    PHP_INCLUDE_DIRS
+  VERSION_VAR PHP_VERSION
+)
+
+if(PHP_FOUND AND NOT TARGET PHP::Extension)
+  add_library(PHP::Extension INTERFACE IMPORTED)
+  set_target_properties(PHP::Extension PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${PHP_INCLUDE_DIRS}"
+  )
+endif()
