@@ -1,5 +1,9 @@
 include(UseSWIG)
 
+if(SWIG_CSHARP AND CSHARP_MONO_FOUND)
+  add_subdirectory(csharp)
+endif()
+
 if(SWIG_JAVA AND JNI_FOUND)
   add_subdirectory(java)
 endif()
