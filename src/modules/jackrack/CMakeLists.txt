@@ -1,8 +1,8 @@
-set(mltjack_src factory.c consumer_jack.c)
-set(mltjack_lib mlt Threads::Threads PkgConfig::jack)
+add_library(mltjack MODULE consumer_jack.c factory.c)
+target_link_libraries(mltjack PRIVATE mlt Threads::Threads PkgConfig::jack)
 
 if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
-  set(mltjack_src ${mltjack_src}
+  target_sources(mltjack PRIVATE
     jack_rack.c
     lock_free_fifo.c
     plugin.c
@@ -12,18 +12,22 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
     process.c
     producer_ladspa.c
     filter_jackrack.c
-    filter_ladspa.c)
-  set(mltjack_lib ${mltjack_lib} ${CMAKE_DL_LIBS} m PkgConfig::xml PkgConfig::glib)
-  set(mltjack_def GPL)
-  file(GLOB yml *.yml blacklist.txt)
-else()
-  message(JACK NOGO)
-  set(yml consumer_jack.yml)
+    filter_ladspa.c
+  )
+  target_link_libraries(mltjack PRIVATE ${CMAKE_DL_LIBS} m PkgConfig::xml PkgConfig::glib)
+  target_compile_definitions(mltjack PRIVATE GPL)
+  install(FILES
+    filter_jackrack.yml
+    filter_jack.yml
+    filter_ladspa.yml
+    producer_ladspa.yml
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/jackrack
+  )
 endif()
-add_library(mltjack MODULE ${mltjack_src})
-target_link_libraries(mltjack ${mltjack_lib})
-target_compile_definitions(mltjack PRIVATE ${mltjack_def})
+
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltjack PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+
 install(TARGETS mltjack LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/jackrack)
+
+install(FILES consumer_jack.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/jackrack)
