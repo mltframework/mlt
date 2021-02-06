@@ -58,9 +58,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(GNUInstallDirs)
-if(BUILD_TESTING)
-  include(CTest)
-endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -99,8 +96,14 @@ endif()
 
 pkg_check_modules(sdl2 IMPORTED_TARGET GLOBAL sdl2)
 
-if(MOD_QT OR BUILD_TESTING)
-  find_package(Qt5 COMPONENTS Core Gui Xml Svg Widgets Test)
+if(BUILD_TESTING)
+  find_package(Qt5 REQUIRED COMPONENTS Core Test)
+  find_package(Kwalify REQUIRED)
+  enable_testing()
+endif()
+
+if(MOD_QT)
+  find_package(Qt5 COMPONENTS Core Gui Xml Svg Widgets)
 endif()
 
 if(MOD_QT OR MOD_PLUS)
