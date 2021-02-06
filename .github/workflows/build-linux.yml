@@ -67,10 +67,9 @@ jobs:
           sudo sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
           sudo apt-get -qq update
           sudo apt-get -yqq build-dep mlt
-          sudo apt-get -yqq install cmake
-          cmake -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build
-          CPUS=$(grep "processor.*:" /proc/cpuinfo | wc -l)
-          cmake --build build -j $(( $CPUS + 1 ))
+          sudo apt-get -yqq install cmake ninja-build kwalify
+          cmake -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build -G Ninja
+          cmake --build build
           sudo cmake --install build
 
       - name: Run tests
@@ -78,11 +77,5 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
           LD_LIBRARY_PATH: /usr/local/lib
         run: |
-          sudo apt-get -yqq install kwalify
-          for file in $(find src/modules -type f -name *.yml ! -name resolution_scale.yml)
-          do
-            echo "validate: $file"
-            kwalify -f src/framework/metaschema.yaml "$file" || exit 1
-          done
           sudo locale-gen de_DE.UTF-8
-          make -C build/src/tests test
+          cd build && ctest

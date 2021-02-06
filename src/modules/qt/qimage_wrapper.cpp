@@ -282,17 +282,17 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 #if QT_VERSION >= 0x050200
 		if ( has_alpha )
 		{
-			image_size = 4 * width * height;
 			self->format = mlt_image_rgb24a;
 			scaled = scaled.convertToFormat( QImage::Format_RGBA8888 );
+			image_size = mlt_image_format_size(self->format, width, height, NULL);
 			self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
-			memcpy( self->current_image, scaled.constBits(), image_size);
+			memcpy( self->current_image, scaled.constBits(), scaled.sizeInBytes());
 		}
 		else
 		{
-			image_size = 3 * width * height;
 			self->format = mlt_image_rgb24;
 			scaled = scaled.convertToFormat( QImage::Format_RGB888 );
+			image_size = mlt_image_format_size(self->format, width, height, NULL);
 			self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 			for (int y = 0; y < height; y++) {
 				QRgb *values = reinterpret_cast<QRgb *>(scaled.scanLine(y));

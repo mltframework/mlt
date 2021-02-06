@@ -10,6 +10,7 @@ project(MLT
 option(GPL "Enable GPLv2 modules" ON)
 option(GPL3 "Enable GPLv3 modules" ON)
 option(BUILD_TESTING "Enable tests" OFF)
+option(BUILD_DOCS "Enable Doxygen documentation" OFF)
 
 option(MOD_AVFORMAT "Enable avformat module" ON)
 option(MOD_DECKLINK "Enable decklink module" ON)
@@ -40,16 +41,31 @@ option(MOD_VORBIS "Enable Vorbis module" ON)
 option(MOD_XINE "Enable xine module" ON)
 option(MOD_XML "Enable XML module" ON)
 
+option(SWIG_CSHARP "Enable SWIG CSharp bindings" OFF)
+option(SWIG_JAVA "Enable SWIG Java bindings" OFF)
+option(SWIG_LUA "Enable SWIG Lua bindings" OFF)
+option(SWIG_NODEJS "Enable SWIG Node.js bindings" OFF)
+option(SWIG_PERL "Enable SWIG Perl bindings" OFF)
+option(SWIG_PHP "Enable SWIG PHP bindings" OFF)
 option(SWIG_PYTHON "Enable SWIG Python bindings" OFF)
+option(SWIG_RUBY "Enable SWIG Ruby bindings" OFF)
+option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
 
 if(WIN32)
   option(NODEPLOY "Keep bin/ lib/ layout on Windows" ON)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 include(GNUInstallDirs)
-if(BUILD_TESTING)
-  include(CTest)
-endif()
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64)|(AMD64)")
   if(${ARCH} MATCHES "i686")
@@ -80,9 +96,14 @@ endif()
 
 pkg_check_modules(sdl2 IMPORTED_TARGET GLOBAL sdl2)
 
-if(MOD_QT OR BUILD_TESTING)
-  set(CMAKE_AUTOMOC ON)
-  find_package(Qt5 COMPONENTS Core Gui Xml Svg Widgets Test)
+if(BUILD_TESTING)
+  find_package(Qt5 REQUIRED COMPONENTS Core Test)
+  find_package(Kwalify REQUIRED)
+  enable_testing()
+endif()
+
+if(MOD_QT)
+  find_package(Qt5 COMPONENTS Core Gui Xml Svg Widgets)
 endif()
 
 if(MOD_QT OR MOD_PLUS)
@@ -126,6 +147,7 @@ endif()
 
 if(MOD_GTK2)
   find_package(GTK2 COMPONENTS gtk)
+  pkg_check_modules(harfbuzz IMPORTED_TARGET harfbuzz)
 endif()
 
 if(MOD_JACKRACK)
@@ -140,6 +162,13 @@ endif()
 
 if(MOD_OPENGL)
   pkg_check_modules(movit IMPORTED_TARGET movit)
+  find_package(OpenGL)
+  if(UNIX AND NOT APPLE)
+    find_package(X11)
+    if(NOT TARGET X11::X11)
+      set(MOD_OPENGL OFF)
+    endif()
+  endif()
 endif()
 
 if(MOD_PLUS)
@@ -152,7 +181,7 @@ endif()
 
 if(MOD_RTAUDIO)
   pkg_check_modules(rtaudio IMPORTED_TARGET rtaudio)
-  if(UNIX AND NOT APPLE)
+  if(NOT TARGET PkgConfig::rtaudio AND UNIX AND NOT APPLE)
     pkg_check_modules(alsa IMPORTED_TARGET alsa)
     pkg_check_modules(libpulse-simple IMPORTED_TARGET libpulse-simple)
   endif()
@@ -164,7 +193,7 @@ endif()
 
 if(MOD_SDL1)
   pkg_check_modules(sdl IMPORTED_TARGET sdl)
-  pkg_check_modules(sdl_image IMPORTED_TARGET sdl_image)
+  pkg_check_modules(sdl_image IMPORTED_TARGET SDL_image)
 endif()
 
 if(MOD_SOX)
@@ -182,8 +211,69 @@ endif()
 
 find_package(SWIG)
 
+if(SWIG_CSHARP)
+  find_package(Mono)
+endif()
+
+if(SWIG_JAVA)
+  find_package(JNI)
+endif()
+
+if(SWIG_LUA)
+  find_package(Lua)
+endif()
+
+if(SWIG_NODEJS)
+  find_package(Node)
+  if(NODE_VERSION_MAJOR VERSION_GREATER_EQUAL 12 AND SWIG_VERSION VERSION_LESS 4.1)
+    # https://github.com/swig/swig/issues/1520
+    set(SWIG_NODEJS OFF)
+  endif()
+endif()
+
+if(SWIG_PERL)
+  find_package(PerlLibs)
+endif()
+
+if(SWIG_PHP)
+  find_package(PHP)
+endif()
+
 if(SWIG_PYTHON)
   find_package(Python3 COMPONENTS Interpreter Development)
+endif()
+
+if(SWIG_RUBY)
+  find_package(Ruby)
+endif()
+
+if(SWIG_TCL)
+  find_package(TCL)
+endif()
+
+if(BUILD_DOCS)
+  find_package(Doxygen REQUIRED)
+
+  set(DOXYGEN_OUTPUT_DIRECTORY "docs")
+  set(DOXYGEN_ABBREVIATE_BRIEF "")
+  set(DOXYGEN_STRIP_FROM_PATH "src/framework/")
+  set(DOXYGEN_JAVADOC_AUTOBRIEF "YES")
+  set(DOXYGEN_QT_AUTOBRIEF "YES")
+  set(DOXYGEN_ALIASES "properties=\\xrefitem properties \\\"Property\\\" \\\"Properties Dictionary\\\"")
+  list(APPEND DOXYGEN_ALIASES "event=\\xrefitem event \\\"Event\\\" \\\"Events Dictionary\\\"")
+  list(APPEND DOXYGEN_ALIASES "envvar=\\xrefitem envvars \\\"Environment Variable\\\" \\\"Environment Variables\\\"")
+  set(DOXYGEN_OPTIMIZE_OUTPUT_FOR_C "YES")
+  set(DOXYGEN_SORT_BRIEF_DOCS "YES")
+  set(DOXYGEN_EXTRACT_ALL "YES")
+  set(DOXYGEN_EXTRACT_PRIVATE "YES")
+  set(DOXYGEN_EXTRACT_STATIC "YES")
+  set(DOXYGEN_FILE_PATTERNS "")
+  set(DOXYGEN_RECURSIVE "NO")
+  set(DOXYGEN_EXCLUDE_PATTERNS "")
+  set(DOXYGEN_EXAMPLE_PATTERNS "")
+  set(DOXYGEN_SEARCHENGINE "NO")
+
+  doxygen_add_docs(docs src/framework)
 endif()
 
 install(DIRECTORY presets profiles DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)

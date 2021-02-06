@@ -1,26 +1,32 @@
-set(mltgdk_src factory.c)
-set(mltgdk_lib mlt m Threads::Threads)
-set(mltgdk_def "")
+add_library(mltgdk MODULE
+  factory.c
+  filter_rescale.c
+  pixops.c
+  producer_pixbuf.c
+)
 
-list(APPEND mltgdk_src producer_pixbuf.c pixops.c filter_rescale.c)
-list(APPEND mltgdk_lib PkgConfig::GdkPixbuf)
-list(APPEND mltgdk_def USE_PIXBUF)
+target_link_libraries(mltgdk PRIVATE mlt m Threads::Threads PkgConfig::GdkPixbuf)
+
+target_compile_definitions(mltgdk PRIVATE USE_PIXBUF)
+
 if(TARGET PkgConfig::libexif)
-  list(APPEND mltgdk_lib PkgConfig::libexif)
-  list(APPEND mltgdk_def USE_EXIF)
+  target_link_libraries(mltgdk PRIVATE PkgConfig::libexif)
+  target_compile_definitions(mltgdk PRIVATE USE_EXIF)
 endif()
+
 if(TARGET PkgConfig::pango AND TARGET PkgConfig::fontconfig)
-  list(APPEND mltgdk_src producer_pango.c)
-  list(APPEND mltgdk_lib PkgConfig::pango PkgConfig::fontconfig PkgConfig::pangoft2)
-  list(APPEND mltgdk_def USE_PANGO)
+  target_sources(mltgdk PRIVATE producer_pango.c)
+  target_link_libraries(mltgdk PRIVATE PkgConfig::pango PkgConfig::fontconfig PkgConfig::pangoft2)
+  target_compile_definitions(mltgdk PRIVATE USE_PANGO)
+  install(FILES producer_pango.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
 endif()
+
 # Only for MMX but not x86_64: deprecated
-# list(APPEND mltgdk_src have_mmx.S scale_line_22_yuv_mmx.S)
-add_library(mltgdk MODULE ${mltgdk_src})
-target_link_libraries(mltgdk ${mltgdk_lib})
-target_compile_definitions(mltgdk PRIVATE ${mltgdk_def})
+# target_sources(mltgdk PRIVATE have_mmx.S scale_line_22_yuv_mmx.S)
+
 # Create module in parent directory, for the benefit of "source setenv".
 set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+
 install(TARGETS mltgdk LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-file(GLOB yml *.yml)
-install(FILES ${yml} DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
+
+install(FILES filter_rescale.yml producer_pixbuf.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
