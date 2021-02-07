@@ -28,6 +28,7 @@ add_library(mltcore MODULE
   filter_resize.c
   filter_transition.c
   filter_watermark.c
+  link_timeremap.c
   producer_colour.c
   producer_consumer.c
   producer_hold.c
@@ -82,6 +83,7 @@ install(FILES
   filter_resize.yml
   filter_transition.yml
   filter_watermark.yml
+  link_timeremap.yml
   producer_colour.yml
   producer_consumer.yml
   producer_hold.yml
