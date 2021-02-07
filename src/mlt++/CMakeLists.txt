@@ -1,6 +1,7 @@
 add_library(mlt++ SHARED
   MltAnimation.cpp
   MltAudio.cpp
+  MltChain.cpp
   MltConsumer.cpp
   MltDeque.cpp
   MltEvent.cpp
@@ -11,6 +12,7 @@ add_library(mlt++ SHARED
   MltFilteredProducer.cpp
   MltFrame.cpp
   MltGeometry.cpp
+  MltLink.cpp
   MltMultitrack.cpp
   MltParser.cpp
   MltPlaylist.cpp
@@ -32,12 +34,10 @@ target_include_directories(mlt++ PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/mlt++>
 )
 
-set(MLTPP_SOVERSION "3")
-
-set_target_properties(mlt++ PROPERTIES SOVERSION ${MLTPP_SOVERSION} VERSION ${MLT_VERSION})
+set_target_properties(mlt++ PROPERTIES SOVERSION ${MLT_VERSION_MAJOR} VERSION ${MLT_VERSION})
 
 if(WIN32)
-  set_target_properties(mlt++ PROPERTIES OUTPUT_NAME "mlt++-${MLTPP_SOVERSION}")
+  set_target_properties(mlt++ PROPERTIES OUTPUT_NAME "mlt++-${MLT_VERSION_MAJOR}")
   target_compile_definitions(mlt++ PUBLIC MLTPP_EXPORTS)
 endif()
 
@@ -45,6 +45,7 @@ set(MLTPP_PUPLIC_HEADERS
   Mlt.h
   MltAnimation.h
   MltAudio.h
+  MltChain.h
   MltConfig.h
   MltConsumer.h
   MltDeque.h
@@ -56,6 +57,7 @@ set(MLTPP_PUPLIC_HEADERS
   MltFilteredProducer.h
   MltFrame.h
   MltGeometry.h
+  MltLink.h
   MltMultitrack.h
   MltParser.h
   MltPlaylist.h
