@@ -1,6 +1,7 @@
 add_library(mlt++ SHARED
   MltAnimation.cpp
   MltAudio.cpp
+  MltChain.cpp
   MltConsumer.cpp
   MltDeque.cpp
   MltEvent.cpp
@@ -11,6 +12,7 @@ add_library(mlt++ SHARED
   MltFilteredProducer.cpp
   MltFrame.cpp
   MltGeometry.cpp
+  MltLink.cpp
   MltMultitrack.cpp
   MltParser.cpp
   MltPlaylist.cpp
@@ -45,6 +47,7 @@ set(MLTPP_PUPLIC_HEADERS
   Mlt.h
   MltAnimation.h
   MltAudio.h
+  MltChain.h
   MltConfig.h
   MltConsumer.h
   MltDeque.h
@@ -56,6 +59,7 @@ set(MLTPP_PUPLIC_HEADERS
   MltFilteredProducer.h
   MltFrame.h
   MltGeometry.h
+  MltLink.h
   MltMultitrack.h
   MltParser.h
   MltPlaylist.h

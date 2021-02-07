@@ -2,6 +2,7 @@ add_library(mlt SHARED
   mlt_animation.c
   mlt_audio.c
   mlt_cache.c
+  mlt_chain.c
   mlt_consumer.c
   mlt_deque.c
   mlt_events.c
@@ -10,6 +11,7 @@ add_library(mlt SHARED
   mlt_filter.c
   mlt_frame.c
   mlt_geometry.c
+  mlt_link.c
   mlt_log.c
   mlt_luma_map.c
   mlt_multitrack.c
@@ -58,6 +60,7 @@ set(MLT_PUPLIC_HEADERS
   mlt_animation.h
   mlt_audio.h
   mlt_cache.h
+  mlt_chain.h
   mlt_consumer.h
   mlt_deque.h
   mlt_events.h
@@ -66,6 +69,7 @@ set(MLT_PUPLIC_HEADERS
   mlt_filter.h
   mlt_frame.h
   mlt_geometry.h
+  mlt_link.h
   mlt_log.h
   mlt_luma_map.h
   mlt_multitrack.h
