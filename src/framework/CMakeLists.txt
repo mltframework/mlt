@@ -11,6 +11,7 @@ add_library(mlt SHARED
   mlt_filter.c
   mlt_frame.c
   mlt_geometry.c
+  mlt_image.c
   mlt_link.c
   mlt_log.c
   mlt_luma_map.c
@@ -78,6 +79,7 @@ set(MLT_PUPLIC_HEADERS
   mlt_filter.h
   mlt_frame.h
   mlt_geometry.h
+  mlt_image.h
   mlt_link.h
   mlt_log.h
   mlt_luma_map.h

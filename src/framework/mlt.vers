@@ -595,4 +595,11 @@ MLT_7.0.0 {
     mlt_repository_links;
     mlt_animation_shift_frames;
     mlt_animation_get_string;
+    mlt_image_new;
+    mlt_image_close;
+    mlt_image_set_values;
+    mlt_image_get_values;
+    mlt_image_alloc_data;
+    mlt_image_calculate_size;
+    mlt_image_fill_black;
 } MLT_6.22.0;
