@@ -74,7 +74,6 @@ Last Revision: 2013-09-07
 
    | *Module* | *Description* |
    | avformat | [[http://www.ffmpeg.org][FFmpeg]] v4.0 or later |
-   | gtk2     | [[http://www.gtk.org][GTK2]] and associated dependencies |
    | jackrack | [[http://jackaudio.org][JACK]], [[http://www.xmlsoft.org/][libxml2]], and ladspa.h |
    | opengl   | [[http://git.sesse.net/movit][Movit]] |
    | qt       | [[http://www.qt-project.org][Qt]] 4.4 or later |
