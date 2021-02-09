@@ -1,6 +1,0 @@
-# udev rules for linsys cards to give members of the video group permissions
-KERNEL=="sdi*[rt]x[0-9]*", MODE="0660", GROUP="video", \
-	RUN+="/usr/bin/find /sys/$env{DEVPATH}/ -type f -execdir /bin/chmod 0660 {} + -execdir /bin/chgrp video {} +", OPTIONS="last_rule"
-KERNEL=="asi*[rt]x[0-9]*", MODE="0660", GROUP="video", \ 
-	RUN+="/usr/bin/find /sys/$env{DEVPATH}/ -type f -execdir /bin/chmod 0660 {} + -execdir /bin/chgrp video {} +", OPTIONS="last_rule"
-
