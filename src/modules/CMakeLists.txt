@@ -20,10 +20,6 @@ if(MOD_GDK AND TARGET PkgConfig::GdkPixbuf)
   add_subdirectory(gdk)
 endif()
 
-if(MOD_GTK2)
-  add_subdirectory(gtk2)
-endif()
-
 if(MOD_JACKRACK AND TARGET PkgConfig::jack)
   add_subdirectory(jackrack)
 endif()
