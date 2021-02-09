@@ -104,11 +104,6 @@ mlt_repository mlt_repository_init( const char *directory )
 		int flags = RTLD_NOW;
 		const char *object_name = mlt_properties_get_value( dir, i);
 
-		// Very temporary hack to allow the quicktime plugins to work
-		// TODO: extend repository to allow this to be used on a case by case basis
-		if ( strstr( object_name, "libmltkino" ) )
-			flags |= RTLD_GLOBAL;
-	
 		// Open the shared object
 		void *object = dlopen( object_name, flags );
 		if ( object != NULL )
