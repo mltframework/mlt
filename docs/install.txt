@@ -42,7 +42,7 @@ Last Revision: 2013-09-07
          * rtaudio       - audio consumer based on !RtAudio project code
          * sdl           - SDL dependent services
          * sox           - !SoX dependent audio filters
-         * videostab     - video stabilization filters (*)
+         * vid.stab      - video stabilization filters (*)
          * vmfx          - services contributed by (defunct) Visual Media FX
          * vorbis        - vorbis dependenent services
          * xine          - Xine-derived sources (*)
