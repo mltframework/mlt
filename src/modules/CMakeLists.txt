@@ -28,10 +28,6 @@ if(MOD_KDENLIVE)
   add_subdirectory(kdenlive)
 endif()
 
-if(MOD_LUMAS)
-  add_subdirectory(lumas)
-endif()
-
 if(MOD_MOTION_EST AND GPL)
   add_subdirectory(motion_est)
 endif()
