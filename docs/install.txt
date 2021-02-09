@@ -42,7 +42,6 @@ Last Revision: 2013-09-07
          * rtaudio       - audio consumer based on !RtAudio project code
          * sdl           - SDL dependent services
          * sox           - !SoX dependent audio filters
-         * swfdec        - Swfdec dependent producer for Flash files
          * videostab     - video stabilization filters (*)
          * vmfx          - services contributed by (defunct) Visual Media FX
          * vorbis        - vorbis dependenent services
@@ -78,7 +77,6 @@ Last Revision: 2013-09-07
    | resample | [[http://www.mega-nerd.com/SRC][libsamplerate]] 0.15 or later |
    | sdl      | [[http://www.libsdl.org][SDL]] 1.2 or later |
    | sox      | [[http://sox.sourceforge.net][SoX]] 13 or later |
-   | swfdec   | [[http://github.com/mltframework/swfdec][swfdec]] 0.8 or later |
    | vorbis   | [[http://www.vorbis.com][libvorbis]] 1.0.1 or later |
    | xml      | [[http://www.xmlsoft.org][libxml2]] 2.5 or later |
 
