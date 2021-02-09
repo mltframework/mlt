@@ -13,9 +13,7 @@ you to choose a consumer. A consumer is like a viewer, but it could also
 write to a stream/file. The "SDL" consumer is the popular Simple DirectMedia
 Layer audio and video output. The "xml" consumer generates an XML
 representation of the service network. That can be played directly due to the
-XML producer plugin. See docs/mlt-xml.txt for more information. "/dev/dv1394/0"
-refers to a device file for transmitting DV over FireWire using the Linux
-dv1394 kernel module.
+XML producer plugin. See docs/mlt-xml.txt for more information.
 
 These examples assume the numeric locale LC_NUMERIC decimal separator is a
 period. Therefore, the demo script sets LC_NUMERIC=C for you, but if you are
