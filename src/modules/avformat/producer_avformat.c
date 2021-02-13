@@ -1646,6 +1646,11 @@ static int allocate_buffer( mlt_frame frame, AVCodecParameters *codec_params, ui
 	return size;
 }
 
+static int ignore_send_packet_result(int result)
+{
+	return result >= 0 || result == AVERROR(EAGAIN) || result == AVERROR_EOF || result == AVERROR_INVALIDDATA;
+}
+
 /** Get an image from a frame.
 */
 
@@ -1818,7 +1823,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		else
 			av_frame_unref( self->video_frame );
 
-		while (!got_picture && (self->video_send_result >= 0 || self->video_send_result == AVERROR(EAGAIN) || self->video_send_result == AVERROR_EOF))
+		while (!got_picture && ignore_send_packet_result(self->video_send_result))
 		{
 			if ( self->video_send_result != AVERROR( EAGAIN ) )
 			{
@@ -1913,7 +1918,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					self->video_send_result = avcodec_send_packet( codec_context, &self->pkt );
 					mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "decoded video packet with size %d => %d\n", self->pkt.size, self->video_send_result );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
-					if (self->video_send_result < 0 && self->video_send_result != AVERROR(EAGAIN) && self->video_send_result != AVERROR_EOF)
+					if (!ignore_send_packet_result(self->video_send_result))
 					{
 						mlt_log_warning( MLT_PRODUCER_SERVICE( producer ), "video avcodec_send_packet failed with %d\n", self->video_send_result );
 					}
@@ -2573,7 +2578,7 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 		av_frame_unref( self->audio_frame );
 	int error = avcodec_send_packet(codec_context, pkt);
 	mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent), "decoded audio packet with size %d => %d\n", pkt->size, error);
-	if (error && error != AVERROR(EAGAIN) && error != AVERROR_EOF) {
+	if (ignore_send_packet_result(error)) {
 		mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), "audio avcodec_send_packet failed with %d\n", error);
 	} else while (!error) {
 		error = avcodec_receive_frame(codec_context, self->audio_frame);
