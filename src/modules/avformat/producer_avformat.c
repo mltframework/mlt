@@ -2576,7 +2576,7 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 		av_frame_unref( self->audio_frame );
 	int error = avcodec_send_packet(codec_context, pkt);
 	mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent), "decoded audio packet with size %d => %d\n", pkt->size, error);
-	if (ignore_send_packet_result(error)) {
+	if (!ignore_send_packet_result(error)) {
 		mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), "audio avcodec_send_packet failed with %d\n", error);
 	} else while (!error) {
 		error = avcodec_receive_frame(codec_context, self->audio_frame);
