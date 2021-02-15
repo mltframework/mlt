@@ -934,3 +934,20 @@ int mlt_animation_key_set_frame(mlt_animation self, int index, int frame)
 
 	return error;
 }
+
+/** Shift the frame value for all nodes.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param shift the value to add to all frame values
+ */
+
+void mlt_animation_shift_frames( mlt_animation self, int shift )
+{
+	animation_node node = self->nodes;
+	while ( node ) {
+		node->item.frame += shift;
+		node = node->next;
+	}
+	mlt_animation_interpolate(self);
+}

@@ -174,6 +174,11 @@ int Animation::key_set_frame(int index, int frame)
 	return mlt_animation_key_set_frame(instance, index, frame);
 }
 
+void Animation::shift_frames( int shift )
+{
+	return mlt_animation_shift_frames(instance, shift);
+}
+
 void Animation::set_length( int length )
 {
 	return mlt_animation_set_length( instance, length );
