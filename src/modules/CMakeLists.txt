@@ -32,6 +32,10 @@ if(MOD_MOTION_EST AND GPL)
   add_subdirectory(motion_est)
 endif()
 
+if(MOD_NDI)
+  add_subdirectory(ndi)
+endif()
+
 if(MOD_NORMALIZE AND GPL)
   add_subdirectory(normalize)
 endif()
