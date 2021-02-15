@@ -593,4 +593,5 @@ MLT_7.0.0 {
     mlt_link_connect_next;
     mlt_link_close;
     mlt_repository_links;
+    mlt_animation_shift_frames;
 } MLT_6.22.0;

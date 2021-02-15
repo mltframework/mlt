@@ -52,7 +52,7 @@ namespace Mlt
 			mlt_keyframe_type key_get_type( int index );
 			int key_set_type( int index, mlt_keyframe_type type );
 			int key_set_frame( int index, int frame );
-
+			void shift_frames( int shift );
 			void set_length( int length );
 			int remove( int position );
 			void interpolate();
