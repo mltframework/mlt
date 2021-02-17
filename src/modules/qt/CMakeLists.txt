@@ -32,6 +32,10 @@ target_link_libraries(mltqt
 
 target_compile_definitions(mltqt PRIVATE USE_QT_OPENGL)
 
+if(NOT WINDOWS_DEPLOY)
+  target_compile_definitions(mltqt PRIVATE NODEPLOY)
+endif()
+
 if(GPL3)
   target_sources(mltqt PRIVATE transition_vqm.cpp)
   target_compile_definitions(mltqt PRIVATE GPL3)

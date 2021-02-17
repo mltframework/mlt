@@ -51,12 +51,16 @@ option(SWIG_RUBY "Enable SWIG Ruby bindings" OFF)
 option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
 
 if(WIN32)
-  option(NODEPLOY "Keep bin/ lib/ layout on Windows" ON)
+  option(WINDOWS_DEPLOY "Install exes/libs directly to prefix (no subdir /bin)" ON)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(GNUInstallDirs)
+
+if(WINDOWS_DEPLOY)
+  set(CMAKE_INSTALL_BINDIR .)
+endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
