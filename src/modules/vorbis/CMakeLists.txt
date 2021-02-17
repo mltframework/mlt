@@ -1,8 +1,7 @@
 add_library(mltvorbis MODULE factory.c producer_vorbis.c)
 target_link_libraries(mltvorbis mlt PkgConfig::vorbis PkgConfig::vorbisfile)
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltvorbis PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltvorbis PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltvorbis LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

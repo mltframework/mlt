@@ -25,8 +25,7 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
   )
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltjack PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltjack PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltjack LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

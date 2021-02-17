@@ -39,8 +39,7 @@ else()
   target_compile_definitions(mltplus PRIVATE USE_INTERNAL_LIBEBUR128)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltplus LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

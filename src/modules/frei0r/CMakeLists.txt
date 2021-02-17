@@ -9,8 +9,7 @@ add_library(mltfrei0r MODULE
 
 target_link_libraries(mltfrei0r mlt m ${CMAKE_DL_LIBS})
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltfrei0r PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltfrei0r PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltfrei0r LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

@@ -7,8 +7,7 @@ add_library(mltxml MODULE
 
 target_link_libraries(mltxml mlt Threads::Threads PkgConfig::xml)
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltxml PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltxml PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltxml LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

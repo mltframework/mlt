@@ -54,8 +54,7 @@ if(TARGET PkgConfig::libexif)
   target_compile_definitions(mltqt PRIVATE USE_EXIF)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltqt PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltqt PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltqt LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

@@ -33,8 +33,7 @@ endif()
 pkg_get_variable(SHADERDIR movit shaderdir)
 target_compile_definitions(mltopengl PRIVATE SHADERDIR="${SHADERDIR}")
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltopengl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltopengl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltopengl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 
