@@ -41,6 +41,11 @@ if(WIN32)
   target_compile_definitions(mlt++ PUBLIC MLTPP_EXPORTS)
 endif()
 
+if(NOT (WIN32 OR APPLE))
+  target_link_options(mlt++ PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt++.vers)
+  set_target_properties(mlt++ PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt++.vers)
+endif()
+
 set(MLTPP_PUPLIC_HEADERS
   Mlt.h
   MltAnimation.h
