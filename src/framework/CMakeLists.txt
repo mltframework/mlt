@@ -42,6 +42,12 @@ set_target_properties(mlt PROPERTIES SOVERSION ${MLT_VERSION_MAJOR} VERSION ${ML
 
 if(WIN32)
   set_target_properties(mlt PROPERTIES OUTPUT_NAME "mlt-${MLT_VERSION_MAJOR}")
+  if(MINGW)
+    install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.dll"
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RENAME libmlt.dll
+    )
+  endif()
   target_sources(mlt PRIVATE ../win32/win32.c ../win32/strptime.c)
   target_link_libraries(mlt Iconv::Iconv)
   if(NOT WINDOWS_DEPLOY)
