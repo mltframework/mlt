@@ -691,7 +691,11 @@ static void on_start_link( deserialise_context context, const xmlChar *name, con
 	// Store properties until the service type is known
 	mlt_service service = calloc( 1, sizeof( struct mlt_service_s ) );
 	mlt_service_init( service, NULL );
+	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 	context_push_service( context, service, mlt_link_type );
+
+	for ( ; atts != NULL && *atts != NULL; atts += 2 )
+		mlt_properties_set_string( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 }
 
 static void on_end_link( deserialise_context context, const xmlChar *name )
