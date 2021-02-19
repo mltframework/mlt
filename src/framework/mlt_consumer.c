@@ -80,16 +80,10 @@ typedef struct
 }
 consumer_private;
 
-typedef void* ( *thread_function_t )( void* );
-
-static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
-static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, char *name );
 static void apply_profile_properties( mlt_consumer self, mlt_profile profile, mlt_properties properties );
 static void on_consumer_frame_show( mlt_properties owner, mlt_consumer self, mlt_frame frame );
-static void transmit_thread_create( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
-static void mlt_thread_create( mlt_consumer self, thread_function_t function );
-static void transmit_thread_join( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
+static void mlt_thread_create( mlt_consumer self, mlt_thread_function_t function );
 static void mlt_thread_join( mlt_consumer self );
 static void consumer_read_ahead_start( mlt_consumer self );
 
@@ -149,14 +143,14 @@ int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile )
 		priv->image_format = mlt_image_yuv422;
 		priv->audio_format = mlt_audio_s16;
 
-		mlt_events_register( properties, "consumer-frame-show", ( mlt_transmitter )mlt_consumer_frame_show );
-		mlt_events_register( properties, "consumer-frame-render", ( mlt_transmitter )mlt_consumer_frame_render );
-		mlt_events_register( properties, "consumer-thread-started", NULL );
-		mlt_events_register( properties, "consumer-thread-stopped", NULL );
-		mlt_events_register( properties, "consumer-stopping", NULL );
-		mlt_events_register( properties, "consumer-stopped", NULL );
-		mlt_events_register( properties, "consumer-thread-create", ( mlt_transmitter )transmit_thread_create );
-		mlt_events_register( properties, "consumer-thread-join", ( mlt_transmitter )transmit_thread_join );
+		mlt_events_register( properties, "consumer-frame-show" );
+		mlt_events_register( properties, "consumer-frame-render" );
+		mlt_events_register( properties, "consumer-thread-started" );
+		mlt_events_register( properties, "consumer-thread-stopped" );
+		mlt_events_register( properties, "consumer-stopping" );
+		mlt_events_register( properties, "consumer-stopped" );
+		mlt_events_register( properties, "consumer-thread-create" );
+		mlt_events_register( properties, "consumer-thread-join" );
 		mlt_events_listen( properties, self, "consumer-frame-show", ( mlt_listener )on_consumer_frame_show );
 
 		// Register a property-changed listener to handle the profile property -
@@ -328,40 +322,6 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
 		if ( profile )
 			profile->colorspace = mlt_properties_get_int( properties, "colorspace" );
 	}
-}
-
-/** The transmitter for the consumer-frame-show event
- *
- * Invokes the listener.
- *
- * \private \memberof mlt_consumer_s
- * \param listener a function pointer that will be invoked
- * \param owner the events object that will be passed to \p listener
- * \param self a service that will be passed to \p listener
- * \param args an array of pointers - the first entry is passed as a frame to \p listener
- */
-
-static void mlt_consumer_frame_show( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener != NULL )
-		listener( owner, self, ( mlt_frame )args[ 0 ] );
-}
-
-/** The transmitter for the consumer-frame-render event
- *
- * Invokes the listener.
- *
- * \private \memberof mlt_consumer_s
- * \param listener a function pointer that will be invoked
- * \param owner the events object that will be passed to \p listener
- * \param self a service that will be passed to \p listener
- * \param args an array of pointers - the first entry is passed as a frame to \p listener
- */
-
-static void mlt_consumer_frame_render( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener != NULL )
-		listener( owner, self, ( mlt_frame )args[ 0 ] );
 }
 
 /** A listener on the consumer-frame-show event
@@ -828,7 +788,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Get the image of the first frame
 		if ( !video_off )
 		{
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame );
 			mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 		}
 
@@ -906,7 +866,7 @@ static void *consumer_read_ahead_thread( void *arg )
 				height = mlt_properties_get_int( properties, "height" );
 
 				// Get the image
-				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
+				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame );
 				mlt_log_timings_begin();
 				mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 				mlt_log_timings_end( NULL, "mlt_frame_get_image" );
@@ -1099,7 +1059,7 @@ static void *consumer_worker_thread( void *arg )
 			// Fetch width/height again
 			width = mlt_properties_get_int( properties, "width" );
 			height = mlt_properties_get_int( properties, "height" );
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame, NULL );
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame );
 			mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 		}
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
@@ -1140,7 +1100,7 @@ static void consumer_read_ahead_start( mlt_consumer self )
 	pthread_cond_init( &priv->queue_cond, NULL );
 
 	// Create the read ahead
-	mlt_thread_create( self, (thread_function_t) consumer_read_ahead_thread );
+	mlt_thread_create( self, (mlt_thread_function_t) consumer_read_ahead_thread );
 	priv->started = 1;
 }
 
@@ -1766,14 +1726,7 @@ mlt_position mlt_consumer_position( mlt_consumer consumer )
 	return result;
 }
 
-static void transmit_thread_create( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener )
-		listener( owner, self,
-			(void**) args[0] /* handle */, (int*) args[1] /* priority */, (thread_function_t) args[2], (void*) args[3] /* data */ );
-}
-
-static void mlt_thread_create( mlt_consumer self, thread_function_t function )
+static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function )
 {
 	consumer_private *priv = self->local;
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
@@ -1782,8 +1735,13 @@ static void mlt_thread_create( mlt_consumer self, thread_function_t function )
 	{
 		struct sched_param priority;
 		priority.sched_priority = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( self ), "priority" );
-		if ( mlt_events_fire( properties, "consumer-thread-create",
-		     &priv->ahead_thread, &priority.sched_priority, function, self, NULL ) < 1 )
+		mlt_event_data_thread data = {
+		    .thread = priv->ahead_thread,
+		    .priority = priority.sched_priority,
+		    .function = function,
+		    .data = self
+		};
+		if ( mlt_events_fire( properties, "consumer-thread-create", &data ) < 1 )
 		{
 			pthread_attr_t thread_attributes;
 			pthread_attr_init( &thread_attributes );
@@ -1800,9 +1758,13 @@ static void mlt_thread_create( mlt_consumer self, thread_function_t function )
 	}
 	else
 	{
-		int priority = -1;
-		if ( mlt_events_fire( properties, "consumer-thread-create",
-		     &priv->ahead_thread, &priority, function, self, NULL ) < 1 )
+		mlt_event_data_thread data = {
+		    .thread = priv->ahead_thread,
+		    .priority = -1,
+		    .function = function,
+		    .data = self
+		};
+		if ( mlt_events_fire( properties, "consumer-thread-create", &data ) < 1 )
 		{
 			priv->ahead_thread = malloc( sizeof( pthread_t ) );
 			pthread_t *handle = priv->ahead_thread;
@@ -1811,16 +1773,10 @@ static void mlt_thread_create( mlt_consumer self, thread_function_t function )
 	}
 }
 
-static void transmit_thread_join( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener )
-		listener( owner, self, (void*) args[0] /* handle */ );
-}
-
 static void mlt_thread_join( mlt_consumer self )
 {
 	consumer_private *priv = self->local;
-	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join", priv->ahead_thread, NULL ) < 1 )
+	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join", priv->ahead_thread ) < 1 )
 	{
 		pthread_t *handle = priv->ahead_thread;
 		pthread_join( *handle, NULL );

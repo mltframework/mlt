@@ -363,7 +363,7 @@ static int consumer_play_video( consumer_jack self, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
 	if ( self->running && !mlt_consumer_is_stopped( &self->parent ) )
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+		mlt_events_fire( properties, "consumer-frame-show", frame );
 
 	return 0;
 }

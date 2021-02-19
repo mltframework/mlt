@@ -60,4 +60,10 @@ extern void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destruc
 extern void mlt_factory_close( );
 extern mlt_properties mlt_global_properties( );
 
+typedef struct {
+	const char *name;
+	const void *input;
+	void *service;
+} mlt_factory_event;
+
 #endif

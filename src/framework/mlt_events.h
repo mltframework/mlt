@@ -26,24 +26,19 @@
 #include "mlt_types.h"
 
 #if GCC_VERSION >= 40000
-typedef void ( *mlt_transmitter )( void *, ... );
-typedef void ( *mlt_listener )( void *, ... );
+typedef void ( *mlt_listener )( mlt_properties, void*, void* );
 #else
-/** callback function to send an event message
- *
- */
-typedef void ( *mlt_transmitter )( );
 /** event handler when receiving an event message
  * \param the properties object on which the event was registered
  * \param an opaque pointer to a service or really an object
- * \param variable args supplied by the transmitter
+ * \param another opaque pointer to an individual event object
  */
 typedef void ( *mlt_listener )( );
 #endif
 
 extern void mlt_events_init( mlt_properties self );
-extern int mlt_events_register( mlt_properties self, const char *id, mlt_transmitter transmitter );
-extern int mlt_events_fire( mlt_properties self, const char *id, ... );
+extern int mlt_events_register( mlt_properties self, const char *id );
+extern int mlt_events_fire(mlt_properties self, const char *id, void* data);
 extern mlt_event mlt_events_listen( mlt_properties self, void *service, const char *id, mlt_listener listener );
 extern void mlt_events_block( mlt_properties self, void *service );
 extern void mlt_events_unblock( mlt_properties self, void *service );

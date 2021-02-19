@@ -108,7 +108,7 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 		pthread_cond_init( &self->refresh_cond, NULL );
 		pthread_mutex_init( &self->refresh_mutex, NULL );
 		mlt_events_listen( MLT_CONSUMER_PROPERTIES( parent ), self, "property-changed", ( mlt_listener )consumer_refresh_cb );
-		mlt_events_register( properties, "consumer-sdl-paused", NULL );
+		mlt_events_register( properties, "consumer-sdl-paused" );
 		return parent;
 	}
 	free( self );
@@ -120,12 +120,12 @@ void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_frame fr
 	consumer_sdl self = parent->child;
 	self->last_speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 	self->last_position = mlt_frame_get_position( frame );
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-frame-show", frame, NULL );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-frame-show", frame );
 }
 
 static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer parent, SDL_Event *event )
 {
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-sdl-event", event, NULL );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-sdl-event", event );
 }
 
 static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *name )

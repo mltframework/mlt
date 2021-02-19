@@ -220,7 +220,7 @@ static void show_frame()
 	glEnd();
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES(&xgl->parent), "consumer-frame-show", new_frame.mlt_frame_ref, NULL );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES(&xgl->parent), "consumer-frame-show", new_frame.mlt_frame_ref );
 	mlt_frame_close( new_frame.mlt_frame_ref );
 	new_frame.mlt_frame_ref = NULL;
 

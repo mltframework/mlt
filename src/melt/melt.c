@@ -81,7 +81,7 @@ static void transport_action( mlt_producer producer, char *value )
 				mlt_producer_set_speed( producer, 1 );
 				mlt_producer_seek( producer, position );
 				mlt_consumer_purge( consumer );
-				mlt_events_fire( jack, "jack-seek", &position, NULL );
+				mlt_events_fire( jack, "jack-seek", &position );
 				break;
 			case '1':
 				mlt_producer_set_speed( producer, -10 );
@@ -140,7 +140,7 @@ static void transport_action( mlt_producer producer, char *value )
 					position = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 0 );
 					mlt_producer_seek( producer, position );
 					mlt_consumer_purge( consumer );
-					mlt_events_fire( jack, "jack-seek", &position, NULL );
+					mlt_events_fire( jack, "jack-seek", &position );
 				}
 				break;
 			case 'H':
@@ -149,7 +149,7 @@ static void transport_action( mlt_producer producer, char *value )
 					position -= mlt_producer_get_fps( producer ) * 60;
 					mlt_consumer_purge( consumer );
 					mlt_producer_seek( producer, position );
-					mlt_events_fire( jack, "jack-seek", &position, NULL );
+					mlt_events_fire( jack, "jack-seek", &position );
 				}
 				break;
 			case 'h':
@@ -160,7 +160,7 @@ static void transport_action( mlt_producer producer, char *value )
 					mlt_consumer_purge( consumer );
 					mlt_producer_seek( producer, position );
 					mlt_events_fire( jack, "jack-stop", NULL );
-					mlt_events_fire( jack, "jack-seek", &position, NULL );
+					mlt_events_fire( jack, "jack-seek", &position );
 				}
 				break;
 			case 'j':
@@ -169,7 +169,7 @@ static void transport_action( mlt_producer producer, char *value )
 					position = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, 1 );
 					mlt_consumer_purge( consumer );
 					mlt_producer_seek( producer, position );
-					mlt_events_fire( jack, "jack-seek", &position, NULL );
+					mlt_events_fire( jack, "jack-seek", &position );
 				}
 				break;
 			case 'k':
@@ -178,7 +178,7 @@ static void transport_action( mlt_producer producer, char *value )
 					position = mlt_multitrack_clip( multitrack, mlt_whence_relative_current, -1 );
 					mlt_consumer_purge( consumer );
 					mlt_producer_seek( producer, position );
-					mlt_events_fire( jack, "jack-seek", &position, NULL );
+					mlt_events_fire( jack, "jack-seek", &position );
 				}
 				break;
 			case 'l':
@@ -194,7 +194,7 @@ static void transport_action( mlt_producer producer, char *value )
 					else
 					{
 						mlt_producer_seek( producer, position );
-						mlt_events_fire( jack, "jack-seek", &position, NULL );
+						mlt_events_fire( jack, "jack-seek", &position );
 					}
 				}
 				break;
@@ -204,7 +204,7 @@ static void transport_action( mlt_producer producer, char *value )
 					position += mlt_producer_get_fps( producer ) * 60;
 					mlt_consumer_purge( consumer );
 					mlt_producer_seek( producer, position );
-					mlt_events_fire( jack, "jack-seek", &position, NULL );
+					mlt_events_fire( jack, "jack-seek", &position );
 				}
 				break;
 		}

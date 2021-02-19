@@ -851,7 +851,7 @@ protected:
 				render( frame );
 				mlt_log_timings_end( NULL, "render" );
 
-				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+				mlt_events_fire( properties, "consumer-frame-show", frame );
 
 				// terminate on pause
 				if ( m_terminate_on_pause &&

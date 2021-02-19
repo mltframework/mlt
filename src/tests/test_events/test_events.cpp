@@ -58,7 +58,7 @@ private Q_SLOTS:
         Profile profile;
         Producer producer(profile, "noise");
         QVERIFY(producer.is_valid());
-        Event* event = producer.listen("property-changed", this, (mlt_transmitter) onPropertyChanged);
+		Event* event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         m_properties = producer.get_properties();
@@ -71,7 +71,7 @@ private Q_SLOTS:
         Profile profile;
         Producer producer(profile, "noise");
         m_properties = nullptr;
-        Event* event = producer.listen("property-changed", nullptr, (mlt_transmitter) onPropertyChanged);
+		Event* event = producer.listen("property-changed", nullptr, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         event->block();
@@ -84,7 +84,7 @@ private Q_SLOTS:
         Profile profile;
         Producer producer(profile, "noise");
         m_properties = producer.get_properties();
-        Event* event = producer.listen("property-changed", this, (mlt_transmitter) onPropertyChanged);
+		Event* event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         event->block();

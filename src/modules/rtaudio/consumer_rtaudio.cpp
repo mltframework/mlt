@@ -666,7 +666,7 @@ public:
 		// Get the properties of this consumer
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
 		if ( running && !mlt_consumer_is_stopped( getConsumer() ) )
-			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			mlt_events_fire( properties, "consumer-frame-show", frame );
 
 		return 0;
 	}

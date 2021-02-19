@@ -21,7 +21,6 @@
  */
 
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <pthread.h>
 
@@ -149,16 +148,15 @@ void mlt_events_init( mlt_properties self )
 	}
 }
 
-/** Register an event and transmitter.
+/** Register an event.
  *
  * \public \memberof mlt_events_struct
  * \param self a properties list
  * \param id the name of an event
- * \param transmitter the callback function to send an event message
  * \return true if there was an error
  */
 
-int mlt_events_register( mlt_properties self, const char *id, mlt_transmitter transmitter )
+int mlt_events_register(mlt_properties self, const char *id)
 {
 	int error = 1;
 	mlt_events events = mlt_events_fetch( self );
@@ -166,7 +164,6 @@ int mlt_events_register( mlt_properties self, const char *id, mlt_transmitter tr
 	{
 		mlt_properties list = events->list;
 		char temp[ 128 ];
-		error = mlt_properties_set_data( list, id, transmitter, 0, NULL, NULL );
 		sprintf( temp, "list:%s", id );
 		if ( mlt_properties_get_data( list, temp, NULL ) == NULL )
 			mlt_properties_set_data( list, temp, mlt_properties_new( ), 0, ( mlt_destructor )mlt_properties_close, NULL );
@@ -176,47 +173,33 @@ int mlt_events_register( mlt_properties self, const char *id, mlt_transmitter tr
 
 /** Fire an event.
  *
- * This takes a variable number of arguments to supply to the listener.
-
  * \public \memberof mlt_events_struct
  * \param self a properties list
  * \param id the name of an event
+ * \param data an opaque pointer
  * \return the number of listeners
  */
 
-int mlt_events_fire( mlt_properties self, const char *id, ... )
+int mlt_events_fire(mlt_properties self, const char *id, void* data)
 {
 	int result = 0;
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
-		int i = 0;
-		va_list alist;
-		void *args[ 10 ];
 		mlt_properties list = events->list;
 		mlt_properties listeners = NULL;
 		char temp[ 128 ];
-		mlt_transmitter transmitter = mlt_properties_get_data( list, id, NULL );
 		sprintf( temp, "list:%s", id );
 		listeners = mlt_properties_get_data( list, temp, NULL );
 
-		va_start( alist, id );
-		do
-			args[ i ] = va_arg( alist, void * );
-		while( args[ i ++ ] != NULL );
-		va_end( alist );
-
 		if ( listeners != NULL )
 		{
-			for ( i = 0; i < mlt_properties_count( listeners ); i ++ )
+			for ( int i = 0; i < mlt_properties_count( listeners ); i ++ )
 			{
 				mlt_event event = mlt_properties_get_data_at( listeners, i, NULL );
 				if ( event != NULL && event->owner != NULL && event->block_count == 0 )
 				{
-					if ( transmitter != NULL )
-						transmitter( event->listener, event->owner->owner, event->service, args );
-					else
-						event->listener( event->owner->owner, event->service );
+					event->listener( event->owner->owner, event->service, data );
 					++result;
 				}
 			}

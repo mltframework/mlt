@@ -420,7 +420,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 {
 	// Get the properties of this consumer
 	mlt_properties properties = self->properties;
-	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+	mlt_events_fire( properties, "consumer-frame-show", frame );
 	return 0;
 }
 

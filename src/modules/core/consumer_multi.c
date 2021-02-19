@@ -159,7 +159,7 @@ static void attach_normalisers( mlt_profile profile, mlt_service service )
 
 static void on_frame_show( void *dummy, mlt_properties properties, mlt_frame frame )
 {
-	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+	mlt_events_fire( properties, "consumer-frame-show", frame );
 }
 
 static mlt_consumer generate_consumer( mlt_consumer consumer, mlt_properties props, int index )

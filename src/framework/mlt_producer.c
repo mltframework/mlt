@@ -108,7 +108,7 @@ int mlt_producer_init( mlt_producer self, void *child )
 
 			mlt_events_listen( properties, self, "service-changed", ( mlt_listener )mlt_producer_service_changed );
 			mlt_events_listen( properties, self, "property-changed", ( mlt_listener )mlt_producer_property_changed );
-			mlt_events_register( properties, "producer-changed", NULL );
+			mlt_events_register( properties, "producer-changed" );
 		}
 	}
 

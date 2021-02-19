@@ -33,7 +33,7 @@ notes: >
     {
         mlt_profile profile = mlt_profile_init("dv_pal");
         mlt_producer producer = mlt_factory_producer(profile, "pango", NULL);
-        mlt_events_fire(mlt_producer_properties(producer), "fontmap-reload", NULL, NULL );
+        mlt_events_fire(mlt_producer_properties(producer), "fontmap-reload", NULL );
         mlt_producer_close(producer);
         mlt_profile_close(profile);
     };

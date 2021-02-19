@@ -196,7 +196,7 @@ mlt_consumer consumer_qglsl_init( mlt_profile profile, mlt_service_type type, co
 		if (filter) {
 			mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
 			mlt_properties_set_data(properties, "glslManager", filter, 0, (mlt_destructor) mlt_filter_close, NULL);
-			mlt_events_register( properties, "consumer-cleanup", NULL );
+			mlt_events_register( properties, "consumer-cleanup" );
 			mlt_events_listen(properties, consumer, "consumer-thread-started", (mlt_listener) onThreadStarted);
 			mlt_events_listen(properties, consumer, "consumer-thread-stopped", (mlt_listener) onThreadStopped);
 			mlt_events_listen(properties, consumer, "consumer-cleanup", (mlt_listener) onCleanup);

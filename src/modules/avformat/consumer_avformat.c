@@ -267,7 +267,7 @@ mlt_consumer consumer_avformat_init( mlt_profile profile, char *arg )
 		consumer->stop = consumer_stop;
 		consumer->is_stopped = consumer_is_stopped;
 		
-		mlt_events_register( properties, "consumer-fatal-error", NULL );
+		mlt_events_register( properties, "consumer-fatal-error" );
 		mlt_event event = mlt_events_listen( properties, consumer, "property-changed", ( mlt_listener )property_changed );
 		mlt_properties_set_data( properties, "property-changed event", event, 0, NULL, NULL );
 	}
@@ -1189,17 +1189,17 @@ static inline long time_difference( struct timeval *time1 )
 	return time2.tv_sec * 1000000 + time2.tv_usec - time1->tv_sec * 1000000 - time1->tv_usec;
 }
 
+typedef struct {
+	uint8_t *data;
+	size_t size;
+} buffer_t;
+
 static int mlt_write(void *h, uint8_t *buf, int size)
 {
 	mlt_properties properties = (mlt_properties) h;
-	mlt_events_fire( properties, "avformat-write", buf, &size, NULL );
+	buffer_t buffer = { buf, size };
+	mlt_events_fire( properties, "avformat-write", &buffer );
 	return 0;
-}
-
-static void write_transmitter( mlt_listener listener, mlt_properties owner, mlt_service service, void **args )
-{
-	int *p_size = (int*) args[1];
-	listener( owner, service, (uint8_t*) args[0], *p_size );
 }
 
 typedef struct encode_ctx_desc
@@ -1770,7 +1770,7 @@ static void *consumer_thread( void *arg )
 				enc_ctx->oc->flags |= AVFMT_FLAG_CUSTOM_IO;
 				mlt_properties_set_data( properties, "avio_buffer", buffer, buffer_size, av_free, NULL );
 				mlt_properties_set_data( properties, "avio_context", io, 0, av_free, NULL );
-				mlt_events_register( properties, "avformat-write", (mlt_transmitter) write_transmitter );
+				mlt_events_register( properties, "avformat-write" );
 			}
 			else
 			{
@@ -1910,7 +1910,7 @@ static void *consumer_thread( void *arg )
 					total_time += ( samples * 1000000 ) / enc_ctx->frequency;
 				}
 				if ( !enc_ctx->video_st )
-					mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+					mlt_events_fire( properties, "consumer-frame-show", frame );
 			}
 
 			// Encode the image
@@ -1974,7 +1974,7 @@ static void *consumer_thread( void *arg )
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
 
-						mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+						mlt_events_fire( properties, "consumer-frame-show", frame );
 
 						// Apply the alpha if applicable
 						if ( !mlt_properties_get( properties, "mlt_image_format" ) ||

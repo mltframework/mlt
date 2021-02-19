@@ -156,7 +156,7 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 		parent->purge = consumer_purge;
 
 		// Register specific events
-		mlt_events_register( self->properties, "consumer-sdl-event", ( mlt_transmitter )consumer_sdl_event );
+		mlt_events_register( self->properties, "consumer-sdl-event" );
 
 		// Return the consumer produced
 		return parent;
@@ -167,12 +167,6 @@ mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, cons
 
 	// Indicate failure
 	return NULL;
-}
-
-static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener != NULL )
-		listener( owner, self, ( SDL_Event * )args[ 0 ] );
 }
 
 int consumer_start( mlt_consumer parent )
@@ -551,7 +545,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 
 			while ( SDL_PollEvent( &event ) )
 			{
-				mlt_events_fire( self->properties, "consumer-sdl-event", &event, NULL );
+				mlt_events_fire( self->properties, "consumer-sdl-event", &event );
 
 				switch( event.type )
 				{
@@ -694,14 +688,14 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 
 		sdl_unlock_display();
 		mlt_cocoa_autorelease_close( pool );
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+		mlt_events_fire( properties, "consumer-frame-show", frame );
 	}
 	else if ( self->running )
 	{
 		vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
 		if ( !video_off )
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+		mlt_events_fire( properties, "consumer-frame-show", frame );
 	}
 
 	return 0;

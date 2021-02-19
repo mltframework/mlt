@@ -70,8 +70,8 @@ GlslManager::GlslManager()
 		filter->child = this;
 		add_ref(mlt_global_properties());
 
-		mlt_events_register( get_properties(), "init glsl", NULL );
-		mlt_events_register( get_properties(), "close glsl", NULL );
+		mlt_events_register( get_properties(), "init glsl" );
+		mlt_events_register( get_properties(), "close glsl" );
 		initEvent = listen("init glsl", this, (mlt_listener) GlslManager::onInit);
 		closeEvent = listen("close glsl", this, (mlt_listener) GlslManager::onClose);
 	}

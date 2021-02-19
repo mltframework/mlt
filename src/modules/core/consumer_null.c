@@ -153,7 +153,7 @@ static void *consumer_thread( void *arg )
 		if ( frame != NULL )
 		{
 			// Close the frame
-			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			mlt_events_fire( properties, "consumer-frame-show", frame );
 			mlt_frame_close( frame );
 		}
 	}

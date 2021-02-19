@@ -654,5 +654,6 @@ MLTPP_7.0.0 {
       "Mlt::Parser::on_end_chain(Mlt::Chain*)";
       "Mlt::Parser::on_start_link(Mlt::Link*)";
       "Mlt::Parser::on_end_link(Mlt::Link*)";
+      "Mlt::Properties::listen(char const*, void*, void (*)(mlt_properties_s*, void*, void*))";
     };
 } MLTPP_6.22.0;
