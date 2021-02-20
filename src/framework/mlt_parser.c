@@ -258,11 +258,11 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 			if ( error == 0 )
 			{
 				int i = 0;
-				while ( error == 0 && i < mlt_chain_link( ( mlt_chain )object, i ) != NULL )
+				while ( error == 0 && mlt_chain_link( ( mlt_chain )object, i ) != NULL )
 					mlt_parser_start( self, ( mlt_service )mlt_chain_link( ( mlt_chain )object, i ++ ) );
 				i = 0;
-				while ( error == 0 && mlt_producer_filter( MLT_CHAIN_PRODUCER(object), i ) != NULL )
-					error = mlt_parser_start( self, ( mlt_service )mlt_producer_filter( MLT_CHAIN_PRODUCER(object), i ++ ) );
+				while ( error == 0 && mlt_producer_filter( ( mlt_producer )object, i ) != NULL )
+					error = mlt_parser_start( self, ( mlt_service )mlt_producer_filter( ( mlt_producer )object, i ++ ) );
 			}
 			error = self->on_end_chain( self, ( mlt_chain )object );
 			break;

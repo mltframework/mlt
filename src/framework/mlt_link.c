@@ -158,7 +158,7 @@ int producer_set_in_and_out( mlt_producer parent, mlt_position in, mlt_position 
 	if ( parent && parent->child )
 	{
 		mlt_link self = parent->child;
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
+		mlt_properties properties = MLT_LINK_PROPERTIES( self );
 		mlt_events_block( properties, properties );
 		mlt_properties_set_position( properties, "in", in );
 		mlt_events_unblock( properties, properties );
