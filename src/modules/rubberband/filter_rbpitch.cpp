@@ -171,7 +171,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 
 	mlt_service_unlock( MLT_FILTER_SERVICE(filter) );
 
-	mlt_log_debug( MLT_FILTER_SERVICE(filter), "Requested: %d\tReceived: %d\tSent: %d\tLatency: %d(%fms)\n", requested_samples, in.samples, out.samples, (pdata->in_samples - pdata->out_samples), latency );
+	mlt_log_debug( MLT_FILTER_SERVICE(filter), "Requested: %d\tReceived: %d\tSent: %d\tLatency: %d(%fms)\n", requested_samples, in.samples, out.samples, (int)(pdata->in_samples - pdata->out_samples), latency );
 	return error;
 }
 
