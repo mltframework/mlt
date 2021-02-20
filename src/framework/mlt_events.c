@@ -3,7 +3,7 @@
  * \brief event handling
  * \see mlt_events_struct
  *
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <limits.h>
 
 #include "mlt_properties.h"
 #include "mlt_events.h"
@@ -47,7 +48,7 @@ static int events_destroyed = 0;
 struct mlt_events_struct
 {
 	mlt_properties owner;
-	mlt_properties list;
+	mlt_properties listeners;
 };
 
 typedef struct mlt_events_struct *mlt_events;
@@ -58,11 +59,20 @@ typedef struct mlt_events_struct *mlt_events;
 
 struct mlt_event_struct
 {
-	mlt_events owner;
+	mlt_events parent;
 	int ref_count;
 	int block_count;
 	mlt_listener listener;
-	void *service;
+	void *listener_data;
+};
+
+struct mlt_event_data_s {
+	union {
+		int integer;
+		const char *string;
+		mlt_frame frame;
+		void *other;
+	} u;
 };
 
 /** Increment the reference count on self event.
@@ -85,7 +95,7 @@ void mlt_event_inc_ref( mlt_event self )
 
 void mlt_event_block( mlt_event self )
 {
-	if ( self != NULL && self->owner != NULL )
+	if ( self != NULL && self->parent != NULL )
 		self->block_count ++;
 }
 
@@ -97,7 +107,7 @@ void mlt_event_block( mlt_event self )
 
 void mlt_event_unblock( mlt_event self )
 {
-	if ( self != NULL && self->owner != NULL )
+	if ( self != NULL && self->parent != NULL )
 		self->block_count --;
 }
 
@@ -112,7 +122,7 @@ void mlt_event_close( mlt_event self )
 	if ( self != NULL )
 	{
 		if ( -- self->ref_count == 1 )
-			self->owner = NULL;
+			self->parent = NULL;
 		if ( self->ref_count <= 0 )
 		{
 #ifdef _MLT_EVENT_CHECKS_
@@ -141,7 +151,7 @@ void mlt_events_init( mlt_properties self )
 	if (!events && self) {
 		events = calloc( 1, sizeof( struct mlt_events_struct ) );
 		if (events) {
-			events->list = mlt_properties_new( );
+			events->listeners = mlt_properties_new( );
 			events->owner = self;
 			mlt_properties_set_data( self, "_events", events, 0, ( mlt_destructor )mlt_events_close, NULL );
 		}
@@ -162,7 +172,7 @@ int mlt_events_register(mlt_properties self, const char *id)
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
-		mlt_properties list = events->list;
+		mlt_properties list = events->listeners;
 		char temp[ 128 ];
 		sprintf( temp, "list:%s", id );
 		if ( mlt_properties_get_data( list, temp, NULL ) == NULL )
@@ -180,13 +190,13 @@ int mlt_events_register(mlt_properties self, const char *id)
  * \return the number of listeners
  */
 
-int mlt_events_fire(mlt_properties self, const char *id, void* data)
+int mlt_events_fire(mlt_properties self, const char *id, mlt_event_data event_data)
 {
 	int result = 0;
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
-		mlt_properties list = events->list;
+		mlt_properties list = events->listeners;
 		mlt_properties listeners = NULL;
 		char temp[ 128 ];
 		sprintf( temp, "list:%s", id );
@@ -197,9 +207,9 @@ int mlt_events_fire(mlt_properties self, const char *id, void* data)
 			for ( int i = 0; i < mlt_properties_count( listeners ); i ++ )
 			{
 				mlt_event event = mlt_properties_get_data_at( listeners, i, NULL );
-				if ( event != NULL && event->owner != NULL && event->block_count == 0 )
+				if ( event != NULL && event->parent != NULL && event->block_count == 0 )
 				{
-					event->listener( event->owner->owner, event->service, data );
+					event->listener( event->parent->owner, event->listener_data, event_data );
 					++result;
 				}
 			}
@@ -212,19 +222,19 @@ int mlt_events_fire(mlt_properties self, const char *id, void* data)
  *
  * \public \memberof mlt_events_struct
  * \param self a properties list
- * \param service an opaque pointer
+ * \param listener_data an opaque pointer
  * \param id the name of the event to listen for
  * \param listener the callback to receive an event message
  * \return
  */
 
-mlt_event mlt_events_listen( mlt_properties self, void *service, const char *id, mlt_listener listener )
+mlt_event mlt_events_listen( mlt_properties self, void *listener_data, const char *id, mlt_listener listener )
 {
 	mlt_event event = NULL;
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
-		mlt_properties list = events->list;
+		mlt_properties list = events->listeners;
 		mlt_properties listeners = NULL;
 		char temp[ 128 ];
 		sprintf( temp, "list:%s", id );
@@ -236,12 +246,12 @@ mlt_event mlt_events_listen( mlt_properties self, void *service, const char *id,
 			for ( i = 0; event == NULL && i < mlt_properties_count( listeners ); i ++ )
 			{
 				mlt_event entry = mlt_properties_get_data_at( listeners, i, NULL );
-				if ( entry != NULL && entry->owner != NULL )
+				if ( entry != NULL && entry->parent != NULL )
 				{
-					if ( entry->service == service && entry->listener == listener )
+					if ( entry->listener_data == listener_data && entry->listener == listener )
 						event = entry;
 				}
-				else if ( ( entry == NULL || entry->owner == NULL ) && first_null == -1 )
+				else if ( ( entry == NULL || entry->parent == NULL ) && first_null == -1 )
 				{
 					first_null = i;
 				}
@@ -256,11 +266,11 @@ mlt_event mlt_events_listen( mlt_properties self, void *service, const char *id,
 					events_created ++;
 #endif
 					sprintf( temp, "%d", first_null == -1 ? mlt_properties_count( listeners ) : first_null );
-					event->owner = events;
+					event->parent = events;
 					event->ref_count = 0;
 					event->block_count = 0;
 					event->listener = listener;
-					event->service = service;
+					event->listener_data = listener_data;
 					mlt_properties_set_data( listeners, temp, event, 0, ( mlt_destructor )mlt_event_close, NULL );
 					mlt_event_inc_ref( event );
 				}
@@ -271,20 +281,20 @@ mlt_event mlt_events_listen( mlt_properties self, void *service, const char *id,
 	return event;
 }
 
-/** Block all events for a given service.
+/** Block all events for a given listener_data.
  *
  * \public \memberof mlt_events_struct
  * \param self a properties list
- * \param service an opaque pointer
+ * \param listener_data the listener's opaque data pointer
  */
 
-void mlt_events_block( mlt_properties self, void *service )
+void mlt_events_block( mlt_properties self, void *listener_data )
 {
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		int i = 0, j = 0;
-		mlt_properties list = events->list;
+		mlt_properties list = events->listeners;
 		for ( j = 0; j < mlt_properties_count( list ); j ++ )
 		{
 			char *temp = mlt_properties_get_name( list, j );
@@ -294,7 +304,7 @@ void mlt_events_block( mlt_properties self, void *service )
 				for ( i = 0; i < mlt_properties_count( listeners ); i ++ )
 				{
 					mlt_event entry = mlt_properties_get_data_at( listeners, i, NULL );
-					if ( entry != NULL && entry->service == service )
+					if ( entry != NULL && entry->listener_data == listener_data )
 						mlt_event_block( entry );
 				}
 			}
@@ -302,20 +312,20 @@ void mlt_events_block( mlt_properties self, void *service )
 	}
 }
 
-/** Unblock all events for a given service.
+/** Unblock all events for a given listener_data.
  *
  * \public \memberof mlt_events_struct
  * \param self a properties list
- * \param service an opaque pointer
+ * \param listener_data the listener's opaque data pointer
  */
 
-void mlt_events_unblock( mlt_properties self, void *service )
+void mlt_events_unblock( mlt_properties self, void *listener_data )
 {
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		int i = 0, j = 0;
-		mlt_properties list = events->list;
+		mlt_properties list = events->listeners;
 		for ( j = 0; j < mlt_properties_count( list ); j ++ )
 		{
 			char *temp = mlt_properties_get_name( list, j );
@@ -325,7 +335,7 @@ void mlt_events_unblock( mlt_properties self, void *service )
 				for ( i = 0; i < mlt_properties_count( listeners ); i ++ )
 				{
 					mlt_event entry = mlt_properties_get_data_at( listeners, i, NULL );
-					if ( entry != NULL && entry->service == service )
+					if ( entry != NULL && entry->listener_data == listener_data )
 						mlt_event_unblock( entry );
 				}
 			}
@@ -333,20 +343,20 @@ void mlt_events_unblock( mlt_properties self, void *service )
 	}
 }
 
-/** Disconnect all events for a given service.
+/** Disconnect all events for a given listener_data.
  *
  * \public \memberof mlt_events_struct
  * \param self a properties list
- * \param service an opaque pointer
+ * \param listener_data the listener's opaque data pointer
  */
 
-void mlt_events_disconnect( mlt_properties self, void *service )
+void mlt_events_disconnect( mlt_properties self, void *listener_data )
 {
 	mlt_events events = mlt_events_fetch( self );
 	if ( events != NULL )
 	{
 		int i = 0, j = 0;
-		mlt_properties list = events->list;
+		mlt_properties list = events->listeners;
 		for ( j = 0; j < mlt_properties_count( list ); j ++ )
 		{
 			char *temp = mlt_properties_get_name( list, j );
@@ -357,7 +367,7 @@ void mlt_events_disconnect( mlt_properties self, void *service )
 				{
 					mlt_event entry = mlt_properties_get_data_at( listeners, i, NULL );
 					char *name = mlt_properties_get_name( listeners, i );
-					if ( entry != NULL && entry->service == service )
+					if ( entry != NULL && entry->listener_data == listener_data )
 						mlt_properties_set_data( listeners, name, NULL, 0, NULL, NULL );
 				}
 			}
@@ -416,7 +426,7 @@ void mlt_events_wait_for( mlt_properties self, mlt_event event )
 {
 	if ( event != NULL )
 	{
-		condition_pair *pair = event->service;
+		condition_pair *pair = event->listener_data;
 		pthread_cond_wait( &pair->cond, &pair->mutex );
 	}
 }
@@ -432,8 +442,8 @@ void mlt_events_close_wait_for( mlt_properties self, mlt_event event )
 {
 	if ( event != NULL )
 	{
-		condition_pair *pair = event->service;
-		event->owner = NULL;
+		condition_pair *pair = event->listener_data;
+		event->parent = NULL;
 		pthread_mutex_unlock( &pair->mutex );
 		pthread_mutex_destroy( &pair->mutex );
 		pthread_cond_destroy( &pair->cond );
@@ -466,7 +476,80 @@ static void mlt_events_close( mlt_events events )
 {
 	if ( events != NULL )
 	{
-		mlt_properties_close( events->list );
+		mlt_properties_close( events->listeners );
 		free( events );
 	}
+}
+
+mlt_event_data mlt_event_data_set_int(int value)
+{
+	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
+	if (event_data) {
+		event_data->u.integer = value;
+	}
+	return event_data;
+}
+
+int mlt_event_data_get_int(mlt_event_data event_data)
+{
+	if (event_data) {
+		return event_data->u.integer;
+	}
+	return INT_MIN;
+}
+
+mlt_event_data mlt_event_data_set_string(const char *value)
+{
+	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
+	if (event_data) {
+		event_data->u.string = value;
+	}
+	return event_data;
+}
+
+const char *mlt_event_data_get_string(mlt_event_data event_data)
+{
+	if (event_data) {
+		return event_data->u.string;
+	}
+	return NULL;
+}
+
+mlt_event_data mlt_event_data_set_frame(mlt_frame frame)
+{
+	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
+	if (event_data) {
+		event_data->u.frame = frame;
+	}
+	return event_data;
+}
+
+mlt_frame mlt_event_data_get_frame(mlt_event_data event_data)
+{
+	if (event_data) {
+		return event_data->u.frame;
+	}
+	return NULL;
+}
+
+mlt_event_data mlt_event_data_set_other(void *value)
+{
+	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
+	if (event_data) {
+		event_data->u.other = value;
+	}
+	return event_data;
+}
+
+void* mlt_event_data_get_other(mlt_event_data event_data)
+{
+	if (event_data) {
+		return event_data->u.other;
+	}
+	return NULL;
+}
+
+void mlt_event_data_free(mlt_event_data event_data)
+{
+	free(event_data);
 }

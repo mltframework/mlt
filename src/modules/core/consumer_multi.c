@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Meltytech, LLC
+ * Copyright (C) 2011-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -157,9 +157,9 @@ static void attach_normalisers( mlt_profile profile, mlt_service service )
 	create_filter( profile, service, "audioconvert", &created );
 }
 
-static void on_frame_show( void *dummy, mlt_properties properties, mlt_frame frame )
+static void on_frame_show( void *dummy, mlt_properties properties, mlt_event_data event_data )
 {
-	mlt_events_fire( properties, "consumer-frame-show", frame );
+	mlt_events_fire( properties, "consumer-frame-show", event_data );
 }
 
 static mlt_consumer generate_consumer( mlt_consumer consumer, mlt_properties props, int index )

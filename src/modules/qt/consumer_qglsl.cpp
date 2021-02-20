@@ -1,6 +1,6 @@
 /*
  * consumer_qglsl.cpp
- * Copyright (C) 2012-2014 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2012-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -123,19 +123,20 @@ private:
 	QOffscreenSurface* m_surface;
 };
 
-static void onThreadCreate(mlt_properties owner, mlt_consumer self,
-	RenderThread** thread, int* priority, thread_function_t function, void* data )
+static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
 	Q_UNUSED(owner)
-	Q_UNUSED(priority)
-	(*thread) = new RenderThread(function, data);
-	(*thread)->start();
+	mlt_event_data_thread* t = (mlt_event_data_thread*) mlt_event_data_get_other(event_data);
+	auto thread = new RenderThread((thread_function_t) t->function, t->data);
+	*t->thread = thread;
+	thread->start();
 }
 
-static void onThreadJoin(mlt_properties owner, mlt_consumer self, RenderThread* thread)
+static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data event_data)
 {
 	Q_UNUSED(owner)
 	Q_UNUSED(self)
+	auto thread = (RenderThread*) mlt_event_data_get_other(event_data);
 	if (thread) {
 		thread->quit();
 		thread->wait();

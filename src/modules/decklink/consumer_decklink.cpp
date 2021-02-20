@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2018 Meltytech, LLC
+ * Copyright (C) 2010-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -851,7 +851,9 @@ protected:
 				render( frame );
 				mlt_log_timings_end( NULL, "render" );
 
-				mlt_events_fire( properties, "consumer-frame-show", frame );
+				mlt_event_data event_data = mlt_event_data_set_frame(frame);
+				mlt_events_fire( properties, "consumer-frame-show", event_data );
+				mlt_event_data_free(event_data);
 
 				// terminate on pause
 				if ( m_terminate_on_pause &&
@@ -929,8 +931,9 @@ static void close( mlt_consumer consumer )
 extern "C" {
 
 // Listen for the list_devices property to be set
-static void on_property_changed( void*, mlt_properties properties, const char *name )
+static void on_property_changed( void*, mlt_properties properties, mlt_event_data event_data )
 {
+	const char *name = mlt_event_data_get_string(event_data);
 	IDeckLinkIterator* decklinkIterator = NULL;
 	IDeckLink* decklink = NULL;
 	IDeckLinkInput* decklinkOutput = NULL;

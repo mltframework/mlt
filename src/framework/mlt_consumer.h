@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -148,8 +148,8 @@ extern mlt_position mlt_consumer_position( mlt_consumer );
 typedef void* ( *mlt_thread_function_t )( void* );
 
 typedef struct {
-	void *thread;
-	int priority;
+	void **thread;
+	int *priority;
 	mlt_thread_function_t function;
 	void *data;
 } mlt_event_data_thread;

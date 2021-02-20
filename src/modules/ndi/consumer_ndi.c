@@ -238,7 +238,9 @@ static void* consumer_ndi_feeder( void* p )
 			last = frame;
 		}
 
-		mlt_events_fire( properties, "consumer-frame-show", frame );
+		mlt_event_data event_data = mlt_event_data_set_frame(frame);
+		mlt_events_fire( properties, "consumer-frame-show", event_data );
+		mlt_event_data_free(event_data);
 	}
 
 	NDIlib_send_destroy( ndi_send );

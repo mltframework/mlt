@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_audio.c -- A Simple DirectMedia Layer audio-only consumer
- * Copyright (C) 2009-2020 Meltytech, LLC
+ * Copyright (C) 2009-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,7 +69,7 @@ static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, char *name );
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data );
 
 /** This is what will be called by the factory - anything can be passed in
 	via the argument, but keep it simple.
@@ -144,9 +144,10 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 	return NULL;
 }
 
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *name )
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
 {
-	if ( !strcmp( name, "refresh" ) )
+	const char *name = mlt_event_data_get_string(event_data);
+	if ( name && !strcmp( name, "refresh" ) )
 	{
 		consumer_sdl self = parent->child;
 		pthread_mutex_lock( &self->refresh_mutex );
@@ -420,7 +421,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 {
 	// Get the properties of this consumer
 	mlt_properties properties = self->properties;
-	mlt_events_fire( properties, "consumer-frame-show", frame );
+	mlt_event_data event_data = mlt_event_data_set_frame(frame);
+	mlt_events_fire( properties, "consumer-frame-show", event_data );
+	mlt_event_data_free(event_data);
 	return 0;
 }
 

@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -597,6 +597,13 @@ static mlt_property mlt_properties_fetch( mlt_properties self, const char *name 
 	return property;
 }
 
+static void fire_property_changed(mlt_properties self, const char *name)
+{
+	mlt_event_data event_data = mlt_event_data_set_string(name);
+	mlt_events_fire(self, "property-changed", event_data);
+	mlt_event_data_free(event_data);
+}
+
 /** Copy a property to another properties list.
  *
  * \public \memberof mlt_properties_s
@@ -614,7 +621,7 @@ void mlt_properties_pass_property( mlt_properties self, mlt_properties that, con
 		return;
 
 	mlt_property_pass( mlt_properties_fetch( self, name ), that_prop );
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 }
 
 /** Copy all properties specified in a comma-separated list to another properties list.
@@ -786,7 +793,7 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
 			mlt_properties_preset( self, value );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -848,7 +855,7 @@ int mlt_properties_set_string( mlt_properties self, const char *name, const char
 			mlt_properties_preset( self, value );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -1051,7 +1058,7 @@ int mlt_properties_set_int( mlt_properties self, const char *name, int value )
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -1095,7 +1102,7 @@ int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t val
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -1147,7 +1154,7 @@ int mlt_properties_set_double( mlt_properties self, const char *name, double val
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -1199,7 +1206,7 @@ int mlt_properties_set_position( mlt_properties self, const char *name, mlt_posi
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -1245,7 +1252,7 @@ int mlt_properties_set_data( mlt_properties self, const char *name, void *value,
 	if ( property != NULL )
 		error = mlt_property_set_data( property, value, length, destroy, serialise );
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -2244,7 +2251,7 @@ void mlt_properties_clear( mlt_properties self, const char *name )
 	if ( property )
 		mlt_property_clear( property );
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 }
 
 /** Check if a property exists.
@@ -2405,7 +2412,7 @@ int mlt_properties_set_color( mlt_properties self, const char *name, mlt_color c
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -2467,7 +2474,7 @@ int mlt_properties_anim_set( mlt_properties self, const char *name, const char *
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -2525,7 +2532,7 @@ int mlt_properties_anim_set_int( mlt_properties self, const char *name, int valu
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -2583,7 +2590,7 @@ int mlt_properties_anim_set_double( mlt_properties self, const char *name, doubl
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -2627,7 +2634,7 @@ extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_r
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }
@@ -2681,7 +2688,7 @@ extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, 
 		mlt_properties_do_mirror( self, name );
 	}
 
-	mlt_events_fire( self, "property-changed", name );
+	fire_property_changed(self, name);
 
 	return error;
 }

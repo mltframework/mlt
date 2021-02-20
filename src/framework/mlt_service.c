@@ -3,7 +3,7 @@
  * \brief interface definition for all service classes
  * \see mlt_service_s
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,6 @@ mlt_service_base;
 static void mlt_service_disconnect( mlt_service self );
 static void mlt_service_connect( mlt_service self, mlt_service that );
 static int service_get_frame( mlt_service self, mlt_frame_ptr frame, int index );
-static void mlt_service_property_changed( mlt_listener, mlt_properties owner, mlt_service self, void **args );
 
 /** Initialize a service.
  *
@@ -654,9 +653,9 @@ static void mlt_service_filter_changed( mlt_service owner, mlt_service self )
  * \param name the name of the property that changed
  */
 
-static void mlt_service_filter_property_changed( mlt_service owner, mlt_service self, char *name )
+static void mlt_service_filter_property_changed( mlt_service owner, mlt_service self, mlt_event_data event_data )
 {
-	mlt_events_fire( MLT_SERVICE_PROPERTIES( self ), "property-changed", name );
+	mlt_events_fire(MLT_SERVICE_PROPERTIES(self), "property-changed", event_data);
 }
 
 /** Attach a filter.

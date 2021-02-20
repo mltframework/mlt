@@ -1,7 +1,6 @@
 /**
  * mlt.i - Swig Bindings for mlt++
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -64,6 +63,7 @@ namespace Mlt {
 %newobject Repository::presets();
 %newobject Properties::get_anim();
 %newobject Animation::Animation();
+%newobject EventData::get_frame();
 
 %rename(__assign__) Animation::operator=;
 %rename(__assign__) Frame::operator=;

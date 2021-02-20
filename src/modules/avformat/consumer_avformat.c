@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -213,7 +213,7 @@ static int init_vaapi(mlt_properties properties, AVCodecContext *codec_context)
 #endif
 
 // Forward references.
-static void property_changed( mlt_properties owner, mlt_consumer self, char *name );
+static void property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data );
 static int consumer_start( mlt_consumer consumer );
 static int consumer_stop( mlt_consumer consumer );
 static int consumer_is_stopped( mlt_consumer consumer );
@@ -352,11 +352,12 @@ static void color_primaries_from_colorspace( mlt_properties properties )
 	}
 }
 
-static void property_changed( mlt_properties owner, mlt_consumer self, char *name )
+static void property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
+	const char *name = mlt_event_data_get_string(event_data);
 
-	if ( !strcmp( name, "s" ) )
+	if ( name && !strcmp( name, "s" ) )
 	{
 		// Obtain the size property
 		char *size = mlt_properties_get( properties, "s" );
@@ -1198,7 +1199,9 @@ static int mlt_write(void *h, uint8_t *buf, int size)
 {
 	mlt_properties properties = (mlt_properties) h;
 	buffer_t buffer = { buf, size };
-	mlt_events_fire( properties, "avformat-write", &buffer );
+	mlt_event_data event_data = mlt_event_data_set_other(&buffer);
+	mlt_events_fire( properties, "avformat-write", event_data );
+	mlt_event_data_free(event_data);
 	return 0;
 }
 
@@ -1909,8 +1912,11 @@ static void *consumer_thread( void *arg )
 					sample_fifo_append( enc_ctx->fifo, pcm, samples * enc_ctx->channels * enc_ctx->sample_bytes );
 					total_time += ( samples * 1000000 ) / enc_ctx->frequency;
 				}
-				if ( !enc_ctx->video_st )
-					mlt_events_fire( properties, "consumer-frame-show", frame );
+				if ( !enc_ctx->video_st ) {
+					mlt_event_data event_data = mlt_event_data_set_frame(frame);
+					mlt_events_fire( properties, "consumer-frame-show", event_data );
+					mlt_event_data_free(event_data);
+				}
 			}
 
 			// Encode the image
@@ -1974,7 +1980,9 @@ static void *consumer_thread( void *arg )
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
 
-						mlt_events_fire( properties, "consumer-frame-show", frame );
+						mlt_event_data event_data = mlt_event_data_set_frame(frame);
+						mlt_events_fire( properties, "consumer-frame-show", event_data );
+						mlt_event_data_free(event_data);
 
 						// Apply the alpha if applicable
 						if ( !mlt_properties_get( properties, "mlt_image_format" ) ||

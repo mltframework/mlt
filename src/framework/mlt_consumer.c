@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -80,9 +80,9 @@ typedef struct
 }
 consumer_private;
 
-static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, char *name );
+static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data );
 static void apply_profile_properties( mlt_consumer self, mlt_profile profile, mlt_properties properties );
-static void on_consumer_frame_show( mlt_properties owner, mlt_consumer self, mlt_frame frame );
+static void on_consumer_frame_show( mlt_properties owner, mlt_consumer self, mlt_event_data );
 static void mlt_thread_create( mlt_consumer self, mlt_thread_function_t function );
 static void mlt_thread_join( mlt_consumer self );
 static void consumer_read_ahead_start( mlt_consumer self );
@@ -202,9 +202,10 @@ static void apply_profile_properties( mlt_consumer self, mlt_profile profile, ml
  * \param name the name of the property that changed
  */
 
-static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, char *name )
+static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
-	if ( !strcmp( name, "mlt_profile" ) )
+	const char *name = mlt_event_data_get_string(event_data);
+	if ( name && !strcmp( name, "mlt_profile" ) )
 	{
 		// Get the properties
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
@@ -334,8 +335,9 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
  * \param frame the frame that was shown
  */
 
-static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_frame frame )
+static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_event_data event_data )
 {
+	mlt_frame frame = mlt_event_data_get_frame(event_data);
 	if ( frame ) {
 		consumer_private* priv = consumer->local;
 		pthread_mutex_lock( &priv->position_mutex );
@@ -788,7 +790,9 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Get the image of the first frame
 		if ( !video_off )
 		{
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame );
+			mlt_event_data event_data = mlt_event_data_set_frame(frame);
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", event_data );
+			mlt_event_data_free(event_data);
 			mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 		}
 
@@ -866,7 +870,9 @@ static void *consumer_read_ahead_thread( void *arg )
 				height = mlt_properties_get_int( properties, "height" );
 
 				// Get the image
-				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame );
+				mlt_event_data event_data = mlt_event_data_set_frame(frame);
+				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", event_data );
+				mlt_event_data_free(event_data);
 				mlt_log_timings_begin();
 				mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 				mlt_log_timings_end( NULL, "mlt_frame_get_image" );
@@ -1059,7 +1065,9 @@ static void *consumer_worker_thread( void *arg )
 			// Fetch width/height again
 			width = mlt_properties_get_int( properties, "width" );
 			height = mlt_properties_get_int( properties, "height" );
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", frame );
+			mlt_event_data event_data = mlt_event_data_set_frame(frame);
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", event_data );
+			mlt_event_data_free(event_data);
 			mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 		}
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
@@ -1736,12 +1744,13 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 		struct sched_param priority;
 		priority.sched_priority = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( self ), "priority" );
 		mlt_event_data_thread data = {
-		    .thread = priv->ahead_thread,
-		    .priority = priority.sched_priority,
+		    .thread = &priv->ahead_thread,
+		    .priority = &priority.sched_priority,
 		    .function = function,
 		    .data = self
 		};
-		if ( mlt_events_fire( properties, "consumer-thread-create", &data ) < 1 )
+		mlt_event_data event_data = mlt_event_data_set_other(&data);
+		if ( mlt_events_fire( properties, "consumer-thread-create", event_data ) < 1 )
 		{
 			pthread_attr_t thread_attributes;
 			pthread_attr_init( &thread_attributes );
@@ -1755,32 +1764,38 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 				pthread_create( ( pthread_t* ) &( *handle ), NULL, function, self );
 			pthread_attr_destroy( &thread_attributes );
 		}
+		mlt_event_data_free(event_data);
 	}
 	else
 	{
+		int priority = -1;
 		mlt_event_data_thread data = {
-		    .thread = priv->ahead_thread,
-		    .priority = -1,
+		    .thread = &priv->ahead_thread,
+		    .priority = &priority,
 		    .function = function,
 		    .data = self
 		};
-		if ( mlt_events_fire( properties, "consumer-thread-create", &data ) < 1 )
+		mlt_event_data event_data = mlt_event_data_set_other(&data);
+		if ( mlt_events_fire( properties, "consumer-thread-create", event_data ) < 1 )
 		{
 			priv->ahead_thread = malloc( sizeof( pthread_t ) );
 			pthread_t *handle = priv->ahead_thread;
 			pthread_create( ( pthread_t* ) &( *handle ), NULL, function, self );
 		}
+		mlt_event_data_free(event_data);
 	}
 }
 
 static void mlt_thread_join( mlt_consumer self )
 {
 	consumer_private *priv = self->local;
-	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join", priv->ahead_thread ) < 1 )
+	mlt_event_data event_data = mlt_event_data_set_other(priv->ahead_thread);
+	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join", event_data ) < 1 )
 	{
 		pthread_t *handle = priv->ahead_thread;
 		pthread_join( *handle, NULL );
 		free( priv->ahead_thread );
 	}
+	mlt_event_data_free(event_data);
 	priv->ahead_thread = NULL;
 }

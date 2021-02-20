@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_preview.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,9 +61,9 @@ static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer self, mlt_frame frame );
-static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer self, SDL_Event *event );
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, char *name );
+static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data );
+static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data );
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data );
 
 mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
@@ -115,22 +115,28 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 	return NULL;
 }
 
-void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_frame frame )
+void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
 {
+	mlt_frame frame = mlt_event_data_get_frame(event_data);
 	consumer_sdl self = parent->child;
-	self->last_speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
-	self->last_position = mlt_frame_get_position( frame );
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-frame-show", frame );
+	if (frame && self) {
+		self->last_speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+		self->last_position = mlt_frame_get_position( frame );
+		event_data = mlt_event_data_set_frame(frame);
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-frame-show", event_data );
+		mlt_event_data_free(event_data);
+	}
 }
 
-static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer parent, SDL_Event *event )
+static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
 {
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-sdl-event", event );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-sdl-event", event_data );
 }
 
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, char *name )
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
 {
-	if ( !strcmp( name, "refresh" ) )
+	const char *name = mlt_event_data_get_string(event_data);
+	if ( name && !strcmp( name, "refresh" ) )
 	{
 		consumer_sdl self = parent->child;
 		pthread_mutex_lock( &self->refresh_mutex );

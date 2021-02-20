@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017-2019 Meltytech, LLC
+ * Copyright (C) 2017-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -677,7 +677,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			SDL_RenderPresent( self->sdl_renderer );
 		}
 
-		mlt_events_fire( properties, "consumer-frame-show", frame );
+		mlt_event_data event_data = mlt_event_data_set_frame(frame);
+		mlt_events_fire( properties, "consumer-frame-show", event_data );
+		mlt_event_data_free(event_data);
 	}
 	else if ( self->running )
 	{
@@ -686,7 +688,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 		}
-		mlt_events_fire( properties, "consumer-frame-show", frame );
+		mlt_event_data event_data = mlt_event_data_set_frame(frame);
+		mlt_events_fire( properties, "consumer-frame-show", event_data );
+		mlt_event_data_free(event_data);
 	}
 
 	return 0;

@@ -31,16 +31,17 @@ typedef struct
 	mlt_position prev_pos;
 } private_data;
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
+	const char *name = mlt_event_data_get_string(event_data);
 	private_data* pdata = (private_data*)filter->child;
-	if ( !strcmp( name, "reset" ) ||
+	if ( name && pdata && ( !strcmp( name, "reset" ) ||
 		!strcmp( name, "calc_program" ) ||
 		!strcmp( name, "calc_shortterm" ) ||
 		!strcmp( name, "calc_momentary" ) ||
 		!strcmp( name, "calc_range" ) ||
 		!strcmp( name, "calc_peak" ) ||
-		!strcmp( name, "calc_true_peak" ) )
+	    !strcmp( name, "calc_true_peak" ) ) )
 	{
 		pdata->reset = 1;
 	}

@@ -1,7 +1,6 @@
 /**
  * MltEvent.h - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,7 +26,9 @@
 
 namespace Mlt 
 {
-	class MLTPP_DECLSPEC Event 
+    class Frame;
+
+	class MLTPP_DECLSPEC Event
 	{
 		private:
 			mlt_event instance;
@@ -39,6 +40,22 @@ namespace Mlt
 			bool is_valid( );
 			void block( );
 			void unblock( );
+	};
+
+	class MLTPP_DECLSPEC EventData
+	{
+	    private:
+		    mlt_event_data instance;
+	    public:
+			EventData(mlt_event_data);
+			EventData(EventData&);
+			~EventData() {};
+			mlt_event_data get_event_data();
+			bool is_valid();
+			int get_int();
+			const char* get_string();
+			Frame get_frame();
+			void* get_other();
 	};
 }
 

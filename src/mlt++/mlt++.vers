@@ -655,5 +655,15 @@ MLTPP_7.0.0 {
       "Mlt::Parser::on_start_link(Mlt::Link*)";
       "Mlt::Parser::on_end_link(Mlt::Link*)";
       "Mlt::Properties::listen(char const*, void*, void (*)(mlt_properties_s*, void*, void*))";
+      "typeinfo name for Mlt::EventData";
+      "vtable for Mlt::EventData";
+      "Mlt::EventData::EventData(mlt_event_data_s*)
+      "Mlt::EventData::EventData(Mlt::EventData&)";
+      "Mlt::EventData::get_event_data()";
+      "Mlt::EventData::is_valid()";
+      "Mlt::EventData::get_int()";
+      "Mlt::EventData::get_string()";
+      "Mlt::EventData::get_frame()";
+      "Mlt::EventData::get_other()";
     };
 } MLTPP_6.22.0;

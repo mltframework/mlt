@@ -3,7 +3,7 @@
  * \brief playlist service class
  * \see mlt_playlist_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,7 +52,6 @@ struct playlist_entry_s
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static int mlt_playlist_unmix( mlt_playlist self, int clip );
 static int mlt_playlist_resize_mix( mlt_playlist self, int clip, int in, int out );
-static void mlt_playlist_next( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 
 /** Construct a playlist.
  *
@@ -483,8 +482,11 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist self, int *progressiv
 	}
 
 	// Determine if we have moved to the next entry in the playlist.
-	if ( original == total - 2 )
-		mlt_events_fire( properties, "playlist-next", &i );
+	if ( original == total - 2 ) {
+		mlt_event_data event_data = mlt_event_data_set_int(i);
+		mlt_events_fire(properties, "playlist-next", event_data);
+		mlt_event_data_free(event_data);
+	}
 
 	return MLT_PRODUCER_SERVICE( producer );
 }

@@ -1,6 +1,6 @@
 /*
  * filter_jackrack.c -- filter audio through Jack and/or LADSPA plugins
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,9 @@ static int jack_sync( jack_transport_state_t state, jack_position_t *jack_pos, v
 		mlt_properties_get_position( properties, "_last_pos" ) );
 	if ( state == JackTransportStopped )
 	{
-		mlt_events_fire( properties, "jack-stopped", &position );
+		mlt_event_data event_data = mlt_event_data_set_int(position);
+		mlt_events_fire( properties, "jack-stopped", event_data );
+		mlt_event_data_free(event_data);
 		mlt_properties_set_int( properties, "_sync_guard", 0 );
 	}
 	else if ( state == JackTransportStarting )
@@ -58,7 +60,9 @@ static int jack_sync( jack_transport_state_t state, jack_position_t *jack_pos, v
 		if ( !mlt_properties_get_int( properties, "_sync_guard" ) )
 		{
 			mlt_properties_set_int( properties, "_sync_guard", 1 );
-			mlt_events_fire( properties, "jack-started", &position );
+			mlt_event_data event_data = mlt_event_data_set_int(position);
+			mlt_events_fire( properties, "jack-started", event_data );
+			mlt_event_data_free(event_data);
 		}
 		else if ( position >= mlt_properties_get_position( properties, "_last_pos" ) - 2 )
 		{
@@ -88,15 +92,16 @@ static void on_jack_stop( mlt_properties owner, mlt_properties properties )
 	jack_transport_stop( jack_client );
 }
 
-static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_position *position )
+static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_event_data event_data )
 {
+	mlt_position position = mlt_event_data_get_int(event_data);
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_log_verbose( MLT_FILTER_SERVICE(filter), "%s: %d\n", __FUNCTION__, *position );
+	mlt_log_verbose( MLT_FILTER_SERVICE(filter), "%s: %d\n", __FUNCTION__, position );
 	mlt_properties_set_int( properties, "_sync_guard", 1 );
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 	jack_client_t *jack_client = mlt_properties_get_data( properties, "jack_client", NULL );
 	jack_nframes_t jack_frame = jack_get_sample_rate( jack_client );
-	jack_frame *= *position / mlt_profile_fps( profile );
+	jack_frame *= position / mlt_profile_fps( profile );
 	jack_transport_locate( jack_client, jack_frame );
 }
 

@@ -1,7 +1,6 @@
 /*
  * filter_audiowaveform.cpp -- audio waveform visualization filter
- * Copyright (c) 2015-2020 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
+ * Copyright (c) 2015-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,9 +68,10 @@ static void destory_save_buffer( void* ptr )
 	free( buff );
 }
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
-	if ( !strcmp( name, "window" ) )
+	const char *name = mlt_event_data_get_string(event_data);
+	if ( name && !strcmp( name, "window" ) )
 	{
 		private_data* pdata = (private_data*)filter->child;
 		pdata->reset_window = 1;

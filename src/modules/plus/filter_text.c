@@ -1,6 +1,6 @@
 /*
  * filter_text.c -- text overlay filter
- * Copyright (C) 2018-2019 Meltytech, LLC
+ * Copyright (C) 2018-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,8 +21,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
+	const char *name = mlt_event_data_get_string(event_data);
+	if (!name) return;
 	if( !strcmp( "geometry", name ) ||
 		!strcmp( "family", name ) ||
 		!strcmp( "size", name ) ||

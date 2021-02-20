@@ -593,4 +593,13 @@ MLT_7.0.0 {
     mlt_link_connect_next;
     mlt_link_close;
     mlt_repository_links;
+    mlt_event_data_set_int;
+    mlt_event_data_get_int;
+    mlt_event_data_set_string;
+    mlt_event_data_get_string;
+    mlt_event_data_set_frame;
+    mlt_event_data_get_frame;
+    mlt_event_data_set_other;
+    mlt_event_data_get_other;
+    mlt_event_data_free;
 } MLT_6.22.0;

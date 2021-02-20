@@ -148,7 +148,7 @@ static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void on_data_received( mlt_properties properties, mlt_consumer consumer, buffer_t *buffer );
+static void on_data_received( mlt_properties properties, mlt_consumer consumer, mlt_event_data );
 
 mlt_consumer consumer_cbrts_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
@@ -999,8 +999,9 @@ static void filter_remux_or_write_packet( consumer_cbrts self, uint8_t *packet )
 	}
 }
 
-static void on_data_received( mlt_properties properties, mlt_consumer consumer, buffer_t *buffer )
+static void on_data_received( mlt_properties properties, mlt_consumer consumer, mlt_event_data event_data )
 {
+	buffer_t *buffer = mlt_event_data_get_other(event_data);
 	uint8_t *buf = buffer->data;
 	size_t size = buffer->size;
 	if ( size > 0 )
