@@ -49,13 +49,15 @@ namespace Mlt
 	    public:
 			EventData(mlt_event_data);
 			EventData(EventData&);
+			EventData(const EventData&);
+			EventData& operator=(const EventData &);
 			~EventData() {};
-			mlt_event_data get_event_data();
-			bool is_valid();
-			int get_int();
-			const char* get_string();
-			Frame get_frame();
-			void* get_other();
+			mlt_event_data get_event_data() const;
+			bool is_valid() const;
+			int get_int() const;
+			const char* get_string() const;
+			Frame get_frame() const;
+			void* get_other() const;
 	};
 }
 

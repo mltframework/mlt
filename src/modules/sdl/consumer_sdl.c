@@ -545,7 +545,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 
 			while ( SDL_PollEvent( &event ) )
 			{
-				mlt_event_data event_data = mlt_event_data_set_othjer(&event);
+				mlt_event_data event_data = mlt_event_data_set_other(&event);
 				mlt_events_fire( self->properties, "consumer-sdl-event", event_data );
 				mlt_event_data_free(event_data);
 

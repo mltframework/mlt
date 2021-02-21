@@ -70,32 +70,43 @@ EventData::EventData(EventData &data)
 {
 }
 
-mlt_event_data EventData::get_event_data()
+EventData::EventData(const EventData &data)
+	: instance(data.get_event_data())
+{
+}
+
+EventData &EventData::operator=(const EventData &data)
+{
+	instance = data.get_event_data();
+	return *this;
+}
+
+mlt_event_data EventData::get_event_data() const
 {
 	return instance;
 }
 
-bool EventData::is_valid()
+bool EventData::is_valid() const
 {
 	return instance != nullptr;
 }
 
-int EventData::get_int()
+int EventData::get_int() const
 {
 	return mlt_event_data_get_int(instance);
 }
 
-const char *EventData::get_string()
+const char *EventData::get_string() const
 {
 	return mlt_event_data_get_string(instance);
 }
 
-Frame EventData::get_frame()
+Frame EventData::get_frame() const
 {
 	return Frame(mlt_event_data_get_frame(instance));
 }
 
-void *EventData::get_other()
+void* EventData::get_other() const
 {
 	return mlt_event_data_get_other(instance);
 }

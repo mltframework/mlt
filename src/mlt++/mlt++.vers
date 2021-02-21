@@ -654,16 +654,18 @@ MLTPP_7.0.0 {
       "Mlt::Parser::on_end_chain(Mlt::Chain*)";
       "Mlt::Parser::on_start_link(Mlt::Link*)";
       "Mlt::Parser::on_end_link(Mlt::Link*)";
-      "Mlt::Properties::listen(char const*, void*, void (*)(mlt_properties_s*, void*, void*))";
+      "Mlt::Properties::listen(char const*, void*, void (*)(mlt_properties_s*, void*, mlt_event_data_s*))";
       "typeinfo name for Mlt::EventData";
       "vtable for Mlt::EventData";
-      "Mlt::EventData::EventData(mlt_event_data_s*)
+      "Mlt::EventData::EventData(mlt_event_data_s*)";
       "Mlt::EventData::EventData(Mlt::EventData&)";
-      "Mlt::EventData::get_event_data()";
-      "Mlt::EventData::is_valid()";
-      "Mlt::EventData::get_int()";
-      "Mlt::EventData::get_string()";
-      "Mlt::EventData::get_frame()";
-      "Mlt::EventData::get_other()";
+      "Mlt::EventData::EventData(Mlt::EventData const&)";
+      "Mlt::EventData::operator=(Mlt::EventData const&)";
+      "Mlt::EventData::get_event_data() const";
+      "Mlt::EventData::is_valid() const";
+      "Mlt::EventData::get_int() const";
+      "Mlt::EventData::get_string() const";
+      "Mlt::EventData::get_frame() const";
+      "Mlt::EventData::get_other() const";
     };
 } MLTPP_6.22.0;

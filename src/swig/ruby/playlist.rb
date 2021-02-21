@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Import required modules
-require 'mlt'
+require './mlt'
 
 # Create the mlt system
 Mlt::Factory::init
@@ -54,6 +54,8 @@ consumer.connect( pls )
 
 # Wait until the user stops the consumer
 consumer.wait_for( event )
+
+puts "Done and closing"
 
 # Clean up consumer
 consumer.stop
