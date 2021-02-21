@@ -1,5 +1,5 @@
 --- # A metadata schema in Kwalify: http://www.kuwata-lab.com/kwalify/
-# Version: 7
+# Version: 7.0
 type: map
 mapping:
   "schema_version": # This should match the version comment above
