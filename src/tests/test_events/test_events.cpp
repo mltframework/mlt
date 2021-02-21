@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Meltytech, LLC
+ * Copyright (C) 2019-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,10 +44,10 @@ private:
         QVERIFY(owner == m_properties);
     }
 
-    static void onPropertyChanged(mlt_properties owner, TestEvents* self, char* name)
+    static void onPropertyChanged(mlt_properties owner, TestEvents* self, mlt_event_data data)
     {
         QVERIFY(self != nullptr);
-        QCOMPARE(name, "foo");
+        QCOMPARE(Mlt::EventData(data).get_string(), "foo");
         self->checkOwner(owner);
     }
 
