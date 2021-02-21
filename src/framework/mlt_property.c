@@ -1322,6 +1322,11 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 		self->animation = mlt_animation_new();
 		self->serialiser = (mlt_serialiser) mlt_animation_serialize_tf;
 		mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
+		// Delete the string and interact with the animation from now on.
+		self->types &= !mlt_prop_string;
+		if ( self->prop_string )
+			free( self->prop_string );
+		self->prop_string = NULL;
 	}
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 	{
