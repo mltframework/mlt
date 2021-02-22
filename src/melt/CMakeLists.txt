@@ -11,4 +11,8 @@ if(TARGET PkgConfig::sdl2)
     endif()
 endif()
 
+if(MINGW)
+  target_link_options(melt PRIVATE -mconsole)
+endif()
+
 install(TARGETS melt RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

@@ -42,17 +42,26 @@ set_target_properties(mlt PROPERTIES SOVERSION ${MLT_VERSION_MAJOR} VERSION ${ML
 
 if(WIN32)
   set_target_properties(mlt PROPERTIES OUTPUT_NAME "mlt-${MLT_VERSION_MAJOR}")
+  if(MINGW)
+    install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.dll"
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RENAME libmlt.dll
+    )
+  endif()
   target_sources(mlt PRIVATE ../win32/win32.c ../win32/strptime.c)
   target_link_libraries(mlt Iconv::Iconv)
-  if(NODEPLOY)
+  if(NOT WINDOWS_DEPLOY)
     target_compile_definitions(mlt PRIVATE NODEPLOY)
   endif()
 endif()
 
 if(NOT (WIN32 OR APPLE))
   target_compile_definitions(mlt PRIVATE
-    PREFIX_DATA="${CMAKE_INSTALL_FULL_DATADIR}/mlt"
-    PREFIX_LIB="${CMAKE_INSTALL_FULL_LIBDIR}/mlt")
+    $<BUILD_INTERFACE:PREFIX_DATA="${MLT_DATA_OUTPUT_DIRECTORY}" PREFIX_LIB="${MLT_MODULE_OUTPUT_DIRECTORY}">
+    $<INSTALL_INTERFACE:PREFIX_DATA="${CMAKE_INSTALL_FULL_DATADIR}/mlt" PREFIX_LIB="${CMAKE_INSTALL_FULL_LIBDIR}/mlt">
+  )
+  target_link_options(mlt PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
+  set_target_properties(mlt PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
 endif()
 
 set(MLT_PUPLIC_HEADERS

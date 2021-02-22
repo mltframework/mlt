@@ -15,8 +15,7 @@ if(TARGET PkgConfig::sdl_image)
   install(FILES producer_sdl_image.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/sdl)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltsdl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltsdl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltsdl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

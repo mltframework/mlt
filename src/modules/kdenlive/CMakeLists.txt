@@ -8,8 +8,7 @@ add_library(mltkdenlive MODULE
 
 target_link_libraries(mltkdenlive mlt m)
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltkdenlive LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

@@ -19,7 +19,6 @@ if(X86_64)
   endif()
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltxine PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltxine PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltxine LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)

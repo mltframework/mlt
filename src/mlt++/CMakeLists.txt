@@ -38,7 +38,18 @@ set_target_properties(mlt++ PROPERTIES SOVERSION ${MLT_VERSION_MAJOR} VERSION ${
 
 if(WIN32)
   set_target_properties(mlt++ PROPERTIES OUTPUT_NAME "mlt++-${MLT_VERSION_MAJOR}")
+  if(MINGW)
+    install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt++-${MLT_VERSION_MAJOR}.dll"
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RENAME libmlt++.dll
+    )
+  endif()
   target_compile_definitions(mlt++ PUBLIC MLTPP_EXPORTS)
+endif()
+
+if(NOT (WIN32 OR APPLE))
+  target_link_options(mlt++ PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt++.vers)
+  set_target_properties(mlt++ PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt++.vers)
 endif()
 
 set(MLTPP_PUPLIC_HEADERS

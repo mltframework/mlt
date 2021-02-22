@@ -5,6 +5,7 @@ if(TARGET PkgConfig::rtaudio)
   target_link_libraries(mltrtaudio PkgConfig::rtaudio)
 else()
   target_sources(mltrtaudio PRIVATE RtAudio.cpp)
+  target_include_directories(mltrtaudio PRIVATE .)
   if(APPLE)
     target_link_libraries(mltrtaudio CoreAudio CoreFoundation)
     target_compile_definitions(mltrtaudio PRIVATE __MACOSX_CORE__)
@@ -27,8 +28,7 @@ else()
   endif()
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltrtaudio PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltrtaudio PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltrtaudio LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

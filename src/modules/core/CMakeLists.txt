@@ -48,14 +48,14 @@ target_link_libraries(mltcore mlt Threads::Threads)
 
 if(WIN32)
   target_sources(mltcore PRIVATE ../../win32/fnmatch.c)
+  target_include_directories(mltcore PRIVATE ../../win32)
 endif()
 
 if(X86_64)
   target_sources(mltcore PRIVATE composite_line_yuv_sse2_simple.c)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltcore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

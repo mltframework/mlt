@@ -9,8 +9,7 @@ add_library(mltvmfx MODULE
 
 target_link_libraries(mltvmfx mlt)
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltvmfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltvmfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltvmfx LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

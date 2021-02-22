@@ -7,8 +7,7 @@ add_library(mltvidstab MODULE
 
 target_link_libraries(mltvidstab mlt m mlt++ PkgConfig::vidstab)
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltvidstab LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 

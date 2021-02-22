@@ -6,8 +6,7 @@ add_library(mltnormalize MODULE
 
 target_link_libraries(mltnormalize mlt m)
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltnormalize PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltnormalize PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltnormalize LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 
