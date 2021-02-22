@@ -166,7 +166,7 @@ public:
     }
 
     void updateText(QString text) {
-#if QT_VERSION >= 0x050c00
+#if QT_VERSION >= 0x051300
         m_path.clear();
 #else
         m_path = QPainterPath();
