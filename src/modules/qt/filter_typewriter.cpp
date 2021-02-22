@@ -28,23 +28,9 @@
 #include <vector>
 
 #include "typewriter.h"
+#include "kdenlivetitle_wrapper.h"
 
-struct producer_ktitle_s
-{
-    struct mlt_producer_s parent;
-    uint8_t *rgba_image;
-    uint8_t *current_image;
-    uint8_t *current_alpha;
-    mlt_image_format format;
-    int current_width;
-    int current_height;
-    int has_alpha;
-    pthread_mutex_t mutex;
-};
-
-typedef struct producer_ktitle_s *producer_ktitle;
-
-struct FilterContainer{
+struct FilterContainer {
     XmlParser xp;
 
     std::vector<TypeWriter> renders;      // rendered data [array]
