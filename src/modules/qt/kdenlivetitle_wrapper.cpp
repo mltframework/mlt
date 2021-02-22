@@ -19,6 +19,8 @@
  */
 
 #include "kdenlivetitle_wrapper.h"
+#include "typewriter.h"
+
 #include "common.h"
 
 #include <QImage>
@@ -47,7 +49,10 @@
 #include <QGraphicsDropShadowEffect>
 #endif
 
+#include <memory>
+
 Q_DECLARE_METATYPE(QTextCursor);
+Q_DECLARE_METATYPE(std::shared_ptr<TypeWriter>);
 
 // Private Constants
 static const double PI = 3.14159265358979323846;
@@ -145,31 +150,41 @@ void blur( QImage& image, int radius )
 class PlainTextItem: public QGraphicsItem
 {
 public:
-    PlainTextItem(QString text, QFont font, double width, double height, QBrush brush, QColor outlineColor, double outline, int align, int lineSpacing)
+    PlainTextItem(QString text, QFont font, double width, double height, QBrush brush, QColor outlineColor, double outline, int align, int lineSpacing) : m_metrics(QFontMetrics(font))
     {
         m_boundingRect = QRectF(0, 0, width, height);
         m_brush = brush;
         m_outline = outline;
         m_pen = QPen(outlineColor);
         m_pen.setWidthF(outline);
-        QFontMetrics metrics(font);
-        lineSpacing += metrics.lineSpacing();
+        m_font = font;
+        m_lineSpacing = lineSpacing + m_metrics.lineSpacing();
         m_path.setFillRule(Qt::WindingFill);
+        m_align = align;
+        m_width = width;
+        updateText(text);
+    }
 
+    void updateText(QString text) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+        m_path.clear();
+#else
+        m_path = QPainterPath();
+#endif
         // Calculate line width
         QStringList lines = text.split('\n');
-        double linePos = metrics.ascent();
+        double linePos = m_metrics.ascent();
         foreach(const QString &line, lines)
         {
                 QPainterPath linePath;
-                linePath.addText(0, linePos, font, line);
-                linePos += lineSpacing;
-                if ( align == Qt::AlignHCenter )
+                linePath.addText(0, linePos, m_font, line);
+                linePos += m_lineSpacing;
+                if ( m_align == Qt::AlignHCenter )
                 {
-                        double offset = (width - metrics.width(line)) / 2;
+                        double offset = (m_width - m_metrics.width(line)) / 2;
                         linePath.translate(offset, 0);
-                } else if ( align == Qt::AlignRight ) {
-                        double offset = (width - metrics.width(line));
+                } else if ( m_align == Qt::AlignRight ) {
+                        double offset = (m_width - m_metrics.width(line));
                         linePath.translate(offset, 0);
                 }
                 m_path.addPath(linePath);
@@ -198,16 +213,21 @@ public:
 
     void addShadow(QStringList params)
     {
-        if (params.count() < 5 || params.at( 0 ).toInt() == false) 
+        m_params = params;
+        updateShadows();
+    }
+
+    void updateShadows() {
+        if (m_params.count() < 5 || m_params.at( 0 ).toInt() == false)
         {
                 // Invalid or no shadow wanted
                 return;
         }
         // Build shadow image
-        QColor shadowColor = QColor( params.at( 1 ) );
-        int blurRadius = params.at( 2 ).toInt();
-        int offsetX = params.at( 3 ).toInt();
-        int offsetY = params.at( 4 ).toInt();
+        QColor shadowColor = QColor( m_params.at( 1 ) );
+        int blurRadius = m_params.at( 2 ).toInt();
+        int offsetX = m_params.at( 3 ).toInt();
+        int offsetY = m_params.at( 4 ).toInt();
         m_shadow = QImage( m_boundingRect.width() + abs( offsetX ) + 4 * blurRadius, m_boundingRect.height() + abs( offsetY ) + 4 * blurRadius, QImage::Format_ARGB32_Premultiplied );
         m_shadow.fill( Qt::transparent );
         QPainterPath shadowPath = m_path;
@@ -228,7 +248,13 @@ private:
     QPainterPath m_path;
     QBrush m_brush;
     QPen m_pen;
+    QFont m_font;
+    int m_lineSpacing;
+    int m_align;
+    double m_width;
+    QFontMetrics m_metrics;
     double m_outline;
+    QStringList m_params;
 };
 
 QRectF stringToRect( const QString & s )
@@ -420,6 +446,43 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
                                         {
                                                 QStringList values = txtProperties.namedItem( "shadow" ).nodeValue().split(";");
                                                 txt->addShadow(values);
+                                        }
+                                        if (!txtProperties.namedItem( "typewriter" ).isNull()) {
+                                                // typewriter effect
+
+                                                QStringList values = txtProperties.namedItem( "typewriter" ).nodeValue().split(";");
+                                                int enabled = (static_cast<bool>(values.at(0).toInt()));
+
+                                                if (enabled and values.count() >= 5) {
+                                                        mlt_properties_set_int( producer_props, "_animated", 1 );
+                                                        std::shared_ptr<TypeWriter> tw(new TypeWriter);
+                                                        tw->setFrameStep(values.at(1).toInt());
+                                                        int macro = values.at(2).toInt();
+                                                        tw->setStepSigma(values.at(3).toInt());
+                                                        tw->setStepSeed(values.at(4).toInt());
+                                                        QString pattern;
+                                                        if (macro) {
+                                                                char c = 0;
+                                                                switch (macro) {
+                                                                        case 1: c = 'c'; break;
+                                                                        case 2: c = 'w'; break;
+                                                                        case 3: c = 'l'; break;
+                                                                        default: break;
+                                                                }
+                                                                pattern = QString(":%1{%2}").arg(c).arg(text);
+                                                        }
+                                                        else
+                                                        {
+                                                                pattern = text;
+                                                        }
+
+                                                        tw->setPattern(pattern.toStdString());
+                                                        tw->parse();
+                                                        tw->printParseResult();
+                                                        txt->setData(0, QVariant::fromValue<std::shared_ptr<TypeWriter>>(tw));
+                                                } else {
+                                                        txt->setData(0, QVariant());
+                                                }
                                         }
                                         scene->addItem( txt );
                                         gitem = txt;
@@ -688,32 +751,13 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 
 		// Effects
 		QList <QGraphicsItem *> items = scene->items();
-		QGraphicsTextItem *titem = NULL;
+		PlainTextItem *titem = NULL;
 		for (int i = 0; i < items.count(); i++) {
-		    titem = static_cast <QGraphicsTextItem*> ( items.at( i ) );
+		    titem = dynamic_cast <PlainTextItem*> ( items.at( i ) );
 		    if (titem && !titem->data( 0 ).isNull()) {
-			    QStringList params = titem->data( 0 ).toStringList();
-			    if (params.at( 0 ) == "typewriter" ) {
-				    // typewriter effect has 2 param values:
-				    // the keystroke delay and a start offset, both in frames
-				    QStringList values = params.at( 2 ).split( ";" );
-				    int interval = qMax( 0, ( ( int ) position - values.at( 1 ).toInt()) / values.at( 0 ).toInt() );
-				    QTextCursor cursor = titem->textCursor();
-				    cursor.movePosition(QTextCursor::EndOfBlock);
-				    // get the font format
-				    QTextCharFormat format = cursor.charFormat();
-				    cursor.select(QTextCursor::Document);
-				    QString txt = params.at( 1 ).left( interval );
-				    // If the string to insert is empty, insert a space / linebreak so that we don't loose
-				    // formatting infos for the next iterations
-				    int lines = params.at( 1 ).count( '\n' );
-				    QString empty = " ";
-				    for (int i = 0; i < lines; i++)
-					    empty.append( "\n " );
-				    cursor.insertText( txt.isEmpty() ? empty : txt, format );
-				    if ( !titem->data( 1 ).isNull() )
-					  titem->setTextWidth( titem->data( 1 ).toDouble() );
-			    }
+                        std::shared_ptr<TypeWriter> ptr = titem->data( 0 ).value<std::shared_ptr<TypeWriter>>();
+                        titem->updateText(ptr->render(position).c_str());
+                        titem->updateShadows();
 		    }
 		}
 

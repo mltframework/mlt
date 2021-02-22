@@ -50,6 +50,3 @@ extern void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_
 #ifdef __cplusplus
 }
 #endif
-
-
-
