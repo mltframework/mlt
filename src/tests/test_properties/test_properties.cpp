@@ -811,7 +811,7 @@ private Q_SLOTS:
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
         mlt_property_anim_set_double(p, 1.5, fps, locale, 30, len, mlt_keyframe_linear);
-        QCOMPARE(mlt_property_get_double(p, fps, locale), 10.0);
+        QCOMPARE(mlt_property_get_double(p, fps, locale), 100.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale,  0, len), 100.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 15, len), 150.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 20, len), 200.0);
@@ -827,7 +827,7 @@ private Q_SLOTS:
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
         mlt_property_anim_set_int(p, 300, fps, locale, 30, len, mlt_keyframe_linear);
-        QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
+        QCOMPARE(mlt_property_get_int(p, fps, locale), 100);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale,  0, len), 100);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 15, len), 150);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 20, len), 200);

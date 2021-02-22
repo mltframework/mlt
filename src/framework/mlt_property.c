@@ -496,6 +496,8 @@ int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
 		result = ( int ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 		result = mlt_property_atoi( self, fps, locale );
+	else if ( self->animation )
+		result = mlt_property_anim_get_int( self, fps, locale, 0, 0 );
 	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
@@ -589,6 +591,8 @@ double mlt_property_get_double( mlt_property self, double fps, locale_t locale )
 		result = ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 		result = mlt_property_atof( self, fps, locale );
+	else if ( self->animation )
+		result = mlt_property_anim_get_double( self, fps, locale, 0, 0 );
 	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
@@ -619,6 +623,8 @@ mlt_position mlt_property_get_position( mlt_property self, double fps, locale_t 
 		result = ( mlt_position ) ( (mlt_rect*) self->data )->x;
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 		result = ( mlt_position )mlt_property_atoi( self, fps, locale );
+	else if ( self->animation )
+		result = mlt_property_anim_get_int( self, fps, locale, 0, 0 );
 	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
