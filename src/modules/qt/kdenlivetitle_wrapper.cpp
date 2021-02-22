@@ -214,6 +214,7 @@ public:
     void addShadow(QStringList params)
     {
         m_params = params;
+        updateShadows();
     }
 
     void updateShadows() {
@@ -452,12 +453,13 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
                                                 QStringList values = txtProperties.namedItem( "typewriter" ).nodeValue().split(";");
                                                 int enabled = (static_cast<bool>(values.at(0).toInt()));
 
-                                                if (enabled) {
+                                                if (enabled and values.count() >= 5) {
                                                         mlt_properties_set_int( producer_props, "_animated", 1 );
                                                         std::shared_ptr<TypeWriter> tw(new TypeWriter);
                                                         tw->setFrameStep(values.at(1).toInt());
-                                                        tw->setStepSigma(values.at(2).toInt());
-                                                        int macro = values.at(3).toInt();
+                                                        int macro = values.at(2).toInt();
+                                                        tw->setStepSigma(values.at(3).toInt());
+                                                        tw->setStepSeed(values.at(4).toInt());
                                                         QString pattern;
                                                         if (macro) {
                                                                 char c = 0;
