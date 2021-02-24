@@ -619,6 +619,9 @@ MLTPP_7.0.0 {
       "typeinfo for Mlt::Audio";
       "typeinfo name for Mlt::Audio";
       "vtable for Mlt::Audio";
+      "typeinfo for Mlt::Image";
+      "typeinfo name for Mlt::Image";
+      "vtable for Mlt::Image";
       "typeinfo for Mlt::Link";
       "typeinfo name for Mlt::Link";
       "vtable for Mlt::Link";
@@ -626,7 +629,7 @@ MLTPP_7.0.0 {
       "typeinfo name for Mlt::Chain";
       "vtable for Mlt::Chain";
       "Mlt::Link::Link()";
-      "Mlt::Link::Link(mlt_link)";
+      "Mlt::Link::Link(mlt_link_s*)";
       "Mlt::Link::Link(char const*, char const*)";
       "Mlt::Link::~Link()";
       "Mlt::Link::get_link()";
@@ -655,5 +658,15 @@ MLTPP_7.0.0 {
       "Mlt::Parser::on_start_link(Mlt::Link*)";
       "Mlt::Parser::on_end_link(Mlt::Link*)";
       "Mlt::Animation::shift_frames(int)";
+      "Mlt::Image::Image()";
+      "Mlt::Image::Image(mlt_image_s*)";
+      "Mlt::Image::Image(int, int, mlt_image_format)";
+      "Mlt::Image::~Image()";
+      "Mlt::Image::format()";
+      "Mlt::Image::width()";
+      "Mlt::Image::height()";
+      "Mlt::Image::alloc(int, int, mlt_image_format)";
+      "Mlt::Image::plane(int)";
+      "Mlt::Image::stride(int)";
     };
 } MLTPP_6.22.0;

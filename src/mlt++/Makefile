@@ -39,6 +39,7 @@ OBJS = MltAudio.o \
 	   MltFilteredProducer.o \
 	   MltFrame.o \
 	   MltGeometry.o \
+	   MltImage.o \
 	   MltLink.o \
 	   MltMultitrack.o \
 	   MltParser.o \
