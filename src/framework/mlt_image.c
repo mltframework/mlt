@@ -138,23 +138,22 @@ void mlt_image_alloc_data( mlt_image self )
 
 int mlt_image_calculate_size( mlt_image self )
 {
-	int height = self->height + 1; // Legacy bug workaround
 	switch ( self->format )
 	{
 		case mlt_image_rgb24:
-			return self->width * height * 3;
+			return self->width * self->height * 3;
 		case mlt_image_opengl:
 		case mlt_image_rgb24a:
-			return self->width * height * 4;
+			return self->width * self->height * 4;
 		case mlt_image_yuv422:
-			return self->width * height * 2;
+			return self->width * self->height * 2;
 		case mlt_image_yuv420p:
-			return self->width * height * 3 / 2;
+			return self->width * self->height * 3 / 2;
 		case mlt_image_glsl:
 		case mlt_image_glsl_texture:
 			return 4;
 		case mlt_image_yuv422p16:
-			return 4 * self->width * height;
+			return 4 * self->width * self->height;
 	}
 	return 0;
 }
@@ -286,7 +285,6 @@ void mlt_image_fill_black( mlt_image self )
   */
 int mlt_image_format_size( mlt_image_format format, int width, int height, int *bpp )
 {
-	height += 1;
 	switch ( format )
 	{
 		case mlt_image_rgb24:

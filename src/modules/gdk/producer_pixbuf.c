@@ -645,9 +645,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 					buffer = self->image;
 					image_size = mlt_image_format_size( self->format, self->width, self->height, NULL );
 					self->image = mlt_pool_alloc( image_size );
-					// We use height-1 because mlt_image_format_size() uses height + 1.
-					// XXX Remove -1 when mlt_image_format_size() is changed.
-					memcpy( self->image, buffer, mlt_image_format_size( self->format, self->width, self->height - 1, NULL ) );
+					memcpy( self->image, buffer, mlt_image_format_size( self->format, self->width, self->height, NULL ) );
 				}
 			}
 			if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
@@ -718,10 +716,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Clone the image
 		int image_size = mlt_image_format_size( self->format, self->width, self->height, NULL );
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
-		// We use height-1 because mlt_image_format_size() uses height + 1.
-		// XXX Remove -1 when mlt_image_format_size() is changed.
 		memcpy( image_copy, self->image,
-			mlt_image_format_size( self->format, self->width, self->height - 1, NULL ) );
+			mlt_image_format_size( self->format, self->width, self->height, NULL ) );
 		// Now update properties so we free the copy after
 		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
 		// We're going to pass the copy on
