@@ -38,6 +38,8 @@ namespace Mlt
 			mlt_image_format format();
 			int width();
 			int height();
+			void set_colorspace( int colorspace );
+			int colorspace();
 			void alloc( int width, int height, mlt_image_format format );
 			uint8_t* plane( int plane );
 			int stride( int plane );

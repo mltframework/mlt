@@ -36,6 +36,7 @@ struct mlt_image_s
 	mlt_image_format format;
 	int width;
 	int height;
+	int colorspace;
 	uint8_t* planes[MLT_IMAGE_MAX_PLANES];
 	int strides[MLT_IMAGE_MAX_PLANES];
 	void* data;

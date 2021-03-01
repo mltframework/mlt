@@ -57,6 +57,16 @@ int Image::height()
 	return instance->height;
 }
 
+void Image::set_colorspace( int colorspace )
+{
+	instance->colorspace = colorspace;
+}
+
+int Image::colorspace()
+{
+	return instance->colorspace;
+}
+
 void Image::alloc( int width, int height, mlt_image_format format )
 {
 	instance->width = width;
