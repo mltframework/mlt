@@ -70,6 +70,7 @@ extern void mlt_animation_close( mlt_animation self );
 extern int mlt_animation_key_set_type( mlt_animation self, int index, mlt_keyframe_type type );
 extern int mlt_animation_key_set_frame( mlt_animation self, int index, int frame );
 extern void mlt_animation_shift_frames( mlt_animation self, int shift );
+extern const char* mlt_animation_get_string( mlt_animation self );
 
 #endif
 

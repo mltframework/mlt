@@ -54,6 +54,8 @@ struct mlt_animation_s
 	animation_node nodes; /**< a linked list of keyframes (and possibly non-keyframe values) */
 };
 
+static void mlt_animation_clear_string( mlt_animation self );
+
 /** Create a new animation object.
  *
  * \public \memberof mlt_animation_s
@@ -301,8 +303,10 @@ int mlt_animation_get_length( mlt_animation self )
 
 void mlt_animation_set_length( mlt_animation self, int length )
 {
-	if ( self )
+	if ( self ) {
 		self->length = length;
+		mlt_animation_clear_string( self );
+	}
 }
 
 /** Parse a string representing an animation keyframe=value.
@@ -519,6 +523,7 @@ int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 		// Set the first item
 		self->nodes = node;
 	}
+	mlt_animation_clear_string( self );
 
 	return error;
 }
@@ -543,6 +548,8 @@ int mlt_animation_remove( mlt_animation self, int position )
 
 	if ( node && position == node->item.frame )
 		error = mlt_animation_drop( self, node );
+
+	mlt_animation_clear_string( self );
 
 	return error;
 }
@@ -897,6 +904,7 @@ int mlt_animation_key_set_type(mlt_animation self, int index, mlt_keyframe_type 
 	if ( node ) {
 		node->item.keyframe_type = type;
 		mlt_animation_interpolate(self);
+		mlt_animation_clear_string( self );
 	} else {
 		error = 1;
 	}
@@ -928,6 +936,7 @@ int mlt_animation_key_set_frame(mlt_animation self, int index, int frame)
 	if ( node ) {
 		node->item.frame = frame;
 		mlt_animation_interpolate(self);
+		mlt_animation_clear_string( self );
 	} else {
 		error = 1;
 	}
@@ -949,5 +958,34 @@ void mlt_animation_shift_frames( mlt_animation self, int shift )
 		node->item.frame += shift;
 		node = node->next;
 	}
+	mlt_animation_clear_string( self );
 	mlt_animation_interpolate(self);
+}
+
+/** Get the cached serialization string.
+ *
+ * This can be used to determine if the animation has been modified because the
+ * string is cleared whenever the animation is changed.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \return the cached serialization string
+ */
+
+const char* mlt_animation_get_string( mlt_animation self )
+{
+	if (!self) return NULL;
+	return self->data;
+}
+
+/** Clear the cached serialization string.
+ *
+ * \private \memberof mlt_animation_s
+ * \param self an animation
+ */
+
+void mlt_animation_clear_string( mlt_animation self )
+{
+	if (!self) return;
+	free( self->data );
+	self->data = NULL;
 }

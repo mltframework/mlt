@@ -494,8 +494,13 @@ int mlt_property_get_int( mlt_property self, double fps, locale_t locale )
 		result = ( int )self->prop_int64;
 	else if ( self->types & mlt_prop_rect && self->data )
 		result = ( int ) ( (mlt_rect*) self->data )->x;
-	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		result = mlt_property_atoi( self, fps, locale );
+	else
+	{
+		if ( self->animation && !mlt_animation_get_string(self->animation) )
+			mlt_property_get_string( self );
+		if ( ( self->types & mlt_prop_string ) && self->prop_string )
+			result = mlt_property_atoi( self, fps, locale );
+	}
 	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
@@ -517,7 +522,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 {
 	const char *value = self->prop_string;
 
-    if ( fps > 0 && strchr( value, ':' ) )
+	if ( fps > 0 && strchr( value, ':' ) )
 	{
 		if ( strchr( value, '.' ) || strchr( value, ',' ) )
 			return time_clock_to_frames( self, value, fps, locale );
@@ -587,8 +592,13 @@ double mlt_property_get_double( mlt_property self, double fps, locale_t locale )
 		result = ( double )self->prop_int64;
 	else if ( self->types & mlt_prop_rect && self->data )
 		result = ( (mlt_rect*) self->data )->x;
-	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		result = mlt_property_atof( self, fps, locale );
+	else
+	{
+		if ( self->animation && !mlt_animation_get_string(self->animation) )
+			mlt_property_get_string( self );
+		if ( ( self->types & mlt_prop_string ) && self->prop_string )
+			result = mlt_property_atof( self, fps, locale );
+	}
 	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
@@ -617,8 +627,13 @@ mlt_position mlt_property_get_position( mlt_property self, double fps, locale_t 
 		result = ( mlt_position )self->prop_int64;
 	else if ( self->types & mlt_prop_rect && self->data )
 		result = ( mlt_position ) ( (mlt_rect*) self->data )->x;
-	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		result = ( mlt_position )mlt_property_atoi( self, fps, locale );
+	else
+	{
+		if ( self->animation && !mlt_animation_get_string(self->animation) )
+			mlt_property_get_string( self );
+		if ( ( self->types & mlt_prop_string ) && self->prop_string )
+			result = ( mlt_position )mlt_property_atoi( self, fps, locale );
+	}
 	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
@@ -662,8 +677,13 @@ int64_t mlt_property_get_int64( mlt_property self )
 		result = ( int64_t )self->prop_position;
 	else if ( self->types & mlt_prop_rect && self->data )
 		result = ( int64_t ) ( (mlt_rect*) self->data )->x;
-	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
-		result = mlt_property_atoll( self->prop_string );
+	else
+	{
+		if ( self->animation && !mlt_animation_get_string(self->animation) )
+			mlt_property_get_string( self );
+		if ( ( self->types & mlt_prop_string ) && self->prop_string )
+			result = mlt_property_atoll( self->prop_string );
+	}
 	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
@@ -1322,6 +1342,15 @@ static void refresh_animation( mlt_property self, double fps, locale_t locale, i
 		self->animation = mlt_animation_new();
 		self->serialiser = (mlt_serialiser) mlt_animation_serialize_tf;
 		mlt_animation_parse( self->animation, self->prop_string, length, fps, locale );
+	}
+	else if ( !mlt_animation_get_string( self->animation ) )
+	{
+		// The animation clears its string if it is modified.
+		// Do not use a property string that is out of sync.
+		self->types &= ~mlt_prop_string;
+		if ( self->prop_string )
+			free( self->prop_string );
+		self->prop_string = NULL;
 	}
 	else if ( ( self->types & mlt_prop_string ) && self->prop_string )
 	{
