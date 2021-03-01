@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1442,6 +1442,11 @@ receive_audio_packet:
 			mlt_log_warning( MLT_CONSUMER_SERVICE( ctx->consumer ), "error with audio encode: %d (frame %d)\n", pkt.size, ctx->frame_count );
 			if ( ++ctx->error_count > 2 )
 				return -1;
+		}
+		else if (!samples) // flushing
+		{
+			pkt.stream_index = stream->index;
+			av_interleaved_write_frame(ctx->oc, &pkt);
 		}
 
 		if ( i == 0 )

@@ -1,6 +1,6 @@
 /*
  * filter_brightness.c -- brightness, fade, and opacity filter
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -120,7 +120,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if (!error) {
 		int threads = mlt_properties_get_int(properties, "threads");
 		threads = CLAMP(threads, 0, mlt_slices_count_normal());
-		double alpha = mlt_properties_get(properties, "alpha")? mlt_properties_anim_get_double(properties, "alpha", position, length) : 1.0;
+		double alpha = mlt_properties_get(properties, "alpha")? MIN(mlt_properties_anim_get_double(properties, "alpha", position, length), 1.0) : 1.0;
 		struct sliced_desc desc = {
 			.image = *image,
 			.rgba = (*format == mlt_image_rgb24a),
