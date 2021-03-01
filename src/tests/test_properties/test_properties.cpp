@@ -919,6 +919,65 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get("key", 45), "hello world");
     }
 
+
+    void PropertyRefreshOnAnimationChange()
+    {
+        // Create an animation property from string and see that it works.
+        // Get the animation and modify the first position.
+        // Ensure that change affects other get() functions
+
+        {
+            Properties p;
+            p.set("foo", "10=100; 20=200");
+            QCOMPARE(p.get_double("foo"), 10.0);
+            // Call anim_get_double() to create the animation
+            QCOMPARE(p.anim_get_double("foo", 15, 20 ), 150.0);
+            Mlt::Animation animation = p.get_animation("foo");
+            animation.key_set_frame(0, 15);
+            QCOMPARE(p.get_double("foo"), 15.0);
+        }
+
+        {
+            Properties p;
+            p.set("foo", "10=100;20=200");
+            QCOMPARE(p.anim_get_double("foo", 15, 20 ), 150.0);
+            Mlt::Animation animation = p.get_animation("foo");
+            animation.key_set_frame(0, 15);
+            QCOMPARE(p.anim_get_double("foo", 15, 0 ), 100.0);
+        }
+
+        {
+            Properties p;
+            p.set("foo", "10=100; 20=200");
+            QCOMPARE(p.get_int("foo"), 10);
+            // Call anim_get_int() to create the animation
+            QCOMPARE(p.anim_get_int("foo", 15, 20 ), 150);
+            Mlt::Animation animation = p.get_animation("foo");
+            animation.key_set_frame(0, 15);
+            QCOMPARE(p.get_int("foo"), 15);
+        }
+
+        {
+            Properties p;
+            p.set("foo", "10=100; 20=200");
+            QCOMPARE(p.anim_get_int("foo", 15, 20 ), 150);
+            Mlt::Animation animation = p.get_animation("foo");
+            animation.key_set_frame(0, 15);
+            QCOMPARE(p.anim_get_int("foo", 15, 0 ), 100);
+        }
+
+        {
+            Properties p;
+            p.set("foo", "10=100;20=200");
+            // Call anim_get_int() to create the animation
+            QCOMPARE(p.anim_get_int("foo", 15, 20 ), 150);
+            Mlt::Animation animation = p.get_animation("foo");
+            QCOMPARE(p.get("foo"), "10=100;20=200");
+            animation.key_set_frame(0, 15);
+            QCOMPARE(p.get("foo"), "15=100;20=200");
+        }
+    }
+
     void test_mlt_rect()
     {
         mlt_property p = mlt_property_init();
