@@ -600,6 +600,7 @@ MLT_7.0.0 {
     mlt_image_set_values;
     mlt_image_get_values;
     mlt_image_alloc_data;
+    mlt_image_alloc_alpha;
     mlt_image_calculate_size;
     mlt_image_fill_black;
 } MLT_6.22.0;

@@ -667,7 +667,8 @@ MLTPP_7.0.0 {
       "Mlt::Image::height()";
       "Mlt::Image::set_colorspace(int)";
       "Mlt::Image::colorspace()";
-      "Mlt::Image::alloc(int, int, mlt_image_format)";
+      "Mlt::Image::alloc(int, int, mlt_image_format, bool)";
+      "Mlt::Image::init_alpha()";
       "Mlt::Image::plane(int)";
       "Mlt::Image::stride(int)";
     };

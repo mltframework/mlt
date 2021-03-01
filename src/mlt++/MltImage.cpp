@@ -67,12 +67,19 @@ int Image::colorspace()
 	return instance->colorspace;
 }
 
-void Image::alloc( int width, int height, mlt_image_format format )
+void Image::alloc( int width, int height, mlt_image_format format, bool alpha )
 {
 	instance->width = width;
 	instance->height = height;
 	instance->format = format;
 	mlt_image_alloc_data( instance );
+	if ( alpha )
+		mlt_image_alloc_alpha( instance );
+}
+
+void Image::init_alpha()
+{
+	mlt_image_alloc_alpha( instance );
 }
 
 uint8_t* Image::plane( int plane )

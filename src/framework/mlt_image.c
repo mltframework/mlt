@@ -53,6 +53,10 @@ void mlt_image_close( mlt_image self )
 		{
 			self->release_data( self->data );
 		}
+		if ( self->release_alpha )
+		{
+			self->release_alpha( self->alpha );
+		}
 		if ( self->close )
 		{
 			self->close( self );
@@ -78,7 +82,9 @@ void mlt_image_set_values( mlt_image self, void* data, mlt_image_format format, 
 	self->format = format;
 	self->width = width;
 	self->height = height;
+	self->colorspace = mlt_colorspace_unspecified;
 	self->release_data = NULL;
+	self->release_alpha = NULL;
 	self->close = NULL;
 	mlt_image_format_planes( self->format, self->width, self->height, self->data, self->planes, self->strides );
 }
@@ -127,6 +133,34 @@ void mlt_image_alloc_data( mlt_image self )
 	self->data = mlt_pool_alloc( size );
 	self->release_data = mlt_pool_release;
 	mlt_image_format_planes( self->format, self->width, self->height, self->data, self->planes, self->strides );
+}
+
+/** Allocate the alpha field based on the other properties of the Image.
+ *
+ * If the alpha field is already set, and a destructor function exists, the data
+ * will be released. Else, the data pointer will be overwritten without being
+ * released.
+ *
+ * After this function call, the release_data field will be set and can be used
+ * to release the data when necessary.
+ *
+ * \public \memberof mlt_image_s
+ * \param self the Image object
+ */
+
+void mlt_image_alloc_alpha( mlt_image self )
+{
+	if ( !self ) return;
+
+	if ( self->release_alpha )
+	{
+		self->release_alpha( self->alpha );
+	}
+
+	self->alpha = mlt_pool_alloc( self->width * self->height );
+	self->release_alpha = mlt_pool_release;
+	self->strides[3] = self->width;
+	self->planes[3] = self->alpha;
 }
 
 /** Calculate the number of bytes needed for the Image data.

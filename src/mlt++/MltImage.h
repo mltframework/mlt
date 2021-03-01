@@ -40,7 +40,8 @@ namespace Mlt
 			int height();
 			void set_colorspace( int colorspace );
 			int colorspace();
-			void alloc( int width, int height, mlt_image_format format );
+			void alloc( int width, int height, mlt_image_format format, bool alpha = false );
+			void init_alpha();
 			uint8_t* plane( int plane );
 			int stride( int plane );
 	};

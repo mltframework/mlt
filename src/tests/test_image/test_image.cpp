@@ -125,6 +125,13 @@ private Q_SLOTS:
 		i.set_colorspace(mlt_colorspace_bt709);
 		QCOMPARE(i.colorspace(), mlt_colorspace_bt709);
 	}
+
+	void InitAlpha()
+	{
+		Image i(1920, 1080, mlt_image_rgb24 );
+		i.init_alpha();
+		QVERIFY(i.plane(3) != nullptr);
+	}
 };
 
 QTEST_APPLESS_MAIN(TestImage)
