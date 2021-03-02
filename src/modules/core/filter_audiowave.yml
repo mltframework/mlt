@@ -1,13 +1,15 @@
 schema_version: 0.1
 type: filter
 identifier: audiowave
-title: Audio Waveform
+title: Audio Waveform (*deprecated*)
 version: 1
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
 language: en
 description: Generate audio waveforms.
+notes: >
+    This filter is deprecated and will eventually be removed. Use the audiowaveform filter instead.
 tags:
   - Video
 bugs:
