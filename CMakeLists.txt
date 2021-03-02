@@ -14,7 +14,6 @@ option(BUILD_DOCS "Enable Doxygen documentation" OFF)
 
 option(MOD_AVFORMAT "Enable avformat module" ON)
 option(MOD_DECKLINK "Enable decklink module" ON)
-option(MOD_FEEDS "Enable feeds module" ON)
 option(MOD_FREI0R "Enable frei0r module" ON)
 option(MOD_GDK "Enable gdk module" ON)
 option(MOD_JACKRACK "Enable jackrack module" ON)

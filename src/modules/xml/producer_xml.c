@@ -444,8 +444,6 @@ static void on_start_tractor( deserialise_context context, const xmlChar *name, 
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 		mlt_properties_set_string( MLT_SERVICE_PROPERTIES( service ), (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
 
-	mlt_properties_set_int( MLT_TRACTOR_PROPERTIES( tractor ), "global_feed", 1 );
-
 	if ( mlt_properties_get( properties, "id" ) != NULL )
 		mlt_properties_set_data( context->producer_map, mlt_properties_get( properties, "id" ), service, 0, NULL, NULL );
 	

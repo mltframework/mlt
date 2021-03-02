@@ -8,10 +8,6 @@ if(MOD_DECKLINK)
   add_subdirectory(decklink)
 endif()
 
-if(MOD_FEEDS)
-  add_subdirectory(feeds)
-endif()
-
 if(MOD_FREI0R AND FREI0R_FOUND)
   add_subdirectory(frei0r)
 endif()

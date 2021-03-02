@@ -23,8 +23,6 @@ OBJS = factory.o \
 	   filter_channelcopy.o \
 	   filter_choppy.o \
 	   filter_crop.o \
-	   filter_data_feed.o \
-	   filter_data_show.o \
 	   filter_fieldorder.o \
 	   filter_gamma.o \
 	   filter_greyscale.o \
@@ -86,7 +84,6 @@ clean:
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
 	install -d "$(DESTDIR)$(mltdatadir)/core"
-	install -m 644 data_fx.properties "$(DESTDIR)$(mltdatadir)/core"
 	install -m 644 loader.dict "$(DESTDIR)$(mltdatadir)/core"
 	install -m 644 loader.ini "$(DESTDIR)$(mltdatadir)/core"
 	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/core"
