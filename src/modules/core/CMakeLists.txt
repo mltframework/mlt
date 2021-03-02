@@ -10,8 +10,6 @@ add_library(mltcore MODULE
   filter_channelcopy.c
   filter_choppy.c
   filter_crop.c
-  filter_data_feed.c
-  filter_data_show.c
   filter_fieldorder.c
   filter_gamma.c
   filter_greyscale.c
@@ -67,7 +65,6 @@ install(FILES
   filter_channelcopy.yml
   filter_choppy.yml
   filter_crop.yml
-  filter_data_show.yml
   filter_fieldorder.yml
   filter_gamma.yml
   filter_greyscale.yml
@@ -98,7 +95,6 @@ install(FILES
   transition_matte.yml
   transition_mix.yml
   transition_region.yml
-  data_fx.properties
   loader.dict
   loader.ini
   DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/core
