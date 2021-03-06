@@ -91,9 +91,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		mlt_log_debug( MLT_FILTER_SERVICE(filter), "Create a new stretcher\t%d\t%d\t%f\n", *channels, rubberband_frequency, pitchscale );
 		delete s;
 		// Create a rubberband instance
-		RubberBandStretcher::Options options = RubberBandStretcher::OptionProcessRealTime |
-												RubberBandStretcher::OptionPitchHighConsistency |
-												RubberBandStretcher::OptionTransientsSmooth;
+		RubberBandStretcher::Options options = RubberBandStretcher::OptionProcessRealTime;
 		s = new RubberBandStretcher(rubberband_frequency, *channels, options, 1.0, pitchscale);
 		pdata->s = s;
 		pdata->rubberband_frequency = rubberband_frequency;
@@ -101,6 +99,20 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		pdata->out_samples = 0;
 	}
 	s->setPitchScale(pitchscale);
+	if( pitchscale > 0.5 && pitchscale < 2.0 )
+	{
+		// Pitch adjustment < 200%
+		s->setPitchOption(RubberBandStretcher::OptionPitchHighQuality);
+		s->setTransientsOption(RubberBandStretcher::OptionTransientsCrisp);
+	}
+	else
+	{
+		// Pitch adjustment > 200%
+		// "HighConsistency" and "Smooth" options help to avoid large memory
+		// consumption and crashes that can occur for large pitch adjustments.
+		s->setPitchOption(RubberBandStretcher::OptionPitchHighConsistency);
+		s->setTransientsOption(RubberBandStretcher::OptionTransientsSmooth);
+	}
 
 	// Configure input and output buffers and counters.
 	int consumed_samples = 0;
