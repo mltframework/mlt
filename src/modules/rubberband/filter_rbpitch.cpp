@@ -124,6 +124,12 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 			mlt_log_debug( MLT_FILTER_SERVICE(filter), "Repeat samples\n");
 		}
 		int process_samples = std::min( in.samples - consumed_samples, (int)s->getSamplesRequired() );
+		if ( process_samples == 0 && received_samples == out.samples && total_consumed_samples < in.samples )
+		{
+			// No more out samples are needed, but input samples are still available.
+			// Send the final input samples for processing.
+			process_samples = in.samples - total_consumed_samples;
+		}
 		if ( process_samples > 0 )
 		{
 			float* in_planes[MAX_CHANNELS];
