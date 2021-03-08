@@ -595,4 +595,5 @@ MLT_7.0.0 {
     mlt_repository_links;
     mlt_animation_shift_frames;
     mlt_animation_get_string;
+    mlt_audio_silence;
 } MLT_6.22.0;
