@@ -96,9 +96,9 @@ OBJS += ../win32/win32.o ../win32/strptime.o
 SRCS += ../win32/win32.c ../win32/strptime.c
 endif
 
-CFLAGS += $(RDYNAMIC) -DPREFIX_DATA="\"$(mltdatadir)\"" -DPREFIX_LIB="\"$(moduledir)\""
+CFLAGS += -DPREFIX_DATA="\"$(mltdatadir)\"" -DPREFIX_LIB="\"$(moduledir)\""
 
-LDFLAGS += $(LIBDL) -lpthread -lm
+LDFLAGS += $(RDYNAMIC) $(LIBDL) -lpthread -lm
 
 all:	$(TARGET)
 
