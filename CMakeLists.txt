@@ -102,9 +102,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64)|(AMD64)")
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-  add_compile_options(-ffast-math)
+  set(MLT_COMPILE_OPTIONS "$<$<CONFIG:Release>:-ffast-math>")
 elseif(MSVC)
-  add_compile_options(/fp:fast)
+  set(MLT_COMPILE_OPTIONS "$<$<CONFIG:Release>:/fp:fast>")
 endif()
 
 find_package(Threads REQUIRED)

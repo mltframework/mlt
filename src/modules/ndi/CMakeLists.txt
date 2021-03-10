@@ -4,6 +4,8 @@ add_library(mltndi MODULE
   producer_ndi.c
 )
 
+target_compile_options(mltndi PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltndi PRIVATE mlt NDI::NDI)
 
 set_target_properties(mltndi PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

@@ -1,4 +1,7 @@
 add_library(mltsox MODULE factory.c filter_sox.c)
+
+target_compile_options(mltsox PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltsox PRIVATE mlt m PkgConfig::sox)
 
 if(${sox_VERSION} GREATER 13)

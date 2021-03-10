@@ -1,5 +1,9 @@
 add_executable(melt melt.c io.c)
+
+target_compile_options(melt PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(melt PRIVATE mlt Threads::Threads)
+
 target_compile_definitions(melt PRIVATE VERSION="${MLT_VERSION}")
 
 if(TARGET PkgConfig::sdl2)

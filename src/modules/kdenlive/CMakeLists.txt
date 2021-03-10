@@ -6,6 +6,8 @@ add_library(mltkdenlive MODULE
   producer_framebuffer.c
 )
 
+target_compile_options(mltkdenlive PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltkdenlive PRIVATE mlt m)
 
 set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

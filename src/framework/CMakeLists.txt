@@ -32,6 +32,8 @@ add_library(mlt SHARED
   mlt_version.c
 )
 
+target_compile_options(mlt PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mlt PRIVATE m Threads::Threads ${CMAKE_DL_LIBS})
 
 target_include_directories(mlt PUBLIC

@@ -18,6 +18,8 @@ add_library(mltqt MODULE
   typewriter.cpp
 )
 
+target_compile_options(mltqt PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltqt PRIVATE
   mlt++
   mlt

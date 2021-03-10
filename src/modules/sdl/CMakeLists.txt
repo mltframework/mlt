@@ -6,6 +6,8 @@ add_library(mltsdl MODULE
   factory.c
 )
 
+target_compile_options(mltsdl PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltsdl PRIVATE mlt m Threads::Threads PkgConfig::sdl)
 
 if(TARGET PkgConfig::sdl_image)

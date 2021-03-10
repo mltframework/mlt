@@ -7,6 +7,8 @@ add_library(mltfrei0r MODULE
   transition_frei0r.c
 )
 
+target_compile_options(mltfrei0r PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltfrei0r PRIVATE mlt m ${CMAKE_DL_LIBS})
 
 set_target_properties(mltfrei0r PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

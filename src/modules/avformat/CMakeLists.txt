@@ -6,6 +6,8 @@ add_library(mltavformat MODULE
   filter_swscale.c
 )
 
+target_compile_options(mltavformat PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltavformat PRIVATE
   mlt
   m

@@ -4,6 +4,8 @@ add_library(mltnormalize MODULE
   filter_volume.c
 )
 
+target_compile_options(mltnormalize PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltnormalize PRIVATE mlt m)
 
 set_target_properties(mltnormalize PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

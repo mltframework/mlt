@@ -3,6 +3,7 @@ add_library(mltdecklink MODULE
   consumer_decklink.cpp
   producer_decklink.cpp
 )
+target_compile_options(mltdecklink PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltdecklink PRIVATE mlt Threads::Threads)
 

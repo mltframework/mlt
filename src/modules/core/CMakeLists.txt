@@ -42,6 +42,8 @@ add_library(mltcore MODULE
   transition_region.c
 )
 
+target_compile_options(mltcore PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltcore PRIVATE m mlt Threads::Threads)
 
 if(WIN32)

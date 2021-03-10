@@ -22,6 +22,8 @@ add_library(mltplus MODULE
   transition_affine.c
 )
 
+target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltplus PRIVATE mlt m Threads::Threads)
 
 if(TARGET PkgConfig::FFTW)

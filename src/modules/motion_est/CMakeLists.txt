@@ -8,6 +8,8 @@ add_library(mltmotion_est MODULE
   producer_slowmotion.c
 )
 
+target_compile_options(mltmotion_est PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltmotion_est PRIVATE mlt m)
 
 set_target_properties(mltmotion_est PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

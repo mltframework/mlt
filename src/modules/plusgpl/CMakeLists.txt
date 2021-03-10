@@ -10,6 +10,8 @@ add_library(mltplusgpl MODULE
   utils.c
 )
 
+target_compile_options(mltplusgpl PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltplusgpl PRIVATE mlt m Threads::Threads)
 
 if(WIN32)

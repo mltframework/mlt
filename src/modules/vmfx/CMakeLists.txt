@@ -7,6 +7,8 @@ add_library(mltvmfx MODULE
   producer_pgm.c
 )
 
+target_compile_options(mltvmfx PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltvmfx PRIVATE mlt)
 
 set_target_properties(mltvmfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

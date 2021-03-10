@@ -28,6 +28,8 @@ add_library(mlt++ SHARED
   MltTransition.cpp
 )
 
+target_compile_options(mlt++ PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mlt++ PRIVATE mlt)
 
 target_include_directories(mlt++ PUBLIC

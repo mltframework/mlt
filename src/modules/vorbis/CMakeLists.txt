@@ -1,4 +1,7 @@
 add_library(mltvorbis MODULE factory.c producer_vorbis.c)
+
+target_compile_options(mltvorbis PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltvorbis PRIVATE mlt PkgConfig::vorbis PkgConfig::vorbisfile)
 
 set_target_properties(mltvorbis PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

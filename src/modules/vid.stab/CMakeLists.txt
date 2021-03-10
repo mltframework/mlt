@@ -5,6 +5,8 @@ add_library(mltvidstab MODULE
   filter_vidstab.cpp
 )
 
+target_compile_options(mltvidstab PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltvidstab PRIVATE mlt m mlt++ PkgConfig::vidstab)
 
 set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

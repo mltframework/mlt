@@ -1,4 +1,7 @@
 add_library(mltjack MODULE consumer_jack.c factory.c)
+
+target_compile_options(mltjack PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltjack PRIVATE mlt Threads::Threads PkgConfig::jack)
 
 if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)

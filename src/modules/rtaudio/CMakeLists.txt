@@ -1,4 +1,7 @@
 add_library(mltrtaudio MODULE consumer_rtaudio.cpp)
+
+target_compile_options(mltrtaudio PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltrtaudio PRIVATE mlt Threads::Threads)
 
 if(TARGET PkgConfig::rtaudio)

@@ -5,6 +5,8 @@ add_library(mltgdk MODULE
   producer_pixbuf.c
 )
 
+target_compile_options(mltgdk PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltgdk PRIVATE mlt m Threads::Threads PkgConfig::GdkPixbuf)
 
 target_compile_definitions(mltgdk PRIVATE USE_PIXBUF)
