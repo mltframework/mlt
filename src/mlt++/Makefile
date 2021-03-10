@@ -19,9 +19,9 @@ endif
 ifneq (, $(shell $(CXX) --version | grep -is -e g++ -e clang))
 	CXXFLAGS += -std=c++11
 endif
-CXXFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\" -fvisibility=hidden
+CXXFLAGS += -I.. -DVERSION=\"$(version)\" -fvisibility=hidden
 
-LDFLAGS := -L../framework -lmlt $(LDFLAGS)
+LDFLAGS := $(RDYNAMIC) -L../framework -lmlt $(LDFLAGS)
 ifeq ($(targetos), Linux)
 LDFLAGS += -Wl,--version-script=mlt++.vers
 endif

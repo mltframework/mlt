@@ -3,9 +3,9 @@ include ../../config.mak
 OBJS = melt.o \
 	   io.o
 
-CFLAGS += -I.. $(RDYNAMIC) -DVERSION=\"$(version)\"
+CFLAGS += -I.. -DVERSION=\"$(version)\"
 
-LDFLAGS += -L../framework -lmlt -lpthread
+LDFLAGS += $(RDYNAMIC) -L../framework -lmlt -lpthread
 
 SRCS := $(OBJS:.o=.c)
 

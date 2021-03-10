@@ -603,4 +603,5 @@ MLT_7.0.0 {
     mlt_image_alloc_alpha;
     mlt_image_calculate_size;
     mlt_image_fill_black;
+    mlt_audio_silence;
 } MLT_6.22.0;
