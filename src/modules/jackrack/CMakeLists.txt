@@ -24,12 +24,12 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
     filter_jack.yml
     filter_ladspa.yml
     producer_ladspa.yml
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/jackrack
+    DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack
   )
 endif()
 
 set_target_properties(mltjack PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltjack LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltjack LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES consumer_jack.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/jackrack)
+install(FILES consumer_jack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)

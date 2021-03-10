@@ -52,7 +52,7 @@ endif()
 
 set_target_properties(mltavformat PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltavformat LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltavformat LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_avformat.yml
@@ -60,5 +60,5 @@ install(FILES
   resolution_scale.yml
   blacklist.txt
   yuv_only.txt
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/avformat
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/avformat
 )

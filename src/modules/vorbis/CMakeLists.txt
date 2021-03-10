@@ -6,6 +6,6 @@ target_link_libraries(mltvorbis PRIVATE mlt PkgConfig::vorbis PkgConfig::vorbisf
 
 set_target_properties(mltvorbis PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltvorbis LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltvorbis LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES producer_vorbis.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/vorbis)
+install(FILES producer_vorbis.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/vorbis)

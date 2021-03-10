@@ -41,14 +41,14 @@ endif()
 if(GPL3)
   target_sources(mltqt PRIVATE transition_vqm.cpp)
   target_compile_definitions(mltqt PRIVATE GPL3)
-  install(FILES transition_vqm.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/qt)
+  install(FILES transition_vqm.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/qt)
 endif()
 
 if(TARGET PkgConfig::FFTW)
   target_sources(mltqt PRIVATE filter_audiospectrum.cpp filter_lightshow.cpp)
   target_link_libraries(mltqt PRIVATE PkgConfig::FFTW)
   target_compile_definitions(mltqt PRIVATE USE_FFTW)
-  install(FILES filter_audiospectrum.yml filter_lightshow.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/qt)
+  install(FILES filter_audiospectrum.yml filter_lightshow.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/qt)
 endif()
 
 if(TARGET PkgConfig::libexif)
@@ -58,7 +58,7 @@ endif()
 
 set_target_properties(mltqt PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltqt LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltqt LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_audiowaveform.yml
@@ -70,5 +70,5 @@ install(FILES
   producer_qimage.yml
   producer_qtext.yml
   transition_qtblend.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/qt
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/qt
 )

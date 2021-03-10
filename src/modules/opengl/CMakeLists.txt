@@ -37,7 +37,7 @@ target_compile_definitions(mltopengl PRIVATE SHADERDIR="${SHADERDIR}")
 
 set_target_properties(mltopengl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltopengl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltopengl LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_movit_blur.yml
@@ -55,5 +55,5 @@ install(FILES
   transition_movit_luma.yml
   transition_movit_mix.yml
   transition_movit_overlay.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/opengl
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/opengl
 )

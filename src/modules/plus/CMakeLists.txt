@@ -30,7 +30,7 @@ if(TARGET PkgConfig::FFTW)
   target_sources(mltplus PRIVATE filter_dance.c filter_fft.c)
   target_link_libraries(mltplus PRIVATE PkgConfig::FFTW)
   target_compile_definitions(mltplus PRIVATE USE_FFTW)
-  install(FILES filter_dance.yml filter_fft.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plus)
+  install(FILES filter_dance.yml filter_fft.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/plus)
 endif()
 
 if(TARGET PkgConfig::libebur128)
@@ -43,7 +43,7 @@ endif()
 
 set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltplus LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltplus LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_blipflash.yml
@@ -66,5 +66,5 @@ install(FILES
   producer_blipflash.yml
   producer_count.yml
   transition_affine.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plus
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/plus
 )

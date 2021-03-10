@@ -14,7 +14,7 @@ target_link_libraries(mltoldfilm PRIVATE mlt m)
 
 set_target_properties(mltoldfilm PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltoldfilm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltoldfilm LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_dust.yml
@@ -34,5 +34,5 @@ install(FILES
   oldfilm.svg
   tcolor.svg
   vignette.svg
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/oldfilm
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/oldfilm
 )

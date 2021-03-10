@@ -13,7 +13,7 @@ target_link_libraries(mltvmfx PRIVATE mlt)
 
 set_target_properties(mltvmfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltvmfx LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltvmfx LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_chroma_hold.yml
@@ -21,5 +21,5 @@ install(FILES
   filter_mono.yml
   filter_shape.yml
   producer_pgm.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/vmfx
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/vmfx
 )

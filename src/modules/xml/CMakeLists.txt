@@ -11,7 +11,7 @@ target_link_libraries(mltxml PRIVATE mlt Threads::Threads PkgConfig::xml)
 
 set_target_properties(mltxml PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltxml LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltxml LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_xml.yml
@@ -19,5 +19,5 @@ install(FILES
   producer_xml-string.yml
   producer_xml.yml
   mlt-xml.dtd
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/xml
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/xml
 )

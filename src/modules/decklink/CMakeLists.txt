@@ -24,10 +24,10 @@ endif()
 
 set_target_properties(mltdecklink PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltdecklink LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltdecklink LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_decklink.yml
   producer_decklink.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/decklink
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/decklink
 )

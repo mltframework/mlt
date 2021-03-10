@@ -62,7 +62,7 @@ endif()
 
 set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltcore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltcore LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_multi.yml
@@ -104,5 +104,5 @@ install(FILES
   transition_region.yml
   loader.dict
   loader.ini
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/core
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/core
 )

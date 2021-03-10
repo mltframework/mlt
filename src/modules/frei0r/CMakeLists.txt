@@ -13,12 +13,12 @@ target_link_libraries(mltfrei0r PRIVATE mlt m ${CMAKE_DL_LIBS})
 
 set_target_properties(mltfrei0r PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltfrei0r LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltfrei0r LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_cairoblend_mode.yml
   resolution_scale.yml
   param_name_map.yaml
   blacklist.txt not_thread_safe.txt
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/frei0r
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/frei0r
 )

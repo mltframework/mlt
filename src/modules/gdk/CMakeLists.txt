@@ -20,7 +20,7 @@ if(TARGET PkgConfig::pango AND TARGET PkgConfig::fontconfig)
   target_sources(mltgdk PRIVATE producer_pango.c)
   target_link_libraries(mltgdk PRIVATE PkgConfig::pango PkgConfig::fontconfig PkgConfig::pangoft2)
   target_compile_definitions(mltgdk PRIVATE USE_PANGO)
-  install(FILES producer_pango.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
+  install(FILES producer_pango.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/gdk)
 endif()
 
 if(CPU_MMX)
@@ -34,6 +34,6 @@ endif()
 
 set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltgdk LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltgdk LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES filter_rescale.yml producer_pixbuf.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
+install(FILES filter_rescale.yml producer_pixbuf.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/gdk)

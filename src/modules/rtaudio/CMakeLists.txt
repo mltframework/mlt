@@ -33,6 +33,6 @@ endif()
 
 set_target_properties(mltrtaudio PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltrtaudio LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltrtaudio LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES consumer_rtaudio.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/rtaudio)
+install(FILES consumer_rtaudio.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/rtaudio)

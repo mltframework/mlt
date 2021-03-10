@@ -22,12 +22,12 @@ endif()
 
 set_target_properties(mltplusgpl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltplusgpl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltplusgpl LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_cbrts.yml
   filter_burningtv.yml
   filter_lumaliftgaingamma.yml
   filter_rotoscoping.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plusgpl
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/plusgpl
 )

@@ -83,6 +83,13 @@ else()
   file(CREATE_LINK "${CMAKE_SOURCE_DIR}/profiles" "${MLT_DATA_OUTPUT_DIRECTORY}/profiles" SYMBOLIC)
 endif()
 
+set(MLT_INSTALL_MODULE_DIR ${CMAKE_INSTALL_LIBDIR}/mlt)
+set(MLT_INSTALL_DATA_DIR ${CMAKE_INSTALL_DATADIR}/mlt)
+if(NOT (WIN32 OR APPLE))
+  set(MLT_INSTALL_MODULE_DIR ${CMAKE_INSTALL_LIBDIR}/mlt-${MLT_VERSION_MAJOR})
+  set(MLT_INSTALL_DATA_DIR ${CMAKE_INSTALL_DATADIR}/mlt-${MLT_VERSION_MAJOR})
+endif()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
@@ -309,10 +316,13 @@ if(BUILD_DOCS)
   doxygen_add_docs(docs src/framework)
 endif()
 
-install(DIRECTORY presets profiles DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
+install(DIRECTORY presets profiles DESTINATION ${MLT_INSTALL_DATA_DIR})
 
 if(UNIX AND NOT APPLE)
-  install(FILES docs/melt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  install(FILES docs/melt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 RENAME melt-${MLT_VERSION_MAJOR}.1)
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \
+                ${CMAKE_INSTALL_FULL_MANDIR}/man1/melt-${MLT_VERSION_MAJOR}.1 ${CMAKE_INSTALL_FULL_MANDIR}/man1/melt.1)"
+  )
 endif()
 
 add_subdirectory(src)
