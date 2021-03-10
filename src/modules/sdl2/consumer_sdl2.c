@@ -668,9 +668,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			unsigned char* planes[4];
 			int strides[4];
 
-			// We use height-1 because mlt_image_format_size() uses height + 1.
-			// XXX Remove -1 when mlt_image_format_size() is changed.
-			mlt_image_format_planes( vfmt, width, height - 1, image, planes, strides );
+			mlt_image_format_planes( vfmt, width, height, image, planes, strides );
 			if ( strides[1] ) {
 				SDL_UpdateYUVTexture( self->sdl_texture, NULL,
 					planes[0], strides[0],

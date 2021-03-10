@@ -25,6 +25,7 @@ SHFLAGS += -Wl,--version-script=mlt.vers
 endif
 
 OBJS = mlt_audio.o \
+	   mlt_image.o \
 	   mlt_frame.o \
 	   mlt_version.o \
 	   mlt_geometry.o \
@@ -56,6 +57,7 @@ OBJS = mlt_audio.o \
 	   mlt_chain.o
 
 INCS = mlt_audio.h \
+	   mlt_image.h \
 	   mlt_consumer.h \
 	   mlt_version.h \
 	   mlt_factory.h \

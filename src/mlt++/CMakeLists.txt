@@ -12,6 +12,7 @@ add_library(mlt++ SHARED
   MltFilteredProducer.cpp
   MltFrame.cpp
   MltGeometry.cpp
+  MltImage.cpp
   MltLink.cpp
   MltMultitrack.cpp
   MltParser.cpp
@@ -68,6 +69,7 @@ set(MLTPP_PUPLIC_HEADERS
   MltFilteredProducer.h
   MltFrame.h
   MltGeometry.h
+  MltImage.h
   MltLink.h
   MltMultitrack.h
   MltParser.h

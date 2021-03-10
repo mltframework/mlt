@@ -682,9 +682,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			self->buffer = self->sdl_overlay->pixels[ 0 ];
 			if ( SDL_LockYUVOverlay( self->sdl_overlay ) >= 0 )
 			{
-				// We use height-1 because mlt_image_format_size() uses height + 1.
-				// XXX Remove -1 when mlt_image_format_size() is changed.
-				int size = mlt_image_format_size( vfmt, width, height - 1, NULL );
+				int size = mlt_image_format_size( vfmt, width, height, NULL );
 				if ( image != NULL )
 					memcpy( self->buffer, image, size );
 				SDL_UnlockYUVOverlay( self->sdl_overlay );
