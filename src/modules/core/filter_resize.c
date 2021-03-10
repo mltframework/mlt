@@ -284,6 +284,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		*image = frame_resize_image( frame, *width, *height, *format );
 	}
+	else
+	{
+		*width = owidth;
+		*height = oheight;
+	}
 
 	return error;
 }

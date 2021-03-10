@@ -237,6 +237,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				*width = owidth;
 				*height = oheight;
 			}
+			else
+			{
+				*width = iwidth;
+				*height = iheight;
+			}
 			// Scale the alpha channel only if exists and not correct size
 			int alpha_size = 0;
 			mlt_properties_get_data( properties, "alpha", &alpha_size );
