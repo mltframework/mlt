@@ -1,3 +1,39 @@
+set(MLT_PUPLIC_HEADERS
+  mlt.h
+  mlt_animation.h
+  mlt_audio.h
+  mlt_cache.h
+  mlt_chain.h
+  mlt_consumer.h
+  mlt_deque.h
+  mlt_events.h
+  mlt_factory.h
+  mlt_field.h
+  mlt_filter.h
+  mlt_frame.h
+  mlt_geometry.h
+  mlt_image.h
+  mlt_link.h
+  mlt_log.h
+  mlt_luma_map.h
+  mlt_multitrack.h
+  mlt_parser.h
+  mlt_playlist.h
+  mlt_pool.h
+  mlt_producer.h
+  mlt_profile.h
+  mlt_properties.h
+  mlt_property.h
+  mlt_repository.h
+  mlt_service.h
+  mlt_slices.h
+  mlt_tokeniser.h
+  mlt_tractor.h
+  mlt_transition.h
+  mlt_types.h
+  mlt_version.h
+)
+
 add_library(mlt SHARED
   mlt_animation.c
   mlt_audio.c
@@ -47,6 +83,7 @@ set_target_properties(mlt PROPERTIES
   VERSION 1.${MLT_VERSION_MINOR}.${MLT_VERSION_PATCH}
   SOVERSION 1
   OUTPUT_NAME mlt-${MLT_VERSION_MAJOR}
+  PUBLIC_HEADER "${MLT_PUPLIC_HEADERS}"
 )
 
 if(WIN32)
@@ -71,44 +108,6 @@ if(NOT (WIN32 OR APPLE))
   target_link_options(mlt PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
   set_target_properties(mlt PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
 endif()
-
-set(MLT_PUPLIC_HEADERS
-  mlt.h
-  mlt_animation.h
-  mlt_audio.h
-  mlt_cache.h
-  mlt_chain.h
-  mlt_consumer.h
-  mlt_deque.h
-  mlt_events.h
-  mlt_factory.h
-  mlt_field.h
-  mlt_filter.h
-  mlt_frame.h
-  mlt_geometry.h
-  mlt_image.h
-  mlt_link.h
-  mlt_log.h
-  mlt_luma_map.h
-  mlt_multitrack.h
-  mlt_parser.h
-  mlt_playlist.h
-  mlt_pool.h
-  mlt_producer.h
-  mlt_profile.h
-  mlt_properties.h
-  mlt_property.h
-  mlt_repository.h
-  mlt_service.h
-  mlt_slices.h
-  mlt_tokeniser.h
-  mlt_tractor.h
-  mlt_transition.h
-  mlt_types.h
-  mlt_version.h
-)
-
-set_target_properties(mlt PROPERTIES PUBLIC_HEADER "${MLT_PUPLIC_HEADERS}")
 
 install(TARGETS mlt
   EXPORT MltTargets

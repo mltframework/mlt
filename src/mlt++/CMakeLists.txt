@@ -1,3 +1,35 @@
+set(MLTPP_PUPLIC_HEADERS
+  Mlt.h
+  MltAnimation.h
+  MltAudio.h
+  MltChain.h
+  MltConfig.h
+  MltConsumer.h
+  MltDeque.h
+  MltEvent.h
+  MltFactory.h
+  MltField.h
+  MltFilter.h
+  MltFilteredConsumer.h
+  MltFilteredProducer.h
+  MltFrame.h
+  MltGeometry.h
+  MltImage.h
+  MltLink.h
+  MltMultitrack.h
+  MltParser.h
+  MltPlaylist.h
+  MltProducer.h
+  MltProfile.h
+  MltProperties.h
+  MltPushConsumer.h
+  MltRepository.h
+  MltService.h
+  MltTokeniser.h
+  MltTractor.h
+  MltTransition.h
+)
+
 add_library(mlt++ SHARED
   MltAnimation.cpp
   MltAudio.cpp
@@ -43,6 +75,7 @@ set_target_properties(mlt++ PROPERTIES
   VERSION 1.${MLT_VERSION_MINOR}.${MLT_VERSION_PATCH}
   SOVERSION 1
   OUTPUT_NAME mlt++-${MLT_VERSION_MAJOR}
+  PUBLIC_HEADER "${MLTPP_PUPLIC_HEADERS}"
 )
 
 if(WIN32)
@@ -60,40 +93,6 @@ if(NOT (WIN32 OR APPLE))
   set_target_properties(mlt++ PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt++.vers)
 endif()
 
-set(MLTPP_PUPLIC_HEADERS
-  Mlt.h
-  MltAnimation.h
-  MltAudio.h
-  MltChain.h
-  MltConfig.h
-  MltConsumer.h
-  MltDeque.h
-  MltEvent.h
-  MltFactory.h
-  MltField.h
-  MltFilter.h
-  MltFilteredConsumer.h
-  MltFilteredProducer.h
-  MltFrame.h
-  MltGeometry.h
-  MltImage.h
-  MltLink.h
-  MltMultitrack.h
-  MltParser.h
-  MltPlaylist.h
-  MltProducer.h
-  MltProfile.h
-  MltProperties.h
-  MltPushConsumer.h
-  MltRepository.h
-  MltService.h
-  MltTokeniser.h
-  MltTractor.h
-  MltTransition.h
-)
-
-set_target_properties(mlt++ PROPERTIES PUBLIC_HEADER "${MLTPP_PUPLIC_HEADERS}")
-
 install(TARGETS mlt++
   EXPORT MltTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -107,5 +106,3 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mlt++-${MLT_VERSION_MAJOR}.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT Development
 )
-
-add_library(MLT7::mlt++ ALIAS mlt++)
