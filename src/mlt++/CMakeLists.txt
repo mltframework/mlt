@@ -28,6 +28,8 @@ add_library(mlt++ SHARED
   MltTransition.cpp
 )
 
+add_library(Mlt${MLT_VERSION_MAJOR}::mlt++ ALIAS mlt++)
+
 target_compile_options(mlt++ PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mlt++ PUBLIC mlt)
@@ -93,6 +95,7 @@ set(MLTPP_PUPLIC_HEADERS
 set_target_properties(mlt++ PROPERTIES PUBLIC_HEADER "${MLTPP_PUPLIC_HEADERS}")
 
 install(TARGETS mlt++
+  EXPORT MltTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -104,3 +107,5 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mlt++-${MLT_VERSION_MAJOR}.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT Development
 )
+
+add_library(MLT7::mlt++ ALIAS mlt++)

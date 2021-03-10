@@ -32,6 +32,8 @@ add_library(mlt SHARED
   mlt_version.c
 )
 
+add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
+
 target_compile_options(mlt PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mlt PRIVATE m Threads::Threads ${CMAKE_DL_LIBS})
@@ -109,6 +111,7 @@ set(MLT_PUPLIC_HEADERS
 set_target_properties(mlt PROPERTIES PUBLIC_HEADER "${MLT_PUPLIC_HEADERS}")
 
 install(TARGETS mlt
+  EXPORT MltTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
