@@ -22,17 +22,17 @@ add_library(mltplus MODULE
   transition_affine.c
 )
 
-target_link_libraries(mltplus mlt m Threads::Threads)
+target_link_libraries(mltplus PRIVATE mlt m Threads::Threads)
 
 if(TARGET PkgConfig::FFTW)
   target_sources(mltplus PRIVATE filter_dance.c filter_fft.c)
-  target_link_libraries(mltplus PkgConfig::FFTW)
+  target_link_libraries(mltplus PRIVATE PkgConfig::FFTW)
   target_compile_definitions(mltplus PRIVATE USE_FFTW)
   install(FILES filter_dance.yml filter_fft.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plus)
 endif()
 
 if(TARGET PkgConfig::libebur128)
-  target_link_libraries(mltplus PkgConfig::libebur128)
+  target_link_libraries(mltplus PRIVATE PkgConfig::libebur128)
 else()
   target_sources(mltplus PRIVATE ebur128/ebur128.c)
   target_include_directories(mltplus PRIVATE ebur128 ebur128/queue) 

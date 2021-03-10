@@ -4,7 +4,7 @@ add_library(mltdecklink MODULE
   producer_decklink.cpp
 )
 
-target_link_libraries(mltdecklink mlt Threads::Threads)
+target_link_libraries(mltdecklink PRIVATE mlt Threads::Threads)
 
 if(WIN32)
   target_sources(mltdecklink PRIVATE win/DeckLinkAPI_i.cpp)

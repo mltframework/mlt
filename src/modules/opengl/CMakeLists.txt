@@ -24,10 +24,10 @@ add_library(mltopengl MODULE
   transition_movit_overlay.cpp
 )
 
-target_link_libraries(mltopengl m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
+target_link_libraries(mltopengl PRIVATE m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
 
 if(UNIX AND NOT APPLE)
-  target_link_libraries(mltopengl X11::X11)
+  target_link_libraries(mltopengl PRIVATE X11::X11)
 endif()
 
 pkg_get_variable(SHADERDIR movit shaderdir)

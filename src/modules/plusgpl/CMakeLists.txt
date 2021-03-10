@@ -10,12 +10,12 @@ add_library(mltplusgpl MODULE
   utils.c
 )
 
-target_link_libraries(mltplusgpl mlt m Threads::Threads)
+target_link_libraries(mltplusgpl PRIVATE mlt m Threads::Threads)
 
 if(WIN32)
-  target_link_libraries(mltplusgpl ws2_32)
+  target_link_libraries(mltplusgpl PRIVATE ws2_32)
 elseif(UNIX)
-  target_link_libraries(mltplusgpl rt)
+  target_link_libraries(mltplusgpl PRIVATE rt)
 endif()
 
 set_target_properties(mltplusgpl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

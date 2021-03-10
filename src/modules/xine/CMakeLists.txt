@@ -5,7 +5,7 @@ add_library(mltxine MODULE
   filter_deinterlace.c
 )
 
-target_link_libraries(mltxine mlt)
+target_link_libraries(mltxine PRIVATE mlt)
 
 set_target_properties(mltxine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

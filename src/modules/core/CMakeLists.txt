@@ -42,7 +42,7 @@ add_library(mltcore MODULE
   transition_region.c
 )
 
-target_link_libraries(mltcore mlt Threads::Threads)
+target_link_libraries(mltcore PRIVATE m mlt Threads::Threads)
 
 if(WIN32)
   target_sources(mltcore PRIVATE ../../win32/fnmatch.c)

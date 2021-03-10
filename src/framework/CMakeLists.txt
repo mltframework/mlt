@@ -32,7 +32,7 @@ add_library(mlt SHARED
   mlt_version.c
 )
 
-target_link_libraries(mlt m Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(mlt PRIVATE m Threads::Threads ${CMAKE_DL_LIBS})
 
 target_include_directories(mlt PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
@@ -50,7 +50,7 @@ if(WIN32)
     )
   endif()
   target_sources(mlt PRIVATE ../win32/win32.c ../win32/strptime.c)
-  target_link_libraries(mlt Iconv::Iconv)
+  target_link_libraries(mlt PRIVATE Iconv::Iconv)
   if(NOT WINDOWS_DEPLOY)
     target_compile_definitions(mlt PRIVATE NODEPLOY)
   endif()

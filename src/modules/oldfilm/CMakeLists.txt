@@ -8,7 +8,7 @@ add_library(mltoldfilm MODULE
   filter_vignette.c
 )
 
-target_link_libraries(mltoldfilm mlt m)
+target_link_libraries(mltoldfilm PRIVATE mlt m)
 
 set_target_properties(mltoldfilm PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

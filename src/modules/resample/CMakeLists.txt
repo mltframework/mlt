@@ -1,5 +1,5 @@
 add_library(mltresample MODULE factory.c filter_resample.c)
-target_link_libraries(mltresample mlt PkgConfig::samplerate)
+target_link_libraries(mltresample PRIVATE mlt PkgConfig::samplerate)
 
 set_target_properties(mltresample PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
