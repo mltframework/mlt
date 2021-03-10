@@ -30,7 +30,7 @@ add_library(mlt++ SHARED
 
 target_compile_options(mlt++ PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mlt++ PRIVATE mlt)
+target_link_libraries(mlt++ PUBLIC mlt)
 
 target_include_directories(mlt++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

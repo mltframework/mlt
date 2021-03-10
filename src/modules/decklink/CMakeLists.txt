@@ -18,6 +18,10 @@ else()
   target_include_directories(mltdecklink PRIVATE linux)
 endif()
 
+if(CPU_SSE)
+  target_compile_definitions(mltdecklink PRIVATE USE_SSE)
+endif()
+
 set_target_properties(mltdecklink PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltdecklink LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)

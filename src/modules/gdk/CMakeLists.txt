@@ -23,8 +23,14 @@ if(TARGET PkgConfig::pango AND TARGET PkgConfig::fontconfig)
   install(FILES producer_pango.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
 endif()
 
-# Only for MMX but not x86_64: deprecated
-# target_sources(mltgdk PRIVATE have_mmx.S scale_line_22_yuv_mmx.S)
+if(CPU_MMX)
+  target_sources(mltgdk PRIVATE have_mmx.S scale_line_22_yuv_mmx.S)
+  target_compile_definitions(mltgdk PRIVATE USE_MMX)
+endif()
+
+if(CPU_X86_64)
+  target_compile_definitions(mltgdk PRIVATE ARCH_X86_64)
+endif()
 
 set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

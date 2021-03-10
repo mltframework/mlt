@@ -51,8 +51,13 @@ if(WIN32)
   target_include_directories(mltcore PRIVATE ../../win32)
 endif()
 
-if(X86_64)
+if(CPU_SSE)
+  target_compile_definitions(mltcore PRIVATE USE_SSE)
+endif()
+
+if(CPU_X86_64)
   target_sources(mltcore PRIVATE composite_line_yuv_sse2_simple.c)
+  target_compile_definitions(mltcore PRIVATE ARCH_X86_64)
 endif()
 
 set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
