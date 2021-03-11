@@ -337,7 +337,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
 		// Refresh the image
-		if ( self->count == 1 || mlt_properties_get_int( properties, "ttl" ) > 1 )
+		if ( self->count == 1 || mlt_properties_get_int( producer_properties, "ttl" ) > 1 )
 		{
 			self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
 			self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
