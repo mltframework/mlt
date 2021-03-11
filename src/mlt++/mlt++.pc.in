@@ -7,6 +7,6 @@ datadir=@CMAKE_INSTALL_FULL_DATADIR@
 Name: mlt++
 Description: C++ API for MLT multimedia framework
 Version: @MLT_VERSION@
-Requires: mlt-framework
-Libs: -L${libdir} -lmlt++
-Cflags: -I${includedir} -I${includedir}/mlt++
+Requires: mlt-framework-@MLT_VERSION_MAJOR@
+Libs: -L${libdir} -lmlt++-@MLT_VERSION_MAJOR@
+Cflags: -I${includedir}/mlt-@MLT_VERSION_MAJOR@/mlt++

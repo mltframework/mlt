@@ -1,70 +1,3 @@
-add_library(mlt SHARED
-  mlt_animation.c
-  mlt_audio.c
-  mlt_cache.c
-  mlt_chain.c
-  mlt_consumer.c
-  mlt_deque.c
-  mlt_events.c
-  mlt_factory.c
-  mlt_field.c
-  mlt_filter.c
-  mlt_frame.c
-  mlt_geometry.c
-  mlt_image.c
-  mlt_link.c
-  mlt_log.c
-  mlt_luma_map.c
-  mlt_multitrack.c
-  mlt_parser.c
-  mlt_playlist.c
-  mlt_pool.c
-  mlt_producer.c
-  mlt_profile.c
-  mlt_properties.c
-  mlt_property.c
-  mlt_repository.c
-  mlt_service.c
-  mlt_slices.c
-  mlt_tokeniser.c
-  mlt_tractor.c
-  mlt_transition.c
-  mlt_version.c
-)
-
-target_link_libraries(mlt m Threads::Threads ${CMAKE_DL_LIBS})
-
-target_include_directories(mlt PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/mlt>
-)
-
-set_target_properties(mlt PROPERTIES SOVERSION ${MLT_VERSION_MAJOR} VERSION ${MLT_VERSION})
-
-if(WIN32)
-  set_target_properties(mlt PROPERTIES OUTPUT_NAME "mlt-${MLT_VERSION_MAJOR}")
-  if(MINGW)
-    install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.dll"
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      RENAME libmlt.dll
-    )
-  endif()
-  target_sources(mlt PRIVATE ../win32/win32.c ../win32/strptime.c)
-  target_link_libraries(mlt Iconv::Iconv)
-  if(NOT WINDOWS_DEPLOY)
-    target_compile_definitions(mlt PRIVATE NODEPLOY)
-  endif()
-endif()
-
-if(NOT (WIN32 OR APPLE))
-  target_compile_definitions(mlt PRIVATE
-    $<BUILD_INTERFACE:PREFIX_DATA="${MLT_DATA_OUTPUT_DIRECTORY}" PREFIX_LIB="${MLT_MODULE_OUTPUT_DIRECTORY}">
-    $<INSTALL_INTERFACE:PREFIX_DATA="${CMAKE_INSTALL_FULL_DATADIR}/mlt" PREFIX_LIB="${CMAKE_INSTALL_FULL_LIBDIR}/mlt">
-  )
-  target_link_options(mlt PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
-  set_target_properties(mlt PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
-endif()
-
 set(MLT_PUPLIC_HEADERS
   mlt.h
   mlt_animation.h
@@ -101,19 +34,93 @@ set(MLT_PUPLIC_HEADERS
   mlt_version.h
 )
 
-set_target_properties(mlt PROPERTIES PUBLIC_HEADER "${MLT_PUPLIC_HEADERS}")
+add_library(mlt SHARED
+  mlt_animation.c
+  mlt_audio.c
+  mlt_cache.c
+  mlt_chain.c
+  mlt_consumer.c
+  mlt_deque.c
+  mlt_events.c
+  mlt_factory.c
+  mlt_field.c
+  mlt_filter.c
+  mlt_frame.c
+  mlt_geometry.c
+  mlt_image.c
+  mlt_link.c
+  mlt_log.c
+  mlt_luma_map.c
+  mlt_multitrack.c
+  mlt_parser.c
+  mlt_playlist.c
+  mlt_pool.c
+  mlt_producer.c
+  mlt_profile.c
+  mlt_properties.c
+  mlt_property.c
+  mlt_repository.c
+  mlt_service.c
+  mlt_slices.c
+  mlt_tokeniser.c
+  mlt_tractor.c
+  mlt_transition.c
+  mlt_version.c
+)
+
+add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
+
+target_compile_options(mlt PRIVATE ${MLT_COMPILE_OPTIONS})
+
+target_link_libraries(mlt PRIVATE m Threads::Threads ${CMAKE_DL_LIBS})
+
+target_include_directories(mlt PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/mlt-${MLT_VERSION_MAJOR}>
+)
+
+set_target_properties(mlt PROPERTIES
+  VERSION 1.${MLT_VERSION_MINOR}.${MLT_VERSION_PATCH}
+  SOVERSION 1
+  OUTPUT_NAME mlt-${MLT_VERSION_MAJOR}
+  PUBLIC_HEADER "${MLT_PUPLIC_HEADERS}"
+)
+
+if(WIN32)
+  if(MINGW)
+    install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.dll"
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RENAME libmlt.dll
+    )
+  endif()
+  target_sources(mlt PRIVATE ../win32/win32.c ../win32/strptime.c)
+  target_link_libraries(mlt PRIVATE Iconv::Iconv)
+  if(NOT WINDOWS_DEPLOY)
+    target_compile_definitions(mlt PRIVATE NODEPLOY)
+  endif()
+endif()
+
+if(NOT (WIN32 OR APPLE))
+  target_compile_definitions(mlt PRIVATE
+    $<BUILD_INTERFACE:PREFIX_DATA="${MLT_DATA_OUTPUT_DIRECTORY}" PREFIX_LIB="${MLT_MODULE_OUTPUT_DIRECTORY}">
+    $<INSTALL_INTERFACE:PREFIX_DATA="${CMAKE_INSTALL_FULL_DATADIR}/mlt-${MLT_VERSION_MAJOR}" PREFIX_LIB="${CMAKE_INSTALL_FULL_LIBDIR}/mlt-${MLT_VERSION_MAJOR}">
+  )
+  target_link_options(mlt PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
+  set_target_properties(mlt PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
+endif()
 
 install(TARGETS mlt
+  EXPORT MltTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mlt/framework
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mlt-${MLT_VERSION_MAJOR}/framework
 )
 
-install(FILES metaschema.yaml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt)
+install(FILES metaschema.yaml DESTINATION ${MLT_INSTALL_DATA_DIR})
 
-configure_file(mlt-framework.pc.in mlt-framework.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mlt-framework.pc
+configure_file(mlt-framework.pc.in mlt-framework-${MLT_VERSION_MAJOR}.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mlt-framework-${MLT_VERSION_MAJOR}.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT Development
 )

@@ -8,16 +8,22 @@ add_library(mltmotion_est MODULE
   producer_slowmotion.c
 )
 
-target_link_libraries(mltmotion_est mlt m)
+target_compile_options(mltmotion_est PRIVATE ${MLT_COMPILE_OPTIONS})
+
+target_link_libraries(mltmotion_est PRIVATE mlt m)
+
+if(CPU_SSE)
+  target_compile_definitions(mltmotion_est PRIVATE USE_SSE)
+endif()
 
 set_target_properties(mltmotion_est PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltmotion_est LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltmotion_est LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_autotrack_rectangle.yml
   filter_motion_est.yml
   filter_vismv.yml
   producer_slowmotion.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/motion_est
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/motion_est
 )

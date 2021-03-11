@@ -3,8 +3,9 @@ add_library(mltdecklink MODULE
   consumer_decklink.cpp
   producer_decklink.cpp
 )
+target_compile_options(mltdecklink PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltdecklink mlt Threads::Threads)
+target_link_libraries(mltdecklink PRIVATE mlt Threads::Threads)
 
 if(WIN32)
   target_sources(mltdecklink PRIVATE win/DeckLinkAPI_i.cpp)
@@ -17,12 +18,16 @@ else()
   target_include_directories(mltdecklink PRIVATE linux)
 endif()
 
+if(CPU_SSE)
+  target_compile_definitions(mltdecklink PRIVATE USE_SSE)
+endif()
+
 set_target_properties(mltdecklink PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltdecklink LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltdecklink LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_decklink.yml
   producer_decklink.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/decklink
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/decklink
 )

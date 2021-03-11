@@ -1,8 +1,11 @@
 add_library(mltresample MODULE factory.c filter_resample.c)
-target_link_libraries(mltresample mlt PkgConfig::samplerate)
+
+target_compile_options(mltresample PRIVATE ${MLT_COMPILE_OPTIONS})
+
+target_link_libraries(mltresample PRIVATE mlt PkgConfig::samplerate)
 
 set_target_properties(mltresample PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltresample LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltresample LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES filter_resample.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/resample)
+install(FILES filter_resample.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/resample)

@@ -1,7 +1,8 @@
 set_source_files_properties(../mlt.i PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES ON CPLUSPLUS ON)
 
 swig_add_library(mltperl LANGUAGE perl SOURCES ../mlt.i)
-target_link_libraries(mltperl mlt mlt++)
+target_compile_options(mltperl PRIVATE ${MLT_COMPILE_OPTIONS})
+target_link_libraries(mltperl PRIVATE mlt mlt++)
 target_include_directories(mltperl PRIVATE ${PERL_INCLUDE_PATH})
 set_target_properties(mltperl PROPERTIES OUTPUT_NAME "mlt")
 

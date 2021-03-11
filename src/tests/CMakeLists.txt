@@ -2,6 +2,7 @@ set(CMAKE_AUTOMOC ON)
 
 foreach(QT_TEST_NAME animation audio events filter frame image playlist properties repository service tractor)
   add_executable(test_${QT_TEST_NAME} test_${QT_TEST_NAME}/test_${QT_TEST_NAME}.cpp)
+  target_compile_options(test_${QT_TEST_NAME} PRIVATE ${MLT_COMPILE_OPTIONS})
   target_link_libraries(test_${QT_TEST_NAME} PRIVATE Qt5::Core Qt5::Test mlt++)
   add_test(NAME "QtTest:${QT_TEST_NAME}" COMMAND test_${QT_TEST_NAME})
   if(NOT WIN32)
