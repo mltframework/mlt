@@ -24,6 +24,7 @@
 #define MLT_FRAME_H
 
 #include "mlt_audio.h"
+#include "mlt_image.h"
 #include "mlt_properties.h"
 #include "mlt_deque.h"
 #include "mlt_service.h"
