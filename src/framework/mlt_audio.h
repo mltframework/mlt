@@ -51,6 +51,7 @@ extern int mlt_audio_calculate_size( mlt_audio self );
 extern int mlt_audio_plane_count( mlt_audio self );
 extern int mlt_audio_plane_size( mlt_audio self );
 extern void mlt_audio_get_planes( mlt_audio self, uint8_t** planes );
+extern void mlt_audio_silence( mlt_audio self, int samples, int start );
 extern void mlt_audio_shrink( mlt_audio self , int samples );
 extern void mlt_audio_reverse( mlt_audio self );
 extern void mlt_audio_copy( mlt_audio dst, mlt_audio src, int samples, int src_start, int dst_start );

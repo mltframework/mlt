@@ -208,6 +208,69 @@ void mlt_audio_get_planes( mlt_audio self, uint8_t** planes )
 	}
 }
 
+/** Set a range of samples to silence.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self the Audio object
+ * \param samples the new number of samples to silent
+ * \param start the sample to begin the silence
+ * \return none
+ */
+
+void mlt_audio_silence( mlt_audio self, int samples, int start )
+{
+	if ( ( start + samples ) > self->samples )
+	{
+		mlt_log_error( NULL, "mlt_audio_silence: avoid buffer overrun\n" );
+		return;
+	}
+
+	switch ( self->format )
+	{
+		case mlt_audio_none:
+			mlt_log_error( NULL, "mlt_audio_silence: mlt_audio_none\n" );
+			return;
+		// Interleaved 8bit formats
+		case mlt_audio_u8:
+		{
+			int8_t* s = (int8_t*)self->data + ( start * self->channels );
+			int size = self->channels * samples * sizeof(int8_t);
+			memset( s, 127, size );
+			return;
+		}
+		// Interleaved 16bit formats
+		case mlt_audio_s16:
+		{
+			int16_t* s = (int16_t*)self->data + ( start * self->channels );
+			int size = self->channels * samples * sizeof(int16_t);
+			memset( s, 0, size );
+			return;
+		}
+		// Interleaved 32bit formats
+		case mlt_audio_s32le:
+		case mlt_audio_f32le:
+		{
+			int32_t* s = (int32_t*)self->data + ( start * self->channels );
+			int size = self->channels * samples * sizeof(int32_t);
+			memset( s, 0, size );
+			return;
+		}
+		// Planer 32bit formats
+		case mlt_audio_s32:
+		case mlt_audio_float:
+		{
+			int p = 0;
+			for ( p = 0; p < self->channels; p++ )
+			{
+				int32_t* s = (int32_t*)self->data + (p * self->samples) + start;
+				int size = samples * sizeof(int32_t);
+				memset( s, 0, size );
+			}
+			return;
+		}
+	}
+}
+
 /** Shrink the audio to the new number of samples.
  *
  * Existing samples will be moved as necessary to ensure that the audio planes

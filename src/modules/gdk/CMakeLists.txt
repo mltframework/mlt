@@ -5,6 +5,8 @@ add_library(mltgdk MODULE
   producer_pixbuf.c
 )
 
+target_compile_options(mltgdk PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltgdk PRIVATE mlt m Threads::Threads PkgConfig::GdkPixbuf)
 
 target_compile_definitions(mltgdk PRIVATE USE_PIXBUF)
@@ -18,15 +20,20 @@ if(TARGET PkgConfig::pango AND TARGET PkgConfig::fontconfig)
   target_sources(mltgdk PRIVATE producer_pango.c)
   target_link_libraries(mltgdk PRIVATE PkgConfig::pango PkgConfig::fontconfig PkgConfig::pangoft2)
   target_compile_definitions(mltgdk PRIVATE USE_PANGO)
-  install(FILES producer_pango.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
+  install(FILES producer_pango.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/gdk)
 endif()
 
-# Only for MMX but not x86_64: deprecated
-# target_sources(mltgdk PRIVATE have_mmx.S scale_line_22_yuv_mmx.S)
+if(CPU_MMX)
+  target_sources(mltgdk PRIVATE have_mmx.S scale_line_22_yuv_mmx.S)
+  target_compile_definitions(mltgdk PRIVATE USE_MMX)
+endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+if(CPU_X86_64)
+  target_compile_definitions(mltgdk PRIVATE ARCH_X86_64)
+endif()
 
-install(TARGETS mltgdk LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+set_target_properties(mltgdk PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(FILES filter_rescale.yml producer_pixbuf.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/gdk)
+install(TARGETS mltgdk LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+
+install(FILES filter_rescale.yml producer_pixbuf.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/gdk)

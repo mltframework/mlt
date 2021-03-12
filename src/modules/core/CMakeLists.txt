@@ -10,8 +10,6 @@ add_library(mltcore MODULE
   filter_channelcopy.c
   filter_choppy.c
   filter_crop.c
-  filter_data_feed.c
-  filter_data_show.c
   filter_fieldorder.c
   filter_gamma.c
   filter_greyscale.c
@@ -44,20 +42,27 @@ add_library(mltcore MODULE
   transition_region.c
 )
 
-target_link_libraries(mltcore mlt Threads::Threads)
+target_compile_options(mltcore PRIVATE ${MLT_COMPILE_OPTIONS})
+
+target_link_libraries(mltcore PRIVATE m mlt Threads::Threads)
 
 if(WIN32)
   target_sources(mltcore PRIVATE ../../win32/fnmatch.c)
+  target_include_directories(mltcore PRIVATE ../../win32)
 endif()
 
-if(X86_64)
+if(CPU_SSE)
+  target_compile_definitions(mltcore PRIVATE USE_SSE)
+endif()
+
+if(CPU_X86_64)
   target_sources(mltcore PRIVATE composite_line_yuv_sse2_simple.c)
+  target_compile_definitions(mltcore PRIVATE ARCH_X86_64)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltcore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltcore LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_multi.yml
@@ -67,7 +72,6 @@ install(FILES
   filter_channelcopy.yml
   filter_choppy.yml
   filter_crop.yml
-  filter_data_show.yml
   filter_fieldorder.yml
   filter_gamma.yml
   filter_greyscale.yml
@@ -98,8 +102,7 @@ install(FILES
   transition_matte.yml
   transition_mix.yml
   transition_region.yml
-  data_fx.properties
   loader.dict
   loader.ini
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/core
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/core
 )

@@ -1,8 +1,10 @@
 add_library(mltopencv MODULE factory.c filter_opencv_tracker.cpp)
-target_link_libraries(mltopencv mlt ${OpenCV_LIBS})
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltopencv PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+target_compile_options(mltopencv PRIVATE ${MLT_COMPILE_OPTIONS})
 
-install(TARGETS mltopencv LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
-install(FILES filter_opencv_tracker.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/opencv)
+target_link_libraries(mltopencv PRIVATE mlt ${OpenCV_LIBS})
+
+set_target_properties(mltopencv PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+
+install(TARGETS mltopencv LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+install(FILES filter_opencv_tracker.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/opencv)

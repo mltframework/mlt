@@ -5,11 +5,12 @@ add_library(mltvidstab MODULE
   filter_vidstab.cpp
 )
 
-target_link_libraries(mltvidstab mlt m mlt++ PkgConfig::vidstab)
+target_compile_options(mltvidstab PRIVATE ${MLT_COMPILE_OPTIONS})
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+target_link_libraries(mltvidstab PRIVATE mlt m mlt++ PkgConfig::vidstab)
 
-install(TARGETS mltvidstab LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(FILES filter_deshake.yml filter_vidstab.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/vidstab)
+install(TARGETS mltvidstab LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+
+install(FILES filter_deshake.yml filter_vidstab.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/vidstab)

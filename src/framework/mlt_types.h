@@ -104,6 +104,25 @@ typedef enum
 }
 mlt_channel_layout;
 
+/** Colorspace definitions */
+
+typedef enum
+{
+	mlt_colorspace_rgb         = 0,  ///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
+	mlt_colorspace_bt709       = 1,  ///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
+	mlt_colorspace_unspecified = 2,
+	mlt_colorspace_reserved    = 3,
+	mlt_colorspace_fcc         = 4,  ///< FCC Title 47 Code of Federal Regulations 73.682 (a)(20)
+	mlt_colorspace_bt470bg     = 5,  ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
+	mlt_colorspace_smpte170m   = 6,  ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+	mlt_colorspace_smpte240m   = 7,  ///< functionally identical to above
+	mlt_colorspace_ycgco       = 8,  ///< Used by Dirac / VC-2 and H.264 FRext, see ITU-T SG16
+	mlt_colorspace_bt2020_ncl  = 9,  ///< ITU-R BT2020 non-constant luminance system
+	mlt_colorspace_bt2020_cl   = 10, ///< ITU-R BT2020 constant luminance system
+	mlt_colorspace_smpte2085   = 11, ///< SMPTE 2085, Y'D'zD'x
+}
+mlt_colorspace;
+
 /** The time string formats */
 
 typedef enum
@@ -187,6 +206,7 @@ typedef struct {
 mlt_color;
 
 typedef struct mlt_audio_s *mlt_audio;                  /**< pointer to Audio object */
+typedef struct mlt_image_s *mlt_image;                  /**< pointer to Image object */
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr; /**< pointer to Frame object */
 typedef struct mlt_property_s *mlt_property;            /**< pointer to Property object */
 typedef struct mlt_properties_s *mlt_properties;        /**< pointer to Properties object */

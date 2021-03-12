@@ -24,6 +24,7 @@
 #define MLT_FRAME_H
 
 #include "mlt_audio.h"
+#include "mlt_image.h"
 #include "mlt_properties.h"
 #include "mlt_deque.h"
 #include "mlt_service.h"
@@ -145,11 +146,7 @@ extern mlt_properties mlt_frame_get_unique_properties( mlt_frame self, mlt_servi
 extern mlt_frame mlt_frame_clone( mlt_frame self, int is_deep );
 
 /* convenience functions */
-extern const char * mlt_image_format_name( mlt_image_format format );
-extern int mlt_image_format_size( mlt_image_format format, int width, int height, int *bpp );
 extern void mlt_frame_write_ppm( mlt_frame frame );
-extern int mlt_image_format_planes( mlt_image_format format, int width, int height, void* data, unsigned char *planes[4], int strides[4]);
-extern mlt_image_format mlt_image_format_id( const char * name );
 
 /** This macro scales RGB into the YUV gamut - y is scaled by 219/255 and uv by 224/255. */
 #define RGB2YUV_601_SCALED(r, g, b, y, u, v)\

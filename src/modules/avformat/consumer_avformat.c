@@ -1446,6 +1446,11 @@ receive_audio_packet:
 			if ( ++ctx->error_count > 2 )
 				return -1;
 		}
+		else if (!samples) // flushing
+		{
+			pkt.stream_index = stream->index;
+			av_interleaved_write_frame(ctx->oc, &pkt);
+		}
 
 		if ( i == 0 )
 		{

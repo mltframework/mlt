@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+set(_supported_components "@MLT_SUPPORTED_COMPONENTS@")
+
+foreach(_comp ${Mlt@MLT_VERSION_MAJOR@_FIND_COMPONENTS})
+  if (NOT _comp IN_LIST _supported_components)
+    set(Mlt@MLT_VERSION_MAJOR@_FOUND False)
+    set(Mlt@MLT_VERSION_MAJOR@_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
+  endif()
+endforeach()
+
+include("${CMAKE_CURRENT_LIST_DIR}/Mlt@MLT_VERSION_MAJOR@Targets.cmake")

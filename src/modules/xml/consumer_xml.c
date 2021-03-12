@@ -535,8 +535,6 @@ static void serialise_tractor( serialise_context context, mlt_service service, x
 		xmlNewProp( child, _x("id"), _x(id) );
 		if ( mlt_properties_get( properties, "title" ) )
 			xmlNewProp( child, _x("title"), _x(mlt_properties_get( properties, "title" )) );
-		if ( mlt_properties_get( properties, "global_feed" ) )
-			xmlNewProp( child, _x("global_feed"), _x(mlt_properties_get( properties, "global_feed" )) );
 		if ( mlt_properties_get_position( properties, "in" ) >= 0 )
 			xmlNewProp( child, _x("in"), _x(mlt_properties_get_time( properties, "in", context->time_format )) );
 		if ( mlt_properties_get_position( properties, "out" ) >= 0 )
@@ -862,7 +860,6 @@ xmlDocPtr xml_make_doc( mlt_consumer consumer, mlt_service service )
 	// Assign a title property
 	if ( mlt_properties_get( properties, "title" ) != NULL )
 		xmlNewProp( root, _x("title"), _x(mlt_properties_get( properties, "title" )) );
-	mlt_properties_set_int( properties, "global_feed", 1 );
 
 	// Add a profile child element
 	if ( profile )

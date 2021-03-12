@@ -22,27 +22,28 @@ add_library(mltplus MODULE
   transition_affine.c
 )
 
-target_link_libraries(mltplus mlt m Threads::Threads)
+target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})
+
+target_link_libraries(mltplus PRIVATE mlt m Threads::Threads)
 
 if(TARGET PkgConfig::FFTW)
   target_sources(mltplus PRIVATE filter_dance.c filter_fft.c)
-  target_link_libraries(mltplus PkgConfig::FFTW)
+  target_link_libraries(mltplus PRIVATE PkgConfig::FFTW)
   target_compile_definitions(mltplus PRIVATE USE_FFTW)
-  install(FILES filter_dance.yml filter_fft.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plus)
+  install(FILES filter_dance.yml filter_fft.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/plus)
 endif()
 
 if(TARGET PkgConfig::libebur128)
-  target_link_libraries(mltplus PkgConfig::libebur128)
+  target_link_libraries(mltplus PRIVATE PkgConfig::libebur128)
 else()
   target_sources(mltplus PRIVATE ebur128/ebur128.c)
   target_include_directories(mltplus PRIVATE ebur128 ebur128/queue) 
   target_compile_definitions(mltplus PRIVATE USE_INTERNAL_LIBEBUR128)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltplus LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltplus LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_blipflash.yml
@@ -65,5 +66,5 @@ install(FILES
   producer_blipflash.yml
   producer_count.yml
   transition_affine.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plus
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/plus
 )

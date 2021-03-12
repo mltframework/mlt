@@ -31,8 +31,6 @@ extern mlt_filter filter_brightness_init( mlt_profile profile, mlt_service_type 
 extern mlt_filter filter_channelcopy_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_choppy_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg);
 extern mlt_filter filter_crop_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_data_feed_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_data_show_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_fieldorder_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_gamma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_greyscale_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -85,8 +83,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_filter_type, "channelswap", filter_channelcopy_init );
 	MLT_REGISTER( mlt_service_filter_type, "choppy", filter_choppy_init );
 	MLT_REGISTER( mlt_service_filter_type, "crop", filter_crop_init );
-	MLT_REGISTER( mlt_service_filter_type, "data_feed", filter_data_feed_init );
-	MLT_REGISTER( mlt_service_filter_type, "data_show", filter_data_show_init );
 	MLT_REGISTER( mlt_service_filter_type, "fieldorder", filter_fieldorder_init );
 	MLT_REGISTER( mlt_service_filter_type, "gamma", filter_gamma_init );
 	MLT_REGISTER( mlt_service_filter_type, "greyscale", filter_greyscale_init );
@@ -130,7 +126,6 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "channelswap", metadata, "filter_channelcopy.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "choppy", metadata, "filter_choppy.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "crop", metadata, "filter_crop.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "data_show", metadata, "filter_data_show.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "fieldorder", metadata, "filter_fieldorder.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "gamma", metadata, "filter_gamma.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "greyscale", metadata, "filter_greyscale.yml" );

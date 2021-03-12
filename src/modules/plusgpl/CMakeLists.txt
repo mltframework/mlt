@@ -10,23 +10,24 @@ add_library(mltplusgpl MODULE
   utils.c
 )
 
-target_link_libraries(mltplusgpl mlt m Threads::Threads)
+target_compile_options(mltplusgpl PRIVATE ${MLT_COMPILE_OPTIONS})
+
+target_link_libraries(mltplusgpl PRIVATE mlt m Threads::Threads)
 
 if(WIN32)
-  target_link_libraries(mltplusgpl ws2_32)
+  target_link_libraries(mltplusgpl PRIVATE ws2_32)
 elseif(UNIX)
-  target_link_libraries(mltplusgpl rt)
+  target_link_libraries(mltplusgpl PRIVATE rt)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltplusgpl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltplusgpl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltplusgpl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltplusgpl LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_cbrts.yml
   filter_burningtv.yml
   filter_lumaliftgaingamma.yml
   filter_rotoscoping.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/plusgpl
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/plusgpl
 )

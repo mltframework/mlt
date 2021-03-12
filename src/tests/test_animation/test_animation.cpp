@@ -297,8 +297,8 @@ private Q_SLOTS:
 	void SerializesInTimeFormat()
 	{
 		Profile profile;
-        Properties p;
-        p.set("_profile", profile.get_profile(), 0);
+		Properties p;
+		p.set("_profile", profile.get_profile(), 0);
 		p.set("foo", "50=100; 60=60; 100=0");
 		// Cause the string to be interpreted as animated value.
 		p.anim_get("foo", 0);
@@ -311,8 +311,8 @@ private Q_SLOTS:
 	void GetPropertyInTimeFormat()
 	{
 		Profile profile;
-        Properties p;
-        p.set("_profile", profile.get_profile(), 0);
+		Properties p;
+		p.set("_profile", profile.get_profile(), 0);
 		p.set("foo", "50=100; 60=60; 100=0");
 		// Cause the string to be interpreted as animated value.
 		p.anim_get_int("foo", 0);
@@ -338,21 +338,51 @@ private Q_SLOTS:
 		p.clear("foo");
 		QCOMPARE(p.get_animation("foo"), mlt_animation(0));
 	}
-    
-    void CanBeEscapedWithQuotes()
-    {
-        Properties p;
-        p.set("foo", "\"50=100; 60=60; 100=0\"");
-        // Quotes are retained when using the non-anim getter.
-        QCOMPARE(p.get("foo"), "\"50=100; 60=60; 100=0\"");
-        // Quotes are removed when using the anim getter.
+
+	void CanBeEscapedWithQuotes()
+	{
+		Properties p;
+		p.set("foo", "\"50=100; 60=60; 100=0\"");
+		// Quotes are retained when using the non-anim getter.
+		QCOMPARE(p.get("foo"), "\"50=100; 60=60; 100=0\"");
+		// Quotes are removed when using the anim getter.
 		QCOMPARE(p.anim_get("foo", 0), "50=100; 60=60; 100=0");
-        // Anim strings may contain delimiters and equal signs if quoted.
-        p.set("foo", "50=100; 60=\"60; 100=0\";\"hello=world\"");
-        QCOMPARE(p.anim_get("foo", 0), "hello=world");
-        QCOMPARE(p.anim_get("foo", 50), "100");
-        QCOMPARE(p.anim_get("foo", 60), "60; 100=0");
-    }
+		// Anim strings may contain delimiters and equal signs if quoted.
+		p.set("foo", "50=100; 60=\"60; 100=0\";\"hello=world\"");
+		QCOMPARE(p.anim_get("foo", 0), "hello=world");
+		QCOMPARE(p.anim_get("foo", 50), "100");
+		QCOMPARE(p.anim_get("foo", 60), "60; 100=0");
+	}
+
+	void ShiftFramesPositive()
+	{
+		Properties p;
+		p.set("foo", "50=100; 60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		a.shift_frames( 60 );
+		QCOMPARE(a.key_get_frame(0), 110);
+		QCOMPARE(a.key_get_frame(1), 120);
+		QCOMPARE(a.key_get_frame(2), 160);
+		QCOMPARE(a.key_get_frame(3), -1);
+	}
+
+	void ShiftFramesNegative()
+	{
+		Properties p;
+		p.set("foo", "50=100; 60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+		a.shift_frames( -60 );
+		QCOMPARE(a.key_get_frame(0), -10);
+		QCOMPARE(a.key_get_frame(1), 0);
+		QCOMPARE(a.key_get_frame(2), 40);
+		QCOMPARE(a.key_get_frame(3), -1);
+	}
 };
 
 QTEST_APPLESS_MAIN(TestAnimation)

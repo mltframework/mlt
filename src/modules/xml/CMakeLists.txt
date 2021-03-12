@@ -5,12 +5,13 @@ add_library(mltxml MODULE
   producer_xml.c
 )
 
-target_link_libraries(mltxml mlt Threads::Threads PkgConfig::xml)
+target_compile_options(mltxml PRIVATE ${MLT_COMPILE_OPTIONS})
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltxml PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+target_link_libraries(mltxml PRIVATE mlt Threads::Threads PkgConfig::xml)
 
-install(TARGETS mltxml LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+set_target_properties(mltxml PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+
+install(TARGETS mltxml LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_xml.yml
@@ -18,5 +19,5 @@ install(FILES
   producer_xml-string.yml
   producer_xml.yml
   mlt-xml.dtd
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/xml
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/xml
 )

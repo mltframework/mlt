@@ -25,6 +25,7 @@ SHFLAGS += -Wl,--version-script=mlt.vers
 endif
 
 OBJS = mlt_audio.o \
+	   mlt_image.o \
 	   mlt_frame.o \
 	   mlt_version.o \
 	   mlt_geometry.o \
@@ -56,6 +57,7 @@ OBJS = mlt_audio.o \
 	   mlt_chain.o
 
 INCS = mlt_audio.h \
+	   mlt_image.h \
 	   mlt_consumer.h \
 	   mlt_version.h \
 	   mlt_factory.h \
@@ -96,9 +98,9 @@ OBJS += ../win32/win32.o ../win32/strptime.o
 SRCS += ../win32/win32.c ../win32/strptime.c
 endif
 
-CFLAGS += $(RDYNAMIC) -DPREFIX_DATA="\"$(mltdatadir)\"" -DPREFIX_LIB="\"$(moduledir)\""
+CFLAGS += -DPREFIX_DATA="\"$(mltdatadir)\"" -DPREFIX_LIB="\"$(moduledir)\""
 
-LDFLAGS += $(LIBDL) -lpthread -lm
+LDFLAGS += $(RDYNAMIC) $(LIBDL) -lpthread -lm
 
 all:	$(TARGET)
 

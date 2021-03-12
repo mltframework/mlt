@@ -6,6 +6,8 @@ add_library(mltavformat MODULE
   filter_swscale.c
 )
 
+target_compile_options(mltavformat PRIVATE ${MLT_COMPILE_OPTIONS})
+
 target_link_libraries(mltavformat PRIVATE
   mlt
   m
@@ -44,10 +46,13 @@ if(TARGET PkgConfig::libswresample)
   target_compile_definitions(mltavformat PRIVATE SWRESAMPLE)
 endif()
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltavformat PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+if(CPU_MMX)
+  target_compile_definitions(mltavformat PRIVATE USE_MMX)
+endif()
 
-install(TARGETS mltavformat LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+set_target_properties(mltavformat PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+
+install(TARGETS mltavformat LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_avformat.yml
@@ -55,5 +60,5 @@ install(FILES
   resolution_scale.yml
   blacklist.txt
   yuv_only.txt
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/avformat
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/avformat
 )

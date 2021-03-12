@@ -24,19 +24,20 @@ add_library(mltopengl MODULE
   transition_movit_overlay.cpp
 )
 
-target_link_libraries(mltopengl m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
+target_compile_options(mltopengl PRIVATE ${MLT_COMPILE_OPTIONS})
+
+target_link_libraries(mltopengl PRIVATE m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
 
 if(UNIX AND NOT APPLE)
-  target_link_libraries(mltopengl X11::X11)
+  target_link_libraries(mltopengl PRIVATE X11::X11)
 endif()
 
 pkg_get_variable(SHADERDIR movit shaderdir)
 target_compile_definitions(mltopengl PRIVATE SHADERDIR="${SHADERDIR}")
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltopengl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltopengl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltopengl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltopengl LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_movit_blur.yml
@@ -54,5 +55,5 @@ install(FILES
   transition_movit_luma.yml
   transition_movit_mix.yml
   transition_movit_overlay.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/opengl
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/opengl
 )

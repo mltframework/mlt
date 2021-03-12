@@ -1,11 +1,13 @@
 set(CMAKE_AUTOMOC ON)
 
-foreach(QT_TEST_NAME animation audio events filter frame playlist properties repository service tractor)
+foreach(QT_TEST_NAME animation audio events filter frame image playlist properties repository service tractor)
   add_executable(test_${QT_TEST_NAME} test_${QT_TEST_NAME}/test_${QT_TEST_NAME}.cpp)
+  target_compile_options(test_${QT_TEST_NAME} PRIVATE ${MLT_COMPILE_OPTIONS})
   target_link_libraries(test_${QT_TEST_NAME} PRIVATE Qt5::Core Qt5::Test mlt++)
   add_test(NAME "QtTest:${QT_TEST_NAME}" COMMAND test_${QT_TEST_NAME})
-  set_tests_properties("QtTest:${QT_TEST_NAME}" PROPERTIES
-    ENVIRONMENT "LANG=en_US;MLT_REPOSITORY=${CMAKE_BINARY_DIR}/src/modules;MLT_DATA=${CMAKE_SOURCE_DIR}/src/modules;MLT_PROFILES_PATH=${CMAKE_SOURCE_DIR}/profiles;MLT_PRESETS_PATH=${CMAKE_SOURCE_DIR}/presets")
+  if(NOT WIN32)
+    set_tests_properties("QtTest:${QT_TEST_NAME}" PROPERTIES ENVIRONMENT "LANG=en_US")
+  endif()
 endforeach()
 
 file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")

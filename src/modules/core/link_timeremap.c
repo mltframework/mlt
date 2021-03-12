@@ -204,6 +204,7 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 	uint8_t* images[MAX_BLEND_IMAGES];
 	int image_count = 0;
 	mlt_position in_frame_pos = floor( source_time * source_fps );
+	int colorspace = 0;
 	while ( image_count < MAX_BLEND_IMAGES )
 	{
 		char key[19];
@@ -211,6 +212,7 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 		mlt_frame src_frame = (mlt_frame)mlt_properties_get_data( unique_properties, key, NULL );
 		if ( src_frame && !mlt_frame_get_image( src_frame, &images[image_count], format, width, height, 0 ) )
 		{
+			colorspace = mlt_properties_get_int( MLT_FRAME_PROPERTIES(src_frame), "colorspace" );
 			in_frame_pos++;
 			image_count++;
 		}
@@ -246,6 +248,7 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "format", *format );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "width", *width );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "height", *height );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "colorspace", colorspace );
 
 	return 0;
 }
@@ -277,6 +280,7 @@ static int link_get_image_nearest( mlt_frame frame, uint8_t** image, mlt_image_f
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "format", *format );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "width", *width );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "height", *height );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "colorspace", mlt_properties_get_int( MLT_FRAME_PROPERTIES(src_frame), "colorspace" ));
 
 			uint8_t* in_alpha = mlt_frame_get_alpha( src_frame );
 			if ( in_alpha )
