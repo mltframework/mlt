@@ -38,7 +38,7 @@
 /* Forward references. */
 
 static int producer_get_frame( mlt_service self, mlt_frame_ptr frame, int index );
-static void mlt_producer_property_changed( mlt_service owner, mlt_producer self, mlt_event_data );
+static void mlt_producer_property_changed( mlt_service owner, mlt_producer self, mlt_event_data* );
 static void mlt_producer_service_changed( mlt_service owner, mlt_producer self );
 
 /* for debugging */
@@ -125,9 +125,9 @@ int mlt_producer_init( mlt_producer self, void *child )
  * \param name the property that changed
  */
 
-static void mlt_producer_property_changed( mlt_service owner, mlt_producer self, mlt_event_data event_data)
+static void mlt_producer_property_changed( mlt_service owner, mlt_producer self, mlt_event_data *event_data)
 {
-	const char *name = mlt_event_data_get_string(event_data);
+	const char *name = mlt_event_data_to_string(event_data);
 	if (!name) return;
 	if ( !strcmp( name, "in" ) || !strcmp( name, "out" ) || !strcmp( name, "length" ) )
 		mlt_events_fire( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( self ) ), "producer-changed", NULL );

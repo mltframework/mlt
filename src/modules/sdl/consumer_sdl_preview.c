@@ -61,9 +61,9 @@ static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data );
-static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data );
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data );
+static void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data* );
+static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer self, mlt_event_data* );
+static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer self, mlt_event_data* );
 
 mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
@@ -115,27 +115,26 @@ mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type ty
 	return NULL;
 }
 
-void consumer_frame_show_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
+void consumer_frame_show_cb(mlt_consumer sdl, mlt_consumer parent, mlt_event_data *event_data )
 {
-	mlt_frame frame = mlt_event_data_get_frame(event_data);
+	mlt_frame frame = mlt_event_data_to_frame(event_data);
 	consumer_sdl self = parent->child;
 	if (frame && self) {
 		self->last_speed = mlt_properties_get_double( MLT_FRAME_PROPERTIES( frame ), "_speed" );
 		self->last_position = mlt_frame_get_position( frame );
-		event_data = mlt_event_data_set_frame(frame);
+		mlt_event_data_from_frame(event_data, frame);
 		mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-frame-show", event_data );
-		mlt_event_data_free(event_data);
 	}
 }
 
-static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
+static void consumer_sdl_event_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data *event_data )
 {
 	mlt_events_fire( MLT_CONSUMER_PROPERTIES( parent ), "consumer-sdl-event", event_data );
 }
 
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data *event_data )
 {
-	const char *name = mlt_event_data_get_string(event_data);
+	const char *name = mlt_event_data_to_string(event_data);
 	if ( name && !strcmp( name, "refresh" ) )
 	{
 		consumer_sdl self = parent->child;

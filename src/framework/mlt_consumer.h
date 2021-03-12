@@ -145,13 +145,4 @@ extern void mlt_consumer_stopped( mlt_consumer self );
 extern void mlt_consumer_close( mlt_consumer );
 extern mlt_position mlt_consumer_position( mlt_consumer );
 
-typedef void* ( *mlt_thread_function_t )( void* );
-
-typedef struct {
-	void **thread;
-	int *priority;
-	mlt_thread_function_t function;
-	void *data;
-} mlt_event_data_thread;
-
 #endif

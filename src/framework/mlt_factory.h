@@ -64,6 +64,6 @@ typedef struct {
 	const char *name;
 	const void *input;
 	void *service;
-} mlt_factory_event;
+} mlt_factory_event_data;
 
 #endif

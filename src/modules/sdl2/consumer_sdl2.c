@@ -677,9 +677,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			SDL_RenderPresent( self->sdl_renderer );
 		}
 
-		mlt_event_data event_data = mlt_event_data_set_frame(frame);
-		mlt_events_fire( properties, "consumer-frame-show", event_data );
-		mlt_event_data_free(event_data);
+		mlt_event_data event_data;
+		mlt_event_data_from_frame(&event_data, frame);
+		mlt_events_fire( properties, "consumer-frame-show", &event_data );
 	}
 	else if ( self->running )
 	{
@@ -688,9 +688,9 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 		}
-		mlt_event_data event_data = mlt_event_data_set_frame(frame);
-		mlt_events_fire( properties, "consumer-frame-show", event_data );
-		mlt_event_data_free(event_data);
+		mlt_event_data event_data;
+		mlt_event_data_from_frame(&event_data, frame);
+		mlt_events_fire( properties, "consumer-frame-show", &event_data );
 	}
 
 	return 0;

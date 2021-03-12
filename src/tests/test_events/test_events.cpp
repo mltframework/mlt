@@ -47,7 +47,7 @@ private:
     static void onPropertyChanged(mlt_properties owner, TestEvents* self, mlt_event_data data)
     {
         QVERIFY(self != nullptr);
-        QCOMPARE(Mlt::EventData(data).get_string(), "foo");
+		QCOMPARE(Mlt::EventData(data).to_string(), "foo");
         self->checkOwner(owner);
     }
 

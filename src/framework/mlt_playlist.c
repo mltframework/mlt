@@ -483,9 +483,9 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist self, int *progressiv
 
 	// Determine if we have moved to the next entry in the playlist.
 	if ( original == total - 2 ) {
-		mlt_event_data event_data = mlt_event_data_set_int(i);
-		mlt_events_fire(properties, "playlist-next", event_data);
-		mlt_event_data_free(event_data);
+		mlt_event_data event_data;
+		mlt_event_data_from_int(&event_data, i);
+		mlt_events_fire(properties, "playlist-next", &event_data);
 	}
 
 	return MLT_PRODUCER_SERVICE( producer );

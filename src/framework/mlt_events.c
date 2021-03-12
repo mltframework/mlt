@@ -66,15 +66,6 @@ struct mlt_event_struct
 	void *listener_data;
 };
 
-struct mlt_event_data_s {
-	union {
-		int integer;
-		const char *string;
-		mlt_frame frame;
-		void *other;
-	} u;
-};
-
 /** Increment the reference count on self event.
  *
  * \public \memberof mlt_event_struct
@@ -190,7 +181,7 @@ int mlt_events_register(mlt_properties self, const char *id)
  * \return the number of listeners
  */
 
-int mlt_events_fire(mlt_properties self, const char *id, mlt_event_data event_data)
+int mlt_events_fire(mlt_properties self, const char *id, mlt_event_data *event_data)
 {
 	int result = 0;
 	mlt_events events = mlt_events_fetch( self );
@@ -481,75 +472,62 @@ static void mlt_events_close( mlt_events events )
 	}
 }
 
-mlt_event_data mlt_event_data_set_int(int value)
+void mlt_event_data_from_int(mlt_event_data *event_data, int value)
 {
-	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
 	if (event_data) {
-		event_data->u.integer = value;
+		event_data->u.i = value;
 	}
-	return event_data;
 }
 
-int mlt_event_data_get_int(mlt_event_data event_data)
+int mlt_event_data_to_int(const mlt_event_data *event_data)
 {
 	if (event_data) {
-		return event_data->u.integer;
+		return event_data->u.i;
 	}
 	return INT_MIN;
 }
 
-mlt_event_data mlt_event_data_set_string(const char *value)
+void mlt_event_data_from_string(mlt_event_data *event_data, const char *value)
 {
-	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
 	if (event_data) {
-		event_data->u.string = value;
+		event_data->u.p = (char*) value;
 	}
-	return event_data;
 }
 
-const char *mlt_event_data_get_string(mlt_event_data event_data)
+const char *mlt_event_data_to_string(const mlt_event_data *event_data)
 {
 	if (event_data) {
-		return event_data->u.string;
+		return event_data->u.p;
 	}
 	return NULL;
 }
 
-mlt_event_data mlt_event_data_set_frame(mlt_frame frame)
+void mlt_event_data_from_frame(mlt_event_data *event_data, mlt_frame frame)
 {
-	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
 	if (event_data) {
-		event_data->u.frame = frame;
+		event_data->u.p = frame;
 	}
-	return event_data;
 }
 
-mlt_frame mlt_event_data_get_frame(mlt_event_data event_data)
+mlt_frame mlt_event_data_to_frame(const mlt_event_data *event_data)
 {
 	if (event_data) {
-		return event_data->u.frame;
+		return (mlt_frame) event_data->u.p;
 	}
 	return NULL;
 }
 
-mlt_event_data mlt_event_data_set_other(void *value)
+void mlt_event_data_from_object(mlt_event_data *event_data, void *value)
 {
-	mlt_event_data event_data = calloc(1, sizeof(struct mlt_event_data_s));
 	if (event_data) {
-		event_data->u.other = value;
+		event_data->u.p = value;
 	}
-	return event_data;
 }
 
-void* mlt_event_data_get_other(mlt_event_data event_data)
+void *mlt_event_data_to_object(const mlt_event_data *event_data)
 {
 	if (event_data) {
-		return event_data->u.other;
+		return event_data->u.p;
 	}
 	return NULL;
-}
-
-void mlt_event_data_free(mlt_event_data event_data)
-{
-	free(event_data);
 }

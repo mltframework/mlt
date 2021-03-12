@@ -793,9 +793,9 @@ static void producer_close( mlt_producer producer )
 extern "C" {
 
 // Listen for the list_devices property to be set
-static void on_property_changed( void*, mlt_properties properties, mlt_event_data event_data )
+static void on_property_changed( void*, mlt_properties properties, mlt_event_data *event_data )
 {
-	const char *name = mlt_event_data_get_string(event_data);
+	const char *name = mlt_event_data_to_string(event_data);
 	IDeckLinkIterator* decklinkIterator = NULL;
 	IDeckLink* decklink = NULL;
 	IDeckLinkInput* decklinkInput = NULL;

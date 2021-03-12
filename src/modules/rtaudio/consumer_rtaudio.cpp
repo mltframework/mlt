@@ -28,7 +28,7 @@
 #include <RtAudio.h>
 #endif
 
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer consumer, mlt_event_data );
+static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer consumer, mlt_event_data* );
 static int  rtaudio_callback( void *outputBuffer, void *inputBuffer,
 	unsigned int nFrames, double streamTime, RtAudioStreamStatus status, void *userData );
 static void *consumer_thread_proxy( void *arg );
@@ -666,9 +666,9 @@ public:
 		// Get the properties of this consumer
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
 		if ( running && !mlt_consumer_is_stopped( getConsumer() ) ) {
-			mlt_event_data event_data = mlt_event_data_set_frame(frame);
-			mlt_events_fire( properties, "consumer-frame-show", event_data );
-			mlt_event_data_free(event_data);
+			mlt_event_data event_data;
+			mlt_event_data_from_frame(&event_data, frame);
+			mlt_events_fire( properties, "consumer-frame-show", &event_data );
 		}
 
 		return 0;
@@ -763,9 +763,9 @@ public:
 
 };
 
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer consumer, mlt_event_data event_data )
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer consumer, mlt_event_data *event_data )
 {
-	const char *name = mlt_event_data_get_string(event_data);
+	const char *name = mlt_event_data_to_string(event_data);
 	if ( name && !strcmp( name, "refresh" ) )
 	{
 		RtAudioConsumer* rtaudio = (RtAudioConsumer*) consumer->child;

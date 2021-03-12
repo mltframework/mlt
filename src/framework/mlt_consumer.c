@@ -80,9 +80,9 @@ typedef struct
 }
 consumer_private;
 
-static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data );
+static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data* );
 static void apply_profile_properties( mlt_consumer self, mlt_profile profile, mlt_properties properties );
-static void on_consumer_frame_show( mlt_properties owner, mlt_consumer self, mlt_event_data );
+static void on_consumer_frame_show(mlt_properties owner, mlt_consumer self, mlt_event_data* );
 static void mlt_thread_create( mlt_consumer self, mlt_thread_function_t function );
 static void mlt_thread_join( mlt_consumer self );
 static void consumer_read_ahead_start( mlt_consumer self );
@@ -202,9 +202,9 @@ static void apply_profile_properties( mlt_consumer self, mlt_profile profile, ml
  * \param name the name of the property that changed
  */
 
-static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
+static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data *event_data )
 {
-	const char *name = mlt_event_data_get_string(event_data);
+	const char *name = mlt_event_data_to_string(event_data);
 	if ( name && !strcmp( name, "mlt_profile" ) )
 	{
 		// Get the properties
@@ -335,9 +335,9 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
  * \param frame the frame that was shown
  */
 
-static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_event_data event_data )
+static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_event_data *event_data )
 {
-	mlt_frame frame = mlt_event_data_get_frame(event_data);
+	mlt_frame frame = mlt_event_data_to_frame(event_data);
 	if ( frame ) {
 		consumer_private* priv = consumer->local;
 		pthread_mutex_lock( &priv->position_mutex );
@@ -790,9 +790,9 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Get the image of the first frame
 		if ( !video_off )
 		{
-			mlt_event_data event_data = mlt_event_data_set_frame(frame);
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", event_data );
-			mlt_event_data_free(event_data);
+			mlt_event_data event_data;
+			mlt_event_data_from_frame(&event_data, frame);
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", &event_data );
 			mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 		}
 
@@ -870,9 +870,9 @@ static void *consumer_read_ahead_thread( void *arg )
 				height = mlt_properties_get_int( properties, "height" );
 
 				// Get the image
-				mlt_event_data event_data = mlt_event_data_set_frame(frame);
-				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", event_data );
-				mlt_event_data_free(event_data);
+				mlt_event_data event_data;
+				mlt_event_data_from_frame(&event_data, frame);
+				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", &event_data );
 				mlt_log_timings_begin();
 				mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 				mlt_log_timings_end( NULL, "mlt_frame_get_image" );
@@ -1065,9 +1065,9 @@ static void *consumer_worker_thread( void *arg )
 			// Fetch width/height again
 			width = mlt_properties_get_int( properties, "width" );
 			height = mlt_properties_get_int( properties, "height" );
-			mlt_event_data event_data = mlt_event_data_set_frame(frame);
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", event_data );
-			mlt_event_data_free(event_data);
+			mlt_event_data event_data;
+			mlt_event_data_from_frame(&event_data, frame);
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", &event_data );
 			mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 		}
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
@@ -1749,8 +1749,9 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 		    .function = function,
 		    .data = self
 		};
-		mlt_event_data event_data = mlt_event_data_set_other(&data);
-		if ( mlt_events_fire( properties, "consumer-thread-create", event_data ) < 1 )
+		mlt_event_data event_data;
+		mlt_event_data_from_object(&event_data, &data);
+		if ( mlt_events_fire( properties, "consumer-thread-create", &event_data ) < 1 )
 		{
 			pthread_attr_t thread_attributes;
 			pthread_attr_init( &thread_attributes );
@@ -1764,7 +1765,6 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 				pthread_create( ( pthread_t* ) &( *handle ), NULL, function, self );
 			pthread_attr_destroy( &thread_attributes );
 		}
-		mlt_event_data_free(event_data);
 	}
 	else
 	{
@@ -1775,27 +1775,27 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 		    .function = function,
 		    .data = self
 		};
-		mlt_event_data event_data = mlt_event_data_set_other(&data);
-		if ( mlt_events_fire( properties, "consumer-thread-create", event_data ) < 1 )
+		mlt_event_data event_data;
+		mlt_event_data_from_object(&event_data, &data);
+		if ( mlt_events_fire( properties, "consumer-thread-create", &event_data ) < 1 )
 		{
 			priv->ahead_thread = malloc( sizeof( pthread_t ) );
 			pthread_t *handle = priv->ahead_thread;
 			pthread_create( ( pthread_t* ) &( *handle ), NULL, function, self );
 		}
-		mlt_event_data_free(event_data);
 	}
 }
 
 static void mlt_thread_join( mlt_consumer self )
 {
 	consumer_private *priv = self->local;
-	mlt_event_data event_data = mlt_event_data_set_other(priv->ahead_thread);
-	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join", event_data ) < 1 )
+	mlt_event_data event_data;
+	mlt_event_data_from_object(&event_data, priv->ahead_thread);
+	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join", &event_data ) < 1 )
 	{
 		pthread_t *handle = priv->ahead_thread;
 		pthread_join( *handle, NULL );
 		free( priv->ahead_thread );
 	}
-	mlt_event_data_free(event_data);
 	priv->ahead_thread = NULL;
 }

@@ -59,9 +59,9 @@ static void abnormal_exit_handler(int signum)
 
 static void fire_jack_seek_event(mlt_properties jack, int position)
 {
-	mlt_event_data event_data = mlt_event_data_set_int(position);
-	mlt_events_fire(jack, "jack-seek", event_data);
-	mlt_event_data_free(event_data);
+	mlt_event_data event_data;
+	mlt_event_data_from_int(&event_data, position);
+	mlt_events_fire(jack, "jack-seek", &event_data);
 }
 
 static void transport_action( mlt_producer producer, char *value )
@@ -222,7 +222,7 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_properties_set_int( properties, "stats_off", 0 );
 }
 
-static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_event_data event_data )
+static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_event_data *event_data )
 {
 	mlt_producer producer = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "transport_producer", NULL );
 	if ( producer )
@@ -234,7 +234,7 @@ static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_ev
 		}
 		else
 		{
-			mlt_position position = mlt_event_data_get_int(event_data);
+			mlt_position position = mlt_event_data_to_int(event_data);
 			mlt_producer_set_speed( producer, 1 );
 			mlt_consumer_purge( consumer );
 			mlt_producer_seek( producer, position );
@@ -243,12 +243,12 @@ static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_ev
 	}
 }
 
-static void on_jack_stopped( mlt_properties owner, mlt_consumer consumer, mlt_event_data event_data )
+static void on_jack_stopped( mlt_properties owner, mlt_consumer consumer, mlt_event_data *event_data )
 {
 	mlt_producer producer = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "transport_producer", NULL );
 	if ( producer )
 	{
-		mlt_position position = mlt_event_data_get_int(event_data);
+		mlt_position position = mlt_event_data_to_int(event_data);
 		mlt_producer_set_speed( producer, 0 );
 		mlt_consumer_purge( consumer );
 		mlt_producer_seek( producer, position );

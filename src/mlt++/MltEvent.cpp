@@ -60,28 +60,28 @@ void Event::unblock( )
 }
 
 
-EventData::EventData(mlt_event_data data)
+EventData::EventData(mlt_event_data* data)
     : instance(data)
 {
 }
 
-EventData::EventData(EventData &data)
+EventData::EventData(EventData& data)
     : instance(data.get_event_data())
 {
 }
 
-EventData::EventData(const EventData &data)
+EventData::EventData(const EventData& data)
 	: instance(data.get_event_data())
 {
 }
 
-EventData &EventData::operator=(const EventData &data)
+EventData& EventData::operator=(const EventData& data)
 {
 	instance = data.get_event_data();
 	return *this;
 }
 
-mlt_event_data EventData::get_event_data() const
+mlt_event_data* EventData::get_event_data() const
 {
 	return instance;
 }
@@ -91,22 +91,22 @@ bool EventData::is_valid() const
 	return instance != nullptr;
 }
 
-int EventData::get_int() const
+int EventData::to_int() const
 {
-	return mlt_event_data_get_int(instance);
+	return mlt_event_data_to_int(instance);
 }
 
-const char *EventData::get_string() const
+const char* EventData::to_string() const
 {
-	return mlt_event_data_get_string(instance);
+	return mlt_event_data_to_string(instance);
 }
 
-Frame EventData::get_frame() const
+Frame EventData::to_frame() const
 {
-	return Frame(mlt_event_data_get_frame(instance));
+	return Frame(mlt_event_data_to_frame(instance));
 }
 
-void* EventData::get_other() const
+const void* EventData::to_object() const
 {
-	return mlt_event_data_get_other(instance);
+	return mlt_event_data_to_object(instance);
 }

@@ -82,9 +82,9 @@ static void refresh_length( mlt_properties properties, producer_pixbuf self )
 	}
 }
 
-static void on_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
+static void on_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data *event_data )
 {
-	const char *name = mlt_event_data_get_string(event_data);
+	const char *name = mlt_event_data_to_string(event_data);
 	if ( name && !strcmp( name, "ttl" ) )
 		refresh_length( MLT_PRODUCER_PROPERTIES(producer), producer->child );
 }

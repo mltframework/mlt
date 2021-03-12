@@ -49,9 +49,9 @@ static int jack_sync( jack_transport_state_t state, jack_position_t *jack_pos, v
 		mlt_properties_get_position( properties, "_last_pos" ) );
 	if ( state == JackTransportStopped )
 	{
-		mlt_event_data event_data = mlt_event_data_set_int(position);
-		mlt_events_fire( properties, "jack-stopped", event_data );
-		mlt_event_data_free(event_data);
+		mlt_event_data event_data;
+		mlt_event_data_from_int(&event_data, position);
+		mlt_events_fire( properties, "jack-stopped", &event_data );
 		mlt_properties_set_int( properties, "_sync_guard", 0 );
 	}
 	else if ( state == JackTransportStarting )
@@ -60,9 +60,9 @@ static int jack_sync( jack_transport_state_t state, jack_position_t *jack_pos, v
 		if ( !mlt_properties_get_int( properties, "_sync_guard" ) )
 		{
 			mlt_properties_set_int( properties, "_sync_guard", 1 );
-			mlt_event_data event_data = mlt_event_data_set_int(position);
-			mlt_events_fire( properties, "jack-started", event_data );
-			mlt_event_data_free(event_data);
+			mlt_event_data event_data;
+			mlt_event_data_from_int(&event_data, position);
+			mlt_events_fire( properties, "jack-started", &event_data );
 		}
 		else if ( position >= mlt_properties_get_position( properties, "_last_pos" ) - 2 )
 		{
@@ -92,9 +92,9 @@ static void on_jack_stop( mlt_properties owner, mlt_properties properties )
 	jack_transport_stop( jack_client );
 }
 
-static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_event_data event_data )
+static void on_jack_seek( mlt_properties owner, mlt_filter filter, mlt_event_data *event_data )
 {
-	mlt_position position = mlt_event_data_get_int(event_data);
+	mlt_position position = mlt_event_data_to_int(event_data);
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_log_verbose( MLT_FILTER_SERVICE(filter), "%s: %d\n", __FUNCTION__, position );
 	mlt_properties_set_int( properties, "_sync_guard", 1 );

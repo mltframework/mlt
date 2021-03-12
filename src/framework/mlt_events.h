@@ -25,18 +25,30 @@
 
 #include "mlt_types.h"
 
-typedef struct mlt_event_data_s *mlt_event_data;
+typedef struct {
+	union {
+		int i;
+		void *p;
+	} u;
+} mlt_event_data;
+
+typedef struct {
+	void **thread;
+	int *priority;
+	mlt_thread_function_t function;
+	void *data;
+} mlt_event_data_thread;
 
 /** event handler when receiving an event message
  * \param the properties object on which the event was registered
  * \param an opaque pointer to the listener's data
  * \param event data object
  */
-typedef void ( *mlt_listener )( mlt_properties, void*, mlt_event_data );
+typedef void ( *mlt_listener )( mlt_properties, void*, mlt_event_data* );
 
 extern void mlt_events_init( mlt_properties self );
 extern int mlt_events_register( mlt_properties self, const char *id );
-extern int mlt_events_fire( mlt_properties self, const char *id, mlt_event_data );
+extern int mlt_events_fire( mlt_properties self, const char *id, mlt_event_data* );
 extern mlt_event mlt_events_listen( mlt_properties self, void *listener_data, const char *id, mlt_listener listener );
 extern void mlt_events_block( mlt_properties self, void *listener_data );
 extern void mlt_events_unblock( mlt_properties self, void *listener_data );
@@ -51,15 +63,13 @@ extern void mlt_event_block( mlt_event self );
 extern void mlt_event_unblock( mlt_event self );
 extern void mlt_event_close( mlt_event self );
 
-extern mlt_event_data mlt_event_data_set_int(int value);
-extern int mlt_event_data_get_int(mlt_event_data);
-extern mlt_event_data mlt_event_data_set_string(const char *value);
-extern const char* mlt_event_data_get_string(mlt_event_data);
-extern mlt_event_data mlt_event_data_set_frame(mlt_frame);
-extern mlt_frame mlt_event_data_get_frame(mlt_event_data);
-extern mlt_event_data mlt_event_data_set_other(void*);
-extern void* mlt_event_data_get_other(mlt_event_data);
-extern void mlt_event_data_free(mlt_event_data);
+extern void mlt_event_data_from_int(mlt_event_data*, int value);
+extern int mlt_event_data_to_int(const mlt_event_data*);
+extern void mlt_event_data_from_string(mlt_event_data*, const char *value);
+extern const char* mlt_event_data_to_string(const mlt_event_data*);
+extern void mlt_event_data_from_frame(mlt_event_data*, mlt_frame);
+extern mlt_frame mlt_event_data_to_frame(const mlt_event_data*);
+extern void mlt_event_data_from_object(mlt_event_data*, void*);
+extern void* mlt_event_data_to_object(const mlt_event_data*);
 
 #endif
-

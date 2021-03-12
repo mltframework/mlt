@@ -653,7 +653,7 @@ static void mlt_service_filter_changed( mlt_service owner, mlt_service self )
  * \param name the name of the property that changed
  */
 
-static void mlt_service_filter_property_changed( mlt_service owner, mlt_service self, mlt_event_data event_data )
+static void mlt_service_filter_property_changed( mlt_service owner, mlt_service self, mlt_event_data *event_data )
 {
 	mlt_events_fire(MLT_SERVICE_PROPERTIES(self), "property-changed", event_data);
 }

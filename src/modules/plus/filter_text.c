@@ -21,9 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data *event_data )
 {
-	const char *name = mlt_event_data_get_string(event_data);
+	const char *name = mlt_event_data_to_string(event_data);
 	if (!name) return;
 	if( !strcmp( "geometry", name ) ||
 		!strcmp( "family", name ) ||

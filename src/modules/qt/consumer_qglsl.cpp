@@ -123,20 +123,20 @@ private:
 	QOffscreenSurface* m_surface;
 };
 
-static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
+static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_data* event_data )
 {
 	Q_UNUSED(owner)
-	mlt_event_data_thread* t = (mlt_event_data_thread*) mlt_event_data_get_other(event_data);
+	mlt_event_data_thread* t = (mlt_event_data_thread*) mlt_event_data_to_object(event_data);
 	auto thread = new RenderThread((thread_function_t) t->function, t->data);
 	*t->thread = thread;
 	thread->start();
 }
 
-static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data event_data)
+static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data* event_data)
 {
 	Q_UNUSED(owner)
 	Q_UNUSED(self)
-	auto thread = (RenderThread*) mlt_event_data_get_other(event_data);
+	auto thread = (RenderThread*) mlt_event_data_to_object(event_data);
 	if (thread) {
 		thread->quit();
 		thread->wait();
