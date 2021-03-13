@@ -538,50 +538,59 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
                                         }
                                 }
 			}
-			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsRectItem" )
+            else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsRectItem" || nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsEllipseItem")
 			{
-                                QDomNamedNodeMap rectProperties = node.namedItem( "content" ).attributes();
-                                QRectF rect = stringToRect( rectProperties.namedItem( "rect" ).nodeValue() );
+                QDomNamedNodeMap rectProperties = node.namedItem( "content" ).attributes();
+                QRectF rect = stringToRect( rectProperties.namedItem( "rect" ).nodeValue() );
 				QString pen_str = rectProperties.namedItem( "pencolor" ).nodeValue();
 				double penwidth = rectProperties.namedItem( "penwidth") .nodeValue().toDouble();
-                                QBrush brush;
-                                if ( !rectProperties.namedItem( "gradient" ).isNull() )
+                QBrush brush;
+                if ( !rectProperties.namedItem( "gradient" ).isNull() )
 				{
-                                        // Calculate gradient
-                                        QString gradientData = rectProperties.namedItem( "gradient" ).nodeValue();
-                                        QStringList values = gradientData.split(";");
-                                        if (values.count() < 5) {
-                                            // invalid gradient, use default
-                                            values = QStringList() << "#ff0000" << "#2e0046" << "0" << "100" << "90";
-                                        }
-                                        QLinearGradient gr;
-                                        gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
-                                        gr.setColorAt(values.at(3).toDouble() / 100, values.at(1));
-                                        double angle = values.at(4).toDouble();
-                                        if (angle <= 90) {
-                                            gr.setStart(0, 0);
-                                            gr.setFinalStop(rect.width() * cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
-                                        } else {
-                                            gr.setStart(rect.width(), 0);
-                                            gr.setFinalStop(rect.width() + rect.width()* cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
-                                        }
-                                        brush = QBrush(gr);
+                    // Calculate gradient
+                    QString gradientData = rectProperties.namedItem( "gradient" ).nodeValue();
+                    QStringList values = gradientData.split(";");
+                    if (values.count() < 5) {
+                        // invalid gradient, use default
+                        values = QStringList() << "#ff0000" << "#2e0046" << "0" << "100" << "90";
+                    }
+                    QLinearGradient gr;
+                    gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
+                    gr.setColorAt(values.at(3).toDouble() / 100, values.at(1));
+                    double angle = values.at(4).toDouble();
+                    if (angle <= 90) {
+                        gr.setStart(0, 0);
+                        gr.setFinalStop(rect.width() * cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
+                    } else {
+                        gr.setStart(rect.width(), 0);
+                        gr.setFinalStop(rect.width() + rect.width()* cos( angle * PI / 180 ), rect.height() * sin( angle * PI / 180 ));
+                    }
+                    brush = QBrush(gr);
 				}
 				else
-                                {
-                                    brush = QBrush(stringToColor( rectProperties.namedItem( "brushcolor" ).nodeValue() ) );
-                                }
-                                QPen pen;
-                                if ( penwidth == 0 )
-                                {
-                                    pen = QPen( Qt::NoPen );
-                                }
-                                else
-                                {
-                                    pen = QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin );
-                                }
-				QGraphicsRectItem *rec = scene->addRect( rect, pen, brush );
-				gitem = rec;
+                    {
+                        brush = QBrush(stringToColor( rectProperties.namedItem( "brushcolor" ).nodeValue() ) );
+                    }
+                    QPen pen;
+                    if ( penwidth == 0 )
+                    {
+                        pen = QPen( Qt::NoPen );
+                    }
+                    else
+                    {
+                        pen = QPen( QBrush( stringToColor( pen_str ) ), penwidth, Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin );
+                    }
+                    if(nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsEllipseItem")
+                    {
+                        QGraphicsEllipseItem *ellipse = scene->addEllipse( rect, pen, brush );
+                        gitem = ellipse;
+                    }
+                    else
+                    {
+                        // QGraphicsRectItem
+                        QGraphicsRectItem *rec = scene->addRect( rect, pen, brush );
+                        gitem = rec;
+                    }
 			}
 			else if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsPixmapItem" )
 			{
