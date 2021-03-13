@@ -106,7 +106,7 @@ Frame EventData::to_frame() const
 	return Frame(mlt_event_data_to_frame(instance));
 }
 
-const void* EventData::to_object() const
+void* EventData::to_object() const
 {
 	return mlt_event_data_to_object(instance);
 }

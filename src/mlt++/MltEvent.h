@@ -57,7 +57,7 @@ namespace Mlt
 			int to_int() const;
 			const char* to_string() const;
 			Frame to_frame() const;
-			const void *to_object() const;
+			void *to_object() const;
 	};
 }
 
