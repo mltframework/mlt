@@ -63,7 +63,6 @@ namespace Mlt {
 %newobject Repository::presets();
 %newobject Properties::get_anim();
 %newobject Animation::Animation();
-%newobject EventData::get_frame();
 
 %rename(__assign__) Animation::operator=;
 %rename(__assign__) Frame::operator=;
@@ -160,7 +159,7 @@ void markRubyListener( void* p )
     o->mark( );
 }
 
-static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data );
+static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data* );
 
 class PlaylistNextListener : RubyListener
 {
@@ -182,14 +181,14 @@ class PlaylistNextListener : RubyListener
 		void yield(const Mlt::EventData& eventData)
 		{
 			ID method = rb_intern( "call" );
-			rb_funcall( callback, method, 1, INT2FIX( eventData.get_int() ) );
+			rb_funcall( callback, method, 1, INT2FIX( eventData.to_int() ) );
 		}
 };
 
-static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data event_data )
+static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data *event_data )
 {
 	PlaylistNextListener *o = static_cast< PlaylistNextListener * >( object );
-	Mlt::EventData data = event_data;
+	Mlt::EventData data(event_data);
 	o->yield(data);
 }
 

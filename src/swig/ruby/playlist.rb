@@ -29,7 +29,7 @@ pls.append(producer)
 pls.append(producer2)
 
 # Create the consumer
-consumer = Mlt::Consumer.new( profile, "sdl" )
+consumer = Mlt::Consumer.new( profile, "sdl2" )
 raise "Unable to open sdl consumer" if !consumer.is_valid
 
 # Turn off the default rescaling
