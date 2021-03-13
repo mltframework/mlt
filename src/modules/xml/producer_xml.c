@@ -667,6 +667,8 @@ static void on_end_chain( deserialise_context context, const xmlChar *name )
 		}
 		if ( !source )
 			source = mlt_factory_producer( context->profile, NULL, "colour:red" );
+		// Propogate properties to the source
+		mlt_properties_inherit( MLT_PRODUCER_PROPERTIES( source ), properties );
 		// Add the source producer to the chain
 		mlt_chain_set_source( chain, source );
 
