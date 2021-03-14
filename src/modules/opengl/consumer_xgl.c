@@ -264,7 +264,7 @@ void* video_thread( void *arg )
 			if ( mlt_properties_get_int( properties, "rendered" ) == 1 )
 			{
 				// Get the image, width and height
-				mlt_image_format vfmt = mlt_image_glsl_texture;
+				mlt_image_format vfmt = mlt_image_opengl_texture;
 				int width = 0, height = 0;
 				GLuint *image = 0;
 				int error = mlt_frame_get_image( next, (uint8_t**) &image, &vfmt, &width, &height, 0 );

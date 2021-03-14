@@ -76,7 +76,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	// Get the image as requested
 	if ( *format != mlt_image_none )
-		*format = mlt_image_glsl;
+		*format = mlt_image_movit;
 	int error = mlt_frame_get_image( frame, image, format, &iwidth, &iheight, writable );
 
 	if (*width < 1 || *height < 1 || iwidth < 1 || iheight < 1 || owidth < 1 || oheight < 1) {

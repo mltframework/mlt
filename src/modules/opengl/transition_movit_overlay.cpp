@@ -45,7 +45,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	uint8_t *a_image, *b_image;
 
 	// Get the two images.
-	*format = mlt_image_glsl;
+	*format = mlt_image_movit;
 	error = mlt_frame_get_image( a_frame, &a_image, format, width, height, writable );
 	error = mlt_frame_get_image( b_frame, &b_image, format, width, height, writable );
 

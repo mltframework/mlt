@@ -182,8 +182,8 @@ int mlt_image_calculate_size( mlt_image self )
 			return self->width * self->height * 2;
 		case mlt_image_yuv420p:
 			return self->width * self->height * 3 / 2;
-		case mlt_image_glsl:
-		case mlt_image_glsl_texture:
+		case mlt_image_movit:
+		case mlt_image_opengl_texture:
 			return 4;
 		case mlt_image_yuv422p16:
 			return 4 * self->width * self->height;
@@ -203,15 +203,15 @@ const char * mlt_image_format_name( mlt_image_format format )
 {
 	switch ( format )
 	{
-		case mlt_image_none:    return "none";
-		case mlt_image_rgb:   return "rgb";
-		case mlt_image_rgba:  return "rgba";
-		case mlt_image_yuv422:  return "yuv422";
-		case mlt_image_yuv420p: return "yuv420p";
-		case mlt_image_glsl:    return "glsl";
-		case mlt_image_glsl_texture: return "glsl_texture";
-		case mlt_image_yuv422p16: return "yuv422p16";
-		case mlt_image_invalid: return "invalid";
+		case mlt_image_none:           return "none";
+		case mlt_image_rgb:            return "rgb";
+		case mlt_image_rgba:           return "rgba";
+		case mlt_image_yuv422:         return "yuv422";
+		case mlt_image_yuv420p:        return "yuv420p";
+		case mlt_image_movit:          return "glsl";
+		case mlt_image_opengl_texture: return "opengl_texture";
+		case mlt_image_yuv422p16:      return "yuv422p16";
+		case mlt_image_invalid:        return "invalid";
 	}
 	return "invalid";
 }
@@ -248,8 +248,8 @@ void mlt_image_fill_black( mlt_image self )
 	switch(  self->format )
 	{
 		case mlt_image_none:
-		case mlt_image_glsl:
-		case mlt_image_glsl_texture:
+		case mlt_image_movit:
+		case mlt_image_opengl_texture:
 			return;
 		case mlt_image_rgb:
 		case mlt_image_rgba:
@@ -330,8 +330,8 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 		case mlt_image_yuv420p:
 			if ( bpp ) *bpp = 3 / 2;
 			return width * height * 3 / 2;
-		case mlt_image_glsl:
-		case mlt_image_glsl_texture:
+		case mlt_image_movit:
+		case mlt_image_opengl_texture:
 			if ( bpp ) *bpp = 0;
 			return 4;
 		case mlt_image_yuv422p16:

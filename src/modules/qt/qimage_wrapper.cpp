@@ -243,7 +243,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->current_image = NULL;
 
 	// If we have a qimage and need a new scaled image
-	if ( self->qimage && ( !self->current_image || ( format != mlt_image_none && format != mlt_image_glsl && format != self->format ) ) )
+	if ( self->qimage && ( !self->current_image || ( format != mlt_image_none && format != mlt_image_movit && format != self->format ) ) )
 	{
 		QString interps = mlt_properties_get( properties, "rescale.interp" );
 		bool interp = ( interps != "nearest" ) && ( interps != "none" );
@@ -334,7 +334,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 #endif
 
 		// Convert image to requested format
-		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format && enable_caching )
+		if ( format != mlt_image_none && format != mlt_image_movit && format != self->format && enable_caching )
 		{
 			uint8_t *buffer = NULL;
 

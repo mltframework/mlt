@@ -1769,7 +1769,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	stream = context->streams[ self->video_index ];
 	codec_context = stream->codec;
 	codec_params = stream->codecpar;
-	if ( *format == mlt_image_none || *format == mlt_image_glsl ||
+	if ( *format == mlt_image_none || *format == mlt_image_movit ||
 			codec_params->format == AV_PIX_FMT_ARGB ||
 			codec_params->format == AV_PIX_FMT_RGBA ||
 			codec_params->format == AV_PIX_FMT_ABGR ||

@@ -60,7 +60,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	// Get the image as requested
 //	*format = (mlt_image_format) mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(producer), "_movit image_format" );
 
-	// This is needed to prevent conversion to mlt_image_glsl after producer,
+	// This is needed to prevent conversion to mlt_image_movit after producer,
 	// deinterlace, or fieldorder, The latter two can force output of
 	// an image after it had already been converted to glsl.
 	*format = mlt_image_none;
@@ -71,10 +71,10 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	if ( requested_format == mlt_image_none )
 		return error;
 
-	if ( !error && *format != mlt_image_glsl && frame->convert_image ) {
+	if ( !error && *format != mlt_image_movit && frame->convert_image ) {
 	// Pin the requested format to the first one returned.
 //		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES(producer), "_movit image_format", *format );
-		error = frame->convert_image( frame, image, format, mlt_image_glsl );
+		error = frame->convert_image( frame, image, format, mlt_image_movit );
 	}
 	if ( !error ) {
 		double left    = mlt_properties_get_double( properties, "crop.left" );

@@ -55,7 +55,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_properties_set( properties, "_movit fingerprint", fingerprint );
 
 	GlslManager::get_instance()->unlock_service( frame );
-	*format = mlt_image_glsl;
+	*format = mlt_image_movit;
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 	if (*width < 1 || *height < 1) {
