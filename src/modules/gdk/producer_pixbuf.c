@@ -1,6 +1,6 @@
 /*
  * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -82,9 +82,10 @@ static void refresh_length( mlt_properties properties, producer_pixbuf self )
 	}
 }
 
-static void on_property_changed( mlt_service owner, mlt_producer producer, char *name )
+static void on_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
 {
-	if ( !strcmp( name, "ttl" ) )
+	const char *name = mlt_event_data_to_string(event_data);
+	if ( name && !strcmp( name, "ttl" ) )
 		refresh_length( MLT_PRODUCER_PROPERTIES(producer), producer->child );
 }
 

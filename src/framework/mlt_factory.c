@@ -2,7 +2,7 @@
  * \file mlt_factory.c
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -68,36 +68,6 @@ static mlt_repository repository = NULL;
 static mlt_properties event_object = NULL;
 /** for tracking the unique_id set on each constructed service */
 static int unique_id = 0;
-
-/* Event transmitters. */
-
-/** the -create-request event transmitter
- *
- * \param listener
- * \param owner
- * \param self
- * \param args
- */
-
-static void mlt_factory_create_request( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener != NULL )
-		listener( owner, self, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service * )args[ 2 ] );
-}
-
-/** the -create-done event transmitter
- *
- * \param listener
- * \param owner
- * \param self
- * \param args
- */
-
-static void mlt_factory_create_done( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener != NULL )
-		listener( owner, self, ( char * )args[ 0 ], ( char * )args[ 1 ], ( mlt_service )args[ 2 ] );
-}
 
 #if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
 // Replacement for buggy dirname() on some systems.
@@ -218,14 +188,14 @@ mlt_repository mlt_factory_init( const char *directory )
 		// Create and set up the events object
 		event_object = mlt_properties_new( );
 		mlt_events_init( event_object );
-		mlt_events_register( event_object, "producer-create-request", ( mlt_transmitter )mlt_factory_create_request );
-		mlt_events_register( event_object, "producer-create-done", ( mlt_transmitter )mlt_factory_create_done );
-		mlt_events_register( event_object, "filter-create-request", ( mlt_transmitter )mlt_factory_create_request );
-		mlt_events_register( event_object, "filter-create-done", ( mlt_transmitter )mlt_factory_create_done );
-		mlt_events_register( event_object, "transition-create-request", ( mlt_transmitter )mlt_factory_create_request );
-		mlt_events_register( event_object, "transition-create-done", ( mlt_transmitter )mlt_factory_create_done );
-		mlt_events_register( event_object, "consumer-create-request", ( mlt_transmitter )mlt_factory_create_request );
-		mlt_events_register( event_object, "consumer-create-done", ( mlt_transmitter )mlt_factory_create_done );
+		mlt_events_register( event_object, "producer-create-request" );
+		mlt_events_register( event_object, "producer-create-done" );
+		mlt_events_register( event_object, "filter-create-request" );
+		mlt_events_register( event_object, "filter-create-done" );
+		mlt_events_register( event_object, "transition-create-request" );
+		mlt_events_register( event_object, "transition-create-done" );
+		mlt_events_register( event_object, "consumer-create-request" );
+		mlt_events_register( event_object, "consumer-create-done" );
 
 		// Create the repository of services
 		repository = mlt_repository_init( mlt_directory );
@@ -354,13 +324,18 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, con
 		service = mlt_environment( "MLT_PRODUCER" );
 
 	// Offer the application the chance to 'create'
-	mlt_events_fire( event_object, "producer-create-request", service, resource, &obj, NULL );
+	mlt_factory_event_data data = {
+	    .name = service,
+	    .input = resource,
+	    .service = &obj
+	};
+	mlt_events_fire( event_object, "producer-create-request", mlt_event_data_from_object(&data) );
 
 	// Try to instantiate via the specified service
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, profile, mlt_service_producer_type, service, resource );
-		mlt_events_fire( event_object, "producer-create-done", service, resource, obj, NULL );
+		mlt_events_fire( event_object, "producer-create-done", mlt_event_data_from_object(&data) );
 		if ( obj != NULL )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( obj );
@@ -391,12 +366,17 @@ mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, const v
 	mlt_filter obj = NULL;
 
 	// Offer the application the chance to 'create'
-	mlt_events_fire( event_object, "filter-create-request", service, input, &obj, NULL );
+	mlt_factory_event_data data = {
+	    .name = service,
+	    .input = input,
+	    .service = &obj
+	};
+	mlt_events_fire( event_object, "filter-create-request", mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, profile, mlt_service_filter_type, service, input );
-		mlt_events_fire( event_object, "filter-create-done", service, input, obj, NULL );
+		mlt_events_fire( event_object, "filter-create-done", mlt_event_data_from_object(&data) );
 	}
 
 	if ( obj != NULL )
@@ -419,12 +399,17 @@ mlt_link mlt_factory_link( const char *service, const void *input )
 	mlt_link obj = NULL;
 
 	// Offer the application the chance to 'create'
-	mlt_events_fire( event_object, "link-create-request", service, input, &obj, NULL );
+	mlt_factory_event_data data = {
+	    .name = service,
+	    .input = input,
+	    .service = &obj
+	};
+	mlt_events_fire( event_object, "link-create-request", mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, NULL, mlt_service_link_type, service, input );
-		mlt_events_fire( event_object, "link-create-done", service, input, obj, NULL );
+		mlt_events_fire( event_object, "link-create-done", mlt_event_data_from_object(&data) );
 	}
 
 	if ( obj != NULL )
@@ -448,12 +433,17 @@ mlt_transition mlt_factory_transition( mlt_profile profile, const char *service,
 	mlt_transition obj = NULL;
 
 	// Offer the application the chance to 'create'
-	mlt_events_fire( event_object, "transition-create-request", service, input, &obj, NULL );
+	mlt_factory_event_data data = {
+	    .name = service,
+	    .input = input,
+	    .service = &obj
+	};
+	mlt_events_fire( event_object, "transition-create-request", mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, profile, mlt_service_transition_type, service, input );
-		mlt_events_fire( event_object, "transition-create-done", service, input, obj, NULL );
+		mlt_events_fire( event_object, "transition-create-done", mlt_event_data_from_object(&data) );
 	}
 
 	if ( obj != NULL )
@@ -480,7 +470,12 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 		service = mlt_environment( "MLT_CONSUMER" );
 
 	// Offer the application the chance to 'create'
-	mlt_events_fire( event_object, "consumer-create-request", service, input, &obj, NULL );
+	mlt_factory_event_data data = {
+	    .name = service,
+	    .input = input,
+	    .service = &obj
+	};
+	mlt_events_fire( event_object, "consumer-create-request",mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
@@ -504,7 +499,7 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 	if ( obj != NULL )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( obj );
-		mlt_events_fire( event_object, "consumer-create-done", service, input, obj, NULL );
+		mlt_events_fire( event_object, "consumer-create-done", mlt_event_data_from_object(&data) );
 		set_common_properties( properties, profile, "consumer", service );
 	}
 	return obj;

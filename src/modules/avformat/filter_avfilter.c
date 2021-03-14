@@ -1,7 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 2016-2020 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
+ * Copyright (C) 2016-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,9 +53,10 @@ typedef struct
 	int reset;
 } private_data;
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
-	if( strncmp( PARAM_PREFIX, name, PARAM_PREFIX_LEN ) == 0 ) {
+	const char *name = mlt_event_data_to_string(event_data);
+	if( name && strncmp( PARAM_PREFIX, name, PARAM_PREFIX_LEN ) == 0 ) {
 		private_data* pdata = (private_data*)filter->child;
 		if( pdata->avfilter )
 		{

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Meltytech, LLC
+ * Copyright (C) 2019-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,10 +44,10 @@ private:
         QVERIFY(owner == m_properties);
     }
 
-    static void onPropertyChanged(mlt_properties owner, TestEvents* self, char* name)
+    static void onPropertyChanged(mlt_properties owner, TestEvents* self, mlt_event_data data)
     {
         QVERIFY(self != nullptr);
-        QCOMPARE(name, "foo");
+        QCOMPARE(Mlt::EventData(data).to_string(), "foo");
         self->checkOwner(owner);
     }
 
@@ -58,7 +58,7 @@ private Q_SLOTS:
         Profile profile;
         Producer producer(profile, "noise");
         QVERIFY(producer.is_valid());
-        Event* event = producer.listen("property-changed", this, (mlt_transmitter) onPropertyChanged);
+        Event* event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         m_properties = producer.get_properties();
@@ -71,7 +71,7 @@ private Q_SLOTS:
         Profile profile;
         Producer producer(profile, "noise");
         m_properties = nullptr;
-        Event* event = producer.listen("property-changed", nullptr, (mlt_transmitter) onPropertyChanged);
+        Event* event = producer.listen("property-changed", nullptr, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         event->block();
@@ -84,7 +84,7 @@ private Q_SLOTS:
         Profile profile;
         Producer producer(profile, "noise");
         m_properties = producer.get_properties();
-        Event* event = producer.listen("property-changed", this, (mlt_transmitter) onPropertyChanged);
+        Event* event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         event->block();

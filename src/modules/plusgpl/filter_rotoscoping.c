@@ -64,9 +64,10 @@ static int stringValue( const char *string, const char **stringList, int max )
 
 /** Sets "spline_is_dirty" to 1 if property "spline" was changed.
  * We then know when to parse the json stored in "spline" */
-static void rotoPropertyChanged( mlt_service owner, mlt_filter this, char *name )
+static void rotoPropertyChanged( mlt_service owner, mlt_filter this, mlt_event_data event_data )
 {
-    if ( !strcmp( name, "spline" ) )
+	const char *name = mlt_event_data_to_string(event_data);
+	if ( name && !strcmp( name, "spline" ) )
         mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "_spline_is_dirty", 1 );
 }
 

@@ -180,7 +180,7 @@ mlt_producer producer_pango_init( const char *filename )
 		// Get the properties interface
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
 
-		mlt_events_register( properties, "fontmap-reload", NULL );
+		mlt_events_register( properties, "fontmap-reload" );
 		mlt_events_listen( properties, producer, "fontmap-reload", (mlt_listener) on_fontmap_reload );
 
 		// Set the default properties

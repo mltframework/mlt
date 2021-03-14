@@ -234,6 +234,7 @@ typedef struct mlt_chain_s *mlt_chain;                  /**< pointer to Chain ob
 
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */
+typedef void *( *mlt_thread_function_t )( void* );      /**< generic thread function pointer */
 
 #define MLT_SERVICE(x)    ( ( mlt_service )( x ) )      /**< Cast to a Service pointer */
 #define MLT_PRODUCER(x)   ( ( mlt_producer )( x ) )     /**< Cast to a Producer pointer */

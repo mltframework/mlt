@@ -1,6 +1,6 @@
 /**
  * MltProperties.cpp - MLT Wrapper
- * Copyright (C) 2004-2020 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -120,7 +120,7 @@ void Properties::unblock( void *object )
 
 int Properties::fire_event( const char *event )
 {
-	return mlt_events_fire( get_properties( ), event, NULL );
+	return mlt_events_fire( get_properties( ), event, mlt_event_data_none() );
 }
 
 bool Properties::is_valid( )
@@ -271,23 +271,11 @@ int Properties::save( const char *file )
 	return mlt_properties_save( get_properties( ), file );
 }
 
-#if defined( __APPLE__ ) && GCC_VERSION < 40000
-
-Event *Properties::listen( const char *id, void *object, void (*listener)( ... ) )
-{
-	mlt_event event = mlt_events_listen( get_properties( ), object, id, ( mlt_listener )listener );
-	return new Event( event );
-}
-
-#else
-
 Event *Properties::listen( const char *id, void *object, mlt_listener listener )
 {
 	mlt_event event = mlt_events_listen( get_properties( ), object, id, listener );
 	return new Event( event );
 }
-
-#endif
 
 Event *Properties::setup_wait_for( const char *id )
 {

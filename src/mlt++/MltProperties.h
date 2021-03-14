@@ -1,6 +1,6 @@
 /**
  * MltProperties.h - MLT Wrapper
- * Copyright (C) 2004-2020 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -85,11 +85,7 @@ namespace Mlt
 			void debug( const char *title = "Object", FILE *output = stderr );
 			void load( const char *file );
 			int save( const char *file );
-			#if defined( __APPLE__ ) && GCC_VERSION < 40000
-			Event *listen( const char *id, void *object, void (*)( ... ) );
-			#else
 			Event *listen( const char *id, void *object, mlt_listener );
-			#endif
 			static void delete_event( Event * );
 			Event *setup_wait_for( const char *id );
 			void wait_for( Event *, bool destroy = true );

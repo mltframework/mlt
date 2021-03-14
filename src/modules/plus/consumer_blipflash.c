@@ -387,7 +387,7 @@ static void *consumer_thread( void *arg )
 			report_results( stats, pos );
 
 			// Close the frame
-			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 			mlt_frame_close( frame );
 		}
 	}

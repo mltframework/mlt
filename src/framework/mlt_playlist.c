@@ -3,7 +3,7 @@
  * \brief playlist service class
  * \see mlt_playlist_s
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,7 +52,6 @@ struct playlist_entry_s
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
 static int mlt_playlist_unmix( mlt_playlist self, int clip );
 static int mlt_playlist_resize_mix( mlt_playlist self, int clip, int in, int out );
-static void mlt_playlist_next( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 
 /** Construct a playlist.
  *
@@ -99,7 +98,7 @@ mlt_playlist mlt_playlist_init( )
 		self->list = calloc( self->size, sizeof( playlist_entry * ) );
 		if ( self->list == NULL ) goto error2;
 		
-		mlt_events_register( MLT_PLAYLIST_PROPERTIES( self ), "playlist-next", (mlt_transmitter) mlt_playlist_next );
+		mlt_events_register( MLT_PLAYLIST_PROPERTIES( self ), "playlist-next" );
 	}
 
 	return self;
@@ -395,24 +394,6 @@ static mlt_producer mlt_playlist_locate( mlt_playlist self, mlt_position *positi
 	return producer;
 }
 
-/** The transmitter for the producer-next event
- *
- * Invokes the listener.
- *
- * \private \memberof mlt_playlist_s
- * \param listener a function pointer that will be invoked
- * \param owner the events object that will be passed to \p listener
- * \param self a service that will be passed to \p listener
- * \param args an array of pointers.
- */
-
-static void mlt_playlist_next( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener )
-		listener( owner, self, args[ 0 ] );
-}
-
-
 /** Seek in the virtual playlist.
  *
  * This gets the producer at the current position and seeks on the producer
@@ -501,8 +482,9 @@ static mlt_service mlt_playlist_virtual_seek( mlt_playlist self, int *progressiv
 	}
 
 	// Determine if we have moved to the next entry in the playlist.
-	if ( original == total - 2 )
-		mlt_events_fire( properties, "playlist-next", i, NULL );
+	if ( original == total - 2 ) {
+		mlt_events_fire(properties, "playlist-next", mlt_event_data_from_int(i));
+	}
 
 	return MLT_PRODUCER_SERVICE( producer );
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Required modules
-require 'mlt'
+require './mlt'
 
 # Create the mlt system
 Mlt::Factory::init

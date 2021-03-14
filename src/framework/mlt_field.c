@@ -183,7 +183,7 @@ int mlt_field_plant_filter( mlt_field self, mlt_filter that, int track )
 		mlt_tractor_connect( self->tractor, self->producer );
 
 		// Fire an event
-		mlt_events_fire( mlt_field_properties( self ), "service-changed", NULL );
+		mlt_events_fire( mlt_field_properties( self ), "service-changed", mlt_event_data_none() );
 	}
 
 	return result;
@@ -214,7 +214,7 @@ int mlt_field_plant_transition( mlt_field self, mlt_transition that, int a_track
 		mlt_tractor_connect( self->tractor, self->producer );
 
 		// Fire an event
-		mlt_events_fire( mlt_field_properties( self ), "service-changed", NULL );
+		mlt_events_fire( mlt_field_properties( self ), "service-changed", mlt_event_data_none() );
 	}
 
 	return result;
@@ -265,5 +265,5 @@ void mlt_field_disconnect_service( mlt_field self, mlt_service service )
 		default:
 			break;
 	}
-	mlt_events_fire( mlt_field_properties( self ), "service-changed", NULL );
+	mlt_events_fire( mlt_field_properties( self ), "service-changed", mlt_event_data_none() );
 }

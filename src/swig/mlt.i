@@ -1,7 +1,6 @@
 /**
  * mlt.i - Swig Bindings for mlt++
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
@@ -160,7 +159,7 @@ void markRubyListener( void* p )
     o->mark( );
 }
 
-static void on_playlist_next( mlt_properties owner, void *object, int i );
+static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data );
 
 class PlaylistNextListener : RubyListener
 {
@@ -168,8 +167,8 @@ class PlaylistNextListener : RubyListener
 		Mlt::Event *event;
 
 	public:
-		PlaylistNextListener( Mlt::Properties *properties, VALUE proc )
-			: RubyListener( proc )
+		PlaylistNextListener( Mlt::Properties *properties, VALUE callback )
+			: RubyListener( callback )
 		{
 			event = properties->listen( "playlist-next", this, ( mlt_listener )on_playlist_next );
 		}
@@ -179,17 +178,18 @@ class PlaylistNextListener : RubyListener
 			delete event;
 		}
 
-		void yield( int i )
+		void yield(const Mlt::EventData& eventData)
 		{
 			ID method = rb_intern( "call" );
-			rb_funcall( callback, method, 1, INT2FIX( i ) );
+			rb_funcall( callback, method, 1, INT2FIX( eventData.to_int() ) );
 		}
 };
 
-static void on_playlist_next( mlt_properties owner, void *object, int i )
+static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data event_data )
 {
 	PlaylistNextListener *o = static_cast< PlaylistNextListener * >( object );
-	o->yield( i );
+	Mlt::EventData data(event_data);
+	o->yield(data);
 }
 
 %}

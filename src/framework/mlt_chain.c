@@ -189,7 +189,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 
 		// Reconfigure the chain
 		relink_chain( self );
-		mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", NULL );
+		mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 	}
 }
 
@@ -245,7 +245,7 @@ int mlt_chain_attach( mlt_chain self, mlt_link link )
 				mlt_properties_set_data( MLT_LINK_PROPERTIES( link ), "chain", self, 0, NULL, NULL );
 				base->links[ base->link_count ++ ] = link;
 				relink_chain( self );
-				mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", NULL );
+				mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 			}
 			else
 			{
@@ -284,7 +284,7 @@ int mlt_chain_detach( mlt_chain self, mlt_link link )
 			base->link_count --;
 			mlt_link_close( link );
 			relink_chain( self );
-			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", NULL );
+			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 		}
 	}
 	return error;
@@ -343,7 +343,7 @@ int mlt_chain_move_link( mlt_chain self, int from, int to )
 			}
 			base->links[to] = link;
 			relink_chain( self );
-			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", NULL );
+			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 			error = 0;
 		}
 	}

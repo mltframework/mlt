@@ -220,7 +220,7 @@ static void show_frame()
 	glEnd();
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES(&xgl->parent), "consumer-frame-show", new_frame.mlt_frame_ref, NULL );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES(&xgl->parent), "consumer-frame-show", mlt_event_data_from_frame(new_frame.mlt_frame_ref) );
 	mlt_frame_close( new_frame.mlt_frame_ref );
 	new_frame.mlt_frame_ref = NULL;
 
@@ -524,7 +524,7 @@ static void on_consumer_thread_started( mlt_properties owner, HiddenContext* con
 {
 	// Initialize this thread's OpenGL state
 	glXMakeCurrent( context->dpy, context->win, context->ctx );
-	mlt_events_fire( MLT_FILTER_PROPERTIES(glsl_manager), "init glsl", NULL );
+	mlt_events_fire( MLT_FILTER_PROPERTIES(glsl_manager), "init glsl", mlt_event_data_none() );
 }
 
 /** Forward references to static functions.

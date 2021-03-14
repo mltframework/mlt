@@ -39,11 +39,13 @@ typedef struct
 } private_data;
 
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
-	if ( !strcmp( name, "results" ) )
+	const char *name = mlt_event_data_to_string(event_data);
+
+	if ( name && !strcmp( name, "results" ) )
 	{
 		mlt_properties_anim_get_int( filter_properties, "results", 0, -1 );
 		mlt_animation anim = mlt_properties_get_animation( filter_properties, "results" );

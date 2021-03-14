@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017-2019 Meltytech, LLC
+ * Copyright (C) 2017-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -84,7 +84,6 @@ static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_purge( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service self, void **args );
 static int setup_sdl_video( consumer_sdl self );
 
 /** This is what will be called by the factory - anything can be passed in
@@ -156,7 +155,7 @@ mlt_consumer consumer_sdl2_init( mlt_profile profile, mlt_service_type type, con
 		parent->purge = consumer_purge;
 
 		// Register specific events
-		mlt_events_register( self->properties, "consumer-sdl-event", ( mlt_transmitter )consumer_sdl_event );
+		mlt_events_register( self->properties, "consumer-sdl-event" );
 
 		// Return the consumer produced
 		return parent;
@@ -167,12 +166,6 @@ mlt_consumer consumer_sdl2_init( mlt_profile profile, mlt_service_type type, con
 
 	// Indicate failure
 	return NULL;
-}
-
-static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service self, void **args )
-{
-	if ( listener != NULL )
-		listener( owner, self, ( SDL_Event * )args[ 0 ] );
 }
 
 int consumer_start( mlt_consumer parent )
@@ -682,7 +675,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			SDL_RenderPresent( self->sdl_renderer );
 		}
 
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+		mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 	}
 	else if ( self->running )
 	{
@@ -691,7 +684,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 		}
-		mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+		mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 	}
 
 	return 0;

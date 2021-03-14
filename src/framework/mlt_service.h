@@ -39,7 +39,7 @@
  * a filter graph or what gstreamer calls an element pipeline.
  *
  * \event \em service-changed a filter was attached or detached or a transition was connected or disconnected
- * \event \em property-changed
+ * \event \em property-changed a property's value changed; the event data is a string for the name of the property
  * \properties \em mlt_type identifies the subclass
  * \properties \em _mlt_service_hidden a flag that indicates whether to hide the mlt_service
  * \properties \em mlt_service is the name of the implementation of the service

@@ -604,4 +604,13 @@ MLT_7.0.0 {
     mlt_image_calculate_size;
     mlt_image_fill_black;
     mlt_audio_silence;
+    mlt_event_data_none;
+    mlt_event_data_from_int;
+    mlt_event_data_to_int;
+    mlt_event_data_from_string;
+    mlt_event_data_to_string;
+    mlt_event_data_from_frame;
+    mlt_event_data_to_frame;
+    mlt_event_data_from_object;
+    mlt_event_data_to_object;
 } MLT_6.22.0;

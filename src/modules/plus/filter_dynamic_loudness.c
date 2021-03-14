@@ -35,10 +35,11 @@ typedef struct
 	mlt_position prev_o_pos;
 } private_data;
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
+	const char *name = mlt_event_data_to_string(event_data);
 	private_data* pdata = (private_data*)filter->child;
-	if ( !strcmp( name, "window" ) )
+	if ( name && pdata && !strcmp( name, "window" ) )
 	{
 		pdata->reset = 1;
 	}

@@ -1,6 +1,6 @@
 /*
  * consumer_null.c -- a null consumer
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -153,7 +153,7 @@ static void *consumer_thread( void *arg )
 		if ( frame != NULL )
 		{
 			// Close the frame
-			mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+			mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 			mlt_frame_close( frame );
 		}
 	}

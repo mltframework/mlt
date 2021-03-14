@@ -671,5 +671,17 @@ MLTPP_7.0.0 {
       "Mlt::Image::init_alpha()";
       "Mlt::Image::plane(int)";
       "Mlt::Image::stride(int)";
+      "Mlt::Properties::listen(char const*, void*, void (*)(mlt_properties_s*, void*, mlt_event_data))";
+      "typeinfo name for Mlt::EventData";
+      "vtable for Mlt::EventData";
+      "Mlt::EventData::EventData(mlt_event_data)";
+      "Mlt::EventData::EventData(Mlt::EventData&)";
+      "Mlt::EventData::EventData(Mlt::EventData const&)";
+      "Mlt::EventData::operator=(Mlt::EventData const&)";
+      "Mlt::EventData::get_event_data() const";
+      "Mlt::EventData::to_int() const";
+      "Mlt::EventData::to_string() const";
+      "Mlt::EventData::to_frame() const";
+      "Mlt::EventData::to_object() const";
     };
 } MLTPP_6.22.0;
