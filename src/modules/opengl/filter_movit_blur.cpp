@@ -36,7 +36,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		mlt_filter_get_length2( filter, frame ) );
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 	GlslManager::get_instance()->unlock_service( frame );
-	*format = mlt_image_glsl;
+	*format = mlt_image_movit;
 	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
 	if (*width < 1 || *height < 1) {

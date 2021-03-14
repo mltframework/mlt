@@ -832,7 +832,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 	}
 
 	// Convert image to requested format
-	if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format )
+	if ( format != mlt_image_none && format != mlt_image_movit && format != self->format )
 	{
 		uint8_t *buffer = NULL;
 		if ( self->format != mlt_image_rgba ) {

@@ -454,7 +454,7 @@ static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *
 
 	GlslManager* glsl = GlslManager::get_instance();
 	int error;
-	if ( output_format == mlt_image_glsl_texture ) {
+	if ( output_format == mlt_image_opengl_texture ) {
 		error = glsl->render_frame_texture( chain, frame, width, height, image );
 	}
 	else {
@@ -540,7 +540,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		return convert_on_cpu( frame, image, format, output_format );
 
 	// Do non-GL image conversions on a CPU-based image converter.
-	if ( *format != mlt_image_glsl && output_format != mlt_image_glsl && output_format != mlt_image_glsl_texture )
+	if ( *format != mlt_image_movit && output_format != mlt_image_movit && output_format != mlt_image_opengl_texture )
 		return convert_on_cpu( frame, image, format, output_format );
 
 	int error = 0;
@@ -556,7 +556,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	
 	// If we're at the beginning of a series of Movit effects, store the input
 	// sent into the chain.
-	if ( output_format == mlt_image_glsl ) {
+	if ( output_format == mlt_image_movit ) {
 		mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 		MltInput *input = create_input( properties, *format, profile->width, profile->height, width, height );
@@ -580,7 +580,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 	}
 
 	// If we're at the _end_ of a series of Movit effects, render the chain.
-	if ( *format == mlt_image_glsl ) {
+	if ( *format == mlt_image_movit ) {
 		mlt_service leaf_service = (mlt_service) *image;
 
 		if ( leaf_service == (mlt_service) -1 ) {
@@ -611,8 +611,8 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	// If we've been asked to render some frame directly to a texture (without any
 	// effects in-between), we create a new mini-chain to do so.
-	if ( *format != mlt_image_glsl && output_format == mlt_image_glsl_texture ) {
-		// We might already have a texture from a previous conversion from mlt_image_glsl.
+	if ( *format != mlt_image_movit && output_format == mlt_image_opengl_texture ) {
+		// We might already have a texture from a previous conversion from mlt_image_movit.
 		glsl_texture texture = (glsl_texture) mlt_properties_get_data( properties, "movit.convert.texture", NULL );
 		// XXX: requires a special property set on the frame by the app for now
 		// because we do not have reliable way to clear the texture property

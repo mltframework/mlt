@@ -91,7 +91,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*format = mlt_image_format_id( mlt_properties_get( producer_props, "mlt_image_format") );
 
 	// Choose suitable out values if nothing specific requested
-	if ( *format == mlt_image_none || *format == mlt_image_glsl )
+	if ( *format == mlt_image_none || *format == mlt_image_movit )
 		*format = mlt_image_rgba;
 	if ( *width <= 0 )
 		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
@@ -99,7 +99,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
 	
 	// Choose default image format if specific request is unsupported
-	if (*format!=mlt_image_yuv420p  && *format!=mlt_image_yuv422  && *format!=mlt_image_rgb && *format!= mlt_image_glsl && *format!= mlt_image_glsl_texture)
+	if (*format!=mlt_image_yuv420p  && *format!=mlt_image_yuv422  && *format!=mlt_image_rgb && *format!= mlt_image_movit && *format!= mlt_image_opengl_texture)
 		*format = mlt_image_rgba;
 
 	// See if we need to regenerate
@@ -171,8 +171,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				*p ++ = color.b;
 			}
 			break;
-		case mlt_image_glsl:
-		case mlt_image_glsl_texture:
+		case mlt_image_movit:
+		case mlt_image_opengl_texture:
 			memset(p, 0, size);
 			break;
 		case mlt_image_rgba:

@@ -150,7 +150,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_properties_set_int( properties, "distort", 0 );
 
 	// Now get the image
-	*format = mlt_image_glsl;
+	*format = mlt_image_movit;
 	error = mlt_frame_get_image( frame, image, format, &owidth, &oheight, writable );
 
 	// Offset the position according to alignment

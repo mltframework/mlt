@@ -436,8 +436,8 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 			case mlt_image_yuv420p:
 				break;
 			case mlt_image_none:
-			case mlt_image_glsl:
-			case mlt_image_glsl_texture:
+			case mlt_image_movit:
+			case mlt_image_opengl_texture:
 				*format = mlt_image_yuv422;
 				break;
 		}
