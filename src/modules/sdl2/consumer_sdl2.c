@@ -518,10 +518,10 @@ static int setup_sdl_video( consumer_sdl self )
 	int image_format = mlt_properties_get_int( self->properties, "mlt_image_format" );
 
 	if ( image_format ) switch ( image_format ) {
-	case mlt_image_rgb24:
+	case mlt_image_rgb:
 		texture_format = SDL_PIXELFORMAT_RGB24;
 		break;
-	case mlt_image_rgb24a:
+	case mlt_image_rgba:
 		texture_format = SDL_PIXELFORMAT_ABGR8888;
 		break;
 	case mlt_image_yuv420p:
@@ -681,7 +681,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 	{
 		if ( !video_off ) {
 			mlt_image_format preview_format = mlt_properties_get_int( properties, "preview_format" );
-			vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
+			vfmt = preview_format == mlt_image_none ? mlt_image_rgba : preview_format;
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 		}
 		mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );

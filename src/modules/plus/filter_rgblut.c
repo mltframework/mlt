@@ -65,7 +65,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the image
 	mlt_filter filter = mlt_frame_pop_service( frame );
 
-	*format = mlt_image_rgb24;
+	*format = mlt_image_rgb;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 
 	// Only process if we have no error and a valid colour space

@@ -459,8 +459,8 @@ static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *
 	}
 	else {
 		error = glsl->render_frame_rgba( chain, frame, width, height, image );
-		if ( !error && output_format != mlt_image_rgb24a ) {
-			*format = mlt_image_rgb24a;
+		if ( !error && output_format != mlt_image_rgba ) {
+			*format = mlt_image_rgba;
 			error = convert_on_cpu( frame, image, format, output_format );
 		}
 	}
@@ -476,11 +476,11 @@ static MltInput* create_input( mlt_properties properties, mlt_image_format forma
 	}
 
 	MltInput* input = new MltInput( format );
-	if ( format == mlt_image_rgb24a ) {
+	if ( format == mlt_image_rgba ) {
 		// TODO: Get the color space if available.
 		input->useFlatInput( FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
 	}
-	else if ( format == mlt_image_rgb24 ) {
+	else if ( format == mlt_image_rgb ) {
 		// TODO: Get the color space if available.
 		input->useFlatInput( FORMAT_RGB, width, height );
 	}

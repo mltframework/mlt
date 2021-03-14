@@ -37,11 +37,11 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 	mlt_rect rect = mlt_properties_anim_get_rect(properties, "rect", position, length);
 
 	// Get the current image
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "resize_alpha", 255);
 	error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
-	if (!error && *format == mlt_image_rgb24a) {
+	if (!error && *format == mlt_image_rgba) {
 		QImage bgImage;
 		convert_mlt_to_qimage_rgba(*image, &bgImage, *width, *height);
 

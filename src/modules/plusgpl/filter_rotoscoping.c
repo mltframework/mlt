@@ -327,7 +327,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
     // Get the image
     if ( mode == MODE_RGB )
-        *format = mlt_image_rgb24;
+        *format = mlt_image_rgb;
     int error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
     // Only process if we have no error and a valid colour space
@@ -387,7 +387,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             switch ( mode )
             {
             case MODE_RGB:
-                // *format == mlt_image_rgb24
+                // *format == mlt_image_rgb
                 while ( p != q )
                 {
                     if ( !map[i++] )
@@ -398,8 +398,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             case MODE_LUMA:
                 switch ( *format )
                 {
-                    case mlt_image_rgb24:
-                    case mlt_image_rgb24a:
+                    case mlt_image_rgb:
+                    case mlt_image_rgba:
                         while ( p != q )
                         {
                             p[0] = p[1] = p[2] = map[i++];
@@ -425,7 +425,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             case MODE_ALPHA:
                 switch ( *format )
                 {
-                case mlt_image_rgb24a:
+                case mlt_image_rgba:
                     switch ( mlt_properties_get_int( unique, "alpha_operation" ) )
                     {
                     case ALPHA_CLEAR:

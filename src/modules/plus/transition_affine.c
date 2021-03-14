@@ -447,7 +447,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Image, format, width, height and image for the b frame
 	uint8_t *b_image = NULL;
-	mlt_image_format b_format = mlt_image_rgb24a;
+	mlt_image_format b_format = mlt_image_rgba;
 	int b_width = mlt_properties_get_int( b_props, "meta.media.width" );
 	int b_height = mlt_properties_get_int( b_props, "meta.media.height" );
 	double b_ar = mlt_frame_get_aspect_ratio( b_frame );
@@ -485,7 +485,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 	
 	// Fetch the a frame image
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	int error = mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 	if (error || !image)
 		return error;
@@ -621,7 +621,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	}
 
 	// Check that both images are of the correct format and process
-	if ( *format == mlt_image_rgb24a && b_format == mlt_image_rgb24a )
+	if ( *format == mlt_image_rgba && b_format == mlt_image_rgba )
 	{
 		double sw, sh;
 		// Get values from the transition

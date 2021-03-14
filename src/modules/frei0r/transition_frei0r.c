@@ -46,7 +46,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	int error = 0;
 
 	// Get the B-frame.
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	error = mlt_frame_get_image( b_frame, &images[1], format, width, height, 0 );
 	if ( error ) return error;
 

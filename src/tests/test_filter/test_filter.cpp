@@ -47,7 +47,7 @@ private Q_SLOTS:
         Filter filter(profile, "resize");
         int width = 0;
         int height = 0;
-        mlt_image_format format = mlt_image_rgb24;
+        mlt_image_format format = mlt_image_rgb;
 
         // Get a frame from the producer
         Frame* frame = producer.get_frame();

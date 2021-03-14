@@ -139,7 +139,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		return 0;
 
 	// get RGBA image for Qt drawing
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
 	// convert mlt image to qimage

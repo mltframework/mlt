@@ -512,7 +512,7 @@ protected:
 	void renderVideo( mlt_frame frame )
 	{
 		HRESULT hr;
-		mlt_image_format format = m_isKeyer? mlt_image_rgb24a : mlt_image_yuv422;
+		mlt_image_format format = m_isKeyer? mlt_image_rgba : mlt_image_yuv422;
 		uint8_t* image = 0;
 		int rendered = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered");
 		mlt_properties consumer_properties = MLT_CONSUMER_PROPERTIES( getConsumer() );

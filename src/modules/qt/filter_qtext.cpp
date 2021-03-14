@@ -297,7 +297,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "geometry", position, length );
 
 	// Get the current image
-	*image_format = mlt_image_rgb24a;
+	*image_format = mlt_image_rgba;
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "resize_alpha", 255 );
 	mlt_service_lock(MLT_FILTER_SERVICE(filter));
 	error = mlt_frame_get_image( frame, image, image_format, width, height, writable );

@@ -27,7 +27,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 
 	mlt_filter filter = mlt_frame_pop_service( frame );
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "frei0r %dx%d\n", *width, *height );
 	int error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 

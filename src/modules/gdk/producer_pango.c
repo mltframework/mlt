@@ -614,12 +614,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			cached = mlt_pool_alloc( sizeof( struct pango_cached_image_s ));
 			cached->width = self->width;
 			cached->height = self->height;
-			cached->format = gdk_pixbuf_get_has_alpha( self->pixbuf ) ? mlt_image_rgb24a : mlt_image_rgb24;
+			cached->format = gdk_pixbuf_get_has_alpha( self->pixbuf ) ? mlt_image_rgba : mlt_image_rgb;
 			cached->alpha = NULL;
 			cached->image = NULL;
 
 			src_stride = gdk_pixbuf_get_rowstride( self->pixbuf );
-			dst_stride = self->width * ( mlt_image_rgb24a == cached->format ? 4 : 3 );
+			dst_stride = self->width * ( mlt_image_rgba == cached->format ? 4 : 3 );
 
 			size = mlt_image_format_size( cached->format, cached->width, cached->height, &bpp );
 			buf = mlt_pool_alloc( size );

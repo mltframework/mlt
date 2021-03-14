@@ -295,7 +295,7 @@ static int get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *forma
 		else if ( NDIlib_FourCC_type_RGBA == video->FourCC || NDIlib_FourCC_type_RGBX == video->FourCC )
 		{
 			dst_stride = 4 * video->xres;
-			*format = mlt_image_rgb24a;
+			*format = mlt_image_rgba;
 		}
 		else
 			*format = mlt_image_none;

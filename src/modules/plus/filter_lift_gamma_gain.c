@@ -125,7 +125,7 @@ static void apply_lut( mlt_filter filter, uint8_t* image, mlt_image_format forma
 
 	switch( format )
 	{
-	case mlt_image_rgb24:
+	case mlt_image_rgb:
 		while( --total )
 		{
 			*sample = rlut[ *sample ];
@@ -136,7 +136,7 @@ static void apply_lut( mlt_filter filter, uint8_t* image, mlt_image_format forma
 			sample++;
 		}
 		break;
-	case mlt_image_rgb24a:
+	case mlt_image_rgba:
 		while( --total )
 		{
 			*sample = rlut[ *sample ];
@@ -169,9 +169,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 
 	// Make sure the format is acceptable
-	if( *format != mlt_image_rgb24 && *format != mlt_image_rgb24a )
+	if( *format != mlt_image_rgb && *format != mlt_image_rgba )
 	{
-		*format = mlt_image_rgb24;
+		*format = mlt_image_rgb;
 	}
 
 	// Get the image

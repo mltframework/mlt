@@ -92,15 +92,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Choose suitable out values if nothing specific requested
 	if ( *format == mlt_image_none || *format == mlt_image_glsl )
-		*format = mlt_image_rgb24a;
+		*format = mlt_image_rgba;
 	if ( *width <= 0 )
 		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
 	if ( *height <= 0 )
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
 	
 	// Choose default image format if specific request is unsupported
-	if (*format!=mlt_image_yuv420p  && *format!=mlt_image_yuv422  && *format!=mlt_image_rgb24 && *format!= mlt_image_glsl && *format!= mlt_image_glsl_texture)
-		*format = mlt_image_rgb24a;
+	if (*format!=mlt_image_yuv420p  && *format!=mlt_image_yuv422  && *format!=mlt_image_rgb && *format!= mlt_image_glsl && *format!= mlt_image_glsl_texture)
+		*format = mlt_image_rgba;
 
 	// See if we need to regenerate
 	if ( !now || ( then && strcmp( now, then ) ) || *width != current_width || *height != current_height || *format != current_format )
@@ -163,7 +163,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_properties_set_int( properties, "colorspace", 601 );
 			break;
 		}
-		case mlt_image_rgb24:
+		case mlt_image_rgb:
 			while ( --i )
 			{
 				*p ++ = color.r;
@@ -175,7 +175,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		case mlt_image_glsl_texture:
 			memset(p, 0, size);
 			break;
-		case mlt_image_rgb24a:
+		case mlt_image_rgba:
 			while ( --i )
 			{
 				*p ++ = color.r;
@@ -199,7 +199,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	uint8_t *alpha = NULL;
 
 	// Initialise the alpha
-	if (color.a < 255 || *format == mlt_image_rgb24a) {
+	if (color.a < 255 || *format == mlt_image_rgba) {
 		alpha_size = *width * *height;
 		alpha = mlt_pool_alloc( alpha_size );
 		if ( alpha )

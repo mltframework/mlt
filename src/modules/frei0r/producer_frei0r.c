@@ -36,7 +36,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
 
 	// Allocate the image
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	int size = mlt_image_format_size( *format, *width, *height, NULL );
 
 	// Allocate the image
