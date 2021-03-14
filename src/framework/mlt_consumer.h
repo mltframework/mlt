@@ -51,12 +51,15 @@
  * environment variable MLT_TEST_CARD. If undefined, the hard-coded default test card is
  * white silence. A test card is what appears when nothing is produced.
  * \event \em consumer-frame-show Subclass implementations fire this immediately after showing a frame
- * or when a frame should be shown (if audio-only consumer).
- * \event \em consumer-frame-render The base class fires this immediately before rendering a frame.
+ *   or when a frame should be shown (if audio-only consumer). The event data is a frame.
+ * \event \em consumer-frame-render The base class fires this immediately before rendering a frame;
+ *   the event data is a frame.
  * \event \em consumer-thread-create Override the implementation of creating and
  *   starting a thread by listening and responding to this (real_time 1 or -1 only).
+ *   The event data is a pointer to mlt_event_data_thread.
  * \event \em consumer-thread-join Override the implementation of waiting and
  *   joining a terminated thread  by listening and responding to this (real_time 1 or -1 only).
+ *   The event data is a pointer to mlt_event_data_thread.
  * \event \em consumer-thread-started The base class fires when beginning execution of a rendering thread.
  * \event \em consumer-thread-stopped The base class fires when a rendering thread has ended.
  * \event \em consumer-stopping This is fired when stop was requested, but before render threads are joined.

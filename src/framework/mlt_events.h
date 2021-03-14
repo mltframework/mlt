@@ -25,6 +25,7 @@
 
 #include "mlt_types.h"
 
+/** A container for data that may be supplied with an event */
 typedef struct {
 	union {
 		int i;
@@ -32,11 +33,12 @@ typedef struct {
 	} u;
 } mlt_event_data;
 
+/** An event data structure to convey thread parameters */
 typedef struct {
-	void **thread;
-	int *priority;
-	mlt_thread_function_t function;
-	void *data;
+	void **thread; /**< a pointer to a thread object or handle as determined by you */
+	int *priority; /**< a priority level for the thread */
+	mlt_thread_function_t function; /**< a pointer to the function that thread will run */
+	void *data;    /**< an opaque data pointer to pass along */
 } mlt_event_data_thread;
 
 /** event handler when receiving an event message

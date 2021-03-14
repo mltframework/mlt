@@ -2,7 +2,7 @@
  * \file mlt_factory.h
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,14 +35,26 @@
  * \envvar \em MLT_REPOSITORY overrides the default location of the plugin modules, defaults to \p PREFIX_LIB.
  * MLT_REPOSITORY is ignored on Windows and OS X relocatable builds.
  * \envvar \em MLT_PRESETS_PATH overrides the default full path to the properties preset files, defaults to \p MLT_DATA/presets
- * \event \em producer-create-request fired when mlt_factory_producer is called
- * \event \em producer-create-done fired when a producer registers itself
- * \event \em filter-create-request fired when mlt_factory_filter is called
- * \event \em filter-create-done fired when a filter registers itself
- * \event \em transition-create-request fired when mlt_factory_transition is called
- * \event \em transition-create-done fired when a transition registers itself
- * \event \em consumer-create-request fired when mlt_factory_consumer is called
- * \event \em consumer-create-done fired when a consumer registers itself
+ * \event \em producer-create-request fired when mlt_factory_producer is called;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em producer-create-done fired when a producer registers itself;
+ *	 the event data is a pointer to mlt_factory_event_data
+ * \event \em filter-create-request fired when mlt_factory_filter is called;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em filter-create-done fired when a filter registers itself;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em transition-create-request fired when mlt_factory_transition is called;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em transition-create-done fired when a transition registers itself;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em consumer-create-request fired when mlt_factory_consumer is called;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em consumer-create-done fired when a consumer registers itself;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em link-create-request fired when mlt_factory_link is called;
+ *   the event data is a pointer to mlt_factory_event_data
+ * \event \em link-create-done fired when a link registers itself;
+ *   the event data is a pointer to mlt_factory_event_data
  */
 
 extern mlt_repository mlt_factory_init( const char *directory );
@@ -60,10 +72,12 @@ extern void mlt_factory_register_for_clean_up( void *ptr, mlt_destructor destruc
 extern void mlt_factory_close( );
 extern mlt_properties mlt_global_properties( );
 
+/** The event data for all factory-related events */
+
 typedef struct {
-	const char *name;
-	const void *input;
-	void *service;
+	const char *name;  /**< the name of the service requested */
+	const void *input; /**< an argument supplied to initialize the service, typically a string */
+	void *service;     /**< the service being created */
 } mlt_factory_event_data;
 
 #endif

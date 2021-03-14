@@ -31,6 +31,9 @@
  *
  * Properties is a combination list/dictionary of name/::mlt_property pairs.
  * It is also a base class for many of the other MLT classes.
+ *
+ * \event \em property-changed a property's value changed;
+ *   the event data is a string for the name of the property
  */
 
 struct mlt_properties_s
