@@ -174,9 +174,9 @@ int mlt_image_calculate_size( mlt_image self )
 {
 	switch ( self->format )
 	{
-		case mlt_image_rgb24:
+		case mlt_image_rgb:
 			return self->width * self->height * 3;
-		case mlt_image_rgb24a:
+		case mlt_image_rgba:
 			return self->width * self->height * 4;
 		case mlt_image_yuv422:
 			return self->width * self->height * 2;
@@ -204,8 +204,8 @@ const char * mlt_image_format_name( mlt_image_format format )
 	switch ( format )
 	{
 		case mlt_image_none:    return "none";
-		case mlt_image_rgb24:   return "rgb24";
-		case mlt_image_rgb24a:  return "rgb24a";
+		case mlt_image_rgb:   return "rgb";
+		case mlt_image_rgba:  return "rgba";
 		case mlt_image_yuv422:  return "yuv422";
 		case mlt_image_yuv420p: return "yuv420p";
 		case mlt_image_glsl:    return "glsl";
@@ -251,8 +251,8 @@ void mlt_image_fill_black( mlt_image self )
 		case mlt_image_glsl:
 		case mlt_image_glsl_texture:
 			return;
-		case mlt_image_rgb24:
-		case mlt_image_rgb24a:
+		case mlt_image_rgb:
+		case mlt_image_rgba:
 		{
 			int size = mlt_image_calculate_size( self );
 			memset( self->planes[0], 255, size );
@@ -318,10 +318,10 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 {
 	switch ( format )
 	{
-		case mlt_image_rgb24:
+		case mlt_image_rgb:
 			if ( bpp ) *bpp = 3;
 			return width * height * 3;
-		case mlt_image_rgb24a:
+		case mlt_image_rgba:
 			if ( bpp ) *bpp = 4;
 			return width * height * 4;
 		case mlt_image_yuv422:

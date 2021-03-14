@@ -429,8 +429,8 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 		*height = *height == 0 ? 576 : *height;
 		switch( *format )
 		{
-			case mlt_image_rgb24:
-			case mlt_image_rgb24a:
+			case mlt_image_rgb:
+			case mlt_image_rgba:
 			case mlt_image_yuv422:
 			case mlt_image_yuv422p16:
 			case mlt_image_yuv420p:
@@ -815,7 +815,7 @@ void mlt_frame_write_ppm( mlt_frame frame )
 {
 	int width = 0;
 	int height = 0;
-	mlt_image_format format = mlt_image_rgb24;
+	mlt_image_format format = mlt_image_rgb;
 	uint8_t *image;
 	
 	if ( mlt_frame_get_image( frame, &image, &format, &width, &height, 0 ) == 0 )

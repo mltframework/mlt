@@ -477,7 +477,7 @@ static void add_clock_to_frame( mlt_producer producer, mlt_frame frame, time_inf
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 	uint8_t* image = NULL;
-	mlt_image_format format = mlt_image_rgb24a;
+	mlt_image_format format = mlt_image_rgba;
 	int size = 0;
 	int width = profile->width;
 	int height = profile->height;

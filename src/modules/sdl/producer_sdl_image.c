@@ -59,13 +59,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **image, mlt_image_forma
 	switch( surface->format->BitsPerPixel )
 	{
 		case 32:
-			*format = mlt_image_rgb24a;
+			*format = mlt_image_rgba;
 			image_size = *width * *height * 4;
 			*image = mlt_pool_alloc( image_size );
 			memcpy( *image, surface->pixels, image_size );
 			break;
 		default:
-			*format = mlt_image_rgb24;
+			*format = mlt_image_rgb;
 			*image = mlt_pool_alloc( image_size );
 			memcpy( *image, surface->pixels, image_size );
 			break;

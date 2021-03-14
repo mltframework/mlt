@@ -102,7 +102,7 @@ static void* consumer_ndi_feeder( void* p )
 			int m_isKeyer = 0, width = profile->width, height = profile->height;
 			uint8_t* image = 0;
 			mlt_frame frm = m_isKeyer ? frame : last;
-			mlt_image_format format = 0 ? mlt_image_rgb24a : mlt_image_yuv422;
+			mlt_image_format format = 0 ? mlt_image_rgba : mlt_image_yuv422;
 			int rendered = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frm ), "rendered" );
 
 			if ( rendered && !mlt_frame_get_image( frm, &image, &format, &width, &height, 0 ) )

@@ -50,13 +50,13 @@ private Q_SLOTS:
 
 	void ConstructAndAlloc()
 	{
-		Image i(1920, 1080, mlt_image_rgb24 );
+		Image i(1920, 1080, mlt_image_rgb );
 		QVERIFY(i.plane(0) != nullptr);
 	}
 
 	void PlaneAndStrideRgb24()
 	{
-		Image i(1920, 1080, mlt_image_rgb24 );
+		Image i(1920, 1080, mlt_image_rgb );
 		QVERIFY(i.plane(0) != nullptr);
 		QCOMPARE(i.stride(0), 1920 * 3);
 		QVERIFY(i.plane(1) == nullptr);
@@ -69,7 +69,7 @@ private Q_SLOTS:
 
 	void PlaneAndStrideRgb24a()
 	{
-		Image i(1920, 1080, mlt_image_rgb24a );
+		Image i(1920, 1080, mlt_image_rgba );
 		QVERIFY(i.plane(0) != nullptr);
 		QCOMPARE(i.stride(0), 1920 * 4);
 		QVERIFY(i.plane(1) == nullptr);
@@ -121,14 +121,14 @@ private Q_SLOTS:
 
 	void GetSetColorspace()
 	{
-		Image i(1920, 1080, mlt_image_rgb24 );
+		Image i(1920, 1080, mlt_image_rgb );
 		i.set_colorspace(mlt_colorspace_bt709);
 		QCOMPARE(i.colorspace(), mlt_colorspace_bt709);
 	}
 
 	void InitAlpha()
 	{
-		Image i(1920, 1080, mlt_image_rgb24 );
+		Image i(1920, 1080, mlt_image_rgb );
 		i.init_alpha();
 		QVERIFY(i.plane(3) != nullptr);
 	}

@@ -208,7 +208,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
 
 		// Get the current image
-		*format = mlt_image_rgb24a;
+		*format = mlt_image_rgba;
 		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 		if ( strchr( mlt_properties_get( filter_properties, "rect" ), '%' ) ) {

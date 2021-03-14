@@ -303,7 +303,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 	else
 	{
-		*format = mlt_image_rgb24;
+		*format = mlt_image_rgb;
 		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 		cvFrame = cv::Mat( *height, *width, CV_8UC3, *image );
 	}

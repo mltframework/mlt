@@ -332,7 +332,7 @@ static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_form
 		generate_qimage( frame_properties );
 	}
 
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	*width = qImg->width();
 	*height = qImg->height();
 

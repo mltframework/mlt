@@ -155,14 +155,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	switch( *format )
 	{
-		case mlt_image_rgb24a:
-		case mlt_image_rgb24:
+		case mlt_image_rgba:
+		case mlt_image_rgb:
 		case mlt_image_yuv422:
 		case mlt_image_yuv420p:
 			// These formats are all supported
 			break;
 		default:
-			*format = mlt_image_rgb24a;
+			*format = mlt_image_rgba;
 			break;
 	}
 	error = mlt_frame_get_image( frame, image, format, width, height, 1 );
@@ -174,13 +174,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int i;
 	switch( *format )
 	{
-		case mlt_image_rgb24a:
+		case mlt_image_rgba:
 			for ( i = 0; i < 4; i++ )
 			{
 				remove_spot_channel( img.planes[0] + i, img.width, 4, rect );
 			}
 			break;
-		case mlt_image_rgb24:
+		case mlt_image_rgb:
 			for ( i = 0; i < 3; i++ )
 			{
 				remove_spot_channel( img.planes[0] + i, img.width, 3, rect );
@@ -211,7 +211,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 
 	uint8_t *alpha = mlt_frame_get_alpha( frame );
-	if ( alpha && *format != mlt_image_rgb24a )
+	if ( alpha && *format != mlt_image_rgba )
 	{
 		remove_spot_channel( alpha, *width, 1, rect );
 	}

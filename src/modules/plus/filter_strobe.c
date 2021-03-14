@@ -73,7 +73,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		memset( alpha_buffer, 0, pixelCount );
 	}
 
-	if ( *format == mlt_image_rgb24a )
+	if ( *format == mlt_image_rgba )
 	{
 		uint8_t *bytes = *image;
 		for ( size_t i=3; i<pixelCount * 4; i+=4 )

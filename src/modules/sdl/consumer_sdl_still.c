@@ -366,7 +366,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
 
-	mlt_image_format vfmt = mlt_image_rgb24a;
+	mlt_image_format vfmt = mlt_image_rgba;
 	int height = this->height;
 	int width = this->width;
 	uint8_t *image = NULL;
@@ -558,7 +558,7 @@ static void *consumer_thread( void *arg )
 			}
 			else
 			{
-				mlt_image_format vfmt = mlt_image_rgb24a;
+				mlt_image_format vfmt = mlt_image_rgba;
 				int height = this->height;
 				int width = this->width;
 				uint8_t *image = NULL;

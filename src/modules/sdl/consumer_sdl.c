@@ -690,7 +690,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 	}
 	else if ( self->running )
 	{
-		vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
+		vfmt = preview_format == mlt_image_none ? mlt_image_rgba : preview_format;
 		if ( !video_off )
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 		mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );

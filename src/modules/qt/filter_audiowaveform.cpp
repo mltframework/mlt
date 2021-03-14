@@ -340,7 +340,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( audio )
 	{
 		// Get the current image
-		*image_format = mlt_image_rgb24a;
+		*image_format = mlt_image_rgba;
 		error = mlt_frame_get_image( frame, image, image_format, width, height, writable );
 
 		// Draw the waveforms

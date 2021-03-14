@@ -606,7 +606,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		int has_alpha = gdk_pixbuf_get_has_alpha( pixbuf );
 		int src_stride = gdk_pixbuf_get_rowstride( pixbuf );
 		int dst_stride = self->width * ( has_alpha ? 4 : 3 );
-		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+		self->format = has_alpha ? mlt_image_rgba : mlt_image_rgb;
 		int image_size = mlt_image_format_size( self->format, width, height, NULL );
 		self->image = mlt_pool_alloc( image_size );
 		self->alpha = NULL;
