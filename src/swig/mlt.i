@@ -159,7 +159,7 @@ void markRubyListener( void* p )
     o->mark( );
 }
 
-static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data* );
+static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data );
 
 class PlaylistNextListener : RubyListener
 {
@@ -185,7 +185,7 @@ class PlaylistNextListener : RubyListener
 		}
 };
 
-static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data *event_data )
+static void on_playlist_next( mlt_properties owner, void *object, mlt_event_data event_data )
 {
 	PlaylistNextListener *o = static_cast< PlaylistNextListener * >( object );
 	Mlt::EventData data(event_data);

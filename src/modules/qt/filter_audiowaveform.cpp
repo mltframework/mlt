@@ -68,7 +68,7 @@ static void destory_save_buffer( void* ptr )
 	free( buff );
 }
 
-static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data *event_data )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
 	const char *name = mlt_event_data_to_string(event_data);
 	if ( name && !strcmp( name, "window" ) )

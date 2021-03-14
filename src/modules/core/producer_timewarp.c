@@ -38,7 +38,7 @@ typedef struct
 
 // Private Functions
 
-static void timewarp_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data *event_data )
+static void timewarp_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
 {
 	private_data* pdata = (private_data*)producer->child;
 	const char *name = mlt_event_data_to_string(event_data);
@@ -61,7 +61,7 @@ static void timewarp_property_changed( mlt_service owner, mlt_producer producer,
 	}
 }
 
-static void clip_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data *event_data )
+static void clip_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
 {
 	private_data* pdata = (private_data*)producer->child;
 	const char *name = mlt_event_data_to_string(event_data);

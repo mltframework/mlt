@@ -60,13 +60,13 @@ void Event::unblock( )
 }
 
 
-EventData::EventData(mlt_event_data* data)
-    : instance(data)
+EventData::EventData(mlt_event_data data)
+	: instance(data)
 {
 }
 
 EventData::EventData(EventData& data)
-    : instance(data.get_event_data())
+	: instance(data.get_event_data())
 {
 }
 
@@ -81,14 +81,9 @@ EventData& EventData::operator=(const EventData& data)
 	return *this;
 }
 
-mlt_event_data* EventData::get_event_data() const
+mlt_event_data EventData::get_event_data() const
 {
 	return instance;
-}
-
-bool EventData::is_valid() const
-{
-	return instance != nullptr;
 }
 
 int EventData::to_int() const

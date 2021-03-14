@@ -157,7 +157,7 @@ static void attach_normalisers( mlt_profile profile, mlt_service service )
 	create_filter( profile, service, "audioconvert", &created );
 }
 
-static void on_frame_show( void *dummy, mlt_properties properties, mlt_event_data *event_data )
+static void on_frame_show( void *dummy, mlt_properties properties, mlt_event_data event_data )
 {
 	mlt_events_fire( properties, "consumer-frame-show", event_data );
 }

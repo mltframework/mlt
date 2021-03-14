@@ -120,7 +120,7 @@ void Properties::unblock( void *object )
 
 int Properties::fire_event( const char *event )
 {
-	return mlt_events_fire( get_properties( ), event, NULL );
+	return mlt_events_fire( get_properties( ), event, mlt_event_data_none() );
 }
 
 bool Properties::is_valid( )

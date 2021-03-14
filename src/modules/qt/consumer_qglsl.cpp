@@ -123,7 +123,7 @@ private:
 	QOffscreenSurface* m_surface;
 };
 
-static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_data* event_data )
+static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
 	Q_UNUSED(owner)
 	mlt_event_data_thread* t = (mlt_event_data_thread*) mlt_event_data_to_object(event_data);
@@ -132,7 +132,7 @@ static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_da
 	thread->start();
 }
 
-static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data* event_data)
+static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data event_data)
 {
 	Q_UNUSED(owner)
 	Q_UNUSED(self)
@@ -161,11 +161,11 @@ static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 #else
 	{
 #endif
-		mlt_events_fire(filter_properties, "init glsl", NULL);
+		mlt_events_fire(filter_properties, "init glsl", mlt_event_data_none());
 		if (!mlt_properties_get_int(filter_properties, "glsl_supported")) {
 			mlt_log_fatal(service,
 				"OpenGL Shading Language rendering is not supported on this machine.\n" );
-			mlt_events_fire(properties, "consumer-fatal-error", NULL);
+			mlt_events_fire(properties, "consumer-fatal-error", mlt_event_data_none());
 		}
 	}
 }
@@ -174,7 +174,7 @@ static void onThreadStopped(mlt_properties owner, mlt_consumer consumer)
 {
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
 	mlt_filter filter = (mlt_filter) mlt_properties_get_data(properties, "glslManager", NULL);
-	mlt_events_fire(MLT_FILTER_PROPERTIES(filter), "close glsl", NULL);
+	mlt_events_fire(MLT_FILTER_PROPERTIES(filter), "close glsl", mlt_event_data_none());
 }
 
 static void onCleanup(mlt_properties owner, mlt_consumer consumer)

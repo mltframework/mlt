@@ -104,7 +104,7 @@ static int get_audio( mlt_frame frame, void **buffer, mlt_audio_format *format, 
 	return result;
 }
 
-static void property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data *event_data )
+static void property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
 	context cx = mlt_properties_get_data( properties, "context", NULL );

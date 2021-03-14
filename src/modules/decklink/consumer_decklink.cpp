@@ -851,9 +851,7 @@ protected:
 				render( frame );
 				mlt_log_timings_end( NULL, "render" );
 
-				mlt_event_data event_data;
-				mlt_event_data_from_frame(&event_data, frame);
-				mlt_events_fire( properties, "consumer-frame-show", &event_data );
+				mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 
 				// terminate on pause
 				if ( m_terminate_on_pause &&
@@ -931,7 +929,7 @@ static void close( mlt_consumer consumer )
 extern "C" {
 
 // Listen for the list_devices property to be set
-static void on_property_changed( void*, mlt_properties properties, mlt_event_data *event_data )
+static void on_property_changed( void*, mlt_properties properties, mlt_event_data event_data )
 {
 	const char *name = mlt_event_data_to_string(event_data);
 	IDeckLinkIterator* decklinkIterator = NULL;

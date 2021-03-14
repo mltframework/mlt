@@ -213,7 +213,7 @@ static int init_vaapi(mlt_properties properties, AVCodecContext *codec_context)
 #endif
 
 // Forward references.
-static void property_changed(mlt_properties owner, mlt_consumer self, mlt_event_data* );
+static void property_changed(mlt_properties owner, mlt_consumer self, mlt_event_data );
 static int consumer_start( mlt_consumer consumer );
 static int consumer_stop( mlt_consumer consumer );
 static int consumer_is_stopped( mlt_consumer consumer );
@@ -352,7 +352,7 @@ static void color_primaries_from_colorspace( mlt_properties properties )
 	}
 }
 
-static void property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data *event_data )
+static void property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( self );
 	const char *name = mlt_event_data_to_string(event_data);
@@ -1199,9 +1199,7 @@ static int mlt_write(void *h, uint8_t *buf, int size)
 {
 	mlt_properties properties = (mlt_properties) h;
 	buffer_t buffer = { buf, size };
-	mlt_event_data event_data;
-	mlt_event_data_from_object(&event_data, &buffer);
-	mlt_events_fire( properties, "avformat-write", &event_data );
+	mlt_events_fire( properties, "avformat-write", mlt_event_data_from_object(&buffer) );
 	return 0;
 }
 
@@ -1429,7 +1427,7 @@ receive_audio_packet:
 			if ( av_interleaved_write_frame( ctx->oc, &pkt ) )
 			{
 				mlt_log_fatal( MLT_CONSUMER_SERVICE( ctx->consumer ), "error writing audio frame\n" );
-				mlt_events_fire( ctx->properties, "consumer-fatal-error", NULL );
+				mlt_events_fire( ctx->properties, "consumer-fatal-error", mlt_event_data_none() );
 				return -1;
 			}
 			ctx->error_count = 0;
@@ -1792,7 +1790,7 @@ static void *consumer_thread( void *arg )
 			if ( avio_open( &enc_ctx->oc->pb, filename, AVIO_FLAG_WRITE ) < 0 )
 			{
 				mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not open '%s'\n", filename );
-				mlt_events_fire( properties, "consumer-fatal-error", NULL );
+				mlt_events_fire( properties, "consumer-fatal-error", mlt_event_data_none() );
 				goto on_fatal_error;
 			}
 		}
@@ -1802,7 +1800,7 @@ static void *consumer_thread( void *arg )
 	// Last check - need at least one stream
 	if ( !enc_ctx->audio_st[0] && !enc_ctx->video_st )
 	{
-		mlt_events_fire( properties, "consumer-fatal-error", NULL );
+		mlt_events_fire( properties, "consumer-fatal-error", mlt_event_data_none() );
 		goto on_fatal_error;
 	}
 
@@ -1818,7 +1816,7 @@ static void *consumer_thread( void *arg )
 		converted_avframe = alloc_picture( pix_fmt, width, height );
 		if ( !converted_avframe ) {
 			mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "failed to allocate video AVFrame\n" );
-			mlt_events_fire( properties, "consumer-fatal-error", NULL );
+			mlt_events_fire( properties, "consumer-fatal-error", mlt_event_data_none() );
 			goto on_fatal_error;
 		}
 	}
@@ -1837,7 +1835,7 @@ static void *consumer_thread( void *arg )
 #endif
 		} else {
 			mlt_log_error( MLT_CONSUMER_SERVICE(consumer), "failed to allocate audio AVFrame\n" );
-			mlt_events_fire( properties, "consumer-fatal-error", NULL );
+			mlt_events_fire( properties, "consumer-fatal-error", mlt_event_data_none() );
 			goto on_fatal_error;
 		}
 	}
@@ -1878,7 +1876,7 @@ static void *consumer_thread( void *arg )
 				if ( avformat_write_header( enc_ctx->oc, NULL ) < 0 )
 				{
 					mlt_log_error( MLT_CONSUMER_SERVICE( consumer ), "Could not write header '%s'\n", filename );
-					mlt_events_fire( properties, "consumer-fatal-error", NULL );
+					mlt_events_fire( properties, "consumer-fatal-error", mlt_event_data_none() );
 					goto on_fatal_error;
 				}
 
@@ -1918,9 +1916,7 @@ static void *consumer_thread( void *arg )
 					total_time += ( samples * 1000000 ) / enc_ctx->frequency;
 				}
 				if ( !enc_ctx->video_st ) {
-					mlt_event_data event_data;
-					mlt_event_data_from_frame(&event_data, frame);
-					mlt_events_fire( properties, "consumer-frame-show", &event_data );
+					mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 				}
 			}
 
@@ -1985,9 +1981,7 @@ static void *consumer_thread( void *arg )
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
 
-						mlt_event_data event_data;
-						mlt_event_data_from_frame(&event_data, frame);
-						mlt_events_fire( properties, "consumer-frame-show", &event_data );
+						mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 
 						// Apply the alpha if applicable
 						if ( !mlt_properties_get( properties, "mlt_image_format" ) ||
@@ -2150,7 +2144,7 @@ receive_video_packet:
 					if ( ret )
 					{
 						mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "error writing video frame: %d\n", ret );
-						mlt_events_fire( properties, "consumer-fatal-error", NULL );
+						mlt_events_fire( properties, "consumer-fatal-error", mlt_event_data_none() );
 						goto on_fatal_error;
 					}
 					mlt_frame_close( frame );
@@ -2260,7 +2254,7 @@ receive_video_packet:
 			if ( av_interleaved_write_frame( enc_ctx->oc, &pkt ) != 0 )
 			{
 				mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "error writing flushed video frame\n" );
-				mlt_events_fire( properties, "consumer-fatal-error", NULL );
+				mlt_events_fire( properties, "consumer-fatal-error", mlt_event_data_none() );
 				goto on_fatal_error;
 			}
 		}

@@ -129,8 +129,8 @@ private:
 	static void* get_frame_specific_data( mlt_service service, mlt_frame frame, const char *key, int *length );
 	static int set_frame_specific_data( mlt_service service, mlt_frame frame, const char *key, void *value, int length, mlt_destructor destroy, mlt_serialiser serialise );
 
-	static void onInit( mlt_properties owner, GlslManager* filter );
-	static void onClose( mlt_properties owner, GlslManager* filter );
+	static void onInit(mlt_properties owner, GlslManager* filter, mlt_event_data );
+	static void onClose( mlt_properties owner, GlslManager* filter, mlt_event_data );
 	static void onServiceChanged( mlt_properties owner, mlt_service service );
 	static void onPropertyChanged( mlt_properties owner, mlt_service service, const char* property );
 	movit::ResourcePool* resource_pool;

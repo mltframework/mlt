@@ -64,7 +64,7 @@ static int consumer_stop( mlt_consumer parent );
 static int consumer_is_stopped( mlt_consumer parent );
 static void consumer_close( mlt_consumer parent );
 static void *consumer_thread( void * );
-static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer parent, mlt_event_data* );
+static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer parent, mlt_event_data );
 static int jack_process( jack_nframes_t frames, void * data );
 
 /** Constructor
@@ -140,7 +140,7 @@ mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type type, con
 	return NULL;
 }
 
-static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data *event_data )
+static void consumer_refresh_cb( mlt_consumer sdl, mlt_consumer parent, mlt_event_data event_data )
 {
 	const char *name = mlt_event_data_to_string(event_data);
 	if ( !strcmp( name, "refresh" ) )
@@ -364,9 +364,7 @@ static int consumer_play_video( consumer_jack self, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( &self->parent );
 	if ( self->running && !mlt_consumer_is_stopped( &self->parent ) ) {
-		mlt_event_data event_data;
-		mlt_event_data_from_frame(&event_data, frame);
-		mlt_events_fire( properties, "consumer-frame-show", &event_data );
+		mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 	}
 
 	return 0;

@@ -45,19 +45,18 @@ namespace Mlt
 	class MLTPP_DECLSPEC EventData
 	{
 	    private:
-		    mlt_event_data* instance;
+			mlt_event_data instance;
 	    public:
-			EventData(mlt_event_data*);
+			EventData(mlt_event_data);
 			EventData(EventData&);
 			EventData(const EventData&);
 			EventData& operator=(const EventData&);
 			~EventData() {};
-			mlt_event_data* get_event_data() const;
-			bool is_valid() const;
+			mlt_event_data get_event_data() const;
 			int to_int() const;
 			const char* to_string() const;
 			Frame to_frame() const;
-			void *to_object() const;
+			void* to_object() const;
 	};
 }
 

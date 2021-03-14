@@ -642,7 +642,7 @@ int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 
 static void mlt_service_filter_changed( mlt_service owner, mlt_service self )
 {
-	mlt_events_fire( MLT_SERVICE_PROPERTIES( self ), "service-changed", NULL );
+	mlt_events_fire( MLT_SERVICE_PROPERTIES( self ), "service-changed", mlt_event_data_none() );
 }
 
 /** The property-changed event handler.
@@ -653,7 +653,7 @@ static void mlt_service_filter_changed( mlt_service owner, mlt_service self )
  * \param name the name of the property that changed
  */
 
-static void mlt_service_filter_property_changed( mlt_service owner, mlt_service self, mlt_event_data *event_data )
+static void mlt_service_filter_property_changed( mlt_service owner, mlt_service self, mlt_event_data event_data )
 {
 	mlt_events_fire(MLT_SERVICE_PROPERTIES(self), "property-changed", event_data);
 }
@@ -693,11 +693,11 @@ int mlt_service_attach( mlt_service self, mlt_filter filter )
 				mlt_properties_inc_ref( MLT_FILTER_PROPERTIES( filter ) );
 				base->filters[ base->filter_count ++ ] = filter;
 				mlt_properties_set_data( props, "service", self, 0, NULL, NULL );
-				mlt_events_fire( properties, "service-changed", NULL );
-				mlt_events_fire( props, "service-changed", NULL );
+				mlt_events_fire( properties, "service-changed", mlt_event_data_none() );
+				mlt_events_fire( props, "service-changed", mlt_event_data_none() );
 				mlt_service cp = mlt_properties_get_data( properties, "_cut_parent", NULL );
 				if ( cp )
-					mlt_events_fire( MLT_SERVICE_PROPERTIES(cp), "service-changed", NULL );
+					mlt_events_fire( MLT_SERVICE_PROPERTIES(cp), "service-changed", mlt_event_data_none() );
 				mlt_events_listen( props, self, "service-changed", ( mlt_listener )mlt_service_filter_changed );
 				mlt_events_listen( props, self, "property-changed", ( mlt_listener )mlt_service_filter_property_changed );
 			}
@@ -739,7 +739,7 @@ int mlt_service_detach( mlt_service self, mlt_filter filter )
 			base->filter_count --;
 			mlt_events_disconnect( MLT_FILTER_PROPERTIES( filter ), self );
 			mlt_filter_close( filter );
-			mlt_events_fire( properties, "service-changed", NULL );
+			mlt_events_fire( properties, "service-changed", mlt_event_data_none() );
 		}
 	}
 	return error;
@@ -797,7 +797,7 @@ int mlt_service_move_filter( mlt_service self, int from, int to )
 					base->filters[i] = base->filters[i + 1];
 			}
 			base->filters[to] = filter;
-			mlt_events_fire( MLT_SERVICE_PROPERTIES(self), "service-changed", NULL );
+			mlt_events_fire( MLT_SERVICE_PROPERTIES(self), "service-changed", mlt_event_data_none() );
 			error = 0;
 		}
 	}

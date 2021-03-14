@@ -599,9 +599,7 @@ static mlt_property mlt_properties_fetch( mlt_properties self, const char *name 
 
 static void fire_property_changed(mlt_properties self, const char *name)
 {
-	mlt_event_data event_data;
-	mlt_event_data_from_string(&event_data, name);
-	mlt_events_fire(self, "property-changed", &event_data);
+	mlt_events_fire(self, "property-changed", mlt_event_data_from_string(name));
 }
 
 /** Copy a property to another properties list.

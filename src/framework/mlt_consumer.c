@@ -80,9 +80,9 @@ typedef struct
 }
 consumer_private;
 
-static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data* );
+static void mlt_consumer_property_changed(mlt_properties owner, mlt_consumer self, mlt_event_data );
 static void apply_profile_properties( mlt_consumer self, mlt_profile profile, mlt_properties properties );
-static void on_consumer_frame_show(mlt_properties owner, mlt_consumer self, mlt_event_data* );
+static void on_consumer_frame_show(mlt_properties owner, mlt_consumer self, mlt_event_data );
 static void mlt_thread_create( mlt_consumer self, mlt_thread_function_t function );
 static void mlt_thread_join( mlt_consumer self );
 static void consumer_read_ahead_start( mlt_consumer self );
@@ -202,7 +202,7 @@ static void apply_profile_properties( mlt_consumer self, mlt_profile profile, ml
  * \param name the name of the property that changed
  */
 
-static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data *event_data )
+static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
 	const char *name = mlt_event_data_to_string(event_data);
 	if ( name && !strcmp( name, "mlt_profile" ) )
@@ -335,7 +335,7 @@ static void mlt_consumer_property_changed( mlt_properties owner, mlt_consumer se
  * \param frame the frame that was shown
  */
 
-static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_event_data *event_data )
+static void on_consumer_frame_show( mlt_properties owner, mlt_consumer consumer, mlt_event_data event_data )
 {
 	mlt_frame frame = mlt_event_data_to_frame(event_data);
 	if ( frame ) {
@@ -772,7 +772,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	set_audio_format( self );
 	set_image_format( self );
 
-	mlt_events_fire( properties, "consumer-thread-started", NULL );
+	mlt_events_fire( properties, "consumer-thread-started", mlt_event_data_none() );
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( self );
@@ -790,9 +790,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		// Get the image of the first frame
 		if ( !video_off )
 		{
-			mlt_event_data event_data;
-			mlt_event_data_from_frame(&event_data, frame);
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", &event_data );
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", mlt_event_data_from_frame(frame) );
 			mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 		}
 
@@ -870,9 +868,7 @@ static void *consumer_read_ahead_thread( void *arg )
 				height = mlt_properties_get_int( properties, "height" );
 
 				// Get the image
-				mlt_event_data event_data;
-				mlt_event_data_from_frame(&event_data, frame);
-				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", &event_data );
+				mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", mlt_event_data_from_frame(frame) );
 				mlt_log_timings_begin();
 				mlt_frame_get_image( frame, &image, &priv->image_format, &width, &height, 0 );
 				mlt_log_timings_end( NULL, "mlt_frame_get_image" );
@@ -957,7 +953,7 @@ static void *consumer_read_ahead_thread( void *arg )
 	priv->queue = NULL;
 	pthread_mutex_unlock( &priv->queue_mutex );
 
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", NULL );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", mlt_event_data_none() );
 
 	return NULL;
 }
@@ -1019,7 +1015,7 @@ static void *consumer_worker_thread( void *arg )
 	if ( preview_off && preview_format != 0 )
 		format = preview_format;
 
-	mlt_events_fire( properties, "consumer-thread-started", NULL );
+	mlt_events_fire( properties, "consumer-thread-started", mlt_event_data_none() );
 
 	// Continue to read ahead
 	while ( priv->ahead )
@@ -1065,9 +1061,7 @@ static void *consumer_worker_thread( void *arg )
 			// Fetch width/height again
 			width = mlt_properties_get_int( properties, "width" );
 			height = mlt_properties_get_int( properties, "height" );
-			mlt_event_data event_data;
-			mlt_event_data_from_frame(&event_data, frame);
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", &event_data );
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-frame-render", mlt_event_data_from_frame(frame) );
 			mlt_frame_get_image( frame, &image, &format, &width, &height, 0 );
 		}
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "rendered", 1 );
@@ -1209,7 +1203,7 @@ static void consumer_read_ahead_stop( mlt_consumer self )
 	{
 		// Inform thread to stop
 		priv->ahead = 0;
-		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", mlt_event_data_none() );
 
 		// Broadcast to the condition in case it's waiting
 		pthread_mutex_lock( &priv->queue_mutex );
@@ -1248,7 +1242,7 @@ static void consumer_work_stop( mlt_consumer self )
 	{
 		// Inform thread to stop
 		priv->ahead = 0;
-		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", NULL );
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-stopping", mlt_event_data_none() );
 
 		// Broadcast to the queue condition in case it's waiting
 		pthread_mutex_lock( &priv->queue_mutex );
@@ -1289,7 +1283,7 @@ static void consumer_work_stop( mlt_consumer self )
 		mlt_deque_close( priv->queue );
 		mlt_deque_close( priv->worker_threads );
 
-		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", NULL );
+		mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-stopped", mlt_event_data_none() );
 	}
 }
 
@@ -1571,7 +1565,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 		if ( !priv->ahead )
 		{
 			priv->ahead = 1;
-			mlt_events_fire( properties, "consumer-thread-started", NULL );
+			mlt_events_fire( properties, "consumer-thread-started", mlt_event_data_none() );
 		}
 		// Get the frame in non real time
 		frame = mlt_consumer_get_frame( self );
@@ -1598,7 +1592,7 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 void mlt_consumer_stopped( mlt_consumer self )
 {
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( self ), "running", 0 );
-	mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-stopped", NULL );
+	mlt_events_fire( MLT_CONSUMER_PROPERTIES( self ), "consumer-stopped", mlt_event_data_none() );
 	mlt_event_unblock( ( ( consumer_private* ) self->local )->event_listener );
 }
 
@@ -1749,9 +1743,7 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 		    .function = function,
 		    .data = self
 		};
-		mlt_event_data event_data;
-		mlt_event_data_from_object(&event_data, &data);
-		if ( mlt_events_fire( properties, "consumer-thread-create", &event_data ) < 1 )
+		if ( mlt_events_fire( properties, "consumer-thread-create", mlt_event_data_from_object(&data) ) < 1 )
 		{
 			pthread_attr_t thread_attributes;
 			pthread_attr_init( &thread_attributes );
@@ -1775,9 +1767,7 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 		    .function = function,
 		    .data = self
 		};
-		mlt_event_data event_data;
-		mlt_event_data_from_object(&event_data, &data);
-		if ( mlt_events_fire( properties, "consumer-thread-create", &event_data ) < 1 )
+		if ( mlt_events_fire( properties, "consumer-thread-create", mlt_event_data_from_object(&data) ) < 1 )
 		{
 			priv->ahead_thread = malloc( sizeof( pthread_t ) );
 			pthread_t *handle = priv->ahead_thread;
@@ -1789,9 +1779,8 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 static void mlt_thread_join( mlt_consumer self )
 {
 	consumer_private *priv = self->local;
-	mlt_event_data event_data;
-	mlt_event_data_from_object(&event_data, priv->ahead_thread);
-	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join", &event_data ) < 1 )
+	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join",
+		mlt_event_data_from_object(priv->ahead_thread) ) < 1 )
 	{
 		pthread_t *handle = priv->ahead_thread;
 		pthread_join( *handle, NULL );

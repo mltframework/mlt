@@ -1084,9 +1084,7 @@ static void *consumer_thread( void *arg )
 				mlt_frame_get_audio( frame, (void**) &buffer, &aformat, &frequency, &channels, &samples );
 
 			// Close the frame
-			mlt_event_data event_data;
-			mlt_event_data_from_frame(&event_data, frame);
-			mlt_events_fire( properties, "consumer-frame-show", &event_data );
+			mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 			mlt_frame_close( frame );
 		}
 	}

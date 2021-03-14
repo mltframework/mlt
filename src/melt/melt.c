@@ -59,9 +59,7 @@ static void abnormal_exit_handler(int signum)
 
 static void fire_jack_seek_event(mlt_properties jack, int position)
 {
-	mlt_event_data event_data;
-	mlt_event_data_from_int(&event_data, position);
-	mlt_events_fire(jack, "jack-seek", &event_data);
+	mlt_events_fire(jack, "jack-seek", mlt_event_data_from_int(position));
 }
 
 static void transport_action( mlt_producer producer, char *value )
@@ -81,7 +79,7 @@ static void transport_action( mlt_producer producer, char *value )
 			case 'q':
 			case 'Q':
 				mlt_properties_set_int( properties, "done", 1 );
-				mlt_events_fire( jack, "jack-stop", NULL );
+				mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 				break;
 			case '0':
 				position = 0;
@@ -106,14 +104,14 @@ static void transport_action( mlt_producer producer, char *value )
 				mlt_producer_set_speed( producer, 0 );
 				mlt_consumer_purge( consumer );
 				mlt_producer_seek( producer, mlt_consumer_position( consumer ) + 1 );
-				mlt_events_fire( jack, "jack-stop", NULL );
+				mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 				break;
 			case '6':
 			case ' ':
 				if ( !jack || mlt_producer_get_speed( producer ) != 0 )
 					mlt_producer_set_speed( producer, 1 );
 				mlt_consumer_purge( consumer );
-				mlt_events_fire( jack, "jack-start", NULL );
+				mlt_events_fire( jack, "jack-start", mlt_event_data_none() );
 				break;
 			case '7':
 				mlt_producer_set_speed( producer, 2 );
@@ -166,7 +164,7 @@ static void transport_action( mlt_producer producer, char *value )
 					mlt_producer_set_speed( producer, 0 );
 					mlt_consumer_purge( consumer );
 					mlt_producer_seek( producer, position );
-					mlt_events_fire( jack, "jack-stop", NULL );
+					mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 					fire_jack_seek_event(jack, position);
 				}
 				break;
@@ -196,7 +194,7 @@ static void transport_action( mlt_producer producer, char *value )
 					if ( mlt_producer_get_speed( producer ) != 0 )
 					{
 						mlt_producer_set_speed( producer, 0 );
-						mlt_events_fire( jack, "jack-stop", NULL );
+						mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 					}
 					else
 					{
@@ -222,7 +220,7 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_properties_set_int( properties, "stats_off", 0 );
 }
 
-static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_event_data *event_data )
+static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_event_data event_data )
 {
 	mlt_producer producer = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "transport_producer", NULL );
 	if ( producer )
@@ -230,7 +228,7 @@ static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_ev
 		if ( mlt_producer_get_speed( producer ) != 0 )
 		{
 			mlt_properties jack = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES( consumer ), "jack_filter", NULL );
-			mlt_events_fire( jack, "jack-stop", NULL );
+			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 		}
 		else
 		{
@@ -243,7 +241,7 @@ static void on_jack_started( mlt_properties owner, mlt_consumer consumer, mlt_ev
 	}
 }
 
-static void on_jack_stopped( mlt_properties owner, mlt_consumer consumer, mlt_event_data *event_data )
+static void on_jack_stopped( mlt_properties owner, mlt_consumer consumer, mlt_event_data event_data )
 {
 	mlt_producer producer = mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "transport_producer", NULL );
 	if ( producer )
@@ -1093,7 +1091,7 @@ query_all:
 		error = mlt_properties_get_int( MLT_CONSUMER_PROPERTIES( consumer ), "melt_error" );
 		mlt_consumer_connect( consumer, NULL );
 		if ( !is_abort )
-			mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-cleanup", NULL);
+			mlt_events_fire( MLT_CONSUMER_PROPERTIES(consumer), "consumer-cleanup", mlt_event_data_none());
 	}
 
 	if ( is_abort )

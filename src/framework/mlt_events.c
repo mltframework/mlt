@@ -177,11 +177,11 @@ int mlt_events_register(mlt_properties self, const char *id)
  * \public \memberof mlt_events_struct
  * \param self a properties list
  * \param id the name of an event
- * \param data an opaque pointer
+ * \param event_data an event data object
  * \return the number of listeners
  */
 
-int mlt_events_fire(mlt_properties self, const char *id, mlt_event_data *event_data)
+int mlt_events_fire(mlt_properties self, const char *id, mlt_event_data event_data)
 {
 	int result = 0;
 	mlt_events events = mlt_events_fetch( self );
@@ -472,118 +472,119 @@ static void mlt_events_close( mlt_events events )
 	}
 }
 
+/** Initialize an empty event data.
+ *
+ * \public \memberof mlt_event_data
+ * \return an event data object
+ */
+
+mlt_event_data mlt_event_data_none()
+{
+	mlt_event_data event_data;
+	event_data.u.p = NULL;
+	return event_data;
+}
+
 /** Initialize event data with an integer.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
  * \param value the integer with which to initialize the event data
+ * \return an event data object
  */
 
-void mlt_event_data_from_int(mlt_event_data *event_data, int value)
+mlt_event_data mlt_event_data_from_int(int value)
 {
-	if (event_data) {
-		event_data->u.i = value;
-	}
+	mlt_event_data event_data;
+	event_data.u.i = value;
+	return event_data;
 }
 
 /** Get an integer from the event data.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
+ * \param event_data an event data object
  * \return an integer
  */
 
-int mlt_event_data_to_int(const mlt_event_data *event_data)
+int mlt_event_data_to_int(mlt_event_data event_data)
 {
-	if (event_data) {
-		return event_data->u.i;
-	}
-	return INT_MIN;
+	return event_data.u.i;
 }
 
 /** Initialize event data with a string.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
  * \param value the string with which to initialize the event data
+ * \return an event data object
  */
 
-void mlt_event_data_from_string(mlt_event_data *event_data, const char *value)
+mlt_event_data mlt_event_data_from_string(const char *value)
 {
-	if (event_data) {
-		event_data->u.p = (char*) value;
-	}
+	mlt_event_data event_data;
+	event_data.u.p = (void*) value;
+	return event_data;
 }
 
 /** Get a string from the event data.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
+ * \param event_data an event data object
  * \return a string
  */
 
-const char *mlt_event_data_to_string(const mlt_event_data *event_data)
+const char *mlt_event_data_to_string(mlt_event_data event_data)
 {
-	if (event_data) {
-		return event_data->u.p;
-	}
-	return NULL;
+	return event_data.u.p;
 }
 
 /** Initialize event data with a frame.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
  * \param frame the frame with which to initialize the event data
+ * \return an event data object
  */
 
-void mlt_event_data_from_frame(mlt_event_data *event_data, mlt_frame frame)
+mlt_event_data mlt_event_data_from_frame(mlt_frame frame)
 {
-	if (event_data) {
-		event_data->u.p = frame;
-	}
+	mlt_event_data event_data;
+	event_data.u.p = frame;
+	return event_data;
 }
 
 /** Get a frame from the event data.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
+ * \param event_data an event data object
  * \return a frame
  */
 
-mlt_frame mlt_event_data_to_frame(const mlt_event_data *event_data)
+mlt_frame mlt_event_data_to_frame(mlt_event_data event_data)
 {
-	if (event_data) {
-		return (mlt_frame) event_data->u.p;
-	}
-	return NULL;
+	return (mlt_frame) event_data.u.p;
 }
 
 /** Initialize event data with opaque data.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
  * \param value the pointer with which to initialize the event data
+ * \return an event data object
  */
 
-void mlt_event_data_from_object(mlt_event_data *event_data, void *value)
+mlt_event_data mlt_event_data_from_object(void *value)
 {
-	if (event_data) {
-		event_data->u.p = value;
-	}
+	mlt_event_data event_data;
+	event_data.u.p = value;
+	return event_data;
 }
 
 /** Get a pointer from the event data.
  *
  * \public \memberof mlt_event_data
- * \param event_data pointer to an event data object
+ * \param event_data an event data object
  * \return a pointer
  */
 
-void *mlt_event_data_to_object(const mlt_event_data *event_data)
+void *mlt_event_data_to_object(mlt_event_data event_data)
 {
-	if (event_data) {
-		return event_data->u.p;
-	}
-	return NULL;
+	return event_data.u.p;
 }

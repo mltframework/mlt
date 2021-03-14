@@ -235,7 +235,7 @@ void GlslManager::cleanupContext()
 	unlock();
 }
 
-void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
+void GlslManager::onInit( mlt_properties owner, GlslManager* filter, mlt_event_data )
 {
 	mlt_log_debug( filter->get_service(), "%s\n", __FUNCTION__ );
 #ifdef _WIN32
@@ -249,7 +249,7 @@ void GlslManager::onInit( mlt_properties owner, GlslManager* filter )
 	filter->set( "glsl_supported", success );
 }
 
-void GlslManager::onClose( mlt_properties owner, GlslManager *filter )
+void GlslManager::onClose( mlt_properties owner, GlslManager *filter, mlt_event_data )
 {
 	filter->cleanupContext();
 }

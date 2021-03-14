@@ -39,7 +39,7 @@ typedef struct
 } private_data;
 
 
-static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data *event_data )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );

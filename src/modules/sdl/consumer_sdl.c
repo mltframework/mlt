@@ -545,9 +545,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 
 			while ( SDL_PollEvent( &event ) )
 			{
-				mlt_event_data event_data;
-				mlt_event_data_from_object(&event_data, &event);
-				mlt_events_fire( self->properties, "consumer-sdl-event", &event_data );
+				mlt_events_fire( self->properties, "consumer-sdl-event", mlt_event_data_from_object(&event) );
 
 				switch( event.type )
 				{
@@ -688,18 +686,14 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 
 		sdl_unlock_display();
 		mlt_cocoa_autorelease_close( pool );
-		mlt_event_data event_data;
-		mlt_event_data_from_frame(&event_data, frame);
-		mlt_events_fire( properties, "consumer-frame-show", &event_data );
+		mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 	}
 	else if ( self->running )
 	{
 		vfmt = preview_format == mlt_image_none ? mlt_image_rgb24a : preview_format;
 		if ( !video_off )
 			mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-		mlt_event_data event_data;
-		mlt_event_data_from_frame(&event_data, frame);
-		mlt_events_fire( properties, "consumer-frame-show", &event_data );
+		mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 	}
 
 	return 0;

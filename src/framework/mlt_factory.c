@@ -329,15 +329,13 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, con
 	    .input = resource,
 	    .service = &obj
 	};
-	mlt_event_data event_data;
-	mlt_event_data_from_object(&event_data, &data);
-	mlt_events_fire( event_object, "producer-create-request", &event_data );
+	mlt_events_fire( event_object, "producer-create-request", mlt_event_data_from_object(&data) );
 
 	// Try to instantiate via the specified service
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, profile, mlt_service_producer_type, service, resource );
-		mlt_events_fire( event_object, "producer-create-done", &event_data );
+		mlt_events_fire( event_object, "producer-create-done", mlt_event_data_from_object(&data) );
 		if ( obj != NULL )
 		{
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES( obj );
@@ -373,14 +371,12 @@ mlt_filter mlt_factory_filter( mlt_profile profile, const char *service, const v
 	    .input = input,
 	    .service = &obj
 	};
-	mlt_event_data event_data;
-	mlt_event_data_from_object(&event_data, &data);
-	mlt_events_fire( event_object, "filter-create-request", &event_data );
+	mlt_events_fire( event_object, "filter-create-request", mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, profile, mlt_service_filter_type, service, input );
-		mlt_events_fire( event_object, "filter-create-done", &event_data );
+		mlt_events_fire( event_object, "filter-create-done", mlt_event_data_from_object(&data) );
 	}
 
 	if ( obj != NULL )
@@ -408,14 +404,12 @@ mlt_link mlt_factory_link( const char *service, const void *input )
 	    .input = input,
 	    .service = &obj
 	};
-	mlt_event_data event_data;
-	mlt_event_data_from_object(&event_data, &data);
-	mlt_events_fire( event_object, "link-create-request", &event_data );
+	mlt_events_fire( event_object, "link-create-request", mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, NULL, mlt_service_link_type, service, input );
-		mlt_events_fire( event_object, "link-create-done", &event_data );
+		mlt_events_fire( event_object, "link-create-done", mlt_event_data_from_object(&data) );
 	}
 
 	if ( obj != NULL )
@@ -444,14 +438,12 @@ mlt_transition mlt_factory_transition( mlt_profile profile, const char *service,
 	    .input = input,
 	    .service = &obj
 	};
-	mlt_event_data event_data;
-	mlt_event_data_from_object(&event_data, &data);
-	mlt_events_fire( event_object, "transition-create-request", &event_data );
+	mlt_events_fire( event_object, "transition-create-request", mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
 		obj = mlt_repository_create( repository, profile, mlt_service_transition_type, service, input );
-		mlt_events_fire( event_object, "transition-create-done", &event_data );
+		mlt_events_fire( event_object, "transition-create-done", mlt_event_data_from_object(&data) );
 	}
 
 	if ( obj != NULL )
@@ -483,9 +475,7 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 	    .input = input,
 	    .service = &obj
 	};
-	mlt_event_data event_data;
-	mlt_event_data_from_object(&event_data, &data);
-	mlt_events_fire( event_object, "consumer-create-request", &event_data );
+	mlt_events_fire( event_object, "consumer-create-request",mlt_event_data_from_object(&data) );
 
 	if ( obj == NULL )
 	{
@@ -509,7 +499,7 @@ mlt_consumer mlt_factory_consumer( mlt_profile profile, const char *service, con
 	if ( obj != NULL )
 	{
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( obj );
-		mlt_events_fire( event_object, "consumer-create-done", &event_data );
+		mlt_events_fire( event_object, "consumer-create-done", mlt_event_data_from_object(&data) );
 		set_common_properties( properties, profile, "consumer", service );
 	}
 	return obj;
