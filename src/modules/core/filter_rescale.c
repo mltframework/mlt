@@ -230,7 +230,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 			// If valid colorspace
 			if ( *format == mlt_image_yuv422 || *format == mlt_image_rgb24 ||
-			     *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+			     *format == mlt_image_rgb24a )
 			{
 				// Call the virtual function
 				scaler_method( frame, image, format, iwidth, iheight, owidth, oheight );

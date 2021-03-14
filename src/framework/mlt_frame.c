@@ -431,7 +431,6 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 		{
 			case mlt_image_rgb24:
 			case mlt_image_rgb24a:
-			case mlt_image_opengl:
 			case mlt_image_yuv422:
 			case mlt_image_yuv422p16:
 			case mlt_image_yuv420p:

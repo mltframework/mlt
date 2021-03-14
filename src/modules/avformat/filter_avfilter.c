@@ -107,7 +107,6 @@ static mlt_image_format get_supported_image_format( mlt_image_format format )
 		mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format );
 	case mlt_image_none:
 	case mlt_image_yuv422:
-	case mlt_image_opengl:
 	case mlt_image_glsl:
 	case mlt_image_glsl_texture:
 		return mlt_image_yuv422;

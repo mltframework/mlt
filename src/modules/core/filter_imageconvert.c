@@ -323,10 +323,9 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 			int size = width * height * bpp_table[ requested_format - 1 ];
 			int alpha_size = width * height;
 			uint8_t *image = mlt_pool_alloc( size );
-			uint8_t *alpha = ( *format == mlt_image_rgb24a ||
-			                   *format == mlt_image_opengl )
+			uint8_t *alpha = ( *format == mlt_image_rgb24a )
 			                 ? mlt_pool_alloc( width * height ) : NULL;
-			if ( requested_format == mlt_image_rgb24a || requested_format == mlt_image_opengl )
+			if ( requested_format == mlt_image_rgb24a )
 			{
 				if ( alpha )
 					mlt_pool_release( alpha );
@@ -337,7 +336,7 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 			if ( !( error = converter( *buffer, image, alpha, width, height ) ) )
 			{
 				mlt_frame_set_image( frame, image, size, mlt_pool_release );
-				if ( alpha && ( *format == mlt_image_rgb24a || *format == mlt_image_opengl ) )
+				if ( alpha && *format == mlt_image_rgb24a )
 					mlt_frame_set_alpha( frame, alpha, alpha_size, mlt_pool_release );
 				*buffer = image;
 				*format = requested_format;

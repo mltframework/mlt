@@ -476,7 +476,7 @@ static MltInput* create_input( mlt_properties properties, mlt_image_format forma
 	}
 
 	MltInput* input = new MltInput( format );
-	if ( format == mlt_image_rgb24a || format == mlt_image_opengl ) {
+	if ( format == mlt_image_rgb24a ) {
 		// TODO: Get the color space if available.
 		input->useFlatInput( FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height );
 	}

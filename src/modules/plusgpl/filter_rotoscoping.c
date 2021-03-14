@@ -399,7 +399,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
                 {
                     case mlt_image_rgb24:
                     case mlt_image_rgb24a:
-                    case mlt_image_opengl:
                         while ( p != q )
                         {
                             p[0] = p[1] = p[2] = map[i++];
@@ -426,7 +425,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
                 switch ( *format )
                 {
                 case mlt_image_rgb24a:
-                case mlt_image_opengl:
                     switch ( mlt_properties_get_int( unique, "alpha_operation" ) )
                     {
                     case ALPHA_CLEAR:

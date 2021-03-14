@@ -1459,7 +1459,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			|| pix_fmt == AV_PIX_FMT_YUVA444P
 #endif
 			) &&
-		*format != mlt_image_rgb24a && *format != mlt_image_opengl &&
+		*format != mlt_image_rgb24a &&
 		frame->data[3] && frame->linesize[3] )
 	{
 		int i;
@@ -1519,7 +1519,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			out_data, out_stride);
 		sws_freeContext( context );
 	}
-	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+	else if ( *format == mlt_image_rgb24a )
 	{
 		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGBA);
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
