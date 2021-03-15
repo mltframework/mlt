@@ -4,7 +4,7 @@ CFLAGS := -I../.. $(CFLAGS)
 
 LDFLAGS := -L../../framework -lmlt -lm $(LDFLAGS)
 
-TARGET = ../libmltopengl$(LIBSUF)
+TARGET = ../libmltmovit$(LIBSUF)
 
 OBJS = factory.o
 
@@ -75,8 +75,8 @@ clean:
 
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
-	install -d "$(DESTDIR)$(mltdatadir)/opengl"
-	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/opengl"
+	install -d "$(DESTDIR)$(mltdatadir)/movit"
+	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/movit"
 
 ifneq ($(wildcard .depend),)
 include .depend

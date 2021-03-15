@@ -44,8 +44,8 @@ if(MOD_OPENCV)
   add_subdirectory(opencv)
 endif()
 
-if(MOD_OPENGL)
-  add_subdirectory(opengl)
+if(MOD_MOVIT)
+  add_subdirectory(movit)
 endif()
 
 if(MOD_PLUS)
