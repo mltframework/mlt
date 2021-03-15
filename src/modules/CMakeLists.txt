@@ -24,10 +24,6 @@ if(MOD_KDENLIVE)
   add_subdirectory(kdenlive)
 endif()
 
-if(MOD_MOTION_EST)
-  add_subdirectory(motion_est)
-endif()
-
 if(MOD_NDI)
   add_subdirectory(ndi)
 endif()

@@ -30,7 +30,6 @@ Last Revision: 2013-09-07
          * gdk           - GDK pango and pixbuf dependent services
          * jackrack      - adapter for LADSPA audio plugins and JACK server
          * kdenlive      - services contributed by Kdenlive project
-         * motion_est    - motion estimation-based filters (*)
          * normalize     - audio normalisation functions (*)
          * oldfilm       - filters to make pristine video dirty
          * movit         - Movit dependent services (*)
