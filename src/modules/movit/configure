@@ -5,7 +5,7 @@ then
 	if ! $(pkg-config movit)
 	then
 		echo "- movit not found: disabling"
-		touch ../disable-opengl
+		touch ../disable-movit
 		exit 0
 	fi
 

@@ -1,4 +1,4 @@
-add_library(mltopengl MODULE
+add_library(mltmovit MODULE
   consumer_xgl.c
   factory.c
   filter_glsl_manager.cpp
@@ -24,20 +24,20 @@ add_library(mltopengl MODULE
   transition_movit_overlay.cpp
 )
 
-target_compile_options(mltopengl PRIVATE ${MLT_COMPILE_OPTIONS})
+target_compile_options(mltmovit PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltopengl PRIVATE m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
+target_link_libraries(mltmovit PRIVATE m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
 
 if(UNIX AND NOT APPLE)
-  target_link_libraries(mltopengl PRIVATE X11::X11)
+  target_link_libraries(mltmovit PRIVATE X11::X11)
 endif()
 
 pkg_get_variable(SHADERDIR movit shaderdir)
-target_compile_definitions(mltopengl PRIVATE SHADERDIR="${SHADERDIR}")
+target_compile_definitions(mltmovit PRIVATE SHADERDIR="${SHADERDIR}")
 
-set_target_properties(mltopengl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+set_target_properties(mltmovit PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltopengl LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+install(TARGETS mltmovit LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_movit_blur.yml

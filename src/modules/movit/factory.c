@@ -48,7 +48,7 @@ extern mlt_transition transition_movit_overlay_init( mlt_profile profile, mlt_se
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/opengl/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	snprintf( file, PATH_MAX, "%s/movit/%s", mlt_environment( "MLT_DATA" ), (char*) data );
 	return mlt_properties_parse_yaml( file );
 }
 

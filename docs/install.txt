@@ -33,7 +33,7 @@ Last Revision: 2013-09-07
          * motion_est    - motion estimation-based filters (*)
          * normalize     - audio normalisation functions (*)
          * oldfilm       - filters to make pristine video dirty
-         * opengl        - !OpenGL dependent services (*)
+         * movit         - Movit dependent services (*)
          * plus          - miscellaneous services (pending move to core)
          * qt            - Qt dependent services (*)
          * resample      - libresample dependent services (*)
@@ -71,7 +71,7 @@ Last Revision: 2013-09-07
    | *Module* | *Description* |
    | avformat | [[http://www.ffmpeg.org][FFmpeg]] v4.0 or later |
    | jackrack | [[http://jackaudio.org][JACK]], [[http://www.xmlsoft.org/][libxml2]], and ladspa.h |
-   | opengl   | [[http://git.sesse.net/movit][Movit]] |
+   | movit    | [[http://git.sesse.net/movit][Movit]] |
    | qt       | [[http://www.qt-project.org][Qt]] 4.4 or later |
    | resample | [[http://www.mega-nerd.com/SRC][libsamplerate]] 0.15 or later |
    | sdl      | [[http://www.libsdl.org][SDL]] 1.2 or later |
