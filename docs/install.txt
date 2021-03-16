@@ -41,7 +41,6 @@ Last Revision: 2013-09-07
          * sdl           - SDL dependent services
          * sox           - !SoX dependent audio filters
          * vid.stab      - video stabilization filters (*)
-         * vmfx          - services contributed by (defunct) Visual Media FX
          * vorbis        - vorbis dependenent services
          * xine          - Xine-derived sources (*)
          * xml           - XML (de)serialization services

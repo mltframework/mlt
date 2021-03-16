@@ -1,5 +1,5 @@
 /*
- * filter_mono.c -- Arbitrary alpha channel shaping
+ * filter_threshold.c -- Arbitrary alpha channel shaping
  * Copyright (C) 2005 Visual Media Fx Inc.
  * Author: Charles Yates <charles.yates@gmail.com>
  *
@@ -90,7 +90,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 /** Constructor for the filter.
 */
 
-mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_filter filter_threshold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_filter filter = mlt_filter_new( );
 	if ( filter != NULL )
