@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1606,7 +1606,7 @@ mlt_animation mlt_property_get_animation( mlt_property self )
 
 /** Convert a rectangle value into a string.
  *
- * Unlike the deprecated mlt_geometry API, the canonical form of a mlt_rect
+ * The canonical form of a mlt_rect
  * is a space delimited "x y w h o" even though many kinds of field delimiters
  * may be used to convert a string to a rectangle.
  * \private \memberof mlt_property_s

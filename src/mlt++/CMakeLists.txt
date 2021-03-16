@@ -13,7 +13,6 @@ set(MLTPP_PUPLIC_HEADERS
   MltFilteredConsumer.h
   MltFilteredProducer.h
   MltFrame.h
-  MltGeometry.h
   MltImage.h
   MltLink.h
   MltMultitrack.h
@@ -43,7 +42,6 @@ add_library(mlt++ SHARED
   MltFilteredConsumer.cpp
   MltFilteredProducer.cpp
   MltFrame.cpp
-  MltGeometry.cpp
   MltImage.cpp
   MltLink.cpp
   MltMultitrack.cpp

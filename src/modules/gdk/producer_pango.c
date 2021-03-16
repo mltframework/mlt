@@ -1,6 +1,6 @@
 /*
  * producer_pango.c -- a pango-based titler
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,9 +19,9 @@
 
 #include <framework/mlt_producer.h>
 #include <framework/mlt_frame.h>
-#include <framework/mlt_geometry.h>
 #include <framework/mlt_cache.h>
 #include <framework/mlt_log.h>
+#include <framework/mlt_animation.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -227,11 +227,14 @@ mlt_producer producer_pango_init( const char *filename )
 			int i = 0;
 			mlt_position out_point = 0;
 			mlt_properties contents = mlt_properties_load( filename );
-			mlt_geometry key_frames = mlt_geometry_init( );
-			struct mlt_geometry_item_s item;
+
+			mlt_animation key_frames = mlt_animation_new();
+			struct mlt_animation_item_s item;
+			item.property = NULL;
+			item.keyframe_type = mlt_keyframe_discrete;
 			mlt_properties_set_string( properties, "resource", filename );
 			mlt_properties_set_data( properties, "contents", contents, 0, ( mlt_destructor )mlt_properties_close, NULL );
-			mlt_properties_set_data( properties, "key_frames", key_frames, 0, ( mlt_destructor )mlt_geometry_close, NULL );
+			mlt_properties_set_data( properties, "key_frames", key_frames, 0, ( mlt_destructor )mlt_animation_close, NULL );
 
 			// Make sure we have at least one entry
 			if ( mlt_properties_get( contents, "0" ) == NULL )
@@ -244,10 +247,10 @@ mlt_producer producer_pango_init( const char *filename )
 				while ( value != NULL && strchr( value, '~' ) )
 					( *strchr( value, '~' ) ) = '\n';
 				item.frame = atoi( name );
-				mlt_geometry_insert( key_frames, &item );
+				mlt_animation_insert( key_frames, &item );
 				out_point = MAX( out_point, item.frame );
 			}
-			mlt_geometry_interpolate( key_frames );
+			mlt_animation_interpolate( key_frames );
 			mlt_properties_set_position( properties, "length", out_point + 1 );
 			mlt_properties_set_position( properties, "out", out_point );
 		}
@@ -426,12 +429,13 @@ static void refresh_image( producer_pango self, mlt_frame frame, int width, int 
 	{
 		// Check for file support
 		mlt_properties contents = mlt_properties_get_data( producer_props, "contents", NULL );
-		mlt_geometry key_frames = mlt_properties_get_data( producer_props, "key_frames", NULL );
-		struct mlt_geometry_item_s item;
+		mlt_animation key_frames = mlt_properties_get_data( producer_props, "key_frames", NULL );
 		if ( contents != NULL )
 		{
 			char temp[ 20 ];
-			mlt_geometry_prev_key( key_frames, &item, mlt_frame_original_position( frame ) );
+			struct mlt_animation_item_s item;
+			item.property = NULL;
+			mlt_animation_prev_key( key_frames, &item, mlt_frame_original_position( frame ) );
 			sprintf( temp, "%d", item.frame );
 			markup = mlt_properties_get( contents, temp );
 		}

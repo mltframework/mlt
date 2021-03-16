@@ -3,7 +3,7 @@
  * \brief Property Animation class definition
  * \see mlt_animation_s
  *
- * Copyright (C) 2004-2018 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -477,7 +477,8 @@ int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 	node->item.is_key = 1;
 	node->item.keyframe_type = item->keyframe_type;
 	node->item.property = mlt_property_init();
-	mlt_property_pass( node->item.property, item->property );
+	if (item->property)
+		mlt_property_pass( node->item.property, item->property );
 
 	// Determine if we need to insert or append to the list, or if it's a new list
 	if ( self->nodes )

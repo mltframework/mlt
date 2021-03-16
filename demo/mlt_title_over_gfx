@@ -5,7 +5,7 @@ melt \
 -track \
 	clip1.dv \
 -transition \
-	composite start=30%/20%:40%x60% \
+    composite:30%/20%:40%x60% \
 		in=50 \
 		out=199 \
 		a_track=0 \
@@ -13,15 +13,12 @@ melt \
 		distort=1 \
 		sliced_composite=1 \
 -transition \
-	composite:0%/75%:100%x20%:0 \
+    composite:"0=0%/75%:100%x20%:0; 24=0%/75%:100%x20%:100%; -25=0%/75%:100%x20%:100%; -1=0%/75%:100%x20%:0" \
 		in=50 \
 		out=199 \
 		a_track=2 \
 		b_track=0 \
-		key[24]=0%/75%:100%x20%:100 \
-		key[-25]=0%/75%:100%x20%:100 \
 		luma=luma1.pgm \
-		end=0%/75%:100%x20%:0 \
 		distort=1 \
 		sliced_composite=1 \
 $*

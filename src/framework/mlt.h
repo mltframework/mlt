@@ -2,7 +2,7 @@
  * \file mlt.h
  * \brief header file for lazy client and implementation code :-)
  *
- * Copyright (C) 2003-2017 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,7 +53,6 @@ extern "C"
 #include "mlt_tractor.h"
 #include "mlt_tokeniser.h"
 #include "mlt_parser.h"
-#include "mlt_geometry.h"
 #include "mlt_profile.h"
 #include "mlt_repository.h"
 #include "mlt_log.h"
