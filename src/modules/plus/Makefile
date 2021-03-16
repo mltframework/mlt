@@ -11,6 +11,8 @@ OBJS = consumer_blipflash.o \
 	   factory.o \
 	   filter_affine.o \
 	   filter_charcoal.o \
+	   filter_chroma.o \
+	   filter_chroma_hold.o \
 	   filter_dynamictext.o \
 	   filter_dynamic_loudness.o \
 	   filter_invert.o \
@@ -23,10 +25,13 @@ OBJS = consumer_blipflash.o \
 	   filter_sepia.o \
 	   filter_spot_remover.o \
 	   filter_text.o \
+	   filter_threshold.o \
 	   filter_timer.o \
+	   filter_shape.o \
 	   filter_strobe.o \
 	   producer_blipflash.o \
 	   producer_count.o \
+	   producer_pgm.o \
 	   transition_affine.o
 
 ifdef USE_FFTW

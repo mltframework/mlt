@@ -84,10 +84,6 @@ if(MOD_VIDSTAB)
   add_subdirectory(vid.stab)
 endif()
 
-if(MOD_VMFX)
-  add_subdirectory(vmfx)
-endif()
-
 if(MOD_VORBIS)
   add_subdirectory(vorbis)
 endif()
