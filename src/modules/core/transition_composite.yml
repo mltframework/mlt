@@ -2,7 +2,7 @@ schema_version: 0.3
 type: transition
 identifier: composite
 title: Composite
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -32,10 +32,8 @@ parameters:
 
   - identifier: geometry
     title: Geometry
-    type: geometry
-    description: > 
-      Key frame specification. This is a ";" delimited form of the deprecated 
-      start, key[n], end properties.
+    type: rect
+    description: A possibly keyframed rectangle
     mutable: yes
 
   - identifier: progressive
@@ -126,29 +124,6 @@ parameters:
     readonly: no
     mutable: yes
 
-  - identifier: start
-    title: Start geometry
-    description: >
-      (deprecated) A geometry specification as X/Y:WxH[!][:mix]
-      
-      X, Y, W, H are assumed to pixel units unless they have the suffix '%'.
-      
-      '!' is a shortcut to specify distort.
-      
-      Mix is always a 2 digit percentage, defaults to 100.
-    type: geometry
-    default: "0%/0%:100%x100%"
-    readonly: no
-    mutable: yes
-
-  - identifier: end
-    title: End geometry
-    description: >
-      (deprecated) X/Y:WxH[:mix] - The end geometry specification (see "start").
-    type: geometry
-    readonly: no
-    mutable: yes
-
   - identifier: sliced_composite
     title: Use sliced compositing
     description: >
@@ -158,16 +133,6 @@ parameters:
     default: 0
     mutable: yes
     widget: checkbox
-
-  - identifier: key[F]
-    title: Key frame geometry
-    description: >
-      (deprecated) X/Y:WxH[:mix] - set a key frame for geometry between the in 
-      and out. F is a frame number and can be negative to make it relative to 
-      the out point.
-    type: geometry
-    readonly: no
-    mutable: yes
 
   - identifier: fill
     title: Fill geometry

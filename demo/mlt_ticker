@@ -7,11 +7,10 @@ colour:0 out=299 \
 out=299 \
 -transition \
 composite a_track=0 b_track=1 out=299 distort=1 \
-start=0/70%:100%x64:100 \
+geometry=0/70%:100%x11%:100% \
 sliced_composite=1 \
 -transition \
 composite a_track=0 b_track=2 out=299 titles=1 \
-start=100%/70%:999%x20% \
-end=-299%/70%:999%x20% \
+geometry="0=100%/70%:999%x20%; -1=-299%/70%:999%x20%" \
 sliced_composite=1 \
 $*

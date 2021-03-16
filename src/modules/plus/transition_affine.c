@@ -78,83 +78,6 @@ static double anim_get_angle(mlt_properties properties, const char* name, mlt_po
 	return result;
 }
 
-/** Calculate real geometry.
-*/
-
-static void geometry_calculate( mlt_transition transition, const char *store, struct mlt_geometry_item_s *output, double position )
-{
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
-	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
-	int mirror_off = mlt_properties_get_int( properties, "mirror_off" );
-	int repeat_off = mlt_properties_get_int( properties, "repeat_off" );
-	int length = mlt_geometry_get_length( geometry );
-
-	// Allow wrapping
-	if ( !repeat_off && position >= length && length != 0 )
-	{
-		int section = position / length;
-		position -= section * length;
-		if ( !mirror_off && section % 2 == 1 )
-			position = length - position;
-	}
-
-	// Fetch the key for the position
-	mlt_geometry_fetch( geometry, output, position );
-}
-
-
-static mlt_geometry transition_parse_keys( mlt_transition transition, const char *name, const char *store, int normalised_width, int normalised_height )
-{
-	// Get the properties of the transition
-	mlt_properties properties = MLT_TRANSITION_PROPERTIES( transition );
-
-	// Try to fetch it first
-	mlt_geometry geometry = mlt_properties_get_data( properties, store, NULL );
-
-	// Determine length and obtain cycle
-	mlt_position length = mlt_transition_get_length( transition );
-	double cycle = mlt_properties_get_double( properties, "cycle" );
-
-	// Allow a geometry repeat cycle
-	if ( cycle >= 1 )
-		length = cycle;
-	else if ( cycle > 0 )
-		length *= cycle;
-
-	if ( geometry == NULL )
-	{
-		// Get the new style geometry string
-		char *property = mlt_properties_get( properties, name );
-
-		// Create an empty geometries object
-		geometry = mlt_geometry_init( );
-
-		// Parse the geometry if we have one
-		mlt_geometry_parse( geometry, property, length, normalised_width, normalised_height );
-
-		// Store it
-		mlt_properties_set_data( properties, store, geometry, 0, ( mlt_destructor )mlt_geometry_close, NULL );
-	}
-	else
-	{
-		// Check for updates and refresh if necessary
-		mlt_geometry_refresh( geometry, mlt_properties_get( properties, name ), length, normalised_width, normalised_height );
-	}
-
-	return geometry;
-}
-
-static mlt_geometry composite_calculate( mlt_transition transition, struct mlt_geometry_item_s *result, int nw, int nh, double position )
-{
-	// Structures for geometry
-	mlt_geometry start = transition_parse_keys( transition, "geometry", "geometries", nw, nh );
-
-	// Do the calculation
-	geometry_calculate( transition, "geometries", result, position );
-
-	return start;
-}
-
 typedef struct
 {
 	double matrix[3][3];
@@ -497,18 +420,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 
-	if (mlt_properties_get(properties, "geometry"))
-	{
-		// Structures for geometry
-		struct mlt_geometry_item_s geometry;
-		composite_calculate( transition, &geometry, normalised_width, normalised_height, ( double )position );
-		result.x = geometry.x;
-		result.y = geometry.y;
-		result.w = geometry.w;
-		result.h = geometry.h;
-		result.o = geometry.mix / 100.0f;
-	}
-	else if (mlt_properties_get(properties, "rect"))
+	if (mlt_properties_get(properties, "rect"))
 	{
 		// Determine length and obtain cycle
 		double cycle = mlt_properties_get_double( properties, "cycle" );

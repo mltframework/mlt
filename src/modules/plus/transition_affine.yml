@@ -1,8 +1,8 @@
-schema_version: 0.2
+schema_version: 7.0
 type: transition
 identifier: affine
 title: Transform
-version: 5
+version: 6
 copyright: Meltytech, LLC
 creator: Charles Yates
 contributor:
@@ -12,16 +12,11 @@ language: en
 tags:
   - Video
 parameters:
-  - identifier: geometry
-    title: Rectangle
-    type: geometry
-    description: This property is deprecated. Use rect instead.
-
   - identifier: distort
     title: Ignore aspect ratio
     description: >
       Determines whether the image aspect ratio will be distorted while scaling
-      to completely fill the geometry rectangle.
+      to completely fill the rectangle.
     type: boolean
     default: 0
     mutable: yes
@@ -72,10 +67,7 @@ parameters:
 
   - identifier: keyed
     title: Key-framed
-    description: >
-      Whether rotate, shear, and offset are key-framed or not.
-      This ("key-framed") refers to the legacy, deprecated, mlt_geometry-based
-      property evaluation. Most of the properties support mlt_animation now.
+    description: Whether rotate, shear, and offset are key-framed or not.
     type: boolean
     default: 0
     mutable: yes
@@ -217,7 +209,7 @@ parameters:
   - identifier: scale
     title: Scale
     description: >
-      Whether to automatic upscale B frame image to ensure the geometry area
+      Whether to automatic upscale B frame image to ensure the rectangle
       is filled.
     type: boolean
     default: 0
@@ -261,12 +253,12 @@ parameters:
     mutable: yes
 
   - identifier: fill
-    title: Fill geometry
+    title: Fill rectangle
     description: >
-      Determines whether the image will be scaled up to fill the geometry.
-      Otherwise, if the B frame image fits within the geometry, it will not
-      be scaled. If 0, and the B frame image exceeds the geometry, then it is
-      scaled down to fit within the geometry.
+      Determines whether the image will be scaled up to fill the rectangle.
+      Otherwise, if the B frame image fits within the rectangle, it will not
+      be scaled. If 0, and the B frame image exceeds the rectangle, then it is
+      scaled down to fit within the rectangle.
     type: boolean
     default: 1
     mutable: yes
@@ -275,7 +267,7 @@ parameters:
   - identifier: halign
     title: Horizontal alignment
     description: >
-      Set the horizontal alignment within the geometry rectangle.
+      Set the horizontal alignment within the rectangle.
     type: string
     default: left
     values:
@@ -288,7 +280,7 @@ parameters:
   - identifier: valign
     title: Vertical alignment
     description: >
-      Set the vertical alignment within the geometry rectangle.
+      Set the vertical alignment within the rectangle.
     type: string
     default: top
     values:
@@ -309,10 +301,9 @@ parameters:
   - identifier: rect
     title: Rectangle
     description: >
-      This replaces the geometry property and specifies a specifies a rectangle
-      for the size and position of the image. The format of this is
+      This specifies the size and position of the image. The format of this is
       "X/Y:WxH[:opacity]" and can be animated with key frames.
-      Unlike the geometry property, if you use percentages you must use them for
+      If you use percentages you must use them for
       every field in the above format. For example, you cannot mix and match
       usage of absolute coordinates and percentages for size and opacity.
     type: rect
