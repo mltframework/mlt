@@ -75,12 +75,6 @@ struct mlt_frame_s
 {
 	struct mlt_properties_s parent; /**< \private A frame extends properties. */
 
-	/** Get the alpha channel (callback function).
-	 * \param self a frame
-	 * \return the 8-bit alpha channel
-	 */
-	uint8_t * ( *get_alpha_mask )( mlt_frame self );
-
 	/** Convert the image format (callback function).
 	 * \param self a frame
 	 * \param[in,out] image a buffer of image data

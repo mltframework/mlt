@@ -349,7 +349,6 @@ int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_destructo
 
 int mlt_frame_set_alpha( mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy )
 {
-	self->get_alpha_mask = NULL;
 	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "alpha", alpha, size, destroy, NULL );
 }
 
@@ -389,7 +388,6 @@ void mlt_frame_replace_image( mlt_frame self, uint8_t *image, mlt_image_format f
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "width", width );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "height", height );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "format", format );
-	self->get_alpha_mask = NULL;
 }
 
 static int generate_test_image( mlt_properties properties, uint8_t **buffer,  mlt_image_format *format, int *width, int *height, int writable )
@@ -540,10 +538,7 @@ uint8_t *mlt_frame_get_alpha_mask( mlt_frame self )
 	uint8_t *alpha = NULL;
 	if ( self != NULL )
 	{
-		if ( self->get_alpha_mask != NULL )
-			alpha = self->get_alpha_mask( self );
-		if ( alpha == NULL )
-			alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
+		alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
 		if ( alpha == NULL )
 		{
 			int size = mlt_properties_get_int( &self->parent, "width" ) * mlt_properties_get_int( &self->parent, "height" );
@@ -570,10 +565,7 @@ uint8_t *mlt_frame_get_alpha( mlt_frame self )
 	uint8_t *alpha = NULL;
 	if ( self != NULL )
 	{
-		if ( self->get_alpha_mask != NULL )
-			alpha = self->get_alpha_mask( self );
-		if ( alpha == NULL )
-			alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
+		alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
 	}
 	return alpha;
 }
