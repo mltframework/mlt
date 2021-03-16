@@ -21,7 +21,6 @@ add_library(mltcore MODULE
   filter_mono.c
   filter_obscure.c
   filter_panner.c
-  filter_region.c
   filter_rescale.c
   filter_resize.c
   filter_transition.c
@@ -39,7 +38,6 @@ add_library(mltcore MODULE
   transition_luma.c
   transition_matte.c
   transition_mix.c
-  transition_region.c
 )
 
 target_compile_options(mltcore PRIVATE ${MLT_COMPILE_OPTIONS})
@@ -82,7 +80,6 @@ install(FILES
   filter_mono.yml
   filter_obscure.yml
   filter_panner.yml
-  filter_region.yml
   filter_rescale.yml
   filter_resize.yml
   filter_transition.yml
@@ -101,7 +98,6 @@ install(FILES
   transition_luma.yml
   transition_matte.yml
   transition_mix.yml
-  transition_region.yml
   loader.dict
   loader.ini
   DESTINATION ${MLT_INSTALL_DATA_DIR}/core

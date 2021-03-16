@@ -76,16 +76,6 @@ Clock in and out
 	http://mlt.sf.net/. It also performs field rendering.
 	The second wipe demonstrates the ability to control the direction of the
 	wipe as well.
-	
-Obscure
-
-	A popular requirement in news production is to obscure a face, obscenity,
-	or trademarked logo. This demonstrates using a simple rectangular 
-	obscure filter applied to a region of the image. The second example is more
-	advanced and shows using the "region" filter to select the image area and a 
-	property of the region filter to "shape" the region using the alpha channel
-	of another image (circle.png) and another property to "filter" the region
-	using the obscure filter.
 
 Audio Stuff
 

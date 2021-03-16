@@ -34,7 +34,6 @@ OBJS = factory.o \
 	   filter_mono.o \
 	   filter_obscure.o \
 	   filter_panner.o \
-	   filter_region.o \
 	   filter_rescale.o \
 	   filter_resize.o \
 	   filter_transition.o \
@@ -43,7 +42,6 @@ OBJS = factory.o \
 	   transition_composite.o \
 	   transition_luma.o \
 	   transition_mix.o \
-	   transition_region.o \
 	   transition_matte.o \
 	   consumer_multi.o \
 	   consumer_null.o
