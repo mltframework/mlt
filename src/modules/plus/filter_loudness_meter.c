@@ -1,7 +1,6 @@
 /*
  * filter_loudness_meter.c -- measure audio loudness according to EBU R128
- * Copyright (C) 2016 Brian Matherly <code@brianmatherly.com>
- * Author: Brian Matherly <code@brianmatherly.com>
+ * Copyright (C) 2016 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

@@ -3,8 +3,7 @@ type: filter
 identifier: dynamic_loudness
 title: Dynamic Loudness
 version: 1
-copyright: Brian Matherly <code@brianmatherly.com>
-creator: Brian Matherly <code@brianmatherly.com>
+copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
 tags:
