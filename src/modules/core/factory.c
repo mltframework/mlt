@@ -42,7 +42,6 @@ extern mlt_filter filter_mirror_init( mlt_profile profile, mlt_service_type type
 extern mlt_filter filter_mono_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_obscure_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_panner_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_region_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_rescale_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_resize_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_transition_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -61,7 +60,6 @@ extern mlt_producer producer_tone_init( mlt_profile profile, mlt_service_type ty
 extern mlt_transition transition_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_mix_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_transition transition_matte_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-#include "transition_region.h"
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
@@ -95,7 +93,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_filter_type, "mono", filter_mono_init );
 	MLT_REGISTER( mlt_service_filter_type, "obscure", filter_obscure_init );
 	MLT_REGISTER( mlt_service_filter_type, "panner", filter_panner_init );
-	MLT_REGISTER( mlt_service_filter_type, "region", filter_region_init );
 	MLT_REGISTER( mlt_service_filter_type, "rescale", filter_rescale_init );
 	MLT_REGISTER( mlt_service_filter_type, "resize", filter_resize_init );
 	MLT_REGISTER( mlt_service_filter_type, "transition", filter_transition_init );
@@ -116,7 +113,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_transition_type, "luma", transition_luma_init );
 	MLT_REGISTER( mlt_service_transition_type, "mix", transition_mix_init );
 	MLT_REGISTER( mlt_service_transition_type, "matte", transition_matte_init );
-	MLT_REGISTER( mlt_service_transition_type, "region", transition_region_init );
 
 	MLT_REGISTER_METADATA( mlt_service_consumer_type, "multi", metadata, "consumer_multi.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "audiomap", metadata, "filter_audiomap.yml" );
@@ -137,7 +133,6 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "mono", metadata, "filter_mono.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "obscure", metadata, "filter_obscure.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "panner", metadata, "filter_panner.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "region", metadata, "filter_region.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "rescale", metadata, "filter_rescale.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "resize", metadata, "filter_resize.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "transition", metadata, "filter_transition.yml" );
@@ -157,5 +152,4 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_transition_type, "luma", metadata, "transition_luma.yml" );
 	MLT_REGISTER_METADATA( mlt_service_transition_type, "mix", metadata, "transition_mix.yml" );
 	MLT_REGISTER_METADATA( mlt_service_transition_type, "matte", metadata, "transition_matte.yml" );
-	MLT_REGISTER_METADATA( mlt_service_transition_type, "region", metadata, "transition_region.yml" );
 }
