@@ -1,7 +1,6 @@
 /*
  * filter_swresample.c -- convert from one format/ configuration to another
  * Copyright (C) 2018 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

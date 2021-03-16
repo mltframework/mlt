@@ -1,8 +1,7 @@
 /*
  * consumer_blipflash.c -- a consumer to measure A/V sync from a blip/flash
  *                         source
- * Copyright (C) 2013 Brian Matherly
- * Author: Brian Matherly <pez4brian@yahoo.com>
+ * Copyright (C) 2013 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015-2020 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

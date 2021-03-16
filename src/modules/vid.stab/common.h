@@ -1,7 +1,7 @@
 /*
  * common.h
  * Copyright (C) 2013 Jakub Ksiezniak <j.ksiezniak@gmail.com>
- * Copyright (C) 2014 Brian Matherly <pez4brian@yahoo.com>
+ * Copyright (C) 2014 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -3,8 +3,7 @@ type: producer
 identifier: count
 title: Count
 version: 1
-copyright: Brian Matherly
-creator: Brian Matherly
+copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
 tags:

@@ -6,7 +6,6 @@ version: 1
 copyright: Copyright (C) 2013-2014 Meltytech, LLC
 license: GPLv2
 language: en
-creator: Brian Matherly
 tags:
   - Audio
 description: Generate audio using LADSPA plugins.
