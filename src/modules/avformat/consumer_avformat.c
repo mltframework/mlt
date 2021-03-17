@@ -1991,30 +1991,46 @@ static void *consumer_thread( void *arg )
 						     c->pix_fmt == AV_PIX_FMT_BGRA )
 						{
 							uint8_t *p;
-							uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
-							register int n;
-
-							for ( i = 0; i < height; i ++ )
+							uint8_t *alpha = mlt_frame_get_alpha( frame );
+							if ( alpha )
 							{
-								n = ( width + 7 ) / 8;
-								p = converted_avframe->data[ 0 ] + i * converted_avframe->linesize[ 0 ] + 3;
+								register int n;
 
-								switch( width % 8 )
+								for ( i = 0; i < height; i ++ )
 								{
-									case 0:	do { *p = *alpha++; p += 4;
-									case 7:		 *p = *alpha++; p += 4;
-									case 6:		 *p = *alpha++; p += 4;
-									case 5:		 *p = *alpha++; p += 4;
-									case 4:		 *p = *alpha++; p += 4;
-									case 3:		 *p = *alpha++; p += 4;
-									case 2:		 *p = *alpha++; p += 4;
-									case 1:		 *p = *alpha++; p += 4;
-											}
-											while( --n );
+									n = ( width + 7 ) / 8;
+									p = converted_avframe->data[ 0 ] + i * converted_avframe->linesize[ 0 ] + 3;
+
+									switch( width % 8 )
+									{
+										case 0:	do { *p = *alpha++; p += 4;
+										case 7:		 *p = *alpha++; p += 4;
+										case 6:		 *p = *alpha++; p += 4;
+										case 5:		 *p = *alpha++; p += 4;
+										case 4:		 *p = *alpha++; p += 4;
+										case 3:		 *p = *alpha++; p += 4;
+										case 2:		 *p = *alpha++; p += 4;
+										case 1:		 *p = *alpha++; p += 4;
+												}
+												while( --n );
+									}
 								}
 							}
 						}
-
+						else
+						{
+							for ( i = 0; i < height; i ++ )
+							{
+								int n = width;
+								uint8_t* p = converted_avframe->data[ 0 ] + i * converted_avframe->linesize[ 0 ] + 3;
+								while ( n )
+								{
+									*p = 255;
+									p += 4;
+									n--;
+								}
+							}
+						}
 #if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
 						if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
 							AVFilterContext *vfilter_in = mlt_properties_get_data(properties, "vfilter_in", NULL);
