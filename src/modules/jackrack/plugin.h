@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,9 @@
 #include <glib.h>
 #include <ladspa.h>
 #include <pthread.h>
+#ifdef WITH_JACK
 #include <jack/jack.h>
+#endif
 
 #include "process.h"
 #include "plugin_desc.h"
@@ -43,7 +45,9 @@ struct _ladspa_holder
   LADSPA_Data * control_memory;
   LADSPA_Data * status_memory;
 
+#ifdef WITH_JACK
   jack_port_t **             aux_ports;
+#endif
 };
 
 struct _plugin

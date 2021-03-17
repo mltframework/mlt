@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,8 +37,7 @@
 
 #define CONTROL_FIFO_SIZE   128
 
-
-
+#ifdef WITH_JACK
 /* swap over the jack ports in two plugins */
 static void
 plugin_swap_aux_ports (plugin_t * plugin, plugin_t * other)
@@ -53,6 +52,7 @@ plugin_swap_aux_ports (plugin_t * plugin, plugin_t * other)
       plugin->holders[copy].aux_ports = aux_ports_tmp;
     }
 }
+#endif
 
 /** connect up the ladspa instance's input buffers to the previous
     plugin's audio memory.  make sure to check that plugin->prev
@@ -141,6 +141,7 @@ process_remove_plugin (process_info_t * procinfo, plugin_t *plugin)
   else
     procinfo->chain_end = plugin->prev;
     
+#ifdef WITH_JACK
   /* sort out the aux ports */
   if (procinfo->jack_client && plugin->desc->aux_channels > 0)
     {
@@ -150,6 +151,7 @@ process_remove_plugin (process_info_t * procinfo, plugin_t *plugin)
         if (other->desc->id == plugin->desc->id)
           plugin_swap_aux_ports (plugin, other);
     }
+#endif
 
   return plugin;
 }
@@ -230,7 +232,8 @@ process_move_plugin (process_info_t * procinfo, plugin_t *plugin, gint up)
       else
 	procinfo->chain_end = plugin;
     }
-  
+
+#ifdef WITH_JACK
   if (procinfo->jack_client && plugin->desc->aux_channels > 0)
     {
       plugin_t * other;
@@ -240,6 +243,7 @@ process_move_plugin (process_info_t * procinfo, plugin_t *plugin, gint up)
       if (other->desc->id == plugin->desc->id)
         plugin_swap_aux_ports (plugin, other);
     }
+#endif
 }
 
 /** exchange an existing plugin for a newly created one */
@@ -260,6 +264,7 @@ process_change_plugin (process_info_t * procinfo,
   else
     procinfo->chain_end = new_plugin;
 
+#ifdef WITH_JACK
   /* sort out the aux ports */
   if (procinfo->jack_client && plugin->desc->aux_channels > 0)
     {
@@ -269,6 +274,7 @@ process_change_plugin (process_info_t * procinfo,
         if (other->desc->id == plugin->desc->id)
           plugin_swap_aux_ports (plugin, other);
     }
+#endif
 
   return plugin;
 }
@@ -364,6 +370,8 @@ plugin_instantiate (const LADSPA_Descriptor * descriptor,
   return 0;
 }
 
+#ifdef WITH_JACK
+
 static void
 plugin_create_aux_ports (plugin_t * plugin, guint copy, jack_rack_t * jack_rack)
 {
@@ -430,6 +438,8 @@ plugin_create_aux_ports (plugin_t * plugin, guint copy, jack_rack_t * jack_rack)
   g_free (plugin_name);
 }
 
+#endif
+
 static void
 plugin_init_holder (plugin_t * plugin,
                     guint copy,
@@ -481,8 +491,10 @@ plugin_init_holder (plugin_t * plugin,
         connect_port (instance, desc->status_port_indicies[i], holder->status_memory + i);
     }
   
+#ifdef WITH_JACK
   if (jack_rack->procinfo->jack_client && plugin->desc->aux_channels > 0)
     plugin_create_aux_ports (plugin, copy, jack_rack);
+#endif
   
   if (plugin->descriptor->activate)
     plugin->descriptor->activate (instance);
@@ -581,6 +593,7 @@ plugin_destroy (plugin_t * plugin)
           g_free (plugin->holders[i].status_memory);
         }
 
+#ifdef WITH_JACK
       /* aux ports */
       if (plugin->jack_rack->procinfo->jack_client && plugin->desc->aux_channels > 0)
         {
@@ -595,6 +608,7 @@ plugin_destroy (plugin_t * plugin)
        
           g_free (plugin->holders[i].aux_ports);
         }
+#endif
     }
     
   g_free (plugin->holders);

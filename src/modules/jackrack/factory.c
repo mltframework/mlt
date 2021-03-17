@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,9 @@ extern mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type ty
 #include <ladspa.h>
 #include "plugin_mgr.h"
 
+#ifdef WITH_JACK
 extern mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+#endif
 extern mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
@@ -206,12 +208,16 @@ MLT_REPOSITORY
 	}
 	mlt_factory_register_for_clean_up( g_jackrack_plugin_mgr, (mlt_destructor) plugin_mgr_destroy );
 
+# ifdef WITH_JACK
 	MLT_REGISTER( mlt_service_filter_type, "jack", filter_jackrack_init );
 	MLT_REGISTER( mlt_service_filter_type, "jackrack", filter_jackrack_init );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "jackrack", metadata, "filter_jackrack.yml" );
+# endif
 	MLT_REGISTER( mlt_service_filter_type, "ladspa", filter_ladspa_init );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "ladspa", metadata, "filter_ladspa.yml" );
 #endif
+#ifdef WITH_JACK
 	MLT_REGISTER( mlt_service_consumer_type, "jack", consumer_jack_init );
 	MLT_REGISTER_METADATA( mlt_service_consumer_type, "jack", metadata, "consumer_jack.yml" );
+#endif
 }
