@@ -65,7 +65,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 	{
 		// Return silent samples for speeds less than 0.1 or > 10
 		mlt_position position = mlt_frame_original_position( frame );
-		*samples = mlt_sample_calculator( link_fps, *frequency, position );
+		*samples = mlt_audio_calculate_frame_samples( link_fps, *frequency, position );
 		int size = mlt_audio_format_size( *format, *samples, *channels );
 		*audio = mlt_pool_alloc( size );
 		memset( *audio, 0, size );
@@ -75,7 +75,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 	else
 	{
 		// Calculate the samples to get from the input frames
-		int link_sample_count = mlt_sample_calculator( link_fps, *frequency, mlt_frame_get_position( frame ) );
+		int link_sample_count = mlt_audio_calculate_frame_samples( link_fps, *frequency, mlt_frame_get_position( frame ) );
 		int sample_count = lrint( (double)link_sample_count * source_speed );
 		mlt_position in_frame_pos = floor( source_time * source_fps );
 		int64_t first_out_sample = llrint(source_time * (double)*frequency);
@@ -105,7 +105,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 			}
 		}
 
-		int64_t first_in_sample = mlt_sample_calculator_to_now( source_fps, *frequency, in_frame_pos );
+		int64_t first_in_sample = mlt_audio_calculate_samples_to_position( source_fps, *frequency, in_frame_pos );
 		int samples_to_skip = first_out_sample - first_in_sample;
 		if ( samples_to_skip < 0 )
 		{
@@ -133,7 +133,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 				break;
 			}
 
-			int in_samples = mlt_sample_calculator( source_fps, *frequency, in_frame_pos );
+			int in_samples = mlt_audio_calculate_frame_samples( source_fps, *frequency, in_frame_pos );
 			struct mlt_audio_s in;
 			mlt_audio_set_values( &in, NULL, *frequency, *format, in_samples, *channels );
 
