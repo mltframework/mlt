@@ -2024,25 +2024,6 @@ int mlt_playlist_remove_region( mlt_playlist self, mlt_position position, int le
 	return index;
 }
 
-/** Not implemented
- *
- * \deprecated not implemented
- * \public \memberof mlt_playlist_s
- * \param self
- * \param position
- * \param length
- * \param new_position
- * \return
- */
-
-int mlt_playlist_move_region( mlt_playlist self, mlt_position position, int length, int new_position )
-{
-	if ( self != NULL )
-	{
-	}
-	return 0;
-}
-
 /** Get the current frame.
  *
  * The implementation of the get_frame virtual function.
