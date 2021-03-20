@@ -797,18 +797,9 @@ static GdkPixbuf *pango_get_pixbuf( const char *markup, const char *text, const 
 	FT_Bitmap bitmap;
 	PangoFontDescription *desc = NULL;
 
-	if( font )
-	{
-		// Support for deprecated "font" property.
-		desc = pango_font_description_from_string( font );
-		pango_ft2_font_map_set_resolution( fontmap, 72, 72 );
-	}
-	else
-	{
-		desc = pango_font_description_from_string( family );
-		pango_font_description_set_size( desc, PANGO_SCALE * size );
-		pango_font_description_set_style( desc, (PangoStyle) style );
-	}
+	desc = pango_font_description_from_string( family );
+	pango_font_description_set_size( desc, PANGO_SCALE * size );
+	pango_font_description_set_style( desc, (PangoStyle) style );
 
 	pango_font_description_set_weight( desc, ( PangoWeight ) weight  );
 

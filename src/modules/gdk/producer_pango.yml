@@ -143,17 +143,6 @@ parameters:
     mutable: yes
     widget: textbox
 
-  - identifier: font
-    title: Font
-    type: string
-    description: >
-      The default typeface to use when not using markup. 
-      FreeType2 renders at 72 dpi.
-      This property is deprecated. Use family, size and style instead.
-    readonly: no
-    mutable: yes
-    widget: combo
-    
   - identifier: family
     title: Font family
     type: string
