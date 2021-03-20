@@ -12,7 +12,7 @@ tags:
 description: Pan an audio channel, adjust balance, or adjust fade.
 notes: Only handles up to 6 channels. Needs more work balance for surround and other channel layouts.
 parameters:
-  - identifier: start
+  - identifier: start (*deprecated*)
     title: Start
     description: >
       The position of the audio relative to its neighbor channel. For example,
@@ -26,7 +26,7 @@ parameters:
     minimum: 0
     maximum: 1
 
-  - identifier: end
+  - identifier: end (*deprecated*)
     title: End
     description: >
       The ending value of the audio position. It will be interpolated from
