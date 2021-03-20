@@ -34,12 +34,6 @@ CFLAGS += $(shell sdl-config --cflags)
 LDFLAGS += $(shell sdl-config --libs)
 endif
 
-ifeq ($(WITH_SDL_IMAGE),1)
-OBJS += producer_sdl_image.o
-CFLAGS += -DWITH_SDL_IMAGE
-LDFLAGS += -lSDL_image
-endif
-
 SRCS := $(OBJS:.o=.c)
 ifeq ($(targetos),Darwin)
 OBJS += consumer_sdl_osx.o
