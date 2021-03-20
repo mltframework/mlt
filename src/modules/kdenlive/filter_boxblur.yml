@@ -10,7 +10,7 @@ language: en
 tags:
   - Video
 parameters:
-  - identifier: start
+  - identifier: start (*deprecated*)
     title: Size
     argument: yes
     type: integer
@@ -28,7 +28,7 @@ parameters:
     default: 2
     minimum: 1
 
-  - identifier: end
+  - identifier: end (*deprecated*)
     title: End size
     type: integer
     unit: pixels
