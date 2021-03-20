@@ -126,7 +126,6 @@ extern int mlt_playlist_clip_start( mlt_playlist self, int clip );
 extern int mlt_playlist_clip_length( mlt_playlist self, int clip );
 extern int mlt_playlist_blanks_from( mlt_playlist self, int clip, int bounded );
 extern int mlt_playlist_remove_region( mlt_playlist self, mlt_position position, int length );
-extern int mlt_playlist_move_region( mlt_playlist self, mlt_position position, int length, int new_position );
 extern void mlt_playlist_close( mlt_playlist self );
 
 #endif

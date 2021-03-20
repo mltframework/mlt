@@ -335,9 +335,3 @@ int Playlist::remove_region( int position, int length )
 {
 	return mlt_playlist_remove_region( get_playlist( ), position, length );
 }
-
-int Playlist::move_region( int position, int length, int new_position )
-{
-	return mlt_playlist_move_region( get_playlist( ), position, length, new_position );
-}
-

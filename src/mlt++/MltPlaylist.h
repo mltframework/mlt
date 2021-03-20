@@ -107,7 +107,6 @@ namespace Mlt
 			int clip_length( int clip );
 			int blanks_from( int clip, int bounded = 0 );
 			int remove_region( int position, int length );
-			int move_region( int position, int length, int new_position );
 	};
 }
 
