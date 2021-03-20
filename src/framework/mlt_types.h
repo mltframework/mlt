@@ -61,7 +61,6 @@ mlt_image_format;
 typedef enum
 {
 	mlt_audio_none = 0,/**< audio not available */
-	mlt_audio_pcm = 1, /**< \deprecated signed 16-bit interleaved PCM */
 	mlt_audio_s16 = 1, /**< signed 16-bit interleaved PCM */
 	mlt_audio_s32,     /**< signed 32-bit non-interleaved PCM */
 	mlt_audio_float,   /**< 32-bit non-interleaved floating point */
@@ -129,7 +128,6 @@ typedef enum
 	mlt_time_frames = 0, /**< frame count */
 	mlt_time_clock,      /**< SMIL clock-value as [[hh:]mm:]ss[.fraction] */
 	mlt_time_smpte_df,   /**< SMPTE timecode as [[[hh:]mm:]ss{:|;}]frames */
-	mlt_time_smpte = mlt_time_smpte_df,   /**< Deprecated */
 	mlt_time_smpte_ndf   /**< SMPTE NDF timecode as [[[hh:]mm:]ss:]frames */
 }
 mlt_time_format;
