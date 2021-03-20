@@ -64,12 +64,4 @@ extern mlt_channel_layout mlt_audio_channel_layout_id( const char * name );
 extern int mlt_audio_channel_layout_channels( mlt_channel_layout layout );
 extern mlt_channel_layout mlt_audio_channel_layout_default( int channels );
 
-// Deprecated functions
-extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
-extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
-extern const char * mlt_channel_layout_name( mlt_channel_layout layout );
-extern mlt_channel_layout mlt_channel_layout_id( const char * name );
-extern int mlt_channel_layout_channels( mlt_channel_layout layout );
-extern mlt_channel_layout mlt_channel_layout_default( int channels );
-
 #endif
