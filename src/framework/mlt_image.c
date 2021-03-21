@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_mlt_image_s
  *
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -187,6 +187,9 @@ int mlt_image_calculate_size( mlt_image self )
 			return 4;
 		case mlt_image_yuv422p16:
 			return 4 * self->width * self->height;
+		case mlt_image_none:
+		case mlt_image_invalid:
+			return 0;
 	}
 	return 0;
 }
@@ -245,8 +248,9 @@ void mlt_image_fill_black( mlt_image self )
 {
 	if ( !self->data) return;
 
-	switch(  self->format )
+	switch( self->format )
 	{
+		case mlt_image_invalid:
 		case mlt_image_none:
 		case mlt_image_movit:
 		case mlt_image_opengl_texture:
@@ -302,8 +306,33 @@ void mlt_image_fill_black( mlt_image self )
 		}
 		break;
 	}
+}
 
- }
+/** Fill an image alpha channel with opaque if it exists.
+  *
+  * \public \memberof mlt_image_s
+  */
+void mlt_image_fill_opaque( mlt_image self )
+{
+	if ( !self->data) return;
+
+	if ( self->format == mlt_image_rgba && self->planes[0] != NULL )
+	{
+		for ( int line = 0; line < self->height; line++ )
+		{
+			uint8_t* pLine = self->planes[0] + ( self->strides[0] * line ) + 3;
+			for ( int pixel = 0; pixel < self->width; pixel++ )
+			{
+				*pLine = 0xff;
+				*pLine += 4;
+			}
+		}
+	}
+	else if ( self->planes[3] != NULL )
+	{
+		memset( self->planes[3], 255, self->height * self->strides[3] );
+	}
+}
 
 /** Get the number of bytes needed for an image.
   *
