@@ -603,6 +603,7 @@ MLT_7.0.0 {
     mlt_image_alloc_alpha;
     mlt_image_calculate_size;
     mlt_image_fill_black;
+    mlt_image_fill_opaque;
     mlt_audio_silence;
     mlt_event_data_none;
     mlt_event_data_from_int;

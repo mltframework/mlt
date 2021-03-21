@@ -54,6 +54,7 @@ extern void mlt_image_alloc_data( mlt_image self );
 extern void mlt_image_alloc_alpha( mlt_image self );
 extern int mlt_image_calculate_size( mlt_image self );
 extern void mlt_image_fill_black( mlt_image self );
+extern void mlt_image_fill_opaque( mlt_image self );
 extern const char * mlt_image_format_name( mlt_image_format format );
 extern mlt_image_format mlt_image_format_id( const char * name );
 
