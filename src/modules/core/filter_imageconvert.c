@@ -1,6 +1,6 @@
 /*
  * filter_imageconvert.c -- colorspace and pixel format converter
- * Copyright (C) 2009-2014 Meltytech, LLC
+ * Copyright (C) 2009-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_image.h>
 #include <framework/mlt_log.h>
 #include <framework/mlt_pool.h>
 
@@ -54,255 +55,409 @@
 #define YUV2RGB_601 YUV2RGB_601_UNSCALED
 #endif
 
-static int convert_yuv422_to_rgb24a( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha, int width, int height )
+static void convert_yuv422_to_rgba( mlt_image src, mlt_image dst )
 {
-	int ret = 0;
 	int yy, uu, vv;
 	int r,g,b;
-	int total = width * height / 2 + 1;
 
-	while ( --total )
+	mlt_image_set_values( dst, NULL, mlt_image_rgba, src->width, src->height );
+	mlt_image_alloc_data( dst );
+
+	for ( int line = 0; line < src->height; line++ )
 	{
-		yy = yuv[0];
-		uu = yuv[1];
-		vv = yuv[3];
-		YUV2RGB_601( yy, uu, vv, r, g, b );
-		rgba[0] = r;
-		rgba[1] = g;
-		rgba[2] = b;
-		rgba[3] = *alpha++;
-		yy = yuv[2];
-		YUV2RGB_601( yy, uu, vv, r, g, b );
-		rgba[4] = r;
-		rgba[5] = g;
-		rgba[6] = b;
-		rgba[7] = *alpha++;
-		yuv += 4;
-		rgba += 8;
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line;
+		uint8_t* pAlpha = src->planes[3] + src->strides[3] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		int total = src->width / 2 + 1;
+
+		if ( pAlpha )
+			while ( --total )
+			{
+				yy = pSrc[0];
+				uu = pSrc[1];
+				vv = pSrc[3];
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[0] = r;
+				pDst[1] = g;
+				pDst[2] = b;
+				pDst[3] = *pAlpha++;
+				yy = pSrc[2];
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[4] = r;
+				pDst[5] = g;
+				pDst[6] = b;
+				pDst[7] = *pAlpha++;
+				pSrc += 4;
+				pDst += 8;
+			}
+		else
+			while ( --total )
+			{
+				yy = pSrc[0];
+				uu = pSrc[1];
+				vv = pSrc[3];
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[0] = r;
+				pDst[1] = g;
+				pDst[2] = b;
+				pDst[3] = 0xff;
+				yy = pSrc[2];
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[4] = r;
+				pDst[5] = g;
+				pDst[6] = b;
+				pDst[7] = 0xff;
+				pSrc += 4;
+				pDst += 8;
+			}
 	}
-	return ret;
 }
 
-static int convert_yuv422_to_rgb24( uint8_t *yuv, uint8_t *rgb, uint8_t *alpha, int width, int height )
+static void convert_yuv422_to_rgb( mlt_image src, mlt_image dst )
 {
-	int ret = 0;
 	int yy, uu, vv;
 	int r,g,b;
-	int total = width * height / 2 + 1;
 
-	while ( --total )
+	mlt_image_set_values( dst, NULL, mlt_image_rgb, src->width, src->height );
+	mlt_image_alloc_data( dst );
+
+	for ( int line = 0; line < src->height; line++ )
 	{
-		yy = yuv[0];
-		uu = yuv[1];
-		vv = yuv[3];
-		YUV2RGB_601( yy, uu, vv, r, g, b );
-		rgb[0] = r;
-		rgb[1] = g;
-		rgb[2] = b;
-		yy = yuv[2];
-		YUV2RGB_601( yy, uu, vv, r, g, b );
-		rgb[3] = r;
-		rgb[4] = g;
-		rgb[5] = b;
-		yuv += 4;
-		rgb += 6;
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		int total = src->width / 2 + 1;
+		while ( --total )
+		{
+			yy = pSrc[0];
+			uu = pSrc[1];
+			vv = pSrc[3];
+			YUV2RGB_601( yy, uu, vv, r, g, b );
+			pDst[0] = r;
+			pDst[1] = g;
+			pDst[2] = b;
+			yy = pSrc[2];
+			YUV2RGB_601( yy, uu, vv, r, g, b );
+			pDst[3] = r;
+			pDst[4] = g;
+			pDst[5] = b;
+			pSrc += 4;
+			pDst += 6;
+		}
 	}
-	return ret;
 }
 
-static int convert_rgb24a_to_yuv422( uint8_t *rgba, uint8_t *yuv, uint8_t *alpha, int width, int height )
+static void convert_rgba_to_yuv422( mlt_image src, mlt_image dst )
 {
-	int ret = 0;
-	int stride = width * 4;
 	int y0, y1, u0, u1, v0, v1;
 	int r, g, b;
-	uint8_t *s, *d = yuv;
-	int i, j, n = width / 2 + 1;
 
-	if ( alpha )
-	for ( i = 0; i < height; i++ )
+	mlt_image_set_values( dst, NULL, mlt_image_yuv422, src->width, src->height );
+	mlt_image_alloc_data( dst );
+	mlt_image_alloc_alpha( dst );
+
+	for ( int line = 0; line < src->height; line++ )
 	{
-		s = rgba + ( stride * i );
-		j = n;
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		uint8_t* pAlpha = dst->planes[3] + dst->strides[3] * line;
+		int j = src->width / 2 + 1;
 		while ( --j )
 		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			*alpha++ = *s++;
+			r = *pSrc++;
+			g = *pSrc++;
+			b = *pSrc++;
+			*pAlpha++ = *pSrc++;
 			RGB2YUV_601( r, g, b, y0, u0 , v0 );
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			*alpha++ = *s++;
+			r = *pSrc++;
+			g = *pSrc++;
+			b = *pSrc++;
+			*pAlpha++ = *pSrc++;
 			RGB2YUV_601( r, g, b, y1, u1 , v1 );
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
+			*pDst++ = y0;
+			*pDst++ = (u0+u1) >> 1;
+			*pDst++ = y1;
+			*pDst++ = (v0+v1) >> 1;
 		}
-		if ( width % 2 )
+		if ( src->width % 2 )
 		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			*alpha++ = *s++;
+			r = *pSrc++;
+			g = *pSrc++;
+			b = *pSrc++;
+			*pAlpha++ = *pSrc++;
 			RGB2YUV_601( r, g, b, y0, u0 , v0 );
-			*d++ = y0;
-			*d++ = u0;
+			*pDst++ = y0;
+			*pDst++ = u0;
 		}
 	}
-	else
-	for ( i = 0; i < height; i++ )
-	{
-		s = rgba + ( stride * i );
-		j = n;
-		while ( --j )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			s++;
-			RGB2YUV_601( r, g, b, y0, u0 , v0 );
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			s++;
-			RGB2YUV_601( r, g, b, y1, u1 , v1 );
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
-		}
-		if ( width % 2 )
-		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
-			s++;
-			RGB2YUV_601( r, g, b, y0, u0 , v0 );
-			*d++ = y0;
-			*d++ = u0;
-		}
-	}
-
-	return ret;
 }
 
-static int convert_rgb24_to_yuv422( uint8_t *rgb, uint8_t *yuv, uint8_t *alpha, int width, int height )
+static void convert_rgb_to_yuv422( mlt_image src, mlt_image dst )
 {
-	int ret = 0;
-	int stride = width * 3;
 	int y0, y1, u0, u1, v0, v1;
 	int r, g, b;
-	uint8_t *s, *d = yuv;
-	int i, j, n = width / 2 + 1;
 
-	for ( i = 0; i < height; i++ )
+	mlt_image_set_values( dst, NULL, mlt_image_yuv422, src->width, src->height );
+	mlt_image_alloc_data( dst );
+
+	for ( int line = 0; line < src->height; line++ )
 	{
-		s = rgb + ( stride * i );
-		j = n;
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		int j = src->width / 2 + 1;
 		while ( --j )
 		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
+			r = *pSrc++;
+			g = *pSrc++;
+			b = *pSrc++;
 			RGB2YUV_601( r, g, b, y0, u0 , v0 );
-			r = *s++;
-			g = *s++;
-			b = *s++;
+			r = *pSrc++;
+			g = *pSrc++;
+			b = *pSrc++;
 			RGB2YUV_601( r, g, b, y1, u1 , v1 );
-			*d++ = y0;
-			*d++ = (u0+u1) >> 1;
-			*d++ = y1;
-			*d++ = (v0+v1) >> 1;
+			*pDst++ = y0;
+			*pDst++ = (u0+u1) >> 1;
+			*pDst++ = y1;
+			*pDst++ = (v0+v1) >> 1;
 		}
-		if ( width % 2 )
+		if ( src->width % 2 )
 		{
-			r = *s++;
-			g = *s++;
-			b = *s++;
+			r = *pSrc++;
+			g = *pSrc++;
+			b = *pSrc++;
 			RGB2YUV_601( r, g, b, y0, u0 , v0 );
-			*d++ = y0;
-			*d++ = u0;
+			*pDst++ = y0;
+			*pDst++ = u0;
 		}
 	}
-	return ret;
 }
 
-static int convert_yuv420p_to_yuv422( uint8_t *yuv420p, uint8_t *yuv, uint8_t *alpha, int width, int height )
+static void convert_yuv420p_to_yuv422( mlt_image src, mlt_image dst )
 {
-	int ret = 0;
-	int i, j;
-	int half = width >> 1;
-	uint8_t *Y = yuv420p;
-	uint8_t *U = Y + width * height;
-	uint8_t *V = U + width * height / 4;
-	uint8_t *d = yuv;
+	mlt_image_set_values( dst, NULL, mlt_image_yuv422, src->width, src->height );
+	mlt_image_alloc_data( dst );
 
-	for ( i = 0; i < height; i++ )
+	for ( int line = 0; line < src->height; line++ )
 	{
-		uint8_t *u = U + ( i / 2 ) * ( half );
-		uint8_t *v = V + ( i / 2 ) * ( half );
-
-		j = half + 1;
+		uint8_t* pSrcY = src->planes[0] + src->strides[0] * line;
+		uint8_t* pSrcU = src->planes[1] + src->strides[1] * line / 2;
+		uint8_t* pSrcV = src->planes[2] + src->strides[2] * line / 2;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		int j = src->width / 2 + 1;
 		while ( --j )
 		{
-			*d ++ = *Y ++;
-			*d ++ = *u ++;
-			*d ++ = *Y ++;
-			*d ++ = *v ++;
+			*pDst++ = *pSrcY++;
+			*pDst++ = *pSrcU++;
+			*pDst++ = *pSrcY++;
+			*pDst++ = *pSrcV++;
 		}
 	}
-	return ret;
 }
 
-static int convert_rgb24_to_rgb24a( uint8_t *rgb, uint8_t *rgba, uint8_t *alpha, int width, int height )
+static void convert_yuv420p_to_rgb( mlt_image src, mlt_image dst )
 {
-	uint8_t *s = rgb;
-	uint8_t *d = rgba;
-	int total = width * height + 1;
+	int yy, uu, vv;
+	int r,g,b;
 
-	while ( --total )
+	mlt_image_set_values( dst, NULL, mlt_image_rgb, src->width, src->height );
+	mlt_image_alloc_data( dst );
+
+	for ( int line = 0; line < src->height; line++ )
 	{
-		*d++ = s[0];
-		*d++ = s[1];
-		*d++ = s[2];
-		*d++ = 0xff;
-		s += 3;
+		uint8_t* pSrcY = src->planes[0] + src->strides[0] * line;
+		uint8_t* pSrcU = src->planes[1] + src->strides[1] * line / 2;
+		uint8_t* pSrcV = src->planes[2] + src->strides[2] * line / 2;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		int total = src->width / 2 + 1;
+		while ( --total )
+		{
+			yy = *pSrcY++;
+			uu = *pSrcU++;
+			vv = *pSrcV++;
+			YUV2RGB_601( yy, uu, vv, r, g, b );
+			pDst[0] = r;
+			pDst[1] = g;
+			pDst[2] = b;
+			yy = *pSrcY++;
+			YUV2RGB_601( yy, uu, vv, r, g, b );
+			pDst[3] = r;
+			pDst[4] = g;
+			pDst[5] = b;
+			pDst += 6;
+		}
 	}
-	return 0;
 }
 
-static int convert_rgb24a_to_rgb24( uint8_t *rgba, uint8_t *rgb, uint8_t *alpha, int width, int height )
+static void convert_yuv420p_to_rgba( mlt_image src, mlt_image dst )
 {
-	uint8_t *s = rgba;
-	uint8_t *d = rgb;
-	int total = width * height + 1;
+	int yy, uu, vv;
+	int r,g,b;
 
-	while ( --total )
+	mlt_image_set_values( dst, NULL, mlt_image_rgba, src->width, src->height );
+	mlt_image_alloc_data( dst );
+
+	for ( int line = 0; line < src->height; line++ )
 	{
-		*d++ = s[0];
-		*d++ = s[1];
-		*d++ = s[2];
-		*alpha++ = s[3];
-		s += 4;
+		uint8_t* pSrcY = src->planes[0] + src->strides[0] * line;
+		uint8_t* pSrcU = src->planes[1] + src->strides[1] * line / 2;
+		uint8_t* pSrcV = src->planes[2] + src->strides[2] * line / 2;
+		uint8_t* pSrcA = src->planes[3] + src->strides[3] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		int total = src->width / 2 + 1;
+		if ( pSrcA )
+			while ( --total )
+			{
+				yy = *pSrcY++;
+				uu = *pSrcU++;
+				vv = *pSrcV++;
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[0] = r;
+				pDst[1] = g;
+				pDst[2] = b;
+				pDst[3] = *pSrcA++;
+				yy = *pSrcY++;
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[4] = r;
+				pDst[5] = g;
+				pDst[6] = b;
+				pDst[7] = *pSrcA++;
+				pDst += 8;
+			}
+		else
+			while ( --total )
+			{
+				yy = *pSrcY++;
+				uu = *pSrcU++;
+				vv = *pSrcV++;
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[0] = r;
+				pDst[1] = g;
+				pDst[2] = b;
+				pDst[3] = 0xff;
+				yy = *pSrcY++;
+				YUV2RGB_601( yy, uu, vv, r, g, b );
+				pDst[4] = r;
+				pDst[5] = g;
+				pDst[6] = b;
+				pDst[7] = 0xff;
+				pDst += 8;
+			}
 	}
-	return 0;
 }
 
-typedef int ( *conversion_function )( uint8_t *yuv, uint8_t *rgba, uint8_t *alpha, int width, int height );
+static void convert_yuv422_to_yuv420p( mlt_image src, mlt_image dst )
+{
+	int lines = src->height;
+	int pixels = src->width;
+
+	mlt_image_set_values( dst, NULL, mlt_image_yuv420p, src->width, src->height );
+	mlt_image_alloc_data( dst );
+
+	// Y
+	for ( int line = 0; line < lines; line++ )
+	{
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		for ( int pixel = 0; pixel < pixels; pixel++ )
+		{
+			*pDst++ = *pSrc;
+			pSrc += 2;
+		}
+	}
+
+	lines = src->height / 2;
+	pixels = src->width / 2;
+
+	// U
+	for ( int line = 0; line < lines; line++ )
+	{
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line * 2 + 1;
+		uint8_t* pDst = dst->planes[1] + dst->strides[1] * line;
+		for ( int pixel = 0; pixel < pixels; pixel++ )
+		{
+			*pDst++ = *pSrc;
+			pSrc += 4;
+		}
+	}
+
+	// V
+	for ( int line = 0; line < lines; line++ )
+	{
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line * 2 + 3;
+		uint8_t* pDst = dst->planes[2] + dst->strides[2] * line;
+		for ( int pixel = 0; pixel < pixels; pixel++ )
+		{
+			*pDst++ = *pSrc;
+			pSrc += 4;
+		}
+	}
+}
+
+static void convert_rgb_to_rgba( mlt_image src, mlt_image dst )
+{
+	mlt_image_set_values( dst, NULL, mlt_image_rgba, src->width, src->height );
+	mlt_image_alloc_data( dst );
+
+	for ( int line = 0; line < src->height; line++ )
+	{
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line;
+		uint8_t* pAlpha = src->planes[3] + src->strides[3] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		int total = src->width + 1;
+		if ( pAlpha )
+			while ( --total )
+			{
+				*pDst++ = pSrc[0];
+				*pDst++ = pSrc[1];
+				*pDst++ = pSrc[2];
+				*pDst++ = *pAlpha++;
+				pSrc += 3;
+			}
+		else
+			while ( --total )
+			{
+				*pDst++ = pSrc[0];
+				*pDst++ = pSrc[1];
+				*pDst++ = pSrc[2];
+				*pDst++ = 0xff;
+				pSrc += 3;
+			}
+	}
+}
+
+static void convert_rgba_to_rgb( mlt_image src, mlt_image dst )
+{
+	mlt_image_set_values( dst, NULL, mlt_image_rgb, src->width, src->height );
+	mlt_image_alloc_data( dst );
+	mlt_image_alloc_alpha( dst );
+
+	for ( int line = 0; line < src->height; line++ )
+	{
+		uint8_t* pSrc = src->planes[0] + src->strides[0] * line;
+		uint8_t* pDst = dst->planes[0] + dst->strides[0] * line;
+		uint8_t* pAlpha = dst->planes[3] + dst->strides[3] * line;
+		int total = src->width + 1;
+		while ( --total )
+		{
+			*pDst++ = pSrc[0];
+			*pDst++ = pSrc[1];
+			*pDst++ = pSrc[2];
+			*pAlpha++ = pSrc[3];
+			pSrc += 4;
+		}
+	}
+}
+
+typedef void ( *conversion_function )( mlt_image src, mlt_image dst );
 
 static conversion_function conversion_matrix[ mlt_image_invalid - 1 ][ mlt_image_invalid - 1 ] = {
-	{ NULL, convert_rgb24_to_rgb24a, convert_rgb24_to_yuv422, NULL, convert_rgb24_to_rgb24a, NULL },
-	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL, NULL },
-	{ convert_yuv422_to_rgb24, convert_yuv422_to_rgb24a, NULL, NULL, convert_yuv422_to_rgb24a, NULL },
-	{ NULL, NULL, convert_yuv420p_to_yuv422, NULL, NULL, NULL },
-	{ convert_rgb24a_to_rgb24, NULL, convert_rgb24a_to_yuv422, NULL, NULL, NULL },
-	{ NULL, NULL, NULL, NULL, NULL, NULL },
+	{ NULL, convert_rgb_to_rgba, convert_rgb_to_yuv422, NULL, NULL, NULL, NULL },
+	{ convert_rgba_to_rgb, NULL, convert_rgba_to_yuv422, NULL, NULL, NULL, NULL },
+	{ convert_yuv422_to_rgb, convert_yuv422_to_rgba, NULL, convert_yuv422_to_yuv420p, NULL, NULL, NULL },
+	{ convert_yuv420p_to_rgb, convert_yuv420p_to_rgba, convert_yuv420p_to_yuv422, NULL, NULL, NULL, NULL },
+	{ NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+	{ NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+	{ NULL, NULL, NULL, NULL, NULL, NULL, NULL },
 };
-
-static uint8_t bpp_table[4] = { 3, 4, 2, 0 };
 
 static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, mlt_image_format requested_format )
 {
@@ -320,36 +475,26 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 			width, height );
 		if ( converter )
 		{
-			int size = width * height * bpp_table[ requested_format - 1 ];
-			int alpha_size = width * height;
-			uint8_t *image = mlt_pool_alloc( size );
-			uint8_t *alpha = ( *format == mlt_image_rgba )
-			                 ? mlt_pool_alloc( width * height ) : NULL;
+			struct mlt_image_s src;
+			struct mlt_image_s dst;
+			mlt_image_set_values( &src, *buffer, *format, width, height );
+			converter( &src, &dst );
+			mlt_frame_set_image( frame, dst.data, 0, dst.release_data );
 			if ( requested_format == mlt_image_rgba )
 			{
-				if ( alpha )
-					mlt_pool_release( alpha );
-				alpha = mlt_frame_get_alpha_mask( frame );
-				mlt_properties_get_data( properties, "alpha", &alpha_size );
+				// Clear the alpha buffer on the frame
+				mlt_frame_set_alpha( frame, NULL, 0, NULL );
 			}
-
-			if ( !( error = converter( *buffer, image, alpha, width, height ) ) )
+			else if ( dst.alpha )
 			{
-				mlt_frame_set_image( frame, image, size, mlt_pool_release );
-				if ( alpha && *format == mlt_image_rgba )
-					mlt_frame_set_alpha( frame, alpha, alpha_size, mlt_pool_release );
-				*buffer = image;
-				*format = requested_format;
+				mlt_frame_set_alpha( frame, dst.alpha, 0, dst.release_alpha );
 			}
-			else
-			{
-				mlt_pool_release( image );
-				if ( alpha )
-					mlt_pool_release( alpha );
-			}
+			*buffer = dst.data;
+			*format = dst.format;
 		}
 		else
 		{
+			mlt_log_error( NULL, "imageconvert: no conversion from %s to %s\n", mlt_image_format_name(*format), mlt_image_format_name(requested_format));
 			error = 1;
 		}
 	}
