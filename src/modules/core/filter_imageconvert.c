@@ -478,6 +478,14 @@ static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *f
 			struct mlt_image_s src;
 			struct mlt_image_s dst;
 			mlt_image_set_values( &src, *buffer, *format, width, height );
+			if ( requested_format == mlt_image_rgba && mlt_frame_get_alpha( frame ) )
+			{
+				// imageconvert leaves the alpha buffer alone except in the case of rgba.
+				// For rgba input, an alpha buffer will be created and added to the frame.
+				// For rgba output, the alpha buffer will be copied to the rgba and the buffer is removed from the frame.
+				src.planes[3] = mlt_frame_get_alpha( frame );
+				src.strides[3] = src.width;
+			}
 			converter( &src, &dst );
 			mlt_frame_set_image( frame, dst.data, 0, dst.release_data );
 			if ( requested_format == mlt_image_rgba )
