@@ -90,6 +90,8 @@ if(WIN32)
       DESTINATION ${CMAKE_INSTALL_LIBDIR}
       RENAME libmlt.dll
     )
+    target_link_options(mlt PRIVATE -Wl,--output-def,libmlt.def)
+    install(FILES "${CMAKE_BINARY_DIR}/libmlt.def" DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
   target_sources(mlt PRIVATE ../win32/win32.c ../win32/strptime.c)
   target_link_libraries(mlt PRIVATE Iconv::Iconv)
