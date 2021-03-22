@@ -757,7 +757,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			int i;
 			uint8_t* src = *image;
 			uint8_t* dst = pdata->avinframe->data[0];
-			int stride = mlt_image_format_size( *format, *width, 0, NULL );
+			int stride = mlt_image_format_size( *format, *width, 1, NULL );
 			for( i = 0; i < *height; i ++ )
 			{
 				memcpy( dst, src, stride );
@@ -808,7 +808,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			int i;
 			uint8_t* dst = *image;
 			uint8_t* src = pdata->avoutframe->data[0];
-			int stride = mlt_image_format_size( *format, *width, 0, NULL );
+			int stride = mlt_image_format_size( *format, *width, 1, NULL );
 			for( i = 0; i < *height; i ++ )
 			{
 				memcpy( dst, src, stride );
