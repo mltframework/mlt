@@ -82,6 +82,8 @@ if(WIN32)
       DESTINATION ${CMAKE_INSTALL_LIBDIR}
       RENAME libmlt++.dll
     )
+    target_link_options(mlt++ PRIVATE -Wl,--output-def,libmlt++.def)
+    install(FILES "${CMAKE_BINARY_DIR}/libmlt++.def" DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
   target_compile_definitions(mlt++ PUBLIC MLTPP_EXPORTS)
 endif()
