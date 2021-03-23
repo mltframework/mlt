@@ -195,9 +195,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_properties_set( b_props, "rescale.interp", rescale );
 				mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), b_frame, 0 );
 				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
-				alpha = mlt_frame_get_alpha_mask( b_frame );
+				alpha = mlt_frame_get_alpha( b_frame );
 				mlt_frame_set_image( frame, *image, *width * *height * 2, NULL );
-				mlt_frame_set_alpha( frame, alpha, *width * *height, NULL );
+				if ( alpha )
+					mlt_frame_set_alpha( frame, alpha, *width * *height, NULL );
 				mlt_properties_set_int( a_props, "width", *width );
 				mlt_properties_set_int( a_props, "height", *height );
 				mlt_properties_set_int( a_props, "progressive", 1 );
