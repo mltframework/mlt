@@ -146,7 +146,7 @@ if(WIN32)
   endif()
 endif()
 
-pkg_check_modules(sdl2 IMPORTED_TARGET GLOBAL sdl2)
+pkg_check_modules(sdl2 IMPORTED_TARGET sdl2)
 
 if(BUILD_TESTING)
   find_package(Qt5 REQUIRED COMPONENTS Core Test)
@@ -313,7 +313,7 @@ if(MOD_SDL1)
 endif()
 
 if(MOD_SDL2)
-  if(TARGET sdl2)
+  if(TARGET PkgConfig::sdl2)
     list(APPEND MLT_SUPPORTED_COMPONENTS sdl2)
   else()
     set(MOD_SDL2 OFF)
