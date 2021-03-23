@@ -1,6 +1,7 @@
 /*
  * producer_framebuffer.c -- create subspeed frames
  * Copyright (C) 2007 Jean-Baptiste Mardelle <jb@ader.ch>
+ * Copyright (C) 2021 Meltytech, LLC
  * Author: Jean-Baptiste Mardelle, based on the code of motion_est by Zachary Drew
  *
  * This library is free software; you can redistribute it and/or
@@ -61,7 +62,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 	if ( !freeze || freeze_after || freeze_before )
 	{
 		double prod_speed = mlt_properties_get_double( properties, "_speed" );
-                double actual_position = prod_speed * ( in + mlt_producer_position( producer ) );
+		double actual_position = prod_speed * ( in + mlt_producer_position( producer ) );
 
 		if ( mlt_properties_get_int( properties, "reverse" ) )
 			actual_position = mlt_producer_get_playtime( producer ) - actual_position;
@@ -95,9 +96,9 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	// Get output buffer
 	int buffersize = 0;
-        int alphasize = *width * *height;
+	int alphasize = *width * *height;
 	uint8_t *output = mlt_properties_get_data( properties, "output_buffer", &buffersize );
-        uint8_t *output_alpha = mlt_properties_get_data( properties, "output_alpha", NULL );
+	uint8_t *output_alpha = mlt_properties_get_data( properties, "output_alpha", NULL );
 	if( buffersize == 0 || buffersize != size )
 	{
 		// invalidate cached frame
@@ -116,15 +117,15 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	if ( output && first_position != -1 ) {
 		// Using the cached frame
-	  	uint8_t *image_copy = mlt_pool_alloc( size );
+		uint8_t *image_copy = mlt_pool_alloc( size );
 		memcpy( image_copy, output, size );
-                uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
-                memcpy( alpha_copy, output_alpha, alphasize );
+		uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
+		memcpy( alpha_copy, output_alpha, alphasize );
 
 		// Set the output image
 		*image = image_copy;
 		mlt_frame_set_image( frame, image_copy, size, mlt_pool_release );
-                mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
+		mlt_frame_set_alpha( frame, alpha_copy, alphasize, mlt_pool_release );
 
 		*width = mlt_properties_get_int( properties, "_output_width" );
 		*height = mlt_properties_get_int( properties, "_output_height" );
@@ -154,7 +155,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	// Which frames are buffered?
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
-        uint8_t *first_alpha = mlt_properties_get_data( first_frame_properties, "alpha", NULL );
+	uint8_t *first_alpha = mlt_properties_get_data( first_frame_properties, "alpha", NULL );
 	if ( !first_image )
 	{
 		mlt_properties_set( first_frame_properties, "rescale.interp", mlt_properties_get( frame_properties, "rescale.interp" ) );
@@ -177,21 +178,21 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 	}
 
 	if ( !first_alpha )
-        {
-                alphasize = *width * *height;
-                first_alpha = mlt_frame_get_alpha_mask( first_frame );
-                output_alpha = mlt_pool_alloc( alphasize );
-                memcpy( output_alpha, first_alpha, alphasize );
-                mlt_properties_set_data( properties, "output_alpha", output_alpha, alphasize, mlt_pool_release, NULL ); 
-        }
+	{
+		alphasize = *width * *height;
+		first_alpha = mlt_frame_get_alpha_mask( first_frame );
+		output_alpha = mlt_pool_alloc( alphasize );
+		memcpy( output_alpha, first_alpha, alphasize );
+		mlt_properties_set_data( properties, "output_alpha", output_alpha, alphasize, mlt_pool_release, NULL );
+	}
 
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Create a copy
 	uint8_t *image_copy = mlt_pool_alloc( size );
 	memcpy( image_copy, first_image, size );
-        uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
-        memcpy( alpha_copy, first_alpha, alphasize );
+	uint8_t *alpha_copy = mlt_pool_alloc( alphasize );
+	memcpy( alpha_copy, first_alpha, alphasize );
 
 	// Set the output image
 	*image = image_copy;
@@ -221,32 +222,32 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 		if ( first_frame == NULL )
 		{
-		    // Get the frame to cache from the real producer
-		    mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
+			// Get the frame to cache from the real producer
+			mlt_producer real_producer = mlt_properties_get_data( properties, "producer", NULL );
 
-                    // Get the producer speed
-                    double prod_speed = mlt_properties_get_double( properties, "_speed" );
+			// Get the producer speed
+			double prod_speed = mlt_properties_get_double( properties, "_speed" );
 
-		    // Seek the producer to the correct place
-		    mlt_producer_seek( real_producer, mlt_producer_position( producer ) * prod_speed );
+			// Seek the producer to the correct place
+			mlt_producer_seek( real_producer, mlt_producer_position( producer ) * prod_speed );
 
-		    // Get the frame
-		    mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
+			// Get the frame
+			mlt_service_get_frame( MLT_PRODUCER_SERVICE( real_producer ), &first_frame, index );
 
-		    // Cache the frame
-		    mlt_properties_set_data( properties, "first_frame", first_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
+			// Cache the frame
+			mlt_properties_set_data( properties, "first_frame", first_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
-		    // Find the original producer's format
-		    int width = 0;
-		    int height = 0;
-		    mlt_image_format format = mlt_image_none;
-		    uint8_t *image = NULL;
-		    int error = mlt_frame_get_image( first_frame, &image, &format, &width, &height, 0 );
-		    if ( !error )
-		    {
+			// Find the original producer's format
+			int width = 0;
+			int height = 0;
+			mlt_image_format format = mlt_image_none;
+			uint8_t *image = NULL;
+			int error = mlt_frame_get_image( first_frame, &image, &format, &width, &height, 0 );
+			if ( !error )
+			{
 			// cache the original producer's pixel format
 			mlt_properties_set_int( properties, "_original_format", (int) format );
-		    }
+			}
 		}
 
 		mlt_properties_inherit( frame_properties, MLT_FRAME_PROPERTIES(first_frame) );
@@ -254,7 +255,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		double force_aspect_ratio = mlt_properties_get_double( properties, "force_aspect_ratio" );
 		if ( force_aspect_ratio <= 0.0 ) force_aspect_ratio = mlt_properties_get_double( properties, "aspect_ratio" );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", force_aspect_ratio );
-                
+
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
@@ -288,10 +289,10 @@ mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type ty
 	/** 
 
 	* Speed must be appended to the filename with '?'. To play your video at 50%:
-	 melt framebuffer:my_video.mpg?0.5
+	  melt framebuffer:my_video.mpg?0.5
 
 	* Stroboscope effect can be obtained by adding a stobe=x parameter, where
-	 x is the number of frames that will be ignored.
+	  x is the number of frames that will be ignored.
 
 	* You can play the movie backwards by adding reverse=1
 
