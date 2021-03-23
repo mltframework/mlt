@@ -7,7 +7,7 @@ add_library(mltsdl2 MODULE
 
 target_compile_options(mltsdl2 PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltsdl2 PRIVATE mlt m Threads::Threads sdl2)
+target_link_libraries(mltsdl2 PRIVATE mlt m Threads::Threads PkgConfig::sdl2)
 
 set_target_properties(mltsdl2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
