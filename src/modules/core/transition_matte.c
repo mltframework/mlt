@@ -180,7 +180,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	// Get the image from the a frame
 	mlt_frame_get_image( b_frame, &image_b, format, &width_b, &height_b, 1 );
-	alpha_a = mlt_frame_get_alpha_mask( a_frame );
+	alpha_a = mlt_frame_get_alpha( a_frame );
+	if ( !alpha_a )
+	{
+		int size = width_a * height_a;
+		alpha_a = mlt_pool_alloc( size );
+		memset( alpha_a, 255, size );
+		mlt_frame_set_alpha( a_frame, alpha_a, size, mlt_pool_release );
+	}
 
 	// copy data
 	copy_Y_to_A_scaled_luma
