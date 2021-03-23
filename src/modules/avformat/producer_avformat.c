@@ -543,97 +543,87 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	char *protocol = strdup( URL );
 	char *url = strchr( protocol, ':' );
 
-	// Only if there is not a protocol specification that avformat can handle
-	if ( url && avio_check( URL, 0 ) < 0 )
-	{
-		// Truncate protocol string
-		url[0] = 0;
+	// Truncate protocol string
+	if (url) {
+		url[0] = '\0';
 		++url;
 		mlt_log_debug( NULL, "%s: protocol=%s resource=%s\n", __FUNCTION__, protocol, url );
 
-		int isFsProtocol = !strcmp( protocol, "fs" );
-
 		// Lookup the format
 		*format = av_find_input_format( protocol );
-
-		if ( *format || isFsProtocol )
-		{
-			// Eat the format designator
-			char *result = url;
-
-			// support for legacy width and height parameters
-			char *width = NULL;
-			char *height = NULL;
-
-			// Parse out params
-			char* query = strchr( url, '?' );
-			while ( isFsProtocol && query && query > url && query[-1] == '\\' )
-			{
-				// ignore escaped question marks
-				query = strchr( query + 1, '?' );
-			}
-			url = ( query && query > url && query[-1] != '\\' ) ? query : NULL;
-			while ( url )
-			{
-				url[0] = 0;
-				char *name = strdup( ++url );
-				char *value = strchr( name, '=' );
-				if ( !value )
-					// Also accept : as delimiter for backwards compatibility.
-					value = strchr( name, ':' );
-				if ( value )
-				{
-					value[0] = 0;
-					value++;
-					char *t = strchr( value, '&' );
-					if ( t )
-						t[0] = 0;
-					// translate old parameters to new av_dict names
-					if ( !strcmp( name, "frame_rate" ) )
-						av_dict_set( params, "framerate", value, 0 );
-					else if ( !strcmp( name, "pix_fmt" ) )
-						av_dict_set( params, "pixel_format", value, 0 );
-					else if ( !strcmp( name, "width" ) )
-						width = strdup( value );
-					else if ( !strcmp( name, "height" ) )
-						height = strdup( value );
-					else
-						// generic demux/device option support
-						av_dict_set( params, name, value, 0 );
-				}
-				free( name );
-				url = strchr( url, '&' );
-			}
-			// continued support for legacy width and height parameters
-			if ( width && height )
-			{
-				char *s = malloc( strlen( width ) + strlen( height ) + 2 );
-				strcpy( s, width );
-				strcat( s, "x");
-				strcat( s, height );
-				av_dict_set( params, "video_size", s, 0 );
-				free( s );
-			}
-			free( width );
-			free( height );
-			result = strdup(result);
-			free( protocol );
-			if (isFsProtocol) {
-				// remove escape backslashes
-				int reader = 0, writer = 0;
-				while (result[reader])
-				{
-					if (result[reader] != '\\') 
-						result[writer++] = result[reader];
-					reader++;
-				}
-				result[writer] = '\0';
-			}
-			return result;
-		}
+	} else {
+		url = protocol;
 	}
+
+	// Eat the format designator
+	char *result = url;
+
+	// support for legacy width and height parameters
+	char *width = NULL;
+	char *height = NULL;
+
+	// Parse out params
+	char* query = strchr( url, '?' );
+	if (*format) {
+		// Query string delimiter is '?'
+		url = ( query && query > url && query[-1] != '\\' ) ? query : NULL;
+	} else {
+		// Ignore unescaped question marks
+		while ( query && query > url && query[-1] != '\\' ) {
+			query = strchr( query + 1, '?' );
+		}
+		// Query string delimiter is '\?'
+		url = ( query && query > url && query[-1] == '\\' ) ? query : NULL;
+		if (url) url[-1] = '\0'; // null the backslash
+	}
+	while ( url )
+	{
+		url[0] = '\0';
+		char *name = strdup( ++url );
+		char *value = strchr( name, '=' );
+		if ( !value )
+			// Also accept : as delimiter for backwards compatibility.
+			value = strchr( name, ':' );
+		if ( value )
+		{
+			value[0] = '\0';
+			value++;
+			char *t = strchr( value, '&' );
+			if ( t )
+				t[0] = 0;
+			// translate old parameters to new av_dict names
+			if ( !strcmp( name, "frame_rate" ) )
+				av_dict_set( params, "framerate", value, 0 );
+			else if ( !strcmp( name, "pix_fmt" ) )
+				av_dict_set( params, "pixel_format", value, 0 );
+			else if ( !strcmp( name, "width" ) )
+				width = strdup( value );
+			else if ( !strcmp( name, "height" ) )
+				height = strdup( value );
+			else
+				// generic demux/device option support
+				av_dict_set( params, name, value, 0 );
+		}
+		free( name );
+		url = strchr( url, '&' );
+	}
+	// continued support for legacy width and height parameters
+	if ( width && height )
+	{
+		char *s = malloc( strlen( width ) + strlen( height ) + 2 );
+		strcpy( s, width );
+		strcat( s, "x");
+		strcat( s, height );
+		av_dict_set( params, "video_size", s, 0 );
+		free( s );
+	}
+	free( width );
+	free( height );
+
+	result = strdup(result);
 	free( protocol );
-	return strdup( URL );
+	mlt_log_debug(NULL, "[producer avformat] %s filename = %s\n", __FUNCTION__, result);
+	return result;
 }
 
 static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
