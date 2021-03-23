@@ -135,7 +135,7 @@ static void* mlt_slices_worker( void* p )
 
 /** Initialize a sliced threading context
  *
- * \public \memberof mlt_slices_s
+ * \private \memberof mlt_slices_s
  * \param threads number of threads to use for job list, 0 for #cpus
  * \param policy scheduling policy of processing threads, -1 for normal
  * \param priority priority value that can be used with the scheduling algorithm, -1 for maximum
@@ -218,7 +218,7 @@ static mlt_slices mlt_slices_init( int threads, int policy, int priority )
 
 /** Destroy sliced threading context
  *
- * \public \memberof mlt_slices_s
+ * \private \memberof mlt_slices_s
  * \param ctx context pointer
  */
 
@@ -262,7 +262,7 @@ static void mlt_slices_close( mlt_slices ctx )
 
 /** Run sliced execution
  *
- * \public \memberof mlt_slices_s
+ * \private \memberof mlt_slices_s
  * \param ctx context pointer
  * \param jobs number of jobs to process
  * \param proc number of jobs to process
