@@ -1,6 +1,6 @@
 /*
  * producer_loader.c -- auto-load producer by file name extension
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -107,8 +107,8 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 
 		// Chop off the query string
 		p = strrchr( lookup, '?' );
-		if ( p )
-			p[0] = '\0';
+		if ( p && p > lookup && p[-1] == '\\' )
+			p[-1] = '\0';
 
 		// Strip file:// prefix
 		p = lookup;
