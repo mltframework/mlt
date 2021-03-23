@@ -180,7 +180,13 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 	if ( !first_alpha )
 	{
 		alphasize = *width * *height;
-		first_alpha = mlt_frame_get_alpha_mask( first_frame );
+		first_alpha = mlt_frame_get_alpha( first_frame );
+		if ( !first_alpha )
+		{
+			first_alpha = mlt_pool_alloc( alphasize );
+			memset( first_alpha, 255, alphasize );
+			mlt_frame_set_alpha( first_frame, first_alpha, alphasize, mlt_pool_release );
+		}
 		output_alpha = mlt_pool_alloc( alphasize );
 		memcpy( output_alpha, first_alpha, alphasize );
 		mlt_properties_set_data( properties, "output_alpha", output_alpha, alphasize, mlt_pool_release, NULL );
