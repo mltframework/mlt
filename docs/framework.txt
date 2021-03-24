@@ -1134,7 +1134,6 @@ mlt_frame:
 	mlt_position mlt_frame_get_position( mlt_frame this );
 	int mlt_frame_set_position( mlt_frame this, mlt_position value );
 	int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
-	uint8_t *mlt_frame_get_alpha_mask( mlt_frame this );
 	int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
 	int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image );
 	mlt_get_image mlt_frame_pop_get_image( mlt_frame this );

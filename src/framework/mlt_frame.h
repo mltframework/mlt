@@ -117,7 +117,6 @@ extern int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_de
 extern int mlt_frame_set_alpha( mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy );
 extern void mlt_frame_replace_image( mlt_frame self, uint8_t *image, mlt_image_format format, int width, int height );
 extern int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
-extern uint8_t *mlt_frame_get_alpha_mask( mlt_frame self );
 extern uint8_t *mlt_frame_get_alpha( mlt_frame self );
 extern int mlt_frame_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
 extern int mlt_frame_set_audio( mlt_frame self, void *buffer, mlt_audio_format, int size, mlt_destructor );

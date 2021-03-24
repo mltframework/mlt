@@ -533,27 +533,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
  * \return the alpha channel
  */
 
-uint8_t *mlt_frame_get_alpha_mask( mlt_frame self )
-{
-	uint8_t *alpha = NULL;
-	if ( self != NULL )
-	{
-		alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
-		if ( alpha == NULL )
-		{
-			int size = mlt_properties_get_int( &self->parent, "width" ) * mlt_properties_get_int( &self->parent, "height" );
-			alpha = mlt_pool_alloc( size );
-			memset( alpha, 255, size );
-			mlt_properties_set_data( &self->parent, "alpha", alpha, size, mlt_pool_release, NULL );
-		}
-	}
-	return alpha;
-}
-
 /** Get the alpha channel associated to the frame (without creating if it has not).
- *
- * Unlike mlt_frame_get_alpha_mask(), this function does NOT create an alpha
- * channel if one does not already exist.
  *
  * \public \memberof mlt_frame_s
  * \param self a frame
