@@ -1,6 +1,7 @@
 /*
  * filter_chroma.c -- Maps a chroma key to the alpha channel
  * Copyright (C) 2005 Visual Media Fx Inc.
+ * Copyright (C) 2021 Meltytech, LLC
  * Author: Charles Yates <charles.yates@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -19,10 +20,12 @@
  */
 
 #include <framework/mlt_filter.h>
-#include <stdlib.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
+
+#include <stdlib.h>
+#include <string.h>
 
 static inline int in_range( uint8_t v, uint8_t c, int var )
 {
@@ -55,7 +58,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	*format = mlt_image_yuv422;
 	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
 	{
-		uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
+		uint8_t *alpha = mlt_frame_get_alpha( frame );
+		if ( !alpha )
+		{
+			int alphasize = *width * *height;
+			alpha = mlt_pool_alloc( alphasize );
+			memset( alpha, 255, alphasize );
+			mlt_frame_set_alpha( frame, alpha, alphasize, mlt_pool_release );
+		}
 		uint8_t *p = *image;
 		int size = *width * *height / 2;
 		while ( size -- )

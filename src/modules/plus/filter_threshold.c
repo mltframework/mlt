@@ -1,6 +1,7 @@
 /*
  * filter_threshold.c -- Arbitrary alpha channel shaping
  * Copyright (C) 2005 Visual Media Fx Inc.
+ * Copyright (C) 2021 Meltytech, LLC
  * Author: Charles Yates <charles.yates@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -62,14 +63,25 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		}
 		else
 		{
-			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
-			while (--size)
+			uint8_t *alpha = mlt_frame_get_alpha( frame );
+			if ( alpha )
 			{
-				if ( *alpha ++ < midpoint )
-					*p ++ = A;
-				else
+				while (--size)
+				{
+					if ( *alpha ++ < midpoint )
+						*p ++ = A;
+					else
+						*p ++ = B;
+					*p ++ = 128;
+				}
+			}
+			else
+			{
+				while (--size)
+				{
 					*p ++ = B;
-				*p ++ = 128;
+					*p ++ = 128;
+				}
 			}
 		}
 	}

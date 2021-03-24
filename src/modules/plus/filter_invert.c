@@ -57,9 +57,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		if ( mask )
 		{
-			uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
 			int size = *width * *height;
+			uint8_t* alpha = mlt_pool_alloc( size );
 			memset( alpha, mask, size );
+			mlt_frame_set_alpha( frame, alpha, size, mlt_pool_release );
 		}
 	}
 

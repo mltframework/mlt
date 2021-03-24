@@ -1,6 +1,7 @@
 /*
  * rotoscoping.c -- keyframable vector based rotoscoping
  * Copyright (C) 2011 Till Theato <root@ttill.de>
+ * Copyright (C) 2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -470,7 +471,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
                     }
                     break;
                 default:
-                    alpha = mlt_frame_get_alpha_mask( frame );
+                    alpha = mlt_frame_get_alpha( frame );
+                    if ( !alpha )
+                    {
+                        alpha = mlt_pool_alloc( length );
+                        memset( alpha, 255, length );
+                        mlt_frame_set_alpha( frame, alpha, length, mlt_pool_release );
+                    }
                     switch ( mlt_properties_get_int( unique, "alpha_operation" ) )
                     {
                     case ALPHA_CLEAR:

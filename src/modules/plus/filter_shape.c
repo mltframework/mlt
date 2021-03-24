@@ -1,6 +1,7 @@
 /*
  * filter_shape.c -- Arbitrary alpha channel shaping
  * Copyright (C) 2005 Visual Media Fx Inc.
+ * Copyright (C) 2021 Meltytech, LLC
  * Author: Charles Yates <charles.yates@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,9 +60,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 &&
 		 ( !use_luminance || !use_mix || (int) mix != 1 || invert == 255 ) )
 	{
-		// Get the alpha mask of the source
-		uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
-
 		// Obtain a scaled/distorted mask to match
 		uint8_t *mask_img = NULL;
 		mlt_image_format mask_fmt = mlt_image_yuv422;
@@ -71,12 +69,27 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if ( mlt_frame_get_image( mask, &mask_img, &mask_fmt, width, height, 0 ) == 0 )
 		{
 			int size = *width * *height;
-			uint8_t *p = alpha;
 			double a = 0;
 			double b = 0;
+			uint8_t* p = mlt_frame_get_alpha( frame );
+			if ( !p )
+			{
+				int alphasize = *width * *height;
+				p = mlt_pool_alloc( alphasize );
+				memset( p, 255, alphasize );
+				mlt_frame_set_alpha( frame, p, alphasize, mlt_pool_release );
+			}
+
 			if ( !use_luminance )
 			{
-				uint8_t *q = mlt_frame_get_alpha_mask( mask );
+				uint8_t* q = mlt_frame_get_alpha( mask );
+				if ( !q )
+				{
+					int alphasize = *width * *height;
+					q = mlt_pool_alloc( alphasize );
+					memset( q, 255, alphasize );
+					mlt_frame_set_alpha( mask, q, alphasize, mlt_pool_release );
+				}
 				if ( use_mix )
 				{
 					while( size -- )
