@@ -99,7 +99,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		pdata->out_samples = 0;
 	}
 	s->setPitchScale(pitchscale);
-	if( pitchscale > 0.5 && pitchscale < 2.0 )
+	if( pitchscale >= 0.5 && pitchscale <= 2.0 )
 	{
 		// Pitch adjustment < 200%
 		s->setPitchOption(RubberBandStretcher::OptionPitchHighQuality);

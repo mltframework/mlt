@@ -23,9 +23,6 @@ Last Revision: 2013-09-07
          * avsync        - services to help test audio/video synchronization
          * core          - independent MLT services
          * decklink      - Blackmagick Design SDI/HDMI services
-         * dgraft        - ports of Donald Graft's filters (*)
-         * effectv       - ports of !EffecTV filters (*)
-         * feeds         - templates for use with core's data filters
          * frei0r        - adapter for frei0r video plugins
          * gdk           - GDK pango and pixbuf dependent services
          * jackrack      - adapter for LADSPA audio plugins and JACK server
@@ -33,13 +30,20 @@ Last Revision: 2013-09-07
          * normalize     - audio normalisation functions (*)
          * oldfilm       - filters to make pristine video dirty
          * movit         - Movit dependent services (*)
-         * plus          - miscellaneous services (pending move to core)
+         * ndi           - NewTek NDI producer and consumer
+         * normalize     - audio normalization functions (*)
+         * oldfilm       - filters to make pristine video dirty
+         * opencv        - OpenCV dependent services
+         * opengl        - OpenGL dependent services (*)
+         * plus          - miscellaneous services (mixed copyright with no dependencies)
+         * plusgpl       - miscellaneous services (mixed copyright with no dependencies) (*)
          * qt            - Qt dependent services (*)
          * resample      - libresample dependent services (*)
-         * rotoscoping   - spline-based alpha mask filter (*)
          * rtaudio       - audio consumer based on !RtAudio project code
+         * rubberband    - librubberband dependent services (*)
          * sdl           - SDL dependent services
-         * sox           - !SoX dependent audio filters
+         * sdl2          - SDL2 dependent services
+         * sox           - SoX dependent audio filters
          * vid.stab      - video stabilization filters (*)
          * vorbis        - vorbis dependenent services
          * xine          - Xine-derived sources (*)

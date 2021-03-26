@@ -71,7 +71,8 @@ int TypeWriter::parse()
     clear();
 
     gen.seed(step_seed);
-    d = std::normal_distribution<>{0, step_sigma};
+    if (step_sigma > 0.)
+        d = std::normal_distribution<>{0, step_sigma};
 
     previous_total_frame = -1;
     int start_frame = 0;
@@ -109,7 +110,7 @@ uint TypeWriter::getOrInsertFrame(uint frame)
     uint n = frames.size();
     if (!n)
     {
-        int s = std::round(d(gen));
+        int s = step_sigma > 0. ? std::round(d(gen)) : 0;
 
         if ((s + real_frame) > 0)
             real_frame += s;
@@ -124,7 +125,7 @@ uint TypeWriter::getOrInsertFrame(uint frame)
     if (frames[n-1].frame >= frame)
         return n-1;
 
-    int s = std::round(d(gen));
+    int s = step_sigma > 0. ? std::round(d(gen)) : 0;
 
     if ((s + real_frame) > 0)
         real_frame += s;
