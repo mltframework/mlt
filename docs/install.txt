@@ -23,30 +23,33 @@ Last Revision: 2013-09-07
          * avsync        - services to help test audio/video synchronization
          * core          - independent MLT services
          * decklink      - Blackmagick Design SDI/HDMI services
-         * dgraft        - ports of Donald Graft's filters (*)
-         * dv            - libdv dependent services
-         * effectv       - ports of !EffecTV filters (*)
-         * feeds         - templates for use with core's data filters
+         * dv            - libdv dependent services (deprecated)
+         * feeds         - templates for use with core's data filters (deprecated)
          * frei0r        - adapter for frei0r video plugins
          * gdk           - GDK pango and pixbuf dependent services
          * jackrack      - adapter for LADSPA audio plugins and JACK server
          * kdenlive      - services contributed by Kdenlive project
-         * kino          - DV/AVI demuxer from Kino project (*)
-         * linsys        - DVEO SDI card consumer (*)
-         * lumas         - wipe file generator for core's luma transition
-         * motion_est    - motion estimation-based filters (*)
+         * kino          - DV/AVI demuxer from Kino project (*)(deprecated)
+         * linsys        - DVEO SDI card consumer (*)(deprecated)
+         * lumas         - wipe file generator for core's luma transition (deprecated)
+         * motion_est    - motion estimation-based filters (*)(deprecated)
+         * ndi           - NewTek NDI producer and consumer
          * normalize     - audio normalisation functions (*)
          * oldfilm       - filters to make pristine video dirty
-         * opengl        - !OpenGL dependent services (*)
-         * plus          - miscellaneous services (pending move to core)
+         * opencv        - OpenCV dependent services
+         * opengl        - OpenGL dependent services (*)
+         * plus          - miscellaneous services (mixed copyright with no dependencies)
+         * plusgpl       - miscellaneous services (mixed copyright with no dependencies) (*)
          * qt            - Qt dependent services (*)
          * resample      - libresample dependent services (*)
-         * rotoscoping   - spline-based alpha mask filter (*)
          * rtaudio       - audio consumer based on !RtAudio project code
+         * rubberband    - librubberband dependent services (*)
          * sdl           - SDL dependent services
-         * sox           - !SoX dependent audio filters
-         * swfdec        - Swfdec dependent producer for Flash files
-         * videostab     - video stabilization filters (*)
+         * sdl2          - SDL2 dependent services
+         * sox           - SoX dependent audio filters
+         * swfdec        - Swfdec dependent producer for Flash files (deprecated)
+         * videostab     - video stabilization filters (*)(deprecated)
+         * vid.stab      - video stabilization filters (*)
          * vmfx          - services contributed by (defunct) Visual Media FX
          * vorbis        - vorbis dependenent services
          * xine          - Xine-derived sources (*)

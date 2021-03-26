@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: producer
 identifier: slowmotion
-title: Slow Motion
+title: Slow Motion (*deprecated*)
 version: 1
 copyright: Zachary Drew
 creator: Zachary Drew

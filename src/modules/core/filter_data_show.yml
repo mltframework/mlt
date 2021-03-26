@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
 identifier: data_show
-title: Template
+title: Template (*deprecated*)
 version: 1
 copyright: Meltytech, LLC
 creator: Charles Yates

@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
 identifier: autotrack_rectangle
-title: Autotrack Rectangle
+title: Autotrack Rectangle (*deprecated*)
 version: 1
 copyright: Zachary Drew
 creator: Zachary Drew

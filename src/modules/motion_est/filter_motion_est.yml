@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
 identifier: motion_est
-title: Motion Estimation
+title: Motion Estimation (*deprecated*)
 version: 1
 copyright: Zachary Drew
 creator: Zachary Drew
