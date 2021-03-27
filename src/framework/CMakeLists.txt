@@ -100,13 +100,15 @@ if(WIN32)
   endif()
 endif()
 
-if(NOT (WIN32 OR APPLE))
+if(NOT (WIN32 OR (APPLE AND RELOCATABLE)))
   target_compile_definitions(mlt PRIVATE
     $<BUILD_INTERFACE:PREFIX_DATA="${MLT_DATA_OUTPUT_DIRECTORY}" PREFIX_LIB="${MLT_MODULE_OUTPUT_DIRECTORY}">
     $<INSTALL_INTERFACE:PREFIX_DATA="${CMAKE_INSTALL_FULL_DATADIR}/mlt-${MLT_VERSION_MAJOR}" PREFIX_LIB="${CMAKE_INSTALL_FULL_LIBDIR}/mlt-${MLT_VERSION_MAJOR}">
   )
   target_link_options(mlt PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
   set_target_properties(mlt PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt.vers)
+elseif(APPLE AND RELOCATABLE)
+  target_compile_definitions(mlt PRIVATE RELOCATABLE)
 endif()
 
 install(TARGETS mlt

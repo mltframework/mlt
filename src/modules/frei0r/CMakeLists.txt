@@ -8,6 +8,9 @@ add_library(mltfrei0r MODULE
 )
 
 target_compile_options(mltfrei0r PRIVATE ${MLT_COMPILE_OPTIONS})
+if(APPLE AND RELOCATABLE)
+  target_compile_definitions(mltfrei0r PRIVATE RELOCATABLE)
+endif()
 
 target_link_libraries(mltfrei0r PRIVATE mlt m ${CMAKE_DL_LIBS})
 

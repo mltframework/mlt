@@ -25,6 +25,10 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
   )
   target_link_libraries(mltjackrack PRIVATE ${CMAKE_DL_LIBS} m PkgConfig::xml PkgConfig::glib)
   target_compile_definitions(mltjackrack PRIVATE GPL)
+  if(APPLE AND RELOCATABLE)
+    target_compile_definitions(mltjackrack PRIVATE RELOCATABLE)
+  endif()
+
   install(FILES filter_jack.yml filter_ladspa.yml producer_ladspa.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
 
   if(TARGET JACK::JACK)
