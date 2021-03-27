@@ -11,18 +11,23 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
     plugin_settings.c
     process.c
     producer_ladspa.c
-    filter_jackrack.c
     filter_ladspa.c
   )
   target_link_libraries(mltjack PRIVATE ${CMAKE_DL_LIBS} m PkgConfig::xml PkgConfig::glib)
   target_compile_definitions(mltjack PRIVATE GPL)
+  if(APPLE AND RELOCATABLE)
+    target_compile_definitions(mltjackrack PRIVATE RELOCATABLE)
+  endif()
   install(FILES
-    filter_jackrack.yml
     filter_jack.yml
     filter_ladspa.yml
     producer_ladspa.yml
     DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/jackrack
   )
+  if(TARGET JACK::JACK)
+    target_sources(mltjack PRIVATE filter_jackrack.c)
+    install(FILES filter_jackrack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+  endif()
 endif()
 
 # Create module in parent directory, for the benefit of "source setenv".

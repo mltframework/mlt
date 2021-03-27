@@ -25,6 +25,9 @@ add_library(mltopengl MODULE
 )
 
 target_link_libraries(mltopengl m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
+if(APPLE AND RELOCATABLE)
+  target_compile_definitions(mltopengl PRIVATE RELOCATABLE)
+endif()
 
 if(UNIX AND NOT APPLE)
   target_link_libraries(mltopengl X11::X11)

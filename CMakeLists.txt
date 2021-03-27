@@ -54,6 +54,10 @@ option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
 if(WIN32)
   option(NODEPLOY "Keep bin/ lib/ layout on Windows" ON)
 endif()
+if(APPLE)
+  option(RELOCATABLE "Use standard app bundle layout" ON)
+endif()
+
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 

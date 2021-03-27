@@ -46,10 +46,12 @@ if(WIN32)
   endif()
 endif()
 
-if(NOT (WIN32 OR APPLE))
+if(NOT (WIN32 OR (APPLE AND RELOCATABLE)))
   target_compile_definitions(mlt PRIVATE
     PREFIX_DATA="${CMAKE_INSTALL_FULL_DATADIR}/mlt"
     PREFIX_LIB="${CMAKE_INSTALL_FULL_LIBDIR}/mlt")
+elseif(APPLE AND RELOCATABLE)
+  target_compile_definitions(mlt PRIVATE RELOCATABLE)
 endif()
 
 set(MLT_PUPLIC_HEADERS
