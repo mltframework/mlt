@@ -683,5 +683,6 @@ MLTPP_7.0.0 {
       "Mlt::EventData::to_string() const";
       "Mlt::EventData::to_frame() const";
       "Mlt::EventData::to_object() const";
+      "Mlt::Frame::image()";
     };
 } MLTPP_6.22.0;

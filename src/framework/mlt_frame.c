@@ -53,12 +53,9 @@ mlt_frame mlt_frame_init( mlt_service service )
 
 		// Set default properties on the frame
 		mlt_properties_set_position( properties, "_position", 0.0 );
-		mlt_properties_set_data( properties, "image", NULL, 0, NULL, NULL );
-		mlt_properties_set_int( properties, "width", profile? profile->width : 720 );
-		mlt_properties_set_int( properties, "height", profile? profile->height : 576 );
+		self->image.width = profile ? profile->width : 720;
+		self->image.height = profile? profile->height : 576;
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( NULL ) );
-		mlt_properties_set_data( properties, "audio", NULL, 0, NULL, NULL );
-		mlt_properties_set_data( properties, "alpha", NULL, 0, NULL, NULL );
 
 		// Construct stacks for frames and methods
 		self->stack_image = mlt_deque_init( );
@@ -91,8 +88,7 @@ mlt_properties mlt_frame_properties( mlt_frame self )
 int mlt_frame_is_test_card( mlt_frame self )
 {
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
-	return ( mlt_deque_count( self->stack_image ) == 0
-			 && !mlt_properties_get_data( properties, "image", NULL ) )
+	return ( mlt_deque_count( self->stack_image ) == 0 && !self->image.data )
 			|| mlt_properties_get_int( properties, "test_image" );
 }
 
@@ -334,7 +330,9 @@ mlt_deque mlt_frame_service_stack( mlt_frame self )
 
 int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_destructor destroy )
 {
-	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "image", image, size, destroy, NULL );
+	mlt_image_set_values( &self->image, image, self->image.format, self->image.width, self->image.height );
+	self->image.release_data = destroy;
+	return 0;
 }
 
 /** Set a new alpha channel on the frame.
@@ -349,7 +347,15 @@ int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_destructo
 
 int mlt_frame_set_alpha( mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy )
 {
-	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "alpha", alpha, size, destroy, NULL );
+	if ( self->image.alpha && self->image.release_alpha )
+	{
+		self->image.release_alpha( self->image.alpha );
+	}
+	self->image.alpha = alpha;
+	self->image.planes[3] = alpha;
+	self->image.strides[3] = self->image.width;
+	self->image.release_alpha = destroy;
+	return 0;
 }
 
 /** Replace image stack with the information provided.
@@ -384,14 +390,12 @@ void mlt_frame_replace_image( mlt_frame self, uint8_t *image, mlt_image_format f
 	while( mlt_deque_pop_back( self->stack_image ) ) ;
 
 	// Update the information
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "image", image, 0, NULL, NULL );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "width", width );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "height", height );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "format", format );
+	mlt_image_set_values( &self->image, image, format, width, height );
 }
 
-static int generate_test_image( mlt_properties properties, uint8_t **buffer,  mlt_image_format *format, int *width, int *height, int writable )
+static int generate_test_image( mlt_frame self, uint8_t **buffer,  mlt_image_format *format, int *width, int *height, int writable )
 {
+	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_producer producer = mlt_properties_get_data( properties, "test_card_producer", NULL );
 	mlt_image_format requested_format = *format;
 	int error = 1;
@@ -408,12 +412,10 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 			error = mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
 			if ( !error && buffer && *buffer )
 			{
-				mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
-				mlt_properties_set_int( properties, "width", *width );
-				mlt_properties_set_int( properties, "height", *height );
 				if ( test_frame->convert_image && requested_format != mlt_image_none )
 					test_frame->convert_image( test_frame, buffer, format, requested_format );
-				mlt_properties_set_int( properties, "format", *format );
+				mlt_image_set_values( &self->image, *buffer, *format, *width, *height );
+				mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( test_frame ) );
 			}
 		}
 		else
@@ -423,8 +425,9 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 	}
 	if ( error && buffer )
 	{
-		*width = *width == 0 ? 720 : *width;
-		*height = *height == 0 ? 576 : *height;
+		self->image.width = *width == 0 ? 720 : *width;
+		self->image.height = *height == 0 ? 576 : *height;
+		self->image.format = *format;
 		switch( *format )
 		{
 			case mlt_image_rgb:
@@ -433,24 +436,17 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 			case mlt_image_yuv422p16:
 			case mlt_image_yuv420p:
 				break;
+			case mlt_image_invalid:
 			case mlt_image_none:
 			case mlt_image_movit:
 			case mlt_image_opengl_texture:
-				*format = mlt_image_yuv422;
+				self->image.format = mlt_image_yuv422;
 				break;
 		}
-
-		struct mlt_image_s img;
-		mlt_image_set_values( &img, NULL, *format, *width, *height );
-		mlt_image_alloc_data( &img );
-		mlt_image_fill_black( &img );
-
-		*buffer = img.data;
-		mlt_properties_set_int( properties, "format", *format );
-		mlt_properties_set_int( properties, "width", *width );
-		mlt_properties_set_int( properties, "height", *height );
+		mlt_image_alloc_data( &self->image );
+		mlt_image_fill_black( &self->image );
+		mlt_image_get_values( &self->image, (void**)buffer, format, width, height );
 		mlt_properties_set_double( properties, "aspect_ratio", 1.0 );
-		mlt_properties_set_data( properties, "image", *buffer, 0, img.release_data, NULL );
 		mlt_properties_set_int( properties, "test_image", 1 );
 		error = 0;
 	}
@@ -491,32 +487,29 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 		error = get_image( self, buffer, format, width, height, writable );
 		if ( !error && buffer && *buffer )
 		{
-			mlt_properties_set_int( properties, "width", *width );
-			mlt_properties_set_int( properties, "height", *height );
+			self->image.width = *width;
+			self->image.height = *height;
 			if ( self->convert_image && requested_format != mlt_image_none )
 				self->convert_image( self, buffer, format, requested_format );
-			mlt_properties_set_int( properties, "format", *format );
+			self->image.format = *format;
 		}
 		else
 		{
-			error = generate_test_image( properties, buffer, format, width, height, writable );
+			error = generate_test_image( self, buffer, format, width, height, writable );
 		}
 	}
-	else if ( mlt_properties_get_data( properties, "image", NULL ) && buffer )
+	else if ( self->image.data && buffer )
 	{
-		*format = mlt_properties_get_int( properties, "format" );
-		*buffer = mlt_properties_get_data( properties, "image", NULL );
-		*width = mlt_properties_get_int( properties, "width" );
-		*height = mlt_properties_get_int( properties, "height" );
+		mlt_image_get_values( &self->image, (void**)buffer, format, width, height );
 		if ( self->convert_image && *buffer && requested_format != mlt_image_none )
 		{
 			self->convert_image( self, buffer, format, requested_format );
-			mlt_properties_set_int( properties, "format", *format );
+			self->image.format = *format;
 		}
 	}
 	else
 	{
-		error = generate_test_image( properties, buffer, format, width, height, writable );
+		error = generate_test_image( self, buffer, format, width, height, writable );
 	}
 
 	return error;
@@ -534,7 +527,7 @@ uint8_t *mlt_frame_get_alpha( mlt_frame self )
 	uint8_t *alpha = NULL;
 	if ( self != NULL )
 	{
-		alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
+		alpha = self->image.alpha;
 	}
 	return alpha;
 }
@@ -765,6 +758,8 @@ void mlt_frame_close( mlt_frame self )
 		while( mlt_deque_peek_back( self->stack_service ) )
 			mlt_service_close( mlt_deque_pop_back( self->stack_service ) );
 		mlt_deque_close( self->stack_service );
+		mlt_image_close( &self->image );
+		mlt_audio_close( &self->audio );
 		mlt_properties_close( &self->parent );
 		free( self );
 	}
@@ -887,29 +882,7 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 			memcpy( copy, data, size );
 			mlt_properties_set_data( new_props, "audio", copy, size, mlt_pool_release, NULL );
 		}
-		data = mlt_properties_get_data( properties, "image", &size );
-		if ( data )
-		{
-			int width = mlt_properties_get_int( properties, "width" );
-			int height = mlt_properties_get_int( properties, "height" );
-
-			if ( ! size )
-				size = mlt_image_format_size( mlt_properties_get_int( properties, "format" ),
-					width, height, NULL );
-			copy = mlt_pool_alloc( size );
-			memcpy( copy, data, size );
-			mlt_properties_set_data( new_props, "image", copy, size, mlt_pool_release, NULL );
-
-			data = mlt_properties_get_data( properties, "alpha", &size );
-			if ( data )
-			{
-				if ( ! size )
-					size = width * height;
-				copy = mlt_pool_alloc( size );
-				memcpy( copy, data, size );
-				mlt_properties_set_data( new_props, "alpha", copy, size, mlt_pool_release, NULL );
-			};
-		}
+		mlt_image_copy_deep( &self->image, &new_frame->image );
 	}
 	else
 	{
@@ -921,10 +894,8 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 		// Copy properties
 		data = mlt_properties_get_data( properties, "audio", &size );
 		mlt_properties_set_data( new_props, "audio", data, size, NULL, NULL );
-		data = mlt_properties_get_data( properties, "image", &size );
-		mlt_properties_set_data( new_props, "image", data, size, NULL, NULL );
-		data = mlt_properties_get_data( properties, "alpha", &size );
-		mlt_properties_set_data( new_props, "alpha", data, size, NULL, NULL );
+		mlt_image_set_values( &new_frame->image, self->image.data, self->image.format, self->image.width, self->image.height );
+		new_frame->image.planes[3] = self->image.planes[3];
 	}
 
 	return new_frame;

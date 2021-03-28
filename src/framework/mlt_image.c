@@ -135,6 +135,31 @@ void mlt_image_alloc_data( mlt_image self )
 	mlt_image_format_planes( self->format, self->width, self->height, self->data, self->planes, self->strides );
 }
 
+/** Deallocate the data field.
+ *
+ * If the data field is already set, and a destructor function exists, the data
+ * will be released. Else, the data pointer will be cleared without being
+ * released.
+ *
+ * \public \memberof mlt_image_s
+ * \param self the Image object
+ */
+void mlt_image_clear_data( mlt_image self )
+{
+	if ( self->release_data )
+	{
+		self->release_data( self->data );
+	}
+	self->data = NULL;
+	self->release_data = NULL;
+	self->strides[0] = 0;
+	self->strides[1] = 0;
+	self->strides[2] = 0;
+	self->planes[0] = NULL;
+	self->planes[1] = NULL;
+	self->planes[2] = NULL;
+}
+
 /** Allocate the alpha field based on the other properties of the Image.
  *
  * If the alpha field is already set, and a destructor function exists, the data
@@ -161,6 +186,27 @@ void mlt_image_alloc_alpha( mlt_image self )
 	self->release_alpha = mlt_pool_release;
 	self->strides[3] = self->width;
 	self->planes[3] = self->alpha;
+}
+
+/** Deallocate the alpha field.
+ *
+ * If the alpha field is already set, and a destructor function exists, the data
+ * will be released. Else, the data pointer will be cleared without being
+ * released.
+ *
+ * \public \memberof mlt_image_s
+ * \param self the Image object
+ */
+void mlt_image_clear_alpha( mlt_image self )
+{
+	if ( self->release_alpha )
+	{
+		self->release_alpha( self->alpha );
+	}
+	self->alpha = NULL;
+	self->release_alpha = NULL;
+	self->strides[3] = 0;
+	self->planes[3] = NULL;
 }
 
 /** Calculate the number of bytes needed for the Image data.
@@ -332,6 +378,56 @@ void mlt_image_fill_opaque( mlt_image self )
 	{
 		memset( self->planes[3], 255, self->height * self->strides[3] );
 	}
+}
+
+/** Copy an image from src to dst.
+  *
+  * \public \memberof mlt_image_s
+  */
+void mlt_image_copy_deep( mlt_image src, mlt_image dst )
+{
+	mlt_image_clear_data( dst );
+	mlt_image_clear_alpha( dst );
+	mlt_image_set_values( dst, NULL, src->format, src->width, src->height );
+	mlt_image_alloc_data( dst );
+	if ( src->planes[3] )
+	{
+		mlt_image_alloc_alpha( dst );
+	}
+	for ( int plane = 0; plane < 4; plane++ )
+	{
+		uint8_t* s = src->planes[plane];
+		uint8_t* d = dst->planes[plane];
+		if ( !src || !dst ) continue;
+
+		int linesize = src->strides[plane];
+		if ( dst->strides[plane] < linesize )
+		{
+			linesize = dst->strides[plane];
+		}
+		for ( int line = 0; line < src->height; line++ )
+		{
+			memcpy( d, s, linesize );
+		}
+		s += src->strides[plane];
+		d += dst->strides[plane];
+	}
+}
+
+/** Make a shallow copy of an image.
+  * Memory will continue to be owned by the source image.
+  *
+  * \public \memberof mlt_image_s
+  */
+void mlt_image_copy_shallow( mlt_image src, mlt_image dst )
+{
+	mlt_image_clear_data( dst );
+	mlt_image_clear_alpha( dst );
+	mlt_destructor close = dst->close;
+	memcpy( dst, src, sizeof(struct mlt_image_s) );
+	dst->release_data = NULL;
+	dst->release_alpha = NULL;
+	dst->close = close;
 }
 
 /** Get the number of bytes needed for an image.

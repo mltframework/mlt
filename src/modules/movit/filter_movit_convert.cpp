@@ -544,8 +544,8 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		return convert_on_cpu( frame, image, format, output_format );
 
 	int error = 0;
-	int width = mlt_properties_get_int( properties, "width" );
-	int height = mlt_properties_get_int( properties, "height" );
+	int width = frame->image.width;
+	int height = frame->image.height;
 
 	if (width < 1 || height < 1) {
 		mlt_log_error( NULL, "Invalid frame size for convert_image %dx%d.\n", width, height );
@@ -673,7 +673,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 
 	GlslManager::get_instance()->unlock_service( frame );
 
-	mlt_properties_set_int( properties, "format", output_format );
+	frame->image.format = output_format;
 	*format = output_format;
 
 	return error;

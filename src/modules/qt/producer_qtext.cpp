@@ -348,10 +348,9 @@ static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_form
 	copy_image_to_alpha( *buffer, alpha, *width, *height );
 
 	// Update the frame
-	mlt_frame_set_image( frame, *buffer, img_size, mlt_pool_release );
+	mlt_image_set_values( &frame->image, *buffer, *format, *width, *height );
+	frame->image.release_data = mlt_pool_release;
 	mlt_frame_set_alpha( frame, alpha, alpha_size, mlt_pool_release );
-	mlt_properties_set_int( frame_properties, "width", *width );
-	mlt_properties_set_int( frame_properties, "height", *height );
 
 	return 0;
 }

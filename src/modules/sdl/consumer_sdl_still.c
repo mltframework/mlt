@@ -569,7 +569,6 @@ static void *consumer_thread( void *arg )
 					vfmt = preview_format;
 			
 				mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
-				mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
 				mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 			}
 			mlt_frame_close( frame );

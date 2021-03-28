@@ -130,8 +130,8 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		int profile_colorspace = profile ? profile->colorspace : 601;
 		int colorspace = mlt_properties_get_int( properties, "colorspace" );
 		int force_full_luma = 0;
-		int width = mlt_properties_get_int( properties, "width" );
-		int height = mlt_properties_get_int( properties, "height" );
+		int width = frame->image.width;
+		int height = frame->image.height;
 
 		if (out_width <= 0)
 			out_width = width;
@@ -179,7 +179,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			}
 		} else {
 			// Scaling
-			mlt_properties_clear(properties, "alpha");
+			mlt_image_clear_alpha( &frame->image );
 		}
 
 		// Update the output
@@ -195,18 +195,15 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		}
 		*image = output;
 		*format = output_format;
-		mlt_frame_set_image( frame, output, size, mlt_pool_release );
-		mlt_properties_set_int( properties, "format", output_format );
-		mlt_properties_set_int(properties, "width", out_width);
-		mlt_properties_set_int(properties, "height", out_height);
+		mlt_image_set_values( &frame->image, output, output_format, out_width, out_height );
+		frame->image.release_data = mlt_pool_release;
 
 		if (out_width == width && out_height == height)
 		if ( output_format == mlt_image_rgba )
 		{
 			register int len = width * height;
-			int alpha_size = 0;
+			int alpha_size = frame->image.width * frame->image.height;
 			uint8_t *alpha = mlt_frame_get_alpha( frame );
-			mlt_properties_get_data( properties, "alpha", &alpha_size );
 
 			if ( alpha && alpha_size >= len )
 			{

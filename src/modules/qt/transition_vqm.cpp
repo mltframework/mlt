@@ -183,9 +183,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// finish Qt drawing
 	painter.end();
-	window_size = mlt_image_format_size( *format, *width, *height, NULL );
-	uint8_t *dst = (uint8_t *) mlt_pool_alloc( window_size );
-	mlt_properties_set_data( MLT_FRAME_PROPERTIES(a_frame), "image", dst, window_size, mlt_pool_release, NULL );
+	mlt_image_set_values( &a_frame->image, NULL, *format, *width, *height );
+	mlt_image_alloc_data( &a_frame->image );
+	uint8_t* dst = (uint8_t*)a_frame->image.data;
 	*image = dst;
 
 	// convert qimage to mlt

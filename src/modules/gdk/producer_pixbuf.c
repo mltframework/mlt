@@ -555,8 +555,8 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 	}
 
 	// Set width/height of frame
-	mlt_properties_set_int( properties, "width", self->width );
-	mlt_properties_set_int( properties, "height", self->height );
+	frame->image.width = self->width;
+	frame->image.height = self->height;
 
 	return current_idx;
 }
@@ -636,11 +636,8 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 			uint8_t *buffer = self->image;
 			if ( buffer )
 			{
-				mlt_frame_set_image( frame, self->image, image_size, mlt_pool_release );
-				mlt_properties_set_int( properties, "width", self->width );
-				mlt_properties_set_int( properties, "height", self->height );
-				mlt_properties_set_int( properties, "format", self->format );
-
+				mlt_image_set_values( &frame->image, self->image, self->format, self->width, self->height );
+				frame->image.release_data = mlt_pool_release;
 				if ( !frame->convert_image( frame, &self->image, &self->format, format ) )
 				{
 					buffer = self->image;
@@ -674,8 +671,8 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 	}
 
 	// Set width/height of frame
-	mlt_properties_set_int( properties, "width", self->width );
-	mlt_properties_set_int( properties, "height", self->height );
+	frame->image.width = self->width;
+	frame->image.height = self->height;
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )

@@ -85,10 +85,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_frame real_frame = mlt_frame_pop_service( frame );
 
 	// Get the image from the real frame
-	int size = 0;
-	*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", &size );
-	*width = mlt_properties_get_int( MLT_FRAME_PROPERTIES( real_frame ), "width" );
-	*height = mlt_properties_get_int( MLT_FRAME_PROPERTIES( real_frame ), "height" );
+	*buffer = real_frame->image.data;
+	*width = real_frame->image.width;
+	*height = real_frame->image.height;
 
 	// If this is the first time, get it from the producer
 	if ( *buffer == NULL )
@@ -105,11 +104,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_frame_get_image( real_frame, buffer, format, width, height, writable );
 	
 		// Make sure we get the size
-		*buffer = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", &size );
+		*buffer = real_frame->image.data;
 	}
 
 	mlt_properties_pass( properties, MLT_FRAME_PROPERTIES( real_frame ), "" );
-
+	int size = mlt_image_format_size( *format, *width, *height, NULL );
 	// Set the values obtained on the frame
 	if ( *buffer != NULL )
 	{
@@ -167,8 +166,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		else
 		{
 			// Temporary fix - ensure that we aren't seen as a test frame
-			uint8_t *image = mlt_properties_get_data( MLT_FRAME_PROPERTIES( real_frame ), "image", NULL );
-			mlt_frame_set_image( *frame, image, 0, NULL );
+			mlt_frame_set_image( *frame, real_frame->image.data, 0, NULL );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_image", 0 );
 		}
 

@@ -44,7 +44,6 @@ namespace Mlt
 			int push( Frame *frame );
 			int push( Frame &frame );
 			int drain( );
-			Frame *construct( int );
 	};
 }
 

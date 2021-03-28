@@ -632,13 +632,17 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 	uint8_t resize_alpha = mlt_properties_get_int( b_props, "resize_alpha" );
 	double output_ar = mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) );
+	int real_width = mlt_properties_get_int( b_props, "meta.media.width" );
+	if (!real_width)
+		real_width = b_frame->image.width;
+	int real_height = mlt_properties_get_int( b_props, "meta.media.height" );
+	if (!real_height)
+		real_height = b_frame->image.height;
 
 	// Do not scale if we are cropping - the compositing rectangle can crop the b image
 	// TODO: Use the animatable w and h of the crop geometry to scale independently of crop rectangle
 	if ( mlt_properties_get( properties, "crop" ) )
 	{
-		int real_width = get_value( b_props, "meta.media.width", "width" );
-		int real_height = get_value( b_props, "meta.media.height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
@@ -647,8 +651,6 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 	}
 	else if ( mlt_properties_get_int( properties, "crop_to_fill" ) )
 	{
-		int real_width = get_value( b_props, "meta.media.width", "width" );
-		int real_height = get_value( b_props, "meta.media.height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
@@ -677,8 +679,6 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		// Adjust b_frame pixel aspect
 		int normalised_width = geometry->item.w;
 		int normalised_height = geometry->item.h;
-		int real_width = get_value( b_props, "meta.media.width", "width" );
-		int real_height = get_value( b_props, "meta.media.height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;

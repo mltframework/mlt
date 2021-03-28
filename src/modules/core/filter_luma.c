@@ -41,7 +41,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_transition luma = mlt_properties_get_data( properties, "luma", NULL );
 	mlt_frame b_frame = mlt_properties_get_data( properties, "frame", NULL );
-	mlt_properties b_frame_props = b_frame ? MLT_FRAME_PROPERTIES( b_frame ) : NULL;
 	int out = mlt_properties_get_int( properties, "period" );
 	int cycle = mlt_properties_get_int( properties, "cycle" );
 	int duration = mlt_properties_get_int( properties, "duration" );
@@ -54,7 +53,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		duration = out;
 	*format = mlt_image_yuv422;
 
-	if ( b_frame == NULL || mlt_properties_get_int( b_frame_props, "width" ) != *width || mlt_properties_get_int( b_frame_props, "height" ) != *height )
+	if ( b_frame == NULL || b_frame->image.width != *width || b_frame->image.height != *height )
 	{
 		b_frame = mlt_frame_init( MLT_FILTER_SERVICE( filter ) );
 		mlt_properties_set_data( properties, "frame", b_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
@@ -95,21 +94,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// with realtime frame-dropping, so we copy the last several frames of the cycle.
 	if ( error == 0 && modulo_pos > out - duration )
 	{
-		mlt_properties a_props = MLT_FRAME_PROPERTIES( frame );
-		int size = 0;
-		uint8_t *src = mlt_properties_get_data( a_props, "image", &size );
-		uint8_t *dst = mlt_pool_alloc( size );
-
-		if ( dst != NULL )
-		{
-			mlt_log_debug( MLT_FILTER_SERVICE(filter), "copying frame " MLT_POSITION_FMT "\n", modulo_pos );
-			mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
-			memcpy( dst, src, size );
-			mlt_frame_set_image( b_frame, dst, size, mlt_pool_release );
-			mlt_properties_set_int( b_props, "width", *width );
-			mlt_properties_set_int( b_props, "height", *height );
-			mlt_properties_set_int( b_props, "format", *format );
-		}
+		mlt_log_debug( MLT_FILTER_SERVICE(filter), "copying frame " MLT_POSITION_FMT "\n", modulo_pos );
+		mlt_image_copy_deep( &frame->image, &b_frame->image );
 	}
 
 	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );

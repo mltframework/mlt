@@ -118,9 +118,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		int real_width = mlt_properties_get_int( properties, "meta.media.width" );
 		int real_height = mlt_properties_get_int( properties, "meta.media.height" );
 		if ( real_width == 0 )
-			real_width = mlt_properties_get_int( properties, "width" );
+			real_width = frame->image.width;
 		if ( real_height == 0 )
-			real_height = mlt_properties_get_int( properties, "height" );
+			real_height = frame->image.height;
 		double input_ar = aspect_ratio * real_width / real_height;
 		double output_ar = consumer_aspect * owidth / oheight;
 		

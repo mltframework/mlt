@@ -90,8 +90,8 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 		*format = (mlt_image_format) mlt_properties_get_int( properties, "_original_format" );
 	}
 	// Determine output buffer size
-	*width = mlt_properties_get_int( frame_properties, "width" );
-	*height = mlt_properties_get_int( frame_properties, "height" );
+	*width = frame->image.width;
+	*height = frame->image.height;
 	int size = mlt_image_format_size( *format, *width, *height, NULL );
 
 	// Get output buffer
@@ -154,8 +154,8 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 
 	// Which frames are buffered?
-	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
-	uint8_t *first_alpha = mlt_properties_get_data( first_frame_properties, "alpha", NULL );
+	uint8_t *first_image = first_frame->image.data;
+	uint8_t *first_alpha = first_frame->image.planes[3];
 	if ( !first_image )
 	{
 		mlt_properties_set( first_frame_properties, "rescale.interp", mlt_properties_get( frame_properties, "rescale.interp" ) );
@@ -265,9 +265,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Give the returned frame temporal identity
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 
-		mlt_properties_set_int( frame_properties, "meta.media.width", mlt_properties_get_int( properties, "width" ) );
-		mlt_properties_set_int( frame_properties, "meta.media.height", mlt_properties_get_int( properties, "height" ) );
-		mlt_properties_pass_list( frame_properties, properties, "width, height" );
+		mlt_properties_set_int( frame_properties, "meta.media.width", (*frame)->image.width );
+		mlt_properties_set_int( frame_properties, "meta.media.height", (*frame)->image.height );
+		mlt_properties_set_int( properties, "width", (*frame)->image.width );
+		mlt_properties_set_int( properties, "height", (*frame)->image.height );
 	}
 
 	return 0;

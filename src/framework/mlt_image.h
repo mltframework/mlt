@@ -51,10 +51,14 @@ extern void mlt_image_close( mlt_image self );
 extern void mlt_image_set_values( mlt_image self, void* data, mlt_image_format format, int width, int height );
 extern void mlt_image_get_values( mlt_image self, void** data, mlt_image_format* format, int* width, int* height );
 extern void mlt_image_alloc_data( mlt_image self );
+extern void mlt_image_clear_data( mlt_image self );
 extern void mlt_image_alloc_alpha( mlt_image self );
+extern void mlt_image_clear_alpha( mlt_image self );
 extern int mlt_image_calculate_size( mlt_image self );
 extern void mlt_image_fill_black( mlt_image self );
 extern void mlt_image_fill_opaque( mlt_image self );
+extern void mlt_image_copy_deep( mlt_image src, mlt_image dst );
+extern void mlt_image_copy_shallow( mlt_image src, mlt_image dst );
 extern const char * mlt_image_format_name( mlt_image_format format );
 extern mlt_image_format mlt_image_format_id( const char * name );
 

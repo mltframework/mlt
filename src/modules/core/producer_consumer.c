@@ -60,7 +60,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	*image = new_image;
 	
 	// Copy the alpha channel
-	uint8_t *alpha = mlt_properties_get_data( MLT_FRAME_PROPERTIES( nested_frame ), "alpha", &size );
+	uint8_t *alpha = nested_frame->image.planes[3];
+	size = nested_frame->image.width * nested_frame->image.height;
 	if ( alpha && size > 0 )
 	{
 		new_image = mlt_pool_alloc( size );
@@ -216,8 +217,8 @@ static int get_frame( mlt_producer self, mlt_frame_ptr frame, int index )
 
 		// Inform the normalizers about our video properties
 		mlt_properties_set_double( frame_props, "aspect_ratio", mlt_profile_sar( cx->profile ) );
-		mlt_properties_set_int( frame_props, "width", cx->profile->width );
-		mlt_properties_set_int( frame_props, "height", cx->profile->height );
+		(*frame)->image.width = cx->profile->width;
+		(*frame)->image.height = cx->profile->height;
 		mlt_properties_set_int( frame_props, "meta.media.width", cx->profile->width );
 		mlt_properties_set_int( frame_props, "meta.media.height", cx->profile->height );
 		mlt_properties_set_int( frame_props, "progressive", cx->profile->progressive );

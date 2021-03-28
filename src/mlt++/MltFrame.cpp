@@ -133,3 +133,10 @@ int Frame::set_alpha( uint8_t *alpha, int size, mlt_destructor destroy )
 {
 	return mlt_frame_set_alpha( get_frame(), alpha, size, destroy );
 }
+
+Image Frame::image()
+{
+	mlt_image clone = mlt_image_new();
+	mlt_image_copy_shallow( &(get_frame()->image), clone );
+	return Image( clone );
+}

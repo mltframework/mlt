@@ -27,11 +27,7 @@
 
 static int dummy_get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable)
 {
-	mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
-	*image = mlt_properties_get_data(properties, "image", NULL);
-	*format = mlt_properties_get_int(properties, "format");
-	*width = mlt_properties_get_int(properties, "width");
-	*height = mlt_properties_get_int(properties, "height");
+	mlt_image_get_values( &frame->image, (void**)image, format, width, height );
 	return 0;
 }
 

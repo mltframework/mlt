@@ -199,8 +199,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				mlt_frame_set_image( frame, *image, *width * *height * 2, NULL );
 				if ( alpha )
 					mlt_frame_set_alpha( frame, alpha, *width * *height, NULL );
-				mlt_properties_set_int( a_props, "width", *width );
-				mlt_properties_set_int( a_props, "height", *height );
+				a_frame->image.width = *width;
+				a_frame->image.height = *height;
 				mlt_properties_set_int( a_props, "progressive", 1 );
 				mlt_properties_inc_ref( b_props );
 				strcpy( temp, "_b_frame" );

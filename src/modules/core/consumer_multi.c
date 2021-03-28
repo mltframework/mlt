@@ -416,10 +416,8 @@ static void foreach_consumer_put( mlt_consumer consumer, mlt_frame frame )
 				buffer += nested_size;
 
 				// Fix some things
-				mlt_properties_set_int( clone_props, "meta.media.width",
-					mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "width" ) );
-				mlt_properties_set_int( clone_props, "meta.media.height",
-					mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "height" ) );
+				mlt_properties_set_int( clone_props, "meta.media.width", frame->image.width );
+				mlt_properties_set_int( clone_props, "meta.media.height", frame->image.height );
 
 				// send frame to nested consumer
 				mlt_consumer_put_frame( nested, clone_frame );

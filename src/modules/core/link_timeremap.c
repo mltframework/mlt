@@ -244,10 +244,8 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 		*p = sum / image_count;
 		p++;
 	}
-	mlt_frame_set_image( frame, *image, size, mlt_pool_release );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "format", *format );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "width", *width );
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "height", *height );
+	mlt_image_set_values( &frame->image, *image, *format, *width, *height );
+	frame->image.release_data = mlt_pool_release;
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "colorspace", colorspace );
 
 	return 0;
@@ -276,10 +274,8 @@ static int link_get_image_nearest( mlt_frame frame, uint8_t** image, mlt_image_f
 			int size = mlt_image_format_size( *format, *width, *height, NULL );
 			*image = mlt_pool_alloc( size );
 			memcpy( *image, in_image, size );
-			mlt_frame_set_image( frame, *image, size, mlt_pool_release );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "format", *format );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "width", *width );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "height", *height );
+			mlt_image_set_values( &frame->image, *image, *format, *width, *height );
+			frame->image.release_data = mlt_pool_release;
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES(frame), "colorspace", mlt_properties_get_int( MLT_FRAME_PROPERTIES(src_frame), "colorspace" ));
 
 			uint8_t* in_alpha = mlt_frame_get_alpha( src_frame );

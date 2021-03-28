@@ -143,7 +143,6 @@ static QImage* reorient_with_exif( producer_qimage self, int image_idx, QImage *
 int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching )
 {
 	// Obtain properties of frame and producer
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_producer producer = &self->parent;
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
@@ -223,8 +222,8 @@ int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching )
 	}
 
 	// Set width/height of frame
-	mlt_properties_set_int( properties, "width", self->current_width );
-	mlt_properties_set_int( properties, "height", self->current_height );
+	frame->image.width = self->current_width;
+	frame->image.height = self->current_height;
 
 	return image_idx;
 }
@@ -355,10 +354,12 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 				self->current_image = (uint8_t*) mlt_pool_alloc( image_size );
 				memcpy( self->current_image, buffer, image_size );
 			}
-			if ( ( buffer = (uint8_t*) mlt_properties_get_data( properties, "alpha", &self->alpha_size ) ) )
+			buffer = frame->image.planes[3];
+			self->alpha_size = frame->image.width * frame->image.height;
+			if ( buffer )
 			{
-                if ( !self->alpha_size )
-                    self->alpha_size = self->current_width * self->current_height;
+				if ( !self->alpha_size )
+					self->alpha_size = self->current_width * self->current_height;
 				self->current_alpha = (uint8_t*) mlt_pool_alloc( self->alpha_size );
 				memcpy( self->current_alpha, buffer, self->alpha_size );
 			}
@@ -382,8 +383,8 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 	}
 
 	// Set width/height of frame
-	mlt_properties_set_int( properties, "width", self->current_width );
-	mlt_properties_set_int( properties, "height", self->current_height );
+	frame->image.width = self->current_width;
+	frame->image.height = self->current_height;
 }
 
 extern void make_tempfile( producer_qimage self, const char *xml )

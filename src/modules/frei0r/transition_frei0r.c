@@ -100,9 +100,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 		process_frei0r_item( MLT_TRANSITION_SERVICE(transition), position, time, length, !invert ? a_frame : b_frame, images, width, height );
 
-		*width = mlt_properties_get_int( !invert ? a_props : b_props, "width" );
-		*height = mlt_properties_get_int( !invert ? a_props : b_props, "height" );
-		*image = mlt_properties_get_data( !invert ? a_props : b_props , "image", NULL );
+		*width = !invert ? a_frame->image.width : b_frame->image.width;
+		*height = !invert ? a_frame->image.width : b_frame->image.width;
+		*image = !invert ? (uint8_t*)a_frame->image.data : (uint8_t*)b_frame->image.width;
 	}
 	return error;
 }

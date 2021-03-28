@@ -132,15 +132,3 @@ int PushConsumer::drain( )
 {
 	return 0;
 }
-
-// Convenience function - generates a frame with an image of a given size
-Frame *PushConsumer::construct( int size )
-{
-	mlt_frame f = mlt_frame_init( get_service() );
-	Frame *frame = new Frame( f );
-	uint8_t *buffer = ( uint8_t * )mlt_pool_alloc( size );
-	frame->set( "image", buffer, size, mlt_pool_release );
-	mlt_frame_close( f );
-	return frame;
-}
-

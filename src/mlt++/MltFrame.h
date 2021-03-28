@@ -24,6 +24,7 @@
 #include "MltConfig.h"
 
 #include <framework/mlt.h>
+#include "MltImage.h"
 #include "MltProperties.h"
 
 namespace Mlt
@@ -54,6 +55,7 @@ namespace Mlt
 			mlt_properties get_unique_properties( Service &service );
 			int set_image( uint8_t *image, int size, mlt_destructor destroy );
 			int set_alpha( uint8_t *alpha, int size, mlt_destructor destroy );
+			Image image();
 	};
 }
 

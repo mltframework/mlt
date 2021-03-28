@@ -51,8 +51,10 @@ static int sliced_proc(int id, int index, int jobs, void* cookie)
 			uint8_t* p = ctx->image->planes[0] + ( (slice_line_start + line) * ctx->image->strides[0]);
 			for ( int pixel = 0; pixel < ctx->image->width; pixel++ )
 			{
-				*p++ = CLAMP((*p * m) >> 16, 16, 235);
-				*p++ = CLAMP((*p * m + n) >> 16, 16, 240);
+				*p = CLAMP((*p * m) >> 16, 16, 235);
+				p++;
+				*p = CLAMP((*p * m + n) >> 16, 16, 240);
+				p++;
 			}
 		}
 
@@ -77,7 +79,8 @@ static int sliced_proc(int id, int index, int jobs, void* cookie)
 				uint8_t* p = ctx->image->planes[3] + ( (slice_line_start + line) * ctx->image->strides[3]);
 				for ( int pixel = 0; pixel < ctx->image->width; pixel++ )
 				{
-					*p++ = (*p * m) >> 16;
+					*p = (*p * m) >> 16;
+					p++;
 				}
 			}
 		}

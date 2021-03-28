@@ -250,8 +250,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	refresh_image( self, frame, *format, *width, *height, enable_caching );
 
 	// Get width and height (may have changed during the refresh)
-	*width = mlt_properties_get_int( properties, "width" );
-	*height = mlt_properties_get_int( properties, "height" );
+	*width = frame->image.width;
+	*height = frame->image.height;
 	*format = self->format;
 
 	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)

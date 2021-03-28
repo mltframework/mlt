@@ -47,31 +47,8 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		} else {
 			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 			error = mlt_frame_get_image(frame, image, format, width, height, writable);
-			if (!error) {
-				mlt_properties cloned_props = MLT_FRAME_PROPERTIES(cloned_frame);
-				int size = 0;
-				void *data = mlt_properties_get_data(cloned_props, "image", &size);
-				if (data) {
-					*width = mlt_properties_get_int(cloned_props, "width");
-					*height = mlt_properties_get_int(cloned_props, "height");
-					*format = mlt_properties_get_int(cloned_props, "format");
-					if (!size) {
-						size = mlt_image_format_size(*format, *width, *height, NULL);
-					}
-					*image = mlt_pool_alloc(size);
-					memcpy(*image, data, size);
-					mlt_frame_set_image(frame, *image, size, mlt_pool_release);
-
-					data = mlt_properties_get_data(cloned_props, "alpha", &size);
-					if (data) {
-						if (!size) {
-							size = (*width) * (*height);
-						}
-						void *copy = mlt_pool_alloc(size);
-						memcpy(copy, data, size);
-						mlt_frame_set_alpha(frame, copy, size, mlt_pool_release);
-					}
-				}
+			if (!error && cloned_frame && cloned_frame->image.data) {
+				mlt_image_copy_deep( &cloned_frame->image, &frame->image );
 			}
 		}
 	} else {

@@ -407,9 +407,9 @@ public:
 			mlt_properties_set_int( properties, "meta.media.sample_aspect_den", profile->sample_aspect_den );
 			mlt_properties_set_int( properties, "meta.media.frame_rate_num", profile->frame_rate_num );
 			mlt_properties_set_int( properties, "meta.media.frame_rate_den", profile->frame_rate_den );
-			mlt_properties_set_int( properties, "width", profile->width );
+			frame->image.width = profile->width;
 			mlt_properties_set_int( properties, "meta.media.width", profile->width );
-			mlt_properties_set_int( properties, "height", profile->height );
+			frame->image.height = profile->height;
 			mlt_properties_set_int( properties, "meta.media.height", profile->height );
 			mlt_properties_set_int( properties, "format", ( m_pixel_format == bmdFormat8BitYUV ) ? mlt_image_yuv422 : mlt_image_yuv422p16 );
 			mlt_properties_set_int( properties, "colorspace", m_colorspace );

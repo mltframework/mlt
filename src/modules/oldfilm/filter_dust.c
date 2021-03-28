@@ -132,7 +132,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				{
 					mlt_image_format luma_format = mlt_image_yuv422;
 					luma_width = dx;
-					luma_height = luma_width * mlt_properties_get_int( MLT_FRAME_PROPERTIES ( luma_frame ) , "height" ) / mlt_properties_get_int( MLT_FRAME_PROPERTIES ( luma_frame ) , "width" );
+					luma_height = luma_width * luma_frame->image.height / luma_frame->image.width;
 
 					mlt_properties_set( MLT_FRAME_PROPERTIES( luma_frame ), "rescale.interp", "best" );// none/nearest/tiles/hyper
 					

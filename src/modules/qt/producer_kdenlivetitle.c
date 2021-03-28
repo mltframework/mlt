@@ -89,8 +89,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		drawKdenliveTitle( self, frame, *format, *width, *height, mlt_frame_original_position( frame ), 0 );
 	}
 	// Get width and height (may have changed during the refresh)
-	*width = mlt_properties_get_int( properties, "width" );
-	*height = mlt_properties_get_int( properties, "height" );
+	*width = frame->image.width;
+	*height = frame->image.height;
 	*format = self->format;
 
 	if ( self->current_image )

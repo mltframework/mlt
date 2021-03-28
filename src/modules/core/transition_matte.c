@@ -161,16 +161,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 
 	mlt_frame_get_image( a_frame, image, format, width, height, 1 );
 
-	// Get the properties of the a frame
-	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
-
-	// Get the properties of the b frame
-	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
-
 	int
-		width_a = mlt_properties_get_int( a_props, "width" ),
+		width_a = a_frame->image.width,
 		width_b = width_a,
-		height_a = mlt_properties_get_int( a_props, "height" ),
+		height_a = a_frame->image.height,
 		height_b = height_a;
 	
 	uint8_t *alpha_a, *image_b;
@@ -198,9 +192,9 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	);
 
 	// Extract the a_frame image info
-	*width = mlt_properties_get_int( a_props, "width" );
-	*height = mlt_properties_get_int( a_props, "height" );
-	*image = mlt_properties_get_data( a_props, "image", NULL );
+	*width = a_frame->image.width;
+	*height = a_frame->image.height;
+	*image = a_frame->image.data;
 
 	return 0;
 }

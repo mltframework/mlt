@@ -694,9 +694,6 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 	mlt_profile profile = mlt_service_profile ( MLT_PRODUCER_SERVICE( producer ) ) ;
 	mlt_properties producer_props = MLT_PRODUCER_PROPERTIES( producer );
 
-	// Obtain properties of frame
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-
 	pthread_mutex_lock( &self->mutex );
 
 	// Check if user wants us to reload the image or if we need animation
@@ -734,7 +731,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 				qRegisterMetaType<QTextCursor>( "QTextCursor" );
 			scene = new QGraphicsScene();
 			scene->setItemIndexMethod( QGraphicsScene::NoIndex );
-			scene->setSceneRect(0, 0, mlt_properties_get_int( properties, "width" ), mlt_properties_get_int( properties, "height" ));
+			scene->setSceneRect(0, 0, frame->image.width, frame->image.height);
 			if ( mlt_properties_get( producer_props, "resource" ) && mlt_properties_get( producer_props, "resource" )[0] != '\0' )
 			{
 				// The title has a resource property, so we read all properties from the resource.
@@ -877,8 +874,8 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 	}
 
 	pthread_mutex_unlock( &self->mutex );
-	mlt_properties_set_int( properties, "width", self->current_width );
-	mlt_properties_set_int( properties, "height", self->current_height );
+	frame->image.width = self->current_width;
+	frame->image.height = self->current_height;
 }
 
 

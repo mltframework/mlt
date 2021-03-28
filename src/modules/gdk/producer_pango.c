@@ -568,8 +568,8 @@ static void refresh_image( producer_pango self, mlt_frame frame, int width, int 
 	}
 
 	// Set width/height
-	mlt_properties_set_int( properties, "width", self->width );
-	mlt_properties_set_int( properties, "height", self->height );
+	frame->image.width = self->width;
+	frame->image.height = self->height;
 }
 
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )

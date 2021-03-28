@@ -462,9 +462,8 @@ static conversion_function conversion_matrix[ mlt_image_invalid - 1 ][ mlt_image
 static int convert_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, mlt_image_format requested_format )
 {
 	int error = 0;
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-	int width = mlt_properties_get_int( properties, "width" );
-	int height = mlt_properties_get_int( properties, "height" );
+	int width = frame->image.width;
+	int height = frame->image.height;
 
 	if ( *format != requested_format )
 	{

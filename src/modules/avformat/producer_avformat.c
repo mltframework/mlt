@@ -1719,15 +1719,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		if ( original )
 		{
 			mlt_properties orig_props = MLT_FRAME_PROPERTIES( original );
-			int size = 0;
-
-			*buffer = mlt_properties_get_data( orig_props, "alpha", &size );
-			if (*buffer)
-				mlt_frame_set_alpha( frame, *buffer, size, NULL );
-			*buffer = mlt_properties_get_data( orig_props, "image", &size );
-			mlt_frame_set_image( frame, *buffer, size, NULL );
+			mlt_image_copy_shallow( &original->image, &frame->image );
 			mlt_properties_set_data( frame_properties, "avformat.image_cache", original, 0, (mlt_destructor) mlt_frame_close, NULL );
-			*format = mlt_properties_get_int( orig_props, "format" );
+			*format = original->image.format;
 			set_image_size( self, width, height );
 			mlt_properties_pass_property(frame_properties, orig_props, "colorspace");
 			got_picture = 1;
@@ -2040,7 +2034,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	if ( image_size > 0 )
 	{
-		mlt_properties_set_int( frame_properties, "format", *format );
+		frame->image.format = *format;
 		// Cache the image for rapid repeated access.
 		if ( self->image_cache ) {
 			if (is_album_art) {
@@ -2064,16 +2058,9 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	{
 		// Use last known good frame if there was a decoding failure.
 		mlt_frame original = mlt_frame_clone( self->last_good_frame, 1 );
-		mlt_properties orig_props = MLT_FRAME_PROPERTIES( original );
-		int size = 0;
-
-		*buffer = mlt_properties_get_data( orig_props, "alpha", &size );
-		if (*buffer)
-			mlt_frame_set_alpha( frame, *buffer, size, NULL );
-		*buffer = mlt_properties_get_data( orig_props, "image", &size );
-		mlt_frame_set_image( frame, *buffer, size, NULL );
+		mlt_image_copy_shallow( &original->image, &frame->image );
 		mlt_properties_set_data( frame_properties, "avformat.conceal_error", original, 0, (mlt_destructor) mlt_frame_close, NULL );
-		*format = mlt_properties_get_int( orig_props, "format" );
+		*format = original->image.format;
 		set_image_size( self, width, height );
 		got_picture = 1;
 	}
@@ -2433,25 +2420,25 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		{
 			// Workaround 1088 encodings missing cropping info.
 			if ( self->video_codec->height == 1088 && dar == 16.0/9.0 ) {
-				mlt_properties_set_int( frame_properties, "width", 1080 );
+				frame->image.width = 1080;
 				mlt_properties_set_int( properties, "meta.media.width", 1080 );
 			} else {
-				mlt_properties_set_int( frame_properties, "width", self->video_codec->height );
+				frame->image.width = self->video_codec->height;
 				mlt_properties_set_int( properties, "meta.media.width", self->video_codec->height );
 			}
-			mlt_properties_set_int( frame_properties, "height", self->video_codec->width );
+			frame->image.height = self->video_codec->width;
 			mlt_properties_set_int( properties, "meta.media.height", self->video_codec->width );
 			aspect_ratio = ( force_aspect_ratio > 0.0 ) ? force_aspect_ratio : 1.0 / aspect_ratio;
 			mlt_properties_set_double( frame_properties, "aspect_ratio", 1.0/aspect_ratio );
 		} else {
-			mlt_properties_set_int( frame_properties, "width", self->video_codec->width );
+			frame->image.width = self->video_codec->width;
 			mlt_properties_set_int( properties, "meta.media.width", self->video_codec->width );
 			// Workaround 1088 encodings missing cropping info.
 			if ( self->video_codec->height == 1088 && dar == 16.0/9.0 ) {
-				mlt_properties_set_int( frame_properties, "height", 1080 );
+				frame->image.height = 1080;
 				mlt_properties_set_int( properties, "meta.media.height", 1080 );
 			} else {
-				mlt_properties_set_int( frame_properties, "height", self->video_codec->height );
+				frame->image.height = self->video_codec->height;
 				mlt_properties_set_int( properties, "meta.media.height", self->video_codec->height );
 			}
 			mlt_properties_set_double( frame_properties, "aspect_ratio", aspect_ratio );
