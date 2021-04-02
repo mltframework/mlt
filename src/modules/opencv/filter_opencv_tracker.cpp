@@ -25,7 +25,11 @@
 typedef struct
 {
 	cv::Ptr<cv::Tracker> tracker;
+#if CV_VERSION_MAJOR < 4 && CV_VERSION_MINOR < 5
 	cv::Rect2d boundingBox;
+#else
+	cv::Rect boundingBox;
+#endif
 	char * algo;
 	mlt_rect startRect;
 	bool initialized;
@@ -138,7 +142,7 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		{
 			data->tracker = cv::TrackerKCF::create();
 		}
-#if CV_VERSION_MAJOR > 3 || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR >= 4 && CV_VERSION_REVISION >= 2)
+#if (CV_VERSION_MAJOR > 3 && CV_VERSION_MAJOR < 4 && CV_VERSION_MINOR < 5) || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR >= 4 && CV_VERSION_REVISION >= 2)
 		else if ( !strcmp(data->algo, "CSRT" ) )
 		{
 			data->tracker = cv::TrackerCSRT::create();
@@ -152,6 +156,7 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		{
 			data->tracker = cv::TrackerMIL::create();
 		}
+#if CV_VERSION_MAJOR < 4 && CV_VERSION_MINOR < 5
 		else if ( !strcmp(data->algo, "TLD" ) )
 		{
 			data->tracker = cv::TrackerTLD::create();
@@ -160,6 +165,7 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		{
 			data->tracker = cv::TrackerBoosting::create();
 		}
+#endif // CV_VERSION_MAJOR < 4 && CV_VERSION_MINOR < 5
 #else
 		if ( data->algo == NULL || !strcmp(data->algo, "" ) )
 		{
@@ -224,7 +230,12 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 			if ( data->boundingBox.height <1 ) {
 				data->boundingBox.height = 50;
 			}
+#if CV_VERSION_MAJOR < 4 && CV_VERSION_MINOR < 5
 			if ( data->tracker->init( cvFrame, data->boundingBox ) ) {
+#else
+			{
+				data->tracker->init( cvFrame, data->boundingBox );
+#endif
 				data->initialized = true;
 				data->analyze = true;
 				data->last_position = position - 1;
