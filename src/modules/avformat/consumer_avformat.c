@@ -2016,18 +2016,18 @@ static void *consumer_thread( void *arg )
 									}
 								}
 							}
-						}
-						else
-						{
-							for ( i = 0; i < height; i ++ )
+							else
 							{
-								int n = width;
-								uint8_t* p = converted_avframe->data[ 0 ] + i * converted_avframe->linesize[ 0 ] + 3;
-								while ( n )
+								for ( i = 0; i < height; i ++ )
 								{
-									*p = 255;
-									p += 4;
-									n--;
+									int n = width;
+									uint8_t* p = converted_avframe->data[ 0 ] + i * converted_avframe->linesize[ 0 ] + 3;
+									while ( n )
+									{
+										*p = 255;
+										p += 4;
+										n--;
+									}
 								}
 							}
 						}
