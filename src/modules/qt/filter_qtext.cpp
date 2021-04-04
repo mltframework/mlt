@@ -1,6 +1,6 @@
 /*
  * filter_qtext.cpp -- text overlay filter
- * Copyright (c) 2018-2020 Meltytech, LLC
+ * Copyright (c) 2018-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,9 @@
 #include <QFile>
 #include <QTextDocument>
 #include <QTextCodec>
+#include <QMutexLocker>
+
+static QMutex g_mutex;
 
 static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properties, const char* text, double scale )
 {
@@ -338,6 +341,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				!!mlt_properties_get_int(filter_properties, "overflow-y") :
 				(path_rect.height() >= profile->height * pixel_ratio);
 			auto drawRect = overflowY? QRectF() : path_rect;
+			QMutexLocker mutexLock(&g_mutex);
 			auto doc = get_rich_text(filter_properties, path_rect.width(), std::numeric_limits<qreal>::max());
 			if (doc) {
 				transform_painter(&painter, rect, path_rect, filter_properties, profile);
