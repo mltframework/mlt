@@ -16,7 +16,7 @@ target_link_libraries(mltplusgpl PRIVATE mlt m Threads::Threads)
 
 if(WIN32)
   target_link_libraries(mltplusgpl PRIVATE ws2_32)
-elseif(UNIX)
+elseif(UNIX AND NOT APPLE)
   target_link_libraries(mltplusgpl PRIVATE rt)
 endif()
 

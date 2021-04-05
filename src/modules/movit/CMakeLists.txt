@@ -1,5 +1,4 @@
 add_library(mltmovit MODULE
-  consumer_xgl.c
   factory.c
   filter_glsl_manager.cpp
   filter_movit_blur.cpp
@@ -32,6 +31,7 @@ endif()
 target_link_libraries(mltmovit PRIVATE m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
 
 if(UNIX AND NOT APPLE)
+  target_sources(mltmovit PRIVATE consumer_xgl.c)
   target_link_libraries(mltmovit PRIVATE X11::X11)
 endif()
 
