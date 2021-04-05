@@ -22,7 +22,7 @@ if(WIN32 OR APPLE)
   install(TARGETS melt RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 else()
   install(PROGRAMS "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/melt" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME melt-${MLT_VERSION_MAJOR})
-  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \
-                ${CMAKE_INSTALL_FULL_BINDIR}/melt-${MLT_VERSION_MAJOR} ${CMAKE_INSTALL_FULL_BINDIR}/melt)"
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink melt-${MLT_VERSION_MAJOR} melt \
+                                WORKING_DIRECTORY ${CMAKE_INSTALL_FULL_BINDIR})"
   )
 endif()

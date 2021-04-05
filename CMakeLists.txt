@@ -435,8 +435,8 @@ install(DIRECTORY presets profiles DESTINATION ${MLT_INSTALL_DATA_DIR})
 
 if(UNIX AND NOT APPLE)
   install(FILES docs/melt.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 RENAME melt-${MLT_VERSION_MAJOR}.1)
-  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \
-                ${CMAKE_INSTALL_FULL_MANDIR}/man1/melt-${MLT_VERSION_MAJOR}.1 ${CMAKE_INSTALL_FULL_MANDIR}/man1/melt.1)"
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink melt-${MLT_VERSION_MAJOR}.1 melt.1 \
+                                WORKING_DIRECTORY ${CMAKE_INSTALL_FULL_MANDIR}/man1)"
   )
 endif()
 
