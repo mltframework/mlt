@@ -544,7 +544,7 @@ static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **fo
 	char *url = strchr( protocol, ':' );
 
 	// Truncate protocol string
-	if (url) {
+	if (url && url - protocol > 1) { // if defined and not a drive letter
 		url[0] = '\0';
 		++url;
 		mlt_log_debug( NULL, "%s: protocol=%s resource=%s\n", __FUNCTION__, protocol, url );
