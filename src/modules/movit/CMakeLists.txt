@@ -58,5 +58,5 @@ install(FILES
   transition_movit_luma.yml
   transition_movit_mix.yml
   transition_movit_overlay.yml
-  DESTINATION ${MLT_INSTALL_DATA_DIR}/opengl
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/movit
 )
