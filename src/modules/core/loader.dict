@@ -22,6 +22,7 @@ plain:https://*=webvfx:plain:
 *.ico=qimage,avformat
 *.jfx=xml
 *.jef=xml
+*.jfif=qimage,pixbuf
 *.jpg=qimage,pixbuf
 *.jpeg=qimage,pixbuf
 *.kdenlivetitle=kdenlivetitle
