@@ -27,6 +27,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Private Types
+typedef struct
+{
+	mlt_frame prev_frame;
+	mlt_filter resample_filter;
+	mlt_filter pitch_filter;
+} private_data;
+
 static void link_configure( mlt_link self, mlt_profile chain_profile )
 {
 	// Timeremap must always work with the same profile as the chain so that
@@ -36,7 +44,10 @@ static void link_configure( mlt_link self, mlt_profile chain_profile )
 
 static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* format, int* frequency, int* channels, int* samples )
 {
+	int requested_frequency = *frequency;
+	int requested_samples = *samples;
 	mlt_link self = (mlt_link)mlt_frame_pop_audio( frame );
+	private_data* pdata = (private_data*)self->child;
 	mlt_properties unique_properties = mlt_frame_get_unique_properties( frame, MLT_LINK_SERVICE(self) );
 	if ( !unique_properties )
 	{
@@ -72,120 +83,161 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 		mlt_frame_set_audio( frame, *audio, *format, size, mlt_pool_release );
 		return 0;
 	}
-	else
+
+	// Calculate the samples to get from the input frames
+	int link_sample_count = mlt_audio_calculate_frame_samples( link_fps, *frequency, mlt_frame_get_position( frame ) );
+	int sample_count = lrint( (double)link_sample_count * source_speed );
+	mlt_position in_frame_pos = floor( source_time * source_fps );
+	int64_t first_out_sample = llrint(source_time * (double)*frequency);
+
+	// Attempt to maintain sample continuity with the previous frame
+	static const int64_t SAMPLE_CONTINUITY_ERROR_MARGIN = 4;
+	int64_t continuity_sample = mlt_properties_get_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample" );
+	int64_t continuity_delta = continuity_sample - first_out_sample;
+	if ( source_duration > 0.0 && continuity_delta != 0 )
 	{
-		// Calculate the samples to get from the input frames
-		int link_sample_count = mlt_audio_calculate_frame_samples( link_fps, *frequency, mlt_frame_get_position( frame ) );
-		int sample_count = lrint( (double)link_sample_count * source_speed );
-		mlt_position in_frame_pos = floor( source_time * source_fps );
-		int64_t first_out_sample = llrint(source_time * (double)*frequency);
-
-		// Attempt to maintain sample continuity with the previous frame
-		static const int64_t SAMPLE_CONTINUITY_ERROR_MARGIN = 4;
-		int64_t continuity_sample = mlt_properties_get_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample" );
-		int64_t continuity_delta = continuity_sample - first_out_sample;
-		if ( source_duration > 0.0 && continuity_delta != 0 )
+		// Forward: Continue from where the previous frame left off if within the margin of error
+		if ( continuity_delta > -SAMPLE_CONTINUITY_ERROR_MARGIN && continuity_delta < SAMPLE_CONTINUITY_ERROR_MARGIN )
 		{
-			// Forward: Continue from where the previous frame left off if within the margin of error
-			if ( continuity_delta > -SAMPLE_CONTINUITY_ERROR_MARGIN && continuity_delta < SAMPLE_CONTINUITY_ERROR_MARGIN )
-			{
-				sample_count = sample_count - continuity_delta;
-				first_out_sample = continuity_sample;
-				mlt_log_debug( MLT_LINK_SERVICE(self), "Maintain Forward Continuity: %d\n", (int)continuity_delta );
-			}
+			sample_count = sample_count - continuity_delta;
+			first_out_sample = continuity_sample;
+			mlt_log_debug( MLT_LINK_SERVICE(self), "Maintain Forward Continuity: %d\n", (int)continuity_delta );
 		}
-		else if ( source_duration < 0.0 && continuity_delta != sample_count )
+	}
+	else if ( source_duration < 0.0 && continuity_delta != sample_count )
+	{
+		// Reverse: End where the previous frame left off if within the margin of error
+		continuity_delta -= sample_count;
+		if ( continuity_delta > -SAMPLE_CONTINUITY_ERROR_MARGIN && continuity_delta < SAMPLE_CONTINUITY_ERROR_MARGIN )
 		{
-			// Reverse: End where the previous frame left off if within the margin of error
-			continuity_delta -= sample_count;
-			if ( continuity_delta > -SAMPLE_CONTINUITY_ERROR_MARGIN && continuity_delta < SAMPLE_CONTINUITY_ERROR_MARGIN )
-			{
-				sample_count = sample_count + continuity_delta;
-				mlt_log_debug( MLT_LINK_SERVICE(self), "Maintain Reverse Continuity: %d\n", (int)continuity_delta );
-			}
+			sample_count = sample_count + continuity_delta;
+			mlt_log_debug( MLT_LINK_SERVICE(self), "Maintain Reverse Continuity: %d\n", (int)continuity_delta );
 		}
-
-		int64_t first_in_sample = mlt_audio_calculate_samples_to_position( source_fps, *frequency, in_frame_pos );
-		int samples_to_skip = first_out_sample - first_in_sample;
-		if ( samples_to_skip < 0 )
-		{
-			mlt_log_error( MLT_LINK_SERVICE(self), "Audio too late: %d\t%d\n", (int)first_out_sample, (int)first_in_sample );
-			samples_to_skip = 0;
-		}
-
-		// Allocate the out buffer
-		struct mlt_audio_s out;
-		mlt_audio_set_values( &out, NULL, *frequency, *format, sample_count, *channels );
-		mlt_audio_alloc_data( &out );
-
-		// Copy audio from the input frames to the output buffer
-		int samples_copied = 0;
-		int samples_needed = sample_count;
-
-		while ( samples_needed > 0 )
-		{
-			char key[19];
-			sprintf( key, "%d", in_frame_pos );
-			mlt_frame src_frame = (mlt_frame)mlt_properties_get_data( unique_properties, key, NULL );
-			if ( !src_frame )
-			{
-				mlt_log_error( MLT_LINK_SERVICE(self), "Frame not found: %d\n", in_frame_pos );
-				break;
-			}
-
-			int in_samples = mlt_audio_calculate_frame_samples( source_fps, *frequency, in_frame_pos );
-			struct mlt_audio_s in;
-			mlt_audio_set_values( &in, NULL, *frequency, *format, in_samples, *channels );
-
-			int error = mlt_frame_get_audio( src_frame, &in.data, &in.format, &in.frequency, &in.channels, &in.samples );
-			if ( error )
-			{
-				mlt_log_error( MLT_LINK_SERVICE(self), "No audio: %d\n", in_frame_pos );
-				break;
-			}
-
-			int samples_to_copy = in.samples - samples_to_skip;
-			if ( samples_to_copy > samples_needed )
-			{
-				samples_to_copy = samples_needed;
-			}
-			mlt_log_debug( MLT_LINK_SERVICE(self), "Copy: %d\t%d\t%d\t%d\n", samples_to_skip, samples_to_skip + samples_to_copy -1, samples_to_copy, in.samples );
-
-			if ( samples_to_copy > 0 )
-			{
-				mlt_audio_copy( &out, &in, samples_to_copy, samples_to_skip, samples_copied );
-				samples_copied += samples_to_copy;
-				samples_needed -= samples_to_copy;
-			}
-
-			samples_to_skip = 0;
-			in_frame_pos++;
-		}
-
-		if ( samples_copied != sample_count )
-		{
-			mlt_log_error( MLT_LINK_SERVICE(self), "Sample under run: %d\t%d\n", samples_copied, sample_count );
-			mlt_audio_shrink( &out , samples_copied );
-		}
-
-		if ( source_duration < 0.0 )
-		{
-			// Going backwards
-			mlt_audio_reverse( &out );
-			mlt_properties_set_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample", first_out_sample );
-		}
-		else
-		{
-			mlt_properties_set_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample", first_out_sample + sample_count );
-		}
-
-		out.frequency = lrint( (double)out.frequency * (double)sample_count / (double)link_sample_count );
-		mlt_frame_set_audio( frame, out.data, out.format, 0, out.release_data );
-		mlt_audio_get_values( &out, audio, frequency, format, samples, channels );
-		return 0;
 	}
 
-	return 1;
+	int64_t first_in_sample = mlt_audio_calculate_samples_to_position( source_fps, *frequency, in_frame_pos );
+	int samples_to_skip = first_out_sample - first_in_sample;
+	if ( samples_to_skip < 0 )
+	{
+		mlt_log_error( MLT_LINK_SERVICE(self), "Audio too late: %d\t%d\n", (int)first_out_sample, (int)first_in_sample );
+		samples_to_skip = 0;
+	}
+
+	// Allocate the out buffer
+	struct mlt_audio_s out;
+	mlt_audio_set_values( &out, NULL, *frequency, *format, sample_count, *channels );
+	mlt_audio_alloc_data( &out );
+
+	// Copy audio from the input frames to the output buffer
+	int samples_copied = 0;
+	int samples_needed = sample_count;
+
+	while ( samples_needed > 0 )
+	{
+		char key[19];
+		sprintf( key, "%d", in_frame_pos );
+		mlt_frame src_frame = (mlt_frame)mlt_properties_get_data( unique_properties, key, NULL );
+		if ( !src_frame )
+		{
+			mlt_log_error( MLT_LINK_SERVICE(self), "Frame not found: %d\n", in_frame_pos );
+			break;
+		}
+
+		int in_samples = mlt_audio_calculate_frame_samples( source_fps, *frequency, in_frame_pos );
+		struct mlt_audio_s in;
+		mlt_audio_set_values( &in, NULL, *frequency, *format, in_samples, *channels );
+
+		int error = mlt_frame_get_audio( src_frame, &in.data, &in.format, &in.frequency, &in.channels, &in.samples );
+		if ( error )
+		{
+			mlt_log_error( MLT_LINK_SERVICE(self), "No audio: %d\n", in_frame_pos );
+			break;
+		}
+
+		int samples_to_copy = in.samples - samples_to_skip;
+		if ( samples_to_copy > samples_needed )
+		{
+			samples_to_copy = samples_needed;
+		}
+		mlt_log_debug( MLT_LINK_SERVICE(self), "Copy: %d\t%d\t%d\t%d\n", samples_to_skip, samples_to_skip + samples_to_copy -1, samples_to_copy, in.samples );
+
+		if ( samples_to_copy > 0 )
+		{
+			mlt_audio_copy( &out, &in, samples_to_copy, samples_to_skip, samples_copied );
+			samples_copied += samples_to_copy;
+			samples_needed -= samples_to_copy;
+		}
+
+		samples_to_skip = 0;
+		in_frame_pos++;
+	}
+
+	if ( samples_copied != sample_count )
+	{
+		mlt_log_error( MLT_LINK_SERVICE(self), "Sample under run: %d\t%d\n", samples_copied, sample_count );
+		mlt_audio_shrink( &out , samples_copied );
+	}
+
+	if ( source_duration < 0.0 )
+	{
+		// Going backwards
+		mlt_audio_reverse( &out );
+		mlt_properties_set_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample", first_out_sample );
+	}
+	else
+	{
+		mlt_properties_set_int64( MLT_LINK_PROPERTIES( self ), "_continuity_sample", first_out_sample + sample_count );
+	}
+
+	int in_frequency = *frequency;
+	out.frequency = lrint( (double)out.frequency * (double)sample_count / (double)link_sample_count );
+	mlt_frame_set_audio( frame, out.data, out.format, 0, out.release_data );
+	mlt_audio_get_values( &out, audio, frequency, format, samples, channels );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "audio_frequency", *frequency );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "audio_channels", *channels );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "audio_samples", *samples );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "audio_format", *format );
+
+	// Apply pitch compensation if requested
+	int pitch_compensate = mlt_properties_get_int( MLT_LINK_PROPERTIES( self ), "pitch" );
+	if ( pitch_compensate )
+	{
+		if ( !pdata->pitch_filter )
+		{
+			pdata->pitch_filter = mlt_factory_filter( mlt_service_profile( MLT_LINK_SERVICE( self ) ), "rbpitch", NULL );
+		}
+		if ( pdata->pitch_filter )
+		{
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES(pdata->pitch_filter), "stretch", 1 );
+			// Set the pitchscale to compensate for the difference between the input sampling frequency and the requested sampling frequency.
+			double pitchscale = (double)in_frequency / (double)requested_frequency;
+			mlt_properties_set_double( MLT_FILTER_PROPERTIES(pdata->pitch_filter), "pitchscale", pitchscale );
+			mlt_filter_process( pdata->pitch_filter, frame );
+		}
+	}
+	// Apply a resampler if rbpitch is not stretching to provide
+	if ( !pitch_compensate || !pdata->pitch_filter )
+	{
+		if ( !pdata->resample_filter )
+		{
+			pdata->resample_filter = mlt_factory_filter( mlt_service_profile( MLT_LINK_SERVICE(self) ), "resample", NULL );
+			if ( !pdata->resample_filter )
+			{
+				pdata->resample_filter = mlt_factory_filter( mlt_service_profile( MLT_LINK_SERVICE(self) ), "swresample", NULL );
+			}
+		}
+		if ( pdata->resample_filter )
+		{
+			mlt_filter_process( pdata->resample_filter, frame );
+		}
+	}
+
+	// Final call to get_audio() to apply the pitch or resample filter
+	*frequency = requested_frequency;
+	*samples = requested_samples;
+	int error = mlt_frame_get_audio( frame, audio, format, frequency, channels, samples );
+
+	return error;
 }
 
 static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_format* format, int* width, int* height, int writable )
@@ -300,6 +352,7 @@ static int link_get_image_nearest( mlt_frame frame, uint8_t** image, mlt_image_f
 static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 {
 	mlt_properties properties = MLT_LINK_PROPERTIES( self );
+	private_data* pdata = (private_data*)self->child;
 	mlt_position position = mlt_producer_position( MLT_LINK_PRODUCER( self ) );
 	mlt_position length = mlt_producer_get_length( MLT_LINK_PRODUCER( self ) );
 	double source_time = 0.0;
@@ -347,8 +400,7 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	// Get frames from the next link and pass them along with the new frame
 	int in_frame_count = 0;
 	mlt_frame src_frame = NULL;
-	mlt_frame prev_frame = mlt_properties_get_data( properties, "_prev_frame", NULL );
-	mlt_position prev_frame_position = prev_frame ? mlt_frame_get_position( prev_frame ) : -1;
+	mlt_position prev_frame_position = pdata->prev_frame ? mlt_frame_get_position( pdata->prev_frame ) : -1;
 	mlt_position in_frame_pos = floor( source_time * source_fps );
 	double frame_time = (double)in_frame_pos / source_fps;
 	double source_end_time = source_time + fabs(source_duration);
@@ -362,7 +414,7 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 		if( in_frame_pos == prev_frame_position )
 		{
 			// Reuse the previous frame to avoid seeking.
-			src_frame = prev_frame;
+			src_frame = pdata->prev_frame;
 			mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(src_frame) );
 		}
 		else
@@ -397,11 +449,12 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	(*frame)->convert_audio = src_frame->convert_audio;
 	mlt_properties_pass_list( MLT_FRAME_PROPERTIES(*frame), MLT_FRAME_PROPERTIES(src_frame), "audio_frequency" );
 
-	if ( src_frame != prev_frame )
+	if ( src_frame != pdata->prev_frame )
 	{
 		// Save the last source frame because it might be requested for the next frame.
+		mlt_frame_close( pdata->prev_frame );
 		mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(src_frame) );
-		mlt_properties_set_data( properties, "_prev_frame", src_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
+		pdata->prev_frame = src_frame;
 	}
 
 	// Setup callbacks
@@ -419,25 +472,6 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	mlt_frame_push_audio( *frame, (void*)self );
 	mlt_frame_push_audio( *frame, link_get_audio );
 
-	// Apply a resampler
-	mlt_filter resampler = (mlt_filter)mlt_properties_get_data( properties, "_resampler", NULL );
-	if ( !resampler )
-	{
-		resampler = mlt_factory_filter( mlt_service_profile( MLT_LINK_SERVICE(self) ), "resample", NULL );
-		if ( !resampler )
-		{
-			resampler = mlt_factory_filter( mlt_service_profile( MLT_LINK_SERVICE(self) ), "swresample", NULL );
-		}
-		if( resampler )
-		{
-			mlt_properties_set_data( properties, "_resampler", resampler, 0, (mlt_destructor)mlt_filter_close, NULL );
-		}
-	}
-	if ( resampler )
-	{
-		mlt_filter_process( resampler, *frame );
-	}
-
 	mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
 	mlt_properties_set_double( properties, "speed", source_speed );
 
@@ -446,20 +480,57 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 
 static void link_close( mlt_link self )
 {
-	self->close = NULL;
-	mlt_link_close( self );
-	free( self );
+	if ( self )
+	{
+		private_data* pdata = (private_data*)self->child;
+		if ( pdata )
+		{
+			if ( pdata->prev_frame )
+			{
+				mlt_frame_close( pdata->prev_frame );
+			}
+			if ( pdata->resample_filter )
+			{
+				mlt_filter_close( pdata->resample_filter );
+			}
+			if ( pdata->pitch_filter )
+			{
+				mlt_filter_close( pdata->pitch_filter );
+			}
+			free( pdata );
+		}
+		self->close = NULL;
+		mlt_link_close( self );
+		free( self );
+	}
 }
 
 mlt_link link_timeremap_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	mlt_link self = mlt_link_init();
-	if ( self != NULL )
+	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
+
+	if ( self && pdata )
 	{
+		self->child = pdata;
+
 		// Callback registration
 		self->configure = link_configure;
 		self->get_frame = link_get_frame;
 		self->close = link_close;
+	}
+	else
+	{
+		if ( pdata )
+		{
+			free( pdata );
+		}
+
+		if ( self )
+		{
+			mlt_link_close( self );
+			self = NULL;
+		}
 	}
 	return self;
 }

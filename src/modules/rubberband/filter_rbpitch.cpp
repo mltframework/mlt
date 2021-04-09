@@ -50,7 +50,6 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		return mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	}
 
-	int requested_samples = *samples;
 	mlt_properties unique_properties = mlt_frame_get_unique_properties( frame, MLT_FILTER_SERVICE(filter) );
 	if ( !unique_properties )
 	{
@@ -59,6 +58,8 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	}
 
 	// Get the producer's audio
+	int requested_frequency = *frequency;
+	int requested_samples = *samples;
 	*format = mlt_audio_float;
 	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	if ( error ) return error;
@@ -79,7 +80,15 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	// the future.
 	double pitchscale = mlt_properties_get_double( unique_properties, "pitchscale" );
 	pitchscale = CLAMP( pitchscale, 0.05, 50.0 );
-	int rubberband_frequency = CLAMP( *frequency, 10000, 300000 );
+	double timeratio = 1.0;
+	int stretch = mlt_properties_get_int( unique_properties, "stretch" );
+	int rubberband_frequency = *frequency;
+	if( stretch )
+	{
+		rubberband_frequency = requested_frequency;
+		timeratio = (double)requested_samples / (double)*samples;
+	}
+	rubberband_frequency = CLAMP( rubberband_frequency, 10000, 300000 );
 
 	// Protect the RubberBandStretcher instance.
 	mlt_service_lock( MLT_FILTER_SERVICE(filter) );
@@ -113,6 +122,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		s->setPitchOption(RubberBandStretcher::OptionPitchHighConsistency);
 		s->setTransientsOption(RubberBandStretcher::OptionTransientsSmooth);
 	}
+	s->setTimeRatio( timeratio );
 
 	// Configure input and output buffers and counters.
 	int consumed_samples = 0;
@@ -121,6 +131,11 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	struct mlt_audio_s in;
 	struct mlt_audio_s out;
 	mlt_audio_set_values( &in, *buffer, *frequency, *format, *samples, *channels );
+	if( stretch )
+	{
+		*frequency = requested_frequency;
+		*samples = requested_samples;
+	}
 	mlt_audio_set_values( &out, NULL, *frequency, *format, *samples, *channels );
 	mlt_audio_alloc_data( &out );
 
@@ -218,6 +233,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	// Save the pitchscale on the frame to be used in rbpitch_get_audio
 	mlt_properties unique_properties = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE(filter) );
 	mlt_properties_set_double( unique_properties, "pitchscale", pitchscale );
+	mlt_properties_set_int( unique_properties, "stretch", mlt_properties_get_int( filter_properties, "stretch" ) );
 
 	mlt_frame_push_audio( frame, (void*)filter );
 	mlt_frame_push_audio( frame, (void*)rbpitch_get_audio );

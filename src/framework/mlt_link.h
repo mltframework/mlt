@@ -61,6 +61,8 @@ struct mlt_link_s
 
 	/** \privatesection */
 	mlt_producer next;
+	/** the object of a subclass */
+	void *child;
 };
 
 #define MLT_LINK_PRODUCER( link )		( &( link )->parent )

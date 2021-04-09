@@ -46,6 +46,15 @@ parameters:
     minimum: 0.1
     maximum: 10
 
+  - identifier: stretch
+    title: Stretch
+    type: boolean
+    description: >
+      Stretch the audio to fill the requested samples. This option will have no
+      effect if the requested sample size is the same as the received sample
+      size.
+    readonly: yes
+
   - identifier: latency
     title: Latency
     type: float
