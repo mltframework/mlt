@@ -1,6 +1,78 @@
 MLT Release Notes
 -----------------
 
+Version 6.26.0
+
+This is the last planned release of major version 6. Version 7 will be released
+soon and introduce some minor API breakage while removing deprecations.
+The main new feature in this version is hardware-accellerated decoding!
+However, this is a basic implementation: It always returns the uncompressed
+video to the CPU memory with no pipelining to filters. Even when coupled with
+hardware encoding in the avformat consumer it must transfer the video. Also,
+there is no automatic software/CPU fallback and no resource management.
+
+Modules
+  * Added support for `hwaccel` query string parameter to the `avformat`
+    producer. It accepts the following values:
+    vaapi (Linux/BSD), cuda (Linux), videotoolbox (macOS), d3d11va (Windows), dxva2 (Windows)
+  * Added support for `hwaccel_device` query string parameter to the `avformat`
+    producer. This is only used with vaapi (device path) and cuda, d3d11va, or
+    dxva (number).
+  * Improved the usage of image slice threading in `frei0r`. This only applies
+    when `threads`=0 and only works with some frei0r plugins that you must decide
+    yourself.
+  * Added an ellipse item to `kdenlivetitle` producer.
+  * Added support for PNG and GIF as album art in the `avformat` producer.
+  * Added BT.2020 color space metadata to the `avformat` producer.
+  * Resolved many FFmpeg deprecations in the `avformat` producer making it possible to support AV1 decoding.
+  * Added a `strobe` fitler that periodically makes the alpha channel transparent.
+  * Added a new `typewriter` text filter (currently only works with the
+    kdenlivetitle producer).
+  * Improved sound quality for lower pitch shifts in `rbpitch`.
+  * Fixed speed of trick play in the `jack`, `rtaudio`, `sdl_audio`, and `sdl2_audio` consumers.
+  * Fixed matrix for independent channels in `swresample` filter.
+  * Fixed leading zeros for the `timer` filter.
+  * Fixed flickering using `affine` with a `luma` transition.
+  * Fixed a crash using RGBA images in the `qimage` producer (regression in v6.22.0).
+  * Fixed `brightness` filter misbehaves on `alpha` > 1.
+  * Fixed writing `flac` format file does not set its duration in the `avformat` consumer.
+  * Fixed an infinite loop in `rbpitch` filter.
+  * Fixed `ttl` in the `qimage` producer.
+  * Fixed building with OpenCV 4.5
+  * Fixed artifacts with multiple HTML `qtext` filters and frame threading.
+  * Deprecated the `start` and `end` properties on the following (use property
+    animation instead):
+    - brightness
+    - panner
+    - boxblur
+    - wave
+    - volume
+  * Deprecated the following services:
+    - data_show
+    - region
+    - transition filter
+    - autotrack_rectangle
+    - motion_est
+    - slowmotion
+
+Other
+  * CMake:
+    - Fixed building without SWIG.
+    - Added many "MOD_..." options to explictly disable modules.
+    - Added src/tests and the option `BUILD_TESTING`, which defaults off.
+    - All dependency checks moved to top level CMakeLists.txt.
+    - Install melt man page.
+    - Install oldfilm SVG files.
+    - Added src/examples.
+    - Install framework/metaschema.yaml.
+    - Fixed `plusgpl` datadir.
+    - Added all swwig/ languages.
+    - Increased C++ standard to C++14.
+  * Added an `AV1` encoding preset.
+  * Improved documentation of the requirement for C11.
+  * The minimum version of FFmpeg is v4.0 and Libav is no longer supported.
+
+
 Version 6.24.0
 
 This version is mostly fixes plus a few new filters.
