@@ -8,6 +8,7 @@ add_library(mltfrei0r MODULE
 )
 
 target_compile_options(mltfrei0r PRIVATE ${MLT_COMPILE_OPTIONS})
+target_include_directories(mltfrei0r PRIVATE ${FREI0R_INCLUDE_DIRS})
 if(APPLE AND RELOCATABLE)
   target_compile_definitions(mltfrei0r PRIVATE RELOCATABLE)
 endif()
