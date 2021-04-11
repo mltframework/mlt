@@ -43,3 +43,13 @@ src/tests/*/*
 !src/tests/*/*.cpp
 !src/tests/*/*.pro
 build
+*cmake_install.cmake
+.ninja_*
+build.ninja
+rules.ninja
+CMakeCache.txt
+*CMakeFiles/
+Mlt7Config*.cmake
+install_manifest.txt
+out/
+src/modules/qt/mltqt_autogen/
