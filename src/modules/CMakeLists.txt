@@ -20,7 +20,7 @@ if(MOD_GDK AND TARGET PkgConfig::GdkPixbuf)
   add_subdirectory(gdk)
 endif()
 
-if(MOD_GTK2)
+if(MOD_GTK2 AND TARGET GTK2::gtk)
   add_subdirectory(gtk2)
 endif()
 

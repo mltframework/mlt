@@ -47,6 +47,7 @@ target_link_libraries(mltcore mlt Threads::Threads)
 
 if(WIN32)
   target_sources(mltcore PRIVATE ../../win32/fnmatch.c)
+  target_include_directories(mltcore PRIVATE ../../win32)
 endif()
 
 if(X86_64)

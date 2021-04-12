@@ -39,7 +39,6 @@ target_include_directories(mlt PUBLIC
 set_target_properties(mlt PROPERTIES SOVERSION ${MLT_VERSION_MAJOR} VERSION ${MLT_VERSION})
 
 if(WIN32)
-  set_target_properties(mlt PROPERTIES OUTPUT_NAME "mlt-${MLT_VERSION_MAJOR}")
   target_sources(mlt PRIVATE ../win32/win32.c ../win32/strptime.c)
   target_link_libraries(mlt Iconv::Iconv)
   if(NODEPLOY)
