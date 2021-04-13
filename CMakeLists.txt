@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(MLT
-  VERSION 6.26.0
+  VERSION 6.26.1
   DESCRIPTION "Multimedia Framework"
   HOMEPAGE_URL "https://www.mltframework.org"
   LANGUAGES C CXX

@@ -1,6 +1,12 @@
 MLT Release Notes
 -----------------
 
+Version 6.26.1
+
+This version fixes a major regression in the avformat producer to read from
+network URLs.
+
+
 Version 6.26.0
 
 This is the last planned release of major version 6. Version 7 will be released
