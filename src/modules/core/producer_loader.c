@@ -230,7 +230,7 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties_get( properties, "loader_normalised" ) == NULL )
 		attach_normalisers( profile, producer );
 	
-	if ( producer )
+	if ( producer && mlt_service_identify( MLT_PRODUCER_SERVICE( producer ) ) != mlt_service_chain_type )
 	{
 		// Always let the image and audio be converted
 		int created = 0;
