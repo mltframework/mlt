@@ -37,19 +37,19 @@ static mlt_properties oldfilm_metadata( mlt_service_type type, const char *id, v
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "oldfilm", filter_oldfilm_init );
-	MLT_REGISTER( filter_type, "dust", filter_dust_init );
-	MLT_REGISTER( filter_type, "lines", filter_lines_init );
-	MLT_REGISTER( filter_type, "grain", filter_grain_init );
-	MLT_REGISTER( filter_type, "tcolor", filter_tcolor_init );
-	MLT_REGISTER( filter_type, "vignette", filter_vignette_init );
+	MLT_REGISTER( mlt_service_filter_type, "oldfilm", filter_oldfilm_init );
+	MLT_REGISTER( mlt_service_filter_type, "dust", filter_dust_init );
+	MLT_REGISTER( mlt_service_filter_type, "lines", filter_lines_init );
+	MLT_REGISTER( mlt_service_filter_type, "grain", filter_grain_init );
+	MLT_REGISTER( mlt_service_filter_type, "tcolor", filter_tcolor_init );
+	MLT_REGISTER( mlt_service_filter_type, "vignette", filter_vignette_init );
 	
-	MLT_REGISTER_METADATA( filter_type, "vignette", oldfilm_metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "tcolor", oldfilm_metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "grain", oldfilm_metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "lines", oldfilm_metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "dust", oldfilm_metadata, NULL );
-	MLT_REGISTER_METADATA( filter_type, "oldfilm", oldfilm_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "vignette", oldfilm_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "tcolor", oldfilm_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "grain", oldfilm_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "lines", oldfilm_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "dust", oldfilm_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "oldfilm", oldfilm_metadata, NULL );
 	
 }
 

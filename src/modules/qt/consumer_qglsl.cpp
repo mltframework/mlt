@@ -1,6 +1,6 @@
 /*
  * consumer_qglsl.cpp
- * Copyright (C) 2012-2014 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2012-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -123,19 +123,20 @@ private:
 	QOffscreenSurface* m_surface;
 };
 
-static void onThreadCreate(mlt_properties owner, mlt_consumer self,
-	RenderThread** thread, int* priority, thread_function_t function, void* data )
+static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
 {
 	Q_UNUSED(owner)
-	Q_UNUSED(priority)
-	(*thread) = new RenderThread(function, data);
-	(*thread)->start();
+	mlt_event_data_thread* t = (mlt_event_data_thread*) mlt_event_data_to_object(event_data);
+	auto thread = new RenderThread((thread_function_t) t->function, t->data);
+	*t->thread = thread;
+	thread->start();
 }
 
-static void onThreadJoin(mlt_properties owner, mlt_consumer self, RenderThread* thread)
+static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data event_data)
 {
 	Q_UNUSED(owner)
 	Q_UNUSED(self)
+	auto thread = (RenderThread*) mlt_event_data_to_object(event_data);
 	if (thread) {
 		thread->quit();
 		thread->wait();
@@ -160,11 +161,11 @@ static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 #else
 	{
 #endif
-		mlt_events_fire(filter_properties, "init glsl", NULL);
+		mlt_events_fire(filter_properties, "init glsl", mlt_event_data_none());
 		if (!mlt_properties_get_int(filter_properties, "glsl_supported")) {
 			mlt_log_fatal(service,
 				"OpenGL Shading Language rendering is not supported on this machine.\n" );
-			mlt_events_fire(properties, "consumer-fatal-error", NULL);
+			mlt_events_fire(properties, "consumer-fatal-error", mlt_event_data_none());
 		}
 	}
 }
@@ -173,7 +174,7 @@ static void onThreadStopped(mlt_properties owner, mlt_consumer consumer)
 {
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
 	mlt_filter filter = (mlt_filter) mlt_properties_get_data(properties, "glslManager", NULL);
-	mlt_events_fire(MLT_FILTER_PROPERTIES(filter), "close glsl", NULL);
+	mlt_events_fire(MLT_FILTER_PROPERTIES(filter), "close glsl", mlt_event_data_none());
 }
 
 static void onCleanup(mlt_properties owner, mlt_consumer consumer)
@@ -196,7 +197,7 @@ mlt_consumer consumer_qglsl_init( mlt_profile profile, mlt_service_type type, co
 		if (filter) {
 			mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
 			mlt_properties_set_data(properties, "glslManager", filter, 0, (mlt_destructor) mlt_filter_close, NULL);
-			mlt_events_register( properties, "consumer-cleanup", NULL );
+			mlt_events_register( properties, "consumer-cleanup" );
 			mlt_events_listen(properties, consumer, "consumer-thread-started", (mlt_listener) onThreadStarted);
 			mlt_events_listen(properties, consumer, "consumer-thread-stopped", (mlt_listener) onThreadStopped);
 			mlt_events_listen(properties, consumer, "consumer-cleanup", (mlt_listener) onCleanup);

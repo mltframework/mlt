@@ -51,11 +51,10 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 
 	switch( format )
 	{
-		case mlt_image_rgb24:
+		case mlt_image_rgb:
 			value = AV_PIX_FMT_RGB24;
 			break;
-		case mlt_image_rgb24a:
-		case mlt_image_opengl:
+		case mlt_image_rgba:
 			value = AV_PIX_FMT_RGBA;
 			break;
 		case mlt_image_yuv422:
@@ -150,7 +149,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		uint8_t *output = mlt_pool_alloc( size );
 
 		if (out_width == width && out_height == height) {
-			if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+			if ( *format == mlt_image_rgba )
 			{
 				register int len = width * height;
 				uint8_t *alpha = mlt_pool_alloc( len );
@@ -202,7 +201,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		mlt_properties_set_int(properties, "height", out_height);
 
 		if (out_width == width && out_height == height)
-		if ( output_format == mlt_image_rgb24a || output_format == mlt_image_opengl )
+		if ( output_format == mlt_image_rgba )
 		{
 			register int len = width * height;
 			int alpha_size = 0;

@@ -51,6 +51,7 @@ extern int mlt_audio_calculate_size( mlt_audio self );
 extern int mlt_audio_plane_count( mlt_audio self );
 extern int mlt_audio_plane_size( mlt_audio self );
 extern void mlt_audio_get_planes( mlt_audio self, uint8_t** planes );
+extern void mlt_audio_silence( mlt_audio self, int samples, int start );
 extern void mlt_audio_shrink( mlt_audio self , int samples );
 extern void mlt_audio_reverse( mlt_audio self );
 extern void mlt_audio_copy( mlt_audio dst, mlt_audio src, int samples, int src_start, int dst_start );
@@ -62,13 +63,5 @@ extern const char * mlt_audio_channel_layout_name( mlt_channel_layout layout );
 extern mlt_channel_layout mlt_audio_channel_layout_id( const char * name );
 extern int mlt_audio_channel_layout_channels( mlt_channel_layout layout );
 extern mlt_channel_layout mlt_audio_channel_layout_default( int channels );
-
-// Deprecated functions
-extern int mlt_sample_calculator( float fps, int frequency, int64_t position );
-extern int64_t mlt_sample_calculator_to_now( float fps, int frequency, int64_t position );
-extern const char * mlt_channel_layout_name( mlt_channel_layout layout );
-extern mlt_channel_layout mlt_channel_layout_id( const char * name );
-extern int mlt_channel_layout_channels( mlt_channel_layout layout );
-extern mlt_channel_layout mlt_channel_layout_default( int channels );
 
 #endif

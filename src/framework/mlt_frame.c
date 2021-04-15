@@ -21,6 +21,7 @@
  */
 
 #include "mlt_frame.h"
+#include "mlt_image.h"
 #include "mlt_producer.h"
 #include "mlt_factory.h"
 #include "mlt_profile.h"
@@ -348,7 +349,6 @@ int mlt_frame_set_image( mlt_frame self, uint8_t *image, int size, mlt_destructo
 
 int mlt_frame_set_alpha( mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy )
 {
-	self->get_alpha_mask = NULL;
 	return mlt_properties_set_data( MLT_FRAME_PROPERTIES( self ), "alpha", alpha, size, destroy, NULL );
 }
 
@@ -388,94 +388,6 @@ void mlt_frame_replace_image( mlt_frame self, uint8_t *image, mlt_image_format f
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "width", width );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "height", height );
 	mlt_properties_set_int( MLT_FRAME_PROPERTIES( self ), "format", format );
-	self->get_alpha_mask = NULL;
-}
-
-/** Get the short name for an image format.
- *
- * \public \memberof mlt_frame_s
- * \param format the image format
- * \return a string
- */
-
-const char * mlt_image_format_name( mlt_image_format format )
-{
-	switch ( format )
-	{
-		case mlt_image_none:    return "none";
-		case mlt_image_rgb24:   return "rgb24";
-		case mlt_image_rgb24a:  return "rgb24a";
-		case mlt_image_yuv422:  return "yuv422";
-		case mlt_image_yuv420p: return "yuv420p";
-		case mlt_image_opengl:  return "opengl";
-		case mlt_image_glsl:    return "glsl";
-		case mlt_image_glsl_texture: return "glsl_texture";
-		case mlt_image_yuv422p16: return "yuv422p16";
-		case mlt_image_invalid: return "invalid";
-	}
-	return "invalid";
-}
-
-/** Get the id of image format from short name.
- *
- * \public \memberof mlt_frame_s
- * \param name the image format short name
- * \return a image format
- */
-
-mlt_image_format mlt_image_format_id( const char * name )
-{
-	mlt_image_format f;
-
-	for( f = mlt_image_none; name && f < mlt_image_invalid; f++ )
-	{
-		const char * v = mlt_image_format_name( f );
-		if( !strcmp( v, name ) )
-			return f;
-	}
-
-	return mlt_image_invalid;
-}
-
-/** Get the number of bytes needed for an image.
-  *
-  * \public \memberof mlt_frame_s
-  * \param format the image format
-  * \param width width of the image in pixels
-  * \param height height of the image in pixels
-  * \param[out] bpp the number of bytes per pixel (optional)
-  * \return the number of bytes
-  */
-int mlt_image_format_size( mlt_image_format format, int width, int height, int *bpp )
-{
-	height += 1;
-	switch ( format )
-	{
-		case mlt_image_rgb24:
-			if ( bpp ) *bpp = 3;
-			return width * height * 3;
-		case mlt_image_opengl:
-		case mlt_image_rgb24a:
-			if ( bpp ) *bpp = 4;
-			return width * height * 4;
-		case mlt_image_yuv422:
-			if ( bpp ) *bpp = 2;
-			return width * height * 2;
-		case mlt_image_yuv420p:
-			if ( bpp ) *bpp = 3 / 2;
-			return width * height * 3 / 2;
-		case mlt_image_glsl:
-		case mlt_image_glsl_texture:
-			if ( bpp ) *bpp = 0;
-			return 4;
-		case mlt_image_yuv422p16:
-			if ( bpp ) *bpp = 0;
-			return 4 * height * width ;
-		default:
-			if ( bpp ) *bpp = 0;
-			return 0;
-	}
-	return 0;
 }
 
 static int generate_test_image( mlt_properties properties, uint8_t **buffer,  mlt_image_format *format, int *width, int *height, int writable )
@@ -511,75 +423,34 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 	}
 	if ( error && buffer )
 	{
-		int size = 0;
-
 		*width = *width == 0 ? 720 : *width;
 		*height = *height == 0 ? 576 : *height;
-		size = *width * *height;
+		switch( *format )
+		{
+			case mlt_image_rgb:
+			case mlt_image_rgba:
+			case mlt_image_yuv422:
+			case mlt_image_yuv422p16:
+			case mlt_image_yuv420p:
+				break;
+			case mlt_image_none:
+			case mlt_image_movit:
+			case mlt_image_opengl_texture:
+				*format = mlt_image_yuv422;
+				break;
+		}
 
+		struct mlt_image_s img;
+		mlt_image_set_values( &img, NULL, *format, *width, *height );
+		mlt_image_alloc_data( &img );
+		mlt_image_fill_black( &img );
+
+		*buffer = img.data;
 		mlt_properties_set_int( properties, "format", *format );
 		mlt_properties_set_int( properties, "width", *width );
 		mlt_properties_set_int( properties, "height", *height );
 		mlt_properties_set_double( properties, "aspect_ratio", 1.0 );
-
-		switch( *format )
-		{
-			case mlt_image_rgb24:
-				size *= 3;
-				size += *width * 3;
-				*buffer = mlt_pool_alloc( size );
-				if ( *buffer )
-					memset( *buffer, 255, size );
-				break;
-			case mlt_image_rgb24a:
-			case mlt_image_opengl:
-				size *= 4;
-				size += *width * 4;
-				*buffer = mlt_pool_alloc( size );
-				if ( *buffer )
-					memset( *buffer, 255, size );
-				break;
-			case mlt_image_none:
-			case mlt_image_glsl:
-			case mlt_image_glsl_texture:
-				*format = mlt_image_yuv422;
-			case mlt_image_yuv422:
-				size *= 2;
-				size += *width * 2;
-				*buffer = mlt_pool_alloc( size );
-				if ( *buffer )
-				{
-					register uint8_t *p = *buffer;
-					register uint8_t *q = p + size;
-					while ( p != NULL && p != q )
-					{
-						*p ++ = 235;
-						*p ++ = 128;
-					}
-				}
-				break;
-			case mlt_image_yuv422p16:
-			case mlt_image_yuv420p:
-				size = mlt_image_format_size( *format, *width, *height, NULL );
-				*buffer = mlt_pool_alloc( size );
-				if ( *buffer )
-				{
-					int strides[4];
-					uint8_t* planes[4];
-					int h = *height;
-					mlt_image_format_planes( *format, *width, *height, *buffer, planes, strides );
-					memset(planes[0], 235, h * strides[0]);
-					if ( *format == mlt_image_yuv420p )
-						h /= 2;
-					memset(planes[1], 128, h * strides[1]);
-					memset(planes[2], 128, h * strides[2]);
-				}
-				break;
-			default:
-				size = 0;
-				break;
-		}
-		mlt_properties_set_data( properties, "image", *buffer, size, ( mlt_destructor )mlt_pool_release, NULL );
+		mlt_properties_set_data( properties, "image", *buffer, 0, img.release_data, NULL );
 		mlt_properties_set_int( properties, "test_image", 1 );
 		error = 0;
 	}
@@ -651,41 +522,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 	return error;
 }
 
-/** Get the alpha channel associated to the frame.
- *
- * Unlike mlt_frame_get_alpha(), this function WILL create an opaque alpha
- * channel if one does not already exist.
- *
- * \public \memberof mlt_frame_s
- * \deprecated use mlt_frame_get_alpha() instead
- * \param self a frame
- * \return the alpha channel
- */
-
-uint8_t *mlt_frame_get_alpha_mask( mlt_frame self )
-{
-	uint8_t *alpha = NULL;
-	if ( self != NULL )
-	{
-		if ( self->get_alpha_mask != NULL )
-			alpha = self->get_alpha_mask( self );
-		if ( alpha == NULL )
-			alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
-		if ( alpha == NULL )
-		{
-			int size = mlt_properties_get_int( &self->parent, "width" ) * mlt_properties_get_int( &self->parent, "height" );
-			alpha = mlt_pool_alloc( size );
-			memset( alpha, 255, size );
-			mlt_properties_set_data( &self->parent, "alpha", alpha, size, mlt_pool_release, NULL );
-		}
-	}
-	return alpha;
-}
-
 /** Get the alpha channel associated to the frame (without creating if it has not).
- *
- * Unlike mlt_frame_get_alpha_mask(), this function does NOT create an alpha
- * channel if one does not already exist.
  *
  * \public \memberof mlt_frame_s
  * \param self a frame
@@ -697,10 +534,7 @@ uint8_t *mlt_frame_get_alpha( mlt_frame self )
 	uint8_t *alpha = NULL;
 	if ( self != NULL )
 	{
-		if ( self->get_alpha_mask != NULL )
-			alpha = self->get_alpha_mask( self );
-		if ( alpha == NULL )
-			alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
+		alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
 	}
 	return alpha;
 }
@@ -942,7 +776,7 @@ void mlt_frame_write_ppm( mlt_frame frame )
 {
 	int width = 0;
 	int height = 0;
-	mlt_image_format format = mlt_image_rgb24;
+	mlt_image_format format = mlt_image_rgb;
 	uint8_t *image;
 	
 	if ( mlt_frame_get_image( frame, &image, &format, &width, &height, 0 ) == 0 )
@@ -1094,64 +928,4 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 	}
 
 	return new_frame;
-}
-
-/** Build a planes pointers of image mapping
- *
- * For proper and unified planar image processing, planes sizes and planes pointers should
- * be provides to processing code.
- *
- * \public \memberof mlt_frame_s
- * \param format the image format
- * \param width width of the image in pixels
- * \param height height of the image in pixels
- * \param[in] data pointer to allocated image
- * \param[out] planes pointers to plane's pointers will be set
- * \param[out] strides pointers to plane's strides will be set
- * \return the number of bytes
- */
-int mlt_image_format_planes( mlt_image_format format, int width, int height, void* data, unsigned char *planes[4], int strides[4])
-{
-	if ( mlt_image_yuv422p16 == format )
-	{
-		strides[0] = width * 2;
-		strides[1] = width;
-		strides[2] = width;
-		strides[3] = 0;
-
-		planes[0] = (unsigned char*)data;
-		planes[1] = planes[0] + height * strides[0];
-		planes[2] = planes[1] + height * strides[1];
-		planes[3] = 0;
-	}
-	else if ( mlt_image_yuv420p == format )
-	{
-		strides[0] = width;
-		strides[1] = width >> 1;
-		strides[2] = width >> 1;
-		strides[3] = 0;
-
-		planes[0] = (unsigned char*)data;
-		planes[1] = (unsigned char*)data + width * height;
-		planes[2] = (unsigned char*)data + ( 5 * width * height ) / 4;
-		planes[3] = 0;
-	}
-	else
-	{
-		int bpp;
-
-		mlt_image_format_size( format, width, height, &bpp );
-
-		planes[0] = data;
-		planes[1] = 0;
-		planes[2] = 0;
-		planes[3] = 0;
-
-		strides[0] = bpp * width;
-		strides[1] = 0;
-		strides[2] = 0;
-		strides[3] = 0;
-	};
-
-	return 0;
 }

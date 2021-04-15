@@ -32,7 +32,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "resample", filter_resample_init );
+	MLT_REGISTER( mlt_service_filter_type, "resample", filter_resample_init );
 
-	MLT_REGISTER_METADATA( filter_type, "resample", metadata, "filter_resample.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "resample", metadata, "filter_resample.yml" );
 }

@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2018 Meltytech, LLC
+ * Copyright (C) 2010-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -512,7 +512,7 @@ protected:
 	void renderVideo( mlt_frame frame )
 	{
 		HRESULT hr;
-		mlt_image_format format = m_isKeyer? mlt_image_rgb24a : mlt_image_yuv422;
+		mlt_image_format format = m_isKeyer? mlt_image_rgba : mlt_image_yuv422;
 		uint8_t* image = 0;
 		int rendered = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "rendered");
 		mlt_properties consumer_properties = MLT_CONSUMER_PROPERTIES( getConsumer() );
@@ -851,7 +851,7 @@ protected:
 				render( frame );
 				mlt_log_timings_end( NULL, "render" );
 
-				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+				mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 
 				// terminate on pause
 				if ( m_terminate_on_pause &&
@@ -929,8 +929,9 @@ static void close( mlt_consumer consumer )
 extern "C" {
 
 // Listen for the list_devices property to be set
-static void on_property_changed( void*, mlt_properties properties, const char *name )
+static void on_property_changed( void*, mlt_properties properties, mlt_event_data event_data )
 {
+	const char *name = mlt_event_data_to_string(event_data);
 	IDeckLinkIterator* decklinkIterator = NULL;
 	IDeckLink* decklink = NULL;
 	IDeckLinkInput* decklinkOutput = NULL;
@@ -1017,10 +1018,10 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 	const char *service_type = NULL;
 	switch ( type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			service_type = "consumer";
 			break;
-		case producer_type:
+		case mlt_service_producer_type:
 			service_type = "producer";
 			break;
 		default:
@@ -1032,10 +1033,10 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "decklink", consumer_decklink_init );
-	MLT_REGISTER( producer_type, "decklink", producer_decklink_init );
-	MLT_REGISTER_METADATA( consumer_type, "decklink", metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "decklink", metadata, NULL );
+	MLT_REGISTER( mlt_service_consumer_type, "decklink", consumer_decklink_init );
+	MLT_REGISTER( mlt_service_producer_type, "decklink", producer_decklink_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "decklink", metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "decklink", metadata, NULL );
 }
 
 } // extern C

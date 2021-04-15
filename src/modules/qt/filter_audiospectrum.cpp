@@ -1,7 +1,6 @@
 /*
  * filter_audiospectrum.cpp -- audio spectrum visualization filter
  * Copyright (c) 2015-2020 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -255,7 +254,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if( mlt_properties_get_data( frame_properties, pdata->fft_prop_name, NULL ) )
 	{
 		// Get the current image
-		*format = mlt_image_rgb24a;
+		*format = mlt_image_rgba;
 		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 		// Draw the spectrum

@@ -1,8 +1,6 @@
 /*
  * qimage_wrapper.cpp -- a QT/QImage based producer for MLT
- *
- * NB: This module is designed to be functionally equivalent to the 
- * gtk2 image loading module so it can be used as replacement.
+ * Copyright (C) 2006-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -245,7 +243,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		self->current_image = NULL;
 
 	// If we have a qimage and need a new scaled image
-	if ( self->qimage && ( !self->current_image || ( format != mlt_image_none && format != mlt_image_glsl && format != self->format ) ) )
+	if ( self->qimage && ( !self->current_image || ( format != mlt_image_none && format != mlt_image_movit && format != self->format ) ) )
 	{
 		QString interps = mlt_properties_get( properties, "rescale.interp" );
 		bool interp = ( interps != "nearest" ) && ( interps != "none" );
@@ -282,7 +280,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 #if QT_VERSION >= 0x050200
 		if ( has_alpha )
 		{
-			self->format = mlt_image_rgb24a;
+			self->format = mlt_image_rgba;
 			scaled = scaled.convertToFormat( QImage::Format_RGBA8888 );
 			image_size = mlt_image_format_size(self->format, width, height, NULL);
 			self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
@@ -290,7 +288,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 		}
 		else
 		{
-			self->format = mlt_image_rgb24;
+			self->format = mlt_image_rgb;
 			scaled = scaled.convertToFormat( QImage::Format_RGB888 );
 			image_size = mlt_image_format_size(self->format, width, height, NULL);
 			self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
@@ -300,7 +298,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 			}
 		}
 #else
-		self->format = has_alpha? mlt_image_rgb24a : mlt_image_rgb24;
+		self->format = has_alpha? mlt_image_rgba : mlt_image_rgb;
 		image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
 		self->current_image = ( uint8_t * )mlt_pool_alloc( image_size );
 		int y = self->current_height + 1;
@@ -336,7 +334,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 #endif
 
 		// Convert image to requested format
-		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format && enable_caching )
+		if ( format != mlt_image_none && format != mlt_image_movit && format != self->format && enable_caching )
 		{
 			uint8_t *buffer = NULL;
 

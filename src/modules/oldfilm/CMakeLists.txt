@@ -8,12 +8,13 @@ add_library(mltoldfilm MODULE
   filter_vignette.c
 )
 
-target_link_libraries(mltoldfilm mlt m)
+target_compile_options(mltoldfilm PRIVATE ${MLT_COMPILE_OPTIONS})
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltoldfilm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+target_link_libraries(mltoldfilm PRIVATE mlt m)
 
-install(TARGETS mltoldfilm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+set_target_properties(mltoldfilm PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+
+install(TARGETS mltoldfilm LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_dust.yml
@@ -33,5 +34,5 @@ install(FILES
   oldfilm.svg
   tcolor.svg
   vignette.svg
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/oldfilm
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/oldfilm
 )

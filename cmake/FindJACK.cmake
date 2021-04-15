@@ -1,0 +1,36 @@
+find_package(PkgConfig)
+pkg_check_modules(PC_JACK QUIET jack)
+
+find_path(JACK_INCLUDE_DIR
+  NAMES jack/jack.h
+  PATHS ${PC_JACK_INCLUDE_DIRS}
+)
+find_library(JACK_LIBRARY
+  NAMES jack
+  PATHS ${PC_JACK_LIBRARY_DIRS}
+)
+
+set(JACK_VERSION ${PC_JACK_VERSION})
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(JACK
+  FOUND_VAR JACK_FOUND
+  REQUIRED_VARS
+    JACK_LIBRARY
+    JACK_INCLUDE_DIR
+  VERSION_VAR JACK_VERSION
+)
+
+if(JACK_FOUND AND NOT TARGET JACK::JACK)
+  add_library(JACK::JACK UNKNOWN IMPORTED)
+  set_target_properties(JACK::JACK PROPERTIES
+    IMPORTED_LOCATION "${JACK_LIBRARY}"
+    INTERFACE_COMPILE_OPTIONS "${PC_JACK_CFLAGS_OTHER}"
+    INTERFACE_INCLUDE_DIRECTORIES "${JACK_INCLUDE_DIR}"
+  )
+endif()
+
+mark_as_advanced(
+  JACK_INCLUDE_DIR
+  JACK_LIBRARY
+)

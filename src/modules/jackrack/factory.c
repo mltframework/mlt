@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,9 @@ extern mlt_consumer consumer_jack_init( mlt_profile profile, mlt_service_type ty
 #include <ladspa.h>
 #include "plugin_mgr.h"
 
+#ifdef WITH_JACK
 extern mlt_filter filter_jackrack_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+#endif
 extern mlt_filter filter_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_ladspa_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
@@ -88,7 +90,7 @@ static void add_port_to_metadata( mlt_properties p, plugin_desc_t* desc, int j )
 static mlt_properties metadata( mlt_service_type type, const char *id, char *data )
 {
 	char file[ PATH_MAX ];
-	if( type == filter_type )
+	if( type == mlt_service_filter_type )
 	{
 		snprintf( file, PATH_MAX, "%s/jackrack/%s",
 			  mlt_environment( "MLT_DATA" ), strncmp( id, "ladspa.", 7 ) ? data : "filter_ladspa.yml" );
@@ -158,7 +160,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, char *dat
 			mlt_properties_set( p, "type", "integer" );
 			mlt_properties_set( p, "readonly", "yes" );
 
-			if( type == filter_type )
+			if( type == mlt_service_filter_type )
 			{
 				p = mlt_properties_new();
 				snprintf( key, sizeof(key), "%d", mlt_properties_count( params ) );
@@ -193,25 +195,29 @@ MLT_REPOSITORY
 
 		if( desc->has_input )
 		{
-			MLT_REGISTER( filter_type, s, filter_ladspa_init );
-			MLT_REGISTER_METADATA( filter_type, s, metadata, NULL );
+			MLT_REGISTER( mlt_service_filter_type, s, filter_ladspa_init );
+			MLT_REGISTER_METADATA( mlt_service_filter_type, s, metadata, NULL );
 		}
 		else
 		{
-			MLT_REGISTER( producer_type, s, producer_ladspa_init );
-			MLT_REGISTER_METADATA( producer_type, s, metadata, NULL );
+			MLT_REGISTER( mlt_service_producer_type, s, producer_ladspa_init );
+			MLT_REGISTER_METADATA( mlt_service_producer_type, s, metadata, NULL );
 		}
 
 		free( s );
 	}
 	mlt_factory_register_for_clean_up( g_jackrack_plugin_mgr, (mlt_destructor) plugin_mgr_destroy );
 
-	MLT_REGISTER( filter_type, "jack", filter_jackrack_init );
-	MLT_REGISTER( filter_type, "jackrack", filter_jackrack_init );
-	MLT_REGISTER_METADATA( filter_type, "jackrack", metadata, "filter_jackrack.yml" );
-	MLT_REGISTER( filter_type, "ladspa", filter_ladspa_init );
-	MLT_REGISTER_METADATA( filter_type, "ladspa", metadata, "filter_ladspa.yml" );
+# ifdef WITH_JACK
+	MLT_REGISTER( mlt_service_filter_type, "jack", filter_jackrack_init );
+	MLT_REGISTER( mlt_service_filter_type, "jackrack", filter_jackrack_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "jackrack", metadata, "filter_jackrack.yml" );
+# endif
+	MLT_REGISTER( mlt_service_filter_type, "ladspa", filter_ladspa_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "ladspa", metadata, "filter_ladspa.yml" );
 #endif
-	MLT_REGISTER( consumer_type, "jack", consumer_jack_init );
-	MLT_REGISTER_METADATA( consumer_type, "jack", metadata, "consumer_jack.yml" );
+#ifdef WITH_JACK
+	MLT_REGISTER( mlt_service_consumer_type, "jack", consumer_jack_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "jack", metadata, "consumer_jack.yml" );
+#endif
 }

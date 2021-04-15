@@ -118,9 +118,9 @@ static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, i
 	if ( mlt_properties_get( &frame->parent, "distort" ) )
 		mlt_properties_set( &that->parent, "distort", mlt_properties_get( &frame->parent, "distort" ) );
 	mlt_frame_get_image( frame, &p_dest, &format, &width, &height, 1 );
-	alpha_dst = mlt_frame_get_alpha_mask( frame );
+	alpha_dst = mlt_frame_get_alpha( frame );
 	mlt_frame_get_image( that, &p_src, &format, &width_src, &height_src, 0 );
-	alpha_src = mlt_frame_get_alpha_mask( that );
+	alpha_src = mlt_frame_get_alpha( that );
 	int is_translucent = ( alpha_dst && !is_opaque(alpha_dst, width, height) )
 	                  || ( alpha_src && !is_opaque(alpha_src, width_src, height_src) );
 
@@ -148,8 +148,8 @@ static inline int dissolve_yuv( mlt_frame frame, mlt_frame that, float weight, i
 			composite_line_yuv( p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0 );
 			p_src += width_src << 1;
 			p_dest += width << 1;
-			alpha_src += width_src;
-			alpha_dst += width;
+			if ( alpha_src ) alpha_src += width_src;
+			if ( alpha_dst ) alpha_dst += width;
 		}
 	}
 
@@ -205,9 +205,9 @@ static void luma_composite( mlt_frame a_frame, mlt_frame b_frame, int luma_width
 	if ( mlt_properties_get( &a_frame->parent, "distort" ) )
 		mlt_properties_set( &b_frame->parent, "distort", mlt_properties_get( &a_frame->parent, "distort" ) );
 	mlt_frame_get_image( a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1 );
-	alpha_dest = mlt_frame_get_alpha_mask( a_frame );
+	alpha_dest = mlt_frame_get_alpha( a_frame );
 	mlt_frame_get_image( b_frame, &p_src, &format_src, &width_src, &height_src, 0 );
-	alpha_src = mlt_frame_get_alpha_mask( b_frame );
+	alpha_src = mlt_frame_get_alpha( b_frame );
 
 	if ( *width == 0 || *height == 0 )
 		return;

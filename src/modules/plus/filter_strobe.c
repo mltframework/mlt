@@ -61,25 +61,21 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	assert( *height >= 0 );
 	size_t pixelCount = *width * *height;
 
-	// We always clear the alpha mask, in case there's some optimizations
-	// that can be applied or other filters modyify the image contents.
-	uint8_t *alpha_buffer = mlt_frame_get_alpha_mask( frame );
-	assert( alpha_buffer != NULL );
-
-	// We assert because the API contract guarantees that we always get a
-	// buffer, but don't want to crash in release build if it is broken.
-	if ( alpha_buffer )
-	{
-		memset( alpha_buffer, 0, pixelCount );
-	}
-
-	if ( *format == mlt_image_rgb24a )
+	if ( *format == mlt_image_rgba )
 	{
 		uint8_t *bytes = *image;
 		for ( size_t i=3; i<pixelCount * 4; i+=4 )
 		{
 			bytes[i] = 0;
 		}
+		// Clear any alpha buffer that may be attached to the frame
+		mlt_frame_set_alpha( frame, NULL, 0, NULL );
+	}
+	else
+	{
+		uint8_t* alpha = mlt_pool_alloc( pixelCount );
+		memset( alpha, 0, pixelCount );
+		mlt_frame_set_alpha( frame, alpha, pixelCount, mlt_pool_release );
 	}
 
 	return 0;

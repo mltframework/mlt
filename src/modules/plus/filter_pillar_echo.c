@@ -1,6 +1,6 @@
 /*
  * filter_pillar_echo.c -- filter to interpolate pixels outside an area of interest
- * Copyright (c) 2020 Meltytech, LLC
+ * Copyright (c) 2020-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -107,7 +107,6 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 			double factorSum[] = {0.0, 0.0, 0.0, 0.0};
 
 			uint8_t* s = src + (srcYindex * linesize) + (srcXindex * 4);
-			uint8_t* st = s;
 
 			// Top Left
 			double ftl = ftop * fleft;
@@ -396,7 +395,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
 
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
 	if (error) return error;

@@ -95,7 +95,7 @@ Playlist::Playlist( Profile& profile ) :
 Playlist::Playlist( Service &producer ) :
 	instance( NULL )
 {
-	if ( producer.type( ) == playlist_type )
+	if ( producer.type( ) == mlt_service_playlist_type )
 	{
 		instance = ( mlt_playlist )producer.get_service( );
 		inc_ref( );
@@ -335,9 +335,3 @@ int Playlist::remove_region( int position, int length )
 {
 	return mlt_playlist_remove_region( get_playlist( ), position, length );
 }
-
-int Playlist::move_region( int position, int length, int new_position )
-{
-	return mlt_playlist_move_region( get_playlist( ), position, length, new_position );
-}
-

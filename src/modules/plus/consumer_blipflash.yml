@@ -3,8 +3,7 @@ type: consumer
 identifier: blipflash
 title: Blip Flash
 version: 1
-copyright: Brian Matherly
-creator: Brian Matherly
+copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
 tags:

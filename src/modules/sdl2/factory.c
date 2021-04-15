@@ -34,8 +34,8 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "sdl2", consumer_sdl2_init );
-	MLT_REGISTER_METADATA( consumer_type, "sdl2", metadata, "consumer_sdl2.yml" );
-	MLT_REGISTER( consumer_type, "sdl2_audio", consumer_sdl2_audio_init );
-	MLT_REGISTER_METADATA( consumer_type, "sdl2_audio", metadata, "consumer_sdl_audio.yml" );
+	MLT_REGISTER( mlt_service_consumer_type, "sdl2", consumer_sdl2_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl2", metadata, "consumer_sdl2.yml" );
+	MLT_REGISTER( mlt_service_consumer_type, "sdl2_audio", consumer_sdl2_audio_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl2_audio", metadata, "consumer_sdl_audio.yml" );
 }

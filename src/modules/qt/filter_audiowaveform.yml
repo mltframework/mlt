@@ -4,7 +4,6 @@ identifier: audiowaveform
 title: Audio Waveform Filter
 version: 1
 copyright: Meltytech, LLC
-creator: Brian Matherly
 license: LGPLv2.1
 language: en
 tags:

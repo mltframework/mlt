@@ -25,9 +25,9 @@ SHFLAGS += -Wl,--version-script=mlt.vers
 endif
 
 OBJS = mlt_audio.o \
+	   mlt_image.o \
 	   mlt_frame.o \
 	   mlt_version.o \
-	   mlt_geometry.o \
 	   mlt_deque.o \
 	   mlt_property.o \
 	   mlt_properties.o \
@@ -51,9 +51,12 @@ OBJS = mlt_audio.o \
 	   mlt_cache.o \
 	   mlt_animation.o \
 	   mlt_slices.o \
-	   mlt_luma_map.o
+	   mlt_luma_map.o \
+	   mlt_link.o \
+	   mlt_chain.o
 
 INCS = mlt_audio.h \
+	   mlt_image.h \
 	   mlt_consumer.h \
 	   mlt_version.h \
 	   mlt_factory.h \
@@ -70,7 +73,6 @@ INCS = mlt_audio.h \
 	   mlt_deque.h \
 	   mlt_field.h \
 	   mlt_frame.h \
-	   mlt_geometry.h \
 	   mlt_playlist.h \
 	   mlt_producer.h \
 	   mlt_property.h \
@@ -82,7 +84,9 @@ INCS = mlt_audio.h \
 	   mlt_cache.h \
 	   mlt_animation.h \
 	   mlt_slices.h \
-	   mlt_luma_map.h
+	   mlt_luma_map.h \
+	   mlt_link.h \
+	   mlt_chain.h
 
 SRCS := $(OBJS:.o=.c)
 

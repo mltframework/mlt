@@ -112,9 +112,9 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 #ifdef CODECS
 	if ( !strncmp( id, "avformat", 8 ) )
 	{
-		if ( type == producer_type )
+		if ( type == mlt_service_producer_type )
 			return producer_avformat_init( profile, id, arg );
-		else if ( type == consumer_type )
+		else if ( type == mlt_service_consumer_type )
 			return consumer_avformat_init( profile, arg );
 	}
 #endif
@@ -294,35 +294,41 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 	// Convert the service type to a string.
 	switch ( type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			service_type = "consumer";
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			service_type = "filter";
 			break;
-		case producer_type:
+		case mlt_service_producer_type:
 			service_type = "producer";
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			service_type = "transition";
 			break;
 		default:
 			return NULL;
 	}
+
+	if ( type == mlt_service_producer_type && !strcmp( id, "avformat-novalidate" ) )
+	{
+		id = "avformat";
+	}
+
 	// Load the yaml file
 	snprintf( file, PATH_MAX, "%s/avformat/%s_%s.yml", mlt_environment( "MLT_DATA" ), service_type, id );
 	result = mlt_properties_parse_yaml( file );
-	if ( result && ( type == consumer_type || type == producer_type ) )
+	if ( result && ( type == mlt_service_consumer_type || type == mlt_service_producer_type ) )
 	{
 		// Annotate the yaml properties with AVOptions.
 		mlt_properties params = (mlt_properties) mlt_properties_get_data( result, "parameters", NULL );
 		AVFormatContext *avformat = avformat_alloc_context();
 		AVCodecContext *avcodec = avcodec_alloc_context3( NULL );
-		int flags = ( type == consumer_type )? AV_OPT_FLAG_ENCODING_PARAM : AV_OPT_FLAG_DECODING_PARAM;
+		int flags = ( type == mlt_service_consumer_type )? AV_OPT_FLAG_ENCODING_PARAM : AV_OPT_FLAG_DECODING_PARAM;
 
 		add_parameters( params, avformat, flags, NULL, NULL, NULL );
 		avformat_init();
-		if ( type == producer_type )
+		if ( type == mlt_service_producer_type )
 		{
 			AVInputFormat *f = NULL;
 			while ( ( f = av_iformat_next( f ) ) )
@@ -420,17 +426,17 @@ static mlt_properties avfilter_metadata( mlt_service_type type, const char *id, 
 MLT_REPOSITORY
 {
 #ifdef CODECS
-	MLT_REGISTER( consumer_type, "avformat", create_service );
-	MLT_REGISTER( producer_type, "avformat", create_service );
-	MLT_REGISTER( producer_type, "avformat-novalidate", create_service );
-	MLT_REGISTER_METADATA( consumer_type, "avformat", avformat_metadata, NULL );
-	MLT_REGISTER_METADATA( producer_type, "avformat", avformat_metadata, NULL );
+	MLT_REGISTER( mlt_service_consumer_type, "avformat", create_service );
+	MLT_REGISTER( mlt_service_producer_type, "avformat", create_service );
+	MLT_REGISTER( mlt_service_producer_type, "avformat-novalidate", create_service );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "avformat", avformat_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "avformat", avformat_metadata, NULL );
 #endif
 #ifdef FILTERS
-	MLT_REGISTER( filter_type, "avcolour_space", create_service );
-	MLT_REGISTER( filter_type, "avcolor_space", create_service );
-	MLT_REGISTER( filter_type, "avdeinterlace", create_service );
-	MLT_REGISTER( filter_type, "swscale", create_service );
+	MLT_REGISTER( mlt_service_filter_type, "avcolour_space", create_service );
+	MLT_REGISTER( mlt_service_filter_type, "avcolor_space", create_service );
+	MLT_REGISTER( mlt_service_filter_type, "avdeinterlace", create_service );
+	MLT_REGISTER( mlt_service_filter_type, "swscale", create_service );
 
 #ifdef AVFILTER
 	char dirname[PATH_MAX];
@@ -457,14 +463,14 @@ MLT_REPOSITORY
 		{
 			char service_name[1024]="avfilter.";
 			strncat( service_name, f->name, sizeof( service_name ) - strlen( service_name ) -1 );
-			MLT_REGISTER( filter_type, service_name, filter_avfilter_init );
-			MLT_REGISTER_METADATA( filter_type, service_name, avfilter_metadata, (void*)f->name );
+			MLT_REGISTER( mlt_service_filter_type, service_name, filter_avfilter_init );
+			MLT_REGISTER_METADATA( mlt_service_filter_type, service_name, avfilter_metadata, (void*)f->name );
 		}
 	}
 	mlt_properties_close( blacklist );
 #endif // AVFILTER
 #endif
 #ifdef SWRESAMPLE
-	MLT_REGISTER( filter_type, "swresample", create_service );
+	MLT_REGISTER( mlt_service_filter_type, "swresample", create_service );
 #endif
 }

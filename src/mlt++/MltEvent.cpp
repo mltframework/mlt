@@ -1,7 +1,6 @@
 /**
  * MltEvent.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +18,7 @@
  */
 
 #include "MltEvent.h"
+#include "MltFrame.h"
 using namespace Mlt;
 
 
@@ -59,3 +59,49 @@ void Event::unblock( )
 	mlt_event_unblock( get_event( ) );
 }
 
+
+EventData::EventData(mlt_event_data data)
+	: instance(data)
+{
+}
+
+EventData::EventData(EventData& data)
+	: instance(data.get_event_data())
+{
+}
+
+EventData::EventData(const EventData& data)
+	: instance(data.get_event_data())
+{
+}
+
+EventData& EventData::operator=(const EventData& data)
+{
+	instance = data.get_event_data();
+	return *this;
+}
+
+mlt_event_data EventData::get_event_data() const
+{
+	return instance;
+}
+
+int EventData::to_int() const
+{
+	return mlt_event_data_to_int(instance);
+}
+
+const char* EventData::to_string() const
+{
+	return mlt_event_data_to_string(instance);
+}
+
+Frame EventData::to_frame() const
+{
+	return Frame(mlt_event_data_to_frame(instance));
+}
+
+void* EventData::to_object() const
+{
+	return mlt_event_data_to_object(instance);
+}

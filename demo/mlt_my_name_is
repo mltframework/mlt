@@ -4,7 +4,7 @@ clip3.dv \
 "+My name is Inigo Montoya.txt" out=99 -blank 49 "+Prepare to die!.txt" out=99 \
 -track \
 -blank 74 "+You killed my father.txt" out=74 \
--transition composite:50%/20%:5%x4% end=10%/20%:80%x12% distort=1 halign=centre valign=centre in=0 out=99 a_track=0 b_track=1 sliced_composite=1 \
--transition composite:0%/70%:100%x10% end=100%/70%:100%x10% in=75 out=149 a_track=0 b_track=2 sliced_composite=1 \
--transition composite:25%/25%:50%x50%! in=150 out=249 a_track=0 b_track=1 sliced_composite=1 \
+-transition composite:"0=50%/20%:5%x4%; -1=10%/20%:80%x12%" distort=1 halign=centre valign=centre in=0 out=99 a_track=0 b_track=1 sliced_composite=1 \
+-transition composite:"0=0%/70%:100%x10%; -1=100%/70%:100%x10%" in=75 out=149 a_track=0 b_track=2 sliced_composite=1 \
+-transition composite:25%/25%:50%x50% in=150 out=249 a_track=0 b_track=1 sliced_composite=1 \
 $*

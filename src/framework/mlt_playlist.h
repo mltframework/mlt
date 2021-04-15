@@ -66,7 +66,7 @@ typedef struct playlist_entry_s playlist_entry;
  * 2 to hide the audio (make it a video-only track), or 3 to hide audio and video (hidden track).
  * This property only applies when using a multitrack or transition.
  * \event \em playlist-next The playlist fires this when it moves to the next item in the list.
- * The listener receives one argument that is the index of the entry that just completed.
+ *   The event data is an integer of the index of the entry that just completed.
  */
 
 struct mlt_playlist_s
@@ -126,7 +126,6 @@ extern int mlt_playlist_clip_start( mlt_playlist self, int clip );
 extern int mlt_playlist_clip_length( mlt_playlist self, int clip );
 extern int mlt_playlist_blanks_from( mlt_playlist self, int clip, int bounded );
 extern int mlt_playlist_remove_region( mlt_playlist self, mlt_position position, int length );
-extern int mlt_playlist_move_region( mlt_playlist self, mlt_position position, int length, int new_position );
 extern void mlt_playlist_close( mlt_playlist self );
 
 #endif

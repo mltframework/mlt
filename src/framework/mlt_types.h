@@ -44,15 +44,14 @@ extern "C"
 
 typedef enum
 {
-	mlt_image_none = 0,/**< image not available */
-	mlt_image_rgb24,   /**< 8-bit RGB */
-	mlt_image_rgb24a,  /**< 8-bit RGB with alpha channel */
-	mlt_image_yuv422,  /**< 8-bit YUV 4:2:2 packed */
-	mlt_image_yuv420p, /**< 8-bit YUV 4:2:0 planar */
-	mlt_image_opengl,  /**< (deprecated) suitable for OpenGL texture */
-	mlt_image_glsl,    /**< for opengl module internal use only */
-	mlt_image_glsl_texture, /**< an OpenGL texture name */
-	mlt_image_yuv422p16, /**< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian */
+	mlt_image_none = 0,       /**< image not available */
+	mlt_image_rgb,            /**< 8-bit RGB */
+	mlt_image_rgba,           /**< 8-bit RGB with alpha channel */
+	mlt_image_yuv422,         /**< 8-bit YUV 4:2:2 packed */
+	mlt_image_yuv420p,        /**< 8-bit YUV 4:2:0 planar */
+	mlt_image_movit,          /**< for movit module internal use only */
+	mlt_image_opengl_texture, /**< an OpenGL texture name */
+	mlt_image_yuv422p16,      /**< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian */
 	mlt_image_invalid
 }
 mlt_image_format;
@@ -62,7 +61,6 @@ mlt_image_format;
 typedef enum
 {
 	mlt_audio_none = 0,/**< audio not available */
-	mlt_audio_pcm = 1, /**< \deprecated signed 16-bit interleaved PCM */
 	mlt_audio_s16 = 1, /**< signed 16-bit interleaved PCM */
 	mlt_audio_s32,     /**< signed 32-bit non-interleaved PCM */
 	mlt_audio_float,   /**< 32-bit non-interleaved floating point */
@@ -104,6 +102,25 @@ typedef enum
 }
 mlt_channel_layout;
 
+/** Colorspace definitions */
+
+typedef enum
+{
+	mlt_colorspace_rgb         = 0,  ///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
+	mlt_colorspace_bt709       = 1,  ///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
+	mlt_colorspace_unspecified = 2,
+	mlt_colorspace_reserved    = 3,
+	mlt_colorspace_fcc         = 4,  ///< FCC Title 47 Code of Federal Regulations 73.682 (a)(20)
+	mlt_colorspace_bt470bg     = 5,  ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
+	mlt_colorspace_smpte170m   = 6,  ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+	mlt_colorspace_smpte240m   = 7,  ///< functionally identical to above
+	mlt_colorspace_ycgco       = 8,  ///< Used by Dirac / VC-2 and H.264 FRext, see ITU-T SG16
+	mlt_colorspace_bt2020_ncl  = 9,  ///< ITU-R BT2020 non-constant luminance system
+	mlt_colorspace_bt2020_cl   = 10, ///< ITU-R BT2020 constant luminance system
+	mlt_colorspace_smpte2085   = 11, ///< SMPTE 2085, Y'D'zD'x
+}
+mlt_colorspace;
+
 /** The time string formats */
 
 typedef enum
@@ -111,7 +128,6 @@ typedef enum
 	mlt_time_frames = 0, /**< frame count */
 	mlt_time_clock,      /**< SMIL clock-value as [[hh:]mm:]ss[.fraction] */
 	mlt_time_smpte_df,   /**< SMPTE timecode as [[[hh:]mm:]ss{:|;}]frames */
-	mlt_time_smpte = mlt_time_smpte_df,   /**< Deprecated */
 	mlt_time_smpte_ndf   /**< SMPTE NDF timecode as [[[hh:]mm:]ss:]frames */
 }
 mlt_time_format;
@@ -139,16 +155,18 @@ mlt_whence;
 
 typedef enum
 {
-	invalid_type = 0,           /**< invalid service */
-	unknown_type,               /**< unknown class */
-	producer_type,              /**< Producer class */
-	tractor_type,               /**< Tractor class */
-	playlist_type,              /**< Playlist class */
-	multitrack_type,            /**< Multitrack class */
-	filter_type,                /**< Filter class */
-	transition_type,            /**< Transition class */
-	consumer_type,              /**< Consumer class */
-	field_type                  /**< Field class */
+	mlt_service_invalid_type = 0,           /**< invalid service */
+	mlt_service_unknown_type,               /**< unknown class */
+	mlt_service_producer_type,              /**< Producer class */
+	mlt_service_tractor_type,               /**< Tractor class */
+	mlt_service_playlist_type,              /**< Playlist class */
+	mlt_service_multitrack_type,            /**< Multitrack class */
+	mlt_service_filter_type,                /**< Filter class */
+	mlt_service_transition_type,            /**< Transition class */
+	mlt_service_consumer_type,              /**< Consumer class */
+	mlt_service_field_type,                 /**< Field class */
+	mlt_service_link_type,                  /**< Link class */
+	mlt_service_chain_type                  /**< Chain class */
 }
 mlt_service_type;
 
@@ -185,6 +203,7 @@ typedef struct {
 mlt_color;
 
 typedef struct mlt_audio_s *mlt_audio;                  /**< pointer to Audio object */
+typedef struct mlt_image_s *mlt_image;                  /**< pointer to Image object */
 typedef struct mlt_frame_s *mlt_frame, **mlt_frame_ptr; /**< pointer to Frame object */
 typedef struct mlt_property_s *mlt_property;            /**< pointer to Property object */
 typedef struct mlt_properties_s *mlt_properties;        /**< pointer to Properties object */
@@ -208,9 +227,12 @@ typedef struct mlt_cache_s *mlt_cache;                  /**< pointer to Cache ob
 typedef struct mlt_cache_item_s *mlt_cache_item;        /**< pointer to CacheItem object */
 typedef struct mlt_animation_s *mlt_animation;          /**< pointer to Property Animation object */
 typedef struct mlt_slices_s *mlt_slices;                /**< pointer to Sliced processing context object */
+typedef struct mlt_link_s *mlt_link;                    /**< pointer to Link object */
+typedef struct mlt_chain_s *mlt_chain;                  /**< pointer to Chain object */
 
 typedef void ( *mlt_destructor )( void * );             /**< pointer to destructor function */
 typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serialization function */
+typedef void *( *mlt_thread_function_t )( void* );      /**< generic thread function pointer */
 
 #define MLT_SERVICE(x)    ( ( mlt_service )( x ) )      /**< Cast to a Service pointer */
 #define MLT_PRODUCER(x)   ( ( mlt_producer )( x ) )     /**< Cast to a Producer pointer */
@@ -221,6 +243,8 @@ typedef char *( *mlt_serialiser )( void *, int length );/**< pointer to serializ
 #define MLT_TRANSITION(x) ( ( mlt_transition )( x ) )   /**< Cast to a Transition pointer */
 #define MLT_CONSUMER(x) ( ( mlt_consumer )( x ) )       /**< Cast to a Consumer pointer */
 #define MLT_FRAME(x)      ( ( mlt_frame )( x ) )        /**< Cast to a Frame pointer */
+#define MLT_LINK(x)       ( ( mlt_link )( x ) )         /**< Cast to a Link pointer */
+#define MLT_CHAIN(x)      ( ( mlt_chain )( x ) )        /**< Cast to a Chain pointer */
 
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))

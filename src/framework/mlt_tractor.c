@@ -267,7 +267,7 @@ int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index
 			mlt_service_type type = mlt_service_identify( service );
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 
-			if ( type == transition_type )
+			if ( type == mlt_service_transition_type )
 			{
 				mlt_transition transition = MLT_TRANSITION( service );
 				int a_track = mlt_transition_get_a_track( transition );
@@ -280,7 +280,7 @@ int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index
 					mlt_transition_set_tracks( transition, a_track, b_track );
 				}
 			}
-			else if ( type == filter_type )
+			else if ( type == mlt_service_filter_type )
 			{
 				int current_track = mlt_properties_get_int( properties, "track" );
 				if ( current_track >= index )
@@ -313,7 +313,7 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
 			int track_max = MAX( mlt_multitrack_count( mlt_tractor_multitrack( self ) ) - 1, 0 );
 
-			if ( type == transition_type )
+			if ( type == mlt_service_transition_type )
 			{
 				mlt_transition transition = MLT_TRANSITION( service );
 				int a_track = mlt_transition_get_a_track( transition );
@@ -326,7 +326,7 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
 					mlt_transition_set_tracks( transition, a_track, b_track );
 				}
 			}
-			else if ( type == filter_type )
+			else if ( type == mlt_service_filter_type )
 			{
 				int current_track = mlt_properties_get_int( properties, "track" );
 				if ( current_track >= index )
@@ -425,22 +425,6 @@ static int producer_get_audio( mlt_frame self, void **buffer, mlt_audio_format *
 	return 0;
 }
 
-static void destroy_data_queue( void *arg )
-{
-	if ( arg != NULL )
-	{
-		// Assign the correct type
-		mlt_deque queue = arg;
-
-		// Iterate through each item and destroy them
-		while ( mlt_deque_peek_front( queue ) != NULL )
-			mlt_properties_close( mlt_deque_pop_back( queue ) );
-
-		// Close the deque
-		mlt_deque_close( queue );
-	}
-}
-
 /** Get the next frame.
  *
  * \private \memberof mlt_tractor_s
@@ -472,15 +456,9 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 		// Or a specific producer
 		mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
 
-		// Determine whether this tractor feeds to the consumer or stops here
-		int global_feed = mlt_properties_get_int( properties, "global_feed" );
-
 		// If we don't have one, we're in trouble...
 		if ( multitrack != NULL )
 		{
-			// The output frame will hold the 'global' data feeds (ie: those which are targeted for the final frame)
-			mlt_deque data_queue = mlt_deque_init( );
-
 			// Used to garbage collect all frames
 			char label[64];
 
@@ -554,36 +532,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				snprintf( label, sizeof(label), "mlt_tractor %s_%d", id, count ++ );
 				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
 
-				// We want to append all 'final' feeds to the global queue
-				if ( !done && mlt_properties_get_data( temp_properties, "data_queue", NULL ) != NULL )
-				{
-					// Move the contents of this queue on to the output frames data queue
-					mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "data_queue", NULL );
-					mlt_deque temp = mlt_deque_init( );
-					while ( global_feed && mlt_deque_count( sub_queue ) )
-					{
-						mlt_properties p = mlt_deque_pop_back( sub_queue );
-						if ( mlt_properties_get_int( p, "final" ) )
-							mlt_deque_push_back( data_queue, p );
-						else
-							mlt_deque_push_back( temp, p );
-					}
-					while( mlt_deque_count( temp ) )
-						mlt_deque_push_front( sub_queue, mlt_deque_pop_back( temp ) );
-					mlt_deque_close( temp );
-				}
-
-				// Now do the same with the global queue but without the conditional behaviour
-				if ( mlt_properties_get_data( temp_properties, "global_queue", NULL ) != NULL )
-				{
-					mlt_deque sub_queue = mlt_properties_get_data( MLT_FRAME_PROPERTIES( temp ), "global_queue", NULL );
-					while ( mlt_deque_count( sub_queue ) )
-					{
-						mlt_properties p = mlt_deque_pop_back( sub_queue );
-						mlt_deque_push_back( data_queue, p );
-					}
-				}
-
 				// Pick up first video and audio frames
 				if ( !done && !mlt_frame_is_test_audio( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 2 ) )
 				{
@@ -623,9 +571,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties video_properties = MLT_FRAME_PROPERTIES( first_video );
 				mlt_frame_push_service( *frame, video );
 				mlt_frame_push_service( *frame, producer_get_image );
-				if ( global_feed )
-					mlt_properties_set_data( frame_properties, "data_queue", data_queue, 0, NULL, NULL );
-				mlt_properties_set_data( video_properties, "global_queue", data_queue, 0, destroy_data_queue, NULL );
 				mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( video_properties, "width" ) );
 				mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( video_properties, "height" ) );
 				mlt_properties_pass_list( frame_properties, video_properties, "meta.media.width, meta.media.height" );
@@ -633,10 +578,6 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
 				mlt_properties_set_int( frame_properties, "image_count", image_count );
 				mlt_properties_set_data( frame_properties, "_producer", mlt_frame_get_original_producer( first_video ), 0, NULL, NULL );
-			}
-			else
-			{
-				destroy_data_queue( data_queue );
 			}
 
 			mlt_frame_set_position( *frame, mlt_producer_frame( parent ) );

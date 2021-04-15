@@ -1,7 +1,7 @@
 #!/bin/sh
 
-export version=6.26.1
-export soversion=6
+export version=7.0.0
+export soversion=7
 
 show_help()
 {

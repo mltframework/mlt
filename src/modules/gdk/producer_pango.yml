@@ -33,7 +33,7 @@ notes: >
     {
         mlt_profile profile = mlt_profile_init("dv_pal");
         mlt_producer producer = mlt_factory_producer(profile, "pango", NULL);
-        mlt_events_fire(mlt_producer_properties(producer), "fontmap-reload", NULL, NULL );
+        mlt_events_fire(mlt_producer_properties(producer), "fontmap-reload", NULL );
         mlt_producer_close(producer);
         mlt_profile_close(profile);
     };
@@ -143,17 +143,6 @@ parameters:
     mutable: yes
     widget: textbox
 
-  - identifier: font
-    title: Font
-    type: string
-    description: >
-      The default typeface to use when not using markup. 
-      FreeType2 renders at 72 dpi.
-      This property is deprecated. Use family, size and style instead.
-    readonly: no
-    mutable: yes
-    widget: combo
-    
   - identifier: family
     title: Font family
     type: string

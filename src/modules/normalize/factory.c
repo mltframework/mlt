@@ -33,8 +33,8 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "audiolevel", filter_audiolevel_init );
-	MLT_REGISTER( filter_type, "volume", filter_volume_init );
-	MLT_REGISTER_METADATA( filter_type, "audiolevel", metadata, "filter_audiolevel.yml" );
-	MLT_REGISTER_METADATA( filter_type, "volume", metadata, "filter_volume.yml" );
+	MLT_REGISTER( mlt_service_filter_type, "audiolevel", filter_audiolevel_init );
+	MLT_REGISTER( mlt_service_filter_type, "volume", filter_volume_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "audiolevel", metadata, "filter_audiolevel.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "volume", metadata, "filter_volume.yml" );
 }

@@ -23,8 +23,6 @@ OBJS = factory.o \
 	   filter_channelcopy.o \
 	   filter_choppy.o \
 	   filter_crop.o \
-	   filter_data_feed.o \
-	   filter_data_show.o \
 	   filter_fieldorder.o \
 	   filter_gamma.o \
 	   filter_greyscale.o \
@@ -36,15 +34,14 @@ OBJS = factory.o \
 	   filter_mono.o \
 	   filter_obscure.o \
 	   filter_panner.o \
-	   filter_region.o \
 	   filter_rescale.o \
 	   filter_resize.o \
 	   filter_transition.o \
 	   filter_watermark.o \
+	   link_timeremap.o \
 	   transition_composite.o \
 	   transition_luma.o \
 	   transition_mix.o \
-	   transition_region.o \
 	   transition_matte.o \
 	   consumer_multi.o \
 	   consumer_null.o
@@ -85,7 +82,6 @@ clean:
 install: all
 	install -m 755 $(TARGET) "$(DESTDIR)$(moduledir)"
 	install -d "$(DESTDIR)$(mltdatadir)/core"
-	install -m 644 data_fx.properties "$(DESTDIR)$(mltdatadir)/core"
 	install -m 644 loader.dict "$(DESTDIR)$(mltdatadir)/core"
 	install -m 644 loader.ini "$(DESTDIR)$(mltdatadir)/core"
 	install -m 644 *.yml "$(DESTDIR)$(mltdatadir)/core"

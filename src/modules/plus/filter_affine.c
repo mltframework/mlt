@@ -1,6 +1,6 @@
 /*
  * filter_affine.c -- affine filter
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Get the image
 	int error = 0;
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 	mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
@@ -111,7 +111,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		mlt_frame_get_image( a_frame, image, format, width, height, writable );
 		mlt_properties_set_data( frame_properties, "affine_frame", a_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
 		mlt_frame_set_image( frame, *image, *width * *height * 4, NULL );
-		mlt_frame_set_alpha( frame, mlt_frame_get_alpha_mask( a_frame ), *width * *height, NULL );
+		uint8_t* alpha = mlt_frame_get_alpha( a_frame );
+		if ( alpha ) {
+			mlt_frame_set_alpha( frame, alpha, *width * *height, NULL );
+		}
 		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
 	}
 	else

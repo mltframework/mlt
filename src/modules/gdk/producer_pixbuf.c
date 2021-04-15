@@ -1,6 +1,6 @@
 /*
  * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -82,9 +82,10 @@ static void refresh_length( mlt_properties properties, producer_pixbuf self )
 	}
 }
 
-static void on_property_changed( mlt_service owner, mlt_producer producer, char *name )
+static void on_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
 {
-	if ( !strcmp( name, "ttl" ) )
+	const char *name = mlt_event_data_to_string(event_data);
+	if ( name && !strcmp( name, "ttl" ) )
 		refresh_length( MLT_PRODUCER_PROPERTIES(producer), producer->child );
 }
 
@@ -576,7 +577,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		self->image, self->pixbuf, current_idx, self->image_idx, self->pixbuf_idx, width );
 
 	// If we have a pixbuf and we need an image
-	if ( self->pixbuf && ( !self->image || ( format != mlt_image_none && format != mlt_image_glsl && format != self->format ) ) )
+	if ( self->pixbuf && ( !self->image || ( format != mlt_image_none && format != mlt_image_movit && format != self->format ) ) )
 	{
 		char *interps = mlt_properties_get( properties, "rescale.interp" );
 		if ( interps ) interps = strdup( interps );
@@ -605,7 +606,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		int has_alpha = gdk_pixbuf_get_has_alpha( pixbuf );
 		int src_stride = gdk_pixbuf_get_rowstride( pixbuf );
 		int dst_stride = self->width * ( has_alpha ? 4 : 3 );
-		self->format = has_alpha ? mlt_image_rgb24a : mlt_image_rgb24;
+		self->format = has_alpha ? mlt_image_rgba : mlt_image_rgb;
 		int image_size = mlt_image_format_size( self->format, width, height, NULL );
 		self->image = mlt_pool_alloc( image_size );
 		self->alpha = NULL;
@@ -629,7 +630,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 		pthread_mutex_unlock( &g_mutex );
 
 		// Convert image to requested format
-		if ( format != mlt_image_none && format != mlt_image_glsl && format != self->format && frame->convert_image )
+		if ( format != mlt_image_none && format != mlt_image_movit && format != self->format && frame->convert_image )
 		{
 			// cache copies of the image and alpha buffers
 			uint8_t *buffer = self->image;
@@ -645,9 +646,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 					buffer = self->image;
 					image_size = mlt_image_format_size( self->format, self->width, self->height, NULL );
 					self->image = mlt_pool_alloc( image_size );
-					// We use height-1 because mlt_image_format_size() uses height + 1.
-					// XXX Remove -1 when mlt_image_format_size() is changed.
-					memcpy( self->image, buffer, mlt_image_format_size( self->format, self->width, self->height - 1, NULL ) );
+					memcpy( self->image, buffer, mlt_image_format_size( self->format, self->width, self->height, NULL ) );
 				}
 			}
 			if ( ( buffer = mlt_frame_get_alpha( frame ) ) )
@@ -718,10 +717,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		// Clone the image
 		int image_size = mlt_image_format_size( self->format, self->width, self->height, NULL );
 		uint8_t *image_copy = mlt_pool_alloc( image_size );
-		// We use height-1 because mlt_image_format_size() uses height + 1.
-		// XXX Remove -1 when mlt_image_format_size() is changed.
 		memcpy( image_copy, self->image,
-			mlt_image_format_size( self->format, self->width, self->height - 1, NULL ) );
+			mlt_image_format_size( self->format, self->width, self->height, NULL ) );
 		// Now update properties so we free the copy after
 		mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
 		// We're going to pass the copy on

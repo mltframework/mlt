@@ -3,7 +3,7 @@
  * \brief sliced threading processing helper
  * \see mlt_slices_s
  *
- * Copyright (C) 2016-2017 Meltytech, LLC
+ * Copyright (C) 2016-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -135,15 +135,14 @@ static void* mlt_slices_worker( void* p )
 
 /** Initialize a sliced threading context
  *
- * \public \memberof mlt_slices_s
- * \deprecated
+ * \private \memberof mlt_slices_s
  * \param threads number of threads to use for job list, 0 for #cpus
  * \param policy scheduling policy of processing threads, -1 for normal
  * \param priority priority value that can be used with the scheduling algorithm, -1 for maximum
  * \return the context pointer
  */
 
-mlt_slices mlt_slices_init( int threads, int policy, int priority )
+static mlt_slices mlt_slices_init( int threads, int policy, int priority )
 {
 	pthread_attr_t tattr;
 	struct sched_param param;
@@ -219,12 +218,11 @@ mlt_slices mlt_slices_init( int threads, int policy, int priority )
 
 /** Destroy sliced threading context
  *
- * \public \memberof mlt_slices_s
- * \deprecated
+ * \private \memberof mlt_slices_s
  * \param ctx context pointer
  */
 
-void mlt_slices_close( mlt_slices ctx )
+static void mlt_slices_close( mlt_slices ctx )
 {
 	int j;
 
@@ -264,14 +262,13 @@ void mlt_slices_close( mlt_slices ctx )
 
 /** Run sliced execution
  *
- * \public \memberof mlt_slices_s
- * \deprecated
+ * \private \memberof mlt_slices_s
  * \param ctx context pointer
  * \param jobs number of jobs to process
  * \param proc number of jobs to process
  */
 
-void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie )
+static void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie )
 {
 	struct mlt_slices_runtime_s runtime, *r = &runtime;
 

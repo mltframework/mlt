@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,9 @@
 #define __JLH_PROCESS_H__
 
 #include <glib.h>
+#ifdef WITH_JACK
 #include <jack/jack.h>
+#endif
 #include <ladspa.h>
 
 #include "lock_free_fifo.h"
@@ -41,10 +43,12 @@ struct _process_info {
   struct _plugin * chain;
   struct _plugin * chain_end;
   
+#ifdef WITH_JACK
   jack_client_t * jack_client;
   unsigned long port_count;
   jack_port_t ** jack_input_ports;
   jack_port_t ** jack_output_ports;
+#endif
 
   unsigned long channels;
   LADSPA_Data ** jack_input_buffers;
@@ -55,6 +59,9 @@ struct _process_info {
   int quit;
 };
 
+#ifndef WITH_JACK
+typedef guint32 jack_nframes_t;
+#endif
 extern jack_nframes_t sample_rate;
 extern jack_nframes_t buffer_size;
 
@@ -68,7 +75,9 @@ void process_info_set_channels (process_info_t * procinfo,
 int process_ladspa (process_info_t * procinfo, jack_nframes_t frames,
                     LADSPA_Data ** inputs, LADSPA_Data ** outputs);
 
+#ifdef WITH_JACK
 int process_jack (jack_nframes_t frames, void * data);
+#endif
 
 void process_quit (process_info_t * procinfo);
 

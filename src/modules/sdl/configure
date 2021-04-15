@@ -6,19 +6,10 @@ if [ "$help" != "1" ]; then
 		echo " - using SDL version $(pkg-config --modversion sdl)"
 		echo "USE_PKG_CONFIG=1" > config.mak
 		echo "HAVE_SDL1=1" >> config.mak
-		image=`pkg-config --variable=prefix sdl`/include/SDL/SDL_image.h
-		if [ -f "$image" ]; then
-			echo " - found SDL_image"
-			echo "WITH_SDL_IMAGE=1" >> config.mak
-		fi
 	elif sdl-config --version > /dev/null 2>&1 ; then
 		echo " - using SDL version $(sdl-config --version)"
 		echo "USE_PKG_CONFIG=0" > config.mak
 		echo "HAVE_SDL1=1" >> config.mak
-		image=`sdl-config --prefix`/include/SDL/SDL_image.h
-		if [ -f "$image" ]; then
-			echo "WITH_SDL_IMAGE=1" >> config.mak
-		fi
 	else
 		echo "- SDL development libs not found: disabling"
 		touch ../disable-sdl

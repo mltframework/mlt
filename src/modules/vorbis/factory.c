@@ -32,6 +32,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( producer_type, "vorbis", producer_vorbis_init );
-	MLT_REGISTER_METADATA( producer_type, "vorbis", metadata, "producer_vorbis.yml" );
+	MLT_REGISTER( mlt_service_producer_type, "vorbis", producer_vorbis_init );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "vorbis", metadata, "producer_vorbis.yml" );
 }

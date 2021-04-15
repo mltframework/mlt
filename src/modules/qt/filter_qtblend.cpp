@@ -125,7 +125,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( !hasAlpha ) {
 		uint8_t *src_image = NULL;
 		error = mlt_frame_get_image( frame, &src_image, format, &b_width, &b_height, 0 );
-		if ( *format == mlt_image_rgb24a || mlt_frame_get_alpha( frame ) ) {
+		if ( *format == mlt_image_rgba || mlt_frame_get_alpha( frame ) ) {
 			hasAlpha = true;
 		} else {
 			// Prepare output image
@@ -137,7 +137,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 
 	// fetch image
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	uint8_t *src_image = NULL;
 	
 	// Adjust if consumer is scaling

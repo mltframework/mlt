@@ -83,8 +83,8 @@ General rules:
 Terminology:
 
 	'Producers' typically refer to files but may also indicate devices (such as
-	dv1394 input or video4linux). Hence, the more generic term is used [the more 
-	generic usage is out of scope for now...].
+	video4linux). Hence, the more generic term is used [the more generic usage
+	is out of scope for now...].
 
 	'Filters' are frame modifiers - they always guarantee that for every frame 
 	they receive, they output *precisely* one frame.  Never more, never less, 

@@ -1,6 +1,6 @@
 /*
  * consumer_sdl_still.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -123,7 +123,7 @@ mlt_consumer consumer_sdl_still_init( mlt_profile profile, mlt_service_type type
 		parent->is_stopped = consumer_is_stopped;
 
 		// Register specific events
-		mlt_events_register( this->properties, "consumer-sdl-event", ( mlt_transmitter )consumer_sdl_event );
+		mlt_events_register( this->properties, "consumer-sdl-event" );
 
 		// Return the consumer produced
 		return parent;
@@ -134,12 +134,6 @@ mlt_consumer consumer_sdl_still_init( mlt_profile profile, mlt_service_type type
 
 	// Indicate failure
 	return NULL;
-}
-
-static void consumer_sdl_event( mlt_listener listener, mlt_properties owner, mlt_service this, void **args )
-{
-	if ( listener != NULL )
-		listener( owner, this, ( SDL_Event * )args[ 0 ] );
 }
 
 static int consumer_start( mlt_consumer parent )
@@ -372,7 +366,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	// Get the properties of this consumer
 	mlt_properties properties = this->properties;
 
-	mlt_image_format vfmt = mlt_image_rgb24a;
+	mlt_image_format vfmt = mlt_image_rgba;
 	int height = this->height;
 	int width = this->width;
 	uint8_t *image = NULL;
@@ -397,7 +391,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 
 		while ( SDL_PollEvent( &event ) )
 		{
-			mlt_events_fire( this->properties, "consumer-sdl-event", &event, NULL );
+			mlt_events_fire( this->properties, "consumer-sdl-event", mlt_event_data_from_object(&event) );
 
 			switch( event.type )
 			{
@@ -528,7 +522,7 @@ static int consumer_play_video( consumer_sdl this, mlt_frame frame )
 	sdl_unlock_display();
 	mlt_cocoa_autorelease_close( pool );
 	if ( unlock != NULL ) unlock( );
-	mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+	mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 
 	return 1;
 }
@@ -564,7 +558,7 @@ static void *consumer_thread( void *arg )
 			}
 			else
 			{
-				mlt_image_format vfmt = mlt_image_rgb24a;
+				mlt_image_format vfmt = mlt_image_rgba;
 				int height = this->height;
 				int width = this->width;
 				uint8_t *image = NULL;
@@ -576,7 +570,7 @@ static void *consumer_thread( void *arg )
 			
 				mlt_frame_get_image( frame, &image, &vfmt, &width, &height, 0 );
 				mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "format", vfmt );
-				mlt_events_fire( properties, "consumer-frame-show", frame, NULL );
+				mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 			}
 			mlt_frame_close( frame );
 		}

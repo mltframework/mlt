@@ -1,0 +1,33 @@
+schema_version: 7.0
+type: link
+identifier: timeremap
+title: Time Remap
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+  - Video
+description: Remap frames in time.
+parameters:
+  - identifier: map
+    title: Map
+    type: float
+    description: >
+      A map of input frame times to output frame times.
+    mutable: yes
+    animation: yes
+  - identifier: image_mode
+    title: Image Mode
+    type: string
+    description: The image mode to use.
+    values:
+      - nearest # Output the nearest frame
+      - blend   # Blend the frames that make up the output
+    mutable: yes
+  - identifier: speed
+    title: Speed
+    type: float
+    description: The instantaneous speed of the last frame that was processed.
+    readonly: yes

@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<!-- MLT XML DTD v0.2.0 -->
+<!-- MLT XML DTD v7.0.0 -->
 
-<!ELEMENT mlt (profile | producer | playlist | tractor | multitrack | consumer)+ >
+<!ELEMENT mlt (profile | producer | playlist | tractor | multitrack | consumer | chain)+ >
 <!ATTLIST mlt
     LC_NUMERIC CDATA    #IMPLIED
     version    CDATA    #IMPLIED
@@ -39,6 +39,20 @@
     title    CDATA    #IMPLIED
     mlt_service  CDATA    #IMPLIED
 >
+<!ELEMENT chain (property | filter | link)* >
+<!ATTLIST chain
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+    mlt_service  CDATA    #IMPLIED
+>
+<!ELEMENT link (property)* >
+<!ATTLIST link
+    id       ID       #IMPLIED
+    in       CDATA    #IMPLIED
+    out      CDATA    #IMPLIED
+    mlt_service  CDATA    #IMPLIED
+>
 <!ELEMENT filter (property)* >
 <!ATTLIST filter
     id       ID       #IMPLIED
@@ -56,14 +70,14 @@
     a_track  CDATA    #IMPLIED
     b_track  CDATA    #IMPLIED
 >
-<!ELEMENT playlist (property*,(entry | blank | producer | playlist | tractor | multitrack)*) >
+<!ELEMENT playlist (property*,(entry | blank | producer | playlist | tractor | multitrack |chain)*) >
 <!ATTLIST playlist
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
     title    CDATA    #IMPLIED
 >
-<!ELEMENT entry (producer | playlist | tractor | multitrack | filter | transition)* >
+<!ELEMENT entry (producer | playlist | tractor | multitrack | filter | transition | chain)* >
 <!ATTLIST entry
     producer IDREF    #IMPLIED
     in       CDATA    #IMPLIED
@@ -79,13 +93,12 @@
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
     title    CDATA    #IMPLIED
-    global_feed CDATA #IMPLIED
 >
-<!ELEMENT multitrack (track | producer | playlist | tractor | multitrack)+ >
+<!ELEMENT multitrack (track | producer | playlist | tractor | multitrack | chain)+ >
 <!ATTLIST multitrack
     id       ID       #IMPLIED
 >
-<!ELEMENT track (producer | playlist | tractor | multitrack | filter | transition)* >
+<!ELEMENT track (producer | playlist | tractor | multitrack | filter | transition | chain)* >
 <!ATTLIST track
     producer IDREF    #IMPLIED
     hide    (video | audio | both) #IMPLIED

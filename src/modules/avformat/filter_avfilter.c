@@ -1,7 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 2016-2020 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
+ * Copyright (C) 2016-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,9 +53,10 @@ typedef struct
 	int reset;
 } private_data;
 
-static void property_changed( mlt_service owner, mlt_filter filter, char *name )
+static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
-	if( strncmp( PARAM_PREFIX, name, PARAM_PREFIX_LEN ) == 0 ) {
+	const char *name = mlt_event_data_to_string(event_data);
+	if( name && strncmp( PARAM_PREFIX, name, PARAM_PREFIX_LEN ) == 0 ) {
 		private_data* pdata = (private_data*)filter->child;
 		if( pdata->avfilter )
 		{
@@ -79,9 +79,9 @@ static int mlt_to_av_image_format( mlt_image_format format )
 	{
 	case mlt_image_none:
 		return AV_PIX_FMT_NONE;
-	case mlt_image_rgb24:
+	case mlt_image_rgb:
 		return AV_PIX_FMT_RGB24;
-	case mlt_image_rgb24a:
+	case mlt_image_rgba:
 		return AV_PIX_FMT_RGBA;
 	case mlt_image_yuv422:
 		return AV_PIX_FMT_YUYV422;
@@ -97,19 +97,18 @@ static mlt_image_format get_supported_image_format( mlt_image_format format )
 {
 	switch( format )
 	{
-	case mlt_image_rgb24a:
-		return mlt_image_rgb24a;
-	case mlt_image_rgb24:
-		return mlt_image_rgb24;
+	case mlt_image_rgba:
+		return mlt_image_rgba;
+	case mlt_image_rgb:
+		return mlt_image_rgb;
 	case mlt_image_yuv420p:
 		return mlt_image_yuv420p;
 	default:
 		mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format );
 	case mlt_image_none:
 	case mlt_image_yuv422:
-	case mlt_image_opengl:
-	case mlt_image_glsl:
-	case mlt_image_glsl_texture:
+	case mlt_image_movit:
+	case mlt_image_opengl_texture:
 		return mlt_image_yuv422;
 	}
 }
@@ -758,7 +757,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			int i;
 			uint8_t* src = *image;
 			uint8_t* dst = pdata->avinframe->data[0];
-			int stride = mlt_image_format_size( *format, *width, 0, NULL );
+			int stride = mlt_image_format_size( *format, *width, 1, NULL );
 			for( i = 0; i < *height; i ++ )
 			{
 				memcpy( dst, src, stride );
@@ -809,7 +808,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			int i;
 			uint8_t* dst = *image;
 			uint8_t* src = pdata->avoutframe->data[0];
-			int stride = mlt_image_format_size( *format, *width, 0, NULL );
+			int stride = mlt_image_format_size( *format, *width, 1, NULL );
 			for( i = 0; i < *height; i ++ )
 			{
 				memcpy( dst, src, stride );

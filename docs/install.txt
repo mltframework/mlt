@@ -23,18 +23,15 @@ Last Revision: 2013-09-07
          * avsync        - services to help test audio/video synchronization
          * core          - independent MLT services
          * decklink      - Blackmagick Design SDI/HDMI services
-         * dv            - libdv dependent services (deprecated)
-         * feeds         - templates for use with core's data filters (deprecated)
          * frei0r        - adapter for frei0r video plugins
          * gdk           - GDK pango and pixbuf dependent services
          * jackrack      - adapter for LADSPA audio plugins and JACK server
          * kdenlive      - services contributed by Kdenlive project
-         * kino          - DV/AVI demuxer from Kino project (*)(deprecated)
-         * linsys        - DVEO SDI card consumer (*)(deprecated)
-         * lumas         - wipe file generator for core's luma transition (deprecated)
-         * motion_est    - motion estimation-based filters (*)(deprecated)
-         * ndi           - NewTek NDI producer and consumer
          * normalize     - audio normalisation functions (*)
+         * oldfilm       - filters to make pristine video dirty
+         * movit         - Movit dependent services (*)
+         * ndi           - NewTek NDI producer and consumer
+         * normalize     - audio normalization functions (*)
          * oldfilm       - filters to make pristine video dirty
          * opencv        - OpenCV dependent services
          * opengl        - OpenGL dependent services (*)
@@ -47,10 +44,7 @@ Last Revision: 2013-09-07
          * sdl           - SDL dependent services
          * sdl2          - SDL2 dependent services
          * sox           - SoX dependent audio filters
-         * swfdec        - Swfdec dependent producer for Flash files (deprecated)
-         * videostab     - video stabilization filters (*)(deprecated)
          * vid.stab      - video stabilization filters (*)
-         * vmfx          - services contributed by (defunct) Visual Media FX
          * vorbis        - vorbis dependenent services
          * xine          - Xine-derived sources (*)
          * xml           - XML (de)serialization services
@@ -78,15 +72,12 @@ Last Revision: 2013-09-07
 
    | *Module* | *Description* |
    | avformat | [[http://www.ffmpeg.org][FFmpeg]] v4.0 or later |
-   | dv       | [[http://libdv.sf.net][libdv]] 0.102 or later |
-   | gtk2     | [[http://www.gtk.org][GTK2]] and associated dependencies |
    | jackrack | [[http://jackaudio.org][JACK]], [[http://www.xmlsoft.org/][libxml2]], and ladspa.h |
-   | opengl   | [[http://git.sesse.net/movit][Movit]] |
+   | movit    | [[http://git.sesse.net/movit][Movit]] |
    | qt       | [[http://www.qt-project.org][Qt]] 4.4 or later |
    | resample | [[http://www.mega-nerd.com/SRC][libsamplerate]] 0.15 or later |
    | sdl      | [[http://www.libsdl.org][SDL]] 1.2 or later |
    | sox      | [[http://sox.sourceforge.net][SoX]] 13 or later |
-   | swfdec   | [[http://github.com/mltframework/swfdec][swfdec]] 0.8 or later |
    | vorbis   | [[http://www.vorbis.com][libvorbis]] 1.0.1 or later |
    | xml      | [[http://www.xmlsoft.org][libxml2]] 2.5 or later |
 

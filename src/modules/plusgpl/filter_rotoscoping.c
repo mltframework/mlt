@@ -1,6 +1,7 @@
 /*
  * rotoscoping.c -- keyframable vector based rotoscoping
  * Copyright (C) 2011 Till Theato <root@ttill.de>
+ * Copyright (C) 2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,9 +65,10 @@ static int stringValue( const char *string, const char **stringList, int max )
 
 /** Sets "spline_is_dirty" to 1 if property "spline" was changed.
  * We then know when to parse the json stored in "spline" */
-static void rotoPropertyChanged( mlt_service owner, mlt_filter this, char *name )
+static void rotoPropertyChanged( mlt_service owner, mlt_filter this, mlt_event_data event_data )
 {
-    if ( !strcmp( name, "spline" ) )
+	const char *name = mlt_event_data_to_string(event_data);
+	if ( name && !strcmp( name, "spline" ) )
         mlt_properties_set_int( MLT_FILTER_PROPERTIES( this ), "_spline_is_dirty", 1 );
 }
 
@@ -326,7 +328,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
     // Get the image
     if ( mode == MODE_RGB )
-        *format = mlt_image_rgb24;
+        *format = mlt_image_rgb;
     int error = mlt_frame_get_image( frame, image, format, width, height, writable );
 
     // Only process if we have no error and a valid colour space
@@ -376,7 +378,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             }
 
             int bpp;
-            size = mlt_image_format_size( *format, *width, *height - 1, &bpp ); // mlt_image_format_size increments height!
+            size = mlt_image_format_size( *format, *width, *height, &bpp );
             uint8_t *p = *image;
             uint8_t *q = *image + size;
 
@@ -386,7 +388,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             switch ( mode )
             {
             case MODE_RGB:
-                // *format == mlt_image_rgb24
+                // *format == mlt_image_rgb
                 while ( p != q )
                 {
                     if ( !map[i++] )
@@ -397,9 +399,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             case MODE_LUMA:
                 switch ( *format )
                 {
-                    case mlt_image_rgb24:
-                    case mlt_image_rgb24a:
-                    case mlt_image_opengl:
+                    case mlt_image_rgb:
+                    case mlt_image_rgba:
                         while ( p != q )
                         {
                             p[0] = p[1] = p[2] = map[i++];
@@ -425,8 +426,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             case MODE_ALPHA:
                 switch ( *format )
                 {
-                case mlt_image_rgb24a:
-                case mlt_image_opengl:
+                case mlt_image_rgba:
                     switch ( mlt_properties_get_int( unique, "alpha_operation" ) )
                     {
                     case ALPHA_CLEAR:
@@ -471,7 +471,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
                     }
                     break;
                 default:
-                    alpha = mlt_frame_get_alpha_mask( frame );
+                    alpha = mlt_frame_get_alpha( frame );
+                    if ( !alpha )
+                    {
+                        alpha = mlt_pool_alloc( length );
+                        memset( alpha, 255, length );
+                        mlt_frame_set_alpha( frame, alpha, length, mlt_pool_release );
+                    }
                     switch ( mlt_properties_get_int( unique, "alpha_operation" ) )
                     {
                     case ALPHA_CLEAR:

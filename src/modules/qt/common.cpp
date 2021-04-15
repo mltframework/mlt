@@ -106,7 +106,7 @@ int create_image( mlt_frame frame, uint8_t **image, mlt_image_format *image_form
 	int error = 0;
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 
-	*image_format = mlt_image_rgb24a;
+	*image_format = mlt_image_rgba;
 
 	// Use the width and height suggested by the rescale filter.
 	if( mlt_properties_get_int( frame_properties, "rescale_width" ) > 0 )

@@ -6,17 +6,18 @@ add_library(mltkdenlive MODULE
   producer_framebuffer.c
 )
 
-target_link_libraries(mltkdenlive mlt m)
+target_compile_options(mltkdenlive PRIVATE ${MLT_COMPILE_OPTIONS})
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+target_link_libraries(mltkdenlive PRIVATE mlt m)
 
-install(TARGETS mltkdenlive LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+
+install(TARGETS mltkdenlive LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_boxblur.yml
   filter_freeze.yml
   filter_wave.yml
   producer_framebuffer.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/kdenlive
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/kdenlive
 )

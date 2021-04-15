@@ -3,7 +3,7 @@
  * \brief Property Animation class definition
  * \see mlt_animation_s
  *
- * Copyright (C) 2004-2018 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,8 @@ struct mlt_animation_s
 	locale_t locale;      /**< pointer to a locale to use when converting strings to numeric values */
 	animation_node nodes; /**< a linked list of keyframes (and possibly non-keyframe values) */
 };
+
+static void mlt_animation_clear_string( mlt_animation self );
 
 /** Create a new animation object.
  *
@@ -301,8 +303,10 @@ int mlt_animation_get_length( mlt_animation self )
 
 void mlt_animation_set_length( mlt_animation self, int length )
 {
-	if ( self )
+	if ( self ) {
 		self->length = length;
+		mlt_animation_clear_string( self );
+	}
 }
 
 /** Parse a string representing an animation keyframe=value.
@@ -473,7 +477,8 @@ int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 	node->item.is_key = 1;
 	node->item.keyframe_type = item->keyframe_type;
 	node->item.property = mlt_property_init();
-	mlt_property_pass( node->item.property, item->property );
+	if (item->property)
+		mlt_property_pass( node->item.property, item->property );
 
 	// Determine if we need to insert or append to the list, or if it's a new list
 	if ( self->nodes )
@@ -519,6 +524,7 @@ int mlt_animation_insert( mlt_animation self, mlt_animation_item item )
 		// Set the first item
 		self->nodes = node;
 	}
+	mlt_animation_clear_string( self );
 
 	return error;
 }
@@ -543,6 +549,8 @@ int mlt_animation_remove( mlt_animation self, int position )
 
 	if ( node && position == node->item.frame )
 		error = mlt_animation_drop( self, node );
+
+	mlt_animation_clear_string( self );
 
 	return error;
 }
@@ -897,6 +905,7 @@ int mlt_animation_key_set_type(mlt_animation self, int index, mlt_keyframe_type 
 	if ( node ) {
 		node->item.keyframe_type = type;
 		mlt_animation_interpolate(self);
+		mlt_animation_clear_string( self );
 	} else {
 		error = 1;
 	}
@@ -928,9 +937,56 @@ int mlt_animation_key_set_frame(mlt_animation self, int index, int frame)
 	if ( node ) {
 		node->item.frame = frame;
 		mlt_animation_interpolate(self);
+		mlt_animation_clear_string( self );
 	} else {
 		error = 1;
 	}
 
 	return error;
+}
+
+/** Shift the frame value for all nodes.
+ *
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \param shift the value to add to all frame values
+ */
+
+void mlt_animation_shift_frames( mlt_animation self, int shift )
+{
+	animation_node node = self->nodes;
+	while ( node ) {
+		node->item.frame += shift;
+		node = node->next;
+	}
+	mlt_animation_clear_string( self );
+	mlt_animation_interpolate(self);
+}
+
+/** Get the cached serialization string.
+ *
+ * This can be used to determine if the animation has been modified because the
+ * string is cleared whenever the animation is changed.
+ * \public \memberof mlt_animation_s
+ * \param self an animation
+ * \return the cached serialization string
+ */
+
+const char* mlt_animation_get_string( mlt_animation self )
+{
+	if (!self) return NULL;
+	return self->data;
+}
+
+/** Clear the cached serialization string.
+ *
+ * \private \memberof mlt_animation_s
+ * \param self an animation
+ */
+
+void mlt_animation_clear_string( mlt_animation self )
+{
+	if (!self) return;
+	free( self->data );
+	self->data = NULL;
 }

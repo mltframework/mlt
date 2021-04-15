@@ -576,3 +576,42 @@ MLT_6.22.0 {
     mlt_audio_channel_layout_channels;
     mlt_audio_channel_layout_default;
 } MLT_6.20.0;
+
+MLT_7.0.0 {
+  global:
+    mlt_factory_link;
+    mlt_chain_init;
+    mlt_chain_set_source;
+    mlt_chain_get_source;
+    mlt_chain_attach;
+    mlt_chain_detach;
+    mlt_chain_link_count;
+    mlt_chain_move_link;
+    mlt_chain_link;
+    mlt_chain_close;
+    mlt_link_init;
+    mlt_link_connect_next;
+    mlt_link_close;
+    mlt_repository_links;
+    mlt_animation_shift_frames;
+    mlt_animation_get_string;
+    mlt_image_new;
+    mlt_image_close;
+    mlt_image_set_values;
+    mlt_image_get_values;
+    mlt_image_alloc_data;
+    mlt_image_alloc_alpha;
+    mlt_image_calculate_size;
+    mlt_image_fill_black;
+    mlt_image_fill_opaque;
+    mlt_audio_silence;
+    mlt_event_data_none;
+    mlt_event_data_from_int;
+    mlt_event_data_to_int;
+    mlt_event_data_from_string;
+    mlt_event_data_to_string;
+    mlt_event_data_from_frame;
+    mlt_event_data_to_frame;
+    mlt_event_data_from_object;
+    mlt_event_data_to_object;
+} MLT_6.22.0;

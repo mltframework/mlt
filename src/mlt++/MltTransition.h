@@ -30,6 +30,8 @@ namespace Mlt
 	class Service;
 	class Profile;
 	class Frame;
+	class Chain;
+	class Link;
 
 	class MLTPP_DECLSPEC Transition : public Service
 	{

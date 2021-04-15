@@ -1,5 +1,0 @@
-melt \
-clip2.mpeg \
--filter obscure:25%/25%:25%x25%:10x10 in=0 out=68 \
--filter region:circle.png filter=obscure composite.start=55%/25%:12%x50% in=68 out=200 region.composite.sliced_composite=1 \
-$*

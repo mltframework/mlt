@@ -4,7 +4,6 @@ identifier: fft
 title: FFT
 version: 1
 copyright: Meltytech, LLC
-creator: Brian Matherly <code@brianmatherly.com>
 license: LGPLv2.1
 language: en
 tags:

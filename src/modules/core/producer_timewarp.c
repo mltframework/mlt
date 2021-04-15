@@ -1,7 +1,6 @@
 /*
  * producer_timewarp.c -- modify speed and direction of a clip
- * Copyright (C) 2015-2020 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
+ * Copyright (C) 2015-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,9 +38,11 @@ typedef struct
 
 // Private Functions
 
-static void timewarp_property_changed( mlt_service owner, mlt_producer producer, char *name )
+static void timewarp_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
 {
 	private_data* pdata = (private_data*)producer->child;
+	const char *name = mlt_event_data_to_string(event_data);
+
 	if ( mlt_properties_get_int( pdata->clip_parameters, name ) ||
 		 !strcmp( name, "length" ) ||
 		 !strcmp( name, "in" ) ||
@@ -60,9 +61,11 @@ static void timewarp_property_changed( mlt_service owner, mlt_producer producer,
 	}
 }
 
-static void clip_property_changed( mlt_service owner, mlt_producer producer, char *name )
+static void clip_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
 {
 	private_data* pdata = (private_data*)producer->child;
+	const char *name = mlt_event_data_to_string(event_data);
+
 	if ( mlt_properties_get_int( pdata->clip_parameters, name ) ||
 		 !strcmp( name, "length" ) ||
 		 !strcmp( name, "in" ) ||
@@ -278,7 +281,7 @@ mlt_producer producer_timewarp_init( mlt_profile profile, mlt_service_type type,
 			// they can be passed between the clip producer and this producer.
 			pdata->clip_parameters = mlt_properties_new();
 			mlt_repository repository = mlt_factory_repository();
-			mlt_properties clip_metadata = mlt_repository_metadata( repository, producer_type, mlt_properties_get( clip_properties, "mlt_service" ) );
+			mlt_properties clip_metadata = mlt_repository_metadata( repository, mlt_service_producer_type, mlt_properties_get( clip_properties, "mlt_service" ) );
 			if ( clip_metadata )
 			{
 				mlt_properties params = (mlt_properties) mlt_properties_get_data( clip_metadata, "parameters", NULL );

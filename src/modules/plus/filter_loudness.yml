@@ -3,8 +3,7 @@ type: filter
 identifier: loudness
 title: Loudness
 version: 1
-copyright: Brian Matherly <pez4brian@yahoo.com>
-creator: Brian Matherly <pez4brian@yahoo.com>
+copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
 tags:

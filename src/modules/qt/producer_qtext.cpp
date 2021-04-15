@@ -1,7 +1,6 @@
 /*
  * producer_qtext.c -- text generating producer
- * Copyright (C) 2013 Brian Matherly
- * Author: Brian Matherly <pez4brian@yahoo.com>
+ * Copyright (C) 2013 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -332,7 +331,7 @@ static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_form
 		generate_qimage( frame_properties );
 	}
 
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	*width = qImg->width();
 	*height = qImg->height();
 

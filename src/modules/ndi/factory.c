@@ -110,9 +110,9 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 		return NULL;
 	}
 
-	if ( type == producer_type )
+	if ( type == mlt_service_producer_type )
 		return producer_ndi_init( profile, type, id, (char*)arg );
-	else if ( type == consumer_type )
+	else if ( type == mlt_service_consumer_type )
 		return consumer_ndi_init( profile, type, id, (char*)arg );
 
 	return NULL;
@@ -120,6 +120,6 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( consumer_type, "ndi", create_service );
-	MLT_REGISTER( producer_type, "ndi", create_service );
+	MLT_REGISTER( mlt_service_consumer_type, "ndi", create_service );
+	MLT_REGISTER( mlt_service_producer_type, "ndi", create_service );
 }

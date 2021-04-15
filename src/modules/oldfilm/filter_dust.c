@@ -137,7 +137,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					mlt_properties_set( MLT_FRAME_PROPERTIES( luma_frame ), "rescale.interp", "best" );// none/nearest/tiles/hyper
 					
 					mlt_frame_get_image( luma_frame, &luma_image, &luma_format, &luma_width, &luma_height, 0 );
-					alpha = mlt_frame_get_alpha_mask (luma_frame );
+					alpha = mlt_frame_get_alpha( luma_frame );
+					if ( !alpha )
+					{
+						int alphasize = luma_width * luma_height;
+						alpha = mlt_pool_alloc( alphasize );
+						memset( alpha, 255, alphasize );
+						mlt_frame_set_alpha( luma_frame, alpha, alphasize, mlt_pool_release );
+					}
 					
 					uint8_t* savealpha = mlt_pool_alloc( luma_width * luma_height );
 					uint8_t* savepic = mlt_pool_alloc( luma_width * luma_height * 2);

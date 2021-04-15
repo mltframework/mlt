@@ -1249,7 +1249,7 @@ static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_RGBA:
 	case AV_PIX_FMT_ABGR:
 	case AV_PIX_FMT_BGRA:
-		return mlt_image_rgb24a;
+		return mlt_image_rgba;
 	case AV_PIX_FMT_YUV420P:
 	case AV_PIX_FMT_YUVJ420P:
 	case AV_PIX_FMT_YUVA420P:
@@ -1263,7 +1263,7 @@ static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
 	case AV_PIX_FMT_BGR8:
 #if defined(FFUDIV)
 	case AV_PIX_FMT_BAYER_RGGB16LE:
-		return mlt_image_rgb24;
+		return mlt_image_rgb;
 #endif
 	default:
 		return mlt_image_yuv422;
@@ -1449,7 +1449,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			|| pix_fmt == AV_PIX_FMT_YUVA444P
 #endif
 			) &&
-		*format != mlt_image_rgb24a && *format != mlt_image_opengl &&
+		*format != mlt_image_rgba &&
 		frame->data[3] && frame->linesize[3] )
 	{
 		int i;
@@ -1495,7 +1495,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			out_data, out_stride);
 		sws_freeContext( context );
 	}
-	else if ( *format == mlt_image_rgb24 )
+	else if ( *format == mlt_image_rgb )
 	{
 		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGB24);
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
@@ -1509,7 +1509,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			out_data, out_stride);
 		sws_freeContext( context );
 	}
-	else if ( *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+	else if ( *format == mlt_image_rgba )
 	{
 		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGBA);
 		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
@@ -1761,7 +1761,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	stream = context->streams[ self->video_index ];
 	codec_context = stream->codec;
 	codec_params = stream->codecpar;
-	if ( *format == mlt_image_none || *format == mlt_image_glsl ||
+	if ( *format == mlt_image_none || *format == mlt_image_movit ||
 			codec_params->format == AV_PIX_FMT_ARGB ||
 			codec_params->format == AV_PIX_FMT_RGBA ||
 			codec_params->format == AV_PIX_FMT_ABGR ||
@@ -1771,8 +1771,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	else if ( codec_params->format == AV_PIX_FMT_BAYER_RGGB16LE ) {
 		if ( *format == mlt_image_yuv422 )
 			*format = mlt_image_yuv420p;
-		else if ( *format == mlt_image_rgb24a )
-			*format = mlt_image_rgb24;
+		else if ( *format == mlt_image_rgba )
+			*format = mlt_image_rgb;
 	}
 #endif
 	else if ( codec_params->format == AV_PIX_FMT_YUVA444P10LE
@@ -1781,7 +1781,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			|| codec_params->format == AV_PIX_FMT_GBRAP12LE
 #endif
 			)
-		*format = mlt_image_rgb24a;
+		*format = mlt_image_rgba;
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
@@ -2347,6 +2347,8 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			self->color_primaries = 709;
 			break;
 		}
+
+		mlt_properties_set_int( properties, "meta.media.has_b_frames", self->video_codec->has_b_frames );
 
 		self->full_luma = 0;
 		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );

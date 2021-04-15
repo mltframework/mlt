@@ -47,6 +47,7 @@ struct mlt_repository_s
 	struct mlt_properties_s parent; /// a list of object files
 	mlt_properties consumers;       /// a list of entry points for consumers
 	mlt_properties filters;         /// a list of entry points for filters
+	mlt_properties links;           /// a list of entry points for links
 	mlt_properties producers;       /// a list of entry points for producers
 	mlt_properties transitions;     /// a list of entry points for transitions
 };
@@ -69,6 +70,7 @@ mlt_repository mlt_repository_init( const char *directory )
 	mlt_properties_init( &self->parent, self );
 	self->consumers = mlt_properties_new();
 	self->filters = mlt_properties_new();
+	self->links = mlt_properties_new();
 	self->producers = mlt_properties_new();
 	self->transitions = mlt_properties_new();
 
@@ -102,11 +104,6 @@ mlt_repository mlt_repository_init( const char *directory )
 		int flags = RTLD_NOW;
 		const char *object_name = mlt_properties_get_value( dir, i);
 
-		// Very temporary hack to allow the quicktime plugins to work
-		// TODO: extend repository to allow this to be used on a case by case basis
-		if ( strstr( object_name, "libmltkino" ) )
-			flags |= RTLD_GLOBAL;
-	
 		// Open the shared object
 		void *object = dlopen( object_name, flags );
 		if ( object != NULL )
@@ -172,19 +169,23 @@ void mlt_repository_register( mlt_repository self, mlt_service_type service_type
 	// Add the entry point to the corresponding service list
 	switch ( service_type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			mlt_properties_set_data( self->consumers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			mlt_properties_set_data( self->filters, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
-		case producer_type:
+		case mlt_service_link_type:
+			mlt_properties_set_data( self->links, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
+			break;
+		case mlt_service_producer_type:
 			mlt_properties_set_data( self->producers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			mlt_properties_set_data( self->transitions, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
 			break;
 		default:
+			mlt_log_error( NULL, "%s: Unable to register \"%s\"\n", __FUNCTION__, service );
 			break;
 	}
 }
@@ -205,16 +206,19 @@ static mlt_properties get_service_properties( mlt_repository self, mlt_service_t
 	// Get the entry point from the corresponding service list
 	switch ( type )
 	{
-		case consumer_type:
+		case mlt_service_consumer_type:
 			service_properties = mlt_properties_get_data( self->consumers, service, NULL );
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			service_properties = mlt_properties_get_data( self->filters, service, NULL );
 			break;
-		case producer_type:
+		case mlt_service_link_type:
+			service_properties = mlt_properties_get_data( self->links, service, NULL );
+			break;
+		case mlt_service_producer_type:
 			service_properties = mlt_properties_get_data( self->producers, service, NULL );
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			service_properties = mlt_properties_get_data( self->transitions, service, NULL );
 			break;
 		default:
@@ -284,6 +288,18 @@ mlt_properties mlt_repository_consumers( mlt_repository self )
 mlt_properties mlt_repository_filters( mlt_repository self )
 {
 	return self->filters;
+}
+
+/** Get the list of registered links.
+ *
+ * \public \memberof mlt_repository_s
+ * \param self a repository
+ * \return a properties list of all of the links
+ */
+
+mlt_properties mlt_repository_links( mlt_repository self )
+{
+	return self->links;
 }
 
 /** Get the list of registered producers.

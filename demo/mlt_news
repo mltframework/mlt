@@ -12,7 +12,7 @@ pango: text=" Breaking News
 -transition mix:0.5 always_active=1 a_track=0 b_track=2 \
 -transition composite geometry=50%/15%:37.5%x40% a_track=0 b_track=1 in=0 out=174 sliced_composite=1 \
 -transition composite geometry=10%/15%:37.5%x40% a_track=0 b_track=2 in=0 out=199 sliced_composite=1 \
--transition composite geometry="50%/15%:37.5%x40%;-1=0%/0%:100%x100%" a_track=0 b_track=1 in=175 out=199 distort=1 sliced_composite=1 \
+-transition composite geometry="50%/15%:37.5%x40%; -1=0%/0%:100%x100%" a_track=0 b_track=1 in=175 out=199 distort=1 sliced_composite=1 \
 -transition composite geometry=10%/65%:90%x20% a_track=0 b_track=3 in=0 out=199 sliced_composite=1 \
 -transition composite geometry=10%/65%:90%x20% a_track=1 b_track=3 in=200 out=499 sliced_composite=1 \
 $*

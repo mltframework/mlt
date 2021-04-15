@@ -229,13 +229,18 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				iwidth, iheight, owidth, oheight, mlt_image_format_name( *format ), interps );
 
 			// If valid colorspace
-			if ( *format == mlt_image_yuv422 || *format == mlt_image_rgb24 ||
-			     *format == mlt_image_rgb24a || *format == mlt_image_opengl )
+			if ( *format == mlt_image_yuv422 || *format == mlt_image_rgb ||
+			     *format == mlt_image_rgba )
 			{
 				// Call the virtual function
 				scaler_method( frame, image, format, iwidth, iheight, owidth, oheight );
 				*width = owidth;
 				*height = oheight;
+			}
+			else
+			{
+				*width = iwidth;
+				*height = iheight;
 			}
 			// Scale the alpha channel only if exists and not correct size
 			int alpha_size = 0;

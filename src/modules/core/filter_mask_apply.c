@@ -106,7 +106,7 @@ mlt_filter filter_mask_apply_init(mlt_profile profile, mlt_service_type type, co
 	mlt_filter filter = mlt_filter_new( );
 	if (filter) {
 		mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "transition", arg? arg : "frei0r.composition");
-		mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "mlt_image_format", "rgb24a");
+		mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "mlt_image_format", "rgba");
 		filter->process = process;
 	}
 	return filter;

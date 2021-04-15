@@ -61,7 +61,7 @@ Filter::Filter( mlt_profile profile, const char *id, const char *arg ) :
 Filter::Filter( Service &filter ) :
 	instance( NULL )
 {
-	if ( filter.type( ) == filter_type )
+	if ( filter.type( ) == mlt_service_filter_type )
 	{
 		instance = ( mlt_filter )filter.get_service( );
 		inc_ref( );

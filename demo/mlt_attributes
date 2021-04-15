@@ -1,7 +1,0 @@
-melt clip1.dv \
-meta.attr.location=1 meta.attr.location.markup="Location" \
-meta.attr.exclusive=1 meta.attr.exclusive.markup="Exclusive" \
-meta.attr.special=1 meta.attr.special.markup="Special" \
-meta.attr.super=1 meta.attr.super.0="Line 1" meta.attr.super.1="Line 2" \
--filter data_show:%etv.properties \
-$*

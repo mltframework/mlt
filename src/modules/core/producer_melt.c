@@ -130,6 +130,19 @@ static mlt_transition create_transition( mlt_profile profile, mlt_field field, c
 	return transition;
 }
 
+static mlt_link create_link( mlt_field field, char *id )
+{
+	char *temp = strdup( id );
+	char *arg = strchr( temp, ':' );
+	if ( arg != NULL )
+		*arg ++ = '\0';
+	mlt_link link = mlt_factory_link( temp, arg );
+	if ( link != NULL )
+		track_service( field, link, ( mlt_destructor )mlt_link_close );
+	free( temp );
+	return link;
+}
+
 mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv )
 {
 	int i;
@@ -143,6 +156,7 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 	mlt_field field = mlt_tractor_field( tractor );
 	mlt_properties field_properties = mlt_field_properties( field );
 	mlt_multitrack multitrack = mlt_tractor_multitrack( tractor );
+	mlt_chain chain = NULL;
 	char *title = NULL;
 
 	// Assistance for template construction (allows -track usage to specify the first track)
@@ -418,6 +432,41 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 					mlt_properties_set_int( properties, "hide", 2 );
 			}
 		}
+		else if ( !strcmp( argv[ i ], "-chain" ) )
+		{
+			if ( chain == NULL && producer != NULL && !mlt_producer_is_cut( producer ) )
+				mlt_playlist_append( playlist, producer );
+			else if ( chain != NULL && mlt_chain_get_source( chain ) != NULL )
+			{
+				mlt_playlist_append( playlist, producer );
+			}
+
+			chain = mlt_chain_init( profile );
+			if ( chain != NULL )
+			{
+				producer = MLT_CHAIN_PRODUCER( chain );
+				properties = MLT_PRODUCER_PROPERTIES( producer );
+				mlt_properties_inherit( properties, group );
+				track_service( field, chain, ( mlt_destructor )mlt_chain_close );
+			}
+		}
+		else if ( !strcmp( argv[ i ], "-link" ) )
+		{
+			if ( chain == NULL || mlt_chain_get_source( chain ) == NULL )
+			{
+				fprintf( stderr, "A link can only be added to a chain with a producer.\n" );
+			}
+			else
+			{
+				mlt_link link = create_link( field, argv[ ++ i ] );
+				if ( link != NULL )
+				{
+					mlt_chain_attach( chain, link );
+					properties = MLT_LINK_PROPERTIES( link );
+					mlt_properties_inherit( properties, group );
+				}
+			}
+		}
 		else if ( strchr( argv[ i ], '=' ) && strstr( argv[ i ], "<?xml" ) != argv[ i ] &&
 			// Prevent interpreting URL with parameters as a property.
 			// This does not support property names containing a colon.
@@ -427,12 +476,23 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 		}
 		else if ( argv[ i ][ 0 ] != '-' )
 		{
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
+			if ( chain == NULL && producer != NULL && !mlt_producer_is_cut( producer ) )
 				mlt_playlist_append( playlist, producer );
+			else if ( chain != NULL && mlt_chain_get_source( chain ) != NULL )
+			{
+				mlt_playlist_append( playlist, producer );
+				chain = NULL;
+			}
 			if ( title == NULL && strstr( argv[ i ], "<?xml" ) != argv[ i ] )
 				title = argv[ i ];
+
 			producer = create_producer( profile, field, argv[ i ] );
-			if ( producer != NULL )
+			if ( producer != NULL && chain != NULL )
+			{
+				mlt_chain_set_source( chain, producer );
+				producer = MLT_CHAIN_PRODUCER( chain );
+			}
+			else if ( producer != NULL )
 			{
 				properties = MLT_PRODUCER_PROPERTIES( producer );
 				mlt_properties_inherit( properties, group );

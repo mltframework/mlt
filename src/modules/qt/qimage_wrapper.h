@@ -1,8 +1,6 @@
 /*
  * qimage_wrapper.h -- a QT/QImage based producer for MLT
- *
- * NB: This module is designed to be functionally equivalent to the 
- * gtk2 image loading module so it can be used as replacement.
+ * Copyright (C) 2006-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

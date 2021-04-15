@@ -37,7 +37,7 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 	result = mlt_properties_parse_yaml( file );
 
 #ifdef SOX14
-	if ( result && ( type == filter_type ) && strcmp( id, "sox" ) )
+	if ( result && ( type == mlt_service_filter_type ) && strcmp( id, "sox" ) )
 	{
 		// Annotate the yaml properties with sox effect usage.
 		mlt_properties params = mlt_properties_get_data( result, "parameters", NULL );
@@ -67,8 +67,8 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( filter_type, "sox", filter_sox_init );
-	MLT_REGISTER_METADATA( filter_type, "sox", metadata, NULL );
+	MLT_REGISTER( mlt_service_filter_type, "sox", filter_sox_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "sox", metadata, NULL );
 #ifdef SOX14
 	int i;
 	const sox_effect_handler_t *e;
@@ -83,8 +83,8 @@ MLT_REPOSITORY
 			)
 		{
 			strcpy( name + 4, e->name );
-			MLT_REGISTER( filter_type, name, filter_sox_init );
-			MLT_REGISTER_METADATA( filter_type, name, metadata, NULL );
+			MLT_REGISTER( mlt_service_filter_type, name, filter_sox_init );
+			MLT_REGISTER_METADATA( mlt_service_filter_type, name, metadata, NULL );
 		}
 	}
 #endif

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Import required modules
-require 'mlt'
+require './mlt'
 
 # Create the mlt system
 Mlt::Factory::init
@@ -29,7 +29,7 @@ pls.append(producer)
 pls.append(producer2)
 
 # Create the consumer
-consumer = Mlt::Consumer.new( profile, "sdl" )
+consumer = Mlt::Consumer.new( profile, "sdl2" )
 raise "Unable to open sdl consumer" if !consumer.is_valid
 
 # Turn off the default rescaling
@@ -54,6 +54,8 @@ consumer.connect( pls )
 
 # Wait until the user stops the consumer
 consumer.wait_for( event )
+
+puts "Done and closing"
 
 # Clean up consumer
 consumer.stop

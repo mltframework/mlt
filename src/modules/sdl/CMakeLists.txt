@@ -6,24 +6,18 @@ add_library(mltsdl MODULE
   factory.c
 )
 
-target_link_libraries(mltsdl mlt m Threads::Threads PkgConfig::sdl)
+target_compile_options(mltsdl PRIVATE ${MLT_COMPILE_OPTIONS})
 
-if(TARGET PkgConfig::sdl_image)
-  target_sources(mltsdl PRIVATE producer_sdl_image.c)
-  target_link_libraries(mltsdl PkgConfig::sdl_image)
-  target_compile_definitions(mltsdl PRIVATE WITH_SDL_IMAGE)
-  install(FILES producer_sdl_image.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/sdl)
-endif()
+target_link_libraries(mltsdl PRIVATE mlt m Threads::Threads PkgConfig::sdl)
 
-# Create module in parent directory, for the benefit of "source setenv".
-set_target_properties(mltsdl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
+set_target_properties(mltsdl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltsdl LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
+install(TARGETS mltsdl LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_sdl_audio.yml
   consumer_sdl_preview.yml
   consumer_sdl_still.yml
   consumer_sdl.yml
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/sdl
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/sdl
 )

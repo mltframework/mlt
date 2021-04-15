@@ -78,4 +78,4 @@ jobs:
           LD_LIBRARY_PATH: /usr/local/lib
         run: |
           sudo locale-gen de_DE.UTF-8
-          cd build && ctest
+          cd build && ctest --output-on-failure

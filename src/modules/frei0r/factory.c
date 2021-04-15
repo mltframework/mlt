@@ -100,13 +100,13 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
 	struct stat stat_buff;
 
 	switch (type) {
-		case producer_type:
+		case mlt_service_producer_type:
 			strcpy(servicetype, "producer");
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			strcpy(servicetype, "filter");
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			strcpy(servicetype, "transition");
 			break;
 		default:
@@ -158,13 +158,13 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
 	mlt_properties_set(metadata, "description" , info.explanation);
 	mlt_properties_set(metadata, "creator" , info.author);
 	switch (type) {
-		case producer_type:
+		case mlt_service_producer_type:
 			mlt_properties_set(metadata, "type", "producer");
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			mlt_properties_set(metadata, "type", "filter");
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			mlt_properties_set(metadata, "type", "transition");
 			break;
 		default:
@@ -265,7 +265,7 @@ static void* load_lib(mlt_profile profile, mlt_service_type type , void* handle,
 		mlt_properties properties = NULL;
 		char minor[12];
 
-		if (type == producer_type && info.plugin_type == F0R_PLUGIN_TYPE_SOURCE) {
+		if (type == mlt_service_producer_type && info.plugin_type == F0R_PLUGIN_TYPE_SOURCE) {
 			mlt_producer producer = mlt_producer_new(profile);
 			if (producer)
 			{
@@ -281,7 +281,7 @@ static void* load_lib(mlt_profile profile, mlt_service_type type , void* handle,
 
 				ret = producer;
 			}
-		} else if (type == filter_type && info.plugin_type == F0R_PLUGIN_TYPE_FILTER) {
+		} else if (type == mlt_service_filter_type && info.plugin_type == F0R_PLUGIN_TYPE_FILTER) {
 			mlt_filter filter = mlt_filter_new();
 			if (filter)
 			{
@@ -297,7 +297,7 @@ static void* load_lib(mlt_profile profile, mlt_service_type type , void* handle,
 
 				ret = filter;
 			}
-		} else if (type == transition_type && info.plugin_type == F0R_PLUGIN_TYPE_MIXER2) {
+		} else if (type == mlt_service_transition_type && info.plugin_type == F0R_PLUGIN_TYPE_MIXER2) {
 			mlt_transition transition = mlt_transition_new();
 			if (transition)
 			{
@@ -469,8 +469,8 @@ MLT_REPOSITORY
 							dlclose(handle);
 							continue;
 						}
-						MLT_REGISTER(producer_type, pluginname, create_frei0r_item);
-						MLT_REGISTER_METADATA(producer_type, pluginname, fill_param_info, name);
+						MLT_REGISTER(mlt_service_producer_type, pluginname, create_frei0r_item);
+						MLT_REGISTER_METADATA(mlt_service_producer_type, pluginname, fill_param_info, name);
 					}
 					else if (firstname && info.plugin_type == F0R_PLUGIN_TYPE_FILTER) {
 						if (mlt_properties_get(mlt_repository_filters(repository), pluginname))
@@ -478,8 +478,8 @@ MLT_REPOSITORY
 							dlclose(handle);
 							continue;
 						}
-						MLT_REGISTER(filter_type, pluginname, create_frei0r_item);
-						MLT_REGISTER_METADATA(filter_type, pluginname, fill_param_info, name);
+						MLT_REGISTER(mlt_service_filter_type, pluginname, create_frei0r_item);
+						MLT_REGISTER_METADATA(mlt_service_filter_type, pluginname, fill_param_info, name);
 					}
 					else if (firstname && info.plugin_type==F0R_PLUGIN_TYPE_MIXER2 ) {
 						if (mlt_properties_get(mlt_repository_transitions(repository), pluginname))
@@ -487,8 +487,8 @@ MLT_REPOSITORY
 							dlclose(handle);
 							continue;
 						}
-						MLT_REGISTER(transition_type, pluginname, create_frei0r_item);
-						MLT_REGISTER_METADATA(transition_type, pluginname, fill_param_info, name);
+						MLT_REGISTER(mlt_service_transition_type, pluginname, create_frei0r_item);
+						MLT_REGISTER_METADATA(mlt_service_transition_type, pluginname, fill_param_info, name);
 					}
 				}
 				dlclose(handle);
@@ -499,6 +499,6 @@ MLT_REPOSITORY
 	mlt_tokeniser_close(tokeniser);
 	mlt_properties_close(blacklist);
 	free(frei0r_path);
-	MLT_REGISTER(filter_type, "cairoblend_mode", filter_cairoblend_mode_init);
-	MLT_REGISTER_METADATA(filter_type, "cairoblend_mode", metadata, "filter_cairoblend_mode.yml");
+	MLT_REGISTER(mlt_service_filter_type, "cairoblend_mode", filter_cairoblend_mode_init);
+	MLT_REGISTER_METADATA(mlt_service_filter_type, "cairoblend_mode", metadata, "filter_cairoblend_mode.yml");
 }

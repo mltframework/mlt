@@ -6,38 +6,52 @@ then
 JACK Rack options:
 
   --gdk-prefix=path      - Override the gdk prefix for pkg-config
+  --ladspa-prefix=path   - Overrride the LADSPA path prefix
+  --without-jack         - Build only the LADSPA producer and filter
 
 EOF
 
 else
 
-	pkg-config jack
-	disable_jack=$?
-
 	echo > config.mak
+
+	export without_jack=false
+
+	for i in "$@"
+	do
+		case $i in
+			--gdk-prefix=* )	pkgconfig_prefix="${i#--gdk-prefix=}" ;;
+			--ladspa-prefix=*)	ladspa_prefix="${i#--ladspa-prefix=}" ;;
+			--without-jack )	without_jack=true ;;
+		esac
+	done
+
+	if [ "$without_jack" = "false" ]; then
+		pkg-config jack
+		disable_jack=$?
+		[ "$disable_jack" != "1" ] && "WITH_JACK=1" >> config.mak
+	fi
 
 	if [ "$gpl" = "true" ]
 	then
 		pkg-config libxml-2.0 > /dev/null 2>&1
 		disable_xml2=$?
 
-		ladspa_prefix=`which listplugins 2> /dev/null`
-		if [ "$ladspa_prefix" != "" ]
-		then
-			ladspa_prefix=`dirname "$ladspa_prefix"`
-			ladspa_prefix=`dirname "$ladspa_prefix"`
+		if [ "$ladspa_prefix" = "" ]; then
+			ladspa_prefix=`which listplugins 2> /dev/null`
+			if [ "$ladspa_prefix" != "" ]; then
+				ladspa_prefix=`dirname "$ladspa_prefix"`
+				ladspa_prefix=`dirname "$ladspa_prefix"`
+			fi
 		else
+			echo "LADSPA_PREFIX=\"-I$ladspa_prefix/include\"" >> config.mak
+		fi
+		if [ "$ladspa_prefix" = "" ]; then
 			ladspa_prefix=`pkg-config --variable=prefix jack`
 		fi
 		disable_ladspa=`[ -f "$ladspa_prefix/include/ladspa.h" ] && echo 0 || echo 1`
-		echo GPL=1 > config.mak
+		echo GPL=1 >> config.mak
 
-		for i in "$@"
-		do
-			case $i in
-				--gdk-prefix=* )	pkgconfig_prefix="${i#--gdk-prefix=}" ;;
-			esac
-		done
 		[ "$pkgconfig_prefix" != "" ] && echo "PKGCONFIG_PREFIX=--define-variable=prefix=\"$pkgconfig_prefix\"" >> config.mak
 	fi
 

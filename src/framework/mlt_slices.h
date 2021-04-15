@@ -3,7 +3,7 @@
  * \brief sliced threading processing helper
  * \see mlt_slices_s
  *
- * Copyright (C) 2016-2017 Meltytech, LLC
+ * Copyright (C) 2016-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,12 +33,6 @@
 struct mlt_slices_s;
 
 typedef int (*mlt_slices_proc)( int id, int idx, int jobs, void* cookie );
-
-extern mlt_slices mlt_slices_init( int threads, int policy, int priority );
-
-extern void mlt_slices_close( mlt_slices ctx );
-
-extern void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie );
 
 extern int mlt_slices_count_normal();
 

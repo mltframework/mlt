@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@
  */
 
 #include <pthread.h>
+#ifdef WITH_JACK
 #include <jack/jack.h>
+#endif
 #include <glib.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,6 +54,8 @@ extern pthread_mutex_t g_activate_mutex;
 jack_nframes_t sample_rate;
 jack_nframes_t buffer_size;
 
+#ifdef WITH_JACK
+
 static void
 jack_shutdown_cb (void * data)
 {
@@ -59,6 +63,8 @@ jack_shutdown_cb (void * data)
   
   procinfo->quit = TRUE;
 }
+
+#endif
 
 /** process messages for plugins' control ports */
 void process_control_port_messages (process_info_t * procinfo) {
@@ -88,7 +94,9 @@ void process_control_port_messages (process_info_t * procinfo) {
     }
 }
 
-int get_jack_buffers (process_info_t * procinfo, jack_nframes_t frames) {
+#ifdef WITH_JACK
+
+static int get_jack_buffers (process_info_t * procinfo, jack_nframes_t frames) {
   unsigned long channel;
   
   for (channel = 0; channel < procinfo->channels; channel++)
@@ -110,6 +118,8 @@ int get_jack_buffers (process_info_t * procinfo, jack_nframes_t frames) {
 
   return 0;
 }
+
+#endif
 
 plugin_t *
 get_first_enabled_plugin (process_info_t * procinfo)
@@ -164,6 +174,7 @@ connect_chain (process_info_t * procinfo, jack_nframes_t frames)
     {
       if (plugin->desc->aux_channels > 0 && plugin->enabled)
         {
+#ifdef WITH_JACK
           if (procinfo->jack_client)
             {
               for (copy = 0; copy < plugin->copies; copy++)
@@ -174,6 +185,7 @@ connect_chain (process_info_t * procinfo, jack_nframes_t frames)
                                   jack_port_get_buffer (plugin->holders[copy].aux_ports[channel], frames));
             }
           else
+#endif
             {
               for (copy = 0; copy < frames; copy++)
                 procinfo->silent_buffer[copy] = 0.0;
@@ -218,6 +230,7 @@ process_chain (process_info_t * procinfo, jack_nframes_t frames)
   unsigned long channel;
   unsigned long i;
 
+#ifdef WITH_JACK
   if (procinfo->jack_client)
     {
       LADSPA_Data zero_signal[frames];
@@ -237,6 +250,7 @@ process_chain (process_info_t * procinfo, jack_nframes_t frames)
               memcpy (jack_port_get_buffer (plugin->holders[copy].aux_ports[channel], frames),
                       zero_signal, sizeof (LADSPA_Data) * frames);
     }
+#endif
 
   first_enabled = get_first_enabled_plugin (procinfo);
   
@@ -336,6 +350,8 @@ int process_ladspa (process_info_t * procinfo, jack_nframes_t frames,
   
   return 0;
 }
+
+#ifdef WITH_JACK
 
 int process_jack (jack_nframes_t frames, void * data) {
   int err;
@@ -442,7 +458,7 @@ process_info_connect_port (process_info_t * procinfo,
   free (jack_ports);
 }
 
-int
+static int
 process_info_set_port_count (process_info_t * procinfo,
 	unsigned long port_count, gboolean connect_inputs, gboolean connect_outputs)
 {
@@ -509,11 +525,15 @@ process_info_set_port_count (process_info_t * procinfo,
   return 0;
 }
 
+#endif
+
 void
 process_info_set_channels (process_info_t * procinfo,
 	unsigned long channels, gboolean connect_inputs, gboolean connect_outputs)
 {
+#ifdef WITH_JACK
   process_info_set_port_count (procinfo, channels, connect_inputs, connect_outputs);
+#endif
   procinfo->channels = channels; 
 }
 
@@ -529,10 +549,12 @@ process_info_new (const char * client_name, unsigned long rack_channels,
   
   procinfo->chain = NULL;
   procinfo->chain_end = NULL;
+#ifdef WITH_JACK
   procinfo->jack_client = NULL;
   procinfo->port_count = 0;
   procinfo->jack_input_ports = NULL;
   procinfo->jack_output_ports = NULL;
+#endif
   procinfo->channels = rack_channels;
   procinfo->quit = FALSE;
 	
@@ -562,7 +584,8 @@ process_info_new (const char * client_name, unsigned long rack_channels,
       else if (isupper (jack_client_name[err]))
         jack_client_name[err] = tolower (jack_client_name[err]);
     }
-  
+
+#ifdef WITH_JACK
   err = process_info_connect_jack (procinfo);
   if (err)
     {
@@ -584,22 +607,25 @@ process_info_new (const char * client_name, unsigned long rack_channels,
   err = process_info_set_port_count (procinfo, rack_channels, connect_inputs, connect_outputs);
   if (err)
     return NULL;
+#endif
 
   return procinfo;
 }
 
 void
 process_info_destroy (process_info_t * procinfo) {
+#ifdef WITH_JACK
   if (procinfo->jack_client)
     {
       jack_deactivate (procinfo->jack_client);
       jack_client_close (procinfo->jack_client);
     }
-  g_free (procinfo->silent_buffer);
   g_free (procinfo->jack_input_ports);
   g_free (procinfo->jack_output_ports);
+#endif
   g_free (procinfo->jack_input_buffers);
   g_free (procinfo->jack_output_buffers);
+  g_free (procinfo->silent_buffer);
   g_free (procinfo);
 }
 

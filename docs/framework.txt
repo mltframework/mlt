@@ -79,14 +79,8 @@ Structure and Flow:
 	+--------+   +--------+
 
 	A typical consumer requests MLT Frame objects from the producer, does 
-	something with them and when finished with a frame, closes it. 
-	
-	 /\  A common confusion with the producer/consumer terminology used here is 
-	/!!\ that a consumer may 'produce' something. For example, the libdv consumer
-	\!!/ produces DV and the libdv producer seems to consume DV. However, the
-	 \/  naming conventions refer only to producers and consumers of MLT Frames.
-
-	To put it another way - a producer produces MLT Frame objects and a consumer 
+	something with them and when finished with a frame, closes it. To put it
+	another way - a producer produces MLT Frame objects and a consumer
 	consumes MLT Frame objects.
 
 	An MLT Frame essentially provides an uncompressed image and its associated
@@ -212,11 +206,6 @@ Hello World:
 
 	This will play the video using the avformat producer directly, thus it will
 	bypass the normalising functions.
-
-	$ MLT_CONSUMER=libdv ./hello file.avi > /dev/dv1394
-
-	This might, if you're lucky, do on the fly, realtime conversions of file.avi
-	to DV and broadcast it to your DV device.
 
 
 Factories:
@@ -1145,7 +1134,6 @@ mlt_frame:
 	mlt_position mlt_frame_get_position( mlt_frame this );
 	int mlt_frame_set_position( mlt_frame this, mlt_position value );
 	int mlt_frame_get_image( mlt_frame this, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable );
-	uint8_t *mlt_frame_get_alpha_mask( mlt_frame this );
 	int mlt_frame_get_audio( mlt_frame this, int16_t **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples );
 	int mlt_frame_push_get_image( mlt_frame this, mlt_get_image get_image );
 	mlt_get_image mlt_frame_pop_get_image( mlt_frame this );

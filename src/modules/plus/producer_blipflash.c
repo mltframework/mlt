@@ -1,7 +1,6 @@
 /*
  * producer_blipflash.c -- blip/flash generating producer
- * Copyright (C) 2013 Brian Matherly
- * Author: Brian Matherly <pez4brian@yahoo.com>
+ * Copyright (C) 2013 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -160,7 +159,7 @@ static void fill_image( mlt_properties producer_properties, char* color, uint8_t
 					}
 					break;
 				}
-				case mlt_image_rgb24:
+				case mlt_image_rgb:
 				{
 					int i = width * height + 1;
 					while ( --i )
@@ -171,7 +170,7 @@ static void fill_image( mlt_properties producer_properties, char* color, uint8_t
 					}
 					break;
 				}
-				case mlt_image_rgb24a:
+				case mlt_image_rgba:
 				{
 					int i = width * height + 1;
 					while ( --i )
@@ -205,7 +204,7 @@ static int producer_get_image( mlt_frame frame, uint8_t** buffer, mlt_image_form
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 
 	// Correct the returns if necessary
-	if( *format != mlt_image_yuv422 && *format != mlt_image_rgb24 && *format != mlt_image_rgb24a )
+	if( *format != mlt_image_yuv422 && *format != mlt_image_rgb && *format != mlt_image_rgba )
 		*format = mlt_image_yuv422;
 	if( *width <= 0 )
 		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;

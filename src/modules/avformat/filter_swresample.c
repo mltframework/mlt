@@ -1,7 +1,6 @@
 /*
  * filter_swresample.c -- convert from one format/ configuration to another
  * Copyright (C) 2018 Meltytech, LLC
- * Author: Brian Matherly <code@brianmatherly.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -206,9 +205,14 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		mlt_audio_get_planes( &out, pdata->out_buffers );
 
 		int received_samples = swr_convert( pdata->ctx, pdata->out_buffers, out.samples, (const uint8_t**)pdata->in_buffers, in.samples );
-		if( received_samples > 0 )
+		if( received_samples >= 0 )
 		{
-			if( received_samples < requested_samples )
+			if ( received_samples == 0 )
+			{
+				mlt_log_info( MLT_FILTER_SERVICE(filter), "Precharge required - return silence\n" );
+				mlt_audio_silence( &out, out.samples, 0 );
+			}
+			else if( received_samples < requested_samples )
 			{
 				// Duplicate samples to return the exact number requested.
 				mlt_audio_copy( &out, &out, received_samples, 0, requested_samples - received_samples );

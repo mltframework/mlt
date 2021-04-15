@@ -187,7 +187,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	{
 		// fetch image
 		error = mlt_frame_get_image( b_frame, &b_image, format, width, height, 1 );
-		if ( *format == mlt_image_rgb24a || mlt_frame_get_alpha( b_frame ) )
+		if ( *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) )
 		{
 			hasAlpha = true;
 		}
@@ -201,7 +201,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		return 0;
 	}
 	// Get RGBA image to process
-	*format = mlt_image_rgb24a;
+	*format = mlt_image_rgba;
 	error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, writable );
 
 	// Get bottom frame

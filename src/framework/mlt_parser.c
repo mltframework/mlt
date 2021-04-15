@@ -103,6 +103,27 @@ static int on_end_transition( mlt_parser self, mlt_transition object )
 	return 0;
 }
 
+
+static int on_start_chain( mlt_parser self, mlt_chain object )
+{
+	return 0;
+}
+
+static int on_end_chain( mlt_parser self, mlt_chain object )
+{
+	return 0;
+}
+
+static int on_start_link( mlt_parser self, mlt_link object )
+{
+	return 0;
+}
+
+static int on_end_link( mlt_parser self, mlt_link object )
+{
+	return 0;
+}
+
 mlt_parser mlt_parser_new( )
 {
 	mlt_parser self = calloc( 1, sizeof( struct mlt_parser_s ) );
@@ -124,6 +145,10 @@ mlt_parser mlt_parser_new( )
 		self->on_end_filter = on_end_filter;
 		self->on_start_transition = on_start_transition;
 		self->on_end_transition = on_end_transition;
+		self->on_start_chain = on_start_chain;
+		self->on_end_chain = on_end_chain;
+		self->on_start_link = on_start_link;
+		self->on_end_link = on_end_link;
 	}
 	return self;
 }
@@ -139,13 +164,13 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 	mlt_service_type type = mlt_service_identify( object );
 	switch( type )
 	{
-		case invalid_type:
+		case mlt_service_invalid_type:
 			error = self->on_invalid( self, object );
 			break;
-		case unknown_type:
+		case mlt_service_unknown_type:
 			error = self->on_unknown( self, object );
 			break;
-		case producer_type:
+		case mlt_service_producer_type:
 			if ( mlt_producer_is_cut( ( mlt_producer )object ) )
 				error = mlt_parser_start( self, ( mlt_service )mlt_producer_cut_parent( ( mlt_producer )object ) );
 			error = self->on_start_producer( self, ( mlt_producer )object );
@@ -157,7 +182,7 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 			}
 			error = self->on_end_producer( self, ( mlt_producer )object );
 			break;
-		case playlist_type:
+		case mlt_service_playlist_type:
 			error = self->on_start_playlist( self, ( mlt_playlist )object );
 			if ( error == 0 )
 			{
@@ -170,7 +195,7 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 			}
 			error = self->on_end_playlist( self, ( mlt_playlist )object );
 			break;
-		case tractor_type:
+		case mlt_service_tractor_type:
 			error = self->on_start_tractor( self, ( mlt_tractor )object );
 			if ( error == 0 )
 			{
@@ -187,7 +212,7 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 			}
 			error = self->on_end_tractor( self, ( mlt_tractor )object );
 			break;
-		case multitrack_type:
+		case mlt_service_multitrack_type:
 			error = self->on_start_multitrack( self, ( mlt_multitrack )object );
 			if ( error == 0 )
 			{
@@ -204,7 +229,7 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 			}
 			error = self->on_end_multitrack( self, ( mlt_multitrack )object );
 			break;
-		case filter_type:
+		case mlt_service_filter_type:
 			error = self->on_start_filter( self, ( mlt_filter )object );
 			if ( error == 0 )
 			{
@@ -214,7 +239,7 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 			}
 			error = self->on_end_filter( self, ( mlt_filter )object );
 			break;
-		case transition_type:
+		case mlt_service_transition_type:
 			error = self->on_start_transition( self, ( mlt_transition )object );
 			if ( error == 0 )
 			{
@@ -224,9 +249,26 @@ int mlt_parser_start( mlt_parser self, mlt_service object )
 			}
 			error = self->on_end_transition( self, ( mlt_transition )object );
 			break;
-		case field_type:
+		case mlt_service_field_type:
 			break;
-		case consumer_type:
+		case mlt_service_consumer_type:
+			break;
+		case mlt_service_chain_type:
+			error = self->on_start_chain( self, ( mlt_chain )object );
+			if ( error == 0 )
+			{
+				int i = 0;
+				while ( error == 0 && mlt_chain_link( ( mlt_chain )object, i ) != NULL )
+					mlt_parser_start( self, ( mlt_service )mlt_chain_link( ( mlt_chain )object, i ++ ) );
+				i = 0;
+				while ( error == 0 && mlt_producer_filter( ( mlt_producer )object, i ) != NULL )
+					error = mlt_parser_start( self, ( mlt_service )mlt_producer_filter( ( mlt_producer )object, i ++ ) );
+			}
+			error = self->on_end_chain( self, ( mlt_chain )object );
+			break;
+		case mlt_service_link_type:
+			error = self->on_start_link( self, ( mlt_link )object );
+			error = self->on_end_link( self, ( mlt_link )object );
 			break;
 	}
 	return error;

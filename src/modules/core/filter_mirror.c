@@ -1,6 +1,6 @@
 /*
  * filter_mirror.c -- mirror filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_image.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +30,9 @@
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
+	struct mlt_image_s img;
+	int i;
+
 	// Pop the mirror filter from the stack
 	mlt_filter filter = mlt_frame_pop_service( frame );
 
@@ -45,29 +49,23 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
-	// Get the alpha
-	uint8_t *alpha = mlt_frame_get_alpha_mask( frame );
-
 	// If we have an image of the right colour space
-	if ( error == 0 )
+	if ( error == 0 && *format == mlt_image_yuv422 )
 	{
-		// We'll KISS here
-		int hh = *height / 2;
+		mlt_image_set_values( &img, *image, *format, *width, *height );
+		if ( mlt_frame_get_alpha( frame ) )
+		{
+			img.planes[3] = mlt_frame_get_alpha( frame );
+			img.strides[3] = img.width;
+		}
 
 		if ( !strcmp( mirror, "horizontal" ) )
 		{
-			uint8_t *p = NULL;
-			uint8_t *q = NULL;
-			uint8_t *a = NULL;
-			uint8_t *b = NULL;
-			int i;
-			int uneven_w = ( *width % 2 ) * 2;
-			for ( i = 0; i < *height; i ++ )
+			int uneven_w = ( img.width % 2 ) * 2;
+			for ( i = 0; i < img.height; i ++ )
 			{
-				p = ( uint8_t * )*image + i * *width * 2;
-				q = p + *width * 2;
-				a = alpha + i * *width;
-				b = a + *width - 1;
+				uint8_t* p = img.planes[0] + img.strides[0] * i;
+				uint8_t* q = p + img.width * 2;
 				if ( !reverse )
 				{
 					while ( p < q )
@@ -77,8 +75,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*p ++ = *( q - 4 );
 						*p ++ = *( q - 1 - uneven_w );
 						q -= 4;
-						*a ++ = *b --;
-						*a ++ = *b --;
 					}
 				}
 				else
@@ -90,34 +86,48 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*( q - 4 ) = *p ++;
 						*( q - 1 - uneven_w ) = *p ++;
 						q -= 4;
-						*b -- = *a ++;
-						*b -- = *a ++;
 					}
 				}
 			}
+			if ( img.planes[3] )
+			{
+				for ( i = 0; i < img.height; i ++ )
+				{
+					uint8_t* a = img.planes[3] + img.strides[3] * i;
+					uint8_t* b = a + img.width - 1;
+					if ( !reverse )
+					{
+						while ( a < b )
+						{
+							*a ++ = *b --;
+							*a ++ = *b --;
+						}
+					}
+					else
+					{
+						while ( a < b )
+						{
+							*b -- = *a ++;
+							*b -- = *a ++;
+						}
+					}
+				}
+			}
+
 		}
 		else if ( !strcmp( mirror, "vertical" ) )
 		{
-			uint16_t *end = ( uint16_t *)*image + *width * *height;
-			uint16_t *p = NULL;
-			uint16_t *q = NULL;
-			uint8_t *a = NULL;
-			uint8_t *b = NULL;
-			int i;
-			int j;
+			int hh = img.height / 2;
 			for ( i = 0; i < hh; i ++ )
 			{
-				p = ( uint16_t * )*image + i * *width;
-				q = end - ( i + 1 ) * *width;
-				j = *width;
-				a = alpha + i * *width;
-				b = alpha + ( *height - i - 1 ) * *width;
+				uint16_t* p = (uint16_t*)(img.planes[0] + (img.strides[0] * i));
+				uint16_t* q = (uint16_t*)(img.planes[0] + (img.strides[0] * (img.height - i - 1)));
+				int j = img.width;
 				if ( !reverse )
 				{
 					while ( j -- )
 					{
 						*p ++ = *q ++;
-						*a ++ = *b ++;
 					}
 				}
 				else
@@ -125,28 +135,30 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					while ( j -- )
 					{
 						*q ++ = *p ++;
-						*b ++ = *a ++;
 					}
 				}
+			}
+			if ( img.planes[3] )
+			{
+				int j = img.width;
+				uint8_t* a = img.planes[3] + (img.strides[3] * i);
+				uint8_t* b = img.planes[3] + (img.strides[3] * (img.height - i - 1));
+				if ( !reverse )
+					while ( j -- )
+						*a ++ = *b ++;
+				else
+					while ( j -- )
+						*b ++ = *a ++;
 			}
 		}
 		else if ( !strcmp( mirror, "diagonal" ) )
 		{
-			uint8_t *end = ( uint8_t *)*image + *width * *height * 2;
-			uint8_t *p = NULL;
-			uint8_t *q = NULL;
-			uint8_t *a = NULL;
-			uint8_t *b = NULL;
-			int i;
-			int j;
-			int uneven_w = ( *width % 2 ) * 2;
-			for ( i = 0; i < *height; i ++ )
+			int uneven_w = ( img.width % 2 ) * 2;
+			for ( i = 0; i < img.height; i ++ )
 			{
-				p = ( uint8_t * )*image + i * *width * 2;
-				q = end - i * *width * 2;
-				j = ( ( *width * ( *height - i ) ) / *height ) / 2;
-				a = alpha + i * *width;
-				b = alpha + ( *height - i - 1 ) * *width;
+				uint8_t* p = img.planes[0] + (img.strides[0] * i);
+				uint8_t* q = img.planes[0] + (img.strides[0] * (img.height - i - 1));
+				int j = ( ( img.width * ( img.height - i ) ) / img.height ) / 2;
 				if ( !reverse )
 				{
 					while ( j -- )
@@ -156,8 +168,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*p ++ = *( q - 4 );
 						*p ++ = *( q - 1 - uneven_w );
 						q -= 4;
-						*a ++ = *b --;
-						*a ++ = *b --;
 					}
 				}
 				else
@@ -169,29 +179,34 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*( q - 4 ) = *p ++;
 						*( q - 1 - uneven_w ) = *p ++;
 						q -= 4;
-						*b -- = *a ++;
-						*b -- = *a ++;
 					}
+				}
+			}
+			if ( img.planes[3] )
+			{
+				int i;
+				for ( i = 0; i < img.height; i ++ )
+				{
+					int j = ( img.width * ( img.height - i ) ) / img.height;
+					uint8_t* a = img.planes[3] + (img.strides[3] * i);
+					uint8_t* b = img.planes[3] + (img.strides[3] * (img.height - i - 1));
+					if ( !reverse )
+						while ( j -- )
+							*a ++ = *b --;
+					else
+						while ( j -- )
+							*b -- = *a ++;
 				}
 			}
 		}
 		else if ( !strcmp( mirror, "xdiagonal" ) )
 		{
-			uint8_t *end = ( uint8_t *)*image + *width * *height * 2;
-			uint8_t *p = NULL;
-			uint8_t *q = NULL;
-			int i;
-			int j;
-			uint8_t *a = NULL;
-			uint8_t *b = NULL;
-			int uneven_w = ( *width % 2 ) * 2;
-			for ( i = 0; i < *height; i ++ )
+			int uneven_w = ( img.width % 2 ) * 2;
+			for ( i = 0; i < img.height; i ++ )
 			{
-				p = ( uint8_t * )*image + ( i + 1 ) * *width * 2;
-				q = end - ( i + 1 ) * *width * 2;
-				j = ( ( *width * ( *height - i ) ) / *height ) / 2;
-				a = alpha + ( i + 1 ) * *width - 1;
-				b = alpha + ( *height - i - 1 ) * *width;
+				uint8_t* p = img.planes[0] + (img.strides[0] * (i + 1));
+				uint8_t* q = img.planes[0] + (img.strides[0] * (img.height - i));
+				int j = ( ( img.width * ( img.height - i ) ) / img.height ) / 2;
 				if ( !reverse )
 				{
 					while ( j -- )
@@ -201,8 +216,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*q ++ = *( p - 4 );
 						*q ++ = *( p - 1 - uneven_w );
 						p -= 4;
-						*b ++ = *a --;
-						*b ++ = *a --;
 					}
 				}
 				else
@@ -214,28 +227,34 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 						*( p - 4 ) = *q ++;
 						*( p - 1 - uneven_w ) = *q ++;
 						p -= 4;
-						*a -- = *b ++;
-						*a -- = *b ++;
 					}
+				}
+			}
+			if ( img.planes[3] )
+			{
+				int i;
+				for ( i = 0; i < img.height; i ++ )
+				{
+					int j = ( ( img.width * ( img.height - i ) ) / img.height );
+					uint8_t* a = img.planes[3] + (img.strides[3] * i) + img.width - 1;
+					uint8_t* b = img.planes[3] + (img.strides[3] * (img.height - i - 1));
+					if ( !reverse )
+						while ( j -- )
+							*b ++ = *a --;
+					else
+						while ( j -- )
+							*a -- = *b ++;
 				}
 			}
 		}
 		else if ( !strcmp( mirror, "flip" ) )
 		{
 			uint8_t t[ 4 ];
-			uint8_t *p = NULL;
-			uint8_t *q = NULL;
-			int i;
-			uint8_t *a = NULL;
-			uint8_t *b = NULL;
-			uint8_t c;
-			int uneven_w = ( *width % 2 ) * 2;
-			for ( i = 0; i < *height; i ++ )
+			int uneven_w = ( img.width % 2 ) * 2;
+			for ( i = 0; i < img.height; i ++ )
 			{
-				p = ( uint8_t * )*image + i * *width * 2;
-				q = p + *width * 2;
-				a = alpha + i * *width;
-				b = a + *width - 1;
+				uint8_t* p = img.planes[0] + (img.strides[0] * i);
+				uint8_t* q = p + *width * 2;
 				while ( p < q )
 				{
 					t[ 0 ] = p[ 0 ];
@@ -250,41 +269,53 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					*( -- q ) = t[ 0 ];
 					*( -- q ) = t[ 1 ];
 					*( -- q ) = t[ 2 ];
-					c = *a;
-					*a ++ = *b;
-					*b -- = c;
-					c = *a;
-					*a ++ = *b;
-					*b -- = c;
+				}
+			}
+			if ( img.planes[3] )
+			{
+				uint8_t c;
+				for ( i = 0; i < img.height; i ++ )
+				{
+					uint8_t* a = img.planes[3] + (img.strides[3] * i);
+					uint8_t* b = a + img.width - 1;
+					while ( a < b )
+					{
+						c = *a;
+						*a ++ = *b;
+						*b -- = c;
+					}
 				}
 			}
 		}
 		else if ( !strcmp( mirror, "flop" ) )
 		{
-			uint16_t *end = ( uint16_t *)*image + *width * *height;
-			uint16_t *p = NULL;
-			uint16_t *q = NULL;
 			uint16_t t;
-			uint8_t *a = NULL;
-			uint8_t *b = NULL;
-			uint8_t c;
-			int i;
-			int j;
+			int hh = *height / 2;
 			for ( i = 0; i < hh; i ++ )
 			{
-				p = ( uint16_t * )*image + i * *width;
-				q = end - ( i + 1 ) * *width;
-				a = alpha + i * *width;
-				b = alpha + ( *height - i - 1 ) * *width;
-				j = *width;
+				uint16_t* p = (uint16_t*)(img.planes[0] + (img.strides[0] * i));
+				uint16_t* q = (uint16_t*)(img.planes[0] + (img.strides[0] * (img.height - i - 1)));
+				int j = img.width;
 				while ( j -- )
 				{
 					t = *p;
 					*p ++ = *q;
 					*q ++ = t;
-					c = *a;
-					*a ++ = *b;
-					*b ++ = c;
+				}
+			}
+			if ( img.planes[3] )
+			{
+				uint8_t c;
+				for ( i = 0; i < img.height; i ++ )
+				{
+					uint8_t* a = img.planes[3] + (img.strides[3] * i);
+					uint8_t* b = img.planes[3] + (img.strides[3] * (img.height - i - 1));
+					while ( a < b )
+					{
+						c = *a;
+						*a ++ = *b;
+						*b -- = c;
+					}
 				}
 			}
 		}

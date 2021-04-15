@@ -7,13 +7,11 @@ clip3.dv in=200 out=275 \
 clip2.dv in=200 \
 -transition \
 composite in=50 out=75 a_track=0 b_track=1 \
-start=0/0:100%x100%:100 \
-end=100%/0:100%x100%:100 \
+geometry="0=0/0:100%x100%:100%; -1=100%/0:100%x100%:100%" \
 sliced_composite=1 \
 -transition \
 composite in=50 out=75 a_track=0 b_track=2 \
-start=-100%/0:100%x100%:100 \
-end=0/0:100%x100%:100 \
+geometry="0=-100%/0:100%x100%:100%; -1=0/0:100%x100%:100%" \
 sliced_composite=1 \
 -transition \
 mix:-1 in=50 out=75 a_track=1 b_track=2 \

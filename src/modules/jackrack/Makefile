@@ -15,18 +15,20 @@ GPL_OBJS = jack_rack.o \
 	plugin_settings.o \
 	process.o \
 	producer_ladspa.o \
-	filter_jackrack.o \
 	filter_ladspa.o
 
-OBJS = factory.o \
-	   consumer_jack.o
+OBJS = factory.o
 
-CFLAGS += $(shell pkg-config --cflags jack)
+ifdef WITH_JACK
+GPL_OBJS += filter_jackrack.o
+OBJS += consumer_jack.o
+CFLAGS += -DWITH_JACK $(shell pkg-config --cflags jack)
 LDFLAGS += $(shell pkg-config --libs jack)
+endif
 
 ifdef GPL
 OBJS += $(GPL_OBJS)
-CFLAGS += -DGPL
+CFLAGS += -DGPL $(LADSPA_PREFIX)
 CFLAGS += $(shell pkg-config --cflags libxml-2.0)
 CFLAGS += $(shell pkg-config $(PKGCONFIG_PREFIX) --cflags glib-2.0)
 

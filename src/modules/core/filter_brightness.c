@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_image.h>
 #include <framework/mlt_slices.h>
 
 #include <stdio.h>
@@ -28,49 +29,56 @@
 
 struct sliced_desc
 {
-	uint8_t *image;
-	int rgba;
-	int width, height;
+	mlt_image image;
 	double level;
 	double alpha_level;
-	uint8_t* alpha;
 };
 
 static int sliced_proc(int id, int index, int jobs, void* cookie)
 {
 	(void) id; // unused
-	struct sliced_desc ctx = *((struct sliced_desc*) cookie);
-	int slice_height = (ctx.height + jobs - 1) / jobs;
-	int slice_offset = index * slice_height * ctx.width;
-	slice_height = MIN(slice_height, ctx.height - index * slice_height);
+	struct sliced_desc* ctx = ((struct sliced_desc*) cookie);
+	int slice_height = (ctx->image->height + jobs - 1) / jobs;
+	int slice_line_start = index * slice_height;
+	slice_height = MIN(slice_height, ctx->image->height - slice_line_start);
 
 	// Only process if level is something other than 1
-	if (ctx.level != 1.0) {
-		int i = ctx.width * slice_height + 1;
-		uint8_t *p = ctx.image + (slice_offset * 2);
-		int32_t m = ctx.level * (1 << 16);
+	if (ctx->level != 1.0 && ctx->image->format == mlt_image_yuv422) {
+		int32_t m = ctx->level * (1 << 16);
 		int32_t n = 128 * ((1 << 16 ) - m);
-
-		for (; --i; p += 2) {
-			p[0] = CLAMP((p[0] * m) >> 16, 16, 235);
-			p[1] = CLAMP((p[1] * m + n) >> 16, 16, 240);
+		for ( int line = 0; line < slice_height; line++ )
+		{
+			uint8_t* p = ctx->image->planes[0] + ( (slice_line_start + line) * ctx->image->strides[0]);
+			for ( int pixel = 0; pixel < ctx->image->width; pixel++ )
+			{
+				*p++ = CLAMP((*p * m) >> 16, 16, 235);
+				*p++ = CLAMP((*p * m + n) >> 16, 16, 240);
+			}
 		}
+
 	}
 
 	// Process the alpha channel if requested.
-	if (ctx.alpha_level != 1.0) {
-		int32_t m = ctx.alpha_level * (1 << 16);
-		int i = ctx.width * slice_height + 1;
-
-		if (ctx.rgba) {
-			uint8_t *p = ctx.image + (slice_offset * 4) + 3;
-			for (; --i; p += 4) {
-				p[0] = (p[0] * m) >> 16;
+	if (ctx->alpha_level != 1.0) {
+		int32_t m = ctx->alpha_level * (1 << 16);
+		if (ctx->image->format == mlt_image_rgba) {
+			for ( int line = 0; line < slice_height; line++ )
+			{
+				uint8_t* p = ctx->image->planes[0] + ( (slice_line_start + line) * ctx->image->strides[0]) + 3;
+				for ( int pixel = 0; pixel < ctx->image->width; pixel++ )
+				{
+					*p = (*p * m) >> 16;
+					p += 4;
+				}
 			}
 		} else {
-			uint8_t *p = ctx.alpha + slice_offset;
-			for (; --i; ++p) {
-				p[0] = (p[0] * m) >> 16;
+			for ( int line = 0; line < slice_height; line++ )
+			{
+				uint8_t* p = ctx->image->planes[3] + ( (slice_line_start + line) * ctx->image->strides[3]);
+				for ( int pixel = 0; pixel < ctx->image->width; pixel++ )
+				{
+					*p++ = (*p * m) >> 16;
+				}
 			}
 		}
 	}
@@ -87,6 +95,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	double level = 1.0;
+	double alpha_level = 1.0;
 
 	// Use animated "level" property only if it has been set since init
 	char* level_property = mlt_properties_get( properties, "level" );
@@ -116,20 +125,33 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the image
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
 
+	level = (*format == mlt_image_yuv422) ? level : 1.0;
+	alpha_level = mlt_properties_get(properties, "alpha")? MIN(mlt_properties_anim_get_double(properties, "alpha", position, length), 1.0) : 1.0;
+	if (alpha_level < 0.0) {
+		alpha_level = level;
+	}
+
 	// Only process if we have no error.
-	if (!error) {
+	if (!error && (level != 1.0 || alpha_level != 1.0)) {
 		int threads = mlt_properties_get_int(properties, "threads");
+		struct sliced_desc desc;
+		struct mlt_image_s proc_image;
+		mlt_image_set_values( &proc_image, *image, *format, *width, *height );
+		if (alpha_level != 1.0 && proc_image.format != mlt_image_rgba) {
+			proc_image.planes[3] = mlt_frame_get_alpha(frame);
+			proc_image.strides[3] = proc_image.width;
+			if (!proc_image.planes[3]) {
+				// Alpha will be needed but it does not exist yet. Create opaque alpha.
+				mlt_image_alloc_alpha( &proc_image );
+				mlt_image_fill_opaque( &proc_image );
+				mlt_frame_set_alpha( frame, proc_image.planes[3], 0, proc_image.release_alpha );
+			}
+		}
+		desc.level = level;
+		desc.alpha_level = alpha_level;
+		desc.image = &proc_image;
+
 		threads = CLAMP(threads, 0, mlt_slices_count_normal());
-		double alpha = mlt_properties_get(properties, "alpha")? MIN(mlt_properties_anim_get_double(properties, "alpha", position, length), 1.0) : 1.0;
-		struct sliced_desc desc = {
-			.image = *image,
-			.rgba = (*format == mlt_image_rgb24a),
-			.width = *width,
-			.height = *height,
-			.level = (*format == mlt_image_yuv422)? level : 1.0,
-			.alpha_level = alpha >= 0.0 ? alpha : level,
-			.alpha = mlt_frame_get_alpha_mask(frame)
-		};
 		if (threads == 1) {
 			sliced_proc(0, 0, 1, &desc);
 		} else {
