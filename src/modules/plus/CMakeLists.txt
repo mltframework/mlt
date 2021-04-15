@@ -6,6 +6,7 @@ add_library(mltplus MODULE
   filter_chroma_hold.c
   filter_chroma.c
   filter_dynamictext.c
+  filter_dynamicgpstext.c
   filter_dynamic_loudness.c
   filter_invert.c
   filter_lift_gamma_gain.c
@@ -58,6 +59,7 @@ install(FILES
   filter_chroma.yml
   filter_dynamic_loudness.yml
   filter_dynamictext.yml
+  filter_dynamicgpstext.yml
   filter_invert.yml
   filter_lift_gamma_gain.yml
   filter_loudness_meter.yml
