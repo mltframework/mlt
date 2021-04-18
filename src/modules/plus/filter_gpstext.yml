@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
-identifier: dynamicgpstext
-title: GPS text overlay
+identifier: gpstext
+title: GPS text
 version: 1
 copyright: Meltytech, LLC
 creator: Daniel F
@@ -17,7 +17,7 @@ notes: >
 
 parameters:
   - identifier: argument
-    title: Dynamic gps text
+    title: GPS text
     type: string
     description: |
       The text to overlay. May include keywords enclosed in "#".
@@ -65,7 +65,7 @@ parameters:
     widget: text
 
   - identifier: gps.file
-    title: File/URL
+    title: GPS File/URL
     type: string
     description: >
       "The fullpath of file containing location (GPS) data. Supported extensions: .gpx, .tcx."

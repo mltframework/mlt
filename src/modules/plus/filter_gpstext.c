@@ -1,5 +1,5 @@
 /*
- * filter_dynamicgpstext.c -- overlays GPS data as text on video
+ * filter_gpstext.c -- overlays GPS data as text on video
  * Copyright (C) 2011-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
@@ -1125,7 +1125,7 @@ static double convert_distance_to_format(double x, const char* format)
 {
 	if (format == NULL)
 		return x;
-	//mlt_log_info(NULL, "filter_dynamicgps.c convert_distance_to_format, format=%s len=%d", format, strlen(format));
+	//mlt_log_info(NULL, "filter_gps.c convert_distance_to_format, format=%s len=%d", format, strlen(format));
 	
 	//x is in meters
 	if (strstr(format, "km") || strstr(format, "kilometer"))
@@ -1143,7 +1143,7 @@ static double convert_speed_to_format(double x, const char* format)
 {
 	if (format == NULL)
 		return x*3.6;	//default km/h
-	//mlt_log_info(NULL, "filter_dynamicgps.c convert_speed_to_format, format=%s len=%d", format, strlen(format));
+	//mlt_log_info(NULL, "filter_gps.c convert_speed_to_format, format=%s len=%d", format, strlen(format));
 	
 	//x is in meters/sec
 	if (strstr(format, "ms") || strstr(format, "m/s") || strstr(format, "meter"))
@@ -1292,7 +1292,7 @@ static void gps_point_to_output(gps_point crt_point, char* keyword, time_t video
 			format = keyword + strlen("gps_datetime_now");
 		seconds_to_timestring(crt_point.time, format, gps_text);
 	}
-//	mlt_log_info(NULL, "filter_dynamicgps.c gps_point_to_output, keyword=%s, result=%s", keyword, gps_text);
+//	mlt_log_info(NULL, "filter_gps.c gps_point_to_output, keyword=%s, result=%s", keyword, gps_text);
 }
 
 /** Checks if file is processed or needs to be read from disk,
@@ -1624,7 +1624,7 @@ static void filter_close (mlt_filter filter)
 
 /** Constructor for the filter.
 */
-mlt_filter filter_dynamicgpstext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 		mlt_filter filter = mlt_filter_new();
 		private_data* pdata = (private_data*) calloc(1, sizeof(private_data));
