@@ -1,6 +1,6 @@
 /*
  * filter_dynamicgpstext.c -- overlays GPS data as text on video
- * Copyright (C) 2011-2020 Meltytech, LLC
+ * Copyright (C) 2011-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -78,7 +78,7 @@ typedef struct
 	char last_filename[256]; //gps file fullpath
 	int video_file_timezone_s; //caches the video file's timezone offset (seconds, includes DST)
 	time_t gps_proc_start_t; //process only points after this time (epoch seconds)
-	double video_timelapse_speed;
+	double speed_multiplier;
 } private_data;
 
 /* Sets the private data to default values and frees gps points array
@@ -91,7 +91,7 @@ static void cleanup_priv_data(private_data* pdata)
 			free (pdata->gps_points);
 		memset (pdata, 0 , sizeof(private_data));
 		pdata->video_file_timezone_s = -1;
-		pdata->video_timelapse_speed = 1;
+		pdata->speed_multiplier = 1;
 	}
 }
 
@@ -166,7 +166,7 @@ static time_t datetimeXMLstring_to_seconds(const char* text, char* format)
 
 	//TODO: add milisecond support
 	if (strptime(text, format, &tm_time) == NULL) {
-	//	mlt_log_warning(NULL, "filter_dynamicgpstext.c datetimeXMLstring_to_seconds strptime failed on string: %.25s", text);
+	//	mlt_log_warning(NULL, "filter_gpsText.c datetimeXMLstring_to_seconds strptime failed on string: %.25s", text);
 		return 0;
 	}
 
@@ -282,7 +282,7 @@ static int binary_search_gps(mlt_filter filter, time_t video_time)
 	while (il < ir)
 	{
 		int mid = (ir+il)/2;
-		//mlt_log_info(NULL, "filter_dynamicgps.c binary_search_gps: mid=%d, l=%d, r=%d, mid-time=%d", mid, il, ir, gps_points[mid].time);
+		//mlt_log_info(filter, "binary_search_gps: mid=%d, l=%d, r=%d, mid-time=%d", mid, il, ir, gps_points[mid].time);
 		if (gps_points[mid].time == video_time) {
 			pdata->last_searched_index = mid;
 			return mid;
@@ -295,7 +295,7 @@ static int binary_search_gps(mlt_filter filter, time_t video_time)
 
 	//don't return the closest gps point if time difference is too large:
 	if (abs(video_time - gps_points[il].time) > MAX_GPS_DIFF) {
-	//	mlt_log_info(NULL, "filter_dynamicgps.c binary_search_gps: TIME DIFF too large (>MAX_GPS_DIFFs) return -1: vid_time(synced)%d, gps_time:%d", video_time, gps_points[il].time);
+	//	mlt_log_info(filter, "binary_search_gps: TIME DIFF too large (>MAX_GPS_DIFFs) return -1: vid_time(synced)%d, gps_time:%d", video_time, gps_points[il].time);
 		return -1;
 	}
 	pdata->last_searched_index = il;
@@ -320,7 +320,7 @@ static void _DEBUG_write_smoothed_gps_to_file(mlt_filter filter, int smooth_lvl)
 	sprintf(fname, "smoothed_gpx_smooth_%d.gpx", smooth_lvl);
 	f= fopen(fname, "w"); //created in home_dir by def
 	if (!f) {
-		mlt_log_warning(NULL, "filter_dynamicgps.c couldn't open file to write - %s", fname);
+		mlt_log_warning(filter, "couldn't open file to write - %s", fname);
 		return;
 	}
 	fputs(intro_gpx, f);
@@ -344,7 +344,7 @@ static void _DEBUG_write_smoothed_gps_to_file(mlt_filter filter, int smooth_lvl)
 	}
 	fputs(outro_gpx, f);
 	fclose(f);
-	mlt_log_info(NULL, "filter_dynamicgps.c done writing (%d points) smoothed file - %s", gps_points_size, fname);
+	mlt_log_info(filter, "done writing (%d points) smoothed file - %s", gps_points_size, fname);
 }
 
 /* Converts the bearing angle to a cardinal direction
@@ -387,7 +387,7 @@ static void recalculate_gps_data(mlt_filter filter, int req_smooth)
 	gps_point* gps_points = pdata->gps_points+offset;
 	int gps_points_size = pdata->gps_points_size-offset;
 
-	//mlt_log_info(NULL, "filter_dynamicgps.c recalculate_gps_data, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  pdata->gps_points, gps_points, pdata->gps_points_size, gps_points_size);
+	//mlt_log_info(filter, "recalculate_gps_data, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  pdata->gps_points, gps_points, pdata->gps_points_size, gps_points_size);
 
 	int i = 0, ignore_points_before = 0;
 	double total_dist = 0, total_d_elev = 0, total_elev_up = 0, total_elev_down = 0,
@@ -512,8 +512,8 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 	const char* last_address = file_content+bytes_read;
 	int i;
 	
-//	mlt_log_info(NULL, "filter_dynamicgps.c entered process_tcx, ptext=%p, last_address=%p", ptext, last_address);
-//	mlt_log_info(NULL, "filter_dynamicgps.c entered process_tcx, ptext=%.100s", ptext);
+//	mlt_log_info(filter, "entered process_tcx, ptext=%p, last_address=%p", ptext, last_address);
+//	mlt_log_info(filter, "entered process_tcx, ptext=%.100s", ptext);
 	
 	//ptext will point to the current location in the string where we're processing stuff
 	//we will first look for the start of an entry (<Trackpoint>) then try to parse all tags <> </> until the end tag </Trackpoint>
@@ -526,7 +526,7 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 			nr_points++;
 		ptext++;
 	}
-	//mlt_log_info(NULL, "filter_dynamicgps.c found %d gps points in file", nr_points);
+	//mlt_log_info(filter, "found %d gps points in file", nr_points);
 	
 	if (pdata->gps_points)
 		free(pdata->gps_points);
@@ -552,7 +552,7 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 				ptext+=6;
 				//format: YYYY-MM-DDThh:mm:ss (+timezone optional?)
 				if (ptext+19 >= last_address) {
-					mlt_log_warning(NULL, "filter_dynamicgps.c <time> tag can't fit time, reached EOF");
+					mlt_log_warning(filter, "<time> tag can't fit time, reached EOF");
 					continue;
 				}
 				crt_point.time = datetimeXMLstring_to_seconds(ptext, NULL);
@@ -569,14 +569,14 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 					{
 						ptext+=17;
 						crt_point.lat = crt_point.lat_smoothed = strtod(ptext, &ptext);
-		//				mlt_log_info(NULL, "filter_dynamicgps.c found gps.lat: %f", crt_point.lat);
+		//				mlt_log_info(filter, "found gps.lat: %f", crt_point.lat);
 						ptext+=17;
 					}
 					else if (strncmp(ptext, "<LongitudeDegrees>", 18) == 0)
 					{
 						ptext+=18;
 						crt_point.lon = crt_point.lon_smoothed = strtod(ptext, &ptext);
-		//				mlt_log_info(NULL, "filter_dynamicgps.c found gps.lon: %f", crt_point.lon);
+		//				mlt_log_info(filter, "found gps.lon: %f", crt_point.lon);
 						ptext+=18;
 					}
 					ptext++;
@@ -588,14 +588,14 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 			{
 				ptext+=16;
 				crt_point.ele = strtod(ptext, &ptext);
-		//		mlt_log_info(NULL, "filter_dynamicgps.c found gps.ele: %f", crt_point.ele);
+		//		mlt_log_info(filter, "found gps.ele: %f", crt_point.ele);
 				ptext+=16;
 			}
 			else if (strncmp(ptext, "<DistanceMeters>", 16) == 0)
 			{
 				ptext+=16;
 				crt_point.total_dist = strtod(ptext, &ptext);
-		//		mlt_log_info(NULL, "filter_dynamicgps.c found gps.total_dist: %f", crt_point.total_dist);
+		//		mlt_log_info(filter, "found gps.total_dist: %f", crt_point.total_dist);
 				ptext+=16;
 			}
 			else if (strncmp(ptext, "<HeartRateBpm", 13) == 0)
@@ -606,7 +606,7 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 					{
 						ptext+=7;
 						crt_point.hr = (short)strtod(ptext, &ptext);
-				//		mlt_log_info(NULL, "filter_dynamicgps.c found gps.HR: %d", crt_point.hr);
+				//		mlt_log_info(filter, "found gps.HR: %d", crt_point.hr);
 						ptext+=7;
 					}
 				}
@@ -621,7 +621,7 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 				ptext+=?;
 				//convert string to float
 				crt_point.speed = strtod(ptext, &ptext);
-		//		mlt_log_info(NULL, "filter_dynamicgps.c found gps.speed: %f", crt_point.speed);
+		//		mlt_log_info(filter, "found gps.speed: %f", crt_point.speed);
 				//skip closing
 				ptext+=?;
 			}
@@ -630,7 +630,7 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 		
 		//ignore points with missing or non increasing time
 		if (crt_point.time == GPS_UNINIT || crt_point.time == 0 || (crt_nr_point-1>0 && crt_point.time<=pdata->gps_points[crt_nr_point-1].time)){
-			//mlt_log_info(NULL, "filter_dynamicgps.c dropping GPS point[%d] with invalid time: crt.time: %d, prev.time: %d",crt_nr_point, crt_point.time, pdata->gps_points[MAX(crt_nr_point-1, 0)].time);
+			//mlt_log_info(filter, "dropping GPS point[%d] with invalid time: crt.time: %d, prev.time: %d",crt_nr_point, crt_point.time, pdata->gps_points[MAX(crt_nr_point-1, 0)].time);
 			skipped_points++;
 			continue;
 		}
@@ -643,11 +643,11 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 	
 	//resize down array to only valid points:
 	if (skipped_points) {
-	//	mlt_log_info(NULL, "filter_dynamicgps.c realloc gps_points: (prev_size=%d, new_size=%d", nr_points, crt_nr_point);
+	//	mlt_log_info(filter, "realloc gps_points: (prev_size=%d, new_size=%d", nr_points, crt_nr_point);
 		pdata->gps_points_size = crt_nr_point;
 		pdata->gps_points = realloc(pdata->gps_points, crt_nr_point*sizeof(gps_point));
 		if (pdata->gps_points == NULL) {
-			mlt_log_error(NULL, "filter_dynamicgps.c memory alloc failed, BYE. realloc(size=%d)", crt_nr_point*sizeof(gps_point));
+			mlt_log_error(filter, "memory alloc failed, BYE. realloc(size=%d)", crt_nr_point*sizeof(gps_point));
 			pdata->gps_points_size = 0;
 			return;
 		}
@@ -656,13 +656,13 @@ static void process_tcx(mlt_filter filter, char* file_content, int bytes_read)
 	//debug
 	/*
 	for (i=0; i<5 && i<pdata->gps_points_size; i++)
-		mlt_log_info(NULL, "filter_dynamicgps.c process_tcx gps_points[%d]: lat:%f lon:%f time:%d ",
+		mlt_log_info(filter, "process_tcx gps_points[%d]: lat:%f lon:%f time:%d ",
 			i, pdata->gps_points[i].lat, pdata->gps_points[i].lon, pdata->gps_points[i].time);
 	for (i=pdata->gps_points_size/2; i<pdata->gps_points_size/2+5 && i<pdata->gps_points_size; i++)
-		mlt_log_info(NULL, "filter_dynamicgps.c process_tcx gps_points[%d]: lat:%f lon:%f time:%d ",
+		mlt_log_info(filter, "process_tcx gps_points[%d]: lat:%f lon:%f time:%d ",
 			i, pdata->gps_points[i].lat, pdata->gps_points[i].lon, pdata->gps_points[i].time);
 	for (i=MAX(pdata->gps_points_size-5,0); i<pdata->gps_points_size; i++)
-		mlt_log_info(NULL, "filter_dynamicgps.c process_tcx gps_points[%d]: lat:%f lon:%f time:%d ",
+		mlt_log_info(filter, "process_tcx gps_points[%d]: lat:%f lon:%f time:%d ",
 			i, pdata->gps_points[i].lat, pdata->gps_points[i].lon, pdata->gps_points[i].time);
 	*/
 }
@@ -692,8 +692,8 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 	const char* last_address = file_content+bytes_read;
 	int i;
 	
-	//mlt_log_info(NULL, "filter_dynamicgps.c entered process_gpx, ptext=%p, last_address=%p", ptext, last_address);
-	//mlt_log_info(NULL, "filter_dynamicgps.c entered process_gpx, ptext=%.100s", ptext);
+	//mlt_log_info(filter, "entered process_gpx, ptext=%p, last_address=%p", ptext, last_address);
+	//mlt_log_info(filter, "entered process_gpx, ptext=%.100s", ptext);
 	
 	//ptext will point to the current location in the string where we're processing stuff
 	//we will first look for the start of an entry (<trkpt ) then try to parse all tags <> </> until the end tag </trkpt>
@@ -711,7 +711,7 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 		free(pdata->gps_points);
 	pdata->gps_points = (gps_point*) malloc(sizeof(gps_point) * nr_points);
 	if (!pdata->gps_points) {
-		mlt_log_error(NULL, "filter_dynamicgpstext.c can't malloc, BYE! (size=%d)", sizeof(gps_point)*nr_points);
+		mlt_log_error(filter, "can't malloc, BYE! (size=%d)", sizeof(gps_point)*nr_points);
 		return;
 	}
 	pdata->gps_points_size = nr_points;
@@ -731,7 +731,7 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 				//skip lat="
 				ptext+=5;
 				crt_point.lat = crt_point.lat_smoothed = strtod(ptext, &ptext);
-				//mlt_log_info(NULL, "filter_dynamicgps.c found gps.lat: %f", crt_point.lat);
+				//mlt_log_info(filter, "found gps.lat: %f", crt_point.lat);
 				//skip closing "
 				ptext++;
 			}
@@ -739,7 +739,7 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 			{
 				ptext+=5;
 				crt_point.lon = crt_point.lon_smoothed = strtod(ptext, &ptext);
-				//mlt_log_info(NULL, "filter_dynamicgps.c found gps.lon: %f", crt_point.lon);
+				//mlt_log_info(filter, "found gps.lon: %f", crt_point.lon);
 				ptext++;
 			}
 			//find one of the optional tags
@@ -749,7 +749,7 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 				{
 					ptext+=5;
 					crt_point.ele = strtod(ptext, &ptext);
-				//	mlt_log_info(NULL, "filter_dynamicgps.c found gps.ele: %f", crt_point.ele);
+				//	mlt_log_info(filter, "found gps.ele: %f", crt_point.ele);
 					//skip closing </ele  //(intentionally left the '>' out)
 					ptext+=5;
 				}
@@ -757,18 +757,18 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 				{
 					ptext+=6;
 					if (ptext+24 > last_address) {
-						mlt_log_warning(NULL, "filter_dynamicgps.c <time> tag can't fit time, reached EOF");
+						mlt_log_warning(filter, "<time> tag can't fit time, reached EOF");
 						continue;
 					}
 					crt_point.time = datetimeXMLstring_to_seconds(ptext, NULL);
-					//	mlt_log_info(NULL, "filter_dynamicgps.c found gps.time: %.24s -> %d", ptext, crt_point.time);
+					//	mlt_log_info(filter, "found gps.time: %.24s -> %d", ptext, crt_point.time);
 					ptext+=24+6;
 				}
 				else if (strncmp(ptext, "<speed>", 7) == 0)
 				{
 					ptext+=7;
 					crt_point.speed = strtod(ptext, &ptext);
-			//		mlt_log_info(NULL, "filter_dynamicgps.c found gps.speed: %f", crt_point.speed);
+			//		mlt_log_info(filter, "found gps.speed: %f", crt_point.speed);
 					ptext+=7;
 				}
 				else if (strncmp(ptext, "<extensions>", 12) == 0)
@@ -791,7 +791,7 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 						{
 							ptext+=11;
 							crt_point.hr = (short)strtod(ptext, &ptext);
-				//			mlt_log_info(NULL, "filter_dynamicgps.c found gps.HR: %d", crt_point.hr);
+				//			mlt_log_info(filter, "found gps.HR: %d", crt_point.hr);
 							ptext+=11;
 						}
 					}
@@ -802,7 +802,7 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 		
 		//ignore points with missing or non increasing time!
 		if (crt_point.time == GPS_UNINIT || crt_point.time == 0 || (crt_nr_point-1>0 && crt_point.time<=pdata->gps_points[crt_nr_point-1].time)){
-			mlt_log_warning(NULL, "filter_dynamicgps.c dropping GPS point with invalid time: crt.time: %d, prev.time: %d", crt_point.time, pdata->gps_points[crt_nr_point-1].time);
+			mlt_log_warning(filter, "dropping GPS point with invalid time: crt.time: %d, prev.time: %d", crt_point.time, pdata->gps_points[crt_nr_point-1].time);
 			skipped_points++;
 			continue;
 		}
@@ -815,11 +815,11 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 	
 	//resize down array to only valid points:
 	if (skipped_points) {
-		mlt_log_info(NULL, "filter_dynamicgps.c realloc gps_points: (prev_size=%d, new_size=%d", nr_points, crt_nr_point);
+		mlt_log_info(filter, "realloc gps_points: (prev_size=%d, new_size=%d", nr_points, crt_nr_point);
 		pdata->gps_points_size = crt_nr_point;
 		pdata->gps_points = realloc(pdata->gps_points, crt_nr_point*sizeof(gps_point));
 		if (pdata->gps_points == NULL) {
-			mlt_log_error(NULL, "filter_dynamicgps.c memory alloc failed, BYE - realloc(size=%d)", crt_nr_point*sizeof(gps_point));
+			mlt_log_error(filter, "memory alloc failed, BYE - realloc(size=%d)", crt_nr_point*sizeof(gps_point));
 			cleanup_priv_data(pdata);
 			return;
 		}
@@ -828,10 +828,10 @@ static void process_gpx(mlt_filter filter, const char* file_content, int bytes_r
 	//debug
 	/*
 	for (i=0; i<MIN(5, pdata->gps_points_size); i++)
-		mlt_log_info(NULL, "filter_dynamicgps.c process_gpx gps_points[%d]: lat:%f lon:%f time:%d ",
+		mlt_log_info(filter, "process_gpx gps_points[%d]: lat:%f lon:%f time:%d ",
 			i, pdata->gps_points[i].lat, pdata->gps_points[i].lon, pdata->gps_points[i].time);
 	for (i=MAX(pdata->gps_points_size-5,0); i<pdata->gps_points_size; i++)
-		mlt_log_info(NULL, "filter_dynamicgps.c process_gpx gps_points[%d]: lat:%f lon:%f time:%d ",
+		mlt_log_info(filter, "process_gpx gps_points[%d]: lat:%f lon:%f time:%d ",
 			i, pdata->gps_points[i].lat, pdata->gps_points[i].lon, pdata->gps_points[i].time);
 	 */
 }
@@ -855,7 +855,7 @@ static time_t get_first_gps_time(mlt_filter filter)
 	{
 		if (gps_points[i].time && has_valid_location(gps_points[i]))
 		{
-		//	mlt_log_info(NULL, "filter_dynamicgps.cx get_first_gps_time found: %d", gps_points[i].time);
+			//mlt_log_info(filter, "get_first_gps_time found: %d", gps_points[i].time);
 			pdata->first_gps_time = gps_points[i].time;
 			return pdata->first_gps_time;
 		}
@@ -872,7 +872,7 @@ static time_t get_last_gps_time(mlt_filter filter)
 {
 	private_data* pdata = (private_data*)filter->child;
 	gps_point* gps_points = pdata->gps_points;
-	//mlt_log_info(NULL, "filter_dynamicgps.cx get_last_gps_time: pdata->gps address: %p, gps_pts=%p", pdata->gps_points, gps_points);
+	//mlt_log_info(filter, "get_last_gps_time: pdata->gps address: %p, gps_pts=%p", pdata->gps_points, gps_points);
 
 	if (pdata->last_gps_time)
 		return pdata->last_gps_time;
@@ -885,7 +885,7 @@ static time_t get_last_gps_time(mlt_filter filter)
 	{
 		if (gps_points[i].time && has_valid_location(gps_points[i]))
 		{
-			//mlt_log_info(NULL, "filter_dynamicgps.cx get_last_gps_time found: %d", gps_points[i].time);
+			//mlt_log_info(filter, "get_last_gps_time found: %d", gps_points[i].time);
 			pdata->last_gps_time = gps_points[i].time;
 			return pdata->last_gps_time;
 		}
@@ -917,7 +917,7 @@ static void process_gps_smoothing(mlt_filter filter, int req_smooth)
 	gps_point* gps_points = pdata->gps_points+offset;
 	int gps_points_size = pdata->gps_points_size-offset;
 
-	//mlt_log_info(NULL, "filter_dynamicgps.c process_gps_smoothing, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  pdata->gps_points, gps_points, pdata->gps_points_size, gps_points_size);
+	//mlt_log_info(filter, "process_gps_smoothing, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  pdata->gps_points, gps_points, pdata->gps_points_size, gps_points_size);
 
 	char interpolated = 0;
 	int i, j;
@@ -990,7 +990,7 @@ static void process_gps_smoothing(mlt_filter filter, int req_smooth)
 			{
 				//TODO: this should be a weighted "middle" point depending on time difference, not exactly midpoint if time is not halfway
 				midpoint_simple_2p(gps_points[i-1].lat, gps_points[i-1].lon, gps_points[i+1].lat, gps_points[i+1].lon, &gps_points[i].lat_smoothed, &gps_points[i].lon_smoothed);
-				//mlt_log_info(NULL, "filter_dynamicgpstext.c interpolating position for smooth=1, new point[%d]:%f,%f @time=%d", i, gps_points[i].lat_smoothed, gps_points[i].lon_smoothed, gps_points[i].time);
+				//mlt_log_info(filter, "interpolating position for smooth=1, new point[%d]:%f,%f @time=%d", i, gps_points[i].lat_smoothed, gps_points[i].lon_smoothed, gps_points[i].time);
 			}
 		}
 		else if (req_smooth > 1) //average X nearby values into current index
@@ -1026,7 +1026,7 @@ static void process_gps_smoothing(mlt_filter filter, int req_smooth)
 				gps_points[i].lat_smoothed = gps_points[i].lat;
 				gps_points[i].lon_smoothed = gps_points[i].lon;
 			}
-			//mlt_log_info(NULL, "filter_dynamicgps.c i=%d, lat_sum=%f, lon_sum=%f, nr_div=%d, time=%d", i, lat_sum, lon_sum, nr_div, gps_points[i].time);
+			//mlt_log_info(filter, "i=%d, lat_sum=%f, lon_sum=%f, nr_div=%d, time=%d", i, lat_sum, lon_sum, nr_div, gps_points[i].time);
 		}
 	}
 	if (req_smooth != 0)
@@ -1044,25 +1044,25 @@ static void process_gps_file (mlt_filter filter, mlt_frame frame, const char* lo
 	FILE *f = NULL;
 	int file_length = 0;
 	
-	//mlt_log_info(NULL, "filter_dynamicgps.c process_gps_file gps_file string: %s", location_filename==NULL?"null":location_filename);
+	//mlt_log_info(filter, "process_gps_file gps_file string: %s", location_filename==NULL?"null":location_filename);
 	
 	f = fopen( location_filename, "r" );
 	if (!f)
-		mlt_log_warning(NULL, "filter_dynamicgps.c couldn't open file to read - %s", location_filename);
+		mlt_log_warning(filter, "couldn't open file to read - %s", location_filename);
 	if (fseek(f, 0, SEEK_END)) {
-		mlt_log_warning(NULL, "filter_dynamicgps.c couldn't seek to end of file - %s", location_filename);
+		mlt_log_warning(filter, "couldn't seek to end of file - %s", location_filename);
 		fclose(f);
 		return;
 	}
 	//get filesize
 	if ((file_length = ftell(f)) == -1) {
-		mlt_log_warning(NULL, "filter_dynamicgps.c couldn't get size of file - %s", location_filename);
+		mlt_log_warning(filter, "couldn't get size of file - %s", location_filename);
 		fclose(f);
 		return;
 	}
 	//move cursor back at the start of file
 	if (fseek(f, 0, SEEK_SET)) {
-		mlt_log_warning(NULL, "filter_dynamicgps.c couldn't seek to end of file - %s", location_filename);
+		mlt_log_warning(filter, "couldn't seek to end of file - %s", location_filename);
 		fclose(f);
 		return;
 	}
@@ -1078,7 +1078,7 @@ static void process_gps_file (mlt_filter filter, mlt_frame frame, const char* lo
 	fclose(f);
 	file_content[bytes_read] = '\0';
 	
-	//mlt_log_info(NULL, "filter_dynamicgps.c process_gps_file bytes_read %d; &file_content=%p, starts:%.100s", bytes_read, file_content, file_content);
+	//mlt_log_info(filter, "process_gps_file bytes_read %d; &file_content=%p, starts:%.100s", bytes_read, file_content, file_content);
 	
 	if (bytes_read != file_length) {
 		mlt_log_warning(NULL, "read (%d) instead of expected bytes (%d) - %s", bytes_read, file_length, location_filename);
@@ -1114,7 +1114,7 @@ static void process_gps_file (mlt_filter filter, mlt_frame frame, const char* lo
 	else
 		strcpy (first_datetime, "--");
 	mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "gps_start_text", first_datetime);
-	//mlt_log_info(NULL, "filter_dynamicgps.c setting gps_start_text to %s", first_datetime);
+	//mlt_log_info(filter, "setting gps_start_text to %s", first_datetime);
 
 	free(file_content);
 }
@@ -1156,11 +1156,18 @@ static double convert_speed_to_format(double x, const char* format)
 	return x*3.6;
 }
 
+/** Returns the number of decimal values for floats
+*/
+static inline int decimals_needed(double x) {
+	if (x<10) return 2;
+	if (x<100) return 1;
+	return 0;
+}
+
 /** Does the actual replacement of keyword with valid data, also parses any keyword extra format
 */
 static void gps_point_to_output(gps_point crt_point, char* keyword, time_t video_time_original, char* gps_text)
 {
-	//TODO: for meters/feet output would look better without decimals
 	if ( !strncmp( keyword, "gps_lat_r", strlen("gps_lat_r") ) && crt_point.lat != GPS_UNINIT )
 	{
 		snprintf(gps_text, 10, "%3.6f", crt_point.lat);
@@ -1183,21 +1190,24 @@ static void gps_point_to_output(gps_point crt_point, char* keyword, time_t video
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_elev"))
 			format = keyword + strlen("gps_elev");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(crt_point.ele, format));
+		double val = convert_distance_to_format(crt_point.ele, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_speed_r", strlen("gps_speed_r") ) && crt_point.speed != GPS_UNINIT )
 	{
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_speed_r"))
 			format = keyword + strlen("gps_speed_r");
-		snprintf(gps_text, 10, "%.2f", convert_speed_to_format(crt_point.speed, format));
+		double val = convert_speed_to_format(crt_point.speed, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_speed_c", strlen("gps_speed_c") ) && crt_point.calc_speed != GPS_UNINIT )
 	{
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_speed_c"))
 			format = keyword + strlen("gps_speed_c");
-		snprintf(gps_text, 10, "%.2f", convert_speed_to_format(crt_point.calc_speed, format));
+		double val = convert_speed_to_format(crt_point.calc_speed, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_hr", strlen("gps_hr") ) && crt_point.hr != GPS_UNINIT )
 	{
@@ -1216,14 +1226,16 @@ static void gps_point_to_output(gps_point crt_point, char* keyword, time_t video
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_dist_r"))
 			format = keyword + strlen("gps_dist_r");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(crt_point.total_dist, format));
+		double val = convert_distance_to_format(crt_point.total_dist, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_dist_c", strlen("gps_dist_c") ) && crt_point.calc_total_dist != GPS_UNINIT )
 	{
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_dist_c"))
 			format = keyword + strlen("gps_dist_c");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(crt_point.calc_total_dist, format));
+		double val = convert_distance_to_format(crt_point.calc_total_dist, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 //	else if ( !strncmp( keyword, "gps_vdist_total", 15 ) && crt_point.calc_d_elev != GPS_UNINIT )
 //	{
@@ -1238,35 +1250,40 @@ static void gps_point_to_output(gps_point crt_point, char* keyword, time_t video
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_vdist_up"))
 			format = keyword + strlen("gps_vdist_up");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(abs(crt_point.calc_elev_up), format));
+		double val = convert_distance_to_format(abs(crt_point.calc_elev_up), format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_vdist_down", strlen("gps_vdist_down") ) && crt_point.calc_elev_down != GPS_UNINIT )
 	{
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_vdist_down"))
 			format = keyword + strlen("gps_vdist_down");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(abs(crt_point.calc_elev_down), format));
+		double val = convert_distance_to_format(abs(crt_point.calc_elev_down), format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_dist_uphill", strlen("gps_dist_uphill") ) && crt_point.calc_dist_up != GPS_UNINIT )
 	{
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_dist_uphill"))
 			format = keyword + strlen("gps_dist_uphill");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(crt_point.calc_dist_up, format));
+		double val = convert_distance_to_format(crt_point.calc_dist_up, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_dist_downhill", strlen("gps_dist_downhill") ) && crt_point.calc_dist_down != GPS_UNINIT )
 	{
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_dist_downhill"))
 			format = keyword + strlen("gps_dist_downhill");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(crt_point.calc_dist_down, format));
+		double val = convert_distance_to_format(crt_point.calc_dist_down, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_dist_flat", strlen("gps_dist_flat") ) && crt_point.calc_dist_flat != GPS_UNINIT )
 	{
 		char* format = NULL;
 		if (strlen(keyword) > strlen("gps_dist_flat"))
 			format = keyword + strlen("gps_dist_flat");
-		snprintf(gps_text, 10, "%.2f", convert_distance_to_format(crt_point.calc_dist_flat, format));
+		double val = convert_distance_to_format(crt_point.calc_dist_flat, format);
+		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_datetime_now", strlen("gps_datetime_now") ) && crt_point.time != GPS_UNINIT )
 	{
@@ -1292,7 +1309,7 @@ static void get_next_gps_frame_data (mlt_filter filter, mlt_frame frame, const t
 	
 	//if there's no file selected just return
 	if ( !location_filename || !strcmp(location_filename, "") ) {
-		//mlt_log_warning(NULL, "filter_dynamicgps.c get_next_gps_frame_data gps_file string null, %s", location_filename==0?"null":location_filename);
+		//mlt_log_warning(filter, "get_next_gps_frame_data gps_file string null, %s", location_filename==0?"null":location_filename);
 		return;
 	}
 	
@@ -1304,7 +1321,7 @@ static void get_next_gps_frame_data (mlt_filter filter, mlt_frame frame, const t
 			gps_proc_t = datetimeXMLstring_to_seconds(gps_processing_start_time, "%Y-%m-%d %H:%M:%S");
 		//if different start time is selected we must clear extra data, resmooth with level and recalculate
 		if (gps_proc_t != pdata->gps_proc_start_t) {
-			//mlt_log_info(NULL, "filter_dynamicgps.c get_next_gps_frame_data gps_processing_start_time=%s -> %d", gps_processing_start_time, gps_proc_t);
+			//mlt_log_info(filter, "get_next_gps_frame_data gps_processing_start_time=%s -> %d", gps_processing_start_time, gps_proc_t);
 			pdata->gps_proc_start_t = gps_proc_t;
 			process_gps_smoothing(filter, 0);
 			process_gps_smoothing(filter, crt_smooth);
@@ -1315,7 +1332,7 @@ static void get_next_gps_frame_data (mlt_filter filter, mlt_frame frame, const t
 	//check if the gps file has been changed, if not, just use current data
 	if (strcmp(pdata->last_filename, location_filename))
 	{
-		//mlt_log_info(NULL, "filter_dynamicgps.c get_next_gps_frame_data: last_filename (%s) != entered_filename (%s), reading data from file", pdata->last_filename, location_filename);
+		//mlt_log_info(filter, "get_next_gps_frame_data: last_filename (%s) != entered_filename (%s), reading data from file", pdata->last_filename, location_filename);
 		cleanup_priv_data(pdata);
 		strcpy(pdata->last_filename, location_filename);
 		process_gps_file(filter, frame, location_filename);
@@ -1341,44 +1358,18 @@ static void get_next_gps_frame_data (mlt_filter filter, mlt_frame frame, const t
 static time_t get_original_file_time_seconds (mlt_filter filter, mlt_frame frame)
 {
 	mlt_producer producer = mlt_producer_cut_parent( mlt_frame_get_original_producer( frame ) );
-	time_t ret_time = 0;
+	return mlt_producer_get_creation_time(producer)/1000;
+}
 
-	//method 1: use the creation_time provided by avfilter in avformat.h
-	ret_time = mlt_producer_get_creation_time(producer)/1000; //this is in milliseconds since epoch as an int64_t
-	//mlt_log_info(NULL, "filter_dynamicgps.cx mlt_producer_get_creation_time(): %lld", mlt_producer_get_creation_time(producer));
-
-	if (ret_time)
-		return ret_time;
-
-	//method 2: use the file's "modified time" as provided by OS,
-	//NOTE: from my tests this is usually the time a device finishes writing the file, so expect it to be inexact but better than nothing
-	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
-	char* filename = mlt_properties_get( producer_properties, "resource");
-	struct stat file_info;
-	if( !stat(filename, &file_info)) {
-		char date[MAX_TEXT_LEN];
-		const char *format = "%Y-%m-%dT%H:%M:%S";
-		struct tm* time_info = gmtime( &(file_info.st_mtime) );
-		strftime( date, MAX_TEXT_LEN, format, time_info );
-//		mlt_log_info(NULL, "filter_dynamicgps.c get_original_file_time_seconds, stat ok, file time=%d ; %s", file_info.st_mtime, date);
-		ret_time = file_info.st_mtime;
-	}
-	else {
-		mlt_log_warning(NULL, "filter_dynamicgps.c get_original_file_time_seconds, file stat NOT OK");
-		ret_time = 0;
-	}
-	return ret_time;
-}	
-
-/** Returns absolute current frame time in seconds (original Media Created + current timecode)
+/** Returns absolute current frame time in seconds (original media creation + current timecode)
  */
 static time_t get_current_frame_time (mlt_filter filter, mlt_frame frame)
-{      
+{
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	private_data* pdata = (private_data*)filter->child;
 	time_t ret_time = 0, fr_time = 0;
 	
-	//get original file's time:
+	//get original file time:
 	ret_time = get_original_file_time_seconds(filter, frame);
 
 	//assign the time to a property to show it in ui
@@ -1393,7 +1384,7 @@ static time_t get_current_frame_time (mlt_filter filter, mlt_frame frame)
 		ptm->tm_isdst = -1; //force dst detection
 		time_t time_local = mktime(ptm);
 		pdata->video_file_timezone_s = timezone-(ptm->tm_isdst*3600);
-		//mlt_log_info(NULL, "filter_dynamicgps.c get_current_frame_time, setting videofile_timezone_seconds=%d", pdata->video_file_timezone_s);
+		//mlt_log_info(filter, "get_current_frame_time, setting videofile_timezone_seconds=%d", pdata->video_file_timezone_s);
 		mlt_properties_set_int(properties, "videofile_timezone_seconds", pdata->video_file_timezone_s);
 	}
 
@@ -1406,19 +1397,19 @@ static time_t get_current_frame_time (mlt_filter filter, mlt_frame frame)
 		float sec = 0;
 		sscanf(s, "%d:%d:%f", &h, &m, &sec);
 		fr_time = h*3600 + m*60 + (int)sec;
-	//	mlt_log_info(NULL, "filter_dynamicgps.c get_current_frame_time, timecode: %s, timecode->seconds: %d", s, fr_time);
+	//	mlt_log_info(filter, "get_current_frame_time, timecode: %s, timecode->seconds: %d", s, fr_time);
 	}
 	else 
-		mlt_log_warning(NULL, "filter_dynamicgps.c get_current_frame_time, couldn't get timecode!");
+		mlt_log_warning(filter, "get_current_frame_time, couldn't get timecode!");
 
 	//check to see if we need to speed up/down the time
-	double video_timelapse_speed = mlt_properties_get_double(properties, "video_timelapse_speed");
-	if (pdata->video_timelapse_speed && pdata->video_timelapse_speed != video_timelapse_speed) {
-		pdata->video_timelapse_speed = video_timelapse_speed;
+	double speed_multiplier = mlt_properties_get_double(properties, "speed_multiplier");
+	if (pdata->speed_multiplier && pdata->speed_multiplier != speed_multiplier) {
+		pdata->speed_multiplier = speed_multiplier;
 	}
 
-//	mlt_log_info(NULL, "filter_dynamicgpstext.c get_current_frame_time: timelapse read:%f timecode s:%d, with timelapse ratio:%d", video_timelapse_speed, fr_time, (int)(fr_time*(pdata->video_timelapse_speed)));
-	fr_time *= pdata->video_timelapse_speed;
+//	mlt_log_info(filter, "get_current_frame_time: timelapse read:%f timecode s:%d, with timelapse ratio:%d", speed_multiplier, fr_time, (int)(fr_time*(pdata->speed_multiplier)));
+	fr_time *= pdata->speed_multiplier;
 
 	return ret_time + (int)fr_time;
 }
@@ -1438,7 +1429,7 @@ static void update_gpsoffsets_ui(mlt_filter filter, mlt_frame frame, int* video_
 	//read data from UI:
 	*video_offset1 = mlt_properties_get_int(properties, "major_offset");
 	*video_offset2 = mlt_properties_get_int(properties, "minor_offset");
-//	mlt_log_info(NULL, "filter_dynamicgps.c video_offset2 = %d", *video_offset2);
+//	mlt_log_info(filter, "video_offset2 = %d", *video_offset2);
 }
 
 /** Processes data and tries to replace the GPS keywords with actual values.
@@ -1464,7 +1455,7 @@ static void get_gps_str(const char* keyword, mlt_filter filter, mlt_frame frame,
 	//add offset to video time:
 	video_time_synced = video_time + video_offset1 + video_offset2;
 
-//	mlt_log_info(NULL, "filter_dynamicgps.cy get_gps_str, video_offset1: %d (1st gps: %d - 1st file: %d - crt vid_file: %d - sync_crt_file:%d)",
+//	mlt_log_info(filter, "get_gps_str, video_offset1: %d (1st gps: %d - 1st file: %d - crt vid_file: %d - sync_crt_file:%d)",
 //			video_offset1, get_first_gps_time(filter), get_original_file_time_seconds(filter, frame),
 //			video_time, video_time_synced);
 	
@@ -1603,7 +1594,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		return frame;
 
 	mlt_filter text_filter = mlt_properties_get_data( properties, "_text_filter", NULL );
-	mlt_properties text_filter_properties = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE(text_filter));
+	mlt_properties text_filter_properties = mlt_frame_unique_properties( frame, MLT_FILTER_SERVICE(text_filter) );
 
 	// Apply keyword substitution before passing the text to the filter.
 	char* result = calloc( 1, MAX_TEXT_LEN );
@@ -1668,7 +1659,7 @@ mlt_filter filter_dynamicgpstext_init( mlt_profile profile, mlt_service_type typ
 						"Speed: #gps_speed_c#km/h\n"
 						"Distance: #gps_dist_c#m\n"
 						"Altitude: #gps_elev#m\n\n"
-						"GPS time: #gps_datetime_now#\n"
+						"GPS time: #gps_datetime_now# UTC\n"
 						"GPS location: #gps_lat_c#, #gps_lon_c#"
 						);
 				mlt_properties_set_string( my_properties, "geometry", "10%/10%:80%x80%:100%" );
@@ -1689,7 +1680,7 @@ mlt_filter filter_dynamicgpstext_init( mlt_profile profile, mlt_service_type typ
 				mlt_properties_set_int( my_properties, "minor_offset", 0);
 				mlt_properties_set_int( my_properties, "smoothing_value", 5);
 				mlt_properties_set_int( my_properties, "videofile_timezone_seconds", 0);
-				mlt_properties_set_int( my_properties, "video_timelapse_speed", 1);
+				mlt_properties_set_int( my_properties, "speed_multiplier", 1);
 
 				filter->close = filter_close;
 				filter->process = filter_process;

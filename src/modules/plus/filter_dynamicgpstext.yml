@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
 identifier: dynamicgpstext
-title: Dynamic GPS text
+title: GPS text overlay
 version: 1
 copyright: Meltytech, LLC
 creator: Daniel F
@@ -136,17 +136,13 @@ parameters:
     mutable: yes
     widget: text
     
-  - identifier: video_timelapse_speed
-    title: Video timelapse speed
+  - identifier: speed_multiplier
+    title: Speed multiplier
     type: double
     description: >
       If the video file is a timelapse (or slow motion), use this value to set the
-      speed up/slow down ratio. Sample values: 30 for 30x timelapse, 0.25 for 4x 
-      slow motion footage. 
-      Note: this value is multiplied to current video time (seconds) and added 
-      to video start time (Media created field or file's modified time) after offsets
-      are applied. Keep in mind that if the timelapse video is not directly from 
-      camera it will likely have an unexpected start time. 
+      speed up/slow down ratio. 
+      Sample values: 30 for 30x timelapse, 0.25 for 4x slow motion footage. 
     default: 1
     readonly: no
     required: no
