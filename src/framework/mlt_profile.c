@@ -446,9 +446,17 @@ void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer )
 				profile->sample_aspect_num = mlt_properties_get_int( p, "meta.media.sample_aspect_num" );
 				profile->sample_aspect_den = mlt_properties_get_int( p, "meta.media.sample_aspect_den" );
 				profile->colorspace = mlt_properties_get_int( p, "meta.media.colorspace" );
-				profile->display_aspect_num = lrint( (double) profile->sample_aspect_num * profile->width
-					/ profile->sample_aspect_den );
-				profile->display_aspect_den = profile->height;
+				int n = profile->display_aspect_num = profile->sample_aspect_num * profile->width;
+				int m = profile->display_aspect_den = profile->sample_aspect_den * profile->height;
+				int gcd, remainder;
+				while (n) {
+					remainder = m % n;
+					m = n;
+					n = remainder;
+				}
+				gcd = m;
+				profile->display_aspect_num /= gcd;
+				profile->display_aspect_den /= gcd;
 				free( profile->description );
 				profile->description = strdup( "automatic" );
 				profile->is_explicit = 0;
