@@ -42,6 +42,8 @@ src/tests/Makefile
 src/tests/*/*
 !src/tests/*/*.cpp
 !src/tests/*/*.pro
+*CTestTestfile.cmake
+src/tests/test_*_autogen
 build
 *cmake_install.cmake
 .ninja_*
