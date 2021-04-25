@@ -37,7 +37,7 @@ set(MLTPP_SOVERSION "3")
 set_target_properties(mlt++ PROPERTIES SOVERSION ${MLTPP_SOVERSION} VERSION ${MLT_VERSION})
 
 if(WIN32)
-  target_compile_definitions(mlt++ PUBLIC MLTPP_EXPORTS)
+  target_compile_definitions(mlt++ PRIVATE MLTPP_EXPORTS)
 endif()
 
 set(MLTPP_PUPLIC_HEADERS
