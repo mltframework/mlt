@@ -71,6 +71,16 @@ parameters:
     mutable: yes
     widget: text
 
+  - identifier: speed
+    title: Speed
+    type: float
+    description: >
+      Clock speed multiplier. For example, speed 10.0 makes the timer tick 10
+      seconds for each second of playback.
+    default: 1.0
+    readonly: no
+    mutable: yes
+
   - identifier: direction
     title: Direction
     type: string
