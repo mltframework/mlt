@@ -14,8 +14,6 @@ target_link_libraries(mltplusgpl mlt m Threads::Threads)
 
 if(WIN32)
   target_link_libraries(mltplusgpl ws2_32)
-elseif(UNIX)
-  target_link_libraries(mltplusgpl rt)
 endif()
 
 # Create module in parent directory, for the benefit of "source setenv".
