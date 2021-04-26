@@ -38,7 +38,7 @@ double time_to_seconds( char* time )
 static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_position current_frame = mlt_filter_get_position( filter, frame );
+	mlt_position current_frame = mlt_filter_get_position( filter, frame ) * mlt_properties_get_double( properties, "speed" );
 	char* direction = mlt_properties_get( properties, "direction" );
 	double timer_start = time_to_seconds( mlt_properties_get( properties, "start" ) );
 	double timer_duration = time_to_seconds( mlt_properties_get( properties, "duration" ) );
@@ -160,6 +160,7 @@ mlt_filter filter_timer_init( mlt_profile profile, mlt_service_type type, const 
 		mlt_properties_set( my_properties, "start", "00:00:00.000" );
 		mlt_properties_set( my_properties, "duration", "00:10:00.000" );
 		mlt_properties_set( my_properties, "offset", "00:00:00.000" );
+		mlt_properties_set_double( my_properties, "speed", 1.0 );
 		mlt_properties_set( my_properties, "direction", "up" );
 		mlt_properties_set( my_properties, "geometry", "0%/0%:100%x100%:100%" );
 		mlt_properties_set( my_properties, "family", "Sans" );
