@@ -1,7 +1,0 @@
-#!/bin/sh
-if [ -s "config.log" ]; then
-	$(tail -1 config.log) $@
-else
-	echo The file \"config.log\" does not exist.
-	echo You must run configure first. 
-fi

@@ -1,16 +1,16 @@
 
 # Environment variable settings to allow execution without install
 
-export MLT_REPOSITORY=`pwd`/src/modules
-export MLT_DATA=`pwd`/src/modules
-export MLT_PROFILES_PATH=`pwd`/profiles
-export MLT_PRESETS_PATH=`pwd`/presets
+export MLT_REPOSITORY="`pwd`/out/lib/mlt"
+export MLT_DATA="`pwd`/out/share/mlt"
+export MLT_PROFILES_PATH="`pwd`/out/share/mlt/profiles"
+export MLT_PRESETS_PATH="`pwd`/out/share/mlt/presets"
 
-export LD_LIBRARY_PATH=\
-`pwd`/src/framework:\
-`pwd`/src/mlt++:\
-$LD_LIBRARY_PATH
 
-[ $(uname -s) = Darwin ] && export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
+if [ "$(uname -s)" = "Darwin" ]; then
+    export DYLD_LIBRARY_PATH="`pwd`/out/lib:$DYLD_LIBRARY_PATH"
+else
+    export LD_LIBRARY_PATH="`pwd`/out/lib:$LD_LIBRARY_PATH"
+fi
 
-export PATH=`pwd`/src/melt:$PATH
+export PATH="`pwd`/out/bin:$PATH"

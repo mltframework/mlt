@@ -8,8 +8,8 @@ Usage
 
 	Use the following definitions in a Makefile to compile and link with mlt++:
 
-		CXXFLAGS=`pkg-config --cflags mlt-framework` -Wall
-		LDFLAGS=-lmlt++ `pkg-config --libs mlt-framework`
+        CXXFLAGS=`pkg-config --cflags mlt-framework-7` -Wall
+        LDFLAGS=-lmlt++-7 `pkg-config --libs mlt-framework-7`
 
 	Include files for the classes can either be explicitly included, ie:
 

@@ -1,5 +1,0 @@
-#!/bin/sh
-
-echo "framework	-I$includedir -I$includedir/mlt -D_REENTRANT	-L$libdir -lmlt" >> ../../packages.dat
-
-echo > config.mak

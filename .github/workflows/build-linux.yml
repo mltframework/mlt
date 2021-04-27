@@ -26,35 +26,6 @@ jobs:
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
 
-  build-make:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Build C/C++ with configure & make
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
-          sudo apt-get -qq update
-          sudo apt-get -yqq build-dep mlt
-          ./configure --enable-gpl --enable-gpl3 --swig-languages=python
-          CPUS=$(grep "processor.*:" /proc/cpuinfo | wc -l)
-          make -j$(( $CPUS + 1 ))
-          sudo make install
-          cd src/tests
-          qmake -r tests.pro
-          make -j$(( $CPUS + 1 ))
-
-      - name: Run tests
-        env:
-          LD_LIBRARY_PATH: /usr/local/lib
-        run: |
-          sudo apt-get -yqq install kwalify
-          make validate-yml
-          sudo locale-gen de_DE.UTF-8
-          make -C src/tests check
-
   build-cmake:
     runs-on: ubuntu-20.04
     steps:
