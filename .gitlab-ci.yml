@@ -4,6 +4,7 @@ ubuntu-latest:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
+        - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
             # there's no `check` or `test` `make` target
 
@@ -13,33 +14,38 @@ ubuntu-lts:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
+        - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
             # there's no `check` or `test` `make` target
 
 debian-unstable:
     image: debian:unstable
     script:
-        - echo -e 'deb-src http://deb.debian.org/debian buster main\ndeb-src http://deb.debian.org/debian buster-updates main\ndeb-src http://security.debian.org buster/updates main' >> /etc/apt/sources.list
+        - echo 'deb-src http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
+        - apt-get -yqq install cmake
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
             # there's no `check` or `test` `make` target
 
 debian-testing:
     image: debian:testing
     script:
-        - echo -e 'deb-src http://deb.debian.org/debian buster main\ndeb-src http://deb.debian.org/debian buster-updates main\ndeb-src http://security.debian.org buster/updates main' >> /etc/apt/sources.list
+        - echo 'deb-src http://deb.debian.org/debian testing main' >> /etc/apt/sources.list
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
+        - apt-get -yqq install cmake
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
             # there's no `check` or `test` `make` target
 
 debian-stable:
     image: debian:stable
     script:
-        - echo -e 'deb-src http://deb.debian.org/debian stretch main\ndeb-src http://deb.debian.org/debian stretch-updates main\ndeb-src http://security.debian.org stretch/updates main' >> /etc/apt/sources.list
+        - echo -e 'deb-src http://deb.debian.org/debian stable main\ndeb-src http://deb.debian.org/debian stable-updates main\ndeb-src http://security.debian.org stable/updates main' >> /etc/apt/sources.list
+        - echo 'deb http://deb.debian.org/debian buster-backports main' >> /etc/apt/sources.list
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
+        - apt-get -yqq -t buster-backports install cmake
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
             # there's no `check` or `test` `make` target
 
@@ -47,7 +53,7 @@ fedora-33:
     image: fedora:33
     script:
         - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
 
@@ -55,7 +61,7 @@ fedora-32:
     image: fedora:32
     script:
         - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
 
@@ -63,7 +69,7 @@ fedora-31:
     image: fedora:31
     script:
         - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
 
@@ -71,6 +77,6 @@ fedora-30:
     image: fedora:30
     script:
         - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
