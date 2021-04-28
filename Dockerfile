@@ -21,6 +21,8 @@ RUN wget --quiet -O /tmp/build-melt.sh https://raw.githubusercontent.com/mltfram
   echo "SOURCE_DIR=\"/tmp/melt\"" >> /tmp/build-melt.conf && \
   echo "AUTO_APPEND_DATE=0" >> /tmp/build-melt.conf && \
   echo "ENABLE_WEBVFX=1" >> /tmp/build-melt.conf && \
+  echo "FFMPEG_HEAD=0" >> /tmp/build-melt.conf && \
+  echo "FFMPEG_REVISION=origin/release/4.4" >> /tmp/build-melt.conf && \
   bash /tmp/build-melt.sh -c /tmp/build-melt.conf
 
 

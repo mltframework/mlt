@@ -1,6 +1,93 @@
 MLT Release Notes
 -----------------
 
+Version 7.0.0
+
+This is a major new version that breaks API to add a major new feature to the
+framework: retiming. This is accomplished through new classes `mlt_chain` and
+`mlt_link`. And since we are breaking API we decided to clean house by
+removing deprecations and switching the build system over entirely to CMake.
+For more information see our
+[migration guide](https://mltframework.org/docs/v7migration/).
+
+Framework
+  * Added `mlt_chain` and `Mlt::Chain` classes.
+  * Added `mlt_link` and `Mlt::Link` classes.
+  * Added a `link` value to service `type` in the service metadata schema.
+  * Added a boolean `animation` parameter attribute to the service metadata schema.
+  * Added `mlt_animation_shift_frame()` and `Mlt::Animation::shift_frames()`.
+  * Added `mlt_animation_get_string()`.
+  * Fixed using a stale cached property animation string.
+  * Added `mlt_image` and `Mlt::Image` classes.
+  * Remove legacy "height + 1" workaround in image allocation.
+  * Fixed a crash on setting `timewarp` speed higher than 23x.
+  * Added `mlt_audio_silence()`.
+  * Removed `mlt_image_opengl`.
+  * Replaced variadic arguments in `mlt_events` with new `mlt_event_data` APIs.
+  * Removed `mlt_geometry` APIs.
+  * Renamed `mlt_image_rgb24a` as `mlt_image_rgba`.
+  * Renamed `mlt_image_rgb24` to `mlt_image_rgb`.
+  * Renamed `mlt_image_glsl` to `mlt_image_movit`.
+  * Renamed `mlt_image_glsl_texture` to `mlt_image_opengl_texture`.
+  * Removed virtual function `mlt_frame::get_alpha_mask()`.
+  * Removed `mlt_frame_get_alpha_mask()`.
+  * Removed deprecated functions:
+    - `mlt_sample_calculator`
+    - `mlt_sample_calculator_to_now`
+    - `mlt_channel_layout_name`
+    - `mlt_channel_layout_id`
+    - `mlt_channel_layout_channels`
+    - `mlt_channel_layout_default`
+    - `mlt_slices_init`
+    - `mlt_slices_close`
+    - `mlt_slices_run`
+    - `mlt_playlist_move_region`
+    - `Mlt::Playlist::move_region`
+  * Fixed a rounding error calculating display aspect ratio in `mlt_profile_from_producer()`.
+
+Modules
+  * Added a `timeremap` link to the core module with animatable `map` property.
+    (Speed can increase or decrease between keyframes including reverse.)
+  * Added `chain` and `link` XML elements to `xml` module.
+  * Added "meta.media.has_b_frames" property to `avformat` producer.
+  * Removed deprecated modules:
+    - `dv`
+    - `gtk2` (not gdk)
+    - `kino`
+    - `linsys`
+    - `lumas`
+    - `motion_est`
+    - `swfdec`
+    - `videostab`
+  * Removed the following services:
+    - `data_feed` filter
+    - `data_show` filter
+    - `region` filter and transition
+    - `sdl_image`
+  * Converted filters to use new `mlt_image` class:
+    - `brightness`
+    - `imageconver`
+    - `mirror`
+    - `spot_remover`
+  * Deprecated the `audiowave` filter.
+  * Added the ability to build the `jackrack` module without JACK to get only
+    LADSPA producers and filters.
+  * Deprecated `start` and `end` properties for the following filters:
+    - `brightness`
+    - `panner`
+    - `boxblur`
+    - `wave`
+    - `volume`
+  * Removed deprecated `font` property from `pango` producer.
+  * Improved album art (attached pic) detection in `avformat` producer.
+  * Improved the `resample` filter to have less artifacts and use less memory.
+
+Other
+  * CMake: nearly complete rewrite.
+  * Removed the old configure bash scripts and Makefiles.
+  * Added `-chain` and `-link` options to `melt` command line.
+
+
 Version 6.26.1
 
 This version fixes a major regression in the avformat producer to read from
