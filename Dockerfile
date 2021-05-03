@@ -20,7 +20,6 @@ RUN wget --quiet -O /tmp/build-melt.sh https://raw.githubusercontent.com/mltfram
   echo "INSTALL_DIR=\"/usr/local\"" > /tmp/build-melt.conf && \
   echo "SOURCE_DIR=\"/tmp/melt\"" >> /tmp/build-melt.conf && \
   echo "AUTO_APPEND_DATE=0" >> /tmp/build-melt.conf && \
-  echo "ENABLE_WEBVFX=1" >> /tmp/build-melt.conf && \
   echo "FFMPEG_HEAD=0" >> /tmp/build-melt.conf && \
   echo "FFMPEG_REVISION=origin/release/4.4" >> /tmp/build-melt.conf && \
   bash /tmp/build-melt.sh -c /tmp/build-melt.conf
@@ -53,4 +52,4 @@ WORKDIR /mnt
 # Qt, Movit, and WebVfx require xvfb-run
 # IMPORTANT: xvfb-run requires docker run option "--init"
 # https://docs.docker.com/engine/reference/commandline/run/
-ENTRYPOINT ["/usr/bin/xvfb-run", "-a", "/usr/local/bin/qmelt"]
+ENTRYPOINT ["/usr/bin/xvfb-run", "-a", "/usr/local/bin/melt"]
