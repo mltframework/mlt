@@ -48,6 +48,9 @@ RUN apt-get install -yqq libsamplerate0 libxml2 libjack0 \
 COPY --from=build /usr/local/ /usr/local/
 
 WORKDIR /mnt
+ENV LD_LIBRARY_PATH /usr/local/lib
+ENV MLT_REPOSITORY /usr/local/lib/mlt-7
+ENV MLT_DATA /usr/local/share/mlt-7
 
 # Qt, Movit, and WebVfx require xvfb-run
 # IMPORTANT: xvfb-run requires docker run option "--init"
