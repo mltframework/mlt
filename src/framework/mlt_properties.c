@@ -44,6 +44,8 @@
 #include <locale.h>
 #include <float.h>
 
+#define MAX_LOAD_LINE_SIZE 4096
+
 /** \brief private implementation of the property list */
 
 typedef struct
@@ -206,11 +208,11 @@ static int load_properties( mlt_properties self, const char *filename )
 	if ( file != NULL )
 	{
 		// Temp string
-		char temp[ 1024 ];
-		char last[ 1024 ] = "";
+		char temp[ MAX_LOAD_LINE_SIZE ];
+		char last[ MAX_LOAD_LINE_SIZE ] = "";
 
 		// Read each string from the file
-		while( fgets( temp, 1024, file ) )
+		while( fgets( temp, MAX_LOAD_LINE_SIZE, file ) )
 		{
 			// Chomp the new line character from the string
 			int x = strlen( temp ) - 1;
@@ -220,7 +222,7 @@ static int load_properties( mlt_properties self, const char *filename )
 			// Check if the line starts with a .
 			if ( temp[ 0 ] == '.' )
 			{
-				char temp2[ 1024 ];
+				char temp2[ MAX_LOAD_LINE_SIZE ];
 				strcpy( temp2, last );
 				strncat( temp2, temp, sizeof(temp2) - strlen(temp2) - 1 );
 				strcpy( temp, temp2 );
@@ -1875,7 +1877,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 		if ( file )
 		{
 			// Temp string
-			char temp[ 1024 ];
+			char temp[ MAX_LOAD_LINE_SIZE ];
 			char *ptemp = &temp[ 0 ];
 
 			// Default to LC_NUMERIC = C
@@ -1889,7 +1891,7 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 			mlt_deque_push_back_int( context->index_stack, 0 );
 
 			// Read each string from the file
-			while( fgets( temp, 1024, file ) )
+			while( fgets( temp, MAX_LOAD_LINE_SIZE, file ) )
 			{
 				// Check for end-of-stream
 				if ( strncmp( ptemp, "...", 3 ) == 0 )
