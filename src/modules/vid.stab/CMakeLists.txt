@@ -13,4 +13,4 @@ set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODU
 
 install(TARGETS mltvidstab LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES filter_deshake.yml filter_vidstab.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/vidstab)
+install(FILES filter_deshake.yml filter_vidstab.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/vid.stab)
