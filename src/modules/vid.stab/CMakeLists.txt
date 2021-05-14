@@ -12,4 +12,4 @@ set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY ..)
 
 install(TARGETS mltvidstab LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/mlt)
 
-install(FILES filter_deshake.yml filter_vidstab.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/vidstab)
+install(FILES filter_deshake.yml filter_vidstab.yml DESTINATION ${CMAKE_INSTALL_DATADIR}/mlt/vid.stab)
