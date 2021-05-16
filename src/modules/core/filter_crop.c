@@ -1,6 +1,6 @@
 /*
  * filter_crop.c -- cropping filter
- * Copyright (C) 2009-2020 Meltytech, LLC
+ * Copyright (C) 2009-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -170,12 +170,13 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			double input_ar = aspect_ratio * width / height;
 			double output_ar = mlt_profile_dar( mlt_service_profile( MLT_FILTER_SERVICE(filter) ) );
 			int bias = mlt_properties_get_int( filter_props, "center_bias" );
-			
+			mlt_log_verbose(filter, "bias %d ", bias);
+
 			if ( input_ar > output_ar )
 			{
 				left = right = ( width - rint( output_ar * height / aspect_ratio ) ) / 2;
 				if ( use_profile )
-					bias *= width / profile->width;
+					bias = bias * width / profile->width;
 				if ( abs(bias) > left )
 					bias = bias < 0 ? -left : left;
 				left -= bias;
@@ -185,7 +186,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			{
 				top = bottom = ( height - rint( aspect_ratio * width / output_ar ) ) / 2;
 				if ( use_profile )
-					bias *= height / profile->height;
+					bias = bias * height / profile->height;
 				if ( abs(bias) > top )
 					bias = bias < 0 ? -top : top;
 				top -= bias;
