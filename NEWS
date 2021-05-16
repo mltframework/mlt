@@ -1,6 +1,19 @@
 MLT Release Notes
 -----------------
 
+Version 7.0.1
+
+This version is just build fixes for the most immediate problems with the
+somewhat new but exclusive build system in v7.
+
+* Fixed docker image not working.
+* Fixed a system-installed build cannot finds its modules and data.
+* Fixed the python installation path for binaries.
+* Added support for the `DESTDIR` environment variable when creating melt symlink.
+* Increased the build constant for the maximum size of a line of a properties file.
+* Fixed the vid.stab metadata install path.
+
+
 Version 7.0.0
 
 This is a major new version that breaks API to add a major new feature to the
