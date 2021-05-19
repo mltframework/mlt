@@ -170,7 +170,6 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			double input_ar = aspect_ratio * width / height;
 			double output_ar = mlt_profile_dar( mlt_service_profile( MLT_FILTER_SERVICE(filter) ) );
 			int bias = mlt_properties_get_int( filter_props, "center_bias" );
-			mlt_log_verbose(filter, "bias %d ", bias);
 
 			if ( input_ar > output_ar )
 			{
