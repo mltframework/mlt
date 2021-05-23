@@ -19,7 +19,7 @@ arnr_max_frames=7
 arnr_strength=5
 arnr_type=3
 auto-alt-ref=0
-mlt_image_format=rgb24a
+mlt_image_format=rgba
 pix_fmt=yuva420p
 
 meta.preset.name=alpha/WebM VP8 with alpha channel

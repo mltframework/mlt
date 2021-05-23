@@ -1,6 +1,6 @@
 f=avi
 vcodec=utvideo
-mlt_image_format=rgb24a
+mlt_image_format=rgba
 pix_fmt=gbrap
 g=1
 bf=0
