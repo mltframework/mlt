@@ -54,7 +54,7 @@ private Q_SLOTS:
 		QVERIFY(i.plane(0) != nullptr);
 	}
 
-	void PlaneAndStrideRgb24()
+	void PlaneAndStrideRgb()
 	{
 		Image i(1920, 1080, mlt_image_rgb );
 		QVERIFY(i.plane(0) != nullptr);
@@ -67,7 +67,7 @@ private Q_SLOTS:
 		QCOMPARE(i.stride(3), 0);
 	}
 
-	void PlaneAndStrideRgb24a()
+	void PlaneAndStrideRgba()
 	{
 		Image i(1920, 1080, mlt_image_rgba );
 		QVERIFY(i.plane(0) != nullptr);

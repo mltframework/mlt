@@ -34,8 +34,8 @@ parameters:
     description: Set to the same image format that the transition needs.
     values:
     mutable: yes
-    default: rgb24a
+    default: rgba
     values:
       - yuv422
-      - rgb24
-      - rgb24a
+      - rgb
+      - rgba

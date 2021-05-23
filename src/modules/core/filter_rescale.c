@@ -31,10 +31,10 @@
  *
  * image scaler implementations are expected to support the following in and out formats:
  * yuv422 -> yuv422
- * rgb24 -> rgb24
- * rgb24a -> rgb24a
- * rgb24 -> yuv422
- * rgb24a -> yuv422
+ * rgb -> rgb
+ * rgba -> rgba
+ * rgb -> yuv422
+ * rgba -> yuv422
  */
 
 typedef int ( *image_scaler )( mlt_frame frame, uint8_t **image, mlt_image_format *format, int iwidth, int iheight, int owidth, int oheight );

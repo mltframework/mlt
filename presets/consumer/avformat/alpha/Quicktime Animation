@@ -3,7 +3,7 @@ vcodec=qtrle
 g=1
 bf=0
 progressive=1
-mlt_image_format=rgb24a
+mlt_image_format=rgba
 pix_fmt=argb
 
 meta.preset.extension=mov

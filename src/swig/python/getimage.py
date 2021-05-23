@@ -25,6 +25,6 @@ frame.set("consumer_deinterlace", 1)
 
 # Now we are ready to get the image and save it.
 size = (profile.width(), profile.height())
-rgb = frame.get_image(mlt.mlt_image_rgb24, *size)
+rgb = frame.get_image(mlt.mlt_image_rgb, *size)
 img = Image.fromstring('RGB', size, rgb)
 img.save(sys.argv[1] + '.png')
