@@ -249,6 +249,8 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 	{
 		return 1;
 	}
+	int requested_width = *width;
+	int requested_height = *height;
 	double source_time = mlt_properties_get_double( unique_properties, "source_time");
 	double source_fps = mlt_properties_get_double( unique_properties, "source_fps");
 
@@ -262,20 +264,28 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 		char key[19];
 		sprintf( key, "%d", in_frame_pos );
 		mlt_frame src_frame = (mlt_frame)mlt_properties_get_data( unique_properties, key, NULL );
-		if ( src_frame && !mlt_frame_get_image( src_frame, &images[image_count], format, width, height, 0 ) )
-		{
-			colorspace = mlt_properties_get_int( MLT_FRAME_PROPERTIES(src_frame), "colorspace" );
-			in_frame_pos++;
-			image_count++;
-		}
-		else
+		if ( !src_frame )
 		{
 			break;
 		}
+		if ( mlt_frame_get_image( src_frame, &images[image_count], format, &requested_width, &requested_height, 0 ) != 0 )
+		{
+			mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get image %s\n", key );
+			break;
+		}
+		if ( *width != requested_width || *height != requested_height )
+		{
+			mlt_log_error( MLT_LINK_SERVICE(self), "Dimension Mismatch (%s): %dx%d != %dx%d\n", key, requested_width, requested_height, *width, *height );
+			break;
+		}
+		colorspace = mlt_properties_get_int( MLT_FRAME_PROPERTIES(src_frame), "colorspace" );
+		in_frame_pos++;
+		image_count++;
 	}
 
 	if ( image_count <= 0 )
 	{
+		mlt_log_error( MLT_LINK_SERVICE(self), "No images to blend\n" );
 		return 1;
 	}
 
