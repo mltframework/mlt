@@ -161,19 +161,34 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 
 static void create_filter( mlt_profile profile, mlt_producer producer, char *effect, int *created )
 {
-	mlt_filter filter;
+	mlt_filter filter = NULL;
+	int i = 0;
 	char *id = strdup( effect );
 	char *arg = strchr( id, ':' );
 	if ( arg != NULL )
 		*arg ++ = '\0';
 
-	filter = mlt_factory_filter( profile, id, arg );
-	if ( filter )
+	for ( i = 0; ( filter = mlt_service_filter( MLT_PRODUCER_SERVICE(producer), i ) ) != NULL; i ++ )
 	{
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
-		mlt_producer_attach( producer, filter );
-		mlt_filter_close( filter );
-		*created = 1;
+		// Check if this filter already exists
+		char* filter_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "mlt_service");
+		if ( filter_id && strcmp( id, filter_id ) == 0 )
+		{
+			*created = 1;
+			break;
+		}
+	}
+
+	if ( !*created )
+	{
+		filter = mlt_factory_filter( profile, id, arg );
+		if ( filter )
+		{
+			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
+			mlt_producer_attach( producer, filter );
+			mlt_filter_close( filter );
+			*created = 1;
+		}
 	}
 	free( id );
 }
