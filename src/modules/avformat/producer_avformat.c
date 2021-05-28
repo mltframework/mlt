@@ -2163,7 +2163,7 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 #if USE_HWACCEL
 		if ( self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE || self->hwaccel.pix_fmt == AV_PIX_FMT_NONE ) 
 		{
-			mlt_log_verbose( MLT_PRODUCER_SERVICE( self->parent ), "missing hwaccel parameters. skipping hardware initialization\n" );
+			mlt_log_debug( MLT_PRODUCER_SERVICE( self->parent ), "missing hwaccel parameters. skipping hardware initialization\n" );
 			goto skip_hwaccel;
 		}
 
