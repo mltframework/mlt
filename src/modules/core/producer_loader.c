@@ -163,6 +163,7 @@ static void create_filter( mlt_profile profile, mlt_producer producer, char *eff
 {
 	mlt_filter filter = NULL;
 	int i = 0;
+	int exists = 0;
 	char *id = strdup( effect );
 	char *arg = strchr( id, ':' );
 	if ( arg != NULL )
@@ -174,18 +175,30 @@ static void create_filter( mlt_profile profile, mlt_producer producer, char *eff
 		char* filter_id = mlt_properties_get( MLT_FILTER_PROPERTIES(filter), "mlt_service");
 		if ( filter_id && strcmp( id, filter_id ) == 0 )
 		{
+			exists = 1;
 			*created = 1;
+			break;
+		}
+		else if ( mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "_loader") == 0 )
+		{
+			// Stop at the first non-loader filter. This will be the insertion point for the new filter.
 			break;
 		}
 	}
 
-	if ( !*created )
+	if ( !exists )
 	{
 		filter = mlt_factory_filter( profile, id, arg );
 		if ( filter )
 		{
 			mlt_properties_set_int( MLT_FILTER_PROPERTIES( filter ), "_loader", 1 );
 			mlt_producer_attach( producer, filter );
+			int last_filter_index = mlt_service_filter_count( MLT_PRODUCER_SERVICE(producer) ) - 1;
+			if ( i != last_filter_index )
+			{
+				// Move the filter to be before any non-loader filters;
+				mlt_service_move_filter( MLT_PRODUCER_SERVICE(producer), last_filter_index, i );
+			}
 			mlt_filter_close( filter );
 			*created = 1;
 		}
