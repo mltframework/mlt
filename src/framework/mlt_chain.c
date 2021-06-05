@@ -83,7 +83,7 @@ mlt_chain mlt_chain_init( mlt_profile profile )
 			// Generate local space
 			self->local = calloc( 1, sizeof( mlt_chain_base ) );
 			mlt_chain_base* base = self->local;
-			base->source_profile = mlt_profile_init(NULL);
+			base->source_profile = NULL;
 
 			// Listen to property changes to pass along to the source
 			mlt_events_listen( MLT_CHAIN_PROPERTIES(self), self, "property-changed", ( mlt_listener )chain_property_changed );
@@ -117,6 +117,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		// Clean up from previous source
 		mlt_producer_close( base->source );
 		mlt_properties_close( base->source_parameters );
+		mlt_profile_close( base->source_profile );
 
 		// Save the source producer
 		base->source = source;
@@ -177,9 +178,6 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 
 		// Monitor property changes from the source to pass to the chain.
 		mlt_events_listen( source_properties, self, "property-changed", ( mlt_listener )source_property_changed );
-
-		// Save the native source producer profile
-		mlt_profile_from_producer( base->source_profile, base->source );
 
 		// This chain will control the speed and in/out
 		mlt_producer_set_speed( base->source, 0.0 );
@@ -416,6 +414,11 @@ static void relink_chain( mlt_chain self )
 	mlt_chain_base *base = self->local;
 	mlt_profile profile = mlt_service_profile( MLT_CHAIN_SERVICE(self) );
 
+	if ( !base->source )
+	{
+		return;
+	}
+
 	if ( base->link_count == 0 )
 	{
 		base->begin = base->source;
@@ -424,6 +427,13 @@ static void relink_chain( mlt_chain self )
 	}
 	else
 	{
+		if ( !base->source_profile )
+		{
+			// Save the native source producer profile
+			base->source_profile = mlt_profile_init(NULL);
+			mlt_profile_from_producer( base->source_profile, base->source );
+		}
+
 		// Set the producer to be in native frame rate
 		mlt_service_set_profile( MLT_PRODUCER_SERVICE(base->source), base->source_profile );
 
