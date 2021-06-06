@@ -26,7 +26,7 @@ Compilation
 
 Once configured, it should be sufficient to run:
 
-    cmake --build
+    cmake --build .
 
 to compile the system. Alternatively, you can run `cmake` with `-G Ninja` and use ninja to compile.
 
@@ -48,7 +48,7 @@ Installation
 
 The install is triggered by running:
 
-    cmake --install
+    cmake --install .
 
 
 More Information
