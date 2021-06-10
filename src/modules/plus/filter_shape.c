@@ -57,7 +57,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Render the frame
 	*format = mlt_image_yuv422;
 	*width -= *width % 2;
-	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 &&
+	if ( mlt_frame_get_image( frame, image, format, width, height, 1 ) == 0 &&
 		 ( !use_luminance || !use_mix || (int) mix != 1 || invert == 255 ) )
 	{
 		// Obtain a scaled/distorted mask to match

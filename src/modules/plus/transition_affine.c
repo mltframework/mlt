@@ -486,9 +486,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			mlt_properties_set( b_props, "rescale.interp", mlt_properties_get( a_props, "rescale.interp" ) );
 			// Disable padding (resize filter)
 			mlt_properties_set_int( b_props, "distort", 1 );
-	} else if (!mlt_properties_get_int(b_props, "interpolation_not_required")
-			   && (fill || distort || b_width > result.w || b_height > result.h
-				   || mlt_properties_get_int(properties, "b_scaled") || mlt_properties_get_int(b_props, "always_scale"))) {
+	} else if (mlt_properties_get_int(b_props, "always_scale") || (!mlt_properties_get_int(b_props, "interpolation_not_required")
+			  && (fill || distort || b_width > result.w || b_height > result.h || mlt_properties_get_int(properties, "b_scaled")))) {
 		// Request b frame image scaled to what is needed.
 		b_height = CLAMP(result.h, 1, MLT_AFFINE_MAX_DIMENSION);
 		b_width  = MAX(b_height * b_dar / b_ar, 1);
