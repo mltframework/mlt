@@ -4,6 +4,7 @@ vcodec=libx264
 threads=0
 vpre=medium
 preset=medium
+vprofile=high
 fastfirstpass=1
 partitions=-parti8x8-parti4x4-partp8x8-partb8x8
 me_method=dia
