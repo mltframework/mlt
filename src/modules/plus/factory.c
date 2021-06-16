@@ -28,7 +28,6 @@ extern mlt_filter filter_chroma_init( mlt_profile profile, mlt_service_type type
 extern mlt_filter filter_chroma_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_dynamictext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_dynamic_loudness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_invert_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_lift_gamma_gain_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_loudness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -69,7 +68,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_filter_type, "chroma_hold", filter_chroma_hold_init );
 	MLT_REGISTER( mlt_service_filter_type, "dynamictext", filter_dynamictext_init );
 	MLT_REGISTER( mlt_service_filter_type, "dynamic_loudness", filter_dynamic_loudness_init );
-	MLT_REGISTER( mlt_service_filter_type, "gpstext", filter_gpstext_init );
 	MLT_REGISTER( mlt_service_filter_type, "invert", filter_invert_init );
 	MLT_REGISTER( mlt_service_filter_type, "lift_gamma_gain", filter_lift_gamma_gain_init );
 	MLT_REGISTER( mlt_service_filter_type, "loudness", filter_loudness_init );
@@ -100,7 +98,6 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "chroma_hold", metadata, "filter_chroma_hold.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "dynamictext", metadata, "filter_dynamictext.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "dynamic_loudness", metadata, "filter_dynamic_loudness.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "gpstext", metadata, "filter_gpstext.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "invert", metadata, "filter_invert.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "lift_gamma_gain", metadata, "filter_lift_gamma_gain.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "loudness", metadata, "filter_loudness.yml" );
