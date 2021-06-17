@@ -22,35 +22,32 @@ parameters:
     description: |
       The text to overlay. May include keywords enclosed in "#".
       Keywords include:
-        * #gps_lat_r#         - the raw GPS latitude value, as read from file
-        * #gps_lon_r#         - the raw GPS longitude value, as read from file
-        * #gps_lat_c#         - the smoothed GPS latitude value
-        * #gps_lon_c#         - the smoothed GPS longitude value
-        * #gps_elev#          - the GPS altitude value (if present in gps file)
-        * #gps_speed_r#       - the raw GPS speed (if present in gps file)
-        * #gps_speed_c#       - the computed GPS speed
-        * #gps_dist_r#        - the raw total distance so far (if present in gps file)
-        * #gps_dist_c#        - the computed total travelled distance
-        * #gps_datetime_now#  - date and time of current gps point shown (UTC)
-        * #file_datetime_now# - date and time of current frame in video file (absolute)
-        * #hr#                - heart rate (if present in file)
+        * #gps_lat#           - the GPS latitude value
+        * #gps_lon#           - the GPS longitude value
+        * #gps_elev#          - the GPS altitude value
+        * #gps_speed#         - GPS speed 
+        * #gps_dist#          - total distance so far 
+        * #gps_datetime_now#  - date and time of current gps point shown
+        * #file_datetime_now# - date and time of current frame in video file
+        * #hr#                - heart rate (if present in gps file)
         * #gps_bearing#       - current GPS bearing (degrees 0-360)
         * #gps_compass#       - current GPS direction (8 divisions: N, NE, E, etc)
-        * #gps_vdist_up#      - total GPS altitude gain so far (computed)
+        * #gps_vdist_up#      - total GPS altitude gain so far
         * #gps_vdist_down#    - total GPS altitude loss so far
         * #gps_dist_uphill#   - total distance travelled uphill so far
         * #gps_dist_downhill# - total distance travelled downhill so far
         * #gps_dist_flat#     - total distance travelled on flat area so far
-      The r in keyword stands for "raw" and c for "computed". If a keyword can't 
-      produce valid data it returns "--".
+      An extra word "RAW" (uppercase!) can be added to the keyword to display the 
+      unchanged value from the file. If a keyword can't produce valid data it will 
+      print "--".
       Time-based keywords can include a strftime format string to customize the
-      output as long as you put some delimiter except "#" between the keyword
-      and the format string and the keyword comes first. For example, 
-      "#localtime %I:%M:%S %p#" shows only the time in 12-hour format.
+      output and a number (representing seconds) preceeded by '+' or '-' which will 
+      offset the actual time. For example,  "#gps_datetime_now %I:%M:%S %p +3600#" shows 
+      only the time in 12-hour format, offset by 1 hour.
       Speed and distance keywords may include an extra format keyword to convert 
       the value to metric/imperial units. Default is meters and km/h respectively.
       Supported formats, distance: m|meter, km|kilometer*, mi|mile*, ft|feet;
-      speed: ms|m/s|meter, km|km/h|kilometer, mi|mi/h|mile, ft|ft/s|feet.
+      speed: ms|m/s|meter, km|km/h|kilo, mi|mi/h|mile, ft|ft/s|feet.
       Computed values are calculated since begining of GPS file or since 
       "gps_processing_start_time" property, if set.
       The # may be escaped with "\".
@@ -101,7 +98,7 @@ parameters:
     required: no
     mutable: yes
     widget: spinner
-    
+
   - identifier: smoothing_value
     title: Smoothing level
     type: integer
@@ -111,9 +108,6 @@ parameters:
       A value of 1 does not smooth locations, it only calculates the extra 
       fields (speed, distance, etc) it also interpolates missing values for
       heart rate and altitude. 
-      After setting this value to non zero the interpolated hr/altitude
-      will remain in memory, reload the file using a value of 0 to get
-      back the pure raw data. 
     default: 5
     minimum: 0
     readonly: no
@@ -149,6 +143,18 @@ parameters:
     mutable: yes
     widget: text
     
+  - identifier: updates_per_second
+    title: Updates per second
+    type: double
+    description: >
+      Controls how many times per second is the GPS text updated on video.
+      Can be used in combination with speed_multiplier.
+    default: 1
+    readonly: no
+    required: no
+    mutable: yes
+    widget: text
+    
     # READ ONLY:
   - identifier: gps_start_text
     title: GPS start time
@@ -157,7 +163,7 @@ parameters:
     
   - identifier: video_start_text
     title: Video start time
-    description: Date and time of the video file (Media created tag or file modification date).
+    description: Date and time of the video file.
     readonly: yes
     
   - identifier: videofile_timezone_seconds
@@ -179,7 +185,7 @@ parameters:
     title: Auto offset now
     description: > 
       Provides a helper offset to sync the first gps point to current video time (it is 
-      updated every second, only makes sense in a GUI scenario).
+      updated every second).
       Correctly sets the offset if you video record the moment gps starts.
     readonly: yes
 
