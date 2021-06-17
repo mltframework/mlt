@@ -54,11 +54,11 @@ parameters:
     required: yes
     readonly: no
     default: >
-      Speed: #gps_speed_c#km/h\n
-      Distance: #gps_dist_c#m\n
+      Speed: #gps_speed#km/h\n
+      Distance: #gps_dist#m\n
       Altitude: #gps_elev#m\n\n
       GPS time: #gps_datetime_now#\n
-      GPS location: #gps_lat_c#, #gps_lon_c#
+      GPS location: #gps_lat#, #gps_lon#
     widget: text
 
   - identifier: gps.file

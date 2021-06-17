@@ -734,11 +734,11 @@ mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, cons
 
 		// Assign default values
 		mlt_properties_set_string( my_properties, "argument", arg ? arg:
-				"Speed: #gps_speed_c#km/h\n"
-				"Distance: #gps_dist_c#m\n"
+				"Speed: #gps_speed#km/h\n"
+				"Distance: #gps_dist#m\n"
 				"Altitude: #gps_elev#m\n\n"
 				"GPS time: #gps_datetime_now# UTC\n"
-				"GPS location: #gps_lat_c#, #gps_lon_c#"
+				"GPS location: #gps_lat#, #gps_lon#"
 				);
 		mlt_properties_set_string( my_properties, "geometry", "10%/10%:80%x80%:100%" );
 		mlt_properties_set_string( my_properties, "family", "Sans" );
