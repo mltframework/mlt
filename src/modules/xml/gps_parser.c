@@ -512,7 +512,7 @@ void process_gps_smoothing(gps_private_data gdata)
 	gps_point_proc* gps_points_p = gdata.gps_points_p + offset;
 	const int gps_points_size = *gdata.gps_points_size - offset;
 
-	mlt_log_info(gdata.filter, "process_gps_smoothing, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  gdata.gps_points_r, gps_points_r, *gdata.gps_points_size, gps_points_size);
+	//mlt_log_info(gdata.filter, "process_gps_smoothing, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  gdata.gps_points_r, gps_points_r, *gdata.gps_points_size, gps_points_size);
 
 	for (i=0; i<gps_points_size; i++)
 	{
@@ -602,7 +602,7 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 	</trkpt>
 	*/
 
-    mlt_log_info(NULL, "xml_parse_gpx - parsing %d elements\n", found_nodes->nodeNr);
+    //mlt_log_info(NULL, "xml_parse_gpx - parsing %d elements\n", found_nodes->nodeNr);
 
 	for (i=0; i<found_nodes->nodeNr; i++)
     {
@@ -682,7 +682,7 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 		</HeartRateBpm>
 	  </Trackpoint>
 	*/
-    mlt_log_info(NULL, "xml_parse_tcx - parsing %d elements\n", found_nodes->nodeNr);
+    //mlt_log_info(NULL, "xml_parse_tcx - parsing %d elements\n", found_nodes->nodeNr);
 
 	for (i=0; i<found_nodes->nodeNr; i++)
     {

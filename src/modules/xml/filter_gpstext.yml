@@ -11,7 +11,7 @@ tags:
   - Video
 description: Overlay GPS-related text onto the video
 notes: >
-  The dynamic gps text filter will search for keywords in the text to be overlaid
+  The GPS text filter will search for keywords in the text to be overlaid
   and will replace those keywords on a frame-by-frame basis. 
   It is based on dynamictext filter.
 
@@ -148,6 +148,7 @@ parameters:
     type: double
     description: >
       Controls how many times per second is the GPS text updated on video.
+      Update frequency can't be higher than GPS data frequency.
       Can be used in combination with speed_multiplier.
     default: 1
     readonly: no
