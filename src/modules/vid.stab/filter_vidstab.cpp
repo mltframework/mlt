@@ -2,7 +2,7 @@
  * filter_vidstab.cpp
  * Copyright (C) 2013 Marco Gittler <g.marco@freenet.de>
  * Copyright (C) 2013 Jakub Ksiezniak <j.ksiezniak@gmail.com>
- * Copyright (C) 2014 Meltytech, LLC
+ * Copyright (C) 2014-2021 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,7 +149,7 @@ static void init_apply_data( mlt_filter filter, mlt_frame frame, VSPixelFormat v
 	FILE* f = mlt_fopen( filename, "r" );
 	VSManyLocalMotions mlms;
 
-	if( vsReadLocalMotionsFile( f, &mlms ) == VS_OK )
+	if( f && vsReadLocalMotionsFile( f, &mlms ) == VS_OK )
 	{
 		int i = 0;
 		mlt_log_info( MLT_FILTER_SERVICE(filter), "Successfully loaded %d motions\n", vs_vector_size( &mlms ) );
