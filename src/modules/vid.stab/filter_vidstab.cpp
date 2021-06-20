@@ -219,6 +219,9 @@ static void init_analyze_data( mlt_filter filter, mlt_frame frame, VSPixelFormat
 
 	// Initialize the saved VSMotionDetect
 	vsMotionDetectInit( &analyze_data->md, &conf, &fi );
+#ifdef ASCII_SERIALIZATION_MODE
+	analyze_data->md.serializationMode = ASCII_SERIALIZATION_MODE;
+#endif
 
 	// Initialize the file to save results to
 	char* filename = mlt_properties_get( properties, "filename" );
