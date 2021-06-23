@@ -1635,7 +1635,7 @@ static int allocate_buffer( mlt_frame frame, AVCodecParameters *codec_params, ui
 
 static int ignore_send_packet_result(int result)
 {
-	return result >= 0 || result == AVERROR(EAGAIN) || result == AVERROR_EOF || result == AVERROR_INVALIDDATA;
+	return result >= 0 || result == AVERROR(EAGAIN) || result == AVERROR_EOF || result == AVERROR_INVALIDDATA || result == AVERROR(EINVAL);
 }
 
 /** Get an image from a frame.
