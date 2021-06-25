@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
 identifier: gpstext
-title: GPS text
+title: GPS Text
 version: 1
 copyright: Meltytech, LLC
 creator: Daniel F

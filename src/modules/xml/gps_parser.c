@@ -9,7 +9,7 @@
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -70,7 +70,7 @@ static int is_whitespace_string(char* str) {
 
 /* Converts miliseconds to a date-time with optional format (no miliesconds in output)
  * Note: gmtime completely ignores timezones - this keeps time consistent
- *   as all times in this file are (hopefully) in UTC
+ *       as all times in this file are (hopefully) in UTC
  */
 void mseconds_to_timestring (int64_t seconds, char* format, char* result)
 {
@@ -150,7 +150,7 @@ void get_first_gps_time(gps_private_data gdata)
 }
 
 /** Searches for and returns the last valid time with location in the gps_points_r array
- *  returns in miliesconds,  returns 0 on error
+ *  returns in miliesconds,	 returns 0 on error
 */
 void get_last_gps_time(gps_private_data gdata)
 {
@@ -322,7 +322,7 @@ void recalculate_gps_data(gps_private_data gdata)
 	gps_point_proc* gps_points = gdata.gps_points_p + offset;
 	const int gps_points_size = *gdata.gps_points_size - offset;
 
-	//mlt_log_info(gdata.filter, "recalculate_gps_data, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  gdata.gps_points, gps_points, *gdata.gps_points_size, gps_points_size);
+	//mlt_log_info(gdata.filter, "recalculate_gps_data, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,	 gdata.gps_points, gps_points, *gdata.gps_points_size, gps_points_size);
 
 	int ignore_points_before = 0;
 	double total_dist = 0, total_d_elev = 0, total_elev_up = 0, total_elev_down = 0,
@@ -638,8 +638,8 @@ void process_gps_smoothing(gps_private_data gdata)
 void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *count_pts)
 {
 	int i;
-    xmlNode *crt_node = NULL, *gps_val = NULL, *gps_subval = NULL, *gps_subsubval = NULL;
-    int64_t last_time = 0;
+	xmlNode *crt_node = NULL, *gps_val = NULL, *gps_subval = NULL, *gps_subsubval = NULL;
+	int64_t last_time = 0;
 
 	/*
 	// sample point from .GPX file (version 1.0) + HR extension
@@ -656,10 +656,10 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 	</trkpt>
 	*/
 
-    //mlt_log_info(NULL, "xml_parse_gpx - parsing %d elements\n", found_nodes->nodeNr);
+	//mlt_log_info(NULL, "xml_parse_gpx - parsing %d elements\n", found_nodes->nodeNr);
 
 	for (i=0; i<found_nodes->nodeNr; i++)
-    {
+	{
 		gps_point_raw crt_point = uninit_gps_raw_point;
 		crt_node = found_nodes->nodeTab[i];
 
@@ -711,15 +711,15 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 			last_time = crt_point.time;
 		}
 		else printf("xml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%I64d, last:%I64d\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
-    }
+	}
 }
 
 // Parses a .tcx file into a gps_point_raw linked list
 void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *count_pts)
 {
 	int i;
-    xmlNode *crt_node = NULL, *gps_val = NULL, *gps_subval = NULL;
-    int64_t last_time = 0;
+	xmlNode *crt_node = NULL, *gps_val = NULL, *gps_subval = NULL;
+	int64_t last_time = 0;
 
 	/*
 	//sample point from .TCX file
@@ -736,10 +736,10 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 		</HeartRateBpm>
 	  </Trackpoint>
 	*/
-    //mlt_log_info(NULL, "xml_parse_tcx - parsing %d elements\n", found_nodes->nodeNr);
+	//mlt_log_info(NULL, "xml_parse_tcx - parsing %d elements\n", found_nodes->nodeNr);
 
 	for (i=0; i<found_nodes->nodeNr; i++)
-    {
+	{
 		gps_point_raw crt_point = uninit_gps_raw_point;
 		crt_node = found_nodes->nodeTab[i];
 
@@ -782,7 +782,7 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 			last_time = crt_point.time;
 		}
 		else printf("xml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%I64d, last:%I64d\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
-    }
+	}
 }
 
 /* Reads file, parses it and stores the gps values in a gps_point_raw array (allocated inside) 
@@ -792,100 +792,100 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 int xml_parse_file(gps_private_data gdata)
 {
 	int count_pts = 0, rv = 1, i = 0;
-    xmlDoc *doc = NULL;
-    xmlNode *root_element = NULL;
-    xmlXPathContextPtr xpathCtx = NULL;
-    xmlXPathObjectPtr xpathObj = NULL;
-    gps_point_ll *gps_list_head = NULL;
+	xmlDoc *doc = NULL;
+	xmlNode *root_element = NULL;
+	xmlXPathContextPtr xpathCtx = NULL;
+	xmlXPathObjectPtr xpathObj = NULL;
+	gps_point_ll *gps_list_head = NULL;
 	char* filename = gdata.last_filename;
 
-    LIBXML_TEST_VERSION
+	LIBXML_TEST_VERSION
 
 	//mlt_log_info(gdata.filter, "in xml_parse_file, filename: %s", filename);
 
-    doc = xmlParseFile(filename);
-    if (doc == NULL) {
+	doc = xmlParseFile(filename);
+	if (doc == NULL) {
 		mlt_log_warning(gdata.filter, "xmlParseFile couldn't read or parse file: %s", filename);
 		rv = 0;
 		goto cleanup;
-    }
+	}
 
-    root_element = xmlDocGetRootElement(doc);
+	root_element = xmlDocGetRootElement(doc);
 	if (root_element == NULL) {
 		mlt_log_info(gdata.filter, "xmlParseFile no root element found");
 		rv = 0;
 		goto cleanup;
 	}
 
-    //mlt_log_info(gdata.filter, "xml_parse_file root_elem= %s \n", root_element->name);
+	//mlt_log_info(gdata.filter, "xml_parse_file root_elem= %s \n", root_element->name);
 
-    /* Create xpath evaluation context */
-    xpathCtx = xmlXPathNewContext(doc);
-    if(xpathCtx == NULL) {
-    	mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathNewContext: unable to create new XPath context");
+	/* Create xpath evaluation context */
+	xpathCtx = xmlXPathNewContext(doc);
+	if(xpathCtx == NULL) {
+		mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathNewContext: unable to create new XPath context");
 		rv = 0;
 		goto cleanup;
-    }
+	}
 
-    //xpath query for each doc type
-    if (strncmp(root_element->name, "TrainingCenterDatabase", strlen("TrainingCenterDatabase"))==0) {
-        xmlChar* xpathExpr = "//*[local-name()='Trackpoint']";
-        xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-        xmlNodeSetPtr nodeset = xpathObj->nodesetval;
-        if (xmlXPathNodeSetIsEmpty(nodeset)) {
-        	mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
-    		rv = 0;
-    		goto cleanup;
-        }
-    	xml_parse_tcx(nodeset, &gps_list_head, &count_pts);
-    }
-    else if (strncmp(root_element->name, "gpx", strlen("gpx"))==0) {
-        xmlChar* xpathExpr = "//*[local-name()='trkpt']";
-        xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-        xmlNodeSetPtr nodeset = xpathObj->nodesetval;
-        if (xmlXPathNodeSetIsEmpty(nodeset)) {
-        	mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
-    		rv = 0;
-    		goto cleanup;
-        }
-    	xml_parse_gpx(nodeset, &gps_list_head, &count_pts);
-    }
-    else {
-    	mlt_log_warning(gdata.filter, "Unsupported file type: root == %s, file=%s", root_element->name, filename);
-    	rv = 0;
-    	goto cleanup;
-    }
+	//xpath query for each doc type
+	if (strncmp(root_element->name, "TrainingCenterDatabase", strlen("TrainingCenterDatabase"))==0) {
+		xmlChar* xpathExpr = "//*[local-name()='Trackpoint']";
+		xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
+		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
+		if (xmlXPathNodeSetIsEmpty(nodeset)) {
+			mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
+			rv = 0;
+			goto cleanup;
+		}
+		xml_parse_tcx(nodeset, &gps_list_head, &count_pts);
+	}
+	else if (strncmp(root_element->name, "gpx", strlen("gpx"))==0) {
+		xmlChar* xpathExpr = "//*[local-name()='trkpt']";
+		xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
+		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
+		if (xmlXPathNodeSetIsEmpty(nodeset)) {
+			mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
+			rv = 0;
+			goto cleanup;
+		}
+		xml_parse_gpx(nodeset, &gps_list_head, &count_pts);
+	}
+	else {
+		mlt_log_warning(gdata.filter, "Unsupported file type: root == %s, file=%s", root_element->name, filename);
+		rv = 0;
+		goto cleanup;
+	}
 
-    *gdata.ptr_to_gps_points_r = (gps_point_raw*) calloc(count_pts, sizeof(gps_point_raw));
-    gps_point_raw* gps_array = *gdata.ptr_to_gps_points_r; //just an alias
-    if (gps_array == NULL) {
+	*gdata.ptr_to_gps_points_r = (gps_point_raw*) calloc(count_pts, sizeof(gps_point_raw));
+	gps_point_raw* gps_array = *gdata.ptr_to_gps_points_r; //just an alias
+	if (gps_array == NULL) {
 		mlt_log_error(gdata.filter, "malloc error (size=%d)", count_pts * sizeof(gps_point_raw));
 		rv = 0;
 		goto cleanup;
-    }
-    *gdata.gps_points_size = count_pts;
+	}
+	*gdata.gps_points_size = count_pts;
 
-    //copy points to private array and free list
-    int nr=0;
+	//copy points to private array and free list
+	int nr=0;
 	gps_point_ll *tmp = NULL;
 	while (gps_list_head) {
 		gps_array[nr++] = gps_list_head->gp;
 		tmp = gps_list_head;
-		gps_list_head =  gps_list_head->next;
+		gps_list_head =	 gps_list_head->next;
 		free (tmp);
 	}
 
 ///debug result:
 	// for (i = 0; i<*gdata.gps_points_size; i+=100) {
-	// 	gps_point_raw* crt_point = &gps_array[i];
-	// 	mlt_log_info(NULL, "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, distance:%f, hr:%d\n",
-	// 			i, crt_point->time/1000, crt_point->lat, crt_point->lon, crt_point->ele, crt_point->total_dist, crt_point->hr);
+	//	gps_point_raw* crt_point = &gps_array[i];
+	//	mlt_log_info(NULL, "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, distance:%f, hr:%d\n",
+	//			i, crt_point->time/1000, crt_point->lat, crt_point->lon, crt_point->ele, crt_point->total_dist, crt_point->hr);
 	// }
 
 cleanup:
 	//note: this order is important or there's a crash
-    xmlXPathFreeObject(xpathObj);
-    xmlXPathFreeContext(xpathCtx);
-    xmlFreeDoc(doc);
-    return rv;
+	xmlXPathFreeObject(xpathObj);
+	xmlXPathFreeContext(xpathCtx);
+	xmlFreeDoc(doc);
+	return rv;
 }

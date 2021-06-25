@@ -9,7 +9,7 @@
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -380,7 +380,7 @@ static int64_t restrict_updates(int64_t fr, double upd_per_sec) {
 	if (upd_per_sec == 0) 
 		return fr;
 	int64_t rez =  fr - fr % (int)(1000.0/upd_per_sec);
-	// mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d", fr%100000, upd_per_sec, rez%100000);
+	//mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d", fr%100000, upd_per_sec, rez%100000);
 	return rez;
 }
 
@@ -428,8 +428,8 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
 	double read_updates_per_second = mlt_properties_get_double(properties, "updates_per_second");
 
 	int64_t original_video_time = get_original_file_time_mseconds(frame);
-	// mlt_log_info(filter, "process_filter_properties - read values: offset1=%d, smooth=%d, gps_start_time=%s, speed=%f, updates=%f",
-	// 		read_video_offset1, read_smooth_val, read_gps_processing_start_time, read_speed_multiplier, read_updates_per_second);
+	//mlt_log_info(filter, "process_filter_properties - read values: offset1=%d, smooth=%d, gps_start_time=%s, speed=%f, updates=%f",
+	//	read_video_offset1, read_smooth_val, read_gps_processing_start_time, read_speed_multiplier, read_updates_per_second);
 
 //process properties
 	pdata->gps_offset = (int64_t)read_video_offset1 * 1000;
@@ -485,8 +485,8 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
 	mlt_properties_set(properties, "gps_start_text", gps_start_text);
 	mlt_properties_set(properties, "video_start_text", video_start_text);
 	mlt_properties_set_int(properties, "videofile_timezone_seconds", pdata->video_file_timezone_ms/1000);
-	mlt_properties_set_int(properties, "auto_gps_offset_start",  (pdata->first_gps_time - original_video_time)/1000); //seconds
-	mlt_properties_set_int(properties, "auto_gps_offset_now", (pdata->first_gps_time - get_current_frame_time_ms(filter, frame))/1000); //seconds
+	mlt_properties_set_int(properties, "auto_gps_offset_start", (pdata->first_gps_time - original_video_time)/1000);
+	mlt_properties_set_int(properties, "auto_gps_offset_now", (pdata->first_gps_time - get_current_frame_time_ms(filter, frame))/1000);
 	mlt_properties_set(properties, "auto_gps_processing_start_now", gps_processing_start_now);
 }
 
