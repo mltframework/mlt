@@ -70,8 +70,8 @@ parameters:
     readonly: no
     widget: fileopen
     
-  - identifier: major_offset
-    title: Major offset
+  - identifier: time_offset
+    title: Time offset
     type: integer
     description: >
       An offset (in seconds) to be added to the video file to match it to the GPS track.
@@ -85,20 +85,6 @@ parameters:
     mutable: yes
     widget: text
     
-  - identifier: minor_offset
-    title: Minor offset
-    type: integer
-    description: >
-      An extra offset (in seconds) to be also added to video file to match it to the GPS
-      track. The intended use of this value is to have a realtime fine control over the 
-      sync on a per clip basis (this way the major offset can be kept the same over 
-      multiple videos). 
-    default: 0
-    readonly: no
-    required: no
-    mutable: yes
-    widget: spinner
-
   - identifier: smoothing_value
     title: Smoothing level
     type: integer
@@ -123,7 +109,7 @@ parameters:
       processing the gps file. Use if the GPS file has extra points before the video
       and you want to ignore them (can be used to track the distance since begining 
       of a segment).
-      If the string provided doesn't perfectly match the format it will be ignored.
+      If the string provided doesn't perfectly match the format, it will be ignored.
     default: "yyyy-MM-dd hh:mm:ss"
     readonly: no
     required: no
@@ -147,8 +133,8 @@ parameters:
     title: Updates per second
     type: double
     description: >
-      Controls how many times per second is the GPS text updated on video.
-      Update frequency can't be higher than GPS data frequency.
+      Controls how many times per second is the GPS text updated on video (interpolated).
+      A value of 0 will only update text when a real gps point has been recorded.
       Can be used in combination with speed_multiplier.
     default: 1
     readonly: no
@@ -172,7 +158,7 @@ parameters:
     description: > 
       A guess on the timezone of the video file (includes daylight savings time if active 
       at file's creation), to be used as a one click major_offset if gps and file start time
-      seem hours off. 
+      seem hours off.
     readonly: yes
     
   - identifier: auto_gps_offset_start
@@ -188,6 +174,13 @@ parameters:
       Provides a helper offset to sync the first gps point to current video time (it is 
       updated every second).
       Correctly sets the offset if you video record the moment gps starts.
+    readonly: yes
+    
+  - identifier: auto_gps_processing_start_now
+    title: Auto gps processing start now
+    description: > 
+      Provides a helper offset to sync the gps_processing_start_time property to current 
+      video time (it is updated every second). DateTime string.
     readonly: yes
 
   - identifier: geometry

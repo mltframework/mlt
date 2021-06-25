@@ -199,7 +199,7 @@ static int extract_offset_time_ms_keyword (char* keyword) {
 }
 
 //Does the actual replacement of keyword with valid data, also parses any keyword extra format
-static void gps_point_to_output(mlt_filter filter, int index, char* keyword, char* gps_text)
+static void gps_point_to_output(mlt_filter filter, int index, int64_t req_time, char* keyword, char* gps_text)
 {
 	private_data* pdata = (private_data*)filter->child;
 	char* format = NULL;
@@ -221,7 +221,11 @@ static void gps_point_to_output(mlt_filter filter, int index, char* keyword, cha
 	else {
 		if (pdata->gps_points_p == NULL)
 			return;
-		crt_point = pdata->gps_points_p[index];
+		//interpolate any time depending on updates_per_second property
+		if (pdata->updates_per_second != 0 && index+1 < pdata->gps_points_size && req_time >= pdata->gps_points_p[index].time)
+			crt_point = weighted_middle_point_proc(&pdata->gps_points_p[index], &pdata->gps_points_p[index+1], req_time);
+		else
+			crt_point = pdata->gps_points_p[index];
 	}
 
 	/* for every keyword: we first check if the "RAW" keyword is used and if so, we print the value read from file (or --)
@@ -372,9 +376,10 @@ static int64_t get_original_file_time_mseconds (mlt_frame frame)
 
 //Restricts how many updates per second are done (the searched gps - frame time is altered)
 static int64_t restrict_updates(int64_t fr, double upd_per_sec) {
+	//0 = disabled
 	if (upd_per_sec == 0) 
-		upd_per_sec = 1;
-	int64_t rez =  fr - fr % (int)(1000/upd_per_sec);
+		return fr;
+	int64_t rez =  fr - fr % (int)(1000.0/upd_per_sec);
 	// mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d", fr%100000, upd_per_sec, rez%100000);
 	return rez;
 }
@@ -416,21 +421,20 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
 	char do_smoothing = 0, do_processing = 0;
 
 //read properties
-	int read_video_offset1 = mlt_properties_get_int(properties, "major_offset");
-	int read_video_offset2 = mlt_properties_get_int(properties, "minor_offset");
+	int read_video_offset1 = mlt_properties_get_int(properties, "time_offset");
 	int read_smooth_val = mlt_properties_get_int(properties, "smoothing_value");
 	char* read_gps_processing_start_time = mlt_properties_get(properties, "gps_processing_start_time");
 	double read_speed_multiplier = mlt_properties_get_double(properties, "speed_multiplier");
 	double read_updates_per_second = mlt_properties_get_double(properties, "updates_per_second");
 
 	int64_t original_video_time = get_original_file_time_mseconds(frame);
-	// mlt_log_info(filter, "process_filter_properties - read values: offset1=%d, offset2=%d, smooth=%d, gps_start_time=%s, speed=%f, updates=%f",
-	// 		read_video_offset1, read_video_offset2, read_smooth_val, read_gps_processing_start_time, read_speed_multiplier, read_updates_per_second);
+	// mlt_log_info(filter, "process_filter_properties - read values: offset1=%d, smooth=%d, gps_start_time=%s, speed=%f, updates=%f",
+	// 		read_video_offset1, read_smooth_val, read_gps_processing_start_time, read_speed_multiplier, read_updates_per_second);
 
 //process properties
-	pdata->gps_offset = (int64_t)(read_video_offset1 + read_video_offset2)*1000;
+	pdata->gps_offset = (int64_t)read_video_offset1 * 1000;
 	pdata->speed_multiplier = (read_speed_multiplier ? read_speed_multiplier : 1);
-	pdata->updates_per_second = (read_updates_per_second ? read_updates_per_second : 1);
+	pdata->updates_per_second = read_updates_per_second;
 
 	if (pdata->last_smooth_lvl != read_smooth_val) {
 		pdata->last_smooth_lvl = read_smooth_val;
@@ -473,13 +477,17 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
 	else if (do_processing) //smoothing also does processing
 		recalculate_gps_data(filter_to_gps_data(filter));
 
+	char gps_processing_start_now[255];
+	int64_t gps_now = pdata->first_gps_time + (get_current_frame_time_ms(filter, frame) - original_video_time);
+	mseconds_to_timestring(gps_now, NULL, gps_processing_start_now);
 
 //write properties
-	mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "gps_start_text", gps_start_text);
+	mlt_properties_set(properties, "gps_start_text", gps_start_text);
 	mlt_properties_set(properties, "video_start_text", video_start_text);
 	mlt_properties_set_int(properties, "videofile_timezone_seconds", pdata->video_file_timezone_ms/1000);
 	mlt_properties_set_int(properties, "auto_gps_offset_start",  (pdata->first_gps_time - original_video_time)/1000); //seconds
 	mlt_properties_set_int(properties, "auto_gps_offset_now", (pdata->first_gps_time - get_current_frame_time_ms(filter, frame))/1000); //seconds
+	mlt_properties_set(properties, "auto_gps_processing_start_now", gps_processing_start_now);
 }
 
 /** Processes data and tries to replace the GPS keywords with actual values.
@@ -512,7 +520,7 @@ static void get_gps_str(char* keyword, mlt_filter filter, mlt_frame frame, char*
 		return;
 	}
 //	mlt_log_info(NULL, "get_gps_str, vid_time: %d s, i_gps=%d, time[i]=%d s\n", video_time_synced/1000, i_gps, pdata->gps_points_r[i_gps].time/1000);
-	gps_point_to_output(filter, i_gps, keyword, gps_text);
+	gps_point_to_output(filter, i_gps, video_time_synced, keyword, gps_text);
 	strncat( text, gps_text, MAX_TEXT_LEN - strlen( text ) - 1);
 }
 
@@ -527,17 +535,17 @@ static void get_current_frame_time_str(char* keyword, mlt_filter filter, mlt_fra
 	/* if no gps data has been succesfully parsed or this is the only keyword in the filter 
 	 * we don't read filter properties at all (via process_filter_properties) so we must
 	 * read and update these 2 fields here */
-	//TODO: we're duplicating this update for a very weird use case, remove it?
+	//NOTE: we're duplicating this read for a very weird use case, remove it?
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		double read_speed_multiplier = mlt_properties_get_double(properties, "speed_multiplier");
 		double read_updates_per_second = mlt_properties_get_double(properties, "updates_per_second");
 		pdata->speed_multiplier = (read_speed_multiplier ? read_speed_multiplier : 1);
-		pdata->updates_per_second = (read_updates_per_second ? read_updates_per_second : 1);
+		pdata->updates_per_second = read_updates_per_second;
 	}
 
 	//check for seconds offset
-	if ((offset=strstr(keyword, "+")) != NULL || (offset = strstr(keyword, "-")) != NULL)
+	if ( (offset = strstr(keyword, "+")) != NULL || (offset = strstr(keyword, "-")) != NULL )
 		val = extract_offset_time_ms_keyword(offset);
 
 	//check for time format
@@ -754,7 +762,7 @@ mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set_string( my_properties, "outline", "0" );
 		mlt_properties_set_int( my_properties, "_filter_private", 1 );
 
-		mlt_properties_set_int( my_properties, "major_offset", 0);
+		mlt_properties_set_int( my_properties, "time_offset", 0);
 		mlt_properties_set_int( my_properties, "minor_offset", 0);
 		mlt_properties_set_int( my_properties, "smoothing_value", 5);
 		mlt_properties_set_int( my_properties, "videofile_timezone_seconds", 0);

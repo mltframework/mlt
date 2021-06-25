@@ -424,7 +424,58 @@ void recalculate_gps_data(gps_private_data gdata)
 
 		prev_point = crt_point;
 	}
-	// _DEBUG_write_smoothed_gps_to_file(gdata);
+	//_DEBUG_write_smoothed_gps_to_file(gdata);
+}
+
+/* Returns a weighted (type:double) value for an intermediary time
+ * notes: time limit 10s, if one value is GPS_UNINIT, returns the other
+*/
+double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int64_t new_t) {
+	int64_t d_time = t2 - t1;
+	if (v1 == GPS_UNINIT) return v2;
+	if (v2 == GPS_UNINIT) return v1;
+	if (d_time > MAX_GPS_DIFF_MS || d_time == 0) return v1;
+
+	double prev_weight = 1 - (double)(new_t - t1)/d_time;
+	double next_weight = 1 - (double)(t2 - new_t)/d_time;
+	double rez = v1 * prev_weight + v2 * next_weight;
+	//mlt_log_info(NULL, "weighted_middle_double in: v:%f-%f, %d-%d %d out: %f ", v1, v2, t1/1000, t2/1000, new_t/1000, rez);
+	return rez;
+}
+int64_t weighted_middle_int64 (int64_t v1, int64_t t1, int64_t v2, int64_t t2, int64_t new_t) {
+	int64_t d_time = t2 - t1;
+	if (v1 == GPS_UNINIT) return v2;
+	if (v2 == GPS_UNINIT) return v1;
+	if (d_time > MAX_GPS_DIFF_MS || d_time == 0) return v1;
+
+	double prev_weight = 1 - (double)(new_t - t1)/d_time;
+	double next_weight = 1 - (double)(t2 - new_t)/d_time;
+	int64_t rez = v1 * prev_weight + v2 * next_weight;
+	//mlt_log_info(NULL, "weighted_middle_int64 in: v:%d-%d, %d-%d %d out: %d ", v1%1000000, v2%1000000, t1/1000, t2/1000, new_t/1000, rez%1000000);
+	return rez;
+}
+
+//compute a virtual point at a specific time between 2 real points
+gps_point_proc weighted_middle_point_proc(gps_point_proc* p1, gps_point_proc* p2, int64_t new_t) {
+	//strict time check, max 10s difference
+	if (abs(p2->time - p1->time) > MAX_GPS_DIFF_MS)
+		return *p1;
+	gps_point_proc crt_point = uninit_gps_proc_point;
+	crt_point.lat = weighted_middle_double(p1->lat, p1->time, p2->lat, p2->time, new_t);
+	crt_point.lon = weighted_middle_double(p1->lon, p1->time, p2->lon, p2->time, new_t);
+	crt_point.speed = weighted_middle_double(p1->speed, p1->time, p2->speed, p2->time, new_t);
+	crt_point.total_dist = weighted_middle_double(p1->total_dist, p1->time, p2->total_dist, p2->time, new_t);
+	crt_point.ele = weighted_middle_double(p1->ele, p1->time, p2->ele, p2->time, new_t);
+	crt_point.time = weighted_middle_int64(p1->time, p1->time, p2->time, p2->time, new_t);
+	crt_point.d_elev = weighted_middle_double(p1->d_elev, p1->time, p2->d_elev, p2->time, new_t);
+	crt_point.elev_up = weighted_middle_double(p1->elev_up, p1->time, p2->elev_up, p2->time, new_t);
+	crt_point.elev_down = weighted_middle_double(p1->elev_down, p1->time, p2->elev_down, p2->time, new_t);
+	crt_point.dist_up = weighted_middle_double(p1->dist_up, p1->time, p2->dist_up, p2->time, new_t);
+	crt_point.dist_down = weighted_middle_double(p1->dist_down, p1->time, p2->dist_down, p2->time, new_t);
+	crt_point.dist_flat = weighted_middle_double(p1->dist_flat, p1->time, p2->dist_flat, p2->time, new_t);
+	crt_point.bearing = weighted_middle_int64(p1->bearing, p1->time, p2->bearing, p2->time, new_t);
+	crt_point.hr = weighted_middle_int64(p1->hr, p1->time, p2->hr, p2->time, new_t);
+	return crt_point;
 }
 
 /* Processes the entire gps_points_p array to fill the lat, lon values
@@ -518,7 +569,6 @@ void process_gps_smoothing(gps_private_data gdata)
 	{
 		if (req_smooth == 1) //copy raw lat/lon to calc lat/lon and interpolate 1 location if necessary
 		{
-			gps_points_p[i].smooth_loc = 1;
 			gps_points_p[i].lat = gps_points_r[i].lat;
 			gps_points_p[i].lon = gps_points_r[i].lon;
 
@@ -528,12 +578,12 @@ void process_gps_smoothing(gps_private_data gdata)
 					&& abs(gps_points_r[i+1].time - gps_points_r[i-1].time) < MAX_GPS_DIFF_MS) //if time difference is lower than MAX_GPS_DIFF_MS
 			{
 				//place a weighted "middle" point here depending on time difference
-				//x = (prev.x * (1-d_time(i,prev)/d_time(next,prev)) + next.x * (1-d_time(next,i)/d_time(next,prev))
-				double d_time = gps_points_r[i+1].time - gps_points_r[i-1].time;
-				double prev_weight = 1 - (gps_points_r[i].time - gps_points_r[i-1].time)/d_time;
-				double next_weight = 1 - (gps_points_r[i+1].time - gps_points_r[i].time)/d_time;
-				gps_points_p[i].lat = gps_points_r[i-1].lat * prev_weight + gps_points_r[i+1].lat * next_weight;
-				gps_points_p[i].lon = gps_points_r[i-1].lon * prev_weight + gps_points_r[i+1].lon * next_weight;
+				double new_lat = weighted_middle_double(gps_points_r[i-1].lat, gps_points_r[i-1].time,
+										gps_points_r[i+1].lat, gps_points_r[i+1].time,
+										gps_points_r[i].time);
+				double new_lon = weighted_middle_double(gps_points_r[i-1].lon, gps_points_r[i-1].time,
+										gps_points_r[i+1].lon, gps_points_r[i+1].time,
+										gps_points_r[i].time);
 				//mlt_log_info(gdata.filter, "interpolating position for smooth=1, new point[%d]:%f,%f @time=%d s", i, gps_points_p[i].lat, gps_points_p[i].lon, gps_points_r[i].time/1000);
 			}
 		}
@@ -656,7 +706,7 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 			gps_list = &(*gps_list)->next;
 			last_time = crt_point.time;
 		}
-		else mlt_log_info(NULL, "xml_parse_gpx: skipping point due to time [%d] %f,%f - %d", i, crt_point.lat, crt_point.lon, crt_point.time);
+		else printf("xml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%I64d, last:%I64d\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
     }
 }
 
@@ -727,7 +777,7 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 			gps_list = &(*gps_list)->next;
 			last_time = crt_point.time;
 		}
-		else mlt_log_info(NULL, "xml_parse_tcx: skipping point due to time [%d] %f,%f - %d", i, crt_point.lat, crt_point.lon, crt_point.time);
+		else printf("xml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%I64d, last:%I64d\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
     }
 }
 

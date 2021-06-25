@@ -51,7 +51,6 @@ typedef struct gps_point_raw_list {
 
 typedef struct
 {
-	char smooth_loc, bearing_c[3];
 	double lat, lon, speed, total_dist, ele;
 	int64_t time;
 	double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat;
@@ -66,7 +65,6 @@ static const gps_point_raw uninit_gps_raw_point = {
 	};
 
 static const gps_point_proc uninit_gps_proc_point = {
-	.smooth_loc = 0, .bearing_c = "-",
 	.lat=GPS_UNINIT, .lon=GPS_UNINIT, .speed=GPS_UNINIT,
 	.total_dist=GPS_UNINIT, .ele=GPS_UNINIT, .time=GPS_UNINIT,
 	.d_elev=GPS_UNINIT, .elev_up=GPS_UNINIT, .elev_down=GPS_UNINIT,
@@ -111,6 +109,10 @@ int binary_search_gps(gps_private_data gdata, int64_t video_time, char force_res
 char* bearing_to_compass(int x);
 void recalculate_gps_data(gps_private_data gdata);
 void process_gps_smoothing(gps_private_data gdata);
+
+double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int64_t new_t);
+int64_t weighted_middle_int64 (int64_t v1, int64_t t1, int64_t v2, int64_t t2, int64_t new_t);
+gps_point_proc weighted_middle_point_proc(gps_point_proc* p1, gps_point_proc* p2, int64_t new_t);
 
 void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *count_pts);
 void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *count_pts);
