@@ -763,7 +763,6 @@ mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set_int( my_properties, "_filter_private", 1 );
 
 		mlt_properties_set_int( my_properties, "time_offset", 0);
-		mlt_properties_set_int( my_properties, "minor_offset", 0);
 		mlt_properties_set_int( my_properties, "smoothing_value", 5);
 		mlt_properties_set_int( my_properties, "videofile_timezone_seconds", 0);
 		mlt_properties_set_int( my_properties, "speed_multiplier", 1);

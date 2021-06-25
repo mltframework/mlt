@@ -118,6 +118,4 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *count_pts);
 int xml_parse_file(gps_private_data gdata);
 
-//void _DEBUG_write_smoothed_gps_to_file(gps_private_data gdata);
-
 #endif /* GPS_PARSER_H */

@@ -424,11 +424,10 @@ void recalculate_gps_data(gps_private_data gdata)
 
 		prev_point = crt_point;
 	}
-	//_DEBUG_write_smoothed_gps_to_file(gdata);
 }
 
 /* Returns a weighted (type:double) value for an intermediary time
- * notes: time limit 10s, if one value is GPS_UNINIT, returns the other
+ * Notes: time limit 10s, if one value is GPS_UNINIT, returns the other
 */
 double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int64_t new_t) {
 	int64_t d_time = t2 - t1;
@@ -442,6 +441,10 @@ double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int
 	//mlt_log_info(NULL, "weighted_middle_double in: v:%f-%f, %d-%d %d out: %f ", v1, v2, t1/1000, t2/1000, new_t/1000, rez);
 	return rez;
 }
+
+/* Returns a weighted (type:int64_t) value for an intermediary time
+ * Notes: time limit 10s, if one value is GPS_UNINIT, returns the other
+*/
 int64_t weighted_middle_int64 (int64_t v1, int64_t t1, int64_t v2, int64_t t2, int64_t new_t) {
 	int64_t d_time = t2 - t1;
 	if (v1 == GPS_UNINIT) return v2;
@@ -578,12 +581,13 @@ void process_gps_smoothing(gps_private_data gdata)
 					&& abs(gps_points_r[i+1].time - gps_points_r[i-1].time) < MAX_GPS_DIFF_MS) //if time difference is lower than MAX_GPS_DIFF_MS
 			{
 				//place a weighted "middle" point here depending on time difference
-				double new_lat = weighted_middle_double(gps_points_r[i-1].lat, gps_points_r[i-1].time,
+				gps_points_p[i].lat = weighted_middle_double(gps_points_r[i-1].lat, gps_points_r[i-1].time,
 										gps_points_r[i+1].lat, gps_points_r[i+1].time,
 										gps_points_r[i].time);
-				double new_lon = weighted_middle_double(gps_points_r[i-1].lon, gps_points_r[i-1].time,
+				gps_points_p[i].lon = weighted_middle_double(gps_points_r[i-1].lon, gps_points_r[i-1].time,
 										gps_points_r[i+1].lon, gps_points_r[i+1].time,
 										gps_points_r[i].time);
+
 				//mlt_log_info(gdata.filter, "interpolating position for smooth=1, new point[%d]:%f,%f @time=%d s", i, gps_points_p[i].lat, gps_points_p[i].lon, gps_points_r[i].time/1000);
 			}
 		}
@@ -884,55 +888,4 @@ cleanup:
     xmlXPathFreeContext(xpathCtx);
     xmlFreeDoc(doc);
     return rv;
-}
-
-/////////////////////////
-
-/* Writes the smoothed version of gpx lat/lon + time(local) to a .gpx file
- */
-void _DEBUG_write_smoothed_gps_to_file(gps_private_data gdata)
-{
-	gps_point_proc* gps_points = gdata.gps_points_p;
-	const int gps_points_size = *gdata.gps_points_size;
-
-	if (gps_points == NULL) {
-		mlt_log_warning(gdata.filter, "gps_points_p is null");
-		return;
-	}
-
-	int i;
-	char intro_gpx[] = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><gpx version=\"1.0\" creator=\"shotcut:gpstextoverlay test export\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.topografix.com/GPX/1/0\" xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd\">\n"
-						"<trk><trkseg>\n";
-	char outro_gpx[] = "\n</trkseg></trk></gpx>";
-
-	FILE* f = NULL;
-	char fname[100];
-	sprintf(fname, "smoothed_gpx_smooth_%d.gpx", gdata.last_smooth_lvl);
-	f= fopen(fname, "w"); //created in home_dir by def
-	if (!f) {
-		mlt_log_warning(gdata.filter, "couldn't open file to write - %s", fname);
-		return;
-	}
-	fputs(intro_gpx, f);
-	for (i=0; i<gps_points_size; i++)
-	{
-		if (!has_valid_location(gps_points[i]))
-			continue;
-
-		fprintf(f, "<trkpt lat=\"%f\" lon=\"%f\">", gps_points[i].lat, gps_points[i].lon);
-
-		if (gps_points[i].ele !=GPS_UNINIT)
-			fprintf(f, "<ele>%f</ele>", gps_points[i].ele);
-
-		char time[50] = {0};
-		mseconds_to_timestring(gps_points[i].time, "%Y-%m-%dT%H:%M:%S.000Z", time);
-		fprintf(f, "<time>%s</time>", time);
-
-		if (gps_points[i].hr != GPS_UNINIT)
-			fprintf(f, "\n\t<extensions> <gpxtpx:TrackPointExtension> <gpxtpx:hr>%d</gpxtpx:hr> </gpxtpx:TrackPointExtension> </extensions>", gps_points[i].hr);
-		fprintf(f, "</trkpt>\n");
-	}
-	fputs(outro_gpx, f);
-	fclose(f);
-	mlt_log_info(gdata.filter, "done writing (%d points) smoothed file - %s", gps_points_size, fname);
 }
