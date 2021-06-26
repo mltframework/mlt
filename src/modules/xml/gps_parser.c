@@ -290,48 +290,44 @@ void recalculate_gps_data(gps_private_data gdata)
 		}
 	}
 
-	//check to see if we must skip points at begining according to filter property
-	int offset = 0;
+	gps_point_proc* gps_points = gdata.gps_points_p;
+	const int gps_points_size = *gdata.gps_points_size;
+
+	//compute gps_start_time actual offset
+	int offset_start = 0;
 	if (gdata.gps_proc_start_t != 0) {
-		offset = binary_search_gps(gdata, gdata.gps_proc_start_t, 1);
-
-		//cleanup ("relative") processed data for points before gps_start_time
-		int offset_end = offset;
-		if (offset == -1) {
-			//offset == -1 means it's either before or after entire gps track time
+		offset_start = binary_search_gps(gdata, gdata.gps_proc_start_t, 1);
+		if (offset_start == -1) {//=either before or after entire gps track time
 			if (gdata.gps_proc_start_t > *gdata.last_gps_time)
-				offset_end = *gdata.gps_points_size;
+				offset_start = *gdata.gps_points_size;
 			else
-				offset_end = 0;
+				offset_start = 0;
 		}
-		//mlt_log_info(gdata.filter, "recalculate_gps_data: clearing gps data from 0 to %d due to set GPS start time:%d s", offset_end, gdata.gps_proc_start_t/1000);
-		for (i=0; i<offset_end; i++) {
-			gps_point_proc* crt_point = &(gdata.gps_points_p[i]);
-			crt_point->total_dist = 0;
-			crt_point->d_elev = 0;
-			crt_point->elev_up = 0;
-			crt_point->elev_down = 0;
-			crt_point->dist_up = 0;
-			crt_point->dist_down = 0;
-			crt_point->dist_flat = 0;
-		}
+		offset_start++;
 	}
-	if (gdata.gps_proc_start_t > *gdata.last_gps_time || offset > *gdata.gps_points_size) //nothing to process
-		return;
-
-	if (offset == -1) offset = 0;
-	gps_point_proc* gps_points = gdata.gps_points_p + offset;
-	const int gps_points_size = *gdata.gps_points_size - offset;
 
 	//mlt_log_info(gdata.filter, "recalculate_gps_data, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,	 gdata.gps_points, gps_points, *gdata.gps_points_size, gps_points_size);
 
 	int ignore_points_before = 0;
 	double total_dist = 0, total_d_elev = 0, total_elev_up = 0, total_elev_down = 0,
 		   total_dist_up = 0, total_dist_down = 0, total_dist_flat = 0;
+	double start_dist = 0, start_d_elev = 0, start_elev_up = 0, start_elev_down = 0, 
+			start_dist_up = 0, start_dist_down = 0, start_dist_flat = 0;
 	gps_point_proc *crt_point = NULL, *prev_point = NULL, *prev_nrsmooth_point = NULL;
 	
 	for (i=0; i<gps_points_size; i++)
 	{
+		//store values at processing_start_time to substract them at the end
+		if (i-1 == offset_start) {
+			start_dist = total_dist;
+			start_d_elev = total_d_elev;
+			start_elev_up = total_elev_up;
+			start_elev_down = total_elev_down;
+			start_dist_up = total_dist_up;
+			start_dist_down = total_dist_down;
+			start_dist_flat = total_dist_flat;
+		}
+
 		crt_point = &gps_points[i];
 
 		//this is the farthest valid point (behind current) that can be used for smoothing, limited by start of array or big gap in time
@@ -424,6 +420,34 @@ void recalculate_gps_data(gps_private_data gdata)
 		}
 
 		prev_point = crt_point;
+	}
+	
+	//clean up computed values for relative stuff (distances mostly) before gps_processing_start time
+	if (gdata.gps_proc_start_t != 0 && offset_start > 0 && offset_start < gps_points_size) {
+		//mlt_log_info(gdata.filter, "recalculate_gps_data: clearing gps data from 0 to %d due to set GPS start time:%d s", offset_start, gdata.gps_proc_start_t/1000);
+		for (i=0; i<offset_start; i++) {
+			gps_point_proc* crt_point = &(gdata.gps_points_p[i]);
+			if (crt_point->total_dist != 0) start_dist = crt_point->total_dist;
+			crt_point->total_dist = 0;
+			crt_point->d_elev = 0;
+			crt_point->elev_up = 0;
+			crt_point->elev_down = 0;
+			crt_point->dist_up = 0;
+			crt_point->dist_down = 0;
+			crt_point->dist_flat = 0;
+		}
+		//remove the distances from before 
+		//mlt_log_info(gdata.filter, "recalculate_gps_data: substracting values at start time! (start_dist=%f @ start index=%d)", start_dist, offset_start);
+		for (i=offset_start; i<gps_points_size; i++) {
+			gps_point_proc* crt_point = &(gdata.gps_points_p[i]);
+			crt_point->total_dist -= start_dist;
+			crt_point->d_elev -= start_d_elev;
+			crt_point->elev_up -= start_elev_up;
+			crt_point->elev_down -= start_elev_down;
+			crt_point->dist_up -= start_dist_up;
+			crt_point->dist_down -= start_dist_down;
+			crt_point->dist_flat -= start_dist_flat;
+		}
 	}
 }
 
@@ -558,18 +582,9 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 		}
 	}
 
-	//check to see if we must skip points at begining according to filter property
-	int offset = 0;
-	if (gdata.gps_proc_start_t != 0) {
-		if ( (offset = binary_search_gps(gdata, gdata.gps_proc_start_t, 1)) != -1 )
-			if (offset - MAX(req_smooth/2, MAX_GPS_DIFF_MS*1000) > 0) //allow a few extra (max 10) points for smoothing outside range
-				offset -= MAX(req_smooth/2, MAX_GPS_DIFF_MS*1000);
-	}
-	gps_point_raw* gps_points_r = gdata.gps_points_r + offset;
-	gps_point_proc* gps_points_p = gdata.gps_points_p + offset;
-	const int gps_points_size = *gdata.gps_points_size - offset;
-
-	//mlt_log_info(gdata.filter, "process_gps_smoothing, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,  gdata.gps_points_r, gps_points_r, *gdata.gps_points_size, gps_points_size);
+	gps_point_raw* gps_points_r = gdata.gps_points_r;
+	gps_point_proc* gps_points_p = gdata.gps_points_p;
+	const int gps_points_size = *gdata.gps_points_size;
 
 	for (i=0; i<gps_points_size; i++)
 	{
