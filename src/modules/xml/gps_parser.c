@@ -150,7 +150,7 @@ void get_first_gps_time(gps_private_data gdata)
 }
 
 /** Searches for and returns the last valid time with location in the gps_points_r array
- *  returns in miliesconds,	 returns 0 on error
+ *	returns in miliesconds,	 returns 0 on error
 */
 void get_last_gps_time(gps_private_data gdata)
 {
@@ -224,11 +224,10 @@ int binary_search_gps(gps_private_data gdata, int64_t video_time, char force_res
 	while (il < ir)
 	{
 		int mid = (ir+il)/2;
-		///mlt_log_info(gdata.filter, "binary_search_gps: mid=%d, l=%d, r=%d, mid-time=%d (s)", mid, il, ir, gps_points[mid].time/1000);
+		//mlt_log_info(gdata.filter, "binary_search_gps: mid=%d, l=%d, r=%d, mid-time=%d (s)", mid, il, ir, gps_points[mid].time/1000);
 		if (time_val_between_indices(video_time, gps_points, mid, gps_points_size)) {
 			*gdata.last_searched_index = mid;
-			break;
-			//return mid;
+			return mid;
 		}
 		else if (gps_points[mid].time > video_time)
 			ir = mid-1;
@@ -285,8 +284,10 @@ void recalculate_gps_data(gps_private_data gdata)
 			mlt_log_warning(gdata.filter, "calloc error, size=%d", *gdata.gps_points_size*sizeof(gps_point_proc));
 			return;
 		}
-		else //alloc ok
+		else { //alloc ok
 			gdata.gps_points_p = *gdata.ptr_to_gps_points_p;
+			process_gps_smoothing(gdata, 0);
+		}
 	}
 
 	//check to see if we must skip points at begining according to filter property
@@ -303,7 +304,7 @@ void recalculate_gps_data(gps_private_data gdata)
 			else
 				offset_end = 0;
 		}
-		//mlt_log_info(gdata.filter, "recalculate_gps_data: clearing gps data from 0 to %d due to set GPS start time:%d s", offset_end, pdata->gps_proc_start_t/1000);
+		//mlt_log_info(gdata.filter, "recalculate_gps_data: clearing gps data from 0 to %d due to set GPS start time:%d s", offset_end, gdata.gps_proc_start_t/1000);
 		for (i=0; i<offset_end; i++) {
 			gps_point_proc* crt_point = &(gdata.gps_points_p[i]);
 			crt_point->total_dist = 0;
@@ -483,10 +484,10 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc* p1, gps_point_proc* p2
 
 /* Processes the entire gps_points_p array to fill the lat, lon values
  * Also does linear interpolation of HR, altitude (+lat/lon*) if necessary to fill missing values
- * After this, calls recalculate_gps_data to update distance, speed + other fields for all points
+ * After this, if do_processing is 1, calls recalculate_gps_data to update distance, speed + other fields for all points
  * Returns without doing anything if smoothing level is 0
  */
-void process_gps_smoothing(gps_private_data gdata)
+void process_gps_smoothing(gps_private_data gdata, char do_processing)
 {
 	int req_smooth = gdata.last_smooth_lvl;
 	if (gdata.last_smooth_lvl == 0)
@@ -550,8 +551,10 @@ void process_gps_smoothing(gps_private_data gdata)
 			else
 				nr_ele++;
 
-			//time is not interpolated but as long as we're iterating we can copy it now
+			//these are not interpolated but as long as we're iterating we can copy them now
 			gp_p[i].time = gp_r[i].time;
+			gp_p[i].lat = gp_r[i].lat;
+			gp_p[i].lon = gp_r[i].lon;
 		}
 	}
 
@@ -628,7 +631,7 @@ void process_gps_smoothing(gps_private_data gdata)
 		}
 	}
 	*gdata.interpolated = 1;
-	if (req_smooth != 0)
+	if (req_smooth != 0 && do_processing == 1)
 		recalculate_gps_data(gdata);
 }
 

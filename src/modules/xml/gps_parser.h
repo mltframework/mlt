@@ -108,7 +108,7 @@ void get_last_gps_time(gps_private_data gdata);
 int binary_search_gps(gps_private_data gdata, int64_t video_time, char force_result);
 char* bearing_to_compass(int x);
 void recalculate_gps_data(gps_private_data gdata);
-void process_gps_smoothing(gps_private_data gdata);
+void process_gps_smoothing(gps_private_data gdata, char do_processing);
 
 double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int64_t new_t);
 int64_t weighted_middle_int64 (int64_t v1, int64_t t1, int64_t v2, int64_t t2, int64_t new_t);

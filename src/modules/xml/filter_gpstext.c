@@ -473,12 +473,12 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
 	mseconds_to_timestring(pdata->first_gps_time, NULL, gps_start_text);
 
 	if (do_smoothing)
-		process_gps_smoothing(filter_to_gps_data(filter));
+		process_gps_smoothing(filter_to_gps_data(filter), 1);
 	else if (do_processing) //smoothing also does processing
 		recalculate_gps_data(filter_to_gps_data(filter));
 
 	char gps_processing_start_now[255];
-	int64_t gps_now = pdata->first_gps_time + (get_current_frame_time_ms(filter, frame) - original_video_time);
+	int64_t gps_now = get_current_frame_time_ms(filter, frame) + pdata->gps_offset;
 	mseconds_to_timestring(gps_now, NULL, gps_processing_start_now);
 
 //write properties
