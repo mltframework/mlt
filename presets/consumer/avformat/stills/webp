@@ -1,0 +1,13 @@
+progressive=1
+f=image2
+vcodec=libwebp
+an=1
+audio_off=1
+g=1
+bf=0
+qscale=75
+preset=default
+
+meta.preset.extension=webp
+meta.preset.name=stills/WebP
+meta.preset.note=Change preset to photo, picture, drawing, icon, or text as needed.
