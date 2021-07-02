@@ -222,7 +222,9 @@ static void gps_point_to_output(mlt_filter filter, int index, int64_t req_time, 
 		if (pdata->gps_points_p == NULL)
 			return;
 		//interpolate any time depending on updates_per_second property
-		if (pdata->updates_per_second != 0 && index+1 < pdata->gps_points_size && req_time >= pdata->gps_points_p[index].time)
+		if (pdata->updates_per_second != 0 && index+1 < pdata->gps_points_size 
+			&& req_time >= pdata->gps_points_p[index].time && req_time < pdata->gps_points_p[index+1].time
+			&& (pdata->gps_points_p[index+1].time - pdata->gps_points_p[index].time) <= MAX_GPS_DIFF_MS)
 			crt_point = weighted_middle_point_proc(&pdata->gps_points_p[index], &pdata->gps_points_p[index+1], req_time);
 		else
 			crt_point = pdata->gps_points_p[index];

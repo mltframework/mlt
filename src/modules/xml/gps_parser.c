@@ -175,13 +175,18 @@ void get_last_gps_time(gps_private_data gdata)
 }
 
 //checks if time value val is between gps_points[i] and gps_points[i+1] with size checks
-static int time_val_between_indices(int64_t val, gps_point_raw* gp, int i, int size) {
+static int time_val_between_indices(int64_t val, gps_point_raw* gp, int i, int size, char force_result) {
 	if (i<0 || i>size)
 		return 0;
 	else if (val == gp[i].time)
 		return 1;
-	else if (i+1 < size && gp[i].time < val && val < gp[i+1].time)
-		return 1;
+	else if (i+1 < size && gp[i].time < val && val < gp[i+1].time) 
+	{
+		if (force_result)
+			return 1;
+		else if (llabs(gp[i].time - gp[i+1].time) <= MAX_GPS_DIFF_MS)
+			return 1;
+	}
 	return 0;
 }
 
@@ -198,19 +203,20 @@ int binary_search_gps(gps_private_data gdata, int64_t video_time, char force_res
 
 	int il = 0;
 	int ir = gps_points_size-1;
+	int mid = 0;
 
 	if (!gps_points || gps_points_size==0)
 		return -1;
 
 	//optimize repeated calls (exact match or in between points)
-	if (time_val_between_indices(video_time, gps_points, last_index, gps_points_size)) {
+	if (time_val_between_indices(video_time, gps_points, last_index, gps_points_size, force_result)) {
 //		printf("_binary_search_gps, last_index(%d) v1 video_time: %I64d match: %I64d\n", last_index, video_time, gps_points[last_index].time);
 		return last_index;
 	}
 
 	//optimize consecutive playback calls
 	last_index++;
-	if (time_val_between_indices(video_time, gps_points, last_index, gps_points_size)) {
+	if (time_val_between_indices(video_time, gps_points, last_index, gps_points_size, force_result)) {
 //		printf("_binary_search_gps, last_index(%d) v2 video_time: %I64d match: %I64d\n", last_index, video_time, gps_points[last_index].time);
 		*gdata.last_searched_index = last_index;
 		return last_index;
@@ -223,11 +229,11 @@ int binary_search_gps(gps_private_data gdata, int64_t video_time, char force_res
 	//binary search
 	while (il < ir)
 	{
-		int mid = (ir+il)/2;
+		mid = (ir+il)/2;
 		//mlt_log_info(gdata.filter, "binary_search_gps: mid=%d, l=%d, r=%d, mid-time=%d (s)", mid, il, ir, gps_points[mid].time/1000);
-		if (time_val_between_indices(video_time, gps_points, mid, gps_points_size)) {
+		if (time_val_between_indices(video_time, gps_points, mid, gps_points_size, force_result)) {
 			*gdata.last_searched_index = mid;
-			return mid;
+			break;
 		}
 		else if (gps_points[mid].time > video_time)
 			ir = mid-1;
@@ -236,10 +242,10 @@ int binary_search_gps(gps_private_data gdata, int64_t video_time, char force_res
 	}
 
 	//don't return the closest gps point if time difference is too large (unless force_result is 1)
-	if (abs(video_time - gps_points[il].time) > MAX_GPS_DIFF_MS)
-		return (force_result ? il : -1);
+	if (llabs(video_time - gps_points[mid].time) > MAX_GPS_DIFF_MS)
+		return (force_result ? mid : -1);
 	else 
-		return il;
+		return mid;
 }
 
 /* Converts the bearing angle (0-360) to a cardinal direction
@@ -486,7 +492,7 @@ int64_t weighted_middle_int64 (int64_t v1, int64_t t1, int64_t v2, int64_t t2, i
 //compute a virtual point at a specific time between 2 real points
 gps_point_proc weighted_middle_point_proc(gps_point_proc* p1, gps_point_proc* p2, int64_t new_t) {
 	//strict time check, max 10s difference
-	if (abs(p2->time - p1->time) > MAX_GPS_DIFF_MS)
+	if (llabs(p2->time - p1->time) > MAX_GPS_DIFF_MS)
 		return *p1;
 	gps_point_proc crt_point = uninit_gps_proc_point;
 	crt_point.lat = weighted_middle_double(p1->lat, p1->time, p2->lat, p2->time, new_t);
@@ -504,6 +510,14 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc* p1, gps_point_proc* p2
 	crt_point.bearing = weighted_middle_int64(p1->bearing, p1->time, p2->bearing, p2->time, new_t);
 	crt_point.hr = weighted_middle_int64(p1->hr, p1->time, p2->hr, p2->time, new_t);
 	return crt_point;
+}
+
+//checks whether 2 points (not necessarily consecutive) are not after a long pause in tracking
+int in_gps_time_window(gps_private_data gdata, int crt, int next, double max_time) {
+	gps_point_raw* gp = gdata.gps_points_r;
+	int64_t d_time = llabs(gp[next].time - gp[crt].time);
+	int d_indices = abs(next - crt);
+	return d_time <= (max_time * d_indices + MAX_GPS_DIFF_MS);
 }
 
 /* Processes the entire gps_points_p array to fill the lat, lon values
@@ -530,9 +544,9 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 			gdata.gps_points_p = *gdata.ptr_to_gps_points_p;
 	}
 
-	int i, j, nr_hr = 0, nr_ele = 0, nr_div = 0;
+	int i, j, nr_hr = 0, nr_ele = 0;
 	short hr = GPS_UNINIT;
-	double ele = GPS_UNINIT, lat_sum = 0, lon_sum = 0;
+	double ele = GPS_UNINIT;
 
 	//linear interpolation for heart rate and elevation, one time per file, ignores start offset
 	if (*gdata.interpolated == 0)
@@ -585,6 +599,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 	gps_point_raw* gps_points_r = gdata.gps_points_r;
 	gps_point_proc* gps_points_p = gdata.gps_points_p;
 	const int gps_points_size = *gdata.gps_points_size;
+	const double avg_gps_time = (*gdata.last_gps_time - *gdata.first_gps_time) / *gdata.gps_points_size;
 
 	for (i=0; i<gps_points_size; i++)
 	{
@@ -596,7 +611,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 			//this can happen often if location and altitude are stored at different time intervals (every 3s vs every 10s)
 			if (	i-1 >= 0 && i+1 < gps_points_size //if we're not at start/end
 					&& !has_valid_location(gps_points_r[i]) && has_valid_location(gps_points_r[i-1]) && has_valid_location(gps_points_r[i+1]) //if current point has no lat/lon but nearby ones do
-					&& abs(gps_points_r[i+1].time - gps_points_r[i-1].time) < MAX_GPS_DIFF_MS) //if time difference is lower than MAX_GPS_DIFF_MS
+					&& llabs(gps_points_r[i+1].time - gps_points_r[i-1].time) < MAX_GPS_DIFF_MS) //if time difference is lower than MAX_GPS_DIFF_MS
 			{
 				//place a weighted "middle" point here depending on time difference
 				gps_points_p[i].lat = weighted_middle_double(gps_points_r[i-1].lat, gps_points_r[i-1].time,
@@ -609,30 +624,18 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 				//mlt_log_info(gdata.filter, "interpolating position for smooth=1, new point[%d]:%f,%f @time=%d s", i, gps_points_p[i].lat, gps_points_p[i].lon, gps_points_r[i].time/1000);
 			}
 		}
-		else if (req_smooth > 1) //average "req_smooth" values into current index; using a rolling avg of nearby points
+		else if (req_smooth > 1) //for each point average "req_smooth/2" values before and after
 		{
-			if (i == 0) { //first point is special
-				for (j=0; j<=req_smooth/2; j++) {
-					if (has_valid_location(gps_points_r[j])) {
-						lat_sum += gps_points_r[j].lat;
-						lon_sum += gps_points_r[j].lon;
-						nr_div++;
-					}
-				}
-			}
-			else { //add the next one, substract the one behind our range
-				int next = i+req_smooth/2;
-				int prev = i-req_smooth/2-1;
-				//TODO: somehow treat case of points on opposite sides of 180*
-				if (next < gps_points_size && has_valid_location(gps_points_r[next])) {
+			double lat_sum = 0, lon_sum = 0;
+			int nr_div = 0;
+
+			//TODO: treat case of points on opposite sides of 180*
+			for (j = MAX(0, i-req_smooth/2) ; j < MIN(i+req_smooth/2, gps_points_size); j++) 
+			{
+				if (has_valid_location(gps_points_r[j]) && in_gps_time_window(gdata, i, j, avg_gps_time)) {
+					lat_sum += gps_points_r[j].lat;
+					lon_sum += gps_points_r[j].lon;
 					nr_div++;
-					lat_sum += gps_points_r[next].lat;
-					lon_sum += gps_points_r[next].lon;
-				}
-				if (prev >= 0 && has_valid_location(gps_points_r[prev])) {
-					nr_div--;
-					lat_sum -= gps_points_r[prev].lat;
-					lon_sum -= gps_points_r[prev].lon;
 				}
 			}
 			if (nr_div!=0) {
