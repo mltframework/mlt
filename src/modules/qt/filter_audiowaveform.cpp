@@ -371,8 +371,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	if( mlt_frame_is_test_card( frame ) ) {
 		// The producer does not generate video. This filter will create an
 		// image on the producer's behalf.
-		mlt_profile profile = mlt_service_profile(
-			MLT_PRODUCER_SERVICE( mlt_frame_get_original_producer( frame ) ) );
+		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 		mlt_properties_set_int( frame_properties, "progressive", 1 );
 		mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_profile_sar( profile ) );
 		mlt_properties_set_int( frame_properties, "meta.media.width", profile->width );
