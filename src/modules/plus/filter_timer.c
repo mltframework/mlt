@@ -38,7 +38,8 @@ double time_to_seconds( char* time )
 static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_position current_frame = mlt_filter_get_position( filter, frame ) * mlt_properties_get_double( properties, "speed" );
+	double filter_speed = mlt_properties_get_double( properties, "speed" );
+	mlt_position current_frame = mlt_filter_get_position( filter, frame ) * filter_speed;
 	char* direction = mlt_properties_get( properties, "direction" );
 	double timer_start = time_to_seconds( mlt_properties_get( properties, "start" ) );
 	double timer_duration = time_to_seconds( mlt_properties_get( properties, "duration" ) );
@@ -50,17 +51,17 @@ static void get_timer_str( mlt_filter filter, mlt_frame frame, char* text )
 		// "duration" of zero means entire length of the filter.
 		mlt_position filter_length = mlt_filter_get_length2( filter, frame ) - 1;
 		double filter_duration = time_to_seconds( mlt_properties_frames_to_time( properties, filter_length, mlt_time_clock ) );
-		timer_duration = filter_duration - timer_start;
+		timer_duration = (filter_duration - timer_start) * filter_speed;
 	}
 
-	if ( value < timer_start )
+	if ( value < timer_start * filter_speed)
 	{
 		// Hold at 0 until start time.
 		value = 0.0;
 	}
 	else
 	{
-		value = value - timer_start;
+		value = value - timer_start * filter_speed;
 		if ( value > timer_duration )
 		{
 			// Hold at duration after the timer has elapsed.
