@@ -7,7 +7,7 @@ add_library(mltxine MODULE
 
 target_compile_options(mltxine PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltxine PRIVATE mlt)
+target_link_libraries(mltxine PRIVATE mlt ${CMAKE_DL_LIBS})
 
 set_target_properties(mltxine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
