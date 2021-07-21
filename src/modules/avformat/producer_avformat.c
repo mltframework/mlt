@@ -1542,7 +1542,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 		av_image_fill_arrays(ctx.out_data, ctx.out_stride, buffer, ctx.dst_format, width, height, IMAGE_ALIGN);
 
-		int sliced = !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE");
+		int sliced = !getenv("MLT_AVFORMAT_SLICED_PIXFMT_DISABLE") && src_pix_fmt != ctx.dst_format;
 		if ( sliced ) {
 			ctx.slice_w = ( width < 1000 )
 				? ( 256 >> frame->interlaced_frame )
