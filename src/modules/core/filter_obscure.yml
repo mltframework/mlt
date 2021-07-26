@@ -2,9 +2,9 @@ schema_version: 0.1
 type: filter
 identifier: obscure
 title: Obscure
-version: 1
+version: 2
 copyright: Meltytech, LLC
-creator: Charles Yates
+creator: Charles Yates, Julius Künzel
 license: LGPLv2.1
 language: en
 tags:
@@ -12,15 +12,30 @@ tags:
 description: >
    Obscuring filter.
 parameters:
-  - identifier: argument
-    title: Start
-    type: string
+  - identifier: rect
+    title: Rectangle
     description: >
-      The starting rectangle is given in the format X/Y:WxH[:PWxPY] where
-      PWxPY is the size of the averaging region in pixels.
-  - identifier: end
-    title: End
-    type: string
-    description: >
-      The ending rectangle is given in the format X/Y:WxH[:PWxPY] where
-      PWxPY is the size of the averaging region in pixels.
+      Defines the rectangle of the area that will be obscured.
+
+      Format is: "X Y W H".
+
+      X, Y, W, H are assumed to be pixel units unless they have the suffix '%'.
+    type: rect
+    default: "0 0 10% 10%"
+    readonly: no
+    mutable: yes
+  - identifier: maskWidth
+    title: Width of the mask
+    type: integer
+    description: The width of the averaging region in pixels.
+    minimum: 1
+    maximum: 2000
+    default: 20
+  - identifier: maskHeight
+    title: Height of the mask
+    type: integer
+    description: The height of the averaging region in pixels.
+    minimum: 1
+    maximum: 2000
+    default: 20
+

@@ -20,115 +20,67 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <string.h>
 
-/** Geometry struct.
-*/
-
-struct geometry_s
+/** Scale a rectangle by the specified factors. */
+static mlt_rect scale_rect( mlt_rect rect, double x_scale, double y_scale )
 {
-	int nw;
-	int nh;
-	float x;
-	float y;
-	float w;
-	float h;
-	int mask_w;
-	int mask_h;
-};
-
-/** Parse a value from a geometry string.
-*/
-
-static inline float parse_value( char **ptr, int normalisation, char delim, float defaults )
-{
-	float value = defaults;
-
-	if ( *ptr != NULL && **ptr != '\0' )
-	{
-		char *end = NULL;
-		value = strtod( *ptr, &end );
-		if ( end != NULL )
-		{
-			if ( *end == '%' )
-				value = ( value / 100.0 ) * normalisation;
-			while ( *end == delim || *end == '%' || ( delim == ',' && *end == '/' ) )
-				end ++;
-		}
-		*ptr = end;
-	}
-
-	return value;
+	rect.x = rect.x / x_scale;
+	rect.y = rect.y / y_scale;
+	rect.w = rect.w / x_scale;
+	rect.h = rect.h / y_scale;
+	return rect;
 }
 
-/** Parse a geometry property string.
-*/
-
-static void geometry_parse( struct geometry_s *geometry, struct geometry_s *defaults, char *property, int nw, int nh )
+/** Constrain a rect to be within the max dimensions with an additional 1 pixel
+  * padding.
+  */
+static mlt_rect constrain_rect( mlt_rect rect, int max_x, int max_y )
 {
-	// Assign normalised width and height
-	geometry->nw = nw;
-	geometry->nh = nh;
-
-	// Assign from defaults if available
-	if ( defaults != NULL )
+	rect.x = round( rect.x );
+	rect.y = round( rect.y );
+	rect.w = round( rect.w );
+	rect.h = round( rect.h );
+	if ( rect.x < 0 )
 	{
-		geometry->x = defaults->x;
-		geometry->y = defaults->y;
-		geometry->w = defaults->w;
-		geometry->h = defaults->h;
-		geometry->mask_w = defaults->mask_w;
-		geometry->mask_h = defaults->mask_h;
+		rect.w = rect.w + rect.x - 1;
+		rect.x = 1;
 	}
-	else
+	if ( rect.y < 0 )
 	{
-		geometry->x = 0;
-		geometry->y = 0;
-		geometry->w = nw;
-		geometry->h = nh;
-		geometry->mask_w = 20;
-		geometry->mask_h = 20;
+		rect.h = rect.h + rect.y - 1;
+		rect.y = 1;
 	}
-
-	// Parse the geometry string
-	if ( property != NULL )
+	if ( rect.x + rect.w < 0 )
 	{
-		char *ptr = property;
-		geometry->x = parse_value( &ptr, nw, ',', geometry->x );
-		geometry->y = parse_value( &ptr, nh, ':', geometry->y );
-		geometry->w = parse_value( &ptr, nw, 'x', geometry->w );
-		geometry->h = parse_value( &ptr, nh, ':', geometry->h );
-		geometry->mask_w = parse_value( &ptr, nw, 'x', geometry->mask_w );
-		geometry->mask_h = parse_value( &ptr, nh, ' ', geometry->mask_h );
+		rect.w = 0;
 	}
-}
-
-/** A Timism but not as clean ;-).
-*/
-
-static float lerp( float value, float lower, float upper )
-{
-	if ( value < lower )
-		return lower;
-	else if ( upper > lower && value > upper )
-		return upper;
-	return value;
-}
-
-/** Calculate real geometry.
-*/
-
-static void geometry_calculate( struct geometry_s *output, struct geometry_s *in, struct geometry_s *out, float position, int ow, int oh )
-{
-	// Calculate this frames geometry
-	output->x = lerp( ( in->x + ( out->x - in->x ) * position ) / ( float )out->nw * ow, 0, ow );
-	output->y = lerp( ( in->y + ( out->y - in->y ) * position ) / ( float )out->nh * oh, 0, oh );
-	output->w = lerp( ( in->w + ( out->w - in->w ) * position ) / ( float )out->nw * ow, 0, ow - output->x );
-	output->h = lerp( ( in->h + ( out->h - in->h ) * position ) / ( float )out->nh * oh, 0, oh - output->y );
-	output->mask_w = lerp( in->mask_w + ( out->mask_w - in->mask_w ) * position, 1, -1 );
-	output->mask_h = lerp( in->mask_h + ( out->mask_h - in->mask_h ) * position, 1, -1 );
+	if ( rect.y + rect.h < 0 )
+	{
+		rect.h = 0;
+	}
+	if ( rect.x < 1 )
+	{
+		rect.x = 1;
+	}
+	if ( rect.y < 1 )
+	{
+		rect.y = 1;
+	}
+	if ( rect.x + rect.w > max_x - 1 )
+	{
+		rect.w = max_x - rect.x - 1;
+	}
+	if ( rect.y + rect.h > max_y - 1 )
+	{
+		rect.h = max_y - rect.y - 1;
+	}
+	return rect;
 }
 
 /** The averaging function...
@@ -180,28 +132,27 @@ static inline void obscure_average( uint8_t *start, int width, int height, int s
 /** The obscurer rendering function...
 */
 
-static void obscure_render( uint8_t *image, int width, int height, struct geometry_s result )
-{
-	int area_x = result.x;
-	int area_y = result.y;
-	int area_w = result.w;
-	int area_h = result.h;
-
-	int mw = result.mask_w;
-	int mh = result.mask_h;
+static void obscure_render( uint8_t *image, int width, int height, mlt_rect rect, int mw, int mh)
+ {
 	int w;
 	int h;
 	int aw;
 	int ah;
+	if ( mw < 1) mw = 1;
+	if ( mw > rect.w) mw = rect.w;
+	if ( mw > 2000) mw = 2000;
+	if ( mh < 1) mh = 1;
+	if ( mh > rect.h) mh = rect.h;
+	if ( mh > 2000) mh = 2000;
 
-	uint8_t *p = image + area_y * width * 2 + area_x * 2;
+	uint8_t *p = image + (int)rect.y * width * 2 + (int)rect.x * 2;
 
-	for ( w = 0; w < area_w; w += mw )
+	for ( w = 0; w < rect.w; w += mw )
 	{
-		for ( h = 0; h < area_h; h += mh )
+		for ( h = 0; h < rect.h; h += mh )
 		{
-			aw = w + mw > area_w ? mw - ( w + mw - area_w ) : mw;
-			ah = h + mh > area_h ? mh - ( h + mh - area_h ) : mh;
+			aw = w + mw > rect.w ? mw - ( w + mw - rect.w ) : mw;
+			ah = h + mh > rect.h ? mh - ( h + mh - rect.h ) : mh;
 			if ( aw > 1 && ah > 1 )
 				obscure_average( p + h * ( width << 1 ) + ( w << 1 ), aw, ah, width << 1 );
 		}
@@ -216,6 +167,53 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Pop the top of stack now
 	mlt_filter filter = mlt_frame_pop_service( frame );
 
+	if ( filter == NULL ) {
+		return 1;
+	}
+
+	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
+	char* rect_str = mlt_properties_get( filter_properties, "rect" );
+	if ( !rect_str )
+	{
+		mlt_log_warning( MLT_FILTER_SERVICE(filter), "rect property not set\n" );
+		return mlt_frame_get_image( frame, image, format, width, height, writable );
+	}
+	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
+	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
+	if ( strchr( rect_str, '%' ) )
+	{
+		rect.x *= profile->width;
+		rect.w *= profile->width;
+		rect.y *= profile->height;
+		rect.h *= profile->height;
+	}
+	double scale = mlt_profile_scale_width(profile, *width);
+	rect.x *= scale;
+	rect.w *= scale;
+	scale = mlt_profile_scale_height(profile, *height);
+	rect.y *= scale;
+	rect.h *= scale;
+	rect = constrain_rect( rect, profile->width * scale, profile->height * scale);
+	if ( rect.w < 1 || rect.h < 1 )
+	{
+		mlt_log_info( MLT_FILTER_SERVICE(filter), "rect invalid\n" );
+		return mlt_frame_get_image( frame, image, format, width, height, writable );
+	}
+
+	int maskWidth = 20;
+	if (mlt_properties_get( filter_properties, "maskWidth" ) )
+	{
+		maskWidth = mlt_properties_anim_get_int( filter_properties, "maskWidth", position, length );
+	}
+
+	int maskHeight = 20;
+	if (mlt_properties_get( filter_properties, "maskHeight" ) )
+	{
+		maskHeight = mlt_properties_anim_get_int( filter_properties, "maskHeight", position, length );
+	}
+
 	// Get the image from the frame
 	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
@@ -223,30 +221,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Get the image from the frame
 	if ( error == 0 )
 	{
-		if ( filter != NULL )
-		{
-			// Get the filter properties
-			mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
-
-			// Structures for geometry
-			struct geometry_s result;
-			struct geometry_s start;
-			struct geometry_s end;
-
-			// Retrieve the position
-			float position = mlt_filter_get_progress( filter, frame );
-
-			// Now parse the geometries
-			geometry_parse( &start, NULL, mlt_properties_get( properties, "start" ), profile->width, profile->height );
-			geometry_parse( &end, &start, mlt_properties_get( properties, "end" ), profile->width, profile->height );
-
-			// Do the calculation
-			geometry_calculate( &result, &start, &end, position, *width, *height );
-
-			// Now actually render it
-			obscure_render( *image, *width, *height, result );
-		}
+		// Now actually render it
+		obscure_render( *image, *width, *height, rect, maskWidth, maskHeight );
 	}
 
 	return error;
@@ -275,9 +251,10 @@ mlt_filter filter_obscure_init( mlt_profile profile, mlt_service_type type, cons
 	if ( filter != NULL )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		mlt_properties_set( properties, "rect", "0% 0% 10% 10%" );
+		mlt_properties_set( properties, "maskWidth", NULL );
+		mlt_properties_set( properties, "maskHeight", NULL );
 		filter->process = filter_process;
-		mlt_properties_set( properties, "start", arg != NULL ? arg : "0%/0%:100%x100%" );
-		mlt_properties_set( properties, "end", "" );
 	}
 	return filter;
 }
