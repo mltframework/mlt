@@ -9,7 +9,7 @@ add_library(mltxml MODULE
 
 target_compile_options(mltxml PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltxml PRIVATE mlt Threads::Threads PkgConfig::xml)
+target_link_libraries(mltxml PRIVATE mlt m Threads::Threads PkgConfig::xml)
 
 set_target_properties(mltxml PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
