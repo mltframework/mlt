@@ -155,7 +155,7 @@ if(MOD_GTK2)
 endif()
 
 if(MOD_JACKRACK)
-  pkg_check_modules(jack IMPORTED_TARGET jack)
+  find_package(JACK)
   pkg_check_modules(glib IMPORTED_TARGET glib-2.0)
   check_include_file(ladspa.h ladspa_h_FOUND)
 endif()
