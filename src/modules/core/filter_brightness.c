@@ -42,7 +42,10 @@ static int sliced_proc(int id, int index, int jobs, void* cookie)
 	struct sliced_desc ctx = *((struct sliced_desc*) cookie);
 	int slice_height = (ctx.height + jobs - 1) / jobs;
 	int slice_offset = index * slice_height * ctx.width;
+
 	slice_height = MIN(slice_height, ctx.height - index * slice_height);
+	if (slice_height <= 0)
+		return 0;
 
 	// Only process if level is something other than 1
 	if (ctx.level != 1.0) {
