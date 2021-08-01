@@ -17,6 +17,8 @@ RUN apt-get install -yqq wget git automake autoconf libtool intltool g++ yasm na
 
 # Get and run the build script
 RUN wget --quiet -O /tmp/build-melt.sh https://raw.githubusercontent.com/mltframework/mlt-scripts/master/build/build-melt.sh && \
+  echo "MLT_HEAD=0" >> /tmp/build-melt.conf && \
+  echo "MLT_REVISION=origin/v6" >> /tmp/build-melt.conf && \
   echo "INSTALL_DIR=\"/usr/local\"" > /tmp/build-melt.conf && \
   echo "SOURCE_DIR=\"/tmp/melt\"" >> /tmp/build-melt.conf && \
   echo "AUTO_APPEND_DATE=0" >> /tmp/build-melt.conf && \
