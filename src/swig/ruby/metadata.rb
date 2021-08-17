@@ -81,7 +81,7 @@ type: <%= param['type'] %>
 readonly: <%= param['readonly'] or 'no' %>  
 required: <%= param['required'] or 'no' %>  
 %     $optional_params.each do |key|
-<%= "#{key}: #{param[key]}  \n" if param[key] %>
+<%= "#{key}: #{param[key].to_s.gsub('](', ']\(')}  \n" if param[key] %>
 %     end
 %     if param['values']
 values:  
@@ -136,8 +136,8 @@ end
 Dir.mkdir($folder) if not Dir.exists?($folder)
 
 [
-  [Mlt::Consumer_type, $repo.consumers, 'Consumer'],
-  [Mlt::Filter_type, $repo.filters, 'Filter'],
-  [Mlt::Producer_type, $repo.producers, 'Producer'],
-  [Mlt::Transition_type, $repo.transitions, 'Transition']
+  [Mlt::Mlt_service_consumer_type, $repo.consumers, 'Consumer'],
+  [Mlt::Mlt_service_filter_type, $repo.filters, 'Filter'],
+  [Mlt::Mlt_service_producer_type, $repo.producers, 'Producer'],
+  [Mlt::Mlt_service_transition_type, $repo.transitions, 'Transition']
 ].each {|x| output *x}
