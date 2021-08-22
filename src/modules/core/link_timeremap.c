@@ -268,7 +268,10 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 		{
 			break;
 		}
-		if ( mlt_frame_get_image( src_frame, &images[image_count], format, &requested_width, &requested_height, 0 ) != 0 )
+		mlt_service_lock( MLT_LINK_SERVICE(self) );
+		int result = mlt_frame_get_image( src_frame, &images[image_count], format, &requested_width, &requested_height, 0 );
+		mlt_service_unlock( MLT_LINK_SERVICE(self) );
+		if ( !result )
 		{
 			mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get image %s\n", key );
 			break;
@@ -333,7 +336,10 @@ static int link_get_image_nearest( mlt_frame frame, uint8_t** image, mlt_image_f
 	if ( src_frame )
 	{
 		uint8_t* in_image;
-		if ( !mlt_frame_get_image( src_frame, &in_image, format, width, height, 0 ) )
+		mlt_service_lock( MLT_LINK_SERVICE(self) );
+		int result = mlt_frame_get_image( src_frame, &in_image, format, width, height, 0 );
+		mlt_service_unlock( MLT_LINK_SERVICE(self) );
+		if ( !result )
 		{
 			int size = mlt_image_format_size( *format, *width, *height, NULL );
 			*image = mlt_pool_alloc( size );
