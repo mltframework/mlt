@@ -271,7 +271,7 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 		mlt_service_lock( MLT_LINK_SERVICE(self) );
 		int result = mlt_frame_get_image( src_frame, &images[image_count], format, &requested_width, &requested_height, 0 );
 		mlt_service_unlock( MLT_LINK_SERVICE(self) );
-		if ( result != 0 )
+		if ( !result )
 		{
 			mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get image %s\n", key );
 			break;
