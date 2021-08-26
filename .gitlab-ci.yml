@@ -41,7 +41,7 @@ debian-testing:
 debian-stable:
     image: debian:stable
     script:
-        - echo -e 'deb-src http://deb.debian.org/debian stable main\ndeb-src http://deb.debian.org/debian stable-updates main\ndeb-src http://security.debian.org stable/updates main' >> /etc/apt/sources.list
+        - echo -e 'deb-src http://deb.debian.org/debian stable main\ndeb-src http://deb.debian.org/debian stable-updates main' >> /etc/apt/sources.list
         - echo 'deb http://deb.debian.org/debian buster-backports main' >> /etc/apt/sources.list
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
