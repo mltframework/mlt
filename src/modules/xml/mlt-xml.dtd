@@ -77,7 +77,7 @@
     out      CDATA    #IMPLIED
     title    CDATA    #IMPLIED
 >
-<!ELEMENT entry (producer | playlist | tractor | multitrack | filter | transition | chain)* >
+<!ELEMENT entry (property*,(producer | playlist | tractor | multitrack | filter | transition | chain)*) >
 <!ATTLIST entry
     producer IDREF    #IMPLIED
     in       CDATA    #IMPLIED
