@@ -45,7 +45,7 @@ debian-stable:
         - echo 'deb http://deb.debian.org/debian buster-backports main' >> /etc/apt/sources.list
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
-        - apt-get -yqq -t buster-backports install cmake
+        - apt-get -yqq install cmake
         - cmake -DGPL=ON -DGPL3=ON . && make && make install
             # there's no `check` or `test` `make` target
 
