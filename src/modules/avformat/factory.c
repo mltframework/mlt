@@ -53,13 +53,9 @@ static void avformat_init( )
 	if ( avformat_initialised == 0 )
 	{
 		avformat_initialised = 1;
-//		av_register_all( );
 #ifdef AVDEVICE
 		avdevice_register_all();
 #endif
-//#ifdef AVFILTER
-//		avfilter_register_all();
-//#endif
 		avformat_network_init();
 		av_log_set_level( mlt_log_get_level() );
 		if ( getenv("MLT_AVFORMAT_PRODUCER_CACHE") )
