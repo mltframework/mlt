@@ -34,6 +34,7 @@ extern mlt_filter filter_avfilter_init( mlt_profile, mlt_service_type, const cha
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 #ifdef AVDEVICE
 #include <libavdevice/avdevice.h>
 #endif
@@ -46,56 +47,19 @@ extern mlt_filter filter_avfilter_init( mlt_profile, mlt_service_type, const cha
 // A static flag used to determine if avformat has been initialised
 static int avformat_initialised = 0;
 
-static int avformat_lockmgr(void **mutex, enum AVLockOp op)
-{
-	pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
-
-	switch (op)
-	{
-	case AV_LOCK_CREATE:
-		*pmutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-		if (!*pmutex) return -1;
-		pthread_mutex_init(*pmutex, NULL);
-		break;
-	case AV_LOCK_OBTAIN:
-		if (!*pmutex) return -1;
-		pthread_mutex_lock(*pmutex);
-		break;
-	case AV_LOCK_RELEASE:
-		if (!*pmutex) return -1;
-		pthread_mutex_unlock(*pmutex);
-		break;
-	case AV_LOCK_DESTROY:
-		if (!*pmutex) return -1;
-		pthread_mutex_destroy(*pmutex);
-		free(*pmutex);
-		*pmutex = NULL;
-		break;
-	}
-
-	return 0;
-}
-
-static void unregister_lockmgr( void *p )
-{
-	av_lockmgr_register( NULL );
-}
-
 static void avformat_init( )
 {
 	// Initialise avformat if necessary
 	if ( avformat_initialised == 0 )
 	{
 		avformat_initialised = 1;
-		av_lockmgr_register( &avformat_lockmgr );
-		mlt_factory_register_for_clean_up( &avformat_lockmgr, unregister_lockmgr );
-		av_register_all( );
+//		av_register_all( );
 #ifdef AVDEVICE
 		avdevice_register_all();
 #endif
-#ifdef AVFILTER
-		avfilter_register_all();
-#endif
+//#ifdef AVFILTER
+//		avfilter_register_all();
+//#endif
 		avformat_network_init();
 		av_log_set_level( mlt_log_get_level() );
 		if ( getenv("MLT_AVFORMAT_PRODUCER_CACHE") )
@@ -330,22 +294,25 @@ static mlt_properties avformat_metadata( mlt_service_type type, const char *id, 
 		avformat_init();
 		if ( type == mlt_service_producer_type )
 		{
-			AVInputFormat *f = NULL;
-			while ( ( f = av_iformat_next( f ) ) )
+			const AVInputFormat *f = NULL;
+			void *iterator = NULL;
+			while ( ( f = av_demuxer_iterate( &iterator ) ) )
 				if ( f->priv_class )
 					add_parameters( params, &f->priv_class, flags, NULL, f->name, NULL );
 		}
 		else
 		{
-			AVOutputFormat *f = NULL;
-			while ( ( f = av_oformat_next( f ) ) )
+			const AVOutputFormat *f = NULL;
+			void *iterator = NULL;
+			while ( ( f = av_muxer_iterate( &iterator ) ) )
 				if ( f->priv_class )
 					add_parameters( params, &f->priv_class, flags, NULL, f->name, NULL );
 		}
 
 		add_parameters( params, avcodec, flags, NULL, NULL, NULL );
-		AVCodec *c = NULL;
-		while ( ( c = av_codec_next( c ) ) )
+		const AVCodec *c = NULL;
+		void *iterator = NULL;
+		while ( ( c = av_codec_iterate( &iterator ) ) )
 			if ( c->priv_class )
 				add_parameters( params, &c->priv_class, flags, NULL, c->name, NULL );
 
@@ -452,9 +419,9 @@ MLT_REPOSITORY
 	mlt_properties_set_data(mlt_global_properties(), "avfilter.resolution_scale",
 		mlt_properties_parse_yaml(dirname), 0, (mlt_destructor) mlt_properties_close, NULL);
 
-	avfilter_register_all();
-	AVFilter *f = NULL;
-	while ( ( f = (AVFilter*)avfilter_next( f ) ) ) {
+	const AVFilter *f = NULL;
+	void *iterator = NULL;
+	while ( ( f = (AVFilter*) av_filter_iterate( &iterator ) ) ) {
 		// Support filters that have one input and one output of the same type.
 		if ( avfilter_pad_count( f->inputs ) == 1 &&
 			avfilter_pad_count( f->outputs ) == 1 &&

@@ -17,6 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#if !defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 700
+#  undef _XOPEN_SOURCE
+#  define _XOPEN_SOURCE 700
+#endif
+
 #include "common.h"
 
 #include <framework/mlt.h>
@@ -148,8 +153,8 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, int frequency, int channels )
 {
 	private_data* pdata = (private_data*)filter->child;
-	AVFilter *abuffersrc  = avfilter_get_by_name("abuffer");
-	AVFilter *abuffersink = avfilter_get_by_name("abuffersink");
+	const AVFilter *abuffersrc  = avfilter_get_by_name("abuffer");
+	const AVFilter *abuffersink = avfilter_get_by_name("abuffersink");
 	int sample_fmts[] = { -1, -1 };
 	int sample_rates[] = { -1, -1 };
 	int channel_counts[] = { -1, -1 };
@@ -289,10 +294,10 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-	AVFilter *buffersrc  = avfilter_get_by_name("buffer");
-	AVFilter *buffersink = avfilter_get_by_name("buffersink");
-	AVFilter *scale = avfilter_get_by_name("scale");
-	AVFilter *pad = avfilter_get_by_name("pad");
+	const AVFilter *buffersrc  = avfilter_get_by_name("buffer");
+	const AVFilter *buffersink = avfilter_get_by_name("buffersink");
+	const AVFilter *scale = avfilter_get_by_name("scale");
+	const AVFilter *pad = avfilter_get_by_name("pad");
 	mlt_properties p = mlt_properties_new();
 	enum AVPixelFormat pixel_fmts[] = { -1, -1 };
 	AVRational sar = (AVRational){ profile->sample_aspect_num, profile->frame_rate_den };
@@ -706,25 +711,24 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		pdata->avinframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 		pdata->avinframe->color_primaries = mlt_properties_get_int( frame_properties, "color_primaries" );
 		pdata->avinframe->color_trc = mlt_properties_get_int( frame_properties, "color_trc" );
-		av_frame_set_color_range( pdata->avinframe,
-			mlt_properties_get_int( frame_properties, "full_luma" )? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG );
+		pdata->avinframe->color_range = mlt_properties_get_int( frame_properties, "full_luma" )? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
 
 		switch (mlt_properties_get_int( frame_properties, "colorspace" ))
 		{
 		case 240:
-			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_SMPTE240M );
+			pdata->avinframe->colorspace = AVCOL_SPC_SMPTE240M;
 			break;
 		case 601:
-			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT470BG );
+			pdata->avinframe->colorspace = AVCOL_SPC_BT470BG;
 			break;
 		case 709:
-			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT709 );
+			pdata->avinframe->colorspace = AVCOL_SPC_BT709;
 			break;
 		case 2020:
-			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT2020_NCL );
+			pdata->avinframe->colorspace = AVCOL_SPC_BT2020_NCL;
 			break;
 		case 2021:
-			av_frame_set_colorspace( pdata->avinframe, AVCOL_SPC_BT2020_CL );
+			pdata->avinframe->colorspace = AVCOL_SPC_BT2020_CL;
 			break;
 		}
 
@@ -873,8 +877,6 @@ mlt_filter filter_avfilter_init( mlt_profile profile, mlt_service_type type, con
 {
 	mlt_filter filter = mlt_filter_new();
 	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
-
-	avfilter_register_all();
 
 	if( pdata && id )
 	{

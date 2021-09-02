@@ -40,6 +40,7 @@
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <libavutil/samplefmt.h>
 #include <libavutil/pixdesc.h>
@@ -382,10 +383,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 		// Get the codec context
 		AVStream *stream = context->streams[ i ];
 		if ( ! stream ) continue;
-		AVCodecContext *codec_context = stream->codec;
-		if ( ! codec_context ) continue;
 		AVCodecParameters *codec_params = stream->codecpar;
-		AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
+		const AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
 		if ( ! codec ) continue;
 
 		snprintf( key, sizeof(key), "meta.media.%u.stream.type", i );
@@ -421,9 +420,9 @@ static mlt_properties find_default_streams( producer_avformat self )
 				mlt_properties_set_int( meta_media, key, codec_params->height );
 				snprintf( key, sizeof(key), "meta.media.%u.codec.rotate", i );
 				mlt_properties_set_int( meta_media, key, get_rotation(context->streams[i]) );
-				snprintf( key, sizeof(key), "meta.media.%u.codec.frame_rate", i );
-				AVRational frame_rate = { codec_context->time_base.den, codec_context->time_base.num * codec_context->ticks_per_frame };
-				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
+//				snprintf( key, sizeof(key), "meta.media.%u.codec.frame_rate", i );
+//				AVRational frame_rate = { codec_context->time_base.den, codec_context->time_base.num * codec_context->ticks_per_frame };
+//				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
 				snprintf( key, sizeof(key), "meta.media.%u.codec.pix_fmt", i );
 				mlt_properties_set( meta_media, key, av_get_pix_fmt_name( codec_params->format ) );
 				snprintf( key, sizeof(key), "meta.media.%u.codec.sample_aspect_ratio", i );
@@ -447,7 +446,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 					mlt_properties_set_int( meta_media, key, codec_params->width * codec_params->height > 750000 ? 709 : 601 );
 					break;
 				default:
-					mlt_properties_set_int( meta_media, key, codec_context->colorspace );
+//					mlt_properties_set_int( meta_media, key, codec_context->colorspace );
 					break;
 				}
 				if ( codec_params->color_trc && codec_params->color_trc != AVCOL_TRC_UNSPECIFIED )
@@ -474,8 +473,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 			default:
 				break;
 		}
-// 		snprintf( key, sizeof(key), "meta.media.%u.stream.time_base", i );
-// 		mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->time_base ) );
+//		snprintf( key, sizeof(key), "meta.media.%u.stream.time_base", i );
+//		mlt_properties_set_double( meta_media, key, av_q2d( context->streams[ i ]->time_base ) );
 		snprintf( key, sizeof(key), "meta.media.%u.codec.name", i );
 		mlt_properties_set( meta_media, key, codec->name );
 		snprintf( key, sizeof(key), "meta.media.%u.codec.long_name", i );
@@ -532,7 +531,7 @@ static void get_aspect_ratio( mlt_properties properties, AVStream *stream, AVCod
 	mlt_properties_set_double( properties, "aspect_ratio", av_q2d( sar ) );
 }
 
-static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **format, AVDictionary **params )
+static char* parse_url( mlt_profile profile, const char* URL, const AVInputFormat **format, AVDictionary **params )
 {
 	(void) profile; // unused
 	if ( !URL ) return NULL;
@@ -817,7 +816,7 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 	mlt_events_block( properties, self->parent );
 
 	// Parse URL
-	AVInputFormat *format = NULL;
+	const AVInputFormat *format = NULL;
 	AVDictionary *params = NULL;
 	char *filename = parse_url( profile, URL, &format, &params );
 
@@ -1140,12 +1139,6 @@ static int seek_video( producer_avformat self, mlt_position position,
 		// Fetch the video format context
 		AVFormatContext *context = self->video_format;
 
-		// Get the video stream
-		AVStream *stream = context->streams[ self->video_index ];
-
-		// Get codec context
-		AVCodecContext *codec_context = stream->codec;
-
 		// We may want to use the source fps if available
 		double source_fps = mlt_properties_get_double( properties, "meta.media.frame_rate_num" ) /
 			mlt_properties_get_double( properties, "meta.media.frame_rate_den" );
@@ -1176,11 +1169,11 @@ static int seek_video( producer_avformat self, mlt_position position,
 				timestamp, position, self->video_expected, self->last_position );
 
 			// Seek to the timestamp
-			codec_context->skip_loop_filter = AVDISCARD_NONREF;
+			self->video_codec->skip_loop_filter = AVDISCARD_NONREF;
 			av_seek_frame( context, self->video_index, timestamp, AVSEEK_FLAG_BACKWARD );
 
 			// flush any pictures still in decode buffer
-			avcodec_flush_buffers( codec_context );
+			avcodec_flush_buffers( self->video_codec );
 			self->video_send_result = 0;
 
 			// Remove the cached info relating to the previous position
@@ -1216,11 +1209,23 @@ static void get_audio_streams_info( producer_avformat self )
 		if ( context->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO )
 		{
 			AVCodecParameters *codec_params = context->streams[i]->codecpar;
-			AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
+			const AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
+
+			// Setup the codec context
+			AVCodecContext *codec_context = avcodec_alloc_context3(codec);
+			if (!codec_context) {
+				mlt_log_info(MLT_PRODUCER_SERVICE(self->parent), "Failed to allocate the decoder context for stream #%d\n", i);
+				continue;
+			}
+			int ret = avcodec_parameters_to_context(codec_context, codec_params);
+			if (ret < 0) {
+				mlt_log_info(MLT_PRODUCER_SERVICE(self->parent), "Failed to copy decoder parameters to input decoder context for stream #%d\n", i);
+				continue;
+			}
 
 			// If we don't have a codec and we can't initialise it, we can't do much more...
 			pthread_mutex_lock( &self->open_mutex );
-			if ( codec && avcodec_open2( context->streams[i]->codec, codec, NULL ) >= 0 )
+			if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
 			{
 				self->audio_streams++;
 				self->audio_max_stream = i;
@@ -1229,7 +1234,7 @@ static void get_audio_streams_info( producer_avformat self )
 					self->max_channel = codec_params->channels;
 				if ( codec_params->sample_rate > self->max_frequency )
 					self->max_frequency = codec_params->sample_rate;
-				avcodec_close( context->streams[i]->codec );
+				avcodec_close( codec_context );
 			}
 			pthread_mutex_unlock( &self->open_mutex );
 		}
@@ -1673,9 +1678,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Get the video stream
 	AVStream *stream = context->streams[ self->video_index ];
-
-	// Get codec context
-	AVCodecContext *codec_context = stream->codec;
 	codec_params = stream->codecpar;
 
 	// Always use the image cache for album art.
@@ -1746,13 +1748,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 
 	// Seek if necessary
 	double speed = mlt_producer_get_speed(producer);
-	int preseek = must_decode && codec_context->has_b_frames && speed >= 0.0 && speed <= 1.0;
+	int preseek = must_decode && self->video_codec->has_b_frames && speed >= 0.0 && speed <= 1.0;
 	int paused = seek_video( self, position, req_position, preseek );
 
 	// Seek might have reopened the file
 	context = self->video_format;
 	stream = context->streams[ self->video_index ];
-	codec_context = stream->codec;
 	codec_params = stream->codecpar;
 	if ( *format == mlt_image_none || *format == mlt_image_movit ||
 			codec_params->format == AV_PIX_FMT_ARGB ||
@@ -1897,10 +1898,10 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				// Decode the image
 				if ( must_decode  || int_position >= req_position || !self->pkt.data )
 				{
-					codec_context->reordered_opaque = int_position;
+					self->video_codec->reordered_opaque = int_position;
 					if ( int_position >= req_position )
-						codec_context->skip_loop_filter = AVDISCARD_NONE;
-					self->video_send_result = avcodec_send_packet( codec_context, &self->pkt );
+						self->video_codec->skip_loop_filter = AVDISCARD_NONE;
+					self->video_send_result = avcodec_send_packet( self->video_codec, &self->pkt );
 					mlt_log_debug( MLT_PRODUCER_SERVICE( producer ), "decoded video packet with size %d => %d\n", self->pkt.size, self->video_send_result );
 					// Note: decode may fail at the beginning of MPEGfile (B-frames referencing before first I-frame), so allow a few errors.
 					if (!ignore_send_packet_result(self->video_send_result))
@@ -1909,7 +1910,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					}
 					else
 					{
-						int error = avcodec_receive_frame( codec_context, self->video_frame );
+						int error = avcodec_receive_frame( self->video_codec, self->video_frame );
 						if ( error < 0 ) 
 						{
 							if ( error != AVERROR( EAGAIN ) && ++decode_errors > 10 ) 
@@ -1969,7 +1970,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					if ( int_position < req_position )
 						got_picture = 0;
 					else if ( int_position >= req_position )
-						codec_context->skip_loop_filter = AVDISCARD_NONE;
+						self->video_codec->skip_loop_filter = AVDISCARD_NONE;
 				}
 				else if ( !self->pkt.data ) // draining decoder with null packets
 				{
@@ -2137,11 +2138,10 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		AVStream *stream = self->video_format->streams[ index ];
 
 		// Get codec context
-		AVCodecContext *codec_context = stream->codec;
 		AVCodecParameters *codec_params = stream->codecpar;
 
 		// Find the codec
-		AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
+		const AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
 		if ( mlt_properties_get( properties, "vcodec" ) ) {
 			if ( !( codec = avcodec_find_decoder_by_name( mlt_properties_get( properties, "vcodec" ) ) ) )
 				codec = avcodec_find_decoder( codec_params->codec_id );
@@ -2151,6 +2151,20 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		} else if ( codec_params->codec_id == AV_CODEC_ID_VP8 ) {
 			if ( !( codec = avcodec_find_decoder_by_name( "libvpx" ) ) )
 				codec = avcodec_find_decoder( codec_params->codec_id );
+		}
+
+		// Setup the codec context
+		AVCodecContext *codec_context = avcodec_alloc_context3(codec);
+		if (!codec_context) {
+			mlt_log_error( MLT_PRODUCER_SERVICE( self->parent ), "Failed to allocate the decoder context for video stream #%d\n", index);
+			self->video_index = -1;
+			return 0;
+		}
+		int ret = avcodec_parameters_to_context(codec_context, codec_params);
+		if (ret < 0) {
+			mlt_log_error( MLT_PRODUCER_SERVICE( self->parent ), "Failed to copy decoder parameters to input decoder context for video stream #%d\n", index);
+			self->video_index = -1;
+			return 0;
 		}
 
 		// Initialise multi-threading
@@ -2924,15 +2938,32 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 	// Initialise the codec if necessary
 	if ( !self->audio_codec[ index ] )
 	{
+		// Get the video stream
+		AVStream *stream = self->audio_format->streams[ index ];
+
 		// Get codec context
-		AVCodecContext *codec_context = self->audio_format->streams[index]->codec;
+		AVCodecParameters *codec_params = stream->codecpar;
 
 		// Find the codec
-		AVCodec *codec = avcodec_find_decoder( codec_context->codec_id );
+		const AVCodec *codec = avcodec_find_decoder( codec_params->codec_id );
 		if ( mlt_properties_get( properties, "acodec" ) )
 		{
 			if ( !( codec = avcodec_find_decoder_by_name( mlt_properties_get( properties, "acodec" ) ) ) )
-				codec = avcodec_find_decoder( codec_context->codec_id );
+				codec = avcodec_find_decoder( codec_params->codec_id );
+		}
+
+		// Setup the codec context
+		AVCodecContext *codec_context = avcodec_alloc_context3(codec);
+		if (!codec_context) {
+			mlt_log_error( MLT_PRODUCER_SERVICE( self->parent ), "Failed to allocate the decoder context for audio stream #%d\n", index);
+			self->audio_index = -1;
+			return 0;
+		}
+		int ret = avcodec_parameters_to_context(codec_context, codec_params);
+		if (ret < 0) {
+			mlt_log_error( MLT_PRODUCER_SERVICE( self->parent ), "Failed to copy decoder parameters to input decoder context for audio stream #%d\n", index);
+			self->audio_index = -1;
+			return 0;
 		}
 
 		// If we don't have a codec and we can't initialise it, we can't do much more...

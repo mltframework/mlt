@@ -34,9 +34,11 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <time.h>
 
 // avformat header files
 #include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avio.h>
 #include <libswscale/swscale.h>
 #include <libavutil/pixdesc.h>
@@ -45,6 +47,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/version.h>
+#include <libavutil/channel_layout.h>
 #ifdef AVFILTER
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
@@ -423,11 +426,12 @@ static int consumer_start( mlt_consumer consumer )
 		mlt_properties doc = mlt_properties_new();
 		mlt_properties formats = mlt_properties_new();
 		char key[20];
-		AVOutputFormat *format = NULL;
+		const AVOutputFormat *format = NULL;
+		void *iterator = NULL;
 		
 		mlt_properties_set_data( properties, "f", formats, 0, (mlt_destructor) mlt_properties_close, NULL );
 		mlt_properties_set_data( doc, "formats", formats, 0, NULL, NULL );
-		while ( ( format = av_oformat_next( format ) ) )
+		while ( ( format = av_muxer_iterate( &iterator ) ) )
 		{
 			snprintf( key, sizeof(key), "%d", mlt_properties_count( formats ) );
 			mlt_properties_set( formats, key, format->name );
@@ -444,11 +448,12 @@ static int consumer_start( mlt_consumer consumer )
 		mlt_properties doc = mlt_properties_new();
 		mlt_properties codecs = mlt_properties_new();
 		char key[20];
-		AVCodec *codec = NULL;
+		const AVCodec *codec = NULL;
 
 		mlt_properties_set_data( properties, "acodec", codecs, 0, (mlt_destructor) mlt_properties_close, NULL );
 		mlt_properties_set_data( doc, "audio_codecs", codecs, 0, NULL, NULL );
-		while ( ( codec = av_codec_next( codec ) ) )
+		void *iterator = NULL;
+		while ( ( codec = av_codec_iterate( &iterator ) ) )
 #if LIBAVCODEC_VERSION_INT >= ((57<<16)+(37<<8)+0)
 			if ( av_codec_is_encoder(codec) && codec->type == AVMEDIA_TYPE_AUDIO )
 #else
@@ -470,11 +475,12 @@ static int consumer_start( mlt_consumer consumer )
 		mlt_properties doc = mlt_properties_new();
 		mlt_properties codecs = mlt_properties_new();
 		char key[20];
-		AVCodec *codec = NULL;
+		const AVCodec *codec = NULL;
+		void *iterator = NULL;
 
 		mlt_properties_set_data( properties, "vcodec", codecs, 0, (mlt_destructor) mlt_properties_close, NULL );
 		mlt_properties_set_data( doc, "video_codecs", codecs, 0, NULL, NULL );
-		while ( ( codec = av_codec_next( codec ) ) )
+		while ( ( codec = av_codec_iterate( &iterator ) ) )
 #if LIBAVCODEC_VERSION_INT >= ((57<<16)+(37<<8)+0)
 			if ( av_codec_is_encoder(codec) && codec->type == AVMEDIA_TYPE_VIDEO )
 #else
@@ -616,7 +622,7 @@ static int get_mlt_audio_format( int av_sample_fmt )
 	}
 }
 
-static int pick_sample_fmt( mlt_properties properties, AVCodec *codec )
+static int pick_sample_fmt( mlt_properties properties, const AVCodec *codec )
 {
 	int sample_fmt = AV_SAMPLE_FMT_S16;
 	const char *format = mlt_properties_get( properties, "mlt_audio_format" );
@@ -693,7 +699,7 @@ static uint8_t* interleaved_to_planar( int samples, int channels, uint8_t* audio
 /** Add an audio output stream
 */
 
-static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec, int channels, int64_t channel_layout )
+static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, const AVCodec *codec, AVCodecContext **codec_context, int channels, int64_t channel_layout )
 {
 	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -704,10 +710,11 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 	// If created, then initialise from properties
 	if ( st != NULL ) 
 	{
-		AVCodecContext *c = st->codec;
-
-		// Establish defaults from AVOptions
-		avcodec_get_context_defaults3( c, codec );
+		AVCodecContext *c = *codec_context = avcodec_alloc_context3(codec);
+		if (!c) {
+			mlt_log_fatal(MLT_CONSUMER_SERVICE(consumer), "Failed to allocate the audio encoder context\n");
+			return NULL;
+		}
 
 		c->codec_id = codec->id;
 		c->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -770,20 +777,10 @@ static AVStream *add_audio_stream( mlt_consumer consumer, AVFormatContext *oc, A
 	return st;
 }
 
-static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream *st, int audio_outbuf_size, const char *codec_name )
+static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream *st, const AVCodec *codec, AVCodecContext *c )
 {
 	// We will return the audio input size from here
 	int audio_input_frame_size = 0;
-
-	// Get the context
-	AVCodecContext *c = st->codec;
-
-	// Find the encoder
-	AVCodec *codec;
-	if ( codec_name )
-		codec = avcodec_find_encoder_by_name( codec_name );
-	else
-		codec = avcodec_find_encoder( c->codec_id );
 
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
@@ -807,6 +804,11 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	// Continue if codec found and we can open it
 	if ( codec && avcodec_open2( c, codec, NULL ) >= 0 )
 	{
+		if (avcodec_parameters_from_context(st->codecpar, c) < 0) {
+			mlt_log_warning(NULL, "Failed to copy encoder parameters to output audio stream\n");
+			return 0;
+		}
+
 		// ugly hack for PCM codecs (will be removed ASAP with new PCM
 		// support to compute the input frame size in samples
 		if ( c->frame_size <= 1 ) 
@@ -829,16 +831,10 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	return audio_input_frame_size;
 }
 
-static void close_audio( AVFormatContext *oc, AVStream *st )
-{
-	if ( st && st->codec )
-		avcodec_close( st->codec );
-}
-
 /** Add a video output stream 
 */
 
-static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, AVCodec *codec )
+static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, const AVCodec *codec, AVCodecContext **codec_context )
 {
  	// Get the properties
 	mlt_properties properties = MLT_CONSUMER_PROPERTIES( consumer );
@@ -849,10 +845,12 @@ static AVStream *add_video_stream( mlt_consumer consumer, AVFormatContext *oc, A
 	if ( st != NULL ) 
 	{
 		char *pix_fmt = mlt_properties_get( properties, "pix_fmt" );
-		AVCodecContext *c = st->codec;
 
-		// Establish defaults from AVOptions
-		avcodec_get_context_defaults3( c, codec );
+		AVCodecContext *c = *codec_context = avcodec_alloc_context3(codec);
+		if (!c) {
+			mlt_log_fatal(MLT_CONSUMER_SERVICE(consumer), "Failed to allocate the video encoder context\n");
+			return NULL;
+		}
 
 		c->codec_id = codec->id;
 		c->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -1121,18 +1119,8 @@ static AVFrame *alloc_picture( int pix_fmt, int width, int height )
 	return picture;
 }
 
-static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream *st, const char *codec_name )
+static int open_video( mlt_properties properties,  AVFormatContext *oc, AVStream *st, const AVCodec *codec, AVCodecContext *video_enc )
 {
-	// Get the codec
-	AVCodecContext *video_enc = st->codec;
-
-	// find the video encoder
-	AVCodec *codec;
-	if ( codec_name )
-		codec = avcodec_find_encoder_by_name( codec_name );
-	else
-		codec = avcodec_find_encoder( video_enc->codec_id );
-
 	// Process properties as AVOptions on the AVCodec
 	if ( codec && codec->priv_class )
 	{
@@ -1166,21 +1154,22 @@ static int open_video( mlt_properties properties, AVFormatContext *oc, AVStream 
 
 	const AVPixFmtDescriptor* srcDesc = av_pix_fmt_desc_get(video_enc->pix_fmt);
 	if (srcDesc->flags & AV_PIX_FMT_FLAG_RGB) {
-		st->codec->colorspace = AVCOL_SPC_RGB;
+		video_enc->colorspace = AVCOL_SPC_RGB;
 	}
 
 	int result = codec && avcodec_open2( video_enc, codec, NULL ) >= 0;
-	
-	return result;
-}
 
-void close_video(AVFormatContext *oc, AVStream *st)
-{
-	if ( st && st->codec )
-	{
-		av_freep( &st->codec->stats_in );
-		avcodec_close(st->codec);
+	if (result >= 0) {
+		result = avcodec_parameters_from_context(st->codecpar, video_enc) >= 0;
+		if (!result) {
+			mlt_log_warning(NULL, "Failed to copy encoder parameters to output video stream\n");
+		}
+	} else {
+		mlt_log_warning( NULL, "%s: Unable to encode video - disabling video output.\n", __FILE__ );
 	}
+
+
+	return result;
 }
 
 static inline long time_difference( struct timeval *time1 )
@@ -1219,7 +1208,9 @@ typedef struct encode_ctx_desc
 
 	AVFormatContext *oc;
 	AVStream *video_st;
+	AVCodecContext *vcodec_ctx;
 	AVStream *audio_st[ MAX_AUDIO_STREAMS ];
+	AVCodecContext *acodec_ctx[MAX_AUDIO_STREAMS];
 	int64_t sample_count[ MAX_AUDIO_STREAMS ];
 
 	// Used to store and override codec ids
@@ -1279,7 +1270,7 @@ static int encode_audio(encode_ctx_t* ctx)
 	for ( i = 0; i < MAX_AUDIO_STREAMS && ctx->audio_st[i] && j < ctx->total_channels; i++ )
 	{
 		AVStream *stream = ctx->audio_st[i];
-		AVCodecContext *codec = stream->codec;
+		AVCodecContext *codec = ctx->acodec_ctx[i];
 		AVPacket pkt;
 
 		av_init_packet( &pkt );
@@ -1452,7 +1443,7 @@ receive_audio_packet:
 
 		if ( i == 0 )
 		{
-			ctx->audio_pts = (double) ctx->sample_count[0] * av_q2d( stream->codec->time_base );
+			ctx->audio_pts = (double) ctx->sample_count[0] * av_q2d( codec->time_base );
 		}
 	}
 
@@ -1531,14 +1522,13 @@ static void *consumer_thread( void *arg )
 	long int total_time = 0;
 
 	// Determine the format
-	AVOutputFormat *fmt = NULL;
+	const AVOutputFormat *fmt = NULL;
 	const char *filename = mlt_properties_get( properties, "target" );
 	char *format = mlt_properties_get( properties, "f" );
 	char *vcodec = mlt_properties_get( properties, "vcodec" );
 	char *acodec = mlt_properties_get( properties, "acodec" );
-	AVCodec *audio_codec = NULL;
-	AVCodec *video_codec = NULL;
-
+	const AVCodec *audio_codec = NULL;
+	const AVCodec *video_codec = NULL;
 
 	// Misc
 	char key[27];
@@ -1657,7 +1647,7 @@ static void *consumer_thread( void *arg )
 	// Add audio and video streams
 	if ( enc_ctx->video_codec_id != AV_CODEC_ID_NONE )
 	{
-		if ( ( enc_ctx->video_st = add_video_stream( consumer, enc_ctx->oc, video_codec ) ) )
+		if ( ( enc_ctx->video_st = add_video_stream( consumer, enc_ctx->oc, video_codec, &enc_ctx->vcodec_ctx ) ) )
 		{
 			const char* img_fmt_name = mlt_properties_get( properties, "mlt_image_format" );
 			if ( img_fmt_name )
@@ -1670,7 +1660,7 @@ static void *consumer_thread( void *arg )
 			else
 			{
 				// Set the mlt_image_format from the selected pix_fmt.
-				const char *pix_fmt_name = av_get_pix_fmt_name( enc_ctx->video_st->codec->pix_fmt );
+				const char *pix_fmt_name = av_get_pix_fmt_name( enc_ctx->vcodec_ctx->pix_fmt );
 				if ( !strcmp( pix_fmt_name, "rgba" ) ||
 					 !strcmp( pix_fmt_name, "argb" ) ||
 					 !strcmp( pix_fmt_name, "bgra" ) ) {
@@ -1698,7 +1688,7 @@ static void *consumer_thread( void *arg )
 			{
 				is_multi = 1;
 				enc_ctx->total_channels += j;
-				enc_ctx->audio_st[i] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, j, av_get_default_channel_layout( j ) );
+				enc_ctx->audio_st[i] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, &enc_ctx->acodec_ctx[i], j, av_get_default_channel_layout( j ) );
 			}
 		}
 		// single track
@@ -1711,7 +1701,7 @@ static void *consumer_thread( void *arg )
 			{
 				layout = mlt_audio_channel_layout_default( enc_ctx->channels );
 			}
-			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, enc_ctx->channels, mlt_to_av_channel_layout( layout ) );
+			enc_ctx->audio_st[0] = add_audio_stream( consumer, enc_ctx->oc, audio_codec, &enc_ctx->acodec_ctx[0], enc_ctx->channels, mlt_to_av_channel_layout( layout ) );
 			enc_ctx->total_channels = enc_ctx->channels;
 		}
 	}
@@ -1720,7 +1710,7 @@ static void *consumer_thread( void *arg )
 	// Audio format is determined when adding the audio stream
 	mlt_audio_format aud_fmt = mlt_audio_none;
 	if ( enc_ctx->audio_st[0] )
-		aud_fmt = get_mlt_audio_format( enc_ctx->audio_st[0]->codec->sample_fmt );
+		aud_fmt = get_mlt_audio_format( enc_ctx->acodec_ctx[0]->sample_fmt );
 	enc_ctx->sample_bytes = mlt_audio_format_size( aud_fmt, 1, 1 );
 	enc_ctx->sample_bytes = enc_ctx->sample_bytes ? enc_ctx->sample_bytes : 1; // prevent divide by zero
 
@@ -1744,16 +1734,15 @@ static void *consumer_thread( void *arg )
 		if ( enc_ctx->oc->oformat && enc_ctx->oc->oformat->priv_class && enc_ctx->oc->priv_data )
 			apply_properties( enc_ctx->oc->priv_data, properties, AV_OPT_FLAG_ENCODING_PARAM );
 
-		if ( enc_ctx->video_st && !open_video( properties, enc_ctx->oc, enc_ctx->video_st, vcodec? vcodec : NULL ) )
+		if ( enc_ctx->video_st && !open_video( properties, enc_ctx->oc, enc_ctx->video_st, video_codec, enc_ctx->vcodec_ctx ) )
 			enc_ctx->video_st = NULL;
 		for ( i = 0; i < MAX_AUDIO_STREAMS && enc_ctx->audio_st[i]; i++ )
 		{
-			enc_ctx->audio_input_frame_size = open_audio( properties, enc_ctx->oc, enc_ctx->audio_st[i], enc_ctx->audio_outbuf_size,
-				acodec? acodec : NULL );
+			enc_ctx->audio_input_frame_size = open_audio( properties, enc_ctx->oc, enc_ctx->audio_st[i], audio_codec, enc_ctx->acodec_ctx[i] );
 			if ( !enc_ctx->audio_input_frame_size )
 			{
 				// Remove the audio stream from the output context
-				int j;
+				unsigned int j;
 				for ( j = 0; j < enc_ctx->oc->nb_streams; j++ )
 				{
 					if ( enc_ctx->oc->streams[j] == enc_ctx->audio_st[i] )
@@ -1808,10 +1797,10 @@ static void *consumer_thread( void *arg )
 	enum AVPixelFormat pix_fmt;
 	if ( enc_ctx->video_st ) {
 #if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
-		pix_fmt = enc_ctx->video_st->codec->pix_fmt == AV_PIX_FMT_VAAPI ?
-				   AV_PIX_FMT_NV12 : enc_ctx->video_st->codec->pix_fmt;
+		pix_fmt = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI ?
+				   AV_PIX_FMT_NV12 : enc_ctx->vcodec_ctx->pix_fmt;
 #else
-		pix_fmt = enc_ctx->video_st->codec->pix_fmt;
+		pix_fmt = enc_ctx->vcodec_ctx->pix_fmt;
 #endif
 		converted_avframe = alloc_picture( pix_fmt, width, height );
 		if ( !converted_avframe ) {
@@ -1826,7 +1815,7 @@ static void *consumer_thread( void *arg )
 	{
 		enc_ctx->audio_avframe = av_frame_alloc();
 		if ( enc_ctx->audio_avframe ) {
-			AVCodecContext *c = enc_ctx->audio_st[0]->codec;
+			AVCodecContext *c = enc_ctx->acodec_ctx[0];
 			enc_ctx->audio_avframe->format = c->sample_fmt;
 			enc_ctx->audio_avframe->nb_samples = enc_ctx->audio_input_frame_size;
 			enc_ctx->audio_avframe->channel_layout = c->channel_layout;
@@ -1957,7 +1946,7 @@ static void *consumer_thread( void *arg )
 				if ( mlt_deque_count( queue ) )
 				{
 					int ret = 0;
-					AVCodecContext *c = enc_ctx->video_st->codec;
+					AVCodecContext *c = enc_ctx->vcodec_ctx;
 
 					frame = mlt_deque_pop_front( queue );
 					frame_properties = MLT_FRAME_PROPERTIES( frame );
@@ -2156,7 +2145,7 @@ receive_video_packet:
 						}
  					}
 					enc_ctx->frame_count++;
-					enc_ctx->video_pts = (double) enc_ctx->frame_count * av_q2d( enc_ctx->video_st->codec->time_base );
+					enc_ctx->video_pts = (double) enc_ctx->frame_count * av_q2d( enc_ctx->vcodec_ctx->time_base );
 					if ( ret )
 					{
 						mlt_log_fatal( MLT_CONSUMER_SERVICE(consumer), "error writing video frame: %d\n", ret );
@@ -2222,7 +2211,7 @@ receive_video_packet:
         if ( enc_ctx->video_st ) for (;;)
 #endif
 		{
-			AVCodecContext *c = enc_ctx->video_st->codec;
+			AVCodecContext *c = enc_ctx->vcodec_ctx;
 			AVPacket pkt;
 			av_init_packet( &pkt );
 			if ( c->codec->id == AV_CODEC_ID_RAWVIDEO ) {
@@ -2290,20 +2279,19 @@ on_fatal_error:
 		av_free( converted_avframe->data[0] );
 	av_free( converted_avframe );
 #if defined(AVFILTER) && LIBAVUTIL_VERSION_MAJOR >= 56
-	if (enc_ctx->video_st && enc_ctx->video_st->codec && AV_PIX_FMT_VAAPI == enc_ctx->video_st->codec->pix_fmt)
+	if (enc_ctx->video_st && enc_ctx->vcodec_ctx && AV_PIX_FMT_VAAPI == enc_ctx->vcodec_ctx->pix_fmt)
 		av_frame_free(&avframe);
 #endif
 	av_free( video_outbuf );
 	av_free( enc_ctx->audio_avframe );
 
 	// close each codec
-	if ( enc_ctx->video_st )
-		close_video(enc_ctx->oc, enc_ctx->video_st);
-	for ( i = 0; i < MAX_AUDIO_STREAMS && enc_ctx->audio_st[i]; i++ )
-		close_audio( enc_ctx->oc, enc_ctx->audio_st[i] );
+	avcodec_free_context(&enc_ctx->vcodec_ctx);
+	for ( i = 0; i < MAX_AUDIO_STREAMS; i++ )
+		avcodec_free_context(&enc_ctx->acodec_ctx[i]);
 
 	// Free the streams
-	for ( i = 0; i < enc_ctx->oc->nb_streams; i++ )
+	for ( unsigned int i = 0; i < enc_ctx->oc->nb_streams; i++ )
 		av_freep( &enc_ctx->oc->streams[i] );
 
 	// Close the output file
