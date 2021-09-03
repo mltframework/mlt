@@ -144,7 +144,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				// Alpha will be needed but it does not exist yet. Create opaque alpha.
 				mlt_image_alloc_alpha( &proc_image );
 				mlt_image_fill_opaque( &proc_image );
-				mlt_frame_set_alpha( frame, proc_image.planes[3], 0, proc_image.release_alpha );
+				mlt_frame_set_alpha( frame, proc_image.planes[3], (*width) * (*height), proc_image.release_alpha );
 			}
 		}
 		desc.level = level;
