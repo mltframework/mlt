@@ -129,6 +129,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	alpha_level = mlt_properties_get(properties, "alpha")? MIN(mlt_properties_anim_get_double(properties, "alpha", position, length), 1.0) : 1.0;
 	if (alpha_level < 0.0) {
 		alpha_level = level;
+		if ( mlt_properties_exists( properties, "end" ) )
+		{
+			// we use the simplified start / end syntax
+			level = 1.0;
+		}
 	}
 
 	// Only process if we have no error.
