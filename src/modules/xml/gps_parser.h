@@ -27,6 +27,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <ctype.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
