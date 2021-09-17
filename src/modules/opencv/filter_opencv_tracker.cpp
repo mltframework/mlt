@@ -23,9 +23,21 @@
 
 #define CV_VERSION_INT (CV_VERSION_MAJOR << 16 | CV_VERSION_MINOR << 8 | CV_VERSION_REVISION)
 
+#if CV_VERSION_INT > 0x040502
+#include <opencv2/tracking/tracking_legacy.hpp>
+#include <sys/types.h> // for stat()
+#include <sys/stat.h>  // for stat()
+#include <unistd.h>    // for stat()
+#endif
+
+
 typedef struct
 {
 	cv::Ptr<cv::Tracker> tracker;
+#if CV_VERSION_INT > 0x040502
+	cv::Ptr<cv::legacy::tracking::Tracker> legacyTracker;
+#endif
+
 #if CV_VERSION_INT < 0x040500
 	cv::Rect2d boundingBox;
 #else
@@ -41,6 +53,7 @@ typedef struct
 	int analyse_height;
 	mlt_position producer_in;
 	mlt_position producer_length;
+	bool legacyTracking;
 } private_data;
 
 
@@ -62,7 +75,7 @@ static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_da
 			return;
 		}
 		else
-                {
+		{
 			// Analysis data was discarded
 			pdata->initialized = false;
 			pdata->producer_length = 0;
@@ -96,6 +109,10 @@ static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_da
 	else if ( !strcmp( name, "_reset" ) )
 	{
 		mlt_properties_set( filter_properties, "results", NULL );
+		mlt_properties_set( filter_properties, "_results", NULL );
+		pdata->initialized = false;
+		pdata->playback = false;
+
 	}
 }
 
@@ -121,7 +138,6 @@ static void apply( mlt_filter filter, private_data* data, int width, int height,
 static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int width, int height, int position, int length )
 {
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
-
 	if ( data->analyse_width == -1 )
 	{
 		// Store analyze width/height
@@ -139,12 +155,70 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 	if (!data->initialized)
 	{
 		// Build tracker
+		data->tracker.reset();
+#if CV_VERSION_INT > 0x040502
+		data->legacyTracker.reset();
+#endif
+		data->legacyTracking = false;
 		data->algo = mlt_properties_get( filter_properties, "algo" );
 #if CV_VERSION_MAJOR > 3 || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR >= 3)
 		if ( !data->algo || *data->algo == '\0' || !strcmp(data->algo, "KCF" ) )
 		{
 			data->tracker = cv::TrackerKCF::create();
 		}
+		else if ( !strcmp(data->algo, "MIL" ) )
+		{
+			data->tracker = cv::TrackerMIL::create();
+		}
+#if CV_VERSION_INT > 0x040502
+		else if ( !strcmp(data->algo, "DaSIAM" ) )
+		{
+				if (mlt_properties_exists( filter_properties, "modelsfolder" ) ) {
+						char *modelsdir = mlt_properties_get( filter_properties, "modelsfolder" );
+						cv::TrackerDaSiamRPN::Params parameters;
+						char *model1 = (char *)calloc( 1, 1000 );
+						char *model2 = (char *)calloc( 1, 1000 );
+						char *model3 = (char *)calloc( 1, 1000 );
+						strcat( model1, modelsdir );
+						strcat( model2, modelsdir );
+						strcat( model3, modelsdir );
+						strcat( model1, "/dasiamrpn_model.onnx" );
+						strcat( model2, "/dasiamrpn_kernel_cls1.onnx" );
+						strcat( model3, "/dasiamrpn_kernel_r1.onnx" );
+						struct stat file_info;
+						if ( stat( model1, &file_info ) == 0 && stat( model2, &file_info ) == 0 && stat( model3, &file_info ) == 0 )
+						{
+								// Models found, process
+								parameters.model = model1;
+								parameters.kernel_cls1 = model2;
+								parameters.kernel_r1 = model3;
+								data->tracker = cv::TrackerDaSiamRPN::create(parameters);
+						}
+						else
+						{
+								fprintf( stderr, "DaSIAM models not found, please provide a modelsfolder parameter\n" );
+						}
+						free( model1 );
+						free( model2 );
+						free( model3 );
+				}
+		}
+		else if ( !strcmp(data->algo, "MOSSE" ) )
+		{
+			data->legacyTracking = true;
+			data->legacyTracker = cv::legacy::tracking::TrackerMOSSE::create();
+		}
+		else if ( !strcmp(data->algo, "MEDIANFLOW" ) )
+		{
+			data->legacyTracking = true;
+			data->legacyTracker = cv::legacy::tracking::TrackerMedianFlow::create();
+		}
+		else if ( !strcmp(data->algo, "CSRT" ) )
+		{
+			data->legacyTracking = true;
+			data->legacyTracker = cv::legacy::tracking::TrackerCSRT::create();
+		}
+#endif
 #if CV_VERSION_INT >= 0x030402 && CV_VERSION_INT < 0x040500
 		else if ( !strcmp(data->algo, "CSRT" ) )
 		{
@@ -155,10 +229,6 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 			data->tracker = cv::TrackerMOSSE::create();
 		}
 #endif
-		else if ( !strcmp(data->algo, "MIL" ) )
-		{
-			data->tracker = cv::TrackerMIL::create();
-		}
 #if CV_VERSION_INT >= 0x030402 && CV_VERSION_INT < 0x040500
 		else if ( !strcmp(data->algo, "TLD" ) )
 		{
@@ -181,9 +251,13 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 #endif
 
 		// Discard previous results
-		mlt_properties_set( filter_properties, "_results", "" );
+#if CV_VERSION_INT > 0x040502
+		if( data->tracker == NULL &&  data->legacyTracker == NULL )
+		{
+#else
 		if( data->tracker == NULL )
 		{
+#endif
 			fprintf( stderr, "Tracker initialized FAILED\n" );
 		}
 		else
@@ -237,7 +311,16 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 			if ( data->tracker->init( cvFrame, data->boundingBox ) ) {
 #else
 			{
-				data->tracker->init( cvFrame, data->boundingBox );
+				if ( data->legacyTracking )
+				{
+#if CV_VERSION_INT > 0x040502
+						data->legacyTracker->init( cvFrame, data->boundingBox );
+#endif
+				}
+				else
+				{
+						data->tracker->init( cvFrame, data->boundingBox );
+				}
 #endif
 				data->initialized = true;
 				data->analyze = true;
@@ -253,7 +336,18 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 	}
 	else
 	{
-		data->tracker->update( cvFrame, data->boundingBox );
+		if ( data->legacyTracking )
+		{
+#if CV_VERSION_INT > 0x040502
+				cv::Rect2d rect( data->boundingBox );
+				data->legacyTracker->update( cvFrame, rect );
+				data->boundingBox = cv::Rect( rect );
+#endif
+		}
+		else
+		{
+				data->tracker->update( cvFrame, data->boundingBox );
+		}
 	}
 	if( data->analyze && position != data->last_position + 1 )
 	{

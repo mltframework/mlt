@@ -117,6 +117,15 @@ parameters:
     default: 5
     minimum: 0
 
+  - identifier: modelsfolder
+    title: OpenCV models folder
+    type: string
+    description: >
+      The folder where the tracker models are stored if any
+    mutable: no
+    readonly: no
+    required: no
+
   - identifier: results
     title: Analysis Results
     type: string
