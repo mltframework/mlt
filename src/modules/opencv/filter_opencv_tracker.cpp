@@ -400,12 +400,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 	int shape_width = mlt_properties_get_int( filter_properties, "shape_width" );
+	int pixelate = mlt_properties_get_int( filter_properties, "pixelate" );
 	int blur = mlt_properties_get_int( filter_properties, "blur" );
 	cv::Mat cvFrame;
 
 	private_data* data = (private_data*) filter->child;
-	if ( shape_width == 0 && blur == 0 && !data->playback ) {
+	if ( shape_width == 0 && blur == 0 && !data->playback && pixelate == 0) {
 		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+		mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+		return error;
 	}
 	else
 	{
@@ -487,6 +490,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				cv::medianBlur( cvFrame( data->boundingBox ), cvFrame( data->boundingBox ), blur );
 				break;
 		}
+	}
+
+	if ( pixelate > 0 )
+	{
+		cv::Mat roi = cvFrame( data->boundingBox );
+		cv::Mat res;
+		cv::resize( roi, res, cv::Size( MAX( 2, data->boundingBox.width / pixelate ), MAX( 2, data->boundingBox.height / pixelate )), cv::INTER_NEAREST );
+		cv::resize( res, roi, cv::Size( data->boundingBox.width, data->boundingBox.height ), 0, 0, cv::INTER_NEAREST );
+		cvFrame( data->boundingBox ) = roi;
 	}
 
 	// Paint overlay shape
