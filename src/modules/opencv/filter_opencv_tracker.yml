@@ -69,18 +69,6 @@ parameters:
     default: 0xffffffff
     mutable: yes
 
-  - identifier: pixelate
-    title: Pixelate
-    type: integer
-    description: >
-      Decide if we want to pixelate the rect around followed object during playback.
-      0 means no effect, > 0 is the size of the pixels.
-    readonly: no
-    required: no
-    minimum: 0
-    default: 0
-    mutable: no
-
   - identifier: blur
     title: Blur
     type: integer
@@ -99,7 +87,7 @@ parameters:
     type: integer
     description: >
       Decide which blur method is used.
-      0 for median blur, 1 for gaussian blur.
+      0 for median blur, 1 for gaussian blur, 2 for pixelate, 3 for opaque fill.
     readonly: no
     required: no
     minimum: 0
