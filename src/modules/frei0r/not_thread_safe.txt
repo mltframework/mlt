@@ -2,6 +2,7 @@
 baltan
 bigsh0t_eq_mask
 bigsh0t_eq_to_rect
+bigsh0t_eq_to_stereo
 bigsh0t_hemi_to_eq
 bigsh0t_rect_to_eq
 bigsh0t_stabilize_360
