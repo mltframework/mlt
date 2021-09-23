@@ -10,4 +10,5 @@ SUBDIRS = test_audio \
     test_repository \
     test_animation \
     test_tractor \
-    test_service
+    test_service \
+    test_xml
