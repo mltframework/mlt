@@ -31,7 +31,11 @@
     name     CDATA    #REQUIRED
     value    CDATA    #IMPLIED
 >
-<!ELEMENT producer (property | filter)* >
+<!ELEMENT properties property >
+<!ATTLIST properties
+    name     CDATA    #REQUIRED
+>
+<!ELEMENT producer (property | properties | filter)* >
 <!ATTLIST producer
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
@@ -39,21 +43,21 @@
     title    CDATA    #IMPLIED
     mlt_service  CDATA    #IMPLIED
 >
-<!ELEMENT chain (property | filter | link)* >
+<!ELEMENT chain (property | properties | filter | link)* >
 <!ATTLIST chain
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
     mlt_service  CDATA    #IMPLIED
 >
-<!ELEMENT link (property)* >
+<!ELEMENT link (property | properties)* >
 <!ATTLIST link
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
     mlt_service  CDATA    #IMPLIED
 >
-<!ELEMENT filter (property)* >
+<!ELEMENT filter (property | properties)* >
 <!ATTLIST filter
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
@@ -61,7 +65,7 @@
     mlt_service  CDATA    #IMPLIED
     track    CDATA    #IMPLIED
 >
-<!ELEMENT transition (property)* >
+<!ELEMENT transition (property | properties)* >
 <!ATTLIST transition
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
@@ -70,14 +74,14 @@
     a_track  CDATA    #IMPLIED
     b_track  CDATA    #IMPLIED
 >
-<!ELEMENT playlist (property*,(entry | blank | producer | playlist | tractor | multitrack |chain)*) >
+<!ELEMENT playlist ((property | properties)*,(entry | blank | producer | playlist | tractor | multitrack |chain)*) >
 <!ATTLIST playlist
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
     out      CDATA    #IMPLIED
     title    CDATA    #IMPLIED
 >
-<!ELEMENT entry (property*,(producer | playlist | tractor | multitrack | filter | transition | chain)*) >
+<!ELEMENT entry ((property | properties)*,(producer | playlist | tractor | multitrack | filter | transition | chain)*) >
 <!ATTLIST entry
     producer IDREF    #IMPLIED
     in       CDATA    #IMPLIED
@@ -87,7 +91,7 @@
 <!ATTLIST blank
     length   CDATA    #REQUIRED
 >
-<!ELEMENT tractor ((property)*, (multitrack | (track)+), (filter | transition )*) >
+<!ELEMENT tractor ((property | properties)*, (multitrack | (track)+), (filter | transition )*) >
 <!ATTLIST tractor
     id       ID       #IMPLIED
     in       CDATA    #IMPLIED
@@ -103,7 +107,7 @@
     producer IDREF    #IMPLIED
     hide    (video | audio | both) #IMPLIED
 >
-<!ELEMENT consumer (property)* >
+<!ELEMENT consumer (property | properties)* >
 <!ATTLIST consumer
     id       ID       #IMPLIED
     mlt_service  CDATA    #IMPLIED
