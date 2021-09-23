@@ -69,6 +69,7 @@ struct deserialise_context_s
 {
 	mlt_deque stack_types;
 	mlt_deque stack_service;
+	mlt_deque stack_properties;
 	mlt_properties producer_map;
 	mlt_properties destructors;
 	char *property;
@@ -182,6 +183,31 @@ static xmlNodePtr context_pop_node( deserialise_context context )
 	return mlt_deque_pop_back( context->stack_node );
 }
 
+// Get the current properties object to add each property to.
+// The object could be a service, or it could be a properties instance
+// nested under a service.
+static mlt_properties current_properties( deserialise_context context )
+{
+	mlt_properties properties = NULL;
+	if ( mlt_deque_count( context->stack_properties ) )
+	{
+		// Nested properties are being parsed
+		properties = mlt_deque_peek_back( context->stack_properties );
+	}
+	else if ( mlt_deque_count( context->stack_service ) )
+	{
+		// Properties belong to the service being parsed
+		mlt_service service = mlt_deque_peek_back( context->stack_service );
+		properties = MLT_SERVICE_PROPERTIES( service );
+	}
+
+	if ( properties )
+	{
+		mlt_properties_set_data( properties, "_profile", context->profile, 0, NULL, NULL );
+		mlt_properties_set_lcnumeric( properties, context->lc_numeric );
+	}
+	return properties;
+}
 
 // Set the destructor on a new service
 static void track_service( mlt_properties properties, void *service, mlt_destructor destructor )
@@ -1470,12 +1496,10 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 
 static void on_start_property( deserialise_context context, const xmlChar *name, const xmlChar **atts)
 {
-	enum service_type type;
-	mlt_service service = context_pop_service( context, &type );
-	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+	mlt_properties properties = current_properties( context );
 	const char *value = NULL;
 
-	if ( service != NULL )
+	if ( properties != NULL )
 	{
 		// Set the properties
 		for ( ; atts != NULL && *atts != NULL; atts += 2 )
@@ -1491,26 +1515,22 @@ static void on_start_property( deserialise_context context, const xmlChar *name,
 
 		// Tell parser to collect any further nodes for serialisation
 		context->is_value = 1;
-
-		context_push_service( context, service, type );
 	}
 	else
 	{
-		mlt_log_error( NULL, "[producer_xml] Property without a service '%s'?\n", ( const char * )name );
+		mlt_log_error( NULL, "[producer_xml] Property without a parent '%s'?\n", ( const char * )name );
 	}
 }
 
 static void on_end_property( deserialise_context context, const xmlChar *name )
 {
-	enum service_type type;
-	mlt_service service = context_pop_service( context, &type );
-	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+	mlt_properties properties = current_properties( context );
 
-	if ( service != NULL )
+	if ( properties != NULL )
 	{
 		// Tell parser to stop building a tree
 		context->is_value = 0;
-	
+
 		// See if there is a xml tree for the value
 		if ( context->property != NULL && context->value_doc != NULL )
 		{
@@ -1532,12 +1552,59 @@ static void on_end_property( deserialise_context context, const xmlChar *name )
 		// Close this property handling
 		free( context->property );
 		context->property = NULL;
-
-		context_push_service( context, service, type );
 	}
 	else
 	{
-		mlt_log_error( NULL, "[producer_xml] Property without a service '%s'??\n", (const char *)name );
+		mlt_log_error( NULL, "[producer_xml] Property without a parent '%s'??\n", (const char *)name );
+	}
+}
+
+static void on_start_properties( deserialise_context context, const xmlChar *name, const xmlChar **atts)
+{
+	mlt_properties parent_properties = current_properties( context );
+	if ( parent_properties != NULL )
+	{
+		mlt_properties properties = NULL;
+
+		// Get the name
+		for ( ; atts != NULL && *atts != NULL; atts += 2 )
+		{
+			if ( xmlStrcmp( atts[ 0 ], _x("name") ) == 0 )
+			{
+				properties = mlt_properties_new();
+				mlt_properties_set_properties( parent_properties, _s(atts[ 1 ]), properties );
+				mlt_properties_dec_ref( properties );
+			}
+			else
+			{
+				mlt_log_warning( NULL, "[producer_xml] Invalid attribute for properties '%s=%s'\n", ( const char * )atts[ 0 ], ( const char * )atts[ 1 ] );
+			}
+		}
+
+		if ( properties )
+		{
+			mlt_deque_push_back( context->stack_properties, properties );
+		}
+		else
+		{
+			mlt_log_error( NULL, "[producer_xml] Properties without a name '%s'?\n", ( const char * )name );
+		}
+	}
+	else
+	{
+		mlt_log_error( NULL, "[producer_xml] Properties without a parent '%s'?\n", ( const char * )name );
+	}
+}
+
+static void on_end_properties( deserialise_context context, const xmlChar *name )
+{
+	if ( mlt_deque_count( context->stack_properties ) )
+	{
+		mlt_deque_pop_back( context->stack_properties );
+	}
+	else
+	{
+		mlt_log_error( NULL, "[producer_xml] Properties end missing properties '%s'.\n", (const char *)name );
 	}
 }
 
@@ -1613,6 +1680,8 @@ static void on_start_element( void *ctx, const xmlChar *name, const xmlChar **at
 		on_start_link( context, name, atts );
 	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_start_property( context, name, atts );
+	else if ( xmlStrcmp( name, _x("properties") ) == 0 )
+		on_start_properties( context, name, atts );
 	else if ( xmlStrcmp( name, _x("consumer") ) == 0 )
 		on_start_consumer( context, name, atts );
 	else if ( xmlStrcmp( name, _x("westley") ) == 0 || xmlStrcmp( name, _x("mlt") ) == 0 )
@@ -1646,6 +1715,8 @@ static void on_end_element( void *ctx, const xmlChar *name )
 		on_end_tractor( context, name );
 	else if ( xmlStrcmp( name, _x("property") ) == 0 )
 		on_end_property( context, name );
+	else if ( xmlStrcmp( name, _x("properties") ) == 0 )
+		on_end_properties( context, name );
 	else if ( xmlStrcmp( name, _x("producer") ) == 0 || xmlStrcmp( name, _x("video") ) == 0 )
 		on_end_producer( context, name );
 	else if ( xmlStrcmp( name, _x("filter") ) == 0 )
@@ -1667,12 +1738,7 @@ static void on_characters( void *ctx, const xmlChar *ch, int len )
 	struct _xmlParserCtxt *xmlcontext = ( struct _xmlParserCtxt* )ctx;
 	deserialise_context context = ( deserialise_context )( xmlcontext->_private );
 	char *value = calloc( 1, len + 1 );
-	enum service_type type;
-	mlt_service service = context_pop_service( context, &type );
-	mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-
-	if ( service != NULL )
-		context_push_service( context, service, type );
+	mlt_properties properties = current_properties( context );
 
 	value[ len ] = 0;
 	strncpy( value, (const char*) ch, len );
@@ -1956,6 +2022,7 @@ static deserialise_context context_new( mlt_profile profile )
 		context->seekable = 1;
 		context->stack_service = mlt_deque_init();
 		context->stack_types = mlt_deque_init();
+		context->stack_properties = mlt_deque_init();
 		context->stack_node = mlt_deque_init();
 		context->stack_branch = mlt_deque_init();
 		mlt_deque_push_back_int( context->stack_branch, 0 );
@@ -1970,6 +2037,7 @@ static void context_close( deserialise_context context )
 	mlt_properties_close( context->params );
 	mlt_deque_close( context->stack_service );
 	mlt_deque_close( context->stack_types );
+	mlt_deque_close( context->stack_properties );
 	mlt_deque_close( context->stack_node );
 	mlt_deque_close( context->stack_branch );
 	xmlFreeDoc( context->entity_doc );
@@ -2114,9 +2182,11 @@ mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type servtype, 
 	// Reset the stack.
 	mlt_deque_close( context->stack_service );
 	mlt_deque_close( context->stack_types );
+	mlt_deque_close( context->stack_properties );
 	mlt_deque_close( context->stack_node );
 	context->stack_service = mlt_deque_init();
 	context->stack_types = mlt_deque_init();
+	context->stack_properties = mlt_deque_init();
 	context->stack_node = mlt_deque_init();
 
 	// Create the qglsl consumer now, if requested, so that glsl.manager

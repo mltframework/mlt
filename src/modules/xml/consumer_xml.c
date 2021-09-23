@@ -205,9 +205,11 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 	for ( i = 0; i < mlt_properties_count( properties ); i++ )
 	{
 		char *name = mlt_properties_get_name( properties, i );
-		if ( name != NULL &&
-			 name[ 0 ] != '_' &&
-			 mlt_properties_get_value( properties, i ) != NULL &&
+		if ( name == NULL || name[ 0 ] == '_' )
+		{
+			continue;
+		}
+		else if ( mlt_properties_get_value( properties, i ) != NULL &&
 			 ( !context->no_meta || strncmp( name, "meta.", 5 ) ) &&
 			 strcmp( name, "mlt" ) &&
 			 strcmp( name, "mlt_type" ) &&
@@ -254,6 +256,13 @@ static void serialise_properties( serialise_context context, mlt_properties prop
 				xmlNewProp( p, _x("name"), _x(name) );
 			}
 		}
+		else if ( mlt_properties_get_properties_at( properties, i ) != NULL )
+		{
+			mlt_properties child_properties = mlt_properties_get_properties_at( properties, i );
+			p = xmlNewChild( node, NULL, _x("properties"), NULL );
+			xmlNewProp( p, _x("name"), _x(name) );
+			serialise_properties( context, child_properties, p );
+		}
 	}
 }
 
@@ -278,6 +287,13 @@ static void serialise_store_properties( serialise_context context, mlt_propertie
 				else
 					p = xmlNewTextChild( node, NULL, _x("property"), _x(value) );
 				xmlNewProp( p, _x("name"), _x(name) );
+			}
+			else if ( mlt_properties_get_properties_at( properties, i ) != NULL )
+			{
+				mlt_properties child_properties = mlt_properties_get_properties_at( properties, i );
+				p = xmlNewChild( node, NULL, _x("properties"), NULL );
+				xmlNewProp( p, _x("name"), _x(name) );
+				serialise_properties( context, child_properties, p );
 			}
 		}
 	}
