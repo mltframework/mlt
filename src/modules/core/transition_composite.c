@@ -144,6 +144,7 @@ void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_
 			alpha_a += j;
 		if ( alpha_b )
 			alpha_b += j;
+		return;
 	}
 #endif
 
