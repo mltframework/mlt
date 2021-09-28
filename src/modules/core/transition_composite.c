@@ -378,8 +378,6 @@ static int composite_yuv( uint8_t *p_dest, int width_dest, int height_dest, uint
 	if ( uneven_x != uneven_x_src )
 	{
 		p_src += 2;
-		if ( alpha_b )
-			alpha_b += 1;
 	}
 
 	// now do the compositing only to cropped extents
