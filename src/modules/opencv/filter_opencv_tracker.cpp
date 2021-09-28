@@ -119,7 +119,7 @@ static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_da
 static void apply( mlt_filter filter, private_data* data, int width, int height, int position, int length )
 {
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_rect rect = mlt_properties_anim_get_rect( properties, "results", position, length );
+	mlt_rect rect = mlt_properties_anim_get_rect( properties, "results", position, -1 );
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 	// Calculate the region now
 	double scale_width = mlt_profile_scale_width( profile, width );
@@ -327,7 +327,7 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 				data->last_position = position - 1;
 			}
 			// init anim property
-			mlt_properties_anim_get_int( filter_properties, "_results", 0, length );
+			mlt_properties_anim_get_int( filter_properties, "_results", 0, -1 );
 			mlt_animation anim = mlt_properties_get_animation( filter_properties, "_results" );
 			if ( anim == NULL ) {
 				fprintf( stderr, "animation initialized FAILED\n" );
@@ -367,16 +367,16 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 	rect.o = 0;
 
 	int steps = mlt_properties_get_int(filter_properties, "steps");
-	if ( steps > 1 && position > 0 && position < length - 1 )
+	if ( steps > 1 && position > 0 && position < data->producer_length - 1 )
 	{
 		if ( position % steps == 0 )
-			mlt_properties_anim_set_rect( filter_properties, "_results", rect, position, length, mlt_keyframe_smooth );
+			mlt_properties_anim_set_rect( filter_properties, "_results", rect, position + data->producer_in, length, mlt_keyframe_smooth );
 	}
 	else
 	{
-		mlt_properties_anim_set_rect( filter_properties, "_results", rect, position, length, mlt_keyframe_smooth );
+		mlt_properties_anim_set_rect( filter_properties, "_results", rect, position + data->producer_in, length, mlt_keyframe_smooth );
 	}
-	if ( position + 1 == length )
+	if ( position + 1 == data->producer_length )
 	{
 		//Analysis finished, store results
 		mlt_animation anim = mlt_properties_get_animation( filter_properties, "_results");
@@ -418,15 +418,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( data->producer_length == 0 )
 	{
 		mlt_producer producer = mlt_frame_get_original_producer( frame );
+		producer = mlt_producer_cut_parent( producer );
 		if ( producer )
 		{
-			data->producer_in = mlt_producer_get_in( producer );
-			data->producer_length = mlt_producer_get_playtime( producer );
+			data->producer_in = mlt_producer_get_in( producer ) + mlt_filter_get_in( filter );
+			data->producer_length = mlt_producer_get_playtime( producer ) - mlt_filter_get_in( filter );
 		}
 	}
 	if ( !data->initialized )
 	{
-		mlt_properties_anim_get_int( filter_properties, "results", 0, data->producer_length );
+		mlt_properties_anim_get_int( filter_properties, "results", 0, -1 );
 		mlt_animation anim = mlt_properties_get_animation( filter_properties, "results" );
 		if ( anim && mlt_animation_key_count(anim) > 0 )
 		{
@@ -479,6 +480,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				break;
 			case 2:
 				// Pixelate
+				if ( data->boundingBox.width > 0 && data->boundingBox.height > 0 )
 				{
 					cv::Mat roi = cvFrame( data->boundingBox );
 					cv::Mat res;
@@ -492,7 +494,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				shape_width = -1;
 				break;
 			case 0:
-			default:
 				// Median Blur
 				++blur;
 				if ( blur % 2 == 0 )
@@ -501,6 +502,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					++blur;
 				}
 				cv::medianBlur( cvFrame( data->boundingBox ), cvFrame( data->boundingBox ), blur );
+				break;
+			default:
+				// Do nothing
 				break;
 		}
 	}
