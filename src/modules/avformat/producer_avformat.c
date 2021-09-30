@@ -490,6 +490,13 @@ static mlt_properties find_default_streams( producer_avformat self )
 				snprintf( key, sizeof(key), "meta.attr.%u.stream.%s.markup", i, tag->key );
 				char* value = filter_restricted( tag->value );
 				mlt_properties_set( meta_media, key, value );
+
+				// Force GoPro LRV proxy files at 848x480 to have a 16:9 display aspect ratio
+				if (codec_params->codec_type == AVMEDIA_TYPE_VIDEO
+					&& codec_params->width == 848 && codec_params->height == 480
+					&& !strcmp(tag->key, "encoder") && strstr(tag->value, "GoPro")) {
+					mlt_properties_set_double(meta_media, "force_aspect_ratio", 16.0/9.0 * 480/848);
+				}
 				free( value );
 			}
 		}
