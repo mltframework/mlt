@@ -33,18 +33,21 @@
 #include <math.h>
 
 
-#if defined(_WIN32)
-#define LIBSUF ".dll"
-#define FREI0R_PLUGIN_PATH "\\lib\\frei0r-1"
-#elif defined(__APPLE__) && defined(RELOCATABLE)
-#define LIBSUF ".so"
-#define FREI0R_PLUGIN_PATH "/PlugIns/frei0r-1"
+#ifdef _WIN32
+#  define LIBSUF ".dll"
+#  define FREI0R_PLUGIN_PATH "\\lib\\frei0r-1"
 #else
-#define LIBSUF ".so"
-#define FREI0R_PLUGIN_PATH "/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/.frei0r-1/lib"
+#  define LIBSUF ".so"
+#  ifdef RELOCATABLE
+#    ifdef __APPLE__
+#      define FREI0R_PLUGIN_PATH "/PlugIns/frei0r-1"
+#    else
+#      define FREI0R_PLUGIN_PATH "/lib/frei0r-1"
+#    endif
+#  else
+#    define FREI0R_PLUGIN_PATH "/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/.frei0r-1/lib"
+#  endif
 #endif
-
-#define GET_FREI0R_PATH (getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH)
 
 extern mlt_filter filter_frei0r_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_cairoblend_mode_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -57,18 +60,13 @@ extern mlt_frame transition_process( mlt_transition transition, mlt_frame a_fram
 
 static char* get_frei0r_path()
 {
-#ifdef _WIN32
-	char *dirname = malloc( strlen( mlt_environment( "MLT_APPDIR" ) ) + strlen( FREI0R_PLUGIN_PATH ) + 1 );
-	strcpy( dirname, mlt_environment( "MLT_APPDIR" ) );
-	strcat( dirname, FREI0R_PLUGIN_PATH );
-	return dirname;
-#elif defined(__APPLE__) && defined(RELOCATABLE)
+#if defined(_WIN32) || defined(RELOCATABLE)
 	char *dirname = malloc( strlen( mlt_environment( "MLT_APPDIR" ) ) + strlen( FREI0R_PLUGIN_PATH ) + 1 );
 	strcpy( dirname, mlt_environment( "MLT_APPDIR" ) );
 	strcat( dirname, FREI0R_PLUGIN_PATH );
 	return dirname;
 #else
-	return strdup( GET_FREI0R_PATH );
+	return strdup(getenv("FREI0R_PATH") ? getenv("FREI0R_PATH") : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH") : FREI0R_PLUGIN_PATH);
 #endif
 }
 

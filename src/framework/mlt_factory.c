@@ -44,18 +44,25 @@
    /** the default subdirectory of the install prefix for holding module (plugin) data */
 #  define PREFIX_DATA "\\share\\mlt"
 
-#elif defined(__APPLE__) && defined(RELOCATABLE)
-#  include <mach-o/dyld.h>
+#elif defined(RELOCATABLE)
 #  ifdef PREFIX_LIB
 #    undef PREFIX_LIB
 #  endif
 #  ifdef PREFIX_DATA
 #    undef PREFIX_DATA
 #  endif
-   /** the default subdirectory of the libdir for holding modules (plugins) */
-#  define PREFIX_LIB "/PlugIns/mlt"
-   /** the default subdirectory of the install prefix for holding module (plugin) data */
-#  define PREFIX_DATA "/Resources/mlt"
+#  ifdef __APPLE__
+#    include <mach-o/dyld.h>
+     /** the default subdirectory of the libdir for holding modules (plugins) */
+#    define PREFIX_LIB "/PlugIns/mlt"
+     /** the default subdirectory of the install prefix for holding module (plugin) data */
+#    define PREFIX_DATA "/Resources/mlt"
+#  else
+#    include <unistd.h>
+#    define PREFIX_LIB "/lib/mlt-7"
+     /** the default subdirectory of the install prefix for holding module (plugin) data */
+#    define PREFIX_DATA "/share/mlt-7"
+#  endif
 #endif
 
 /** holds the full path to the modules directory - initialized and retained for the entire session */
@@ -69,7 +76,7 @@ static mlt_properties event_object = NULL;
 /** for tracking the unique_id set on each constructed service */
 static int unique_id = 0;
 
-#if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
+#if defined(_WIN32) || defined(RELOCATABLE)
 // Replacement for buggy dirname() on some systems.
 // https://github.com/mltframework/mlt/issues/285
 static char* mlt_dirname( char *path )
@@ -137,10 +144,14 @@ mlt_repository mlt_factory_init( const char *directory )
 		#endif
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
 		free( appdir );
-#elif defined(__APPLE__)  && defined(RELOCATABLE)
+#elif defined(RELOCATABLE)
 		char path[1024];
 		uint32_t size = sizeof( path );
+#  ifdef __APPLE__
 		_NSGetExecutablePath( path, &size );
+#  else
+		readlink( "/proc/self/exe", path, size );
+#  endif
 		char *appdir = mlt_dirname( mlt_dirname( strdup( path ) ) );
 		mlt_properties_set( global_properties, "MLT_APPDIR", appdir );
 		free( appdir );
@@ -150,14 +161,16 @@ mlt_repository mlt_factory_init( const char *directory )
 	// Only initialise once
 	if ( mlt_directory == NULL )
 	{
-#if !defined(_WIN32) && !(defined(__APPLE__) && defined(RELOCATABLE))
+#if !defined(_WIN32) && !defined(RELOCATABLE)
 		// Allow user overrides
 		if ( directory == NULL || !strcmp( directory, "" ) )
 			directory = getenv( "MLT_REPOSITORY" );
-#endif
-
+		// If no directory is specified, default to install directory
+		if ( directory == NULL )
+			directory = PREFIX_LIB;
 		// Store the prefix for later retrieval
-#if defined(_WIN32) || (defined(__APPLE__) && defined(RELOCATABLE))
+		mlt_directory = strdup( directory );
+#else
 		if ( directory ) {
 			mlt_directory = strdup( directory );
 		} else {
@@ -175,11 +188,6 @@ mlt_repository mlt_factory_init( const char *directory )
 			strcpy( mlt_directory, exedir );
 			strcat( mlt_directory, PREFIX_LIB );
 		}
-#else
-		// If no directory is specified, default to install directory
-		if ( directory == NULL )
-			directory = PREFIX_LIB;
-		mlt_directory = strdup( directory );
 #endif
 		
 		// Initialise the pool

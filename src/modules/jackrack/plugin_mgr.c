@@ -225,11 +225,16 @@ plugin_mgr_get_path_plugins (plugin_mgr_t * plugin_mgr)
     strcpy (ladspa_path, mlt_environment("MLT_APPDIR"));
     strcat (ladspa_path, "\\lib\\ladspa");
   }
-#elif defined(__APPLE__) && defined(RELOCATABLE)
+#elif defined(RELOCATABLE)
+#  ifdef __APPLE__
+#    define LADSPA_SUBDIR "/PlugIns/ladspa"
+#  else
+#    define LADSPA_SUBDIR "/lib/ladspa"
+# endif
   {
-    ladspa_path = malloc( strlen (mlt_environment ("MLT_APPDIR")) + strlen ("/PlugIns/ladspa") + 1 );
+    ladspa_path = malloc( strlen (mlt_environment ("MLT_APPDIR")) + strlen (LADSPA_SUBDIR) + 1 );
     strcpy (ladspa_path,  mlt_environment ("MLT_APPDIR"));
-    strcat (ladspa_path, "/PlugIns/ladspa" );
+    strcat (ladspa_path, LADSPA_SUBDIR );
   }
 #else
   if (!ladspa_path)

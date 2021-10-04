@@ -24,7 +24,7 @@ add_library(mltmovit MODULE
 )
 
 target_compile_options(mltmovit PRIVATE ${MLT_COMPILE_OPTIONS})
-if(APPLE AND RELOCATABLE)
+if(RELOCATABLE)
   target_compile_definitions(mltmovit PRIVATE RELOCATABLE)
 endif()
 

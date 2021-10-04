@@ -49,9 +49,12 @@ option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
 
 if(WIN32)
   option(WINDOWS_DEPLOY "Install exes/libs directly to prefix (no subdir /bin)" ON)
-endif()
-if(APPLE)
-  option(RELOCATABLE "Use standard app bundle layout" ON)
+else()
+  if(APPLE)
+    option(RELOCATABLE "Use standard app bundle layout" ON)
+  else()
+    option(RELOCATABLE "Look for plugins relative to app" OFF)
+  endif()
 endif()
 
 

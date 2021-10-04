@@ -25,7 +25,7 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
   )
   target_link_libraries(mltjackrack PRIVATE ${CMAKE_DL_LIBS} m PkgConfig::xml PkgConfig::glib)
   target_compile_definitions(mltjackrack PRIVATE GPL)
-  if(APPLE AND RELOCATABLE)
+  if(RELOCATABLE)
     target_compile_definitions(mltjackrack PRIVATE RELOCATABLE)
   endif()
 
