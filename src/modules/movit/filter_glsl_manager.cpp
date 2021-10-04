@@ -240,8 +240,12 @@ void GlslManager::onInit( mlt_properties owner, GlslManager* filter, mlt_event_d
 	mlt_log_debug( filter->get_service(), "%s\n", __FUNCTION__ );
 #ifdef _WIN32
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("\\share\\movit");
-#elif defined(__APPLE__) && defined(RELOCATABLE)
+#elif defined(RELOCATABLE)
+#  ifdef __APPLE__
 	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("/Resources/movit");
+#  else
+	std::string path = std::string(mlt_environment("MLT_APPDIR")).append("/share/movit");
+#  endif
 #else
 	std::string path = std::string(getenv("MLT_MOVIT_PATH") ? getenv("MLT_MOVIT_PATH") : SHADERDIR);
 #endif
