@@ -1384,12 +1384,7 @@ receive_audio_packet:
 		if ( pkt.size > 0 )
 		{
 			// Write the compressed frame in the media file
-			if ( pkt.pts != AV_NOPTS_VALUE )
-				pkt.pts = av_rescale_q( pkt.pts, codec->time_base, stream->time_base );
-			if ( pkt.dts != AV_NOPTS_VALUE )
-				pkt.dts = av_rescale_q( pkt.dts, codec->time_base, stream->time_base );
-			if ( pkt.duration > 0 )
-				pkt.duration = av_rescale_q( pkt.duration, codec->time_base, stream->time_base );
+			av_packet_rescale_ts( &pkt, codec->time_base, stream->time_base );
 			pkt.stream_index = stream->index;
 			if ( av_interleaved_write_frame( ctx->oc, &pkt ) )
 			{
@@ -1412,6 +1407,7 @@ receive_audio_packet:
 		else if (!samples) // flushing
 		{
 			pkt.stream_index = stream->index;
+			av_packet_rescale_ts( &pkt, codec->time_base, stream->time_base );
 			av_interleaved_write_frame(ctx->oc, &pkt);
 		}
 
@@ -2064,10 +2060,7 @@ receive_video_packet:
 	 					// If zero size, it means the image was buffered
 						if ( pkt.size > 0 )
 						{
-							if ( pkt.pts != AV_NOPTS_VALUE )
-								pkt.pts = av_rescale_q( pkt.pts, c->time_base, enc_ctx->video_st->time_base );
-							if ( pkt.dts != AV_NOPTS_VALUE )
-								pkt.dts = av_rescale_q( pkt.dts, c->time_base, enc_ctx->video_st->time_base );
+							av_packet_rescale_ts( &pkt, c->time_base, enc_ctx->video_st->time_base );
 							pkt.stream_index = enc_ctx->video_st->index;
 
 							// write the compressed frame in the media file
@@ -2187,10 +2180,7 @@ receive_video_packet:
 			if ( !pkt.size )
 				break;
 
-			if ( pkt.pts != AV_NOPTS_VALUE )
-				pkt.pts = av_rescale_q( pkt.pts, c->time_base, enc_ctx->video_st->time_base );
-			if ( pkt.dts != AV_NOPTS_VALUE )
-				pkt.dts = av_rescale_q( pkt.dts, c->time_base, enc_ctx->video_st->time_base );
+			av_packet_rescale_ts( &pkt, c->time_base, enc_ctx->video_st->time_base );
 			pkt.stream_index = enc_ctx->video_st->index;
 
 			// write the compressed frame in the media file
