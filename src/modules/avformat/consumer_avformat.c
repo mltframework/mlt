@@ -788,6 +788,12 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	// Continue if codec found and we can open it
 	if ( codec && avcodec_open2( c, codec, NULL ) >= 0 )
 	{
+#if LIBAVFORMAT_VERSION_INT < ((58<<16)+(76<<8)+100)
+		if (avcodec_copy_context(st->codec, c)< 0) {
+			mlt_log_warning(NULL, "Failed to copy encoder parameters to output audio stream\n");
+		}
+#endif
+
 		if (avcodec_parameters_from_context(st->codecpar, c) < 0) {
 			mlt_log_warning(NULL, "Failed to copy encoder parameters to output audio stream\n");
 			return 0;
@@ -1142,6 +1148,12 @@ static int open_video( mlt_properties properties,  AVFormatContext *oc, AVStream
 	int result = codec && avcodec_open2( video_enc, codec, NULL ) >= 0;
 
 	if (result >= 0) {
+#if LIBAVFORMAT_VERSION_INT < ((58<<16)+(76<<8)+100)
+		result = avcodec_copy_context(st->codec, video_enc);
+		if (!result) {
+			mlt_log_warning(NULL, "Failed to copy encoder parameters to output video stream\n");
+		}
+#endif
 		result = avcodec_parameters_from_context(st->codecpar, video_enc) >= 0;
 		if (!result) {
 			mlt_log_warning(NULL, "Failed to copy encoder parameters to output video stream\n");
