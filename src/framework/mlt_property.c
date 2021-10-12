@@ -26,6 +26,7 @@
 #endif
 
 #include "mlt_property.h"
+#include "mlt_properties.h"
 #include "mlt_animation.h"
 
 #include <stdio.h>
@@ -81,6 +82,7 @@ struct mlt_property_s
 
 	pthread_mutex_t mutex;
 	mlt_animation animation;
+	mlt_properties properties;
 };
 
 /** Construct a property and initialize it
@@ -118,6 +120,8 @@ static void clear_property( mlt_property self )
 
 	mlt_animation_close( self->animation );
 
+	mlt_properties_close( self->properties );
+
 	// Wipe stuff
 	self->types = 0;
 	self->prop_int = 0;
@@ -130,6 +134,7 @@ static void clear_property( mlt_property self )
 	self->destructor = NULL;
 	self->serialiser = NULL;
 	self->animation = NULL;
+	self->properties = NULL;
 }
 
 /** Clear (0/null) a property.
@@ -159,7 +164,7 @@ int mlt_property_is_clear( mlt_property self )
 	if ( self )
 	{
 		pthread_mutex_lock( &self->mutex );
-		result = self->types == 0 && self->animation == NULL;
+		result = self->types == 0 && self->animation == NULL && self->properties == NULL;
 		pthread_mutex_unlock( &self->mutex );
 	}
 	return result;
@@ -1817,4 +1822,23 @@ mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t loc
 		result = mlt_property_get_rect( self, locale );
 	}
 	return result;
+}
+
+int mlt_property_set_properties( mlt_property self, mlt_properties properties )
+{
+	pthread_mutex_lock( &self->mutex );
+	clear_property( self );
+	self->properties = properties;
+	mlt_properties_inc_ref( properties );
+	pthread_mutex_unlock( &self->mutex );
+	return 0;
+}
+
+mlt_properties mlt_property_get_properties( mlt_property self )
+{
+	mlt_properties properties = NULL;
+	pthread_mutex_lock( &self->mutex );
+	properties = self->properties;
+	pthread_mutex_unlock( &self->mutex );
+	return properties;
 }
