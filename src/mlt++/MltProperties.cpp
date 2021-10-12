@@ -431,3 +431,18 @@ Animation *Properties::get_anim(const char *name)
 {
 	return new Animation( mlt_properties_get_animation( get_properties(), name ) );
 }
+
+int Properties::set( const char *name, Properties& properties )
+{
+	return mlt_properties_set_properties( get_properties(), name, properties.get_properties() );
+}
+
+Properties* Properties::get_props( const char *name )
+{
+	return new Properties( mlt_properties_get_properties( get_properties(), name ) );
+}
+
+Properties* Properties::get_props_at( int index )
+{
+	return new Properties( mlt_properties_get_properties_at( get_properties(), index ) );
+}

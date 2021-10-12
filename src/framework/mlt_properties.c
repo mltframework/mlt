@@ -59,6 +59,9 @@ typedef struct
 	int ref_count;
 	pthread_mutex_t mutex;
 	locale_t locale;
+	mlt_properties* children_properties;
+	char** children_names;
+	int children_count;
 }
 property_list;
 
@@ -458,12 +461,24 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 	int i = 0;
 	for ( i = 0; i < count; i ++ )
 	{
-		char *value = mlt_properties_get_value( that, i );
-		if ( value != NULL )
+		char *name = mlt_properties_get_name( that, i );
+		if (name && strcmp("properties", name))
 		{
-			char *name = mlt_properties_get_name( that, i );
-			if (name && strcmp("properties", name))
+			char *value = mlt_properties_get_value( that, i );
+			if ( value != NULL )
+			{
 				mlt_properties_set_string( self, name, value );
+			}
+			else
+			{
+				mlt_properties that_child_props = mlt_properties_get_properties_at( that, i );
+				if ( that_child_props != NULL )
+				{
+					mlt_properties child_props = mlt_properties_new();
+					mlt_properties_set_properties( self, name, child_props );
+					mlt_properties_inherit( child_props, that_child_props );
+				}
+			}
 		}
 	}
 
@@ -1331,8 +1346,10 @@ void mlt_properties_debug( mlt_properties self, const char *title, FILE *output 
 		for ( i = 0; i < list->count; i ++ )
 			if ( mlt_properties_get( self, list->name[ i ] ) != NULL )
 				fprintf( output, ", %s=%s", list->name[ i ], mlt_properties_get( self, list->name[ i ] ) );
-			else
+			else if ( mlt_properties_get_data( self, list->name[ i ], NULL ) != NULL )
 				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_data( self, list->name[ i ], NULL ) );
+			else
+				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_properties( self, list->name[ i ] ) );
 		fprintf( output, " ]" );
 	}
 	fprintf( output, "\n" );
@@ -2740,3 +2757,40 @@ int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, 
 }
 
 #endif
+
+int mlt_properties_set_properties( mlt_properties self, const char *name, mlt_properties properties )
+{
+	int error = 1;
+
+	if ( !self || !name || !properties) return error;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property != NULL )
+	{
+		error = mlt_property_set_properties( property, properties );
+		mlt_properties_do_mirror( self, name );
+	}
+
+	fire_property_changed(self, name);
+
+	return error;
+}
+
+mlt_properties mlt_properties_get_properties( mlt_properties self, const char *name )
+{
+	property_list *list = self->local;
+	mlt_property value = mlt_properties_find( self, name );
+	return value == NULL ? NULL : mlt_property_get_properties( value );
+}
+
+mlt_properties mlt_properties_get_properties_at( mlt_properties self, int index )
+{
+	if ( !self ) return NULL;
+	property_list *list = self->local;
+	if ( index >= 0 && index < list->count )
+		return mlt_property_get_properties( list->value[ index ] );
+	return NULL;
+}

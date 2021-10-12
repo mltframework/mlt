@@ -123,6 +123,10 @@ namespace Mlt
 			mlt_rect anim_get_rect( const char *name, int position, int length = 0 );
 			mlt_animation get_animation( const char *name );
 			Animation* get_anim( const char *name );
+
+			int set( const char *name, Properties& properties );
+			Properties* get_props( const char *name );
+			Properties* get_props_at( int index );
 	};
 }
 

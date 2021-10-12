@@ -1179,6 +1179,33 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_int("key", 75, 125), 175);
     }
 
+    void NestedProperties()
+    {
+        Properties parent;
+
+        Properties child1;
+        child1.set("c1A", "A");
+        child1.set("c1B", "B");
+        parent.set("c1", child1);
+        QCOMPARE(child1.ref_count(), 2);
+
+        Properties child2;
+        child2.set("c2C", "C");
+        child2.set("c2D", "D");
+        parent.set("c2", child2);
+        QCOMPARE(child2.ref_count(), 2);
+
+        QCOMPARE(parent.count(), 2);
+
+        Properties* pChild1 = parent.get_props("c1");
+        QCOMPARE(pChild1->get("c1B"), "B");
+        delete pChild1;
+
+        Properties* pChild2 = parent.get_props_at(1);
+        QCOMPARE(pChild1->get("c2D"), "D");
+        delete pChild2;
+    }
+
     void PropertyClears()
     {
         Properties p;

@@ -77,4 +77,7 @@ extern mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale );
 extern int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, locale_t locale, int position, int length, mlt_keyframe_type keyframe_type );
 extern mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t locale, int position, int length );
 
+extern int mlt_property_set_properties( mlt_property self, mlt_properties properties );
+extern mlt_properties mlt_property_get_properties( mlt_property self );
+
 #endif

@@ -685,3 +685,12 @@ MLTPP_7.0.0 {
       "Mlt::EventData::to_object() const";
     };
 } MLTPP_6.22.0;
+
+MLTPP_7.1.0 {
+  global:
+    extern "C++" {
+        "Mlt::Properties::set(char const*, Mlt::Properties&)";
+        "Mlt::Properties::get_props(char const*)";
+        "Mlt::Properties::get_props_at(int)";
+    };
+} MLTPP_7.0.0;

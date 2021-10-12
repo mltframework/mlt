@@ -615,3 +615,12 @@ MLT_7.0.0 {
     mlt_event_data_from_object;
     mlt_event_data_to_object;
 } MLT_6.22.0;
+
+MLT_7.1.0 {
+  global:
+    mlt_property_set_properties;
+    mlt_property_get_properties;
+    mlt_properties_set_properties;
+    mlt_properties_get_properties;
+    mlt_properties_get_properties_at;
+} MLT_7.0.0;
