@@ -252,27 +252,17 @@ std::string TypeWriter::detectUtf8(const std::string& str, size_t pos)
      * 0x4000000 do 0x7FFFFFFF – bits 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
      */
     unsigned char c = str[pos];
-    static const unsigned char masks[5] = { 0xfc, 0xf8, 0xf0, 0xc0, 0x80 };
-    if ((c & 0x80) == 0x00)
-    {
-        return str.substr(pos, 1);
+
+    const unsigned char mask = 0xfc;  // largest possible utf char
+
+    // five patterns possible
+    for (int i = 0; i < 5; ++i) {
+        unsigned char m = mask << i;
+        if ((c & m) == m)
+            return str.substr(pos, 6-i);
     }
-    else
-    {
-        for (int i = 0; i < 5; ++i)
-        {
-            if ((c & masks[i]) == masks[i])
-            {
-                for (int j = 0; j < (4-i); ++j)
-                {
-                    if ( !(0x80 & str[pos+1+j]) )
-                        return str.substr(pos, 1);
-                }
-                return str.substr(pos, 5-i);
-            }
-        }
-    }
-    return "";
+
+    return str.substr(pos, 1);
 }
 
 struct TypeWriter::ParseOptions
