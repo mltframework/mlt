@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2015 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +24,7 @@
 #define MLT_TRANSITION_H
 
 #include "mlt_service.h"
+#include <pthread.h>
 
 /** \brief Transition abstract service class
  *
@@ -58,6 +59,7 @@ struct mlt_transition_s
 	/** Private */
 	mlt_frame *frames;
 	int held;
+	pthread_mutex_t mutex;
 };
 
 #define MLT_TRANSITION_SERVICE( transition )		( &( transition )->parent )

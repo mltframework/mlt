@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,7 @@ int mlt_transition_init( mlt_transition self, void *child )
 		service->get_frame = transition_get_frame;
 		service->close = ( mlt_destructor )mlt_transition_close;
 		service->close_object = self;
+		pthread_mutex_init( &self->mutex, NULL );
 
 		mlt_properties_set( properties, "mlt_type", "transition" );
 		mlt_properties_set_position( properties, "in", 0 );
@@ -154,8 +155,10 @@ void mlt_transition_set_tracks( mlt_transition self, int a_track, int b_track )
 {
 	mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( self ), "a_track", a_track );
 	mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( self ), "b_track", b_track );
+	pthread_mutex_lock(&self->mutex);
 	free( self->frames );
 	self->frames = NULL;
+	pthread_mutex_unlock(&self->mutex);
 }
 
 /** Get the index of the a track.
@@ -432,6 +435,7 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	b_track = b_track < 0 ? 0 : b_track;
 
 	// Only act on this operation once per multitrack iteration from the tractor
+	pthread_mutex_lock(&self->mutex);
 	if ( !self->held )
 	{
 		int active = 0;
@@ -526,14 +530,17 @@ static int transition_get_frame( mlt_service service, mlt_frame_ptr frame, int i
 	}
 
 	// Obtain the frame from the cache or the producer we're attached to
-	if ( index >= a_track && index <= b_track )
+	if ( index >= a_track && index <= b_track && self->frames )
 		*frame = self->frames[ index ];
 	else
 		error = mlt_service_get_frame( self->producer, frame, index );
 
 	// Determine if that was the last track
-	self->held = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( *frame ), "last_track" );
+	if ( !error && *frame ) {
+		self->held = !mlt_properties_get_int( MLT_FRAME_PROPERTIES( *frame ), "last_track" );
+	}
 
+	pthread_mutex_unlock(&self->mutex);
 	return error;
 }
 
@@ -556,6 +563,7 @@ void mlt_transition_close( mlt_transition self )
 		{
 			mlt_service_close( &self->parent );
 			free( self->frames );
+			pthread_mutex_destroy( &self->mutex );
 			free( self );
 		}
 	}
