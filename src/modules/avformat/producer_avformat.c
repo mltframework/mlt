@@ -1599,6 +1599,31 @@ static int ignore_send_packet_result(int result)
 	return result >= 0 || result == AVERROR(EAGAIN) || result == AVERROR_EOF || result == AVERROR_INVALIDDATA || result == AVERROR(EINVAL);
 }
 
+static void init_cache(mlt_properties properties, mlt_cache *cache)
+{
+	// if cache size supplied by environment variable
+	int cache_supplied = getenv( "MLT_AVFORMAT_CACHE" ) != NULL;
+	int cache_size = cache_supplied? atoi( getenv( "MLT_AVFORMAT_CACHE" ) ) : 0;
+
+	// cache size supplied via property
+	if ( mlt_properties_get( properties, "cache" ) )
+	{
+		cache_supplied = 1;
+		cache_size = mlt_properties_get_int( properties, "cache" );
+	}
+	if ( mlt_properties_get_int( properties, "noimagecache" ) )
+	{
+		cache_supplied = 1;
+		cache_size = 0;
+	}
+	// create cache if not disabled
+	if ( !cache_supplied || cache_size > 0 )
+		*cache = mlt_cache_init();
+	// set cache size if supplied
+	if ( *cache && cache_supplied )
+		mlt_cache_set_size( *cache, cache_size );
+}
+
 /** Get an image from a frame.
 */
 
@@ -1644,27 +1669,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	// Get the image cache
 	if ( ! self->image_cache )
 	{
-		// if cache size supplied by environment variable
-		int cache_supplied = getenv( "MLT_AVFORMAT_CACHE" ) != NULL;
-		int cache_size = cache_supplied? atoi( getenv( "MLT_AVFORMAT_CACHE" ) ) : 0;
-
-		// cache size supplied via property
-		if ( mlt_properties_get( properties, "cache" ) )
-		{
-			cache_supplied = 1;
-			cache_size = mlt_properties_get_int( properties, "cache" );
-		}
-		if ( mlt_properties_get_int( properties, "noimagecache" ) )
-		{
-			cache_supplied = 1;
-			cache_size = 0;
-		}
-		// create cache if not disabled
-		if ( !cache_supplied || cache_size > 0 )
-			self->image_cache = mlt_cache_init();
-		// set cache size if supplied
-		if ( self->image_cache && cache_supplied )
-			mlt_cache_set_size( self->image_cache, cache_size );
+		init_cache(properties, &self->image_cache);
 	}
 	if ( self->image_cache )
 	{
