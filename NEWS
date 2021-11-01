@@ -1,6 +1,68 @@
 MLT Release Notes
 -----------------
 
+Version 7.2.0
+
+This is the first major maintenance release for the new major version 7
+rendering it much more production ready. Plus there are a few nice new features.
+
+Framework
+  * Added support for `mlt_properties` as a child of `mlt_properties`
+    including XML (de)serialization:
+    - `mlt_property_set_properties()`
+    - `mlt_property_get_properties()`
+    - `mlt_properties_set_properties()`
+    - `mlt_properties_get_properties()`
+    - `mlt_properties_get_properties_at)(`
+    - `Mlt::Properties::set()`
+    - `Mlt::Properties::get_props()`
+    - `Mlt::Properties::get_props_at()`
+    Applications can use this to store structured data in its own namespace,
+    for example "shotcut:markers". And modules could use this for hierarchical
+    parameters.
+  * Fixed crash in `mlt_transition` upon inserting or removing a track.
+  * Stopped loading `mlt_profile` until needed in `mlt_chain` creation.
+
+Modules
+  * Added filter `gpstext` that is similar to `dynamictext` based on data in a
+    GPX file.
+  * Added speed parameter to `timer` filter.
+  * Added WebP presets for `avformat` consumer.
+  * Added a pixelate option to the `opencv_tracker` filter's `blur` property.
+  * Fixed `center_bias` of `crop` filter not working with `use_profile`.
+  * Fixed some missing RGB `mlt_image_format` renames after change in v7.0.0.
+    This primarily affected presets and service metadata.
+  * Fixed a crash when changing preview scaling in `timeremap` link.
+  * Fixes problems due to adding redundant normalize filters upon loading a
+    producer from XML.
+  * Ensure filters added by the `loader` producer always come first in list.
+  * Fixed a crash using `shape` and `affine` filters together on `color` producer.
+  * Fixed a crash when a `vidstab` file fails to open.
+  * Changed `vidstab` filter to save its file in ASCII text mode.
+  * Fixed a clang LTO error in the `decklink` module.
+  * Fixed a video decoding regression on some videos in the `avformat` producer.
+  * Fixed a crash in the `audiowaveform` filter.
+  * Fixed loading a relative filename from XML for `mask_start` with `shape`.
+  * Fixed "#filedate#" in `dynamictext` filter when used with `timeremap` link.
+  * Fixed `timer` filter's new `speed` property interaction with `start` delay.
+  * Fixed a crash with YUYV422 (YUY2) input in `avformat` producer.
+  * Fixed data race condition in `timeremap` link.
+  * Fixed compiling `avformat` module with FFmpeg git beyond v4.4 with
+    many deprecations removed.
+  * Fixed alpha channel size calculation in `brightness` filter.
+  * Restore legacy tracker and the new DaSiam tracker for OpenCV >= 4.5.3 in the
+    `opencv_tracker` filter.
+  * Fixed a crash in `opencv_tracker` on `shape_width` = 0.
+  * Fixed incorrect handling of in and out points and duration in the
+    `opencv_tracker` filter.
+  * Fixed the `composite` transition leaking left border of an image on the
+    right side on uneven width.
+  * Fixed a problem handling some UTF-8 in thhe `typerwriter` filter.
+
+Other
+  * Added support for the `RELOCATABLE` CMake option for Linux or BSD build.
+
+
 Version 7.0.1
 
 This version is just build fixes for the most immediate problems with the
