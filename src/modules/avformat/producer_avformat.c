@@ -305,23 +305,27 @@ static const char* get_projection(AVStream *st)
 
 #include <libavutil/display.h>
 
-static double get_rotation(AVStream *st)
+static double get_rotation(mlt_properties properties, AVStream *st)
 {
-	AVDictionaryEntry *rotate_tag = av_dict_get( st->metadata, "rotate", NULL, 0 );
-	uint8_t* displaymatrix = av_stream_get_side_data( st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
-	double theta = 0;
+	AVDictionaryEntry *rotate_tag = av_dict_get(st->metadata, "rotate", NULL, 0);
+	int has_rotate_metadata = rotate_tag && *rotate_tag->value && strcmp(rotate_tag->value, "0");
+	uint8_t* displaymatrix = av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
+	double theta = mlt_properties_get_double(properties, "rotate");
+	int has_mlt_rotate = !!mlt_properties_get(properties, "rotate");
 
-	if ( rotate_tag && *rotate_tag->value && strcmp( rotate_tag->value, "0" ) )
-	{
+	if (has_rotate_metadata && !has_mlt_rotate) {
 		char *tail;
-		theta = strtod( rotate_tag->value, &tail );
-		if ( *tail )
+		theta = strtod(rotate_tag->value, &tail);
+		if (*tail) { // invalid
 			theta = 0;
+			has_rotate_metadata = 0;
+		}
 	}
-	if ( displaymatrix && !theta )
-		theta = -av_display_rotation_get( (int32_t*) displaymatrix );
+	if (displaymatrix && !has_rotate_metadata && !has_mlt_rotate) {
+		theta = -av_display_rotation_get((int32_t*) displaymatrix);
+	}
 
-	theta -= 360 * floor( theta/360 + 0.9/360 );
+	theta -= 360 * floor(theta/360 + 0.9/360);
 
 	return theta;
 }
@@ -413,7 +417,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 				snprintf( key, sizeof(key), "meta.media.%u.codec.height", i );
 				mlt_properties_set_int( meta_media, key, codec_params->height );
 				snprintf( key, sizeof(key), "meta.media.%u.codec.rotate", i );
-				mlt_properties_set_int( meta_media, key, get_rotation(context->streams[i]) );
+				mlt_properties_set_int( meta_media, key, get_rotation(NULL, context->streams[i]) );
 //				snprintf( key, sizeof(key), "meta.media.%u.codec.frame_rate", i );
 //				AVRational frame_rate = { codec_context->time_base.den, codec_context->time_base.num * codec_context->ticks_per_frame };
 //				mlt_properties_set_double( meta_media, key, av_q2d( frame_rate ) );
@@ -933,7 +937,7 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 				if (self->video_index != -1) {
 					self->autorotate = !mlt_properties_get(properties, "autorotate") || mlt_properties_get_int(properties, "autorotate");
 					if (!test_open && self->autorotate && !self->vfilter_graph) {
-						double theta  = get_rotation(self->video_format->streams[self->video_index]);
+						double theta  = get_rotation(properties, self->video_format->streams[self->video_index]);
 
 						if (fabs(theta - 90) < 1.0) {
 							error = ( setup_video_filters(self) < 0 );
@@ -1548,7 +1552,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 static void set_image_size( producer_avformat self, int *width, int *height )
 {
 	double dar = mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE(self->parent) ) );
-	double theta  = self->autorotate? get_rotation( self->video_format->streams[self->video_index] ) : 0.0;
+	double theta  = self->autorotate? get_rotation( MLT_PRODUCER_PROPERTIES(self->parent), self->video_format->streams[self->video_index] ) : 0.0;
 	if ( fabs(theta - 90.0) < 1.0 || fabs(theta - 270.0) < 1.0 )
 	{
 		*height = self->video_codec->width;
@@ -2380,7 +2384,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 
 		// Set the width and height
 		double dar = mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) ) );
-		double theta  = self->autorotate? get_rotation( self->video_format->streams[index] ) : 0.0;
+		double theta  = self->autorotate? get_rotation( properties, self->video_format->streams[index] ) : 0.0;
 		if ( fabs(theta - 90.0) < 1.0 || fabs(theta - 270.0) < 1.0 )
 		{
 			// Workaround 1088 encodings missing cropping info.

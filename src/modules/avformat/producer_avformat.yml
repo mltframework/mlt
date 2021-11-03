@@ -235,3 +235,12 @@ parameters:
       Whether to automatically compensate image orientation if the file is
       tagged with appropriate metadata and this resource has video/images.
     default: 1
+
+  - identifier: rotate
+    title: Rotation Override
+    description: >
+      While there is automatic rotation for orientation, some files are missing
+      the metadata for it. This provides an override. It can only rotate by a
+      multiple of 90 degrees.
+    type: integer
+    unit: degrees
