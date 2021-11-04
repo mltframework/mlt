@@ -58,6 +58,11 @@ typedef struct
 	int reset;
 } private_data;
 
+static inline int non_animated(const char *value)
+{
+	return value && (value[0] == '"' || !strchr(value, '='));
+}
+
 static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
 	const char *name = mlt_event_data_to_string(event_data);
@@ -70,7 +75,8 @@ static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_da
 			{
 				if( !strcmp( opt->name, name + PARAM_PREFIX_LEN ) )
 				{
-					pdata->reset = 1;
+					const char* value = mlt_properties_get(MLT_FILTER_PROPERTIES(filter), name);
+					pdata->reset = non_animated(value);
 					break;
 				}
 			}
@@ -133,7 +139,7 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 		{
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, param_name + PARAM_PREFIX_LEN, 0, 0, 0 );
 			const char* value = mlt_properties_get_value( filter_properties, i );
-			if( opt && value )
+			if( opt && non_animated(value) )
 			{
 				if (scale != 1.0) {
 					double scale2 = mlt_properties_get_double(scale_map, opt->name);
@@ -152,8 +158,8 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 
 static void send_avformat_commands(mlt_filter filter, mlt_frame frame, private_data* pdata)
 {
-	mlt_service service = MLT_FILTER_SERVICE(filter);
-	mlt_properties prop = MLT_SERVICE_PROPERTIES(service);
+#if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
+	mlt_properties prop = MLT_FILTER_PROPERTIES(filter);
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	int length = mlt_filter_get_length2( filter, frame );
 	int count = mlt_properties_count(prop);
@@ -163,14 +169,20 @@ static void send_avformat_commands(mlt_filter filter, mlt_frame frame, private_d
 		char *name = mlt_properties_get_name(prop, i);
 		if (!strncmp(name, PARAM_PREFIX, PARAM_PREFIX_LEN))
 		{
-			char *new_val = mlt_properties_anim_get( prop, name, position, length);
-			char *cur_val = NULL;
-			av_opt_get(pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, AV_OPT_SEARCH_CHILDREN, (uint8_t **)&cur_val);
-			if (new_val && cur_val && strcmp(new_val, cur_val))
-				avfilter_graph_send_command(pdata->avfilter_graph, pdata->avfilter->name, name + PARAM_PREFIX_LEN, new_val, NULL, 0, 0);
-			av_free(cur_val);
+			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0 );
+			if (opt && opt->flags & AV_OPT_FLAG_RUNTIME_PARAM) {
+				mlt_properties_set_double(prop, "_avfilter_temp", mlt_properties_anim_get_double(prop, name, position, length));
+				char *new_val =  mlt_properties_get(prop, "_avfilter_temp");
+				char *cur_val = NULL;
+				av_opt_get(pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, AV_OPT_SEARCH_CHILDREN, (uint8_t **)&cur_val);
+				if (new_val && cur_val && strcmp(new_val, cur_val)) {
+					avfilter_graph_send_command(pdata->avfilter_graph, pdata->avfilter->name, name + PARAM_PREFIX_LEN, new_val, NULL, 0, 0);
+				}
+				av_free(cur_val);
+			}
 		}
 	}
+#endif
 }
 
 static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, int frequency, int channels )
