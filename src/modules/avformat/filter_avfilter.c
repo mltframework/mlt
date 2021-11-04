@@ -150,6 +150,29 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 	}
 }
 
+static void send_avformat_commands(mlt_filter filter, mlt_frame frame, private_data* pdata)
+{
+	mlt_service service = MLT_FILTER_SERVICE(filter);
+	mlt_properties prop = MLT_SERVICE_PROPERTIES(service);
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	int length = mlt_filter_get_length2( filter, frame );
+	int count = mlt_properties_count(prop);
+	int i;
+	for (i = 0; i < count; i++)
+	{
+		char *name = mlt_properties_get_name(prop, i);
+		if (!strncmp(name, PARAM_PREFIX, PARAM_PREFIX_LEN))
+		{
+			char *new_val = mlt_properties_anim_get( prop, name, position, length);
+			char *cur_val = NULL;
+			av_opt_get(pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, AV_OPT_SEARCH_CHILDREN, (uint8_t **)&cur_val);
+			if (new_val && cur_val && strcmp(new_val, cur_val))
+				avfilter_graph_send_command(pdata->avfilter_graph, pdata->avfilter->name, name + PARAM_PREFIX_LEN, new_val, NULL, 0, 0);
+			av_free(cur_val);
+		}
+	}
+}
+
 static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, int frequency, int channels )
 {
 	private_data* pdata = (private_data*)filter->child;
@@ -625,6 +648,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 					(uint8_t*)*buffer,
 					bufsize );
 		}
+		send_avformat_commands(filter, frame, pdata);
 
 		// Run the frame through the filter graph
 		ret = av_buffersrc_add_frame( pdata->avbuffsrc_ctx, pdata->avinframe );
@@ -769,28 +793,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				dst += pdata->avinframe->linesize[0];
 			}
 		}
-
-		{
-			mlt_service service = MLT_FILTER_SERVICE(filter);
-			mlt_properties prop = MLT_SERVICE_PROPERTIES(service);
-			mlt_position position = mlt_filter_get_position( filter, frame );
-			int length = mlt_filter_get_length2( filter, frame );
-			int count = mlt_properties_count(prop);
-			int i;
-			for (i = 0; i < count; i++)
-			{
-				char *name = mlt_properties_get_name(prop, i);
-				if (!strncmp(name, PARAM_PREFIX, PARAM_PREFIX_LEN))
-				{
-					char *new_val = mlt_properties_anim_get( prop, name, position, length);
-					char *cur_val = NULL;
-					av_opt_get(pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, AV_OPT_SEARCH_CHILDREN, (uint8_t **)&cur_val);
-					if (new_val && cur_val && strcmp(new_val, cur_val))
-						avfilter_graph_send_command(pdata->avfilter_graph, pdata->avfilter->name, name + PARAM_PREFIX_LEN, new_val, NULL, 0, 0);
-					av_free(cur_val);
-				}
-			}
-		}
+		send_avformat_commands(filter, frame, pdata);
 
 		// Run the frame through the filter graph
 		ret = av_buffersrc_add_frame( pdata->avbuffsrc_ctx, pdata->avinframe );
