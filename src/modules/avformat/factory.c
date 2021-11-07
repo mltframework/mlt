@@ -229,12 +229,6 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set( p, "type", "string" );
 			break;
 		}
-		mlt_properties_set( p, "mutable", "yes" );
-#if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
-		if ((opt->flags & AV_OPT_FLAG_RUNTIME_PARAM)) {
-			mlt_properties_set( p, "animation", "yes" );
-		}
-#endif
 		// If the option belongs to a group (unit) and is not a constant (keyword value)
 		if ( opt->unit && opt->type != AV_OPT_TYPE_CONST )
 		{
@@ -375,7 +369,6 @@ static mlt_properties avfilter_metadata( mlt_service_type type, const char *id, 
 			mlt_properties_set( p, "description", "The MLT position value to set on avfilter frames" );
 			mlt_properties_set( p, "type", "string" );
 			mlt_properties_set( p, "default", "frame" );
-			mlt_properties_set( p, "mutable", "yes" );
 			mlt_properties values = mlt_properties_new();
 			mlt_properties_set_data( p, "values", values, 0, (mlt_destructor) mlt_properties_close, NULL );
 			snprintf( key, 20, "%d", i++ );
