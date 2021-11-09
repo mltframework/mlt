@@ -3,7 +3,7 @@
  * \brief Properties class declaration
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -108,6 +108,7 @@ extern int mlt_properties_anim_set_int( mlt_properties self, const char *name, i
 extern double mlt_properties_anim_get_double( mlt_properties self, const char *name, int position, int length );
 extern int mlt_properties_anim_set_double( mlt_properties self, const char *name, double value, int position, int length, mlt_keyframe_type keyframe_type );
 extern mlt_animation mlt_properties_get_animation( mlt_properties self, const char *name );
+extern int mlt_properties_is_anim(mlt_properties self, const char *name);
 
 extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_rect value );
 extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char *name );

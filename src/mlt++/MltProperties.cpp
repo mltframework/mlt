@@ -432,6 +432,11 @@ Animation *Properties::get_anim(const char *name)
 	return new Animation( mlt_properties_get_animation( get_properties(), name ) );
 }
 
+bool Properties::is_anim(const char *name)
+{
+	return mlt_properties_is_anim(get_properties(), name);
+}
+
 int Properties::set( const char *name, Properties& properties )
 {
 	return mlt_properties_set_properties( get_properties(), name, properties.get_properties() );

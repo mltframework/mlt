@@ -2438,6 +2438,12 @@ int mlt_properties_set_color( mlt_properties self, const char *name, mlt_color c
  *
  * Do not free the returned string. It's lifetime is controlled by the property
  * and this properties object.
+ * Enclose a string property value in double quotation marks to prevent
+ * mlt_properties_anim_get() from interpreting the string as animation. The
+ * double-quotes are removed when retrieved through mlt_properties_anim_get().
+ * The same rule applies to string keyframe values: to protect a keyframed-string
+ * value containing a semicolon or equal sign, enclose it in double-quotes.
+ *
  * \public \memberof mlt_properties_s
  * \param self a properties list
  * \param name the property to get
@@ -2758,6 +2764,15 @@ int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, 
 
 #endif
 
+/** Set a property to a nested properties object.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \param properties the properties list to nest into \p self with \p name
+ * \return true if error
+ */
+
 int mlt_properties_set_properties( mlt_properties self, const char *name, mlt_properties properties )
 {
 	int error = 1;
@@ -2779,12 +2794,27 @@ int mlt_properties_set_properties( mlt_properties self, const char *name, mlt_pr
 	return error;
 }
 
+/** Get a nested properties object by name.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return the nested properties list
+ */
+
 mlt_properties mlt_properties_get_properties( mlt_properties self, const char *name )
 {
-	property_list *list = self->local;
 	mlt_property value = mlt_properties_find( self, name );
 	return value == NULL ? NULL : mlt_property_get_properties( value );
 }
+
+/** Get a nested properties object by index.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param index the 0-based index value of the list item
+ * \return the nested properties list
+ */
 
 mlt_properties mlt_properties_get_properties_at( mlt_properties self, int index )
 {
@@ -2793,4 +2823,23 @@ mlt_properties mlt_properties_get_properties_at( mlt_properties self, int index 
 	if ( index >= 0 && index < list->count )
 		return mlt_property_get_properties( list->value[ index ] );
 	return NULL;
+}
+
+/** Check if a property is animated.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return true if the property is animated
+ */
+
+int mlt_properties_is_anim(mlt_properties self, const char *name)
+{
+	mlt_property property = mlt_properties_find(self, name);
+	if (!property) return 0;
+	property_list *list = self->local;
+	pthread_mutex_lock(&list->mutex);
+	int result = mlt_property_is_anim(property);
+	pthread_mutex_unlock(&list->mutex);
+	return result;
 }

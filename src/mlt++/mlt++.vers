@@ -694,3 +694,10 @@ MLTPP_7.1.0 {
         "Mlt::Properties::get_props_at(int)";
     };
 } MLTPP_7.0.0;
+
+MLT_7.4.0 {
+  global:
+    extern "C++" {
+      "Mlt::Properties::is_anim(char const*)";
+    };
+} MLTPP_7.1.0;

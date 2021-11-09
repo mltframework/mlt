@@ -3,7 +3,7 @@
  * \brief Property class declaration
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,6 +71,7 @@ extern int mlt_property_anim_set_double( mlt_property self, double value, double
 extern int mlt_property_anim_set_int( mlt_property self, int value, double fps, locale_t locale, int position, int length, mlt_keyframe_type keyframe_type );
 extern int mlt_property_anim_set_string( mlt_property self, const char *value, double fps, locale_t locale, int position, int length );
 extern mlt_animation mlt_property_get_animation( mlt_property self );
+extern int mlt_property_is_anim(mlt_property self);
 
 extern int mlt_property_set_rect( mlt_property self, mlt_rect value );
 extern mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale );
