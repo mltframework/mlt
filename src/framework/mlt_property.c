@@ -1869,5 +1869,5 @@ mlt_properties mlt_property_get_properties( mlt_property self )
 
 int mlt_property_is_anim(mlt_property self)
 {
-	return self->animation || (self->prop_string && self->prop_string[0] != '"' && strchr(self->prop_string, '='));
+	return self->animation || (self->prop_string && strchr(self->prop_string, '='));
 }
