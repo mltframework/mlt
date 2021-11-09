@@ -58,22 +58,18 @@ typedef struct
 	int reset;
 } private_data;
 
-static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
+static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_data event_data)
 {
 	const char *name = mlt_event_data_to_string(event_data);
-	if( name && strncmp( PARAM_PREFIX, name, PARAM_PREFIX_LEN ) == 0 ) {
+	if (name && strncmp(PARAM_PREFIX, name, PARAM_PREFIX_LEN) == 0) {
 		private_data* pdata = (private_data*)filter->child;
-		if( pdata->avfilter )
-		{
-			const AVOption *opt = NULL;
-			while( ( opt = av_opt_next( &pdata->avfilter->priv_class, opt ) ) )
-			{
-				if( !strcmp( opt->name, name + PARAM_PREFIX_LEN ) )
-				{
-					pdata->reset = !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
-					break;
-				}
-			}
+		if (pdata->avfilter_ctx) {
+			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0 );
+#if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
+			pdata->reset = opt && !(opt->flags & AV_OPT_FLAG_RUNTIME_PARAM) && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
+#else
+			pdata->reset = opt && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
+#endif
 		}
 	}
 }
@@ -133,7 +129,11 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 		{
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, param_name + PARAM_PREFIX_LEN, 0, 0, 0 );
 			const char* value = mlt_properties_get_value( filter_properties, i );
-			if( opt && !mlt_properties_is_anim(filter_properties, param_name) )
+#if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
+			if (opt && !(opt->flags & AV_OPT_FLAG_RUNTIME_PARAM) && !mlt_properties_is_anim(filter_properties, param_name))
+#else
+			if (opt && !mlt_properties_is_anim(filter_properties, param_name))
+#endif
 			{
 				if (scale != 1.0) {
 					double scale2 = mlt_properties_get_double(scale_map, opt->name);
