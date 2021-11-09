@@ -58,11 +58,6 @@ typedef struct
 	int reset;
 } private_data;
 
-static inline int non_animated(const char *value)
-{
-	return value && (value[0] == '"' || !strchr(value, '='));
-}
-
 static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
 {
 	const char *name = mlt_event_data_to_string(event_data);
@@ -75,8 +70,7 @@ static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_da
 			{
 				if( !strcmp( opt->name, name + PARAM_PREFIX_LEN ) )
 				{
-					const char* value = mlt_properties_get(MLT_FILTER_PROPERTIES(filter), name);
-					pdata->reset = non_animated(value);
+					pdata->reset = !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
 					break;
 				}
 			}
@@ -139,7 +133,7 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 		{
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, param_name + PARAM_PREFIX_LEN, 0, 0, 0 );
 			const char* value = mlt_properties_get_value( filter_properties, i );
-			if( opt && non_animated(value) )
+			if( opt && !mlt_properties_is_anim(filter_properties, param_name) )
 			{
 				if (scale != 1.0) {
 					double scale2 = mlt_properties_get_double(scale_map, opt->name);
