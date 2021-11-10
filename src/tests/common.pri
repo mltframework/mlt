@@ -20,5 +20,5 @@ win32 {
     INSTALLS += target
 } else {
     CONFIG += link_pkgconfig
-    PKGCONFIG += mlt++
+    PKGCONFIG += mlt++-7
 }

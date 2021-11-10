@@ -58,22 +58,18 @@ typedef struct
 	int reset;
 } private_data;
 
-static void property_changed( mlt_service owner, mlt_filter filter, mlt_event_data event_data )
+static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_data event_data)
 {
 	const char *name = mlt_event_data_to_string(event_data);
-	if( name && strncmp( PARAM_PREFIX, name, PARAM_PREFIX_LEN ) == 0 ) {
+	if (name && strncmp(PARAM_PREFIX, name, PARAM_PREFIX_LEN) == 0) {
 		private_data* pdata = (private_data*)filter->child;
-		if( pdata->avfilter )
-		{
-			const AVOption *opt = NULL;
-			while( ( opt = av_opt_next( &pdata->avfilter->priv_class, opt ) ) )
-			{
-				if( !strcmp( opt->name, name + PARAM_PREFIX_LEN ) )
-				{
-					pdata->reset = 1;
-					break;
-				}
-			}
+		if (pdata->avfilter_ctx) {
+			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0 );
+#if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
+			pdata->reset = opt && !(opt->flags & AV_OPT_FLAG_RUNTIME_PARAM) && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
+#else
+			pdata->reset = opt && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
+#endif
 		}
 	}
 }
@@ -133,7 +129,11 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 		{
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, param_name + PARAM_PREFIX_LEN, 0, 0, 0 );
 			const char* value = mlt_properties_get_value( filter_properties, i );
-			if( opt && value )
+#if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
+			if (opt && !(opt->flags & AV_OPT_FLAG_RUNTIME_PARAM) && !mlt_properties_is_anim(filter_properties, param_name))
+#else
+			if (opt && !mlt_properties_is_anim(filter_properties, param_name))
+#endif
 			{
 				if (scale != 1.0) {
 					double scale2 = mlt_properties_get_double(scale_map, opt->name);
@@ -148,6 +148,44 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 			}
 		}
 	}
+}
+
+static void send_avformat_commands(mlt_filter filter, mlt_frame frame, private_data* pdata, double scale)
+{
+#if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
+	mlt_properties prop = MLT_FILTER_PROPERTIES(filter);
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	int length = mlt_filter_get_length2( filter, frame );
+	mlt_properties scale_map = mlt_properties_get_data(prop, "_resolution_scale", NULL);
+	int count = mlt_properties_count(prop);
+	int i;
+
+	for (i = 0; i < count; i++)
+	{
+		char *name = mlt_properties_get_name(prop, i);
+		if (!strncmp(name, PARAM_PREFIX, PARAM_PREFIX_LEN))
+		{
+			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0 );
+			if (opt && opt->flags & AV_OPT_FLAG_RUNTIME_PARAM) {
+				double x = mlt_properties_anim_get_double(prop, name, position, length);
+				if (scale != 1.0) {
+					double scale2 = mlt_properties_get_double(scale_map, opt->name);
+					if (scale2 != 0.0) {
+						x *= scale * scale2;
+					}
+				}
+				mlt_properties_set_double(prop, "_avfilter_temp", x);
+				char *new_val =  mlt_properties_get(prop, "_avfilter_temp");
+				char *cur_val = NULL;
+				av_opt_get(pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, AV_OPT_SEARCH_CHILDREN, (uint8_t **)&cur_val);
+				if (new_val && cur_val && strcmp(new_val, cur_val)) {
+					avfilter_graph_send_command(pdata->avfilter_graph, pdata->avfilter->name, name + PARAM_PREFIX_LEN, new_val, NULL, 0, 0);
+				}
+				av_free(cur_val);
+			}
+		}
+	}
+#endif
 }
 
 static void init_audio_filtergraph( mlt_filter filter, mlt_audio_format format, int frequency, int channels )
@@ -625,6 +663,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 					(uint8_t*)*buffer,
 					bufsize );
 		}
+		send_avformat_commands(filter, frame, pdata, 1.0);
 
 		// Run the frame through the filter graph
 		ret = av_buffersrc_add_frame( pdata->avbuffsrc_ctx, pdata->avinframe );
@@ -692,9 +731,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
+	double scale = mlt_profile_scale_width(profile, *width);
+
 	if( pdata->reset || pdata->format != *format || pdata->width != *width || pdata->height != *height )
 	{
-		double scale = mlt_profile_scale_width(profile, *width);
 		init_image_filtergraph( filter, *format, *width, *height, scale );
 		pdata->reset = 0;
 	}
@@ -769,6 +809,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				dst += pdata->avinframe->linesize[0];
 			}
 		}
+		send_avformat_commands(filter, frame, pdata, scale);
 
 		// Run the frame through the filter graph
 		ret = av_buffersrc_add_frame( pdata->avbuffsrc_ctx, pdata->avinframe );

@@ -1383,7 +1383,7 @@ double mlt_property_anim_get_double( mlt_property self, double fps, locale_t loc
 {
 	double result;
 	pthread_mutex_lock( &self->mutex );
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if (mlt_property_is_anim(self))
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
@@ -1419,7 +1419,7 @@ int mlt_property_anim_get_int( mlt_property self, double fps, locale_t locale, i
 {
 	int result;
 	pthread_mutex_lock( &self->mutex );
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if (mlt_property_is_anim(self))
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
@@ -1455,7 +1455,7 @@ char* mlt_property_anim_get_string( mlt_property self, double fps, locale_t loca
 {
 	char *result;
 	pthread_mutex_lock( &self->mutex );
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if (mlt_property_is_anim(self))
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
@@ -1803,7 +1803,7 @@ mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t loc
 {
 	mlt_rect result;
 	pthread_mutex_lock( &self->mutex );
-	if ( self->animation || ( self->prop_string && strchr( self->prop_string, '=' ) ) )
+	if (mlt_property_is_anim(self))
 	{
 		struct mlt_animation_item_s item;
 		item.property = mlt_property_init();
@@ -1824,6 +1824,14 @@ mlt_rect mlt_property_anim_get_rect( mlt_property self, double fps, locale_t loc
 	return result;
 }
 
+/** Set a nested properties object.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \param properties the properties list to nest into \p self with \p name
+ * \return true if error
+ */
+
 int mlt_property_set_properties( mlt_property self, mlt_properties properties )
 {
 	pthread_mutex_lock( &self->mutex );
@@ -1834,6 +1842,13 @@ int mlt_property_set_properties( mlt_property self, mlt_properties properties )
 	return 0;
 }
 
+/** Get a nested properties object.
+ *
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return the nested properties list
+ */
+
 mlt_properties mlt_property_get_properties( mlt_property self )
 {
 	mlt_properties properties = NULL;
@@ -1841,4 +1856,18 @@ mlt_properties mlt_property_get_properties( mlt_property self )
 	properties = self->properties;
 	pthread_mutex_unlock( &self->mutex );
 	return properties;
+}
+
+/** Check if a property is animated.
+ *
+ * This is not a thread-safe function because it is used internally by
+ * mlt_property_s under a lock. However, external callers should protect it.
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return true if the property is animated
+ */
+
+int mlt_property_is_anim(mlt_property self)
+{
+	return self->animation || (self->prop_string && strchr(self->prop_string, '='));
 }
