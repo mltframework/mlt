@@ -201,7 +201,13 @@ plugin_mgr_get_dir_plugins (plugin_mgr_t * plugin_mgr, const char * dir)
       if (S_ISDIR (info.st_mode))
         plugin_mgr_get_dir_plugins (plugin_mgr, file_name);
       else
-        plugin_mgr_get_object_file_plugins (plugin_mgr, file_name);
+        {
+          char * ext = strrchr(file_name, '.');
+          if (ext && (strcmp(ext, ".so") == 0 || strcmp(ext, ".dll") == 0))
+          {
+            plugin_mgr_get_object_file_plugins (plugin_mgr, file_name);
+          }
+        }
       
       g_free (file_name);
     }
