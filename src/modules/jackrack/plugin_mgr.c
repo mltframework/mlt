@@ -203,7 +203,7 @@ plugin_mgr_get_dir_plugins (plugin_mgr_t * plugin_mgr, const char * dir)
       else
         {
           char * ext = strrchr(file_name, '.');
-          if (ext && (strcmp(ext, ".so") == 0 || strcmp(ext, ".dll") == 0))
+          if (ext && (strcmp(ext, ".so") == 0 || strcmp(ext, ".dll") == 0 || strcmp(ext, ".dylib") == 0))
           {
             plugin_mgr_get_object_file_plugins (plugin_mgr, file_name);
           }
