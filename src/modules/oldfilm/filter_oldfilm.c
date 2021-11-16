@@ -81,7 +81,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if ( delta ) {
 			mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 			delta *= mlt_profile_scale_width(profile, *width);
-			diffpic = rand() % delta * 2 - delta;
+            diffpic = rand() % MAX(delta, 1) * 2 - delta;
 		}
 		int brightdelta = 0;
 		if (( bdu + bdd ) != 0 )
