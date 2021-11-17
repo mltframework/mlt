@@ -1,6 +1,6 @@
 /**
  * MltLink.h - MLT Wrapper
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,11 @@ namespace Mlt
 			Link( );
 			Link( mlt_link link );
 			Link( const char* id, const char* service = NULL );
+			Link( Link *link );
+			Link( Service &link );
+			Link( Link &link );
+			Link( const Link &link );
+			Link& operator=( const Link &link );
 			virtual ~Link( );
 			virtual mlt_link get_link( );
 			mlt_producer get_producer( );

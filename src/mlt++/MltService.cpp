@@ -48,6 +48,11 @@ Service::Service( mlt_service service ) :
 	inc_ref( );
 }
 
+Service::Service(Service *service)
+	: Service(service? service->get_service() : nullptr)
+{
+}
+
 Service::~Service( )
 {
 	mlt_service_close( instance );

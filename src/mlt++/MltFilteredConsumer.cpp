@@ -103,7 +103,7 @@ int FilteredConsumer::detach( Filter &filter )
 			Service *producer = it->producer( );
 			Service *consumer = it->consumer( );
 			consumer->connect_producer( *producer );
-			Service dummy( NULL );
+			Service dummy;
 			it->connect_producer( dummy );
 			if ( first->get_service( ) == it->get_service( ) )
 			{

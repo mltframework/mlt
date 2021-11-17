@@ -1,6 +1,6 @@
 /**
  * MltFilter.cpp - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -84,6 +84,11 @@ Filter::Filter( mlt_filter filter ) :
 	instance( filter )
 {
 	inc_ref( );
+}
+
+Filter::Filter(Filter *filter)
+	: Filter(filter? filter->get_filter() : nullptr)
+{
 }
 
 Filter::~Filter( )

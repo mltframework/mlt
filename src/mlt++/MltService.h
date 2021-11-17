@@ -1,6 +1,6 @@
 /**
  * MltService.h - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,7 @@ namespace Mlt
 			Service( Service &service );
 			Service( const Service &service );
 			Service( mlt_service service );
+			Service( Service *service );
 			virtual ~Service( );
 			Service& operator=( const Service &service );
 			virtual mlt_service get_service( );

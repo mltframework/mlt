@@ -699,5 +699,12 @@ MLT_7.4.0 {
   global:
     extern "C++" {
       "Mlt::Properties::is_anim(char const*)";
+      "Mlt::Filter::Filter(Mlt::Filter*)";
+      "Mlt::Link::Link(Mlt::Link*)";
+      "Mlt::Link::Link(Mlt::Service&)";
+      "Mlt::Link::Link(Mlt::Link&)";
+      "Mlt::Link::Link(Mlt::Link const&)";
+      "Mlt::Link::operator=(Mlt::Link const&)";
+      "Mlt::Service::Service(Mlt::Service*)";
     };
 } MLTPP_7.1.0;

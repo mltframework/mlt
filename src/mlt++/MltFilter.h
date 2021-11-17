@@ -1,6 +1,6 @@
 /**
  * MltFilter.h - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,6 +44,7 @@ namespace Mlt
 			Filter( Filter &filter );
 			Filter( const Filter &filter );
 			Filter( mlt_filter filter );
+			Filter( Filter *filter );
 			virtual ~Filter( );
 			Filter& operator=( const Filter &filter );
 			virtual mlt_filter get_filter( );
