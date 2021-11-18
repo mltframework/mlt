@@ -225,6 +225,15 @@ static void add_parameters( mlt_properties params, void *object, int req_flags, 
 			mlt_properties_set( p, "type", "integer" );
 			mlt_properties_set( p, "format", "constant" );
 			break;
+		case AV_OPT_TYPE_COLOR:
+			mlt_properties_set( p, "type", "color" );
+			if ( opt->default_val.str ) {
+				size_t len = strlen( opt->default_val.str ) + 3;
+				char* quoted = malloc( len );
+				snprintf( quoted, len, "'%s'", opt->default_val.str );
+				mlt_properties_set( p, "default", quoted );
+				free( quoted );
+			}
 		default:
 			mlt_properties_set( p, "type", "string" );
 			break;
