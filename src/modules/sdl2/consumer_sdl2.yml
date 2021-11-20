@@ -57,3 +57,12 @@ parameters:
     mutable: yes
     default: 1
     widget: checkbox
+
+  - identifier: terminate_on_pause
+    title: Stop automatically
+    type: boolean
+    description: >
+      Whether to stop playback at the end of the producer or when playback
+      is paused.
+    default: 0
+    widget: checkbox

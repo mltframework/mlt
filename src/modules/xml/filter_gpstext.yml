@@ -118,7 +118,7 @@ parameters:
     
   - identifier: speed_multiplier
     title: Speed multiplier
-    type: double
+    type: float
     description: >
       If the video file is a timelapse (or slow motion), use this value to set the
       speed up/slow down ratio. 
@@ -131,7 +131,7 @@ parameters:
     
   - identifier: updates_per_second
     title: Updates per second
-    type: double
+    type: float
     description: >
       Controls how many times per second is the GPS text updated on video (interpolated).
       A value of 0 will only update text when a real gps point has been recorded.
