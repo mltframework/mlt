@@ -62,15 +62,7 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 
 	// Validate the request
 	*channels = *channels <= 0 ? 2 : *channels;
-	int src_frequency = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "audio_frequency" );
-	if ( src_frequency > 0 )
-	{
-		*frequency = src_frequency;
-	}
-	else if ( *frequency <= 0 )
-	{
-		*frequency = 48000;
-	}
+	*frequency = *frequency <= 0 ? 48000 : *frequency;
 
 	if ( source_speed < 0.1 || source_speed > 10 )
 	{
@@ -82,6 +74,12 @@ static int link_get_audio( mlt_frame frame, void** audio, mlt_audio_format* form
 		memset( *audio, 0, size );
 		mlt_frame_set_audio( frame, *audio, *format, size, mlt_pool_release );
 		return 0;
+	}
+
+	int src_frequency = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "audio_frequency" );
+	if ( src_frequency > 0 )
+	{
+		*frequency = src_frequency;
 	}
 
 	// Calculate the samples to get from the input frames
