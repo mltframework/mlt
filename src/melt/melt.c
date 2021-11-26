@@ -212,6 +212,63 @@ static void transport_action( mlt_producer producer, char *value )
 					fire_jack_seek_event(jack, position);
 				}
 				break;
+			default:
+				if (producer) {
+   				    mlt_position len = mlt_producer_get_length(producer);
+					switch (value[0]) {
+						case 'z':
+							position = len;
+							break;
+						case 'Z':
+							position = 2 * len;
+							break;
+						case 'x':
+							position = 3 * len;
+							break;
+						case 'X':
+							position = 4 * len;
+							break;
+						case 'c':
+							position = 5 * len;
+							break;
+						case 'C':
+							position = 6 * len;
+							break;
+						case 'v':
+							position = 7 * len;
+							break;
+						case 'V':
+							position = 8 * len;
+							break;
+						case 'b':
+							position = 9 * len;
+							break;
+						case 'B':
+							position = 10 * len;
+							break;
+						case 'n':
+							position = 11 * len;
+							break;
+						case 'N':
+							position = 12 * len;
+							break;
+						case 'm':
+							position = 13 * len;
+							break;
+						case 'M':
+							position = 14 * len;
+							break;
+						default:
+							len = 0;
+					}
+					if (len) {
+						position /= 15;
+						mlt_consumer_purge( consumer );
+						mlt_producer_seek( producer, position );
+						fire_jack_seek_event(jack, position);
+					}
+				}
+				break;
 		}
 
 		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
