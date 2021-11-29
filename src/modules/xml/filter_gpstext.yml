@@ -46,8 +46,8 @@ parameters:
       only the time in 12-hour format, offset by 1 hour.
       Speed and distance keywords may include an extra format keyword to convert 
       the value to metric/imperial units. Default is meters and km/h respectively.
-      Supported formats, distance: m|meter, km|kilometer*, mi|mile*, ft|feet;
-      speed: ms|m/s|meter, km|km/h|kilo, mi|mi/h|mile, ft|ft/s|feet.
+      Supported formats, distance: m|meter, km|kilometer*, mi|mile*, ft|feet, nm|nautical*;
+      speed: ms|m/s|meter, km|km/h|kilo, mi|mi/h|mile, ft|ft/s|feet, kn|nm/h|knots.
       Computed values are calculated since begining of GPS file or since 
       "gps_processing_start_time" property, if set.
       The # may be escaped with "\".

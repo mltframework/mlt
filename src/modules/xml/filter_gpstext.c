@@ -144,6 +144,8 @@ static double convert_distance_to_format(double x, const char* format)
 		return x/1000.0;
 	else if (strstr(format, "mi") || strstr(format, "mile"))
 		return x*0.00062137;
+	else if (strstr(format, "nm") || strstr(format, "nautical"))
+		return x*0.0005399568;
 	else if (strstr(format, "ft") || strstr(format, "feet"))
 		return x*3.2808399;
 	return x;
@@ -160,6 +162,8 @@ static double convert_speed_to_format(double x, const char* format)
 		return x;
 	else if (strstr(format, "mi") || strstr(format, "mi/h") || strstr(format, "mile"))
 		return x*2.23693629;
+	else if (strstr(format, "kn") || strstr(format, "nm/h") || strstr(format, "knots"))
+		return x*1.94384449;
 	else if (strstr(format, "ft") || strstr(format, "ft/s") || strstr(format, "feet"))
 		return x*3.2808399;
 	
