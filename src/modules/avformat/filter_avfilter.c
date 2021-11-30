@@ -73,7 +73,7 @@ static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_dat
 		if (pdata->avfilter_ctx) {
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0 );
 #if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
-			pdata->reset = !animatable_avoption(opt) && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
+			pdata->reset = opt && !(animatable_avoption(opt) && mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name));
 #else
 			pdata->reset = opt && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
 #endif
@@ -137,7 +137,7 @@ static void set_avfilter_options( mlt_filter filter, double scale)
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, param_name + PARAM_PREFIX_LEN, 0, 0, 0 );
 			const char* value = mlt_properties_get_value( filter_properties, i );
 #if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
-			if (!animatable_avoption(opt) && !mlt_properties_is_anim(filter_properties, param_name))
+			if (opt && !(animatable_avoption(opt) && mlt_properties_is_anim(filter_properties, param_name)))
 #else
 			if (opt && !mlt_properties_is_anim(filter_properties, param_name))
 #endif
@@ -173,7 +173,7 @@ static void send_avformat_commands(mlt_filter filter, mlt_frame frame, private_d
 		if (!strncmp(name, PARAM_PREFIX, PARAM_PREFIX_LEN))
 		{
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0 );
-			if (animatable_avoption(opt)) {
+			if (animatable_avoption(opt) && mlt_properties_is_anim(prop, name)) {
 				double x = mlt_properties_anim_get_double(prop, name, position, length);
 				if (scale != 1.0) {
 					double scale2 = mlt_properties_get_double(scale_map, opt->name);
