@@ -1,0 +1,124 @@
+schema_version: 0.3
+type: filter
+identifier: audiolevel
+title: Audio Level Visualization Filter
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  An audio visualization filter that draws an audio level meter on the image.
+
+parameters:
+  - identifier: bgcolor
+    title: Background Color
+    type: color
+    description: |
+      The background color to be applied to the entire frame. The default color 
+      is transparent.
+      
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+    
+  - identifier: color.*
+    title: Foreground color
+    type: color
+    description: |
+      The color of the waveform.
+      
+      Multiple colors can be specified with incrementing suffixes to cause the
+      waveform to be drawn in a gradient. color.1 is the top of the waveform.
+      Subsequent colors will produce a gradient toward the bottom.
+      
+      By default, the filter has one color defined:
+      
+          color.1=0xffffffff"
+          
+      This results in a white waveform.
+      
+      To create a gradient, define more colors:
+      
+          color.2=green color.3=0x77777777
+      
+      A color value is a hexadecimal representation of RGB plus alpha channel 
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
+    readonly: no
+    mutable: yes
+    widget: color
+
+  - identifier: thickness
+    title: Line Thickness
+    type: integer
+    description: >
+      The thickness of the line used to draw the waveform for line graph.
+      The thickness of the bar for bar graph.
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 20
+    mutable: yes
+    widget: spinner
+    unit: pixels
+    
+  - identifier: angle
+    title: Angle
+    type: float
+    description: >
+      The rotation angle to be applied to the waveform.
+    readonly: no
+    default: 0
+    minimum: 0
+    maximum: 360
+    mutable: yes
+    widget: spinner
+
+  - identifier: rect
+    title: Rectangle
+    description: >
+      Defines the rectangle that the waveform(s) should be drawn in.
+      
+      Format is: "X Y W H".
+      
+      X, Y, W, H are assumed to be pixel units unless they have the suffix '%'.
+    type: rect
+    default: "0 0 100% 100%"
+    readonly: no
+    mutable: yes
+    
+  - identifier: mirror
+    title: Mirror
+    description: >
+      Mirror the spectrum about the center of the rectangle.
+    type: boolean
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+    
+  - identifier: gorient
+    title: Gradient Orientation
+    description: Direction of the color gradient.
+    type: string
+    default: vertical
+    values:
+      - vertical
+      - horizontal
+    readonly: no
+    mutable: yes
+    widget: combo
+    
+  - identifier: channels
+    title: Channels
+    type: integer
+    description: >
+      The number of channels to show.
+    mutable: yes
+    readonly: no
+    default: 2

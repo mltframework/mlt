@@ -7,6 +7,7 @@ add_library(mltqt MODULE
   common.cpp graph.cpp
   qimage_wrapper.cpp
   kdenlivetitle_wrapper.cpp
+  filter_audiolevelgraph.cpp
   filter_audiowaveform.cpp
   filter_qtext.cpp
   filter_qtblend.cpp
@@ -61,6 +62,8 @@ set_target_properties(mltqt PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OU
 install(TARGETS mltqt LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
+  filter_audiolevelgraph.yml
+  filter_audiospectrum.yml
   filter_audiowaveform.yml
   filter_qtblend.yml
   filter_qtcrop.yml
