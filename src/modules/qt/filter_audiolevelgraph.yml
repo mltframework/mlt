@@ -12,6 +12,18 @@ description: >
   An audio visualization filter that draws an audio level meter on the image.
 
 parameters:
+  - identifier: type
+    title: Graph type
+    description: The type of graph to display the levels.
+    type: string
+    default: bar
+    values:
+      - segment
+      - bar
+    readonly: no
+    mutable: yes
+    widget: combo
+
   - identifier: bgcolor
     title: Background Color
     type: color
@@ -57,8 +69,7 @@ parameters:
     title: Line Thickness
     type: integer
     description: >
-      The thickness of the line used to draw the waveform for line graph.
-      The thickness of the bar for bar graph.
+      The thickness of the bar or segments.
     readonly: no
     default: 0
     minimum: 0
@@ -101,7 +112,17 @@ parameters:
     readonly: no
     mutable: yes
     widget: checkbox
-    
+
+  - identifier: reverse
+    title: Reverse
+    description: >
+      Draw the points starting with the right channel first.
+    type: boolean
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+
   - identifier: gorient
     title: Gradient Orientation
     description: Direction of the color gradient.
@@ -122,3 +143,15 @@ parameters:
     mutable: yes
     readonly: no
     default: 2
+
+  - identifier: segment_gap
+    title: Segment Gap
+    type: integer
+    description: >
+      The space in pixels between the segments.
+    mutable: yes
+    readonly: no
+    default: 10
+    minimum: 0
+    maximum: 100
+    unit: pixels

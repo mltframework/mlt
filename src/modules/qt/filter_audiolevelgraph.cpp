@@ -129,6 +129,9 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 	rect.h *= scale;
 	char* graph_type = mlt_properties_get( filter_properties, "type" );
 	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
+	int segment_gap = mlt_properties_get_int( filter_properties, "segment_gap" ) * scale;
+	int segment_width = mlt_properties_get_int( filter_properties, "thickness" ) * scale;
+	QVector<QColor> colors = get_graph_colors( filter_properties );
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
 	QPainter p( qimg );
@@ -151,13 +154,21 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 
 	convert_levels( filter, frame, channels, levels );
 
-	paint_bar_graph( p, r, channels, levels );
+	if( graph_type && graph_type[0] == 'b' ) {
+		paint_bar_graph( p, r, channels, levels );
+	} else {
+		paint_segment_graph( p, r, channels, levels, segment_gap, colors, segment_width );
+	}
 
 	if( mirror ) {
 		// Second rectangle is mirrored.
 		p.translate( 0, r.y() * 2 + r.height() * 2 );
 		p.scale( 1, -1 );
-		paint_bar_graph( p, r, channels, levels );
+		if( graph_type && graph_type[0] == 'b' ) {
+			paint_bar_graph( p, r, channels, levels );
+		} else {
+			paint_segment_graph( p, r, channels, levels, segment_gap, colors, segment_width );
+		}
 	}
 
 	mlt_pool_release( levels );
@@ -254,6 +265,7 @@ mlt_filter filter_audiolevelgraph_init( mlt_profile profile, mlt_service_type ty
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 		mlt_properties_set_int( properties, "_filter_private", 1 );
+		mlt_properties_set( properties, "type", "bar" );
 		mlt_properties_set( properties, "bgcolor", "0x00000000" );
 		mlt_properties_set( properties, "color.1", "0xffffffff" );
 		mlt_properties_set( properties, "rect", "0% 0% 100% 100%" );
@@ -264,6 +276,7 @@ mlt_filter filter_audiolevelgraph_init( mlt_profile profile, mlt_service_type ty
 		mlt_properties_set( properties, "angle", "0" );
 		mlt_properties_set( properties, "gorient", "v" );
 		mlt_properties_set_int( properties, "channels", 2 );
+		mlt_properties_set_int( properties, "segment_gap", 10 );
 
 		pdata->levels_filter = 0;
 
