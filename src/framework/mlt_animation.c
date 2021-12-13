@@ -603,6 +603,9 @@ int mlt_animation_prev_key( mlt_animation self, mlt_animation_item item, int pos
 	while ( node && node->next && position >= node->next->item.frame )
 		node = node->next;
 
+	if ( position < node->item.frame )
+		node = NULL;
+
 	if ( node )
 	{
 		item->frame = node->item.frame;

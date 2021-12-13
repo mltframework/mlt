@@ -1,6 +1,6 @@
 /**
  * MltAnimation.cpp - MLT Wrapper
- * Copyright (C) 2015-2018 Meltytech, LLC
+ * Copyright (C) 2015-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -101,6 +101,15 @@ mlt_keyframe_type Animation::keyframe_type( int position )
 		return (mlt_keyframe_type) -1;
 }
 
+/** Get the keyfame at the position or the next following.
+ *
+ * If no keyframe exists at or after the position, the return value is invalid
+ *
+ * \deprecated Prefer bool Animation::next_key( int position, int& key )
+ * \param position the frame number at which to start looking for the next keyframe
+ * \return the position of the next keyframe
+ */
+
 int Animation::next_key( int position )
 {
 	struct mlt_animation_item_s item;
@@ -112,6 +121,36 @@ int Animation::next_key( int position )
 		return error;
 }
 
+/** Get the keyfame at the position or the next following.
+ *
+ * On error, key is not modified.
+ *
+ * \param position the frame number at which to start looking for the next keyframe
+ * \param key the returned position of the next keyframe
+ * \return true if there was an error
+ */
+
+bool Animation::next_key( int position, int& key )
+{
+	struct mlt_animation_item_s item;
+	item.property = NULL;
+	bool error = mlt_animation_next_key( instance, &item, position );
+	if ( !error )
+	{
+		key = item.frame;
+	}
+	return error;
+}
+
+/** Get the keyfame at the position or the previous keyframe before.
+ *
+ * If no keyframe exists at or before the position, the return value is invalid
+ *
+ * \deprecated Prefer bool Animation::previous_key( int position, int& key )
+ * \param position the frame number at which to start looking for the previous keyframe
+ * \return the position of the previous keyframe
+ */
+
 int Animation::previous_key( int position )
 {
 	struct mlt_animation_item_s item;
@@ -121,6 +160,27 @@ int Animation::previous_key( int position )
 		return item.frame;
 	else
 		return error;
+}
+
+/** Get the keyfame at the position or the previous before.
+ *
+ * On error, key is not modified.
+ *
+ * \param position the frame number at which to start looking for the previous keyframe
+ * \param key the returned position of the previous keyframe
+ * \return true if there was an error
+ */
+
+bool Animation::previous_key( int position, int& key )
+{
+	struct mlt_animation_item_s item;
+	item.property = NULL;
+	bool error = mlt_animation_prev_key( instance, &item, position );
+	if ( !error )
+	{
+		key = item.frame;
+	}
+	return error;
 }
 
 int Animation::key_count()

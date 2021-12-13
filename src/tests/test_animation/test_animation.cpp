@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2015-2021 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -382,6 +382,82 @@ private Q_SLOTS:
 		QCOMPARE(a.key_get_frame(1), 0);
 		QCOMPARE(a.key_get_frame(2), 40);
 		QCOMPARE(a.key_get_frame(3), -1);
+	}
+
+	void NextKey()
+	{
+		Properties p;
+		p.set("foo", "50=100; 60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+
+		int key;
+		bool ret;
+
+		ret = a.next_key(0, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 50);
+
+		ret = a.next_key(59, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 60);
+
+		ret = a.next_key(60, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 60);
+
+		ret = a.next_key(61, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 100);
+
+		ret = a.next_key(100, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 100);
+
+		key = 7; // random value
+		ret = a.next_key(101, key);
+		QCOMPARE(ret, true); // error - No next key
+		QCOMPARE(key, 7); // Not modified on error
+	}
+
+	void PreviousKey()
+	{
+		Properties p;
+		p.set("foo", "50=100; 60=60; 100=0");
+		// Cause the string to be interpreted as animated value.
+		p.anim_get_int("foo", 0);
+		Animation a = p.get_animation("foo");
+		QVERIFY(a.is_valid());
+
+		int key;
+		bool ret;
+
+		key = 7; // random value
+		ret = a.previous_key(0, key);
+		QCOMPARE(ret, true); // error - no previous key
+		QCOMPARE(key, 7); // Not modified on error
+
+		ret = a.previous_key(59, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 50);
+
+		ret = a.previous_key(60, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 60);
+
+		ret = a.previous_key(61, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 60);
+
+		ret = a.previous_key(100, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 100);
+
+		ret = a.previous_key(101, key);
+		QCOMPARE(ret, false);
+		QCOMPARE(key, 100);
 	}
 };
 
