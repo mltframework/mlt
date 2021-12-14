@@ -1776,12 +1776,12 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 				else
 				{
 					int ret = av_read_frame( context, &self->pkt );
-					if ( ret >= 0 && !self->video_seekable && self->pkt.stream_index == self->audio_index )
-					{
+					if ( ret >= 0 && !self->video_seekable && self->pkt.stream_index == self->audio_index ) {
 						mlt_deque_push_back( self->apackets, av_packet_clone( &self->pkt ) );
-					}
-					else if ( ret < 0 )
-					{
+					} else if (ret == AVERROR(EAGAIN)) {
+						pthread_mutex_unlock( &self->packets_mutex );
+						continue;
+					} else if ( ret < 0 && ret != AVERROR(EAGAIN) ) {
 						if ( ret == AVERROR_EOF ) 
 						{
 							self->pkt.stream_index = self->video_index;
@@ -2736,12 +2736,13 @@ static int producer_get_audio( mlt_frame frame, void **buffer, mlt_audio_format 
 			else
 			{
 				ret = av_read_frame( context, &pkt );
-				if ( ret >= 0 && !self->seekable && pkt.stream_index == self->video_index )
-				{
+				if ( ret >= 0 && !self->seekable && pkt.stream_index == self->video_index ) {
 					mlt_deque_push_back( self->vpackets, av_packet_clone(&pkt) );
-				}
-				else if ( ret < 0 )
-				{
+				} else if (ret == AVERROR(EAGAIN)) {
+					ret = 0;
+					pthread_mutex_unlock( &self->packets_mutex );
+					continue;
+				} else if ( ret < 0 ) {
 					mlt_producer producer = self->parent;
 					mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
 					if ( ret != AVERROR_EOF )
