@@ -182,8 +182,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	mlt_frame_get_image( b_frame, &image_b, format, &width_b, &height_b, 1 );
 
 	// Create the alpha channel based on the b_image dimensions
-	int alpha_width = (width_a > width_b) ? width_b : width_a;
-	int alpha_height = (height_a > height_b)? height_b : height_a;
+	int alpha_width = MIN(width_a, width_b);
+	int alpha_height = MIN(height_a, height_b);
 	int size = alpha_width * alpha_height;
 	alpha_a = mlt_pool_alloc( size );
 	memset( alpha_a, 255, size );
