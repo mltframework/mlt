@@ -160,6 +160,18 @@ parameters:
     mutable: yes
     widget: combo
     
+  - identifier: segment_gap
+    title: Segment Gap
+    type: integer
+    description: >
+      The space in pixels between the segments.
+    mutable: yes
+    readonly: no
+    default: 10
+    minimum: 0
+    maximum: 100
+    unit: pixels
+    
   - identifier: bands
     title: Points
     type: integer
