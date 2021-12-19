@@ -1,6 +1,38 @@
 MLT Release Notes
 -----------------
 
+Version 7.4.0
+
+This main highlight of this version is property animation for avfilter!
+
+Framework
+  * Added more constructors and assignment operators in C++ wrapper:
+    - `Mlt::Filter::Filter(Mlt::Filter*)`
+    - `Mlt::Link::Link(Mlt::Link*)`
+    - `Mlt::Link::Link(Mlt::Service&)`
+    - `Mlt::Link::Link(Mlt::Link&)`
+    - `Mlt::Link::Link(Mlt::Link const&)`
+    - `Mlt::Link::operator=(Mlt::Link const&)`
+    - `Mlt::Service::Service(Mlt::Service*)`
+  * Fixed serialized animation in `mlt_animation_serialize_cut_tf()` and
+    `mlt_animation_serialize_cut()` to include a trailing keyframe value.
+
+Modules
+  * Added property animation for `avfilter` filters.
+    This only works for numeric parameters, but many libavfilter options that
+    have a type string are actually numeric in nature but accept a string
+    expression.
+  * Added `rotate` property to `avformat` producer to override orientation.
+  * Changed `jackrack` module to silence false LADSPA plugin loading errors.
+  * Fixed a crash in the `oldfilm` filter when using preview scaling.
+  * Fixed `timeremap` link distorts audio when speed is zero.
+  * Added nautical mile and knot units of measure to the `gpstext` filter.
+  * Fixed full range color handling with embedded tractor (e.g. same track
+    transition).
+  * Fixed device capture in `avformat` producer regression in version 7.2.0.
+  * Fixed a crash in the `matte` transition.
+
+
 Version 7.2.0
 
 This is the first major maintenance release for the new major version 7
