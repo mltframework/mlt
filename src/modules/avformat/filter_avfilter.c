@@ -71,12 +71,14 @@ static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_dat
 	if (name && strncmp(PARAM_PREFIX, name, PARAM_PREFIX_LEN) == 0) {
 		private_data* pdata = (private_data*)filter->child;
 		if (pdata->avfilter_ctx) {
+			mlt_service_lock(MLT_FILTER_SERVICE(filter));
 			const AVOption *opt = av_opt_find( pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0 );
 #if LIBAVUTIL_VERSION_INT >= ((56<<16)+(35<<8)+101)
 			pdata->reset = opt && !(animatable_avoption(opt) && mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name));
 #else
 			pdata->reset = opt && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
 #endif
+			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 		}
 	}
 }
