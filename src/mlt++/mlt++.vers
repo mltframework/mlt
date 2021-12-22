@@ -706,7 +706,13 @@ MLT_7.4.0 {
       "Mlt::Link::Link(Mlt::Link const&)";
       "Mlt::Link::operator=(Mlt::Link const&)";
       "Mlt::Service::Service(Mlt::Service*)";
+    };
+} MLTPP_7.1.0;
+
+MLT_7.6.0 {
+  global:
+    extern "C++" {
       "Mlt::Animation::next_key(int, int&)";
       "Mlt::Animation::previous_key(int, int&)";
     };
-} MLTPP_7.1.0;
+} MLT_7.4.0;
