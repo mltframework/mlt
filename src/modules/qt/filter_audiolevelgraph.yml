@@ -1,6 +1,6 @@
 schema_version: 0.3
 type: filter
-identifier: audiolevel
+identifier: audiolevelgraph
 title: Audio Level Visualization Filter
 version: 1
 copyright: Meltytech, LLC
