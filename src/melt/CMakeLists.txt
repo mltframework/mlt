@@ -18,10 +18,11 @@ if(MINGW)
   target_link_options(melt PRIVATE -mconsole)
 endif()
 
-if(WIN32 OR APPLE)
-  install(TARGETS melt RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-else()
-  install(PROGRAMS "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/melt" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME melt-${MLT_VERSION_MAJOR})
+install(TARGETS melt RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+if(UNIX AND NOT APPLE)
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E rename melt melt-${MLT_VERSION_MAJOR} \
+                                WORKING_DIRECTORY \$ENV\{DESTDIR\}${CMAKE_INSTALL_FULL_BINDIR})"
+  )
   install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink melt-${MLT_VERSION_MAJOR} melt \
                                 WORKING_DIRECTORY \$ENV\{DESTDIR\}${CMAKE_INSTALL_FULL_BINDIR})"
   )
