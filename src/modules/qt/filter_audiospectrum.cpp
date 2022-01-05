@@ -1,6 +1,6 @@
 /*
  * filter_audiospectrum.cpp -- audio spectrum visualization filter
- * Copyright (c) 2015-2021 Meltytech, LLC
+ * Copyright (c) 2015-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -199,6 +199,7 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg, int
 	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
 	int fill = mlt_properties_get_int( filter_properties, "fill" );
 	double tension = mlt_properties_get_double( filter_properties, "tension" );
+	int segments = mlt_properties_get_int( filter_properties, "segments" );
 	int segment_gap = mlt_properties_get_int( filter_properties, "segment_gap" ) * scale;
 	int segment_width = mlt_properties_get_int( filter_properties, "thickness" ) * scale;
 	QVector<QColor> colors = get_graph_colors( filter_properties );
@@ -226,7 +227,7 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg, int
 	if( graph_type && graph_type[0] == 'b' ) {
 		paint_bar_graph( p, r, bands, spectrum );
 	} else if ( graph_type && graph_type[0] == 's' ) {
-		paint_segment_graph( p, r, bands, spectrum, segment_gap, colors, segment_width );
+		paint_segment_graph( p, r, bands, spectrum, colors, segments, segment_gap, segment_width );
 	} else {
 		paint_line_graph( p, r, bands, spectrum, tension, fill );
 	}
@@ -239,7 +240,7 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg, int
 		if( graph_type && graph_type[0] == 'b' ) {
 			paint_bar_graph( p, r, bands, spectrum );
 		} else if ( graph_type && graph_type[0] == 's' ) {
-			paint_segment_graph( p, r, bands, spectrum, segment_gap, colors, segment_width );
+			paint_segment_graph( p, r, bands, spectrum, colors, segments, segment_gap, segment_width );
 		} else {
 			paint_line_graph( p, r, bands, spectrum, tension, fill );
 		}

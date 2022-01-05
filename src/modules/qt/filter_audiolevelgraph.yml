@@ -144,6 +144,17 @@ parameters:
     readonly: no
     default: 2
 
+  - identifier: segments
+    title: Segments
+    type: integer
+    description: >
+      The number of segments to draw if the graph type is "segment".
+    mutable: yes
+    readonly: no
+    default: 10
+    minimum: 2
+    maximum: 100
+
   - identifier: segment_gap
     title: Segment Gap
     type: integer

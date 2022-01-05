@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Meltytech, LLC
+ * Copyright (c) 2015-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -201,20 +201,26 @@ void paint_bar_graph( QPainter& p, QRectF& rect, int points, float* values )
 	}
 }
 
-void paint_segment_graph( QPainter& p, const QRectF& rect, int points, const float* values, double gap, const QVector<QColor>& colors, int segment_width  )
+void paint_segment_graph( QPainter& p, const QRectF& rect, int points, const float* values, const QVector<QColor>& colors, int segments, int segment_gap, int segment_width )
 {
 	double pixelsPerPoint = rect.width() / (double)points;
-	double segmentSize = rect.height() / (double)colors.size();
-	if ( gap >= segmentSize ) {
-		gap = segmentSize - 1.0;
+	if (segment_width > pixelsPerPoint) {
+		segment_width = pixelsPerPoint;
 	}
-	segmentSize = (rect.height() - (gap * (double)(colors.size() - 1))) / (double)colors.size();
+	double segment_space = pixelsPerPoint - segment_width;
+	double segmentSize = rect.height() / (double)segments;
+	if ( segment_gap >= segmentSize ) {
+		segment_gap = segmentSize - 1;
+	}
+	segmentSize = (rect.height() - ((double)segment_gap * (double)(segments - 1))) / (double)segments;
 	for( int i = 0; i < points; i++ ) {
-		QPointF bottomPoint( rect.x() + (pixelsPerPoint / 2.0) + (pixelsPerPoint * (double)i), rect.y() + rect.height() );
+		QPointF bottomPoint( rect.x() + (segment_space / 2.0) + (pixelsPerPoint * (double)i), rect.y() + rect.height() );
 		QPointF topPoint( bottomPoint.x() + segment_width, bottomPoint.y() - segmentSize );
-		qreal segmentRatio = 1.0 / (qreal)colors.size();
-		for (int s = 0; s < colors.size(); s++ ) {
-			QColor segmentColor = colors[colors.size() - s - 1];
+		qreal segmentRatio = 1.0 / (qreal)segments;
+		for (int s = 0; s < segments; s++ ) {
+			int colorIndex = colors.size() - qRound((qreal)s / (qreal) segments * (qreal)colors.size()) - 1;
+			colorIndex = qBound(0, colorIndex, colors.size());
+			QColor segmentColor = colors[colorIndex];
 			qreal minSegmentValue = segmentRatio * (qreal)s;
 			qreal maxSegmentValue = segmentRatio * (qreal)(s + 1);
 			if (values[i] < minSegmentValue) {
@@ -224,7 +230,7 @@ void paint_segment_graph( QPainter& p, const QRectF& rect, int points, const flo
 				segmentColor.setAlphaF(opacity);
 			}
 			p.fillRect(QRectF(topPoint, bottomPoint), segmentColor);
-			bottomPoint.setY( topPoint.y() - gap );
+			bottomPoint.setY( topPoint.y() - segment_gap );
 			topPoint.setY( bottomPoint.y() - segmentSize );
 		}
 	}

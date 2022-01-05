@@ -1,6 +1,6 @@
 /*
  * filter_audiolevel.cpp -- audio level visualization filter
- * Copyright (c) 2021 Meltytech, LLC
+ * Copyright (c) 2021-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -129,6 +129,7 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 	rect.h *= scale;
 	char* graph_type = mlt_properties_get( filter_properties, "type" );
 	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
+	int segments = mlt_properties_get_int( filter_properties, "segments" );
 	int segment_gap = mlt_properties_get_int( filter_properties, "segment_gap" ) * scale;
 	int segment_width = mlt_properties_get_int( filter_properties, "thickness" ) * scale;
 	QVector<QColor> colors = get_graph_colors( filter_properties );
@@ -157,7 +158,7 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 	if( graph_type && graph_type[0] == 'b' ) {
 		paint_bar_graph( p, r, channels, levels );
 	} else {
-		paint_segment_graph( p, r, channels, levels, segment_gap, colors, segment_width );
+		paint_segment_graph( p, r, channels, levels, colors, segments, segment_gap, segment_width );
 	}
 
 	if( mirror ) {
@@ -167,7 +168,7 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 		if( graph_type && graph_type[0] == 'b' ) {
 			paint_bar_graph( p, r, channels, levels );
 		} else {
-			paint_segment_graph( p, r, channels, levels, segment_gap, colors, segment_width );
+			paint_segment_graph( p, r, channels, levels, colors, segments, segment_gap, segment_width );
 		}
 	}
 
