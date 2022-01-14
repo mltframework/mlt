@@ -181,28 +181,6 @@ static int load_sequence_querystring( producer_qimage self, mlt_properties prope
 	return result;
 }
 
-static int load_folder( producer_qimage self, mlt_properties properties, const char *filename )
-{
-	int result = 0;
-
-	// Obtain filenames within folder
-	if ( strstr( filename, "/.all." ) != NULL )
-	{
-		char wildcard[ 1024 ];
-		char *dir_name = strdup( filename );
-		char *extension = strrchr( dir_name, '.' );
-
-		*( strstr( dir_name, "/.all." ) + 1 ) = '\0';
-		sprintf( wildcard, "*%s", extension );
-
-		mlt_properties_dir_list( self->filenames, dir_name, wildcard, 1 );
-
-		free( dir_name );
-		result = 1;
-	}
-	return result;
-}
-
 static void load_filenames( producer_qimage self, mlt_properties properties )
 {
 	char *filename = mlt_properties_get( properties, "resource" );
@@ -212,7 +190,7 @@ static void load_filenames( producer_qimage self, mlt_properties properties )
 		!load_sequence_querystring( self, properties, filename ) &&
 		!load_sequence_sprintf( self, properties, filename ) &&
 		!load_sequence_deprecated( self, properties, filename ) &&
-		!load_folder( self, properties, filename ) )
+		!load_folder( self, filename ) )
 	{
 		mlt_properties_set( self->filenames, "0", filename );
 	}
