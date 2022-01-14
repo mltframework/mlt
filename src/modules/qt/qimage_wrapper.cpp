@@ -26,6 +26,8 @@
 
 #include <QImage>
 #include <QSysInfo>
+#include <QFileInfo>
+#include <QDir>
 #include <QMutex>
 #include <QtEndian>
 #include <QTemporaryFile>
@@ -455,6 +457,28 @@ int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const
 			result = 1;
 		}
 	}
+	return result;
+}
+
+int load_folder( producer_qimage self, const char *filename )
+{
+	int result = 0;
+
+	// Obtain filenames within folder
+	if ( strstr( filename, "/.all." ) != NULL )
+	{
+		mlt_properties filename_property = self->filenames;
+		QFileInfo info( filename );
+		QDir dir = info.absoluteDir();
+		QStringList filters = {QString( "*.%1" ).arg( info.suffix() )};
+		QStringList files = dir.entryList( filters, QDir::Files, QDir::Name );
+		int key;
+		for ( auto &f : files ) {
+			key = mlt_properties_count( filename_property );
+			mlt_properties_set_string( filename_property, QString::number( key ).toLatin1(), dir.absoluteFilePath( f ).toUtf8().constData() );
+		}
+		result = 1;
+    }
 	return result;
 }
 
