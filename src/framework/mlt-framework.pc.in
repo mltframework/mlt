@@ -4,7 +4,7 @@ libdir=@CMAKE_INSTALL_FULL_LIBDIR@
 includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 datadir=@CMAKE_INSTALL_FULL_DATADIR@
 
-moduledir=${libdir}/mlt-@MLT_VERSION_MAJOR@
+moduledir=${libdir}/mlt
 mltdatadir=${datadir}/mlt-@MLT_VERSION_MAJOR@
 
 Name: mlt-framework
