@@ -1,7 +1,0 @@
-
-Name: mlt++
-Description: C++ API for MLT multimedia framework
-Version: ${version}
-Requires: mlt-framework
-Libs: -L${libdir} ${libs}
-Cflags: ${cflags}
