@@ -4,8 +4,8 @@ libdir=@CMAKE_INSTALL_FULL_LIBDIR@
 includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 datadir=@CMAKE_INSTALL_FULL_DATADIR@
 
-moduledir=${libdir}/mlt
-mltdatadir=${datadir}/mlt-@MLT_VERSION_MAJOR@
+moduledir=${prefix}/@MLT_INSTALL_MODULE_DIR@
+mltdatadir=${prefix}/@MLT_INSTALL_DATA_DIR@
 
 Name: mlt-framework
 Description: MLT multimedia framework
