@@ -780,6 +780,41 @@ static int insert_filter(AVFilterGraph *graph, AVFilterContext **last_filter, co
 	}
 	return result;
 }
+
+static int setup_autorotate_filters(producer_avformat self)
+{
+	int error = 0;
+
+	if (!self->vfilter_graph && self->autorotate && self->video_index != -1) {
+		mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+		double theta  = get_rotation(properties, self->video_format->streams[self->video_index]);
+
+		if (fabs(theta - 90) < 1.0) {
+			error = ( setup_video_filters(self) < 0 );
+			AVFilterContext *last_filter = self->vfilter_out;
+			if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "clock") < 0 );
+			if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
+			if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
+		} else if (fabs(theta - 180) < 1.0) {
+			error = ( setup_video_filters(self) < 0 );
+			AVFilterContext *last_filter = self->vfilter_out;
+			if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "hflip", NULL) < 0 );
+			if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "vflip", NULL) < 0 );
+			if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
+			if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
+		} else if (fabs(theta - 270) < 1.0) {
+			error = ( setup_video_filters(self) < 0 );
+			AVFilterContext *last_filter = self->vfilter_out;
+			if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "cclock") < 0 );
+			if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
+			if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
+		}
+	}
+	if (error && self->vfilter_graph) {
+		avfilter_graph_free(&self->vfilter_graph);
+	}
+	return error;
+}
 #endif
 
 /** Open the file.
@@ -933,33 +968,9 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 					get_audio_streams_info( self );
 
 #ifdef AVFILTER
-				// Setup autorotate filters.
-				if (self->video_index != -1) {
+				if (!test_open) {
 					self->autorotate = !mlt_properties_get(properties, "autorotate") || mlt_properties_get_int(properties, "autorotate");
-					if (!test_open && self->autorotate && !self->vfilter_graph) {
-						double theta  = get_rotation(properties, self->video_format->streams[self->video_index]);
-
-						if (fabs(theta - 90) < 1.0) {
-							error = ( setup_video_filters(self) < 0 );
-							AVFilterContext *last_filter = self->vfilter_out;
-							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "clock") < 0 );
-							if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
-							if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
-						} else if (fabs(theta - 180) < 1.0) {
-							error = ( setup_video_filters(self) < 0 );
-							AVFilterContext *last_filter = self->vfilter_out;
-							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "hflip", NULL) < 0 );
-							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "vflip", NULL) < 0 );
-							if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
-							if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
-						} else if (fabs(theta - 270) < 1.0) {
-							error = ( setup_video_filters(self) < 0 );
-							AVFilterContext *last_filter = self->vfilter_out;
-							if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "cclock") < 0 );
-							if (!error) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
-							if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
-						}
-					}
+					error = setup_autorotate_filters(self);
 				}
 #endif
 			}
@@ -1933,7 +1944,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( got_picture )
 			{
 #ifdef AVFILTER
-				if (self->autorotate && self->vfilter_graph) {
+				if (self->autorotate && !setup_autorotate_filters(self) && self->vfilter_graph) {
 					int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
 					if (ret < 0) {
 						got_picture = 0;
