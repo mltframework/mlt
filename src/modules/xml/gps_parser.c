@@ -41,22 +41,25 @@ int64_t datetimeXMLstring_to_mseconds(const char* text, char* format)
 		return 0;
 	}
 
+	ret = mktime(&tm_time);
+#if defined(__GLIBC__) || defined(__APPLE__)
 	/* NOTE: mktime assumes local time-zone for the tm_time but GPS time is UTC.
 	 * time.h provides an extern: "timezone" which stores the local timezone in seconds
 	 * this is used by mktime to "correct" the time so we must substract it to keep UTC
 	 */
-	 ret = mktime(&tm_time) - (timezone-3600*tm_time.tm_isdst);
+	ret -= timezone - 3600 * tm_time.tm_isdst;
+#endif
 
-	 //check if we have miliesconds //NOTE: 3 digits only
-	 if ( (ms_part = strchr(text, '.')) != NULL ) {
-		 ms = strtol(ms_part+1, NULL, 10);
-		 while (abs(ms) > 999)
-			 ms /= 10;
-	 }
-	 ret = ret*1000 + ms;
+	//check if we have miliesconds //NOTE: 3 digits only
+	if ( (ms_part = strchr(text, '.')) != NULL ) {
+		ms = strtol(ms_part+1, NULL, 10);
+		while (abs(ms) > 999)
+			ms /= 10;
+	}
+	ret = ret*1000 + ms;
 
-	 //mlt_log_info(NULL, "datetimeXMLstring_to_mseconds: text:%s, ms:%d (/1000)", text, ret/1000);
-	 return ret;
+	//mlt_log_info(NULL, "datetimeXMLstring_to_mseconds: text:%s, ms:%d (/1000)", text, ret/1000);
+	return ret;
 }
 
 //checks if provided char* is only made of whitespace chars
