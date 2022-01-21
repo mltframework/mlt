@@ -2,7 +2,7 @@ schema_version: 0.3
 type: filter
 identifier: shape
 title: Shape Alpha
-version: 4
+version: 5
 copyright: Visual Media FX ?
 creator: Charles Yates
 license: LGPLv2.1
@@ -48,14 +48,23 @@ parameters:
   - identifier: invert
     title: Invert
     type: boolean
-    description: Use the inverse of the alpha or luma value.
+    description: Invert the resulting alpha channel.
+    default: no
+    mutable: yes
+
+  - identifier: invert_mask
+    title: Invert Mask
+    description: Use the inverse of the resource's alpha channel or luma value.
+    type: boolean
     default: no
     mutable: yes
 
   - identifier: reverse
     title: Reverse
     type: boolean
-    description: Use the complement of the mix level.
+    description: >
+      Use the complement of the mix level. This also inverts the output alpha,
+      which is probably not what you want. See also invert_mask.
     default: no
     mutable: yes
 

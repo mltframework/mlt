@@ -1,8 +1,7 @@
 /*
  * filter_shape.c -- Arbitrary alpha channel shaping
  * Copyright (C) 2005 Visual Media Fx Inc.
- * Copyright (C) 2021 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2021-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +47,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int use_luminance = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "use_luminance" );
 	int use_mix = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "use_mix" );
 	int invert = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert" ) * 255;
+	int invert_mask = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "invert_mask" ) * 255;
 
 	if (mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "reverse")) {
 		mix = 1.0 - mix;
@@ -58,7 +58,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	*format = mlt_image_yuv422;
 	*width -= *width % 2;
 	if ( mlt_frame_get_image( frame, image, format, width, height, 1 ) == 0 &&
-		 ( !use_luminance || !use_mix || (int) mix != 1 || invert == 255 ) )
+		 (!use_luminance || !use_mix || (int) mix != 1 || invert == 255 || invert_mask == 255) )
 	{
 		// Obtain a scaled/distorted mask to match
 		uint8_t *mask_img = NULL;
@@ -94,7 +94,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				{
 					while( size -- )
 					{
-						a = ( double )*q ++ / 255.0;
+						a = (double)(*q++ ^ invert_mask) / 255.0;
 						b = 1.0 - smoothstep( a, a + softness, mix );
 						*p = ( uint8_t )( *p * b ) ^ invert;
 						p ++;
@@ -112,12 +112,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				uint8_t *q = mask_img;
 				while( size -- )
 				{
-					*p = *q;
+					*p = *q ^ invert_mask;
 					p++;
 					q += 2;
 				}
 			}
-			else if ( (int) mix != 1 || invert == 255 )
+			else if ((int) mix != 1 || invert == 255 || invert_mask == 255)
 			{
 				int full_range = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "full_luma" );
 				double offset = full_range ? 0.0 : 16.0;
@@ -127,7 +127,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				softness *= ( 1.0 - mix );
 				while( size -- )
 				{
-					a = ( ( double ) *q - offset ) / divisor;
+					a = ( (double)(*q ^ invert_mask) - offset ) / divisor;
 					b = smoothstep( a, a + softness, mix );
 					*p = ( uint8_t )( *p * b ) ^ invert;
 					p ++;
