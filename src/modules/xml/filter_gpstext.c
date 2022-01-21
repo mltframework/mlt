@@ -1,6 +1,6 @@
 /*
  * filter_gpstext.c -- overlays GPS data as text on video
- * Copyright (C) 2011-2021 Meltytech, LLC
+ * Copyright (C) 2011-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -174,8 +174,8 @@ static double convert_speed_to_format(double x, const char* format)
  *  [ 1.23m | 12.3m | 123m ]
 */
 static int decimals_needed(double x) {
-	if (abs(x) < 10) return 2;
-	if (abs(x) < 100) return 1;
+	if (fabs(x) < 10) return 2;
+	if (fabs(x) < 100) return 1;
 	return 0;
 }
 
@@ -313,14 +313,14 @@ static void gps_point_to_output(mlt_filter filter, int index, int64_t req_time, 
 	{
 		if (strlen(keyword) > strlen("gps_vdist_up"))
 			format = keyword + strlen("gps_vdist_up");
-		double val = convert_distance_to_format(abs(crt_point.elev_up), format);
+		double val = convert_distance_to_format(fabs(crt_point.elev_up), format);
 		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_vdist_down", strlen("gps_vdist_down") ) && crt_point.elev_down != GPS_UNINIT )
 	{
 		if (strlen(keyword) > strlen("gps_vdist_down"))
 			format = keyword + strlen("gps_vdist_down");
-		double val = convert_distance_to_format(abs(crt_point.elev_down), format);
+		double val = convert_distance_to_format(fabs(crt_point.elev_down), format);
 		snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
 	}
 	else if ( !strncmp( keyword, "gps_dist_uphill", strlen("gps_dist_uphill") ) && crt_point.dist_up != GPS_UNINIT )
@@ -464,7 +464,7 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
 
 	//one time video timezone processing
 	if (pdata->video_file_timezone_ms == -1) {
-		int64_t sec = original_video_time/1000;
+		time_t sec = original_video_time/1000;
 		struct tm* ptm = localtime(&sec);
 		ptm->tm_isdst = -1; //force dst detection
 		mktime(ptm);
@@ -728,6 +728,9 @@ static void filter_close (mlt_filter filter)
 */
 mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
+	(void) type; // unused
+	(void) id; // unused
+
 	mlt_filter filter = mlt_filter_new();
 	private_data* pdata = (private_data*) calloc(1, sizeof(private_data));
 	default_priv_data(pdata);

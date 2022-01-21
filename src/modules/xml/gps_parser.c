@@ -20,6 +20,9 @@
 #include "gps_parser.h"
 #include <inttypes.h>
 
+#define _x (const xmlChar*)
+#define _s (const char*)
+
 /* Converts the datetime string from gps file into seconds since epoch in local timezone
  * Note: assumes UTC
  */
@@ -64,7 +67,7 @@ int64_t datetimeXMLstring_to_mseconds(const char* text, char* format)
 
 //checks if provided char* is only made of whitespace chars
 static int is_whitespace_string(char* str) {
-	int i;
+	unsigned i;
 	for (i=0; i<strlen(str); i++) {
 		if (!isspace(str[i]))
 			return 0;
@@ -78,8 +81,8 @@ static int is_whitespace_string(char* str) {
  */
 void mseconds_to_timestring (int64_t seconds, char* format, char* result)
 {
-	seconds /= 1000;
-	struct tm * ptm = gmtime(&seconds);
+	time_t secs = seconds/1000;
+	struct tm * ptm = gmtime(&secs);
 	if (!format || is_whitespace_string(format))
 		strftime(result, 25, "%Y-%m-%d %H:%M:%S", ptm);
 	else
@@ -101,7 +104,7 @@ double distance_haversine_2p (double p1_lat, double p1_lon, double p2_lat, doubl
 double distance_equirectangular_2p (double p1_lat, double p1_lon, double p2_lat, double p2_lon)
 {
 	//return 0 for very far points (implement haversine formula if needed)
-	if (abs(p1_lat-p2_lat) > 0.05 || abs(p1_lat-p2_lat) > 0.05) { //~5.5km at equator to ~2km at arctic circle
+	if (fabs(p1_lat-p2_lat) > 0.05 || fabs(p1_lat-p2_lat) > 0.05) { //~5.5km at equator to ~2km at arctic circle
 		mlt_log_info(NULL, "distance_equirectangular_2p: points are too far away, doing haversine (%f,%f to %f,%f)", p1_lat, p1_lon, p2_lat, p2_lon);
 		return distance_haversine_2p(p1_lat, p1_lon, p2_lat, p2_lon);
 	}
@@ -688,33 +691,33 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 		gps_point_raw crt_point = uninit_gps_raw_point;
 		crt_node = found_nodes->nodeTab[i];
 
-		if (xmlHasProp(crt_node, "lat")) {
-			char* str = xmlGetProp(crt_node, "lat");
-			crt_point.lat = strtod(str, NULL);
+		if (xmlHasProp(crt_node, _x("lat"))) {
+			xmlChar* str = xmlGetProp(crt_node, _x("lat"));
+			crt_point.lat = strtod(_s(str), NULL);
 			xmlFree(str);
 		}
-		if (xmlHasProp(crt_node, "lon")) {
-			char* str = xmlGetProp(crt_node, "lon");
-			crt_point.lon = strtod(str, NULL);
+		if (xmlHasProp(crt_node, _x("lon"))) {
+			xmlChar* str = xmlGetProp(crt_node, _x("lon"));
+			crt_point.lon = strtod(_s(str), NULL);
 			xmlFree(str);
 		}
 		for (gps_val = crt_node->children; gps_val; gps_val = gps_val->next)
 		{
-			if (strncmp(gps_val->name, "ele", strlen("ele")) == 0)
-				crt_point.ele = strtod(gps_val->children->content, NULL);
-			else if (strncmp(gps_val->name, "time", strlen("time")) == 0)
-				crt_point.time = datetimeXMLstring_to_mseconds(gps_val->children->content, NULL);
-			else if (strncmp(gps_val->name, "bearing", strlen("bearing")) == 0)
-				crt_point.bearing = (int)strtod(gps_val->children->content, NULL);
-			else if (strncmp(gps_val->name, "speed", strlen("speed")) == 0)
-				crt_point.speed = strtod(gps_val->children->content, NULL);
-			else if (strncmp(gps_val->name, "extensions", strlen("extensions")) == 0)
+			if (strncmp(_s(gps_val->name), "ele", strlen("ele")) == 0)
+				crt_point.ele = strtod(_s(gps_val->children->content), NULL);
+			else if (strncmp(_s(gps_val->name), "time", strlen("time")) == 0)
+				crt_point.time = datetimeXMLstring_to_mseconds(_s(gps_val->children->content), NULL);
+			else if (strncmp(_s(gps_val->name), "bearing", strlen("bearing")) == 0)
+				crt_point.bearing = (int)strtod(_s(gps_val->children->content), NULL);
+			else if (strncmp(_s(gps_val->name), "speed", strlen("speed")) == 0)
+				crt_point.speed = strtod(_s(gps_val->children->content), NULL);
+			else if (strncmp(_s(gps_val->name), "extensions", strlen("extensions")) == 0)
 			{
 				for (gps_subval = gps_val->children; gps_subval; gps_subval=gps_subval->next) {
-					if (strncmp(gps_subval->name, "gpxtpx:TrackPointExtension", strlen("gpxtpx:TrackPointExtension")) == 0) {
+					if (strncmp(_s(gps_subval->name), "gpxtpx:TrackPointExtension", strlen("gpxtpx:TrackPointExtension")) == 0) {
 						for (gps_subsubval = gps_subval->children; gps_subsubval; gps_subsubval=gps_subsubval->next) {
-							if (strncmp(gps_subsubval->name, "gpxtpx:hr", strlen("gpxtpx:hr")) == 0) {
-								crt_point.hr = (short)strtod(gps_subsubval->children->content, NULL);
+							if (strncmp(_s(gps_subsubval->name), "gpxtpx:hr", strlen("gpxtpx:hr")) == 0) {
+								crt_point.hr = (short)strtod(_s(gps_subsubval->children->content), NULL);
 							}
 						}
 					}
@@ -770,26 +773,26 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 
 		for (gps_val = crt_node->children; gps_val; gps_val = gps_val->next)
 		{
-			if (strncmp(gps_val->name, "Time", strlen("Time")) == 0)
-				crt_point.time = datetimeXMLstring_to_mseconds(gps_val->children->content, NULL);
-			else if (strncmp(gps_val->name, "Position", strlen("Position")) == 0)
+			if (strncmp(_s(gps_val->name), "Time", strlen("Time")) == 0)
+				crt_point.time = datetimeXMLstring_to_mseconds(_s(gps_val->children->content), NULL);
+			else if (strncmp(_s(gps_val->name), "Position", strlen("Position")) == 0)
 			{
 				for (gps_subval = gps_val->children; gps_subval; gps_subval=gps_subval->next) {
-					if (strncmp(gps_subval->name, "LatitudeDegrees", strlen("LatitudeDegrees")) == 0)
-						crt_point.lat = strtod(gps_subval->children->content, NULL);
-					else if (strncmp(gps_subval->name, "LongitudeDegrees", strlen("LongitudeDegrees")) == 0)
-						crt_point.lon = strtod(gps_subval->children->content, NULL);
+					if (strncmp(_s(gps_subval->name), "LatitudeDegrees", strlen("LatitudeDegrees")) == 0)
+						crt_point.lat = strtod(_s(gps_subval->children->content), NULL);
+					else if (strncmp(_s(gps_subval->name), "LongitudeDegrees", strlen("LongitudeDegrees")) == 0)
+						crt_point.lon = strtod(_s(gps_subval->children->content), NULL);
 				}
 			}
-			else if (strncmp(gps_val->name, "AltitudeMeters", strlen("AltitudeMeters")) == 0)
-				crt_point.ele = strtod(gps_val->children->content, NULL);
-			else if (strncmp(gps_val->name, "DistanceMeters", strlen("DistanceMeters")) == 0)
-				crt_point.total_dist = strtod(gps_val->children->content, NULL);
-			else if (strncmp(gps_val->name, "HeartRateBpm", strlen("HeartRateBpm")) == 0)
+			else if (strncmp(_s(gps_val->name), "AltitudeMeters", strlen("AltitudeMeters")) == 0)
+				crt_point.ele = strtod(_s(gps_val->children->content), NULL);
+			else if (strncmp(_s(gps_val->name), "DistanceMeters", strlen("DistanceMeters")) == 0)
+				crt_point.total_dist = strtod(_s(gps_val->children->content), NULL);
+			else if (strncmp(_s(gps_val->name), "HeartRateBpm", strlen("HeartRateBpm")) == 0)
 			{
 				for (gps_subval = gps_val->children; gps_subval; gps_subval=gps_subval->next)
-					if (strncmp(gps_subval->name, "Value", strlen("Value")) == 0)
-						crt_point.hr = (short)strtod(gps_subval->children->content, NULL);
+					if (strncmp(_s(gps_subval->name), "Value", strlen("Value")) == 0)
+						crt_point.hr = (short)strtod(_s(gps_subval->children->content), NULL);
 			}
 		}
 //		mlt_log_info(NULL, "_xml_parse_tcx read point [%d]: time:%d, lat:%.12f, lon:%.12f, ele:%f, distance:%f, hr:%d\n",
@@ -816,7 +819,7 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
  */
 int xml_parse_file(gps_private_data gdata)
 {
-	int count_pts = 0, rv = 1, i = 0;
+	int count_pts = 0, rv = 1;
 	xmlDoc *doc = NULL;
 	xmlNode *root_element = NULL;
 	xmlXPathContextPtr xpathCtx = NULL;
@@ -853,9 +856,9 @@ int xml_parse_file(gps_private_data gdata)
 	}
 
 	//xpath query for each doc type
-	if (strncmp(root_element->name, "TrainingCenterDatabase", strlen("TrainingCenterDatabase"))==0) {
-		xmlChar* xpathExpr = "//*[local-name()='Trackpoint']";
-		xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
+	if (strncmp(_s(root_element->name), "TrainingCenterDatabase", strlen("TrainingCenterDatabase"))==0) {
+		const char* xpathExpr = "//*[local-name()='Trackpoint']";
+		xpathObj = xmlXPathEvalExpression(_x(xpathExpr), xpathCtx);
 		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
 		if (xmlXPathNodeSetIsEmpty(nodeset)) {
 			mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
@@ -864,9 +867,9 @@ int xml_parse_file(gps_private_data gdata)
 		}
 		xml_parse_tcx(nodeset, &gps_list_head, &count_pts);
 	}
-	else if (strncmp(root_element->name, "gpx", strlen("gpx"))==0) {
-		xmlChar* xpathExpr = "//*[local-name()='trkpt']";
-		xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
+	else if (strncmp(_s(root_element->name), "gpx", strlen("gpx"))==0) {
+		const char* xpathExpr = "//*[local-name()='trkpt']";
+		xpathObj = xmlXPathEvalExpression(_x(xpathExpr), xpathCtx);
 		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
 		if (xmlXPathNodeSetIsEmpty(nodeset)) {
 			mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
