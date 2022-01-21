@@ -1,6 +1,6 @@
 /*
  * gps_parser.h -- Contains gps parsing (.gpx and .tcx) and processing code
- * Copyright (C) 2011-2021 Meltytech, LLC
+ * Copyright (C) 2011-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,7 @@
  */
 
 #include "gps_parser.h"
+#include <inttypes.h>
 
 /* Converts the datetime string from gps file into seconds since epoch in local timezone
  * Note: assumes UTC
@@ -287,7 +288,7 @@ void recalculate_gps_data(gps_private_data gdata)
 	}
 	if (gdata.gps_points_p == NULL) {
 		if ((*gdata.ptr_to_gps_points_p = calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
-			mlt_log_warning(gdata.filter, "calloc error, size=%d", *gdata.gps_points_size*sizeof(gps_point_proc));
+			mlt_log_warning(gdata.filter, "calloc error, size=%"PRIu64"\n", *gdata.gps_points_size*sizeof(gps_point_proc));
 			return;
 		}
 		else { //alloc ok
@@ -537,7 +538,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 	}
 	if (gdata.gps_points_p == NULL) {
 		if ((*gdata.ptr_to_gps_points_p = calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
-			mlt_log_warning(gdata.filter, "calloc failed, size =%d", *gdata.gps_points_size * sizeof(gps_point_proc));
+			mlt_log_warning(gdata.filter, "calloc failed, size =%"PRIu64"\n", *gdata.gps_points_size * sizeof(gps_point_proc));
 			return;
 		}
 		else 
@@ -731,7 +732,7 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 			gps_list = &(*gps_list)->next;
 			last_time = crt_point.time;
 		}
-		else printf("xml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%I64d, last:%I64d\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
+		else mlt_log_info(NULL, "xml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%"PRId64", last:%"PRId64"\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
 	}
 }
 
@@ -802,7 +803,7 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 			gps_list = &(*gps_list)->next;
 			last_time = crt_point.time;
 		}
-		else printf("xml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%I64d, last:%I64d\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
+		else mlt_log_info(NULL, "xml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%"PRId64", last:%"PRId64"\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
 	}
 }
 
@@ -880,7 +881,7 @@ int xml_parse_file(gps_private_data gdata)
 	*gdata.ptr_to_gps_points_r = (gps_point_raw*) calloc(count_pts, sizeof(gps_point_raw));
 	gps_point_raw* gps_array = *gdata.ptr_to_gps_points_r; //just an alias
 	if (gps_array == NULL) {
-		mlt_log_error(gdata.filter, "malloc error (size=%d)", count_pts * sizeof(gps_point_raw));
+		mlt_log_error(gdata.filter, "malloc error (size=%"PRIu64")\n", count_pts * sizeof(gps_point_raw));
 		rv = 0;
 		goto cleanup;
 	}
