@@ -468,7 +468,11 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
 		struct tm* ptm = localtime(&sec);
 		ptm->tm_isdst = -1; //force dst detection
 		mktime(ptm);
+#if defined(__GLIBC__) || defined(__APPLE__)
 		pdata->video_file_timezone_ms = (timezone-(ptm->tm_isdst*3600)) * 1000;
+#else
+		pdata->video_file_timezone_ms = 0;
+#endif
 		//mlt_log_info(filter, "process_filter_properties, setting videofile_timezone_seconds=%d", pdata->video_file_timezone_ms);
 	}
 
