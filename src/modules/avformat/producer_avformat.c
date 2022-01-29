@@ -2251,6 +2251,30 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 			frame_rate.den = profile->frame_rate_den;
 		}
 
+		// Normalize broadcast frame rates for Matroska
+		if (self->video_format->iformat->name && strstr(self->video_format->iformat->name, "matroska")) {
+			switch (lrint(100000.0 * frame_rate.num / frame_rate.den)) {
+			case 2997003:
+				frame_rate.num = 30000;
+				frame_rate.den = 1001;
+				break;
+			case 5994006:
+				frame_rate.num = 60000;
+				frame_rate.den = 1001;
+				break;
+			case 2397602:
+				frame_rate.num = 24000;
+				frame_rate.den = 1001;
+				break;
+			case 4795204:
+				frame_rate.num = 48000;
+				frame_rate.den = 1001;
+				break;
+			default:
+				break;
+			}
+		}
+
 		self->video_time_base = stream->time_base;
 		if ( mlt_properties_get( properties, "force_fps" ) )
 		{
