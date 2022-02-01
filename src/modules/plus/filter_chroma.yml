@@ -1,11 +1,27 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: chroma
 title: Chroma Key
 version: 1
-copyright: Visual Media FX ?
+copyright: Visual Media FX
 creator: Charles Yates
 license: LGPLv2.1
 language: en
 tags:
   - Video
+
+parameters:
+  - identifier: key
+    title: Key Color
+    type: color
+    argument: yes
+    mutable: yes
+    default: #0000ff
+
+  - identifier: variance
+    title: Variance
+    type: float
+    mutable: yes
+    default: 0.15
+    minimum: 0
+    maximum: 1.0

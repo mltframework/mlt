@@ -47,13 +47,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	mlt_filter this = mlt_frame_pop_service( frame );
 	int variance = 200 * mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "variance" );
-	int32_t key_val = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "key" );
-	uint8_t r = ( key_val >> 24 ) & 0xff;
-	uint8_t g = ( key_val >> 16 ) & 0xff;
-	uint8_t b = ( key_val >>  8 ) & 0xff;
+	mlt_color key_val = mlt_properties_get_color( MLT_FILTER_PROPERTIES( this ), "key" );
 	uint8_t u, v;
 
-	RGB2UV_601_SCALED( r, g, b, u, v );
+	RGB2UV_601_SCALED( key_val.r, key_val.g, key_val.b, u, v );
 
 	*format = mlt_image_yuv422;
 	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
@@ -99,7 +96,7 @@ mlt_filter filter_chroma_init( mlt_profile profile, mlt_service_type type, const
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "0x0000ff00" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "#0000ff" : arg );
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "variance", 0.15 );
 		this->process = filter_process;
 	}
