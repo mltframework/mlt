@@ -54,7 +54,7 @@ static inline int convert_mlt_to_av_cs( mlt_image_format format )
 			value = AV_PIX_FMT_YUV420P;
 			break;
 		default:
-			fprintf( stderr, "Invalid format...\n" );
+			mlt_log_error(NULL, "[filter swscale] Invalid format %s\n", mlt_image_format_name(format));
 			break;
 	}
 
@@ -108,13 +108,13 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 		AVFrame *avinframe = av_frame_alloc();
 		AVFrame *avoutframe = av_frame_alloc();
 
-		av_opt_set_int(context, "srcw", iwidth, 0 );
-		av_opt_set_int(context, "srch", iheight, 0 );
-		av_opt_set_int(context, "src_format", avformat, 0 );
-		av_opt_set_int(context, "dstw", owidth, 0 );
-		av_opt_set_int(context, "dsth", oheight, 0 );
-		av_opt_set_int(context, "dst_format", avformat, 0 );
-		av_opt_set_int(context, "sws_flags", interp, 0 );
+		av_opt_set_int(context, "srcw", iwidth, 0);
+		av_opt_set_int(context, "srch", iheight, 0);
+		av_opt_set_int(context, "src_format", avformat, 0);
+		av_opt_set_int(context, "dstw", owidth, 0);
+		av_opt_set_int(context, "dsth", oheight, 0);
+		av_opt_set_int(context, "dst_format", avformat, 0);
+		av_opt_set_int(context, "sws_flags", interp, 0);
 #if LIBSWSCALE_VERSION_MAJOR >= 6
 		av_opt_set_int(context, "threads", MIN(mlt_slices_count_normal(), MAX_THREADS), 0);
 #endif
@@ -132,15 +132,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 		avinframe->sample_aspect_ratio = av_d2q(mlt_frame_get_aspect_ratio(frame), 1024);
 		avinframe->interlaced_frame = !mlt_properties_get_int(properties, "progressive");
 		avinframe->top_field_first = mlt_properties_get_int(properties, "top_field_first");
-		avinframe->data[0] = *image;
-		if (*format == mlt_image_yuv420p) {
-			avinframe->data[1] = avinframe->data[0] + iwidth * iheight;
-			avinframe->data[2] = avinframe->data[1] + iwidth / 2 + iheight / 2;
-			avinframe->linesize[0] = iwidth;
-			avinframe->linesize[1] = avinframe->linesize[2] = iwidth / 2;
-		} else {
-			avinframe->linesize[0] = mlt_image_format_size(*format, iwidth, 1, NULL);
-		}
+		mlt_image_format_planes(*format, iwidth, iheight, *image, avinframe->data, avinframe->linesize);
 
 		// Setup the output image
 		av_frame_copy_props(avoutframe, avinframe);
@@ -225,13 +217,13 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 					av_frame_unref(avoutframe);
 
 					avformat = AV_PIX_FMT_GRAY8;
-					av_opt_set_int(context, "srcw", iwidth, 0 );
-					av_opt_set_int(context, "srch", iheight, 0 );
-					av_opt_set_int(context, "src_format", avformat, 0 );
-					av_opt_set_int(context, "dstw", owidth, 0 );
-					av_opt_set_int(context, "dsth", oheight, 0 );
-					av_opt_set_int(context, "dst_format", avformat, 0 );
-					av_opt_set_int(context, "sws_flags", interp, 0 );
+					av_opt_set_int(context, "srcw", iwidth, 0);
+					av_opt_set_int(context, "srch", iheight, 0);
+					av_opt_set_int(context, "src_format", avformat, 0);
+					av_opt_set_int(context, "dstw", owidth, 0);
+					av_opt_set_int(context, "dsth", oheight, 0);
+					av_opt_set_int(context, "dst_format", avformat, 0);
+					av_opt_set_int(context, "sws_flags", interp, 0);
 	#if LIBSWSCALE_VERSION_MAJOR >= 6
 					av_opt_set_int(context, "threads", MIN(mlt_slices_count_normal(), MAX_THREADS), 0);
 	#endif

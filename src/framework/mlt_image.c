@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_mlt_image_s
  *
- * Copyright (C) 2020-2021 Meltytech, LLC
+ * Copyright (C) 2020-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -364,7 +364,7 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 			if ( bpp ) *bpp = 0;
 			return 4;
 		case mlt_image_yuv422p16:
-			if ( bpp ) *bpp = 0;
+			if ( bpp ) *bpp = 4;
 			return 4 * height * width ;
 		default:
 			if ( bpp ) *bpp = 0;
@@ -408,22 +408,18 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 		strides[3] = 0;
 
 		planes[0] = (unsigned char*)data;
-		planes[1] = (unsigned char*)data + width * height;
-		planes[2] = (unsigned char*)data + ( 5 * width * height ) / 4;
+		planes[1] = planes[0] + width * height;
+		planes[2] = planes[1] + (width >> 1) + (height >> 1);
 		planes[3] = 0;
 	}
 	else
 	{
-		int bpp;
-
-		mlt_image_format_size( format, width, height, &bpp );
-
 		planes[0] = data;
 		planes[1] = 0;
 		planes[2] = 0;
 		planes[3] = 0;
 
-		strides[0] = bpp * width;
+		strides[0] = mlt_image_format_size( format, width, 1, NULL );
 		strides[1] = 0;
 		strides[2] = 0;
 		strides[3] = 0;
