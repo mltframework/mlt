@@ -1,6 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 2016-2021 Meltytech, LLC
+ * Copyright (C) 2016-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -754,7 +754,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		pdata->avinframe->height = *height;
 		pdata->avinframe->format = mlt_to_av_image_format( *format );
 		pdata->avinframe->sample_aspect_ratio = (AVRational) {
-			profile->sample_aspect_num, profile->frame_rate_den };
+			profile->sample_aspect_num, profile->sample_aspect_den };
 		pdata->avinframe->pts = pos;
 		pdata->avinframe->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
 		pdata->avinframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
