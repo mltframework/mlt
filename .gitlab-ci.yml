@@ -5,7 +5,7 @@ ubuntu-latest:
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
             # there's no `check` or `test` `make` target
 
 ubuntu-lts:
@@ -15,7 +15,7 @@ ubuntu-lts:
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
             # there's no `check` or `test` `make` target
 
 debian-unstable:
@@ -25,7 +25,7 @@ debian-unstable:
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
         - apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
             # there's no `check` or `test` `make` target
 
 debian-testing:
@@ -35,7 +35,7 @@ debian-testing:
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
         - apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=qON -DGPL3=ON . && make -j -f Makefile install
             # there's no `check` or `test` `make` target
 
 debian-stable:
@@ -46,7 +46,7 @@ debian-stable:
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
         - apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
             # there's no `check` or `test` `make` target
 
 fedora-33:
@@ -55,7 +55,7 @@ fedora-33:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
 
 fedora-32:
     image: fedora:32
@@ -63,7 +63,7 @@ fedora-32:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
 
 fedora-31:
     image: fedora:31
@@ -71,7 +71,7 @@ fedora-31:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
 
 fedora-30:
     image: fedora:30
@@ -79,4 +79,4 @@ fedora-30:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make && make install
+        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
