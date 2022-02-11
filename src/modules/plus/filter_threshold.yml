@@ -31,7 +31,7 @@ parameters:
   - identifier: invert
     title: Invert
     type: integer
-    description: Wether to swap black and white
+    description: Whether to swap black and white
     mutable: yes
     default: 0
     widget: checkbox
