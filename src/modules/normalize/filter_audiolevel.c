@@ -79,7 +79,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 		for ( s = 0; s < num_samples; s++ )
 		{
-			double sample = fabs( pcm[c + s * num_channels] / 128.0 );
+			double sample = fabs( (double)pcm[c + s * num_channels] / 32768.0 );
+
 			val += sample;
 			if ( sample == 128 )
 				num_oversample++;
@@ -97,7 +98,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		}
 		// max amplitude = 40/42, 3to10  oversamples=41, more then 10 oversamples=42
 		if ( level == 0.0 && num_samples > 0 )
-			level = val / num_samples * 40.0/42.0 / 127.0;
+			level = val / num_samples;
 		if ( iec_scale )
 			level = IEC_Scale( AMPTODBFS( level ) );
 		sprintf( key, "meta.media.audio_level.%d", c );
