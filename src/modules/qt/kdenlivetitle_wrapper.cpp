@@ -159,7 +159,6 @@ public:
 		m_pen.setWidthF(outline);
 		m_font = font;
 		m_lineSpacing = lineSpacing + m_metrics.lineSpacing();
-		m_path.setFillRule(Qt::WindingFill);
 		m_align = align;
 		m_width = width;
 		updateText(text);
@@ -189,6 +188,7 @@ public:
 			}
 			m_path.addPath(linePath);
 		}
+		m_path.setFillRule(Qt::WindingFill);
 	}
 
 	virtual QRectF boundingRect() const
