@@ -2630,7 +2630,7 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 
 		if ( self->seekable || int_position > 0 )
 		{
-			if ( req_position > int_position ) {
+			if ( req_pts > pts ) {
 				// We are behind, so skip some
 				*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
 			} else if ( self->audio_index != INT_MAX && int_position > req_position + 2 && !self->is_audio_synchronizing ) {
