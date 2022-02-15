@@ -207,7 +207,7 @@ public:
 		painter->fillPath(m_path, m_brush);
 		if ( m_outline > 0 )
 		{
-			painter->strokePath(m_path, m_pen);
+			painter->strokePath(m_path.simplified(), m_pen);
 		}
 	}
 
