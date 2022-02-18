@@ -2,7 +2,7 @@
  * \file mlt_factory.c
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <locale.h>
 #include <libgen.h>
 
 /** the default subdirectory of the datadir for holding presets */
@@ -112,14 +111,6 @@ static char* mlt_dirname( char *path )
 
 mlt_repository mlt_factory_init( const char *directory )
 {
-	// Load the system locales
-	const char* locale = "";
-#if defined(_WIN32)
-	if (getenv("LC_ALL"))
-		locale = getenv("LC_ALL");
-#endif
-	setlocale( LC_ALL, locale );
-
 	if ( ! global_properties )
 		global_properties = mlt_properties_new( );
 
