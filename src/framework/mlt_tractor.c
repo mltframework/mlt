@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -503,14 +503,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 
 				// Pass all unique meta properties from the producer's frame to the new frame
 				mlt_properties_lock( temp_properties );
-				int props_count = mlt_properties_count( temp_properties );
-				int j;
-				for ( j = 0; j < props_count; j ++ )
-				{
-					char *name = mlt_properties_get_name( temp_properties, j );
-					if ( !strncmp( name, "meta.", 5 ) && !mlt_properties_get( frame_properties, name ) )
-						mlt_properties_set( frame_properties, name, mlt_properties_get_value( temp_properties, j ) );
-				}
+				mlt_properties_copy(frame_properties, temp_properties, "meta.");
 				mlt_properties_unlock( temp_properties );
 
 				// Copy the format conversion virtual functions

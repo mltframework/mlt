@@ -3,7 +3,7 @@
  * \brief abstraction for all producer services
  * \see mlt_producer_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -732,19 +732,11 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
 	// Pass on all meta properties from the producer/cut on to the frame
 	if ( *frame != NULL && self != NULL )
 	{
-		int i = 0;
 		mlt_properties p_props = MLT_PRODUCER_PROPERTIES( self );
 		mlt_properties f_props = MLT_FRAME_PROPERTIES( *frame );
 		mlt_properties_lock( p_props );
-		int count = mlt_properties_count( p_props );
-		for ( i = 0; i < count; i ++ )
-		{
-			char *name = mlt_properties_get_name( p_props, i );
-			if ( !strncmp( name, "meta.", 5 ) )
-				mlt_properties_set( f_props, name, mlt_properties_get_value( p_props, i ) );
-			else if ( !strncmp( name, "set.", 4 ) )
-				mlt_properties_set( f_props, name + 4, mlt_properties_get_value( p_props, i ) );
-		}
+		mlt_properties_copy(f_props, p_props, "meta.");
+		mlt_properties_pass(f_props, p_props, "set.");
 		mlt_properties_unlock( p_props );
 	}
 
