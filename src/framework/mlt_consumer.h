@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -85,6 +85,8 @@
  * \properties \em audio_off set non-zero to disable audio processing
  * \properties \em video_off set non-zero to disable video processing
  * \properties \em drop_count the number of video frames not rendered since starting consumer
+ * \properties \em color_trc the color transfer characteristic (gamma), default is unset
+ * \properties \em deinterlacer the deinterlace algorithm to pass to deinterlace filters, defaults to "yadif"
  */
 
 struct mlt_consumer_s
