@@ -1,6 +1,6 @@
 /*
  * filter_avcolour_space.c -- Colour space filter
- * Copyright (C) 2004-2022 Meltytech, LLC
+ * Copyright (C) 2004-2020 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,13 +29,9 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libavutil/imgutils.h>
-#include <libavutil/opt.h>
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#define MAX_THREADS (6)
-#define IMAGE_ALIGN (1)
 
 #if 0 // This test might come in handy elsewhere someday.
 static int is_big_endian( )
@@ -46,6 +42,8 @@ static int is_big_endian( )
 	return big_endian_test.c[ 0 ] != 1;
 }
 #endif
+
+#define IMAGE_ALIGN (1)
 
 static int convert_mlt_to_av_cs( mlt_image_format format )
 {
@@ -82,101 +80,33 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int out_width, int out_height, int in_width, int in_height,
 	int src_colorspace, int dst_colorspace, int use_full_range )
 {
+	uint8_t *in_data[4];
+	int in_stride[4];
+	uint8_t *out_data[4];
+	int out_stride[4];
+	int flags = mlt_get_sws_flags( in_width, in_height, in_fmt, out_width, out_height, out_fmt);
 	int error = -1;
-	struct SwsContext *context = sws_alloc_context();
 
-	if (context) {
-		AVFrame *avinframe = av_frame_alloc();
-		AVFrame *avoutframe = av_frame_alloc();
-		int flags = mlt_get_sws_flags(in_width, in_height, in_fmt, out_width, out_height, out_fmt);
-
-		av_opt_set_int(context, "srcw", in_width, 0);
-		av_opt_set_int(context, "srch", in_height, 0);
-		av_opt_set_int(context, "src_format", in_fmt, 0);
-		av_opt_set_int(context, "dstw", out_width, 0);
-		av_opt_set_int(context, "dsth", out_height, 0);
-		av_opt_set_int(context, "dst_format", out_fmt, 0);
-		av_opt_set_int(context, "sws_flags", flags, 0);
-#if LIBSWSCALE_VERSION_MAJOR >= 6
-		av_opt_set_int(context, "threads", MIN(mlt_slices_count_normal(), MAX_THREADS), 0);
-#endif
-		error = sws_init_context(context, NULL, NULL);
-		if (error < 0) {
-			mlt_log_error(NULL, "[filter avcolor_space] Initializing swscale failed with %d (%s)\n", error, av_err2str(error));
-			goto exit;
-		}
-
-		// Setup the input image
-		avinframe->width = in_width;
-		avinframe->height = in_height;
-		avinframe->format = in_fmt;
-		avinframe->sample_aspect_ratio.num = avinframe->sample_aspect_ratio.den = 1;
-		avinframe->interlaced_frame = 0;
-		avinframe->color_range = use_full_range? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
-		avinframe->colorspace = SWS_CS_ITU709;
-		av_image_fill_arrays(avinframe->data, avinframe->linesize, in, in_fmt, in_width, in_height, IMAGE_ALIGN);
-
-		// Setup the output image
-		av_frame_copy_props(avoutframe, avinframe);
-		avoutframe->width = out_width;
-		avoutframe->height = out_height;
-		avoutframe->format = out_fmt;
-
-		error = av_frame_get_buffer(avoutframe, 0);
-		if (error < 0) {
-			mlt_log_error(NULL, "[filter avcolor_space] Cannot allocate output frame buffer\n");
-			goto exit;
-		}
-
+	if ( in_fmt == AV_PIX_FMT_YUV422P16LE )
+		mlt_image_format_planes(mlt_image_yuv422p16, in_width, in_height, in, in_data, in_stride);
+	else
+		av_image_fill_arrays(in_data, in_stride, in, in_fmt, in_width, in_height, IMAGE_ALIGN);
+	if ( out_fmt == AV_PIX_FMT_YUV422P16LE )
+		mlt_image_format_planes(mlt_image_yuv422p16, out_width, out_height, out, out_data, out_stride);
+	else
+		av_image_fill_arrays(out_data, out_stride, out, out_fmt, out_width, out_height, IMAGE_ALIGN);
+	struct SwsContext *context = sws_getContext( in_width, in_height, in_fmt,
+		out_width, out_height, out_fmt, flags, NULL, NULL, NULL);
+	if ( context )
+	{
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		if ( out_fmt == AV_PIX_FMT_RGB24 || out_fmt == AV_PIX_FMT_RGBA )
 			dst_colorspace = 601;
-		error = mlt_set_luma_transfer(context, src_colorspace, dst_colorspace, use_full_range, use_full_range);
-
-		// Do the conversion
-#if LIBSWSCALE_VERSION_MAJOR >= 6
-		error = sws_scale_frame(context, avoutframe, avinframe);
-#else
-		error = sws_scale(context, (const uint8_t* const*) avinframe->data, avinframe->linesize, 0, in_height,
-			avoutframe->data, avoutframe->linesize);
-#endif
-		if (error < 0) {
-			mlt_log_error(NULL, "[filter avcolor_space] sws_scale failed with %d (%s)\n", error, av_err2str(error));
-			goto exit;
-		}
-
-		// Copy the filter output into the output buffer
-		if (out_fmt == AV_PIX_FMT_YUV420P) {
-			int i = 0;
-			int p = 0;
-			int widths[3] = { out_width, out_width / 2, out_width / 2 };
-			int heights[3] = { out_height, out_height / 2, out_height / 2 };
-			uint8_t* dst = out;
-			for (p = 0; p < 3; p++) {
-				uint8_t* src = avoutframe->data[p];
-				for (i = 0; i < heights[p]; i++) {
-					memcpy(dst, src, widths[p]);
-					dst += widths[p];
-					src += avoutframe->linesize[p];
-				}
-			}
-		} else {
-			int i;
-			uint8_t* dst = out;
-			uint8_t* src = avoutframe->data[0];
-			int stride = out_width * (out_fmt == AV_PIX_FMT_YUYV422? 2 : out_fmt == AV_PIX_FMT_RGB24? 3 : 4);
-			for (i = 0; i < out_height; i++) {
-				memcpy(dst, src, stride);
-				dst += stride;
-				src += avoutframe->linesize[0];
-			}
-		}
-exit:
-		sws_freeContext(context);
-		av_frame_free(&avinframe);
-		av_frame_free(&avoutframe);
+		error = mlt_set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range, use_full_range );
+		sws_scale(context, (const uint8_t* const*) in_data, in_stride, 0, in_height,
+			out_data, out_stride);
+		sws_freeContext( context );
 	}
-
 	return error;
 }
 
@@ -318,6 +248,10 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 	if ( !frame->convert_image )
 		frame->convert_image = convert_image;
+
+//	Not working yet - see comment for get_image() above.
+//	mlt_frame_push_service( frame, mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
+//	mlt_frame_push_get_image( frame, get_image );
 
 	return frame;
 }
