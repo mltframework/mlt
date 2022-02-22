@@ -3,7 +3,7 @@
  * \brief video output definition
  * \see mlt_profile_s
  *
- * Copyright (C) 2007-2018 Meltytech, LLC
+ * Copyright (C) 2007-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -414,7 +414,7 @@ void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer )
 	if ( ! mlt_service_get_frame( MLT_PRODUCER_SERVICE(producer), &fr, 0 ) && fr )
 	{
 		// Skip scaling and padding since not needed and we request mlt_image_none.
-		mlt_properties_set( MLT_FRAME_PROPERTIES(fr), "rescale.interp", "none" );
+		mlt_properties_set( MLT_FRAME_PROPERTIES(fr), "consumer.rescale", "none" );
 
 		if ( ! mlt_frame_get_image( fr, &buffer, &fmt, &w, &h, 0 ) )
 		{

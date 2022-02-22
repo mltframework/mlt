@@ -172,7 +172,7 @@ static int get_frame( mlt_producer self, mlt_frame_ptr frame, int index )
 		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( cx->consumer ), "real_time",
 			mlt_properties_get_int( properties, "real_time" ) );
 		mlt_properties_pass_list( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties,
-			"buffer, prefill, deinterlace_method, rescale" );
+			"buffer, prefill, deinterlacer, deinterlace_method, rescale" );
 
 		mlt_properties_pass( MLT_CONSUMER_PROPERTIES( cx->consumer ), properties, CONSUMER_PROPERTIES_PREFIX );
 		mlt_properties_pass( MLT_PRODUCER_PROPERTIES( cx->producer ), properties, PRODUCER_PROPERTIES_PREFIX );

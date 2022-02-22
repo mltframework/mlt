@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1449,7 +1449,7 @@ static void on_end_consumer( deserialise_context context, const xmlChar *name )
 					if ( !context->qglsl )
 					{
 						mlt_properties_pass_list( consumer_properties, properties,
-							"real_time, deinterlace_method, rescale, progressive, top_field_first, channels, channel_layout" );
+							"real_time, deinterlacer, deinterlace_method, rescale, progressive, top_field_first, channels, channel_layout" );
 
 						// We only really know how to optimize real_time for the avformat consumer.
 						const char *service_name = mlt_properties_get( properties, "mlt_service" );

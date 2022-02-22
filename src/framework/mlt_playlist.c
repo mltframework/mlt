@@ -2082,7 +2082,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Set the consumer progressive property
 	if ( progressive )
 	{
-		mlt_properties_set_int( properties, "consumer_deinterlace", progressive );
+		mlt_properties_set_int( properties, "consumer.progressive", progressive );
 		mlt_properties_set_int( properties, "test_audio", 1 );
 	}
 

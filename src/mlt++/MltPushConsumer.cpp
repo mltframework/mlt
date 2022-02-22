@@ -1,7 +1,6 @@
 /**
  * MltPushConsumer.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -104,9 +103,9 @@ int PushConsumer::push( Frame *frame )
 		int w = get_int( "render_width" );
 		int h = get_int( "render_height" );
 		frame->set( "consumer_aspect_ratio", get_double( "render_aspect_ratio" ) );
-		frame->set( "consumer_deinterlace", get_int( "deinterlace" ) );
-		frame->set( "deinterlace_method", get_int( "deinterlace_method" ) );
-		frame->set( "rescale.interp", get( "rescale" ) );
+		frame->set( "consumer.progressive", get_int( "progressive" ) | get_int( "deinterlace" ) );
+		frame->set( "consumer.deinterlacer", get("deinterlacer")? get("deinterlacer") : get("deinterlace_method") );
+		frame->set( "consumer.rescale", get( "rescale" ) );
 
 		// Render the frame
 		frame->get_image( format, w, h );

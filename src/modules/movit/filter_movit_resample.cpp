@@ -60,7 +60,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	// Deinterlace if height is changing to prevent fields mixing on interpolation
 	if ( iheight != oheight )
-		mlt_properties_set_int( properties, "consumer_deinterlace", 1 );
+		mlt_properties_set_int( properties, "consumer.progressive", 1 );
 
 	GlslManager::get_instance()->lock_service( frame );
 	mlt_properties_set_int( filter_properties, "_movit.parms.int.width", owidth );

@@ -247,7 +247,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 	// If we have a qimage and need a new scaled image
 	if ( self->qimage && ( !self->current_image || ( format != mlt_image_none && format != mlt_image_movit && format != self->format ) ) )
 	{
-		QString interps = mlt_properties_get( properties, "rescale.interp" );
+		QString interps = mlt_properties_get( properties, "consumer.rescale" );
 		bool interp = ( interps != "nearest" ) && ( interps != "none" );
 		QImage *qimage = static_cast<QImage*>( self->qimage );
 		int has_alpha = qimage->hasAlphaChannel();

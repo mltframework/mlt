@@ -20,8 +20,8 @@ profile.set_sample_aspect(1, 0)
 prod.seek(int(prod.get_length() * 0.1))
 frame = prod.get_frame()
 
-# And make sure we deinterlace if input is interlaced - optional.
-frame.set("consumer_deinterlace", 1)
+# Make sure we deinterlace if input is interlaced.
+frame.set("consumer.progressive", 1)
 
 # Now we are ready to get the image and save it.
 size = (profile.width(), profile.height())

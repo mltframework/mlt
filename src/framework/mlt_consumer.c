@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -688,12 +688,12 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer self )
 
 		// Pass along the interpolation and deinterlace options
 		// TODO: get rid of consumer_deinterlace and use profile.progressive
-		mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale" ) );
-		mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" ) );
-		mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
-		mlt_properties_set_int( frame_properties, "consumer_tff", mlt_properties_get_int( properties, "top_field_first" ) );
-		mlt_properties_set( frame_properties, "consumer_color_trc", mlt_properties_get( properties, "color_trc" ) );
-		mlt_properties_set( frame_properties, "consumer_channel_layout", mlt_properties_get( properties, "channel_layout" ) );
+		mlt_properties_set( frame_properties, "consumer.rescale", mlt_properties_get( properties, "rescale" ) );
+		mlt_properties_set_int( frame_properties, "consumer.progressive", mlt_properties_get_int( properties, "progressive" ) | mlt_properties_get_int( properties, "deinterlace" ) );
+		mlt_properties_set( frame_properties, "consumer.deinterlacer", mlt_properties_get(properties, "deinterlacer")? mlt_properties_get(properties, "deinterlacer") : mlt_properties_get(properties, "deinterlace_method") );
+		mlt_properties_set_int( frame_properties, "consumer.top_field_first", mlt_properties_get_int( properties, "top_field_first" ) );
+		mlt_properties_set( frame_properties, "consumer.color_trc", mlt_properties_get( properties, "color_trc" ) );
+		mlt_properties_set( frame_properties, "consumer.channel_layout", mlt_properties_get( properties, "channel_layout" ) );
 	}
 
 	// Return the frame
@@ -852,7 +852,7 @@ static void *consumer_read_ahead_thread( void *arg )
 		if ( priv->speed != 1 )
 		{
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer.progressive", 1 );
 #endif
 			// Indicate seeking or trick-play
 			start_pos = pos;
@@ -1052,7 +1052,7 @@ static void *consumer_worker_thread( void *arg )
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
 		// All non normal playback frames should be shown
 		if ( mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) != 1 )
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
+			mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer.progressive", 1 );
 #endif
 
 		// Get the image

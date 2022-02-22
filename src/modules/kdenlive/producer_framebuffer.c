@@ -158,7 +158,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 	uint8_t *first_alpha = mlt_properties_get_data( first_frame_properties, "alpha", NULL );
 	if ( !first_image )
 	{
-		mlt_properties_set( first_frame_properties, "rescale.interp", mlt_properties_get( frame_properties, "rescale.interp" ) );
+		mlt_properties_set( first_frame_properties, "consumer.rescale", mlt_properties_get( frame_properties, "consumer.rescale" ) );
 
 		int error = mlt_frame_get_image( first_frame, &first_image, format, width, height, writable );
 

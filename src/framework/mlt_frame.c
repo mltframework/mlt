@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -404,7 +404,7 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 		{
 			mlt_properties test_properties = MLT_FRAME_PROPERTIES( test_frame );
 			mlt_properties_set_data( properties, "test_card_frame", test_frame, 0, ( mlt_destructor )mlt_frame_close, NULL );
-			mlt_properties_set( test_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
+			mlt_properties_set( test_properties, "consumer.rescale", mlt_properties_get( properties, "consumer.rescale" ) );
 			error = mlt_frame_get_image( test_frame, buffer, format, width, height, writable );
 			if ( !error && buffer && *buffer )
 			{

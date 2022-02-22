@@ -279,7 +279,7 @@ public:
 
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( properties, "rescale", "nearest" );
-		mlt_properties_set( properties, "deinterlace_method", "onefield" );
+		mlt_properties_set( properties, "consumer.deinterlacer", "onefield" );
 
 		// Default buffer for low latency
 		mlt_properties_set_int( properties, "buffer", 1 );

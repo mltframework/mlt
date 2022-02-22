@@ -134,7 +134,7 @@ parameters:
     unit: frames/second
 
 # These are common to all consumers.
-  - identifier: deinterlace_method
+  - identifier: deinterlacer
     title: Deinterlacer
     type: string
     default: yadif

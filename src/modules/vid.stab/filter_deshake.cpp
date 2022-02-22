@@ -64,7 +64,7 @@ static void get_config( VSTransformConfig* tconf, VSMotionDetectConfig* mconf, m
 	tconf->relative = 1;
 
 	// by default a bicubic interpolation is selected
-	const char *interps = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "rescale.interp" );
+	const char *interps = mlt_properties_get( MLT_FRAME_PROPERTIES( frame ), "consumer.rescale" );
 	tconf->interpolType = VS_BiCubic;
 	if ( strcmp( interps, "nearest" ) == 0 || strcmp( interps, "neighbor" ) == 0 )
 		tconf->interpolType = VS_Zero;
@@ -122,7 +122,7 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 	VSPixelFormat vs_format = PF_NONE;
 
 	// VS only works on progressive frames
-	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace", 1 );
+	mlt_properties_set_int( MLT_FRAME_PROPERTIES( frame ), "consumer.progressive", 1 );
 
 	*format = validate_format( *format );
 	DeshakeData *data = static_cast<DeshakeData*>(filter->child);

@@ -193,7 +193,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int error = 0;
 	mlt_filter filter = mlt_frame_pop_service( frame );
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-	int deinterlace = mlt_properties_get_int( properties, "consumer_deinterlace" );
+	int deinterlace = mlt_properties_get_int( properties, "consumer.progressive" );
 	// The progressive var should only represent the frame's original state and not the state
 	// as modified by this filter!
 	int progressive = mlt_properties_get_int( properties, "progressive" );
@@ -205,7 +205,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Determine deinterlace method
 		char *method_str = mlt_properties_get( MLT_FILTER_PROPERTIES( filter ), "method" );
 		int method = DEINTERLACE_NONE;
-		char *frame_method_str = mlt_properties_get( properties, "deinterlace_method" );
+		char *frame_method_str = mlt_properties_get( properties, "consumer.deinterlacer" );
 		
 		if ( frame_method_str )
 			method_str = frame_method_str;

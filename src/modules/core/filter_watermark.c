@@ -153,7 +153,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 			// Set the b frame to be in the same position and have same consumer requirements
 			mlt_frame_set_position( b_frame, position );
-			mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) || mlt_properties_get_int( properties, "deinterlace" ) );
+			mlt_properties_set_int( b_props, "consumer.progressive", mlt_properties_get_int( a_props, "consumer.progressive" ) || mlt_properties_get_int( properties, "deinterlace" ) );
 
 			// Check for the special case - no aspect ratio means no problem :-)
 			if ( mlt_frame_get_aspect_ratio( b_frame ) == 0 )
@@ -185,14 +185,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				char temp[ 132 ];
 				int count = 0;
 				uint8_t *alpha = NULL;
-				const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+				const char *rescale = mlt_properties_get( a_props, "consumer.rescale" );
 				if ( rescale == NULL || !strcmp( rescale, "none" ) )
 					rescale = "hyper";
 				mlt_transition_process( composite, b_frame, a_frame );
-				mlt_properties_set_int( a_props, "consumer_deinterlace", 1 );
-				mlt_properties_set_int( b_props, "consumer_deinterlace", 1 );
-				mlt_properties_set( a_props, "rescale.interp", rescale );
-				mlt_properties_set( b_props, "rescale.interp", rescale );
+				mlt_properties_set_int( a_props, "consumer.progressive", 1 );
+				mlt_properties_set_int( b_props, "consumer.progressive", 1 );
+				mlt_properties_set( a_props, "consumer.rescale", rescale );
+				mlt_properties_set( b_props, "consumer.rescale", rescale );
 				mlt_service_apply_filters( MLT_FILTER_SERVICE( filter ), b_frame, 0 );
 				error = mlt_frame_get_image( b_frame, image, format, width, height, 1 );
 				alpha = mlt_frame_get_alpha( b_frame );

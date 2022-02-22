@@ -34,7 +34,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 	if ( !error && *image )
 	{
-		int tff = mlt_properties_get_int( properties, "consumer_tff" );
+		int tff = mlt_properties_get_int( properties, "consumer.top_field_first" );
 
 		// Provides a manual override for misreported field order
 		if ( mlt_properties_get( properties, "meta.top_field_first" ) )

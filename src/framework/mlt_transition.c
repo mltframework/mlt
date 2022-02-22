@@ -3,7 +3,7 @@
  * \brief abstraction for all transition services
  * \see mlt_transition_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -333,9 +333,9 @@ static int get_image_a( mlt_frame a_frame, uint8_t **image, mlt_image_format *fo
 	mlt_properties a_props = MLT_FRAME_PROPERTIES( a_frame );
 
 	// All transitions get scaling
-	const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+	const char *rescale = mlt_properties_get( a_props, "consumer.rescale" );
 	if ( !rescale || !strcmp( rescale, "none" ) )
-		mlt_properties_set( a_props, "rescale.interp", "nearest" );
+		mlt_properties_set( a_props, "consumer.rescale", "nearest" );
 
 	// Ensure sane aspect ratio
 	if ( mlt_frame_get_aspect_ratio( a_frame ) == 0.0 )
@@ -352,20 +352,19 @@ static int get_image_b( mlt_frame b_frame, uint8_t **image, mlt_image_format *fo
 	mlt_properties b_props = MLT_FRAME_PROPERTIES( b_frame );
 
 	// Set scaling from A frame if not already provided.
-	if ( !mlt_properties_get( b_props, "rescale.interp" ) )
+	if ( !mlt_properties_get( b_props, "consumer.rescale" ) )
 	{
-		const char *rescale = mlt_properties_get( a_props, "rescale.interp" );
+		const char *rescale = mlt_properties_get( a_props, "consumer.rescale" );
 		if ( !rescale || !strcmp( rescale, "none" ) )
 			rescale = "nearest";
-		mlt_properties_set( b_props, "rescale.interp", rescale );
+		mlt_properties_set( b_props, "consumer.rescale", rescale );
 	}
 
 	// Ensure sane aspect ratio
 	if ( mlt_frame_get_aspect_ratio( b_frame ) == 0.0 )
 		mlt_frame_set_aspect_ratio( b_frame, mlt_profile_sar( mlt_service_profile( MLT_TRANSITION_SERVICE(self) ) ) );
 
-	mlt_properties_pass_list( b_props, a_props,
-		"consumer_deinterlace, deinterlace_method, consumer_tff, consumer_color_trc, consumer_channel_layout" );
+	mlt_properties_copy(b_props, a_props, "consumer.");
 
 	return mlt_frame_get_image( b_frame, image, format, width, height, writable );
 }

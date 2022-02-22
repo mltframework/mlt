@@ -218,7 +218,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		*format = mlt_image_rgba;
 
 	// Hmmm...
-	char *rescale = mlt_properties_get( properties, "rescale.interp" );
+	char *rescale = mlt_properties_get( properties, "consumer.rescale" );
 	if ( rescale != NULL && !strcmp( rescale, "none" ) )
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 

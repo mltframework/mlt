@@ -115,10 +115,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	}
 
 	// This is not a field-aware transform.
-	mlt_properties_set_int( b_properties, "consumer_deinterlace", 1 );
+	mlt_properties_set_int( b_properties, "consumer.progressive", 1 );
 
 	// Suppress padding and aspect normalization.
-	char *interps = mlt_properties_get( properties, "rescale.interp" );
+	char *interps = mlt_properties_get( properties, "consumer.rescale" );
 	if ( interps )
 		interps = strdup( interps );
 

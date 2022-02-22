@@ -360,7 +360,7 @@ mlt_consumer consumer_ndi_init( mlt_profile profile, mlt_service_type type, cons
 		parent->is_stopped = consumer_ndi_is_stopped;
 
 		mlt_properties properties = MLT_CONSUMER_PROPERTIES( parent );
-		mlt_properties_set( properties, "deinterlace_method", "onefield" );
+		mlt_properties_set( properties, "consumer.deinterlacer", "onefield" );
 
 
 		return parent;

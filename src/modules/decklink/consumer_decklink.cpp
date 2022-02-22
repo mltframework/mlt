@@ -999,7 +999,7 @@ mlt_consumer consumer_decklink_init( mlt_profile profile, mlt_service_type type,
 			consumer->start = start;
 			consumer->stop = stop;
 			consumer->is_stopped = is_stopped;
-			mlt_properties_set( properties, "deinterlace_method", "onefield" );
+			mlt_properties_set( properties, "consumer.deinterlacer", "onefield" );
 
 			mlt_event event = mlt_events_listen( properties, properties, "property-changed", (mlt_listener) on_property_changed );
 			mlt_properties_set_data( properties, "list-devices-event", event, 0, NULL, NULL );

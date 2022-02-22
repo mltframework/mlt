@@ -96,7 +96,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties_pass( MLT_FRAME_PROPERTIES( real_frame ), properties, "" );
 
 		// We'll deinterlace on the downstream deinterlacer
-		mlt_properties_set_int( MLT_FRAME_PROPERTIES( real_frame ), "consumer_deinterlace", 1 );
+		mlt_properties_set_int( MLT_FRAME_PROPERTIES( real_frame ), "consumer.progressive", 1 );
 
 		// We want distorted to ensure we don't hit the resize filter twice
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( real_frame ), "distort", 1 );
@@ -179,7 +179,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Ensure that the consumer sees what the real frame has
 		mlt_properties_pass( MLT_FRAME_PROPERTIES( *frame ), MLT_FRAME_PROPERTIES( real_frame ), "" );
 
-		mlt_properties_set( MLT_FRAME_PROPERTIES( real_frame ), "deinterlace_method",
+		mlt_properties_set( MLT_FRAME_PROPERTIES( real_frame ), "consumer.deinterlacer",
 			mlt_properties_get( properties, "method" ) );
 	}
 

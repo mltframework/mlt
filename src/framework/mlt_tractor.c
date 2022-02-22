@@ -358,13 +358,10 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_frame frame = mlt_frame_pop_service( self );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties_set( frame_properties, "rescale.interp", mlt_properties_get( properties, "rescale.interp" ) );
+
 	mlt_properties_set_int( frame_properties, "resize_alpha", mlt_properties_get_int( properties, "resize_alpha" ) );
 	mlt_properties_set_int( frame_properties, "distort", mlt_properties_get_int( properties, "distort" ) );
-	mlt_properties_set_int( frame_properties, "consumer_deinterlace", mlt_properties_get_int( properties, "consumer_deinterlace" ) );
-	mlt_properties_set( frame_properties, "deinterlace_method", mlt_properties_get( properties, "deinterlace_method" ) );
-	mlt_properties_set_int( frame_properties, "consumer_tff", mlt_properties_get_int( properties, "consumer_tff" ) );
-	mlt_properties_set( frame_properties, "consumer_color_trc", mlt_properties_get( properties, "consumer_color_trc" ) );
+	mlt_properties_copy(frame_properties, properties, "consumer.");
 	// WebVfx uses this to setup a consumer-stopping event handler.
 	mlt_properties_set_data( frame_properties, "consumer", mlt_properties_get_data( properties, "consumer", NULL ), 0, NULL, NULL );
 
@@ -416,7 +413,7 @@ static int producer_get_audio( mlt_frame self, void **buffer, mlt_audio_format *
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_frame frame = mlt_frame_pop_audio( self );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties_set( frame_properties, "consumer_channel_layout", mlt_properties_get( properties, "consumer_channel_layout" ) );
+	mlt_properties_set( frame_properties, "consumer.channel_layout", mlt_properties_get( properties, "consumer.channel_layout" ) );
 	mlt_properties_set( frame_properties, "producer_consumer_fps", mlt_properties_get( properties, "producer_consumer_fps" ) );
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	mlt_frame_set_audio( self, *buffer, *format, mlt_audio_format_size( *format, *samples, *channels ), NULL );

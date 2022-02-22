@@ -297,7 +297,7 @@ static int mlt_avpicture_deinterlace(uint8_t *dst_data[4], int dst_stride[4],
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
-	int deinterlace = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace" );
+	int deinterlace = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "consumer.progressive" );
 
 	// Determine if we need a writable version or not
 	if ( deinterlace && !writable )

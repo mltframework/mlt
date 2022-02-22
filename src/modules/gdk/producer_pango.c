@@ -546,7 +546,7 @@ static void refresh_image( producer_pango self, mlt_frame frame, int width, int 
 	// If we have a pixbuf and a valid width
 	if ( pixbuf && width > 0 )
 	{
-		char *interps = mlt_properties_get( properties, "rescale.interp" );
+		char *interps = mlt_properties_get( properties, "consumer.rescale" );
 		int interp = GDK_INTERP_BILINEAR;
 
 		if ( strcmp( interps, "nearest" ) == 0 )

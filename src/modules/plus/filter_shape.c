@@ -64,7 +64,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		uint8_t *mask_img = NULL;
 		mlt_image_format mask_fmt = mlt_image_yuv422;
 		mlt_properties_set_int( MLT_FRAME_PROPERTIES( mask ), "distort", 1 );
-		mlt_properties_pass_list( MLT_FRAME_PROPERTIES( mask ), MLT_FRAME_PROPERTIES( frame ), "consumer_deinterlace, deinterlace_method, rescale.interp, consumer_tff, consumer_color_trc" );
+		mlt_properties_copy(MLT_FRAME_PROPERTIES(mask), MLT_FRAME_PROPERTIES(frame), "consumer.");
 
 		if ( mlt_frame_get_image( mask, &mask_img, &mask_fmt, width, height, 0 ) == 0 )
 		{

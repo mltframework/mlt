@@ -107,7 +107,7 @@ mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type
 
 		// Default scaler (for now we'll use nearest)
 		mlt_properties_set( self->properties, "rescale", "nearest" );
-		mlt_properties_set( self->properties, "deinterlace_method", "onefield" );
+		mlt_properties_set( self->properties, "consumer.deinterlacer", "onefield" );
 		mlt_properties_set_int( self->properties, "top_field_first", -1 );
 
 		// Default buffer for low latency

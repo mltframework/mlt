@@ -69,7 +69,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 
 	// Get the requested interpolation method
-	char *interps = mlt_properties_get( properties, "rescale.interp" );
+	char *interps = mlt_properties_get( properties, "consumer.rescale" );
 
 	// Convert to the SwScale flag
 	int interp = SWS_BILINEAR;

@@ -565,7 +565,7 @@ mlt_consumer consumer_xgl_init( mlt_profile profile, mlt_service_type type, cons
 
 		// Default scaler
 		mlt_properties_set( this->properties, "rescale", "bilinear" );
-		mlt_properties_set( this->properties, "deinterlace_method", "onefield" );
+		mlt_properties_set( this->properties, "consumer.deinterlacer", "onefield" );
 
 		// default image format
 		mlt_properties_set( this->properties, "mlt_image_format", "glsl" );

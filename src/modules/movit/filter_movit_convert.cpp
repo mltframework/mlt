@@ -113,10 +113,10 @@ static GammaCurve getGammaCurve( int color_trc )
 // Also, update the frame's color_trc property with the selection.
 static GammaCurve getGammaCurve( mlt_properties properties )
 {
-	const char *color_trc = mlt_properties_get( properties, "consumer_color_trc" );
+	const char *color_trc = mlt_properties_get( properties, "consumer.color_trc" );
 	if ( color_trc ) {
 		// If specified with enum or int.
-		int n = mlt_properties_get_int( properties, "consumer_color_trc" );
+		int n = mlt_properties_get_int( properties, "consumer.color_trc" );
 		switch ( n ) {
 		case AVCOL_TRC_BT709:
 		case AVCOL_TRC_SMPTE170M:

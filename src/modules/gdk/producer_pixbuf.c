@@ -579,7 +579,7 @@ static void refresh_image( producer_pixbuf self, mlt_frame frame, mlt_image_form
 	// If we have a pixbuf and we need an image
 	if ( self->pixbuf && ( !self->image || ( format != mlt_image_none && format != mlt_image_movit && format != self->format ) ) )
 	{
-		char *interps = mlt_properties_get( properties, "rescale.interp" );
+		char *interps = mlt_properties_get( properties, "consumer.rescale" );
 		if ( interps ) interps = strdup( interps );
 		int interp = GDK_INTERP_BILINEAR;
 

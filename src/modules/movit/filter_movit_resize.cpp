@@ -106,7 +106,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 	mlt_properties_set_double( properties, "aspect_ratio", aspect_ratio );
 
 	// Skip processing if requested.
-	char *rescale = mlt_properties_get( properties, "rescale.interp" );
+	char *rescale = mlt_properties_get( properties, "consumer.rescale" );
 	if ( *format == mlt_image_none || ( rescale && !strcmp( rescale, "none" ) ) )
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 

@@ -128,7 +128,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		// Set the b_frame to be in the same position and have same consumer requirements
 		mlt_frame_set_position( b_frame, position );
-		mlt_properties_set_int( b_props, "consumer_deinterlace", mlt_properties_get_int( a_props, "consumer_deinterlace" ) );
+		mlt_properties_set_int( b_props, "consumer.progressive", mlt_properties_get_int( a_props, "consumer.progressive" ) );
 		mlt_properties_set_double( b_props, "consumer_scale", mlt_properties_get_double( a_props, "consumer_scale" ) );
 
 		// Apply all filters that are attached to this filter to the b frame

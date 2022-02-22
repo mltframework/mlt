@@ -158,7 +158,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	// Determine the input/output channel layout.
 	in.layout = mlt_get_channel_layout_or_default( mlt_properties_get( frame_properties, "channel_layout" ), in.channels );
-	out.layout = mlt_get_channel_layout_or_default( mlt_properties_get( frame_properties, "consumer_channel_layout" ), out.channels );
+	out.layout = mlt_get_channel_layout_or_default( mlt_properties_get( frame_properties, "consumer.channel_layout" ), out.channels );
 
 	if( in.format == out.format &&
 		in.frequency == out.frequency &&
