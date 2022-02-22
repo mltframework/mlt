@@ -229,22 +229,26 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 	#endif
 					result = sws_init_context(context, NULL, NULL);
 					if (result < 0) {
-						mlt_log_error(NULL, "[filter swscale] Initializing swscale failed with %d (%s)\n", result, av_err2str(result));
+						mlt_log_error(NULL, "[filter swscale] Initializing swscale alpha failed with %d (%s)\n", result, av_err2str(result));
 						result = 1;
 						goto exit;
 					}
 
 					// Setup the input image
+					avinframe->width = iwidth;
+					avinframe->height = iheight;
 					avinframe->format = avformat;
 					avinframe->data[0] = alpha;
 					avinframe->linesize[0] = iwidth;
 
 					// Setup the output image
+					avoutframe->width = owidth;
+					avoutframe->height = oheight;
 					avoutframe->format = avformat;
 
 					result = av_frame_get_buffer(avoutframe, 0);
 					if (result < 0) {
-						mlt_log_error(NULL, "[filter swscale] Cannot allocate output frame buffer\n");
+						mlt_log_error(NULL, "[filter swscale] Cannot allocate alpha frame buffer\n");
 						result = 1;
 						goto exit;
 					}
@@ -256,7 +260,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 					result = sws_scale(context, (const uint8_t **) avinframe->data, avinframe->linesize, 0, iheight, avoutframe->data, avoutframe->linesize);
 #endif
 					if (result < 0) {
-						mlt_log_error(NULL, "[filter swscale] sws_scale_frame failed with %d (%s)\n", result, av_err2str(result));
+						mlt_log_error(NULL, "[filter swscale] sws_scale_frame alpha failed with %d (%s) %d %d\n", result, av_err2str(result), avoutframe->width, avoutframe->height);
 						result = 1;
 						goto exit;
 					}
@@ -265,7 +269,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 
 					// Sanity check the output frame
 					if (owidth != avoutframe->width || oheight != avoutframe->height) {
-						mlt_log_error(NULL, "[filter swscale] Unexpected output size\n");
+						mlt_log_error(NULL, "[filter swscale] Unexpected output alpha size\n");
 						result = 1;
 						goto exit;
 					}
