@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -484,6 +484,34 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
 
 	mlt_properties_unlock( that );
 
+	return 0;
+}
+
+/** Copy all serializable properties that match a prefix to another properties object
+ *
+ * \public \memberof mlt_properties_s
+ * \param self the properties to copy to
+ * \param that The properties to copy from
+ * \param prefix the property names to match (required)
+ * \return true if error
+ */
+
+int mlt_properties_copy( mlt_properties self, mlt_properties that, const char *prefix )
+{
+	if ( !self || !that ) return 1;
+	int count = mlt_properties_count( that );
+	int length = strlen( prefix );
+	int i = 0;
+	for ( i = 0; i < count; i ++ )
+	{
+		char *name = mlt_properties_get_name( that, i );
+		if ( !strncmp( name, prefix, length ) )
+		{
+			char *value = mlt_properties_get_value( that, i );
+			if ( value != NULL )
+				mlt_properties_set_string( self, name, value );
+		}
+	}
 	return 0;
 }
 

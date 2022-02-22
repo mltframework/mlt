@@ -714,5 +714,6 @@ MLT_7.6.0 {
     extern "C++" {
       "Mlt::Animation::next_key(int, int&)";
       "Mlt::Animation::previous_key(int, int&)";
+      "Mlt::Properties::copy(Mlt::Properties&, char const*)";
     };
 } MLT_7.4.0;

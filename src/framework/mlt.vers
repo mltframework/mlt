@@ -630,3 +630,8 @@ MLT_7.4.0 {
     mlt_property_is_anim;
     mlt_properties_is_anim;
 } MLT_7.1.0;
+
+MLT_7.7.0 {
+  global:
+    mlt_properties_copy;
+} MLT_7.4.0;

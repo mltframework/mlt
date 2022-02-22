@@ -3,7 +3,7 @@
  * \brief Properties class declaration
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,6 +57,7 @@ extern int mlt_properties_dec_ref( mlt_properties self );
 extern int mlt_properties_ref_count( mlt_properties self );
 extern void mlt_properties_mirror( mlt_properties self, mlt_properties that );
 extern int mlt_properties_inherit( mlt_properties self, mlt_properties that );
+extern int mlt_properties_copy( mlt_properties self, mlt_properties that, const char *prefix );
 extern int mlt_properties_pass( mlt_properties self, mlt_properties that, const char *prefix );
 extern void mlt_properties_pass_property( mlt_properties self, mlt_properties that, const char *name );
 extern int mlt_properties_pass_list( mlt_properties self, mlt_properties that, const char *list );
