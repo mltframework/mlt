@@ -3,13 +3,10 @@ type: producer
 identifier: avformat
 title: FFmpeg Reader
 version: 2
-copyright: Copyright (C) 2003-2019 Meltytech, LLC
-license: LGPL
+copyright: Meltytech, LLC
+license: LGPLv2.1
 language: en
 url: http://www.ffmpeg.org/
-creator: Charles Yates
-contributor:
-  - Dan Dennedy
 tags:
   - Audio
   - Video

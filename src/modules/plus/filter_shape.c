@@ -1,7 +1,6 @@
 /*
  * filter_shape.c -- Arbitrary alpha channel shaping
- * Copyright (C) 2005 Visual Media Fx Inc.
- * Copyright (C) 2021-2022 Meltytech, LLC
+ * Copyright (C) 2008-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by

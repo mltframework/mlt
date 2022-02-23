@@ -1,0 +1,14 @@
+schema_version: 7.0
+type: consumer
+identifier: xgl
+title: OpenGL Video (*DEPRECATED*)
+version: 1
+copyright: Christophe Thommeret
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: Display the video only in a X11 window using OpenGL.
+notes: >
+  The window is a fixed size 1280x720 regardless the profile or consumer
+  width and height properties.

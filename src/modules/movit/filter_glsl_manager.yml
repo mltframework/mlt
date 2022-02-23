@@ -1,0 +1,15 @@
+schema_version: 7.0
+type: filter
+identifier: glsl.manager
+title: GLSL Manager
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+description: >
+  This is a special filter to manage OpenGL and Movit.
+  See https://mltframework.org/docs/opengl/ for more information.
+tags:
+  - Video
+  - Hidden

@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2008-2014 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2008-2022 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,4 +48,5 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "burningtv", metadata, "filter_burningtv.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "lumaliftgaingamma", metadata, "filter_lumaliftgaingamma.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "rotoscoping", metadata, "filter_rotoscoping.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "telecide", metadata, "filter_telecide.yml" );
 }

@@ -1,0 +1,16 @@
+schema_version: 7.0
+type: consumer
+identifier: "null"
+title: NULL
+version: 1
+copyright: Meltytech, LLC
+license: LGPL
+language: en
+tags:
+  - Audio
+  - Video
+description: A consumer that does nothing but pull frames.
+notes: >
+  This is intentionally minimal and does not even request image or audio from
+  frames or fire events. It is handy for benchmarking, howevever, if you set
+  the consumer properties terminate_on_pause=1 and real_time=-1.

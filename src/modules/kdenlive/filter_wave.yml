@@ -10,7 +10,7 @@ language: en
 tags:
   - Video
 parameters:
-  - identifier: start (*deprecated*)
+  - identifier: start (*DEPRECATED*)
     title: Amplitude
     argument: yes
     type: integer
@@ -25,7 +25,7 @@ parameters:
     default: 10
     minimum: 1
 
-  - identifier: end (*deprecated*)
+  - identifier: end (*DEPRECATED*)
     title: End amplitude
     type: integer
     mutable: yes

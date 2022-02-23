@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2019 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2022 Dan Dennedy <dan@dennedy.org>
  * factory.c -- the factory method interfaces
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@ MLT_REPOSITORY
 {
 #if !defined(__APPLE__) && !defined(_WIN32)
 	MLT_REGISTER( mlt_service_consumer_type, "xgl", consumer_xgl_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "xgl", metadata, "consumer_xgl.yml" );
 #endif
 	MLT_REGISTER( mlt_service_filter_type, "glsl.manager", filter_glsl_manager_init );
 	MLT_REGISTER( mlt_service_filter_type, "movit.blur", filter_movit_blur_init );
@@ -78,7 +79,10 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_transition_type, "movit.mix", transition_movit_mix_init );
 	MLT_REGISTER( mlt_service_transition_type, "movit.overlay", transition_movit_overlay_init );
 
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "glsl.manager", metadata, "filter_glsl_manager.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.blur", metadata, "filter_movit_blur.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.convert", metadata, "filter_movit_convert.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.crop", metadata, "filter_movit_crop.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.diffusion", metadata, "filter_movit_diffusion.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.flip", metadata, "filter_movit_flip.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.glow", metadata, "filter_movit_glow.yml" );
@@ -86,6 +90,8 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.mirror", metadata, "filter_movit_mirror.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.opacity", metadata, "filter_movit_opacity.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.rect", metadata, "filter_movit_rect.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.resample", metadata, "filter_movit_resample.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.resize", metadata, "filter_movit_resize.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.saturation", metadata, "filter_movit_saturation.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.sharpen", metadata, "filter_movit_deconvolution_sharpen.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "movit.vignette", metadata, "filter_movit_vignette.yml" );

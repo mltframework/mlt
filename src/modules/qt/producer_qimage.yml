@@ -3,7 +3,6 @@ type: producer
 identifier: qimage
 title: Qt QImage
 version: 2
-copyright: Visual Media ?
 creator: Charles Yates
 license: GPLv2
 language: en

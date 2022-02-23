@@ -1,7 +1,7 @@
 schema_version: 0.2
 type: filter
 identifier: transition
-title: Transition as Filter (*deprecated*)
+title: Transition as Filter (*DEPRECATED*)
 version: 1
 copyright: Meltytech, LLC
 creator: Charles Yates

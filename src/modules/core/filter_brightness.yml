@@ -12,14 +12,14 @@ tags:
   - Video
 parameters:
   - identifier: start
-    title: Start level (*deprecated*)
+    title: Start level (*DEPRECATED*)
     type: float
     argument: yes
     minimum: 0.0
     maximum: 15.0
     default: 1.0
 
-  - identifier: end (*deprecated*)
+  - identifier: end (*DEPRECATED*)
     title: End level
     type: float
     minimum: 0.0

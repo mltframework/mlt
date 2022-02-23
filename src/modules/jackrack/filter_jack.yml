@@ -51,7 +51,7 @@ parameters:
   - identifier: in_2
     title: Receive R
     type: string
- 
+
   - identifier: out_1
     title: Send L
     type: string

@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -210,6 +210,7 @@ MLT_REPOSITORY
 
 # ifdef WITH_JACK
 	MLT_REGISTER( mlt_service_filter_type, "jack", filter_jackrack_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "jack", metadata, "filter_jack.yml" );
 	MLT_REGISTER( mlt_service_filter_type, "jackrack", filter_jackrack_init );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "jackrack", metadata, "filter_jackrack.yml" );
 # endif

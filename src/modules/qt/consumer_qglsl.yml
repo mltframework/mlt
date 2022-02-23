@@ -1,0 +1,15 @@
+schema_version: 7.0
+type: consumer
+identifier: qglsl
+title: Qt OpenGL Context
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Creates an OpenGL context using Qt to use with the movit module in terminal
+  (melt) or headless (xvfb) situations. This is based on the "multi" consumer;
+  so, see its documentation.
+

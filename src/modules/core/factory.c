@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -115,6 +115,9 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_transition_type, "matte", transition_matte_init );
 
 	MLT_REGISTER_METADATA( mlt_service_consumer_type, "multi", metadata, "consumer_multi.yml" );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "null", metadata, "consumer_null.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "audiochannels", metadata, "filter_audiochannels.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "audioconvert", metadata, "filter_audioconvert.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "audiomap", metadata, "filter_audiomap.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "audiowave", metadata, "filter_audiowave.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "brightness", metadata, "filter_brightness.yml" );
@@ -126,6 +129,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "gamma", metadata, "filter_gamma.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "greyscale", metadata, "filter_greyscale.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "grayscale", metadata, "filter_greyscale.yml" );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "imageconvert", metadata, "filter_imageconvert.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "luma", metadata, "filter_luma.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "mask_apply", metadata, "filter_mask_apply.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "mask_start", metadata, "filter_mask_start.yml" );
@@ -138,6 +142,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "transition", metadata, "filter_transition.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "watermark", metadata, "filter_watermark.yml" );
 	MLT_REGISTER_METADATA( mlt_service_link_type, "timeremap", metadata, "link_timeremap.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "abnormal", metadata, "producer_abnormal.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "colour", metadata, "producer_colour.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "color", metadata, "producer_colour.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "consumer", metadata, "producer_consumer.yml" );

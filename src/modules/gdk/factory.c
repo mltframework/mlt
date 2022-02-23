@@ -81,7 +81,7 @@ void *create_service( mlt_profile profile, mlt_service_type type, const char *id
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/gtk2/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	snprintf( file, PATH_MAX, "%s/gdk/%s", mlt_environment( "MLT_DATA" ), (char*) data );
 	return mlt_properties_parse_yaml( file );
 }
 

@@ -1,0 +1,17 @@
+schema_version: 7.0
+type: filter
+identifier: swresample
+title: FFmpeg Audio Resampler
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+url: http://www.ffmpeg.org/
+tags:
+  - Audio
+  - Hidden
+description: Converts the audio sample rate.
+notes: >
+  This is not intended to be created directly. Rather, the loader producer
+  loads it if it is available to set the audio resampler to normalize inputs
+  to the consumer audio frequency.

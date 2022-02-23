@@ -1,0 +1,19 @@
+schema_version: 7.0
+type: filter
+identifier: movit.resize
+title: Image Padding (GLSL)
+version: 1
+copyright: Dan Dennedy
+creator: Steinar H. Gunderson
+license: GPLv2
+language: en
+description: Pad an image with black to fulfill the requested image size.
+tags:
+  - Video
+  - Hidden
+
+notes: >
+  Normally resize is used to pad the producer's output to what the consumer has
+  requested after an upstream filter first scales the image to maximise
+  usage of the image area. This filter is automatically invoked by the loader
+  as part of image normalization.

@@ -1,7 +1,5 @@
 /*
- * factory.c -- the factory method interfaces
- * Copyright (C) 2006 Visual Media
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2008-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,6 +62,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_filter_type, "qtblend", filter_qtblend_init );
 	MLT_REGISTER( mlt_service_filter_type, "qtcrop", filter_qtcrop_init );
 	MLT_REGISTER( mlt_service_filter_type, "typewriter", filter_typewriter_init );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "qglsl", metadata, "consumer_qglsl.yml" );
 	MLT_REGISTER_METADATA( mlt_service_transition_type, "qtblend", metadata, "transition_qtblend.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "qtblend", metadata, "filter_qtblend.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "qtcrop", metadata, "filter_qtcrop.yml" );

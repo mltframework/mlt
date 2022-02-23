@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,5 +37,5 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_consumer_type, "sdl2", consumer_sdl2_init );
 	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl2", metadata, "consumer_sdl2.yml" );
 	MLT_REGISTER( mlt_service_consumer_type, "sdl2_audio", consumer_sdl2_audio_init );
-	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl2_audio", metadata, "consumer_sdl_audio.yml" );
+	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl2_audio", metadata, "consumer_sdl2_audio.yml" );
 }

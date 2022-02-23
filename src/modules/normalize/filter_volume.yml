@@ -13,7 +13,7 @@ description: >
   Adjust an audio stream's volume level. This filter is based on the
   'normalize' utility
 parameters:
-  - identifier: argument (*deprecated*)
+  - identifier: argument (*DEPRECATED*)
     title: Gain
     type: string
     description: >
@@ -68,7 +68,7 @@ parameters:
       applied during normalisation.
     default: 20dB
     mutable: yes
-  - identifier: end (*deprecated*)
+  - identifier: end (*DEPRECATED*)
     title: End gain
     type: string
     description: >

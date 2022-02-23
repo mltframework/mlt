@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: filter
 identifier: audiowave
-title: Audio Waveform (*deprecated*)
+title: Audio Waveform (*DEPRECATED*)
 version: 1
 copyright: Meltytech, LLC
 creator: Dan Dennedy

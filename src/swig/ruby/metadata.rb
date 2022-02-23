@@ -13,7 +13,8 @@ $optional_params = [
   'unit',
   'scale',
   'format',
-  'widget'
+  'widget',
+  'animation'
 ]
 template = %q{---
 layout: standard
@@ -78,8 +79,8 @@ description:
 %       end
 %     end
 type: <%= param['type'] %>  
-readonly: <%= param['readonly'] or 'no' %>  
-required: <%= param['required'] or 'no' %>  
+readonly: <%= param['readonly'] or 'false' %>  
+required: <%= param['required'] or 'false' %>  
 %     $optional_params.each do |key|
 <%= "#{key}: #{param[key].to_s.gsub('](', ']\(')}  \n" if param[key] %>
 %     end
@@ -112,12 +113,15 @@ def output(mlt_type, services, type_title)
   unsorted.sort().each do |name|
     meta = $repo.metadata(mlt_type, name)
     if meta.is_valid
+      if !meta.get_data('parameters')
+        puts "No parameters for #{name} #{type_title}"
+      end
       filename = File.join($folder, type_title + name.capitalize.gsub('.', '-'))
-      puts "Processing #{filename}"
+#      puts "Processing #{filename}"
       begin
         yml = YAML.load(meta.serialise_yaml)
         if yml
-		  File.open(filename + '.md', 'w') do |f|
+          File.open(filename + '.md', 'w') do |f|
             f.puts $processor.result(binding)
           end
         else
@@ -128,6 +132,8 @@ def output(mlt_type, services, type_title)
       rescue SyntaxError
           puts "Failed to parse YAML for #{filename}"
       end
+    else
+      puts "No metadata for #{name} #{type_title}"
     end
   end 
   index.close
@@ -138,6 +144,7 @@ Dir.mkdir($folder) if not Dir.exists?($folder)
 [
   [Mlt::Mlt_service_consumer_type, $repo.consumers, 'Consumer'],
   [Mlt::Mlt_service_filter_type, $repo.filters, 'Filter'],
+  [Mlt::Mlt_service_link_type, $repo.links, 'Link'],
   [Mlt::Mlt_service_producer_type, $repo.producers, 'Producer'],
   [Mlt::Mlt_service_transition_type, $repo.transitions, 'Transition']
 ].each {|x| output *x}

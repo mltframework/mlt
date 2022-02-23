@@ -1,0 +1,16 @@
+schema_version: 7.0
+type: filter
+identifier: avcolor_space
+title: FFmpeg Image Converter
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+url: http://www.ffmpeg.org/
+tags:
+  - Video
+  - Hidden
+description: Converts the colorspace and pixel format.
+notes: >
+  This is not intended to be created directly. Rather, the loader producer
+  loads it if it is available to set the convert_image function pointer on frames.

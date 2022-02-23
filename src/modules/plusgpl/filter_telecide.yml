@@ -1,0 +1,18 @@
+schema_version: 7.0
+type: filter
+identifier: telecide
+title: Inverse Telecine (*DEPRECATED*)
+version: 1
+copyright: Donald A. Graft and Dan Dennedy
+creator: Donald A. Graft
+contributor:
+ - Dan Dennedy
+license: GPLv2
+language: en
+tags:
+  - Video
+description: Deinterlace frames that were repeated in a telecine process.
+notes: >
+  This is old work, which never materialized to a completely usable form. It
+  is not able to change the frame rate. The video is deinterlaced in a smart
+  manner, but repeated frames are not removed.

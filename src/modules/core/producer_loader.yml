@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: producer
 identifier: loader
 title: Loader
@@ -16,16 +16,18 @@ description: >
   
   1. it handles the mappings of all file names to the other producers;
   
-  2. it attaches normalising filters (rescale, resize and resample) to the 
+  2. it attaches normalizing filters (rescale, resize and resample) to the
   producers (when necessary).
   
   This producer simplifies many aspects of use. Essentially, it ensures that a 
   consumer will receive images and audio precisely as they request them. 
+
 parameters:
-  - identifier: argument
+  - identifier: resource
     title: File/URL
     type: string
     description: The file for the producer to be based on.
-    required: no
-    readonly: no
+    argument: yes
+    required: yes
+    readonly: yes
     widget: fileopen

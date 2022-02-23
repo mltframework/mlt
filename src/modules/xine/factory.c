@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,15 @@
 
 extern mlt_filter filter_deinterlace_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
+static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+{
+	char file[ PATH_MAX ];
+	snprintf( file, PATH_MAX, "%s/xine/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	return mlt_properties_parse_yaml( file );
+}
+
 MLT_REPOSITORY
 {
 	MLT_REGISTER( mlt_service_filter_type, "deinterlace", filter_deinterlace_init );
+	MLT_REGISTER_METADATA( mlt_service_filter_type, "deinterlace", metadata, "filter_deinterlace.yml" );
 }

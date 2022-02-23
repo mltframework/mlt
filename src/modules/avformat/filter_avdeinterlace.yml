@@ -1,0 +1,17 @@
+schema_version: 7.0
+type: filter
+identifier: avdeinterlace
+title: Legacy FFmpeg Deinterlacer (*DEPRECATED*)
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+url: http://www.ffmpeg.org/
+tags:
+  - Video
+  - Hidden
+description: Deinterlace interlaced video.
+notes: >
+  This is not intended to be created directly. Rather, the loader producer
+  loads it if it is available to set deinterlace interlaced input when the
+  consumer or profile is set to progressive.
