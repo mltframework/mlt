@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1719,23 +1719,23 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	context = self->video_format;
 	stream = context->streams[ self->video_index ];
 	codec_params = stream->codecpar;
-	if ( *format == mlt_image_none || *format == mlt_image_movit ||
-			codec_params->format == AV_PIX_FMT_ARGB ||
-			codec_params->format == AV_PIX_FMT_RGBA ||
-			codec_params->format == AV_PIX_FMT_ABGR ||
-			codec_params->format == AV_PIX_FMT_BGRA )
-		*format = pick_image_format( codec_params->format );
-	else if ( codec_params->format == AV_PIX_FMT_BAYER_RGGB16LE ) {
-		if ( *format == mlt_image_yuv422 )
-			*format = mlt_image_yuv420p;
-		else if ( *format == mlt_image_rgba )
-			*format = mlt_image_rgb;
+
+	// Only change the requested image format for special cases
+	if (*format == mlt_image_none || *format == mlt_image_movit
+		  || codec_params->format == AV_PIX_FMT_ARGB
+		  || codec_params->format == AV_PIX_FMT_RGBA
+		  || codec_params->format == AV_PIX_FMT_ABGR
+		  || codec_params->format == AV_PIX_FMT_BGRA) {
+		*format = pick_image_format(codec_params->format);
+	} else if (codec_params->format == AV_PIX_FMT_BAYER_RGGB16LE
+		  ||  (codec_params->format == AV_PIX_FMT_YUV420P10LE && self->full_luma)) {
+		*format = mlt_image_rgb;
 	}
-	else if ( codec_params->format == AV_PIX_FMT_YUVA444P10LE
-			|| codec_params->format == AV_PIX_FMT_GBRAP10LE
-			|| codec_params->format == AV_PIX_FMT_GBRAP12LE
-			)
+	else if (codec_params->format == AV_PIX_FMT_YUVA444P10LE
+		  || codec_params->format == AV_PIX_FMT_GBRAP10LE
+		  || codec_params->format == AV_PIX_FMT_GBRAP12LE) {
 		*format = mlt_image_rgba;
+	}
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
