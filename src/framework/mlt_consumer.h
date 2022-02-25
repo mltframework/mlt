@@ -85,6 +85,7 @@
  * \properties \em audio_off set non-zero to disable audio processing
  * \properties \em video_off set non-zero to disable video processing
  * \properties \em drop_count the number of video frames not rendered since starting consumer
+ * \properties \em color_range the color range as tv/mpeg (limited) or pc/jpeg (full); default is unset, which implies tv/mpeg
  * \properties \em color_trc the color transfer characteristic (gamma), default is unset
  * \properties \em deinterlacer the deinterlace algorithm to pass to deinterlace filters, defaults to "yadif"
  */

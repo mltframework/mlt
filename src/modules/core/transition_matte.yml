@@ -14,7 +14,7 @@ description: >
 notes: |
   Please note that the transition automatically detects if the frame
   from track B has scaled or non-scaled luma. The frame property
-  "full_luma" should indicate it.
+  "full_range" should indicate it.
 
   If you need to prepare fill and key (matte) files, you can use melt or
   ffmpeg to extract alpha channel from existing video:

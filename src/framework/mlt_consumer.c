@@ -694,6 +694,7 @@ mlt_frame mlt_consumer_get_frame( mlt_consumer self )
 		mlt_properties_set_int( frame_properties, "consumer.top_field_first", mlt_properties_get_int( properties, "top_field_first" ) );
 		mlt_properties_set( frame_properties, "consumer.color_trc", mlt_properties_get( properties, "color_trc" ) );
 		mlt_properties_set( frame_properties, "consumer.channel_layout", mlt_properties_get( properties, "channel_layout" ) );
+		mlt_properties_set( frame_properties, "consumer.color_range", mlt_properties_get( properties, "color_range" ) );
 	}
 
 	// Return the frame

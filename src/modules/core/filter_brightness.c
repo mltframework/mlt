@@ -1,6 +1,6 @@
 /*
  * filter_brightness.c -- brightness, fade, and opacity filter
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,6 +32,7 @@ struct sliced_desc
 	mlt_image image;
 	double level;
 	double alpha_level;
+	int full_range;
 };
 
 static int sliced_proc(int id, int index, int jobs, void* cookie)
@@ -40,6 +41,9 @@ static int sliced_proc(int id, int index, int jobs, void* cookie)
 	struct sliced_desc* ctx = ((struct sliced_desc*) cookie);
 	int slice_height = (ctx->image->height + jobs - 1) / jobs;
 	int slice_line_start = index * slice_height;
+	int min = ctx->full_range? 0 : 16;
+	int max_luma = ctx->full_range? 255 : 235;
+	int max_chroma = ctx->full_range? 255 : 240;
 	slice_height = MIN(slice_height, ctx->image->height - slice_line_start);
 
 	// Only process if level is something other than 1
@@ -51,8 +55,8 @@ static int sliced_proc(int id, int index, int jobs, void* cookie)
 			uint8_t* p = ctx->image->planes[0] + ( (slice_line_start + line) * ctx->image->strides[0]);
 			for ( int pixel = 0; pixel < ctx->image->width; pixel++ )
 			{
-				*p++ = CLAMP((*p * m) >> 16, 16, 235);
-				*p++ = CLAMP((*p * m + n) >> 16, 16, 240);
+				*p++ = CLAMP((*p * m) >> 16, min, max_luma);
+				*p++ = CLAMP((*p * m + n) >> 16, min, max_chroma);
 			}
 		}
 
@@ -150,6 +154,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		desc.level = level;
 		desc.alpha_level = alpha_level;
 		desc.image = &proc_image;
+		desc.full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
 
 		threads = CLAMP(threads, 0, mlt_slices_count_normal());
 		if (threads == 1) {

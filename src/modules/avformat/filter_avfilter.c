@@ -760,7 +760,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		pdata->avinframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
 		pdata->avinframe->color_primaries = mlt_properties_get_int( frame_properties, "color_primaries" );
 		pdata->avinframe->color_trc = mlt_properties_get_int( frame_properties, "color_trc" );
-		pdata->avinframe->color_range = mlt_properties_get_int( frame_properties, "full_luma" )? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
+		pdata->avinframe->color_range = mlt_properties_get_int( frame_properties, "full_range" )? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
 
 		switch (mlt_properties_get_int( frame_properties, "colorspace" ))
 		{

@@ -1,6 +1,6 @@
 /*
  * filter_invert.c -- invert filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	int mask = mlt_properties_get_int( MLT_FILTER_PROPERTIES( filter ), "alpha" );
 	*format = mlt_image_yuv422;
 	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+	int full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
+	int min = full_range? 0 : 16;
+	int max_luma = full_range? 255 : 235;
+	int max_chroma = full_range? 255 : 240;
+	int invert_luma = full_range? 255 : 251;
 
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 )
@@ -51,8 +56,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 		while ( p != q )
 		{
-			*p ++ = clamp( 251 - *r ++, 16, 235 );
-			*p ++ = clamp( 256 - *r ++, 16, 240 );
+			*p++ = clamp(invert_luma - *r++, min, max_luma);
+			*p++ = clamp(256 - *r++, min, max_chroma);
 		}
 
 		if ( mask )

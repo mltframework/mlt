@@ -113,7 +113,7 @@ struct producer_avformat_s
 	unsigned int invalid_dts_counter;
 	mlt_cache image_cache;
 	int yuv_colorspace, color_primaries, color_trc;
-	int full_luma;
+	int full_range;
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
 	mlt_deque apackets;
@@ -1431,7 +1431,7 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 
 // returns resulting YUV colorspace
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
-	mlt_image_format *format, int width, int height, uint8_t **alpha )
+	mlt_image_format *format, int width, int height, uint8_t **alpha, int dst_full_range )
 {
 	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self->parent ) );
 	int result = self->yuv_colorspace;
@@ -1476,7 +1476,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		out_stride[0] = width;
 		out_stride[1] = width >> 1;
 		out_stride[2] = width >> 1;
-		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_luma, self->full_luma ) )
+		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
@@ -1491,7 +1491,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGB24, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
+		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_range, 1 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );
@@ -1505,7 +1505,7 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 		int out_stride[4];
 		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGBA, width, height, IMAGE_ALIGN);
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_luma, 0 );
+		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_range, 1 );
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );
@@ -1521,10 +1521,10 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			.dst_format = AV_PIX_FMT_YUYV422,
 			.src_colorspace = self->yuv_colorspace,
 			.dst_colorspace = profile->colorspace,
-			.src_full_range = self->full_luma,
-			.dst_full_range = 0,
+			.src_full_range = self->full_range,
+			.dst_full_range = dst_full_range,
 		};
-		ctx.src_format = (self->full_luma && src_pix_fmt == AV_PIX_FMT_YUV422P) ? AV_PIX_FMT_YUVJ422P : src_pix_fmt;
+		ctx.src_format = (self->full_range && src_pix_fmt == AV_PIX_FMT_YUV422P) ? AV_PIX_FMT_YUVJ422P : src_pix_fmt;
 		ctx.src_desc = av_pix_fmt_desc_get( ctx.src_format );
 		ctx.dst_desc = av_pix_fmt_desc_get( ctx.dst_format );
 		ctx.flags = mlt_get_sws_flags(width, height, ctx.src_format, width, height, ctx.dst_format);
@@ -1629,6 +1629,8 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	uint8_t *alpha = NULL;
 	int got_picture = 0;
 	int image_size = 0;
+	const char* dst_color_range = mlt_properties_get(frame_properties, "consumer.color_range");
+	int dst_full_range = dst_color_range && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
 
 	pthread_mutex_lock( &self->video_mutex );
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
@@ -1691,6 +1693,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			*format = mlt_properties_get_int( orig_props, "format" );
 			set_image_size( self, width, height );
 			mlt_properties_pass_property(frame_properties, orig_props, "colorspace");
+			mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
 			got_picture = 1;
 			goto exit_get_image;
 		}
@@ -1728,7 +1731,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		  || codec_params->format == AV_PIX_FMT_BGRA) {
 		*format = pick_image_format(codec_params->format);
 	} else if (codec_params->format == AV_PIX_FMT_BAYER_RGGB16LE
-		  ||  (codec_params->format == AV_PIX_FMT_YUV420P10LE && self->full_luma)) {
+		  ||  (codec_params->format == AV_PIX_FMT_YUV420P10LE && self->full_range)) {
 		*format = mlt_image_rgb;
 	}
 	else if (codec_params->format == AV_PIX_FMT_YUVA444P10LE
@@ -1749,12 +1752,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			int yuv_colorspace;
 #if USE_HWACCEL
 			yuv_colorspace = convert_image( self, self->video_frame, *buffer, self->video_frame->format,
-				format, *width, *height, &alpha );
+				format, *width, *height, &alpha, dst_full_range );
 #else
 			yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_params->format,
-				format, *width, *height, &alpha );
+				format, *width, *height, &alpha, dst_full_range );
 #endif
 			mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
+			mlt_properties_set_int( frame_properties, "full_range", dst_full_range );
 			got_picture = 1;
 		}
 	}
@@ -1966,12 +1970,13 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 #if USE_HWACCEL
 					// not sure why this is really needed, but doesn't seem to work otherwise
 					yuv_colorspace = convert_image( self, self->video_frame, *buffer, self->video_frame->format,
-						format, *width, *height, &alpha );
+						format, *width, *height, &alpha, dst_full_range );
 #else
 					yuv_colorspace = convert_image( self, self->video_frame, *buffer, codec_params->format,
-						format, *width, *height, &alpha );
+						format, *width, *height, &alpha, dst_full_range );
 #endif
 					mlt_properties_set_int( frame_properties, "colorspace", yuv_colorspace );
+					mlt_properties_set_int( frame_properties, "full_range", dst_full_range );
 					self->top_field_first |= self->video_frame->top_field_first;
 					self->top_field_first |= codec_params->field_order == AV_FIELD_TT;
 					self->top_field_first |= codec_params->field_order == AV_FIELD_TB;
@@ -2339,12 +2344,12 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		mlt_properties_set_int( properties, "meta.media.has_b_frames", self->video_codec->has_b_frames );
 
-		self->full_luma = 0;
-		mlt_log_debug( MLT_PRODUCER_SERVICE(self->parent), "color_range %d\n", codec_context->color_range );
-		if ( codec_context->color_range == AVCOL_RANGE_JPEG )
-			self->full_luma = 1;
-		if ( mlt_properties_get( properties, "set.force_full_luma" ) )
-			self->full_luma = mlt_properties_get_int( properties, "set.force_full_luma" );
+		self->full_range = codec_context->color_range == AVCOL_RANGE_JPEG;
+		if (mlt_properties_get(properties, "force_full_range")) {
+			self->full_range = mlt_properties_get_int(properties, "force_full_range");
+		} else if (mlt_properties_get( properties, "set.force_full_luma")) { // deprecated
+			self->full_range = mlt_properties_get_int(properties, "set.force_full_luma");
+		}
 	}
 	return self->video_index > -1;
 }
@@ -2450,8 +2455,12 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		mlt_properties_set_int( frame_properties, "colorspace", self->yuv_colorspace );
 		mlt_properties_set_int( frame_properties, "color_trc", self->color_trc );
 		mlt_properties_set_int( frame_properties, "color_primaries", self->color_primaries );
-		mlt_properties_set_int( frame_properties, "full_luma", self->full_luma );
-		mlt_properties_set( properties, "meta.media.color_range", self->full_luma? "full" : "mpeg" );
+		// full_range is the current state of frame
+		mlt_properties_set_int( frame_properties, "full_range", self->full_range );
+		// "full_luma" is deprecated but keep this for backwards compatibility for kdenlive
+		mlt_properties_set_int( frame_properties, "full_luma", self->full_range );
+		// meta.media.color_range is the range of this producer per video_index regardless of override
+		mlt_properties_set( properties, "meta.media.color_range", self->full_range? "full" : "mpeg" );
 
 		// Add our image operation
 		mlt_frame_push_service( frame, self );

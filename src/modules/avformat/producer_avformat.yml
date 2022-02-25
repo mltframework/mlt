@@ -2,7 +2,7 @@ schema_version: 0.3
 type: producer
 identifier: avformat
 title: FFmpeg Reader
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -163,6 +163,11 @@ parameters:
     description: When provided, this attempts to override the detected frame rate of the video.
     type: float
     widget: checkbox
+
+  - identifier: force_full_range
+    title: Force Full Range Color
+    description: When provided, this overrides the detected color range of the video (Y'CbCr only).
+    type: boolean
 
   - identifier: force_colorspace
     title: Force colorspace

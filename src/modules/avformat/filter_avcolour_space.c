@@ -1,6 +1,6 @@
 /*
  * filter_avcolour_space.c -- Colour space filter
- * Copyright (C) 2004-2020 Meltytech, LLC
+ * Copyright (C) 2004-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -78,7 +78,7 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 // returns set_lumage_transfer result
 static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int out_width, int out_height, int in_width, int in_height,
-	int src_colorspace, int dst_colorspace, int use_full_range )
+	int src_colorspace, int dst_colorspace, int src_full_range, int dst_full_range )
 {
 	uint8_t *in_data[4];
 	int in_stride[4];
@@ -102,7 +102,7 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
 		if ( out_fmt == AV_PIX_FMT_RGB24 || out_fmt == AV_PIX_FMT_RGBA )
 			dst_colorspace = 601;
-		error = mlt_set_luma_transfer( context, src_colorspace, dst_colorspace, use_full_range, use_full_range );
+		error = mlt_set_luma_transfer( context, src_colorspace, dst_colorspace, src_full_range, dst_full_range );
 		sws_scale(context, (const uint8_t* const*) in_data, in_stride, 0, in_height,
 			out_data, out_stride);
 		sws_freeContext( context );
@@ -129,18 +129,20 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			MLT_PRODUCER_SERVICE( mlt_frame_get_original_producer( frame ) ) );
 		int profile_colorspace = profile ? profile->colorspace : 601;
 		int colorspace = mlt_properties_get_int( properties, "colorspace" );
-		int force_full_luma = 0;
 		int width = mlt_properties_get_int( properties, "width" );
 		int height = mlt_properties_get_int( properties, "height" );
+		int src_full_range = mlt_properties_get_int(properties, "full_range");
+		const char* dst_color_range = mlt_properties_get(properties, "consumer.color_range");
+		int dst_full_range = dst_color_range && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
 
 		if (out_width <= 0)
 			out_width = width;
 		if (out_height <= 0)
 			out_height = height;
 	
-		mlt_log_debug( NULL, "[filter avcolor_space] %s @ %dx%d -> %s @ %dx%d space %d->%d\n",
-			mlt_image_format_name( *format ), width, height, mlt_image_format_name( output_format ),
-			out_width, out_height, colorspace, profile_colorspace );
+		mlt_log_debug(NULL, "[filter avcolor_space] %s @ %dx%d -> %s @ %dx%d space %d->%d full %d->%d\n",
+			mlt_image_format_name(*format), width, height, mlt_image_format_name(output_format),
+			out_width, out_height, colorspace, profile_colorspace, src_full_range, dst_full_range);
 
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
@@ -185,13 +187,14 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		// Update the output
 		if ( !av_convert_image( output, *image, out_fmt, in_fmt,
 		                        out_width, out_height, width, height,
-		                        colorspace, profile_colorspace, force_full_luma ) )
+								colorspace, profile_colorspace, src_full_range, dst_full_range) )
 		{
 			// The new colorspace is only valid if destination is YUV.
 			if ( output_format == mlt_image_yuv422 ||
 				output_format == mlt_image_yuv420p ||
 				output_format == mlt_image_yuv422p16 )
 				mlt_properties_set_int( properties, "colorspace", profile_colorspace );
+			mlt_properties_set_int(properties, "full_range", dst_full_range);
 		}
 		*image = output;
 		*format = output_format;
@@ -248,10 +251,6 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 	if ( !frame->convert_image )
 		frame->convert_image = convert_image;
-
-//	Not working yet - see comment for get_image() above.
-//	mlt_frame_push_service( frame, mlt_service_profile( MLT_FILTER_SERVICE( filter ) ) );
-//	mlt_frame_push_get_image( frame, get_image );
 
 	return frame;
 }

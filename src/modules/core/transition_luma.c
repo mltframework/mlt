@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -471,7 +471,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					if (luma_image) {
 						if (is_clip) {
 							yuv422_to_luma16(luma_image, &luma_bitmap, luma_width, luma_height,
-								mlt_properties_get_int(MLT_FRAME_PROPERTIES(luma_frame), "full_luma"));
+								mlt_properties_get_int(MLT_FRAME_PROPERTIES(luma_frame), "full_range"));
 						} else {
 							mlt_luma_map_from_yuv422(luma_image, &luma_bitmap, luma_width, luma_height);
 						}

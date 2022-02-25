@@ -1,6 +1,6 @@
 /*
  * filter_movit_convert.cpp
- * Copyright (C) 2013-2015 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2022 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -185,7 +185,7 @@ static void get_format_from_properties( mlt_properties properties, ImageFormat* 
 	if ( mlt_properties_get_int( properties, "force_full_luma" ) ) {
 		ycbcr_format->full_range = true;
 	} else {
-		ycbcr_format->full_range = ( mlt_properties_get_int( properties, "full_luma" ) == 1 );
+		ycbcr_format->full_range = ( mlt_properties_get_int( properties, "full_range" ) == 1 );
 	}
 
 	// TODO: make new frame properties set by producers

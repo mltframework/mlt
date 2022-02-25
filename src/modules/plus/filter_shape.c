@@ -118,7 +118,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			}
 			else if ((int) mix != 1 || invert == 255 || invert_mask == 255)
 			{
-				int full_range = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "full_luma" );
+				int full_range = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "full_range" );
 				double offset = full_range ? 0.0 : 16.0;
 				double divisor = full_range ? 255.0 : 235.0;
 				uint8_t *q = mask_img;

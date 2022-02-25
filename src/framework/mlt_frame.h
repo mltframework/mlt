@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2018 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,7 +59,7 @@ typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format 
  * \properties \em next \em frame a reference to the unfiltered following frame
  * (no speed factor applied, only available when \em _need_previous_next is set on the producer)
  * \properties \em colorspace the standard for the YUV coefficients
- * \properties \em force_full_luma luma range handling, set to -1 for pass-through, 1 for full range, 0 for scaling
+ * \properties \em force_full_luma luma range handling: 1 for full range, 0 for scaling (DEPRECATED)
  * \properties \em color_trc the color transfer characteristic (gamma)
  * \properties \em audio_frequency the sample rate of the audio
  * \properties \em audio_channels the number of audio channels
@@ -69,6 +69,7 @@ typedef int ( *mlt_get_audio )( mlt_frame self, void **buffer, mlt_audio_format 
  * \properties \em width the horizontal resolution of the image
  * \properties \em height the vertical resolution of the image
  * \properties \em aspect_ratio the sample aspect ratio of the image
+ * \properties \em full_range set if the video is full range - only applies to Y'CbCr
  */
 
 struct mlt_frame_s

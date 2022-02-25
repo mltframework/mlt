@@ -1,6 +1,6 @@
 /*
  * filter_charcoal.c -- charcoal filter
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,11 +25,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-static inline int get_Y( uint8_t *pixels, int width, int height, int x, int y )
+static inline int get_Y( uint8_t *pixels, int width, int height, int x, int y, int max_luma )
 {
 	if ( x < 0 || x >= width || y < 0 || y >= height )
 	{
-		return 235;
+		return max_luma;
 	}
 	else
 	{
@@ -87,6 +87,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		float scale = mlt_properties_anim_get_double( properties, "scale" ,position, length);
 		float mix = mlt_properties_anim_get_double( properties, "mix", position, length);
 		int invert = mlt_properties_anim_get_int( properties, "invert", position, length);
+		int full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
+		int min = full_range? 0 : 16;
+		int max_luma = full_range? 255 : 235;
+		int max_chroma = full_range? 255 : 240;
+		int invert_luma = full_range? 255 : 251;
 		mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 		double scale_x = mlt_profile_scale_width(profile, *width);
 		double scale_y = mlt_profile_scale_height(profile, *height);
@@ -120,14 +125,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			for ( x = 0; x < *width; x ++ )
 			{
 				// Populate the matrix
-				matrix[ 0 ][ 0 ] = get_Y( *image, *width, *height, x - x_scatter, y - y_scatter );
-				matrix[ 0 ][ 1 ] = get_Y( *image, *width, *height, x            , y - y_scatter );
-				matrix[ 0 ][ 2 ] = get_Y( *image, *width, *height, x + x_scatter, y - y_scatter );
-				matrix[ 1 ][ 0 ] = get_Y( *image, *width, *height, x - x_scatter, y             );
-				matrix[ 1 ][ 2 ] = get_Y( *image, *width, *height, x + x_scatter, y             );
-				matrix[ 2 ][ 0 ] = get_Y( *image, *width, *height, x - x_scatter, y + y_scatter );
-				matrix[ 2 ][ 1 ] = get_Y( *image, *width, *height, x            , y + y_scatter );
-				matrix[ 2 ][ 2 ] = get_Y( *image, *width, *height, x + x_scatter, y + y_scatter );
+				matrix[0][0] = get_Y(*image, *width, *height, x - x_scatter, y - y_scatter, max_luma);
+				matrix[0][1] = get_Y(*image, *width, *height, x            , y - y_scatter, max_luma);
+				matrix[0][2] = get_Y(*image, *width, *height, x + x_scatter, y - y_scatter, max_luma);
+				matrix[1][0] = get_Y(*image, *width, *height, x - x_scatter, y            , max_luma);
+				matrix[1][2] = get_Y(*image, *width, *height, x + x_scatter, y            , max_luma);
+				matrix[2][0] = get_Y(*image, *width, *height, x - x_scatter, y + y_scatter, max_luma);
+				matrix[2][1] = get_Y(*image, *width, *height, x            , y + y_scatter, max_luma);
+				matrix[2][2] = get_Y(*image, *width, *height, x + x_scatter, y + y_scatter, max_luma);
 
 				// Do calculations
 				sum1 = (matrix[2][0] - matrix[0][0]) + ( (matrix[2][1] - matrix[0][1]) << 1 ) + (matrix[2][2] - matrix[2][0]);
@@ -135,11 +140,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				sum = scale * sqrti( sum1 * sum1 + sum2 * sum2 );
 
 				// Assign value
-				*p ++ = !invert ? ( sum >= 16 && sum <= 235 ? 251 - sum : sum < 16 ? 235 : 16 ) :
-								  ( sum >= 16 && sum <= 235 ? sum : sum < 16 ? 16 : 235 );
+				*p ++ = !invert ? ( sum >= min && sum <= max_luma ? invert_luma - sum : sum < min ? max_luma : min ) :
+								  ( sum >= min && sum <= max_luma ? sum : sum < min ? min : max_luma );
 				q ++;
 				val = 128 + mix * ( *q ++ - 128 );
-				val = val < 16 ? 16 : val > 240 ? 240 : val;
+				val = CLAMP(val, min, max_chroma);
 				*p ++ = val;
 			}
 		}

@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1918,7 +1918,7 @@ static void *consumer_thread( void *arg )
 						struct SwsContext *context = sws_getContext( width, height, srcfmt,
 							width, height, pix_fmt, flags, NULL, NULL, NULL);
 						int src_colorspace = mlt_properties_get_int( frame_properties, "colorspace" );
-						int src_full_range = mlt_properties_get_int( frame_properties, "full_luma" );
+						int src_full_range = mlt_properties_get_int( frame_properties, "full_range" );
 						mlt_set_luma_transfer( context, src_colorspace, dst_colorspace, src_full_range, dst_full_range );
 						sws_scale( context, (const uint8_t* const*) video_avframe.data, video_avframe.linesize, 0, height,
 							converted_avframe->data, converted_avframe->linesize);
