@@ -3,7 +3,6 @@ type: filter
 identifier: threshold
 title: Threshold
 version: 2
-copyright: Visual Media FX ?
 creator: Charles Yates
 license: LGPLv2.1
 language: en

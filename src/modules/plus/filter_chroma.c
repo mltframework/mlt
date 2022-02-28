@@ -1,7 +1,6 @@
 /*
  * filter_chroma.c -- Maps a chroma key to the alpha channel
- * Copyright (C) 2005 Visual Media Fx Inc.
- * Copyright (C) 2021 Meltytech, LLC
+ * Copyright (C) 2007-2022 Meltytech, LLC
  * Author: Charles Yates <charles.yates@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
