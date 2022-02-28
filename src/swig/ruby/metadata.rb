@@ -13,8 +13,7 @@ $optional_params = [
   'unit',
   'scale',
   'format',
-  'widget',
-  'animation'
+  'widget'
 ]
 template = %q{---
 layout: standard
@@ -79,8 +78,9 @@ description:
 %       end
 %     end
 type: <%= param['type'] %>  
-readonly: <%= param['readonly'] or 'false' %>  
-required: <%= param['required'] or 'false' %>  
+readonly: <%= param['readonly'] and 'yes' or 'no' %>  
+required: <%= param['required'] and 'yes' or 'no' %>  
+<%= "animation: yes  \n" if param['animation'] %>
 %     $optional_params.each do |key|
 <%= "#{key}: #{param[key].to_s.gsub('](', ']\(')}  \n" if param[key] %>
 %     end
