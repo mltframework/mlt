@@ -1,7 +1,6 @@
 /*
  * filter_chroma.c -- Maps a chroma key to the alpha channel
- * Copyright (C) 2005 Visual Media Fx Inc.
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2008-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -44,10 +43,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	mlt_filter this = mlt_frame_pop_service( frame );
 	int variance = 200 * mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "variance" );
-	int32_t key_val = mlt_properties_get_int( MLT_FILTER_PROPERTIES( this ), "key" );
-	uint8_t r = ( key_val >> 24 ) & 0xff;
-	uint8_t g = ( key_val >> 16 ) & 0xff;
-	uint8_t b = ( key_val >>  8 ) & 0xff;
+	mlt_color key_val = mlt_properties_get_color( MLT_FILTER_PROPERTIES( this ), "key" );
+	uint8_t r = key_val.r;
+	uint8_t g = key_val.g;
+	uint8_t b = key_val.b;
 	uint8_t u, v;
 
 	RGB2UV_601_SCALED( r, g, b, u, v );
@@ -91,7 +90,7 @@ mlt_filter filter_chroma_hold_init( mlt_profile profile, mlt_service_type type, 
 	mlt_filter this = mlt_filter_new( );
 	if ( this != NULL )
 	{
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "0xc0000000" : arg );
+		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "#c00000" : arg );
 		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "variance", 0.15 );
 		this->process = filter_process;
 	}
