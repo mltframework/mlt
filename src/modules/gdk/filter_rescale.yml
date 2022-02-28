@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: gtkrescale
 title: Gtk Rescale
@@ -21,7 +21,8 @@ notes: >
   disabled by another service by either removing the property, setting it to 
   zero, or setting frame property "distort" to 1.
 parameters:
-  - identifier: argument
+  - identifier: interpolation
+    argument: yes
     title: Interpolation
     type: string
     description: The rescaling method.

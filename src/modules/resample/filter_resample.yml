@@ -21,7 +21,7 @@ bugs:
     Assumes 2 channels during libsamplerate initialisation. Untested with >2 
     channels.
 parameters:
-  - identifier: argument
+  - identifier: requested
     title: Frequency
     type: integer
     description: The target sample rate.

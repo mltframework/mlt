@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: crop
 title: Crop
@@ -17,7 +17,8 @@ notes: >
   second instance of the filter may be applied to set the parameters of the
   crop operation.
 parameters:
-  - identifier: argument
+  - identifier: active
+    argument: yes
     title: Active
     description: Whether to do the processing (1) or simply set the parameters.
     type: integer

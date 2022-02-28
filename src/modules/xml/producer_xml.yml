@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: producer
 identifier: xml
 title: XML File
@@ -27,7 +27,8 @@ bugs:
     may modify the mlt_profile, even if is_explicit is set.
 
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: File
     type: string
     description: An XML text file containing MLT XML.

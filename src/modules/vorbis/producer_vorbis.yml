@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: producer
 identifier: vorbis
 title: Ogg Vorbis
@@ -12,7 +12,8 @@ tags:
 description: |
   OGG Vorbis file reader.
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: File
     type: string
     description: File to use (only .ogg supported at the moment)

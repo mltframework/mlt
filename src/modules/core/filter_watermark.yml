@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: watermark
 title: Overlay
@@ -29,7 +29,8 @@ notes: >
   melt clip.dv -filter watermark:logo.png
   
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: File/URL
     type: string
     description: The file to overlay.

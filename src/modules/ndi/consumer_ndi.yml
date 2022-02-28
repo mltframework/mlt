@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: consumer
 identifier: ndi
 title: NDI Output
@@ -12,9 +12,10 @@ tags:
   - Network
 description: Audio/Video over IP output using NewTek's NDI technology
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     type: string
-    title: NDI Source name
+    title: NDI Sender name
     description: Name used for discovery by NDI receivers on the network
     required: yes
     mutable: no

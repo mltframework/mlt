@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: producer
 identifier: decklink
 title: Blackmagic Design DeckLink Capture
@@ -25,7 +25,8 @@ bugs:
   - External deck control is not implemented.
   - Only 8-bit Y'CbCr is supported at this time.
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: Card
     type: integer
     default: 0

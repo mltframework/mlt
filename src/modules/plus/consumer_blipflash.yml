@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: consumer
 identifier: blipflash
 title: Blip Flash
@@ -13,7 +13,8 @@ description: >
   Calculate the A/V sync for a blip flash source. 
   Sync can be recalculated whenever a blip or a flash is detected.
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: Report File
     type: string
     description: >

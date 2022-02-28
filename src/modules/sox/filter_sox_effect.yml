@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: sox
 title: sox
@@ -16,7 +16,8 @@ bugs:
   - Some effects have a temporal side-effect that do not work well.
 
 parameters:
-  - identifier: argument
+  - identifier: effect
+    argument: yes
     title: Effect name and options
     type: string
     format: effect [options]

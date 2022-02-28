@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: mono
 title: Mixdown
@@ -12,7 +12,8 @@ tags:
 description: >
   Mix all channels of audio into a mono signal and output it as N channels.
 parameters:
-  - identifier: argument
+  - identifier: channels
+    argument: yes
     title: channels
     type: integer
     description: >

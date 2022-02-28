@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: producer
 identifier: consumer
 title: Consumer as Producer
@@ -11,7 +11,8 @@ tags:
   - Audio
   - Video
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: File/URL
     type: string
     description: A file name, URL, or producer name.
