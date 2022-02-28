@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: burningtv
 title: BurningTV
@@ -11,3 +11,22 @@ license: GPLv2
 language: en
 tags:
   - Video
+
+parameters:
+  - identifier: foreground
+    title: Foreground
+    description: >
+      Whether to separate the background and burn only the foreground. The
+      background is based upon the first frame received by the filter.
+    type: boolean
+    default: 0
+    mutable: yes
+
+  - identifier: threshold
+    title: Movement Threshold
+    type: integer
+    minimum: 0
+    maximum: 255
+    default: 50
+    mutable: yes
+    animation: yes

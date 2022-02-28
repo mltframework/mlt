@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: lumaliftgaingamma
 title: LumaLiftGainGamma
@@ -23,6 +23,8 @@ parameters:
     description: >
       Adds a value computed using parameter value 
       to color channel values.
+    mutable: yes
+    animation: yes
 
   - identifier: gain
     title: Gain
@@ -33,6 +35,8 @@ parameters:
     description: >
       Multiplies color channel values by value
       computed using parameter value.
+    mutable: yes
+    animation: yes
 
   - identifier: gamma
     title: Gamma
@@ -43,3 +47,5 @@ parameters:
     description: >
       Applies a gamma correction to all 
       color channel values.
+    mutable: yes
+    animation: yes

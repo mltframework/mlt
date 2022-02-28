@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: transition
 identifier: composite
 title: Composite
@@ -31,10 +31,12 @@ parameters:
     default: loader
 
   - identifier: geometry
+    argument: yes
     title: Geometry
     type: rect
     description: A possibly keyframed rectangle
     mutable: yes
+    animation: yes
 
   - identifier: progressive
     title: Progressive
@@ -153,3 +155,10 @@ parameters:
     default: 1
     mutable: yes
     widget: checkbox
+
+  - identifier: crop
+    title: Crop Rectangle
+    type: rect
+    description: Defines a cropping rectangle for the second input
+    mutable: yes
+    animation: yes

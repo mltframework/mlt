@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter # consumer, filter, producer, or transition
 identifier: vignette
 title: Vignette Effect
@@ -26,7 +26,8 @@ parameters:
     type: float
     readonly: no
     required: yes
-    mutable: no
+    mutable: yes
+    animation: yes
     minimum: 0.0
     maximum: 1.0
     default: 0.8
@@ -36,7 +37,8 @@ parameters:
     type: float
     readonly: no
     required: yes
-    mutable: no
+    mutable: yes
+    animation: yes
     minimum: 0.0
     maximum: 1.0
     default: 0.5
@@ -46,7 +48,8 @@ parameters:
     type: float
     readonly: no
     required: yes
-    mutable: no
+    mutable: yes
+    animation: yes
     minimum: 0.0
     maximum: 1.0
     default: 0.5
@@ -56,7 +59,8 @@ parameters:
     type: float
     readonly: no
     required: yes
-    mutable: no
+    mutable: yes
+    animation: yes
     minimum: 0.0
     maximum: 1.0
     default: 0.5
@@ -66,7 +70,8 @@ parameters:
     type: float
     readonly: no
     required: yes
-    mutable: no
+    mutable: yes
+    animation: yes
     minimum: 0.0
     maximum: 1.0
     default: 0.0
@@ -77,7 +82,7 @@ parameters:
     description:  Use linear (0) or cosinus (1) mode to fade from opac to black
     readonly: no
     required: yes
-    mutable: no
+    mutable: yes
     minimum: 0
     maximum: 1
     default: 0

@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter # consumer, filter, producer, or transition
 identifier: oldfilm
 title: Oldfilm
@@ -28,7 +28,8 @@ parameters:
     minimum: 0
     maximum: 400
     default: 14
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
     unit: pixel
 
@@ -41,7 +42,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 20
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
     unit: '%'
 
@@ -54,7 +56,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 20
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
 
   - identifier: brightnessdelta_down
@@ -66,7 +69,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 30
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
 
   - identifier: brightnessdelta_every
@@ -78,7 +82,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 70
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
     unit: '%'
 
@@ -91,7 +96,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 60
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
 
   - identifier: unevendevelop_down
@@ -103,7 +109,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 20
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
 
   - identifier: unevendevelop_duration
@@ -115,6 +122,7 @@ parameters:
     minimum: 0
     maximum: 10000
     default: 70
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
     unit: '%'

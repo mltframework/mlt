@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: filter
 identifier: opencv.tracker
 title: OpenCV Motion Tracker
@@ -30,7 +30,7 @@ parameters:
       The rectangle defining the object to be followed (from the 1st frame of the filter).
     required: no
     readonly: no
-    mutable: no
+    mutable: yes
     default: 0 0 50 50
 
   - identifier: shape
@@ -44,7 +44,7 @@ parameters:
     minimum: 0
     maximum: 5
     default: 0
-    mutable: no
+    mutable: yes
 
   - identifier: shape_width
     title: Shape Width
@@ -57,7 +57,7 @@ parameters:
     minimum: -1
     maximum: 100
     default: 1
-    mutable: no
+    mutable: yes
 
   - identifier: shape_color
     title: Shape Color
@@ -80,7 +80,7 @@ parameters:
     minimum: 0
     maximum: 100
     default: 0
-    mutable: no
+    mutable: yes
 
   - identifier: blur_type
     title: Blur Type
@@ -93,7 +93,7 @@ parameters:
     minimum: 0
     maximum: 100
     default: 0
-    mutable: no
+    mutable: yes
 
   - identifier: algo
     title: Tracker Algorithm
@@ -104,14 +104,14 @@ parameters:
     readonly: no
     required: no
     default: KCF
-    mutable: no
+    mutable: yes
 
   - identifier: steps
     title: Keyframes spacing
     type: integer
     description: >
       Defines the frequency of stored keyframes. A keyframe is created every steps frames.
-    mutable: yes
+    mutable: no
     readonly: no
     required: no
     default: 5
@@ -131,6 +131,7 @@ parameters:
     type: string
     description: >
       Set after analysis. This is an animated rect following object designated with initial rect property.
-    mutable: no
+    mutable: yes
+    animation: yes
     readonly: yes
 

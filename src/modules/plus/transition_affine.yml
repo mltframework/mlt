@@ -79,6 +79,7 @@ parameters:
     minimum: 0
     default: 0
     mutable: yes
+    animation: yes
     unit: pixels
 
   - identifier: oy
@@ -87,6 +88,7 @@ parameters:
     minimum: 0
     default: 0
     mutable: yes
+    animation: yes
     unit: pixels
 
   - identifier: rotate_x
@@ -126,6 +128,7 @@ parameters:
     unit: degrees
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: fix_rotate_y
     title: Y axis rotation
@@ -134,6 +137,7 @@ parameters:
     unit: degrees
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: fix_rotate_z
     title: Z axis rotation
@@ -142,6 +146,7 @@ parameters:
     unit: degrees
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: shear_x
     title: Shear along X axis
@@ -180,6 +185,7 @@ parameters:
     unit: degrees
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: fix_shear_y
     title: Y axis shear
@@ -188,6 +194,7 @@ parameters:
     unit: degrees
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: fix_shear_z
     title: Z axis shear
@@ -196,6 +203,7 @@ parameters:
     unit: degrees
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: mirror
     title: Ping-pong
@@ -222,6 +230,7 @@ parameters:
     type: float
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: scale_y
     title: Vertical scale
@@ -229,6 +238,7 @@ parameters:
     type: float
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: invert_scale
     title: Invert Scale
@@ -310,6 +320,7 @@ parameters:
     default: "0%/0%:100%x100%:100%"
     readonly: no
     mutable: yes
+    animation: yes
 
   - identifier: b_scaled
     title: Do not use full resolution of B frame

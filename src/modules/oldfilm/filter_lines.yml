@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter # consumer, filter, producer, or transition
 identifier: lines
 title: Scratchlines
@@ -28,7 +28,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 2
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
     unit: pixel
 
@@ -41,7 +42,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 5
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
     unit: lines
 
@@ -54,7 +56,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 40
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
 
   - identifier: lighter
@@ -66,7 +69,8 @@ parameters:
     minimum: 0
     maximum: 100
     default: 40
-    mutable: no
+    mutable: yes
+    animation: yes
     widget: spinner
 
 

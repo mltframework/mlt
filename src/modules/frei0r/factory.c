@@ -1,7 +1,7 @@
 /*
  * factory.c -- the factory method interfaces
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2020 Meltytech, LLC
+ * Copyright (C) 2009-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -148,7 +148,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
 	}
 	plginfo(&info);
 	snprintf(string, sizeof(string) , "%d" , info.minor_version);
-	mlt_properties_set_double(metadata, "schema_version", 0.3);
+	mlt_properties_set(metadata, "schema_version", "7.0");
 	mlt_properties_set(metadata, "title" , info.name);
 	mlt_properties_set_double(metadata, "version",
 		info.major_version +  info.minor_version / pow(10, strlen(string)));
@@ -193,6 +193,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
 			f0r_get_param_value(instance, &deflt, j);
 			mlt_properties_set_double(pnum, "default", CLAMP(deflt, 0.0, 1.0));
 			mlt_properties_set(pnum, "mutable", "yes" );
+			mlt_properties_set(pnum, "animation", "yes" );
 			mlt_properties_set(pnum, "widget", "spinner");
 		} else if (paraminfo.type == F0R_PARAM_BOOL) {
 			double deflt = 0;
@@ -202,6 +203,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
 			f0r_get_param_value(instance, &deflt, j);
 			mlt_properties_set_int(pnum, "default", deflt != 0.0);
 			mlt_properties_set(pnum, "mutable", "yes");
+			mlt_properties_set(pnum, "animation", "yes" );
 			mlt_properties_set(pnum, "widget", "checkbox");
 		} else if (paraminfo.type == F0R_PARAM_COLOR) {
 			char colorstr[8];

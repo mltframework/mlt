@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: transition
 identifier: movit.mix
 title: Dissolve (GLSL)
@@ -12,21 +12,15 @@ tags:
 description: A simple video cross-fade or mixing effect.
 
 parameters:
-  - identifier: argument
-    title: Mix Level
-    description: Performs a dissolve if a mix level is not supplied.
-    type: float
-    minimum: 0
-    maximum: 1
-    mutable: yes
-
   - identifier: mix
+    argument: yes
     title: Mix Level
     description: Performs a dissolve if a mix level is not supplied.
     type: float
     minimum: 0
     maximum: 1
     mutable: yes
+    animation: yes
 
   - identifier: reverse
     title: Reverse

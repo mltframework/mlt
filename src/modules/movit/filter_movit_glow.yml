@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: movit.glow
 title: Glow (GLSL)
@@ -20,6 +20,7 @@ parameters:
     minimum: 0.0
     default: 20.0
     mutable: yes
+    animation: yes
 
   - identifier: blur_mix
     title: Highlight Blurriness
@@ -28,6 +29,7 @@ parameters:
     maximum: 1.0
     default: 1.0
     mutable: yes
+    animation: yes
 
   - identifier: highlight_cutoff
     title: Highlight Cutoff Threshold
@@ -36,3 +38,4 @@ parameters:
     maximum: 1.0
     default: 0.2
     mutable: yes
+    animation: yes

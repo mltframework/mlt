@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: movit.saturation
 title: Saturation (GLSL)
@@ -23,3 +23,4 @@ parameters:
     minimum: 0
     default: 1
     mutable: yes
+    animation: yes

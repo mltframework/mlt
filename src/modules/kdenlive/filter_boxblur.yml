@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: filter
 identifier: boxblur
 title: Box Blur
@@ -42,6 +42,7 @@ parameters:
       If this value is set the start and end parameters are ignored.
     unit: pixels
     mutable: yes
+    animation: yes
     minimum: 1
 
   - identifier: hori
@@ -49,6 +50,7 @@ parameters:
     type: integer
     unit: pixels
     mutable: yes
+    animation: yes
     minimum: 0
     default: 1
 
@@ -57,5 +59,6 @@ parameters:
     type: integer
     unit: pixels
     mutable: yes
+    animation: yes
     minimum: 0
     default: 1

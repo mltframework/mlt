@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: filter
 identifier: qtext
 title: QText
@@ -27,6 +27,8 @@ parameters:
     type: rect
     description: A set of X/Y coordinates by which to adjust the text.
     default: 0%/0%:100%x100%:100
+    mutable: yes
+    animation: yes
 
   - identifier: family
     title: Font family

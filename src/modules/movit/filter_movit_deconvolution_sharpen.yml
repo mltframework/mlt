@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: movit.sharpen
 title: Deconvolution Sharpen (GLSL)
@@ -27,6 +27,7 @@ parameters:
     maximum: 25
     default: 5
     mutable: yes
+    animation: yes
 
   - identifier: circle_radius
     title: Circle Radius
@@ -34,6 +35,7 @@ parameters:
     minimum: 0
     default: 2
     mutable: yes
+    animation: yes
 
   - identifier: gaussian_radius
     title: Gaussian Radius
@@ -41,6 +43,7 @@ parameters:
     minimum: 0
     default: 0
     mutable: yes
+    animation: yes
 
   - identifier: correlation
     title: Correlation
@@ -48,6 +51,7 @@ parameters:
     minimum: 0
     default: 0.95
     mutable: yes
+    animation: yes
 
   - identifier: noise
     title: Noise Level
@@ -55,3 +59,4 @@ parameters:
     minimum: 0
     default: 0.01
     mutable: yes
+    animation: yes

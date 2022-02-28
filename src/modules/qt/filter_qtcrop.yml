@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: filter
 identifier: qtcrop
 title: Crop by padding
@@ -21,6 +21,7 @@ parameters:
     argument: yes
     default: "0%/0%:100%x100%"
     mutable: yes
+    animation: yes
 
   - identifier: circle
     title: Use Circle
@@ -37,6 +38,7 @@ parameters:
     minimum: 0.0
     maximum: 1.0
     mutable: yes
+    animation: yes
 
   - identifier: color
     title: Padding color

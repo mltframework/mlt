@@ -339,6 +339,7 @@ static mlt_properties avfilter_metadata( mlt_service_type type, const char *id, 
 	mlt_properties_set ( metadata, "version", LIBAVFILTER_IDENT );
 	mlt_properties_set ( metadata, "identifier" , id );
 	mlt_properties_set ( metadata, "description" , f->description );
+	mlt_properties_set ( metadata, "notes" , "Many parameters support animated values (keyframes) but only the numeric ones. Many numeric properties have type string because they accept an expression (see FFmpeg documentation) even though they evaluate to a numeric value." );
 	mlt_properties_set ( metadata, "creator" , "libavfilter maintainers" );
 	mlt_properties_set ( metadata, "type" , "filter" );
 

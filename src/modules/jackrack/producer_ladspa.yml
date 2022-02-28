@@ -1,9 +1,8 @@
-schema_version: 0.1
+schema_version: 7.0
 type: producer
 identifier: ladspa
 title: LADSPA
 version: 1
-copyright: Copyright (C) 2013-2014 Meltytech, LLC
 license: GPLv2
 language: en
 tags:

@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: filter
 identifier: choppy
 title: Choppy
@@ -18,4 +18,5 @@ parameters:
     default: 0
     minimum: 0
     mutable: yes
+    animation: yes
     unit: frames

@@ -1,4 +1,4 @@
-schema_version: 0.2
+schema_version: 7.0
 type: filter
 identifier: panner
 title: Audio Pan
@@ -21,7 +21,7 @@ parameters:
        
       If value for property "split" is set value of this property is discarded.
     type: float
-    argument: true
+    argument: yes
     mutable: yes
     minimum: 0
     maximum: 1
@@ -70,5 +70,6 @@ parameters:
       If this value is set, values for properties "start" and "end" are discarded.
     type: float
     mutable: yes
+    animation: yes
     minimum: 0
     maximum: 1

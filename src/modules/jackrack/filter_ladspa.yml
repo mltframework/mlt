@@ -1,9 +1,8 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: ladspa
 title: LADSPA
 version: 1
-copyright: Copyright (C) 2004-2014 Meltytech, LLC
 license: GPLv2
 language: en
 url: http://www.ladspa.org/
@@ -17,7 +16,8 @@ bugs:
   - Some effects have a temporal side-effect that may not work well.
 
 parameters:
-  - identifier: argument
+  - identifier: resource
+    argument: yes
     title: JACK Rack XML file
     type: string
     description: >

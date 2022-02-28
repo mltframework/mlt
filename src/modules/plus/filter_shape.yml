@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: filter
 identifier: shape
 title: Shape Alpha
@@ -31,6 +31,7 @@ parameters:
     maximum: 100
     default: 100
     mutable: yes
+    animation: yes
 
   - identifier: softness
     title: Softness

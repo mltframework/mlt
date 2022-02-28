@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: movit.rect
 title: Position and Size (GLSL)
@@ -16,9 +16,9 @@ parameters:
   - identifier: rect
     title: Rectangle
     type: rect
-    description: > 
-      Keyframable rectangle specification.
+    description: Rectangle specifying the position of the top, left corner and size.
     mutable: yes
+    animation: yes
 
   - identifier: distort
     title: Ignore aspect ratio

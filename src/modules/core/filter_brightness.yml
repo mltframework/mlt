@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.0
 type: filter
 identifier: brightness
 title: Brightness
@@ -31,6 +31,8 @@ parameters:
     type: float
     minimum: 0.0
     maximum: 15.0
+    mutable: yes
+    animation: yes
 
   - identifier: alpha
     title: Alpha factor
@@ -43,6 +45,7 @@ parameters:
     minimum: -1
     maximum: 1
     mutable: yes
+    animation: yes
 
   - identifier: threads
     title: Thread count
