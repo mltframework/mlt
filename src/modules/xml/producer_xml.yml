@@ -23,7 +23,8 @@ notes: >
   its graph.
 
 bugs:
-  - This producer is not thread-safe during its construction because it
+  - >
+    This producer is not thread-safe during its construction because it
     may modify the mlt_profile, even if is_explicit is set.
 
 parameters:
