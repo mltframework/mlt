@@ -502,16 +502,21 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 
 		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 		{
+			char string[2] = {0, 0};
 			int value = ( silent || progress || is_getc )? -1 : term_read( );
 			if ( is_getc )
 			{
-				value = getc( stdin );
-				value = ( value == EOF )? 'q' : value;
+				do {
+					value = read(STDIN_FILENO, string, 1);
+				} while (value == 1 && string[0] < '!');
+				if (value != 1) {
+				    string[0] = 'q';
+				}
 			}
 
 			if ( value != -1 )
 			{
-				char string[ 2 ] = { value, 0 };
+				string[0] = value;
 				transport_action( producer, string );
 			}
 
