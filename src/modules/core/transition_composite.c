@@ -237,7 +237,7 @@ struct sliced_composite_desc
 static int sliced_composite_proc( int id, int idx, int jobs, void* cookie )
 {
 	struct sliced_composite_desc ctx = *((struct sliced_composite_desc*)cookie);
-	int i, hs = (ctx.height_src + jobs / 2) / jobs, ho = hs * idx;
+	int i, ho, hs = mlt_slices_size_slice(jobs, idx, ctx.height_src, &ho);
 
 	for ( i = 0; i < ctx.height_src; i += ctx.step )
 	{

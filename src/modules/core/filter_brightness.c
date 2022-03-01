@@ -39,12 +39,10 @@ static int sliced_proc(int id, int index, int jobs, void* cookie)
 {
 	(void) id; // unused
 	struct sliced_desc* ctx = ((struct sliced_desc*) cookie);
-	int slice_height = (ctx->image->height + jobs - 1) / jobs;
-	int slice_line_start = index * slice_height;
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, ctx->image->height, &slice_line_start);
 	int min = ctx->full_range? 0 : 16;
 	int max_luma = ctx->full_range? 255 : 235;
 	int max_chroma = ctx->full_range? 255 : 240;
-	slice_height = MIN(slice_height, ctx->image->height - slice_line_start);
 
 	// Only process if level is something other than 1
 	if (ctx->level != 1.0 && ctx->image->format == mlt_image_yuv422) {

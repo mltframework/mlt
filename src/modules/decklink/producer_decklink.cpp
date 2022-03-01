@@ -47,9 +47,7 @@ static int copy_lines_sliced_proc( int id, int idx, int jobs, void* cookie )
 	int c, H, Y, i;
 	struct copy_lines_sliced_desc *ctx = (struct copy_lines_sliced_desc*)cookie;
 
-	H = ( ctx->h + jobs ) / jobs;
-	Y = idx * H;
-	H = MIN( H, ctx->h - Y );
+	H = mlt_slices_size_slice(jobs, idx, ctx->h, &Y);
 
 	if ( ctx->in_fmt == bmdFormat10BitYUV ) // bmdFormat10BitYUV -> mlt_image_yuv422p16
 	{

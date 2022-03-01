@@ -327,13 +327,12 @@ static int sliced_proc( int id, int index, int jobs, void* cookie )
 {
 	(void) id; // unused
 	struct sliced_desc ctx = *((struct sliced_desc*) cookie);
-	int height_slice = (ctx.a_height + jobs / 2) / jobs;
-	int starty = height_slice * index;
+	int starty, height_slice = mlt_slices_size_slice(jobs, index, ctx.a_height, &starty);
 	double x, y;
 	double dx, dy;
 	int i, j;
 
-	ctx.a_image += (index * height_slice) * (ctx.a_width * 4);
+	ctx.a_image += starty * (ctx.a_width * 4);
 	for (i = 0, y = ctx.lower_y; i < ctx.a_height; i++, y++) {
 		if (i >= starty && i < (starty + height_slice)) {
 			for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {

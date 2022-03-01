@@ -85,14 +85,13 @@ static int dissolve_slice( int id, int index, int count, void *context )
 {
 	struct dissolve_slice_context ctx = *((struct dissolve_slice_context*) context);
 	int stride = ctx.width * 2;
-	int slice_height = (ctx.height + count - 1) / count;
+	int slice_start, slice_height = mlt_slices_size_slice(count, index, ctx.height, &slice_start);
 	int i;
 
-	ctx.dst_image += index * slice_height * stride;
-	ctx.src_image += index * slice_height * stride;
-	if (ctx.dst_alpha) ctx.dst_alpha += index * slice_height * ctx.width;
-	if (ctx.src_alpha) ctx.src_alpha += index * slice_height * ctx.width;
-	slice_height = MIN(slice_height, ctx.height - index * slice_height);
+	ctx.dst_image += slice_start * stride;
+	ctx.src_image += slice_start * stride;
+	if (ctx.dst_alpha) ctx.dst_alpha += slice_start * ctx.width;
+	if (ctx.src_alpha) ctx.src_alpha += slice_start * ctx.width;
 
 	for (i = 0; i < slice_height; i++) {
 		composite_line_yuv_float( ctx.dst_image, ctx.src_image, ctx.width, ctx.src_alpha, ctx.dst_alpha, ctx.weight );
