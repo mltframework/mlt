@@ -3,7 +3,7 @@
  * \brief sliced threading processing helper
  * \see mlt_slices_s
  *
- * Copyright (C) 2016-2021 Meltytech, LLC
+ * Copyright (C) 2016-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -265,7 +265,7 @@ static void mlt_slices_close( mlt_slices ctx )
  * \private \memberof mlt_slices_s
  * \param ctx context pointer
  * \param jobs number of jobs to process
- * \param proc number of jobs to process
+ * \param proc a pointer to the function that will be called
  */
 
 static void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie )
@@ -407,4 +407,28 @@ void mlt_slices_run_fifo(int jobs, mlt_slices_proc proc, void *cookie)
 {
 	return mlt_slices_run( mlt_slices_get_global( mlt_policy_fifo ),
 	   jobs, proc, cookie );
+}
+
+
+/** Compute size of a slice.
+ *
+ * This a helper function for use in a mlt_slices_proc() to get the number of
+ * pixels over which to operate.
+ *
+ * \public \memberof mlt_slices_s
+ * \param jobs the number of slices
+ * \param index the zero-based index of the current slice
+ * \param input_size the size of a dimension, usually in pixel units, for example height
+ * \param[out] start the optional starting unit for this slice
+ * \return the size of the slice, typically in pixel units
+ */
+
+int mlt_slices_size_slice(int jobs, int index, int input_size, int *start)
+{
+	int size = (input_size + jobs - 1) / jobs;
+	int my_start = index * size;
+	if (start) {
+		*start = my_start;
+	}
+	return MIN(size, input_size - my_start);
 }
