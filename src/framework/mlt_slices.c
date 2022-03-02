@@ -266,6 +266,7 @@ static void mlt_slices_close( mlt_slices ctx )
  * \param ctx context pointer
  * \param jobs number of jobs to process
  * \param proc a pointer to the function that will be called
+ * \param cookie an opaque data pointer passed to \p proc
  */
 
 static void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie )

@@ -1,6 +1,6 @@
 /*
  * filter_lift_gamma_gain.cpp
- * Copyright (C) 2014 Meltytech, LLC
+ * Copyright (C) 2014-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,18 @@ typedef struct
 	double rgamma, ggamma, bgamma;
 	double rgain, ggain, bgain;
 } private_data;
+
+typedef struct
+{
+	mlt_filter filter;
+	uint8_t *image;
+	mlt_image_format format;
+	int width;
+	int height;
+	uint8_t rlut[256];
+	uint8_t glut[256];
+	uint8_t blut[256];
+} sliced_desc;
 
 static void refresh_lut( mlt_filter filter, mlt_frame frame )
 {
@@ -107,54 +119,68 @@ static void refresh_lut( mlt_filter filter, mlt_frame frame )
 	}
 }
 
-static void apply_lut( mlt_filter filter, uint8_t* image, mlt_image_format format, int width, int height )
+static int sliced_proc(int id, int index, int jobs, void* data)
 {
-	private_data* self = (private_data*)filter->child;
-	uint8_t* rlut = malloc( sizeof(self->rlut) );
-	uint8_t* glut = malloc( sizeof(self->glut) );
-	uint8_t* blut = malloc( sizeof(self->blut) );
-	int total = width * height + 1;
-	uint8_t* sample = image;
+	(void) id; // unused
+	sliced_desc* desc = ((sliced_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int total = desc->width * slice_height + 1;
+	uint8_t* sample = desc->image + slice_line_start * mlt_image_format_size(desc->format, desc->width, 1, NULL);
 
-	// Copy the LUT so that we can be frame-thread safe.
-	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
-	memcpy( rlut, self->rlut, sizeof(self->rlut) );
-	memcpy( glut, self->glut, sizeof(self->glut) );
-	memcpy( blut, self->blut, sizeof(self->blut) );
-	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
-
-	switch( format )
+	switch( desc->format )
 	{
 	case mlt_image_rgb:
 		while( --total )
 		{
-			*sample = rlut[ *sample ];
+			*sample = desc->rlut[ *sample ];
 			sample++;
-			*sample = glut[ *sample ];
+			*sample = desc->glut[ *sample ];
 			sample++;
-			*sample = blut[ *sample ];
+			*sample = desc->blut[ *sample ];
 			sample++;
 		}
 		break;
 	case mlt_image_rgba:
 		while( --total )
 		{
-			*sample = rlut[ *sample ];
+			*sample = desc->rlut[ *sample ];
 			sample++;
-			*sample = glut[ *sample ];
+			*sample = desc->glut[ *sample ];
 			sample++;
-			*sample = blut[ *sample ];
+			*sample = desc->blut[ *sample ];
 			sample++;
 			sample++; // Skip alpha
 		}
 		break;
 	default:
-		mlt_log_error( MLT_FILTER_SERVICE( filter ), "Invalid image format: %s\n", mlt_image_format_name( format ) );
+		mlt_log_error( MLT_FILTER_SERVICE( desc->filter ), "Invalid image format: %s\n", mlt_image_format_name( desc->format ) );
 		break;
 	}
-	free( rlut );
-	free( glut );
-	free( blut );
+
+	return 0;
+}
+
+static void apply_lut( mlt_filter filter, uint8_t* image, mlt_image_format format, int width, int height )
+{
+	private_data* self = (private_data*)filter->child;
+	sliced_desc* desc = malloc(sizeof(*desc));
+
+	desc->filter = filter;
+	desc->image = image;
+	desc->format = format;
+	desc->width = width;
+	desc->height = height;
+
+	// Copy the LUT so that we can be frame-thread safe.
+	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+	memcpy( desc->rlut, self->rlut, sizeof(self->rlut) );
+	memcpy( desc->glut, self->glut, sizeof(self->glut) );
+	memcpy( desc->blut, self->blut, sizeof(self->blut) );
+	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+
+	mlt_slices_run_normal(0, sliced_proc, desc);
+
+	free(desc);
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
