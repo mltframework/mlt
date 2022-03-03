@@ -23,6 +23,20 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
 
+typedef struct
+{
+	uint8_t *alpha;
+	uint8_t *mask;
+	int width;
+	int height;
+	double softness;
+	double mix;
+	int invert;
+	int invert_mask;
+	double offset;
+	double divisor;
+} slice_desc;
+
 static inline double smoothstep( const double e1, const double e2, const double a )
 {
     if ( a < e1 ) return 0.0;
@@ -30,6 +44,52 @@ static inline double smoothstep( const double e1, const double e2, const double 
     double v = ( a - e1 ) / ( e2 - e1 );
     return ( v * v * ( 3 - 2 * v ) );
 }
+
+
+static int slice_alpha_proc(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int size = desc->width * slice_height + 1;
+	uint8_t *p = desc->alpha + slice_line_start * desc->width;
+	uint8_t *q = desc->mask + slice_line_start * desc->width;
+	double a = 0;
+	double b = 0;
+
+	while (--size) {
+		a = (double)(*q++ ^ desc->invert_mask) / desc->divisor;
+		b = 1.0 - smoothstep(a, a + desc->softness, desc->mix);
+		*p = (uint8_t)(*p * b) ^ desc->invert;
+		p++;
+	}
+
+	return 0;
+}
+
+static int slice_luma_proc(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int size = desc->width * slice_height + 1;
+	uint8_t *p = desc->alpha + slice_line_start * desc->width;
+	uint8_t *q = desc->mask + slice_line_start * desc->width * 2;
+	double a = 0;
+	double b = 0;
+
+	while (--size) {
+		a = ((double)(*q ^ desc->invert_mask) - desc->offset) / desc->divisor;
+		b = smoothstep(a, a + desc->softness, desc->mix);
+		*p = (uint8_t )(*p * b) ^ desc->invert;
+		p++;
+		q += 2;
+	}
+
+	return 0;
+}
+
+
 
 /** Get the images and apply the luminance of the mask to the alpha of the frame.
 */
@@ -91,13 +151,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				}
 				if ( use_mix )
 				{
-					while( size -- )
-					{
-						a = (double)(*q++ ^ invert_mask) / 255.0;
-						b = 1.0 - smoothstep( a, a + softness, mix );
-						*p = ( uint8_t )( *p * b ) ^ invert;
-						p ++;
-					}
+					slice_desc desc = {
+					    .alpha = p,
+					    .mask = q,
+					    .width = *width,
+					    .height = *height,
+					    .softness = softness,
+					    .mix = mix,
+					    .invert = invert,
+					    .invert_mask = invert_mask,
+					    .offset = 0.0,
+					    .divisor = 255.0
+					};
+					mlt_slices_run_normal(0, slice_alpha_proc, &desc);
 				}
 				else
 				{
@@ -119,19 +185,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			else if ((int) mix != 1 || invert == 255 || invert_mask == 255)
 			{
 				int full_range = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "full_range" );
-				double offset = full_range ? 0.0 : 16.0;
-				double divisor = full_range ? 255.0 : 235.0;
-				uint8_t *q = mask_img;
-				// Ensure softness tends to zero as mix tends to 1
-				softness *= ( 1.0 - mix );
-				while( size -- )
-				{
-					a = ( (double)(*q ^ invert_mask) - offset ) / divisor;
-					b = smoothstep( a, a + softness, mix );
-					*p = ( uint8_t )( *p * b ) ^ invert;
-					p ++;
-					q += 2;
-				}
+				slice_desc desc = {
+				    .alpha = p,
+				    .mask = mask_img,
+				    .width = *width,
+				    .height = *height,
+				    .softness = softness * (1.0 - mix),
+				    .mix = mix,
+				    .invert = invert,
+				    .invert_mask = invert_mask,
+				    .offset = full_range ? 0.0 : 16.0,
+				    .divisor = full_range ? 255.0 : 235.0
+				};
+				mlt_slices_run_normal(0, slice_luma_proc, &desc);
 			}
 		}
 	}
