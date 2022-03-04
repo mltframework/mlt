@@ -540,7 +540,7 @@ int mlt_consumer_start( mlt_consumer self )
 
 	if ( frame_rate_num && frame_rate_den )
 	{
-		frame_duration = 1000000 / frame_rate_num * frame_rate_den;
+		frame_duration = 1000000.0 / frame_rate_num * frame_rate_den;
 	}
 
 	mlt_properties_set_int( properties, "frame_duration", frame_duration );
