@@ -20,6 +20,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_slices.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,8 +64,64 @@ static inline int sqrti( int n )
 	return p;
 }
 
-/** Do it :-).
-*/
+typedef struct {
+	uint8_t *image;
+	uint8_t *dest;
+	int width;
+	int height;
+	int x_scatter;
+	int y_scatter;
+	int min;
+	int max_luma;
+	int max_chroma;
+	int invert;
+	int invert_luma;
+	float scale;
+	float mix;
+} slice_desc;
+
+static int slice_proc(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* d = (slice_desc*) data;
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, d->height, &slice_line_start);
+	uint8_t *p = d->dest  + slice_line_start * d->width * 2;
+	uint8_t *q = d->image + slice_line_start * d->width * 2;
+	int matrix[3][3];
+	int sum1;
+	int sum2;
+	float sum;
+	int val;
+
+	for (int y = slice_line_start; y < slice_line_start + slice_height; y++) {
+		for (int x = 0; x < d->width; x++) {
+			// Populate the matrix
+			matrix[0][0] = get_Y(d->image, d->width, d->height, x - d->x_scatter, y - d->y_scatter, d->max_luma);
+			matrix[0][1] = get_Y(d->image, d->width, d->height, x               , y - d->y_scatter, d->max_luma);
+			matrix[0][2] = get_Y(d->image, d->width, d->height, x + d->x_scatter, y - d->y_scatter, d->max_luma);
+			matrix[1][0] = get_Y(d->image, d->width, d->height, x - d->x_scatter, y               , d->max_luma);
+			matrix[1][2] = get_Y(d->image, d->width, d->height, x + d->x_scatter, y               , d->max_luma);
+			matrix[2][0] = get_Y(d->image, d->width, d->height, x - d->x_scatter, y + d->y_scatter, d->max_luma);
+			matrix[2][1] = get_Y(d->image, d->width, d->height, x               , y + d->y_scatter, d->max_luma);
+			matrix[2][2] = get_Y(d->image, d->width, d->height, x + d->x_scatter, y + d->y_scatter, d->max_luma);
+
+			// Do calculations
+			sum1 = (matrix[2][0] - matrix[0][0]) + ((matrix[2][1] - matrix[0][1]) << 1 ) + (matrix[2][2] - matrix[2][0]);
+			sum2 = (matrix[0][2] - matrix[0][0]) + ((matrix[1][2] - matrix[1][0]) << 1 ) + (matrix[2][2] - matrix[2][0]);
+			sum = d->scale * sqrti(sum1 * sum1 + sum2 * sum2);
+
+			// Assign value
+			*p++ = !d->invert ? (sum >= d->min && sum <= d->max_luma ? d->invert_luma - sum : sum < d->min ? d->max_luma : d->min) :
+			                    (sum >= d->min && sum <= d->max_luma ? sum : sum < d->min ? d->min : d->max_luma);
+			q++;
+			val = 128 + d->mix * (*q++ - 128);
+			val = CLAMP(val, d->min, d->max_chroma);
+			*p++ = val;
+		}
+	}
+
+	return 0;
+}
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -76,22 +133,15 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Get the image
 	*format = mlt_image_yuv422;
-	int error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+	int error = mlt_frame_get_image(frame, image, format, width, height, 0);
 
 	// Only process if we have no error and a valid colour space
-	if ( error == 0 )
-	{
+	if ( error == 0 ) {
+		int size = *width * *height * 2;
+		int full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
 		// Get the charcoal scatter value
 		int x_scatter = mlt_properties_anim_get_double( properties, "x_scatter", position, length );
 		int y_scatter = mlt_properties_anim_get_double( properties, "y_scatter", position, length );
-		float scale = mlt_properties_anim_get_double( properties, "scale" ,position, length);
-		float mix = mlt_properties_anim_get_double( properties, "mix", position, length);
-		int invert = mlt_properties_anim_get_int( properties, "invert", position, length);
-		int full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
-		int min = full_range? 0 : 16;
-		int max_luma = full_range? 255 : 235;
-		int max_chroma = full_range? 255 : 240;
-		int invert_luma = full_range? 255 : 251;
 		mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 		double scale_x = mlt_profile_scale_width(profile, *width);
 		double scale_y = mlt_profile_scale_height(profile, *height);
@@ -100,60 +150,29 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			y_scatter = MAX(1, lrint(y_scatter * scale_y));
 		}
 
-		// We'll process pixel by pixel
-		int x = 0;
-		int y = 0;
-
-		// We need to create a new frame as this effect modifies the input
-		uint8_t *temp = mlt_pool_alloc( *width * *height * 2 );
-		uint8_t *p = temp;
-		uint8_t *q = *image;
-
-		// Calculations are carried out on a 3x3 matrix
-		int matrix[ 3 ][ 3 ];
-
-		// Used to carry out the matrix calculations
-		int sum1;
-		int sum2;
-		float sum;
-		int val;
-
-		// Loop for each row
-		for ( y = 0; y < *height; y ++ )
-		{
-			// Loop for each pixel
-			for ( x = 0; x < *width; x ++ )
-			{
-				// Populate the matrix
-				matrix[0][0] = get_Y(*image, *width, *height, x - x_scatter, y - y_scatter, max_luma);
-				matrix[0][1] = get_Y(*image, *width, *height, x            , y - y_scatter, max_luma);
-				matrix[0][2] = get_Y(*image, *width, *height, x + x_scatter, y - y_scatter, max_luma);
-				matrix[1][0] = get_Y(*image, *width, *height, x - x_scatter, y            , max_luma);
-				matrix[1][2] = get_Y(*image, *width, *height, x + x_scatter, y            , max_luma);
-				matrix[2][0] = get_Y(*image, *width, *height, x - x_scatter, y + y_scatter, max_luma);
-				matrix[2][1] = get_Y(*image, *width, *height, x            , y + y_scatter, max_luma);
-				matrix[2][2] = get_Y(*image, *width, *height, x + x_scatter, y + y_scatter, max_luma);
-
-				// Do calculations
-				sum1 = (matrix[2][0] - matrix[0][0]) + ( (matrix[2][1] - matrix[0][1]) << 1 ) + (matrix[2][2] - matrix[2][0]);
-				sum2 = (matrix[0][2] - matrix[0][0]) + ( (matrix[1][2] - matrix[1][0]) << 1 ) + (matrix[2][2] - matrix[2][0]);
-				sum = scale * sqrti( sum1 * sum1 + sum2 * sum2 );
-
-				// Assign value
-				*p ++ = !invert ? ( sum >= min && sum <= max_luma ? invert_luma - sum : sum < min ? max_luma : min ) :
-								  ( sum >= min && sum <= max_luma ? sum : sum < min ? min : max_luma );
-				q ++;
-				val = 128 + mix * ( *q ++ - 128 );
-				val = CLAMP(val, min, max_chroma);
-				*p ++ = val;
-			}
-		}
+		slice_desc desc = {
+		    // We need to create a new frame as this effect modifies the input
+		    .image = *image,
+		    .dest = mlt_pool_alloc(size),
+		    .width = *width,
+		    .height = *height,
+		    .x_scatter = x_scatter,
+		    .y_scatter = y_scatter,
+		    .min = full_range? 0 : 16,
+		    .max_luma = full_range? 255 : 235,
+		    .max_chroma = full_range? 255 : 240,
+		    .invert = mlt_properties_anim_get_int(properties, "invert", position, length),
+		    .invert_luma = full_range? 255 : 251,
+		    .scale = mlt_properties_anim_get_double(properties, "scale", position, length),
+		    .mix = mlt_properties_anim_get_double(properties, "mix", position, length)
+		};
+		mlt_slices_run_normal(0, slice_proc, &desc);
 
 		// Return the created image
-		*image = temp;
+		*image = desc.dest;
 
 		// Store new and destroy old
-		mlt_frame_set_image( frame, *image, *width * *height * 2, mlt_pool_release );
+		mlt_frame_set_image(frame, *image, size, mlt_pool_release);
 	}
 
 	return error;
