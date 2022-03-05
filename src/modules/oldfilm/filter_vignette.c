@@ -1,6 +1,7 @@
 /*
  * filter_vignette.c -- vignette filter
  * Copyright (c) 2007 Marco Gittler <g.marco@freenet.de>
+ * Copyright (c) 2009-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,13 +21,56 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_slices.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#define SIGMOD_STEPS 1000
-#define POSITION_VALUE(p,s,e) (s+((double)(e-s)*p ))
+typedef struct {
+	uint8_t *image;
+	int width;
+	int height;
+	double smooth;
+	double radius;
+	double cx, cy;
+	double opacity;
+	int mode;
+} slice_desc;
+
+static int slice_proc(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* d = (slice_desc*) data;
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, d->height, &slice_line_start);
+	uint8_t *p = d->image + slice_line_start * d->width * 2;
+	int w2 = d->cx, h2 = d->cy;
+	double delta = 1.0;
+
+	for (int y = slice_line_start; y < slice_line_start + slice_height; y++) {
+		int h2_pow2 = pow(y - h2, 2.0);
+		for (int x = 0; x < d->width; x++, p += 2) {
+			int dx = sqrt(h2_pow2 + pow(x - w2, 2.0));
+			if (d->radius - d->smooth > dx) { // center, make not darker
+				continue;
+			} else if (d->radius + d->smooth <= dx) { // max dark after smooth area
+				delta = 0.0;
+			} else {
+				// linear pos from of opacity (from 0 to 1)
+				delta = (d->radius + d->smooth - dx) / (2.0 * d->smooth);
+				if (d->mode == 1) {
+					// make cos for smoother non linear fade
+					delta = pow(cos(((1.0 - delta) * M_PI / 2.0)), 3.0);
+				}
+			}
+			delta = MAX(d->opacity, delta);
+			p[0] = p[0] * delta;
+			p[1] = (p[1] - 127.0) * delta + 127.0;
+		}
+	}
+
+	return 0;
+}
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
@@ -36,58 +80,23 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	if ( error == 0 && *image )
 	{
-		float smooth, radius, cx, cy, opac;
 		mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter ) ;
 		mlt_position pos = mlt_filter_get_position( filter, frame );
 		mlt_position len = mlt_filter_get_length2( filter, frame );
 		mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 		double scale = mlt_profile_scale_width(profile, *width);
-		
-		smooth = mlt_properties_anim_get_double( filter_props, "smooth", pos, len ) * 100.0 * scale;
-		radius = mlt_properties_anim_get_double( filter_props, "radius", pos, len ) * *width;
-		cx = mlt_properties_anim_get_double( filter_props, "x", pos, len ) * *width;
-		cy = mlt_properties_anim_get_double( filter_props, "y", pos, len ) * *height;
-		opac = mlt_properties_anim_get_double( filter_props, "opacity", pos, len );
-		int mode = mlt_properties_get_int( filter_props , "mode" );
-
-		int video_width = *width;
-		int video_height = *height;
-		
-		int x, y;
-		int w2 = cx, h2 = cy;
-		double delta = 1.0;
-		double max_opac = opac;
-		for ( y=0; y < video_height; y++ )
-		{
-			int h2_pow2 = pow( y - h2, 2.0 );
-			for ( x = 0; x < video_width; x++ )
-			{
-				uint8_t *pix = ( *image + y * video_width * 2 + x * 2 );
-				int dx = sqrt( h2_pow2 + pow( x - w2, 2.0 ));
-				
-				if (radius-smooth > dx) //center, make not darker
-				{
-					continue;
-				}
-				else if ( radius + smooth <= dx ) //max dark after smooth area
-				{
-					delta = 0.0;
-				}
-				else
-				{
-					// linear pos from of opacity (from 0 to 1)
-					delta = (double) ( radius + smooth - dx ) / ( 2.0 * smooth );
-					if ( mode == 1 )
-					{
-						//make cos for smoother non linear fade
-						delta = (double) pow( cos((( 1.0 - delta ) * 3.14159 / 2.0 )), 3.0 );
-					}
-				}
-				delta = MAX( max_opac, delta );
-				*pix = (double) (*pix) * delta;
-				*(pix+1) = ((double)(*(pix+1) - 127.0 ) * delta ) + 127.0;
-			}
-		}
+		slice_desc desc = {
+		    .image = *image,
+		    .width = *width,
+		    .height = *height,
+		    .smooth = mlt_properties_anim_get_double(filter_props, "smooth", pos, len) * 100.0 * scale,
+		    .radius = mlt_properties_anim_get_double( filter_props, "radius", pos, len) * *width,
+		    .cx = mlt_properties_anim_get_double(filter_props, "x", pos, len) * *width,
+		    .cy = mlt_properties_anim_get_double(filter_props, "y", pos, len) * *height,
+		    .opacity = mlt_properties_anim_get_double(filter_props, "opacity", pos, len),
+		    .mode = mlt_properties_get_int(filter_props , "mode")
+		};
+		mlt_slices_run_normal(0, slice_proc, &desc);
 	}
 
 	return error;
