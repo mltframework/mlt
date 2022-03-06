@@ -12,6 +12,10 @@ floodfill:
   x: 1.0
   y: 1.0
 
+gblur:
+  sigma: 1.0
+  sigmaV: 1.0
+
 pad:
   x: 1.0
   y: 1.0
