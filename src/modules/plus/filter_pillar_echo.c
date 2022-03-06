@@ -172,169 +172,6 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 	}
 }
 
-/** Perform a box blur from the source to the destination
-  *
-  * src and dst can be the same location
-  *
-  * This function uses a sliding window accumulator method - applied
-  * horizontally first and then vertically.
-  *
-  * \param src a pointer to the source image
-  * \param dst a pointer to the destination image
-  * \param width the number of values in each row
-  * \param height the number of values in each column
-  * \param radius the radius of the box blur operation
-  */
-
-static void box_blur( uint8_t* src, uint8_t* dst, int width, int height, int radius )
-{
-	int accumulator[] = {0, 0, 0, 0};
-	int x = 0;
-	int y = 0;
-	int step = 4;
-	int linesize = step * width;
-	uint8_t* d = NULL;
-	uint8_t* tmpbuff = mlt_pool_alloc( width * height * step );
-
-	if ( radius > (width / 2) )
-	{
-		radius = width / 2;
-	}
-	if ( radius > (height / 2) )
-	{
-		radius = height / 2;
-	}
-
-	double diameter = (radius * 2) + 1;
-
-	// Horizontal Blur
-	d = tmpbuff;
-	for ( y = 0; y < height; y++ )
-	{
-		uint8_t* first = src + (y * linesize);
-		uint8_t* last = first + linesize - step;
-		uint8_t* s1 = first;
-		uint8_t* s2 = first;
-		accumulator[0] = first[0] * (radius + 1);
-		accumulator[1] = first[1] * (radius + 1);
-		accumulator[2] = first[2] * (radius + 1);
-		accumulator[3] = first[3] * (radius + 1);
-
-		for ( x = 0; x < radius; x++ )
-		{
-			accumulator[0] += s1[0];
-			accumulator[1] += s1[1];
-			accumulator[2] += s1[2];
-			accumulator[3] += s1[3];
-			s1 += step;
-		}
-		for ( x = 0; x <= radius; x++ )
-		{
-			accumulator[0] += s1[0] - first[0];
-			accumulator[1] += s1[1] - first[1];
-			accumulator[2] += s1[2] - first[2];
-			accumulator[3] += s1[3] - first[3];
-			d[0] = lrint((double)accumulator[0] / diameter);
-			d[1] = lrint((double)accumulator[1] / diameter);
-			d[2] = lrint((double)accumulator[2] / diameter);
-			d[3] = lrint((double)accumulator[3] / diameter);
-			s1 += step;
-			d += step;
-		}
-		for ( x= radius + 1; x < width - radius; x++)
-		{
-			accumulator[0] += s1[0] - s2[0];
-			accumulator[1] += s1[1] - s2[1];
-			accumulator[2] += s1[2] - s2[2];
-			accumulator[3] += s1[3] - s2[3];
-			d[0] = lrint((double)accumulator[0] / diameter);
-			d[1] = lrint((double)accumulator[1] / diameter);
-			d[2] = lrint((double)accumulator[2] / diameter);
-			d[3] = lrint((double)accumulator[3] / diameter);
-			s1 += step;
-			s2 += step;
-			d += step;
-		}
-		for ( x = width - radius; x < width; x++ )
-		{
-			accumulator[0] += last[0] - s2[0];
-			accumulator[1] += last[1] - s2[1];
-			accumulator[2] += last[2] - s2[2];
-			accumulator[3] += last[3] - s2[3];
-			d[0] = lrint((double)accumulator[0] / diameter);
-			d[1] = lrint((double)accumulator[1] / diameter);
-			d[2] = lrint((double)accumulator[2] / diameter);
-			d[3] = lrint((double)accumulator[3] / diameter);
-			s2 += step;
-			d += step;
-		}
-	}
-
-	// Vertical Blur
-	for ( x = 0; x < width; x++ )
-	{
-		uint8_t* first = tmpbuff + (x * step);
-		uint8_t* last = first + (linesize * (height - 1));
-		uint8_t* s1 = first;
-		uint8_t* s2 = first;
-		d = dst + (x * step);
-		accumulator[0] = first[0] * (radius + 1);
-		accumulator[1] = first[1] * (radius + 1);
-		accumulator[2] = first[2] * (radius + 1);
-		accumulator[3] = first[3] * (radius + 1);
-
-		for ( y = 0; y < radius; y++ )
-		{
-			accumulator[0] += s1[0];
-			accumulator[1] += s1[1];
-			accumulator[2] += s1[2];
-			accumulator[3] += s1[3];
-			s1 += linesize;
-		}
-		for ( y = 0; y <= radius; y++ )
-		{
-			accumulator[0] += s1[0] - first[0];
-			accumulator[1] += s1[1] - first[1];
-			accumulator[2] += s1[2] - first[2];
-			accumulator[3] += s1[3] - first[3];
-			d[0] = lrint((double)accumulator[0] / diameter);
-			d[1] = lrint((double)accumulator[1] / diameter);
-			d[2] = lrint((double)accumulator[2] / diameter);
-			d[3] = lrint((double)accumulator[3] / diameter);
-			s1 += linesize;
-			d += linesize;
-		}
-		for ( y = radius + 1; y < height - radius; y++)
-		{
-			accumulator[0] += s1[0] - s2[0];
-			accumulator[1] += s1[1] - s2[1];
-			accumulator[2] += s1[2] - s2[2];
-			accumulator[3] += s1[3] - s2[3];
-			d[0] = lrint((double)accumulator[0] / diameter);
-			d[1] = lrint((double)accumulator[1] / diameter);
-			d[2] = lrint((double)accumulator[2] / diameter);
-			d[3] = lrint((double)accumulator[3] / diameter);
-			s1 += linesize;
-			s2 += linesize;
-			d += linesize;
-		}
-		for ( y = height - radius; y < height; y++ )
-		{
-			accumulator[0] += last[0] - s2[0];
-			accumulator[1] += last[1] - s2[1];
-			accumulator[2] += last[2] - s2[2];
-			accumulator[3] += last[3] - s2[3];
-			d[0] = lrint((double)accumulator[0] / diameter);
-			d[1] = lrint((double)accumulator[1] / diameter);
-			d[2] = lrint((double)accumulator[2] / diameter);
-			d[3] = lrint((double)accumulator[3] / diameter);
-			s2 += linesize;
-			d += linesize;
-		}
-	}
-
-	mlt_pool_release( tmpbuff );
-}
 
 /** Copy pixels from source to destination
   *
@@ -405,7 +242,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		return error;
 	}
 
-	double blur = mlt_properties_anim_get_int( filter_properties, "blur", position, length );
+	double blur = mlt_properties_anim_get_double( filter_properties, "blur", position, length );
 	// Convert from percent to pixels.
 	blur = blur * (double)profile->width * mlt_profile_scale_width( profile, *width ) / 100.0;
 	blur = lrint(blur);
@@ -414,7 +251,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	uint8_t* dst = mlt_pool_alloc( size );
 
 	bilinear_scale_rgba( *image, dst, *width, *height, rect );
-	box_blur( dst, dst, *width, *height, blur );
+	if (blur != 0) {
+		struct mlt_image_s img;
+		mlt_image_set_values( &img, dst, *format, *width, *height );
+		mlt_image_box_blur( &img, blur, blur );
+	}
 	blit_rect( *image, dst, *width, rect );
 
 	*image = dst;

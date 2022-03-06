@@ -6,6 +6,7 @@ add_library(mltcore MODULE
   filter_audioconvert.c
   filter_audiomap.c
   filter_audiowave.c
+  filter_box_blur.c
   filter_brightness.c
   filter_channelcopy.c
   filter_choppy.c
@@ -66,6 +67,7 @@ install(FILES
   consumer_multi.yml
   filter_audiomap.yml
   filter_audiowave.yml
+  filter_box_blur.yml
   filter_brightness.yml
   filter_channelcopy.yml
   filter_choppy.yml

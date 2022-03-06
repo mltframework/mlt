@@ -635,4 +635,5 @@ MLT_7.6.0 {
   global:
     mlt_properties_copy;
     mlt_slices_size_slice;
+    mlt_image_box_blur;
 } MLT_7.4.0;
