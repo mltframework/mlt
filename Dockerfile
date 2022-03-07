@@ -21,14 +21,15 @@ RUN wget --quiet -O /tmp/build-melt.sh https://raw.githubusercontent.com/mltfram
   echo "SOURCE_DIR=\"/tmp/melt\"" >> /tmp/build-melt.conf && \
   echo "AUTO_APPEND_DATE=0" >> /tmp/build-melt.conf && \
   echo "FFMPEG_HEAD=0" >> /tmp/build-melt.conf && \
-  echo "FFMPEG_REVISION=origin/release/4.4" >> /tmp/build-melt.conf && \
+  echo "FFMPEG_REVISION=origin/release/5.0" >> /tmp/build-melt.conf && \
   bash /tmp/build-melt.sh -c /tmp/build-melt.conf
 
 
 FROM base
 
 # Install packages for running
-RUN apt-get install -yqq libsamplerate0 libxml2 libjack0 \
+RUN apt-get install -yqq dumb-init \
+  libsamplerate0 libxml2 libjack0 \
   libsdl2-2.0-0 libgtk2.0-0 libsoup2.4-1 \
   libqt5core5a libqt5gui5 libqt5opengl5 libqt5svg5 libqt5widgets5 \
   libqt5x11extras5 libqt5xml5 libqt5webkit5 \
@@ -50,7 +51,5 @@ COPY --from=build /usr/local/ /usr/local/
 WORKDIR /mnt
 ENV LD_LIBRARY_PATH /usr/local/lib
 
-# Qt, Movit, and WebVfx require xvfb-run
-# IMPORTANT: xvfb-run requires docker run option "--init"
-# https://docs.docker.com/engine/reference/commandline/run/
-ENTRYPOINT ["/usr/bin/xvfb-run", "-a", "/usr/local/bin/melt"]
+# Qt, Movit, and WebVfx require xvfb-run, which requires a PID 1 init provided by dumb-init
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/bin/xvfb-run", "-a", "/usr/local/bin/melt"]
