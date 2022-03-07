@@ -79,19 +79,29 @@ static mlt_rect constrain_rect( mlt_rect rect, int max_x, int max_y )
 	return rect;
 }
 
+typedef struct
+{
+	 uint8_t* chan[4]; // pointer to the first value in the channel
+	 int rowCount[4];  // the number of values in each line (row)
+	 int step[4];      // the space between values in each line
+	 mlt_rect rect[4]; // rect the area to be removed
+} slice_desc;
+
 /** Perform spot removal on a channel.
   *
   * Values within the rectangle are replaced with interpolated values.
   * Each value is an interpolation of the first values outside of the rect on
   * the top, bottom, left and right of the value being interpolated.
-  *
-  * \param chan a pointer to the first value in the channel
-  * \param rowCount the number of values in each line (row)
-  * \param step the space between values in each line
-  * \param rect the area to be removed
   */
-static void remove_spot_channel( uint8_t *chan, int rowCount, int step, mlt_rect rect )
+static int remove_spot_channel_proc(int id, int index, int jobs, void* data)
 {
+	(void) id; // unused
+	(void) jobs; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	uint8_t *chan = desc->chan[index];
+	int rowCount = desc->rowCount[index];
+	int step = desc->step[index];
+	mlt_rect rect = desc->rect[index];
 	int yStop = rect.y + rect.h;
 	int xStop = rect.x + rect.w;
 	int rowSize = rowCount * step;
@@ -171,40 +181,67 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	struct mlt_image_s img;
 	mlt_image_set_values( &img, *image, *format, *width, *height );
 
+	// Process each plane in a separate thread.
 	int i;
+	slice_desc desc;
+	int jobs = 0;
 	switch( *format )
 	{
 		case mlt_image_rgba:
+			jobs = 4;
 			for ( i = 0; i < 4; i++ )
 			{
-				remove_spot_channel( img.planes[0] + i, img.width, 4, rect );
+				desc.chan[i] = img.planes[0] + i;
+				desc.rowCount[i] = img.width;
+				desc.step[i] = 4;
+				desc.rect[i] = rect;
 			}
 			break;
 		case mlt_image_rgb:
+			jobs = 3;
 			for ( i = 0; i < 3; i++ )
 			{
-				remove_spot_channel( img.planes[0] + i, img.width, 3, rect );
+				desc.chan[i] = img.planes[0] + i;
+				desc.rowCount[i] = img.width;
+				desc.step[i] = 4;
+				desc.rect[i] = rect;
 			}
 			break;
 		case mlt_image_yuv422:
+			jobs = 3;
 			// Y
-			remove_spot_channel( img.planes[0], img.width, 2, rect );
+			desc.chan[0] = img.planes[0];
+			desc.rowCount[0] = img.width;
+			desc.step[0] = 2;
+			desc.rect[0] = rect;
 			// U
-			remove_spot_channel( img.planes[0] + 1, img.width / 2, 4,
-								 constrain_rect( scale_rect( rect, 2, 1 ), img.width / 2, img.height ) );
+			desc.chan[1] = img.planes[0] + 1;
+			desc.rowCount[1] = img.width / 2;
+			desc.step[1] = 4;
+			desc.rect[1] = constrain_rect( scale_rect( rect, 2, 1 ), img.width / 2, img.height );
 			// V
-			remove_spot_channel( img.planes[0] + 3, img.width / 2, 4,
-								 constrain_rect( scale_rect( rect, 2, 1 ), img.width / 2, img.height ) );
+			desc.chan[2] = img.planes[0] + 3;
+			desc.rowCount[2] = img.width / 2;
+			desc.step[2] = 4;
+			desc.rect[2] = constrain_rect( scale_rect( rect, 2, 1 ), img.width / 2, img.height );
 			break;
 		case mlt_image_yuv420p:
+			jobs = 3;
 			// Y
-			remove_spot_channel( img.planes[0], img.width, 1, rect );
+			desc.chan[0] = img.planes[0];
+			desc.rowCount[0] = img.width;
+			desc.step[0] = 1;
+			desc.rect[0] = rect;
 			// U
-			remove_spot_channel( img.planes[1], img.width / 2, 1,
-								 constrain_rect( scale_rect( rect, 2, 2 ), img.width / 2, img.height / 2 ) );
+			desc.chan[1] = img.planes[1];
+			desc.rowCount[1] = img.width / 2;
+			desc.step[1] = 1;
+			desc.rect[1] = constrain_rect( scale_rect( rect, 2, 2 ), img.width / 2, img.height / 2 );
 			// V
-			remove_spot_channel( img.planes[2], img.width / 2, 1,
-								 constrain_rect( scale_rect( rect, 2, 2 ), img.width / 2, img.height / 2 ) );
+			desc.chan[2] = img.planes[2];
+			desc.rowCount[2] = img.width / 2;
+			desc.step[2] = 1;
+			desc.rect[2] = constrain_rect( scale_rect( rect, 2, 2 ), img.width / 2, img.height / 2 );
 			break;
 		default:
 			return 1;
@@ -213,8 +250,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	uint8_t *alpha = mlt_frame_get_alpha( frame );
 	if ( alpha && *format != mlt_image_rgba )
 	{
-		remove_spot_channel( alpha, *width, 1, rect );
+		jobs++;
+		desc.chan[3] = alpha;
+		desc.rowCount[3] = img.width;
+		desc.step[3] = 1;
+		desc.rect[3] = rect;
 	}
+
+	mlt_slices_run_normal(jobs, remove_spot_channel_proc, &desc);
 
 	return error;
 }
