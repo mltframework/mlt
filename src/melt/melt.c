@@ -35,7 +35,7 @@
 #include <SDL.h>
 #endif
 
-#include "io.h"
+/* #include "io.h" */
 
 static mlt_producer melt = NULL;
 
@@ -509,8 +509,10 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				do {
 					value = read(STDIN_FILENO, string, 1);
 				} while (value == 1 && string[0] < '!');
-				if (value != 1) {
-				    string[0] = 'q';
+				if (value == 1) {
+                    value = string[0];
+                } else {
+                    value = 'q';
 				}
 			}
 
