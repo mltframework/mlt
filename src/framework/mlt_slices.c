@@ -431,5 +431,5 @@ int mlt_slices_size_slice(int jobs, int index, int input_size, int *start)
 	if (start) {
 		*start = my_start;
 	}
-	return MIN(size, input_size - my_start);
+	return CLAMP(input_size - my_start, 0, size);
 }
