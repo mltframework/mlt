@@ -2,6 +2,7 @@
  * wave.c -- wave filter
  * Copyright (C) ?-2007 Leny Grisel <leny.grisel@laposte.net>
  * Copyright (C) 2007 Jean-Baptiste Mardelle <jb@ader.ch>
+ * Copyright (c) 2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +22,7 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_slices.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,28 +37,45 @@ static uint8_t getPoint(uint8_t *src, int w, int h, int x, int y, int z)
 	return src[CLAMP(x+y*w, 0, w*h-1) * 4 + z];
 }
 
+typedef struct {
+	uint8_t *src;
+	int src_w;
+	int src_h;
+	uint8_t *dst;
+	mlt_position position;
+	int speed;
+	int factor;
+	int deformX;
+	int deformY;
+} slice_desc;
+
 // the main meat of the algorithm lies here
-static void DoWave(uint8_t *src, int src_w, int src_h, uint8_t *dst, mlt_position position, int speed, int factor, int deformX, int deformY)
+static int do_wave_slice_proc(int id, int index, int jobs, void* data)
 {
+	(void) id; // unused
+	slice_desc* d = (slice_desc*) data;
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, d->src_h, &slice_line_start);
+	int slice_line_end = slice_line_start + slice_height;
 	register int x, y;
 	int decalY, decalX, z;
 	float amplitude, phase, pulsation;
-	register int uneven = src_w % 2;
-	int w = (src_w - uneven ) / 2;
-	amplitude = factor;
-	pulsation = 0.5 / factor;   // smaller means bigger period
-	phase = position * pulsation * speed / 10; // smaller means longer
-	for (y=0;y<src_h;y++) {
-		decalX = deformX ? sin(pulsation * y + phase) * amplitude : 0;
+	register int uneven = d->src_w % 2;
+	int w = (d->src_w - uneven ) / 2;
+	amplitude = d->factor;
+	pulsation = 0.5 / d->factor;   // smaller means bigger period
+	phase = d->position * pulsation * d->speed / 10; // smaller means longer
+	uint8_t* dst = d->dst + (slice_line_start * d->src_w * 2);
+	for (y=slice_line_start;y<slice_line_end;y++) {
+		decalX = d->deformX ? sin(pulsation * y + phase) * amplitude : 0;
 		for (x=0;x<w;x++) {
-			decalY = deformY ? sin(pulsation * x * 2 + phase) * amplitude : 0;
+			decalY = d->deformY ? sin(pulsation * x * 2 + phase) * amplitude : 0;
 			for (z=0; z<4; z++)
-				*dst++ = getPoint(src, w, src_h, (x+decalX), (y+decalY), z);
+				*dst++ = getPoint(d->src, w, d->src_h, (x+decalX), (y+decalY), z);
 		}
 		if (uneven) {
 			decalY = sin(pulsation * x * 2 + phase) * amplitude;
 			for (z=0; z<2; z++)
-				*dst++ = getPoint(src, w, src_h, (x+decalX), (y+decalY), z);
+				*dst++ = getPoint(d->src, w, d->src_h, (x+decalX), (y+decalY), z);
 		}
 	}
 }
@@ -103,7 +122,17 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			int image_size = *width * (*height) * 2;
 			uint8_t *dst = mlt_pool_alloc (image_size);
-			DoWave(*image, *width, (*height), dst, position, speed, factor, deformX, deformY);
+			slice_desc desc;
+			desc.src = *image;
+			desc.src_w = *width;
+			desc.src_h = *height;
+			desc.dst = dst;
+			desc.position = position;
+			desc.speed = speed;
+			desc.factor = factor;
+			desc.deformX = deformX;
+			desc.deformY = deformY;
+			mlt_slices_run_normal(0, do_wave_slice_proc, &desc);
 			*image = dst;
 			mlt_frame_set_image( frame, *image, image_size, mlt_pool_release );
 		}
