@@ -56,49 +56,37 @@ static mlt_rect constrain_rect( mlt_rect rect, int max_x, int max_y )
 	return rect;
 }
 
-/** Perform a bilinear scale from the rect inside the source to fill the destination
-  *
-  * \param src a pointer to the source image
-  * \param dst a pointer to the destination image
-  * \param width the number of values in each row
-  * \param height the number of values in each column
-  * \param rect the area of interest in the src to be scaled to fit the dst
-  */
-
-static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int height, mlt_rect rect )
+typedef struct
 {
-	mlt_rect srcRect = rect;
+	mlt_image src;
+	mlt_image dst;
+	mlt_rect rect;
+} scale_sliced_desc;
 
-	// Crop out a section of the rect that has the same aspect ratio as the image
-	double destAr = (double)width / (double)height;
-	double sourceAr = rect.w / rect.h;
-	if ( sourceAr > destAr )
-	{
-		// Crop sides to fit height
-		srcRect.w = rect.w * destAr / sourceAr;
-		srcRect.x = rect.x + (rect.w - srcRect.w) / 2.0;
-	}
-	else if ( destAr > sourceAr )
-	{
-		// Crop top and bottom to fit width.
-		srcRect.h = rect.h * sourceAr / destAr;
-		srcRect.y = rect.y + (rect.h - srcRect.h) / 2.0;
-	}
-	double srcScale = srcRect.h / (double)height;
-	int linesize = width * 4;
-
+static int scale_sliced_proc(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	scale_sliced_desc* desc = ((scale_sliced_desc*) data);
+	mlt_image src = desc->src;
+	mlt_image dst = desc->dst;
+	mlt_rect rect = desc->rect;
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, src->height, &slice_line_start);
+	int slice_line_end = slice_line_start + slice_height;
+	double srcScale = rect.h / (double)src->height;
+	int linesize = src->width * 4;
+	uint8_t* d = dst->data + (slice_line_start * linesize);
 	int y = 0;
-	for ( y = 0; y < height; y++ )
+	for ( y = slice_line_start; y < slice_line_end; y++ )
 	{
-		double srcY = srcRect.y + (double)y * srcScale;
+		double srcY = rect.y + (double)y * srcScale;
 		int srcYindex = floor(srcY);
 		double fbottom = srcY - srcYindex;
 		double ftop = 1.0 - fbottom;
 
 		int x = 0;
-		for ( x = 0; x < width; x++ )
+		for ( x = 0; x < src->width; x++ )
 		{
-			double srcX = srcRect.x + (double)x * srcScale;
+			double srcX = rect.x + (double)x * srcScale;
 			int srcXindex = floor(srcX);
 			double fright = srcX - srcXindex;
 			double fleft = 1.0 - fright;
@@ -106,7 +94,7 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 			double valueSum[] = {0.0, 0.0, 0.0, 0.0};
 			double factorSum[] = {0.0, 0.0, 0.0, 0.0};
 
-			uint8_t* s = src + (srcYindex * linesize) + (srcXindex * 4);
+			uint8_t* s = src->data + (srcYindex * linesize) + (srcXindex * 4);
 
 			// Top Left
 			double ftl = ftop * fleft;
@@ -120,7 +108,7 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 			factorSum[3] += ftl;
 
 			// Top Right
-			if ( x < width - 1 )
+			if ( x < src->width - 1 )
 			{
 				double ftr = ftop * fright;
 				valueSum[0] += s[4] * ftr;
@@ -133,7 +121,7 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 				factorSum[3] += ftr;
 			}
 
-			if( y < height - 1 )
+			if( y < src->height - 1 )
 			{
 				uint8_t* sb = s + linesize;
 
@@ -149,7 +137,7 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 				factorSum[3] += fbl;
 
 				// Bottom Right
-				if ( x < width - 1 )
+				if ( x < src->width - 1 )
 				{
 					double fbr = fbottom * fright;
 					valueSum[0] += sb[4] * fbr;
@@ -163,13 +151,45 @@ static void bilinear_scale_rgba( uint8_t* src, uint8_t* dst, int width, int heig
 				}
 			}
 
-			dst[0] = (uint8_t)round( valueSum[0] / factorSum[0] );
-			dst[1] = (uint8_t)round( valueSum[1] / factorSum[1] );
-			dst[2] = (uint8_t)round( valueSum[2] / factorSum[2] );
-			dst[3] = (uint8_t)round( valueSum[3] / factorSum[3] );
-			dst += 4;
+			d[0] = (uint8_t)round( valueSum[0] / factorSum[0] );
+			d[1] = (uint8_t)round( valueSum[1] / factorSum[1] );
+			d[2] = (uint8_t)round( valueSum[2] / factorSum[2] );
+			d[3] = (uint8_t)round( valueSum[3] / factorSum[3] );
+			d += 4;
 		}
 	}
+}
+
+/** Perform a bilinear scale from the rect inside the source to fill the destination
+  *
+  * \param src a pointer to the source image
+  * \param dst a pointer to the destination image
+  * \param rect the area of interest in the src to be scaled to fit the dst
+  */
+
+static void bilinear_scale_rgba( mlt_image src, mlt_image dst, mlt_rect rect )
+{
+	scale_sliced_desc desc;
+	desc.src = src;
+	desc.dst = dst;
+	desc.rect = rect;
+
+	// Crop out a section of the rect that has the same aspect ratio as the image
+	double destAr = (double)src->width / (double)src->height;
+	double sourceAr = rect.w / rect.h;
+	if ( sourceAr > destAr )
+	{
+		// Crop sides to fit height
+		desc.rect.w = rect.w * destAr / sourceAr;
+		desc.rect.x = rect.x + (rect.w - desc.rect.w) / 2.0;
+	}
+	else if ( destAr > sourceAr )
+	{
+		// Crop top and bottom to fit width.
+		desc.rect.h = rect.h * sourceAr / destAr;
+		desc.rect.y = rect.y + (rect.h - desc.rect.h) / 2.0;
+	}
+	mlt_slices_run_normal(0, scale_sliced_proc, &desc);
 }
 
 
@@ -247,19 +267,21 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	blur = blur * (double)profile->width * mlt_profile_scale_width( profile, *width ) / 100.0;
 	blur = lrint(blur);
 
-	int size = mlt_image_format_size( *format, *width, *height, NULL );
-	uint8_t* dst = mlt_pool_alloc( size );
+	struct mlt_image_s src;
+	mlt_image_set_values( &src, *image, *format, *width, *height );
 
-	bilinear_scale_rgba( *image, dst, *width, *height, rect );
+	struct mlt_image_s dst;
+	mlt_image_set_values( &dst, NULL, *format, *width, *height );
+	mlt_image_alloc_data( &dst );
+
+	bilinear_scale_rgba( &src, &dst, rect );
 	if (blur != 0) {
-		struct mlt_image_s img;
-		mlt_image_set_values( &img, dst, *format, *width, *height );
-		mlt_image_box_blur( &img, blur, blur );
+		mlt_image_box_blur( &dst, blur, blur );
 	}
-	blit_rect( *image, dst, *width, rect );
+	blit_rect( src.data, dst.data, *width, rect );
 
-	*image = dst;
-	mlt_frame_set_image( frame, dst, size, mlt_pool_release );
+	*image = dst.data;
+	mlt_frame_set_image( frame, dst.data, 0, dst.release_data );
 
 	return error;
 }
