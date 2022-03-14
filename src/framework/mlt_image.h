@@ -57,7 +57,6 @@ extern void mlt_image_fill_black( mlt_image self );
 extern void mlt_image_fill_opaque( mlt_image self );
 extern const char * mlt_image_format_name( mlt_image_format format );
 extern mlt_image_format mlt_image_format_id( const char * name );
-void mlt_image_box_blur( mlt_image self, int hradius, int vradius );
 
 // Deprecated functions
 extern int mlt_image_format_size( mlt_image_format format, int width, int height, int *bpp );

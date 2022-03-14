@@ -22,10 +22,12 @@ add_library(mltcore MODULE
   filter_mono.c
   filter_obscure.c
   filter_panner.c
+  filter_pillar_echo.c
   filter_rescale.c
   filter_resize.c
   filter_transition.c
   filter_watermark.c
+  image_proc.c
   link_timeremap.c
   producer_colour.c
   producer_consumer.c
@@ -82,6 +84,7 @@ install(FILES
   filter_mono.yml
   filter_obscure.yml
   filter_panner.yml
+  filter_pillar_echo.yml
   filter_rescale.yml
   filter_resize.yml
   filter_transition.yml
