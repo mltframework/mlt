@@ -201,18 +201,18 @@ static void bilinear_scale_rgba( mlt_image src, mlt_image dst, mlt_rect rect )
   * \param rect the area of interest in the src to be copied to the dst
   */
 
-static void blit_rect( uint8_t* src, uint8_t* dst, int width, mlt_rect rect )
+static void blit_rect( mlt_image src, mlt_image dst, mlt_rect rect )
 {
 	int blitHeight = rect.h;
 	int blitWidth = rect.w * 4;
-	int linesize = width * 4;
-	src += (int)rect.y * linesize + (int)rect.x * 4;
-	dst += (int)rect.y * linesize + (int)rect.x * 4;
+	int linesize = src->width * 4;
+	uint8_t* s = src->data + (int)rect.y * linesize + (int)rect.x * 4;
+	uint8_t* d = dst->data + (int)rect.y * linesize + (int)rect.x * 4;
 	while ( blitHeight-- )
 	{
-		memcpy( dst, src, blitWidth );
-		src += linesize;
-		dst += linesize;
+		memcpy( d, s, blitWidth );
+		s += linesize;
+		d += linesize;
 	}
 }
 
@@ -278,7 +278,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if (blur != 0) {
 		mlt_image_box_blur( &dst, blur, blur );
 	}
-	blit_rect( src.data, dst.data, *width, rect );
+	blit_rect( &src, &dst, rect );
 
 	*image = dst.data;
 	mlt_frame_set_image( frame, dst.data, 0, dst.release_data );
