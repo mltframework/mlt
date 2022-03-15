@@ -444,7 +444,7 @@ static mlt_properties find_default_streams( producer_avformat self )
 					mlt_properties_set_int( meta_media, key, codec_params->width * codec_params->height > 750000 ? 709 : 601 );
 					break;
 				default:
-//					mlt_properties_set_int( meta_media, key, codec_context->colorspace );
+					mlt_properties_set_int( meta_media, key, codec_params->color_space );
 					break;
 				}
 				if ( codec_params->color_trc && codec_params->color_trc != AVCOL_TRC_UNSPECIFIED )
