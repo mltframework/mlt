@@ -271,6 +271,11 @@ static void mlt_slices_close( mlt_slices ctx )
 
 static void mlt_slices_run( mlt_slices ctx, int jobs, mlt_slices_proc proc, void* cookie )
 {
+	if ( jobs == 1 )
+	{
+		proc(0, 0, 1, cookie);
+		return;
+	}
 	struct mlt_slices_runtime_s runtime, *r = &runtime;
 
 	/* lock */
