@@ -1,6 +1,6 @@
 /*
  * filter_sepia.c -- sepia filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,21 +19,48 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_slices.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-/** Do it :-).
-*/
+typedef struct {
+	uint8_t* image;
+	int height;
+	int width;
+	uint8_t u;
+	uint8_t v;
+} slice_desc;
+
+static int do_slice_proc(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = (slice_desc*) data;
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int slice_line_end = slice_line_start + slice_height;
+	int line_size = desc->width * 2;
+	int uneven = desc->width % 2;
+	int x,y;
+	for ( y = slice_line_start; y < slice_line_end; y++)
+	{
+		uint8_t* p = desc->image + y * line_size;
+		for ( x = 0; x < line_size; x += 4)
+		{
+			p[x+1] = desc->u;
+			p[x+3] = desc->v;
+		}
+		if ( uneven )
+		{
+			p[line_size - 1] = desc->u;
+		}
+	}
+}
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	// Get the filter
 	mlt_filter filter = mlt_frame_pop_service( frame );
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_position position = mlt_filter_get_position( filter, frame );
-	mlt_position length = mlt_filter_get_length2( filter, frame );
 
 	// Get the image
 	*format = mlt_image_yuv422;
@@ -42,34 +69,16 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	// Only process if we have no error and a valid colour space
 	if ( error == 0 && *image )
 	{
-		// We modify the whole image
-		uint8_t *p = *image;
-		int h = *height;
-		int uneven = *width % 2;
-		int w = ( *width - uneven ) / 2;
-		int t;
-
-		// Get u and v values
-		int u = mlt_properties_anim_get_int( properties, "u", position, length );
-		int v = mlt_properties_anim_get_int( properties, "v", position, length );
-
-		// Loop through image
-		while( h -- )
-		{
-			t = w;
-			while( t -- )
-			{
-				p ++;
-				*p ++ = u;
-				p ++;
-				*p ++ = v;
-			}
-			if ( uneven )
-			{
-				p ++;
-				*p ++ = u;
-			}
-		}
+		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		mlt_position position = mlt_filter_get_position( filter, frame );
+		mlt_position length = mlt_filter_get_length2( filter, frame );
+		slice_desc desc;
+		desc.image = *image;
+		desc.height = *height;
+		desc.width = *width;
+		desc.u = mlt_properties_anim_get_int( properties, "u", position, length );
+		desc.v = mlt_properties_anim_get_int( properties, "v", position, length );
+		mlt_slices_run_normal(0, do_slice_proc, &desc);
 	}
 
 	return error;
