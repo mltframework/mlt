@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+message Jit {
+    int64 position = 1;
+    float playback = 2;
+    MediaInfo mediaInfo = 3;
+}
+
+message MediaInfo {
+    repeated Stream streams = 1;
+}
+
+message Stream {
+    StreamType type = 1;
+    AudioStream audio = 2;
+}
+
+message AudioStream {
+    int32 channels = 1;
+}
+
+enum StreamType {
+    UNKNOWN = 0;
+    AUDIO = 1;
+    VIDEO = 2;
+}

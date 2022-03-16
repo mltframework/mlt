@@ -35,9 +35,11 @@
 #include <SDL.h>
 #endif
 
-/* #include "io.h" */
+#include "io.h"
+#include "Jit.pb-c.h"
 
 static mlt_producer melt = NULL;
+static Jit jit = JIT__INIT;
 
 static void stop_handler(int signum)
 {
@@ -471,6 +473,32 @@ static void event_handling( mlt_producer producer, mlt_consumer consumer )
 
 #endif
 
+static void write_status(Jit *const jit) {
+    static char *buf = NULL;
+    static int buf_len = 0;
+
+    int len = jit__get_packed_size(jit) + 4;
+    if (buf_len < len) {
+        buf = realloc(buf, len);
+        buf_len = len;
+        if (!buf) {
+            exit(1);
+        }
+    }
+
+    char *b = buf;
+    jit__pack(jit, b + 4);
+    *((int*) b) = len - 4;
+    while (len) {
+        const int w = write(STDERR_FILENO, b, len);
+        if (w < 1) {
+            exit(2);
+        }
+        b += w;
+        len -= w;
+    }
+}
+
 static void transport( mlt_producer producer, mlt_consumer consumer )
 {
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
@@ -480,6 +508,9 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 	struct timespec tm = { 0, 40000000 };
 	int total_length = mlt_producer_get_playtime( producer );
 	int last_position = 0;
+    fd_set set;
+    struct timeval timeout;
+    int sel;
 
 	if ( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 	{
@@ -487,7 +518,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 		{
 			if ( !is_getc )
 				term_init( );
-
+/*
 			fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
 			fprintf( stderr, "|1=-10| |2= -5| |3= -2| |4= -1| |5=  0| |6=  1| |7=  2| |8=  5| |9= 10|\n" );
 			fprintf( stderr, "+-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+ +-----+\n" );
@@ -498,10 +529,27 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 			fprintf( stderr, "|           g = start of clip, j = next clip, k = previous clip       |\n" );
 			fprintf( stderr, "|                0 = restart, q = quit, space = play                  |\n" );
 			fprintf( stderr, "+---------------------------------------------------------------------+\n" );
+*/
 		}
 
 		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 		{
+
+            char string[2] = {0, 0};
+            FD_ZERO(&set);
+            FD_SET(STDIN_FILENO, &set);
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+            if (select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout) > 0) {
+                    if (read(STDIN_FILENO, string, 1) != 1) {
+                        string[0] = 'q';
+                    }
+                    if (string[0] >= '!') {
+                        transport_action( producer, string );
+                    }
+            }
+
+        /*
 			char string[2] = {0, 0};
 			int value = ( silent || progress || is_getc )? -1 : term_read( );
 			if ( is_getc )
@@ -521,6 +569,8 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				string[0] = value;
 				transport_action( producer, string );
 			}
+            */
+            
 
 #if defined(SDL_MAJOR_VERSION)
 			event_handling( producer, consumer );
@@ -528,6 +578,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 
 			if ( !silent && mlt_properties_get_int( properties, "stats_off" ) == 0 )
 			{
+                /*
 				if ( progress )
 				{
 					int current_position = mlt_producer_position( producer );
@@ -544,14 +595,19 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 					fprintf( stderr, "Current Position: %10d\r", (int)mlt_consumer_position( consumer ) );
 				}
 				fflush( stderr );
+                */
+                // MOFF
+                jit.position = mlt_producer_position( producer );
+                write_status(&jit);
+                last_position = jit.position;
 			}
 
-			if ( silent || progress )
-				nanosleep( &tm, NULL );
+			//if ( silent || progress )
+				//nanosleep( &tm, NULL );
 		}
 
-		if ( !silent )
-			fprintf( stderr, "\n" );
+		//if ( !silent )
+			//fprintf( stderr, "\n" );
 	}
 }
 
