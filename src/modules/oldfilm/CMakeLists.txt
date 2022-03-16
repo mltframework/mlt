@@ -1,4 +1,5 @@
 add_library(mltoldfilm MODULE
+  common.c
   factory.c
   filter_dust.c
   filter_grain.c
