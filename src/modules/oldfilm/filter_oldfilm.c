@@ -110,23 +110,26 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			ydiff = 1;
 		}
 
+		int full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
+		int min = full_range? 0 : 16;
+		int max_luma = full_range? 255 : 235;
+
 		for (; y != yend; y += ydiff) {
 			int newy = y + diffpic;
 			uint8_t *p = &(*image)[y * w * 2];
 			uint8_t *q = &p[diffpic * w * 2];
 			for (x = 0; x < w * 2; x += 2) {
-				if ( newy > 0 && newy < h ) {
-					if (((int) q[x] + brightdelta + unevendevelop_delta ) > 255) {
-						p[x] = 255;
-					}else if (((int) q[x] + brightdelta + unevendevelop_delta) < 0 ) {
-						p[x] = 0;
+				if (newy > 0 && newy < h) {
+					if (((int) q[x] + brightdelta + unevendevelop_delta ) > max_luma) {
+						p[x] = max_luma;
+					}else if (((int) q[x] + brightdelta + unevendevelop_delta) < 0) {
+						p[x] = min;
 					} else {
 						p[x] = q[x] + brightdelta + unevendevelop_delta;
 					}
 					p[x+1] = q[x+1];
-
 				} else {
-					p[x] = 0;
+					p[x] = min;
 				}
 			}
 		}
