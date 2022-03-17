@@ -81,7 +81,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if ( delta ) {
 			mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
 			delta *= mlt_profile_scale_width(profile, *width);
-            diffpic = rand() % MAX(delta, 1) * 2 - delta;
+			diffpic = rand() % MAX(delta, 1) * 2 - delta;
 		}
 		int brightdelta = 0;
 		if (( bdu + bdd ) != 0 )
@@ -110,36 +110,25 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 			ydiff = 1;
 		}
 
-		while( y != yend )
-		{
-			for ( x = 0; x < w; x++ )
-			{
-				uint8_t* pic = ( *image + y * w * 2 + x * 2 );
-				int newy = y + diffpic;
-				if ( newy > 0 && newy < h )
-				{
-					uint8_t oldval= *( pic + diffpic * w * 2 );
-					if ( ((int) oldval + brightdelta + unevendevelop_delta ) > 255 )
-					{
-						*pic=255;
+		for (; y != yend; y += ydiff) {
+			int newy = y + diffpic;
+			uint8_t *p = &(*image)[y * w * 2];
+			uint8_t *q = &p[diffpic * w * 2];
+			for (x = 0; x < w * 2; x += 2) {
+				if ( newy > 0 && newy < h ) {
+					if (((int) q[x] + brightdelta + unevendevelop_delta ) > 255) {
+						p[x] = 255;
+					}else if (((int) q[x] + brightdelta + unevendevelop_delta) < 0 ) {
+						p[x] = 0;
+					} else {
+						p[x] = q[x] + brightdelta + unevendevelop_delta;
 					}
-					else if ( ( (int) oldval + brightdelta + unevendevelop_delta )	<0 )
-					{
-						*pic=0;
-					}
-					else
-					{
-						*pic = oldval + brightdelta + unevendevelop_delta;
-					}
-					*( pic + 1 ) =* ( pic + diffpic * w * 2 + 1 );
+					p[x+1] = q[x+1];
 
+				} else {
+					p[x] = 0;
 				}
-				else
-				{
-					*pic = 0;
-				}
-		}
-			y += ydiff;
+			}
 		}
 	}
 
