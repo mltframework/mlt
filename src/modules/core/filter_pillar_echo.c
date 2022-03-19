@@ -77,8 +77,7 @@ static int scale_sliced_proc(int id, int index, int jobs, void* data)
 	double srcScale = rect.h / (double)src->height;
 	int linesize = src->width * 4;
 	uint8_t* d = dst->data + (slice_line_start * linesize);
-	int y = 0;
-	for ( y = slice_line_start; y < slice_line_end; y++ )
+	for ( int y = slice_line_start; y < slice_line_end; y++ )
 	{
 		double srcY = rect.y + (double)y * srcScale;
 		int srcYindex = floor(srcY);
@@ -255,7 +254,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 
 	*format = mlt_image_rgba;
-	error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+	error = mlt_frame_get_image( frame, image, format, width, height, 0 );
 
 	if (error) return error;
 	if (rect.x <= 0 && rect.y <= 0 && rect.w >= *width && rect.h >= *height)
@@ -267,7 +266,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	double blur = mlt_properties_anim_get_double( filter_properties, "blur", position, length );
 	// Convert from percent to pixels.
 	blur = blur * (double)profile->width * mlt_profile_scale_width( profile, *width ) / 100.0;
-	blur = lrint(blur);
+	blur = MAX(round(blur), 0);
 
 	struct mlt_image_s src;
 	mlt_image_set_values( &src, *image, *format, *width, *height );
