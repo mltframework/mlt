@@ -12,7 +12,6 @@ add_library(mltplus MODULE
   filter_loudness.c
   filter_loudness_meter.c
   filter_lumakey.c
-  filter_pillar_echo.c
   filter_rgblut.c
   filter_sepia.c
   filter_shape.c
@@ -63,7 +62,6 @@ install(FILES
   filter_loudness_meter.yml
   filter_loudness.yml
   filter_lumakey.yml
-  filter_pillar_echo.yml
   filter_rgblut.yml
   filter_sepia.yml
   filter_shape.yml

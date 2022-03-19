@@ -33,7 +33,6 @@ extern mlt_filter filter_lift_gamma_gain_init( mlt_profile profile, mlt_service_
 extern mlt_filter filter_loudness_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_loudness_meter_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_lumakey_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_pillar_echo_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_rgblut_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_sepia_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_filter filter_shape_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
@@ -73,7 +72,6 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_filter_type, "loudness", filter_loudness_init );
 	MLT_REGISTER( mlt_service_filter_type, "loudness_meter", filter_loudness_meter_init );
 	MLT_REGISTER( mlt_service_filter_type, "lumakey", filter_lumakey_init );
-	MLT_REGISTER( mlt_service_filter_type, "pillar_echo", filter_pillar_echo_init );
 	MLT_REGISTER( mlt_service_filter_type, "rgblut", filter_rgblut_init );
 	MLT_REGISTER( mlt_service_filter_type, "sepia", filter_sepia_init );
 	MLT_REGISTER( mlt_service_filter_type, "shape", filter_shape_init );
@@ -103,7 +101,6 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "loudness", metadata, "filter_loudness.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "loudness_meter", metadata, "filter_loudness_meter.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "lumakey", metadata, "filter_lumakey.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "pillar_echo", metadata, "filter_pillar_echo.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "rgblut", metadata, "filter_rgblut.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "sepia", metadata, "filter_sepia.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "shape", metadata, "filter_shape.yml" );

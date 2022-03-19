@@ -1,0 +1,35 @@
+schema_version: 7.0
+type: filter
+identifier: box_blur
+title: Box Blur
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+parameters:
+
+  - identifier: hradius
+    title: Horizontal radius
+    description: >
+      The horizontal blur radius as a percent of the image size.
+      100% results in a blur radius of 10% of the image width.
+    type: float
+    unit: percent
+    mutable: yes
+    animation: yes
+    minimum: 0
+    default: 1
+
+  - identifier: vradius
+    title: Vertical radius
+    description: >
+      The vertical blur radius as a percent of the image size.
+      100% results in a blur radius of 10% of the image width.
+    type: float
+    unit: percent
+    mutable: yes
+    animation: yes
+    minimum: 0
+    default: 1
