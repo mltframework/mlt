@@ -36,11 +36,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 	double hradius = mlt_properties_anim_get_double( properties, "hradius", position, length );
 	double vradius = mlt_properties_anim_get_double( properties, "vradius", position, length );
-	// Convert from percent to pixels
-	hradius = hradius * (double)profile->width * mlt_profile_scale_width( profile, *width ) / 1000.0;
-	hradius = MAX(lrint(hradius), 0);
-	vradius = vradius * (double)profile->width * mlt_profile_scale_width( profile, *width ) / 1000.0;
-	vradius = MAX(lrint(vradius), 0);
+	// Convert from percent to pixels as a factor of 10% image width.
+	double pixelScale = (double)profile->width * mlt_profile_scale_width( profile, *width ) / 1000.0;
+	hradius = MAX(round(hradius * pixelScale), 0);
+	vradius = MAX(round(vradius * pixelScale), 0);
 
 	if ( hradius == 0 && vradius == 0 )
 	{
