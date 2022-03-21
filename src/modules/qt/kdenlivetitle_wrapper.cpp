@@ -180,10 +180,18 @@ public:
 			linePos += m_lineSpacing;
 			if ( m_align == Qt::AlignHCenter )
 			{
-				double offset = (m_width - m_metrics.width(line)) / 2;
+#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
+                double offset = (m_width - m_metrics.horizontalAdvance(line)) / 2;
+#else
+                double offset = (m_width - m_metrics.width(line)) / 2;
+#endif
 				linePath.translate(offset, 0);
 			} else if ( m_align == Qt::AlignRight ) {
-				double offset = (m_width - m_metrics.width(line));
+#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
+                double offset = (m_width - m_metrics.horizontalAdvance(line));
+#else
+                double offset = (m_width - m_metrics.width(line));
+#endif
 				linePath.translate(offset, 0);
 			}
 			m_path.addPath(linePath);
@@ -312,7 +320,7 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 	// Check title locale
 	if ( title.hasAttribute( "LC_NUMERIC" ) ) {
 		QString locale = title.attribute( "LC_NUMERIC" );
-		QLocale::setDefault( locale );
+        QLocale::setDefault( QLocale( locale ) );
 	}
 
 	int originalWidth;
@@ -358,7 +366,7 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 				else
 				{
 					// New: Font weight (QFont::)
-					font.setWeight( txtProperties.namedItem( "font-weight" ).nodeValue().toInt() );
+                    font.setWeight( QFont::Weight( txtProperties.namedItem( "font-weight" ).nodeValue().toInt() ) );
 				}
 				font.setItalic( txtProperties.namedItem( "font-italic" ).nodeValue().toInt() );
 				font.setUnderline( txtProperties.namedItem( "font-underline" ).nodeValue().toInt() );
@@ -782,8 +790,12 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 		img.fill( 0 );
 		QPainter p1;
 		p1.begin( &img );
-		p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
-		//| QPainter::SmoothPixmapTransform );
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing );
+#else
+        p1.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
+#endif
+        //| QPainter::SmoothPixmapTransform );
 		mlt_position anim_out = mlt_properties_get_position( producer_props, "_animation_out" );
 
 		if (end.isNull())
@@ -811,8 +823,12 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 				img1.fill( 0 );
 				QPainter p2;
 				p2.begin(&img1);
-				p2.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
-				scene->render(&p2,source,r2,  Qt::IgnoreAspectRatio );
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                p2.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing );
+#else
+                p2.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
+#endif
+                scene->render(&p2,source,r2,  Qt::IgnoreAspectRatio );
 				p2.end();
 				int next_field_line = (  mlt_properties_get_int( producer_props, "top_field_first" ) ? 1 : 0 );
 				for (line = next_field_line ;line<height;line+=2){
