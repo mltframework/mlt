@@ -43,7 +43,7 @@
 #include <QWidget>
 #include <framework/mlt_log.h>
 
-#if QT_VERSION >= 0x040600
+#if QT_VERSION >= QT_VERSION_CHECK(4, 6, 0)
 #include <QGraphicsEffect>
 #include <QGraphicsBlurEffect>
 #include <QGraphicsDropShadowEffect>
@@ -634,7 +634,7 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 			int zValue = nodeAttributes.namedItem( "z-index" ).nodeValue().toInt();
 			gitem->setZValue( zValue );
 
-#if QT_VERSION >= 0x040600
+#if QT_VERSION >= QT_VERSION_CHECK(4, 6, 0)
 			// effects
 			QDomNode eff = items.item(i).namedItem("effect");
 			if (!eff.isNull()) {
@@ -772,7 +772,7 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 
 		//must be extracted from kdenlive title
 		self->rgba_image = (uint8_t *) mlt_pool_alloc( image_size );
-#if QT_VERSION >= 0x050200
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
 		// QImage::Format_RGBA8888 was added in Qt5.2
 		// Initialize the QImage with the MLT image because the data formats match.
 		QImage img( self->rgba_image, width, height, QImage::Format_RGBA8888 );
