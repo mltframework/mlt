@@ -42,10 +42,11 @@
 #include <QColor>
 #include <QWidget>
 #include <framework/mlt_log.h>
-
+#if QT_VERSION >= 0x040600
 #include <QGraphicsEffect>
 #include <QGraphicsBlurEffect>
 #include <QGraphicsDropShadowEffect>
+#endif
 
 #include <memory>
 
@@ -639,7 +640,7 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 			gitem->setTransform( stringToTransform( node.namedItem( "position" ).firstChild().firstChild().nodeValue() ) );
 			int zValue = nodeAttributes.namedItem( "z-index" ).nodeValue().toInt();
 			gitem->setZValue( zValue );
-
+#if QT_VERSION >= 0x040600
 			// effects
 			QDomNode eff = items.item(i).namedItem("effect");
 			if (!eff.isNull()) {
@@ -656,6 +657,7 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 					gitem->setGraphicsEffect(shadow);
 				}
 			}
+#endif
 		}
 	}
 
