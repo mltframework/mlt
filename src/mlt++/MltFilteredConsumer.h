@@ -42,7 +42,7 @@ namespace Mlt
 			FilteredConsumer( Profile& profile, const char *id, const char *arg = NULL );
 			FilteredConsumer( Consumer &consumer );
 			virtual ~FilteredConsumer( );
-			int connect( Service &service );
+			int connect( Service &service ) override;
 			int attach( Filter &filter );
 			int last( Filter &filter );
 			int detach( Filter &filter );

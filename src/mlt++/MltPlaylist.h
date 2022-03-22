@@ -67,7 +67,7 @@ namespace Mlt
 			Playlist( mlt_playlist playlist );
 			virtual ~Playlist( );
 			virtual mlt_playlist get_playlist( );
-			mlt_producer get_producer( );
+			mlt_producer get_producer( ) override;
 			int count( );
 			int clear( );
 			int append( Producer &producer, int in = -1, int out = -1 );
