@@ -43,11 +43,9 @@
 #include <QWidget>
 #include <framework/mlt_log.h>
 
-#if QT_VERSION >= QT_VERSION_CHECK(4, 6, 0)
 #include <QGraphicsEffect>
 #include <QGraphicsBlurEffect>
 #include <QGraphicsDropShadowEffect>
-#endif
 
 #include <memory>
 
@@ -165,7 +163,7 @@ public:
 	}
 
 	void updateText(QString text) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
 		m_path.clear();
 #else
 		m_path = QPainterPath();
@@ -634,7 +632,6 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 			int zValue = nodeAttributes.namedItem( "z-index" ).nodeValue().toInt();
 			gitem->setZValue( zValue );
 
-#if QT_VERSION >= QT_VERSION_CHECK(4, 6, 0)
 			// effects
 			QDomNode eff = items.item(i).namedItem("effect");
 			if (!eff.isNull()) {
@@ -651,7 +648,6 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 					gitem->setGraphicsEffect(shadow);
 				}
 			}
-#endif
 		}
 	}
 
