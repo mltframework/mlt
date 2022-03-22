@@ -42,7 +42,7 @@ namespace Mlt
 			Multitrack( Multitrack &multitrack );
 			virtual ~Multitrack( );
 			mlt_multitrack get_multitrack( );
-			mlt_producer get_producer( );
+			mlt_producer get_producer( ) override;
 			int connect( Producer &producer, int index );
 			int insert( Producer &producer, int index );
 			int disconnect( int index );

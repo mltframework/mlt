@@ -46,7 +46,7 @@ namespace Mlt
 			Link& operator=( const Link &link );
 			virtual ~Link( );
 			virtual mlt_link get_link( );
-			mlt_producer get_producer( );
+			mlt_producer get_producer( ) override;
 			int connect_next( Mlt::Producer& next, Mlt::Profile& default_profile );
 	};
 }

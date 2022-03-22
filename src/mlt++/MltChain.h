@@ -44,7 +44,7 @@ namespace Mlt
 			Chain( Service& chain );
 			virtual ~Chain( );
 			virtual mlt_chain get_chain( );
-			mlt_producer get_producer( );
+			mlt_producer get_producer( ) override;
 			void set_source( Mlt::Producer& source );
 			Mlt::Producer get_source( );
 			int attach( Mlt::Link& link );

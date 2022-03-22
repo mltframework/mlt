@@ -52,7 +52,7 @@ namespace Mlt
 			virtual mlt_producer get_producer( );
 			Producer &parent( );
 			mlt_producer get_parent( );
-			mlt_service get_service( );
+			mlt_service get_service( ) override;
 			int seek( int position );
 			int seek( const char* time );
 			int position( );
