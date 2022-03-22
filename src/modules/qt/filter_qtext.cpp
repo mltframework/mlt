@@ -26,9 +26,9 @@
 #include <QFile>
 #include <QTextDocument>
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    #include <QTextCodec>
+#include <QTextCodec>
 #else
-    #include <QtCore5Compat/QTextCodec>
+#include <QtCore5Compat/QTextCodec>
 #endif
 
 #include <QMutexLocker>
@@ -55,7 +55,7 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 	QFont font;
 	font.setPixelSize( mlt_properties_get_int( filter_properties, "size" ) * scale );
 	font.setFamily( mlt_properties_get( filter_properties, "family" ) );
-    font.setWeight( QFont::Weight( ( mlt_properties_get_int( filter_properties, "weight" ) / 10 ) -1 ) );
+	font.setWeight( QFont::Weight( ( mlt_properties_get_int( filter_properties, "weight" ) / 10 ) -1 ) );
 	switch( style )
 	{
 	case 'i':
@@ -71,9 +71,9 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 	{
 		const QString line = lines[i];
 #if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
-        int line_width = fm.horizontalAdvance(line);
+		int line_width = fm.horizontalAdvance(line);
 #else
-        int line_width = fm.width(line);
+		int line_width = fm.width(line);
 #endif
 		int bearing = (line.size() > 0) ? fm.leftBearing(line.at(0)) : 0;
 		if (bearing < 0)
@@ -93,9 +93,9 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 		QString line = lines.at(i);
 		x = offset;
 #if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
-        int line_width = fm.horizontalAdvance(line);
+		int line_width = fm.horizontalAdvance(line);
 #else
-        int line_width = fm.width(line);
+		int line_width = fm.width(line);
 #endif
 		int bearing = (line.size() > 0)? fm.leftBearing(line.at(0)) : 0;
 
@@ -348,11 +348,11 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 #endif
 		QRectF path_rect(0, 0, rect.w / scale * pixel_ratio, rect.h / scale_height * pixel_ratio);
 		QPainter painter( &qimg );
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing );
-#else
-        painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
+		painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+								| QPainter::HighQualityAntialiasing
 #endif
+								);
 		if (isRichText) {
 			auto overflowY = mlt_properties_exists(filter_properties, "overflow-y")?
 				!!mlt_properties_get_int(filter_properties, "overflow-y") :

@@ -50,11 +50,12 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 		QPainterPath path;
 		mlt_color color = mlt_properties_get_color(properties, "color");
 		double radius = mlt_properties_anim_get_double(properties, "radius", position, length);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        painter.setRenderHints( QPainter::Antialiasing );
-#else
-        painter.setRenderHints( QPainter::Antialiasing | QPainter::HighQualityAntialiasing );
+
+		painter.setRenderHints( QPainter::Antialiasing
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+								| QPainter::HighQualityAntialiasing
 #endif
+								);
 		bgImage.fill(QColor(color.r, color.g, color.b, color.a));
 		if (mlt_properties_get_int(properties, "circle")) {
 			QPointF center(double(*width) / 2.0, double(*height) / 2.0);
