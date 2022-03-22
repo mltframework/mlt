@@ -27,15 +27,19 @@ target_link_libraries(mltqt PRIVATE
   m
   Threads::Threads
   Qt${QT_MAJOR_VERSION}::Core
-  Qt${QT_MAJOR_VERSION}::Gui
   Qt${QT_MAJOR_VERSION}::Xml
-  Qt${QT_MAJOR_VERSION}::Svg
-  Qt${QT_MAJOR_VERSION}::Widgets
 )
 
 if(QT_MAJOR_VERSION EQUAL 6)
   target_link_libraries(mltqt PRIVATE
     Qt${QT_MAJOR_VERSION}::SvgWidgets
+    Qt${QT_MAJOR_VERSION}::Core5Compat
+  )
+else()
+  target_link_libraries(mltqt PRIVATE
+    Qt${QT_MAJOR_VERSION}::Svg
+    Qt${QT_MAJOR_VERSION}::Widgets
+    Qt${QT_MAJOR_VERSION}::Gui
   )
 endif()
 
