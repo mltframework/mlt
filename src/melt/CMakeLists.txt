@@ -1,4 +1,4 @@
-add_executable(melt melt.c io.c io.h Jit.pb-c.c)
+add_executable(melt melt.c io.c io.h JitControl.pb-c.c JitStatus.pb-c.c)
 
 target_compile_options(melt PRIVATE ${MLT_COMPILE_OPTIONS})
 
