@@ -36,10 +36,11 @@
 #endif
 
 #include "io.h"
-#include "Jit.pb-c.h"
+#include "JitControl.pb-c.h"
+#include "JitStatus.pb-c.h"
 
 static mlt_producer melt = NULL;
-static Jit jit = JIT__INIT;
+static JitStatus jit_status = JIT_STATUS__INIT;
 
 static void stop_handler(int signum)
 {
@@ -74,6 +75,37 @@ static void transport_action( mlt_producer producer, char *value )
 
 	mlt_properties_set_int( properties, "stats_off", 1 );
 
+	JitControl *const jit_control = (JitControl*) value;
+	switch (jit_control->type) {
+		case CONTROL_TYPE__PAUSE:
+			mlt_producer_set_speed( producer, 0 );
+			mlt_consumer_purge( consumer );
+			mlt_producer_seek( producer, mlt_consumer_position( consumer ) + 1 );
+			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
+			jit_status.playing = 0;
+			break;
+		case CONTROL_TYPE__PLAY:
+			if ( !jack || mlt_producer_get_speed( producer ) != 0 )
+				mlt_producer_set_speed( producer, 1 );
+			mlt_consumer_purge( consumer );
+			mlt_events_fire( jack, "jack-start", mlt_event_data_none() );
+			jit_status.playing = 1;
+			break;
+		case CONTROL_TYPE__SEEK:
+		   	//mlt_position len = mlt_producer_get_length(producer);
+			mlt_consumer_purge( consumer );
+			mlt_producer_seek( producer, jit_control->seek->position );
+			fire_jack_seek_event(jack, position);
+			break;
+		case CONTROL_TYPE__QUIT:
+			mlt_properties_set_int( properties, "done", 1 );
+			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
+			break;
+		default:
+			break;
+	}
+
+	/*
 	if ( strlen( value ) == 1 )
 	{
 		switch( value[ 0 ] )
@@ -274,7 +306,7 @@ static void transport_action( mlt_producer producer, char *value )
 		}
 
 		mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
-	}
+	} */
 
 	mlt_properties_set_int( properties, "stats_off", 0 );
 }
@@ -473,21 +505,47 @@ static void event_handling( mlt_producer producer, mlt_consumer consumer )
 
 #endif
 
-static void write_status(Jit *const jit) {
+static JitControl *read_control() {
+	static char *buf = NULL;
+	static int buf_len = 0;
+
+	int len;
+	if (read(STDIN_FILENO, &len, 4) != 4) {
+		exit(3);
+	}
+	if (buf_len < len) {
+		buf = realloc(buf, len);
+		if (!buf) {
+			exit(4);
+		}
+		buf_len = len;
+	}
+
+	for (int i = 0; i < len; ) {
+		const int r = read(STDIN_FILENO, buf + i, len - i);
+		if (r < 1) {
+			exit(5);
+		}
+		i += r;
+	}
+	return jit_control__unpack(NULL, len, buf);
+}
+
+static void write_status(JitStatus *const jit_status) {
     static char *buf = NULL;
     static int buf_len = 0;
 
-    int len = jit__get_packed_size(jit) + 4;
+    int len = jit_status__get_packed_size(jit_status) + 4;
     if (buf_len < len) {
         buf = realloc(buf, len);
-        buf_len = len;
         if (!buf) {
             exit(1);
         }
+        buf_len = len;
     }
 
     char *b = buf;
-    jit__pack(jit, b + 4);
+    jit_status__pack(jit_status, b + 4);
     *((int*) b) = len - 4;
     while (len) {
         const int w = write(STDERR_FILENO, b, len);
@@ -535,18 +593,25 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 		while( mlt_properties_get_int( properties, "done" ) == 0 && !mlt_consumer_is_stopped( consumer ) )
 		{
 
-            char string[2] = {0, 0};
+            //char string[2] = {0, 0};
             FD_ZERO(&set);
             FD_SET(STDIN_FILENO, &set);
             timeout.tv_sec = 1;
             timeout.tv_usec = 0;
             if (select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout) > 0) {
+				/*
                     if (read(STDIN_FILENO, string, 1) != 1) {
                         string[0] = 'q';
                     }
                     if (string[0] >= '!') {
                         transport_action( producer, string );
                     }
+					*/
+				JitControl *const jit_control = read_control();
+				if (jit_control) {
+					transport_action( producer, (char*) jit_control );
+					jit_control__free_unpacked(jit_control, NULL);
+				}
             }
 
         /*
@@ -597,9 +662,9 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				fflush( stderr );
                 */
                 // MOFF
-                jit.position = mlt_producer_position( producer );
-                write_status(&jit);
-                last_position = jit.position;
+                jit_status.position = mlt_producer_position( producer );
+                write_status(&jit_status);
+                last_position = jit_status.position;
 			}
 
 			//if ( silent || progress )
