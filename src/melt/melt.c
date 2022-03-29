@@ -94,7 +94,7 @@ static void transport_action( mlt_producer producer, char *value )
 			break;
 		case CONTROL_TYPE__SEEK:
 			FILE *f = fopen("/tmp/moff.log", "a");
-			fprintf("seek: %d\n", (int) jit_control->seek->position);
+			fprintf(f, "seek: %d\n", (int) jit_control->seek->position);
 			fclose(f);
 
 		   	//mlt_position len = mlt_producer_get_length(producer);
