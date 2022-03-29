@@ -52,52 +52,7 @@ void   jit_control__free_unpacked
   assert(message->base.descriptor == &jit_control__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-void   seek_control__init
-                     (SeekControl         *message)
-{
-  static const SeekControl init_value = SEEK_CONTROL__INIT;
-  *message = init_value;
-}
-size_t seek_control__get_packed_size
-                     (const SeekControl *message)
-{
-  assert(message->base.descriptor == &seek_control__descriptor);
-  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
-}
-size_t seek_control__pack
-                     (const SeekControl *message,
-                      uint8_t       *out)
-{
-  assert(message->base.descriptor == &seek_control__descriptor);
-  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
-}
-size_t seek_control__pack_to_buffer
-                     (const SeekControl *message,
-                      ProtobufCBuffer *buffer)
-{
-  assert(message->base.descriptor == &seek_control__descriptor);
-  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
-}
-SeekControl *
-       seek_control__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data)
-{
-  return (SeekControl *)
-     protobuf_c_message_unpack (&seek_control__descriptor,
-                                allocator, len, data);
-}
-void   seek_control__free_unpacked
-                     (SeekControl *message,
-                      ProtobufCAllocator *allocator)
-{
-  if(!message)
-    return;
-  assert(message->base.descriptor == &seek_control__descriptor);
-  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
-}
-static const ProtobufCFieldDescriptor jit_control__field_descriptors[2] =
+static const ProtobufCFieldDescriptor jit_control__field_descriptors[3] =
 {
   {
     "type",
@@ -112,26 +67,39 @@ static const ProtobufCFieldDescriptor jit_control__field_descriptors[2] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "seek",
+    "play_rate",
     2,
     PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_MESSAGE,
+    PROTOBUF_C_TYPE_INT32,
     0,   /* quantifier_offset */
-    offsetof(JitControl, seek),
-    &seek_control__descriptor,
+    offsetof(JitControl, play_rate),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "seek_position",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(JitControl, seek_position),
+    NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
 static const unsigned jit_control__field_indices_by_name[] = {
-  1,   /* field[1] = seek */
+  1,   /* field[1] = play_rate */
+  2,   /* field[2] = seek_position */
   0,   /* field[0] = type */
 };
 static const ProtobufCIntRange jit_control__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor jit_control__descriptor =
 {
@@ -141,67 +109,31 @@ const ProtobufCMessageDescriptor jit_control__descriptor =
   "JitControl",
   "",
   sizeof(JitControl),
-  2,
+  3,
   jit_control__field_descriptors,
   jit_control__field_indices_by_name,
   1,  jit_control__number_ranges,
   (ProtobufCMessageInit) jit_control__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor seek_control__field_descriptors[1] =
-{
-  {
-    "position",
-    1,
-    PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_INT64,
-    0,   /* quantifier_offset */
-    offsetof(SeekControl, position),
-    NULL,
-    NULL,
-    0,             /* flags */
-    0,NULL,NULL    /* reserved1,reserved2, etc */
-  },
-};
-static const unsigned seek_control__field_indices_by_name[] = {
-  0,   /* field[0] = position */
-};
-static const ProtobufCIntRange seek_control__number_ranges[1 + 1] =
-{
-  { 1, 0 },
-  { 0, 1 }
-};
-const ProtobufCMessageDescriptor seek_control__descriptor =
-{
-  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
-  "SeekControl",
-  "SeekControl",
-  "SeekControl",
-  "",
-  sizeof(SeekControl),
-  1,
-  seek_control__field_descriptors,
-  seek_control__field_indices_by_name,
-  1,  seek_control__number_ranges,
-  (ProtobufCMessageInit) seek_control__init,
-  NULL,NULL,NULL    /* reserved[123] */
-};
-static const ProtobufCEnumValue control_type__enum_values_by_number[4] =
+static const ProtobufCEnumValue control_type__enum_values_by_number[5] =
 {
   { "PAUSE", "CONTROL_TYPE__PAUSE", 0 },
   { "PLAY", "CONTROL_TYPE__PLAY", 1 },
-  { "SEEK", "CONTROL_TYPE__SEEK", 2 },
+  { "PLAY_RATE", "CONTROL_TYPE__PLAY_RATE", 2 },
   { "QUIT", "CONTROL_TYPE__QUIT", 3 },
+  { "SEEK", "CONTROL_TYPE__SEEK", 4 },
 };
 static const ProtobufCIntRange control_type__value_ranges[] = {
-{0, 0},{0, 4}
+{0, 0},{0, 5}
 };
-static const ProtobufCEnumValueIndex control_type__enum_values_by_name[4] =
+static const ProtobufCEnumValueIndex control_type__enum_values_by_name[5] =
 {
   { "PAUSE", 0 },
   { "PLAY", 1 },
+  { "PLAY_RATE", 2 },
   { "QUIT", 3 },
-  { "SEEK", 2 },
+  { "SEEK", 4 },
 };
 const ProtobufCEnumDescriptor control_type__descriptor =
 {
@@ -210,9 +142,9 @@ const ProtobufCEnumDescriptor control_type__descriptor =
   "ControlType",
   "ControlType",
   "",
-  4,
+  5,
   control_type__enum_values_by_number,
-  4,
+  5,
   control_type__enum_values_by_name,
   1,
   control_type__value_ranges,

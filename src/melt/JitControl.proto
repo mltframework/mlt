@@ -2,16 +2,14 @@ syntax = "proto3";
 
 message JitControl {
     ControlType type = 1;
-    SeekControl seek = 2;
-}
-
-message SeekControl {
-    int64 position = 1;
+    int32 play_rate = 2;
+    int64 seek_position = 3;
 }
 
 enum ControlType {
     PAUSE = 0;
     PLAY = 1;
-    SEEK = 2;
+    PLAY_RATE = 2;
     QUIT = 3;
+    SEEK = 4;
 }

@@ -94,18 +94,24 @@ static void transport_action( mlt_producer producer, char *value )
 			fprintf(f, "play\n");
 
 			if ( !jack || mlt_producer_get_speed( producer ) != 0 ) {
-				mlt_producer_set_speed( producer, 1 );
+				mlt_producer_set_speed( producer, jit_control->play_rate );
 			}
 			mlt_consumer_purge( consumer );
 			mlt_events_fire( jack, "jack-start", mlt_event_data_none() );
 			jit_status.playing = 1;
 			break;
+
+		case CONTROL_TYPE__PLAY_RATE:
+			fprintf(f, "play rate %d\n", jit_control->play_rate);
+			mlt_producer_set_speed( producer, jit_control->play_rate );
+			break;
+
 		case CONTROL_TYPE__SEEK:
-			fprintf(f, "seek: %d\n", (int) jit_control->seek->position);
+			fprintf(f, "seek: %d\n", (int) jit_control->seek_position);
 
 			mlt_consumer_purge( consumer );
-			mlt_producer_seek( producer, jit_control->seek->position);
-			fire_jack_seek_event(jack, jit_control->seek->position);
+			mlt_producer_seek( producer, jit_control->seek_position);
+			fire_jack_seek_event(jack, jit_control->seek_position);
 			break;
 		case CONTROL_TYPE__QUIT:
 			fprintf(f, "quit\n");
