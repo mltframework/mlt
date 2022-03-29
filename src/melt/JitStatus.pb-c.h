@@ -35,14 +35,16 @@ typedef enum _StreamType {
 struct  _JitStatus
 {
   ProtobufCMessage base;
-  int64_t position;
+  int64_t duration;
+  double frame_rate;
   protobuf_c_boolean playing;
-  float playback_rate;
+  int32_t play_rate;
+  int64_t position;
   MediaInfo *mediainfo;
 };
 #define JIT_STATUS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&jit_status__descriptor) \
-    , 0, 0, 0, NULL }
+    , 0, 0, 0, 0, 0, NULL }
 
 
 struct  _MediaInfo
