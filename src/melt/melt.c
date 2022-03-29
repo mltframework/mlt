@@ -86,17 +86,23 @@ static void transport_action( mlt_producer producer, char *value )
 			jit_status.playing = 0;
 			break;
 		case CONTROL_TYPE__PLAY:
-			if ( !jack || mlt_producer_get_speed( producer ) != 0 )
-				mlt_producer_set_speed( producer, 1 );
+			//if ( !jack || mlt_producer_get_speed( producer ) != 0 )
+			mlt_producer_set_speed( producer, 1 );
 			mlt_consumer_purge( consumer );
 			mlt_events_fire( jack, "jack-start", mlt_event_data_none() );
 			jit_status.playing = 1;
 			break;
 		case CONTROL_TYPE__SEEK:
+			FILE *f = fopen("/tmp/moff.log", "a");
+			fprintf("seek: %d\n", (int) jit_control->seek->position);
+			fclose(f);
+
 		   	//mlt_position len = mlt_producer_get_length(producer);
+			mlt_producer_set_speed( producer, 0 );
 			mlt_consumer_purge( consumer );
 			mlt_producer_seek( producer, jit_control->seek->position );
-			fire_jack_seek_event(jack, position);
+			//fire_jack_seek_event(jack, position);
+			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 			break;
 		case CONTROL_TYPE__QUIT:
 			mlt_properties_set_int( properties, "done", 1 );
