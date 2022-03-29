@@ -553,7 +553,6 @@ static void write_status(JitStatus *const jit_status) {
 		FILE *f = fopen("/tmp/moff.log", "a");
 		fprintf(f, "Vafan? %d\n", len);
 		fclose(f);
-		exit(7);
 	}
     if (buf_len < len) {
         buf = realloc(buf, len);
