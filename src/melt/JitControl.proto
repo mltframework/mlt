@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+message JitControl {
+    ControlType type = 1;
+    SeekControl seek = 2;
+}
+
+message SeekControl {
+    int64 position = 1;
+}
+
+enum ControlType {
+    PAUSE = 0;
+    PLAY = 1;
+    SEEK = 2;
+    QUIT = 3;
+}
