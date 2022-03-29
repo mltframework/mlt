@@ -100,13 +100,13 @@ static void transport_action( mlt_producer producer, char *value )
 			fprintf(f, "seek: %d\n", (int) jit_control->seek->position);
 			fclose(f);
 
-		   	//mlt_position len = mlt_producer_get_length(producer);
 			mlt_producer_set_speed( producer, 0 );
 			mlt_consumer_purge( consumer );
 			mlt_producer_seek( producer, jit_control->seek->position );
 			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 			fire_jack_seek_event(jack, jit_control->seek->position);
 			jit_status.playing = 0;
+
 			break;
 		case CONTROL_TYPE__QUIT:
 			mlt_properties_set_int( properties, "done", 1 );
@@ -115,6 +115,7 @@ static void transport_action( mlt_producer producer, char *value )
 		default:
 			break;
 	}
+	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
 
 	/*
 	if ( strlen( value ) == 1 )
