@@ -16,7 +16,6 @@ PROTOBUF_C__BEGIN_DECLS
 
 
 typedef struct _JitControl JitControl;
-typedef struct _SeekControl SeekControl;
 
 
 /* --- enums --- */
@@ -24,8 +23,9 @@ typedef struct _SeekControl SeekControl;
 typedef enum _ControlType {
   CONTROL_TYPE__PAUSE = 0,
   CONTROL_TYPE__PLAY = 1,
-  CONTROL_TYPE__SEEK = 2,
-  CONTROL_TYPE__QUIT = 3
+  CONTROL_TYPE__PLAY_RATE = 2,
+  CONTROL_TYPE__QUIT = 3,
+  CONTROL_TYPE__SEEK = 4
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(CONTROL_TYPE)
 } ControlType;
 
@@ -35,21 +35,12 @@ struct  _JitControl
 {
   ProtobufCMessage base;
   ControlType type;
-  SeekControl *seek;
+  int32_t play_rate;
+  int64_t seek_position;
 };
 #define JIT_CONTROL__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&jit_control__descriptor) \
-    , CONTROL_TYPE__PAUSE, NULL }
-
-
-struct  _SeekControl
-{
-  ProtobufCMessage base;
-  int64_t position;
-};
-#define SEEK_CONTROL__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&seek_control__descriptor) \
-    , 0 }
+    , CONTROL_TYPE__PAUSE, 0, 0 }
 
 
 /* JitControl methods */
@@ -71,32 +62,10 @@ JitControl *
 void   jit_control__free_unpacked
                      (JitControl *message,
                       ProtobufCAllocator *allocator);
-/* SeekControl methods */
-void   seek_control__init
-                     (SeekControl         *message);
-size_t seek_control__get_packed_size
-                     (const SeekControl   *message);
-size_t seek_control__pack
-                     (const SeekControl   *message,
-                      uint8_t             *out);
-size_t seek_control__pack_to_buffer
-                     (const SeekControl   *message,
-                      ProtobufCBuffer     *buffer);
-SeekControl *
-       seek_control__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   seek_control__free_unpacked
-                     (SeekControl *message,
-                      ProtobufCAllocator *allocator);
 /* --- per-message closures --- */
 
 typedef void (*JitControl_Closure)
                  (const JitControl *message,
-                  void *closure_data);
-typedef void (*SeekControl_Closure)
-                 (const SeekControl *message,
                   void *closure_data);
 
 /* --- services --- */
@@ -106,7 +75,6 @@ typedef void (*SeekControl_Closure)
 
 extern const ProtobufCEnumDescriptor    control_type__descriptor;
 extern const ProtobufCMessageDescriptor jit_control__descriptor;
-extern const ProtobufCMessageDescriptor seek_control__descriptor;
 
 PROTOBUF_C__END_DECLS
 
