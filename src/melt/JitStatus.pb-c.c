@@ -187,15 +187,27 @@ void   audio_stream__free_unpacked
   assert(message->base.descriptor == &audio_stream__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-static const ProtobufCFieldDescriptor jit_status__field_descriptors[4] =
+static const ProtobufCFieldDescriptor jit_status__field_descriptors[6] =
 {
   {
-    "position",
+    "duration",
     1,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT64,
     0,   /* quantifier_offset */
-    offsetof(JitStatus, position),
+    offsetof(JitStatus, duration),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "frame_rate",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_DOUBLE,
+    0,   /* quantifier_offset */
+    offsetof(JitStatus, frame_rate),
     NULL,
     NULL,
     0,             /* flags */
@@ -203,7 +215,7 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[4] =
   },
   {
     "playing",
-    2,
+    3,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_BOOL,
     0,   /* quantifier_offset */
@@ -214,12 +226,24 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[4] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "playback_rate",
-    3,
+    "play_rate",
+    4,
     PROTOBUF_C_LABEL_NONE,
-    PROTOBUF_C_TYPE_FLOAT,
+    PROTOBUF_C_TYPE_INT32,
     0,   /* quantifier_offset */
-    offsetof(JitStatus, playback_rate),
+    offsetof(JitStatus, play_rate),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "position",
+    5,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT64,
+    0,   /* quantifier_offset */
+    offsetof(JitStatus, position),
     NULL,
     NULL,
     0,             /* flags */
@@ -227,7 +251,7 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[4] =
   },
   {
     "mediaInfo",
-    4,
+    6,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
@@ -239,15 +263,17 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[4] =
   },
 };
 static const unsigned jit_status__field_indices_by_name[] = {
-  3,   /* field[3] = mediaInfo */
-  2,   /* field[2] = playback_rate */
-  1,   /* field[1] = playing */
-  0,   /* field[0] = position */
+  0,   /* field[0] = duration */
+  1,   /* field[1] = frame_rate */
+  5,   /* field[5] = mediaInfo */
+  3,   /* field[3] = play_rate */
+  2,   /* field[2] = playing */
+  4,   /* field[4] = position */
 };
 static const ProtobufCIntRange jit_status__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 4 }
+  { 0, 6 }
 };
 const ProtobufCMessageDescriptor jit_status__descriptor =
 {
@@ -257,7 +283,7 @@ const ProtobufCMessageDescriptor jit_status__descriptor =
   "JitStatus",
   "",
   sizeof(JitStatus),
-  4,
+  6,
   jit_status__field_descriptors,
   jit_status__field_indices_by_name,
   1,  jit_status__number_ranges,

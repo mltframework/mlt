@@ -1,10 +1,12 @@
 syntax = "proto3";
 
 message JitStatus {
-    int64 position = 1;
-    bool playing = 2;
-    float playback_rate = 3;
-    MediaInfo mediaInfo = 4;
+    int64 duration = 1;
+    double frame_rate = 2;
+    bool playing = 3;
+    int32 play_rate = 4;
+    int64 position = 5;
+    MediaInfo mediaInfo = 6;
 }
 
 message MediaInfo {
