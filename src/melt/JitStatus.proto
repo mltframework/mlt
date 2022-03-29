@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+message JitStatus {
+    int64 position = 1;
+    bool playing = 2;
+    float playback_rate = 3;
+    MediaInfo mediaInfo = 4;
+}
+
+message MediaInfo {
+    repeated Stream streams = 1;
+}
+
+message Stream {
+    StreamType type = 1;
+    AudioStream audio = 2;
+}
+
+message AudioStream {
+    int32 channels = 1;
+}
+
+enum StreamType {
+    UNKNOWN = 0;
+    AUDIO = 1;
+    VIDEO = 2;
+}
