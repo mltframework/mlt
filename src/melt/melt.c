@@ -76,8 +76,11 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_properties_set_int( properties, "stats_off", 1 );
 
 	JitControl *const jit_control = (JitControl*) value;
+	FILE *f = fopen("/tmp/moff.log", "a");
 	switch (jit_control->type) {
 		case CONTROL_TYPE__PAUSE:
+			fprintf(f, "pause\n");
+
 			mlt_producer_set_speed( producer, 0 );
 			mlt_consumer_purge( consumer );
 			mlt_producer_seek( producer, mlt_consumer_position( consumer ) + 1 );
@@ -85,36 +88,37 @@ static void transport_action( mlt_producer producer, char *value )
 			jit_status.playing = 0;
 			break;
 		case CONTROL_TYPE__PLAY:
-			FILE *f1 = fopen("/tmp/moff.log", "a");
-			fprintf(f1, "play\n");
-			fclose(f1);
+			fprintf(f, "play\n");
 
-			//if ( !jack || mlt_producer_get_speed( producer ) != 0 )
-			mlt_producer_set_speed( producer, 1 );
+			if ( !jack || mlt_producer_get_speed( producer ) != 0 ) {
+				mlt_producer_set_speed( producer, 1 );
+			}
 			mlt_consumer_purge( consumer );
 			mlt_events_fire( jack, "jack-start", mlt_event_data_none() );
 			jit_status.playing = 1;
 			break;
 		case CONTROL_TYPE__SEEK:
-			FILE *f = fopen("/tmp/moff.log", "a");
 			fprintf(f, "seek: %d\n", (int) jit_control->seek->position);
-			fclose(f);
 
-			mlt_producer_set_speed( producer, 0 );
+			//mlt_producer_set_speed( producer, 0 );
 			mlt_consumer_purge( consumer );
 			mlt_producer_seek( producer, jit_control->seek->position );
-			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
+			//mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 			fire_jack_seek_event(jack, jit_control->seek->position);
-			jit_status.playing = 0;
+			//jit_status.playing = 0;
 
 			break;
 		case CONTROL_TYPE__QUIT:
+			fprintf(f, "quit\n");
+
 			mlt_properties_set_int( properties, "done", 1 );
 			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 			break;
 		default:
+			fprintf(f, "argh!\n");
 			break;
 	}
+	fclose(f);
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
 
 	/*
