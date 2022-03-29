@@ -86,6 +86,10 @@ static void transport_action( mlt_producer producer, char *value )
 			jit_status.playing = 0;
 			break;
 		case CONTROL_TYPE__PLAY:
+			FILE *f1 = fopen("/tmp/moff.log", "a");
+			fprintf(f1, "play\n");
+			fclose(f1);
+
 			//if ( !jack || mlt_producer_get_speed( producer ) != 0 )
 			mlt_producer_set_speed( producer, 1 );
 			mlt_consumer_purge( consumer );
@@ -101,8 +105,9 @@ static void transport_action( mlt_producer producer, char *value )
 			mlt_producer_set_speed( producer, 0 );
 			mlt_consumer_purge( consumer );
 			mlt_producer_seek( producer, jit_control->seek->position );
-			//fire_jack_seek_event(jack, position);
 			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
+			fire_jack_seek_event(jack, jit_control->seek->position);
+			jit_status.playing = 0;
 			break;
 		case CONTROL_TYPE__QUIT:
 			mlt_properties_set_int( properties, "done", 1 );
