@@ -402,8 +402,9 @@ static int load_consumer( mlt_consumer *consumer, mlt_profile profile, int argc,
 			qglsl = 1;
 #if SDL_MAJOR_VERSION == 2
 		if ( !strcmp("sdl", argv[i]) || !strcmp("sdl_audio", argv[i]) || !strcmp("sdl_preview", argv[i]) || !strcmp("sdl_still", argv[i]) ) {
+			/*
 			fprintf(stderr, 
-"Error: This program was linked against SDL2, which is incompatible with\nSDL1 consumers. Aborting.\n");
+"Error: This program was linked against SDL2, which is incompatible with\nSDL1 consumers. Aborting.\n");*/
 			return EXIT_FAILURE;
 		}
 #endif
@@ -548,6 +549,12 @@ static void write_status(JitStatus *const jit_status) {
     static int buf_len = 0;
 
     int len = jit_status__get_packed_size(jit_status) + 4;
+	if (len < 5) {
+		FILE *f = fopen("/tmp/moff.log", "a");
+		fprintf(f, "Vafan? %d\n", len);
+		fclose(f);
+		exit(7);
+	}
     if (buf_len < len) {
         buf = realloc(buf, len);
         if (!buf) {
@@ -1273,7 +1280,7 @@ query_all:
 		}
 		else if ( store != NULL && store != stdout && name != NULL )
 		{
-			fprintf( stderr, "Project saved as %s.\n", name );
+			//fprintf( stderr, "Project saved as %s.\n", name );
 			fclose( store );
 		}
 	}
