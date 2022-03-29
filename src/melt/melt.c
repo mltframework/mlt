@@ -102,8 +102,8 @@ static void transport_action( mlt_producer producer, char *value )
 			fprintf(f, "seek: %d\n", (int) jit_control->seek->position);
 
 			mlt_consumer_purge( consumer );
-			mlt_producer_seek( producer, 0 /* jit_control->seek->position */);
-			fire_jack_seek_event(jack, 0 /* jit_control->seek->position */);
+			mlt_producer_seek( producer, jit_control->seek->position);
+			fire_jack_seek_event(jack, jit_control->seek->position);
 			break;
 		case CONTROL_TYPE__QUIT:
 			fprintf(f, "quit\n");
