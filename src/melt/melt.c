@@ -987,7 +987,7 @@ static mlt_producer find_producer_avformat(mlt_producer p) {
 
 	mlt_tractor tractor = (mlt_tractor) p;
 	mlt_multitrack multitrack = mlt_tractor_multitrack(tractor);
-	mlt_playlist playlist = mlt_multitrack_track(multitrack, 0);
+	mlt_playlist playlist = (mlt_playlist) mlt_multitrack_track(multitrack, 0);
 	mlt_producer clip = mlt_playlist_get_clip(playlist, 0);
 	return mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(mlt_playlist_get_clip(playlist, 0)), "_cut_parent", NULL);
 }
