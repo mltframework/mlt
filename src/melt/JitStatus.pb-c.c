@@ -187,7 +187,7 @@ void   audio_stream__free_unpacked
   assert(message->base.descriptor == &audio_stream__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
-static const ProtobufCFieldDescriptor jit_status__field_descriptors[6] =
+static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
 {
   {
     "duration",
@@ -250,8 +250,20 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[6] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "mediaInfo",
+    "total_channels",
     6,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(JitStatus, total_channels),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "mediaInfo",
+    7,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
@@ -265,15 +277,16 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[6] =
 static const unsigned jit_status__field_indices_by_name[] = {
   0,   /* field[0] = duration */
   1,   /* field[1] = frame_rate */
-  5,   /* field[5] = mediaInfo */
+  6,   /* field[6] = mediaInfo */
   3,   /* field[3] = play_rate */
   2,   /* field[2] = playing */
   4,   /* field[4] = position */
+  5,   /* field[5] = total_channels */
 };
 static const ProtobufCIntRange jit_status__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 6 }
+  { 0, 7 }
 };
 const ProtobufCMessageDescriptor jit_status__descriptor =
 {
@@ -283,7 +296,7 @@ const ProtobufCMessageDescriptor jit_status__descriptor =
   "JitStatus",
   "",
   sizeof(JitStatus),
-  6,
+  7,
   jit_status__field_descriptors,
   jit_status__field_indices_by_name,
   1,  jit_status__number_ranges,
