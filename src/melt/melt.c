@@ -985,11 +985,11 @@ static mlt_repository setup_factory(const char* repo_path, int set_locale)
 
 static mlt_producer find_producer_avformat(mlt_producer p) {
 
-		mlt_tractor tractor = (mlt_tractor) p;
-		mlt_multitrack multitrack = mlt_tractor_multitrack(tractor);
-		mlt_playlist playlist = mlt_multitrack_track(multitrack, 0);
-		mlt_producer clip = mlt_playlist_get_clip(playlist, 0);
-		return mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(mlt_playlist_get_clip(playlist, 0)), "_cut_parent", NULL);
+	mlt_tractor tractor = (mlt_tractor) p;
+	mlt_multitrack multitrack = mlt_tractor_multitrack(tractor);
+	mlt_playlist playlist = mlt_multitrack_track(multitrack, 0);
+	mlt_producer clip = mlt_playlist_get_clip(playlist, 0);
+	return mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(mlt_playlist_get_clip(playlist, 0)), "_cut_parent", NULL);
 }
 
 static void dump_properties(mlt_properties p) {
@@ -1244,16 +1244,27 @@ query_all:
 
 	// media info
 	mlt_producer av = find_producer_avformat(melt);
-	int nb_streams = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), "meta.media.nb_streams");
-	for (int i = 0; i < nb_streams; i++) {
+	jit_status.mediainfo = calloc(sizeof *jit_status.mediainfo, 1);
+	jit_status.mediainfo->n_streams = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), "meta.media.nb_streams");
+	jit_status.mediainfo->streams = calloc(sizeof *jit_status.mediainfo->streams, jit_status.mediainfo->n_streams);
+	Stream *s = jit_status.mediainfo->streams;
+	for (int i = 0; i < jit_status.mediainfo->n_streams; i++) {
+		s[i].type = STREAM_TYPE__UNKNOWN;
 		char key[100];
 		sprintf(key, "meta.media.%d.stream.type", i);
 		char *value = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
 		if (!value) {
 			continue;
 		} else if (!strcmp(value, "audio")) {
+			s[i].type = STREAM_TYPE__AUDIO;
+			s[i].audio = calloc(sizeof *s[i].audio, 1);
 			sprintf(key, "meta.media.%d.codec.channels", i);
-			jit_status.total_channels += mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), key);
+			s[i].audio->channels = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), key);
+			jit_status.total_channels += s[i].audio->channels;
+			sprintf(key, "meta.attr.%d.stream.language.markup", i);
+			s[i].audio->language = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
+		} else if (!strcmp(value, "video")) {
+			s[i].type = STREAM_TYPE__VIDEO;
 		}
 	}
 	//dump_properties(av);

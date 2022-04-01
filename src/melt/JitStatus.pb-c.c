@@ -187,6 +187,51 @@ void   audio_stream__free_unpacked
   assert(message->base.descriptor == &audio_stream__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   video_stream__init
+                     (VideoStream         *message)
+{
+  static const VideoStream init_value = VIDEO_STREAM__INIT;
+  *message = init_value;
+}
+size_t video_stream__get_packed_size
+                     (const VideoStream *message)
+{
+  assert(message->base.descriptor == &video_stream__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t video_stream__pack
+                     (const VideoStream *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &video_stream__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t video_stream__pack_to_buffer
+                     (const VideoStream *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &video_stream__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+VideoStream *
+       video_stream__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (VideoStream *)
+     protobuf_c_message_unpack (&video_stream__descriptor,
+                                allocator, len, data);
+}
+void   video_stream__free_unpacked
+                     (VideoStream *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &video_stream__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
 {
   {
@@ -341,7 +386,7 @@ const ProtobufCMessageDescriptor media_info__descriptor =
   (ProtobufCMessageInit) media_info__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor stream__field_descriptors[2] =
+static const ProtobufCFieldDescriptor stream__field_descriptors[3] =
 {
   {
     "type",
@@ -367,15 +412,28 @@ static const ProtobufCFieldDescriptor stream__field_descriptors[2] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "video",
+    3,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Stream, video),
+    &video_stream__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned stream__field_indices_by_name[] = {
   1,   /* field[1] = audio */
   0,   /* field[0] = type */
+  2,   /* field[2] = video */
 };
 static const ProtobufCIntRange stream__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 3 }
 };
 const ProtobufCMessageDescriptor stream__descriptor =
 {
@@ -385,14 +443,14 @@ const ProtobufCMessageDescriptor stream__descriptor =
   "Stream",
   "",
   sizeof(Stream),
-  2,
+  3,
   stream__field_descriptors,
   stream__field_indices_by_name,
   1,  stream__number_ranges,
   (ProtobufCMessageInit) stream__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor audio_stream__field_descriptors[1] =
+static const ProtobufCFieldDescriptor audio_stream__field_descriptors[2] =
 {
   {
     "channels",
@@ -406,14 +464,27 @@ static const ProtobufCFieldDescriptor audio_stream__field_descriptors[1] =
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "language",
+    2,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(AudioStream, language),
+    NULL,
+    &protobuf_c_empty_string,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned audio_stream__field_indices_by_name[] = {
   0,   /* field[0] = channels */
+  1,   /* field[1] = language */
 };
 static const ProtobufCIntRange audio_stream__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor audio_stream__descriptor =
 {
@@ -423,11 +494,49 @@ const ProtobufCMessageDescriptor audio_stream__descriptor =
   "AudioStream",
   "",
   sizeof(AudioStream),
-  1,
+  2,
   audio_stream__field_descriptors,
   audio_stream__field_indices_by_name,
   1,  audio_stream__number_ranges,
   (ProtobufCMessageInit) audio_stream__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor video_stream__field_descriptors[1] =
+{
+  {
+    "frame_rate",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_DOUBLE,
+    0,   /* quantifier_offset */
+    offsetof(VideoStream, frame_rate),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned video_stream__field_indices_by_name[] = {
+  0,   /* field[0] = frame_rate */
+};
+static const ProtobufCIntRange video_stream__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor video_stream__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "VideoStream",
+  "VideoStream",
+  "VideoStream",
+  "",
+  sizeof(VideoStream),
+  1,
+  video_stream__field_descriptors,
+  video_stream__field_indices_by_name,
+  1,  video_stream__number_ranges,
+  (ProtobufCMessageInit) video_stream__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
 static const ProtobufCEnumValue stream_type__enum_values_by_number[3] =

@@ -19,6 +19,7 @@ typedef struct _JitStatus JitStatus;
 typedef struct _MediaInfo MediaInfo;
 typedef struct _Stream Stream;
 typedef struct _AudioStream AudioStream;
+typedef struct _VideoStream VideoStream;
 
 
 /* --- enums --- */
@@ -64,19 +65,31 @@ struct  _Stream
   ProtobufCMessage base;
   StreamType type;
   AudioStream *audio;
+  VideoStream *video;
 };
 #define STREAM__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&stream__descriptor) \
-    , STREAM_TYPE__UNKNOWN, NULL }
+    , STREAM_TYPE__UNKNOWN, NULL, NULL }
 
 
 struct  _AudioStream
 {
   ProtobufCMessage base;
   int32_t channels;
+  char *language;
 };
 #define AUDIO_STREAM__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&audio_stream__descriptor) \
+    , 0, (char *)protobuf_c_empty_string }
+
+
+struct  _VideoStream
+{
+  ProtobufCMessage base;
+  double frame_rate;
+};
+#define VIDEO_STREAM__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&video_stream__descriptor) \
     , 0 }
 
 
@@ -156,6 +169,25 @@ AudioStream *
 void   audio_stream__free_unpacked
                      (AudioStream *message,
                       ProtobufCAllocator *allocator);
+/* VideoStream methods */
+void   video_stream__init
+                     (VideoStream         *message);
+size_t video_stream__get_packed_size
+                     (const VideoStream   *message);
+size_t video_stream__pack
+                     (const VideoStream   *message,
+                      uint8_t             *out);
+size_t video_stream__pack_to_buffer
+                     (const VideoStream   *message,
+                      ProtobufCBuffer     *buffer);
+VideoStream *
+       video_stream__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   video_stream__free_unpacked
+                     (VideoStream *message,
+                      ProtobufCAllocator *allocator);
 /* --- per-message closures --- */
 
 typedef void (*JitStatus_Closure)
@@ -170,6 +202,9 @@ typedef void (*Stream_Closure)
 typedef void (*AudioStream_Closure)
                  (const AudioStream *message,
                   void *closure_data);
+typedef void (*VideoStream_Closure)
+                 (const VideoStream *message,
+                  void *closure_data);
 
 /* --- services --- */
 
@@ -181,6 +216,7 @@ extern const ProtobufCMessageDescriptor jit_status__descriptor;
 extern const ProtobufCMessageDescriptor media_info__descriptor;
 extern const ProtobufCMessageDescriptor stream__descriptor;
 extern const ProtobufCMessageDescriptor audio_stream__descriptor;
+extern const ProtobufCMessageDescriptor video_stream__descriptor;
 
 PROTOBUF_C__END_DECLS
 
