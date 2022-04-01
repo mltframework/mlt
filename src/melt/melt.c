@@ -1266,8 +1266,12 @@ query_all:
 			s->audio->channels = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), key);
 			jit_status.total_channels += s->audio->channels;
 			sprintf(key, "meta.attr.%d.stream.language.markup", i);
-			s->audio->language.data = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
-			s->audio->language.len = strlen(s->audio->language.data);
+			value = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
+			if (value) {
+				s->audio->language.len = strlen(value);
+				s->audio->language.data = calloc(1, s->audio->language.len + 1);
+				strcpy(s->audio->language.data, value);
+			}
 		} else if (!strcmp(value, "video")) {
 			s->type = STREAM_TYPE__VIDEO;
 		}
