@@ -1244,27 +1244,31 @@ query_all:
 
 	// media info
 	mlt_producer av = find_producer_avformat(melt);
-	jit_status.mediainfo = calloc(sizeof *jit_status.mediainfo, 1);
+	jit_status.mediainfo = calloc(1, sizeof (MediaInfo));
+	media_info__init(jit_status.mediainfo);
 	jit_status.mediainfo->n_streams = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), "meta.media.nb_streams");
-	jit_status.mediainfo->streams = calloc(sizeof *jit_status.mediainfo->streams, jit_status.mediainfo->n_streams);
-	Stream *s = jit_status.mediainfo->streams;
+	jit_status.mediainfo->streams = calloc(jit_status.mediainfo->n_streams, sizeof (Stream*));
 	for (int i = 0; i < jit_status.mediainfo->n_streams; i++) {
-		s[i].type = STREAM_TYPE__UNKNOWN;
+		Stream *s = calloc(sizeof (Stream), 1);
+		stream__init(s);
+		jit_status.mediainfo->streams[i] = s;
+		s->type = STREAM_TYPE__UNKNOWN;
 		char key[100];
 		sprintf(key, "meta.media.%d.stream.type", i);
 		char *value = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
 		if (!value) {
 			continue;
 		} else if (!strcmp(value, "audio")) {
-			s[i].type = STREAM_TYPE__AUDIO;
-			s[i].audio = calloc(sizeof *s[i].audio, 1);
+			s->type = STREAM_TYPE__AUDIO;
+			s->audio = calloc(1, sizeof (AudioStream));
+			audio_stream__init(s->audio);
 			sprintf(key, "meta.media.%d.codec.channels", i);
-			s[i].audio->channels = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), key);
-			jit_status.total_channels += s[i].audio->channels;
+			s->audio->channels = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), key);
+			jit_status.total_channels += s->audio->channels;
 			sprintf(key, "meta.attr.%d.stream.language.markup", i);
-			s[i].audio->language = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
+			s->audio->language = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
 		} else if (!strcmp(value, "video")) {
-			s[i].type = STREAM_TYPE__VIDEO;
+			s->type = STREAM_TYPE__VIDEO;
 		}
 	}
 	//dump_properties(av);
