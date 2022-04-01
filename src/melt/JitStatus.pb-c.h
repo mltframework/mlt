@@ -76,11 +76,11 @@ struct  _AudioStream
 {
   ProtobufCMessage base;
   int32_t channels;
-  char *language;
+  ProtobufCBinaryData language;
 };
 #define AUDIO_STREAM__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&audio_stream__descriptor) \
-    , 0, (char *)protobuf_c_empty_string }
+    , 0, {0,NULL} }
 
 
 struct  _VideoStream
