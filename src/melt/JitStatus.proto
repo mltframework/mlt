@@ -22,7 +22,7 @@ message Stream {
 
 message AudioStream {
     int32 channels = 1;
-    bytes language = 2;
+    string language = 2;
 }
 
 message VideoStream {

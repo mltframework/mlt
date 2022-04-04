@@ -1271,9 +1271,11 @@ query_all:
 			sprintf(key, "meta.attr.%d.stream.language.markup", i);
 			value = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);
 			if (value) {
-				s->audio->language.len = strlen(value);
-				s->audio->language.data = calloc(1, s->audio->language.len + 1);
-				strcpy(s->audio->language.data, value);
+				//int l = strlen(value);
+				//s->audio->language.len = l;
+				//s->audio->language.data = calloc(1, l + 1);
+				s->audio->language = strdup(value);
+				//strcpy(s->audio->language.data, value);
 			}
 		} else if (!strcmp(value, "video")) {
 			s->type = STREAM_TYPE__VIDEO;
