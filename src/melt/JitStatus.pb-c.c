@@ -307,12 +307,12 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "mediaInfo",
+    "media_info",
     7,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
-    offsetof(JitStatus, mediainfo),
+    offsetof(JitStatus, media_info),
     &media_info__descriptor,
     NULL,
     0,             /* flags */
@@ -322,7 +322,7 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
 static const unsigned jit_status__field_indices_by_name[] = {
   0,   /* field[0] = duration */
   1,   /* field[1] = frame_rate */
-  6,   /* field[6] = mediaInfo */
+  6,   /* field[6] = media_info */
   3,   /* field[3] = play_rate */
   2,   /* field[2] = playing */
   4,   /* field[4] = position */

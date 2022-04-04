@@ -1247,14 +1247,14 @@ query_all:
 
 	// media info
 	mlt_producer av = find_producer_avformat(melt);
-	jit_status.mediainfo = calloc(1, sizeof (MediaInfo));
-	media_info__init(jit_status.mediainfo);
-	jit_status.mediainfo->n_streams = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), "meta.media.nb_streams");
-	jit_status.mediainfo->streams = calloc(jit_status.mediainfo->n_streams, sizeof (Stream*));
-	for (int i = 0; i < jit_status.mediainfo->n_streams; i++) {
+	jit_status.media_info = calloc(1, sizeof (MediaInfo));
+	media_info__init(jit_status.media_info);
+	jit_status.media_info->n_streams = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), "meta.media.nb_streams");
+	jit_status.media_info->streams = calloc(jit_status.media_info->n_streams, sizeof (Stream*));
+	for (int i = 0; i < jit_status.media_info->n_streams; i++) {
 		Stream *s = calloc(sizeof (Stream), 1);
 		stream__init(s);
-		jit_status.mediainfo->streams[i] = s;
+		jit_status.media_info->streams[i] = s;
 		s->type = STREAM_TYPE__UNKNOWN;
 		char key[100];
 		sprintf(key, "meta.media.%d.stream.type", i);

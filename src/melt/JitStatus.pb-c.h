@@ -42,7 +42,7 @@ struct  _JitStatus
   int32_t play_rate;
   int64_t position;
   int32_t total_channels;
-  MediaInfo *mediainfo;
+  MediaInfo *media_info;
 };
 #define JIT_STATUS__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&jit_status__descriptor) \

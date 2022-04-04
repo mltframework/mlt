@@ -7,7 +7,7 @@ message JitStatus {
     int32 play_rate = 4;
     int64 position = 5;
     int32 total_channels = 6;
-    MediaInfo mediaInfo = 7;
+    MediaInfo media_info = 7;
 }
 
 message MediaInfo {
