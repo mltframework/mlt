@@ -1242,6 +1242,9 @@ query_all:
 			consumer = create_consumer( profile, NULL );
 	}
 
+	// video plays automatically
+	jit_status.playing = 1;
+
 	// media info
 	mlt_producer av = find_producer_avformat(melt);
 	jit_status.mediainfo = calloc(1, sizeof (MediaInfo));
