@@ -29,6 +29,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <locale.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <framework/mlt.h>
 
@@ -556,6 +559,11 @@ static JitControl *read_control() {
 static void write_status(JitStatus *const jit_status) {
     static char *buf = NULL;
     static int buf_len = 0;
+	static int fd = -1;
+
+	if (fd < 0) {
+		fd = open("/tmp/jit-status", O_WRONLY);
+	}
 
     int len = jit_status__get_packed_size(jit_status) + 4;
 	if (len < 5) {
@@ -575,7 +583,7 @@ static void write_status(JitStatus *const jit_status) {
     jit_status__pack(jit_status, b + 4);
     *((int*) b) = len - 4;
     while (len) {
-        const int w = write(STDERR_FILENO, b, len);
+        const int w = write(fd, b, len);
         if (w < 1) {
             exit(2);
         }
