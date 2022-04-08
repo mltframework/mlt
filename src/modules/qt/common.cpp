@@ -55,7 +55,7 @@ bool createQApplicationIfNeeded(mlt_service service)
 
 void convert_qimage_to_mlt_rgba( QImage* qImg, uint8_t* mImg, int width, int height )
 {
-#if QT_VERSION >= 0x050200
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
 	// QImage::Format_RGBA8888 was added in Qt5.2
 	// Nothing to do in this case  because the image was modified directly.
 	// Destination pointer must be the same pointer that was provided to
@@ -81,7 +81,7 @@ void convert_qimage_to_mlt_rgba( QImage* qImg, uint8_t* mImg, int width, int hei
 
 void convert_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg, int width, int height )
 {
-#if QT_VERSION >= 0x050200
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
 	// QImage::Format_RGBA8888 was added in Qt5.2
 	// Initialize the QImage with the MLT image because the data formats match.
 	*qImg = QImage( mImg, width, height, QImage::Format_RGBA8888 );
