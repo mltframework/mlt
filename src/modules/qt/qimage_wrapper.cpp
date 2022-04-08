@@ -34,6 +34,7 @@
 #include <QImageReader>
 
 #ifdef USE_EXIF
+#include <QTransform>
 #include <libexif/exif-data.h>
 #endif
 
@@ -107,7 +108,7 @@ static QImage* reorient_with_exif( producer_qimage self, int image_idx, QImage *
 	{
 		  // Rotate image according to exif data
 		  QImage processed;
-		  QMatrix matrix;
+		  QTransform matrix;
 
 		  switch ( exif_orientation ) {
 		  case 2:
