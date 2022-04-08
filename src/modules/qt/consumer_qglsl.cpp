@@ -22,64 +22,6 @@
 #include <QApplication>
 #include <QtGlobal>
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-
-#include <QGLWidget>
-#include <QMutex>
-#include <QWaitCondition>
-
-class GLWidget : public QGLWidget
-{
-private:
-	QGLWidget *renderContext;
-	bool isInitialized;
-	QMutex mutex;
-	QWaitCondition condition;
-
-public:
-	GLWidget()
-#ifdef Q_OS_MAC
-		: QGLWidget()
-#else
-		: QGLWidget(0, 0, Qt::SplashScreen)
-#endif
-		, renderContext(0)
-		, isInitialized(false)
-	{
-		resize(0, 0);
-		show();
-	}
-
-	~GLWidget()
-	{
-		delete renderContext;
-	}
-
-	bool createRenderContext()
-	{
-		if (!isInitialized) {
-			mutex.lock();
-			condition.wait(&mutex);
-			mutex.unlock();
-		}
-		if (!renderContext) {
-			renderContext = new QGLWidget(0, this, Qt::SplashScreen);
-			renderContext->resize(0, 0);
-			renderContext->makeCurrent();
-		}
-		return renderContext->isValid();
-	}
-
-protected:
-	void initializeGL()
-	{
-		condition.wakeAll();
-		isInitialized = true;
-	}
-};
-
-#else // Qt 5
-
 #include <QThread>
 #include <QOpenGLContext>
 #include <QOffscreenSurface>
@@ -145,8 +87,6 @@ static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data
 	}
 }
 
-#endif // Qt 5
-
 static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 {
 	mlt_service service = MLT_CONSUMER_SERVICE(consumer);
@@ -155,12 +95,7 @@ static void onThreadStarted(mlt_properties owner, mlt_consumer consumer)
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
 
 	mlt_log_debug(service, "%s\n", __FUNCTION__);
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-	GLWidget *widget = (GLWidget*) mlt_properties_get_data(properties, "GLWidget", NULL);
-	if (widget->createRenderContext()) {
-#else
 	{
-#endif
 		mlt_events_fire(filter_properties, "init glsl", mlt_event_data_none());
 		if (!mlt_properties_get_int(filter_properties, "glsl_supported")) {
 			mlt_log_fatal(service,
@@ -177,16 +112,6 @@ static void onThreadStopped(mlt_properties owner, mlt_consumer consumer)
 	mlt_events_fire(MLT_FILTER_PROPERTIES(filter), "close glsl", mlt_event_data_none());
 }
 
-static void onCleanup(mlt_properties owner, mlt_consumer consumer)
-{
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-	GLWidget* widget = (GLWidget*) mlt_properties_get_data( MLT_CONSUMER_PROPERTIES(consumer), "GLWidget", NULL);
-	delete widget;
-	mlt_properties_set_data(MLT_CONSUMER_PROPERTIES(consumer), "GLWidget", NULL, 0, NULL, NULL);
-	qApp->processEvents();
-#endif
-}
-
 extern "C" {
 
 mlt_consumer consumer_qglsl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
@@ -200,18 +125,13 @@ mlt_consumer consumer_qglsl_init( mlt_profile profile, mlt_service_type type, co
 			mlt_events_register( properties, "consumer-cleanup" );
 			mlt_events_listen(properties, consumer, "consumer-thread-started", (mlt_listener) onThreadStarted);
 			mlt_events_listen(properties, consumer, "consumer-thread-stopped", (mlt_listener) onThreadStopped);
-			mlt_events_listen(properties, consumer, "consumer-cleanup", (mlt_listener) onCleanup);
 			if (!createQApplicationIfNeeded(MLT_CONSUMER_SERVICE(consumer))) {
 				mlt_filter_close(filter);
 				mlt_consumer_close(consumer);
 				return NULL;
 			}
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-			mlt_properties_set_data(properties, "GLWidget", new GLWidget, 0, NULL, NULL);
-#else
 			mlt_events_listen(properties, consumer, "consumer-thread-create", (mlt_listener) onThreadCreate);
 			mlt_events_listen(properties, consumer, "consumer-thread-join", (mlt_listener) onThreadJoin);
-#endif
 			qApp->processEvents();
 			return consumer;
 		}

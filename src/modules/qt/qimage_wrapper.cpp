@@ -280,7 +280,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 
 		// Copy the image
 		int image_size;
-#if QT_VERSION >= 0x050200
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
 		if ( has_alpha )
 		{
 			self->format = mlt_image_rgba;
