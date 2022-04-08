@@ -160,8 +160,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// setup Qt drawing
 	QPainter painter;
 	painter.begin( &img );
-	painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
-
+	painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+							| QPainter::HighQualityAntialiasing
+#endif
+							);
 	// draw some stuff with Qt
 	QPalette palette;
 	QFont font;
@@ -173,9 +176,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	painter.setPen( QColor("white") );
 	painter.drawLine( 0, *height/2 - 1, *width, *height/2 );
 	painter.setFont( font );
-	s.sprintf( "Frame: %05d\nPSNR:   %05.2f (Y) %05.2f (Cb) %05.2f (Cr)\nSSIM:    %5.3f (Y) %5.3f (Cb) %5.3f (Cr)",
-			  mlt_frame_get_position( a_frame ), psnr[0], psnr[1], psnr[2],
-			  ssim[0], ssim[1], ssim[2] );
+	s.asprintf( "Frame: %05d\nPSNR:   %05.2f (Y) %05.2f (Cb) %05.2f (Cr)\nSSIM:    %5.3f (Y) %5.3f (Cb) %5.3f (Cr)",
+				mlt_frame_get_position( a_frame ), psnr[0], psnr[1], psnr[2],
+				ssim[0], ssim[1], ssim[2] );
 	painter.setPen( QColor("black") );
 	painter.drawText( 52, *height * 8 / 10 + 2, *width, *height, 0, s );
 	painter.setPen( QColor("white") );

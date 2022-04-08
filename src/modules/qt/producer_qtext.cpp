@@ -28,8 +28,13 @@
 #include <QPainterPath>
 #include <QFont>
 #include <QString>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QTextCodec>
 #include <QTextDecoder>
+#else
+#include <QtCore5Compat/QTextCodec>
+#include <QtCore5Compat/QTextDecoder>
+#endif
 
 static void close_qimg( void* qimg )
 {
@@ -153,7 +158,7 @@ static void generate_qpath( mlt_properties producer_properties )
 	QFont font;
 	font.setPixelSize( mlt_properties_get_int( producer_properties, "size" ) );
 	font.setFamily( mlt_properties_get( producer_properties, "family" ) );
-	font.setWeight( ( mlt_properties_get_int( producer_properties, "weight" ) / 10 ) -1 );
+	font.setWeight( QFont::Weight( ( mlt_properties_get_int( producer_properties, "weight" ) / 10 ) -1 ) );
 	switch( style[0] )
 	{
 	case 'i':
@@ -168,7 +173,11 @@ static void generate_qpath( mlt_properties producer_properties )
 	for( int i = 0; i < lines.size(); ++i )
 	{
 		const QString line = lines[i];
+#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
+		int line_width = fm.horizontalAdvance(line);
+#else
 		int line_width = fm.width(line);
+#endif
 		int bearing = (line.size() > 0) ? fm.leftBearing(line.at(0)) : 0;
 		if (bearing < 0)
 			line_width -= bearing;
@@ -186,7 +195,11 @@ static void generate_qpath( mlt_properties producer_properties )
 	{
 		QString line = lines.at(i);
 		x = offset;
+#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
+		int line_width = fm.horizontalAdvance(line);
+#else
 		int line_width = fm.width(line);
+#endif
 		int bearing = (line.size() > 0)? fm.leftBearing(line.at(0)) : 0;
 
 		if (bearing < 0) {
@@ -295,7 +308,11 @@ static void generate_qimage( mlt_properties frame_properties )
 	QPainter painter( qImg );
 	// Scale the painter rather than the image for better looking results.
 	painter.scale( sx, sy );
-	painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::HighQualityAntialiasing );
+	painter.setRenderHints( QPainter::Antialiasing | QPainter::TextAntialiasing
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+							| QPainter::HighQualityAntialiasing
+#endif
+							);
 
 	QPen pen;
 	pen.setWidth( outline );
