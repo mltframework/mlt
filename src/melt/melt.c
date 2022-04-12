@@ -80,11 +80,8 @@ static void transport_action( mlt_producer producer, char *value )
 	mlt_properties_set_int( properties, "stats_off", 1 );
 
 	JitControl *const jit_control = (JitControl*) value;
-	FILE *f = fopen("/tmp/moff.log", "a");
 	switch (jit_control->type) {
 		case CONTROL_TYPE__PAUSE:
-			fprintf(f, "pause\n");
-
 			mlt_producer_set_speed( producer, 0 );
 			mlt_consumer_purge( consumer );
 			if (jit_status.playing) {
@@ -94,8 +91,6 @@ static void transport_action( mlt_producer producer, char *value )
 			jit_status.playing = 0;
 			break;
 		case CONTROL_TYPE__PLAY:
-			fprintf(f, "play\n");
-
 			if ( !jack || mlt_producer_get_speed( producer ) != 0 ) {
 				mlt_producer_set_speed( producer, jit_control->play_rate );
 			}
@@ -105,28 +100,21 @@ static void transport_action( mlt_producer producer, char *value )
 			break;
 
 		case CONTROL_TYPE__PLAY_RATE:
-			fprintf(f, "play rate %d\n", jit_control->play_rate);
 			mlt_producer_set_speed( producer, jit_control->play_rate );
 			break;
 
 		case CONTROL_TYPE__SEEK:
-			fprintf(f, "seek: %d\n", (int) jit_control->seek_position);
-
 			mlt_consumer_purge( consumer );
 			mlt_producer_seek( producer, jit_control->seek_position);
 			fire_jack_seek_event(jack, jit_control->seek_position);
 			break;
 		case CONTROL_TYPE__QUIT:
-			fprintf(f, "quit\n");
-
 			mlt_properties_set_int( properties, "done", 1 );
 			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 			break;
 		default:
-			fprintf(f, "argh!\n");
 			break;
 	}
-	fclose(f);
 	mlt_properties_set_int( MLT_CONSUMER_PROPERTIES( consumer ), "refresh", 1 );
 
 	/*
@@ -562,18 +550,20 @@ static void write_status(JitStatus *const jit_status) {
 	static int fd = -1;
 
 	if (fd < 0) {
+		printf("Opening status pipe\n");
 		fd = open("/tmp/jit-status", O_WRONLY);
+		if (fd < 0) {
+			perror("open");
+			exit(2);
+		}
+		printf("Status pipe opened\n");
 	}
 
     int len = jit_status__get_packed_size(jit_status) + 4;
-	if (len < 5) {
-		FILE *f = fopen("/tmp/moff.log", "a");
-		fprintf(f, "Vafan? %d\n", len);
-		fclose(f);
-	}
     if (buf_len < len) {
         buf = realloc(buf, len);
         if (!buf) {
+			perror("realloc");
             exit(1);
         }
         buf_len = len;
