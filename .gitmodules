@@ -1,0 +1,3 @@
+[submodule "src/modules/glaxnimate/glaxnimate"]
+	path = src/modules/glaxnimate/glaxnimate
+	url = https://gitlab.com/mattbas/glaxnimate.git
