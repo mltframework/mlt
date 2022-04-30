@@ -66,7 +66,7 @@ public:
             pos %= duration();
         }
         auto bg = mlt_properties_get_color(properties(), "background");
-        auto background = QColor(bg.r, bg.g, bg.r, bg.a);
+        auto background = QColor(bg.r, bg.g, bg.b, bg.a);
         auto image = m_document->render_image(m_document->main()->animation->first_frame.get() + pos, {*width, *height}, background);
 
         *format = mlt_image_rgba;
