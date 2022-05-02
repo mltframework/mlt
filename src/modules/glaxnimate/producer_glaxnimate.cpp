@@ -110,6 +110,12 @@ static int get_image(mlt_frame frame, uint8_t **buffer, mlt_image_format *format
 {
     auto producer = static_cast<mlt_producer>(mlt_frame_pop_service(frame));
     auto glax = static_cast<Glaxnimate*>(producer->child);
+
+    if (mlt_properties_get_int(glax->properties(), "refresh")) {
+        mlt_properties_clear(glax->properties(), "refresh");
+        glax->open(mlt_properties_get(glax->properties(), "resource"));
+    }
+
     return glax->getImage(frame, buffer, format, width, height, writable);
 }
 

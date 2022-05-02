@@ -22,3 +22,11 @@ parameters:
     type: color
     mutable: yes
     default: #00000000
+
+  - identifier: refresh
+    title: Refresh
+    type: boolean
+    description: >
+      Set this to reload the animation from the resource the next an image is
+      requested. This property is cleared when it has been refreshed.
+    mutable: yes
