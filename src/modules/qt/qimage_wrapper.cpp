@@ -1,6 +1,6 @@
 /*
  * qimage_wrapper.cpp -- a QT/QImage based producer for MLT
- * Copyright (C) 2006-2021 Meltytech, LLC
+ * Copyright (C) 2006-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -358,7 +358,7 @@ void refresh_image( producer_qimage self, mlt_frame frame, mlt_image_format form
 				self->current_image = (uint8_t*) mlt_pool_alloc( image_size );
 				memcpy( self->current_image, buffer, image_size );
 			}
-			if ( ( buffer = (uint8_t*) mlt_properties_get_data( properties, "alpha", &self->alpha_size ) ) )
+			if ( ( buffer = (uint8_t*) mlt_frame_get_alpha_size(frame, &self->alpha_size) ) )
 			{
                 if ( !self->alpha_size )
                     self->alpha_size = self->current_width * self->current_height;

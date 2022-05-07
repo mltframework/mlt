@@ -203,89 +203,85 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 	
 		// Scale the alpha channel only if exists and not correct size
 		int alpha_size = 0;
-		mlt_properties_get_data(properties, "alpha", &alpha_size);
-		if (alpha_size > 0 && alpha_size != (owidth * oheight)) {
+		uint8_t *alpha = mlt_frame_get_alpha_size(frame, &alpha_size);
+		if (alpha && alpha_size > 0 && alpha_size != (owidth * oheight)) {
 			// Create the context and output image
-			uint8_t *alpha = mlt_frame_get_alpha( frame );
+			outbuf = mlt_pool_alloc(owidth * oheight);
+			context = sws_alloc_context();
 
-			if (alpha) {
-				outbuf = mlt_pool_alloc(owidth * oheight);
-				context = sws_alloc_context();
+			if (outbuf && context) {
+				av_frame_unref(avinframe);
+				av_frame_unref(avoutframe);
 
-				if (outbuf && context) {
-					av_frame_unref(avinframe);
-					av_frame_unref(avoutframe);
-
-					avformat = AV_PIX_FMT_GRAY8;
-					av_opt_set_int(context, "srcw", iwidth, 0);
-					av_opt_set_int(context, "srch", iheight, 0);
-					av_opt_set_int(context, "src_format", avformat, 0);
-					av_opt_set_int(context, "dstw", owidth, 0);
-					av_opt_set_int(context, "dsth", oheight, 0);
-					av_opt_set_int(context, "dst_format", avformat, 0);
-					av_opt_set_int(context, "sws_flags", interp, 0);
-	#if LIBSWSCALE_VERSION_MAJOR >= 6
-					av_opt_set_int(context, "threads", MIN(mlt_slices_count_normal(), MAX_THREADS), 0);
-	#endif
-					result = sws_init_context(context, NULL, NULL);
-					if (result < 0) {
-						mlt_log_error(NULL, "[filter swscale] Initializing swscale alpha failed with %d (%s)\n", result, av_err2str(result));
-						result = 1;
-						goto exit;
-					}
-
-					// Setup the input image
-					avinframe->width = iwidth;
-					avinframe->height = iheight;
-					avinframe->format = avformat;
-					avinframe->data[0] = alpha;
-					avinframe->linesize[0] = iwidth;
-
-					// Setup the output image
-					avoutframe->width = owidth;
-					avoutframe->height = oheight;
-					avoutframe->format = avformat;
-
-					result = av_frame_get_buffer(avoutframe, 0);
-					if (result < 0) {
-						mlt_log_error(NULL, "[filter swscale] Cannot allocate alpha frame buffer\n");
-						result = 1;
-						goto exit;
-					}
-
-					// Perform the scaling
+				avformat = AV_PIX_FMT_GRAY8;
+				av_opt_set_int(context, "srcw", iwidth, 0);
+				av_opt_set_int(context, "srch", iheight, 0);
+				av_opt_set_int(context, "src_format", avformat, 0);
+				av_opt_set_int(context, "dstw", owidth, 0);
+				av_opt_set_int(context, "dsth", oheight, 0);
+				av_opt_set_int(context, "dst_format", avformat, 0);
+				av_opt_set_int(context, "sws_flags", interp, 0);
 #if LIBSWSCALE_VERSION_MAJOR >= 6
-					result = sws_scale_frame(context, avoutframe, avinframe);
-#else
-					result = sws_scale(context, (const uint8_t **) avinframe->data, avinframe->linesize, 0, iheight, avoutframe->data, avoutframe->linesize);
+				av_opt_set_int(context, "threads", MIN(mlt_slices_count_normal(), MAX_THREADS), 0);
 #endif
-					if (result < 0) {
-						mlt_log_error(NULL, "[filter swscale] sws_scale_frame alpha failed with %d (%s) %d %d\n", result, av_err2str(result), avoutframe->width, avoutframe->height);
-						result = 1;
-						goto exit;
-					}
-					sws_freeContext(context);
-					context = NULL;
-
-					// Sanity check the output frame
-					if (owidth != avoutframe->width || oheight != avoutframe->height) {
-						mlt_log_error(NULL, "[filter swscale] Unexpected output alpha size\n");
-						result = 1;
-						goto exit;
-					}
-
-					int i;
-					uint8_t* dst = outbuf;
-					uint8_t* src = avoutframe->data[0];
-					for (i = 0; i < oheight; i++) {
-						memcpy(dst, src, owidth);
-						dst += owidth;
-						src += avoutframe->linesize[0];
-					}
-
-					// Set it back on the frame
-					mlt_frame_set_alpha(frame, outbuf, owidth * oheight, mlt_pool_release );
+				result = sws_init_context(context, NULL, NULL);
+				if (result < 0) {
+					mlt_log_error(NULL, "[filter swscale] Initializing swscale alpha failed with %d (%s)\n", result, av_err2str(result));
+					result = 1;
+					goto exit;
 				}
+
+				// Setup the input image
+				avinframe->width = iwidth;
+				avinframe->height = iheight;
+				avinframe->format = avformat;
+				avinframe->data[0] = alpha;
+				avinframe->linesize[0] = iwidth;
+
+				// Setup the output image
+				avoutframe->width = owidth;
+				avoutframe->height = oheight;
+				avoutframe->format = avformat;
+
+				result = av_frame_get_buffer(avoutframe, 0);
+				if (result < 0) {
+					mlt_log_error(NULL, "[filter swscale] Cannot allocate alpha frame buffer\n");
+					result = 1;
+					goto exit;
+				}
+
+				// Perform the scaling
+#if LIBSWSCALE_VERSION_MAJOR >= 6
+				result = sws_scale_frame(context, avoutframe, avinframe);
+#else
+				result = sws_scale(context, (const uint8_t **) avinframe->data, avinframe->linesize, 0, iheight, avoutframe->data, avoutframe->linesize);
+#endif
+				if (result < 0) {
+					mlt_log_error(NULL, "[filter swscale] sws_scale_frame alpha failed with %d (%s) %d %d\n", result, av_err2str(result), avoutframe->width, avoutframe->height);
+					result = 1;
+					goto exit;
+				}
+				sws_freeContext(context);
+				context = NULL;
+
+				// Sanity check the output frame
+				if (owidth != avoutframe->width || oheight != avoutframe->height) {
+					mlt_log_error(NULL, "[filter swscale] Unexpected output alpha size\n");
+					result = 1;
+					goto exit;
+				}
+
+				int i;
+				uint8_t* dst = outbuf;
+				uint8_t* src = avoutframe->data[0];
+				for (i = 0; i < oheight; i++) {
+					memcpy(dst, src, owidth);
+					dst += owidth;
+					src += avoutframe->linesize[0];
+				}
+
+				// Set it back on the frame
+				mlt_frame_set_alpha(frame, outbuf, owidth * oheight, mlt_pool_release );
 			}
 		}
 

@@ -1684,7 +1684,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			mlt_properties orig_props = MLT_FRAME_PROPERTIES( original );
 			int size = 0;
 
-			*buffer = mlt_properties_get_data( orig_props, "alpha", &size );
+			*buffer = mlt_frame_get_alpha_size(original, &size);
 			if (*buffer)
 				mlt_frame_set_alpha( frame, *buffer, size, NULL );
 			*buffer = mlt_properties_get_data( orig_props, "image", &size );
@@ -2028,7 +2028,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 		mlt_properties orig_props = MLT_FRAME_PROPERTIES( original );
 		int size = 0;
 
-		*buffer = mlt_properties_get_data( orig_props, "alpha", &size );
+		*buffer = mlt_frame_get_alpha_size(original, &size);
 		if (*buffer)
 			mlt_frame_set_alpha( frame, *buffer, size, NULL );
 		*buffer = mlt_properties_get_data( orig_props, "image", &size );

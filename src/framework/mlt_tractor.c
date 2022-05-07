@@ -397,12 +397,10 @@ static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_forma
 		}
 	}
 
-	data = mlt_frame_get_alpha( frame );
-	if ( data )
-	{
-		mlt_properties_get_data( frame_properties, "alpha", &size );
-		mlt_frame_set_alpha( self, data, size, NULL );
-	};
+	data = mlt_frame_get_alpha_size(frame, &size);
+	if (data) {
+		mlt_frame_set_alpha(self, data, size, NULL);
+	}
 	self->convert_image = frame->convert_image;
 	self->convert_audio = frame->convert_audio;
 	return 0;
