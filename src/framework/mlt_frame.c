@@ -524,6 +524,7 @@ int mlt_frame_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *for
 
 /** Get the alpha channel associated to the frame (without creating if it has not).
  *
+ * This returns NULL if the frame's image format is \p mlt_image_rgba.
  * \public \memberof mlt_frame_s
  * \param self a frame
  * \return the alpha channel or NULL
@@ -535,6 +536,40 @@ uint8_t *mlt_frame_get_alpha( mlt_frame self )
 	if ( self != NULL )
 	{
 		alpha = mlt_properties_get_data( &self->parent, "alpha", NULL );
+		if (alpha) {
+			mlt_image_format format = mlt_properties_get_int(&self->parent, "format");
+			if (mlt_image_rgba == format) {
+				alpha = NULL;
+			}
+		}
+	}
+	return alpha;
+}
+
+/** Get the alpha channel associated to the frame and its size.
+ *
+ * This returns NULL and sets \p size to 0 if the frame's image format is
+ * \p mlt_image_rgba.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \return the alpha channel or NULL
+ */
+
+uint8_t *mlt_frame_get_alpha_size(mlt_frame self, int *size)
+{
+	uint8_t *alpha = NULL;
+	if (self) {
+		alpha = mlt_properties_get_data(&self->parent, "alpha", size);
+		if (alpha) {
+			mlt_image_format format = mlt_properties_get_int(&self->parent, "format");
+			if (mlt_image_rgba == format) {
+				alpha = NULL;
+				if (size) {
+					size = 0;
+				}
+			}
+		}
 	}
 	return alpha;
 }
@@ -864,7 +899,7 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
 	mlt_properties new_props = MLT_FRAME_PROPERTIES( new_frame );
 	void *data, *copy;
-	int size;
+	int size = 0;
 
 	mlt_properties_inherit( new_props, properties );
 
@@ -887,6 +922,7 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 			memcpy( copy, data, size );
 			mlt_properties_set_data( new_props, "audio", copy, size, mlt_pool_release, NULL );
 		}
+		size = 0;
 		data = mlt_properties_get_data( properties, "image", &size );
 		if ( data )
 		{
@@ -900,7 +936,8 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 			memcpy( copy, data, size );
 			mlt_properties_set_data( new_props, "image", copy, size, mlt_pool_release, NULL );
 
-			data = mlt_properties_get_data( properties, "alpha", &size );
+			size = 0;
+			data = mlt_frame_get_alpha_size( self, &size );
 			if ( data )
 			{
 				if ( ! size )
@@ -921,9 +958,11 @@ mlt_frame mlt_frame_clone( mlt_frame self, int is_deep )
 		// Copy properties
 		data = mlt_properties_get_data( properties, "audio", &size );
 		mlt_properties_set_data( new_props, "audio", data, size, NULL, NULL );
+		size = 0;
 		data = mlt_properties_get_data( properties, "image", &size );
 		mlt_properties_set_data( new_props, "image", data, size, NULL, NULL );
-		data = mlt_properties_get_data( properties, "alpha", &size );
+		size = 0;
+		data = mlt_frame_get_alpha_size( self, &size );
 		mlt_properties_set_data( new_props, "alpha", data, size, NULL, NULL );
 	}
 
