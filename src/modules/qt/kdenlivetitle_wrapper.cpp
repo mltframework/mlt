@@ -686,6 +686,18 @@ void loadFromXml( producer_ktitle self, QGraphicsScene *scene, const char *templ
 	return;
 }
 
+int initTitleProducer( mlt_producer producer )
+{
+	if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) )
+	{
+		return false;
+	}
+	if ( !QMetaType::type("QTextCursor") )
+	{
+		qRegisterMetaType<QTextCursor>( "QTextCursor" );
+	}
+	return true;
+}
 
 void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format format, int width, int height, double position, int force_refresh )
 {
@@ -726,12 +738,6 @@ void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format 
 
 		if ( scene == NULL )
 		{
-			if ( !createQApplicationIfNeeded( MLT_PRODUCER_SERVICE(producer) ) ) {
-				pthread_mutex_unlock( &self->mutex );
-				return;
-			}
-			if ( !QMetaType::type("QTextCursor") )
-				qRegisterMetaType<QTextCursor>( "QTextCursor" );
 			scene = new QGraphicsScene();
 			scene->setItemIndexMethod( QGraphicsScene::NoIndex );
 			scene->setSceneRect(0, 0, mlt_properties_get_int( properties, "width" ), mlt_properties_get_int( properties, "height" ));

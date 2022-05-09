@@ -191,6 +191,11 @@ mlt_producer producer_kdenlivetitle_init( mlt_profile profile, mlt_service_type 
 		mlt_properties_set_int( properties, "progressive", 1 );
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "seekable", 1 );
+		if ( !initTitleProducer( producer ) )
+		{
+			mlt_producer_close( producer );
+			return NULL;
+		}
 		read_xml(properties);
 		return producer;
 	}

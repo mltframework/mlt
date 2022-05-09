@@ -45,6 +45,7 @@ struct producer_ktitle_s
 typedef struct producer_ktitle_s *producer_ktitle;
 
 extern void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format format, int, int, double, int );
+extern int initTitleProducer( mlt_producer producer );
 
 
 #ifdef __cplusplus
