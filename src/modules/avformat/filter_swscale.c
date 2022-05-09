@@ -132,7 +132,7 @@ static int filter_scale( mlt_frame frame, uint8_t **image, mlt_image_format *for
 		avinframe->sample_aspect_ratio = av_d2q(mlt_frame_get_aspect_ratio(frame), 1024);
 		avinframe->interlaced_frame = !mlt_properties_get_int(properties, "progressive");
 		avinframe->top_field_first = mlt_properties_get_int(properties, "top_field_first");
-		mlt_image_format_planes(*format, iwidth, iheight, *image, avinframe->data, avinframe->linesize);
+		av_image_fill_arrays(avinframe->data, avinframe->linesize, *image, avinframe->format, iwidth, iheight, 1);
 
 		// Setup the output image
 		av_frame_copy_props(avoutframe, avinframe);
