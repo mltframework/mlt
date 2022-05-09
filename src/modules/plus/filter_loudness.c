@@ -32,15 +32,7 @@ typedef struct
 
 typedef struct
 {
-	double in_loudness;
-	double in_range;
-	double in_peak;
-} apply_data;
-
-typedef struct
-{
 	analyze_data* analyze;
-	apply_data* apply;
 	mlt_position last_position;
 } private_data;
 
@@ -58,35 +50,6 @@ static void init_analyze_data( mlt_filter filter, int channels, int samplerate )
 	private->analyze = (analyze_data*)calloc( 1, sizeof(analyze_data) );
 	private->analyze->state = ebur128_init( (unsigned int)channels, (unsigned long)samplerate, EBUR128_MODE_I | EBUR128_MODE_LRA | EBUR128_MODE_SAMPLE_PEAK );
 	private->last_position = 0;
-}
-
-static void destroy_apply_data( mlt_filter filter )
-{
-	private_data* private = (private_data*)filter->child;
-	free( private->apply );
-	private->apply = NULL;
-}
-
-static void init_apply_data( mlt_filter filter )
-{
-	private_data* private = (private_data*)filter->child;
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	char* results = mlt_properties_get( properties, "results" );
-	int scan_return = 0;
-
-	private->apply = (apply_data*)calloc( 1, sizeof(apply_data) );
-
-	scan_return = sscanf( results,"L: %lf\tR: %lf\tP %lf", &private->apply->in_loudness, &private->apply->in_range, &private->apply->in_peak );
-	if( scan_return != 3 )
-	{
-		mlt_log_error( MLT_FILTER_SERVICE( filter ), "Unable to load results: %s\n", results );
-		destroy_apply_data( filter );
-		return;
-	}
-	else
-	{
-		mlt_log_info( MLT_FILTER_SERVICE( filter ), "Loaded Results: L: %lf\tR: %lf\tP %lf\n", private->apply->in_loudness, private->apply->in_range, private->apply->in_peak );
-	}
 }
 
 static void analyze( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
@@ -147,24 +110,25 @@ static void apply( mlt_filter filter, mlt_frame frame, void **buffer, mlt_audio_
 {
 	private_data* private = (private_data*)filter->child;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-
-	// Analyze Audio
-	if( !private->apply )
+	char* results = mlt_properties_get( properties, "results" );
+	double in_loudness;
+	double in_range;
+	double in_peak;
+	int scan_return = sscanf( results,"L: %lf\tR: %lf\tP %lf", &in_loudness, &in_range, &in_peak );
+	if( scan_return != 3 )
 	{
-		init_apply_data( filter );
+		mlt_log_error( MLT_FILTER_SERVICE( filter ), "Unable to load results: %s\n", results );
 	}
-
-	if( private->apply )
+	else
 	{
 		double target_db = mlt_properties_get_double( properties, "program" );
-		double delta_db = target_db - private->apply->in_loudness;
+		double delta_db = target_db - in_loudness;
 		double coeff = delta_db > -90.0 ? pow(10.0, delta_db / 20.0) : 0.0;
 		float* p = *buffer;
 		int count = *samples * *channels;
-		while( count-- )
+		for(int i = 0; i < count; i++)
 		{
-			*p = *p * coeff;
-			p++;
+			p[i] = p[i] * coeff;
 		}
 	}
 }

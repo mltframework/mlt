@@ -50,7 +50,7 @@ namespace Mlt
 			Tractor( mlt_profile profile, char *id, char *arg = NULL );
 			virtual ~Tractor( );
 			virtual mlt_tractor get_tractor( );
-			mlt_producer get_producer( );
+			mlt_producer get_producer( ) override;
 			Multitrack *multitrack( );
 			Field *field( );
 			void refresh( );

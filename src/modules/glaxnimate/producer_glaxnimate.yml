@@ -1,0 +1,32 @@
+schema_version: 7.0
+type: producer
+identifier: glaxnimate
+title: Glaxnimate Animation
+version: 1
+copyright: Meltytech, LLC
+license: GPLv3
+language: en
+tags:
+  - Video
+description: Reads a variety of 2D animations
+parameters:
+  - identifier: resource
+    argument: yes
+    title: File
+    type: string
+    required: yes
+    mutable: no
+
+  - identifier: background
+    title: Background color
+    type: color
+    mutable: yes
+    default: #00000000
+
+  - identifier: refresh
+    title: Refresh
+    type: boolean
+    description: >
+      Set this to reload the animation from the resource the next an image is
+      requested. This property is cleared when it has been refreshed.
+    mutable: yes

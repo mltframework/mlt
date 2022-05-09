@@ -16,6 +16,10 @@ if(MOD_GDK)
   add_subdirectory(gdk)
 endif()
 
+if(MOD_GLAXNIMATE)
+  add_subdirectory(glaxnimate)
+endif()
+
 if(MOD_JACKRACK)
   add_subdirectory(jackrack)
 endif()

@@ -62,7 +62,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 					memcpy(*image, data, size);
 					mlt_frame_set_image(frame, *image, size, mlt_pool_release);
 
-					data = mlt_properties_get_data(cloned_props, "alpha", &size);
+					data = mlt_frame_get_alpha_size(cloned_frame, &size);
 					if (data) {
 						if (!size) {
 							size = (*width) * (*height);

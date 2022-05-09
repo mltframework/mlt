@@ -1,9 +1,86 @@
 MLT Release Notes
 -----------------
 
+Version 7.6.0
+
+This version adds image slice-threading to many filters and full support for
+full range color. All inputs are normalized to and processed at
+the range specified by the consumer property `color_range` that defaults to
+tv/mpeg (limited).
+
+Framework
+  * Added `Mlt::Animation::next_key()` and `previous_key()` with error checking.
+  * Fixed the `moduledir` and `mltdatadir` variables in the pkg-config file.
+  * Removed calling `setlocale()` in `mlt_factory_init()` (moved to `melt`
+    option `-setlocale`).
+  * Added `mlt_properties_copy()` and `Mlt::Properties::copy()`.
+  * Changed some primarily internal property names to consolidate on "consumer."
+    as a prefix convention for all consumer properties copied to `mlt_frame`s.
+  * Added consumer property `deinterlacer` to replace deprecated `deinterlace_method`.
+  * Fixed full range color from producer to consumer.
+  * Added `mlt_slices_size_slice()` helper function.
+  * Fixed choppy playback due to large values in `frame_rate_num` or
+    `frame_rate_den` in `mlt_consumer`.
+  * Added performance optimization for a single slice in `mlt_slices`.
+
+Modules
+  * Added `audiolevelgraph` video filter to the `qt` module.
+  * Added property `segment_gap` to the `audiospectrum` video filter.
+  * Added `segments` property to the `audiolevelgraph` and `audiospectrum` filters.
+  * Fixed loading image sequence with extended UTF-8 characters in the
+    name of a folder for the `qimage` producer.
+  * Fixed a crash in `avformat` producer if the `rotate` property is set after
+    the first frame is fetched.
+  * Added the `invert_mask` property to the `shape` video filter.
+  * Changed `avformat` producer to normalize frame rates very close to
+    non-integer broadcast frames 24/1.001, 30/1.001, and 60/1.001.
+  * Converted the `chroma` and `chroma_hold` filters' `key` property to a proper
+    color type.
+  * Added slice threading to:
+    - `avformat` producer (with FFmpeg v5)
+    - `swsscale` (with FFmpeg v5)
+    - `lift_gamma_gain`
+    - `shape`
+    - `charcoal`
+    - `vignette`
+    - `wave`
+    - `threshold`
+    - `tcolor`
+    - `sepia`
+    - `mirror`
+    - `invert`
+    - `grain`
+    - `lines`
+    - `spot_remover`
+  * Improved the speed of the `oldfilm` filter.
+  * Added a faster `box_blur` filter to the core module and deprecated the
+    `boxblur` filter in the kdenlive module.
+  * Fixed preview scaling for the `avfilter.gblur` filter.
+  * Fixed incorrect text overlap in `kdenlivetitle` producer.
+  * Improved audio synchronization in `avformat` when playing in reverse.
+  * Added much more service metadata (documentation).
+  * Fixed full range 10-bit video input in `avformat` producer.
+  * Fixed full range color handling in:
+    - `avformat` producer
+    - `avcolor_space`
+    - `brightness`
+    - `resize`
+    - `luma` transition
+    - `movit.convert`
+    - `charcoal`
+    - `invert`
+    - `shape`
+  * Fixed identifying unsupported colorspaces in `avformat` producer.
+  * Fixed preserving the alpha channel in the `avfilter.fspp` filter.
+
+Other
+  - Some CMake fixes.
+  - Added `dumb-init` to the docker (no need to remember `docker run --init`).
+
+
 Version 7.4.0
 
-This main highlight of this version is property animation for avfilter!
+The main highlight of this version is property animation for avfilter!
 
 Framework
   * Added more constructors and assignment operators in C++ wrapper:

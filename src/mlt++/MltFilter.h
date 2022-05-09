@@ -48,7 +48,7 @@ namespace Mlt
 			virtual ~Filter( );
 			Filter& operator=( const Filter &filter );
 			virtual mlt_filter get_filter( );
-			mlt_service get_service( );
+			mlt_service get_service( ) override;
 			int connect( Service &service, int index = 0 );
 			void set_in_and_out( int in, int out );
 			int get_in( );

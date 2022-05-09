@@ -1,7 +1,7 @@
 /*
  * producer_framebuffer.c -- create subspeed frames
  * Copyright (C) 2007 Jean-Baptiste Mardelle <jb@ader.ch>
- * Copyright (C) 2021 Meltytech, LLC
+ * Copyright (C) 2022 Meltytech, LLC
  * Author: Jean-Baptiste Mardelle, based on the code of motion_est by Zachary Drew
  *
  * This library is free software; you can redistribute it and/or
@@ -155,7 +155,7 @@ static int framebuffer_get_image( mlt_frame frame, uint8_t **image, mlt_image_fo
 
 	// Which frames are buffered?
 	uint8_t *first_image = mlt_properties_get_data( first_frame_properties, "image", NULL );
-	uint8_t *first_alpha = mlt_properties_get_data( first_frame_properties, "alpha", NULL );
+	uint8_t *first_alpha = mlt_frame_get_alpha(first_frame);
 	if ( !first_image )
 	{
 		mlt_properties_set( first_frame_properties, "consumer.rescale", mlt_properties_get( frame_properties, "consumer.rescale" ) );

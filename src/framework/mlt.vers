@@ -636,3 +636,8 @@ MLT_7.6.0 {
     mlt_properties_copy;
     mlt_slices_size_slice;
 } MLT_7.4.0;
+
+MLT_7.8.0 {
+  global:
+    mlt_frame_get_alpha_size;
+} MLT_7.6.0;

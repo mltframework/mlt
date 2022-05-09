@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(MLT
-  VERSION 7.5.0
+  VERSION 7.7.0
   DESCRIPTION "Multimedia Framework"
   HOMEPAGE_URL "https://www.mltframework.org"
   LANGUAGES C CXX
@@ -11,11 +11,13 @@ option(GPL "Enable GPLv2 components" ON)
 option(GPL3 "Enable GPLv3 components" ON)
 option(BUILD_TESTING "Enable tests" OFF)
 option(BUILD_DOCS "Enable Doxygen documentation" OFF)
+option(BUILD_WITH_QT6 "Build against Qt 6" OFF)
 
 option(MOD_AVFORMAT "Enable avformat module" ON)
 option(MOD_DECKLINK "Enable DeckLink module" ON)
 option(MOD_FREI0R "Enable Frei0r module" ON)
 option(MOD_GDK "Enable GDK module" ON)
+option(MOD_GLAXNIMATE "Enable Glaxnimate module" OFF)
 option(MOD_JACKRACK "Enable JACK Rack module" ON)
 option(MOD_KDENLIVE "Enable Kdenlive module" ON)
 option(MOD_NDI "Enable NDI module" OFF)
@@ -168,8 +170,14 @@ endif()
 
 pkg_check_modules(sdl2 IMPORTED_TARGET sdl2)
 
+if (BUILD_WITH_QT6)
+    set(QT_MAJOR_VERSION 6)
+else()
+    set(QT_MAJOR_VERSION 5)
+endif()
+
 if(BUILD_TESTING)
-  find_package(Qt5 REQUIRED COMPONENTS Core Test)
+  find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS Core Test)
   find_package(Kwalify REQUIRED)
   enable_testing()
 endif()
@@ -232,6 +240,15 @@ if(MOD_GDK)
   endif()
 endif()
 
+if(MOD_GLAXNIMATE)
+  find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Core Gui Widgets Xml)
+  if(Qt${QT_MAJOR_VERSION}_FOUND)
+    list(APPEND MLT_SUPPORTED_COMPONENTS qt)
+  else()
+    set(MOD_GLAXNIMATE OFF)
+  endif()
+endif()
+
 if(MOD_JACKRACK)
   find_package(JACK)
   pkg_check_modules(glib IMPORTED_TARGET glib-2.0)
@@ -288,8 +305,13 @@ if(MOD_PLUSGPL)
 endif()
 
 if(MOD_QT)
-  find_package(Qt5 COMPONENTS Core Gui Xml Svg Widgets)
-  if(Qt5_FOUND)
+  find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Core Xml)
+  if(QT_MAJOR_VERSION EQUAL 6)
+    find_package(Qt${QT_MAJOR_VERSION} COMPONENTS SvgWidgets Core5Compat)
+  else()
+    find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Gui Svg Widgets)
+  endif()
+  if(Qt${QT_MAJOR_VERSION}_FOUND)
     list(APPEND MLT_SUPPORTED_COMPONENTS qt)
   else()
     set(MOD_QT OFF)
@@ -489,6 +511,7 @@ add_feature_info("Module: avformat" MOD_AVFORMAT "")
 add_feature_info("Module: DeckLink" MOD_DECKLINK "")
 add_feature_info("Module: Frei0r" MOD_FREI0R "")
 add_feature_info("Module: GDK" MOD_GDK "")
+add_feature_info("Module: Glaxnimate" MOD_GLAXNIMATE "")
 add_feature_info("Module: JACKRack" MOD_JACKRACK "")
 add_feature_info("Module: Kdenlive" MOD_KDENLIVE "")
 add_feature_info("Module: NDI" MOD_NDI "")

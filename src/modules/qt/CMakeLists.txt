@@ -26,12 +26,22 @@ target_link_libraries(mltqt PRIVATE
   mlt
   m
   Threads::Threads
-  Qt5::Core
-  Qt5::Gui
-  Qt5::Xml
-  Qt5::Svg
-  Qt5::Widgets
+  Qt${QT_MAJOR_VERSION}::Core
+  Qt${QT_MAJOR_VERSION}::Xml
 )
+
+if(QT_MAJOR_VERSION EQUAL 6)
+  target_link_libraries(mltqt PRIVATE
+    Qt${QT_MAJOR_VERSION}::SvgWidgets
+    Qt${QT_MAJOR_VERSION}::Core5Compat
+  )
+else()
+  target_link_libraries(mltqt PRIVATE
+    Qt${QT_MAJOR_VERSION}::Svg
+    Qt${QT_MAJOR_VERSION}::Widgets
+    Qt${QT_MAJOR_VERSION}::Gui
+  )
+endif()
 
 target_compile_definitions(mltqt PRIVATE USE_QT_OPENGL)
 

@@ -48,7 +48,7 @@ namespace Mlt
 			virtual ~Transition( );
 			Transition& operator=( const Transition &transition );
 			virtual mlt_transition get_transition( );
-			mlt_service get_service( );
+			mlt_service get_service( ) override;
 			void set_in_and_out( int in, int out );
 			void set_tracks( int a_track, int b_track );
 			int connect( Producer &producer, int a_track, int b_track );

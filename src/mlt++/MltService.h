@@ -49,7 +49,7 @@ namespace Mlt
 			virtual mlt_service get_service( );
 			void lock( );
 			void unlock( );
-			virtual mlt_properties get_properties( );
+			virtual mlt_properties get_properties( ) override;
 			int connect_producer( Service &producer, int index = 0 );
 			int insert_producer( Service &producer, int index = 0 );
 			int disconnect_producer( int index = 0 );

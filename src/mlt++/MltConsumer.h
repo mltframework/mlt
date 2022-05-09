@@ -46,7 +46,7 @@ namespace Mlt
 			Consumer( mlt_consumer consumer );
 			virtual ~Consumer( );
 			virtual mlt_consumer get_consumer( );
-			mlt_service get_service( );
+			mlt_service get_service( ) override;
 			virtual int connect( Service &service );
 			int run( );
 			int start( );

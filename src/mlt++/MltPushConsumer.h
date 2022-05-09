@@ -40,7 +40,7 @@ namespace Mlt
 			PushConsumer( Profile& profile, const char *id , const char *service = NULL );
 			virtual ~PushConsumer( );
 			void set_render( int width, int height, double aspect_ratio );
-			virtual int connect( Service &service );
+			virtual int connect( Service &service ) override;
 			int push( Frame *frame );
 			int push( Frame &frame );
 			int drain( );

@@ -44,7 +44,7 @@ namespace Mlt
 			virtual ~Frame( );
 			Frame& operator=( const Frame &frame );
 			virtual mlt_frame get_frame( );
-			mlt_properties get_properties( );
+			mlt_properties get_properties( ) override;
 			uint8_t *get_image( mlt_image_format &format, int &w, int &h, int writable = 0 );
 			unsigned char *fetch_image( mlt_image_format format, int w, int h, int writable = 0 );
 			void *get_audio( mlt_audio_format &format, int &frequency, int &channels, int &samples );
