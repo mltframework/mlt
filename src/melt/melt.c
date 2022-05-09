@@ -45,6 +45,7 @@
 
 static mlt_producer melt = NULL;
 static JitStatus jit_status = JIT_STATUS__INIT;
+static int jit_status_fd = -1;
 
 static void stop_handler(int signum)
 {
@@ -547,19 +548,6 @@ static JitControl *read_control() {
 static void write_status(JitStatus *const jit_status) {
     static char *buf = NULL;
     static int buf_len = 0;
-	static int fd = -1;
-
-	if (fd < 0) {
-		fprintf(stdout, "Opening status pipe\n");
-		fflush(stdout);
-		fd = open("/tmp/jit-status", O_WRONLY);
-		if (fd < 0) {
-			perror("open");
-			exit(2);
-		}
-		fprintf(stdout, "Status pipe opened\n");
-		fflush(stdout);
-	}
 
     int len = jit_status__get_packed_size(jit_status) + 4;
     if (buf_len < len) {
@@ -575,7 +563,7 @@ static void write_status(JitStatus *const jit_status) {
     jit_status__pack(jit_status, b + 4);
     *((int*) b) = len - 4;
     while (len) {
-        const int w = write(fd, b, len);
+        const int w = write(jit_status_fd, b, len);
         if (w < 1) {
             exit(2);
         }
@@ -1029,6 +1017,16 @@ int main( int argc, char **argv )
 		}
 	}
 	fprintf(stdout, "Melt starting\n");
+
+	// Open status pipe
+	fprintf(stdout, "Opening status pipe\n");
+	fflush(stdout);
+	jit_status_fd = open("/tmp/jit-status", O_WRONLY);
+	if (jit_status_fd < 0) {
+		perror("open");
+		exit(2);
+	}
+	fprintf(stdout, "Status pipe opened\n");
 	fflush(stdout);
 
 	for ( i = 1; i < argc; i ++ )
