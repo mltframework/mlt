@@ -1838,8 +1838,8 @@ static void *consumer_thread( void *arg )
 				}
 				if ( pcm )
 				{
-					// Silence if not normal forward speed
-					if ( mlt_properties_get_double( frame_properties, "_speed" ) != 1.0 )
+					// Silence only if going backward
+					if ( mlt_properties_get_double( frame_properties, "_speed" ) < 0 )
 						memset( pcm, 0, samples * enc_ctx->channels * enc_ctx->sample_bytes );
 
 					// Append the samples
