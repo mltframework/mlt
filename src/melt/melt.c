@@ -83,10 +83,12 @@ static void transport_action( mlt_producer producer, char *value )
 	JitControl *const jit_control = (JitControl*) value;
 	switch (jit_control->type) {
 		case CONTROL_TYPE__PAUSE:
+			if (mlt_producer_get_speed( producer ) != 0) {
 			mlt_producer_set_speed( producer, 0 );
 			mlt_consumer_purge( consumer );
 			if (jit_status.playing) {
 				mlt_producer_seek( producer, mlt_consumer_position( consumer ) + 1 );
+			}
 			}
 			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
 			jit_status.playing = 0;
