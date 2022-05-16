@@ -1021,15 +1021,19 @@ int main( int argc, char **argv )
 	fprintf(stdout, "Melt starting\n");
 
 	// Open status pipe
-	fprintf(stdout, "Opening status pipe\n");
-	fflush(stdout);
-	jit_status_fd = open("/tmp/jit-status", O_WRONLY);
-	if (jit_status_fd < 0) {
-		perror("open");
-		exit(2);
+	{
+		char b[100];
+		sprintf(b, "/tmp/jit-status-%lld", (long long) getppid());
+		fprintf(stdout, "Opening status pipe: %s\n", b);
+		fflush(stdout);
+		jit_status_fd = open(b, O_WRONLY);
+		if (jit_status_fd < 0) {
+			perror("open");
+			exit(2);
+		}
+		fprintf(stdout, "Status pipe opened\n");
+		fflush(stdout);
 	}
-	fprintf(stdout, "Status pipe opened\n");
-	fflush(stdout);
 
 	for ( i = 1; i < argc; i ++ )
 	{
