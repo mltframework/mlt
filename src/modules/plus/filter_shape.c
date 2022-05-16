@@ -128,8 +128,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		if ( mlt_frame_get_image( mask, &mask_img, &mask_fmt, width, height, 0 ) == 0 )
 		{
 			int size = *width * *height;
-			double a = 0;
-			double b = 0;
 			uint8_t* p = mlt_frame_get_alpha( frame );
 			if ( !p )
 			{
@@ -144,6 +142,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				uint8_t* q = mlt_frame_get_alpha( mask );
 				if ( !q )
 				{
+					mlt_log_warning(MLT_FILTER_SERVICE(filter), "failed to get alpha channel from mask: %s\n",
+						mlt_properties_get(MLT_FILTER_PROPERTIES(filter), "resource"));
 					int alphasize = *width * *height;
 					q = mlt_pool_alloc( alphasize );
 					memset( q, 255, alphasize );
