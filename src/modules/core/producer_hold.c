@@ -125,7 +125,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	}
 
 	// Make sure that no further scaling is done
-	mlt_properties_set( properties, "rescale.interps", "none" );
+	mlt_properties_set( properties, "consumer.rescale", "none" );
 	mlt_properties_set( properties, "scale", "off" );
 
 	// All done
