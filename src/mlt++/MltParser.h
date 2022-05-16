@@ -45,7 +45,7 @@ namespace Mlt
 			Parser( );
 			~Parser( );
 			int start( Service &service );
-			virtual mlt_properties get_properties( );	
+			virtual mlt_properties get_properties( ) override;
 			virtual int on_invalid( Service *object );
 			virtual int on_unknown( Service *object );
 			virtual int on_start_producer( Producer *object );
