@@ -681,7 +681,7 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
                 // MOFF
 				jit_status.has_duration = 1;
 				jit_status.duration = mlt_producer_get_length(producer);
-				jit_status.frame_rate = 1;
+				jit_status.has_frame_rate = 1;
 				jit_status.frame_rate = mlt_producer_get_fps(producer);
 				jit_status.has_play_rate = 1;
 				jit_status.play_rate = mlt_producer_get_speed(producer);
