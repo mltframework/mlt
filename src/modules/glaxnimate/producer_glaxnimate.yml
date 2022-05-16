@@ -21,7 +21,7 @@ parameters:
     title: Background color
     type: color
     mutable: yes
-    default: #00000000
+    default: '#00000000'
 
   - identifier: refresh
     title: Refresh
