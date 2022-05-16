@@ -199,9 +199,6 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		*image = output;
 		*format = output_format;
 		mlt_frame_set_image( frame, output, size, mlt_pool_release );
-		mlt_properties_set_int( properties, "format", output_format );
-		mlt_properties_set_int(properties, "width", out_width);
-		mlt_properties_set_int(properties, "height", out_height);
 
 		if (out_width == width && out_height == height)
 		if ( output_format == mlt_image_rgba )
@@ -232,6 +229,10 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 				}
 			}
 		}
+
+		mlt_properties_set_int( properties, "format", output_format );
+		mlt_properties_set_int(properties, "width", out_width);
+		mlt_properties_set_int(properties, "height", out_height);
 	}
 	return error;
 }
