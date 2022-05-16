@@ -57,9 +57,9 @@ static const ProtobufCFieldDescriptor jit_control__field_descriptors[3] =
   {
     "type",
     1,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_ENUM,
-    0,   /* quantifier_offset */
+    offsetof(JitControl, has_type),
     offsetof(JitControl, type),
     &control_type__descriptor,
     NULL,
@@ -69,9 +69,9 @@ static const ProtobufCFieldDescriptor jit_control__field_descriptors[3] =
   {
     "play_rate",
     2,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(JitControl, has_play_rate),
     offsetof(JitControl, play_rate),
     NULL,
     NULL,
@@ -81,9 +81,9 @@ static const ProtobufCFieldDescriptor jit_control__field_descriptors[3] =
   {
     "seek_position",
     3,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT64,
-    0,   /* quantifier_offset */
+    offsetof(JitControl, has_seek_position),
     offsetof(JitControl, seek_position),
     NULL,
     NULL,

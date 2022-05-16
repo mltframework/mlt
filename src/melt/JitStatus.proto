@@ -1,13 +1,13 @@
-syntax = "proto3";
+syntax = "proto2";
 
 message JitStatus {
-    int64 duration = 1;
-    double frame_rate = 2;
-    bool playing = 3;
-    int32 play_rate = 4;
-    int64 position = 5;
-    int32 total_channels = 6;
-    MediaInfo media_info = 7;
+    optional int64 duration = 1;
+    optional double frame_rate = 2;
+    optional bool playing = 3;
+    optional int32 play_rate = 4;
+    optional int64 position = 5;
+    optional int32 total_channels = 6;
+    optional MediaInfo media_info = 7;
 }
 
 message MediaInfo {
@@ -15,18 +15,18 @@ message MediaInfo {
 }
 
 message Stream {
-    StreamType type = 1;
-    AudioStream audio = 2;
-    VideoStream video = 3;
+    optional StreamType type = 1;
+    optional AudioStream audio = 2;
+    optional VideoStream video = 3;
 }
 
 message AudioStream {
-    int32 channels = 1;
-    string language = 2;
+    optional int32 channels = 1;
+    optional string language = 2;
 }
 
 message VideoStream {
-    double frame_rate = 1;
+    optional double frame_rate = 1;
 }
 
 enum StreamType {

@@ -679,9 +679,13 @@ static void transport( mlt_producer producer, mlt_consumer consumer )
 				fflush( stderr );
                 */
                 // MOFF
+				jit_status.has_duration = 1;
 				jit_status.duration = mlt_producer_get_length(producer);
+				jit_status.frame_rate = 1;
 				jit_status.frame_rate = mlt_producer_get_fps(producer);
+				jit_status.has_play_rate = 1;
 				jit_status.play_rate = mlt_producer_get_speed(producer);
+				jit_status.has_position = 1;
 				jit_status.position = mlt_producer_position(producer);
 
                 write_status(&jit_status);
@@ -1249,6 +1253,7 @@ query_all:
 	}
 
 	// video plays automatically
+	jit_status.has_playing = 1;
 	jit_status.playing = 1;
 
 	// media info
@@ -1261,6 +1266,7 @@ query_all:
 		Stream *s = calloc(sizeof (Stream), 1);
 		stream__init(s);
 		jit_status.media_info->streams[i] = s;
+		s->has_type = 1;
 		s->type = STREAM_TYPE__UNKNOWN;
 		char key[100];
 		sprintf(key, "meta.media.%d.stream.type", i);
@@ -1272,7 +1278,9 @@ query_all:
 			s->audio = calloc(1, sizeof (AudioStream));
 			audio_stream__init(s->audio);
 			sprintf(key, "meta.media.%d.codec.channels", i);
+			s->audio->has_channels = 1;
 			s->audio->channels = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(av), key);
+			jit_status.has_total_channels = 1;
 			jit_status.total_channels += s->audio->channels;
 			sprintf(key, "meta.attr.%d.stream.language.markup", i);
 			value = mlt_properties_get(MLT_PRODUCER_PROPERTIES(av), key);

@@ -1,9 +1,9 @@
-syntax = "proto3";
+syntax = "proto2";
 
 message JitControl {
-    ControlType type = 1;
-    int32 play_rate = 2;
-    int64 seek_position = 3;
+    optional ControlType type = 1;
+    optional int32 play_rate = 2;
+    optional int64 seek_position = 3;
 }
 
 enum ControlType {

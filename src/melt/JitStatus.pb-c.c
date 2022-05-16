@@ -237,9 +237,9 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
   {
     "duration",
     1,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT64,
-    0,   /* quantifier_offset */
+    offsetof(JitStatus, has_duration),
     offsetof(JitStatus, duration),
     NULL,
     NULL,
@@ -249,9 +249,9 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
   {
     "frame_rate",
     2,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_DOUBLE,
-    0,   /* quantifier_offset */
+    offsetof(JitStatus, has_frame_rate),
     offsetof(JitStatus, frame_rate),
     NULL,
     NULL,
@@ -261,9 +261,9 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
   {
     "playing",
     3,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_BOOL,
-    0,   /* quantifier_offset */
+    offsetof(JitStatus, has_playing),
     offsetof(JitStatus, playing),
     NULL,
     NULL,
@@ -273,9 +273,9 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
   {
     "play_rate",
     4,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(JitStatus, has_play_rate),
     offsetof(JitStatus, play_rate),
     NULL,
     NULL,
@@ -285,9 +285,9 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
   {
     "position",
     5,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT64,
-    0,   /* quantifier_offset */
+    offsetof(JitStatus, has_position),
     offsetof(JitStatus, position),
     NULL,
     NULL,
@@ -297,9 +297,9 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
   {
     "total_channels",
     6,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(JitStatus, has_total_channels),
     offsetof(JitStatus, total_channels),
     NULL,
     NULL,
@@ -309,7 +309,7 @@ static const ProtobufCFieldDescriptor jit_status__field_descriptors[7] =
   {
     "media_info",
     7,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
     offsetof(JitStatus, media_info),
@@ -391,9 +391,9 @@ static const ProtobufCFieldDescriptor stream__field_descriptors[3] =
   {
     "type",
     1,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_ENUM,
-    0,   /* quantifier_offset */
+    offsetof(Stream, has_type),
     offsetof(Stream, type),
     &stream_type__descriptor,
     NULL,
@@ -403,7 +403,7 @@ static const ProtobufCFieldDescriptor stream__field_descriptors[3] =
   {
     "audio",
     2,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
     offsetof(Stream, audio),
@@ -415,7 +415,7 @@ static const ProtobufCFieldDescriptor stream__field_descriptors[3] =
   {
     "video",
     3,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
     offsetof(Stream, video),
@@ -455,9 +455,9 @@ static const ProtobufCFieldDescriptor audio_stream__field_descriptors[2] =
   {
     "channels",
     1,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(AudioStream, has_channels),
     offsetof(AudioStream, channels),
     NULL,
     NULL,
@@ -467,12 +467,12 @@ static const ProtobufCFieldDescriptor audio_stream__field_descriptors[2] =
   {
     "language",
     2,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
     offsetof(AudioStream, language),
     NULL,
-    &protobuf_c_empty_string,
+    NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
@@ -506,9 +506,9 @@ static const ProtobufCFieldDescriptor video_stream__field_descriptors[1] =
   {
     "frame_rate",
     1,
-    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_DOUBLE,
-    0,   /* quantifier_offset */
+    offsetof(VideoStream, has_frame_rate),
     offsetof(VideoStream, frame_rate),
     NULL,
     NULL,
