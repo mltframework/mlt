@@ -18,7 +18,14 @@ if(MINGW)
   target_link_options(melt PRIVATE -mconsole)
 endif()
 
+if(UNIX AND NOT APPLE)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E remove melt melt-${MLT_VERSION_MAJOR} \
+                                  WORKING_DIRECTORY \$ENV\{DESTDIR\}${CMAKE_INSTALL_FULL_BINDIR})"
+    )
+endif()
+
 install(TARGETS melt RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 if(UNIX AND NOT APPLE)
   install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E rename melt melt-${MLT_VERSION_MAJOR} \
                                 WORKING_DIRECTORY \$ENV\{DESTDIR\}${CMAKE_INSTALL_FULL_BINDIR})"
