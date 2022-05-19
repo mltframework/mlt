@@ -1,0 +1,26 @@
+schema_version: 0.3
+type: producer
+identifier: ranged
+title: Ranged
+version: 1
+copyright: Eoin O'Neill, Emmet O'Neill
+creator: Eoin O'Neill, Emmet O'Neill
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Audio
+parameters:
+  - identifier: frame_start
+    title: Start Frame
+    type: integer
+    description: First frame of the acceptable playback range.
+    default: 0
+    mutable: true
+
+  - identifier: frame_end
+    title: End Frame
+    type: integer
+    description: Last frame of the acceptable playback range.
+    default: 100
+    mutable: true

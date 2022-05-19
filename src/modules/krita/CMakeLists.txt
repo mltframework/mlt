@@ -1,4 +1,6 @@
 add_library(mltkrita MODULE
+    factory.c
+    producer_ranged.c 
 )
 
 target_compile_options(mltkrita PRIVATE ${MLT_COMPILE_OPTIONS})
@@ -10,6 +12,7 @@ set_target_properties(mltkrita PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE
 install(TARGETS mltkrita LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
+  producer_ranged.yml
   DESTINATION ${MLT_INSTALL_DATA_DIR}/krita
 )
 

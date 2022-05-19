@@ -1,7 +1,7 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2021 Eoin O'Neill <eoinoneill1991@gmail.com>
- * Copyright (C) 2021 Emmet O'Neill <emmetoneill.pdx@gmail.com>
+ * Copyright (C) 2022 Eoin O'Neill <eoinoneill1991@gmail.com>
+ * Copyright (C) 2022 Emmet O'Neill <emmetoneill.pdx@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,18 +22,18 @@
 #include <limits.h>
 #include <framework/mlt.h>
 
-//extern mlt_filter filter_framerange_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_ranged_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
 	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/kdenlive/%s", mlt_environment( "MLT_DATA" ), (char*) data );
+	snprintf( file, PATH_MAX, "%s/krita/%s", mlt_environment( "MLT_DATA" ), (char*) data );
 	return mlt_properties_parse_yaml( file );
 }
 
 MLT_REPOSITORY
 {
-	//MLT_REGISTER( mlt_service_filter_type, "framerange", filter_framerange_init );
-	//MLT_REGISTER_METADATA( mlt_service_filter_type, "framerange", metadata, "filter_framerange.yml" );
+	MLT_REGISTER( mlt_service_producer_type, "ranged", producer_ranged_init );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "ranged", metadata, "producer_ranged.yml" );
 }

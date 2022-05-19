@@ -28,6 +28,10 @@ if(MOD_KDENLIVE)
   add_subdirectory(kdenlive)
 endif()
 
+if(MOD_KRITA)
+  add_subdirectory(krita)
+endif()
+
 if(MOD_NDI)
   add_subdirectory(ndi)
 endif()
