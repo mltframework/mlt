@@ -263,6 +263,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		mlt_frame mask = NULL;
 		double alpha_mix = mlt_properties_anim_get_double( MLT_FILTER_PROPERTIES(filter), "mix", position, length );
 		mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), MLT_FILTER_PROPERTIES( filter ), "producer." );
+		mlt_properties_clear( MLT_FILTER_PROPERTIES( filter ), "producer.refresh" );
 		mlt_producer_seek( producer, position );
 		if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &mask, 0 ) == 0 )
 		{

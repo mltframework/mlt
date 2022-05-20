@@ -1,6 +1,6 @@
 /*
  * filter_mask_start.c -- clone a frame before invoking a filter
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,6 +61,7 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
 
 		mlt_properties_pass_list(instance_props, properties, "in out");
 		mlt_properties_pass(instance_props, properties, "filter.");
+		mlt_properties_clear(properties, "filter.producer.refresh");
 		mlt_frame_push_get_image(frame, get_image);
 		return mlt_filter_process(instance, frame);
 	} else {
