@@ -551,6 +551,10 @@ static void write_status(JitStatus *const jit_status) {
     static char *buf = NULL;
     static int buf_len = 0;
 
+    if (jit_status_fd < 0) {
+        return;
+    }
+
     int len = jit_status__get_packed_size(jit_status) + 4;
     if (buf_len < len) {
         buf = realloc(buf, len);
@@ -1010,6 +1014,7 @@ int main( int argc, char **argv )
 	const char* repo_path = NULL;
 	int is_consumer_explicit = 0;
 	int is_setlocale = 0;
+	int status_fifo = 1;
 
 	// Handle abnormal exit situations.
 	signal( SIGSEGV, abnormal_exit_handler );
@@ -1023,21 +1028,6 @@ int main( int argc, char **argv )
 		}
 	}
 	fprintf(stdout, "Melt starting\n");
-
-	// Open status pipe
-	{
-		char b[100];
-		sprintf(b, "/tmp/jit-status-%lld", (long long) getppid());
-		fprintf(stdout, "Opening status pipe: %s\n", b);
-		fflush(stdout);
-		jit_status_fd = open(b, O_WRONLY);
-		if (jit_status_fd < 0) {
-			perror("open");
-			exit(2);
-		}
-		fprintf(stdout, "Status pipe opened\n");
-		fflush(stdout);
-	}
 
 	for ( i = 1; i < argc; i ++ )
 	{
@@ -1178,7 +1168,28 @@ query_all:
 		{
 			is_consumer_explicit = 1;
 		}
+		else if ( !strcmp( argv[ i ], "-disable-status-fifo" ) )
+		{
+			status_fifo = 0;
+		}
 	}
+
+	// Open status pipe
+	if (status_fifo)
+	{
+		char b[100];
+		sprintf(b, "/tmp/jit-status-%lld", (long long) getppid());
+		fprintf(stdout, "Opening status pipe: %s\n", b);
+		fflush(stdout);
+		jit_status_fd = open(b, O_WRONLY);
+		if (jit_status_fd < 0) {
+			perror("open");
+			exit(2);
+		}
+		fprintf(stdout, "Status pipe opened\n");
+		fflush(stdout);
+	}
+
 	if ( !is_silent && !isatty( STDIN_FILENO ) && !is_progress )
 		is_progress = 1;
 
