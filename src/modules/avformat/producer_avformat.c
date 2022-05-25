@@ -2189,6 +2189,12 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 
 		skip_hwaccel:
 #endif
+
+		// Process properties as AVOptions
+		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+		if ( codec && codec->priv_class && codec_context->priv_data )
+			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+
 		// If we don't have a codec and we can't initialise it, we can't do much more...
 		pthread_mutex_lock( &self->open_mutex );
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
@@ -2217,10 +2223,6 @@ static int video_codec_init( producer_avformat self, int index, mlt_properties p
 		}
 		pthread_mutex_unlock( &self->open_mutex );
 
-		// Process properties as AVOptions
-		apply_properties( codec_context, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-		if ( codec && codec->priv_class && codec_context->priv_data )
-			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 
 		// Reset some image properties
 		mlt_properties_set_int( properties, "width", codec_params->width );
@@ -2965,6 +2967,11 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 			return 0;
 		}
 
+		// Process properties as AVOptions
+		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+		if ( codec && codec->priv_class && codec_context->priv_data )
+			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
+
 		// If we don't have a codec and we can't initialise it, we can't do much more...
 		pthread_mutex_lock( &self->open_mutex );
 		if ( codec && avcodec_open2( codec_context, codec, NULL ) >= 0 )
@@ -2981,11 +2988,6 @@ static int audio_codec_init( producer_avformat self, int index, mlt_properties p
 			self->audio_index = -1;
 		}
 		pthread_mutex_unlock( &self->open_mutex );
-
-		// Process properties as AVOptions
-		apply_properties( codec_context, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
-		if ( codec && codec->priv_class && codec_context->priv_data )
-			apply_properties( codec_context->priv_data, properties, AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM );
 	}
 	return self->audio_codec[ index ] && self->audio_index > -1;
 }
