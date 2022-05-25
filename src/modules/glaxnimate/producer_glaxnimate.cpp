@@ -114,6 +114,9 @@ static int get_image(mlt_frame frame, uint8_t **buffer, mlt_image_format *format
     if (mlt_properties_get_int(glax->properties(), "refresh")) {
         mlt_properties_clear(glax->properties(), "refresh");
         glax->open(mlt_properties_get(glax->properties(), "resource"));
+        if (glax->duration() > mlt_properties_get_int(glax->properties(), "length")) {
+            mlt_properties_set_int(glax->properties(), "length", glax->duration());
+        }
     }
 
     return glax->getImage(frame, buffer, format, width, height, writable);
@@ -170,6 +173,7 @@ mlt_producer producer_glaxnimate_init(mlt_profile profile, mlt_service_type type
         mlt_properties_set_int(properties, "meta.media.sample_aspect_den", 1);
         mlt_properties_set_int(properties, "out", glax->duration() - 1);
         mlt_properties_set_int(properties, "length", glax->duration());
+        mlt_properties_set(properties, "eof", "loop");
     }
     return producer;
 }
