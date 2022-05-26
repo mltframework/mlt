@@ -197,10 +197,13 @@ mlt_producer producer_glaxnimate_init(mlt_profile profile, mlt_service_type type
     Glaxnimate* glax = new Glaxnimate();
     mlt_producer producer = (mlt_producer) calloc(1, sizeof( *producer ));
 
-    createQApplicationIfNeeded(MLT_PRODUCER_SERVICE(producer));
-
+    if (!glax || mlt_producer_init(producer, glax)
+            || !createQApplicationIfNeeded(MLT_PRODUCER_SERVICE(producer))) {
+        mlt_producer_close(producer);
+        return NULL;
+    }
     // If allocated and initializes
-    if (glax && !mlt_producer_init(producer, glax) && glax->open(arg)) {
+    if (glax->open(arg)) {
         glax->setProducer(producer);
         glax->m_profile = profile;
         producer->close = (mlt_destructor) producer_close;
