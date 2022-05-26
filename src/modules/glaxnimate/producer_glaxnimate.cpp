@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <QApplication>
 
 #include "io/io_registry.hpp"
 using namespace glaxnimate;
@@ -118,6 +119,33 @@ public:
     }
 };
 
+static bool createQApplicationIfNeeded(mlt_service service)
+{
+    if (!qApp) {
+#if defined(Q_OS_WIN) && defined(NODEPLOY)
+        QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))+QStringLiteral("/bin"));
+        QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))+QStringLiteral("/plugins"));
+#endif
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
+        if (getenv("DISPLAY") == 0) {
+            mlt_log_error(service,
+                "The MLT Qt module requires a X11 environment.\n"
+                "Please either run melt from an X session or use a fake X server like xvfb:\n"
+                "xvfb-run -a melt (...)\n" );
+            return false;
+        }
+#endif
+        if (!mlt_properties_get(mlt_global_properties(), "qt_argv"))
+            mlt_properties_set(mlt_global_properties(), "qt_argv", "MLT");
+        static int argc = 1;
+        static char* argv[] = { mlt_properties_get(mlt_global_properties(), "qt_argv") };
+        new QApplication(argc, argv);
+        const char *localename = mlt_properties_get_lcnumeric(MLT_SERVICE_PROPERTIES(service));
+        QLocale::setDefault(QLocale(localename));
+    }
+    return true;
+}
+
 extern "C" {
 
 static int get_image(mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable)
@@ -168,6 +196,8 @@ mlt_producer producer_glaxnimate_init(mlt_profile profile, mlt_service_type type
     // Allocate the producer
     Glaxnimate* glax = new Glaxnimate();
     mlt_producer producer = (mlt_producer) calloc(1, sizeof( *producer ));
+
+    createQApplicationIfNeeded(MLT_PRODUCER_SERVICE(producer));
 
     // If allocated and initializes
     if (glax && !mlt_producer_init(producer, glax) && glax->open(arg)) {
