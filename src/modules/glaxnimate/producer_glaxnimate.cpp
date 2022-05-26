@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cassert>
 
 #include "io/io_registry.hpp"
 using namespace glaxnimate;
@@ -48,14 +49,18 @@ public:
         { return MLT_PRODUCER_PROPERTIES(m_producer); }
 
     QSize size() const { return m_document->size(); }
-    int duration() const { return qRound(m_document->main()->animation->last_frame.get() - m_document->main()->animation->first_frame.get() + 1.f); }
 
-    Glaxnimate()
-    {
+    int duration() const {
+        auto frames = m_document->main()->animation->last_frame.get() - m_document->main()->animation->first_frame.get() + 1.f;
+        return toMltFps(frames);
     }
 
-    ~Glaxnimate()
-    {
+    int toMltFps(float frame) const {
+        return qRound(frame / m_document->main()->get_fps() * m_profile->frame_rate_num / m_profile->frame_rate_den);
+    }
+
+    float toGlaxnimateFps(float frame) const {
+        return frame * m_document->main()->get_fps() * m_profile->frame_rate_den / m_profile->frame_rate_num;
     }
 
     int getImage(mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable)
@@ -67,7 +72,8 @@ public:
         }
         auto bg = mlt_properties_get_color(properties(), "background");
         auto background = QColor(bg.r, bg.g, bg.b, bg.a);
-        auto image = m_document->render_image(m_document->main()->animation->first_frame.get() + pos, {*width, *height}, background);
+        pos += toMltFps(m_document->main()->animation->first_frame.get());
+        auto image = m_document->render_image(toGlaxnimateFps(pos), {*width, *height}, background);
 
         *format = mlt_image_rgba;
         int size = mlt_image_format_size(*format, *width, *height, NULL);
@@ -95,7 +101,7 @@ public:
 
         m_document.reset(new model::Document(filename));
         QVariantMap settings;
-        if ( !importer->open(file, filename, m_document.get(), settings) ) {
+        if (!importer->open(file, filename, m_document.get(), settings)) {
             mlt_log_error(service(), "Error loading input file\n");
             return false;
         }
@@ -158,6 +164,7 @@ mlt_producer producer_glaxnimate_init(mlt_profile profile, mlt_service_type type
     // If allocated and initializes
     if (glax && !mlt_producer_init(producer, glax) && glax->open(arg)) {
         glax->setProducer(producer);
+        glax->m_profile = profile;
         producer->close = (mlt_destructor) producer_close;
         producer->get_frame = get_frame;
 
