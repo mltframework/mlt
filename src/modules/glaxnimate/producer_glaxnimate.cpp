@@ -56,11 +56,19 @@ public:
     }
 
     int toMltFps(float frame) const {
-        return qRound(frame / m_document->main()->get_fps() * m_profile->frame_rate_num / m_profile->frame_rate_den);
+        return qRound(frame / fps() * m_profile->frame_rate_num / m_profile->frame_rate_den);
     }
 
     float toGlaxnimateFps(float frame) const {
-        return frame * m_document->main()->get_fps() * m_profile->frame_rate_den / m_profile->frame_rate_num;
+        return frame * fps() * m_profile->frame_rate_den / m_profile->frame_rate_num;
+    }
+
+    int firstFrame() const {
+        return toMltFps(m_document->main()->animation->first_frame.get());
+    }
+
+    float fps() const {
+        return m_document->main()->get_fps();
     }
 
     int getImage(mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable)
@@ -178,8 +186,10 @@ mlt_producer producer_glaxnimate_init(mlt_profile profile, mlt_service_type type
         mlt_properties_set_int(properties, "meta.media.height", glax->size().height());
         mlt_properties_set_int(properties, "meta.media.sample_aspect_num", 1);
         mlt_properties_set_int(properties, "meta.media.sample_aspect_den", 1);
+        mlt_properties_set_double(properties, "meta.media.frame_rate", glax->fps());
         mlt_properties_set_int(properties, "out", glax->duration() - 1);
         mlt_properties_set_int(properties, "length", glax->duration());
+        mlt_properties_set_int(properties, "first_frame", glax->firstFrame());
         mlt_properties_set(properties, "eof", "loop");
     }
     return producer;

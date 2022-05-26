@@ -30,3 +30,17 @@ parameters:
       Set this to reload the animation from the resource the next an image is
       requested. This property is cleared when it has been refreshed.
     mutable: yes
+
+  - identifier: meta.media..frame_rate
+    title: Animation frame rate
+    type: float
+    readonly: yes
+
+  - identifier: first_frame
+    title: First frame number
+    type: integer
+    description: >
+      This returns the first frame number in the animation file as they do not
+      always start with 0. This value is converted to the associated MLT
+      profile frame rate.
+    readonly: yes
