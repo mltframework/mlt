@@ -3,7 +3,7 @@
  * \brief interface definition for all service classes
  * \see mlt_service_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -521,6 +521,8 @@ mlt_properties mlt_service_properties( mlt_service self )
 
 void mlt_service_apply_filters( mlt_service self, mlt_frame frame, int index )
 {
+	if (!self) return;
+
 	int i;
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
 	mlt_properties service_properties = MLT_SERVICE_PROPERTIES( self );
