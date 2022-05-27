@@ -251,7 +251,7 @@ int list_components( char* file )
 		void *state = NULL;
 		const AVCodec *codec = NULL;
 		while ((codec = av_codec_iterate(&state))) {
-			if ( codec->decode && codec->type == AVMEDIA_TYPE_AUDIO )
+			if ( av_codec_is_decoder(codec) && codec->type == AVMEDIA_TYPE_AUDIO )
 				fprintf( stderr, "  - %s\n", codec->name );
 		}
 		fprintf( stderr, "...\n" );
@@ -263,7 +263,7 @@ int list_components( char* file )
 		void *state = NULL;
 		const AVCodec *codec = NULL;
 		while ((codec = av_codec_iterate(&state))) {
-			if ( codec->decode && codec->type == AVMEDIA_TYPE_VIDEO )
+			if ( av_codec_is_decoder(codec) && codec->type == AVMEDIA_TYPE_VIDEO )
 				fprintf( stderr, "  - %s\n", codec->name );
 		}
 		fprintf( stderr, "...\n" );

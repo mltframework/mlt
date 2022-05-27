@@ -770,12 +770,6 @@ static int open_audio( mlt_properties properties, AVFormatContext *oc, AVStream 
 	if ( codec && codec->priv_class )
 	{
 		char *apre = mlt_properties_get( properties, "apre" );
-		if ( !c->priv_data && codec->priv_data_size )
-		{
-			c->priv_data = av_mallocz( codec->priv_data_size );
-			*(const AVClass **) c->priv_data = codec->priv_class;
-//			av_opt_set_defaults( c );
-		}
 		if ( apre )
 		{
 			mlt_properties p = mlt_properties_load( apre );
@@ -1113,12 +1107,6 @@ static int open_video( mlt_properties properties,  AVFormatContext *oc, AVStream
 	if ( codec && codec->priv_class )
 	{
 		char *vpre = mlt_properties_get( properties, "vpre" );
-		if ( !video_enc->priv_data && codec->priv_data_size )
-		{
-			video_enc->priv_data = av_mallocz( codec->priv_data_size );
-			*(const AVClass **) video_enc->priv_data = codec->priv_class;
-//			av_opt_set_defaults( video_enc );
-		}
 		if ( vpre )
 		{
 			mlt_properties p = mlt_properties_load( vpre );
