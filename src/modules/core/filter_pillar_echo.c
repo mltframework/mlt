@@ -159,6 +159,7 @@ static int scale_sliced_proc(int id, int index, int jobs, void* data)
 			d += 4;
 		}
 	}
+	return 0;
 }
 
 /** Perform a bilinear scale from the rect inside the source to fill the destination

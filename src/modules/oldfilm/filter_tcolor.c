@@ -51,6 +51,7 @@ static int do_slice_proc(int id, int index, int jobs, void* data)
 			p[x+3] = CLAMP( ((double)p[x+3] - 127.0) * desc->over_cr + 127.0, 0, 255);
 		}
 	}
+	return 0;
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
