@@ -1,6 +1,6 @@
 /*
- * filter_pillar_echo.c -- filter to interpolate pixels outside an area of interest
- * Copyright (c) 2020-2021 Meltytech, LLC
+ * filter_pillar_echo.c -- filter to interpolate pixels outside an area of
+ * interest Copyright (c) 2020-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
 #include "image_proc.h"
@@ -159,6 +159,7 @@ static int scale_sliced_proc(int id, int index, int jobs, void* data)
 			d += 4;
 		}
 	}
+	return 0;
 }
 
 /** Perform a bilinear scale from the rect inside the source to fill the destination

@@ -78,6 +78,7 @@ static int do_wave_slice_proc(int id, int index, int jobs, void* data)
 				*dst++ = getPoint(d->src, w, d->src_h, (x+decalX), (y+decalY), z);
 		}
 	}
+	return 0;
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )

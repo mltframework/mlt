@@ -299,6 +299,7 @@ static int do_slice_proc(int id, int index, int jobs, void* data)
 			}
 		}
 	}
+	return 0;
 }
 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
