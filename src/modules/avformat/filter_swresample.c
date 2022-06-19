@@ -262,7 +262,7 @@ static void filter_close( mlt_filter filter )
 	mlt_service_close( &filter->parent );
 }
 
-mlt_filter filter_swresample_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_filter filter_swresample_init( mlt_profile profile, char *arg )
 {
 	mlt_filter filter = mlt_filter_new();
 	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
