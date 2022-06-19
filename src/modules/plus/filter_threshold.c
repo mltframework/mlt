@@ -84,6 +84,7 @@ static int do_slice_proc(int id, int index, int jobs, void* data)
 			}
 		}
 	}
+	return 0;
 }
 
 /** Get the images and apply the luminance of the mask to the alpha of the frame.
