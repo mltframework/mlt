@@ -1,6 +1,6 @@
 /*
- * filter_pillar_echo.c -- filter to interpolate pixels outside an area of
- * interest Copyright (c) 2020-2021 Meltytech, LLC
+ * filter_pillar_echo.c -- filter to interpolate pixels outside an area of interest
+ * Copyright (c) 2020-2021 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
