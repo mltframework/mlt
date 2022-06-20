@@ -1,6 +1,6 @@
 /*
  * filter_choppy.c -- simple frame repeating filter
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 		position = mlt_frame_get_position(frame);
 		if (!cloned_frame || MLT_POSITION_MOD(position, amount) == 0 || abs(position - cloned_pos) > amount) {
 			error = mlt_frame_get_image(frame, image, format, width, height, writable);
-			cloned_frame = mlt_frame_clone(frame,  0);
+			cloned_frame = mlt_frame_clone(frame,  1);
 			mlt_properties_set_data(properties, "cloned_frame", cloned_frame, 0, (mlt_destructor) mlt_frame_close, NULL);
 			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 		} else {
