@@ -334,7 +334,7 @@ static char* filter_restricted( const char *in )
 {
 	if ( !in ) return NULL;
 	size_t n = strlen( in );
-	char *out = calloc( 1, n + 1 );
+	char *out = calloc( 1, n*3 + 1 );
 	char *p = out;
 	mbstate_t mbs;
 	memset( &mbs, 0, sizeof(mbs) );
