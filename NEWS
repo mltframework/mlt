@@ -1,6 +1,29 @@
 MLT Release Notes
 -----------------
 
+Version 7.8.0
+
+This highlight of this version is a new glaxnimate producer to render 2D
+vector art and animation.
+
+Framework
+  * Added `mlt_frame_get_alpha_size()` and refactored code to use it.
+  * Fixed a possible null pointer crash in `mlt_service_apply_filters()`.
+
+Modules
+  * Added a `glaxnimate` producer to the glaxnimate module.
+  * Added new file extensions for `glaxnimate` producer: json, lottie, rawr, tgs.
+  * Removed Qt4 compatibility from the qt module.
+  * Added Qt6 compatibility to the qt module.
+  * Added new file extensions for `qimage` producer: avif, heic, heif, jxl.
+  * Fixed `color_range` when using the `multi` consumer.
+  * Fixed reloading updated `results` in the `loudness` filter.
+  * Fixed `image_mode=blend` in the `timeremap` link.
+  * Fixed crash regression in `swscale` filter with odd size YUV image.
+  * Fixed the `choppy` filter may result in black frames with transitions.
+  * Prevent a crash in `avfilter` producer for a bug in glibc with `_FORTIFY_SOURCE=3`.
+
+
 Version 7.6.0
 
 This version adds image slice-threading to many filters and full support for
