@@ -24,3 +24,10 @@ parameters:
     description: Last frame of the acceptable playback range.
     default: 100
     mutable: true
+
+  - identifier: limit_enabled
+    title: Limit Enabled
+    type: integer
+    description: Whether the frame limiting feature should be enabled.
+    default: 0
+    mutable: true

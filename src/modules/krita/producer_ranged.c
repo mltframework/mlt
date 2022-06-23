@@ -38,6 +38,7 @@ typedef struct
 {
 	int frame_start;
 	int frame_end;
+	int limit_enabled;
 	mlt_producer producer_internal;
 } private_data;
 
@@ -47,12 +48,24 @@ static int restrict_range( int input, int min, int max ) {
 	return (MAX(input - min, 0) % (span + 1)) + min;
 }
 
+
+int is_valid_range( const private_data* pdata ) {
+	return pdata->frame_start > -1 && pdata->frame_end > -1 && pdata->frame_end > pdata->frame_start;
+}
+
+int is_limit_enabled( const private_data* pdata) {
+	return pdata->limit_enabled != 0;
+}
+
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	private_data* pdata = (private_data*)producer->child;
 
 	const int position = mlt_producer_position(pdata->producer_internal);
-	mlt_properties_set_position(MLT_PRODUCER_PROPERTIES(pdata->producer_internal), "_position", restrict_range(position, pdata->frame_start, pdata->frame_end));
+	if (is_valid_range(pdata) && is_limit_enabled(pdata)) {
+		mlt_properties_set_position(MLT_PRODUCER_PROPERTIES(pdata->producer_internal), "_position", restrict_range(position, pdata->frame_start, pdata->frame_end));
+	}
+
 	int r = mlt_service_get_frame((mlt_service)pdata->producer_internal, frame, index);
 
 	return r;
@@ -72,12 +85,19 @@ static void producer_property_changed( mlt_service owner, mlt_producer self, mlt
 	const char *name = mlt_event_data_to_string(event_data);
 	if (!name) return;
 
-	if (strcmp(name, "start_frame") || strcmp( name, "end_frame"  )){
+	if (strcmp(name, "start_frame") || strcmp( name, "end_frame" )){
 		private_data* pdata = (private_data*)self->child;
 		mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
 		pdata->frame_start = mlt_properties_get_int(props, "start_frame");
 		pdata->frame_end = mlt_properties_get_int(props, "end_frame");
 	}
+
+	// TODO: Find out why this strcmp doesn't work...
+	//if (strcmp(name, "limit_enabled")) {
+		private_data* pdata = (private_data*)self->child;
+		mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
+		pdata->limit_enabled = mlt_properties_get_int(props, "limit_enabled");
+	//}
 
 	if (strcmp(name, "_profile")) {
 		private_data* pdata = (private_data*)self->child;
@@ -121,12 +141,14 @@ mlt_producer producer_ranged_init( mlt_profile profile, mlt_service_type type, c
 		char* resource = arg;
 
 		// Default frame start / end props.
-		pdata->frame_start = 0;
-		pdata->frame_end = 240;
+		pdata->frame_start = -1;
+		pdata->frame_end = -1;
+		pdata->limit_enabled = 1;
 
 		// Initialize property values for start / end frames.
 		mlt_properties_set_int(producer_properties, "start_frame", pdata->frame_start);
 		mlt_properties_set_int(producer_properties, "end_frame", pdata->frame_end);
+		mlt_properties_set_int(producer_properties, "limit_enabled", pdata->limit_enabled);
 
 		// Create a producer for the clip using the false profile.
 		pdata->producer_internal = mlt_factory_producer( profile, "abnormal", resource);
