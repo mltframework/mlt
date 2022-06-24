@@ -35,6 +35,7 @@
  * \envvar \em MLT_REPOSITORY overrides the default location of the plugin modules, defaults to \p PREFIX_LIB.
  * MLT_REPOSITORY is ignored on Windows and OS X relocatable builds.
  * \envvar \em MLT_PRESETS_PATH overrides the default full path to the properties preset files, defaults to \p MLT_DATA/presets
+ * \envvar \em MLT_REPOSITORY_DENY colon seperated list of modules to skip. Example: libmltplus:libmltavformat:libmltfrei0r
  * \event \em producer-create-request fired when mlt_factory_producer is called;
  *   the event data is a pointer to mlt_factory_event_data
  * \event \em producer-create-done fired when a producer registers itself;
