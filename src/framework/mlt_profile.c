@@ -363,9 +363,17 @@ mlt_properties mlt_profile_list( )
 	if ( prefix == NULL )
 	{
 		prefix = mlt_environment( "MLT_DATA" );
-		filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + 1 );
-		strcpy( filename, prefix );
-		strcat( filename, PROFILES_DIR );
+		if (prefix)
+		{
+			filename = calloc( 1, strlen( prefix ) + strlen( PROFILES_DIR ) + 1 );
+			strcpy( filename, prefix );
+			strcat( filename, PROFILES_DIR );
+		}
+		else
+		{			
+			filename = calloc( 1, strlen( PROFILES_DIR ) + 1 );
+			strcpy( filename, PROFILES_DIR );
+		}		
 		prefix = filename;
 	}
 
