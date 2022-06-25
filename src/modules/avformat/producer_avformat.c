@@ -334,7 +334,8 @@ static char* filter_restricted( const char *in )
 {
 	if ( !in ) return NULL;
 	size_t n = strlen( in );
-	char *out = calloc( 1, n*3 + 1 );
+	// https://github.com/bminor/glibc/commit/9bcd12d223a8990254b65e2dada54faa5d2742f3
+	char *out = calloc( n + MB_CUR_MAX, 1 );
 	char *p = out;
 	mbstate_t mbs;
 	memset( &mbs, 0, sizeof(mbs) );
