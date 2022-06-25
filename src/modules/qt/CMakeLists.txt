@@ -1,87 +1,111 @@
 set(CMAKE_AUTOMOC ON)
 
-add_library(mltqt MODULE
-  factory.c
-  producer_qimage.c
-  producer_kdenlivetitle.c
-  common.cpp graph.cpp
-  qimage_wrapper.cpp
-  kdenlivetitle_wrapper.cpp
-  filter_audiolevelgraph.cpp
-  filter_audiowaveform.cpp
-  filter_qtext.cpp
-  filter_qtblend.cpp
-  filter_qtcrop.cpp
-  producer_qtext.cpp
-  transition_qtblend.cpp
-  consumer_qglsl.cpp
-  filter_typewriter.cpp
-  typewriter.cpp
-)
+function(mlt_add_qt_module ARG_TARGET)
+    cmake_parse_arguments(PARSE_ARGV 1 ARG "" "QT_VERSION;DATADIR" "")
 
-target_compile_options(mltqt PRIVATE ${MLT_COMPILE_OPTIONS})
+    if ("${ARG_TARGET}" STREQUAL "")
+        message(FATAL_ERROR "mlt_add_qt_module called without a valid target name.")
+    endif()
 
-target_link_libraries(mltqt PRIVATE
-  mlt++
-  mlt
-  m
-  Threads::Threads
-  Qt${QT_MAJOR_VERSION}::Core
-  Qt${QT_MAJOR_VERSION}::Xml
-)
+    if (NOT (("${ARG_QT_VERSION}" STREQUAL "5") OR ("${ARG_QT_VERSION}" STREQUAL "6")))
+        message(FATAL_ERROR "mlt_add_qt_module called without a valid Qt Version (allowed are 5 or 6).")
+    endif()
 
-if(QT_MAJOR_VERSION EQUAL 6)
-  target_link_libraries(mltqt PRIVATE
-    Qt${QT_MAJOR_VERSION}::SvgWidgets
-    Qt${QT_MAJOR_VERSION}::Core5Compat
-  )
-else()
-  target_link_libraries(mltqt PRIVATE
-    Qt${QT_MAJOR_VERSION}::Svg
-    Qt${QT_MAJOR_VERSION}::Widgets
-    Qt${QT_MAJOR_VERSION}::Gui
-  )
+    if ("${ARG_DATADIR}" STREQUAL "")
+        message(FATAL_ERROR "mlt_add_qt_module called without a valid data dir name.")
+    endif()
+
+    add_library(${ARG_TARGET} MODULE
+      factory.c
+      producer_qimage.c
+      producer_kdenlivetitle.c
+      common.cpp graph.cpp
+      qimage_wrapper.cpp
+      kdenlivetitle_wrapper.cpp
+      filter_audiolevelgraph.cpp
+      filter_audiowaveform.cpp
+      filter_qtext.cpp
+      filter_qtblend.cpp
+      filter_qtcrop.cpp
+      producer_qtext.cpp
+      transition_qtblend.cpp
+      consumer_qglsl.cpp
+      filter_typewriter.cpp
+      typewriter.cpp
+    )
+
+    target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
+
+    target_link_libraries(${ARG_TARGET} PRIVATE
+      mlt++
+      mlt
+      m
+      Threads::Threads
+      Qt${ARG_QT_VERSION}::Core
+      Qt${ARG_QT_VERSION}::Gui
+      Qt${ARG_QT_VERSION}::Xml
+    )
+
+    if(ARG_QT_VERSION EQUAL 6)
+      target_link_libraries(${ARG_TARGET} PRIVATE
+        Qt6::SvgWidgets
+        Qt6::Core5Compat
+      )
+    else()
+      target_link_libraries(${ARG_TARGET} PRIVATE
+        Qt${ARG_QT_VERSION}::Svg
+        Qt${ARG_QT_VERSION}::Widgets
+      )
+    endif()
+
+    target_compile_definitions(${ARG_TARGET} PRIVATE USE_QT_OPENGL)
+
+    if(NOT WINDOWS_DEPLOY)
+      target_compile_definitions(${ARG_TARGET} PRIVATE NODEPLOY)
+    endif()
+
+    if(GPL3)
+      target_sources(${ARG_TARGET} PRIVATE transition_vqm.cpp)
+      target_compile_definitions(${ARG_TARGET} PRIVATE GPL3)
+      install(FILES transition_vqm.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/${ARG_DATADIR})
+    endif()
+
+    if(TARGET PkgConfig::FFTW)
+      target_sources(${ARG_TARGET} PRIVATE filter_audiospectrum.cpp filter_lightshow.cpp)
+      target_link_libraries(${ARG_TARGET} PRIVATE PkgConfig::FFTW)
+      target_compile_definitions(${ARG_TARGET} PRIVATE USE_FFTW)
+      install(FILES filter_audiospectrum.yml filter_lightshow.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/${ARG_DATADIR})
+    endif()
+
+    if(TARGET PkgConfig::libexif)
+      target_link_libraries(${ARG_TARGET} PRIVATE PkgConfig::libexif)
+      target_compile_definitions(${ARG_TARGET} PRIVATE USE_EXIF)
+    endif()
+
+    set_target_properties(${ARG_TARGET} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+
+    install(TARGETS ${ARG_TARGET} LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+
+    install(FILES
+      filter_audiolevelgraph.yml
+      filter_audiospectrum.yml
+      filter_audiowaveform.yml
+      filter_qtblend.yml
+      filter_qtcrop.yml
+      filter_qtext.yml
+      filter_typewriter.yml
+      producer_kdenlivetitle.yml
+      producer_qimage.yml
+      producer_qtext.yml
+      transition_qtblend.yml
+      DESTINATION ${MLT_INSTALL_DATA_DIR}/${ARG_DATADIR}
+    )
+endfunction()
+
+if (MOD_QT)
+    mlt_add_qt_module(mltqt QT_VERSION 5 DATADIR qt)
 endif()
 
-target_compile_definitions(mltqt PRIVATE USE_QT_OPENGL)
-
-if(NOT WINDOWS_DEPLOY)
-  target_compile_definitions(mltqt PRIVATE NODEPLOY)
+if (MOD_QT6)
+    mlt_add_qt_module(mltqt6 QT_VERSION 6 DATADIR qt6)
 endif()
-
-if(GPL3)
-  target_sources(mltqt PRIVATE transition_vqm.cpp)
-  target_compile_definitions(mltqt PRIVATE GPL3)
-  install(FILES transition_vqm.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/qt)
-endif()
-
-if(TARGET PkgConfig::FFTW)
-  target_sources(mltqt PRIVATE filter_audiospectrum.cpp filter_lightshow.cpp)
-  target_link_libraries(mltqt PRIVATE PkgConfig::FFTW)
-  target_compile_definitions(mltqt PRIVATE USE_FFTW)
-  install(FILES filter_audiospectrum.yml filter_lightshow.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/qt)
-endif()
-
-if(TARGET PkgConfig::libexif)
-  target_link_libraries(mltqt PRIVATE PkgConfig::libexif)
-  target_compile_definitions(mltqt PRIVATE USE_EXIF)
-endif()
-
-set_target_properties(mltqt PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
-
-install(TARGETS mltqt LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
-
-install(FILES
-  filter_audiolevelgraph.yml
-  filter_audiospectrum.yml
-  filter_audiowaveform.yml
-  filter_qtblend.yml
-  filter_qtcrop.yml
-  filter_qtext.yml
-  filter_typewriter.yml
-  producer_kdenlivetitle.yml
-  producer_qimage.yml
-  producer_qtext.yml
-  transition_qtblend.yml
-  DESTINATION ${MLT_INSTALL_DATA_DIR}/qt
-)

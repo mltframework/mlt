@@ -118,50 +118,75 @@ set(GLAX_SOURCES
   ${CORE_DIR}utils/tar.cpp
 )
 
-configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/${CORE_DIR}application_info_generated.in.hpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/${CORE_DIR}application_info_generated.hpp"
-)
+function(mlt_add_glaxnimate_module ARG_TARGET)
+    cmake_parse_arguments(PARSE_ARGV 1 ARG "" "QT_VERSION;DATADIR" "")
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${APP_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${CORE_DIR})
-include_directories(${LibArchive_INCLUDE_DIRS})
 
-add_library(mltglaxnimate MODULE
-  producer_glaxnimate.cpp
-  ${GLAX_SOURCES}
-)
+    if ("${ARG_TARGET}" STREQUAL "")
+        message(FATAL_ERROR "mlt_add_glaxnimate_module called without a valid target name.")
+    endif()
 
-target_compile_options(mltglaxnimate PRIVATE ${MLT_COMPILE_OPTIONS})
-add_definitions(-DWITHOUT_POTRACE -DWITHOUT_QT_COLOR_WIDGETS)
+    if (NOT (("${ARG_QT_VERSION}" STREQUAL "5") OR ("${ARG_QT_VERSION}" STREQUAL "6")))
+        message(FATAL_ERROR "mlt_add_glaxnimate_module called without a valid Qt Version (allowed are 5 or 6).")
+    endif()
 
-find_package(LibArchive REQUIRED)
-find_package(ZLIB REQUIRED)
+    if ("${ARG_DATADIR}" STREQUAL "")
+        message(FATAL_ERROR "mlt_add_glaxnimate_module called without a valid data dir name.")
+    endif()
 
-set_property(TARGET mltglaxnimate APPEND PROPERTY AUTOMOC_MACRO_NAMES "GLAXNIMATE_OBJECT")
+    configure_file(
+      "${CMAKE_CURRENT_SOURCE_DIR}/${CORE_DIR}application_info_generated.in.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/${CORE_DIR}application_info_generated.hpp"
+    )
 
-target_link_libraries(mltglaxnimate PRIVATE
-  mlt++
-  mlt
-  m
-  Threads::Threads
-  Qt${QT_MAJOR_VERSION}::Core
-  Qt${QT_MAJOR_VERSION}::Gui
-  Qt${QT_MAJOR_VERSION}::Widgets
-  Qt${QT_MAJOR_VERSION}::Xml
-  ${LibArchive_LIBRARIES}
-  ZLIB::ZLIB
-)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${APP_DIR})
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${CORE_DIR})
+    include_directories(${LibArchive_INCLUDE_DIRS})
 
-if(NOT WINDOWS_DEPLOY)
-  target_compile_definitions(mltglaxnimate PRIVATE NODEPLOY)
+    add_library(${ARG_TARGET} MODULE
+      producer_glaxnimate.cpp
+      ${GLAX_SOURCES}
+    )
+
+    target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
+    add_definitions(-DWITHOUT_POTRACE -DWITHOUT_QT_COLOR_WIDGETS)
+
+    find_package(LibArchive REQUIRED)
+    find_package(ZLIB REQUIRED)
+
+    set_property(TARGET ${ARG_TARGET} APPEND PROPERTY AUTOMOC_MACRO_NAMES "GLAXNIMATE_OBJECT")
+
+    target_link_libraries(${ARG_TARGET} PRIVATE
+      mlt++
+      mlt
+      m
+      Threads::Threads
+      Qt${ARG_QT_VERSION}::Core
+      Qt${ARG_QT_VERSION}::Gui
+      Qt${ARG_QT_VERSION}::Widgets
+      Qt${ARG_QT_VERSION}::Xml
+      ${LibArchive_LIBRARIES}
+      ZLIB::ZLIB
+    )
+
+    if(NOT WINDOWS_DEPLOY)
+      target_compile_definitions(${ARG_TARGET} PRIVATE NODEPLOY)
+    endif()
+
+    set_target_properties(${ARG_TARGET} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+
+    install(TARGETS ${ARG_TARGET} LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+
+    install(FILES
+      producer_glaxnimate.yml
+      DESTINATION ${MLT_INSTALL_DATA_DIR}/${ARG_DATADIR}
+    )
+endfunction()
+
+if(MOD_GLAXNIMATE)
+    mlt_add_glaxnimate_module(mltglaxnimate QT_VERSION 5 DATADIR glaxnimate)
 endif()
 
-set_target_properties(mltglaxnimate PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
-
-install(TARGETS mltglaxnimate LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
-
-install(FILES
-  producer_glaxnimate.yml
-  DESTINATION ${MLT_INSTALL_DATA_DIR}/glaxnimate
-)
+#if(MOD_GLAXNIMATE_QT6)
+    #mlt_add_glaxnimate_module(mltglaxnimate-qt6 QT_VERSION 6 DATADIR glaxnimate-qt6)
+#endif()
