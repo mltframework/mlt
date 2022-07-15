@@ -267,8 +267,16 @@ double mlt_transition_get_progress( mlt_transition self, mlt_frame frame )
 	}
 	if ( out != 0 )
 	{
-		mlt_position position = mlt_frame_get_position( frame );
-		progress = ( double ) ( position - in ) / ( double ) ( out - in + 1 );
+		if ( in == out )
+		{
+			// Special case for one frame transition
+			progress = 0.5;
+		}
+		else
+		{
+			mlt_position position = mlt_frame_get_position( frame );
+			progress = ( double ) ( position - in ) / ( double ) ( out - in + 1 );
+		}
 	}
 	return progress;
 }
