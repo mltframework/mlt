@@ -55,3 +55,4 @@ Mlt7Config*.cmake
 install_manifest.txt
 out/
 src/modules/qt/mltqt_autogen/
+src/modules/glaxnimate/mltglaxnimate_autogen/
