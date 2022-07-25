@@ -23,7 +23,6 @@
 
 extern mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 extern mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
@@ -38,11 +37,9 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_producer_type, "xml", producer_xml_init );
 	MLT_REGISTER( mlt_service_producer_type, "xml-string", producer_xml_init );
 	MLT_REGISTER( mlt_service_producer_type, "xml-nogl", producer_xml_init );
-	MLT_REGISTER( mlt_service_filter_type, "gpstext", filter_gpstext_init );
 
 	MLT_REGISTER_METADATA( mlt_service_consumer_type, "xml", metadata, "consumer_xml.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "xml", metadata, "producer_xml.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "xml-string", metadata, "producer_xml-string.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "xml-nogl", metadata, "producer_xml-nogl.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "gpstext", metadata, "filter_gpstext.yml" );
 }

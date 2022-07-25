@@ -3,8 +3,6 @@ add_library(mltxml MODULE
   consumer_xml.c
   factory.c
   producer_xml.c
-  gps_parser.c
-  filter_gpstext.c
 )
 
 target_compile_options(mltxml PRIVATE ${MLT_COMPILE_OPTIONS})
@@ -20,7 +18,6 @@ install(FILES
   producer_xml-nogl.yml
   producer_xml-string.yml
   producer_xml.yml
-  filter_gpstext.yml
   mlt-xml.dtd
   DESTINATION ${MLT_INSTALL_DATA_DIR}/xml
 )

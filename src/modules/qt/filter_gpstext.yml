@@ -2,7 +2,7 @@ schema_version: 7.0
 type: filter
 identifier: gpstext
 title: GPS Text
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Daniel F
 license: LGPLv2.1
@@ -143,6 +143,19 @@ parameters:
     mutable: yes
     widget: text
     
+  - identifier: swap_180_meridian
+    title: Swap 180 meridian
+    type: boolean
+    description: > 
+      If the GPS track is crossing the 180 meridian, setting this variable to 1 will 
+      process it properly instead of considering the 2 points went all the way around
+      the globe.
+    default: 0
+    readonly: no
+    required: no
+    mutable: yes
+    widget: checkbox
+
     # READ ONLY:
   - identifier: gps_start_text
     title: GPS start time
@@ -154,18 +167,10 @@ parameters:
     description: Date and time of the video file.
     readonly: yes
     
-  - identifier: videofile_timezone_seconds
-    title: Video timezone
-    description: > 
-      A guess on the timezone of the video file (includes daylight savings time if active 
-      at file's creation), to be used as a one click major_offset if gps and file start time
-      seem hours off.
-    readonly: yes
-    
   - identifier: auto_gps_offset_start
     title: Auto offset start
     description: > 
-      Provides a helper offset to guarantee start of video file syncs at start of gps file.
+      Provides a helper offset to guarantee start of video file syncs with the start of gps file.
       Correctly sets the offset if video file and gps recording was started at the same time.
     readonly: yes
     
