@@ -59,7 +59,6 @@ int64_t datetimeXMLstring_to_mseconds(const char* text, char* format /* = NULL*/
 	char def_format[] = "%Y-%m-%dT%H:%M:%S";
 	int64_t ret = 0;
 	int ms = 0;
-	char * ms_part = NULL;
 	struct tm tm_time;
 	//samples: 2020-07-11T09:03:23.000Z or 2021-02-27T12:10:00+00:00
 	tm_time.tm_isdst = -1; //force dst detection
@@ -75,7 +74,8 @@ int64_t datetimeXMLstring_to_mseconds(const char* text, char* format /* = NULL*/
 	ret = internal_timegm(&tm_time);
 
 	//check if we have miliseconds, 3 digits only
-	if ( (ms_part = strchr(text, '.')) != NULL ) {
+	const char * ms_part = strchr(text, '.');
+	if ( ms_part != NULL ) {
 		ms = strtol(ms_part+1, NULL, 10);
 		while (abs(ms) > 999)
 			ms /= 10;
@@ -823,7 +823,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 				last_time = crt_point.time;
 			}
 			else 
-				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%d, last:%d\n", count_pts, crt_point.lat, crt_point.lon, crt_point.time, last_time);
+				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%d, last:%d\n", *count_pts, crt_point.lat, crt_point.lon, crt_point.time, last_time);
 		}
 	}
 }
@@ -901,7 +901,7 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 				last_time = crt_point.time;
 			}
 			else 
-				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%d, last:%d\n", count_pts, crt_point.lat, crt_point.lon, crt_point.time, last_time);
+				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%d, last:%d\n", *count_pts, crt_point.lat, crt_point.lon, crt_point.time, last_time);
 		}
 	}
 }
