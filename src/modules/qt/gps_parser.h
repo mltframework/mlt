@@ -20,15 +20,7 @@
 #define GPS_PARSER_H
 
 #include <framework/mlt.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <string.h>
-#include <math.h>
-#include <time.h>
-#include <ctype.h>
-
+#include <cmath>
 #include <QXmlStreamReader>
 #include <QFile>
 
@@ -79,11 +71,11 @@ typedef struct
 	int64_t* first_gps_time;
 	int64_t* last_gps_time;
 	char* interpolated;
+	int* swap180;
 	//read only:
 	int64_t gps_proc_start_t; //process only points after this time (epoch miliseconds)
 	int last_smooth_lvl;
 	char* last_filename; //gps file fullpath
-	int swap180 = 0;
 	mlt_filter filter;
 } gps_private_data;
 

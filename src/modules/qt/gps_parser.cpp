@@ -18,8 +18,9 @@
  */
 
 #define __USE_XOPEN
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-
+#endif
 #include "gps_parser.h"
 
 #define _x (const xmlChar*)
@@ -386,6 +387,7 @@ void recalculate_gps_data(gps_private_data gdata)
 	}
 	if (gdata.gps_points_p == NULL) {
 		if ((*gdata.ptr_to_gps_points_p = (gps_point_proc*) calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
+			//mlt_log_warning(gdata.filter, "calloc error, size=%u\n", *gdata.gps_points_size*sizeof(gps_point_proc));
 			mlt_log_warning(gdata.filter, "calloc error, size=%d\n", *gdata.gps_points_size*sizeof(gps_point_proc));
 			return;
 		}
@@ -917,7 +919,7 @@ int qxml_parse_file(gps_private_data gdata)
 	int count_pts = 0, nr = 0;
 	char* filename = gdata.last_filename;
 	gps_point_raw* gps_array = NULL;
-	int swap_to_180 = gdata.swap180;
+	int &swap_to_180 = *gdata.swap180;
 
 	// mlt_log_info(gdata.filter, "in qxml_parse_file, filename: %s, swap_to_180=%d\n", filename, swap_to_180);
 
@@ -970,14 +972,32 @@ int qxml_parse_file(gps_private_data gdata)
 
 	//copy points to private array and free list
 	while (gps_list_head) {
-		if (swap_to_180)
-			gps_list_head->gp.lon = get_180_swapped(gps_list_head->gp.lon);
-
 		gps_array[nr++] = gps_list_head->gp;
 		tmp = gps_list_head;
 		gps_list_head =	 gps_list_head->next;
 		free (tmp);
 	}
+
+	//search to find if we cross the 180 and/or the 0 meridian
+	bool crosses0 = false, crosses180 = false;
+	for (int i = 0; i<*gdata.gps_points_size-1; i++) {
+		double crt =  gps_array[i].lon;
+		double next =  gps_array[i+1].lon;
+		if ((crt < 0 && next > 0) || (crt > 0 && next < 0)) {
+			if (crt - next > 180 || next - crt > 180) 
+				crosses180 = true;
+			else 
+				crosses0 = true;
+		}
+	}
+	//if only 180 is crossed, we swap, otherswise we don't do anything
+	if (crosses180 && !crosses0) {
+		swap_to_180 = 1;
+		for (int i = 0; i < *gdata.gps_points_size; i++)
+			gps_array[i].lon = get_180_swapped(gps_array[i].lon);
+	}
+	else
+		swap_to_180 = 0;
 
 // //debug result:
 // 	for (int i = 0; i<*gdata.gps_points_size; i+=100) {

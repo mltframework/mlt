@@ -17,7 +17,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <iostream>
 #include "common.h"
 #include "filter_gpsgraphic.h"
 
@@ -82,11 +81,11 @@ gps_private_data filter_to_gps_data (mlt_filter filter)
 	ret.first_gps_time = &pdata->first_gps_time;
 	ret.last_gps_time = &pdata->last_gps_time;
 	ret.interpolated = &pdata->interpolated;
+	ret.swap180 = &pdata->swap_180;
 
 	ret.gps_proc_start_t = 0;
 	ret.last_smooth_lvl = pdata->last_smooth_lvl;
 	ret.last_filename = pdata->last_filename;
-	ret.swap180 = pdata->swap_180;
 	ret.filter = filter;
 	return ret;
 }
@@ -351,9 +350,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		process_frame_properties(filter, frame, used_crops);
 		QImage qimg( *width, *height, QImage::Format_ARGB32 );
 		convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
-		// clock_t start_t = clock();
 		draw_graphics( filter, frame, &qimg, *width, *height, used_crops );
-		// mlt_log_info(filter, "draw_graphics() time: %f\n", (double)(clock() - start_t)/CLOCKS_PER_SEC);
 		convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
 	}
 	else 
@@ -577,9 +574,7 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	char* filename = mlt_properties_get( properties, "gps.file");
-	int swap = mlt_properties_get_int( properties, "swap_180_meridian");
 	bool guess_offset = (mlt_properties_get_int(properties, "time_offset") == 0) && (strlen(pdata->last_filename) == 0);
-	pdata->swap_180 = swap;
 
 	//if there's no file selected just return
 	if ( !filename || !strcmp(filename, "") )
@@ -590,7 +585,6 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 	{
 		// mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d \n", pdata->last_filename, filename, swap);
 		default_priv_data(pdata);
-		pdata->swap_180 = swap; //need to fill again after default
 		strcpy(pdata->last_filename, filename);
 
 		if (qxml_parse_file(filter_to_gps_data(filter)) == 1) 
@@ -600,7 +594,7 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 
 			//when loading the first file, sync gps start with video start
 			int64_t original_video_time = get_original_video_file_time_mseconds(frame);
-			if (guess_offset && original_video_time)
+			if (guess_offset)
 			{
 				pdata->gps_offset = pdata->first_gps_time - original_video_time;
 				mlt_properties_set_int(properties, "time_offset", pdata->gps_offset/1000);
@@ -691,7 +685,6 @@ mlt_filter filter_gpsgraphic_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties_set_int(properties, "show_grid", 0);
 		mlt_properties_set( properties, "legend_unit", "" );
 		mlt_properties_set_int( properties, "draw_individual_dots", 0 );
-		mlt_properties_set_int( properties, "swap_180_meridian", 0 );
 		//background image
 		mlt_properties_set(properties, "map_coords_hint", "<no location file processed>");
 		mlt_properties_set(properties, "bg_img_path", "");

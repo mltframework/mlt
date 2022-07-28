@@ -387,19 +387,6 @@ parameters:
     readonly: no
     mutable: yes
     widget: checkbox
-    
-  - identifier: swap_180_meridian
-    title: Swap 180 meridian
-    type: boolean
-    description: > 
-      If the GPS track is crossing the 180 meridian, setting this variable will 
-      process it properly instead of considering the 2 points went all the way 
-      around the globe.
-    default: 0
-    readonly: no
-    required: no
-    mutable: yes
-    widget: checkbox
 
   - identifier: rect
     title: Rectangle

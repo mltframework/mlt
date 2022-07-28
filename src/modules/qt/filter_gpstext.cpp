@@ -17,15 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <framework/mlt.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <time.h>
-
 #include "gps_parser.h"
 
 #include <QMutex>
@@ -81,11 +72,11 @@ static gps_private_data filter_to_gps_data (mlt_filter filter) {
 	ret.first_gps_time = &pdata->first_gps_time;
 	ret.last_gps_time = &pdata->last_gps_time;
 	ret.interpolated = &pdata->interpolated;
+	ret.swap180 = &pdata->swap_180;
 
 	ret.gps_proc_start_t = pdata->gps_proc_start_t;
 	ret.last_smooth_lvl = pdata->last_smooth_lvl;
 	ret.last_filename = pdata->last_filename;
-	ret.swap180 = pdata->swap_180;
 	ret.filter = filter;
 	return ret;
 }
@@ -512,10 +503,8 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	char* filename = mlt_properties_get( properties, "gps.file");
-	int swap = mlt_properties_get_int( properties, "swap_180_meridian");
 	bool guess_offset = (mlt_properties_get_int(properties, "time_offset") == 0) && (strlen(pdata->last_filename) == 0);
-	pdata->swap_180 = swap;
-
+	
 	//if there's no file selected just return
 	if ( !filename || !strcmp(filename, "") )
 		return;
@@ -525,7 +514,6 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 	{
 		// mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d\n", pdata->last_filename, filename, swap);
 		default_priv_data(pdata);
-		pdata->swap_180 = swap; //need to fill again after default
 		strcpy(pdata->last_filename, filename);
 
 		if (qxml_parse_file(filter_to_gps_data(filter)) == 1) 
@@ -535,7 +523,7 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 
 			//when loading the first file, sync gps start with video start
 			int64_t original_video_time = get_original_video_file_time_mseconds(frame);
-			if (guess_offset && original_video_time)
+			if (guess_offset)
 			{
 				pdata->gps_offset = pdata->first_gps_time - original_video_time;
 				mlt_properties_set_int(properties, "time_offset", pdata->gps_offset/1000);
@@ -650,7 +638,6 @@ mlt_filter filter_gpstext_init( mlt_profile profile, mlt_service_type type, cons
 		mlt_properties_set_int( my_properties, "smoothing_value", 5);
 		mlt_properties_set_int( my_properties, "speed_multiplier", 1);
 		mlt_properties_set_int( my_properties, "updates_per_second", 1);
-		mlt_properties_set_int( my_properties, "swap_180_meridian", 0 );
 
 		filter->close = filter_close;
 		filter->process = filter_process;
