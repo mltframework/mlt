@@ -76,9 +76,9 @@ typedef enum
 typedef enum
 {
 	gpsg_color_by_solid = 0,
+	gpsg_color_by_solid_past_future,
 	gpsg_color_by_solid_past,
 	gpsg_color_by_solid_future,
-	gpsg_color_by_solid_past_future,
 	gpsg_color_by_vertical_gradient,
 	gpsg_color_by_horizontal_gradient,
 	gpsg_color_by_duration,

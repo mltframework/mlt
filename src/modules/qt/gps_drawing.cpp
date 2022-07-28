@@ -200,7 +200,7 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
 	char* legend_unit = mlt_properties_get(properties, "legend_unit");
 	QVector<QColor> colors = get_graph_colors( properties );
 	QPen last_graph_pen;
-
+	
 	if (colors.size() < 2)
 		colors.append(colors[0]);
 
@@ -265,14 +265,6 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
 		{
 			p.setPen( pen_solid_color0 );
 		}
-		else if (color_style == gpsg_color_by_solid_past && i <= i_now || color_style == gpsg_color_by_solid_future && i > i_now)
-		{
-			p.setPen( pen_solid_color0 );
-		}
-		else if (color_style == gpsg_color_by_solid_past && i > i_now || color_style == gpsg_color_by_solid_future && i <= i_now)
-		{
-			p.setPen( pen_thin_color1 );
-		}
 		else if (color_style == gpsg_color_by_solid_past_future)
 		{
 			if (i <= i_now) 
@@ -281,6 +273,14 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
 			}
 			else if (i > i_now) 
 				p.setPen( pen_solid_color1 );
+		}
+		else if (color_style == gpsg_color_by_solid_past && i <= i_now || color_style == gpsg_color_by_solid_future && i > i_now)
+		{
+			p.setPen( pen_solid_color0 );
+		}
+		else if (color_style == gpsg_color_by_solid_past && i > i_now || color_style == gpsg_color_by_solid_future && i <= i_now)
+		{
+			p.setPen( pen_thin_color1 );
 		}
 		else if (color_style == gpsg_color_by_vertical_gradient || color_style == gpsg_color_by_horizontal_gradient)
 		{
