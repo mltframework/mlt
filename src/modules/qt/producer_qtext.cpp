@@ -71,11 +71,11 @@ static void copy_qimage_to_mlt_image( QImage* qImg, uint8_t* mImg )
 
 static void copy_image_to_alpha( uint8_t* image, uint8_t* alpha, int width, int height )
 {
-	register int len = width * height;
+	int len = width * height;
 	// Extract the alpha mask from the RGBA image using Duff's Device
-	register uint8_t *s = image + 3; // start on the alpha component
-	register uint8_t *d = alpha;
-	register int n = ( len + 7 ) / 8;
+	uint8_t *s = image + 3; // start on the alpha component
+	uint8_t *d = alpha;
+	int n = ( len + 7 ) / 8;
 
 	switch ( len % 8 )
 	{
