@@ -179,9 +179,27 @@ int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching )
 		// Use Qt's orientation detection
 		reader.setAutoTransform(!disable_exif);
 #endif
+		QString filename = QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) );
+		// First try to detect the file type based on the content
+		// in case the file extension is incorrect.
 		reader.setDecideFormatFromContent( true );
-		reader.setFileName( QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) ) );
-		QImage *qimage = new  QImage( reader.read() );
+		reader.setFileName( filename );
+		QImage *qimage = new QImage( reader.read() );
+		if ( qimage->isNull( ) )
+		{
+			mlt_log_info( MLT_PRODUCER_SERVICE( &self->parent ), "QImage retry: %d - %s\n",
+					reader.error(), reader.errorString().toLatin1().data() );
+			delete qimage;
+			// If detection fails, try a more comprehensive detection including file extension
+			reader.setDecideFormatFromContent( false );
+			reader.setFileName( filename );
+			qimage = new QImage( reader.read() );
+			if ( qimage->isNull( ) )
+			{
+				mlt_log_info( MLT_PRODUCER_SERVICE( &self->parent ), "QImage fail: %d - %s\n",
+						reader.error(), reader.errorString().toLatin1().data() );
+			}
+		}
 		self->qimage = qimage;
 
 		if ( !qimage->isNull( ) )
