@@ -173,18 +173,6 @@ endif()
 
 pkg_check_modules(sdl2 IMPORTED_TARGET sdl2)
 
-if (BUILD_TESTS_WITH_QT6)
-    set(QT_MAJOR_VERSION 6)
-else()
-    set(QT_MAJOR_VERSION 5)
-endif()
-
-if(BUILD_TESTING)
-  find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS Core Test)
-  find_package(Kwalify REQUIRED)
-  enable_testing()
-endif()
-
 if(MOD_QT OR MOD_QT6 OR MOD_PLUS)
   pkg_check_modules(FFTW IMPORTED_TARGET fftw3)
   if(NOT FFTW_FOUND)
@@ -298,6 +286,8 @@ if(MOD_PLUSGPL)
   list(APPEND MLT_SUPPORTED_COMPONENTS plusgpl)
 endif()
 
+# It is necessary to look for Qt6 before Qt5, otherwise there will
+# be a conflict with the targets in case both are enabled
 if(MOD_QT6)
   find_package(Qt6 COMPONENTS Core Gui Xml SvgWidgets Core5Compat)
   if(Qt6_FOUND)
@@ -307,6 +297,7 @@ if(MOD_QT6)
   endif()
 endif()
 
+
 #if(MOD_GLAXNIMATE_QT6)
 #  find_package(Qt6 COMPONENTS Core Gui Widgets Xml)
 #  if(Qt6_FOUND)
@@ -315,6 +306,18 @@ endif()
 #    set(MOD_GLAXNIMATE_QT6 OFF)
 #  endif()
 #endif()
+
+if (BUILD_TESTS_WITH_QT6)
+    set(QT_MAJOR_VERSION 6)
+else()
+    set(QT_MAJOR_VERSION 5)
+endif()
+
+if(BUILD_TESTING)
+  find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS Core Test)
+  find_package(Kwalify REQUIRED)
+  enable_testing()
+endif()
 
 if(MOD_QT)
   find_package(Qt5 COMPONENTS Core Xml Gui Svg Widgets)
