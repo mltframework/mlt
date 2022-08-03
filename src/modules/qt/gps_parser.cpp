@@ -387,8 +387,7 @@ void recalculate_gps_data(gps_private_data gdata)
 	}
 	if (gdata.gps_points_p == NULL) {
 		if ((*gdata.ptr_to_gps_points_p = (gps_point_proc*) calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
-			//mlt_log_warning(gdata.filter, "calloc error, size=%u\n", *gdata.gps_points_size*sizeof(gps_point_proc));
-			mlt_log_warning(gdata.filter, "calloc error, size=%d\n", *gdata.gps_points_size*sizeof(gps_point_proc));
+			mlt_log_warning(gdata.filter, "calloc error, size=%u\n", (unsigned)(*gdata.gps_points_size*sizeof(gps_point_proc)));
 			return;
 		}
 		else { //alloc ok
@@ -637,7 +636,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 	}
 	if (gdata.gps_points_p == NULL) {
 		if ((*gdata.ptr_to_gps_points_p = (gps_point_proc*) calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
-			mlt_log_warning(gdata.filter, "calloc failed, size = %d\n", *gdata.gps_points_size * sizeof(gps_point_proc));
+			mlt_log_warning(gdata.filter, "calloc failed, size = %u\n", (unsigned)(*gdata.gps_points_size * sizeof(gps_point_proc)));
 			return;
 		}
 		else 
@@ -825,7 +824,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 				last_time = crt_point.time;
 			}
 			else 
-				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%d, last:%d\n", *count_pts, crt_point.lat, crt_point.lon, crt_point.time, last_time);
+				mlt_log_info(NULL, "qxml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%u.%u, last:%u.%u\n", *count_pts, crt_point.lat, crt_point.lon, (unsigned)(crt_point.time/1000), (unsigned)(crt_point.time%1000), (unsigned)(last_time/1000), (unsigned)(last_time%1000));
 		}
 	}
 }
@@ -903,7 +902,7 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 				last_time = crt_point.time;
 			}
 			else 
-				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%d, last:%d\n", *count_pts, crt_point.lat, crt_point.lon, crt_point.time, last_time);
+				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%u.%u, last:%u.%u\n", *count_pts, crt_point.lat, crt_point.lon, (unsigned)(crt_point.time/1000), (unsigned)(crt_point.time%1000), (unsigned)(last_time/1000), (unsigned)(last_time%1000));
 		}
 	}
 }
@@ -957,7 +956,7 @@ int qxml_parse_file(gps_private_data gdata)
 	}
 	if (qxml_reader.hasError()) 
 	{
-		mlt_log_info(NULL, "qxml_reader.hasError! line:%d, errString:%s\n", qxml_reader.lineNumber(), qUtf8Printable(qxml_reader.errorString()));
+		mlt_log_info(NULL, "qxml_reader.hasError! line:%u, errString:%s\n", (unsigned)qxml_reader.lineNumber(), qUtf8Printable(qxml_reader.errorString()));
 		return 0;
 	}
 
@@ -966,7 +965,7 @@ int qxml_parse_file(gps_private_data gdata)
 	*gdata.ptr_to_gps_points_r = (gps_point_raw*) calloc(count_pts, sizeof(gps_point_raw));
 	gps_array = *gdata.ptr_to_gps_points_r; //just an alias
 	if (gps_array == NULL) {
-		mlt_log_error(gdata.filter, "malloc error (size=%d)\n", count_pts * sizeof(gps_point_raw));
+		mlt_log_error(gdata.filter, "malloc error (size=%u)\n", (unsigned)(count_pts * sizeof(gps_point_raw)));
 	}
 	*gdata.gps_points_size = count_pts;
 
