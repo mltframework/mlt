@@ -435,7 +435,6 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
  *  (time includes speed_multiplier and updates per second) */
 static void get_current_frame_time_str(char* keyword, mlt_filter filter, mlt_frame frame, char* result )
 {
-	private_data* pdata = (private_data*)filter->child;
 	int64_t val = 0;
 	char *offset = NULL, *format = NULL;
 	

@@ -757,7 +757,6 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 // Parses a .gpx file into a gps_point_raw linked list
 void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
-	int i;
 	int64_t last_time = -1;
 	/*
 	// sample point from .GPX file (version 1.0) + HR extension
@@ -777,7 +776,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 	{
 		reader.readNext();
 		// mlt_log_info(NULL, " readNext tag: %s type = %d\n", _qxml_getthestring(reader.name()), reader.tokenType());
-		if (reader.isStartElement() && reader.name() == "trkpt")
+		if (reader.isStartElement() && reader.name() == QString("trkpt"))
 		{
 			gps_point_raw crt_point = uninit_gps_raw_point;
 			
@@ -787,27 +786,27 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 			if (attributes.hasAttribute("lon"))
 				crt_point.lon = attributes.value("lon").toDouble();
 			
-			while (reader.readNext() && !(reader.name() == "trkpt" && reader.tokenType() == QXmlStreamReader::EndElement)) //until closing trkpt
+			while (reader.readNext() && !(reader.name() == QString("trkpt") && reader.tokenType() == QXmlStreamReader::EndElement)) //until closing trkpt
 			{
 				// mlt_log_info(NULL, "[trkpt->1] readNext tag: %s, type=%d \n", _qxml_getthestring(reader.name()), reader.tokenType());
 				if (!reader.isStartElement())
 					continue;
 
-				if (reader.name() == "ele")
+				if (reader.name() == QString("ele"))
 					crt_point.ele = reader.readElementText().toDouble();
-				else if (reader.name() == "time")
+				else if (reader.name() == QString("time"))
 					crt_point.time = datetimeXMLstring_to_mseconds(qUtf8Printable(reader.readElementText()));
-				else if (reader.name() == "speed")
+				else if (reader.name() == QString("speed"))
 					crt_point.speed = reader.readElementText().toDouble();
-				else if (reader.name() == "course")
+				else if (reader.name() == QString("course"))
 					crt_point.bearing = reader.readElementText().toDouble();
-				else if (reader.name() == "extensions")
+				else if (reader.name() == QString("extensions"))
 				{
 					reader.readNextStartElement();
-					if (reader.name() == "TrackPointExtension")
+					if (reader.name() == QString("TrackPointExtension"))
 					{
 						reader.readNextStartElement();
-						if (reader.name() == "hr")
+						if (reader.name() == QString("hr"))
 							crt_point.hr = reader.readElementText().toDouble();
 					}
 				}
@@ -833,7 +832,6 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 // Parses a .tcx file into a gps_point_raw linked list
 void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
-	int i;
 	int64_t last_time = -1;
 
 	/*
@@ -855,38 +853,38 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 	{
 		reader.readNext();
 		// mlt_log_info(NULL, " readNextStartElement tag: %s \n", _qxml_getthestring(reader.name()));
-		if (reader.isStartElement() && reader.name() == "Trackpoint")
+		if (reader.isStartElement() && reader.name() == QString("Trackpoint"))
 		{
 			gps_point_raw crt_point = uninit_gps_raw_point;
-			while (reader.readNext() && !(reader.name() == "Trackpoint" && reader.tokenType() == QXmlStreamReader::EndElement)) //loop until we hit the closing </Trackpoint>
+			while (reader.readNext() && !(reader.name() == QString("Trackpoint") && reader.tokenType() == QXmlStreamReader::EndElement)) //loop until we hit the closing </Trackpoint>
 			{
 				// mlt_log_info(NULL, "[Trackpoint->1] readNext tag: %s, type=%d \n", _qxml_getthestring(reader.name()), reader.tokenType());
 				if (!reader.isStartElement())
 					continue;
 					
-				if (reader.name() == "Time")
+				if (reader.name() == QString("Time"))
 					crt_point.time = datetimeXMLstring_to_mseconds(qUtf8Printable(reader.readElementText()));
-				else if (reader.name() == "Position")
+				else if (reader.name() == QString("Position"))
 				{
 					reader.readNextStartElement();
-					if (reader.name() == "LatitudeDegrees")
+					if (reader.name() == QString("LatitudeDegrees"))
 						crt_point.lat = reader.readElementText().toDouble();
 					reader.readNextStartElement();
-					if (reader.name() == "LongitudeDegrees")
+					if (reader.name() == QString("LongitudeDegrees"))
 						crt_point.lon = reader.readElementText().toDouble();
 				}
-				else if (reader.name() == "AltitudeMeters")
+				else if (reader.name() == QString("AltitudeMeters"))
 				{
 					crt_point.ele = reader.readElementText().toDouble();
 				}
-				else if (reader.name() == "DistanceMeters")
+				else if (reader.name() == QString("DistanceMeters"))
 				{
 					crt_point.total_dist = reader.readElementText().toDouble();
 				}
-				else if (reader.name() == "HeartRateBpm")
+				else if (reader.name() == QString("HeartRateBpm"))
 				{
 					reader.readNextStartElement();
-					if (reader.name() == "Value")
+					if (reader.name() == QString("Value"))
 						crt_point.hr = reader.readElementText().toDouble();
 				}
 			}
@@ -940,11 +938,11 @@ int qxml_parse_file(gps_private_data gdata)
 			continue;
 		}
 		// mlt_log_info(NULL, " readNext element tag: %s, type=%d \n", qUtf8Printable(qxml_reader.name().toString()), qxml_reader.tokenType());
-		if (qxml_reader.name() == "TrainingCenterDatabase")
+		if (qxml_reader.name() == QString("TrainingCenterDatabase"))
 		{
 			qxml_parse_tcx(qxml_reader, &gps_list_head, &count_pts);
 		}
-		else if (qxml_reader.name() == "gpx")
+		else if (qxml_reader.name() == QString("gpx"))
 		{
 			qxml_parse_gpx(qxml_reader, &gps_list_head, &count_pts);
 		}
@@ -982,6 +980,8 @@ int qxml_parse_file(gps_private_data gdata)
 	for (int i = 0; i<*gdata.gps_points_size-1; i++) {
 		double crt =  gps_array[i].lon;
 		double next =  gps_array[i+1].lon;
+		if (crt == GPS_UNINIT || next == GPS_UNINIT)
+			continue;
 		if ((crt < 0 && next > 0) || (crt > 0 && next < 0)) {
 			if (crt - next > 180 || next - crt > 180) 
 				crosses180 = true;
@@ -989,6 +989,7 @@ int qxml_parse_file(gps_private_data gdata)
 				crosses0 = true;
 		}
 	}
+	mlt_log_info(NULL, "_automatic 180 meridian detection: crosses180=%d, crosses0=%d --> swapping180=%d\n", crosses180, crosses0, (crosses180 && !crosses0));
 	//if only 180 is crossed, we swap, otherswise we don't do anything
 	if (crosses180 && !crosses0) {
 		swap_to_180 = 1;

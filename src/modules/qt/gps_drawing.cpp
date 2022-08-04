@@ -156,7 +156,6 @@ void draw_now_dot(mlt_filter filter, mlt_frame frame, QPainter &p, s_base_crops 
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	int thickness =  mlt_properties_get_int( properties, "thickness" );
 	mlt_color dot_color = mlt_properties_get_color(properties, "now_dot_color");
-	QVector<QColor> colors = get_graph_colors( properties );
 
 	//disc with internal color = white and outer color=now dot color or last used for graph line
 	QPen dot_pen = p.pen();
@@ -274,11 +273,11 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
 			else if (i > i_now) 
 				p.setPen( pen_solid_color1 );
 		}
-		else if (color_style == gpsg_color_by_solid_past && i <= i_now || color_style == gpsg_color_by_solid_future && i > i_now)
+		else if ((color_style == gpsg_color_by_solid_past && i <= i_now) || (color_style == gpsg_color_by_solid_future && i > i_now))
 		{
 			p.setPen( pen_solid_color0 );
 		}
-		else if (color_style == gpsg_color_by_solid_past && i > i_now || color_style == gpsg_color_by_solid_future && i <= i_now)
+		else if ((color_style == gpsg_color_by_solid_past && i > i_now) || (color_style == gpsg_color_by_solid_future && i <= i_now))
 		{
 			p.setPen( pen_thin_color1 );
 		}
@@ -421,8 +420,8 @@ void draw_main_speedometer(mlt_filter filter, mlt_frame frame, QPainter &p, s_ba
 	private_data* pdata = (private_data*)filter->child;
 	mlt_rect rect = pdata->img_rect;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	int color_style = mlt_properties_get_int( properties, "color_style" ) ;
-	int thickness = qAbs( mlt_properties_get_int( properties, "thickness" ) );
+	// int color_style = mlt_properties_get_int( properties, "color_style" ) ;
+	// int thickness = qAbs( mlt_properties_get_int( properties, "thickness" ) );
 	int show_grid = mlt_properties_get_int(properties, "show_grid");
 	QVector<QColor> colors = get_graph_colors( properties );
 

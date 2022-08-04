@@ -287,9 +287,7 @@ static double get_as_percentage (T val, T min, T max)
 //computes used_crops from pdata->ui_crops (they change on each frame so can't store them in pdata)
 static void process_frame_properties (mlt_filter filter, mlt_frame frame, s_base_crops &used_crops)
 {
-	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
 	private_data* pdata = (private_data*)filter->child;
-	int64_t time_now = get_current_frame_time_ms(filter, frame) + pdata->gps_offset;
 
 	//if CROP_CENTER we'll compute used_crops from pdata->ui_crops every frame to keep the point in center
 	if (pdata->graph_type == gpsg_crop_center_graph)
@@ -305,7 +303,6 @@ static void process_frame_properties (mlt_filter filter, mlt_frame frame, s_base
 				now_perc_horizontal = get_as_percentage(crt_weighted.lon, get_min_bysrc(filter, gpsg_longitude_id), get_max_bysrc(filter, gpsg_longitude_id));
 			else
 				now_perc_horizontal = get_as_percentage(crt_weighted.time, pdata->ui_crops.min_crop_time, pdata->ui_crops.max_crop_time);
-			// mlt_log_info(filter, "[time_now=%d.%d] now percentage horizontal: %f, vertical: %f\n", time_now/1000, time_now%1000, now_perc_horizontal, now_perc_vertical);
 
 			//crop_left = Pcrop*delta + left_min; left_min = perc_horiz - delta; right_min = perc_horiz
 			//crop_right = (1-Pcrop)*delta + right_min, delta = perc_horiz if > 0.5 else (1-perc_horiz)
@@ -338,7 +335,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 {
 	int error = 0;
 	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
-	private_data* pdata = (private_data*)filter->child;
 	s_base_crops used_crops = {0, 100, 0, 100};
 
 	// Get the current image
@@ -448,10 +444,10 @@ static void find_minmax_of_data(mlt_filter filter)
 	snprintf(middle_point, 255, "%.6f, %.6f", middle_lat, swap_180_if_needed(middle_lon)); 
 	mlt_properties_set(MLT_FILTER_PROPERTIES( filter ), "map_coords_hint", middle_point);
 
-	// mlt_log_debug(filter, "gps minmax min_lat,lon-max_lat,lon: %f,%f:%f,%f; ele: %f,%f; speed:%f,%f; hr:%f,%f; map_ar:%f, mid_point:%s \n", 
-	// 	pdata->minmax.min_lat, pdata->minmax.min_lon, pdata->minmax.max_lat, pdata->minmax.max_lon,
-	// 	pdata->minmax.min_ele, pdata->minmax.max_ele, pdata->minmax.min_speed, pdata->minmax.max_speed,	pdata->minmax.min_hr, pdata->minmax.max_hr,
-	// 	map_aspect_ratio, middle_point );
+	mlt_log_info(filter, "gps file minmax: min_lat,lon-max_lat,lon: %f,%f:%f,%f; ele: %f,%f; speed:%f,%f; hr:%f,%f; map_ar:%f, mid_point:%s \n", 
+		pdata->minmax.min_lat, pdata->minmax.min_lon, pdata->minmax.max_lat, pdata->minmax.max_lon,
+		pdata->minmax.min_ele, pdata->minmax.max_ele, pdata->minmax.min_speed, pdata->minmax.max_speed,	pdata->minmax.min_hr, pdata->minmax.max_hr,
+		map_aspect_ratio, middle_point );
 }
 
 // Reads and updates all necessary filter properties, and smooths+processes the gps data if needed
