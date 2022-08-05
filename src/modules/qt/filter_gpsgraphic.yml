@@ -12,12 +12,12 @@ tags:
 description: Overlay GPS-related graphics onto the video
 
 parameters:
-  - identifier: gps.file
+  - identifier: resource
     title: GPS File/URL
     description: >
       "The fullpath of file containing location (GPS) data. Supported extensions: .gpx, .tcx."
     type: string
-    required: no
+    required: yes
     readonly: no
     widget: fileopen
     

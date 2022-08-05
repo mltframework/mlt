@@ -61,13 +61,13 @@ parameters:
       GPS time: #gps_datetime_now#\n
       GPS location: #gps_lat#, #gps_lon#
     widget: text
-
-  - identifier: gps.file
+    
+  - identifier: resource
     title: GPS File/URL
-    type: string
     description: >
       "The fullpath of file containing location (GPS) data. Supported extensions: .gpx, .tcx."
-    required: no
+    type: string
+    required: yes
     readonly: no
     widget: fileopen
     

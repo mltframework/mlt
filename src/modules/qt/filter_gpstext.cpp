@@ -501,7 +501,9 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	char* filename = mlt_properties_get( properties, "gps.file");
+	char* filename = mlt_properties_get( properties, "resource");
+	if (filename == NULL)
+		filename = mlt_properties_get( properties, "gps.file"); /* for backwards compatibily with v1 */
 	bool guess_offset = (mlt_properties_get_int(properties, "time_offset") == 0) && (strlen(pdata->last_filename) == 0);
 	
 	//if there's no file selected just return

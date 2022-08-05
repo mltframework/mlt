@@ -569,7 +569,7 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 {
 	private_data* pdata = (private_data*)filter->child;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-	char* filename = mlt_properties_get( properties, "gps.file");
+	char* filename = mlt_properties_get( properties, "resource");
 	bool guess_offset = (mlt_properties_get_int(properties, "time_offset") == 0) && (strlen(pdata->last_filename) == 0);
 
 	//if there's no file selected just return
@@ -650,6 +650,7 @@ mlt_filter filter_gpsgraphic_init( mlt_profile profile, mlt_service_type type, c
 	if ( filter && pdata && createQApplicationIfNeeded( MLT_FILTER_SERVICE(filter) ) )
 	{
 		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+		mlt_properties_set_string( properties, "resource", arg );
 		//sync stuff
 		mlt_properties_set_int( properties, "time_offset", 0);
 		mlt_properties_set_int( properties, "smoothing_value", 5);
