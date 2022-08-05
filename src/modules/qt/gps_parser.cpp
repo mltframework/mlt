@@ -18,23 +18,48 @@
  */
 
 #define __USE_XOPEN
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-
+#endif
 #include "gps_parser.h"
-#include <inttypes.h>
 
 #define _x (const xmlChar*)
 #define _s (const char*)
+#define _qxml_getthestring(s) qUtf8Printable((s).toString())
 
-/* Converts the datetime string from gps file into seconds since epoch in local timezone
+//shifts all (longitude) values from near 180 to 0
+double get_180_swapped(double lon)
+{
+	// mlt_log_info(NULL, "get_180_swapped(%f) -> %f\n", lon, lon + ( lon>0 ? -180 : 180));
+	return lon + ( lon>0 ? -180 : 180);
+}
+
+//testing max valid time between 2 points = 10 * avg_gps_time, better option would be a user entered value
+int get_max_gps_diff_ms(gps_private_data gdata)
+{
+	return (10 * get_avg_gps_time_ms(gdata)) * 1000;
+}
+
+/** Computes the average time between recorded gps points
+ * Note: needs first/last gps time already computed
+*/
+double get_avg_gps_time_ms(gps_private_data gdata)
+{
+	int64_t tdiff = *gdata.last_gps_time - *gdata.first_gps_time;
+	int gp_size = *gdata.gps_points_size;
+	if (gp_size == 0)
+		return 0;
+	return (double)tdiff/gp_size;
+}
+
+/* Converts the datetime string from gps file into seconds since epoch
  * Note: assumes UTC
  */
-int64_t datetimeXMLstring_to_mseconds(const char* text, char* format)
+int64_t datetimeXMLstring_to_mseconds(const char* text, char* format /* = NULL*/)
 {
 	char def_format[] = "%Y-%m-%dT%H:%M:%S";
 	int64_t ret = 0;
 	int ms = 0;
-	char * ms_part = NULL;
 	struct tm tm_time;
 	//samples: 2020-07-11T09:03:23.000Z or 2021-02-27T12:10:00+00:00
 	tm_time.tm_isdst = -1; //force dst detection
@@ -47,24 +72,18 @@ int64_t datetimeXMLstring_to_mseconds(const char* text, char* format)
 		return 0;
 	}
 
-	ret = mktime(&tm_time);
-#if defined(__GLIBC__) || defined(__APPLE__)
-	/* NOTE: mktime assumes local time-zone for the tm_time but GPS time is UTC.
-	 * time.h provides an extern: "timezone" which stores the local timezone in seconds
-	 * this is used by mktime to "correct" the time so we must substract it to keep UTC
-	 */
-	ret -= timezone - 3600 * tm_time.tm_isdst;
-#endif
+	ret = internal_timegm(&tm_time);
 
-	//check if we have miliesconds //NOTE: 3 digits only
-	if ( (ms_part = strchr(text, '.')) != NULL ) {
+	//check if we have miliseconds, 3 digits only
+	const char * ms_part = strchr(text, '.');
+	if ( ms_part != NULL ) {
 		ms = strtol(ms_part+1, NULL, 10);
 		while (abs(ms) > 999)
 			ms /= 10;
 	}
 	ret = ret*1000 + ms;
 
-	//mlt_log_info(NULL, "datetimeXMLstring_to_mseconds: text:%s, ms:%d (/1000)", text, ret/1000);
+	// mlt_log_info(NULL, "datetimeXMLstring_to_mseconds: text:%s, ms:%d (/1000)", text, ret/1000);
 	return ret;
 }
 
@@ -78,13 +97,10 @@ static int is_whitespace_string(char* str) {
 	return 1;
 }
 
-/* Converts miliseconds to a date-time with optional format (no miliesconds in output)
- * Note: gmtime completely ignores timezones - this keeps time consistent
- *       as all times in this file are (hopefully) in UTC
- */
+//Converts miliseconds to a date-time with optional format (no miliesconds in output)
 void mseconds_to_timestring (int64_t seconds, char* format, char* result)
 {
-	time_t secs = seconds/1000;
+	time_t secs = llabs(seconds)/1000;
 	struct tm * ptm = gmtime(&secs);
 	if (!format || is_whitespace_string(format))
 		strftime(result, 25, "%Y-%m-%d %H:%M:%S", ptm);
@@ -106,9 +122,9 @@ double distance_haversine_2p (double p1_lat, double p1_lon, double p2_lat, doubl
 // Returns the distance between 2 gps points, accurate enough (<0.1% error) for distances below 4km
 double distance_equirectangular_2p (double p1_lat, double p1_lon, double p2_lat, double p2_lon)
 {
-	//return 0 for very far points (implement haversine formula if needed)
+	//use the haversine formula for very far points
 	if (fabs(p1_lat-p2_lat) > 0.05 || fabs(p1_lat-p2_lat) > 0.05) { //~5.5km at equator to ~2km at arctic circle
-		mlt_log_info(NULL, "distance_equirectangular_2p: points are too far away, doing haversine (%f,%f to %f,%f)", p1_lat, p1_lon, p2_lat, p2_lon);
+		mlt_log_info(NULL, "distance_equirectangular_2p: points are too far away, doing haversine (%f,%f to %f,%f)\n", p1_lat, p1_lon, p2_lat, p2_lon);
 		return distance_haversine_2p(p1_lat, p1_lon, p2_lat, p2_lon);
 	}
 
@@ -121,7 +137,7 @@ double distance_equirectangular_2p (double p1_lat, double p1_lon, double p2_lat,
 }
 
 // Computes bearing from 2 gps points
-int bearing_2p (double p1_lat, double p1_lon, double p2_lat, double p2_lon)
+double bearing_2p (double p1_lat, double p1_lon, double p2_lat, double p2_lon)
 {
 	double lat1 = to_rad(p1_lat);
 	double lat2 = to_rad(p2_lat);
@@ -131,11 +147,11 @@ int bearing_2p (double p1_lat, double p1_lon, double p2_lat, double p2_lon)
 	double x = cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(dlon);
 	double bearing = to_deg(atan2(y,x));
 	//normalize to 0-360
-	return (int)(bearing + 360) % 360;
+	return fmod(bearing + 360, 360);
 }
 
 /** Searches for and returns the first valid time with locaton in the gps_points_r array
- *  returns in miliesconds, 0 on error
+ *  Returns in miliesconds, 0 on error
 */
 void get_first_gps_time(gps_private_data gdata)
 {
@@ -175,7 +191,7 @@ void get_last_gps_time(gps_private_data gdata)
 	{
 		if (gps_points[i].time && has_valid_location(gps_points[i]))
 		{
-			//mlt_log_info(filter, "get_last_gps_time found: %d", gps_points[i].time);
+			//mlt_log_info(gdata.filter, "get_last_gps_time found: %d", gps_points[i].time);
 			*gdata.last_gps_time = gps_points[i].time;
 			return;
 		}
@@ -185,16 +201,34 @@ void get_last_gps_time(gps_private_data gdata)
 }
 
 //checks if time value val is between gps_points[i] and gps_points[i+1] with size checks
-static int time_val_between_indices(int64_t val, gps_point_raw* gp, int i, int size, char force_result) {
+//note: size must be inclusive (ie: gps_points[size] valid!)
+int time_val_between_indices_raw(int64_t time_val, gps_point_raw* gp, int i, int size, int max_gps_diff_ms, bool force_result) {
 	if (i<0 || i>size)
 		return 0;
-	else if (val == gp[i].time)
+	else if (time_val == gp[i].time)
 		return 1;
-	else if (i+1 < size && gp[i].time < val && val < gp[i+1].time) 
+	else if (i+1 <= size && gp[i].time <= time_val && time_val < gp[i+1].time) 
 	{
 		if (force_result)
 			return 1;
-		else if (llabs(gp[i].time - gp[i+1].time) <= MAX_GPS_DIFF_MS)
+		else if (llabs(gp[i+1].time - gp[i].time) <= max_gps_diff_ms)
+			return 1;
+	}
+	return 0;
+}
+
+//checks if time value val is between gps_points[i] and gps_points[i+1] with size checks
+//note: size must be inclusive (ie: gps_points[size] valid)
+int time_val_between_indices_proc(int64_t time_val, gps_point_proc* gp, int i, int size, int max_gps_diff_ms, bool force_result) {
+	if (i<0 || i>size)
+		return 0;
+	else if (time_val == gp[i].time)
+		return 1;
+	else if (i+1 <= size && gp[i].time <= time_val && time_val < gp[i+1].time) 
+	{
+		if (force_result)
+			return 1;
+		else if (llabs(gp[i+1].time - gp[i].time) <= max_gps_diff_ms)
 			return 1;
 	}
 	return 0;
@@ -205,63 +239,119 @@ static int time_val_between_indices(int64_t val, gps_point_raw* gp, int i, int s
  * Seaches in raw values directly
  * If force_result is nonzero, it will ignore MAX_GPS_DIFF restriction
 */
-int binary_search_gps(gps_private_data gdata, int64_t video_time, char force_result)
+int binary_search_gps(gps_private_data gdata, int64_t video_time, bool force_result /* = false */)
 {
 	gps_point_raw* gps_points = gdata.gps_points_r;
-	const int gps_points_size = *gdata.gps_points_size;
+	const int gps_points_size = *gdata.gps_points_size-1; //size-1 !!
 	int last_index = *gdata.last_searched_index;
+	int max_gps_diff_ms = get_max_gps_diff_ms(gdata);
 
 	int il = 0;
-	int ir = gps_points_size-1;
+	int ir = gps_points_size;
 	int mid = 0;
 
-	if (!gps_points || gps_points_size==0)
+	if (!gps_points || gps_points_size <= 0)
 		return -1;
 
 	//optimize repeated calls (exact match or in between points)
-	if (time_val_between_indices(video_time, gps_points, last_index, gps_points_size, force_result)) {
+	if (time_val_between_indices_raw(video_time, gps_points, last_index, gps_points_size, max_gps_diff_ms, force_result)) {
 //		printf("_binary_search_gps, last_index(%d) v1 video_time: %I64d match: %I64d\n", last_index, video_time, gps_points[last_index].time);
 		return last_index;
 	}
 
 	//optimize consecutive playback calls
 	last_index++;
-	if (time_val_between_indices(video_time, gps_points, last_index, gps_points_size, force_result)) {
-//		printf("_binary_search_gps, last_index(%d) v2 video_time: %I64d match: %I64d\n", last_index, video_time, gps_points[last_index].time);
+	if (time_val_between_indices_raw(video_time, gps_points, last_index, gps_points_size, max_gps_diff_ms, force_result)) {
 		*gdata.last_searched_index = last_index;
 		return last_index;
 	}
 
-	//optimize for outside values
-	if (video_time < *gdata.first_gps_time - MAX_GPS_DIFF_MS || video_time > *gdata.last_gps_time + MAX_GPS_DIFF_MS)
-		return -1;
+	//optimize for the previous index
+	last_index -= 2; //cancel the +1 above
+	if (last_index >= 0 && time_val_between_indices_raw(video_time, gps_points, last_index, gps_points_size, max_gps_diff_ms, force_result)) {
+		*gdata.last_searched_index = last_index;
+		return last_index;
+	}
+
+	//optimize for outside values, if force result it will return 0 or (size-1)
+	if (video_time < *gdata.first_gps_time - max_gps_diff_ms)
+		return ( force_result ? 0 : -1 );
+	if (video_time > *gdata.last_gps_time + max_gps_diff_ms)
+		return ( force_result ? gps_points_size : -1 );
 
 	//binary search
 	while (il < ir)
 	{
 		mid = (ir+il)/2;
 		//mlt_log_info(gdata.filter, "binary_search_gps: mid=%d, l=%d, r=%d, mid-time=%d (s)", mid, il, ir, gps_points[mid].time/1000);
-		if (time_val_between_indices(video_time, gps_points, mid, gps_points_size, force_result)) {
+		if (time_val_between_indices_raw(video_time, gps_points, mid, gps_points_size, max_gps_diff_ms, force_result)) {
 			*gdata.last_searched_index = mid;
 			break;
 		}
 		else if (gps_points[mid].time > video_time)
-			ir = mid-1;
-		else //if (gps_points[mid].time < video_time)
+			ir = mid;
+		else
 			il = mid+1;
 	}
 
 	//don't return the closest gps point if time difference is too large (unless force_result is 1)
-	if (llabs(video_time - gps_points[mid].time) > MAX_GPS_DIFF_MS)
+	if (llabs(video_time - gps_points[mid].time) > max_gps_diff_ms)
 		return (force_result ? mid : -1);
 	else 
 		return mid;
 }
 
+
+/** Returns a nicer number of decimal values for floats
+ *  [ 1.23m | 12.3m | 123m ]
+*/
+int decimals_needed(double x) {
+	if (fabs(x) < 10) return 2;
+	if (fabs(x) < 100) return 1;
+	return 0;
+}
+
+/** Converts the distance (stored in meters) to the unit requested in extended keyword
+*/
+double convert_distance_to_format(double x, const char* format)
+{
+	if (format == NULL)
+		return x;
+		
+	if (strstr(format, "km") || strstr(format, "kilometer"))
+		return x/1000.0;
+	else if (strstr(format, "mi") || strstr(format, "mile"))
+		return x*0.00062137;
+	else if (strstr(format, "nm") || strstr(format, "nautical"))
+		return x*0.0005399568;
+	else if (strstr(format, "ft") || strstr(format, "feet"))
+		return x*3.2808399;
+	return x;
+}
+
+/** Converts the speed (stored in meters/second) to the unit requested in extended keyword
+*/
+double convert_speed_to_format(double x, const char* format)
+{
+	if (format == NULL || strstr(format, "kms") || strstr(format, "km/s") || strstr(format, "kilometer"))
+		return x*3.6;	//default km/h
+
+	if (strstr(format, "ms") || strstr(format, "m/s") || strstr(format, "meter"))
+		return x;
+	else if (strstr(format, "mi") || strstr(format, "mi/h") || strstr(format, "mile"))
+		return x*2.23693629;
+	else if (strstr(format, "kn") || strstr(format, "nm/h") || strstr(format, "knots"))
+		return x*1.94384449;
+	else if (strstr(format, "ft") || strstr(format, "ft/s") || strstr(format, "feet"))
+		return x*3.2808399;
+	
+	return x*3.6;
+}
+
 /* Converts the bearing angle (0-360) to a cardinal direction
  * 8 sub-divisions
  */
-char* bearing_to_compass(int x)
+const char* bearing_to_compass(double x)
 {
 	if (x<=22.5 || x>=360-22.5)
 		return "N";
@@ -296,8 +386,8 @@ void recalculate_gps_data(gps_private_data gdata)
 		return;
 	}
 	if (gdata.gps_points_p == NULL) {
-		if ((*gdata.ptr_to_gps_points_p = calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
-			mlt_log_warning(gdata.filter, "calloc error, size=%"PRIu64"\n", *gdata.gps_points_size*sizeof(gps_point_proc));
+		if ((*gdata.ptr_to_gps_points_p = (gps_point_proc*) calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
+			mlt_log_warning(gdata.filter, "calloc error, size=%u\n", (unsigned)(*gdata.gps_points_size*sizeof(gps_point_proc)));
 			return;
 		}
 		else { //alloc ok
@@ -311,16 +401,8 @@ void recalculate_gps_data(gps_private_data gdata)
 
 	//compute gps_start_time actual offset
 	int offset_start = 0;
-	if (gdata.gps_proc_start_t != 0) {
-		offset_start = binary_search_gps(gdata, gdata.gps_proc_start_t, 1);
-		if (offset_start == -1) {//=either before or after entire gps track time
-			if (gdata.gps_proc_start_t > *gdata.last_gps_time)
-				offset_start = *gdata.gps_points_size;
-			else
-				offset_start = 0;
-		}
-		offset_start++;
-	}
+	if (gdata.gps_proc_start_t != 0)
+		offset_start = binary_search_gps(gdata, gdata.gps_proc_start_t, true) + 1;
 
 	//mlt_log_info(gdata.filter, "recalculate_gps_data, offset=%d, points=%p, new:%p, size:%d, newSize:%d", offset,	 gdata.gps_points, gps_points, *gdata.gps_points_size, gps_points_size);
 
@@ -371,7 +453,8 @@ void recalculate_gps_data(gps_private_data gdata)
 		}
 
 		//find a valid point from i-req_smooth to i (to use in smoothing calc)
-		while (smooth_index<i && !has_valid_location(gps_points[smooth_index])) smooth_index++;
+		while (smooth_index<i && !has_valid_location(gps_points[smooth_index])) 
+			smooth_index++;
 		if (smooth_index < i)
 			prev_nrsmooth_point = &gps_points[smooth_index];
 
@@ -380,7 +463,7 @@ void recalculate_gps_data(gps_private_data gdata)
 
 		//if time difference is way longer for one point than usual, don't do math on that gap (treat recording paused, move far, then resume)
 		//5*average time
-		if (crt_point->time - prev_point->time > 5.0 * (*gdata.last_gps_time - *gdata.first_gps_time) / *gdata.gps_points_size)
+		if ((crt_point->time - prev_point->time) > 5.0 * (*gdata.last_gps_time - *gdata.first_gps_time) / *gdata.gps_points_size)
 		{
 			prev_nrsmooth_point = NULL;
 			ignore_points_before = i;
@@ -470,11 +553,11 @@ void recalculate_gps_data(gps_private_data gdata)
 /* Returns a weighted (type:double) value for an intermediary time
  * Notes: time limit 10s, if one value is GPS_UNINIT, returns the other
 */
-double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int64_t new_t) {
+double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int64_t new_t, int max_gps_diff_ms) {
 	int64_t d_time = t2 - t1;
 	if (v1 == GPS_UNINIT) return v2;
 	if (v2 == GPS_UNINIT) return v1;
-	if (d_time > MAX_GPS_DIFF_MS || d_time == 0) return v1;
+	if (d_time > max_gps_diff_ms || d_time == 0) return v1;
 
 	double prev_weight = 1 - (double)(new_t - t1)/d_time;
 	double next_weight = 1 - (double)(t2 - new_t)/d_time;
@@ -486,48 +569,54 @@ double weighted_middle_double (double v1, int64_t t1, double v2, int64_t t2, int
 /* Returns a weighted (type:int64_t) value for an intermediary time
  * Notes: time limit 10s, if one value is GPS_UNINIT, returns the other
 */
-int64_t weighted_middle_int64 (int64_t v1, int64_t t1, int64_t v2, int64_t t2, int64_t new_t) {
+int64_t weighted_middle_int64 (int64_t v1, int64_t t1, int64_t v2, int64_t t2, int64_t new_t, int max_gps_diff_ms) {
 	int64_t d_time = t2 - t1;
 	if (v1 == GPS_UNINIT) return v2;
 	if (v2 == GPS_UNINIT) return v1;
-	if (d_time > MAX_GPS_DIFF_MS || d_time == 0) return v1;
+	if (d_time > max_gps_diff_ms || d_time == 0) return v1;
 
 	double prev_weight = 1 - (double)(new_t - t1)/d_time;
 	double next_weight = 1 - (double)(t2 - new_t)/d_time;
 	int64_t rez = v1 * prev_weight + v2 * next_weight;
-	//mlt_log_info(NULL, "weighted_middle_int64 in: v:%d-%d, %d-%d %d out: %d ", v1%1000000, v2%1000000, t1/1000, t2/1000, new_t/1000, rez%1000000);
+	//mlt_log_info(NULL, "weighted_middle_int64 in: v:%d-%d, %d-%d %d out: %d (weights: prev=%f, next=%f)", v1%1000000, v2%1000000, t1/1000, t2/1000, new_t/1000, rez%1000000, prev_weight, next_weight);
 	return rez;
 }
 
 //compute a virtual point at a specific time between 2 real points
-gps_point_proc weighted_middle_point_proc(gps_point_proc* p1, gps_point_proc* p2, int64_t new_t) {
-	//strict time check, max 10s difference
-	if (llabs(p2->time - p1->time) > MAX_GPS_DIFF_MS)
+gps_point_proc weighted_middle_point_proc(gps_point_proc* p1, gps_point_proc* p2, int64_t new_t, int max_gps_diff_ms) {
+	if (p1 == p2)
 		return *p1;
+	if (llabs(p2->time - p1->time) > max_gps_diff_ms)
+		return *p1;
+	if (new_t < MIN(p1->time, p2->time))
+		return *p1;
+	if (new_t > MAX(p1->time, p2->time))
+		return *p2;
+
 	gps_point_proc crt_point = uninit_gps_proc_point;
-	crt_point.lat = weighted_middle_double(p1->lat, p1->time, p2->lat, p2->time, new_t);
-	crt_point.lon = weighted_middle_double(p1->lon, p1->time, p2->lon, p2->time, new_t);
-	crt_point.speed = weighted_middle_double(p1->speed, p1->time, p2->speed, p2->time, new_t);
-	crt_point.total_dist = weighted_middle_double(p1->total_dist, p1->time, p2->total_dist, p2->time, new_t);
-	crt_point.ele = weighted_middle_double(p1->ele, p1->time, p2->ele, p2->time, new_t);
-	crt_point.time = weighted_middle_int64(p1->time, p1->time, p2->time, p2->time, new_t);
-	crt_point.d_elev = weighted_middle_double(p1->d_elev, p1->time, p2->d_elev, p2->time, new_t);
-	crt_point.elev_up = weighted_middle_double(p1->elev_up, p1->time, p2->elev_up, p2->time, new_t);
-	crt_point.elev_down = weighted_middle_double(p1->elev_down, p1->time, p2->elev_down, p2->time, new_t);
-	crt_point.dist_up = weighted_middle_double(p1->dist_up, p1->time, p2->dist_up, p2->time, new_t);
-	crt_point.dist_down = weighted_middle_double(p1->dist_down, p1->time, p2->dist_down, p2->time, new_t);
-	crt_point.dist_flat = weighted_middle_double(p1->dist_flat, p1->time, p2->dist_flat, p2->time, new_t);
-	crt_point.bearing = weighted_middle_int64(p1->bearing, p1->time, p2->bearing, p2->time, new_t);
-	crt_point.hr = weighted_middle_int64(p1->hr, p1->time, p2->hr, p2->time, new_t);
+	crt_point.lat = weighted_middle_double(p1->lat, p1->time, p2->lat, p2->time, new_t, max_gps_diff_ms);
+	crt_point.lon = weighted_middle_double(p1->lon, p1->time, p2->lon, p2->time, new_t, max_gps_diff_ms);
+	crt_point.speed = weighted_middle_double(p1->speed, p1->time, p2->speed, p2->time, new_t, max_gps_diff_ms);
+	crt_point.total_dist = weighted_middle_double(p1->total_dist, p1->time, p2->total_dist, p2->time, new_t, max_gps_diff_ms);
+	crt_point.ele = weighted_middle_double(p1->ele, p1->time, p2->ele, p2->time, new_t, max_gps_diff_ms);
+	crt_point.time = weighted_middle_int64(p1->time, p1->time, p2->time, p2->time, new_t, max_gps_diff_ms);
+	crt_point.d_elev = weighted_middle_double(p1->d_elev, p1->time, p2->d_elev, p2->time, new_t, max_gps_diff_ms);
+	crt_point.elev_up = weighted_middle_double(p1->elev_up, p1->time, p2->elev_up, p2->time, new_t, max_gps_diff_ms);
+	crt_point.elev_down = weighted_middle_double(p1->elev_down, p1->time, p2->elev_down, p2->time, new_t, max_gps_diff_ms);
+	crt_point.dist_up = weighted_middle_double(p1->dist_up, p1->time, p2->dist_up, p2->time, new_t, max_gps_diff_ms);
+	crt_point.dist_down = weighted_middle_double(p1->dist_down, p1->time, p2->dist_down, p2->time, new_t, max_gps_diff_ms);
+	crt_point.dist_flat = weighted_middle_double(p1->dist_flat, p1->time, p2->dist_flat, p2->time, new_t, max_gps_diff_ms);
+	crt_point.bearing = weighted_middle_double(p1->bearing, p1->time, p2->bearing, p2->time, new_t, max_gps_diff_ms);
+	crt_point.hr = weighted_middle_double(p1->hr, p1->time, p2->hr, p2->time, new_t, max_gps_diff_ms);
 	return crt_point;
 }
 
 //checks whether 2 points (not necessarily consecutive) are not after a long pause in tracking
-int in_gps_time_window(gps_private_data gdata, int crt, int next, double max_time) {
+int in_gps_time_window(gps_private_data gdata, int crt, int next ) {
 	gps_point_raw* gp = gdata.gps_points_r;
 	int64_t d_time = llabs(gp[next].time - gp[crt].time);
 	int d_indices = abs(next - crt);
-	return d_time <= (max_time * d_indices + MAX_GPS_DIFF_MS);
+	return d_time <= (get_avg_gps_time_ms(gdata) * d_indices + get_max_gps_diff_ms(gdata));
 }
 
 /* Processes the entire gps_points_p array to fill the lat, lon values
@@ -542,20 +631,21 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 		return;
 
 	if (gdata.gps_points_r == NULL) {
-		mlt_log_warning(gdata.filter, "process_gps_smoothing - gps_points_r is null!");
+		mlt_log_warning(gdata.filter, "process_gps_smoothing - gps_points_r is null!\n");
 		return;
 	}
 	if (gdata.gps_points_p == NULL) {
-		if ((*gdata.ptr_to_gps_points_p = calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
-			mlt_log_warning(gdata.filter, "calloc failed, size =%"PRIu64"\n", *gdata.gps_points_size * sizeof(gps_point_proc));
+		if ((*gdata.ptr_to_gps_points_p = (gps_point_proc*) calloc(*gdata.gps_points_size, sizeof(gps_point_proc))) == NULL) {
+			mlt_log_warning(gdata.filter, "calloc failed, size = %u\n", (unsigned)(*gdata.gps_points_size * sizeof(gps_point_proc)));
 			return;
 		}
 		else 
 			gdata.gps_points_p = *gdata.ptr_to_gps_points_p;
 	}
 
+	int max_gps_diff_ms = get_max_gps_diff_ms(gdata);
 	int i, j, nr_hr = 0, nr_ele = 0;
-	short hr = GPS_UNINIT;
+	double hr = GPS_UNINIT;
 	double ele = GPS_UNINIT;
 
 	//linear interpolation for heart rate and elevation, one time per file, ignores start offset
@@ -574,8 +664,8 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 				if (hr != GPS_UNINIT && nr_hr>0 && nr_hr<=60) { //there were missing values and had a hr before
 					nr_hr++;
 					for (j=i; j>i-nr_hr; j--) { //go backwards and fill values
-						gp_p[j].hr = hr + 1.0*(gp_r[i].hr - hr) * (1.0*(j-(i-nr_hr))/nr_hr);
-						//printf("_i=%d, j=%d, nr_hr=%d hr = %d; gp_r[i].hr=%d, gp_p[j].hr=%d  \n", i,j,nr_hr, hr, gp_r[i].hr, gp_p[j].hr);
+						gp_p[j].hr = hr + (gp_r[i].hr - hr) * (1.0*(j-(i-nr_hr))/nr_hr);
+						//printf("_i=%d, j=%d, nr_hr=%d hr = %d; gp_r[i].hr=%f, gp_p[j].hr=%f  \n", i,j,nr_hr, hr, gp_r[i].hr, gp_p[j].hr);
 					}
 				}
 				hr = gp_r[i].hr;
@@ -609,7 +699,6 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 	gps_point_raw* gps_points_r = gdata.gps_points_r;
 	gps_point_proc* gps_points_p = gdata.gps_points_p;
 	const int gps_points_size = *gdata.gps_points_size;
-	const double avg_gps_time = (*gdata.last_gps_time - *gdata.first_gps_time) / *gdata.gps_points_size;
 
 	for (i=0; i<gps_points_size; i++)
 	{
@@ -621,15 +710,15 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 			//this can happen often if location and altitude are stored at different time intervals (every 3s vs every 10s)
 			if (	i-1 >= 0 && i+1 < gps_points_size //if we're not at start/end
 					&& !has_valid_location(gps_points_r[i]) && has_valid_location(gps_points_r[i-1]) && has_valid_location(gps_points_r[i+1]) //if current point has no lat/lon but nearby ones do
-					&& llabs(gps_points_r[i+1].time - gps_points_r[i-1].time) < MAX_GPS_DIFF_MS) //if time difference is lower than MAX_GPS_DIFF_MS
+					&& llabs(gps_points_r[i+1].time - gps_points_r[i-1].time) < max_gps_diff_ms) //if time difference is lower than max_gps_diff_ms
 			{
 				//place a weighted "middle" point here depending on time difference
 				gps_points_p[i].lat = weighted_middle_double(gps_points_r[i-1].lat, gps_points_r[i-1].time,
 										gps_points_r[i+1].lat, gps_points_r[i+1].time,
-										gps_points_r[i].time);
+										gps_points_r[i].time, max_gps_diff_ms);
 				gps_points_p[i].lon = weighted_middle_double(gps_points_r[i-1].lon, gps_points_r[i-1].time,
 										gps_points_r[i+1].lon, gps_points_r[i+1].time,
-										gps_points_r[i].time);
+										gps_points_r[i].time, max_gps_diff_ms);
 
 				//mlt_log_info(gdata.filter, "interpolating position for smooth=1, new point[%d]:%f,%f @time=%d s", i, gps_points_p[i].lat, gps_points_p[i].lon, gps_points_r[i].time/1000);
 			}
@@ -642,7 +731,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 			//TODO: treat case of points on opposite sides of 180*
 			for (j = MAX(0, i-req_smooth/2) ; j < MIN(i+req_smooth/2, gps_points_size); j++) 
 			{
-				if (has_valid_location(gps_points_r[j]) && in_gps_time_window(gdata, i, j, avg_gps_time)) {
+				if (has_valid_location(gps_points_r[j]) && in_gps_time_window(gdata, i, j)) {
 					lat_sum += gps_points_r[j].lat;
 					lon_sum += gps_points_r[j].lon;
 					nr_div++;
@@ -663,15 +752,12 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 		recalculate_gps_data(gdata);
 }
 
-/* xml parsing */
+//File parsing with QT's XML stream reader
 
-// Parses a .gcx file into a gps_point_raw linked list
-void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *count_pts)
+// Parses a .gpx file into a gps_point_raw linked list
+void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
-	int i;
-	xmlNode *crt_node = NULL, *gps_val = NULL, *gps_subval = NULL, *gps_subsubval = NULL;
-	int64_t last_time = 0;
-
+	int64_t last_time = -1;
 	/*
 	// sample point from .GPX file (version 1.0) + HR extension
 	<trkpt lat="45.227621666484104" lon="25.16533185322889">
@@ -686,71 +772,67 @@ void xml_parse_gpx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 		</extensions>
 	</trkpt>
 	*/
-
-	//mlt_log_info(NULL, "xml_parse_gpx - parsing %d elements\n", found_nodes->nodeNr);
-
-	for (i=0; i<found_nodes->nodeNr; i++)
+	while (!reader.atEnd() && !reader.hasError())
 	{
-		gps_point_raw crt_point = uninit_gps_raw_point;
-		crt_node = found_nodes->nodeTab[i];
-
-		if (xmlHasProp(crt_node, _x("lat"))) {
-			xmlChar* str = xmlGetProp(crt_node, _x("lat"));
-			crt_point.lat = strtod(_s(str), NULL);
-			xmlFree(str);
-		}
-		if (xmlHasProp(crt_node, _x("lon"))) {
-			xmlChar* str = xmlGetProp(crt_node, _x("lon"));
-			crt_point.lon = strtod(_s(str), NULL);
-			xmlFree(str);
-		}
-		for (gps_val = crt_node->children; gps_val; gps_val = gps_val->next)
+		reader.readNext();
+		// mlt_log_info(NULL, " readNext tag: %s type = %d\n", _qxml_getthestring(reader.name()), reader.tokenType());
+		if (reader.isStartElement() && reader.name() == QString("trkpt"))
 		{
-			if (strncmp(_s(gps_val->name), "ele", strlen("ele")) == 0)
-				crt_point.ele = strtod(_s(gps_val->children->content), NULL);
-			else if (strncmp(_s(gps_val->name), "time", strlen("time")) == 0)
-				crt_point.time = datetimeXMLstring_to_mseconds(_s(gps_val->children->content), NULL);
-			else if (strncmp(_s(gps_val->name), "bearing", strlen("bearing")) == 0)
-				crt_point.bearing = (int)strtod(_s(gps_val->children->content), NULL);
-			else if (strncmp(_s(gps_val->name), "speed", strlen("speed")) == 0)
-				crt_point.speed = strtod(_s(gps_val->children->content), NULL);
-			else if (strncmp(_s(gps_val->name), "extensions", strlen("extensions")) == 0)
+			gps_point_raw crt_point = uninit_gps_raw_point;
+			
+			QXmlStreamAttributes attributes = reader.attributes();
+			if (attributes.hasAttribute("lat"))
+				crt_point.lat = attributes.value("lat").toDouble();
+			if (attributes.hasAttribute("lon"))
+				crt_point.lon = attributes.value("lon").toDouble();
+			
+			while (reader.readNext() && !(reader.name() == QString("trkpt") && reader.tokenType() == QXmlStreamReader::EndElement)) //until closing trkpt
 			{
-				for (gps_subval = gps_val->children; gps_subval; gps_subval=gps_subval->next) {
-					if (strncmp(_s(gps_subval->name), "gpxtpx:TrackPointExtension", strlen("gpxtpx:TrackPointExtension")) == 0) {
-						for (gps_subsubval = gps_subval->children; gps_subsubval; gps_subsubval=gps_subsubval->next) {
-							if (strncmp(_s(gps_subsubval->name), "gpxtpx:hr", strlen("gpxtpx:hr")) == 0) {
-								crt_point.hr = (short)strtod(_s(gps_subsubval->children->content), NULL);
-							}
-						}
+				// mlt_log_info(NULL, "[trkpt->1] readNext tag: %s, type=%d \n", _qxml_getthestring(reader.name()), reader.tokenType());
+				if (!reader.isStartElement())
+					continue;
+
+				if (reader.name() == QString("ele"))
+					crt_point.ele = reader.readElementText().toDouble();
+				else if (reader.name() == QString("time"))
+					crt_point.time = datetimeXMLstring_to_mseconds(qUtf8Printable(reader.readElementText()));
+				else if (reader.name() == QString("speed"))
+					crt_point.speed = reader.readElementText().toDouble();
+				else if (reader.name() == QString("course"))
+					crt_point.bearing = reader.readElementText().toDouble();
+				else if (reader.name() == QString("extensions"))
+				{
+					reader.readNextStartElement();
+					if (reader.name() == QString("TrackPointExtension"))
+					{
+						reader.readNextStartElement();
+						if (reader.name() == QString("hr"))
+							crt_point.hr = reader.readElementText().toDouble();
 					}
 				}
 			}
-		}
-//		printf("_xml_parse_gpx read point[%d]: time:%I64d, lat:%f, lon:%f, ele:%f, bearing:%d, speed:%f, hr:%d\n",
-//				i, crt_point.time, crt_point.lat, crt_point.lon, crt_point.ele, crt_point.bearing, crt_point.speed, crt_point.hr);
+			//now add the point to linked list (but only if increasing time)
+			if (crt_point.time != GPS_UNINIT && crt_point.time > last_time) {
+				*gps_list = (gps_point_ll*) calloc(1, sizeof(gps_point_ll));
+				if (*gps_list == NULL) return;
 
-		//add point to linked list (but only if increasing time)
-		if (crt_point.time != GPS_UNINIT && crt_point.time > last_time) {
-			*gps_list = calloc (1, sizeof(gps_point_ll));
-			if (*gps_list == NULL) return;
-
-			*count_pts+=1;
-			(*gps_list)->gp = crt_point;
-			(*gps_list)->next = NULL;
-			gps_list = &(*gps_list)->next;
-			last_time = crt_point.time;
+				*count_pts+=1;
+				(*gps_list)->gp = crt_point;
+				(*gps_list)->next = NULL;
+				gps_list = &(*gps_list)->next;
+				last_time = crt_point.time;
+			}
+			else 
+				mlt_log_info(NULL, "qxml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%u.%u, last:%u.%u\n", *count_pts, crt_point.lat, crt_point.lon, (unsigned)(crt_point.time/1000), (unsigned)(crt_point.time%1000), (unsigned)(last_time/1000), (unsigned)(last_time%1000));
 		}
-		else mlt_log_info(NULL, "xml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%"PRId64", last:%"PRId64"\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
 	}
 }
 
+
 // Parses a .tcx file into a gps_point_raw linked list
-void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *count_pts)
+void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
-	int i;
-	xmlNode *crt_node = NULL, *gps_val = NULL, *gps_subval = NULL;
-	int64_t last_time = 0;
+	int64_t last_time = -1;
 
 	/*
 	//sample point from .TCX file
@@ -767,138 +849,125 @@ void xml_parse_tcx(xmlNodeSetPtr found_nodes, gps_point_ll **gps_list, int *coun
 		</HeartRateBpm>
 	  </Trackpoint>
 	*/
-	//mlt_log_info(NULL, "xml_parse_tcx - parsing %d elements\n", found_nodes->nodeNr);
-
-	for (i=0; i<found_nodes->nodeNr; i++)
+	while (!reader.atEnd() && !reader.hasError())
 	{
-		gps_point_raw crt_point = uninit_gps_raw_point;
-		crt_node = found_nodes->nodeTab[i];
-
-		for (gps_val = crt_node->children; gps_val; gps_val = gps_val->next)
+		reader.readNext();
+		// mlt_log_info(NULL, " readNextStartElement tag: %s \n", _qxml_getthestring(reader.name()));
+		if (reader.isStartElement() && reader.name() == QString("Trackpoint"))
 		{
-			if (strncmp(_s(gps_val->name), "Time", strlen("Time")) == 0)
-				crt_point.time = datetimeXMLstring_to_mseconds(_s(gps_val->children->content), NULL);
-			else if (strncmp(_s(gps_val->name), "Position", strlen("Position")) == 0)
+			gps_point_raw crt_point = uninit_gps_raw_point;
+			while (reader.readNext() && !(reader.name() == QString("Trackpoint") && reader.tokenType() == QXmlStreamReader::EndElement)) //loop until we hit the closing </Trackpoint>
 			{
-				for (gps_subval = gps_val->children; gps_subval; gps_subval=gps_subval->next) {
-					if (strncmp(_s(gps_subval->name), "LatitudeDegrees", strlen("LatitudeDegrees")) == 0)
-						crt_point.lat = strtod(_s(gps_subval->children->content), NULL);
-					else if (strncmp(_s(gps_subval->name), "LongitudeDegrees", strlen("LongitudeDegrees")) == 0)
-						crt_point.lon = strtod(_s(gps_subval->children->content), NULL);
+				// mlt_log_info(NULL, "[Trackpoint->1] readNext tag: %s, type=%d \n", _qxml_getthestring(reader.name()), reader.tokenType());
+				if (!reader.isStartElement())
+					continue;
+					
+				if (reader.name() == QString("Time"))
+					crt_point.time = datetimeXMLstring_to_mseconds(qUtf8Printable(reader.readElementText()));
+				else if (reader.name() == QString("Position"))
+				{
+					reader.readNextStartElement();
+					if (reader.name() == QString("LatitudeDegrees"))
+						crt_point.lat = reader.readElementText().toDouble();
+					reader.readNextStartElement();
+					if (reader.name() == QString("LongitudeDegrees"))
+						crt_point.lon = reader.readElementText().toDouble();
+				}
+				else if (reader.name() == QString("AltitudeMeters"))
+				{
+					crt_point.ele = reader.readElementText().toDouble();
+				}
+				else if (reader.name() == QString("DistanceMeters"))
+				{
+					crt_point.total_dist = reader.readElementText().toDouble();
+				}
+				else if (reader.name() == QString("HeartRateBpm"))
+				{
+					reader.readNextStartElement();
+					if (reader.name() == QString("Value"))
+						crt_point.hr = reader.readElementText().toDouble();
 				}
 			}
-			else if (strncmp(_s(gps_val->name), "AltitudeMeters", strlen("AltitudeMeters")) == 0)
-				crt_point.ele = strtod(_s(gps_val->children->content), NULL);
-			else if (strncmp(_s(gps_val->name), "DistanceMeters", strlen("DistanceMeters")) == 0)
-				crt_point.total_dist = strtod(_s(gps_val->children->content), NULL);
-			else if (strncmp(_s(gps_val->name), "HeartRateBpm", strlen("HeartRateBpm")) == 0)
-			{
-				for (gps_subval = gps_val->children; gps_subval; gps_subval=gps_subval->next)
-					if (strncmp(_s(gps_subval->name), "Value", strlen("Value")) == 0)
-						crt_point.hr = (short)strtod(_s(gps_subval->children->content), NULL);
+			//now add the point to linked list (but only if increasing time)
+			if (crt_point.time != GPS_UNINIT && crt_point.time > last_time) {
+				*gps_list = (gps_point_ll*) calloc(1, sizeof(gps_point_ll));
+				if (*gps_list == NULL) return;
+
+				*count_pts+=1;
+				(*gps_list)->gp = crt_point;
+				(*gps_list)->next = NULL;
+				gps_list = &(*gps_list)->next;
+				last_time = crt_point.time;
 			}
+			else 
+				mlt_log_info(NULL, "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%u.%u, last:%u.%u\n", *count_pts, crt_point.lat, crt_point.lon, (unsigned)(crt_point.time/1000), (unsigned)(crt_point.time%1000), (unsigned)(last_time/1000), (unsigned)(last_time%1000));
 		}
-//		mlt_log_info(NULL, "_xml_parse_tcx read point [%d]: time:%d, lat:%.12f, lon:%.12f, ele:%f, distance:%f, hr:%d\n",
-//				i, crt_point.time, crt_point.lat, crt_point.lon, crt_point.ele, crt_point.total_dist, crt_point.hr);
-
-		//add point to linked list (but only if increasing time)
-		if (crt_point.time != GPS_UNINIT && crt_point.time > last_time) {
-			*gps_list = calloc (1, sizeof(gps_point_ll));
-			if (*gps_list == NULL) return;
-
-			*count_pts+=1;
-			(*gps_list)->gp = crt_point;
-			(*gps_list)->next = NULL;
-			gps_list = &(*gps_list)->next;
-			last_time = crt_point.time;
-		}
-		else mlt_log_info(NULL, "xml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%"PRId64", last:%"PRId64"\n", i, crt_point.lat, crt_point.lon, crt_point.time, last_time);
 	}
 }
 
 /* Reads file, parses it and stores the gps values in a gps_point_raw array (allocated inside) 
  * and its size in gps_points_size.
+ * swap_to_180 -> shifts all longitudes around with 180 becoming 0, only use it if user requests it
  * Returns 0 on failure, 1 on success.
  */
-int xml_parse_file(gps_private_data gdata)
+int qxml_parse_file(gps_private_data gdata)
 {
-	int count_pts = 0, rv = 1;
-	xmlDoc *doc = NULL;
-	xmlNode *root_element = NULL;
-	xmlXPathContextPtr xpathCtx = NULL;
-	xmlXPathObjectPtr xpathObj = NULL;
-	gps_point_ll *gps_list_head = NULL;
+	gps_point_ll *gps_list_head = NULL, *tmp = NULL;
+	int count_pts = 0, nr = 0;
 	char* filename = gdata.last_filename;
+	gps_point_raw* gps_array = NULL;
+	int &swap_to_180 = *gdata.swap180;
 
-	LIBXML_TEST_VERSION
+	// mlt_log_info(gdata.filter, "in qxml_parse_file, filename: %s, swap_to_180=%d\n", filename, swap_to_180);
 
-	//mlt_log_info(gdata.filter, "in xml_parse_file, filename: %s", filename);
+	QFile gps_file(filename);
 
-	doc = xmlParseFile(filename);
-	if (doc == NULL) {
-		mlt_log_warning(gdata.filter, "xmlParseFile couldn't read or parse file: %s", filename);
-		rv = 0;
-		goto cleanup;
+	if (!gps_file.open(QFile::ReadOnly | QFile::Text))
+	{
+		mlt_log_warning(gdata.filter, "qxml_parse_file couldn't read file: %s", filename);
+		return 0;
 	}
 
-	root_element = xmlDocGetRootElement(doc);
-	if (root_element == NULL) {
-		mlt_log_info(gdata.filter, "xmlParseFile no root element found");
-		rv = 0;
-		goto cleanup;
-	}
-
-	//mlt_log_info(gdata.filter, "xml_parse_file root_elem= %s \n", root_element->name);
-
-	/* Create xpath evaluation context */
-	xpathCtx = xmlXPathNewContext(doc);
-	if(xpathCtx == NULL) {
-		mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathNewContext: unable to create new XPath context");
-		rv = 0;
-		goto cleanup;
-	}
-
-	//xpath query for each doc type
-	if (strncmp(_s(root_element->name), "TrainingCenterDatabase", strlen("TrainingCenterDatabase"))==0) {
-		const char* xpathExpr = "//*[local-name()='Trackpoint']";
-		xpathObj = xmlXPathEvalExpression(_x(xpathExpr), xpathCtx);
-		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
-		if (xmlXPathNodeSetIsEmpty(nodeset)) {
-			mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
-			rv = 0;
-			goto cleanup;
+	QXmlStreamReader qxml_reader(&gps_file);
+	qxml_reader.setNamespaceProcessing(false);
+	while (!qxml_reader.atEnd() && !qxml_reader.hasError())
+	{
+		qxml_reader.readNextStartElement();
+		if (qxml_reader.isStartDocument()) {
+			// mlt_log_info(NULL, "qxml_parse_file: StartDocument found. Encoding=%s\n", qUtf8Printable(qxml_reader.documentEncoding().toString()));
+			continue;
 		}
-		xml_parse_tcx(nodeset, &gps_list_head, &count_pts);
-	}
-	else if (strncmp(_s(root_element->name), "gpx", strlen("gpx"))==0) {
-		const char* xpathExpr = "//*[local-name()='trkpt']";
-		xpathObj = xmlXPathEvalExpression(_x(xpathExpr), xpathCtx);
-		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
-		if (xmlXPathNodeSetIsEmpty(nodeset)) {
-			mlt_log_warning(gdata.filter, "xml_parse_file xmlXPathEvalExpression: no result, expr='%s'\n", xpathExpr);
-			rv = 0;
-			goto cleanup;
+		// mlt_log_info(NULL, " readNext element tag: %s, type=%d \n", qUtf8Printable(qxml_reader.name().toString()), qxml_reader.tokenType());
+		if (qxml_reader.name() == QString("TrainingCenterDatabase"))
+		{
+			qxml_parse_tcx(qxml_reader, &gps_list_head, &count_pts);
 		}
-		xml_parse_gpx(nodeset, &gps_list_head, &count_pts);
+		else if (qxml_reader.name() == QString("gpx"))
+		{
+			qxml_parse_gpx(qxml_reader, &gps_list_head, &count_pts);
+		}
+		else 
+		{
+			mlt_log_warning(gdata.filter, "qxml_parse_file: fail to parse file: %s, unknown root element: %s. Aborting. \n", filename, qUtf8Printable(qxml_reader.name().toString()));
+			return 0;
+		}		
 	}
-	else {
-		mlt_log_warning(gdata.filter, "Unsupported file type: root == %s, file=%s", root_element->name, filename);
-		rv = 0;
-		goto cleanup;
+	if (qxml_reader.hasError()) 
+	{
+		mlt_log_info(NULL, "qxml_reader.hasError! line:%u, errString:%s\n", (unsigned)qxml_reader.lineNumber(), qUtf8Printable(qxml_reader.errorString()));
+		return 0;
 	}
+
+	qxml_reader.clear(); //not sure if really needed if not reused
 
 	*gdata.ptr_to_gps_points_r = (gps_point_raw*) calloc(count_pts, sizeof(gps_point_raw));
-	gps_point_raw* gps_array = *gdata.ptr_to_gps_points_r; //just an alias
+	gps_array = *gdata.ptr_to_gps_points_r; //just an alias
 	if (gps_array == NULL) {
-		mlt_log_error(gdata.filter, "malloc error (size=%"PRIu64")\n", count_pts * sizeof(gps_point_raw));
-		rv = 0;
-		goto cleanup;
+		mlt_log_error(gdata.filter, "malloc error (size=%u)\n", (unsigned)(count_pts * sizeof(gps_point_raw)));
 	}
 	*gdata.gps_points_size = count_pts;
 
 	//copy points to private array and free list
-	int nr=0;
-	gps_point_ll *tmp = NULL;
 	while (gps_list_head) {
 		gps_array[nr++] = gps_list_head->gp;
 		tmp = gps_list_head;
@@ -906,17 +975,36 @@ int xml_parse_file(gps_private_data gdata)
 		free (tmp);
 	}
 
-///debug result:
-	// for (i = 0; i<*gdata.gps_points_size; i+=100) {
-	//	gps_point_raw* crt_point = &gps_array[i];
-	//	mlt_log_info(NULL, "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, distance:%f, hr:%d\n",
-	//			i, crt_point->time/1000, crt_point->lat, crt_point->lon, crt_point->ele, crt_point->total_dist, crt_point->hr);
-	// }
+	//search to find if we cross the 180 and/or the 0 meridian
+	bool crosses0 = false, crosses180 = false;
+	for (int i = 0; i<*gdata.gps_points_size-1; i++) {
+		double crt =  gps_array[i].lon;
+		double next =  gps_array[i+1].lon;
+		if (crt == GPS_UNINIT || next == GPS_UNINIT)
+			continue;
+		if ((crt < 0 && next > 0) || (crt > 0 && next < 0)) {
+			if (crt - next > 180 || next - crt > 180) 
+				crosses180 = true;
+			else 
+				crosses0 = true;
+		}
+	}
+	mlt_log_info(NULL, "_automatic 180 meridian detection: crosses180=%d, crosses0=%d --> swapping180=%d\n", crosses180, crosses0, (crosses180 && !crosses0));
+	//if only 180 is crossed, we swap, otherswise we don't do anything
+	if (crosses180 && !crosses0) {
+		swap_to_180 = 1;
+		for (int i = 0; i < *gdata.gps_points_size; i++)
+			gps_array[i].lon = get_180_swapped(gps_array[i].lon);
+	}
+	else
+		swap_to_180 = 0;
 
-cleanup:
-	//note: this order is important or there's a crash
-	xmlXPathFreeObject(xpathObj);
-	xmlXPathFreeContext(xpathCtx);
-	xmlFreeDoc(doc);
-	return rv;
+// //debug result:
+// 	for (int i = 0; i<*gdata.gps_points_size; i+=100) {
+// 		gps_point_raw* crt_point = &gps_array[i];
+// 		mlt_log_info(NULL, "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, distance:%f, hr:%f\n",
+// 				i, crt_point->time/1000, crt_point->lat, crt_point->lon, crt_point->ele, crt_point->total_dist, crt_point->hr);
+// 	}
+
+	return 1;
 }

@@ -24,6 +24,10 @@ function(mlt_add_qt_module ARG_TARGET)
       kdenlivetitle_wrapper.cpp
       filter_audiolevelgraph.cpp
       filter_audiowaveform.cpp
+      gps_parser.cpp
+      gps_drawing.cpp
+      filter_gpsgraphic.cpp
+      filter_gpstext.cpp
       filter_qtext.cpp
       filter_qtblend.cpp
       filter_qtcrop.cpp
@@ -90,6 +94,8 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_audiolevelgraph.yml
       filter_audiospectrum.yml
       filter_audiowaveform.yml
+      filter_gpsgraphic.yml
+      filter_gpstext.yml
       filter_qtblend.yml
       filter_qtcrop.yml
       filter_qtext.yml
