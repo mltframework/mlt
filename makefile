@@ -6,7 +6,7 @@ dist:
 	git archive --format=tar --prefix=mlt-$(version)/ v$(version) | gzip >mlt-$(version).tar.gz
 
 validate-yml:
-	for file in $$(find src/modules -type f -name \*.yml \! -name resolution_scale.yml); do \
+	for file in $$(find src/modules -maxdepth 4 -type f -name \*.yml \! -name resolution_scale.yml); do \
 		echo "validate: $$file"; \
 		kwalify -f src/framework/metaschema.yaml $$file || exit 1; \
 	done

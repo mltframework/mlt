@@ -490,6 +490,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 					mlt_properties_set_data(properties, "producer", producer, 0, (mlt_destructor) mlt_producer_close, NULL);
 				} else {
 					// Cleanup the luma producer
+					mlt_properties_clear(properties, "producer");
 					mlt_producer_close(producer);
 					producer = NULL;
 				}
