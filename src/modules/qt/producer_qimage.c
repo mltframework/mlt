@@ -1,6 +1,6 @@
 /*
- * producer_image.c -- a QT/QImage based producer for MLT
- * Copyright (C) 2006-2021 Meltytech, LLC
+ * producer_image.c -- a Qt/QImage based producer for MLT
+ * Copyright (C) 2006-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,13 +62,12 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 
 		// Get the properties interface
 		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
-	
-		// Initialize KDE image plugins
-		if ( !init_qimage( producer, filename ) )
-		{
-			// Reject if animation.
-			mlt_producer_close( producer );
-			free( self );
+
+		// Initialize KDE image plugins and get supported animation frame count
+		self->count = init_qimage(producer, filename);
+		if (!self->count) {
+			mlt_producer_close(producer);
+			free(self);
 			return NULL;
 		}
 
@@ -78,14 +77,17 @@ mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, c
 
 		// Set the default properties
 		mlt_properties_set( properties, "resource", filename );
-		mlt_properties_set_int( properties, "ttl", 25 );
+		mlt_properties_set_int( properties, "ttl", self->count > 1 ? 1 : 25 );
 		mlt_properties_set_int( properties, "aspect_ratio", 1 );
 		mlt_properties_set_int( properties, "progressive", 1 );
 		mlt_properties_set_int( properties, "seekable", 1 );
 
 		// Validate the resource
-		if ( filename )
-			load_filenames( self, properties );
+		if (self->count == 1 && filename) {
+			load_filenames(self, properties);
+		} else {
+			refresh_length(properties, self);
+		}
 		if ( self->count )
 		{
 			mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
@@ -201,7 +203,7 @@ static void load_filenames( producer_qimage self, mlt_properties properties )
 static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
-	
+
 	// Obtain properties of frame and producer
 	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
 	producer_qimage self = mlt_properties_get_data( properties, "producer_qimage", NULL );
@@ -296,8 +298,18 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Fetch the producers properties
 	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
 
-	if ( self->filenames == NULL && mlt_properties_get( producer_properties, "resource" ) != NULL )
-		load_filenames( self, producer_properties );
+	// Cache miss
+	if (!self->filenames && !self->count && mlt_properties_get(producer_properties, "resource")) {
+		self->count = init_qimage(producer, mlt_properties_get(producer_properties, "resource"));
+		if (!self->count) {
+			return 1;
+		}
+		if (self->count == 1) {
+			load_filenames(self, producer_properties);
+		} else {
+			refresh_length(producer_properties, self);
+		}
+	}
 
 	// Generate a frame
 	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );

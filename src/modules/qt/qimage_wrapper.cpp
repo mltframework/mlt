@@ -1,5 +1,5 @@
 /*
- * qimage_wrapper.cpp -- a QT/QImage based producer for MLT
+ * qimage_wrapper.cpp -- a Qt/QImage based producer for MLT
  * Copyright (C) 2006-2022 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include <QtEndian>
 #include <QTemporaryFile>
 #include <QImageReader>
+#include <QMovie>
 
 #ifdef USE_EXIF
 #include <QTransform>
@@ -64,7 +65,7 @@ static void qimage_delete( void *data )
 
 }
 
-/// Returns false if this is animated.
+/// Returns frame count or 0 on error
 int init_qimage(mlt_producer producer, const char *filename)
 {
 	if (!createQApplicationIfNeeded(MLT_PRODUCER_SERVICE(producer))) {
@@ -75,7 +76,7 @@ int init_qimage(mlt_producer producer, const char *filename)
 	reader.setDecideFormatFromContent( true );
 	reader.setFileName( filename );
 	if ( reader.canRead() && reader.imageCount() > 1 ) {
-		return 0;
+		return reader.format() == "webp" ? reader.imageCount() : 0;
 	}
 #ifdef USE_KDE4
 	if ( !instance ) {
@@ -175,16 +176,29 @@ int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching )
 	{
 		self->current_image = NULL;
 		QImageReader reader;
+		QImage *qimage;
+
 #if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
 		// Use Qt's orientation detection
 		reader.setAutoTransform(!disable_exif);
 #endif
 		QString filename = QString::fromUtf8( mlt_properties_get_value( self->filenames, image_idx ) );
+		if (filename.isEmpty()) {
+			filename = QString::fromUtf8(mlt_properties_get(producer_props, "resource"));
+		}
+
 		// First try to detect the file type based on the content
 		// in case the file extension is incorrect.
 		reader.setDecideFormatFromContent( true );
 		reader.setFileName( filename );
-		QImage *qimage = new QImage( reader.read() );
+		if (reader.imageCount() > 1) {
+			QMovie movie(filename);
+			movie.setCacheMode(QMovie::CacheAll);
+			movie.jumpToFrame(image_idx);
+			qimage = new QImage(movie.currentImage());
+		} else {
+			qimage = new QImage(reader.read());
+		}
 		if ( qimage->isNull( ) )
 		{
 			mlt_log_info( MLT_PRODUCER_SERVICE( &self->parent ), "QImage retry: %d - %s\n",
