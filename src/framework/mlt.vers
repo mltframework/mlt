@@ -641,3 +641,9 @@ MLT_7.8.0 {
   global:
     mlt_frame_get_alpha_size;
 } MLT_7.6.0;
+
+MLT_7.10.0 {
+  global:
+    mlt_image_fill_checkerboard;
+    mlt_image_fill_white;
+} MLT_7.8.0;

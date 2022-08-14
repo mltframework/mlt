@@ -443,13 +443,19 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 		struct mlt_image_s img;
 		mlt_image_set_values( &img, NULL, *format, *width, *height );
 		mlt_image_alloc_data( &img );
-		mlt_image_fill_black( &img );
+
+		if (mlt_properties_get_int(properties, "test_audio")) {
+			const char* color_range = mlt_properties_get( properties, "consumer.color_range" );
+			int full_range = color_range && (!strcmp("pc", color_range) || !strcmp("jpeg", color_range));
+			mlt_image_fill_white(&img, full_range);
+		} else {
+			mlt_image_fill_checkerboard(&img, mlt_properties_get_double(properties, "aspect_ratio"));
+		}
 
 		*buffer = img.data;
 		mlt_properties_set_int( properties, "format", *format );
 		mlt_properties_set_int( properties, "width", *width );
 		mlt_properties_set_int( properties, "height", *height );
-		mlt_properties_set_double( properties, "aspect_ratio", 1.0 );
 		mlt_properties_set_data( properties, "image", *buffer, 0, img.release_data, NULL );
 		mlt_properties_set_int( properties, "test_image", 1 );
 		error = 0;

@@ -242,7 +242,9 @@ mlt_image_format mlt_image_format_id( const char * name )
 
 /** Fill an image with black.
   *
+  * \bug This does not respect full range YUV if needed.
   * \public \memberof mlt_image_s
+  * \param self a mlt_image
   */
 void mlt_image_fill_black( mlt_image self )
 {
@@ -259,7 +261,7 @@ void mlt_image_fill_black( mlt_image self )
 		case mlt_image_rgba:
 		{
 			int size = mlt_image_calculate_size( self );
-			memset( self->planes[0], 255, size );
+			memset( self->planes[0], 0, size );
 			break;
 		}
 		case mlt_image_yuv422:
@@ -269,7 +271,7 @@ void mlt_image_fill_black( mlt_image self )
 			register uint8_t *q = p + size;
 			while ( p != NULL && p != q )
 			{
-				*p ++ = 235;
+				*p ++ = 16;
 				*p ++ = 128;
 			}
 		}
@@ -278,7 +280,7 @@ void mlt_image_fill_black( mlt_image self )
 		{
 			for ( int plane = 0; plane < 3; plane++ )
 			{
-				uint16_t value = 235 << 8;
+				uint16_t value = 16 << 8;
 				size_t width = self->width;
 				if ( plane > 0 )
 				{
@@ -300,7 +302,161 @@ void mlt_image_fill_black( mlt_image self )
 		break;
 		case mlt_image_yuv420p:
 		{
-			memset(self->planes[0], 235, self->height * self->strides[0]);
+			memset(self->planes[0], 16, self->height * self->strides[0]);
+			memset(self->planes[1], 128, self->height * self->strides[1] / 2);
+			memset(self->planes[2], 128, self->height * self->strides[2] / 2);
+		}
+		break;
+	}
+}
+
+/** Fill an image with a checkerboard pattern.
+  *
+  * \public \memberof mlt_image_s
+  * \param self a mlt_image
+  * \param sample_aspect_ratio the pixel aspect ratio
+  */
+void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
+{
+	if ( !self->data) return;
+
+	if (sample_aspect_ratio == 0) sample_aspect_ratio = 1.0;
+	int h = 0.025 * MAX(self->width * sample_aspect_ratio, self->height);
+	int w = h / sample_aspect_ratio;
+	// compute center offsets
+	int ox = w * 2 - (self->width / 2) % (w * 2);
+	int oy = h * 2 - (self->height / 2) % (h * 2);
+	int bpp = self->strides[0] / self->width;
+	uint8_t color, gray1 = 0x7F, gray2 = 0xB2;
+
+	switch( self->format )
+	{
+		case mlt_image_invalid:
+		case mlt_image_none:
+		case mlt_image_movit:
+		case mlt_image_opengl_texture:
+			return;
+		case mlt_image_rgb:
+		case mlt_image_rgba:
+		{
+			uint8_t *p = self->planes[0];
+			for (int i = 0; i < self->height; i++) {
+				for (int j = 0; j < self->width; j++) {
+					color = ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+					memset(&p[i * self->strides[0] + j * bpp], color, bpp);
+				}
+			}
+			break;
+		}
+		case mlt_image_yuv422:
+		{
+			uint8_t *p = self->planes[0];
+			for (int i = 0; i < self->height; i++) {
+				for (int j = 0; j < self->width; j++) {
+					color = ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+					p[i * self->strides[0] + j * bpp] = color;
+					p[i * self->strides[0] + j * bpp + 1] = 128;
+				}
+			}
+		}
+		break;
+		case mlt_image_yuv422p16:
+		{
+			for (int plane = 0; plane < 3; plane++){
+				int width = plane > 0 ? self->width/2 : self->width;
+				uint16_t *p = (uint16_t*) self->planes[plane];
+				uint16_t color;
+
+				for (int i = 0; i < self->height; i++) {
+					for (int j = 0; j < width; j++) {
+						color = plane > 0 ? 128 : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+						p[i * self->strides[plane] + j * bpp] = color << 8;
+					}
+				}
+
+			}
+		}
+		break;
+		case mlt_image_yuv420p:
+		{
+			uint8_t *p = self->planes[0];
+			for (int i = 0; i < self->height; i++) {
+				for (int j = 0; j < self->width; j++) {
+					color = ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+					p[i * self->strides[0] + j * bpp] = color;
+				}
+			}
+			memset(self->planes[1], 128, self->height * self->strides[1] / 2);
+			memset(self->planes[2], 128, self->height * self->strides[2] / 2);
+		}
+		break;
+	}
+}
+
+/** Fill an image with white.
+  *
+  * \public \memberof mlt_image_s
+  * \param self a mlt_image
+  * \param full_range whether to use full color range
+  */
+void mlt_image_fill_white(mlt_image self , int full_range)
+{
+	if ( !self->data) return;
+
+	uint8_t white = full_range? 255 : 235;
+	switch( self->format )
+	{
+		case mlt_image_invalid:
+		case mlt_image_none:
+		case mlt_image_movit:
+		case mlt_image_opengl_texture:
+			return;
+		case mlt_image_rgb:
+		case mlt_image_rgba:
+		{
+			int size = mlt_image_calculate_size( self );
+			memset( self->planes[0], 255, size );
+			break;
+		}
+		case mlt_image_yuv422:
+		{
+			int size = mlt_image_calculate_size( self );
+			register uint8_t *p = self->planes[0];
+			register uint8_t *q = p + size;
+			while ( p != NULL && p != q )
+			{
+				*p ++ = white;
+				*p ++ = 128;
+			}
+		}
+		break;
+		case mlt_image_yuv422p16:
+		{
+			for ( int plane = 0; plane < 3; plane++ )
+			{
+				uint16_t value = white << 8;
+				size_t width = self->width;
+				if ( plane > 0 )
+				{
+					value = 128 << 8;
+					width = self->width / 2;
+				}
+				uint16_t* pRow = (uint16_t*)self->planes[plane];
+				for ( int i = 0; i < self->height; i++ )
+				{
+					uint16_t* p = pRow;
+					for ( int j = 0; j < width; j++ )
+					{
+						*p++ = value;
+					}
+					pRow += self->strides[plane];
+				}
+			}
+		}
+		break;
+		case mlt_image_yuv420p:
+		{
+			memset(self->planes[0], white, self->height * self->strides[0]);
 			memset(self->planes[1], 128, self->height * self->strides[1] / 2);
 			memset(self->planes[2], 128, self->height * self->strides[2] / 2);
 		}
