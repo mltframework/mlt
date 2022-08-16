@@ -1,5 +1,5 @@
 add_library(mltoldfilm MODULE
-  common.c
+  common.c common.h
   factory.c
   filter_dust.c
   filter_grain.c
@@ -7,6 +7,11 @@ add_library(mltoldfilm MODULE
   filter_oldfilm.c
   filter_tcolor.c
   filter_vignette.c
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_oldfilm_Files SOURCES
+  ${YML}
 )
 
 target_compile_options(mltoldfilm PRIVATE ${MLT_COMPILE_OPTIONS})

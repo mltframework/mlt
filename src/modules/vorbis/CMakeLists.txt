@@ -1,5 +1,10 @@
 add_library(mltvorbis MODULE factory.c producer_vorbis.c)
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_vorbis_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltvorbis PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltvorbis PRIVATE mlt PkgConfig::vorbis PkgConfig::vorbisfile)

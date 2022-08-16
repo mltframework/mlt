@@ -5,6 +5,11 @@ add_library(mltsdl2 MODULE
   factory.c
 )
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_sdl2_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltsdl2 PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltsdl2 PRIVATE mlt m Threads::Threads PkgConfig::sdl2)

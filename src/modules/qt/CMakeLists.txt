@@ -16,26 +16,31 @@ function(mlt_add_qt_module ARG_TARGET)
     endif()
 
     add_library(${ARG_TARGET} MODULE
+      common.cpp common.h
+      consumer_qglsl.cpp
       factory.c
-      producer_qimage.c
-      producer_kdenlivetitle.c
-      common.cpp graph.cpp
-      qimage_wrapper.cpp
-      kdenlivetitle_wrapper.cpp
       filter_audiolevelgraph.cpp
       filter_audiowaveform.cpp
-      gps_parser.cpp
-      gps_drawing.cpp
-      filter_gpsgraphic.cpp
-      filter_gpstext.cpp
+      filter_gpsgraphic.cpp filter_gpsgraphic.h
       filter_qtext.cpp
       filter_qtblend.cpp
       filter_qtcrop.cpp
-      producer_qtext.cpp
-      transition_qtblend.cpp
-      consumer_qglsl.cpp
       filter_typewriter.cpp
+      gps_drawing.cpp
+      gps_parser.cpp gps_parser.h
+      graph.h
+      kdenlivetitle_wrapper.cpp
+      producer_kdenlivetitle.c
+      producer_qimage.c
+      producer_qtext.cpp
+      qimage_wrapper.cpp
+      transition_qtblend.cpp
       typewriter.cpp
+    )
+
+    file(GLOB YML "*.yml")
+    add_custom_target(Other_${ARG_TARGET}_Files SOURCES
+      ${YML}
     )
 
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})

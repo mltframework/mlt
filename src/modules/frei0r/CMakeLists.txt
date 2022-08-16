@@ -7,6 +7,14 @@ add_library(mltfrei0r MODULE
   transition_frei0r.c
 )
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_frei0r_Files SOURCES
+  ${YML}
+  blacklist.txt
+  not_thread_safe.txt
+  param_name_map.yaml
+)
+
 target_compile_options(mltfrei0r PRIVATE ${MLT_COMPILE_OPTIONS})
 target_include_directories(mltfrei0r PRIVATE ${FREI0R_INCLUDE_DIRS})
 if(RELOCATABLE)

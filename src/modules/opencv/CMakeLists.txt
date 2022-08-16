@@ -1,5 +1,10 @@
 add_library(mltopencv MODULE factory.c filter_opencv_tracker.cpp)
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_opencv_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltopencv PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltopencv PRIVATE mlt ${OpenCV_LIBS})

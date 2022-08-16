@@ -4,6 +4,11 @@ add_library(mltnormalize MODULE
   filter_volume.c
 )
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_normalize_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltnormalize PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltnormalize PRIVATE mlt m)

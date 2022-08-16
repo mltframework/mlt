@@ -1,4 +1,12 @@
-add_library(mltrtaudio MODULE consumer_rtaudio.cpp)
+add_library(mltrtaudio MODULE
+  consumer_rtaudio.cpp
+  RtAudio.cpp RtAudio.h
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_rtaudio_Files SOURCES
+  ${YML}
+)
 
 target_compile_options(mltrtaudio PRIVATE ${MLT_COMPILE_OPTIONS})
 

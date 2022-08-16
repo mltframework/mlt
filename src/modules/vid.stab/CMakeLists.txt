@@ -1,8 +1,13 @@
 add_library(mltvidstab MODULE
-  common.c
+  common.c common.h
   factory.c
   filter_deshake.cpp
   filter_vidstab.cpp
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_vidstab_Files SOURCES
+  ${YML}
 )
 
 target_compile_options(mltvidstab PRIVATE ${MLT_COMPILE_OPTIONS})

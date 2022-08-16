@@ -118,6 +118,11 @@ set(GLAX_SOURCES
   ${CORE_DIR}utils/tar.cpp
 )
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_glaxnimate_Files SOURCES
+  ${YML}
+)
+
 function(mlt_add_glaxnimate_module ARG_TARGET)
     cmake_parse_arguments(PARSE_ARGV 1 ARG "" "QT_VERSION;DATADIR" "")
 

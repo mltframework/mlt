@@ -1,4 +1,4 @@
-add_executable(melt melt.c io.c)
+add_executable(melt melt.c io.c io.h)
 
 target_compile_options(melt PRIVATE ${MLT_COMPILE_OPTIONS})
 

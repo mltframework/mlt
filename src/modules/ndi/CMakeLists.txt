@@ -1,7 +1,12 @@
 add_library(mltndi MODULE
   consumer_ndi.c
-  factory.c
+  factory.c factory.h
   producer_ndi.c
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_ndi_Files SOURCES
+  ${YML}
 )
 
 target_compile_options(mltndi PRIVATE ${MLT_COMPILE_OPTIONS})

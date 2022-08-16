@@ -1,4 +1,4 @@
-set(MLT_PUPLIC_HEADERS
+set(MLT_PUBLIC_HEADERS
   mlt.h
   mlt_animation.h
   mlt_audio.h
@@ -66,7 +66,15 @@ add_library(mlt SHARED
   mlt_version.c
 )
 
+add_custom_target("Other_mlt_Files" SOURCES
+  metaschema.yaml
+  mlt-framework.pc.in
+  mlt.vers
+)
+
 add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
+
+target_sources(mlt PRIVATE ${MLT_PUBLIC_HEADERS})
 
 target_compile_options(mlt PRIVATE ${MLT_COMPILE_OPTIONS})
 
@@ -81,7 +89,7 @@ set_target_properties(mlt PROPERTIES
   VERSION ${MLT_VERSION}
   SOVERSION ${MLT_VERSION_MAJOR}
   OUTPUT_NAME mlt-${MLT_VERSION_MAJOR}
-  PUBLIC_HEADER "${MLT_PUPLIC_HEADERS}"
+  PUBLIC_HEADER "${MLT_PUBLIC_HEADERS}"
 )
 
 if(WIN32)

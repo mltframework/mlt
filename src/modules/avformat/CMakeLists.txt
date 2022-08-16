@@ -1,9 +1,16 @@
 add_library(mltavformat MODULE
-  common.c
+  common.c common.h
   factory.c
   filter_avcolour_space.c
   filter_avdeinterlace.c
   filter_swscale.c
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_avformat_Files SOURCES
+  ${YML}
+  blacklist.txt
+  yuv_only.txt
 )
 
 target_compile_options(mltavformat PRIVATE ${MLT_COMPILE_OPTIONS})

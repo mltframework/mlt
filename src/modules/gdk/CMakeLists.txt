@@ -5,6 +5,11 @@ add_library(mltgdk MODULE
   producer_pixbuf.c
 )
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_gdk_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltgdk PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltgdk PRIVATE mlt m Threads::Threads PkgConfig::GdkPixbuf)

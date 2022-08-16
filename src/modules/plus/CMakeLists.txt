@@ -20,10 +20,16 @@ add_library(mltplus MODULE
   filter_text.c
   filter_threshold.c
   filter_timer.c
+  interp.h
   producer_blipflash.c
   producer_count.c
   producer_pgm.c
   transition_affine.c
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_plus_Files SOURCES
+  ${YML}
 )
 
 target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})

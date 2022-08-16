@@ -1,8 +1,14 @@
 add_library(mltxml MODULE
-  common.c
+  common.c common.h
   consumer_xml.c
   factory.c
   producer_xml.c
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_xml_Files SOURCES
+  ${YML}
+  mlt-xml.dtd
 )
 
 target_compile_options(mltxml PRIVATE ${MLT_COMPILE_OPTIONS})

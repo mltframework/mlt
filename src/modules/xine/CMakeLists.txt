@@ -1,8 +1,13 @@
 add_library(mltxine MODULE
   factory.c
-  deinterlace.c
-  yadif.c
+  deinterlace.c deinterlace.h
+  yadif.c yadif.h
   filter_deinterlace.c
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_xine_Files SOURCES
+  ${YML}
 )
 
 target_compile_options(mltxine PRIVATE ${MLT_COMPILE_OPTIONS})

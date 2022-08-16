@@ -6,6 +6,11 @@ add_library(mltkdenlive MODULE
   producer_framebuffer.c
 )
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_kdenlive_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltkdenlive PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltkdenlive PRIVATE mlt m)

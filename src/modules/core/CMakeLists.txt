@@ -27,7 +27,7 @@ add_library(mltcore MODULE
   filter_resize.c
   filter_transition.c
   filter_watermark.c
-  image_proc.c
+  image_proc.c image_proc.h
   link_timeremap.c
   producer_colour.c
   producer_consumer.c
@@ -41,6 +41,13 @@ add_library(mltcore MODULE
   transition_luma.c
   transition_matte.c
   transition_mix.c
+)
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_core_Files SOURCES
+  ${YML}
+  loader.dict
+  loader.ini
 )
 
 target_compile_options(mltcore PRIVATE ${MLT_COMPILE_OPTIONS})

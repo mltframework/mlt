@@ -1,5 +1,10 @@
 add_library(mltjackrack MODULE factory.c)
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_jackrack_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltjackrack PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltjackrack PRIVATE mlt Threads::Threads)
@@ -13,13 +18,13 @@ endif()
 
 if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
   target_sources(mltjackrack PRIVATE
-    jack_rack.c
-    lock_free_fifo.c
-    plugin.c
-    plugin_desc.c
-    plugin_mgr.c
-    plugin_settings.c
-    process.c
+    jack_rack.c jack_rack.h
+    lock_free_fifo.c lock_free_fifo.h
+    plugin.c plugin.h
+    plugin_desc.c plugin_desc.h
+    plugin_mgr.c plugin_mgr.h
+    plugin_settings.c plugin_settings.h
+    process.c process.h
     producer_ladspa.c
     filter_ladspa.c
   )

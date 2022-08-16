@@ -1,5 +1,10 @@
 add_library(mltresample MODULE factory.c filter_resample.c)
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_resample_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltresample PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltresample PRIVATE mlt PkgConfig::samplerate)

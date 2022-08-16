@@ -1,5 +1,10 @@
 add_library(mltrubberband MODULE factory.c filter_rbpitch.cpp)
 
+file(GLOB YML "*.yml")
+add_custom_target(Other_rubberband_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltrubberband PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltrubberband PRIVATE mlt PkgConfig::rubberband)

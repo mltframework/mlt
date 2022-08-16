@@ -1,8 +1,14 @@
 add_library(mltdecklink MODULE
-  common.cpp
+  common.cpp common.h
   consumer_decklink.cpp
   producer_decklink.cpp
 )
+
+file(GLOB YML "*.yml")
+add_custom_target(Other_decklink_Files SOURCES
+  ${YML}
+)
+
 target_compile_options(mltdecklink PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltdecklink PRIVATE mlt Threads::Threads)
