@@ -28,7 +28,8 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_typewriter.cpp
       gps_drawing.cpp
       gps_parser.cpp gps_parser.h
-      graph.h
+      filter_gpstext.cpp
+      graph.cpp graph.h
       kdenlivetitle_wrapper.cpp
       producer_kdenlivetitle.c
       producer_qimage.c
