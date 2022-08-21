@@ -46,22 +46,104 @@ static inline double smoothstep( const double e1, const double e2, const double 
 }
 
 
+static int slice_alpha_add(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int size = desc->width * slice_height;
+	uint8_t *p = desc->alpha + slice_line_start * desc->width;
+	uint8_t *q = desc->mask + slice_line_start * desc->width;
+	uint32_t b;
+
+	for (int i = 0; i < size; ++i) {
+		b = (uint32_t) (q[i] ^ desc->invert_mask);
+		p[i] = ((uint8_t) MIN((uint32_t) p[i] + b, 255)) ^ desc->invert;
+	}
+
+	return 0;
+}
+
+static int slice_alpha_maximum(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int size = desc->width * slice_height;
+	uint8_t *p = desc->alpha + slice_line_start * desc->width;
+	uint8_t *q = desc->mask + slice_line_start * desc->width;
+
+	for (int i = 0; i < size; ++i) {
+		p[i] = MAX(p[i], (q[i] ^ desc->invert_mask)) ^ desc->invert;
+	}
+
+	return 0;
+}
+
+static int slice_alpha_minimum(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int size = desc->width * slice_height;
+	uint8_t *p = desc->alpha + slice_line_start * desc->width;
+	uint8_t *q = desc->mask + slice_line_start * desc->width;
+
+	for (int i = 0; i < size; ++i) {
+		p[i] = MIN(p[i], (q[i] ^ desc->invert_mask)) ^ desc->invert;
+	}
+
+	return 0;
+}
+
+static int slice_alpha_overwrite(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int size = desc->width * slice_height;
+	uint8_t *p = desc->alpha + slice_line_start * desc->width;
+	uint8_t *q = desc->mask + slice_line_start * desc->width;
+
+	for (int i = 0; i < size; ++i) {
+		p[i] = (q[i] ^ desc->invert_mask) ^ desc->invert;
+	}
+
+	return 0;
+}
+
+static int slice_alpha_subtract(int id, int index, int jobs, void* data)
+{
+	(void) id; // unused
+	slice_desc* desc = ((slice_desc*) data);
+	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+	int size = desc->width * slice_height;
+	uint8_t *p = desc->alpha + slice_line_start * desc->width;
+	uint8_t *q = desc->mask + slice_line_start * desc->width;
+	uint8_t a;
+
+	for (int i = 0; i < size; ++i) {
+		a = q[i] ^ desc->invert_mask;
+		p[i] = (p[i] > a ? p[i] - a : 0) ^ desc->invert;
+	}
+
+	return 0;
+}
+
 static int slice_alpha_proc(int id, int index, int jobs, void* data)
 {
 	(void) id; // unused
 	slice_desc* desc = ((slice_desc*) data);
 	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-	int size = desc->width * slice_height + 1;
+	int size = desc->width * slice_height;
 	uint8_t *p = desc->alpha + slice_line_start * desc->width;
 	uint8_t *q = desc->mask + slice_line_start * desc->width;
-	double a = 0;
-	double b = 0;
+	double a;
 
-	while (--size) {
-		a = (double)(*q++ ^ desc->invert_mask) / desc->divisor;
-		b = 1.0 - smoothstep(a, a + desc->softness, desc->mix);
-		*p = (uint8_t)(*p * b) ^ desc->invert;
-		p++;
+	for (int i = 0; i < size; ++i) {
+		a = (double)(q[i] ^ desc->invert_mask) / desc->divisor;
+		a = 1.0 - smoothstep(a, a + desc->softness, desc->mix);
+		p[i] = (uint8_t)(p[i] * a) ^ desc->invert;
 	}
 
 	return 0;
@@ -72,18 +154,15 @@ static int slice_luma_proc(int id, int index, int jobs, void* data)
 	(void) id; // unused
 	slice_desc* desc = ((slice_desc*) data);
 	int slice_line_start, slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-	int size = desc->width * slice_height + 1;
+	int size = desc->width * slice_height;
 	uint8_t *p = desc->alpha + slice_line_start * desc->width;
 	uint8_t *q = desc->mask + slice_line_start * desc->width * 2;
 	double a = 0;
-	double b = 0;
 
-	while (--size) {
-		a = ((double)(*q ^ desc->invert_mask) - desc->offset) / desc->divisor;
-		b = smoothstep(a, a + desc->softness, desc->mix);
-		*p = (uint8_t )(*p * b) ^ desc->invert;
-		p++;
-		q += 2;
+	for (int i = 0; i < size; ++i) {
+		a = ((double)(q[i*2] ^ desc->invert_mask) - desc->offset) / desc->divisor;
+		a = smoothstep(a, a + desc->softness, desc->mix);
+		p[i] = (uint8_t )(p[i] * a) ^ desc->invert;
 	}
 
 	return 0;
@@ -149,26 +228,39 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 					memset( q, 255, alphasize );
 					mlt_frame_set_alpha( mask, q, alphasize, mlt_pool_release );
 				}
+				slice_desc desc = {
+					.alpha = p,
+					.mask = q,
+					.width = *width,
+					.height = *height,
+					.softness = softness,
+					.mix = mix,
+					.invert = invert,
+					.invert_mask = invert_mask,
+					.offset = 0.0,
+					.divisor = 255.0
+				};
 				if ( use_mix )
 				{
-					slice_desc desc = {
-					    .alpha = p,
-					    .mask = q,
-					    .width = *width,
-					    .height = *height,
-					    .softness = softness,
-					    .mix = mix,
-					    .invert = invert,
-					    .invert_mask = invert_mask,
-					    .offset = 0.0,
-					    .divisor = 255.0
-					};
 					mlt_slices_run_normal(0, slice_alpha_proc, &desc);
 				}
 				else
 				{
-					while( size -- )
-						*p++ = *q++;
+					const char *op = mlt_properties_get(MLT_FILTER_PROPERTIES(filter), "alpha_operation");
+					if (op && op[0] != '\0') {
+						if (op[0] == 'a')
+							mlt_slices_run_normal(0, slice_alpha_add, &desc);
+						else if (op[0] == 's')
+							mlt_slices_run_normal(0, slice_alpha_subtract, &desc);
+						else if (!strncmp("ma", op, 2))
+							mlt_slices_run_normal(0, slice_alpha_maximum, &desc);
+						else if (!strncmp("mi", op, 2))
+							mlt_slices_run_normal(0, slice_alpha_minimum, &desc);
+						else
+							mlt_slices_run_normal(0, slice_alpha_overwrite, &desc);
+					} else {
+						mlt_slices_run_normal(0, slice_alpha_overwrite, &desc);
+					}
 				}
 			}
 			else if ( !use_mix )

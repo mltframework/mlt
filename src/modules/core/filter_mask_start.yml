@@ -2,7 +2,7 @@ schema_version: 0.3
 type: filter
 identifier: mask_start
 title: Setup a filter mask
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1

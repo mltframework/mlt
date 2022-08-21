@@ -2,7 +2,7 @@ schema_version: 7.0
 type: filter
 identifier: shape
 title: Shape Alpha
-version: 5
+version: 6
 creator: Charles Yates
 license: LGPLv2.1
 language: en
@@ -93,3 +93,18 @@ parameters:
       is generally not recommended to enable this.
     default: yes
     mutable: yes
+
+  - identifier: alpha_operation
+    title: Alpha Operation
+    type: string
+    description: >
+      The way to combine the alpha channel of the mask with the source, but this
+      currently only works when use_mix = 0.
+    default: overwrite
+    mutable: yes
+    values:
+      - add
+      - overwrite
+      - maximum
+      - minimum
+      - subtract
