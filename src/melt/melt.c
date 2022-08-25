@@ -87,7 +87,7 @@ static void transport_action( mlt_producer producer, char *value )
 				mlt_producer_set_speed( producer, 0 );
 				mlt_consumer_purge( consumer );
 				if (jit_status.playing) {
-					mlt_producer_seek( producer, mlt_consumer_position( consumer ) + 1 );
+					mlt_producer_seek( producer, mlt_consumer_position( consumer ) - 2 );
 				}
 			}
 			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
@@ -1375,6 +1375,10 @@ query_all:
 				mlt_producer_set_in_and_out( melt, in, out );
 				mlt_producer_seek( melt, 0 );
 			}
+
+			// smaller buffer -> faster pause
+			mlt_properties_set_int( properties, "buffer", 3 );
+
 			// Connect consumer to melt
 			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE( melt ) );
 
