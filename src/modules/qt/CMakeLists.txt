@@ -22,13 +22,13 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_audiolevelgraph.cpp
       filter_audiowaveform.cpp
       filter_gpsgraphic.cpp filter_gpsgraphic.h
+      filter_gpstext.cpp
       filter_qtext.cpp
       filter_qtblend.cpp
       filter_qtcrop.cpp
       filter_typewriter.cpp
       gps_drawing.cpp
       gps_parser.cpp gps_parser.h
-      filter_gpstext.cpp
       graph.cpp graph.h
       kdenlivetitle_wrapper.cpp
       producer_kdenlivetitle.c
