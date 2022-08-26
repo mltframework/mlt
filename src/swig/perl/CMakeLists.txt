@@ -5,6 +5,7 @@ target_compile_options(mltperl PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltperl PRIVATE mlt mlt++)
 target_include_directories(mltperl PRIVATE ${PERL_INCLUDE_PATH})
 set_target_properties(mltperl PROPERTIES OUTPUT_NAME "mlt")
+set_target_properties(mltperl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/perl")
 
 string(REGEX MATCH "lib.*" PERL_MODULE_INSTALL_DIR ${PERL_VENDORARCH})
 
