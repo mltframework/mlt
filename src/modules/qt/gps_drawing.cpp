@@ -526,7 +526,7 @@ void draw_main_speedometer(mlt_filter filter, mlt_frame frame, QPainter &p, s_ba
 	if (mlt_properties_get_int(properties, "show_now_dot"))
 	{
 		mlt_color dot_color = mlt_properties_get_color(properties, "now_dot_color");
-		if (dot_color.a != 0)
+		if (dot_color.a == 0) // if transparent -> use main color
 		{
 			p.setBrush( colors[0] );
 			p.setPen( colors[0] );
