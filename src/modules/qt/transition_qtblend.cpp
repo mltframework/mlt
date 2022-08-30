@@ -181,12 +181,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// Check if we have transparency
 	int request_width = b_width;
 	int request_height = b_height;
-	bool image_fetched = false;
 
 	if ( !hasAlpha )
 	{
 		// fetch image
-		image_fetched = true;
 		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 1 );
 		if ( *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) )
 		{
@@ -215,12 +213,12 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		return 0;
 	}
 	// Get RGBA image to process
-	if ( !image_fetched )
+	if ( *format != mlt_image_rgba )
 	{
 		*format = mlt_image_rgba;
 		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 1 );
 	}
-	if ( b_frame->convert_image && ( *format != mlt_image_rgba || b_width != request_width || b_height != request_height ) )
+	if ( b_frame->convert_image && ( b_width != request_width || b_height != request_height ) )
 	{
 		mlt_properties_set_int( b_properties, "convert_image_width", request_width );
 		mlt_properties_set_int( b_properties, "convert_image_height", request_height );
