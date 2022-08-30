@@ -2,7 +2,7 @@ schema_version: 0.1
 type: transition
 identifier: qtblend
 title: Composite and transform
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Jean-Baptiste Mardelle
 license: LGPLv2.1
