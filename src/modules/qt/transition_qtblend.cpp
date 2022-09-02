@@ -35,7 +35,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
 
 	uint8_t *b_image = NULL;
-	bool hasAlpha = false;
+	bool hasAlpha = *format == mlt_image_rgba;
 	double opacity = 1.0;
 	QTransform transform;
 	// reference rect
@@ -53,11 +53,18 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	double consumer_ar = mlt_profile_sar( profile );
 	int b_width = mlt_properties_get_int( b_properties, "meta.media.width" );
 	int b_height = mlt_properties_get_int( b_properties, "meta.media.height" );
+	bool distort = mlt_properties_get_int( transition_properties, "distort" );
 
-	if ( b_height == 0 )
+	// Potention optimization if the producers do set their native format before fetching image
+	/*if (mlt_properties_get_int( b_properties, "format" ) == mlt_image_rgba) {
+		hasAlpha = true;
+		*format = mlt_image_rgba;
+	}*/
+
+	if ( b_height == 0  || (!distort && ( b_height < *height || b_width < *width) ) )
 	{
-		b_width = normalised_width;
-		b_height = normalised_height;
+		b_width = *width;
+		b_height = *height;
 	}
 	double b_ar = mlt_frame_get_aspect_ratio( b_frame );
 	double b_dar = b_ar * b_width / b_height;
@@ -68,28 +75,51 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	if ( mlt_properties_get( transition_properties, "rect" ) )
 	{
 		rect = mlt_properties_anim_get_rect( transition_properties, "rect", position, length );
-		if (mlt_properties_get(transition_properties, "rect") && ::strchr(mlt_properties_get(transition_properties, "rect"), '%')) {
-			rect.x *= normalised_width;
-			rect.y *= normalised_height;
-			rect.w *= normalised_width;
-			rect.h *= normalised_height;
+		if (::strchr(mlt_properties_get(transition_properties, "rect"), '%')) {
+			// We have percentage values, scale to frame size
+			rect.x *= *width;
+			rect.y *= *height;
+			rect.w *= *width;
+			rect.h *= *height;
 		}
-		double scale = mlt_profile_scale_width(profile, *width);
-		if ( scale != 1.0 )
+		else
 		{
-			rect.x *= scale;
-			rect.w *= scale;
+			// Adjust to preview scaling
+			double scale = mlt_profile_scale_width(profile, *width);
+			if ( scale != 1.0 )
+			{
+				rect.x *= scale;
+				rect.w *= scale;
+				if ( distort )
+				{
+					b_width *= scale;
+				}
+			}
+			scale = mlt_profile_scale_height(profile, *height);
+			if ( scale != 1.0 )
+			{
+				rect.y *= scale;
+				rect.h *= scale;
+				if ( distort )
+				{
+					b_height *= scale;
+				}
+			}
 		}
-		scale = mlt_profile_scale_height(profile, *height);
-		if ( scale != 1.0 )
-		{
-			rect.y *= scale;
-			rect.h *= scale;
-		}
+
 		transform.translate(rect.x, rect.y);
 		opacity = rect.o;
-		b_width = qMin((int)rect.w, b_width);
-		b_height = qMin((int)rect.h, b_height);
+		if ( !distort )
+		{
+			b_width = qMin((int)rect.w, b_width);
+			b_height = qMin((int)rect.h, b_height);
+			transform.translate( ( rect.w - b_width ) / 2.0, ( rect.h - b_height ) / 2.0 );
+		}
+		if ( opacity < 1 || rect.x > 0 || rect.y > 0 || ( rect.x + rect.w < *width ) || ( rect.y + rect.w < *height ) )
+		{
+			// we will process operations on top frame, so also process b_frame
+			hasAlpha = true;
+		}
 	}
 	else
 	{
@@ -133,38 +163,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	{
 		return error;
 	}
-
-	if ( rect.w != -1 )
+	if ( distort && b_width != 0 && b_height != 0 )
 	{
-		if ( mlt_properties_get_int( transition_properties, "distort" ) && b_width != 0 && b_height != 0 )
-		{
-			transform.scale( rect.w / b_width, rect.h / b_height );
-		}
-		else
-		{
-			// Determine scale with respect to aspect ratio.
-			double geometry_dar = rect.w * consumer_ar / rect.h;
-			double scale;
-			if ( b_dar > geometry_dar )
-			{
-				scale = rect.w / b_width;
-			}
-			else
-			{
-				scale = rect.h / b_height * b_ar;
-			}
-
-			transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
-			transform.scale( scale, scale );
-		}
-
-		if ( opacity < 1 || rect.x > 0 || rect.y > 0 || ( rect.x + rect.w < *width ) || ( rect.y + rect.w < *height ) )
-		{
-			// we will process operations on top frame, so also process b_frame
-			hasAlpha = true;
-		}
+		transform.scale( rect.w / b_width, rect.h / b_height );
 	}
-	else
+	if ( rect.w == -1 )
 	{
 		// No transform, request profile sized image
 		if (b_dar != mlt_profile_dar( profile ) )
@@ -181,11 +184,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// Check if we have transparency
 	int request_width = b_width;
 	int request_height = b_height;
-
-	if ( !hasAlpha )
+	if ( !hasAlpha || *format == mlt_image_rgba )
 	{
 		// fetch image
-		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 1 );
+		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 0 );
 		if ( *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) )
 		{
 			hasAlpha = true;
@@ -212,11 +214,12 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		free( interps );
 		return 0;
 	}
+
 	// Get RGBA image to process
 	if ( *format != mlt_image_rgba )
 	{
 		*format = mlt_image_rgba;
-		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 1 );
+		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 0 );
 	}
 	if ( b_frame->convert_image && ( b_width != request_width || b_height != request_height ) )
 	{
@@ -230,7 +233,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 
 	// Get bottom frame
 	uint8_t *a_image = NULL;
-	error = mlt_frame_get_image( a_frame, &a_image, format, width, height, 1 );
+	error = mlt_frame_get_image( a_frame, &a_image, format, width, height, 0 );
 	if (error)
 	{
 		free( interps );

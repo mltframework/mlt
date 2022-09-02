@@ -69,12 +69,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	}
 	double b_ar = mlt_frame_get_aspect_ratio( frame );
 	double b_dar = b_ar * b_width / b_height;
+	b_width = b_dar * b_height;
 	double opacity = 1.0;
 
 	if ( mlt_properties_get( properties, "rect" ) )
 	{
 		rect = mlt_properties_anim_get_rect( properties, "rect", position, length );
-		if (mlt_properties_get(properties, "rect") && ::strchr(mlt_properties_get(properties, "rect"), '%')) {
+		if (::strchr(mlt_properties_get(properties, "rect"), '%')) {
 			rect.x *= normalised_width;
 			rect.y *= normalised_height;
 			rect.w *= normalised_width;
@@ -95,9 +96,13 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		transform.translate(rect.x, rect.y);
 		opacity = rect.o;
 		hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height;
-		b_width = qMin( (int)rect.w, b_width );
-		b_height = qMin( (int)rect.h, b_height );
-		if ( b_width < *width || b_height < *height )
+
+		if ( mlt_properties_get_int( properties, "distort" ) == 0 )
+		{
+			b_height = qMin( (int)rect.h, b_height );
+			b_width = b_height * b_dar / b_ar;
+		}
+		if ( !hasAlpha && ( b_width < *width || b_height < *height ) )
 		{
 			hasAlpha = true;
 		}
