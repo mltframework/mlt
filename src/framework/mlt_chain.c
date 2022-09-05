@@ -164,6 +164,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 				 !strcmp( name, "mlt_service" ) ||
 				 !strcmp( name, "_mlt_service_hidden" ) ||
 				 !strcmp( name, "seekable" ) ||
+				 !strcmp( name, "creation_time" ) ||
 				 !strncmp( name, "meta.", 5 ) )
 			{
 				mlt_properties_pass_property( MLT_CHAIN_PROPERTIES(self), source_properties, name );
