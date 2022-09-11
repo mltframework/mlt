@@ -28,13 +28,36 @@ static void default_priv_data(private_data* pdata)
 {
 	if (pdata)
 	{
-		if (pdata->gps_points_r)
+		if (pdata->gps_points_r) {
 			free (pdata->gps_points_r);
-		if (pdata->gps_points_p)
+			pdata->gps_points_r = NULL;
+		}
+		if (pdata->gps_points_p) {
 			free (pdata->gps_points_p);
-		memset (pdata, 0 , sizeof(private_data));
-		pdata->speed_multiplier = 1;
+			pdata->gps_points_p = NULL;
+		}
+		pdata->gps_points_size = 0;
+		pdata->last_smooth_lvl = 0;
+		pdata->last_searched_index = 0;
+		pdata->first_gps_time = 0;
+		pdata->last_gps_time = 0;
+		pdata->gps_offset = 0;
+		pdata->speed_multiplier = 1.0;
+		pdata->last_filename[0] = '\0';
+		pdata->interpolated = 0;
 		pdata->minmax.set_defaults();
+		memset(&pdata->ui_crops, 0, sizeof(pdata->ui_crops));
+		pdata->graph_data_source = 0;
+		pdata->graph_type = 0;
+		memset(&pdata->img_rect, 0, sizeof(pdata->img_rect));
+		pdata->last_bg_img_path[0] = '\0';
+		pdata->map_aspect_ratio_from_distance = 0.0;
+		pdata->bg_img = QImage();
+		pdata->bg_img_scaled = QImage();
+		pdata->bg_img_scaled_width = 0.0;
+		pdata->bg_img_scaled_height = 0.0;
+		pdata->bg_img_matched_rect = QRectF();
+		pdata->swap_180 = 0;
 	}
 }
 
