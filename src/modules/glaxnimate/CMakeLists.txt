@@ -53,12 +53,14 @@ set(GLAX_SOURCES
   ${CORE_DIR}io/base.cpp
 
   ${CORE_DIR}math/geom.cpp
+  ${CORE_DIR}math/polynomial.cpp
   ${CORE_DIR}math/ellipse_solver.cpp
   ${CORE_DIR}math/bezier/bezier.cpp
   ${CORE_DIR}math/bezier/point.cpp
   ${CORE_DIR}math/bezier/operations.cpp
   ${CORE_DIR}math/bezier/cubic_struts.cpp
   ${CORE_DIR}math/bezier/meta.cpp
+  ${CORE_DIR}math/bezier/bezier_length.cpp
 
   ${CORE_DIR}model/main_composition.cpp
   ${CORE_DIR}model/composition.cpp
@@ -109,6 +111,8 @@ set(GLAX_SOURCES
   ${CORE_DIR}model/shapes/inflate_deflate.cpp
   ${CORE_DIR}model/shapes/path_modifier.cpp
   ${CORE_DIR}model/shapes/round_corners.cpp
+  ${CORE_DIR}model/shapes/offset_path.cpp
+  ${CORE_DIR}model/shapes/zig_zag.cpp
 
   ${CORE_DIR}plugin/plugin.cpp
   ${CORE_DIR}plugin/action.cpp
