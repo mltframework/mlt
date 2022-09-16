@@ -251,8 +251,10 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 			int error = mlt_frame_get_image( first_frame, &image, &format, &width, &height, 0 );
 			if ( !error )
 			{
-			// cache the original producer's pixel format
-			mlt_properties_set_int( properties, "_original_format", (int) format );
+				// cache the original producer's pixel format
+				mlt_properties_set_int( properties, "_original_format", (int) format );
+				// Inform framework of the default frame format for this producer
+				mlt_properties_set_int( frame_properties, "format", format );
 			}
 		}
 

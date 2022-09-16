@@ -209,6 +209,8 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_properties_set_int( properties, "has_image", 1 );
 	mlt_properties_set_int( properties, "progressive", 1 );
 	mlt_properties_set_double( properties, "aspect_ratio", 1 );
+	// Inform framework that this producer creates yuv frames by default
+	mlt_properties_set_int( properties, "format", mlt_image_yuv422 );
 
 	// Push the image callback
 	mlt_frame_push_service( *frame, producer );

@@ -252,6 +252,17 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		if ( mlt_properties_get( producer_props, "colour" ) != NULL )
 			mlt_properties_set( producer_props, "resource", mlt_properties_get( producer_props, "colour" ) );
 		
+		char *colorstring = mlt_properties_get( producer_props, "resource" );
+		if ( colorstring && strchr( colorstring, '/' ) )
+		{
+			colorstring = strdup( strrchr( colorstring, '/' ) + 1 );
+			mlt_properties_set( producer_props, "resource", colorstring );
+			free( colorstring );
+		}
+		mlt_color color = mlt_properties_get_color( producer_props, "resource" );
+		// Inform framework of the default frame format for this producer
+		mlt_properties_set_int( properties, "format", color.a < 255 ? mlt_image_rgba : mlt_image_yuv422 );
+
 		// Push the get_image method
 		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_get_image( *frame, producer_get_image );

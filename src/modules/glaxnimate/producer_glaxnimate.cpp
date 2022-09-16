@@ -171,6 +171,8 @@ static int get_frame(mlt_producer producer, mlt_frame_ptr frame, int index)
 
 	// Set frame properties
 	mlt_properties_set_int(frame_properties, "progressive", 1);
+	// Inform framework that this producer creates rgba frames by default
+	mlt_properties_set_int( frame_properties, "format", mlt_image_rgba );
 	double force_ratio = mlt_properties_get_double(MLT_PRODUCER_PROPERTIES(producer), "force_aspect_ratio");
 	if (force_ratio > 0.0)
 		mlt_properties_set_double(frame_properties, "aspect_ratio", force_ratio);

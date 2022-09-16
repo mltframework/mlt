@@ -645,6 +645,49 @@ static enum AVPixelFormat pick_pix_fmt( enum AVPixelFormat pix_fmt )
 	}
 }
 
+static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt , int full_range, mlt_image_format current_format )
+{
+	if (current_format == mlt_image_none || current_format == mlt_image_movit
+		  || pix_fmt == AV_PIX_FMT_ARGB
+		  || pix_fmt == AV_PIX_FMT_RGBA
+		  || pix_fmt == AV_PIX_FMT_ABGR
+		  || pix_fmt == AV_PIX_FMT_BGRA)
+	{
+		switch ( pix_fmt )
+		{
+			case AV_PIX_FMT_ARGB:
+			case AV_PIX_FMT_RGBA:
+			case AV_PIX_FMT_ABGR:
+			case AV_PIX_FMT_BGRA:
+				return mlt_image_rgba;
+			case AV_PIX_FMT_YUV420P:
+			case AV_PIX_FMT_YUVJ420P:
+			case AV_PIX_FMT_YUVA420P:
+				return mlt_image_yuv420p;
+			case AV_PIX_FMT_RGB24:
+			case AV_PIX_FMT_BGR24:
+			case AV_PIX_FMT_GRAY8:
+			case AV_PIX_FMT_MONOWHITE:
+			case AV_PIX_FMT_MONOBLACK:
+			case AV_PIX_FMT_RGB8:
+			case AV_PIX_FMT_BGR8:
+			case AV_PIX_FMT_BAYER_RGGB16LE:
+				return mlt_image_rgb;
+			default:
+				return mlt_image_yuv422;
+		}
+	} else if (pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE
+		  ||  (pix_fmt == AV_PIX_FMT_YUV420P10LE && full_range)) {
+		return mlt_image_rgb;
+	}
+	else if (pix_fmt == AV_PIX_FMT_YUVA444P10LE
+		  || pix_fmt == AV_PIX_FMT_GBRAP10LE
+		  || pix_fmt == AV_PIX_FMT_GBRAP12LE) {
+		return mlt_image_rgba;
+	}
+	return current_format;
+}
+
 static int get_basic_info( producer_avformat self, mlt_profile profile, const char *filename )
 {
 	int error = 0;
@@ -723,7 +766,11 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 			struct SwsContext *context = sws_getContext( codec_params->width, codec_params->height, pix_fmt,
 				codec_params->width, codec_params->height, pick_pix_fmt( codec_params->format ), SWS_BILINEAR, NULL, NULL, NULL);
 			if ( context )
+			{
 				sws_freeContext( context );
+				mlt_image_format format = pick_image_format(pix_fmt, self->full_range, mlt_image_yuv422);
+				mlt_properties_set_int( properties, "format", format );
+			}
 			else
 				error = 1;
 		} else {
@@ -1251,33 +1298,6 @@ static void get_audio_streams_info( producer_avformat self )
 		self->audio_streams, self->audio_max_stream, self->total_channels, self->max_channel );
 }
 
-static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt )
-{
-	switch ( pix_fmt )
-	{
-	case AV_PIX_FMT_ARGB:
-	case AV_PIX_FMT_RGBA:
-	case AV_PIX_FMT_ABGR:
-	case AV_PIX_FMT_BGRA:
-		return mlt_image_rgba;
-	case AV_PIX_FMT_YUV420P:
-	case AV_PIX_FMT_YUVJ420P:
-	case AV_PIX_FMT_YUVA420P:
-		return mlt_image_yuv420p;
-	case AV_PIX_FMT_RGB24:
-	case AV_PIX_FMT_BGR24:
-	case AV_PIX_FMT_GRAY8:
-	case AV_PIX_FMT_MONOWHITE:
-	case AV_PIX_FMT_MONOBLACK:
-	case AV_PIX_FMT_RGB8:
-	case AV_PIX_FMT_BGR8:
-	case AV_PIX_FMT_BAYER_RGGB16LE:
-		return mlt_image_rgb;
-	default:
-		return mlt_image_yuv422;
-	}
-}
-
 static mlt_audio_format pick_audio_format( int sample_fmt )
 {
 	switch ( sample_fmt )
@@ -1725,21 +1745,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	codec_params = stream->codecpar;
 
 	// Only change the requested image format for special cases
-	if (*format == mlt_image_none || *format == mlt_image_movit
-		  || codec_params->format == AV_PIX_FMT_ARGB
-		  || codec_params->format == AV_PIX_FMT_RGBA
-		  || codec_params->format == AV_PIX_FMT_ABGR
-		  || codec_params->format == AV_PIX_FMT_BGRA) {
-		*format = pick_image_format(codec_params->format);
-	} else if (codec_params->format == AV_PIX_FMT_BAYER_RGGB16LE
-		  ||  (codec_params->format == AV_PIX_FMT_YUV420P10LE && self->full_range)) {
-		*format = mlt_image_rgb;
-	}
-	else if (codec_params->format == AV_PIX_FMT_YUVA444P10LE
-		  || codec_params->format == AV_PIX_FMT_GBRAP10LE
-		  || codec_params->format == AV_PIX_FMT_GBRAP12LE) {
-		*format = mlt_image_rgba;
-	}
+	*format = pick_image_format(codec_params->format, self->full_range, *format);
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
@@ -3102,16 +3108,15 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 
 	// Create an empty frame
 	*frame = mlt_frame_init( service);
-	
-	if ( *frame )
-	{
-		mlt_properties_set_data( MLT_FRAME_PROPERTIES(*frame), "avformat_cache", cache_item, 0, (mlt_destructor) mlt_cache_item_close, NULL );
-	}
-	else
+
+	if ( *frame == NULL )
 	{
 		mlt_cache_item_close( cache_item );
 		return 1;
 	}
+
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( *frame );
+	mlt_properties_set_data( frame_properties, "avformat_cache", cache_item, 0, (mlt_destructor) mlt_cache_item_close, NULL );
 
 	// Update timecode on the frame we're creating
 	mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
@@ -3122,9 +3127,11 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	// Set up the audio
 	producer_set_up_audio( self, *frame );
 
+	mlt_properties_set_int( frame_properties, "format", mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "format" ) );
+
 	// Set the position of this producer
 	mlt_position position = mlt_producer_frame( producer );
-	mlt_properties_set_position( MLT_FRAME_PROPERTIES( *frame ), "original_position", position );
+	mlt_properties_set_position( frame_properties, "original_position", position );
 
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );

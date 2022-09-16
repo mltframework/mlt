@@ -548,6 +548,8 @@ static int refresh_pixbuf( producer_pixbuf self, mlt_frame frame )
 			mlt_properties_set_int( producer_props, "meta.media.width", self->width );
 			mlt_properties_set_int( producer_props, "meta.media.height", self->height );
 			mlt_properties_set_int( producer_props, "_disable_exif", disable_exif );
+			int has_alpha = gdk_pixbuf_get_has_alpha( self->pixbuf );
+			mlt_properties_set_int( properties, "format", has_alpha ? mlt_image_rgba : mlt_image_rgb );
 			mlt_events_unblock( producer_props, NULL );
 
 		}

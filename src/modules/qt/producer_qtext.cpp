@@ -402,6 +402,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set( frame_properties, "_outline", mlt_properties_get( producer_properties, "outline" ) );
 		mlt_properties_set_data( frame_properties, "_producer_qtext", static_cast<void*>( producer ), 0, NULL, NULL );
 
+		// Inform framework that this producer creates rgba frames by default
+		mlt_properties_set_int( frame_properties, "format", mlt_image_rgba );
+
 		// Set frame properties
 		mlt_properties_set_int( frame_properties, "progressive", 1 );
 		double force_ratio = mlt_properties_get_double( producer_properties, "force_aspect_ratio" );

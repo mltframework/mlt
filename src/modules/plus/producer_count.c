@@ -595,6 +595,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		mlt_properties_set_int( frame_properties, "meta.media.width", profile->width );
 		mlt_properties_set_int( frame_properties, "meta.media.height", profile->height );
 
+		// Inform framework that this producer creates rgba frames by default
+		mlt_properties_set_int( frame_properties, "format", mlt_image_rgba );
+
 		// Configure callbacks
 		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_get_image( *frame, producer_get_image );
