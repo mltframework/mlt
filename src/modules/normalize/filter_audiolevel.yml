@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter
 identifier: audiolevel
 title: Audio Levels
-version: 1
+version: 2
 copyright: Dan Dennedy, Marco Gittler, and Steve Harris
 creator: Dan Dennedy
 contributor:
@@ -26,6 +26,14 @@ parameters:
     minimum: 0
     maximum: 1
     default: 1
+    widget: checkbox
+
+  - identifier: peak
+    title: output samples peak value in dB instead of percentage in _audio_level.<N>
+    type: integer
+    minimum: 0
+    maximum: 1
+    default: 0
     widget: checkbox
 
   - identifier: _audio_level.<N>
