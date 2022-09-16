@@ -120,7 +120,7 @@ mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
 
 mlt_service mlt_field_service( mlt_field self )
 {
-	return MLT_TRACTOR_SERVICE( self->tractor );
+	return self != NULL ? MLT_TRACTOR_SERVICE( self->tractor ) : NULL;
 }
 
 /** Get the multitrack.
