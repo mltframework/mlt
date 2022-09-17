@@ -414,11 +414,16 @@ static void mlt_service_disconnect( mlt_service self )
 
 mlt_service mlt_service_consumer( mlt_service self )
 {
-	// Get the service base
-	mlt_service_base *base = self->local;
+	if (self)
+	{
+		// Get the service base
+		mlt_service_base *base = self->local;
 
-	// Return the connected consumer
-	return base->out;
+		// Return the connected consumer
+		return base->out;
+	}
+	else
+		return self;
 }
 
 /** Obtain the producer a service is connected to.
@@ -430,11 +435,16 @@ mlt_service mlt_service_consumer( mlt_service self )
 
 mlt_service mlt_service_producer( mlt_service self )
 {
-	// Get the service base
-	mlt_service_base *base = self->local;
+	if (self)
+	{
+		// Get the service base
+		mlt_service_base *base = self->local;
 
-	// Return the connected producer
-	return base->count > 0 ? base->in[ base->count - 1 ] : NULL;
+		// Return the connected producer
+		return base->count > 0 ? base->in[ base->count - 1 ] : NULL;
+	}
+	else
+		return self;
 }
 
 /** Associate a service to a consumer.
