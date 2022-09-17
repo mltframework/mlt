@@ -61,7 +61,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
 
 	int iec_scale = mlt_properties_get_int( filter_props, "iec_scale" );
-	int peak = mlt_properties_get_int( filter_props, "peak" );
+	int peak = mlt_properties_get_int( filter_props, "dbpeak" );
 	*format = mlt_audio_s16;
 	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	if ( error || !buffer ) return error;
@@ -93,7 +93,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			}
 			else
 			{
-				level = 20 * log10( (double)peakVal / (double)INT16_MAX );
+				level = AMPTODBFS( (double)peakVal / (double)INT16_MAX );
 			}
 		}
 		else

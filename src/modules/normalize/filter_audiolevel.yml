@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: filter
 identifier: audiolevel
 title: Audio Levels
@@ -22,17 +22,13 @@ tags:
 parameters:
   - identifier: iec_scale
     title: Use IEC 60268-18 Scale
-    type: integer
-    minimum: 0
-    maximum: 1
+    type: bool
     default: 1
     widget: checkbox
 
-  - identifier: peak
-    title: output samples peak value in dB instead of percentage in _audio_level.<N>
-    type: integer
-    minimum: 0
-    maximum: 1
+  - identifier: dbpeak
+    title: output true peak value in dB instead of a percentage in _audio_level.<N>
+    type: bool
     default: 0
     widget: checkbox
 
