@@ -116,7 +116,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		{
 			oldfilm_init_seed(&seed, position * 10000 + num);
 			int type = (oldfilm_fast_rand(&seed) % 3) + 1;
-			int xmid = (double) (*width) * oldfilm_fast_rand(&seed) / RAND_MAX;
+			int xmid = (double) (*width) * oldfilm_fast_rand(&seed) / INT_MAX;
 			int dx = oldfilm_fast_rand(&seed) % line_width;
 			int ystart = oldfilm_fast_rand(&seed) % (*height);
 			int yend = oldfilm_fast_rand(&seed) % (*height);
