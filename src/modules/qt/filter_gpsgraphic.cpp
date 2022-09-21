@@ -327,16 +327,15 @@ static void process_frame_properties (mlt_filter filter, mlt_frame frame, s_base
 			else
 				now_perc_horizontal = get_as_percentage(crt_weighted.time, pdata->ui_crops.min_crop_time, pdata->ui_crops.max_crop_time);
 
-			//crop_left = Pcrop*delta + left_min; left_min = perc_horiz - delta; right_min = perc_horiz
-			//crop_right = (1-Pcrop)*delta + right_min, delta = perc_horiz if > 0.5 else (1-perc_horiz)
-			double delta_h = now_perc_horizontal > 0.5 ? now_perc_horizontal : 1-now_perc_horizontal;
-			used_crops.left = ( pdata->ui_crops.left / 100 * delta_h  + (now_perc_horizontal - delta_h) ) * 100;
-			used_crops.right = ( (1 - pdata->ui_crops.left / 100) * delta_h  + now_perc_horizontal ) * 100;
+			//final crop is now_percentage +/- half of 100 - user requested crop (so a 90% crop means show 10% of the map, 5% above and 5% below the centered now_point)
+			double delta_h = (100 - pdata->ui_crops.left) / 2.0;
+			used_crops.left = now_perc_horizontal*100 - delta_h;
+			used_crops.right = now_perc_horizontal*100 + delta_h;
 
-			double delta_v = now_perc_vertical > 0.5 ? now_perc_vertical : 1-now_perc_vertical;
-			used_crops.bot = ( pdata->ui_crops.bot / 100 * delta_v + (now_perc_vertical - delta_v) ) * 100;
-			used_crops.top = ( (1 - pdata->ui_crops.bot / 100 ) * delta_v + now_perc_vertical ) * 100;
-			
+			double delta_v = (100 - pdata->ui_crops.bot) / 2.0;
+			used_crops.bot = now_perc_vertical*100 - delta_v;
+			used_crops.top = now_perc_vertical*100 + delta_v;
+
 			//if not 2d map, center for vertical axis is not something we want, so just use standard crop logic
 			if (pdata->graph_data_source != gspg_location_src)
 			{
