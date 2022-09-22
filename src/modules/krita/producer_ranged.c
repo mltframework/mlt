@@ -39,6 +39,7 @@ typedef struct
 	int frame_start;
 	int frame_end;
 	int limit_enabled;
+	double speed;
 	mlt_producer producer_internal;
 } private_data;
 
@@ -57,6 +58,28 @@ int is_limit_enabled( const private_data* pdata) {
 	return pdata->limit_enabled != 0;
 }
 
+static int producer_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
+{
+	mlt_producer producer = mlt_frame_pop_audio( frame );
+	private_data* pdata = (private_data*)producer->child;
+	struct mlt_audio_s audio;
+	mlt_audio_set_values( &audio, *buffer, *frequency, *format, *samples, *channels );
+
+	int error = mlt_frame_get_audio( frame, &audio.data, &audio.format, &audio.frequency, &audio.channels, &audio.samples );
+
+	// Scale the frequency to account for the speed change.
+	audio.frequency = (double)audio.frequency * fabs(pdata->speed);
+
+	if( pdata->speed < 0.0 )
+	{
+		mlt_audio_reverse( &audio );
+	}
+
+	mlt_audio_get_values( &audio, buffer, frequency, format, samples, channels );
+
+	return error;
+}
+
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 {
 	private_data* pdata = (private_data*)producer->child;
@@ -67,6 +90,12 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	}
 
 	int r = mlt_service_get_frame((mlt_service)pdata->producer_internal, frame, index);
+
+	if ( !mlt_frame_is_test_audio( *frame ) )
+	{
+		mlt_frame_push_audio( *frame, producer );
+		mlt_frame_push_audio( *frame, producer_get_audio );
+	}
 
 	return r;
 }
@@ -98,6 +127,11 @@ static void producer_property_changed( mlt_service owner, mlt_producer self, mlt
 		mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
 		pdata->limit_enabled = mlt_properties_get_int(props, "limit_enabled");
 	//}
+
+	if (strcmp(name, "speed")) {
+		mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
+		pdata->speed = mlt_properties_get_double(props, "speed");
+	}
 
 	if (strcmp(name, "_profile")) {
 		private_data* pdata = (private_data*)self->child;
@@ -144,11 +178,13 @@ mlt_producer producer_ranged_init( mlt_profile profile, mlt_service_type type, c
 		pdata->frame_start = -1;
 		pdata->frame_end = -1;
 		pdata->limit_enabled = 1;
+		pdata->speed = 1.0;
 
 		// Initialize property values for start / end frames.
 		mlt_properties_set_int(producer_properties, "start_frame", pdata->frame_start);
 		mlt_properties_set_int(producer_properties, "end_frame", pdata->frame_end);
 		mlt_properties_set_int(producer_properties, "limit_enabled", pdata->limit_enabled);
+		mlt_properties_set_double(producer_properties, "speed", pdata->speed);
 
 		// Create a producer for the clip using the false profile.
 		pdata->producer_internal = mlt_factory_producer( profile, "abnormal", resource);
