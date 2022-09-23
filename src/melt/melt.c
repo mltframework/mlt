@@ -87,7 +87,11 @@ static void transport_action( mlt_producer producer, char *value )
 				mlt_producer_set_speed( producer, 0 );
 				mlt_consumer_purge( consumer );
 				if (jit_status.playing) {
-					mlt_producer_seek( producer, mlt_consumer_position( consumer ) - 2 );
+					if (jit_control->has_seek_position) {
+						mlt_producer_seek( producer, jit_control->seek_position);
+					} else {
+						mlt_producer_seek( producer, mlt_consumer_position( consumer ) - 2 );
+					}
 				}
 			}
 			mlt_events_fire( jack, "jack-stop", mlt_event_data_none() );
