@@ -22,13 +22,13 @@ tags:
 parameters:
   - identifier: iec_scale
     title: Use IEC 60268-18 Scale
-    type: bool
+    type: boolean
     default: 1
     widget: checkbox
 
   - identifier: dbpeak
     title: output true peak value in dB instead of a percentage in _audio_level.<N>
-    type: bool
+    type: boolean
     default: 0
     widget: checkbox
 
