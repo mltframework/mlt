@@ -25,16 +25,6 @@
 #include <QPainter>
 #include <QTransform>
 
-static int is_opaque( uint8_t *image, int width, int height )
-{
-	int pixels = width * height + 1;
-	while ( --pixels ) {
-		if ( image[3] != 0xff ) return 0;
-		image += 4;
-	}
-	return 1;
-}
-
 static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	int error = 0;
@@ -65,7 +55,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	int b_height = mlt_properties_get_int( b_properties, "meta.media.height" );
 	bool distort = mlt_properties_get_int( transition_properties, "distort" );
 
-	// Potention optimization if the producers do set their native format before fetching image
+	// Check the producer's native format before fetching image
 	if (mlt_properties_get_int( b_properties, "format" ) == mlt_image_rgba) {
 		hasAlpha = true;
 		*format = mlt_image_rgba;
@@ -204,7 +194,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		{
 			hasAlpha = true;
 		}
-		if (hasAlpha && is_opaque( b_image, b_width, b_height ) )
+		if ( hasAlpha && mlt_image_rgba_opaque( b_image, b_width, b_height ) )
 		{
 			hasAlpha = false;
 		}

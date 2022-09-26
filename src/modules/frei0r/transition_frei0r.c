@@ -22,16 +22,6 @@
 #include "frei0r_helper.h"
 #include <string.h>
 
-static int is_opaque( uint8_t *image, int width, int height )
-{
-	int pixels = width * height + 1;
-	while ( --pixels ) {
-		if ( image[3] != 0xff ) return 0;
-		image += 4;
-	}
-	return 1;
-}
-
 static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable ){
 	
 	mlt_frame b_frame = mlt_frame_pop_frame( a_frame );
@@ -68,7 +58,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	    && ( !mlt_properties_get( properties, "1" ) || !strcmp( "normal", mlt_properties_get( properties, "1" ) ) )
 	    && ( !blend_mode || !strcmp("normal", blend_mode) )
 	    // Check if the alpha channel is entirely opaque.
-	    && is_opaque( images[1], *width, *height ) )
+	    && mlt_image_rgba_opaque( images[1], *width, *height ) )
 	{
 		if (invert)
 			error = mlt_frame_get_image( a_frame, image, format, width, height, 0 );
