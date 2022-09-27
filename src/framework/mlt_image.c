@@ -584,3 +584,20 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 		strides[3] = 0;
 	};
 }
+
+
+
+/** Check if the alpha channel of an rgba image is opaque
+ *
+ * \public \memberof mlt_image_s
+ * \param image the image buffer
+ * \param width width of the image in pixels
+ * \param height height of the image in pixels
+ */
+int mlt_image_rgba_opaque(uint8_t *image, int width, int height)
+{
+	for (int i = 0; i < width * height; ++i) {
+		if (image[4 * i + 3] != 0xff) return 0;
+	}
+	return 1;
+}

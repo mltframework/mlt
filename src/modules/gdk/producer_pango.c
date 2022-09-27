@@ -565,6 +565,8 @@ static void refresh_image( producer_pango self, mlt_frame frame, int width, int 
 		// Store width and height
 		self->width = width;
 		self->height = height;
+		int has_alpha = gdk_pixbuf_get_has_alpha( self->pixbuf );
+		mlt_properties_set_int( properties, "format", has_alpha ? mlt_image_rgba : mlt_image_rgb );
 	}
 
 	// Set width/height

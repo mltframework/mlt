@@ -646,4 +646,5 @@ MLT_7.10.0 {
   global:
     mlt_image_fill_checkerboard;
     mlt_image_fill_white;
+    mlt_image_rgba_opaque;
 } MLT_7.8.0;

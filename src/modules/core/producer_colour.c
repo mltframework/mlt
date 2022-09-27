@@ -78,13 +78,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_image_format current_format = mlt_properties_get_int( producer_props, "_format" );
 
 	// Parse the colour
-	if ( now && strchr( now, '/' ) )
-	{
-		now = strdup( strrchr( now, '/' ) + 1 );
-		mlt_properties_set( producer_props, "resource", now );
-		free( now );
-		now = mlt_properties_get( producer_props, "resource" );
-	}
 	mlt_color color = mlt_properties_get_color( producer_props, "resource" );
 
 	if ( mlt_properties_get( producer_props, "mlt_image_format") )
@@ -251,7 +244,26 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// colour is an alias for resource
 		if ( mlt_properties_get( producer_props, "colour" ) != NULL )
 			mlt_properties_set( producer_props, "resource", mlt_properties_get( producer_props, "colour" ) );
-		
+
+		char *colorstring = mlt_properties_get( producer_props, "resource" );
+		if ( colorstring && strchr( colorstring, '/' ) )
+		{
+			colorstring = strdup( strrchr( colorstring, '/' ) + 1 );
+			mlt_properties_set( producer_props, "resource", colorstring );
+			free( colorstring );
+		}
+
+		// Check if we have a predefined image format
+		if ( mlt_properties_exists( producer_props, "mlt_image_format") )
+		{
+			int image_format = mlt_image_format_id( mlt_properties_get( producer_props, "mlt_image_format") );
+			mlt_properties_set_int( properties, "format", image_format );
+		} else {
+			mlt_color color = mlt_properties_get_color( producer_props, "resource" );
+			// Inform framework of the default frame format for this producer
+			mlt_properties_set_int( properties, "format", color.a < 255 ? mlt_image_rgba : mlt_image_yuv422 );
+		}
+
 		// Push the get_image method
 		mlt_frame_push_service( *frame, producer );
 		mlt_frame_push_get_image( *frame, producer_get_image );

@@ -170,6 +170,9 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 		// Set producer-specific frame properties
 		mlt_properties_set_int( properties, "progressive", 1 );
 
+		// Inform framework that this producer creates yuv frames by default
+		mlt_properties_set_int( properties, "format", mlt_image_yuv422 );
+
 		// Update timecode on the frame we're creating
 		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
 

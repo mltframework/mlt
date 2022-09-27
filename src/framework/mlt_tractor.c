@@ -562,6 +562,7 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
 				mlt_frame_push_service( *frame, producer_get_image );
 				mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( video_properties, "width" ) );
 				mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( video_properties, "height" ) );
+				mlt_properties_set_int( frame_properties, "format", mlt_properties_get_int( video_properties, "format" ) );
 				mlt_properties_pass_list( frame_properties, video_properties, "meta.media.width, meta.media.height" );
 				mlt_properties_set_int( frame_properties, "progressive", mlt_properties_get_int( video_properties, "progressive" ) );
 				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );

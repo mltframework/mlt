@@ -76,6 +76,8 @@ int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
 		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
 		mlt_properties_set_int( properties, "meta.media.width", profile->width );
 		mlt_properties_set_int( properties, "meta.media.height", profile->height );
+		// Inform framework that this producer creates rgba frames by default
+		mlt_properties_set_int( properties, "format", mlt_image_rgba );
 
 		// Push the get_image method
 		mlt_frame_push_service( *frame, producer );

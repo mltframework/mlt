@@ -245,6 +245,7 @@ int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching )
 			self->current_height = qimage->height( );
 
 			mlt_events_block( producer_props, NULL );
+			mlt_properties_set_int( producer_props, "format", qimage->hasAlphaChannel() ? mlt_image_rgba : mlt_image_rgb);
 			mlt_properties_set_int( producer_props, "meta.media.width", self->current_width );
 			mlt_properties_set_int( producer_props, "meta.media.height", self->current_height );
 			mlt_properties_set_int( producer_props, "_disable_exif", disable_exif );
