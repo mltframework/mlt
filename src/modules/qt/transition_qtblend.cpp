@@ -194,7 +194,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		{
 			hasAlpha = true;
 		}
-		hasAlpha = hasAlpha && mlt_image_rgba_opaque( b_image, b_width, b_height );
+		hasAlpha = hasAlpha && !mlt_image_rgba_opaque( b_image, b_width, b_height );
 	}
 	if ( !hasAlpha )
 	{
@@ -213,7 +213,6 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			*height = b_height;
 		}
 		*image = b_image;
-		// mlt_frame_replace_image( a_frame, b_image, *format, *width, *height );
 		free( interps );
 		return 0;
 	}
