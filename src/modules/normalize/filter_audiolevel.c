@@ -61,6 +61,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	mlt_properties filter_props = MLT_FILTER_PROPERTIES( filter );
 
 	int iec_scale = mlt_properties_get_int( filter_props, "iec_scale" );
+	int dbPeak = mlt_properties_get_int( filter_props, "dbpeak" );
 	*format = mlt_audio_s16;
 	int error = mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 	if ( error || !buffer ) return error;
@@ -74,32 +75,51 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	for ( c = 0; c < *channels; c++ )
 	{
-		double val = 0;
 		double level = 0.0;
-
-		for ( s = 0; s < num_samples; s++ )
+		if ( dbPeak )
 		{
-			double sample = fabs( pcm[c + s * num_channels] / 128.0 );
-			val += sample;
-			if ( sample == 128 )
-				num_oversample++;
-			else
-				num_oversample = 0;
-			// 10 samples @max => show max signal
-			if ( num_oversample > 10 )
+			int16_t peakVal = 0;
+			for ( s = 0; s < num_samples; s++ )
 			{
-				level = 1.0;
-				break;
+				int16_t sample = abs( pcm[c + s * num_channels] );
+				if ( sample > peakVal )
+					peakVal = sample;
 			}
-			// if 3 samples over max => 1 peak over 0 db (0 dB = 40.0)
-			if ( num_oversample > 3 )
-				level = 41.0/42.0;
+			if ( peakVal == 0 )
+				level = -100;
+			else
+				level = AMPTODBFS( (double)peakVal / (double)INT16_MAX );
+
+			if ( iec_scale )
+				level = IEC_Scale( level );
 		}
-		// max amplitude = 40/42, 3to10  oversamples=41, more then 10 oversamples=42
-		if ( level == 0.0 && num_samples > 0 )
-			level = val / num_samples * 40.0/42.0 / 127.0;
-		if ( iec_scale )
-			level = IEC_Scale( AMPTODBFS( level ) );
+		else
+		{
+			double val = 0;
+			for ( s = 0; s < num_samples; s++ )
+			{
+				double sample = fabs( pcm[c + s * num_channels] / 128.0 );
+				val += sample;
+				if ( sample == 128 )
+					num_oversample++;
+				else
+					num_oversample = 0;
+				// 10 samples @max => show max signal
+				if ( num_oversample > 10 )
+				{
+					level = 1.0;
+					break;
+				}
+				// if 3 samples over max => 1 peak over 0 db (0 dB = 40.0)
+				if ( num_oversample > 3 )
+					level = 41.0/42.0;
+			}
+			// max amplitude = 40/42, 3to10  oversamples=41, more then 10 oversamples=42
+			if ( level == 0.0 && num_samples > 0 )
+				level = val / num_samples * 40.0/42.0 / 127.0;
+			if ( iec_scale )
+				level = IEC_Scale( AMPTODBFS( level ) );
+		}
 		sprintf( key, "meta.media.audio_level.%d", c );
 		mlt_properties_set_double( MLT_FRAME_PROPERTIES( frame ), key, level );
 		sprintf( key, "_audio_level.%d", c );
