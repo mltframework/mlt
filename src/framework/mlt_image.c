@@ -318,18 +318,21 @@ void mlt_image_fill_black( mlt_image self )
   */
 void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
 {
-	if ( !self->data) return;
+    if (!self->data) return;
 
 	if (sample_aspect_ratio == 0) sample_aspect_ratio = 1.0;
 	int h = 0.025 * MAX(self->width * sample_aspect_ratio, self->height);
 	int w = h / sample_aspect_ratio;
-	// compute center offsets
+
+    if (w <= 0 || h <= 0) return;
+
+    // compute center offsets
 	int ox = w * 2 - (self->width / 2) % (w * 2);
 	int oy = h * 2 - (self->height / 2) % (h * 2);
 	int bpp = self->strides[0] / self->width;
 	uint8_t color, gray1 = 0x7F, gray2 = 0xB2;
 
-	switch( self->format )
+    switch (self->format)
 	{
 		case mlt_image_invalid:
 		case mlt_image_none:
