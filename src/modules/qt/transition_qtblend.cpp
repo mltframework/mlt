@@ -190,14 +190,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		// fetch image
 		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 0 );
 		bool imageFetched = true;
-		if (!hasAlpha && *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) )
+		if ( !hasAlpha && ( *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) ) )
 		{
 			hasAlpha = true;
 		}
-		if ( hasAlpha && mlt_image_rgba_opaque( b_image, b_width, b_height ) )
-		{
-			hasAlpha = false;
-		}
+		hasAlpha = hasAlpha && mlt_image_rgba_opaque( b_image, b_width, b_height );
 	}
 	if ( !hasAlpha )
 	{

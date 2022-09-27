@@ -78,13 +78,6 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	mlt_image_format current_format = mlt_properties_get_int( producer_props, "_format" );
 
 	// Parse the colour
-	if ( now && strchr( now, '/' ) )
-	{
-		now = strdup( strrchr( now, '/' ) + 1 );
-		mlt_properties_set( producer_props, "resource", now );
-		free( now );
-		now = mlt_properties_get( producer_props, "resource" );
-	}
 	mlt_color color = mlt_properties_get_color( producer_props, "resource" );
 
 	if ( mlt_properties_get( producer_props, "mlt_image_format") )
