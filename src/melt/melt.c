@@ -1267,9 +1267,9 @@ query_all:
 			consumer = create_consumer( profile, NULL );
 	}
 
-	// video plays automatically
+	// video is paused initially
 	jit_status.has_playing = 1;
-	jit_status.playing = 1;
+	jit_status.playing = 0;
 
 	// media info
 	mlt_producer av = find_producer_avformat(melt);
@@ -1397,6 +1397,10 @@ query_all:
 				signal( SIGHUP, stop_handler );
 				signal( SIGPIPE, stop_handler );
 #endif
+
+				// start in paused state
+				mlt_producer_set_speed( melt, 0 );
+				mlt_producer_seek( melt, 0 );
 
 				// Transport functionality
 				transport( melt, consumer );
