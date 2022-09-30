@@ -63,7 +63,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 			// Check if the alpha channel is opaque
 			struct mlt_image_s b_image;
 			mlt_image_set_values(&b_image, images[1], *format, *width, *height);
-			b_image.planes[3] = mlt_frame_get_alpha(b_frame);
+			if (*format != mlt_image_rgba) {
+				b_image.planes[3] = mlt_frame_get_alpha(b_frame);
+				b_image.strides[3] = *width;
+			}
 			has_alpha = !mlt_image_is_opaque(&b_image);
 		}
 	}

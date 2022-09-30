@@ -198,7 +198,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		{
 			struct mlt_image_s bimg;
 			mlt_image_set_values( &bimg, b_image, *format, b_width, b_height );
-			bimg.planes[3] = mlt_frame_get_alpha( b_frame );
+			if ( *format != mlt_image_rgba )
+			{
+				bimg.planes[3] = mlt_frame_get_alpha( b_frame );
+				bimg.strides[3] = b_width;
+			}
 			hasAlpha = !mlt_image_is_opaque( &bimg );
 		}
 	}

@@ -587,7 +587,7 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 
 /** Check if the image is opaque.
  *
- * \note You probably need to set self->planes[3] if the image is not rgba.
+ * \note You probably need to set self->planes[3] and strides[3] if the image is not rgba.
  * \public \memberof mlt_image_s
  * \return whether the image is opaque or not
  */
