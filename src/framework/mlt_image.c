@@ -532,7 +532,7 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 	return 0;
 }
 
-/** Build a planes pointers of image mapping
+/** Build a planes pointers of image mapping.
  *
  * For proper and unified planar image processing, planes sizes and planes pointers should
  * be provides to processing code.
@@ -585,19 +585,30 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 	};
 }
 
-
-
-/** Check if the alpha channel of an rgba image is opaque
+/** Check if the image is opaque.
  *
+ * \note You probably need to set self->planes[3] if the image is not rgba.
  * \public \memberof mlt_image_s
- * \param image the image buffer
- * \param width width of the image in pixels
- * \param height height of the image in pixels
+ * \return whether the image is opaque or not
  */
-int mlt_image_rgba_opaque(uint8_t *image, int width, int height)
+int mlt_image_is_opaque(mlt_image self)
 {
-	for (int i = 0; i < width * height; ++i) {
-		if (image[4 * i + 3] != 0xff) return 0;
+	if (!self->data) return 0;
+
+	if (self->format == mlt_image_rgba && self->planes[0]) {
+		for (int i = 0; i < self->height; i++) {
+			uint8_t* p = self->planes[0] + (self->strides[0] * i) + 3;
+			for (int j = 0; j < self->width; j++) {
+				if (p[4 * j] != 0xff) return 0;
+			}
+		}
+	} else if (self->planes[3]) {
+		for (int i = 0; i < self->height; i++) {
+			uint8_t* p = self->planes[3] + (self->strides[3] * i);
+			for (int j = 0; j < self->width; j++) {
+				if (p[j] != 0xff) return 0;
+			}
+		}
 	}
 	return 1;
 }
