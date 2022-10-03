@@ -129,9 +129,9 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 	rect.h *= scale;
 	char* graph_type = mlt_properties_get( filter_properties, "type" );
 	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
-	int segments = mlt_properties_get_int( filter_properties, "segments" );
-	int segment_gap = mlt_properties_get_int( filter_properties, "segment_gap" ) * scale;
-	int segment_width = mlt_properties_get_int( filter_properties, "thickness" ) * scale;
+	int segments = mlt_properties_anim_get_int( filter_properties, "segments", position, length );
+	int segment_gap = mlt_properties_anim_get_int( filter_properties, "segment_gap", position, length ) * scale;
+	int segment_width = mlt_properties_anim_get_int( filter_properties, "thickness", position, length ) * scale;
 	QVector<QColor> colors = get_graph_colors( filter_properties );
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
@@ -142,10 +142,10 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 		r.setHeight( r.height() / 2.0 );
 	}
 
-	setup_graph_painter( p, r, filter_properties );
-	setup_graph_pen( p, r, filter_properties, scale );
+	setup_graph_painter( p, r, filter_properties, position, length );
+	setup_graph_pen( p, r, filter_properties, scale, position, length );
 
-	int channels = mlt_properties_get_int( filter_properties, "channels" );
+	int channels = mlt_properties_anim_get_int( filter_properties, "channels", position, length );
 	if ( channels == 0 ) {
 		// "0" means use number of channels in the frame
 		channels = mlt_properties_get_int( MLT_FRAME_PROPERTIES(frame), "audio_channels" );

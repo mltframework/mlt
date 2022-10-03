@@ -80,6 +80,7 @@ parameters:
     maximum: 20
     mutable: yes
     widget: spinner
+    animation: yes
     
   - identifier: angle
     title: Angle

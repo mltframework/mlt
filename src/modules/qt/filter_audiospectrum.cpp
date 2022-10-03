@@ -95,12 +95,14 @@ static void convert_fft_to_spectrum( mlt_filter filter, mlt_frame frame, int spe
 	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
 	mlt_properties fft_properties = MLT_FILTER_PROPERTIES( pdata->fft );
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	double low_freq = mlt_properties_get_int( filter_properties, "frequency_low" );
-	double hi_freq = mlt_properties_get_int( filter_properties, "frequency_high" );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
+	double low_freq = mlt_properties_anim_get_int( filter_properties, "frequency_low", position, length );
+	double hi_freq = mlt_properties_anim_get_int( filter_properties, "frequency_high", position, length );
 	int bin_count = mlt_properties_get_int( fft_properties, "bin_count" );
 	double bin_width = mlt_properties_get_double( fft_properties, "bin_width" );
 	float* bins = (float*)mlt_properties_get_data( frame_properties, pdata->fft_prop_name, NULL );
-	double threshold = mlt_properties_get_int( filter_properties, "threshold" );
+	double threshold = mlt_properties_anim_get_int( filter_properties, "threshold", position, length );
 	int reverse = mlt_properties_get_int( filter_properties, "reverse" );
 
 	// Map the linear fft bin frequencies to a log scale spectrum.
@@ -198,10 +200,10 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg, int
 	char* graph_type = mlt_properties_get( filter_properties, "type" );
 	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
 	int fill = mlt_properties_get_int( filter_properties, "fill" );
-	double tension = mlt_properties_get_double( filter_properties, "tension" );
-	int segments = mlt_properties_get_int( filter_properties, "segments" );
-	int segment_gap = mlt_properties_get_int( filter_properties, "segment_gap" ) * scale;
-	int segment_width = mlt_properties_get_int( filter_properties, "thickness" ) * scale;
+	double tension = mlt_properties_anim_get_double( filter_properties, "tension", position, length );
+	int segments = mlt_properties_anim_get_int( filter_properties, "segments", position, length );
+	int segment_gap = mlt_properties_anim_get_int( filter_properties, "segment_gap", position, length ) * scale;
+	int segment_width = mlt_properties_anim_get_int( filter_properties, "thickness", position, length ) * scale;
 	QVector<QColor> colors = get_graph_colors( filter_properties );
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
@@ -212,10 +214,10 @@ static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg, int
 		r.setHeight( r.height() / 2.0 );
 	}
 
-	setup_graph_painter( p, r, filter_properties );
-	setup_graph_pen( p, r, filter_properties, scale );
+	setup_graph_painter( p, r, filter_properties, position, length );
+	setup_graph_pen( p, r, filter_properties, scale, position, length );
 
-	int bands = mlt_properties_get_int( filter_properties, "bands" );
+	int bands = mlt_properties_anim_get_int( filter_properties, "bands", position, length );
 	if ( bands == 0 ) {
 		// "0" means match rectangle width
 		bands = r.width();

@@ -78,6 +78,7 @@ parameters:
     mutable: yes
     widget: spinner
     unit: pixels
+    animation: yes
     
   - identifier: angle
     title: Angle
@@ -90,6 +91,7 @@ parameters:
     maximum: 360
     mutable: yes
     widget: spinner
+    animation: yes
 
   - identifier: rect
     title: Rectangle
@@ -148,6 +150,7 @@ parameters:
     default: 0.4
     readonly: no
     mutable: yes
+    animation: yes
     
   - identifier: gorient
     title: Gradient Orientation
@@ -172,6 +175,7 @@ parameters:
     minimum: 0
     maximum: 100
     unit: pixels
+    animation: yes
     
   - identifier: bands
     title: Points
@@ -182,6 +186,7 @@ parameters:
     mutable: yes
     readonly: no
     default: 31
+    animation: yes
     
   - identifier: frequency_low
     title: Low Frequency
@@ -193,6 +198,7 @@ parameters:
     readonly: no
     default: 20
     unit: Hz
+    animation: yes
     
   - identifier: frequency_high
     title: High Frequency
@@ -204,6 +210,7 @@ parameters:
     readonly: no
     default: 20000
     unit: Hz
+    animation: yes
     
   - identifier: threshold
     title: Level Threshold
@@ -218,6 +225,7 @@ parameters:
     minimum: -100
     maximum: 0
     unit: dB
+    animation: yes
     
   - identifier: segments
     title: Segments
@@ -229,6 +237,7 @@ parameters:
     default: 10
     minimum: 2
     maximum: 100
+    animation: yes
     
   - identifier: window_size
     title: Window Size
