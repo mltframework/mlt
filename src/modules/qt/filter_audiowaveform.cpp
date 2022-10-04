@@ -263,7 +263,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg,
 	mlt_position position = mlt_filter_get_position( filter, frame );
 	mlt_position length = mlt_filter_get_length2( filter, frame );
 	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-	int show_channel = mlt_properties_get_int( filter_properties, "show_channel" );
+	int show_channel = mlt_properties_anim_get_int( filter_properties, "show_channel", position, length );
 	int fill = mlt_properties_get_int( filter_properties, "fill" );
 	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
 	if ( strchr( mlt_properties_get( filter_properties, "rect" ), '%' ) ) {
@@ -283,7 +283,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg,
 
 	QPainter p( qimg );
 
-	setup_graph_painter( p, r, filter_properties );
+	setup_graph_painter( p, r, filter_properties, position, length );
 
 	if ( show_channel == -1 ) // Combine all channels
 	{
@@ -314,7 +314,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg,
 			// Divide the rectangle into smaller rectangles for each channel.
 			c_rect.setY( r.y() + c_height * c );
 			c_rect.setHeight( c_height );
-			setup_graph_pen( p, c_rect, filter_properties, scale );
+			setup_graph_pen( p, c_rect, filter_properties, scale, position, length );
 			paint_waveform( p, c_rect, audio + c, samples, channels, fill );
 		}
 	} else if ( show_channel > 0 ) { // Show one specific channel
@@ -322,7 +322,7 @@ static void draw_waveforms( mlt_filter filter, mlt_frame frame, QImage* qimg,
 			// Sanity
 			show_channel = 1;
 		}
-		setup_graph_pen( p, r, filter_properties, scale );
+		setup_graph_pen( p, r, filter_properties, scale, position, length );
 		paint_waveform( p, r, audio + show_channel - 1, samples, channels, fill );
 	}
 

@@ -77,6 +77,7 @@ parameters:
     mutable: yes
     widget: spinner
     unit: pixels
+    animation: yes
     
   - identifier: angle
     title: Angle
@@ -89,6 +90,7 @@ parameters:
     maximum: 360
     mutable: yes
     widget: spinner
+    animation: yes
 
   - identifier: rect
     title: Rectangle
@@ -102,6 +104,7 @@ parameters:
     default: "0 0 100% 100%"
     readonly: no
     mutable: yes
+    animation: yes
     
   - identifier: mirror
     title: Mirror
@@ -143,6 +146,7 @@ parameters:
     mutable: yes
     readonly: no
     default: 2
+    animation: yes
 
   - identifier: segments
     title: Segments
@@ -154,6 +158,7 @@ parameters:
     default: 10
     minimum: 2
     maximum: 100
+    animation: yes
 
   - identifier: segment_gap
     title: Segment Gap
@@ -166,3 +171,4 @@ parameters:
     minimum: 0
     maximum: 100
     unit: pixels
+    animation: yes
