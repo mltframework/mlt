@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -983,6 +983,7 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 {
 	int hours, mins, secs;
 	char frame_sep = ':';
+	int save_frames = frames;
 
 	if ( fps == 30000.0/1001.0 )
 	{
@@ -1016,9 +1017,20 @@ static void time_smpte_from_frames( int frames, double fps, char *s, int drop )
 	frames -= floor( hours * 3600 * fps );
 
 	mins = frames / ( fps * 60 );
+	if (mins == 60) { // floating point error
+		++hours;
+		frames = save_frames - floor( hours * 3600 * fps );
+		mins = 0;
+	}
+	save_frames = frames;
 	frames -= floor( mins * 60 * fps );
 
 	secs = frames / fps;
+	if (secs == 60) { // floating point error
+		++mins;
+		frames = save_frames - floor( mins * 60 * fps );
+		secs = 0;
+	}
 	frames -= ceil( secs * fps );
 
 	sprintf( s, "%02d:%02d:%02d%c%0*d", hours, mins, secs, frame_sep,
@@ -1037,12 +1049,26 @@ static void time_clock_from_frames( int frames, double fps, char *s )
 {
 	int hours, mins;
 	double secs;
+	int save_frames = frames;
 
 	hours = frames / ( fps * 3600 );
 	frames -= floor( hours * 3600 * fps );
+
 	mins = frames / ( fps * 60 );
+	if (mins == 60) { // floating point error
+		++hours;
+		frames = save_frames - floor( hours * 3600 * fps );
+		mins = 0;
+	}
+	save_frames = frames;
 	frames -= floor( mins * 60  * fps );
+
 	secs = frames / fps;
+	if (secs >= 60.0) { // floating point error
+		++mins;
+		frames = save_frames - floor( mins * 60 * fps );
+		secs = frames / fps;
+	}
 
 	sprintf( s, "%02d:%02d:%06.3f", hours, mins, secs );
 }

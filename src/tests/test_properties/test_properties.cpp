@@ -203,14 +203,14 @@ private Q_SLOTS:
         Properties p;
         p.set("_profile", profile.get_profile(), 0);
         const char *timeString = "00:00:17;09";
-		// Looking just add seconds:
-		//   510 f / 29.97 fps = 17.017017017 s
-		//   29.97 fps * 17 s  = 509.49 f
-		//   round(509.49) = 509 f, which it not equal to 510, the original amount.
-		//   However, ceiling(509.49) = 510 f
-		// Now, adding on the frames part:
-		//   509.49 f + 9 f = 518.49 f
-		//   ceiling(518.49) = 519 f
+        // Looking just add seconds:
+        //   510 f / 29.97 fps = 17.017017017 s
+        //   29.97 fps * 17 s  = 509.49 f
+        //   round(509.49) = 509 f, which it not equal to 510, the original amount.
+        //   However, ceiling(509.49) = 510 f
+        // Now, adding on the frames part:
+        //   509.49 f + 9 f = 518.49 f
+        //   ceiling(518.49) = 519 f
         const int frames = 519;
         p.set("key", timeString);
         QCOMPARE(p.get_int("key"), frames);
@@ -243,21 +243,27 @@ private Q_SLOTS:
         Properties p;
         p.set("_profile", profile.get_profile(), 0);
         const char *timeString = "11:22:33:04";
-		// 11 * 3600 + 22 * 60 + 33 = 40953 s
-		// floor(23.98 fps * 40953 s) = 981890 f
-		// 981890 f + 4 f = 981894 f
-        const int frames = 981894;
+        // 11 * 3600 + 22 * 60 + 33 = 40953 s
+        // floor(23.98 fps * 40953 s) = 981890 f
+        // 981890 f + 4 f = 981894 f
+        int frames = 981894;
         p.set("key", timeString);
         QCOMPARE(p.get_int("key"), frames);
         p.set("key", frames);
-		// floor(981894 f / (24000/1001 * 3600)) = 11 h
-		// 981894 f - floor(11 * 3600 * 24000/1001) = 32444 f
-		// floor(32444 f / (24000/1001 * 60)) = 22 m
-		// 981894 f - floor((11 * 3600 + 22 * 60) * 24000/1001) = 796 f
-		// floor(796 f / (24000/1001)) = 33 s
-		// 981894 f - ceil((11 * 3600 + 22 * 60 + 33) * 24000/1001) = 4f
+        // floor(981894 f / (24000/1001 * 3600)) = 11 h
+        // 981894 f - floor(11 * 3600 * 24000/1001) = 32444 f
+        // floor(32444 f / (24000/1001 * 60)) = 22 m
+        // 981894 f - floor((11 * 3600 + 22 * 60) * 24000/1001) = 796 f
+        // floor(796 f / (24000/1001)) = 33 s
+        // 981894 f - ceil((11 * 3600 + 22 * 60 + 33) * 24000/1001) = 4f
         QCOMPARE(p.get_time("key", mlt_time_smpte_df), timeString);
-		QCOMPARE(p.get_time("key", mlt_time_clock), "11:22:33.200");
+        QCOMPARE(p.get_time("key", mlt_time_clock), "11:22:33.200");
+
+        // Case that is known to have floating point error
+        frames = 2877;
+        p.set("key", frames);
+        QCOMPARE(p.get_time("key", mlt_time_smpte_df), "00:02:00:00");
+        QCOMPARE(p.get_time("key", mlt_time_clock), "00:02:00.000");
 
         if (kRunLongTests)
         for (int i = 0; i < 9999999; ++i) {
