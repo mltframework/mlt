@@ -718,7 +718,7 @@ char *mlt_property_get_string_tf( mlt_property self, mlt_time_format time_format
 	}
 	else if ( ! ( self->types & mlt_prop_string ) )
 	{
-		if ( self->types & mlt_prop_int )
+		if ( self->types & mlt_prop_int || self->types & mlt_prop_color )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = malloc( 32 );
@@ -829,7 +829,7 @@ char *mlt_property_get_string_l_tf( mlt_property self, locale_t locale, mlt_time
 		setlocale( LC_NUMERIC, localename );
 #endif // _WIN32
 
-		if ( self->types & mlt_prop_int )
+		if ( self->types & mlt_prop_int || self->types & mlt_prop_color )
 		{
 			self->types |= mlt_prop_string;
 			self->prop_string = malloc( 32 );
