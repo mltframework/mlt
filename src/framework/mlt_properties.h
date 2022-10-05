@@ -99,8 +99,10 @@ extern char *mlt_properties_get_time( mlt_properties, const char* name, mlt_time
 extern char *mlt_properties_frames_to_time( mlt_properties, mlt_position, mlt_time_format );
 extern mlt_position mlt_properties_time_to_frames( mlt_properties, const char* time );
 
-extern mlt_color mlt_properties_get_color( mlt_properties, const char* name );
 extern int mlt_properties_set_color( mlt_properties, const char* name, mlt_color value );
+extern mlt_color mlt_properties_get_color( mlt_properties, const char* name );
+extern int mlt_properties_anim_set_color( mlt_properties self, const char *name, mlt_color value, int position, int length , mlt_keyframe_type keyframe_type );
+extern mlt_color mlt_properties_anim_get_color( mlt_properties self, const char *name, int position, int length );
 
 extern char* mlt_properties_anim_get( mlt_properties self, const char *name, int position, int length );
 extern int mlt_properties_anim_set( mlt_properties self, const char *name, const char *value, int position, int length );
