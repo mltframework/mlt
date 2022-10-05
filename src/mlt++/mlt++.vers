@@ -717,3 +717,11 @@ MLT_7.6.0 {
       "Mlt::Properties::copy(Mlt::Properties&, char const*)";
     };
 } MLT_7.4.0;
+
+MLT_7.10.0 {
+  global:
+    extern "C++" {
+      "Mlt::Properties::anim_get_color(char const*, int, int)";
+      "Mlt::Properties::anim_set(char const*, mlt_color, int, int, mlt_keyframe_type)";
+    };
+} MLT_7.6.0;
