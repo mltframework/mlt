@@ -144,7 +144,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if( abs( o_pos - pdata->prev_o_pos ) > 1 )
+	if( mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "discontinuity_reset" ) &&
+			abs( o_pos - pdata->prev_o_pos ) > 1 )
 	{
 		// Assume this is a new clip and restart
 		// Use original position so that transitions between clips are detected.
@@ -231,6 +232,7 @@ mlt_filter filter_dynamic_loudness_init( mlt_profile profile, mlt_service_type t
 		mlt_properties_set( properties, "max_gain", "15.0" );
 		mlt_properties_set( properties, "min_gain", "-15.0" );
 		mlt_properties_set( properties, "max_rate", "3.0" );
+		mlt_properties_set( properties, "discontinuity_reset", "1" );
 		mlt_properties_set( properties, "in_loudness", "-100.0" );
 		mlt_properties_set( properties, "out_gain", "0.0" );
 		mlt_properties_set( properties, "reset_count", "0" );

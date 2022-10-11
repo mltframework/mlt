@@ -65,6 +65,13 @@ parameters:
     maximum: -30
     unit: dB
 
+  - identifier: discontinuity_reset
+    title: Reset on Discontinuity
+    type: boolean
+    description: >
+      Reset the measurement if a discontinuity occurs like seeking or new clip is detected. Useful for playlists and tracks.
+    default: 1
+
   - identifier: in_loudness
     title: Input Program Loudness
     type: float
@@ -81,7 +88,7 @@ parameters:
       The amount of gain applied to the last frame. Updated with each new frame.
     readonly: yes
     unit: dB
-    
+
   - identifier: reset_count
     title: Reset Count
     type: integer
@@ -89,5 +96,5 @@ parameters:
       The number of times the filter has reset the loudness measurement. The 
       measurement is reset whenever the filter detects a discontinuity in the 
       frame sequence. It also resets when it detects that the producer has 
-      changed.
+      changed if clip_reset is set.
     readonly: yes
