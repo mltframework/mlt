@@ -530,7 +530,7 @@ static void get_aspect_ratio( mlt_properties properties, AVStream *stream, AVCod
 	mlt_properties_set_double( properties, "aspect_ratio", av_q2d( sar ) );
 }
 
-static char* parse_url( mlt_profile profile, const char* URL, const AVInputFormat **format, AVDictionary **params )
+static char* parse_url( mlt_profile profile, const char* URL, AVInputFormat **format, AVDictionary **params )
 {
 	(void) profile; // unused
 	if ( !URL ) return NULL;
