@@ -61,7 +61,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		*format = mlt_image_rgba;
 	}
 
-	if ( b_height == 0  || (!distort && ( b_height < *height || b_width < *width) ) )
+	if ( b_height == 0 )
 	{
 		b_width = *width;
 		b_height = *height;
@@ -70,6 +70,11 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	double b_dar = b_ar * b_width / b_height;
 	rect.w = -1;
 	rect.h = -1;
+	if ( !distort && ( b_height < *height || b_width < *width) )
+	{
+		b_width = *width;
+		b_height = *height;
+	}
 
 	// Check transform
 	if ( mlt_properties_get( transition_properties, "rect" ) )
