@@ -558,7 +558,7 @@ static double mlt_property_atof( mlt_property self, double fps, locale_t locale 
 		}
 #endif
 
-			result = strtod( value, &end );
+		result = strtod( value, &end );
 		if ( end && end[0] == '%' )
 			result /= 100.0;
 
@@ -917,7 +917,7 @@ void *mlt_property_get_data( mlt_property self, int *length )
 	// Return the data (note: there is no conversion here)
 	pthread_mutex_lock( &self->mutex );
 	void* result = self->data;
-	pthread_mutex_unlock( &self->mutex );	
+	pthread_mutex_unlock( &self->mutex );
 	return result;
 }
 
@@ -1950,7 +1950,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 #if defined(__GLIBC__) || defined(__APPLE__) || defined(HAVE_STRTOD_L)
 			if ( locale )
 				temp = strtod_l( value, &p, locale );
-            else
+			else
 #endif
 				temp = strtod( value, &p );
 			if ( p != value )
@@ -1990,7 +1990,7 @@ mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale )
 			pthread_mutex_unlock( &self->mutex );
 		}
 #endif
-    }
+	}
 	return rect;
 }
 
