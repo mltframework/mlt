@@ -136,13 +136,13 @@ static QRectF get_text_path( QPainterPath* qpath, mlt_properties filter_properti
 	return QRectF( 0, 0, width, height );
 }
 
-static QColor get_qcolor( mlt_properties filter_properties, const char* name )
+static QColor get_qcolor( mlt_properties filter_properties, const char* name, int position, int length )
 {
-	mlt_color color = mlt_properties_get_color( filter_properties, name );
+	mlt_color color = mlt_properties_anim_get_color( filter_properties, name, position, length);
 	return QColor( color.r, color.g, color.b, color.a );
 }
 
-static QPen get_qpen( mlt_properties filter_properties )
+static QPen get_qpen( mlt_properties filter_properties, int position, int length )
 {
 	QColor color;
 	int outline = mlt_properties_get_int( filter_properties, "outline" );
@@ -151,20 +151,20 @@ static QPen get_qpen( mlt_properties filter_properties )
 	pen.setWidth( outline );
 	if( outline )
 	{
-		color = get_qcolor( filter_properties, "olcolour" );
+		color = get_qcolor( filter_properties, "olcolour", position, length );
 	}
 	else
 	{
-		color = get_qcolor( filter_properties, "bgcolour" );
+		color = get_qcolor( filter_properties, "bgcolour", position, length );
 	}
 	pen.setColor( color );
 
 	return pen;
 }
 
-static QBrush get_qbrush( mlt_properties filter_properties )
+static QBrush get_qbrush( mlt_properties filter_properties, int position, int length)
 {
-	QColor color = get_qcolor( filter_properties, "fgcolour" );
+	QColor color = get_qcolor( filter_properties, "fgcolour", position, length );
 	return QBrush ( color );
 }
 
@@ -226,17 +226,17 @@ static void transform_painter( QPainter* painter, mlt_rect frame_rect, QRectF pa
 	painter->setTransform( transform );
 }
 
-static void paint_background( QPainter* painter, QRectF path_rect, mlt_properties filter_properties )
+static void paint_background( QPainter* painter, QRectF path_rect, mlt_properties filter_properties, int position, int length )
 {
-	QColor bg_color = get_qcolor( filter_properties, "bgcolour" );
+	QColor bg_color = get_qcolor( filter_properties, "bgcolour", position, length );
 	painter->fillRect( path_rect, bg_color );
 }
 
-static void paint_text( QPainter* painter, QPainterPath* qpath, mlt_properties filter_properties )
+static void paint_text( QPainter* painter, QPainterPath* qpath, mlt_properties filter_properties, int position, int length)
 {
-	QPen pen = get_qpen( filter_properties );
+	QPen pen = get_qpen( filter_properties, position, length );
 	painter->setPen( pen );
-	QBrush brush = get_qbrush( filter_properties );
+	QBrush brush = get_qbrush( filter_properties, position, length);
 	painter->setBrush( brush );
 	painter->drawPath( *qpath );
 }
@@ -365,14 +365,14 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 				if (overflowY) {
 					path_rect.setHeight(qMax(path_rect.height(), doc->size().height()));
 				}
-				paint_background(&painter, path_rect, filter_properties);
+				paint_background(&painter, path_rect, filter_properties, position, length);
 				doc->drawContents(&painter, drawRect);
 			}
 		} else {
 			path_rect = get_text_path(&text_path, filter_properties, argument, scale);
 			transform_painter(&painter, rect, path_rect, filter_properties, profile);
-			paint_background(&painter, path_rect, filter_properties);
-			paint_text(&painter, &text_path, filter_properties);
+			paint_background(&painter, path_rect, filter_properties, position, length);
+			paint_text(&painter, &text_path, filter_properties, position, length);
 		}
 		painter.end();
 
