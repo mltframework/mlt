@@ -45,8 +45,10 @@ static inline uint8_t alpha_value( uint8_t a, uint8_t *p, uint8_t u, uint8_t v, 
 static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
 	mlt_filter this = mlt_frame_pop_service( frame );
-	int variance = 200 * mlt_properties_get_double( MLT_FILTER_PROPERTIES( this ), "variance" );
-	mlt_color key_val = mlt_properties_get_color( MLT_FILTER_PROPERTIES( this ), "key" );
+	mlt_position position = mlt_filter_get_position(this, frame);
+	mlt_position length = mlt_filter_get_length2(this, frame);
+	int variance = 200 * mlt_properties_anim_get_double( MLT_FILTER_PROPERTIES( this ), "variance", position, length);
+	mlt_color key_val = mlt_properties_anim_get_color( MLT_FILTER_PROPERTIES( this ), "key", position, length);
 	uint8_t u, v;
 
 	RGB2UV_601_SCALED( key_val.r, key_val.g, key_val.b, u, v );

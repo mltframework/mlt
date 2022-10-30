@@ -16,6 +16,7 @@ parameters:
     argument: yes
     mutable: yes
     default: #0000ff
+    animation: yes
 
   - identifier: variance
     title: Variance
@@ -24,3 +25,4 @@ parameters:
     default: 0.15
     minimum: 0
     maximum: 1.0
+    animation: yes
