@@ -1312,10 +1312,10 @@ int mlt_property_interpolate( mlt_property self, mlt_property p[],
 				colors[0] = p[0]? mlt_property_get_color( p[0], fps, locale ) : zero;
 				colors[2] = p[2]? mlt_property_get_color( p[2], fps, locale ) : zero;
 				colors[3] = p[3]? mlt_property_get_color( p[3], fps, locale ) : zero;
-				value.r = catmull_rom_interpolate( colors[0].r, colors[1].r, colors[2].r, colors[3].r, progress );
-				value.g = catmull_rom_interpolate( colors[0].g, colors[1].g, colors[2].g, colors[3].g, progress );
-				value.b = catmull_rom_interpolate( colors[0].b, colors[1].b, colors[2].b, colors[3].b, progress );
-				value.a = catmull_rom_interpolate( colors[0].a, colors[1].a, colors[2].a, colors[3].a, progress );
+				value.r = CLAMP(catmull_rom_interpolate( colors[0].r, colors[1].r, colors[2].r, colors[3].r, progress ), 0, 255);
+				value.g = CLAMP(catmull_rom_interpolate( colors[0].g, colors[1].g, colors[2].g, colors[3].g, progress ), 0, 255);
+				value.b = CLAMP(catmull_rom_interpolate( colors[0].b, colors[1].b, colors[2].b, colors[3].b, progress ), 0, 255);
+				value.a = CLAMP(catmull_rom_interpolate( colors[0].a, colors[1].a, colors[2].a, colors[3].a, progress ), 0, 255);
 			}
 			else
 			{
