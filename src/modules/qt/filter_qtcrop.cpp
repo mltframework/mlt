@@ -48,7 +48,7 @@ static int get_image(mlt_frame frame, uint8_t **image, mlt_image_format *format,
 		QImage fgImage = bgImage.copy();
 		QPainter painter(&bgImage);
 		QPainterPath path;
-		mlt_color color = mlt_properties_get_color(properties, "color");
+		mlt_color color = mlt_properties_anim_get_color(properties, "color", position, length);
 		double radius = mlt_properties_anim_get_double(properties, "radius", position, length);
 
 		painter.setRenderHints( QPainter::Antialiasing
