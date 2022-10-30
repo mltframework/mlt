@@ -1295,7 +1295,14 @@ int mlt_property_interpolate( mlt_property self, mlt_property p[],
 	double progress, double fps, locale_t locale, mlt_keyframe_type interp )
 {
 	int error = 0;
-	if ( interp != mlt_keyframe_discrete && ( self->types & mlt_prop_color ) )
+	int colorstring = 0;
+	const char *value = self->prop_string;
+	if ( value && ( ( strlen( value ) > 6 && value[0] == '#' ) || ( strlen( value ) > 7 && value[0] == '0' && value[1] == 'x' ) ) )
+	{
+		colorstring = 1;
+	}
+
+	if ( interp != mlt_keyframe_discrete && ( self->types & mlt_prop_color || colorstring ) )
 	{
 		mlt_color value = { 0xff, 0xff, 0xff, 0xff };
 		if ( interp == mlt_keyframe_linear )
