@@ -154,8 +154,10 @@ void draw_now_dot(mlt_filter filter, mlt_frame frame, QPainter &p, s_base_crops 
 	private_data* pdata = (private_data*)filter->child;
 	mlt_rect rect = pdata->img_rect;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 	int thickness =  mlt_properties_get_int( properties, "thickness" );
-	mlt_color dot_color = mlt_properties_get_color(properties, "now_dot_color");
+	mlt_color dot_color = mlt_properties_anim_get_color(properties, "now_dot_color", position, length);
 
 	//disc with internal color = white and outer color=now dot color or last used for graph line
 	QPen dot_pen = p.pen();
@@ -529,7 +531,7 @@ void draw_main_speedometer(mlt_filter filter, mlt_frame frame, QPainter &p, s_ba
 	//the needle considered as a "Now dot in UI"; just a long triangle
 	if (mlt_properties_get_int(properties, "show_now_dot"))
 	{
-		mlt_color dot_color = mlt_properties_get_color(properties, "now_dot_color");
+		mlt_color dot_color = mlt_properties_anim_get_color(properties, "now_dot_color", position, length);
 		if (dot_color.a == 0) // if transparent -> use main color
 		{
 			p.setBrush( colors[0] );

@@ -312,6 +312,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+    animation: yes
 
   - identifier: show_now_text
     title: Show now text
