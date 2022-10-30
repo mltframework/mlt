@@ -21,7 +21,7 @@
 #include <QVector>
 #include <math.h>
 
-QVector<QColor> get_graph_colors( mlt_properties filter_properties )
+QVector<QColor> get_graph_colors( mlt_properties filter_properties, int position, int length )
 {
 	QVector<QColor> colors;
 
@@ -29,7 +29,7 @@ QVector<QColor> get_graph_colors( mlt_properties filter_properties )
 	while( true ) {
 		QString prop_name = QString("color.") + QString::number(colors.size() + 1);
 		if( mlt_properties_exists(filter_properties, prop_name.toUtf8().constData() ) ) {
-			mlt_color mcolor = mlt_properties_get_color( filter_properties, prop_name.toUtf8().constData() );
+			mlt_color mcolor = mlt_properties_anim_get_color( filter_properties, prop_name.toUtf8().constData(), position, length );
 			colors.append( QColor( mcolor.r, mcolor.g, mcolor.b, mcolor.a ) );
 		} else {
 			break;
@@ -50,7 +50,7 @@ QVector<QColor> get_graph_colors( mlt_properties filter_properties )
  */
 void setup_graph_painter( QPainter& p, QRectF& r, mlt_properties filter_properties, int position, int length )
 {
-	mlt_color bg_color = mlt_properties_get_color( filter_properties, "bgcolor" );
+	mlt_color bg_color = mlt_properties_anim_get_color( filter_properties, "bgcolor", position, length );
 	double angle = mlt_properties_anim_get_double( filter_properties, "angle", position, length );
 
 	p.setRenderHint(QPainter::Antialiasing);
@@ -76,7 +76,7 @@ void setup_graph_pen(QPainter& p, QRectF& r, mlt_properties filter_properties , 
 {
 	int thickness = mlt_properties_anim_get_int( filter_properties, "thickness", position, length ) * scale;
 	QString gorient = mlt_properties_get( filter_properties, "gorient" );
-	QVector<QColor> colors = get_graph_colors( filter_properties );
+	QVector<QColor> colors = get_graph_colors( filter_properties, position, length );
 	QPen pen;
 	pen.setWidth( qAbs(thickness) );
 

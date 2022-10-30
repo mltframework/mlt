@@ -282,6 +282,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+    animation: yes
 
   - identifier: show_now_dot
     title: Show now dot

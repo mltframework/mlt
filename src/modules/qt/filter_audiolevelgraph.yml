@@ -37,6 +37,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+    animation: yes
     
   - identifier: color.*
     title: Foreground color
@@ -64,6 +65,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+    animation: yes
 
   - identifier: thickness
     title: Line Thickness

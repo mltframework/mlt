@@ -25,7 +25,7 @@
 #include <QRectF>
 #include <QVector>
 
-QVector<QColor> get_graph_colors( mlt_properties filter_properties );
+QVector<QColor> get_graph_colors( mlt_properties filter_properties, int position, int length );
 void setup_graph_painter( QPainter& p, QRectF& rect, mlt_properties filter_properties, int position, int length );
 void setup_graph_pen( QPainter& p, QRectF& rect, mlt_properties filter_properties, double scale, int position, int length );
 void paint_line_graph( QPainter& p, QRectF& rect, int points, float* values, double tension, int fill );
