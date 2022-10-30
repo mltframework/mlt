@@ -216,6 +216,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
 			colorstr[7] = 0;
 			mlt_properties_set(pnum, "default", colorstr);
 			mlt_properties_set(pnum, "mutable", "yes");
+			mlt_properties_set(pnum, "animation", "yes" );
 			mlt_properties_set(pnum, "widget", "color");
 		} else if (paraminfo.type == F0R_PARAM_STRING) {
 			char *deflt = NULL;
