@@ -1,7 +1,7 @@
 /*
  * frei0r_helper.c -- frei0r helper
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2020 Meltytech, LLC
+ * Copyright (C) 2009-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -78,6 +78,20 @@ static int f0r_update2_slice( int id, int index, int count, void *context )
 	return 0;
 }
 
+static void destruct_ctor(mlt_properties prop)
+{
+	void (*f0r_destruct) (f0r_instance_t instance) = mlt_properties_get_data(prop, "f0r_destruct", NULL);
+	for (int i = 0; i < mlt_properties_count(prop); i++) {
+		if (strstr(mlt_properties_get_name(prop, i), "ctor-")) {
+			void *inst = mlt_properties_get_data(prop, mlt_properties_get_name(prop, i), NULL);
+			if (inst) {
+				f0r_destruct((f0r_instance_t) inst);
+				mlt_properties_clear(prop, mlt_properties_get_name(prop, i));
+			}
+		}
+	}
+}
+
 int process_frei0r_item( mlt_service service, mlt_position position, double time,
 	int length, mlt_frame frame, uint8_t **image, int *width, int *height )
 {
@@ -136,6 +150,7 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 
 	f0r_instance_t inst = mlt_properties_get_data(prop, ctorname, NULL);
 	if (!inst) {
+		destruct_ctor(prop);
 		inst = f0r_construct(*width, slice_height);
 		mlt_properties_set_data(prop, ctorname, inst, 0, NULL, NULL);
 	}
