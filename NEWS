@@ -1,6 +1,56 @@
 MLT Release Notes
 -----------------
 
+Version 7.10.0
+
+The highlight of this version is support for Qt 6.
+
+Framework
+  * Fixed some unguarded null pointers.
+  * Added `MLT_REPOSITORY_DENY` environment variable to skip loading a module
+    (colon delimited list of file names without extension, for example libmltqt).
+  * Fixed frame corruption with one frame transition
+  * Changed so-called test-card frame with audio to show a checkerboard:
+    - Added `mlt_image_fill_checkerboard()`
+    - Added `mlt_image_fill_white()`
+  * Preserve the producer `creation_time` property when creating a chain.
+  * Added `mlt_image_rgba_opaque()`.
+  * Fixed getting a property as a timecode or clock value with 24 or 23.98 fps
+    in `mlt_property.c`.
+
+Modules
+  * Added support for Qt 6:
+    - Added `MOD_QT6` and `BUILD_TESTS_WITH_QT6` CMake options.
+    - Allow installing building and installing both Qt 5 & 6 modules.
+    - Avoid loading both Qt 5 & 6 modules by preferring Qt 5 (use
+      MLT_REPOSITORY_DENY=libmltqt to block Qt 5 and use Qt 6).
+    - This is limited to the `qt` module for now and not `glaxnimate` (still
+      a work-in-progress).
+  * Added support for WebP animation to `qimage` producer.
+  * Added `gps_graphic` filter to the `qt` module.
+  * Added the `format` property in each producer's get_frame method to indicate
+    the producer's default/preferred mlt_image_format to facilitate
+    an optimization in the `qtblend` transition when the B frame is opaque
+    and has the same aspect ratio.
+  * Added property animation to all audio visualization filters in the `qt` module.
+  * Improved TGA format detection in `qimage` filter.
+  * Fixed `qtblend` transition has incorrect scaling with consumer scaling.
+  * Fixed an case of incorrect alpha scaling in `qtblend` transition.
+  * Fixed `luma` transition not updated when `resource` property changes.
+  * Added the `alpha_operation` property to the `shape` filter.
+  * Updated the `glaxnimate` git submodule to version 0.5.1.
+  * Fixed `lines` filter in `oldfilm` regression in v7.6.0.
+  * Added `dbpeak` property to the `audiolevel` filter in dB.
+  * Fixed memory leak using some frei0r plugins in conjunction with
+    an `affine` that animates the `rect` property.
+
+Other
+  * Fixed building for musl.
+  * Fixed underlinking iconv in `gdk` module on MinGW.
+  * Fixed SWIG CMake options can overwrite each other.
+  * Fixed SWIG 4 no longer generates a `mlt.php`.
+
+
 Version 7.8.0
 
 This highlight of this version is a new glaxnimate producer to render 2D
