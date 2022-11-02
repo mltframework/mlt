@@ -718,7 +718,7 @@ MLT_7.6.0 {
     };
 } MLT_7.4.0;
 
-MLT_7.10.0 {
+MLT_7.12.0 {
   global:
     extern "C++" {
       "Mlt::Properties::anim_get_color(char const*, int, int)";
