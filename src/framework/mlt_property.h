@@ -73,6 +73,11 @@ extern int mlt_property_anim_set_string( mlt_property self, const char *value, d
 extern mlt_animation mlt_property_get_animation( mlt_property self );
 extern int mlt_property_is_anim(mlt_property self);
 
+extern int mlt_property_set_color( mlt_property self, mlt_color value );
+extern mlt_color mlt_property_get_color( mlt_property self, double fps, locale_t locale );
+extern int mlt_property_anim_set_color( mlt_property self, mlt_color value, double fps, locale_t locale, int position, int length, mlt_keyframe_type keyframe_type );
+extern mlt_color mlt_property_anim_get_color( mlt_property self, double fps, locale_t locale, int position, int length );
+
 extern int mlt_property_set_rect( mlt_property self, mlt_rect value );
 extern mlt_rect mlt_property_get_rect( mlt_property self, locale_t locale );
 extern int mlt_property_anim_set_rect( mlt_property self, mlt_rect value, double fps, locale_t locale, int position, int length, mlt_keyframe_type keyframe_type );

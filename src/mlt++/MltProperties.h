@@ -106,6 +106,9 @@ namespace Mlt
 
 			mlt_color get_color( const char *name );
 			int set( const char *name , mlt_color value );
+			mlt_color anim_get_color( const char *name, int position, int length = 0 );
+			int anim_set( const char *name, mlt_color value, int position, int length = 0,
+				mlt_keyframe_type keyframe_type = mlt_keyframe_linear );
 
 			char* anim_get( const char *name, int position, int length = 0 );
 			int anim_set( const char *name, const char *value, int position, int length = 0 );

@@ -371,6 +371,16 @@ int Properties::set( const char *name, mlt_color value )
 	return mlt_properties_set_color( get_properties(), name, value );
 }
 
+mlt_color Properties::anim_get_color(const char *name, int position, int length)
+{
+	return mlt_properties_anim_get_color( get_properties(), name, position, length );
+}
+
+int Properties::anim_set( const char *name, mlt_color value, int position, int length, mlt_keyframe_type keyframe_type )
+{
+	return mlt_properties_anim_set_color( get_properties(), name, value, position, length, keyframe_type );
+}
+
 char *Properties::anim_get( const char *name, int position, int length )
 {
 	return mlt_properties_anim_get( get_properties(), name, position, length );

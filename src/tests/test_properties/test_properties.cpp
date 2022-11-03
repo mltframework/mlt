@@ -766,6 +766,37 @@ private Q_SLOTS:
         mlt_property_close(p);
     }
 
+    void test_property_anim_get_color()
+    {
+        double fps = 25.0;
+        int len = 100;
+        mlt_property p = mlt_property_init();
+		mlt_property_set_string(p, "10=#ffff00ff;20=green");
+
+        QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
+
+        mlt_color color = mlt_property_anim_get_color(p, fps, locale, 0, len);
+        QCOMPARE(color.r, 255);
+        QCOMPARE(color.g, 0);
+        QCOMPARE(color.b, 255);
+        QCOMPARE(color.a, 255);
+
+
+        color = mlt_property_anim_get_color(p, fps, locale, 15, len);
+        QCOMPARE(color.r, 127);
+        QCOMPARE(color.g, 127);
+        QCOMPARE(color.b, 127);
+        QCOMPARE(color.a, 255);
+
+        color = mlt_property_anim_get_color(p, fps, locale, 20, len);
+        QCOMPARE(color.r, 0);
+        QCOMPARE(color.g, 255);
+        QCOMPARE(color.b, 0);
+        QCOMPARE(color.a, 255);
+
+        mlt_property_close(p);
+    }
+
     void SmoothIntAnimation()
     {
         double fps = 25.0;
@@ -1145,13 +1176,216 @@ private Q_SLOTS:
         QCOMPARE(color.g, quint8(0x00));
         QCOMPARE(color.b, quint8(0x00));
         QCOMPARE(color.a, quint8(0xff));
+		//pattern #AARRGGBB
         p.set("key", "#deadd00d");
         color = p.get_color("key");
         QCOMPARE(color.r, quint8(0xad));
         QCOMPARE(color.g, quint8(0xd0));
         QCOMPARE(color.b, quint8(0x0d));
         QCOMPARE(color.a, quint8(0xde));
+		//pattern #0xRRGGBBAA
+        p.set("key", "0xadd00dde");
+        color = p.get_color("key");
+        QCOMPARE(color.r, quint8(0xad));
+        QCOMPARE(color.g, quint8(0xd0));
+        QCOMPARE(color.b, quint8(0x0d));
+        QCOMPARE(color.a, quint8(0xde));
     }
+
+	void StringFromColor()
+	{
+		mlt_color color;
+		color.r = quint8(0xad);
+		color.g = quint8(0xd0);
+		color.b = quint8(0x0d);
+		color.a = quint8(0xde);
+		int len = 100;
+		mlt_property p = mlt_property_init();
+		mlt_property_set_color(p, color);
+		QCOMPARE(mlt_property_get_string(p), "#deadd00d");
+		mlt_property_close(p);
+
+		Properties pies;
+
+		pies.set("key", color);
+		QCOMPARE(pies.get("key"), "#deadd00d");
+	}
+
+	void ColorAnimationCpp()
+	{
+		mlt_color c1 = { 0xff, 0xef, 0xab, 0x00 };
+		mlt_color c2 = { 0x00, 0xff, 0xab, 0xdf };
+		Properties p;
+		p.set_lcnumeric("POSIX");
+
+		// Construct animation from scratch
+		p.anim_set("key", c1,  0);
+		p.anim_set("key", c2, 50);
+		QCOMPARE(p.anim_get_color("key",  0).r, 255);
+		QCOMPARE(p.anim_get_color("key", 25).g, 247);
+		QCOMPARE(p.anim_get_color("key", 25).b, 171);
+		QCOMPARE(p.anim_get_color("key", 25).a, 111);
+		QCOMPARE(p.get("key"), "0=#ffefab;50=#df00ffab");
+
+		// Animation from string value
+		QCOMPARE(p.anim_get_color("key", 0).r, 255);
+		QCOMPARE(p.anim_get_color("key", 0).g, 239);
+		QCOMPARE(p.anim_get_color("key", 0).b, 171);
+		QCOMPARE(p.anim_get_color("key", 0).a, 0);
+		QCOMPARE(p.anim_get_color("key", 50).r, 0);
+		QCOMPARE(p.anim_get_color("key", 50).g, 255);
+		QCOMPARE(p.anim_get_color("key", 50).b, 171);
+		QCOMPARE(p.anim_get_color("key", 50).a, 223);
+		QCOMPARE(p.anim_get_color("key", 15).r, 178);
+		QCOMPARE(p.anim_get_color("key", 15).g, 243);
+		QCOMPARE(p.anim_get_color("key", 15).b, 171);
+		QCOMPARE(p.anim_get_color("key", 15).a, 66);
+	}
+
+	void SmoothColorAnimationCpp()
+	{
+		Properties p;
+		p.set_lcnumeric("POSIX");
+
+		// Smooth animation
+		p.set("key", "0~=#00ffefab; 50~=#df00ffab; 100~=#df00ffab; 150~=#df00ffab");
+		QCOMPARE(p.anim_get_color("key", 0).r, 255);
+		QCOMPARE(p.anim_get_color("key", 0).g, 239);
+		QCOMPARE(p.anim_get_color("key", 0).b, 171);
+		QCOMPARE(p.anim_get_color("key", 0).a, 0);
+		QCOMPARE(p.anim_get_color("key", 25).r, 127);
+		QCOMPARE(p.anim_get_color("key", 25).g, 247);
+		QCOMPARE(p.anim_get_color("key", 25).b, 171);
+		QCOMPARE(p.anim_get_color("key", 25).a, 111);
+		QCOMPARE(p.anim_get_color("key", 50).r, 0);
+		QCOMPARE(p.anim_get_color("key", 50).g, 255);
+		QCOMPARE(p.anim_get_color("key", 50).b, 171);
+		QCOMPARE(p.anim_get_color("key", 50).a, 223);
+		QCOMPARE(p.anim_get_color("key", 60).a, 237);
+		QCOMPARE(p.anim_get_color("key", 70).a, 239);
+		QCOMPARE(p.anim_get_color("key", 75).r, 0);
+		QCOMPARE(p.anim_get_color("key", 75).g, 255);
+		QCOMPARE(p.anim_get_color("key", 75).b, 171);
+		QCOMPARE(p.anim_get_color("key", 75).a, 236);
+		QCOMPARE(p.anim_get_color("key", 100).r, 0);
+		QCOMPARE(p.anim_get_color("key", 100).g, 255);
+		QCOMPARE(p.anim_get_color("key", 100).b, 171);
+		QCOMPARE(p.anim_get_color("key", 100).a, 223);
+	}
+
+	void ColorAnimationCssString()
+    {
+        double fps = 25.0;
+        mlt_animation a = mlt_animation_new();
+        struct mlt_animation_item_s item;
+
+		mlt_animation_parse(a, "50=0xff00ffff; 60=0xaa00ffff; 100=0x00ff00ff", 100, fps, locale);
+        mlt_animation_remove(a, 60);
+        char *a_serialized = mlt_animation_serialize(a);
+		QCOMPARE(a_serialized, "50=0xff00ffff;100=0x00ff00ff");
+        if (a_serialized) free(a_serialized);
+        item.property = mlt_property_init();
+
+        mlt_animation_get_item(a, &item, 10);
+        mlt_color color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 255);
+        QCOMPARE(color.g, 0);
+        QCOMPARE(color.b, 255);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 50);
+		color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 255);
+        QCOMPARE(color.g, 0);
+        QCOMPARE(color.b, 255);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 75);
+        color = mlt_property_get_color(item.property, fps, locale);
+		QCOMPARE(color.r, 127);
+		QCOMPARE(color.g, 127);
+		QCOMPARE(color.b, 127);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_animation_get_item(a, &item, 100);
+        color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 0);
+        QCOMPARE(color.g, 255);
+        QCOMPARE(color.b, 0);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 1);
+
+        mlt_animation_get_item(a, &item, 110);
+        color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 0);
+        QCOMPARE(color.g, 255);
+        QCOMPARE(color.b, 0);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 0);
+
+        mlt_property_close(item.property);
+        mlt_animation_close(a);
+    }
+
+	void ColorAnimationHexString()
+	{
+		double fps = 25.0;
+		mlt_animation a = mlt_animation_new();
+		struct mlt_animation_item_s item;
+
+		mlt_animation_parse(a, "50=#ffff00ff; 60=#ffaa00ff; 100=#ff00ff00", 100, fps, locale);
+		mlt_animation_remove(a, 60);
+		char *a_serialized = mlt_animation_serialize(a);
+		QCOMPARE(a_serialized, "50=#ffff00ff;100=#ff00ff00");
+		if (a_serialized) free(a_serialized);
+		item.property = mlt_property_init();
+
+		mlt_animation_get_item(a, &item, 10);
+		mlt_color color = mlt_property_get_color(item.property, fps, locale);
+		QCOMPARE(color.r, 255);
+		QCOMPARE(color.g, 0);
+		QCOMPARE(color.b, 255);
+		QCOMPARE(color.a, 255);
+		QCOMPARE(item.is_key, 0);
+
+		mlt_animation_get_item(a, &item, 50);
+		color = mlt_property_get_color(item.property, fps, locale);
+		QCOMPARE(color.r, 255);
+		QCOMPARE(color.g, 0);
+		QCOMPARE(color.b, 255);
+		QCOMPARE(color.a, 255);
+		QCOMPARE(item.is_key, 1);
+
+		mlt_animation_get_item(a, &item, 75);
+		color = mlt_property_get_color(item.property, fps, locale);
+		QCOMPARE(color.r, 127);
+		QCOMPARE(color.g, 127);
+		QCOMPARE(color.b, 127);
+		QCOMPARE(color.a, 255);
+		QCOMPARE(item.is_key, 0);
+
+		mlt_animation_get_item(a, &item, 100);
+		color = mlt_property_get_color(item.property, fps, locale);
+		QCOMPARE(color.r, 0);
+		QCOMPARE(color.g, 255);
+		QCOMPARE(color.b, 0);
+		QCOMPARE(color.a, 255);
+		QCOMPARE(item.is_key, 1);
+
+		mlt_animation_get_item(a, &item, 110);
+		color = mlt_property_get_color(item.property, fps, locale);
+		QCOMPARE(color.r, 0);
+		QCOMPARE(color.g, 255);
+		QCOMPARE(color.b, 0);
+		QCOMPARE(color.a, 255);
+		QCOMPARE(item.is_key, 0);
+
+		mlt_property_close(item.property);
+		mlt_animation_close(a);
+	}
 
     void SetIntAndGetAnim()
     {

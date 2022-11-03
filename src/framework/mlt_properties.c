@@ -2373,64 +2373,6 @@ mlt_position mlt_properties_time_to_frames( mlt_properties self, const char *tim
 	return mlt_properties_get_position( self, name );
 }
 
-/** Convert a numeric property to a tuple of color components.
- *
- * If the property's string is red, green, blue, white, or black, then it
- * is converted to the corresponding opaque color tuple. Otherwise, the property
- * is fetched as an integer and then converted.
- * \public \memberof mlt_properties_s
- * \param self a properties list
- * \param name the property to get
- * \return a color structure
- */
-
-mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
-{
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	property_list *list = self->local;
-	mlt_property value = mlt_properties_find( self, name );
-	mlt_color result = { 0xff, 0xff, 0xff, 0xff };
-	if ( value )
-	{
-		const char *color = mlt_property_get_string_l( value, list->locale );
-		unsigned int color_int = mlt_property_get_int( value, fps, list->locale );
-
-		if ( !strcmp( color, "red" ) )
-		{
-			result.r = 0xff;
-			result.g = 0x00;
-			result.b = 0x00;
-		}
-		else if ( !strcmp( color, "green" ) )
-		{
-			result.r = 0x00;
-			result.g = 0xff;
-			result.b = 0x00;
-		}
-		else if ( !strcmp( color, "blue" ) )
-		{
-			result.r = 0x00;
-			result.g = 0x00;
-			result.b = 0xff;
-		}
-		else if ( !strcmp( color, "black" ) )
-		{
-			result.r = 0x00;
-			result.g = 0x00;
-			result.b = 0x00;
-		}
-		else if ( strcmp( color, "white" ) )
-		{
-			result.r = ( color_int >> 24 ) & 0xff;
-			result.g = ( color_int >> 16 ) & 0xff;
-			result.b = ( color_int >> 8 ) & 0xff;
-			result.a = ( color_int ) & 0xff;
-		}
-	}
-	return result;
-}
-
 /** Set a property to an integer value by color.
  *
  * \public \memberof mlt_properties_s
@@ -2452,14 +2394,97 @@ int mlt_properties_set_color( mlt_properties self, const char *name, mlt_color c
 	// Set it if not NULL
 	if ( property != NULL )
 	{
-		uint32_t value = ( color.r << 24 ) | ( color.g << 16 ) | ( color.b << 8 ) | color.a;
-		error = mlt_property_set_int( property, value );
+		error = mlt_property_set_color( property, color );
 		mlt_properties_do_mirror( self, name );
 	}
 
 	fire_property_changed(self, name);
 
 	return error;
+}
+
+/** Convert a numeric property to a tuple of color components.
+ *
+ * If the property's string is red, green, blue, white, or black, then it
+ * is converted to the corresponding opaque color tuple. Otherwise, the property
+ * is fetched as an integer and then converted.
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \return a color structure
+ */
+
+mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
+{
+	mlt_property value = mlt_properties_find( self, name );
+	mlt_color result = { 0xff, 0xff, 0xff, 0xff };
+	if ( value )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		result = mlt_property_get_color(value, fps, list->locale );
+	}
+	return result;
+}
+
+/** Set a property to an integer value by color at a frame position.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to set
+ * \param value the color
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \param keyframe_type the interpolation method for this keyframe
+ * \return true if error
+ */
+
+extern int mlt_properties_anim_set_color( mlt_properties self, const char *name, mlt_color value,
+	int position, int length , mlt_keyframe_type keyframe_type )
+{
+	int error = 1;
+
+	if ( !self || !name ) return error;
+
+	// Fetch the property to work with
+	mlt_property property = mlt_properties_fetch( self, name );
+
+	// Set it if not NULL
+	if ( property != NULL )
+	{
+		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+		double fps = mlt_profile_fps( profile );
+		property_list *list = self->local;
+		error = mlt_property_anim_set_color( property, value, fps, list->locale, position, length, keyframe_type );
+		mlt_properties_do_mirror( self, name );
+	}
+
+	fire_property_changed(self, name);
+
+	return error;
+}
+
+/** Get a color associated to the name at a frame position.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \param name the property to get
+ * \param position the frame number
+ * \param length the maximum number of frames when interpreting negative keyframe times,
+ *  <=0 if you don't care or need that
+ * \return a color structure
+ */
+
+mlt_color mlt_properties_anim_get_color( mlt_properties self, const char *name, int position, int length )
+{
+	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
+	double fps = mlt_profile_fps( profile );
+	property_list *list = self->local;
+	mlt_property value = mlt_properties_find( self, name );
+	mlt_color color = { 0xff, 0xff, 0xff, 0xff };
+	return value == NULL ? color : mlt_property_anim_get_color( value, fps, list->locale, position, length );
 }
 
 /** Get a string value by name at a frame position.
