@@ -17,6 +17,7 @@ parameters:
     description: The color to keep. All others are desaturated.
     default: #c00000
     mutable: yes
+    animation: yes
 
   - identifier: variance
     title: Variance
@@ -26,3 +27,4 @@ parameters:
     minimum: 0
     maximum: 1.0
     mutable: yes
+    animation: yes

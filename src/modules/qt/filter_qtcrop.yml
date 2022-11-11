@@ -46,3 +46,4 @@ parameters:
     description: The color to use for padding including alpha
     default: "#00000000"
     mutable: yes
+    animation: yes

@@ -154,8 +154,10 @@ void draw_now_dot(mlt_filter filter, mlt_frame frame, QPainter &p, s_base_crops 
 	private_data* pdata = (private_data*)filter->child;
 	mlt_rect rect = pdata->img_rect;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 	int thickness =  mlt_properties_get_int( properties, "thickness" );
-	mlt_color dot_color = mlt_properties_get_color(properties, "now_dot_color");
+	mlt_color dot_color = mlt_properties_anim_get_color(properties, "now_dot_color", position, length);
 
 	//disc with internal color = white and outer color=now dot color or last used for graph line
 	QPen dot_pen = p.pen();
@@ -193,11 +195,13 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
 	mlt_rect rect = pdata->img_rect;
 	QRectF qrect = QRectF( rect.x, rect.y, rect.w, rect.h );
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 	int color_style = mlt_properties_get_int( properties, "color_style" ) ;
 	int thickness = qAbs( mlt_properties_get_int( properties, "thickness" ) );
 	int dots_only = mlt_properties_get_int( properties, "draw_individual_dots" );
 	char* legend_unit = mlt_properties_get(properties, "legend_unit");
-	QVector<QColor> colors = get_graph_colors( properties );
+	QVector<QColor> colors = get_graph_colors( properties, position, length );
 	QPen last_graph_pen;
 	
 	if (colors.size() < 2)
@@ -420,10 +424,12 @@ void draw_main_speedometer(mlt_filter filter, mlt_frame frame, QPainter &p, s_ba
 	private_data* pdata = (private_data*)filter->child;
 	mlt_rect rect = pdata->img_rect;
 	mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+	mlt_position position = mlt_filter_get_position( filter, frame );
+	mlt_position length = mlt_filter_get_length2( filter, frame );
 	// int color_style = mlt_properties_get_int( properties, "color_style" ) ;
 	// int thickness = qAbs( mlt_properties_get_int( properties, "thickness" ) );
 	int show_grid = mlt_properties_get_int(properties, "show_grid");
-	QVector<QColor> colors = get_graph_colors( properties );
+	QVector<QColor> colors = get_graph_colors( properties, position, length );
 
 	if (colors.size() == 1)
 		colors.append(colors[0]);
@@ -525,7 +531,7 @@ void draw_main_speedometer(mlt_filter filter, mlt_frame frame, QPainter &p, s_ba
 	//the needle considered as a "Now dot in UI"; just a long triangle
 	if (mlt_properties_get_int(properties, "show_now_dot"))
 	{
-		mlt_color dot_color = mlt_properties_get_color(properties, "now_dot_color");
+		mlt_color dot_color = mlt_properties_anim_get_color(properties, "now_dot_color", position, length);
 		if (dot_color.a == 0) // if transparent -> use main color
 		{
 			p.setBrush( colors[0] );

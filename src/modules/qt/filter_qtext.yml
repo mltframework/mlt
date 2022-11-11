@@ -86,6 +86,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+    animation: yes
 
   - identifier: bgcolour
     title: Background color
@@ -98,6 +99,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+    animation: yes
 
   - identifier: olcolour
     title: Outline color
@@ -109,6 +111,7 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+    animation: yes
 
   - identifier: outline
     title: Outline Width

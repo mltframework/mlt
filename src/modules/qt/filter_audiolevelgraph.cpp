@@ -132,7 +132,7 @@ static void draw_levels( mlt_filter filter, mlt_frame frame, QImage* qimg, int w
 	int segments = mlt_properties_anim_get_int( filter_properties, "segments", position, length );
 	int segment_gap = mlt_properties_anim_get_int( filter_properties, "segment_gap", position, length ) * scale;
 	int segment_width = mlt_properties_anim_get_int( filter_properties, "thickness", position, length ) * scale;
-	QVector<QColor> colors = get_graph_colors( filter_properties );
+	QVector<QColor> colors = get_graph_colors( filter_properties, position, length);
 
 	QRectF r( rect.x, rect.y, rect.w, rect.h );
 	QPainter p( qimg );
