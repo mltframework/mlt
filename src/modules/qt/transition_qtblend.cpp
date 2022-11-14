@@ -35,7 +35,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	mlt_properties transition_properties = MLT_TRANSITION_PROPERTIES( transition );
 
 	uint8_t *b_image = NULL;
+	// hasAlpha indicates whether the source material has an alpha channel
 	bool hasAlpha = *format == mlt_image_rgba;
+	// forceAlpha is true if some operation makes it mandatory to perform the alpha compositing, like padding or scaling
+	bool forceAlpha = false;
 	double opacity = 1.0;
 	QTransform transform;
 	// reference rect
@@ -56,8 +59,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	bool distort = mlt_properties_get_int( transition_properties, "distort" );
 
 	// Check the producer's native format before fetching image
-	if (mlt_properties_get_int( b_properties, "format" ) == mlt_image_rgba) {
-		hasAlpha = true;
+	int sourceFormat = mlt_properties_get_int( b_properties, "format" );
+	if ( sourceFormat == mlt_image_rgba || sourceFormat == mlt_image_rgb )
+	{
+		hasAlpha = sourceFormat == mlt_image_rgba;
 		*format = mlt_image_rgba;
 	}
 
@@ -120,10 +125,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			b_height = qMin((int)rect.h, b_height);
 			transform.translate( ( rect.w - b_width ) / 2.0, ( rect.h - b_height ) / 2.0 );
 		}
-		if ( opacity < 1 || rect.x > 0 || rect.y > 0 || ( rect.x + rect.w < *width ) || ( rect.y + rect.w < *height ) )
+		if ( opacity < 1 || rect.x != 0 || rect.y != 0 || ( rect.x + rect.w != *width ) || ( rect.y + rect.h != *height ) )
 		{
 			// we will process operations on top frame, so also process b_frame
-			hasAlpha = true;
+			forceAlpha = true;
 		}
 	}
 	else
@@ -152,7 +157,7 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 			{
 				transform.rotate( angle );
 			}
-			hasAlpha = true;
+			forceAlpha = true;
 		}
 	}
 
@@ -172,54 +177,57 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	{
 		transform.scale( rect.w / b_width, rect.h / b_height );
 	}
-	if ( rect.w == -1 )
+	// Check profile dar vs image dar image
+	if ( !forceAlpha && rect.w == -1 && b_dar != mlt_profile_dar( profile ) )
 	{
-		// No transform, request profile sized image
-		if (b_dar != mlt_profile_dar( profile ) )
-		{
-			// Activate transparency if the clips don't have the same aspect ratio
-			hasAlpha = true;
-		}
+		// Activate transparency if the clips don't have the same aspect ratio
+		forceAlpha = true;
 	}
-	if ( !hasAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height ) )
+	if ( !forceAlpha && ( mlt_properties_get_int( transition_properties, "compositing" ) != 0 || b_width < *width || b_height < *height ) )
 	{
-		hasAlpha = true;
+		forceAlpha = true;
 	}
 
 	// Check if we have transparency
 	int request_width = b_width;
 	int request_height = b_height;
 	bool imageFetched = false;
-	if ( !hasAlpha || *format == mlt_image_rgba )
+	if ( !forceAlpha )
 	{
-		// fetch image
-		error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 0 );
-		bool imageFetched = true;
-		if ( !hasAlpha && ( *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) ) )
+		if ( !hasAlpha || *format == mlt_image_rgba )
 		{
-			hasAlpha = true;
+			// fetch image in native format
+			error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 0 );
+			imageFetched = true;
+			if ( !hasAlpha && ( *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) ) )
+			{
+				hasAlpha = true;
+			}
+			if ( hasAlpha && *format == mlt_image_rgba )
+			{
+				hasAlpha = !mlt_image_rgba_opaque( b_image, b_width, b_height );
+			}
 		}
-		hasAlpha = hasAlpha && !mlt_image_rgba_opaque( b_image, b_width, b_height );
-	}
-	if ( !hasAlpha )
-	{
-		// Prepare output image
-		if ( b_frame->convert_image && ( b_width != request_width || b_height != request_height ) )
+		if ( !hasAlpha )
 		{
-			mlt_properties_set_int( b_properties, "convert_image_width", request_width );
-			mlt_properties_set_int( b_properties, "convert_image_height", request_height );
-			b_frame->convert_image( b_frame, &b_image, format, *format );
-			*width = request_width;
-			*height = request_height;
+			// Prepare output image
+			if ( b_frame->convert_image && ( b_width != request_width || b_height != request_height ) )
+			{
+				mlt_properties_set_int( b_properties, "convert_image_width", request_width );
+				mlt_properties_set_int( b_properties, "convert_image_height", request_height );
+				b_frame->convert_image( b_frame, &b_image, format, *format );
+				*width = request_width;
+				*height = request_height;
+			}
+			else
+			{
+				*width = b_width;
+				*height = b_height;
+			}
+			*image = b_image;
+			free( interps );
+			return 0;
 		}
-		else
-		{
-			*width = b_width;
-			*height = b_height;
-		}
-		*image = b_image;
-		free( interps );
-		return 0;
 	}
 
 	if ( !imageFetched )
