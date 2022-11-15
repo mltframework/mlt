@@ -1,6 +1,5 @@
 add_library(mltrtaudio MODULE
   consumer_rtaudio.cpp
-  RtAudio.cpp RtAudio.h
 )
 
 file(GLOB YML "*.yml")
@@ -15,7 +14,7 @@ target_link_libraries(mltrtaudio PRIVATE mlt Threads::Threads)
 if(TARGET PkgConfig::rtaudio)
   target_link_libraries(mltrtaudio PRIVATE PkgConfig::rtaudio)
 else()
-  target_sources(mltrtaudio PRIVATE RtAudio.cpp)
+  target_sources(mltrtaudio PRIVATE RtAudio.cpp RtAudio.h)
   target_include_directories(mltrtaudio PRIVATE .)
   if(APPLE)
     target_link_libraries(mltrtaudio PRIVATE "-framework CoreAudio" "-framework CoreFoundation")
