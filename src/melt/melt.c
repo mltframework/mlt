@@ -981,6 +981,9 @@ query_all:
 		if ( ! profile->is_explicit )
 		{
 			mlt_profile_from_producer( profile, melt );
+            mlt_consumer melt_consumer = MLT_CONSUMER( mlt_service_consumer( MLT_PRODUCER_SERVICE( melt ) ) );
+			if (melt_consumer)
+				mlt_consumer_connect(melt_consumer, NULL);
 			mlt_producer_close( melt );
 			melt = mlt_factory_producer( profile, "melt", &argv[ 1 ] );
 		}
