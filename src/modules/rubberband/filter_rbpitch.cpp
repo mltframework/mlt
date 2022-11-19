@@ -101,7 +101,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		delete s;
 		// Create a rubberband instance
 		RubberBandStretcher::Options options = RubberBandStretcher::OptionProcessRealTime;
-#if RUBBERBAND_API_MINOR_VERSION >= 7
+#if RUBBERBAND_API_MAJOR_VERSION >= 2 && RUBBERBAND_API_MINOR_VERSION >= 7
 		// Use the higher quality engine if available.
 		options |= RubberBandStretcher::OptionEngineFiner;
 #endif
@@ -116,7 +116,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 	if( pitchscale >= 0.5 && pitchscale <= 2.0 )
 	{
 		// Pitch adjustment < 200%
-#if RUBBERBAND_API_MINOR_VERSION < 7
+#if RUBBERBAND_API_MAJOR_VERSION <= 2 && RUBBERBAND_API_MINOR_VERSION < 7
 		s->setPitchOption(RubberBandStretcher::OptionPitchHighQuality);
 #endif
 		s->setTransientsOption(RubberBandStretcher::OptionTransientsCrisp);
@@ -126,7 +126,7 @@ static int rbpitch_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *
 		// Pitch adjustment > 200%
 		// "HighConsistency" and "Smooth" options help to avoid large memory
 		// consumption and crashes that can occur for large pitch adjustments.
-#if RUBBERBAND_API_MINOR_VERSION < 7
+#if RUBBERBAND_API_MAJOR_VERSION <= 2 && RUBBERBAND_API_MINOR_VERSION < 7
 		s->setPitchOption(RubberBandStretcher::OptionPitchHighConsistency);
 #endif
 		s->setTransientsOption(RubberBandStretcher::OptionTransientsSmooth);
