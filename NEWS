@@ -1,6 +1,46 @@
 MLT Release Notes
 -----------------
 
+Version 7.12.0
+
+This version is released soon after 7.10.0 to fix a couple of major new
+bugs in the popular `qtblend` and `frei0r.cairoblend` transitions.
+It also includes new color animation APIs with sensible interpolation!
+
+Framework
+  * Added new color animation APIs:
+    - `mlt_property_set_color()`
+    - `mlt_property_get_color()`
+    - `mlt_property_anim_set_color()`
+    - `mlt_property_anim_get_color()`
+    - `mlt_properties_anim_set_color()`
+    - `mlt_properties_anim_get_color()`
+    - `Mlt::Properties::anim_get_color(char const*, int, int)`
+    - `Mlt::Properties::anim_set(char const*, mlt_color, int, int, mlt_keyframe_type)`
+
+Modules
+  * Updated the following services to support animation of color properties:
+    - `frei0r` (any color parameter in any frei0r plugin)
+    - `chroma`
+    - `chroma_hold`
+    - `audiolevelgraph`
+    - `audiospectrum`
+    - `audiowaveform`
+    - `gpsgraphic`
+    - `gpstext`
+    - `qtcrop`
+    - `qtext`
+  * Added `discontinuity_reset` property to `dynamic_loudness` filter.
+  * Fixed `qtblend` transition not blending with an opaque rgba image.
+  * Added support for the "finer" engine in Rubberband version 3.
+  * Fixed crash in `frei0r.cairoblend` when `threads` property not set.
+
+Other
+  * Fixed leaking the xml producer in `melt` when the XML contains a `consumer`
+    element but no profile information.
+  * Fixed symbol not found error in `rtaudio` consumer.
+
+
 Version 7.10.0
 
 The highlight of this version is support for Qt 6.
