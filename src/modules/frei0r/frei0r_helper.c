@@ -150,7 +150,8 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 
 	f0r_instance_t inst = mlt_properties_get_data(prop, ctorname, NULL);
 	if (!inst) {
-		destruct_ctor(prop);
+		if (slice_count > 1)
+			destruct_ctor(prop);
 		inst = f0r_construct(*width, slice_height);
 		mlt_properties_set_data(prop, ctorname, inst, 0, NULL, NULL);
 	}
