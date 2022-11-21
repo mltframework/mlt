@@ -48,7 +48,7 @@ if(TARGET PkgConfig::libavdevice)
 endif()
 
 if(TARGET PkgConfig::libswresample)
-  target_sources(mltavformat PRIVATE filter_swresample.c)
+  target_sources(mltavformat PRIVATE common_swr.c common_swr.h filter_swresample.c link_swresample.c)
   target_link_libraries(mltavformat PRIVATE PkgConfig::libswresample)
   target_compile_definitions(mltavformat PRIVATE SWRESAMPLE)
 endif()
