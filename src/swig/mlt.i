@@ -69,10 +69,10 @@ namespace Mlt {
 
 #if defined(SWIGPYTHON)
 %feature("shadow") Frame::get_waveform(int, int) %{
-    def get_waveform(*args): return _mlt.frame_get_waveform(*args)
+    def get_waveform(*args): return _mlt7.frame_get_waveform(*args)
 %}
 %feature("shadow") Frame::get_image(mlt_image_format&, int&, int&) %{
-    def get_image(*args): return _mlt.frame_get_image(*args)
+    def get_image(*args): return _mlt7.frame_get_image(*args)
 %}
 #endif
 
