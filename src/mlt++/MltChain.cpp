@@ -27,10 +27,23 @@ Chain::Chain( ) :
 }
 
 Chain::Chain( Profile& profile, const char *id, const char *service ) :
-	instance( mlt_chain_init( profile.get_profile() ) )
+	instance( nullptr )
 {
-	Mlt::Producer source( profile, id, service );
-	mlt_chain_set_source( instance, source.get_producer() );
+	if ( id == NULL || service == NULL )
+	{
+		service = id != NULL ? id : service;
+		id = NULL;
+	}
+
+	mlt_producer source = mlt_factory_producer( profile.get_profile(), id, service );
+	if ( source )
+	{
+		instance = mlt_chain_init( profile.get_profile() );
+		mlt_chain_set_source( instance, source );
+		if ( id == NULL )
+			mlt_chain_attach_normalisers( instance );
+		mlt_producer_close ( source );
+	}
 }
 
 Chain::Chain( Profile& profile ) :

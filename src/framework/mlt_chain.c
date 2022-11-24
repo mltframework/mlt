@@ -393,6 +393,33 @@ void mlt_chain_close( mlt_chain self )
 	}
 }
 
+/** Attach normalizer links.
+ *
+ * \public \memberof mlt_chain_s
+ * \param self a chain
+ */
+
+extern void mlt_chain_attach_normalisers( mlt_chain self )
+{
+	if ( self )
+	{
+		int i = 0;
+		mlt_chain_base *base = self->local;
+		if ( base->link_count && mlt_properties_get_int( MLT_LINK_PROPERTIES( base->links[ i ] ), "_loader" ) )
+		{
+			mlt_log_warning( MLT_CHAIN_SERVICE(self), "Chain already has normalizers\n");
+			return;
+		}
+		mlt_link resample = mlt_factory_link( "swresample", NULL );
+		if ( resample )
+		{
+			mlt_properties_set_int( MLT_LINK_PROPERTIES(resample), "_loader", 1 );
+			mlt_chain_attach( self, resample );
+			mlt_chain_move_link( self, base->link_count - 1, 0 );
+		}
+	}
+}
+
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index )
 {
 	int result = 1;
