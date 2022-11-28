@@ -11,19 +11,18 @@ tags:
   - Audio
   - Hidden
 description: >
-  Adjust an audio stream's sampling rate, and duplicate channels if producer 
-  provides less than consumer requested.
+  Adjust an audio stream's sampling rate.
   
-  This filter is automatically invoked by the loader producer for the sake of 
-  normalisation over inputs and with the consumer.
-bugs:
-  - >
-    Assumes 2 channels during libsamplerate initialisation. Untested with >2 
-    channels.
+  This filter is automatically invoked by the loader producer to normalize
+  audio from the producer to provide the rate requested by the consumer.
 parameters:
-  - identifier: requested
+  - identifier: frequency
     title: Frequency
     type: integer
-    description: The target sample rate.
+    description: >
+      The target sample rate.
+
+      If not set, the filter will convert to the sample rate requested by
+      the consumer.
     required: no
     readonly: no
