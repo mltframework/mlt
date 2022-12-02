@@ -22,6 +22,7 @@
 #include <framework/mlt.h>
 
 extern mlt_filter filter_resample_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_link link_resample_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
@@ -33,6 +34,8 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 MLT_REPOSITORY
 {
 	MLT_REGISTER( mlt_service_filter_type, "resample", filter_resample_init );
+	MLT_REGISTER( mlt_service_link_type, "resample", link_resample_init );
 
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "resample", metadata, "filter_resample.yml" );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "resample", metadata, "link_resample.yml" );
 }

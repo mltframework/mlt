@@ -411,6 +411,10 @@ extern void mlt_chain_attach_normalisers( mlt_chain self )
 			return;
 		}
 		mlt_link resample = mlt_factory_link( "swresample", NULL );
+		if ( !resample )
+		{
+			resample = mlt_factory_link( "resample", NULL );
+		}
 		if ( resample )
 		{
 			mlt_properties_set_int( MLT_LINK_PROPERTIES(resample), "_loader", 1 );

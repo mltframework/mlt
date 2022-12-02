@@ -1,4 +1,4 @@
-add_library(mltresample MODULE factory.c filter_resample.c)
+add_library(mltresample MODULE factory.c filter_resample.c link_resample.c)
 
 file(GLOB YML "*.yml")
 add_custom_target(Other_resample_Files SOURCES
