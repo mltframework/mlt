@@ -403,7 +403,8 @@ static mlt_properties find_default_streams( producer_avformat self )
 				}
 				mlt_properties_set( meta_media, key, "video" );
 				snprintf( key, sizeof(key), "meta.media.%u.stream.frame_rate", i );
-				double ffmpeg_fps = av_q2d( context->streams[ i ]->avg_frame_rate );
+				double avg_frame_rate = av_q2d( context->streams[ i ]->avg_frame_rate );
+				double ffmpeg_fps = isfinite( avg_frame_rate ) ? avg_frame_rate : av_q2d( context->streams[ i ]->r_frame_rate );
 				mlt_properties_set_double( meta_media, key, ffmpeg_fps );
 
 				const char *projection = get_projection(context->streams[i]);
