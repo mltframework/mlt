@@ -140,7 +140,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	double output_ar = mlt_profile_sar( profile );
 	if ( mlt_frame_get_aspect_ratio( b_frame ) == 0 )
 	{
+		fprintf(stderr, "ADJUSTING BFRAME AR: %f\n", output_ar);
 		mlt_frame_set_aspect_ratio( b_frame, output_ar );
+	} else {
+		fprintf(stderr, "GOT BFRAME AR: %f\n", output_ar);
 	}
 
 	if ( mlt_properties_get( transition_properties, "rotation" ) )
@@ -197,7 +200,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 		if ( !hasAlpha || *format == mlt_image_rgba )
 		{
 			// fetch image in native format
+			fprintf(stderr, "FETCHING NATIVE IMAGE: %dx%d\n", b_width, b_height);
 			error = mlt_frame_get_image( b_frame, &b_image, format, &b_width, &b_height, 0 );
+			fprintf(stderr, "GOT NATIVE IMAGE SIZE: %dx%d\n", b_width, b_height);
 			imageFetched = true;
 			if ( !hasAlpha && ( *format == mlt_image_rgba || mlt_frame_get_alpha( b_frame ) ) )
 			{
