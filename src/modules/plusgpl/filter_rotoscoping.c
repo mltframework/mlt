@@ -326,6 +326,52 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
     int mode = mlt_properties_get_int( unique, "mode" );
 
+    // Rotoscoping points are based on the profile size / aspect ratio, so check the requested image matches profile
+    mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( (mlt_filter) unique ) );
+    int normalised_width = profile->width;
+    int normalised_height = profile->height;
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+    int b_width = mlt_properties_get_int( frame_properties, "meta.media.width" );
+    int b_height = mlt_properties_get_int( frame_properties, "meta.media.height" );
+    if ( b_height == 0 )
+    {
+        b_width = normalised_width;
+        b_height = normalised_height;
+    }
+
+    // Special case - aspect_ratio = 0
+    if ( mlt_frame_get_aspect_ratio( frame ) == 0 )
+    {
+        double output_ar = mlt_profile_sar( profile );
+        mlt_frame_set_aspect_ratio( frame, output_ar );
+    }
+
+    double b_ar = mlt_frame_get_aspect_ratio( frame );
+    int scalex = *width;
+    int scaley = *height;
+    int offsetx = 0;
+    int offsety = 0;
+    // Compare aspect ratio
+    if ( 100 * *width / *height != 100 * normalised_width / normalised_height )
+    {
+        // Source has a different aspect ratio, apply scaling
+        double xfactor = normalised_width / *width;
+        double yfactor = normalised_height / *height;
+        if ( xfactor < yfactor )
+        {
+            // Image will be stretched horizontally
+            scalex = *width / b_ar;
+            scaley = *width * normalised_height / normalised_width / b_ar;
+        }
+        else
+        {
+            // Image will be stretched vertically
+            scaley = *height / b_ar;
+            scalex = *height * normalised_width / normalised_height / b_ar;
+        }
+        offsetx = (scalex - *width) / 2;
+        offsety = (scaley - *height) / 2;
+    }
     // Get the image
     if ( mode == MODE_RGB )
         *format = mlt_image_rgb;
@@ -343,12 +389,18 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
         for ( i = 0; i < bcount; i++ )
         {
             // map to image dimensions
-            bpoints[i].h1.x *= *width;
-            bpoints[i].p.x  *= *width;
-            bpoints[i].h2.x *= *width;
-            bpoints[i].h1.y *= *height;
-            bpoints[i].p.y  *= *height;
-            bpoints[i].h2.y *= *height;
+            bpoints[i].h1.x *= scalex;
+            bpoints[i].p.x  *= scalex;
+            bpoints[i].h2.x *= scalex;
+            bpoints[i].h1.x -= offsetx;
+            bpoints[i].p.x  -= offsetx;
+            bpoints[i].h2.x -= offsetx;
+            bpoints[i].h1.y *= scaley;
+            bpoints[i].p.y  *= scaley;
+            bpoints[i].h2.y *= scaley;
+            bpoints[i].h1.y -= offsety;
+            bpoints[i].p.y  -= offsety;
+            bpoints[i].h2.y -= offsety;
         }
 
         count = 0;
@@ -371,7 +423,6 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
             if ( feather && mode != MODE_RGB )
             {
                 // Adapt feathering to consumer scaling
-                mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( (mlt_filter) unique ) );
                 double scale_width = mlt_profile_scale_width( profile, *width );
                 feather = MAX( 1, (int) ( feather * scale_width ) );
                 blur( map, *width, *height, feather, mlt_properties_get_int( unique, "feather_passes" ) );
