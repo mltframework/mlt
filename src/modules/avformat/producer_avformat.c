@@ -2633,9 +2633,13 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 	{
 		int64_t pts = pkt->pts;
 		if ( self->first_pts != AV_NOPTS_VALUE )
-			pts -= self->first_pts;
+			pts -= av_rescale_q(self->first_pts,
+								context->streams[self->video_index]->time_base,
+								context->streams[ index ]->time_base);
 		else if ( context->start_time != AV_NOPTS_VALUE && self->video_index != -1 )
-			pts -= context->start_time;
+			pts -= av_rescale_q(context->start_time,
+								AV_TIME_BASE_Q,
+								context->streams[ index ]->time_base);
 		double timebase = av_q2d( context->streams[ index ]->time_base );
 		int64_t int_position = llrint( timebase * pts * fps );
 		int64_t req_position = llrint( timecode * fps );
