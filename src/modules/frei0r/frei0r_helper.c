@@ -78,20 +78,6 @@ static int f0r_update2_slice( int id, int index, int count, void *context )
 	return 0;
 }
 
-static void destruct_ctor(mlt_properties prop)
-{
-	void (*f0r_destruct) (f0r_instance_t instance) = mlt_properties_get_data(prop, "f0r_destruct", NULL);
-	for (int i = 0; i < mlt_properties_count(prop); i++) {
-		if (strstr(mlt_properties_get_name(prop, i), "ctor-")) {
-			void *inst = mlt_properties_get_data(prop, mlt_properties_get_name(prop, i), NULL);
-			if (inst) {
-				f0r_destruct((f0r_instance_t) inst);
-				mlt_properties_clear(prop, mlt_properties_get_name(prop, i));
-			}
-		}
-	}
-}
-
 int process_frei0r_item( mlt_service service, mlt_position position, double time,
 	int length, mlt_frame frame, uint8_t **image, int *width, int *height )
 {
@@ -138,24 +124,29 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 	// Use width and height in the frei0r instance key
 	char ctorname[1024] = "";
 	if (not_thread_safe)
-		sprintf(ctorname, "ctor-%dx%d", *width, slice_height);
+		sprintf(ctorname, "ctor-");
 	else
 #ifdef _WIN32
-		sprintf(ctorname, "ctor-%dx%d-%lu", *width, slice_height, GetCurrentThreadId());
+		sprintf(ctorname, "ctor-%lu", GetCurrentThreadId());
 #else
-		sprintf(ctorname, "ctor-%dx%d-%p", *width, slice_height, (void*) pthread_self());
+		sprintf(ctorname, "ctor-%p", (void*) pthread_self());
 #endif
 
 	mlt_service_lock(service);
 
-	f0r_instance_t inst = mlt_properties_get_data(prop, ctorname, NULL);
-	if (!inst) {
-		if (slice_count > 1)
-			destruct_ctor(prop);
-		inst = f0r_construct(*width, slice_height);
-		mlt_properties_set_data(prop, ctorname, inst, 0, NULL, NULL);
+	mlt_properties ctor = mlt_properties_get_properties(prop, ctorname);
+	if (!ctor || mlt_properties_get_int(ctor, "width") != *width || mlt_properties_get_int(ctor, "height") != slice_height)
+	{
+		mlt_properties_clear(prop, ctorname);
+		ctor = mlt_properties_new();
+		f0r_instance_t new_inst = f0r_construct(*width, slice_height);
+		mlt_properties_set_int(ctor, "width", *width);
+		mlt_properties_set_int(ctor, "height", slice_height);
+		mlt_properties_set_data(ctor, "inst", new_inst, 0, mlt_properties_get_data(prop, "f0r_destruct", NULL), NULL);
+		mlt_properties_set_properties(prop, ctorname, ctor);
+		mlt_properties_close(ctor);
 	}
-
+	f0r_instance_t inst = mlt_properties_get_data(ctor, "inst", NULL);
 	if (!not_thread_safe && slice_count == 1)
 		mlt_service_unlock(service);
 
@@ -322,8 +313,6 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 }
 
 void destruct (mlt_properties prop ) {
-
-	void (*f0r_destruct) (f0r_instance_t instance) = mlt_properties_get_data(prop, "f0r_destruct", NULL);
 	void (*f0r_deinit) (void) = mlt_properties_get_data(prop, "f0r_deinit", NULL);
 	int i = 0;
 
@@ -332,10 +321,7 @@ void destruct (mlt_properties prop ) {
 
 	for (i=0; i < mlt_properties_count(prop); i++) {
 		if (strstr(mlt_properties_get_name(prop, i), "ctor-")) {
-			void * inst = mlt_properties_get_data(prop, mlt_properties_get_name(prop, i), NULL);
-			if (inst) {
-				f0r_destruct((f0r_instance_t) inst);
-			}
+			mlt_properties_clear(prop, mlt_properties_get_name(prop, i));
 		}
 	}
 	void (*dlclose) (void*) = mlt_properties_get_data(prop, "_dlclose", NULL);
