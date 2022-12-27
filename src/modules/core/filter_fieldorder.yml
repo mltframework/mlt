@@ -13,7 +13,7 @@ tags:
   - Hidden
 notes: >
   This filter is automatically invoked by the loader as part of image
-  normalisation.
+  normalization.
   It compares the frame property top_field_first to the consumer property with
   the same name to determine if correction is needed.
   It performs field order correction by shifting the image down by one line.

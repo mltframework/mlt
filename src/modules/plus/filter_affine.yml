@@ -34,7 +34,7 @@ parameters:
     service-name: transition.affine
     mutable: yes
 
-  - identifier: use_normalised
+  - identifier: use_normalized
     title: Use normalized
     description: >
       Use the profile's video resolution when requesting the image from the
@@ -42,3 +42,7 @@ parameters:
     type: boolean
     default: 0
     mutable: yes
+
+  - identifier: use_normalised
+    title: Use normalized (*DEPRECATED*)
+    description: deprecated. See use_normalized

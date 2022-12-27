@@ -31,7 +31,7 @@ static void *consumer_thread( void *arg );
 static void consumer_close( mlt_consumer consumer );
 static void purge( mlt_consumer consumer );
 
-static mlt_properties normalisers = NULL;
+static mlt_properties normalizers = NULL;
 
 /** Initialise the consumer.
 */
@@ -108,7 +108,7 @@ static void create_filter( mlt_profile profile, mlt_service service, char *effec
 	free( id );
 }
 
-static void attach_normalisers( mlt_profile profile, mlt_service service )
+static void attach_normalizers( mlt_profile profile, mlt_service service )
 {
 	// Loop variable
 	int i;
@@ -116,21 +116,21 @@ static void attach_normalisers( mlt_profile profile, mlt_service service )
 	// Tokeniser
 	mlt_tokeniser tokeniser = mlt_tokeniser_init( );
 
-	// We only need to load the normalising properties once
-	if ( normalisers == NULL )
+	// We only need to load the normalizing properties once
+	if ( normalizers == NULL )
 	{
 		char temp[ 1024 ];
 		snprintf( temp, sizeof(temp), "%s/core/loader.ini", mlt_environment( "MLT_DATA" ) );
-		normalisers = mlt_properties_load( temp );
-		mlt_factory_register_for_clean_up( normalisers, ( mlt_destructor )mlt_properties_close );
+		normalizers = mlt_properties_load( temp );
+		mlt_factory_register_for_clean_up( normalizers, ( mlt_destructor )mlt_properties_close );
 	}
 
-	// Apply normalisers
-	for ( i = 0; i < mlt_properties_count( normalisers ); i ++ )
+	// Apply normalizers
+	for ( i = 0; i < mlt_properties_count( normalizers ); i ++ )
 	{
 		int j = 0;
 		int created = 0;
-		char *value = mlt_properties_get_value( normalisers, i );
+		char *value = mlt_properties_get_value( normalizers, i );
 		mlt_tokeniser_parse_new( tokeniser, value, "," );
 		for ( j = 0; !created && j < mlt_tokeniser_count( tokeniser ); j ++ )
 			create_filter( profile, service, mlt_tokeniser_get_string( tokeniser, j ), &created );
@@ -190,7 +190,7 @@ static mlt_consumer generate_consumer( mlt_consumer consumer, mlt_properties pro
 		mlt_properties_pass_list( nested_props, props, "mlt_profile" );
 		mlt_properties_inherit( nested_props, props );
 
-		attach_normalisers( profile, MLT_CONSUMER_SERVICE(nested) );
+		attach_normalizers( profile, MLT_CONSUMER_SERVICE(nested) );
 
 		// Relay the first available consumer-frame-show event
 		mlt_event event = mlt_properties_get_data( properties, "frame-show-event", NULL );

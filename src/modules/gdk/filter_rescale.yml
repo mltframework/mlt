@@ -12,10 +12,10 @@ tags:
   - Hidden
 description: >
   Scale the producer video frame size to match the consumer. This filter is 
-  designed for use as a normaliser for the loader producer.
+  designed for use as a normalizer for the loader producer.
 notes: >
   If a property "consumer_aspect_ratio" exists on the frame, then rescaler 
-  normalises the producer's aspect ratio and maximises the size of the frame, 
+  normalizes the producer's aspect ratio and maximises the size of the frame, 
   but may not produce the consumer's requested dimension. Therefore, this 
   option works best in conjunction with the resize filter. This behavior can be 
   disabled by another service by either removing the property, setting it to 

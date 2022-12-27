@@ -140,7 +140,7 @@ mlt_profile mlt_profile_init( const char *name )
 	return profile;
 }
 
-static void set_mlt_normalisation( const char *profile_name )
+static void set_mlt_normalization( const char *profile_name )
 {
 	if ( profile_name )
 	{
@@ -184,7 +184,7 @@ mlt_profile mlt_profile_load_file( const char *file )
 			// Set MLT_PROFILE to basename
 			char *filename = strdup( file );
 			mlt_environment_set( "MLT_PROFILE", basename( filename ) );
-			set_mlt_normalisation( basename( filename ) );
+			set_mlt_normalization( basename( filename ) );
 			free( filename );
 		}
 		mlt_properties_close( properties );
@@ -192,7 +192,7 @@ mlt_profile mlt_profile_load_file( const char *file )
 
 	// Set MLT_NORMALISATION to appease legacy modules
 	char *profile_name = mlt_environment( "MLT_PROFILE" );
-	set_mlt_normalisation( profile_name );
+	set_mlt_normalization( profile_name );
 	return profile;
 }
 

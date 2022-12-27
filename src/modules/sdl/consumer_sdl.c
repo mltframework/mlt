@@ -623,7 +623,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 			if ( mlt_properties_get( properties, "rescale" ) != NULL &&
 				!strcmp( mlt_properties_get( properties, "rescale" ), "none" ) )
 			{
-				// Use hardware scaler to normalise display aspect ratio
+				// Use hardware scaler to normalize display aspect ratio
 				self->rect.w = frame_aspect / this_aspect * self->window_width;
 				self->rect.h = self->window_height;
 				if ( self->rect.w > self->window_width )
@@ -639,7 +639,7 @@ static int consumer_play_video( consumer_sdl self, mlt_frame frame )
 				self->rect.w = self->window_width;
 				self->rect.h = self->window_height;
 			}
-			// Use hardware scaler to normalise sample aspect ratio
+			// Use hardware scaler to normalize sample aspect ratio
 			else if ( self->window_height * display_ratio > self->window_width )
 			{
 				self->rect.w = self->window_width;

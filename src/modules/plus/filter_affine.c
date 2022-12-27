@@ -95,9 +95,9 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		// Add the affine transition onto the frame stack
 		mlt_transition_process( transition, a_frame, frame );
 
-		if ( mlt_properties_get_int( properties, "use_normalised" ) )
+		if ( mlt_properties_get_int( properties, "use_normalized" ) || mlt_properties_get_int( properties, "use_normalized" ) )
 		{
-			// Use the normalised width & height
+			// Use the normalized width & height
 			mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
 			*width = profile->width;
 			*height = profile->height;

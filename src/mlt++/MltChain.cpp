@@ -41,7 +41,7 @@ Chain::Chain( Profile& profile, const char *id, const char *service ) :
 		instance = mlt_chain_init( profile.get_profile() );
 		mlt_chain_set_source( instance, source );
 		if ( id == NULL )
-			mlt_chain_attach_normalisers( instance );
+			mlt_chain_attach_normalizers( instance );
 		mlt_producer_close ( source );
 	}
 }

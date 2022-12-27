@@ -64,7 +64,7 @@ parameters:
     default: 0
     widget: checkbox
 
-  - identifier: normalise
+  - identifier: normalize
     title: Dynamic normalization
     description: >
       This computes the gain for normalization dynamically per frame, but it
@@ -75,6 +75,10 @@ parameters:
     maximum: 1
     default: 0
     widget: checkbox
+
+  - identifier: normalise
+    title: Dynamic normalisation (*DEPRECATED*)
+    description: Deprecated. See normalize
 
   - identifier: window
     title: Smoothing window size

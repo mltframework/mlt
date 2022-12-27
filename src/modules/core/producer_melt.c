@@ -56,7 +56,7 @@ mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type
 	if ( result != NULL )
 	{
 		mlt_properties_set( MLT_PRODUCER_PROPERTIES( result ), "resource", file );
-		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( result ), "loader_normalised", 1);
+		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( result ), "loader_normalized", 1);
 	}
 
 	while( count -- )

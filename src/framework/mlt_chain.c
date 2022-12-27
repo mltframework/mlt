@@ -399,7 +399,7 @@ void mlt_chain_close( mlt_chain self )
  * \param self a chain
  */
 
-extern void mlt_chain_attach_normalisers( mlt_chain self )
+extern void mlt_chain_attach_normalizers( mlt_chain self )
 {
 	if ( self )
 	{
