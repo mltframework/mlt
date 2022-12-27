@@ -725,3 +725,10 @@ MLT_7.12.0 {
       "Mlt::Properties::anim_set(char const*, mlt_color, int, int, mlt_keyframe_type)";
     };
 } MLT_7.6.0;
+
+MLT_7.14.0 {
+  global:
+    extern "C++" {
+      "Mlt::Chain::attach_normalizers()";
+    };
+} MLT_7.12.0;

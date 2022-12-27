@@ -1,6 +1,6 @@
 /**
  * MltChain.cpp - Chain wrapper
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -132,5 +132,9 @@ Mlt::Link* Chain::link( int index )
 {
 	mlt_link result = mlt_chain_link( instance, index );
 	return result == NULL ? NULL : new Link( result );
+}
 
+void Chain::attach_normalizers( )
+{
+	mlt_chain_attach_normalizers( instance );
 }
