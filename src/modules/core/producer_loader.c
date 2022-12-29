@@ -1,6 +1,6 @@
 /*
  * producer_loader.c -- auto-load producer by file name extension
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <fnmatch.h>
 #include <assert.h>
+#include <limits.h>
 
 #include <framework/mlt.h>
 
@@ -92,8 +93,8 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 		// We only need to load the dictionary once
 		if ( dictionary == NULL )
 		{
-			char temp[ 1024 ];
-			sprintf( temp, "%s/core/loader.dict", mlt_environment( "MLT_DATA" ) );
+			char temp[PATH_MAX];
+			snprintf(temp, sizeof(temp), "%s/core/loader.dict", mlt_environment("MLT_DATA"));
 			dictionary = mlt_properties_load( temp );
 			mlt_factory_register_for_clean_up( dictionary, ( mlt_destructor )mlt_properties_close );
 		}
@@ -217,8 +218,8 @@ static void attach_normalizers( mlt_profile profile, mlt_producer producer )
 	// We only need to load the normalizing properties once
 	if ( normalizers == NULL )
 	{
-		char temp[ 1024 ];
-		sprintf( temp, "%s/core/loader.ini", mlt_environment( "MLT_DATA" ) );
+		char temp[PATH_MAX];
+		snprintf(temp, sizeof(temp), "%s/core/loader.ini", mlt_environment("MLT_DATA"));
 		normalizers = mlt_properties_load( temp );
 		mlt_factory_register_for_clean_up( normalizers, ( mlt_destructor )mlt_properties_close );
 	}

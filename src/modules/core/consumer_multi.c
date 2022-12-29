@@ -22,6 +22,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <limits.h>
 
 // Forward references
 static int start( mlt_consumer consumer );
@@ -119,7 +120,7 @@ static void attach_normalizers( mlt_profile profile, mlt_service service )
 	// We only need to load the normalizing properties once
 	if ( normalizers == NULL )
 	{
-		char temp[ 1024 ];
+		char temp[ PATH_MAX ];
 		snprintf( temp, sizeof(temp), "%s/core/loader.ini", mlt_environment( "MLT_DATA" ) );
 		normalizers = mlt_properties_load( temp );
 		mlt_factory_register_for_clean_up( normalizers, ( mlt_destructor )mlt_properties_close );

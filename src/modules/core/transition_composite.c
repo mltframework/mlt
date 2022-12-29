@@ -27,6 +27,7 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <limits.h>
 
 typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src, uint8_t *alpha_b, uint8_t *alpha_a, int weight, uint16_t *luma, int softness, uint32_t step );
 
@@ -463,7 +464,7 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 	char *resource = mlt_properties_get( properties, "luma" );
 	char *orig_resource = resource;
 	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
-	char temp[ 512 ];
+	char temp[PATH_MAX];
 
 	if ( luma_width == 0 || luma_height == 0 )
 	{
@@ -473,8 +474,8 @@ static uint16_t* get_luma( mlt_transition self, mlt_properties properties, int w
 
 	if ( resource && resource[0] && strchr( resource, '%' ) )
 	{
-		sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ),
-			mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
+		snprintf(temp, sizeof(temp), "%s/lumas/%s/%s", mlt_environment("MLT_DATA"),
+		    mlt_profile_lumas_dir(profile), strchr(resource, '%') + 1);
 		FILE *test = mlt_fopen(temp, "r");
 		if (!test) {
 			strcat(temp, ".png");

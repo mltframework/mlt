@@ -18,6 +18,7 @@
  */
 
 #include <framework/mlt.h>
+#include <limits.h>
 #include <string.h>
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
@@ -316,7 +317,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	if ( producer == NULL || !last_resource || strcmp( resource, last_resource ) )
 	{
 		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
-		char temp[ 512 ];
+		char temp[PATH_MAX];
 
 		// Store the last resource now
 		mlt_properties_set( MLT_FILTER_PROPERTIES( filter ), "_resource", resource );
@@ -328,7 +329,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		if ( strchr( resource, '%' ) )
 		{
 			FILE *test;
-			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
+			snprintf(temp, sizeof(temp), "%s/lumas/%s/%s", mlt_environment("MLT_DATA"), mlt_profile_lumas_dir(profile), strchr(resource, '%') + 1);
 			test = mlt_fopen( temp, "r" );
 
 			if ( test == NULL )

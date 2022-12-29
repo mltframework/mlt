@@ -24,6 +24,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 
 static void overlay_image(uint8_t *src, int src_width, int src_height , uint8_t *overlay, int overlay_width, int overlay_height, uint8_t * alpha , int xpos, int ypos, int upsidedown , int mirror )
 {
@@ -77,8 +78,8 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Load svg
 	char *factory = mlt_properties_get( properties, "factory" );
-	char temp[1204] = "";
-	sprintf( temp, "%s/oldfilm/", mlt_environment( "MLT_DATA" ) );
+	char temp[PATH_MAX] = "";
+	snprintf(temp, sizeof(temp), "%s/oldfilm/", mlt_environment("MLT_DATA"));
 	
 	mlt_properties direntries = mlt_properties_new();
 	mlt_properties_dir_list( direntries, temp,"dust*.svg",1 );

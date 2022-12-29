@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 #include "transition_composite.h"
 
 static inline int is_opaque( uint8_t *alpha_channel, int width, int height )
@@ -367,14 +368,14 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		
 	if ( resource && ( producer || !current_resource || strcmp( resource, current_resource ) ) )
 	{
-		char temp[ 512 ];
+		char temp[PATH_MAX];
 		char *extension = strrchr( resource, '.' );
 		char *orig_resource = resource;
 		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
 
 		if ( strchr( resource, '%' ) )
 		{
-			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_profile_lumas_dir(profile), strchr( resource, '%' ) + 1 );
+			snprintf(temp, sizeof(temp), "%s/lumas/%s/%s", mlt_environment("MLT_DATA"), mlt_profile_lumas_dir(profile), strchr(resource, '%') + 1);
 			FILE *test = mlt_fopen(temp, "r");
 			if (!test) {
 				strcat(temp, ".png");
