@@ -420,6 +420,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 			amplitude *= mlt_filter_get_progress( filter, frame );
 		}
 		mlt_properties_set_int( instance_props, "normalize", 1 );
+		mlt_properties_set_int( instance_props, "normalise", 1 );
 		mlt_properties_set_double( instance_props, "amplitude", amplitude );
 	}
 
