@@ -46,7 +46,6 @@ add_library(mltcore MODULE
 file(GLOB YML "*.yml")
 add_custom_target(Other_core_Files SOURCES
   ${YML}
-  chain_loader.ini
   loader.dict
   loader.ini
 )
@@ -74,7 +73,6 @@ set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_
 install(TARGETS mltcore LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
-  chain_loader.ini
   consumer_multi.yml
   filter_audiomap.yml
   filter_audiowave.yml

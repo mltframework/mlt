@@ -67,6 +67,7 @@ add_library(mlt SHARED
 )
 
 add_custom_target("Other_mlt_Files" SOURCES
+  chain_normalizers.ini
   metaschema.yaml
   mlt-framework.pc.in
   mlt.vers
@@ -128,7 +129,7 @@ install(TARGETS mlt
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mlt-${MLT_VERSION_MAJOR}/framework
 )
 
-install(FILES metaschema.yaml DESTINATION ${MLT_INSTALL_DATA_DIR})
+install(FILES metaschema.yaml chain_normalizers.ini DESTINATION ${MLT_INSTALL_DATA_DIR})
 
 configure_file(mlt-framework.pc.in mlt-framework-${MLT_VERSION_MAJOR}.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mlt-framework-${MLT_VERSION_MAJOR}.pc

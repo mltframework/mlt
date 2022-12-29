@@ -418,7 +418,7 @@ extern void mlt_chain_attach_normalizers( mlt_chain self )
 	if ( normalisers == NULL )
 	{
 		char temp[ 1024 ];
-		sprintf( temp, "%s/core/chain_loader.ini", mlt_environment( "MLT_DATA" ) );
+		sprintf( temp, "%s/chain_normalizers.ini", mlt_environment( "MLT_DATA" ) );
 		normalisers = mlt_properties_load( temp );
 		mlt_factory_register_for_clean_up( normalisers, ( mlt_destructor )mlt_properties_close );
 	}
