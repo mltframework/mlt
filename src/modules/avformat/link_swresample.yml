@@ -10,8 +10,8 @@ url: http://www.ffmpeg.org/
 tags:
   - Audio
   - Hidden
-description: Converts the audio sample rate.
-notes: >
-  This is not intended to be created directly. Rather, the loader producer
-  loads it if it is available to set the audio resampler to normalize inputs
-  to the consumer audio frequency.
+description: >
+  Change the audio sampling rate, channel layout and format.
+  
+  This link can be added to a chain to normalize audio from the producer to
+  provide the rate, channels and format requested by the consumer.

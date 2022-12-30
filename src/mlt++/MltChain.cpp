@@ -29,10 +29,10 @@ Chain::Chain( ) :
 Chain::Chain( Profile& profile, const char *id, const char *service ) :
 	instance( nullptr )
 {
-	if ( id == NULL || service == NULL )
+	if ( !id || !service )
 	{
-		service = id != NULL ? id : service;
-		id = NULL;
+		service = id ? id : service;
+		id = nullptr;
 	}
 
 	mlt_producer source = mlt_factory_producer( profile.get_profile(), id, service );

@@ -442,6 +442,7 @@ mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, con
 			}
 
 			chain = mlt_chain_init( profile );
+			mlt_chain_attach_normalizers( chain );
 			if ( chain != NULL )
 			{
 				producer = MLT_CHAIN_PRODUCER( chain );

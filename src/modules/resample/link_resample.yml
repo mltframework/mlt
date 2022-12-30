@@ -1,7 +1,7 @@
 schema_version: 7.0
 type: link
 identifier: resample
-title: Resample
+title: SRC Resampler
 version: 1
 copyright: Meltytech, LLC
 license: LGPLv2.1
@@ -11,7 +11,7 @@ tags:
   - Audio
   - Hidden
 description: >
-  Adjust an audio stream's sampling rate.
+  Change the audio sampling rate.
   
   This link can be added to a chain to normalize audio from the producer to
   provide the rate requested by the consumer.
