@@ -2651,10 +2651,17 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 
 		if ( self->seekable || int_position > 0 )
 		{
+			int64_t ahead_threshold = 2;
+			if ( codec_context->codec_id == AV_CODEC_ID_WMAPRO )
+			{
+				// WMAPro needs more tolerance for sync detection
+				ahead_threshold = 4;
+			}
+
 			if ( req_pts > pts ) {
 				// We are behind, so skip some
 				*ignore = lrint( timebase * (req_pts - pts) * codec_context->sample_rate );
-			} else if ( self->audio_index != INT_MAX && int_position > req_position + 2 && !self->is_audio_synchronizing ) {
+			} else if ( self->audio_index != INT_MAX && int_position > req_position + ahead_threshold && !self->is_audio_synchronizing ) {
 				// We are ahead, so seek backwards some more.
 				// Supply -1 as the position to defeat the checks needed by for the other
 				// call to seek_audio() at the beginning of producer_get_audio(). Otherwise,
