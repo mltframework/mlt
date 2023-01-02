@@ -388,10 +388,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		length = out - in + 1;
 	}
 
-	// Obtain the normalised width and height from the a_frame
+	// Obtain the normalized width and height from the a_frame
 	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
-	int normalised_width = profile->width;
-	int normalised_height = profile->height;
+	int normalized_width = profile->width;
+	int normalized_height = profile->height;
 	double consumer_ar = mlt_profile_sar( profile );
 
 	if ( mirror && position > length / 2 )
@@ -402,8 +402,8 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	double ox = mlt_properties_anim_get_double( properties, "ox", position, length );
 	double oy = mlt_properties_anim_get_double( properties, "oy", position, length );
 	if (ox != 0.0 || oy != 0.0) {
-		*width = normalised_width;
-		*height = normalised_height;
+		*width = normalized_width;
+		*height = normalized_height;
 	}
 	
 	// Fetch the a frame image
@@ -415,7 +415,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 	// Calculate the region now
 	double scale_width = mlt_profile_scale_width(profile, *width);
 	double scale_height = mlt_profile_scale_height(profile, *height);
-	mlt_rect result = {0, 0, normalised_width, normalised_height, 1.0};
+	mlt_rect result = {0, 0, normalized_width, normalized_height, 1.0};
 
 	mlt_service_lock( MLT_TRANSITION_SERVICE( transition ) );
 
@@ -433,10 +433,10 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		mlt_position anim_pos = repeat_position(properties, "rect", position, length);
 		result = mlt_properties_anim_get_rect(properties, "rect", anim_pos, length);
 		if (mlt_properties_get(properties, "rect") && strchr(mlt_properties_get(properties, "rect"), '%')) {
-			result.x *= normalised_width;
-			result.y *= normalised_height;
-			result.w *= normalised_width;
-			result.h *= normalised_height;
+			result.x *= normalized_width;
+			result.y *= normalized_height;
+			result.w *= normalized_width;
+			result.h *= normalized_height;
 		}
 		result.o = (result.o == DBL_MIN)? 1.0 : MIN(result.o, 1.0);
 	}
@@ -596,7 +596,7 @@ static int transition_get_image( mlt_frame a_frame, uint8_t **image, mlt_image_f
 		else
 		{
 			// Determine scale with respect to aspect ratio.
-			double consumer_dar = consumer_ar * normalised_width / normalised_height;
+			double consumer_dar = consumer_ar * normalized_width / normalized_height;
 			
 			if ( b_dar > consumer_dar )
 			{

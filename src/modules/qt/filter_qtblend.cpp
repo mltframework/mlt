@@ -50,19 +50,19 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 
 	// Check transform
 	QTransform transform;
-	int normalised_width = profile->width;
-	int normalised_height = profile->height;
+	int normalized_width = profile->width;
+	int normalized_height = profile->height;
 	double consumer_ar = mlt_profile_sar( profile );
 	double consumer_dar = mlt_profile_dar( profile );
 
 	// Destination rect
-	mlt_rect rect = {0, 0, normalised_width * mlt_profile_scale_width(profile, *width), normalised_height * mlt_profile_scale_height(profile, *height), 1.0};
+	mlt_rect rect = {0, 0, normalized_width * mlt_profile_scale_width(profile, *width), normalized_height * mlt_profile_scale_height(profile, *height), 1.0};
 	int b_width = mlt_properties_get_int( frame_properties, "meta.media.width" );
 	int b_height = mlt_properties_get_int( frame_properties, "meta.media.height" );
 	if ( b_height == 0 )
 	{
-		b_width = normalised_width;
-		b_height = normalised_height;
+		b_width = normalized_width;
+		b_height = normalized_height;
 	}
 	// Special case - aspect_ratio = 0
 	if ( mlt_frame_get_aspect_ratio( frame ) == 0 )
@@ -78,10 +78,10 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		rect = mlt_properties_anim_get_rect( properties, "rect", position, length );
 		if (::strchr(mlt_properties_get(properties, "rect"), '%')) {
-			rect.x *= normalised_width;
-			rect.y *= normalised_height;
-			rect.w *= normalised_width;
-			rect.h *= normalised_height;
+			rect.x *= normalized_width;
+			rect.y *= normalized_height;
+			rect.w *= normalized_width;
+			rect.h *= normalized_height;
 		}
 		double scale = mlt_profile_scale_width(profile, *width);
 		if ( scale != 1.0 )
@@ -117,7 +117,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	{
 		b_width = *width;
 		b_height = *height;
-		if ( b_width < normalised_width || b_height  < normalised_height )
+		if ( b_width < normalized_width || b_height  < normalized_height )
 		{
 			hasAlpha = true;
 		}

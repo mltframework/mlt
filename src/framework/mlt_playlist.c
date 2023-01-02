@@ -313,7 +313,7 @@ static int mlt_playlist_virtual_append( mlt_playlist self, mlt_producer source, 
 	// Fetch the cuts parent properties
 	parent = MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( producer ) );
 
-	// Remove loader normalisers for fx cuts
+	// Remove loader normalizers for fx cuts
 	if ( mlt_properties_get_int( parent, "meta.fx_cut" ) )
 	{
 		mlt_service service = MLT_PRODUCER_SERVICE( mlt_producer_cut_parent( producer ) );

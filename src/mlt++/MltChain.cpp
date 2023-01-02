@@ -1,6 +1,6 @@
 /**
  * MltChain.cpp - Chain wrapper
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,10 +27,23 @@ Chain::Chain( ) :
 }
 
 Chain::Chain( Profile& profile, const char *id, const char *service ) :
-	instance( mlt_chain_init( profile.get_profile() ) )
+	instance( nullptr )
 {
-	Mlt::Producer source( profile, id, service );
-	mlt_chain_set_source( instance, source.get_producer() );
+	if ( !id || !service )
+	{
+		service = id ? id : service;
+		id = nullptr;
+	}
+
+	mlt_producer source = mlt_factory_producer( profile.get_profile(), id, service );
+	if ( source )
+	{
+		instance = mlt_chain_init( profile.get_profile() );
+		mlt_chain_set_source( instance, source );
+		if ( id == NULL )
+			mlt_chain_attach_normalizers( instance );
+		mlt_producer_close ( source );
+	}
 }
 
 Chain::Chain( Profile& profile ) :
@@ -119,5 +132,9 @@ Mlt::Link* Chain::link( int index )
 {
 	mlt_link result = mlt_chain_link( instance, index );
 	return result == NULL ? NULL : new Link( result );
+}
 
+void Chain::attach_normalizers( )
+{
+	mlt_chain_attach_normalizers( instance );
 }

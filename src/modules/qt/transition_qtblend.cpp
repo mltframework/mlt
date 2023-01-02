@@ -49,10 +49,10 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	// Get current position
 	mlt_position position =  mlt_transition_get_position( transition, a_frame );
 
-	// Obtain the normalised width and height from the a_frame
+	// Obtain the normalized width and height from the a_frame
 	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
-	int normalised_width = profile->width;
-	int normalised_height = profile->height;
+	int normalized_width = profile->width;
+	int normalized_height = profile->height;
 	double consumer_ar = mlt_profile_sar( profile );
 	int b_width = mlt_properties_get_int( b_properties, "meta.media.width" );
 	int b_height = mlt_properties_get_int( b_properties, "meta.media.height" );

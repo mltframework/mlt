@@ -36,8 +36,8 @@ typedef void ( *composite_line_fn )( uint8_t *dest, uint8_t *src, int width_src,
 struct geometry_s
 {
 	mlt_rect item;
-	int nw; // normalised width
-	int nh; // normalised height
+	int nw; // normalized width
+	int nh; // normalized height
 	int sw; // scaled width, not including consumer scale based upon w/nw
 	int sh; // scaled height, not including consumer scale based upon h/nh
 	int halign; // horizontal alignment: 0=left, 1=center, 2=right
@@ -650,66 +650,66 @@ static int get_b_frame_image( mlt_transition self, mlt_frame b_frame, uint8_t **
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
-		int normalised_width = geometry->item.w;
-		int normalised_height = geometry->item.h;
+		int normalized_width = geometry->item.w;
+		int normalized_height = geometry->item.h;
 
-		if ( scaled_height > 0 && scaled_width * normalised_height / scaled_height >= normalised_width )
+		if ( scaled_height > 0 && scaled_width * normalized_height / scaled_height >= normalized_width )
 		{
 			// crop left/right edges
-			scaled_width = rint( scaled_width * normalised_height / scaled_height );
-			scaled_height = normalised_height;
+			scaled_width = rint( scaled_width * normalized_height / scaled_height );
+			scaled_height = normalized_height;
 		}
 		else if ( scaled_width > 0 )
 		{
 			// crop top/bottom edges
-			scaled_height = rint( scaled_height * normalised_width / scaled_width );
-			scaled_width = normalised_width;
+			scaled_height = rint( scaled_height * normalized_width / scaled_width );
+			scaled_width = normalized_width;
 		}
 
 		geometry->sw = scaled_width;
 		geometry->sh = scaled_height;
 	}
-	// Normalise aspect ratios and scale preserving aspect ratio
+	// Normalize aspect ratios and scale preserving aspect ratio
 	else if ( mlt_properties_get_int( properties, "aligned" ) && mlt_properties_get_int( properties, "distort" ) == 0 && mlt_properties_get_int( b_props, "distort" ) == 0 )
 	{
 		// Adjust b_frame pixel aspect
-		int normalised_width = geometry->item.w;
-		int normalised_height = geometry->item.h;
+		int normalized_width = geometry->item.w;
+		int normalized_height = geometry->item.h;
 		int real_width = get_value( b_props, "meta.media.width", "width" );
 		int real_height = get_value( b_props, "meta.media.height", "height" );
 		double input_ar = mlt_properties_get_double( b_props, "aspect_ratio" );
 		int scaled_width = rint( ( input_ar == 0.0 ? output_ar : input_ar ) / output_ar * real_width );
 		int scaled_height = real_height;
 // fprintf(stderr, "%s: scaled %dx%d norm %dx%d real %dx%d output_ar %f\n", __FILE__,
-// scaled_width, scaled_height, normalised_width, normalised_height, real_width, real_height,
+// scaled_width, scaled_height, normalized_width, normalized_height, real_width, real_height,
 // output_ar);
 
-		// Now ensure that our images fit in the normalised frame
-		if ( scaled_width > normalised_width )
+		// Now ensure that our images fit in the normalized frame
+		if ( scaled_width > normalized_width )
 		{
-			scaled_height = rint( scaled_height * normalised_width / scaled_width );
-			scaled_width = normalised_width;
+			scaled_height = rint( scaled_height * normalized_width / scaled_width );
+			scaled_width = normalized_width;
 		}
 
-		if ( scaled_height > normalised_height )
+		if ( scaled_height > normalized_height )
 		{
-			scaled_width = rint( scaled_width * normalised_height / scaled_height );
-			scaled_height = normalised_height;
+			scaled_width = rint( scaled_width * normalized_height / scaled_height );
+			scaled_height = normalized_height;
 		}
 
 		// Honour the fill request - this will scale the image to fill width or height while maintaining a/r
 		// ????: Shouldn't this be the default behaviour?
 		if ( mlt_properties_get_int( properties, "fill" ) && scaled_width > 0 && scaled_height > 0 )
 		{
-			if ( scaled_height < normalised_height && scaled_width * normalised_height / scaled_height <= normalised_width )
+			if ( scaled_height < normalized_height && scaled_width * normalized_height / scaled_height <= normalized_width )
 			{
-				scaled_width = rint( scaled_width * normalised_height / scaled_height );
-				scaled_height = normalised_height;
+				scaled_width = rint( scaled_width * normalized_height / scaled_height );
+				scaled_height = normalized_height;
 			}
-			else if ( scaled_width < normalised_width && scaled_height * normalised_width / scaled_width < normalised_height )
+			else if ( scaled_width < normalized_width && scaled_height * normalized_width / scaled_width < normalized_height )
 			{
-				scaled_height = rint( scaled_height * normalised_width / scaled_width );
-				scaled_width = normalised_width;
+				scaled_height = rint( scaled_height * normalized_width / scaled_width );
+				scaled_width = normalized_width;
 			}
 		}
 
@@ -807,10 +807,10 @@ static void composite_calculate( mlt_transition self, struct geometry_s *result,
 	// Get the properties from the transition
 	mlt_properties properties = MLT_TRANSITION_PROPERTIES( self );
 
-	// Obtain the normalised width and height from the a_frame
+	// Obtain the normalized width and height from the a_frame
 	mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( self ) );
-	int normalised_width = profile->width;
-	int normalised_height = profile->height;
+	int normalized_width = profile->width;
+	int normalized_height = profile->height;
 
 	// Now parse the geometries
 	mlt_position length = mlt_transition_get_length( self );
@@ -839,16 +839,16 @@ static void composite_calculate( mlt_transition self, struct geometry_s *result,
 	result->item = mlt_properties_anim_get_rect(properties, "geometry", position, length);
 
 	if (mlt_properties_get(properties, "geometry") && strchr(mlt_properties_get(properties, "geometry"), '%')) {
-		result->item.x *= normalised_width;
-		result->item.y *= normalised_height;
-		result->item.w *= normalised_width;
-		result->item.h *= normalised_height;
+		result->item.x *= normalized_width;
+		result->item.y *= normalized_height;
+		result->item.w *= normalized_width;
+		result->item.h *= normalized_height;
 	}
 	result->item.o = 100.0 * (result->item.o == DBL_MIN ? 1.0 : MIN(result->item.o, 1.0));
 
-	// Assign normalised info
-	result->nw = normalised_width;
-	result->nh = normalised_height;
+	// Assign normalized info
+	result->nw = normalized_width;
+	result->nh = normalized_height;
 
 	// Now parse the alignment
 	result->halign = alignment_parse( mlt_properties_get( properties, "halign" ) );

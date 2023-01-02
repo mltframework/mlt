@@ -268,8 +268,8 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			st_size_t isamp = *samples;
 			st_size_t osamp = *samples;
 			int j = *samples + 1;
-			char *normalise = mlt_properties_get( filter_properties, "normalise" );
-			double normalised_gain = 1.0;
+			int normalize = mlt_properties_get_int( filter_properties, "normalize" ) || mlt_properties_get_int( filter_properties, "normalise" );
+			double normalized_gain = 1.0;
 			
 			if ( analysis )
 			{
@@ -309,7 +309,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 
 					// Convert RMS or peak to gain
 					if ( use_peak )
-						normalised_gain = ST_SSIZE_MIN / -peak;
+						normalized_gain = ST_SSIZE_MIN / -peak;
 					else
 					{
 						double gain = DBFSTOAMP(-12); // default -12 dBFS
@@ -320,18 +320,18 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 							if ( strstr( p, "dB" ) )
 								gain = DBFSTOAMP( gain );
 						}
-						normalised_gain = gain / rms;
+						normalized_gain = gain / rms;
 					}
 
 					// Set properties for serialization
-					snprintf( effect, sizeof(effect), "vol %f", normalised_gain );
+					snprintf( effect, sizeof(effect), "vol %f", normalized_gain );
 					effect[31] = 0;
 					mlt_properties_set( filter_properties, "effect", effect );
 					mlt_properties_set( filter_properties, "analyze", NULL );
 
 					// Show output comparable to normalize --no-adjust --fractions
 					mlt_properties_set_double( filter_properties, "level", rms );
-					mlt_properties_set_double( filter_properties, "gain", normalised_gain );
+					mlt_properties_set_double( filter_properties, "gain", normalized_gain );
 					mlt_properties_set_double( filter_properties, "peak", -peak / ST_SSIZE_MIN );
 				}
 
@@ -339,7 +339,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				p = input_buffer;
 			}
 
-			if ( normalise )
+			if ( normalize )
 			{
 				int window = mlt_properties_get_int( filter_properties, "window" );
 				double *smooth_buffer = mlt_properties_get_data( filter_properties, "smooth_buffer", NULL );
@@ -369,19 +369,19 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 						mlt_properties_set_int( filter_properties, "_smooth_index", ( smooth_index + 1 ) % window );
 					
 					// Smoothing is really just a mean over the past N values
-					normalised_gain = AMPLITUDE_NORM / mean( smooth_buffer, window );
+					normalized_gain = AMPLITUDE_NORM / mean( smooth_buffer, window );
 				}
 				else if ( rms > 0 )
 				{
 					// Determine gain to apply as current amplitude
-					normalised_gain = AMPLITUDE_NORM / rms;
+					normalized_gain = AMPLITUDE_NORM / rms;
 				}
 					
-				//printf("filter_sox: rms %.3f gain %.3f\n", rms, normalised_gain );
+				//printf("filter_sox: rms %.3f gain %.3f\n", rms, normalized_gain );
 				
 				// Govern the maximum gain
-				if ( normalised_gain > max_gain )
-					normalised_gain = max_gain;
+				if ( normalized_gain > max_gain )
+					normalized_gain = max_gain;
 			}
 			
 			// For each effect
@@ -395,16 +395,16 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 				{
 					float saved_gain = 1.0;
 					
-					// XXX: hack to apply the normalised gain level to the vol effect
+					// XXX: hack to apply the normalized gain level to the vol effect
 #ifdef SOX14
-					if ( normalise && strcmp( e->handler.name, "vol" ) == 0 )
+					if ( normalize && strcmp( e->handler.name, "vol" ) == 0 )
 #else
-					if ( normalise && strcmp( e->name, "vol" ) == 0 )
+					if ( normalize && strcmp( e->name, "vol" ) == 0 )
 #endif
 					{
 						float *f = ( float * )( e->priv );
 						saved_gain = *f;
-						*f = saved_gain * normalised_gain;
+						*f = saved_gain * normalized_gain;
 					}
 					
 					// Apply the effect
@@ -419,9 +419,9 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 					
 					// XXX: hack to restore the original vol gain to prevent accumulation
 #ifdef SOX14
-					if ( normalise && strcmp( e->handler.name, "vol" ) == 0 )
+					if ( normalize && strcmp( e->handler.name, "vol" ) == 0 )
 #else
-					if ( normalise && strcmp( e->name, "vol" ) == 0 )
+					if ( normalize && strcmp( e->name, "vol" ) == 0 )
 #endif
 					{
 						float *f = ( float * )( e->priv );
@@ -456,7 +456,7 @@ static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
 		int window = mlt_properties_get_int( properties, "window" );
 		if ( mlt_properties_get( properties, "smooth_buffer" ) == NULL && window > 1 )
 		{
-			// Create a smoothing buffer for the calculated "max power" of frame of audio used in normalisation
+			// Create a smoothing buffer for the calculated "max power" of frame of audio used in normalization
 			double *smooth_buffer = (double*) calloc( window, sizeof( double ) );
 			int i;
 			for ( i = 0; i < window; i++ )

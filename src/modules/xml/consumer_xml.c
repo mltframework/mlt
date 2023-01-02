@@ -688,7 +688,7 @@ static void serialise_chain( serialise_context context, mlt_service service, xml
 		for ( i = 0; i < mlt_chain_link_count( MLT_CHAIN( service ) ); i++ )
 		{
 			mlt_link link = mlt_chain_link( MLT_CHAIN( service ), i );
-			if ( link )
+			if ( link && mlt_properties_get_int( MLT_LINK_PROPERTIES(link), "_loader" ) == 0 )
 			{
 				serialise_link( context, MLT_LINK_SERVICE(link), child );
 			}

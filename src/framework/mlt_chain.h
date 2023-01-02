@@ -52,5 +52,6 @@ extern int mlt_chain_link_count( mlt_chain self );
 extern int mlt_chain_move_link( mlt_chain self, int from, int to );
 extern mlt_link mlt_chain_link( mlt_chain self, int index );
 extern void mlt_chain_close( mlt_chain self );
+extern void mlt_chain_attach_normalizers( mlt_chain self );
 
 #endif

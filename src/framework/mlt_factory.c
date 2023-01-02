@@ -318,7 +318,7 @@ mlt_producer mlt_factory_producer( mlt_profile profile, const char *service, con
 {
 	mlt_producer obj = NULL;
 
-	// Pick up the default normalising producer if necessary
+	// Pick up the default normalizing producer if necessary
 	if ( service == NULL )
 		service = mlt_environment( "MLT_PRODUCER" );
 

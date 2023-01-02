@@ -605,6 +605,8 @@ static void on_start_chain( deserialise_context context, const xmlChar *name, co
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_chain_close );
 
+	mlt_chain_attach_normalizers( chain );
+
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
 		mlt_properties_set_string( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );

@@ -31,6 +31,7 @@ extern mlt_filter filter_swresample_init( mlt_profile profile, char *arg );
 extern mlt_filter filter_swscale_init( mlt_profile profile, char *arg );
 extern mlt_producer producer_avformat_init( mlt_profile profile, const char *service, char *file );
 extern mlt_filter filter_avfilter_init( mlt_profile, mlt_service_type, const char*, char* );
+extern mlt_link link_swresample_init( mlt_profile profile, char *arg );
 
 // ffmpeg Header files
 #include <libavformat/avformat.h>
@@ -90,7 +91,10 @@ static void *create_service( mlt_profile profile, mlt_service_type type, const c
 #endif
 #ifdef SWRESAMPLE
 	if ( !strcmp( id, "swresample" ) )
-		return filter_swresample_init( profile, arg );
+		if ( type == mlt_service_filter_type )
+			return filter_swresample_init( profile, arg );
+		else if ( type == mlt_service_link_type )
+			return link_swresample_init( profile, arg );
 #endif
 	return NULL;
 }
@@ -459,5 +463,7 @@ MLT_REPOSITORY
 #ifdef SWRESAMPLE
 	MLT_REGISTER( mlt_service_filter_type, "swresample", create_service );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "swresample", metadata, "filter_swresample.yml" );
+	MLT_REGISTER( mlt_service_link_type, "swresample", create_service );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "swresample", metadata, "link_swresample.yml" );
 #endif
 }

@@ -1,6 +1,6 @@
 /**
  * MltChain.h - Chain wrapper
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2022 Meltytech, LLC
   *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,6 +52,7 @@ namespace Mlt
 			int link_count() const;
 			bool move_link( int from, int to );
 			Mlt::Link* link( int index );
+			void attach_normalizers( );
 	};
 }
 

@@ -658,3 +658,8 @@ MLT_7.12.0 {
     mlt_properties_anim_set_color;
     mlt_properties_anim_get_color;
 } MLT_7.10.0;
+
+MLT_7.14.0 {
+  global:
+    mlt_chain_attach_normalizers;
+} MLT_7.12.0;

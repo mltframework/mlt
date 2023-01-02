@@ -28,7 +28,7 @@
 
 #define EPSILON 0.00001
 
-/* The following normalise functions come from the normalize utility:
+/* The following normalize functions come from the normalize utility:
    Copyright (C) 1999--2002 Chris Vaill */
 
 #define samp_width 16
@@ -172,7 +172,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	double gain = mlt_properties_get_double( instance_props, "gain" );
 	double max_gain = mlt_properties_get_double( instance_props, "max_gain" );
 	double limiter_level = 0.5; /* -6 dBFS */
-	int normalise =  mlt_properties_get_int( instance_props, "normalise" );
+	int normalize =  mlt_properties_get_int( instance_props, "normalize" );
 	double amplitude =  mlt_properties_get_double( instance_props, "amplitude" );
 	int i, j;
 	double sample;
@@ -192,12 +192,12 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 		limiter_level = mlt_properties_get_double( instance_props, "limiter" );
 	
 	// Get the producer's audio
-	*format = normalise? mlt_audio_s16 : mlt_audio_f32le;
+	*format = normalize? mlt_audio_s16 : mlt_audio_f32le;
 	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
 
 	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
 
-	if ( normalise )
+	if ( normalize )
 	{
 		int window = mlt_properties_get_int( filter_props, "window" );
 		double *smooth_buffer = mlt_properties_get_data( filter_props, "smooth_buffer", NULL );
@@ -249,7 +249,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 	gain = previous_gain;
 
 	// Apply the gain
-	if ( normalise )
+	if ( normalize )
 	{
 		int16_t *p = *buffer;
 		// Determine numeric limits
@@ -260,7 +260,7 @@ static int filter_get_audio( mlt_frame frame, void **buffer, mlt_audio_format *f
 			for ( j = 0; j < *channels; j++ ) {
 				sample = *p * gain;
 				*p = ROUND( sample );
-				if ( gain > 1.0 && normalise ) {
+				if ( gain > 1.0 && normalize ) {
 					/* use limiter function instead of clipping */
 					*p = ROUND( samplemax * limiter( sample / (double) samplemax, limiter_level ) );
 				}
@@ -297,8 +297,11 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		char *p_orig = strdup( gain_str );
 		char *p =  p_orig;
 
-		if ( strncaseeq( p, "normalise", 9 ) )
+		if ( strncaseeq( p, "normali", 7 ) )
+		{
+			mlt_properties_set( filter_props, "normalize", "" );
 			mlt_properties_set( filter_props, "normalise", "" );
+		}
 		else
 		{
 			if ( strcmp( p, "" ) != 0 )
@@ -382,10 +385,13 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		mlt_properties_set_double( instance_props, "limiter", level );
 	}
 
-	// Parse the normalise property
-	if ( mlt_properties_get( filter_props, "normalise" ) != NULL )
+	// Parse the normalize property
+	char *norm = mlt_properties_get( filter_props, "normalize" );
+	if ( !norm )
+		norm = mlt_properties_get( filter_props, "normalise" );
+	if ( norm != NULL )
 	{
-		char *p = mlt_properties_get( filter_props, "normalise" );
+		char *p = norm;
 		double amplitude = 0.2511886431509580; /* -12dBFS */
 		if ( strcmp( p, "" ) != 0 )
 			amplitude = strtod( p, &p);
@@ -413,6 +419,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 		{
 			amplitude *= mlt_filter_get_progress( filter, frame );
 		}
+		mlt_properties_set_int( instance_props, "normalize", 1 );
 		mlt_properties_set_int( instance_props, "normalise", 1 );
 		mlt_properties_set_double( instance_props, "amplitude", amplitude );
 	}
@@ -421,7 +428,7 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 	int window = mlt_properties_get_int( filter_props, "window" );
 	if ( mlt_properties_get( filter_props, "smooth_buffer" ) == NULL && window > 1 )
 	{
-		// Create a smoothing buffer for the calculated "max power" of frame of audio used in normalisation
+		// Create a smoothing buffer for the calculated "max power" of frame of audio used in normalization
 		double *smooth_buffer = (double*) calloc( window, sizeof( double ) );
 		int i;
 		for ( i = 0; i < window; i++ )

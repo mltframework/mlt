@@ -108,7 +108,7 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 			mlt_log_timings_end( NULL, "shifting_fields" );
 		}
 
-		// Set the normalised field order
+		// Set the normalized field order
 		mlt_properties_set_int( properties, "top_field_first", tff );
 		mlt_properties_set_int( properties, "meta.top_field_first", tff );
 	}

@@ -25,7 +25,7 @@ parameters:
       The gain may also be indicated as a numeric value with the suffix "dB"
       to adjust in terms of decibels.
        
-      The gain may also be set to "normalise" to normalise the volume to the
+      The gain may also be set to "normalize" to normalize the volume to the
       target amplitude -12dBFS.
       
       This value is discarded if value for property "level" is set.
@@ -33,22 +33,25 @@ parameters:
     title: Window
     type: integer
     description: >
-       The number of video frames over which to smooth normalisation.
+       The number of video frames over which to smooth normalization.
     default: 75
     mutable: yes
-  - identifier: normalise
-    title: Normalise
+  - identifier: normalize
+    title: Normalize
     type: string
     description: >
-      Normalise the volume to the specified amplitude.
+      Normalize the volume to the specified amplitude.
        
       The normalization may be indicated as a floating point value of the
       relative volume.
        
-      The normalisation may also be indicated as a numeric value with the
+      The normalization may also be indicated as a numeric value with the
       suffix "dB" to set the amplitude in decibels.
     default: -12dBFS
     mutable: yes
+  - identifier: normalise
+    title: Normalise (*DEPRECATED*)
+    description: Deprecated. See normalize
   - identifier: limiter
     title: Limiter
     type: string
@@ -67,7 +70,7 @@ parameters:
     type: string
     description: >
       A floating point or decibel value of the maximum gain that can be
-      applied during normalisation.
+      applied during normalization.
     default: 20dB
     mutable: yes
   - identifier: end (*DEPRECATED*)
@@ -84,7 +87,7 @@ parameters:
     type: string
     description: >
       A floating point or decibel value of the maximum gain that can be
-      applied during normalisation.
+      applied during normalization.
     default: 20dB
     mutable: yes
   - identifier: level
