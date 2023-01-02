@@ -3,7 +3,7 @@
  * \brief provides a map between service and shared objects
  * \see mlt_repository_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -102,21 +102,20 @@ mlt_repository mlt_repository_init( const char *directory )
 	int dl_length = mlt_tokeniser_parse_new( tokeniser, getenv( "MLT_REPOSITORY_DENY" ), ":" );
 
 	// check if both qt5 and qt6 modules are available…
-	int qtmodules = 0;
+	int qt_module_count = 0;
+	int glaxnimate_module_count = 0;
 	for ( i = 0; i < count; i++ )
 	{
 		const char *object_name = mlt_properties_get_value( dir, i);
-		qtmodules += strncmp(object_name, "mltqt", strlen( "mltqt" ) );
-		qtmodules += strncmp(object_name, "mltqt6", strlen( "mltqt6" ) );
+		qt_module_count += !!strstr(object_name, "libmltqt");
+		glaxnimate_module_count += !!strstr(object_name, "libmltglaxnimate");
 	}
 	// …and not blocked
 	for (int j = 0; j < dl_length; j++ )
 	{
-		char *denyfile = calloc( 1, strlen( directory ) + strlen( mlt_tokeniser_get_string( tokeniser, j ) ) + 3 );
-		sprintf (denyfile, "%s/%s.", directory, mlt_tokeniser_get_string( tokeniser, j ));
-		qtmodules -= !strncmp("mltqt", denyfile, strlen( denyfile ) );
-		qtmodules -= !strncmp("mltqt6", denyfile, strlen( denyfile ) );
-		free (denyfile);
+		char *denyfile = mlt_tokeniser_get_string( tokeniser, j );
+		qt_module_count -= !strncmp("libmltqt", denyfile, strlen("libmltqt"));
+		glaxnimate_module_count -= !strncmp("libmltglaxnimate", denyfile, strlen("libmltglaxnimate"));
 	}
 
 	// Iterate over files
@@ -136,8 +135,8 @@ mlt_repository mlt_repository_init( const char *directory )
 		}
 
 		// in case we have both qt modules, we block qt6 to avoid conflicts
-		if (qtmodules == 2 && strncmp(object_name, "mltqt6", strlen( "mltqt6" ) ) )
-		{
+		if ((qt_module_count == 2 && strstr(object_name, "libmltqt6")) ||
+		    (glaxnimate_module_count == 2 && strstr(object_name, "libmltglaxnimate-qt6"))) {
 			ignore = 1;
 		}
 
