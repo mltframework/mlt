@@ -58,7 +58,7 @@ typedef struct
 	mlt_properties mirror;
 	int ref_count;
 	pthread_mutex_t mutex;
-	locale_t locale;
+	mlt_locale_t locale;
 	mlt_properties* children_properties;
 	char** children_names;
 	int children_count;

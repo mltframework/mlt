@@ -50,7 +50,7 @@ struct mlt_animation_s
 	char *data;           /**< the string representing the animation */
 	int length;           /**< the maximum number of frames to use when interpreting negative keyframe positions */
 	double fps;           /**< framerate to use when converting time clock strings to frame units */
-	locale_t locale;      /**< pointer to a locale to use when converting strings to numeric values */
+	mlt_locale_t locale;      /**< pointer to a locale to use when converting strings to numeric values */
 	animation_node nodes; /**< a linked list of keyframes (and possibly non-keyframe values) */
 };
 
@@ -181,7 +181,7 @@ static void mlt_animation_clean( mlt_animation self )
  * \return true if there was an error
  */
 
-int mlt_animation_parse(mlt_animation self, const char *data, int length, double fps, locale_t locale )
+int mlt_animation_parse(mlt_animation self, const char *data, int length, double fps, mlt_locale_t locale )
 {
 	if (!self) return 1;
 

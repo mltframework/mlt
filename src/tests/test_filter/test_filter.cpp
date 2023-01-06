@@ -23,7 +23,7 @@ using namespace Mlt;
 class TestFilter: public QObject
 {
     Q_OBJECT
-    locale_t locale;
+    mlt_locale_t locale;
 
 public:
     TestFilter() {
