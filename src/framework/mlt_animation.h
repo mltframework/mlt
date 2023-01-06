@@ -49,7 +49,7 @@ struct mlt_animation_item_s
 typedef struct mlt_animation_item_s *mlt_animation_item; /**< pointer to an animation item */
 
 extern mlt_animation mlt_animation_new( );
-extern int mlt_animation_parse(mlt_animation self, const char *data, int length, double fps, locale_t locale );
+extern int mlt_animation_parse(mlt_animation self, const char *data, int length, double fps, mlt_locale_t locale );
 extern int mlt_animation_refresh( mlt_animation self, const char *data, int length );
 extern int mlt_animation_get_length( mlt_animation self );
 extern void mlt_animation_set_length( mlt_animation self, int length );

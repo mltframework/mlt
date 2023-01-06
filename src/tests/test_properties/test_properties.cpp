@@ -35,7 +35,7 @@ static const bool kRunLongTests = true;
 class TestProperties: public QObject
 {
     Q_OBJECT
-    locale_t locale;
+    mlt_locale_t locale;
 
 public:
     TestProperties() {
