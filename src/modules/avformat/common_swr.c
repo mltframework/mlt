@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2022 Meltytech, LLC
+ * Copyright (C) 2022-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,9 +18,11 @@
  */
 
 #include "common_swr.h"
+#include "common.h"
 
 #include <libavutil/channel_layout.h>
 #include <libavutil/samplefmt.h>
+#include <libavutil/opt.h>
 
 int mlt_configure_swr_context( mlt_service service, mlt_swr_private_data *pdata )
 {
