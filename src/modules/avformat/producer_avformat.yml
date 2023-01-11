@@ -246,3 +246,8 @@ parameters:
       multiple of 90 degrees.
     type: integer
     unit: degrees
+
+  - identifier: filtergraph
+    title: Filtergraph
+    description: >
+      Filtergraph to apply to resource. Uses libavfilter syntax.
