@@ -875,10 +875,6 @@ static int setup_filters(producer_avformat self)
 				inputs->next = NULL;
 
 				if (!error) error = (avfilter_graph_parse(self->vfilter_graph, self->filtergraph, inputs, outputs, NULL) < 0);
-				if (error) {
-					avfilter_inout_free(&outputs);
-					avfilter_inout_free(&inputs);
-				}
 		}
 		if (self->vfilter_graph) {
 			if (!error && !self->filtergraph) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
