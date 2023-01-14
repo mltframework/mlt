@@ -249,5 +249,5 @@ parameters:
 
   - identifier: filtergraph
     title: Filtergraph
-    description: >
-      Filtergraph to apply to resource. Uses libavfilter syntax.
+    type: string
+    description: Filtergraph to apply to resource. Uses libavfilter syntax.

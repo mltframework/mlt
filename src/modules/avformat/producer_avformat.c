@@ -132,7 +132,6 @@ struct producer_avformat_s
 	int autorotate;
 	int is_audio_synchronizing;
 	int video_send_result;
-	char* filtergraph;
 #if USE_HWACCEL
 	struct {
 		int pix_fmt;
@@ -834,50 +833,52 @@ static int insert_filter(AVFilterGraph *graph, AVFilterContext **last_filter, co
 static int setup_filters(producer_avformat self)
 {
 	int error = 0;
+	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
+	const char *filtergraph = mlt_properties_get(properties, "filtergraph");
 
-	if (!self->vfilter_graph && (self->autorotate || self->filtergraph) && self->video_index != -1) {
+	if (!self->vfilter_graph && (self->autorotate || filtergraph) && self->video_index != -1) {
 		AVFilterContext *last_filter = NULL;
 		if (self->autorotate) {
-				mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
-				double theta  = get_rotation(properties, self->video_format->streams[self->video_index]);
+			mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+			double theta  = get_rotation(properties, self->video_format->streams[self->video_index]);
 
-				if (fabs(theta - 90) < 1.0) {
-					error = ( setup_video_filters(self) < 0 );
-					last_filter = self->vfilter_out;
-					if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "clock") < 0 );
-				} else if (fabs(theta - 180) < 1.0) 	{
-					error = ( setup_video_filters(self) < 0 );
-					last_filter = self->vfilter_out;
-					if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "hflip", NULL) < 0 );
-					if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "vflip", NULL) < 0 );
-				} else if (fabs(theta - 270) < 1.0) {
-					error = ( setup_video_filters(self) < 0 );
-					last_filter = self->vfilter_out;
-					if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "cclock") < 0 );
-				}
+			if (fabs(theta - 90) < 1.0) {
+				error = ( setup_video_filters(self) < 0 );
+				last_filter = self->vfilter_out;
+				if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "clock") < 0 );
+			} else if (fabs(theta - 180) < 1.0)		{
+				error = ( setup_video_filters(self) < 0 );
+				last_filter = self->vfilter_out;
+				if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "hflip", NULL) < 0 );
+				if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "vflip", NULL) < 0 );
+			} else if (fabs(theta - 270) < 1.0) {
+				error = ( setup_video_filters(self) < 0 );
+				last_filter = self->vfilter_out;
+				if (!error) error = ( insert_filter(self->vfilter_graph, &last_filter, "transpose", "cclock") < 0 );
+			}
 		}
-		if (self->filtergraph && !error) {
-				if (!self->vfilter_graph) {
-					error = ( setup_video_filters(self) < 0 );
-					last_filter = self->vfilter_out;
-				}
-				AVFilterInOut *outputs = avfilter_inout_alloc();
-				AVFilterInOut *inputs  = avfilter_inout_alloc();
+		if (filtergraph && !error) {
+			if (!self->vfilter_graph) {
+				error = ( setup_video_filters(self) < 0 );
+				last_filter = self->vfilter_out;
+			}
+			AVFilterInOut *outputs = avfilter_inout_alloc();
+			AVFilterInOut *inputs  = avfilter_inout_alloc();
 
-				outputs->name = av_strdup("in");
-				outputs->filter_ctx = self->vfilter_in;
-				outputs->pad_idx = 0;
-				outputs->next = NULL;
+			outputs->name = av_strdup("in");
+			outputs->filter_ctx = self->vfilter_in;
+			outputs->pad_idx = 0;
+			outputs->next = NULL;
 
-				inputs->name = av_strdup("out");
-				inputs->filter_ctx = last_filter;
-				inputs->pad_idx = 0;
-				inputs->next = NULL;
+			inputs->name = av_strdup("out");
+			inputs->filter_ctx = last_filter;
+			inputs->pad_idx = 0;
+			inputs->next = NULL;
 
-				if (!error) error = (avfilter_graph_parse(self->vfilter_graph, self->filtergraph, inputs, outputs, NULL) < 0);
+			if (!error) error = (avfilter_graph_parse(self->vfilter_graph, filtergraph, inputs, outputs, NULL) < 0);
 		}
 		if (self->vfilter_graph) {
-			if (!error && !self->filtergraph) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
+			if (!error && !filtergraph) error = ( avfilter_link(self->vfilter_in, 0, last_filter, 0) < 0 );
 			if (!error) error = ( avfilter_graph_config(self->vfilter_graph, NULL) < 0 );
 		}
 	}
@@ -1041,7 +1042,6 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 #ifdef AVFILTER
 				if (!test_open) {
 					self->autorotate = !mlt_properties_get(properties, "autorotate") || mlt_properties_get_int(properties, "autorotate");
-					self->filtergraph = mlt_properties_get(properties, "filtergraph");
 					error = setup_filters(self);
 				}
 #endif
@@ -1979,7 +1979,7 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 			if ( got_picture )
 			{
 #ifdef AVFILTER
-				if ((self->autorotate  || self->filtergraph) && !setup_filters(self) && self->vfilter_graph) {
+				if ((self->autorotate  || mlt_properties_get(properties, "filtergraph")) && !setup_filters(self) && self->vfilter_graph) {
 					int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
 					if (ret < 0) {
 						got_picture = 0;
