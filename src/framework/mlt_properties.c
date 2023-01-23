@@ -1802,7 +1802,11 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
 		// Trim comment
 		char *comment = strchr( ptr, '#' );
 		if ( comment )
-			*comment = 0;
+		{
+			const char* quote = strchr( ptr, '\"' );
+			if ( !quote || quote > comment )
+				*comment = 0;
+		}
 
 		// Trim leading and trailing spaces from bare value
 		ltrim( &ptr );
