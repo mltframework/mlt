@@ -537,6 +537,9 @@ mlt_link link_timeremap_init( mlt_profile profile, mlt_service_type type, const 
 		self->configure = link_configure;
 		self->get_frame = link_get_frame;
 		self->close = link_close;
+
+		// Signal that this link performs frame rate conversion
+		mlt_properties_set_int( MLT_LINK_PROPERTIES(self), "_frc", 1 );
 	}
 	else
 	{

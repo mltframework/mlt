@@ -124,6 +124,10 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		base->source = source;
 		mlt_properties_inc_ref( source_properties );
 
+		// Save the native source producer profile
+		base->source_profile = mlt_profile_init(NULL);
+		mlt_profile_from_producer( base->source_profile, base->source );
+
 		// Create a list of all parameters used by the source producer so that
 		// they can be passed between the source producer and this chain.
 		base->source_parameters = mlt_properties_new();
@@ -465,37 +469,48 @@ static void relink_chain( mlt_chain self )
 {
 	mlt_chain_base *base = self->local;
 	mlt_profile profile = mlt_service_profile( MLT_CHAIN_SERVICE(self) );
+	int i = 0;
+	int frc = 0;
 
 	if ( !base->source )
 	{
 		return;
 	}
 
-	if ( base->link_count == 0 )
+	for ( i = 0; i < base->link_count; i++ )
 	{
-		base->begin = base->source;
-		// If there are no links, the producer can operate in the final frame rate
-		mlt_service_set_profile( MLT_PRODUCER_SERVICE(base->source), profile );
+		if ( mlt_properties_get_int( MLT_LINK_PROPERTIES( base->links[i] ), "_frc" ) )
+		{
+			// A link will perform frame rate conversion.
+			frc = 1;
+			break;
+		}
+	}
+
+	if ( frc )
+	{
+		// Set the producer to be in native frame rate
+		mlt_service_set_profile( MLT_PRODUCER_SERVICE(base->source), base->source_profile );
 	}
 	else
 	{
-		if ( !base->source_profile )
-		{
-			// Save the native source producer profile
-			base->source_profile = mlt_profile_init(NULL);
-			mlt_profile_from_producer( base->source_profile, base->source );
-		}
+		// The producer can operate in the final frame rate.
+		mlt_service_set_profile( MLT_PRODUCER_SERVICE(base->source), profile );
+	}
 
-		// Set the producer to be in native frame rate
-		mlt_service_set_profile( MLT_PRODUCER_SERVICE(base->source), base->source_profile );
-
-		int i = 0;
+	if ( base->link_count == 0 )
+	{
+		base->begin = base->source;
+	}
+	else
+	{
 		base->begin = MLT_LINK_PRODUCER( base->links[0] );
-		for ( i = 0; i < base->link_count - 1; i++ )
+		// Connect the links in reverse order so that a link can query the profile of the next link
+		mlt_link_connect_next( base->links[base->link_count -1], base->source, profile );
+		for ( i = base->link_count - 2; i >= 0; i-- )
 		{
 			mlt_link_connect_next( base->links[i], MLT_LINK_PRODUCER( base->links[i+1] ), profile );
 		}
-		mlt_link_connect_next( base->links[base->link_count -1], base->source, profile );
 	}
 }
 
