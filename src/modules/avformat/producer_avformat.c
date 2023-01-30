@@ -760,12 +760,16 @@ static int get_basic_info( producer_avformat self, mlt_profile profile, const ch
 		mlt_properties_set_int( properties, "height", codec_params->height );
 		get_aspect_ratio( properties, format->streams[ self->video_index ], codec_params );
 
+#ifdef AVFILTER
+		int pix_fmt = self->vfilter_out ? av_buffersink_get_format(self->vfilter_out) : codec_params->format;
+#else
 		int pix_fmt = codec_params->format;
+#endif
 		pick_av_pixel_format( &pix_fmt );
 		if ( pix_fmt != AV_PIX_FMT_NONE ) {
 			// Verify that we can convert this to one of our image formats.
 			struct SwsContext *context = sws_getContext( codec_params->width, codec_params->height, pix_fmt,
-				codec_params->width, codec_params->height, pick_pix_fmt( codec_params->format ), SWS_BILINEAR, NULL, NULL, NULL);
+				codec_params->width, codec_params->height, pick_pix_fmt( pix_fmt ), SWS_BILINEAR, NULL, NULL, NULL);
 			if ( context )
 			{
 				sws_freeContext( context );
@@ -807,11 +811,6 @@ static int setup_video_filters( producer_avformat self )
 	if (result >= 0) {
 		result = avfilter_graph_create_filter(&self->vfilter_out, avfilter_get_by_name("buffersink"),
 			"mlt_buffersink", NULL, NULL, self->vfilter_graph);
-
-		if (result >= 0) {
-			enum AVPixelFormat pix_fmts[] = { codec_params->format, AV_PIX_FMT_NONE };
-			result = av_opt_set_int_list(self->vfilter_out, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
-		}
 	}
 
 	return result;
@@ -1607,6 +1606,12 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 
 static void set_image_size( producer_avformat self, int *width, int *height )
 {
+#ifdef AVFILTER
+	if (self->vfilter_out) {
+		*width = av_buffersink_get_w(self->vfilter_out);
+		*height = av_buffersink_get_h(self->vfilter_out);
+	}
+#else
 	double dar = mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE(self->parent) ) );
 	double theta  = self->autorotate? get_rotation( MLT_PRODUCER_PROPERTIES(self->parent), self->video_format->streams[self->video_index] ) : 0.0;
 	if ( fabs(theta - 90.0) < 1.0 || fabs(theta - 270.0) < 1.0 )
@@ -1625,6 +1630,7 @@ static void set_image_size( producer_avformat self, int *width, int *height )
 		else
 			*height = self->video_codec->height;
 	}
+#endif
 }
 
 /** Allocate the image buffer and set it on the frame.
@@ -1769,7 +1775,11 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	codec_params = stream->codecpar;
 
 	// Only change the requested image format for special cases
+#ifdef AVFILTER
+	*format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out) : codec_params->format, self->full_range, *format);
+#else
 	*format = pick_image_format(codec_params->format, self->full_range, *format);
+#endif
 
 	// Duplicate the last image if necessary
 	if ( self->video_frame && self->video_frame->linesize[0]
