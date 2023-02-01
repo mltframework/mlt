@@ -1,6 +1,6 @@
 /*
  * filter_movit_convert.cpp
- * Copyright (C) 2013-2022 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ static void yuv422_to_yuv422p( uint8_t *yuv422, uint8_t *yuv422p, int width, int
 static int convert_on_cpu( mlt_frame frame, uint8_t **image, mlt_image_format *format, mlt_image_format output_format )
 {
 	int error = 0;
-	mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "cpu_csc", NULL );
+	mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data( MLT_FRAME_PROPERTIES( frame ), "_movit cpu_convert", NULL );
 	if ( cpu_csc ) {
 		int (* save_fp )( mlt_frame self, uint8_t **image, mlt_image_format *input, mlt_image_format output )
 			= frame->convert_image;
@@ -690,9 +690,9 @@ static mlt_frame process( mlt_filter filter, mlt_frame frame )
 
 	frame->convert_image = convert_image;
 
-	mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "cpu_csc", NULL );
+	mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data( MLT_FILTER_PROPERTIES( filter ), "cpu_convert", NULL );
 	mlt_properties_inc_ref( MLT_FILTER_PROPERTIES(cpu_csc) );
-	mlt_properties_set_data( properties, "cpu_csc", cpu_csc, 0,
+	mlt_properties_set_data( properties, "_movit cpu_convert", cpu_csc, 0,
 		(mlt_destructor) mlt_filter_close, NULL );
 
 	return frame;
@@ -737,7 +737,7 @@ mlt_filter filter_movit_convert_init( mlt_profile profile, mlt_service_type type
 		if ( !cpu_csc )
 			cpu_csc = create_filter( profile, "imageconvert" );
 		if ( cpu_csc )
-			mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "cpu_csc", cpu_csc, 0,
+			mlt_properties_set_data( MLT_FILTER_PROPERTIES( filter ), "cpu_convert", cpu_csc, 0,
 				(mlt_destructor) mlt_filter_close, NULL );
 		filter->process = process;
 	}
