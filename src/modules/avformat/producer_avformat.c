@@ -130,6 +130,7 @@ struct producer_avformat_s
 	AVFilterContext* vfilter_out;
 #endif
 	int autorotate;
+	double rotation;
 	int is_audio_synchronizing;
 	int video_send_result;
 #if USE_HWACCEL
@@ -834,13 +835,22 @@ static int setup_filters(producer_avformat self)
 	int error = 0;
 	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self->parent );
 	const char *filtergraph = mlt_properties_get(properties, "filtergraph");
+	double theta = 0;
+
+	if(self->video_index != -1 && self->autorotate) {
+		theta = get_rotation(properties, self->video_format->streams[self->video_index]);
+		if (self->vfilter_graph && theta != self->rotation) {
+			// The rotation has changed. Force the filter graph to be rebuilt
+			avfilter_graph_free(&self->vfilter_graph);
+			self->vfilter_out = NULL;
+			self->rotation = theta;
+		}
+	}
 
 	if (!self->vfilter_graph && (self->autorotate || filtergraph) && self->video_index != -1) {
 		AVFilterContext *last_filter = NULL;
 		if (self->autorotate) {
 			mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
-			double theta  = get_rotation(properties, self->video_format->streams[self->video_index]);
-
 			if (fabs(theta - 90) < 1.0) {
 				error = ( setup_video_filters(self) < 0 );
 				last_filter = self->vfilter_out;
@@ -1610,25 +1620,16 @@ static void set_image_size( producer_avformat self, int *width, int *height )
 	if (self->vfilter_out) {
 		*width = av_buffersink_get_w(self->vfilter_out);
 		*height = av_buffersink_get_h(self->vfilter_out);
-	}
-#else
-	double dar = mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE(self->parent) ) );
-	double theta  = self->autorotate? get_rotation( MLT_PRODUCER_PROPERTIES(self->parent), self->video_format->streams[self->video_index] ) : 0.0;
-	if ( fabs(theta - 90.0) < 1.0 || fabs(theta - 270.0) < 1.0 )
-	{
-		*height = self->video_codec->width;
-		// Workaround 1088 encodings missing cropping info.
-		if ( self->video_codec->height == 1088 && dar == 16.0/9.0 )
-			*width = 1080;
-		else
-			*width = self->video_codec->height;
 	} else {
-		*width = self->video_codec->width;
-		// Workaround 1088 encodings missing cropping info.
-		if ( self->video_codec->height == 1088 && dar == 16.0/9.0 )
-			*height = 1080;
-		else
-			*height = self->video_codec->height;
+#endif
+	double dar = mlt_profile_dar( mlt_service_profile( MLT_PRODUCER_SERVICE(self->parent) ) );
+	*width = self->video_codec->width;
+	// Workaround 1088 encodings missing cropping info.
+	if ( self->video_codec->height == 1088 && dar == 16.0/9.0 )
+		*height = 1080;
+	else
+		*height = self->video_codec->height;
+#ifdef AVFILTER
 	}
 #endif
 }
@@ -1686,6 +1687,15 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 	pthread_mutex_lock( &self->video_mutex );
 	mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
 	mlt_log_timings_begin();
+
+#ifdef AVFILTER
+	if (self->autorotate && self->video_index != -1 && get_rotation(properties, self->video_format->streams[self->video_index]) != self->rotation) {
+		// Rotation has changed. Clear any cached frames.
+		mlt_cache_close(self->image_cache);
+		self->image_cache = NULL;
+		av_frame_free( &self->video_frame );
+	}
+#endif
 
 	// Fetch the video format context
 	AVFormatContext *context = self->video_format;
