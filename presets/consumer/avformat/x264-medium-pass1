@@ -2,7 +2,6 @@ f=mp4
 
 vcodec=libx264
 threads=0
-vpre=medium
 preset=medium
 vprofile=high
 fastfirstpass=1

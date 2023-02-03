@@ -11,7 +11,6 @@ ab=96k
 
 vcodec=libx264
 threads=0
-vpre=medium
 preset=medium
 vprofile=main
 flags2=-dct8x8

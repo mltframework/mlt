@@ -5,7 +5,6 @@ ab=256k
 
 vcodec=libx264
 threads=0
-vpre=medium
 preset=medium
 vprofile=baseline
 coder=0
