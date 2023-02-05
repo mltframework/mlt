@@ -588,7 +588,12 @@ int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 		mlt_properties properties = MLT_SERVICE_PROPERTIES( self );
 		mlt_position in = mlt_properties_get_position( properties, "in" );
 		mlt_position out = mlt_properties_get_position( properties, "out" );
-		mlt_position position = mlt_service_identify( self ) == mlt_service_producer_type ? mlt_producer_position( MLT_PRODUCER( self ) ) : -1;
+		mlt_position position = -1;
+		if ( mlt_service_identify( self ) == mlt_service_producer_type ||
+			 mlt_service_identify( self ) == mlt_service_chain_type )
+		{
+			position = mlt_producer_position( MLT_PRODUCER( self ) );
+		}
 
 		result = self->get_frame( self, frame, index );
 
@@ -605,7 +610,7 @@ int mlt_service_get_frame( mlt_service self, mlt_frame_ptr frame, int index )
 			mlt_service_apply_filters( self, *frame, 1 );
 			mlt_deque_push_back( MLT_FRAME_SERVICE_STACK( *frame ), self );
 			
-			if ( mlt_service_identify( self ) == mlt_service_producer_type &&
+			if ( position > -1 &&
 			     mlt_properties_get_int( MLT_SERVICE_PROPERTIES( self ), "_need_previous_next" ) )
 			{
 				// Save the new position from self->get_frame
