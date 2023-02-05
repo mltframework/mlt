@@ -84,7 +84,7 @@ mlt_chain mlt_chain_init( mlt_profile profile )
 			// Generate local space
 			self->local = calloc( 1, sizeof( mlt_chain_base ) );
 			mlt_chain_base* base = self->local;
-			base->source_profile = mlt_profile_clone(profile);
+			base->source_profile = NULL;
 
 			// Listen to property changes to pass along to the source
 			mlt_events_listen( MLT_CHAIN_PROPERTIES(self), self, "property-changed", ( mlt_listener )chain_property_changed );
@@ -125,6 +125,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		mlt_properties_inc_ref( source_properties );
 
 		// Save the native source producer frame rate
+		base->source_profile = mlt_profile_clone(mlt_service_profile(MLT_CHAIN_SERVICE(self)));
 		mlt_frame frame = NULL;
 		mlt_service_get_frame(MLT_PRODUCER_SERVICE(source), &frame, 0);
 		mlt_frame_close(frame);
