@@ -44,7 +44,8 @@ typedef struct
 
 static void link_configure( mlt_link self, mlt_profile chain_profile )
 {
-	mlt_service_set_profile( MLT_LINK_SERVICE( self ), chain_profile );
+	// Operate at the same frame rate as the next link
+	mlt_service_set_profile( MLT_LINK_SERVICE( self ), mlt_service_profile( MLT_PRODUCER_SERVICE( self->next ) ) );
 }
 
 static int link_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
