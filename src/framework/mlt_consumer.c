@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2022 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -914,12 +914,8 @@ static void *consumer_read_ahead_thread( void *arg )
 		}
 
 		// Determine if we started, resumed, or seeked
-		if ( pos != last_pos + 1 ) {
+		if ( pos != last_pos + 1 )
 			start_pos = pos;
-			if (priv->speed) {
-				priv->preroll = 1;
-			}
-		}
 		last_pos = pos;
 
 		// Do not skip the first 20% of buffer at start, resume, or seek
@@ -1407,7 +1403,7 @@ static mlt_frame worker_get_frame( mlt_consumer self, mlt_properties properties 
 //	mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "size %d done count %d work count %d process_head %d\n",
 //		threads, first_unprocessed_frame( self ), mlt_deque_count( priv->queue ), priv->process_head );
 
-	// Feed the work queupriv->speede
+	// Feed the work queue
 	while ( priv->ahead && mlt_deque_count( priv->queue ) < buffer )
 	{
 		frame = mlt_consumer_get_frame( self );
@@ -1535,31 +1531,24 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 	else if ( priv->real_time == 1 || priv->real_time == -1 )
 	{
 		int size = 1;
-		int buffer = mlt_properties_get_int( properties, "buffer" );
-		int prefill = mlt_properties_get_int( properties, "prefill" );
-		int preroll_size = prefill > 0 && prefill < buffer ? prefill : buffer;
 
 		if ( priv->preroll )
 		{
+			int buffer = mlt_properties_get_int( properties, "buffer" );
+			int prefill = mlt_properties_get_int( properties, "prefill" );
 #ifndef _WIN32
 			consumer_read_ahead_start( self );
 #endif
-			if (buffer > 1 && priv->speed)
-				size = preroll_size;
+			if ( buffer > 1 && priv->speed )
+				size = prefill > 0 && prefill < buffer ? prefill : buffer;
 			priv->preroll = 0;
 		}
 
 		// Get frame from queue
 		pthread_mutex_lock( &priv->queue_mutex );
 		mlt_log_timings_begin();
-		while( priv->ahead && mlt_deque_count( priv->queue ) < size ) {
+		while( priv->ahead && mlt_deque_count( priv->queue ) < size )
 			pthread_cond_wait( &priv->queue_cond, &priv->queue_mutex );
-			if (priv->preroll) {
-				if (buffer > 1 && priv->speed)
-					size = preroll_size;
-				priv->preroll = 0;
-			}
-		}
 		frame = mlt_deque_pop_front( priv->queue );
 		mlt_log_timings_end( NULL, "wait_for_frame_queue" );
 		pthread_cond_broadcast( &priv->queue_cond );
