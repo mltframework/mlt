@@ -1045,6 +1045,24 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 				}
 #endif
 			}
+
+			// set up discard
+			if (self->video_format) {
+				for (unsigned x = 0; x < self->video_format->nb_streams; x++) {
+					self->video_format->streams[x]->discard = AVDISCARD_ALL;
+				}
+				self->video_format->streams[self->video_index]->discard = AVDISCARD_DEFAULT;
+			}
+
+			if (self->audio_format) {
+				// don't overwrite the discard we just set if audio_format == video_format
+				if (self->audio_format != self->video_format) {
+					for (unsigned x = 0; x < self->audio_format->nb_streams; x++) {
+						self->audio_format->streams[x]->discard = AVDISCARD_ALL;
+					}
+				}
+				self->audio_format->streams[self->audio_index]->discard = AVDISCARD_DEFAULT;
+			}
 		}
 	}
 	av_dict_free( &params );
