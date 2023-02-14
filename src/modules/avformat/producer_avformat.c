@@ -1915,39 +1915,39 @@ static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_form
 					pthread_cond_wait( &self->packets_cond, &self->packets_mutex );
 				}
 
-					if ( self->packets_thread_ret == 0 ) {
-						AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->vpackets );
-						av_packet_ref( &self->pkt, tmp );
-						av_packet_free( &tmp );
-						pthread_cond_signal( &self->packets_cond );
-					} else {
-						// notify packets_worker that we've seen the error
-						self->packets_thread_ret = 0;
-						pthread_cond_signal( &self->packets_cond );
+				if ( self->packets_thread_ret == 0 ) {
+					AVPacket *tmp = (AVPacket*) mlt_deque_pop_front( self->vpackets );
+					av_packet_ref( &self->pkt, tmp );
+					av_packet_free( &tmp );
+					pthread_cond_signal( &self->packets_cond );
+				} else {
+					// notify packets_worker that we've seen the error
+					self->packets_thread_ret = 0;
+					pthread_cond_signal( &self->packets_cond );
 
-						if ( self->packets_thread_ret == AVERROR_EOF )
-						{
-							self->pkt.stream_index = self->video_index;
-						}
-						if ( !self->video_seekable && mlt_properties_get_int( properties, "reconnect" ) )
-						{
-							// Try to reconnect to live sources by closing context and codecs,
-							// and letting next call to get_frame() reopen.
-							mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
-							prepare_reopen( self );
-							mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
-							pthread_mutex_unlock( &self->packets_mutex );
-							goto exit_get_image;
-						}
-						if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
-						{
-							mlt_log_fatal( MLT_PRODUCER_SERVICE( producer ), "Exiting with error due to disconnected source.\n" );
-							exit( EXIT_FAILURE );
-						}
-						// Send null packets to drain decoder.
-						self->pkt.size = 0;
-						self->pkt.data = NULL;
+					if ( self->packets_thread_ret == AVERROR_EOF )
+					{
+						self->pkt.stream_index = self->video_index;
 					}
+					if ( !self->video_seekable && mlt_properties_get_int( properties, "reconnect" ) )
+					{
+						// Try to reconnect to live sources by closing context and codecs,
+						// and letting next call to get_frame() reopen.
+						mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
+						prepare_reopen( self );
+						mlt_service_lock( MLT_PRODUCER_SERVICE( producer ) );
+						pthread_mutex_unlock( &self->packets_mutex );
+						goto exit_get_image;
+					}
+					if ( !self->video_seekable && mlt_properties_get_int( properties, "exit_on_disconnect" ) )
+					{
+						mlt_log_fatal( MLT_PRODUCER_SERVICE( producer ), "Exiting with error due to disconnected source.\n" );
+						exit( EXIT_FAILURE );
+					}
+					// Send null packets to drain decoder.
+					self->pkt.size = 0;
+					self->pkt.data = NULL;
+				}
 				pthread_mutex_unlock( &self->packets_mutex );
 			}
 
