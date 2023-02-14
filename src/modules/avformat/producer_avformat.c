@@ -676,9 +676,10 @@ static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt , int full
 			case AV_PIX_FMT_BAYER_RGGB16LE:
 				return mlt_image_rgb;
 			default:
-				return mlt_image_yuv422;
+			    current_format = mlt_image_yuv422;
 		}
-	} else if (pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE
+	}
+	if (pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE
 		  ||  (pix_fmt == AV_PIX_FMT_YUV420P10LE && full_range)) {
 		return mlt_image_rgb;
 	}
