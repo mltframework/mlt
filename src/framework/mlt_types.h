@@ -121,6 +121,21 @@ typedef enum
 }
 mlt_colorspace;
 
+typedef enum
+{
+	mlt_deinterlace_method_none,
+	mlt_deinterlace_method_bob,
+	mlt_deinterlace_method_weave,
+	mlt_deinterlace_method_onefield,
+	mlt_deinterlace_method_linearblend,
+	mlt_deinterlace_method_greedy,
+	mlt_deinterlace_method_yadif_nospatial,
+	mlt_deinterlace_method_yadif,
+	mlt_deinterlace_method_bwdif,
+	mlt_deinterlace_method_invalid,
+}
+mlt_deinterlace_method;
+
 /** The time string formats */
 
 typedef enum

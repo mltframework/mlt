@@ -37,7 +37,7 @@ if(TARGET PkgConfig::libavcodec)
 endif()
 
 if(TARGET PkgConfig::libavfilter)
-  target_sources(mltavformat PRIVATE filter_avfilter.c)
+  target_sources(mltavformat PRIVATE filter_avfilter.c link_avdeinterlace.c)
   target_link_libraries(mltavformat PRIVATE PkgConfig::libavfilter)
   target_compile_definitions(mltavformat PRIVATE AVFILTER)
 endif()

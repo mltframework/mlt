@@ -60,6 +60,8 @@ extern void mlt_image_fill_opaque( mlt_image self );
 extern const char * mlt_image_format_name( mlt_image_format format );
 extern mlt_image_format mlt_image_format_id( const char * name );
 extern int mlt_image_rgba_opaque(uint8_t *image, int width, int height);
+extern const char * mlt_deinterlace_name( mlt_deinterlace_method method );
+extern mlt_deinterlace_method mlt_deinterlace_id( const char * name );
 
 // Deprecated functions
 extern int mlt_image_format_size( mlt_image_format format, int width, int height, int *bpp );

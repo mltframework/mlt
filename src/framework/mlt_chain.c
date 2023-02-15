@@ -439,6 +439,7 @@ extern void mlt_chain_attach_normalizers( mlt_chain self )
 	}
 
 	// Apply normalisers
+	int norm_count = 0;
 	for ( int i = 0; i < mlt_properties_count( normalisers ); i ++ )
 	{
 		char *value = mlt_properties_get_value( normalisers, i );
@@ -450,7 +451,8 @@ extern void mlt_chain_attach_normalizers( mlt_chain self )
 			{
 				mlt_properties_set_int( MLT_LINK_PROPERTIES(link), "_loader", 1 );
 				mlt_chain_attach( self, link );
-				mlt_chain_move_link( self, mlt_chain_link_count( self ) - 1, 0 );
+				mlt_chain_move_link( self, mlt_chain_link_count( self ) - 1, norm_count );
+				norm_count++;
 				break;
 			}
 		}

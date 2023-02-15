@@ -39,7 +39,6 @@
 
 #define PARAM_PREFIX "av."
 #define PARAM_PREFIX_LEN (sizeof(PARAM_PREFIX) - 1)
-#define MLT_SWS_FLAGS "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp"
 
 typedef struct
 {
@@ -80,46 +79,6 @@ static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_dat
 #endif
 			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 		}
-	}
-}
-
-static int mlt_to_av_image_format( mlt_image_format format )
-{
-	switch( format )
-	{
-	case mlt_image_none:
-		return AV_PIX_FMT_NONE;
-	case mlt_image_rgb:
-		return AV_PIX_FMT_RGB24;
-	case mlt_image_rgba:
-		return AV_PIX_FMT_RGBA;
-	case mlt_image_yuv422:
-		return AV_PIX_FMT_YUYV422;
-	case mlt_image_yuv420p:
-		return AV_PIX_FMT_YUV420P;
-	default:
-		mlt_log_error(NULL, "[filter_avfilter] Unknown image format: %d\n", format );
-		return AV_PIX_FMT_NONE;
-	}
-}
-
-static mlt_image_format get_supported_image_format( mlt_image_format format )
-{
-	switch( format )
-	{
-	case mlt_image_rgba:
-		return mlt_image_rgba;
-	case mlt_image_rgb:
-		return mlt_image_rgb;
-	case mlt_image_yuv420p:
-		return mlt_image_yuv420p;
-	default:
-		mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format );
-	case mlt_image_none:
-	case mlt_image_yuv422:
-	case mlt_image_movit:
-	case mlt_image_opengl_texture:
-		return mlt_image_yuv422;
 	}
 }
 
@@ -347,7 +306,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	const AVFilter *pad = avfilter_get_by_name("pad");
 	mlt_properties p = mlt_properties_new();
 	enum AVPixelFormat pixel_fmts[] = { -1, -1 };
-	AVRational sar = (AVRational){ profile->sample_aspect_num, profile->frame_rate_den };
+	AVRational sar = (AVRational){ profile->sample_aspect_num, profile->sample_aspect_den };
 	AVRational timebase = (AVRational){ profile->frame_rate_den, profile->frame_rate_num };
 	AVRational framerate = (AVRational){ profile->frame_rate_num, profile->frame_rate_den };
 	int ret;
@@ -733,7 +692,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if (mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_yuv_only")) {
 		*format = mlt_image_yuv422;
 	} else {
-		*format = get_supported_image_format(*format);
+		*format = mlt_get_supported_image_format(*format);
 	}
 
 	mlt_frame_get_image( frame, image, format, width, height, 0 );

@@ -22,6 +22,9 @@
 
 #include <framework/mlt.h>
 #include <libswscale/swscale.h>
+#include <libavutil/frame.h>
+
+#define MLT_SWS_FLAGS "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp"
 
 int mlt_to_av_sample_format( mlt_audio_format format );
 int64_t mlt_to_av_channel_layout( mlt_channel_layout layout );
@@ -30,5 +33,9 @@ mlt_channel_layout mlt_get_channel_layout_or_default( const char* name, int chan
 int mlt_set_luma_transfer( struct SwsContext *context, int src_colorspace,
 	int dst_colorspace, int src_full_range, int dst_full_range );
 int mlt_get_sws_flags(int srcwidth, int srcheight, int srcformat, int dstwidth, int dstheight, int dstformat);
+int mlt_to_av_image_format( mlt_image_format format );
+mlt_image_format mlt_get_supported_image_format( mlt_image_format format );
+void mlt_image_to_avframe( mlt_image image, mlt_frame mltframe, AVFrame* avframe );
+void avframe_to_mlt_image( AVFrame* avframe, mlt_image image );
 
 #endif // COMMON_H

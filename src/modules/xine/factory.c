@@ -21,6 +21,7 @@
 #include <framework/mlt.h>
 
 extern mlt_filter filter_deinterlace_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter link_deinterlace_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
 {
@@ -33,4 +34,6 @@ MLT_REPOSITORY
 {
 	MLT_REGISTER( mlt_service_filter_type, "deinterlace", filter_deinterlace_init );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "deinterlace", metadata, "filter_deinterlace.yml" );
+	MLT_REGISTER( mlt_service_link_type, "deinterlace", link_deinterlace_init );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "deinterlace", metadata, "link_deinterlace.yml" );
 }

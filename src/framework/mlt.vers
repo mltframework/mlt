@@ -663,4 +663,6 @@ MLT_7.14.0 {
   global:
     mlt_producer_probe;
     mlt_chain_attach_normalizers;
+    mlt_deinterlace_name;
+    mlt_deinterlace_id;
 } MLT_7.12.0;

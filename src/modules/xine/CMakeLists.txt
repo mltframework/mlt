@@ -1,8 +1,10 @@
 add_library(mltxine MODULE
+  common.c common.h
   factory.c
   deinterlace.c deinterlace.h
   yadif.c yadif.h
   filter_deinterlace.c
+  link_deinterlace.c
 )
 
 file(GLOB YML "*.yml")

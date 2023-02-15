@@ -601,3 +601,33 @@ int mlt_image_rgba_opaque(uint8_t *image, int width, int height)
 	}
 	return 1;
 }
+
+const char * mlt_deinterlace_name( mlt_deinterlace_method method )
+{
+	switch ( method )
+	{
+		case mlt_deinterlace_method_none:              return "none";
+		case mlt_deinterlace_method_onefield:          return "onefield";
+		case mlt_deinterlace_method_linearblend:       return "linearblend";
+		case mlt_deinterlace_method_bob:               return "bob";
+		case mlt_deinterlace_method_weave:             return "weave";
+		case mlt_deinterlace_method_greedy:            return "greedy";
+		case mlt_deinterlace_method_yadif_nospatial:   return "yadif_nospatial";
+		case mlt_deinterlace_method_yadif:             return "yadif";
+		case mlt_deinterlace_method_bwdif:             return "bwdif";
+		case mlt_deinterlace_method_invalid:           return "invalid";
+	}
+	return "invalid";
+}
+
+mlt_deinterlace_method mlt_deinterlace_id( const char * name )
+{
+	mlt_deinterlace_method m;
+
+	for ( m = mlt_deinterlace_method_none; name && m < mlt_deinterlace_method_invalid; m++ )
+	{
+		if ( !strcmp( mlt_deinterlace_name( m ), name ) )
+			return m;
+	}
+	return mlt_deinterlace_method_invalid;
+}

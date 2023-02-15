@@ -236,3 +236,150 @@ int mlt_set_luma_transfer( struct SwsContext *context, int src_colorspace,
 	return sws_setColorspaceDetails( context, src_coefficients, src_range, dst_coefficients, dst_range,
 		brightness, contrast, saturation );
 }
+
+int mlt_to_av_image_format( mlt_image_format format )
+{
+	switch( format )
+	{
+	case mlt_image_none:
+		return AV_PIX_FMT_NONE;
+	case mlt_image_rgb:
+		return AV_PIX_FMT_RGB24;
+	case mlt_image_rgba:
+		return AV_PIX_FMT_RGBA;
+	case mlt_image_yuv422:
+		return AV_PIX_FMT_YUYV422;
+	case mlt_image_yuv420p:
+		return AV_PIX_FMT_YUV420P;
+	default:
+		mlt_log_error(NULL, "[filter_avfilter] Unknown image format: %d\n", format );
+		return AV_PIX_FMT_NONE;
+	}
+}
+
+mlt_image_format mlt_get_supported_image_format( mlt_image_format format )
+{
+	switch( format )
+	{
+	case mlt_image_rgba:
+		return mlt_image_rgba;
+	case mlt_image_rgb:
+		return mlt_image_rgb;
+	case mlt_image_yuv420p:
+		return mlt_image_yuv420p;
+	default:
+		mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format );
+	case mlt_image_none:
+	case mlt_image_yuv422:
+	case mlt_image_movit:
+	case mlt_image_opengl_texture:
+		return mlt_image_yuv422;
+	}
+}
+
+void mlt_image_to_avframe( mlt_image image, mlt_frame mltframe, AVFrame* avframe )
+{
+	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( mltframe );
+	avframe->width = image->width;
+	avframe->height = image->height;
+	avframe->format = mlt_to_av_image_format( image->format );
+	avframe->sample_aspect_ratio = av_d2q(mlt_frame_get_aspect_ratio(mltframe), 1024);;
+	avframe->pts = mlt_frame_get_position(mltframe);
+	avframe->interlaced_frame = !mlt_properties_get_int( frame_properties, "progressive" );
+	avframe->top_field_first = mlt_properties_get_int( frame_properties, "top_field_first" );
+	avframe->color_primaries = mlt_properties_get_int( frame_properties, "color_primaries" );
+	avframe->color_trc = mlt_properties_get_int( frame_properties, "color_trc" );
+	avframe->color_range = mlt_properties_get_int( frame_properties, "full_range" )? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
+
+	switch (mlt_properties_get_int( frame_properties, "colorspace" ))
+	{
+	case 240:
+		avframe->colorspace = AVCOL_SPC_SMPTE240M;
+		break;
+	case 601:
+		avframe->colorspace = AVCOL_SPC_BT470BG;
+		break;
+	case 709:
+		avframe->colorspace = AVCOL_SPC_BT709;
+		break;
+	case 2020:
+		avframe->colorspace = AVCOL_SPC_BT2020_NCL;
+		break;
+	case 2021:
+		avframe->colorspace = AVCOL_SPC_BT2020_CL;
+		break;
+	}
+
+	int ret = av_frame_get_buffer( avframe, 1 );
+	if( ret < 0 ) {
+		mlt_log_error( NULL, "Cannot get frame buffer\n" );
+	}
+
+	// Set up the input frame
+	if( image->format == mlt_image_yuv420p )
+	{
+		int i = 0;
+		int p = 0;
+		int widths[3] = { image->width, image->width / 2, image->width / 2 };
+		int heights[3] = { image->height, image->height / 2, image->height / 2 };
+		uint8_t* src = image->data;
+		for( p = 0; p < 3; p ++ )
+		{
+			uint8_t* dst = avframe->data[p];
+			for( i = 0; i < heights[p]; i ++ )
+			{
+				memcpy( dst, src, widths[p] );
+				src += widths[p];
+				dst += avframe->linesize[p];
+			}
+		}
+	}
+	else
+	{
+		int i;
+		uint8_t* src = image->data;
+		uint8_t* dst = avframe->data[0];
+		int stride = mlt_image_format_size( image->format, image->width, 1, NULL );
+		for( i = 0; i < image->height; i ++ )
+		{
+			memcpy( dst, src, stride );
+			src += stride;
+			dst += avframe->linesize[0];
+		}
+	}
+}
+
+void avframe_to_mlt_image( AVFrame* avframe, mlt_image image )
+{
+	if( image->format == mlt_image_yuv420p )
+	{
+		int i = 0;
+		int p = 0;
+		int widths[3] = { image->width, image->width / 2, image->width / 2 };
+		int heights[3] = { image->height, image->height / 2, image->height / 2 };
+		uint8_t* dst = image->data;
+		for ( p = 0; p < 3; p ++ )
+		{
+			uint8_t* src = avframe->data[p];
+			for ( i = 0; i < heights[p]; i ++ )
+			{
+				memcpy( dst, src, widths[p] );
+				dst += widths[p];
+				src += avframe->linesize[p];
+			}
+		}
+	}
+	else
+	{
+		int i;
+		uint8_t* dst = image->data;
+		uint8_t* src = avframe->data[0];
+		int stride = mlt_image_format_size( image->format, image->width, 1, NULL );
+		for( i = 0; i < image->height; i ++ )
+		{
+			memcpy( dst, src, stride );
+			dst += stride;
+			src += avframe->linesize[0];
+		}
+	}
+}
