@@ -19,6 +19,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 #include <framework/mlt_profile.h>
 
 #include <stdio.h>
@@ -149,6 +150,9 @@ static uint8_t *frame_resize_image( mlt_frame frame, int owidth, int oheight, ml
 	// If width and height are correct, don't do anything
 	if ( iwidth < owidth || iheight < oheight )
 	{
+		mlt_log_debug( NULL, "[filter_resize] %dx%d -> %dx%d (%s)\n",
+			iwidth, iheight, owidth, oheight, mlt_image_format_name( format ) );
+
 		uint8_t alpha_value = mlt_properties_get_int( properties, "resize_alpha" );
 		// Create the output image
 		uint8_t *output = mlt_pool_alloc( owidth * ( oheight + 1 ) * bpp );
