@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1780,8 +1780,14 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function 
 static void mlt_thread_join( mlt_consumer self )
 {
 	consumer_private *priv = self->local;
+	mlt_event_data_thread data = {
+	    .thread = &priv->ahead_thread,
+	    .priority = NULL,
+	    .function = NULL,
+	    .data = self
+	};
 	if ( mlt_events_fire( MLT_CONSUMER_PROPERTIES(self), "consumer-thread-join",
-		mlt_event_data_from_object(priv->ahead_thread) ) < 1 )
+	     mlt_event_data_from_object(&data) ) < 1 )
 	{
 		pthread_t *handle = priv->ahead_thread;
 		pthread_join( *handle, NULL );
