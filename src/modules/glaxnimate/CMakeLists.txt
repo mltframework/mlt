@@ -36,21 +36,29 @@ set(GLAX_SOURCES
   ${CORE_DIR}command/shape_commands.cpp
   ${CORE_DIR}command/animation_commands.cpp
 
-  ${CORE_DIR}io/lottie/lottie_format.cpp
-  ${CORE_DIR}io/lottie/lottie_html_format.cpp
-  ${CORE_DIR}io/lottie/tgs_format.cpp
-  ${CORE_DIR}io/lottie/cbor_write_json.cpp
-  ${CORE_DIR}io/lottie/validation.cpp
+  ${CORE_DIR}io/base.cpp
+  ${CORE_DIR}io/binary_stream.cpp
   ${CORE_DIR}io/glaxnimate/glaxnimate_format.cpp
   ${CORE_DIR}io/glaxnimate/glaxnimate_importer.cpp
   ${CORE_DIR}io/glaxnimate/glaxnimate_mime.cpp
-  ${CORE_DIR}io/svg/svg_renderer.cpp
-  ${CORE_DIR}io/svg/svg_parser.cpp
-  ${CORE_DIR}io/svg/detail.cpp
-  ${CORE_DIR}io/svg/svg_format.cpp
+  ${CORE_DIR}io/lottie/cbor_write_json.cpp
+  ${CORE_DIR}io/lottie/lottie_format.cpp
+  ${CORE_DIR}io/lottie/lottie_html_format.cpp
+  ${CORE_DIR}io/lottie/tgs_format.cpp
+  ${CORE_DIR}io/lottie/validation.cpp
   ${CORE_DIR}io/mime/mime_serializer.cpp
   ${CORE_DIR}io/raster/raster_format.cpp
-  ${CORE_DIR}io/base.cpp
+  ${CORE_DIR}io/raster/spritesheet_format.cpp
+  ${CORE_DIR}io/rive/rive_format.cpp
+  ${CORE_DIR}io/rive/rive_html_format.cpp
+  ${CORE_DIR}io/rive/rive_loader.cpp
+  ${CORE_DIR}io/rive/rive_serializer.cpp
+  ${CORE_DIR}io/rive/type_def.cpp
+  ${CORE_DIR}io/rive/type_system.cpp
+  ${CORE_DIR}io/svg/detail.cpp
+  ${CORE_DIR}io/svg/svg_format.cpp
+  ${CORE_DIR}io/svg/svg_parser.cpp
+  ${CORE_DIR}io/svg/svg_renderer.cpp
 
   ${CORE_DIR}math/geom.cpp
   ${CORE_DIR}math/polynomial.cpp
