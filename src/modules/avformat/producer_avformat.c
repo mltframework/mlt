@@ -904,6 +904,29 @@ static int setup_filters(producer_avformat self)
 }
 #endif
 
+static void set_up_discard( producer_avformat self, int audio_index, int video_index )
+{
+	// The open_mutex must be locked when this function is called
+	for ( int x = 0; x < self->audio_format->nb_streams; x++ )
+	{
+		if ( audio_index == INT_MAX || x == audio_index || (self->audio_format == self->video_format && x == video_index) )
+			self->audio_format->streams[x]->discard = AVDISCARD_DEFAULT;
+		else
+			self->audio_format->streams[x]->discard = AVDISCARD_ALL;
+	}
+
+	if ( self->audio_format != self->video_format )
+	{
+		for ( int x = 0; x < self->video_format->nb_streams; x++ )
+		{
+			if ( x == video_index )
+				self->video_format->streams[x]->discard = AVDISCARD_DEFAULT;
+			else
+				self->video_format->streams[x]->discard = AVDISCARD_ALL;
+		}
+	}
+}
+
 /** Open the file.
 */
 
@@ -1060,24 +1083,6 @@ static int producer_open(producer_avformat self, mlt_profile profile, const char
 					error = setup_filters(self);
 				}
 #endif
-			}
-
-			// set up discard
-			if (self->video_format) {
-				for (unsigned x = 0; x < self->video_format->nb_streams; x++) {
-					self->video_format->streams[x]->discard = AVDISCARD_ALL;
-				}
-				self->video_format->streams[self->video_index]->discard = AVDISCARD_DEFAULT;
-			}
-
-			if (self->audio_format) {
-				// don't overwrite the discard we just set if audio_format == video_format
-				if (self->audio_format != self->video_format) {
-					for (unsigned x = 0; x < self->audio_format->nb_streams; x++) {
-						self->audio_format->streams[x]->discard = AVDISCARD_ALL;
-					}
-				}
-				self->audio_format->streams[self->audio_index]->discard = AVDISCARD_DEFAULT;
 			}
 		}
 	}
@@ -2543,6 +2548,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 		if ( self->video_codec )
 			avcodec_close( self->video_codec );
 		self->video_codec = NULL;
+		set_up_discard( self, self->audio_index, index );
 		pthread_mutex_unlock( &self->open_mutex );
 	}
 
@@ -3194,6 +3200,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 				self->audio_codec[i] = NULL;
 			}
 		}
+		set_up_discard( self, index, self->video_index );
 		pthread_mutex_unlock( &self->open_mutex );
 	}
 
