@@ -48,6 +48,7 @@ mlt_chain_base;
 */
 
 static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
+static int producer_probe( mlt_producer parent );
 static void relink_chain( mlt_chain self );
 static void chain_property_changed( mlt_service owner, mlt_chain self, char *name );
 static void source_property_changed( mlt_service owner, mlt_chain self, char *name );
@@ -76,6 +77,7 @@ mlt_chain mlt_chain_init( mlt_profile profile )
 			mlt_properties_clear( properties, "length");
 
 			producer->get_frame = producer_get_frame;
+			producer->probe = producer_probe;
 			producer->close = ( mlt_destructor )mlt_chain_close;
 			producer->close_object = self;
 
@@ -471,6 +473,20 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		}
 	}
 	return result;
+}
+
+static int producer_probe( mlt_producer parent )
+{
+	if ( parent && parent->child )
+	{
+		mlt_chain self = parent->child;
+		mlt_chain_base *base = self->local;
+		if ( base && base->source )
+		{
+			return mlt_producer_probe( base->source );
+		}
+	}
+	return 1;
 }
 
 static void relink_chain( mlt_chain self )

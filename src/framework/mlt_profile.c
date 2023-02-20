@@ -412,67 +412,47 @@ mlt_properties mlt_profile_list( )
 
 void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer )
 {
-	mlt_frame fr = NULL;
-	uint8_t *buffer = NULL;
-	mlt_image_format fmt = mlt_image_none;
-	mlt_properties p;
-	int w = profile->width;
-	int h = profile->height;
-
-	if ( ! mlt_service_get_frame( MLT_PRODUCER_SERVICE(producer), &fr, 0 ) && fr )
+	mlt_producer_probe( producer );
+	mlt_properties p = MLT_PRODUCER_PROPERTIES(producer);
+//	mlt_properties_dump(p, stderr);
+	if ( mlt_properties_get_int( p, "meta.media.frame_rate_den" ) &&
+		 mlt_properties_get_int( p, "meta.media.sample_aspect_den" ) )
 	{
-		// Skip scaling and padding since not needed and we request mlt_image_none.
-		mlt_properties_set( MLT_FRAME_PROPERTIES(fr), "consumer.rescale", "none" );
-
-		if ( ! mlt_frame_get_image( fr, &buffer, &fmt, &w, &h, 0 ) )
+		profile->width = mlt_properties_get_int( p, "meta.media.width" );
+		profile->height = mlt_properties_get_int( p, "meta.media.height" );
+		profile->progressive = mlt_properties_get_int( p, "meta.media.progressive" );
+		if ( 1000 > mlt_properties_get_double( p, "meta.media.frame_rate_num" )
+		          / mlt_properties_get_double( p, "meta.media.frame_rate_den" ) )
 		{
-			// Some source properties are not exposed until after the first get_image call.
-			mlt_frame_close( fr );
-			mlt_service_get_frame( MLT_PRODUCER_SERVICE(producer), &fr, 0 );
-			p = MLT_FRAME_PROPERTIES( fr );
-//			mlt_properties_dump(p, stderr);
-			if ( mlt_properties_get_int( p, "meta.media.frame_rate_den" ) &&
-				 mlt_properties_get_int( p, "meta.media.sample_aspect_den" ) )
-			{
-				profile->width = mlt_properties_get_int( p, "meta.media.width" );
-				profile->height = mlt_properties_get_int( p, "meta.media.height" );
-				profile->progressive = mlt_properties_get_int( p, "meta.media.progressive" );
-				if ( 1000 > mlt_properties_get_double( p, "meta.media.frame_rate_num" )
-				          / mlt_properties_get_double( p, "meta.media.frame_rate_den" ) )
-				{
-					profile->frame_rate_num = mlt_properties_get_int( p, "meta.media.frame_rate_num" );
-					profile->frame_rate_den = mlt_properties_get_int( p, "meta.media.frame_rate_den" );
-				} else {
-					profile->frame_rate_num = 60;
-					profile->frame_rate_den = 1;
-				}
-				// AVCHD is mis-reported as double frame rate.
-				if ( profile->progressive == 0 && (
-				     profile->frame_rate_num / profile->frame_rate_den == 50 ||
-				     profile->frame_rate_num / profile->frame_rate_den == 59 ) )
-					profile->frame_rate_num /= 2;
-				profile->sample_aspect_num = mlt_properties_get_int( p, "meta.media.sample_aspect_num" );
-				profile->sample_aspect_den = mlt_properties_get_int( p, "meta.media.sample_aspect_den" );
-				profile->colorspace = mlt_properties_get_int( p, "meta.media.colorspace" );
-				int n = profile->display_aspect_num = profile->sample_aspect_num * profile->width;
-				int m = profile->display_aspect_den = profile->sample_aspect_den * profile->height;
-				int gcd, remainder;
-				while (n) {
-					remainder = m % n;
-					m = n;
-					n = remainder;
-				}
-				gcd = m;
-				profile->display_aspect_num /= gcd;
-				profile->display_aspect_den /= gcd;
-				free( profile->description );
-				profile->description = strdup( "automatic" );
-				profile->is_explicit = 0;
-			}
+			profile->frame_rate_num = mlt_properties_get_int( p, "meta.media.frame_rate_num" );
+			profile->frame_rate_den = mlt_properties_get_int( p, "meta.media.frame_rate_den" );
+		} else {
+			profile->frame_rate_num = 60;
+			profile->frame_rate_den = 1;
 		}
+		// AVCHD is mis-reported as double frame rate.
+		if ( profile->progressive == 0 && (
+		     profile->frame_rate_num / profile->frame_rate_den == 50 ||
+		     profile->frame_rate_num / profile->frame_rate_den == 59 ) )
+			profile->frame_rate_num /= 2;
+		profile->sample_aspect_num = mlt_properties_get_int( p, "meta.media.sample_aspect_num" );
+		profile->sample_aspect_den = mlt_properties_get_int( p, "meta.media.sample_aspect_den" );
+		profile->colorspace = mlt_properties_get_int( p, "meta.media.colorspace" );
+		int n = profile->display_aspect_num = profile->sample_aspect_num * profile->width;
+		int m = profile->display_aspect_den = profile->sample_aspect_den * profile->height;
+		int gcd, remainder;
+		while (n) {
+			remainder = m % n;
+			m = n;
+			n = remainder;
+		}
+		gcd = m;
+		profile->display_aspect_num /= gcd;
+		profile->display_aspect_den /= gcd;
+		free( profile->description );
+		profile->description = strdup( "automatic" );
+		profile->is_explicit = 0;
 	}
-	mlt_frame_close( fr );
-	mlt_producer_seek( producer, 0 );
 }
 
 /** Get the lumas subdirectory to use for the aspect ratio.

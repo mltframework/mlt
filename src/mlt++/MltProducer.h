@@ -77,6 +77,7 @@ namespace Mlt
 			int clear( );
 			int64_t get_creation_time( );
 			void set_creation_time( int64_t creation_time );
+			bool probe( );
 	};
 }
 

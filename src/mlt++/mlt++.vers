@@ -729,6 +729,7 @@ MLT_7.12.0 {
 MLT_7.14.0 {
   global:
     extern "C++" {
+      "Mlt::Producer::probe()";
       "Mlt::Chain::attach_normalizers()";
     };
 } MLT_7.12.0;

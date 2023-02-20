@@ -661,5 +661,6 @@ MLT_7.12.0 {
 
 MLT_7.14.0 {
   global:
+    mlt_producer_probe;
     mlt_chain_attach_normalizers;
 } MLT_7.12.0;

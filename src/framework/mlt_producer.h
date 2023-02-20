@@ -97,6 +97,12 @@ struct mlt_producer_s
 	 */
 	int ( *set_in_and_out )( mlt_producer, mlt_position, mlt_position );
 
+	/** Probe for metadata.
+	 *
+	 * \param mlt_producer a producer
+	 * \return true if there was an error
+	 */
+	int ( *probe )( mlt_producer );
 
 	/** the destructor virtual function */
 	mlt_destructor close;
@@ -145,5 +151,6 @@ extern int mlt_producer_optimise( mlt_producer self );
 extern void mlt_producer_close( mlt_producer self );
 int64_t mlt_producer_get_creation_time( mlt_producer self );
 void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time );
+extern int  mlt_producer_probe( mlt_producer self );
 
 #endif
