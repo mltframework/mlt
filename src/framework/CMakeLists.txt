@@ -63,6 +63,7 @@ add_library(mlt SHARED
   mlt_tokeniser.c
   mlt_tractor.c
   mlt_transition.c
+  mlt_types.c
   mlt_version.c
 )
 

@@ -22,7 +22,7 @@
 
 #include <framework/mlt_image.h>
 
-mlt_deinterlace_method supported_method( mlt_deinterlace_method method );
-int deinterlace_image( mlt_image dst, mlt_image src, mlt_image prev, mlt_image next, int tff, mlt_deinterlace_method method );
+mlt_deinterlacer supported_method( mlt_deinterlacer method );
+int deinterlace_image( mlt_image dst, mlt_image src, mlt_image prev, mlt_image next, int tff, mlt_deinterlacer method );
 
 #endif

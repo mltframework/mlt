@@ -87,43 +87,43 @@ static void close_yadif(yadif_filter *yadif)
 #endif
 }
 
-mlt_deinterlace_method supported_method( mlt_deinterlace_method method )
+mlt_deinterlacer supported_method( mlt_deinterlacer method )
 {
 	// Round the method down to the next one that is supported
-	if ( method <= mlt_deinterlace_method_bob ) method = mlt_deinterlace_method_bob;
-	else if ( method <= mlt_deinterlace_method_weave ) method = mlt_deinterlace_method_weave;
-	else if ( method <= mlt_deinterlace_method_onefield ) method = mlt_deinterlace_method_onefield;
-	else if ( method <= mlt_deinterlace_method_linearblend ) method = mlt_deinterlace_method_linearblend;
-	else if ( method <= mlt_deinterlace_method_greedy ) method = mlt_deinterlace_method_greedy;
-	else if ( method <= mlt_deinterlace_method_yadif_nospatial ) method = mlt_deinterlace_method_yadif_nospatial;
-	else if ( method <= mlt_deinterlace_method_invalid ) method = mlt_deinterlace_method_yadif;
+	if ( method <= mlt_deinterlacer_bob ) method = mlt_deinterlacer_bob;
+	else if ( method <= mlt_deinterlacer_weave ) method = mlt_deinterlacer_weave;
+	else if ( method <= mlt_deinterlacer_onefield ) method = mlt_deinterlacer_onefield;
+	else if ( method <= mlt_deinterlacer_linearblend ) method = mlt_deinterlacer_linearblend;
+	else if ( method <= mlt_deinterlacer_greedy ) method = mlt_deinterlacer_greedy;
+	else if ( method <= mlt_deinterlacer_yadif_nospatial ) method = mlt_deinterlacer_yadif_nospatial;
+	else if ( method <= mlt_deinterlacer_invalid ) method = mlt_deinterlacer_yadif;
 	return method;
 }
 
-int deinterlace_image( mlt_image dst, mlt_image src, mlt_image prev, mlt_image next, int tff, mlt_deinterlace_method method )
+int deinterlace_image( mlt_image dst, mlt_image src, mlt_image prev, mlt_image next, int tff, mlt_deinterlacer method )
 {
 	if ( !dst || !src || !dst->data || !src->data )
 	{
 		return 1;
 	}
 
-	if ( method >= mlt_deinterlace_method_yadif_nospatial &&
+	if ( method >= mlt_deinterlacer_yadif_nospatial &&
 		 ( !prev || !next || !prev->data || !next->data ) )
 	{
-		method = mlt_deinterlace_method_linearblend;
+		method = mlt_deinterlacer_linearblend;
 	}
 
-	if ( method == mlt_deinterlace_method_bob ) {
+	if ( method == mlt_deinterlacer_bob ) {
 		deinterlace_yuv( dst->data, (uint8_t**)&src->data, src->width * 2, src->height, DEINTERLACE_BOB );
-	} else if ( method == mlt_deinterlace_method_weave ) {
+	} else if ( method == mlt_deinterlacer_weave ) {
 		deinterlace_yuv( dst->data, (uint8_t**)&src->data, src->width * 2, src->height, DEINTERLACE_WEAVE );
-	} else if ( method == mlt_deinterlace_method_onefield ) {
+	} else if ( method == mlt_deinterlacer_onefield ) {
 		deinterlace_yuv( dst->data, (uint8_t**)&src->data, src->width * 2, src->height, DEINTERLACE_ONEFIELD );
-	} else if ( method == mlt_deinterlace_method_linearblend ) {
+	} else if ( method == mlt_deinterlacer_linearblend ) {
 		deinterlace_yuv( dst->data, (uint8_t**)&src->data, src->width * 2, src->height, DEINTERLACE_LINEARBLEND );
-	} else if ( method == mlt_deinterlace_method_greedy ) {
+	} else if ( method == mlt_deinterlacer_greedy ) {
 		deinterlace_yuv( dst->data, (uint8_t**)&src->data, src->width * 2, src->height, DEINTERLACE_GREEDY );
-	} else if ( method >= mlt_deinterlace_method_yadif_nospatial ) {
+	} else if ( method >= mlt_deinterlacer_yadif_nospatial ) {
 		yadif_filter *yadif = init_yadif( src->width, src->height );
 		if ( yadif )
 		{
@@ -132,7 +132,7 @@ int deinterlace_image( mlt_image dst, mlt_image src, mlt_image prev, mlt_image n
 			const int YADIF_MODE_TEMPORAL_SPATIAL = 0;
 			const int YADIF_MODE_TEMPORAL = 2;
 			int mode = YADIF_MODE_TEMPORAL_SPATIAL;
-			if ( method == mlt_deinterlace_method_yadif_nospatial )
+			if ( method == mlt_deinterlacer_yadif_nospatial )
 			{
 				mode = YADIF_MODE_TEMPORAL;
 			}

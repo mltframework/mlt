@@ -123,18 +123,18 @@ mlt_colorspace;
 
 typedef enum
 {
-	mlt_deinterlace_method_none,
-	mlt_deinterlace_method_bob,
-	mlt_deinterlace_method_weave,
-	mlt_deinterlace_method_onefield,
-	mlt_deinterlace_method_linearblend,
-	mlt_deinterlace_method_greedy,
-	mlt_deinterlace_method_yadif_nospatial,
-	mlt_deinterlace_method_yadif,
-	mlt_deinterlace_method_bwdif,
-	mlt_deinterlace_method_invalid,
+	mlt_deinterlacer_none,
+	mlt_deinterlacer_bob,
+	mlt_deinterlacer_weave,
+	mlt_deinterlacer_onefield,
+	mlt_deinterlacer_linearblend,
+	mlt_deinterlacer_greedy,
+	mlt_deinterlacer_yadif_nospatial,
+	mlt_deinterlacer_yadif,
+	mlt_deinterlacer_bwdif,
+	mlt_deinterlacer_invalid,
 }
-mlt_deinterlace_method;
+mlt_deinterlacer;
 
 /** The time string formats */
 
@@ -291,6 +291,9 @@ extern char* strptime(const char *buf, const char *fmt, struct tm *tm);
 #define mlt_fopen fopen
 #define MLT_DIRLIST_DELIMITER ":"
 #endif /* ifdef _WIN32 */
+
+extern const char * mlt_deinterlacer_name( mlt_deinterlacer method );
+extern mlt_deinterlacer mlt_deinterlacer_id( const char * name );
 
 #ifdef __cplusplus
 }

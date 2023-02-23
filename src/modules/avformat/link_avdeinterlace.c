@@ -47,7 +47,7 @@ typedef struct
 	AVFilterGraph* avfilter_graph;
 	AVFrame* avinframe;
 	AVFrame* avoutframe;
-	mlt_deinterlace_method method;
+	mlt_deinterlacer method;
 	int informat;
 	int inwidth;
 	int inheight;
@@ -159,7 +159,7 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 	prev_ctx = pdata->avbuffsrc_ctx;
 
 	// Initialize the deinterlace filter context
-	if ( pdata->method <= mlt_deinterlace_method_onefield )
+	if ( pdata->method <= mlt_deinterlacer_onefield )
 	{
 		const AVFilter* deint = (AVFilter*)avfilter_get_by_name( "field" );
 		avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, deint, deint->name );
@@ -196,7 +196,7 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 		}
 		prev_ctx = avfilter_ctx;
 	}
-	else if ( pdata->method <= mlt_deinterlace_method_linearblend )
+	else if ( pdata->method <= mlt_deinterlacer_linearblend )
 	{
 		const AVFilter* deint = (AVFilter*)avfilter_get_by_name( "pp" );
 		avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, deint, deint->name );
@@ -216,7 +216,7 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 		}
 		prev_ctx = avfilter_ctx;
 	}
-	else if ( pdata->method <= mlt_deinterlace_method_yadif_nospatial )
+	else if ( pdata->method <= mlt_deinterlacer_yadif_nospatial )
 	{
 		const AVFilter* deint = (AVFilter*)avfilter_get_by_name( "yadif" );
 		avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, deint, deint->name );
@@ -235,7 +235,7 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 			goto fail;
 		}
 		prev_ctx = avfilter_ctx;
-	} else if ( pdata->method <= mlt_deinterlace_method_yadif ) {
+	} else if ( pdata->method <= mlt_deinterlacer_yadif ) {
 		const AVFilter* deint = (AVFilter*)avfilter_get_by_name( "yadif" );
 		avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, deint, deint->name );
 		if( !avfilter_ctx ) {
@@ -330,10 +330,10 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 
 	struct mlt_image_s srcimg = {0};
 	struct mlt_image_s dstimg = {0};
-	mlt_deinterlace_method method = mlt_deinterlace_id( mlt_properties_get( frame_properties, "consumer.deinterlacer" ) );
+	mlt_deinterlacer method = mlt_deinterlacer_id( mlt_properties_get( frame_properties, "consumer.deinterlacer" ) );
 
 	if ( !mlt_properties_get_int( frame_properties, "consumer.progressive" ) ||
-		 method == mlt_deinterlace_method_none )
+		 method == mlt_deinterlacer_none )
 	{
 		mlt_log_info( MLT_LINK_SERVICE(self), "Do not deinterlace - consumer is interlaced\n" );
 		pdata->deinterlace_required = 0;
@@ -598,7 +598,7 @@ mlt_link link_avdeinterlace_init( mlt_profile profile, mlt_service_type type, co
 		pdata->continuity_frame = -1;
 		pdata->expected_frame = -1;
 		pdata->deinterlace_required = 1;
-		pdata->method = mlt_deinterlace_method_linearblend;
+		pdata->method = mlt_deinterlacer_linearblend;
 		self->child = pdata;
 
 		// Callback registration

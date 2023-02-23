@@ -87,10 +87,10 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 	struct mlt_image_s dstimg = {0};
 	struct mlt_image_s previmg = {0};
 	struct mlt_image_s nextimg = {0};
-	mlt_deinterlace_method method = mlt_deinterlace_id( mlt_properties_get( frame_properties, "consumer.deinterlacer" ) );
+	mlt_deinterlacer method = mlt_deinterlacer_id( mlt_properties_get( frame_properties, "consumer.deinterlacer" ) );
 
 	if ( !mlt_properties_get_int( frame_properties, "consumer.progressive" ) ||
-		 method == mlt_deinterlace_method_none )
+		 method == mlt_deinterlacer_none )
 	{
 		mlt_log_info( MLT_LINK_SERVICE(self), "Do not deinterlace - consumer is interlaced\n" );
 		pdata->deinterlace_required = 0;
@@ -134,7 +134,7 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 
 	// At this point, we know we need to deinterlace.
 	method = supported_method( method );
-	pdata->prev_next_required = method >= mlt_deinterlace_method_yadif_nospatial;
+	pdata->prev_next_required = method >= mlt_deinterlacer_yadif_nospatial;
 
 	if ( srcimg.data ) // Maybe already received during progressive check
 	{
