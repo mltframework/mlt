@@ -1,6 +1,6 @@
 /*
  * link_timeremap.c
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,10 +30,77 @@
 // Private Types
 typedef struct
 {
+	mlt_position prev_integration_position;
+	double prev_integration_time;
 	mlt_frame prev_frame;
 	mlt_filter resample_filter;
 	mlt_filter pitch_filter;
 } private_data;
+
+static void property_changed(mlt_service owner, mlt_link self, mlt_event_data event_data)
+{
+	const char *name = mlt_event_data_to_string( event_data );
+
+	if ( !name ) return;
+
+	if ( strcmp( "map", name ) == 0 )
+	{
+		// Copy the deprecated "map" parameter to the new "time_map" parameter.
+		const char* value = mlt_properties_get( MLT_LINK_PROPERTIES(self), "map" );
+		mlt_properties_set( MLT_LINK_PROPERTIES(self), "time_map", value );
+	}
+	else if ( strcmp( "speed_map", name ) == 0 )
+	{
+		// speed_map changed. Need to re-integrate from the beginning.
+		private_data* pdata = (private_data*)self->child;
+		pdata->prev_integration_position = 0;
+		pdata->prev_integration_time = 0.0;
+	}
+}
+
+static double integrate_source_time( mlt_link self, mlt_position position )
+{
+	private_data* pdata = (private_data*)self->child;
+	mlt_properties properties = MLT_LINK_PROPERTIES( self );
+	mlt_position length = mlt_producer_get_length( MLT_LINK_PRODUCER( self ) );
+	mlt_position in = mlt_producer_get_in( MLT_LINK_PRODUCER( self ) );
+	double link_fps = mlt_producer_get_fps( MLT_LINK_PRODUCER( self ) );
+
+	if ( pdata->prev_integration_position < in ||
+		( pdata->prev_integration_position > (position * 2) ) )
+	{
+		// Restart integration from the beginning
+		pdata->prev_integration_position = in;
+		pdata->prev_integration_time = 0.0;
+	}
+
+	double source_time = pdata->prev_integration_time;
+
+	if ( pdata->prev_integration_position < position )
+	{
+		for ( mlt_position p = pdata->prev_integration_position; p < position; p++ )
+		{
+			double speed = mlt_properties_anim_get_double( properties, "speed_map", position - in, length );
+			double time_delta = speed / link_fps;
+			source_time += time_delta;
+		}
+	}
+	else if  ( pdata->prev_integration_position > position )
+	{
+		for ( mlt_position p = position; p < pdata->prev_integration_position; p++ )
+		{
+			double speed = mlt_properties_anim_get_double( properties, "speed_map", position - in, length );
+			double time_delta = speed / link_fps;
+			source_time -= time_delta;
+		}
+	}
+
+	// Remember the integration results so that the next frame can start
+	// integration from this position instead of from the begining.
+	pdata->prev_integration_position = position;
+	pdata->prev_integration_time = source_time;
+	return source_time;
+}
 
 static void link_configure( mlt_link self, mlt_profile chain_profile )
 {
@@ -377,28 +444,36 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	double source_duration = 0.0;
 	double source_fps = mlt_producer_get_fps( self->next );
 	double link_fps = mlt_producer_get_fps( MLT_LINK_PRODUCER( self ) );
-
+	// Assume that the user wants normal speed before the in point.
+	mlt_position in = mlt_producer_get_in( MLT_LINK_PRODUCER(self) );
+	double in_time = (double)in / link_fps;
 	int result = 0;
 
-	// Create a  frame
+	// Create a frame
 	*frame = mlt_frame_init( MLT_LINK_SERVICE(self) );
 	mlt_frame_set_position( *frame, mlt_producer_position( MLT_LINK_PRODUCER(self) ) );
 	mlt_properties unique_properties = mlt_frame_unique_properties( *frame, MLT_LINK_SERVICE(self) );
 
 	// Calculate the frames from the next link to be used
-	if ( !mlt_properties_exists( properties, "map" ) )
+	if ( mlt_properties_exists( properties, "speed_map" ) )
 	{
-		source_time = (double)position / link_fps;
-		source_duration = 1.0 / link_fps;
+		// Speed mapping
+		source_time = integrate_source_time( self, position ) + in_time;
+		double next_source_time = integrate_source_time( self, position + 1 ) + in_time;
+		source_duration = next_source_time - source_time;
+	}
+	else if ( mlt_properties_exists( properties, "time_map" ) )
+	{
+		source_time = mlt_properties_anim_get_double( properties, "time_map", position - in, length ) + in_time;
+		double next_source_time = mlt_properties_anim_get_double( properties, "time_map", position - in + 1, length ) + in_time;
+		source_duration = next_source_time - source_time;
 	}
 	else
 	{
-		// Assume that the user wants normal speed before the in point.
-		mlt_position in = mlt_producer_get_in( MLT_LINK_PRODUCER(self) );
-		double in_time = (double)in / link_fps;
-		source_time = mlt_properties_anim_get_double( properties, "map", position - in, length ) + in_time;
-		double next_source_time = mlt_properties_anim_get_double( properties, "map", position - in + 1, length ) + in_time;
-		source_duration = next_source_time - source_time;
+		// No mapping specified. Assume 1.0 speed.
+		// This can be used as a frame rate converter.
+		source_time = (double)position / link_fps;
+		source_duration = 1.0 / link_fps;
 	}
 
 	double frame_duration = 1.0 / link_fps;
@@ -504,18 +579,9 @@ static void link_close( mlt_link self )
 		private_data* pdata = (private_data*)self->child;
 		if ( pdata )
 		{
-			if ( pdata->prev_frame )
-			{
-				mlt_frame_close( pdata->prev_frame );
-			}
-			if ( pdata->resample_filter )
-			{
-				mlt_filter_close( pdata->resample_filter );
-			}
-			if ( pdata->pitch_filter )
-			{
-				mlt_filter_close( pdata->pitch_filter );
-			}
+			mlt_frame_close( pdata->prev_frame );
+			mlt_filter_close( pdata->resample_filter );
+			mlt_filter_close( pdata->pitch_filter );
 			free( pdata );
 		}
 		self->close = NULL;
@@ -540,19 +606,14 @@ mlt_link link_timeremap_init( mlt_profile profile, mlt_service_type type, const 
 
 		// Signal that this link performs frame rate conversion
 		mlt_properties_set_int( MLT_LINK_PROPERTIES(self), "_frc", 1 );
+
+		mlt_events_listen( MLT_LINK_PROPERTIES(self), self, "property-changed", ( mlt_listener )property_changed );
 	}
 	else
 	{
-		if ( pdata )
-		{
-			free( pdata );
-		}
-
-		if ( self )
-		{
-			mlt_link_close( self );
-			self = NULL;
-		}
+		free( pdata );
+		mlt_link_close( self );
+		self = NULL;
 	}
 	return self;
 }

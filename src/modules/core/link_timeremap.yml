@@ -11,13 +11,25 @@ tags:
   - Video
 description: Remap frames in time.
 parameters:
-  - identifier: map
-    title: Map
+  - identifier: time_map
+    title: Time Map
     type: float
     description: >
       A map of input frame times to output frame times.
+      Ignore if speed_map is set.
     mutable: yes
     animation: yes
+  - identifier: speed_map
+    title: Speed Map
+    type: float
+    description: >
+      A map of input speed to output frame times.
+      Overrides time_map
+    mutable: yes
+    animation: yes
+  - identifier: map (*deprecated*)
+    description: >
+      This parameter is deprecated. Use time_map instead.
   - identifier: image_mode
     title: Image Mode
     type: string
