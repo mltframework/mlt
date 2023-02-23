@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_mlt_image_s
  *
- * Copyright (C) 2020-2022 Meltytech, LLC
+ * Copyright (C) 2020-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -568,7 +568,7 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 
 		planes[0] = (unsigned char*)data;
 		planes[1] = planes[0] + width * height;
-		planes[2] = planes[1] + (width >> 1) + (height >> 1);
+		planes[2] = planes[1] + (width >> 1) * (height >> 1);
 		planes[3] = 0;
 	}
 	else
