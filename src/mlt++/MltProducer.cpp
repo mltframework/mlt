@@ -267,5 +267,5 @@ void Producer::set_creation_time( int64_t creation_time )
 
 bool Producer::probe( )
 {
-	mlt_producer_probe( get_producer( ) );
+	return mlt_producer_probe( get_producer( ) );
 }

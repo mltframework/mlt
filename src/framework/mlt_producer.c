@@ -1291,8 +1291,11 @@ void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time )
 
 int mlt_producer_probe( mlt_producer self )
 {
-	if ( self && self->probe )
+	if ( self )
 	{
-		return self->probe( self );
+		int ( *probe )( mlt_producer ) = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES(self), "_probe", NULL );
+		if ( probe )
+			return probe( self );
 	}
+	return 0;
 }

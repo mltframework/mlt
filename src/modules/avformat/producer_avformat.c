@@ -200,7 +200,7 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 			producer->get_frame = producer_get_frame;
 
 			// Register our probe implementation
-			producer->probe = producer_probe;
+			mlt_properties_set_data( properties, "_probe", producer_probe, 0, NULL, NULL );
 
 			// Force the duration to be computed unless explicitly provided.
 			mlt_properties_set_position( properties, "length", 0 );

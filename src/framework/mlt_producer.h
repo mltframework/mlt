@@ -97,13 +97,6 @@ struct mlt_producer_s
 	 */
 	int ( *set_in_and_out )( mlt_producer, mlt_position, mlt_position );
 
-	/** Probe for metadata.
-	 *
-	 * \param mlt_producer a producer
-	 * \return true if there was an error
-	 */
-	int ( *probe )( mlt_producer );
-
 	/** the destructor virtual function */
 	mlt_destructor close;
 	void *close_object; /**< the object supplied to the close virtual function */
