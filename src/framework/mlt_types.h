@@ -124,10 +124,10 @@ mlt_colorspace;
 typedef enum
 {
 	mlt_deinterlacer_none,
-	mlt_deinterlacer_bob,
-	mlt_deinterlacer_weave,
 	mlt_deinterlacer_onefield,
 	mlt_deinterlacer_linearblend,
+	mlt_deinterlacer_weave,
+	mlt_deinterlacer_bob,
 	mlt_deinterlacer_greedy,
 	mlt_deinterlacer_yadif_nospatial,
 	mlt_deinterlacer_yadif,

@@ -90,10 +90,10 @@ static void close_yadif(yadif_filter *yadif)
 mlt_deinterlacer supported_method( mlt_deinterlacer method )
 {
 	// Round the method down to the next one that is supported
-	if ( method <= mlt_deinterlacer_bob ) method = mlt_deinterlacer_bob;
-	else if ( method <= mlt_deinterlacer_weave ) method = mlt_deinterlacer_weave;
-	else if ( method <= mlt_deinterlacer_onefield ) method = mlt_deinterlacer_onefield;
+	if ( method <= mlt_deinterlacer_onefield ) method = mlt_deinterlacer_onefield;
 	else if ( method <= mlt_deinterlacer_linearblend ) method = mlt_deinterlacer_linearblend;
+	else if ( method <= mlt_deinterlacer_weave ) method = mlt_deinterlacer_weave;
+	else if ( method <= mlt_deinterlacer_bob ) method = mlt_deinterlacer_bob;
 	else if ( method <= mlt_deinterlacer_greedy ) method = mlt_deinterlacer_greedy;
 	else if ( method <= mlt_deinterlacer_yadif_nospatial ) method = mlt_deinterlacer_yadif_nospatial;
 	else if ( method <= mlt_deinterlacer_invalid ) method = mlt_deinterlacer_yadif;
