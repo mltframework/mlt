@@ -125,12 +125,13 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 		}	
 
 		// Check if the producer changed the profile - xml does this.
-		// The consumer producer does not handle frame rate differences.
 		if ( result && backup_profile->is_explicit && (
 		     profile->width != backup_profile->width ||
 		     profile->height != backup_profile->height ||
 		     profile->sample_aspect_num != backup_profile->sample_aspect_num ||
 		     profile->sample_aspect_den != backup_profile->sample_aspect_den ||
+		     profile->frame_rate_num != backup_profile->frame_rate_num ||
+		     profile->frame_rate_den != backup_profile->frame_rate_den ||
 		     profile->colorspace != backup_profile->colorspace ) )
 		{
 			// Restore the original profile attributes.
