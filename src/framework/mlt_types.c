@@ -34,7 +34,7 @@ const char * mlt_deinterlacer_name( mlt_deinterlacer method )
 		case mlt_deinterlacer_bob:               return "bob";
 		case mlt_deinterlacer_weave:             return "weave";
 		case mlt_deinterlacer_greedy:            return "greedy";
-		case mlt_deinterlacer_yadif_nospatial:   return "yadif_nospatial";
+		case mlt_deinterlacer_yadif_nospatial:   return "yadif-nospatial";
 		case mlt_deinterlacer_yadif:             return "yadif";
 		case mlt_deinterlacer_bwdif:             return "bwdif";
 		case mlt_deinterlacer_invalid:           return "invalid";

@@ -134,7 +134,12 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 
 	// At this point, we know we need to deinterlace.
 	method = supported_method( method );
-	pdata->prev_next_required = method >= mlt_deinterlacer_yadif_nospatial;
+	if ( method == mlt_deinterlacer_weave ||
+		 method == mlt_deinterlacer_greedy ||
+		 method >= mlt_deinterlacer_yadif_nospatial )
+	{
+		pdata->prev_next_required = 1;
+	}
 
 	if ( srcimg.data ) // Maybe already received during progressive check
 	{
