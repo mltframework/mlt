@@ -80,7 +80,7 @@ mlt_chain mlt_chain_init( mlt_profile profile )
 			producer->close = ( mlt_destructor )mlt_chain_close;
 			producer->close_object = self;
 
-			mlt_properties_set_data( properties, "_probe", producer_probe, 0, NULL, NULL );
+			mlt_properties_set_data( properties, "mlt_producer_probe", producer_probe, 0, NULL, NULL );
 
 			mlt_service_set_profile( MLT_CHAIN_SERVICE( self ), profile );
 

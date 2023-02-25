@@ -1293,7 +1293,7 @@ int mlt_producer_probe( mlt_producer self )
 {
 	if ( self )
 	{
-		int ( *probe )( mlt_producer ) = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES(self), "_probe", NULL );
+		int ( *probe )( mlt_producer ) = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES(self), "mlt_producer_probe", NULL );
 		if ( probe )
 			return probe( self );
 	}
