@@ -327,7 +327,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 		mlt_log_error( filter, "Cannot create filter graph\n" );
 		goto fail;
 	}
-	pdata->avfilter_graph->scale_sws_opts = av_strdup("flags=" MLT_SWS_FLAGS);
+	pdata->avfilter_graph->scale_sws_opts = av_strdup("flags=" MLT_AVFILTER_SWS_FLAGS);
 
 	// Set thread count if supported.
 	if ( pdata->avfilter->flags & AVFILTER_FLAG_SLICE_THREADS ) {
@@ -464,7 +464,7 @@ static void init_image_filtergraph( mlt_filter filter, mlt_image_format format, 
 	}
 	opt = av_opt_find( pdata->scale_ctx->priv, "flags", 0, 0, 0 );
 	if ( opt ) {
-		ret = av_opt_set( pdata->scale_ctx->priv, opt->name, MLT_SWS_FLAGS, 0 );
+		ret = av_opt_set( pdata->scale_ctx->priv, opt->name, MLT_AVFILTER_SWS_FLAGS, 0 );
 		if ( ret < 0 ) {
 			mlt_log_error( filter, "Cannot set scale flags\n" );
 			goto fail;

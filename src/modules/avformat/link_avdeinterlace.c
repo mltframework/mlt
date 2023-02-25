@@ -113,7 +113,7 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 		mlt_log_error( self, "Cannot create filter graph\n" );
 		goto fail;
 	}
-	pdata->avfilter_graph->scale_sws_opts = av_strdup("flags=" MLT_SWS_FLAGS);
+	pdata->avfilter_graph->scale_sws_opts = av_strdup("flags=" MLT_AVFILTER_SWS_FLAGS);
 
 	// Initialize the buffer source filter context
 	pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, buffersrc, "in");

@@ -24,7 +24,7 @@
 #include <libswscale/swscale.h>
 #include <libavutil/frame.h>
 
-#define MLT_SWS_FLAGS "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp"
+#define MLT_AVFILTER_SWS_FLAGS "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp"
 
 int mlt_to_av_sample_format( mlt_audio_format format );
 int64_t mlt_to_av_channel_layout( mlt_channel_layout layout );
