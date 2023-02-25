@@ -348,9 +348,13 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
 
-	if ( !pdata->scan_mode_detected )
+	// At this point, we know we need to deinterlace.
+
+	mlt_service_lock( MLT_LINK_SERVICE( self ) );
+
+	if ( !pdata->inwidth )
 	{
-		// Some producers do not set the progressive flag until get_image() has been called.
+		// Pull an image to determine incoming image parameters
 		mlt_image_format outformat = *format;
 		mlt_image_set_values( &srcimg, *image, *format, *width, *height );
 		stash_consumer_properties( frame );
@@ -369,21 +373,7 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 		if (outformat == mlt_image_none || outformat >= mlt_image_invalid)
 			outformat = srcimg.format;
 		pdata->outformat = outformat;
-
-		int progressive_source = mlt_properties_get_int( frame_properties, "progressive" );
-		pdata->scan_mode_detected = 1;
-		char *scan_mode = progressive_source ? "progressive" : "interlaced";
-		mlt_log_info( MLT_LINK_SERVICE(self), "Scan mode detected: %s\n", scan_mode );
-		if ( progressive_source )
-		{
-			mlt_log_error( MLT_LINK_SERVICE(self), "Do not deinterlace - progressive source\n" );
-			pdata->deinterlace_required = 0;
-			mlt_image_get_values( &srcimg, (void**)image, format, width, height );
-			return error;
-		}
 	}
-
-	mlt_service_lock( MLT_LINK_SERVICE( self ) );
 
 	if( !pdata->avfilter_graph ||
 		pdata->method != method ||
@@ -481,11 +471,37 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	private_data* pdata = (private_data*)self->child;
 	mlt_position frame_pos = mlt_producer_position( MLT_LINK_PRODUCER(self) );
 
+	if ( !pdata->scan_mode_detected )
+	{
+		// If the producer is progressive, then this filter does not need to do anything.
+		// This can not be undone. So a source can not toggle between interlaced/progressive.
+		mlt_producer_seek( self->next, frame_pos );
+		error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), frame, index );
+		mlt_producer original_producer = mlt_frame_get_original_producer( *frame );
+		mlt_producer_probe( original_producer );
+		int progressive_source = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "progressive" );
+		pdata->scan_mode_detected = 1;
+		char *scan_mode = progressive_source ? "progressive" : "interlaced";
+		mlt_log_info( MLT_LINK_SERVICE(self), "Scan mode detected: %s\n", scan_mode );
+		if ( progressive_source )
+		{
+			mlt_log_info( MLT_LINK_SERVICE(self), "Do not deinterlace - progressive source\n" );
+			pdata->deinterlace_required = 0;
+			mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
+			return error;
+		}
+		else
+		{
+			// Proceed to setup the frame cache below
+			mlt_frame_close(*frame);
+		}
+	}
+
 	if ( !pdata->deinterlace_required )
 	{
 		// As soon as get_image() detects that deinterlace is not required we stop passing
 		// future frames and stop calling get_image().
-		// This can not be undone. So a source can not toggle between interlaced/progressive.
+		// This can not be undone. So a consumer can not toggle between interlaced/progressive.
 		mlt_producer_seek( self->next, frame_pos );
 		error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), frame, index );
 		mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
