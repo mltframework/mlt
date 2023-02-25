@@ -97,7 +97,6 @@ struct mlt_producer_s
 	 */
 	int ( *set_in_and_out )( mlt_producer, mlt_position, mlt_position );
 
-
 	/** the destructor virtual function */
 	mlt_destructor close;
 	void *close_object; /**< the object supplied to the close virtual function */
@@ -145,5 +144,6 @@ extern int mlt_producer_optimise( mlt_producer self );
 extern void mlt_producer_close( mlt_producer self );
 int64_t mlt_producer_get_creation_time( mlt_producer self );
 void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time );
+extern int  mlt_producer_probe( mlt_producer self );
 
 #endif

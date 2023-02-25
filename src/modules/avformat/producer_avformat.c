@@ -95,6 +95,7 @@ struct producer_avformat_s
 	int video_index;
 	int64_t first_pts;
 	atomic_int_fast64_t last_position;
+	int probe_complete;
 	int video_seekable;
 	int seekable; /// This one is used for both audio and file level seekability.
 	atomic_int_fast64_t current_position;
@@ -153,6 +154,7 @@ typedef struct producer_avformat_s *producer_avformat;
 static int list_components( char* file );
 static int producer_open( producer_avformat self, mlt_profile profile, const char *URL, int take_lock, int test_open );
 static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index );
+static int producer_probe( mlt_producer producer );
 static void producer_avformat_close( producer_avformat );
 static void producer_close( mlt_producer parent );
 static void producer_set_up_video( producer_avformat self, mlt_frame frame );
@@ -196,6 +198,9 @@ mlt_producer producer_avformat_init( mlt_profile profile, const char *service, c
 
 			// Register our get_frame implementation
 			producer->get_frame = producer_get_frame;
+
+			// Register our probe implementation
+			mlt_properties_set_data( properties, "mlt_producer_probe", producer_probe, 0, NULL, NULL );
 
 			// Force the duration to be computed unless explicitly provided.
 			mlt_properties_set_position( properties, "length", 0 );
@@ -2204,6 +2209,7 @@ exit_get_image:
 	// Set immutable properties of the selected track's (or overridden) source attributes.
 	mlt_properties_set_int( properties, "meta.media.top_field_first", self->top_field_first );
 	mlt_properties_set_int( properties, "meta.media.progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
+	self->probe_complete = 1;
 	mlt_service_unlock( MLT_PRODUCER_SERVICE( producer ) );
 
 	mlt_log_timings_end( NULL, __FUNCTION__ );
@@ -2544,6 +2550,7 @@ static void producer_set_up_video( producer_avformat self, mlt_frame frame )
 	{
 		// Reset the video properties if the index changed
 		self->video_index = index;
+		self->probe_complete = 0;
 		pthread_mutex_lock( &self->open_mutex );
 		if ( self->video_codec )
 			avcodec_close( self->video_codec );
@@ -3166,6 +3173,7 @@ static void producer_set_up_audio( producer_avformat self, mlt_frame frame )
 		producer_open( self, mlt_service_profile( MLT_PRODUCER_SERVICE(producer) ),
 			mlt_properties_get( properties, "resource" ), 1, 0 );
 		context = self->audio_format;
+		self->probe_complete = 0;
 	}
 
 	// Exception handling for audio_index
@@ -3279,10 +3287,77 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 	mlt_position position = mlt_producer_frame( producer );
 	mlt_properties_set_position( frame_properties, "original_position", position );
 
+	if ( !self->probe_complete && self->video_index < 0 )
+	{
+		// If video index is valid, get_image() must be called before the probe is complete
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.width" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.height" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.color_range" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.aspect_ratio" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.progressive" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.sample_aspect_num" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.sample_aspect_den" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.top_field_first" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.progressive" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.variable_frame_rate" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.colorspace" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.color_trc" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "meta.media.has_b_frames" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "aspect_ratio" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "width" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "height" );
+		mlt_properties_clear( MLT_PRODUCER_PROPERTIES(producer), "format" );
+		self->probe_complete = 1;
+	}
+
 	// Calculate the next timecode
 	mlt_producer_prepare_next( producer );
 
 	return 0;
+}
+
+static int producer_probe( mlt_producer producer )
+{
+	producer_avformat self = producer->child;
+	int error = 0;
+
+	pthread_mutex_lock( &self->video_mutex );
+	// Update the video properties if the index changed
+	int video_index = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(producer), "video_index" );
+	if ( self->video_format && video_index > -1 && video_index != self->video_index )
+		self->probe_complete = 0;
+	pthread_mutex_unlock( &self->video_mutex );
+
+	pthread_mutex_lock( &self->audio_mutex );
+	// Update the audio properties if the index changed
+	int audio_index = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(producer), "audio_index" );
+	if ( self->audio_format && audio_index > -1 && audio_index != self->audio_index )
+		self->probe_complete = 0;
+	pthread_mutex_unlock( &self->audio_mutex );
+
+	if ( self->probe_complete )
+	{
+		return error;
+	}
+
+	mlt_frame fr = NULL;
+	mlt_position save_position = mlt_producer_position( producer );
+
+	// Call producer_get_frame() directly so that the underlying service will not attach any normalizers
+	error = producer_get_frame( producer, &fr, 0 );
+	if ( !error && fr && self->video_index > -1 )
+	{
+		// Some video metadata is not exposed until after the first get_image call.
+		uint8_t *buffer = NULL;
+		mlt_image_format fmt = mlt_image_none;
+		int w = 0;
+		int h = 0;
+		error = mlt_frame_get_image( fr, &buffer, &fmt, &w, &h, 0 );
+	}
+	mlt_frame_close( fr );
+	mlt_producer_seek( producer, save_position );
+
+	return error;
 }
 
 static void producer_avformat_close( producer_avformat self )

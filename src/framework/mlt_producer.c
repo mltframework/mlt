@@ -1279,3 +1279,23 @@ void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time )
 	mlt_properties_set( MLT_PRODUCER_PROPERTIES( parent ), "creation_time", datestr);
 	free( datestr );
 }
+
+/** Probe the producer to publish metadata properties.
+ *
+ * After this call the producer will publish meta.media properties
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+  * \return true on error
+ */
+
+int mlt_producer_probe( mlt_producer self )
+{
+	if ( self )
+	{
+		int ( *probe )( mlt_producer ) = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES(self), "mlt_producer_probe", NULL );
+		if ( probe )
+			return probe( self );
+	}
+	return 0;
+}
