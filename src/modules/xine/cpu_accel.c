@@ -181,7 +181,7 @@ uint32_t xine_mm_accel (void)
   static uint32_t accel;
 
   if (!initialized) {
-#if defined (ARCH_X86) || (defined (ARCH_PPC) && defined (ENABLE_ALTIVEC))
+#if defined (ARCH_X86) || defined(ARCH_X86_64) || (defined (ARCH_PPC) && defined (ENABLE_ALTIVEC))
     accel = arch_accel ();
 #elif defined (HAVE_MLIB)
 #ifdef MLIB_LAZYLOAD
