@@ -1,6 +1,6 @@
 /*
  * transition_movit_luma.cpp
- * Copyright (C) 2014-2017 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2014-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,10 +17,11 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
 #include <framework/mlt.h>
+#include <framework/mlt_luma_map.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #include "filter_glsl_manager.h"
 #include <init.h>
@@ -59,8 +60,8 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	if ( c_frame )
 	{
 		// Set the Movit parameters.
-		mlt_properties_set( properties, "_movit.parms.float.strength_first", NULL );
-		mlt_properties_set( properties, "_movit.parms.float.strength_second", NULL );
+		mlt_properties_set( properties, "_movit.parms.float.strength_first", nullptr );
+		mlt_properties_set( properties, "_movit.parms.float.strength_second", nullptr );
 		mlt_properties_set_double( properties, "_movit.parms.float.progress", reverse ? inverse : mix );
 		mlt_properties_set_double( properties, "_movit.parms.float.transition_width", 1.0 / (softness + 1.0e-4) );
 		mlt_properties_set_int( properties, "_movit.parms.int.inverse",
@@ -87,9 +88,9 @@ static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *form
 	else
 	{
 		// Set the Movit parameters.
-		mlt_properties_set( properties, "_movit.parms.int.inverse", NULL );
-		mlt_properties_set( properties, "_movit.parms.float.progress", NULL );
-		mlt_properties_set( properties, "_movit.parms.float.transition_width", NULL );
+		mlt_properties_set( properties, "_movit.parms.int.inverse", nullptr );
+		mlt_properties_set( properties, "_movit.parms.float.progress", nullptr );
+		mlt_properties_set( properties, "_movit.parms.float.transition_width", nullptr );
 		mlt_properties_set_double( properties, "_movit.parms.float.strength_first", reverse ? mix : inverse );
 		mlt_properties_set_double( properties, "_movit.parms.float.strength_second", reverse ? inverse : mix );
 	
@@ -122,63 +123,40 @@ static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_fram
 	// Obtain the wipe producer.
 	char *resource = mlt_properties_get( properties, "resource" );
 	char *last_resource = mlt_properties_get( properties, "_resource" );
-	mlt_producer producer = (mlt_producer) mlt_properties_get_data( properties, "instance", NULL );
+	auto producer = (mlt_producer) mlt_properties_get_data( properties, "instance", nullptr);
 
 	// If we haven't created the wipe producer or it has changed
 	if ( resource )
 	if ( !producer || strcmp( resource, last_resource ) ) {
-		char temp[ 512 ];
+		char temp[PATH_MAX];
+		const char *extension = strrchr(resource, '.');
+		mlt_profile profile = mlt_service_profile(MLT_TRANSITION_SERVICE(transition));
 
 		// Store the last resource now
 		mlt_properties_set( properties, "_resource", resource );
-
-		// This is a hack - the idea is that we can indirectly reference the
-		// luma modules pgm or png images by a short cut like %luma01.pgm - we then replace
-		// the % with the full path to the image and use it if it exists, if not, check for
-		// the file ending in a .png, and failing that, default to a fade in
-		if ( strchr( resource, '%' ) ) {
-			FILE *test;
-			sprintf( temp, "%s/lumas/%s/%s", mlt_environment( "MLT_DATA" ), mlt_environment( "MLT_NORMALISATION" ), strchr( resource, '%' ) + 1 );
-			test = mlt_fopen( temp, "r" );
-
-			if ( test == NULL )
-			{
-				strcat( temp, ".png" );
-				test = mlt_fopen( temp, "r" );
-			}
-
-			if ( test )
-				fclose( test ); 
-			else
-				strcpy( temp, "colour:0x00000080" );
-
-			resource = temp;
-		}
-
-		mlt_profile profile = mlt_service_profile( MLT_TRANSITION_SERVICE( transition ) );
-		producer = mlt_factory_producer( profile, NULL, resource );
-		if ( producer != NULL ) {
+		producer = mlt_factory_producer(profile, nullptr, resource);
+		if (producer) {
 			mlt_properties_set( MLT_PRODUCER_PROPERTIES( producer ), "eof", "loop" );
 		}
-		mlt_properties_set_data( properties, "instance", producer, 0, (mlt_destructor) mlt_producer_close, NULL );
+		mlt_properties_set_data(properties, "instance", producer, 0, (mlt_destructor) mlt_producer_close, nullptr);
 	}
-	// We may still not have a producer in which case, we do nothing
 	if ( producer ) {
-		mlt_frame wipe = NULL;
+		mlt_frame wipe = nullptr;
 		mlt_position position = mlt_transition_get_position( transition, a_frame );
 		mlt_properties_pass( MLT_PRODUCER_PROPERTIES( producer ), properties, "producer." );
 		mlt_producer_seek( producer, position );
 		if ( mlt_service_get_frame( MLT_PRODUCER_SERVICE( producer ), &wipe, 0 ) == 0 ) {
 			char name[64];
 			snprintf( name, sizeof(name), "movit.luma %s", mlt_properties_get( properties, "_unique_id" ) );
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES(a_frame), name, wipe, 0, (mlt_destructor) mlt_frame_close, NULL );
+			mlt_properties_set_data( MLT_FRAME_PROPERTIES(a_frame), name, wipe, 0, (mlt_destructor) mlt_frame_close, nullptr );
 			mlt_properties_set_int( MLT_FRAME_PROPERTIES(wipe), "distort", 1 );
 			mlt_frame_push_frame( a_frame, wipe );
 		} else {
-			mlt_frame_push_frame( a_frame, NULL );
+			mlt_frame_push_frame( a_frame, nullptr );
 		}
 	} else {
-		mlt_frame_push_frame( a_frame, NULL );
+		// We may still not have a producer in which case, dissolve
+		mlt_frame_push_frame( a_frame, nullptr );
 	}
 	mlt_frame_push_frame( a_frame, b_frame );
 	mlt_frame_push_service( a_frame, transition );
@@ -190,7 +168,7 @@ static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_fram
 extern "C"
 mlt_transition transition_movit_luma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
-	mlt_transition transition = NULL;
+	mlt_transition transition = nullptr;
 	GlslManager* glsl = GlslManager::get_instance();
 	if ( glsl && ( transition = mlt_transition_new() ) ) {
 		transition->process = process;

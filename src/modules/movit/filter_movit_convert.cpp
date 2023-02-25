@@ -562,6 +562,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		MltInput *input = create_input( properties, *format, profile->width, profile->height, width, height );
 
 		if (!input) {
+			mlt_log_error(nullptr, "filter movit.convert: create_input failed\n");
 			return 1;
 		}
 
@@ -569,6 +570,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		uint8_t *img_copy = make_input_copy( *format, *image, width, height );
 
 		if (!img_copy) {
+			mlt_log_error(nullptr, "filter movit.convert: make_input_copy failed\n");
 			delete input;
 			return 1;
 		}
