@@ -173,35 +173,35 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 #if CV_VERSION_INT > 0x040502
 		else if ( !strcmp(data->algo, "DaSIAM" ) )
 		{
-				if (mlt_properties_exists( filter_properties, "modelsfolder" ) ) {
-						char *modelsdir = mlt_properties_get( filter_properties, "modelsfolder" );
-						cv::TrackerDaSiamRPN::Params parameters;
-						char *model1 = (char *)calloc( 1, 1000 );
-						char *model2 = (char *)calloc( 1, 1000 );
-						char *model3 = (char *)calloc( 1, 1000 );
-						strcat( model1, modelsdir );
-						strcat( model2, modelsdir );
-						strcat( model3, modelsdir );
-						strcat( model1, "/dasiamrpn_model.onnx" );
-						strcat( model2, "/dasiamrpn_kernel_cls1.onnx" );
-						strcat( model3, "/dasiamrpn_kernel_r1.onnx" );
-						struct stat file_info;
-						if ( stat( model1, &file_info ) == 0 && stat( model2, &file_info ) == 0 && stat( model3, &file_info ) == 0 )
-						{
-								// Models found, process
-								parameters.model = model1;
-								parameters.kernel_cls1 = model2;
-								parameters.kernel_r1 = model3;
-								data->tracker = cv::TrackerDaSiamRPN::create(parameters);
-						}
-						else
-						{
-								fprintf( stderr, "DaSIAM models not found, please provide a modelsfolder parameter\n" );
-						}
-						free( model1 );
-						free( model2 );
-						free( model3 );
-				}
+			if (mlt_properties_exists( filter_properties, "modelsfolder" ) ) {
+				    char *modelsdir = mlt_properties_get( filter_properties, "modelsfolder" );
+					cv::TrackerDaSiamRPN::Params parameters;
+					char *model1 = (char *)calloc( 1, 1000 );
+					char *model2 = (char *)calloc( 1, 1000 );
+					char *model3 = (char *)calloc( 1, 1000 );
+					strcat( model1, modelsdir );
+					strcat( model2, modelsdir );
+					strcat( model3, modelsdir );
+					strcat( model1, "/dasiamrpn_model.onnx" );
+					strcat( model2, "/dasiamrpn_kernel_cls1.onnx" );
+					strcat( model3, "/dasiamrpn_kernel_r1.onnx" );
+					struct stat file_info;
+					if ( stat( model1, &file_info ) == 0 && stat( model2, &file_info ) == 0 && stat( model3, &file_info ) == 0 )
+					{
+						// Models found, process
+						parameters.model = model1;
+						parameters.kernel_cls1 = model2;
+						parameters.kernel_r1 = model3;
+						data->tracker = cv::TrackerDaSiamRPN::create(parameters);
+					}
+					else
+					{
+						mlt_log_error( MLT_FILTER_SERVICE(filter), "DaSIAM models not found, please provide a modelsfolder parameter\n" );
+					}
+					free( model1 );
+					free( model2 );
+					free( model3 );
+			}
 		}
 		else if ( !strcmp(data->algo, "MOSSE" ) )
 		{
@@ -258,7 +258,7 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 		if( data->tracker == NULL )
 		{
 #endif
-			fprintf( stderr, "Tracker initialized FAILED\n" );
+			mlt_log_error( MLT_FILTER_SERVICE(filter), "Tracker initialized FAILED\n" );
 		}
 		else
 		{
@@ -329,9 +329,6 @@ static void analyze( mlt_filter filter, cv::Mat cvFrame, private_data* data, int
 			// init anim property
 			mlt_properties_anim_get_int( filter_properties, "_results", 0, -1 );
 			mlt_animation anim = mlt_properties_get_animation( filter_properties, "_results" );
-			if ( anim == NULL ) {
-				fprintf( stderr, "animation initialized FAILED\n" );
-			}
 		}
 	}
 	else
