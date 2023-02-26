@@ -20,6 +20,7 @@
 #include <framework/mlt.h>
 #include <opencv2/tracking.hpp>
 #include <opencv2/core/version.hpp>
+#include <limits>
 
 #define CV_VERSION_INT (CV_VERSION_MAJOR << 16 | CV_VERSION_MINOR << 8 | CV_VERSION_REVISION)
 
@@ -418,8 +419,12 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 		producer = mlt_producer_cut_parent( producer );
 		if ( producer )
 		{
-			data->producer_in = mlt_producer_get_in( producer ) + mlt_filter_get_in( filter );
-			data->producer_length = mlt_producer_get_playtime( producer ) - mlt_filter_get_in( filter );
+			if ( mlt_service_chain_type == mlt_service_identify( MLT_PRODUCER_SERVICE(producer) ) ) {
+				data->producer_length = mlt_filter_get_length2( filter, frame );
+			} else {
+				data->producer_in = mlt_producer_get_in( producer ) + mlt_filter_get_in( filter );
+				data->producer_length = mlt_producer_get_playtime( producer ) - mlt_filter_get_in( filter );
+			}
 		}
 	}
 	if ( !data->initialized )
