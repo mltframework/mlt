@@ -1,6 +1,6 @@
 /*
  * consumer_qglsl.cpp
- * Copyright (C) 2012-2021 Meltytech, LLC
+ * Copyright (C) 2012-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,34 +35,40 @@ public:
 		: QThread(0)
 		, m_function(function)
 		, m_data(data)
+	    , m_context(new QOpenGLContext)
+	    , m_surface(new QOffscreenSurface)
 	{
-		m_context = new QOpenGLContext;
+		QSurfaceFormat format;
+		format.setProfile(QSurfaceFormat::CoreProfile);
+		format.setMajorVersion(3);
+		format.setMinorVersion(2);
+		format.setDepthBufferSize(0);
+		format.setStencilBufferSize(0);
+		m_context->setFormat(format);
 		m_context->create();
 		m_context->moveToThread(this);
-		m_surface = new QOffscreenSurface();
+		m_surface->setFormat(format);
 		m_surface->create();
 	}
 	~RenderThread()
 	{
 		m_surface->destroy();
-		delete m_surface;
 	}
 
 protected:
 	void run()
 	{
 		Q_ASSERT(m_context->isValid());
-		m_context->makeCurrent(m_surface);
+		m_context->makeCurrent(m_surface.get());
 		m_function(m_data);
 		m_context->doneCurrent();
-		delete m_context;
 	}
 
 private:
 	thread_function_t m_function;
 	void* m_data;
-	QOpenGLContext* m_context;
-	QOffscreenSurface* m_surface;
+	std::unique_ptr<QOpenGLContext> m_context;
+	std::unique_ptr<QOffscreenSurface> m_surface;
 };
 
 static void onThreadCreate(mlt_properties owner, mlt_consumer self, mlt_event_data event_data )
