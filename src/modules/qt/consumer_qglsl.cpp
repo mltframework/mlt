@@ -78,12 +78,15 @@ static void onThreadJoin(mlt_properties owner, mlt_consumer self, mlt_event_data
 {
 	Q_UNUSED(owner)
 	Q_UNUSED(self)
-	auto thread = (RenderThread*) mlt_event_data_to_object(event_data);
-	if (thread) {
-		thread->quit();
-		thread->wait();
-		qApp->processEvents();
-		delete thread;
+	auto threadData = (mlt_event_data_thread *) mlt_event_data_to_object(event_data);
+	if (threadData && threadData->thread) {
+		auto thread = (RenderThread *) *threadData->thread;
+		if (thread) {
+			thread->quit();
+			thread->wait();
+			qApp->processEvents();
+			delete thread;
+		}
 	}
 }
 
