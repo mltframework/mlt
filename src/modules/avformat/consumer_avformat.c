@@ -1901,8 +1901,7 @@ static void *consumer_thread( void *arg )
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
 
 						// Interlaced 420 correction
-						if ( mlt_properties_get( frame_properties, "progressive" )
-						     && mlt_properties_get_int( frame_properties, "progressive" ) == 0
+						if ( !mlt_properties_get_int( frame_properties, "progressive" )
 						     && pix_fmt == AV_PIX_FMT_YUV420P  // dst
 						     && img_fmt == mlt_image_yuv422    // src. It looks like rgb and 444 go as 422 too.
 						     && height % 4 == 0		       // because reducing twice
