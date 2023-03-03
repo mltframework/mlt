@@ -1896,7 +1896,24 @@ static void *consumer_thread( void *arg )
 					if ( mlt_properties_get_int( frame_properties, "rendered" ) )
 					{
 						AVFrame video_avframe;
+						int is_interlaced_chroma_correction = 0;
+
 						mlt_frame_get_image( frame, &image, &img_fmt, &img_width, &img_height, 0 );
+
+						// Interlaced 420 correction
+						if ( !mlt_properties_get_int( frame_properties, "progressive" )
+						     && pix_fmt == AV_PIX_FMT_YUV420P  // dst
+						     && img_fmt == mlt_image_yuv422    // src. It looks like rgb and 444 go as 422 too.
+						     && height % 4 == 0		       // because reducing twice
+						     && width == converted_avframe->linesize[1] * 2 )  // if != things become too complicated
+						{
+							width *= 2;  // substitute resolution, to appear each half-frame side-by-side
+							height /= 2;
+							for ( int i = 0; i < 3; ++i )
+								converted_avframe->linesize[i] *= 2;
+							is_interlaced_chroma_correction = 1;
+							mlt_log_debug( MLT_CONSUMER_SERVICE( consumer ), "interlaced chroma correction is activated\n" );
+						}
 
 						mlt_image_format_planes( img_fmt, width, height, image, video_avframe.data, video_avframe.linesize );
 
@@ -1911,6 +1928,14 @@ static void *consumer_thread( void *arg )
 						sws_scale( context, (const uint8_t* const*) video_avframe.data, video_avframe.linesize, 0, height,
 							converted_avframe->data, converted_avframe->linesize);
 						sws_freeContext( context );
+
+						if ( is_interlaced_chroma_correction )  // restoring everything back
+						{
+							width /= 2;
+							height *= 2;
+							for ( int i = 0; i < 3; ++i )
+								converted_avframe->linesize[i] /= 2;
+						}
 
 						mlt_events_fire( properties, "consumer-frame-show", mlt_event_data_from_frame(frame) );
 
