@@ -665,4 +665,6 @@ MLT_7.14.0 {
     mlt_chain_attach_normalizers;
     mlt_deinterlacer_name;
     mlt_deinterlacer_id;
+    mlt_link_filter_init;
+    mlt_link_filter_metadata;
 } MLT_7.12.0;

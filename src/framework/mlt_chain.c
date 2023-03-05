@@ -425,6 +425,30 @@ extern void mlt_chain_attach_normalizers( mlt_chain self )
 		return;
 	}
 
+	mlt_chain_base* base = self->local;
+
+	// Remove any normalizer filters on the source
+	for ( int i = 0; i < mlt_service_filter_count(MLT_PRODUCER_SERVICE(base->source)); i++ )
+	{
+		mlt_filter filter = mlt_service_filter( MLT_PRODUCER_SERVICE(base->source), i );
+		if ( filter && mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "_loader" ) == 1 )
+		{
+			mlt_service_detach( MLT_PRODUCER_SERVICE(base->source), filter );
+			i--;
+		}
+	}
+
+	// Remove any normalizer filters on this chain
+	for ( int i = 0; i < mlt_service_filter_count(MLT_CHAIN_SERVICE(self)); i++ )
+	{
+		mlt_filter filter = mlt_service_filter( MLT_CHAIN_SERVICE(self), i );
+		if ( filter && mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "_loader" ) == 1 )
+		{
+			mlt_service_detach( MLT_CHAIN_SERVICE(self), filter );
+			i--;
+		}
+	}
+
 	static mlt_properties normalisers = NULL;
 
 	mlt_tokeniser tokenizer = mlt_tokeniser_init( );
@@ -446,7 +470,12 @@ extern void mlt_chain_attach_normalizers( mlt_chain self )
 		mlt_tokeniser_parse_new( tokenizer, value, "," );
 		for ( int j = 0; j < mlt_tokeniser_count( tokenizer ); j ++ )
 		{
-			mlt_link link = mlt_factory_link( mlt_tokeniser_get_string( tokenizer, j ), NULL );
+			char *id = strdup( mlt_tokeniser_get_string( tokenizer, j ) );
+			char *arg = strchr( id, ':' );
+			if ( arg != NULL )
+				*arg ++ = '\0';
+			mlt_link link = mlt_factory_link( id, arg );
+			free( id );
 			if ( link )
 			{
 				mlt_properties_set_int( MLT_LINK_PROPERTIES(link), "_loader", 1 );
@@ -531,12 +560,11 @@ static void relink_chain( mlt_chain self )
 	}
 	else
 	{
-		base->begin = MLT_LINK_PRODUCER( base->links[0] );
-		// Connect the links in reverse order so that a link can query the profile of the next link
-		mlt_link_connect_next( base->links[base->link_count -1], base->source, profile );
-		for ( i = base->link_count - 2; i >= 0; i-- )
+		base->begin = MLT_LINK_PRODUCER( base->links[base->link_count -1] );
+		mlt_link_connect_next( base->links[0], base->source, profile );
+		for ( i = 1; i < base->link_count; i++ )
 		{
-			mlt_link_connect_next( base->links[i], MLT_LINK_PRODUCER( base->links[i+1] ), profile );
+			mlt_link_connect_next( base->links[i], MLT_LINK_PRODUCER( base->links[i-1] ), profile );
 		}
 	}
 }

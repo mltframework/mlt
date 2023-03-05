@@ -21,6 +21,7 @@
  */
 
 #include "mlt_link.h"
+#include "mlt_factory.h"
 #include "mlt_frame.h"
 #include "mlt_log.h"
 
@@ -151,7 +152,6 @@ int producer_seek( mlt_producer parent, mlt_position position )
 	return 0;
 }
 
-
 int producer_set_in_and_out( mlt_producer parent, mlt_position in, mlt_position out )
 {
 	// Unlike mlt_producer_set_in_and_out(), a link does not do bounds checking against length
@@ -165,4 +165,92 @@ int producer_set_in_and_out( mlt_producer parent, mlt_position in, mlt_position 
 		mlt_properties_set_position( properties, "out", out );
 	}
 	return 0;
+}
+
+// Link filter wrapper functions
+
+void link_filter_configure( mlt_link self, mlt_profile profile )
+{
+	// Operate at the same frame rate as the next link
+	if ( self )
+	{
+		mlt_service_set_profile( MLT_LINK_SERVICE( self ), mlt_service_profile( MLT_PRODUCER_SERVICE( self->next ) ) );
+		if ( self->child )
+		{
+			mlt_service_set_profile( MLT_SERVICE( self->child ), mlt_service_profile( MLT_PRODUCER_SERVICE( self->next ) ) );
+		}
+	}
+}
+
+void link_filter_close( mlt_link self )
+{
+	if ( self )
+	{
+		mlt_filter_close( (mlt_filter)self->child );
+		self->close = NULL;
+		self->child = NULL;
+		mlt_link_close( self );
+		free( self );
+	}
+}
+
+int link_filter_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
+{
+	int error = 1;
+	if ( self && self->child )
+	{
+		// Get the frame from the next link and apply the filter to it.
+		mlt_producer_seek( self->next, mlt_producer_position( MLT_LINK_PRODUCER(self) ) );
+		error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), frame, index );
+		mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
+		mlt_filter_process( (mlt_filter)self->child, *frame );
+	}
+	return error;
+}
+
+/** Construct a link as a wrapper for the specified filter
+ *
+ * The returned link will be the owner of the supplied filter
+ *
+ * \public \memberof mlt_link_s
+ * \return the new link
+ */
+
+mlt_link mlt_link_filter_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+{
+	mlt_link self = mlt_link_init();
+	mlt_filter filter = mlt_factory_filter( profile, id, arg );
+	if ( self && filter )
+	{
+		self->child = filter;
+		// Callback registration
+		self->close = link_filter_close;
+		self->configure = link_filter_configure;
+		self->get_frame = link_filter_get_frame;
+	}
+	else
+	{
+		mlt_link_close( self );
+		self = NULL;
+		mlt_filter_close( filter );
+	}
+	return self;
+}
+
+/** Get the metadata about a link that is wrapping a filter.
+ *
+ * Returns NULL if link or its metadata are unavailable.
+ *
+ * \public \memberof mlt_link_s
+ * \param type this must be mlt_service_type_link
+ * \param service the name of the filter that this link is wrapping
+ * \return the service metadata as a structured properties list
+ */
+
+extern mlt_properties mlt_link_filter_metadata( mlt_service_type type, const char *id, void *data )
+{
+	mlt_repository repository = mlt_factory_repository();
+	mlt_properties filter_metadata = mlt_repository_metadata( repository, mlt_service_filter_type, id );
+	mlt_properties_set( filter_metadata, "type", "link" );
+	return filter_metadata;
 }
