@@ -1,6 +1,6 @@
 /*
  * filter_resize.c -- resizing filter
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -219,7 +219,7 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
 	if ( rescale != NULL && !strcmp( rescale, "none" ) )
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 
-	if ( mlt_properties_get_int( properties, "distort" ) == 0 )
+	if ( mlt_properties_get_int( properties, "distort" ) == 0 && profile )
 	{
 		// Normalize the input and out display aspect
 		int normalized_width = profile->width;

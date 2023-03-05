@@ -1,6 +1,6 @@
 /*
  * producer_loader.c -- auto-load producer by file name extension
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -125,7 +125,7 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 		}	
 
 		// Check if the producer changed the profile - xml does this.
-		if ( result && backup_profile->is_explicit && (
+		if ( result && backup_profile && backup_profile->is_explicit && (
 		     profile->width != backup_profile->width ||
 		     profile->height != backup_profile->height ||
 		     profile->sample_aspect_num != backup_profile->sample_aspect_num ||

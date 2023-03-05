@@ -1,7 +1,7 @@
 /*
  * frei0r_helper.c -- frei0r helper
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2022 Meltytech, LLC
+ * Copyright (C) 2009-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -147,6 +147,10 @@ int process_frei0r_item( mlt_service service, mlt_position position, double time
 		mlt_properties_close(ctor);
 	}
 	f0r_instance_t inst = mlt_properties_get_data(ctor, "inst", NULL);
+	if (!inst) {
+		mlt_service_unlock(service);
+		return -1;
+	}
 	if (!not_thread_safe && slice_count == 1)
 		mlt_service_unlock(service);
 
