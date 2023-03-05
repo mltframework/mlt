@@ -29,39 +29,12 @@
 // Private Types
 typedef struct
 {
-	// Used by get_frame
-	mlt_filter rescale_filter;
-	mlt_filter resize_filter;
 	// Used by image
 	int scan_mode_detected;
 	// Used by get_frame and get_image
 	int deinterlace_required;
 	int prev_next_required;
 } private_data;
-
-static void stash_consumer_properties( mlt_frame frame )
-{
-	// Skip the deinterlacer and scaler normalizers to get original frames
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties_set( frame_properties, "_save.consumer.rescale", mlt_properties_get( frame_properties, "consumer.rescale" ) );
-	mlt_properties_set( frame_properties, "consumer.rescale", "none" );
-	mlt_properties_set( frame_properties, "_save.consumer.deinterlacer", mlt_properties_get( frame_properties, "consumer.deinterlacer" ) );
-	mlt_properties_set( frame_properties, "consumer.deinterlacer", "none" );
-	mlt_properties_set( frame_properties, "_save.consumer.progressive", mlt_properties_get( frame_properties, "consumer.progressive" ) );
-	mlt_properties_clear( frame_properties, "consumer.progressive" );
-}
-
-static void apply_consumer_properties( mlt_frame frame )
-{
-	// Restore the consumer requests
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties_set( frame_properties, "consumer.rescale", mlt_properties_get( frame_properties, "_save.consumer.rescale" ) );
-	mlt_properties_clear( frame_properties, "_save.consumer.rescale" );
-	mlt_properties_set( frame_properties, "consumer.deinterlacer", mlt_properties_get( frame_properties, "_save.consumer.deinterlacer" ) );
-	mlt_properties_clear( frame_properties, "_save.consumer.deinterlacer" );
-	mlt_properties_set( frame_properties, "consumer.progressive", mlt_properties_get( frame_properties, "_save.consumer.progressive" ) );
-	mlt_properties_clear( frame_properties, "_save.consumer.progressive" );
-}
 
 static void link_configure( mlt_link self, mlt_profile chain_profile )
 {
@@ -129,9 +102,7 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 	else
 	{
 		mlt_image_set_values( &srcimg, NULL, mlt_image_yuv422, *width, *height );
-		stash_consumer_properties( frame );
 		error = mlt_frame_get_image( frame, (uint8_t**)&srcimg.data, &srcimg.format, &srcimg.width, &srcimg.height, 0 );
-		apply_consumer_properties( frame );
 		if ( error )
 		{
 			mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get image\n" );
@@ -150,9 +121,7 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 		if ( prevframe )
 		{
 			mlt_image_set_values( &previmg, NULL, mlt_image_yuv422, srcimg.width, srcimg.height );
-			stash_consumer_properties( prevframe );
 			error = mlt_frame_get_image( prevframe, (uint8_t**)&previmg.data, &previmg.format, &previmg.width, &previmg.height, 0 );
-			apply_consumer_properties( prevframe );
 			if ( error )
 			{
 				mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get prev image\n" );
@@ -163,9 +132,7 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 		if ( nextframe )
 		{
 			mlt_image_set_values( &nextimg, NULL, mlt_image_yuv422, srcimg.width, srcimg.height );
-			stash_consumer_properties( nextframe );
 			error = mlt_frame_get_image( nextframe, (uint8_t**)&nextimg.data, &nextimg.format, &nextimg.width, &nextimg.height, 0 );
-			apply_consumer_properties( nextframe );
 			if ( error )
 			{
 				mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get next image\n" );
@@ -265,24 +232,6 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	mlt_frame_push_get_image( *frame, link_get_image );
 	mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
 
-	// This link will request the native image. Add normalizers to be applied after this link.
-	if ( !pdata->rescale_filter )
-	{
-		pdata->rescale_filter = mlt_factory_filter( mlt_service_profile( MLT_LINK_SERVICE( self ) ), "swscale", NULL );
-	}
-	if ( pdata->rescale_filter )
-	{
-		mlt_filter_process( pdata->rescale_filter, *frame );
-	}
-	if ( !pdata->resize_filter )
-	{
-		pdata->resize_filter = mlt_factory_filter( mlt_service_profile( MLT_LINK_SERVICE( self ) ), "resize", NULL );
-	}
-	if ( pdata->resize_filter )
-	{
-		mlt_filter_process( pdata->resize_filter, *frame );
-	}
-
 	return error;
 }
 
@@ -291,12 +240,7 @@ static void link_close( mlt_link self )
 	if ( self )
 	{
 		private_data* pdata = (private_data*)self->child;
-		if ( pdata )
-		{
-			mlt_filter_close( pdata->rescale_filter );
-			mlt_filter_close( pdata->resize_filter );
-			free( pdata );
-		}
+		free( pdata );
 		self->close = NULL;
 		self->child = NULL;
 		mlt_link_close( self );
