@@ -48,3 +48,9 @@ endif()
 set_target_properties(mltxine PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltxine LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+
+install(FILES
+  filter_deinterlace.yml
+  link_deinterlace.yml
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/xine
+)

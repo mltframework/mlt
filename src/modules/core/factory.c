@@ -101,6 +101,13 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_filter_type, "resize", filter_resize_init );
 	MLT_REGISTER( mlt_service_filter_type, "transition", filter_transition_init );
 	MLT_REGISTER( mlt_service_filter_type, "watermark", filter_watermark_init );
+	MLT_REGISTER( mlt_service_link_type, "audiochannels", mlt_link_filter_init );
+	MLT_REGISTER( mlt_service_link_type, "audioconvert", mlt_link_filter_init );
+	MLT_REGISTER( mlt_service_link_type, "crop", mlt_link_filter_init );
+	MLT_REGISTER( mlt_service_link_type, "fieldorder", mlt_link_filter_init );
+	MLT_REGISTER( mlt_service_link_type, "imageconvert", mlt_link_filter_init );
+	MLT_REGISTER( mlt_service_link_type, "rescale", mlt_link_filter_init );
+	MLT_REGISTER( mlt_service_link_type, "resize", mlt_link_filter_init );
 	MLT_REGISTER( mlt_service_link_type, "timeremap", link_timeremap_init );
 	MLT_REGISTER( mlt_service_producer_type, "abnormal", producer_loader_init );
 	MLT_REGISTER( mlt_service_producer_type, "color", producer_colour_init );
@@ -147,6 +154,13 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "resize", metadata, "filter_resize.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "transition", metadata, "filter_transition.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "watermark", metadata, "filter_watermark.yml" );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "audiochannels", mlt_link_filter_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "audioconvert", mlt_link_filter_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "crop", mlt_link_filter_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "fieldorder", mlt_link_filter_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "imageconvert", mlt_link_filter_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "rescale", mlt_link_filter_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "resize", mlt_link_filter_metadata, NULL );
 	MLT_REGISTER_METADATA( mlt_service_link_type, "timeremap", metadata, "link_timeremap.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "abnormal", metadata, "producer_abnormal.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "colour", metadata, "producer_colour.yml" );

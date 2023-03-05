@@ -426,12 +426,18 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_filter_type, "avcolor_space", create_service );
 	MLT_REGISTER( mlt_service_filter_type, "avdeinterlace", create_service );
 	MLT_REGISTER( mlt_service_filter_type, "swscale", create_service );
+	MLT_REGISTER( mlt_service_link_type, "avcolour_space", mlt_link_filter_init );
+	MLT_REGISTER( mlt_service_link_type, "avcolor_space", mlt_link_filter_init );
 	MLT_REGISTER( mlt_service_link_type, "avdeinterlace", create_service );
+	MLT_REGISTER( mlt_service_link_type, "swscale", mlt_link_filter_init );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "avcolour_space", metadata, "filter_avcolour_space.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "avcolor_space", metadata, "filter_avcolour_space.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "avdeinterlace", metadata, "filter_avdeinterlace.yml" );
 	MLT_REGISTER_METADATA( mlt_service_filter_type, "swscale", metadata, "filter_swscale.yml" );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "avcolour_space", mlt_link_filter_metadata, NULL );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "avcolor_space", mlt_link_filter_metadata, NULL );
 	MLT_REGISTER_METADATA( mlt_service_link_type, "avdeinterlace", metadata, "link_avdeinterlace.yml" );
+	MLT_REGISTER_METADATA( mlt_service_link_type, "swscale", mlt_link_filter_metadata, NULL );
 
 #ifdef AVFILTER
 	char dirname[PATH_MAX];

@@ -63,6 +63,12 @@ install(TARGETS mltavformat LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   consumer_avformat.yml
+  filter_avcolour_space.yml
+  filter_avdeinterlace.yml
+  filter_swresample.yml
+  filter_swscale.yml
+  link_avdeinterlace.yml
+  link_swresample.yml
   producer_avformat.yml
   resolution_scale.yml
   blacklist.txt

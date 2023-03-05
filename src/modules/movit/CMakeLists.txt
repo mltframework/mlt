@@ -50,6 +50,8 @@ install(TARGETS mltmovit LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_movit_blur.yml
+  filter_movit_convert.yml
+  filter_movit_crop.yml
   filter_movit_deconvolution_sharpen.yml
   filter_movit_diffusion.yml
   filter_movit_flip.yml
@@ -58,6 +60,8 @@ install(FILES
   filter_movit_mirror.yml
   filter_movit_opacity.yml
   filter_movit_rect.yml
+  filter_movit_resample.yml
+  filter_movit_resize.yml
   filter_movit_saturation.yml
   filter_movit_vignette.yml
   filter_movit_white_balance.yml
