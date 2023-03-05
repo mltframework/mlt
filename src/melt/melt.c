@@ -521,6 +521,7 @@ static void show_usage( char *program_name )
 "  -query                                   List all of the registered services\n"
 "  -query \"consumers\" | \"consumer\"=id       List consumers or show info about one\n"
 "  -query \"filters\" | \"filter\"=id           List filters or show info about one\n"
+"  -query \"links\" | \"link\"=id               List links or show info about one\n"
 "  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
 "  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
 "  -query \"profiles\" | \"profile\"=id         List profiles, show info about one\n"
@@ -600,6 +601,10 @@ static void query_services( mlt_repository repo, mlt_service_type type )
 		case mlt_service_filter_type:
 			services = mlt_repository_filters( repo );
 			typestr = "filters";
+			break;
+		case mlt_service_link_type:
+			services = mlt_repository_links( repo );
+			typestr = "links";
 			break;
 		case mlt_service_producer_type:
 			services = mlt_repository_producers( repo );
@@ -846,6 +851,8 @@ int main( int argc, char **argv )
 					query_services( repo, mlt_service_consumer_type );
 				else if ( !strcmp( pname, "filters" ) || !strcmp( pname, "filter" ) )
 					query_services( repo, mlt_service_filter_type );
+				else if ( !strcmp( pname, "links" ) || !strcmp( pname, "link" ) )
+					query_services( repo, mlt_service_link_type );
 				else if ( !strcmp( pname, "producers" ) || !strcmp( pname, "producer" ) )
 					query_services( repo, mlt_service_producer_type );
 				else if ( !strcmp( pname, "transitions" ) || !strcmp( pname, "transition" ) )
@@ -865,6 +872,8 @@ int main( int argc, char **argv )
 					query_metadata( repo, mlt_service_consumer_type, "consumer", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "filter=", 7 ) )
 					query_metadata( repo, mlt_service_filter_type, "filter", strchr( pname, '=' ) + 1 );
+				else if ( !strncmp( pname, "link=", 5 ) )
+					query_metadata( repo, mlt_service_link_type, "link", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "producer=", 9 ) )
 					query_metadata( repo, mlt_service_producer_type, "producer", strchr( pname, '=' ) + 1 );
 				else if ( !strncmp( pname, "transition=", 11 ) )
@@ -881,6 +890,7 @@ int main( int argc, char **argv )
 query_all:
 				query_services( repo, mlt_service_consumer_type );
 				query_services( repo, mlt_service_filter_type );
+				query_services( repo, mlt_service_link_type );
 				query_services( repo, mlt_service_producer_type );
 				query_services( repo, mlt_service_transition_type );
 				fprintf( stdout, "# You can query the metadata for a specific service using:\n"
