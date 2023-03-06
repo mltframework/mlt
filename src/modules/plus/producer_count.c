@@ -1,6 +1,6 @@
 /*
  * producer_count.c -- counting producer
- * Copyright (C) 2013 Meltytech, LLC
+ * Copyright (C) 2013-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,6 +36,7 @@
 #define OUTER_RING_RATIO    90
 #define INNER_RING_RATIO    80
 #define TEXT_SIZE_RATIO     70
+#define FACTORY_PRODUCER    "_factory_producer"
 
 typedef struct
 {
@@ -191,7 +192,8 @@ static mlt_frame get_background_frame( mlt_producer producer )
 	if( !color_producer )
 	{
 		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
-		color_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "colour:" );
+		const char *factory_producer = mlt_properties_get(producer_properties, FACTORY_PRODUCER);
+		color_producer = mlt_factory_producer( profile, factory_producer, "colour" );
 		mlt_properties_set_data( producer_properties, "_color_producer", color_producer, 0, ( mlt_destructor )mlt_producer_close, NULL );
 
 		mlt_properties color_properties = MLT_PRODUCER_PROPERTIES( color_producer );
@@ -216,11 +218,12 @@ static mlt_frame get_text_frame( mlt_producer producer, time_info* info  )
 
 	if( !text_producer )
 	{
-		text_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "qtext:" );
+		const char *factory_producer = mlt_properties_get(producer_properties, FACTORY_PRODUCER);
+		text_producer = mlt_factory_producer( profile, factory_producer, "qtext" );
 
 		// Use pango if qtext is not available.
 		if( !text_producer )
-			text_producer = mlt_factory_producer( profile, mlt_environment( "MLT_PRODUCER" ), "pango:" );
+			text_producer = mlt_factory_producer( profile, factory_producer, "pango" );
 	
 		if( !text_producer )
 			mlt_log_warning( MLT_PRODUCER_SERVICE(producer), "QT or GTK modules required for count producer.\n" );
@@ -635,6 +638,9 @@ mlt_producer producer_count_init( mlt_profile profile, mlt_service_type type, co
 		mlt_properties_set( properties, "sound", "none" );
 		mlt_properties_set( properties, "background", "clock" );
 		mlt_properties_set( properties, "drop", "0" );
+		// Let the arg specify the producer to use with the factory, e.g. loader-nogl
+		if (arg && strcmp(arg, "") && strcmp(arg, "<producer>"))
+			mlt_properties_set(properties, FACTORY_PRODUCER, arg);
 
 		// Callback registration
 		producer->get_frame = producer_get_frame;
