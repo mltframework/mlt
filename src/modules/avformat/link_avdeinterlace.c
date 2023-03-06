@@ -449,7 +449,7 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 		error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), frame, index );
 		mlt_producer original_producer = mlt_frame_get_original_producer( *frame );
 		mlt_producer_probe( original_producer );
-		int progressive_source = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "progressive" );
+		int progressive_source = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "meta.media.progressive" );
 		pdata->scan_mode_detected = 1;
 		char *scan_mode = progressive_source ? "progressive" : "interlaced";
 		mlt_log_info( MLT_LINK_SERVICE(self), "Scan mode detected: %s\n", scan_mode );
