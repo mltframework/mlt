@@ -1,6 +1,72 @@
 MLT Release Notes
 -----------------
 
+Version 7.14.0
+
+Framework
+
+  * Added functions to get detailed info about a producer more directly
+    (without having to get a frame and get its image in the case of
+    avformat producer, for example):
+    - `mlt_producer_probe()`
+    - `Mlt::Producer::probe()`
+  * Added functions to add normalizer links to chains (based on a
+    `chain_loader.ini` configuration data file:
+    - `mlt_chain_attach_normalizers()`
+    - `Mlt::Chain::attach_normalizers()`
+  * Changed `locale_t` to `mlt_locale_t` to avoid redefinition on some systems
+    (e.g. clang/llvm on win32).
+  * Fixed the value provided with event "consumer-thread-join" to be
+    `mlt_event_data_thread` as documented.
+  * Fixed `mlt_image_format_planes()` for `mlt_image_yuv420p`.
+
+Modules
+
+  * Added a `swresample` link to the avformat module.
+  * Added a `resample` link to the resample module.
+  * Fixed compatibility of avformat module with FFmpeg version 6.
+  * Fixed `rotoscoping` filter when request image size different than profile.
+  * Fixed `timeremap` link breaking `crop` filter.
+  * Fixed audio/video sync in `avformat` producer when the video start time is
+    not 0.
+  * Improved seeking on a WMA audio file in `avformat` producer.
+  * Optimization to set `AVDISCARD_ALL` on disinterested streams in `avformat`
+    producer.
+  * Added separate demuxing thread in `avformat` producer.
+  * Added `filtergraph` property to the `avformat` producer.
+  * Fixed filter `movit.convert`'s CPU image converter in `mlt_tractor` and
+    `mlt_frame_clone()`.
+  * Fixed using `movit` module with mlt_chain.
+  * Fixed 10-bit full range YUV color input with Movit.
+  * Fixed the `movit.luma` transition.
+  * Changed the `qglsl` consumer to use an OpenGL core profile version 3.2
+    context to make it compatible with recent Movit versions.
+  * Fixed aspect ratio issues in `qtblend` filter transform.
+  * Upgraded `glaxnimate` git submodule to version 0.5.2.
+  * Fixed `xml` producer incorrectly adds a path prefix to a `consumer`
+    producer.
+  * Fixed using `opencv.tracker` filter with `mlt_chain`.
+  * Added interlace-aware chroma conversion from mlt_image_yuv422 to yuv420p
+    in the `avformat` consumer.
+  * Added the `speed_map` property to the `timeremap` link.
+  * Fixed the `loader` producer not injecting the `consumer` producer when a
+    `xml` producer changes the frame rate.
+  * Fixed 'loader' producer corrupts the profile colorspace and description
+    when it injects a `consumer` producer.
+  * Added a `loader-nogl` producer to the core module based on `loader` but
+    prevents adding `movit`-based filters.
+  * Changed `count` producer to take an optional string argument with the name
+    of a loader producer.
+  * Fixed `yadif` deinterlace not working in a mlt_chain.
+  * Fixed the bob, weave, greedy, onefield `deinterlace` filter methods on
+    x86-64 architecture.
+
+Other
+
+  * Fixed SWIG python shadow functions for mlt7.
+  * Added CMake build option `MOD_GLAXNIMATE_QT6`.
+
+
 Version 7.12.0
 
 This version is released soon after 7.10.0 to fix a couple of major new
