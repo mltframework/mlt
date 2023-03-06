@@ -161,7 +161,7 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 	return result;
 }
 
-static void create_filter( mlt_profile profile, mlt_producer producer, char *effect, int *created )
+static void create_filter( mlt_profile profile, mlt_producer producer, const char *effect, int *created )
 {
 	mlt_filter filter = NULL;
 	int i = 0;
@@ -208,7 +208,7 @@ static void create_filter( mlt_profile profile, mlt_producer producer, char *eff
 	free( id );
 }
 
-static void attach_normalizers( mlt_profile profile, mlt_producer producer )
+static void attach_normalizers( mlt_profile profile, mlt_producer producer, int nogl )
 {
 	// Loop variable
 	int i;
@@ -232,8 +232,11 @@ static void attach_normalizers( mlt_profile profile, mlt_producer producer )
 		int created = 0;
 		char *value = mlt_properties_get_value( normalizers, i );
 		mlt_tokeniser_parse_new( tokeniser, value, "," );
-		for ( j = 0; !created && j < mlt_tokeniser_count( tokeniser ); j ++ )
-			create_filter( profile, producer, mlt_tokeniser_get_string( tokeniser, j ), &created );
+		for ( j = 0; !created && j < mlt_tokeniser_count( tokeniser ); j ++ ) {
+			const char *filter_name = mlt_tokeniser_get_string(tokeniser, j);
+			if (!nogl || (filter_name && strncmp(filter_name, "movit.", 6)))
+				create_filter(profile, producer, filter_name, &created);
+		}
 	}
 
 	// Close the tokeniser
@@ -245,6 +248,7 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 	// Create the producer 
 	mlt_producer producer = NULL;
 	mlt_properties properties = NULL;
+	int nogl = !strcmp(id, "loader-nogl");
 
 	if ( arg != NULL )
 		producer = create_producer( profile, arg );
@@ -258,14 +262,14 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 		mlt_properties_get( properties, "xml" ) == NULL &&
 		mlt_properties_get( properties, "_xml" ) == NULL &&
 		mlt_properties_get( properties, "loader_normalized" ) == NULL )
-		attach_normalizers( profile, producer );
+		attach_normalizers( profile, producer, nogl );
 	
 	if ( producer && mlt_service_identify( MLT_PRODUCER_SERVICE( producer ) ) != mlt_service_chain_type )
 	{
 		// Always let the image and audio be converted
 		int created = 0;
 		// movit.convert skips setting the frame->convert_image pointer if GLSL cannot be used.
-		if (strcmp(id, "loader-nogl"))
+		if (!nogl)
 			create_filter( profile, producer, "movit.convert", &created );
 		// avcolor_space and imageconvert only set frame->convert_image if it has not been set.
 		create_filter( profile, producer, "avcolor_space", &created );
