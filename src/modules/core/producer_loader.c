@@ -145,6 +145,7 @@ static mlt_producer create_producer( mlt_profile profile, char *file )
 			profile->sample_aspect_num = backup_profile->sample_aspect_num;
 			profile->width = backup_profile->width;
 			profile->colorspace = backup_profile->colorspace;
+			free( profile->description );
 			profile->description = strdup( backup_profile->description );
 
 			// Use the 'consumer' producer.
