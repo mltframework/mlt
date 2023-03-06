@@ -41,6 +41,7 @@ typedef struct
 	mlt_profile source_profile;
 	mlt_properties source_parameters;
 	mlt_producer begin;
+	int relink_required;
 }
 mlt_chain_base;
 
@@ -203,7 +204,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		mlt_producer_set_in_and_out( base->source, 0, mlt_producer_get_length( base->source ) - 1 );
 
 		// Reconfigure the chain
-		relink_chain( self );
+		base->relink_required = 1;
 		mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 	}
 }
@@ -259,7 +260,7 @@ int mlt_chain_attach( mlt_chain self, mlt_link link )
 				mlt_properties_inc_ref( MLT_LINK_PROPERTIES( link ) );
 				mlt_properties_set_data( MLT_LINK_PROPERTIES( link ), "chain", self, 0, NULL, NULL );
 				base->links[ base->link_count ++ ] = link;
-				relink_chain( self );
+				base->relink_required = 1;
 				mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 			}
 			else
@@ -298,7 +299,7 @@ int mlt_chain_detach( mlt_chain self, mlt_link link )
 				base->links[ i - 1 ] = base->links[ i ];
 			base->link_count --;
 			mlt_link_close( link );
-			relink_chain( self );
+			base->relink_required = 1;
 			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 		}
 	}
@@ -357,7 +358,7 @@ int mlt_chain_move_link( mlt_chain self, int from, int to )
 					base->links[i] = base->links[i + 1];
 			}
 			base->links[to] = link;
-			relink_chain( self );
+			base->relink_required = 1;
 			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 			error = 0;
 		}
@@ -499,6 +500,11 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		if( self )
 		{
 			mlt_chain_base *base = self->local;
+			if ( base->relink_required )
+			{
+				relink_chain( self );
+				base->relink_required = 0;
+			}
 			mlt_producer_seek( base->begin, mlt_producer_frame( parent ) );
 			result = mlt_service_get_frame( MLT_PRODUCER_SERVICE( base->begin ), frame, index );
 			mlt_producer_prepare_next( parent );
