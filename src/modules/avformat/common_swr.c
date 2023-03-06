@@ -62,7 +62,7 @@ int mlt_configure_swr_context( mlt_service service, mlt_swr_private_data *pdata 
 		// If input channels < output channels, silent channels will be added.
 		int64_t custom_in_layout = 0;
 		int64_t custom_out_layout = 0;
-		double* matrix = av_mallocz_array( pdata->in_channels * pdata->out_channels, sizeof(double) );
+		double* matrix = av_calloc( pdata->in_channels * pdata->out_channels, sizeof(double) );
 		int stride = pdata->in_channels;
 		int i = 0;
 
@@ -100,8 +100,8 @@ int mlt_configure_swr_context( mlt_service service, mlt_swr_private_data *pdata 
 	}
 
 	// Allocate the channel buffer pointers
-	pdata->in_buffers = av_mallocz_array( pdata->in_channels, sizeof(uint8_t*) );
-	pdata->out_buffers = av_mallocz_array( pdata->out_channels, sizeof(uint8_t*) );
+	pdata->in_buffers = av_calloc( pdata->in_channels, sizeof(uint8_t*) );
+	pdata->out_buffers = av_calloc( pdata->out_channels, sizeof(uint8_t*) );
 
 	return error;
 }

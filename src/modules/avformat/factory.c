@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -446,10 +446,15 @@ MLT_REPOSITORY
 	void *iterator = NULL;
 	while ( ( f = (AVFilter*) av_filter_iterate( &iterator ) ) ) {
 		// Support filters that have one input and one output of the same type.
-		if ( avfilter_pad_count( f->inputs ) == 1 &&
-			avfilter_pad_count( f->outputs ) == 1 &&
-			avfilter_pad_get_type( f->inputs, 0 ) == avfilter_pad_get_type( f->outputs, 0 ) &&
-			!mlt_properties_get( blacklist, f->name ) )
+#if LIBAVFILTER_VERSION_INT< ((8<<16)+(3<<8)+101)
+		if (avfilter_pad_count(f->inputs) == 1 &&
+		    avfilter_pad_count(f->outputs) == 1 &&
+#else
+		if (avfilter_filter_pad_count(f, f->inputs) == 1 &&
+		    avfilter_filter_pad_count(f, f->outputs) == 1 &&
+#endif
+		    avfilter_pad_get_type(f->inputs, 0) == avfilter_pad_get_type(f->outputs, 0) &&
+		    !mlt_properties_get(blacklist, f->name))
 		{
 			char service_name[1024]="avfilter.";
 			strncat( service_name, f->name, sizeof( service_name ) - strlen( service_name ) -1 );
