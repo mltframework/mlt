@@ -101,6 +101,7 @@ install(FILES
   producer_consumer.yml
   producer_hold.yml
   producer_loader.yml
+  producer_loader-nogl.yml
   producer_melt_file.yml
   producer_melt.yml
   producer_noise.yml

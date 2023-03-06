@@ -265,7 +265,8 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 		// Always let the image and audio be converted
 		int created = 0;
 		// movit.convert skips setting the frame->convert_image pointer if GLSL cannot be used.
-		create_filter( profile, producer, "movit.convert", &created );
+		if (strcmp(id, "loader-nogl"))
+			create_filter( profile, producer, "movit.convert", &created );
 		// avcolor_space and imageconvert only set frame->convert_image if it has not been set.
 		create_filter( profile, producer, "avcolor_space", &created );
 		if ( !created )

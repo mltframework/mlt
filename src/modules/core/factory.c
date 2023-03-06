@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -108,6 +108,7 @@ MLT_REPOSITORY
 	MLT_REGISTER( mlt_service_producer_type, "consumer", producer_consumer_init );
 	MLT_REGISTER( mlt_service_producer_type, "hold", producer_hold_init );
 	MLT_REGISTER( mlt_service_producer_type, "loader", producer_loader_init );
+	MLT_REGISTER( mlt_service_producer_type, "loader-nogl", producer_loader_init );
 	MLT_REGISTER( mlt_service_producer_type, "melt", producer_melt_init );
 	MLT_REGISTER( mlt_service_producer_type, "melt_file", producer_melt_file_init );
 	MLT_REGISTER( mlt_service_producer_type, "noise", producer_noise_init );
@@ -154,6 +155,7 @@ MLT_REPOSITORY
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "consumer", metadata, "producer_consumer.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "hold", metadata, "producer_hold.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "loader", metadata, "producer_loader.yml" );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "loader-nogl", metadata, "producer_loader-nogl.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "melt", metadata, "producer_melt.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "melt_file", metadata, "producer_melt_file.yml" );
 	MLT_REGISTER_METADATA( mlt_service_producer_type, "noise", metadata, "producer_noise.yml" );
