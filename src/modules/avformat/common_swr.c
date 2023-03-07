@@ -106,7 +106,7 @@ int mlt_configure_swr_context( mlt_service service, mlt_swr_private_data *pdata 
 	return error;
 }
 
-int mlt_free_swr_context( mlt_swr_private_data *pdata )
+void mlt_free_swr_context( mlt_swr_private_data *pdata )
 {
 	if( pdata )
 	{
