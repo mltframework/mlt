@@ -39,7 +39,7 @@ typedef struct
 } mlt_swr_private_data;
 
 int mlt_configure_swr_context( mlt_service service, mlt_swr_private_data *pdata );
-int mlt_free_swr_context( mlt_swr_private_data *pdata );
+void mlt_free_swr_context( mlt_swr_private_data *pdata );
 
 
 #endif // COMMON_H
