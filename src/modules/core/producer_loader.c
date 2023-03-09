@@ -256,6 +256,7 @@ mlt_producer producer_loader_init( mlt_profile profile, mlt_service_type type, c
 		strncmp( arg, "abnormal:", 9 ) &&
 		mlt_properties_get( properties, "xml" ) == NULL &&
 		mlt_properties_get( properties, "_xml" ) == NULL &&
+		mlt_service_identify( MLT_PRODUCER_SERVICE( producer ) ) != mlt_service_chain_type &&
 		mlt_properties_get( properties, "loader_normalized" ) == NULL )
 		attach_normalizers( profile, producer );
 	
