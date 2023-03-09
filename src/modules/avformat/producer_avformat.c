@@ -2705,6 +2705,7 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 
 	int channels = codec_context->channels;
 	int audio_used = self->audio_used[ index ];
+	int audio_used_at_start = audio_used;
 	int ret = 0;
 	int discarded = 1;
 	int sizeof_sample = sample_bytes( codec_context );
@@ -2763,6 +2764,7 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 		int n = FFMIN( audio_used, *ignore );
 		*ignore -= n;
 		audio_used -= n;
+		audio_used_at_start -= n;
 		memmove( audio_buffer, &audio_buffer[ n * channels * sizeof_sample ],
 				 audio_used * channels * sizeof_sample );
 	}
@@ -2771,7 +2773,9 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 	// Skip this on non-seekable, audio-only inputs.
 	if ( !discarded && pkt->pts >= 0 && ( self->seekable || self->video_format ) && *ignore == 0 && audio_used > samples / 2 )
 	{
-		int64_t pts = pkt->pts;
+		double timebase = av_q2d( context->streams[ index ]->time_base );
+		int64_t pts_offset = lrint((double)audio_used_at_start / timebase / (double)codec_context->sample_rate);
+		int64_t pts = pkt->pts - pts_offset;
 		if ( self->first_pts != AV_NOPTS_VALUE )
 			pts -= av_rescale_q(self->first_pts,
 								context->streams[self->video_index]->time_base,
@@ -2780,7 +2784,6 @@ static int decode_audio( producer_avformat self, int *ignore, const AVPacket *pk
 			pts -= av_rescale_q(context->start_time,
 								AV_TIME_BASE_Q,
 								context->streams[ index ]->time_base);
-		double timebase = av_q2d( context->streams[ index ]->time_base );
 		int64_t int_position = llrint( timebase * pts * fps );
 		int64_t req_position = llrint( timecode * fps );
 		int64_t req_pts =      llrint( timecode / timebase );
