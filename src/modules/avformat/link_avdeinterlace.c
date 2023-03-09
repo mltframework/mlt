@@ -50,9 +50,6 @@ typedef struct
 	int inwidth;
 	int inheight;
 	int outformat;
-	int scan_mode_detected;
-	// Used by get_frame and get_image
-	int deinterlace_required;
 } private_data;
 
 static void init_image_filtergraph( mlt_link self,AVRational sar )
@@ -288,10 +285,6 @@ static void link_configure( mlt_link self, mlt_profile chain_profile )
 
 	// Operate at the same frame rate as the next link
 	mlt_service_set_profile( MLT_LINK_SERVICE( self ), mlt_service_profile( MLT_PRODUCER_SERVICE( self->next ) ) );
-
-	// The source may have changed so restart sending future frames.
-	pdata->deinterlace_required = 1;
-	pdata->scan_mode_detected = 0;
 }
 
 static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
@@ -307,18 +300,10 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 	mlt_deinterlacer method = mlt_deinterlacer_id( mlt_properties_get( frame_properties, "consumer.deinterlacer" ) );
 
 	if ( !mlt_properties_get_int( frame_properties, "consumer.progressive" ) ||
-		 method == mlt_deinterlacer_none )
+		 method == mlt_deinterlacer_none ||
+		 mlt_frame_is_test_card( frame ) )
 	{
-		mlt_log_info( MLT_LINK_SERVICE(self), "Do not deinterlace - consumer is interlaced\n" );
-		pdata->deinterlace_required = 0;
-		return mlt_frame_get_image( frame, image, format, width, height, writable );
-	}
-
-	if ( mlt_frame_is_test_card( frame ) )
-	{
-		// The producer provided a test card. Do not deinterlace it.
-		// Do not set deinterlace_required = 0 because the producer could provide interlaced frames later.
-		mlt_log_debug( MLT_LINK_SERVICE(self), "Do not deinterlace - test frame\n" );
+		mlt_log_debug( MLT_LINK_SERVICE(self), "Do not deinterlace\n" );
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
 
@@ -441,41 +426,18 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	private_data* pdata = (private_data*)self->child;
 	mlt_position frame_pos = mlt_producer_position( MLT_LINK_PRODUCER(self) );
 
-	if ( !pdata->scan_mode_detected )
+	mlt_producer_seek( self->next, frame_pos );
+	error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), frame, index );
+	mlt_producer original_producer = mlt_frame_get_original_producer( *frame );
+	mlt_producer_probe( original_producer );
+	if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "meta.media.progressive" ) )
 	{
-		// If the producer is progressive, then this filter does not need to do anything.
-		// This can not be undone. So a source can not toggle between interlaced/progressive.
-		mlt_producer_seek( self->next, frame_pos );
-		error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), frame, index );
-		mlt_producer original_producer = mlt_frame_get_original_producer( *frame );
-		mlt_producer_probe( original_producer );
-		int progressive_source = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "meta.media.progressive" );
-		pdata->scan_mode_detected = 1;
-		char *scan_mode = progressive_source ? "progressive" : "interlaced";
-		mlt_log_info( MLT_LINK_SERVICE(self), "Scan mode detected: %s\n", scan_mode );
-		if ( progressive_source )
-		{
-			mlt_log_info( MLT_LINK_SERVICE(self), "Do not deinterlace - progressive source\n" );
-			pdata->deinterlace_required = 0;
-			mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
-			return error;
-		}
-		else
-		{
-			// Proceed to setup the frame cache below
-			mlt_frame_close(*frame);
-		}
-	}
-
-	if ( !pdata->deinterlace_required )
-	{
-		// As soon as get_image() detects that deinterlace is not required we stop passing
-		// future frames and stop calling get_image().
-		// This can not be undone. So a consumer can not toggle between interlaced/progressive.
-		mlt_producer_seek( self->next, frame_pos );
-		error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), frame, index );
-		mlt_producer_prepare_next( MLT_LINK_PRODUCER( self ) );
 		return error;
+	}
+	else
+	{
+		// Source is interlaces. Pass future frames.
+		mlt_frame_close( *frame );
 	}
 
 	// Cycle out the first frame in the cache
@@ -563,7 +525,6 @@ mlt_link link_avdeinterlace_init( mlt_profile profile, mlt_service_type type, co
 	{
 		pdata->continuity_frame = -1;
 		pdata->expected_frame = -1;
-		pdata->deinterlace_required = 1;
 		pdata->method = mlt_deinterlacer_linearblend;
 		self->child = pdata;
 
