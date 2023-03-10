@@ -59,6 +59,9 @@ set(GLAX_SOURCES
   ${CORE_DIR}io/svg/svg_format.cpp
   ${CORE_DIR}io/svg/svg_parser.cpp
   ${CORE_DIR}io/svg/svg_renderer.cpp
+  ${CORE_DIR}io/avd/avd_parser.cpp
+  ${CORE_DIR}io/avd/avd_format.cpp
+  ${CORE_DIR}io/avd/avd_renderer.cpp
 
   ${CORE_DIR}math/geom.cpp
   ${CORE_DIR}math/polynomial.cpp
@@ -127,7 +130,6 @@ set(GLAX_SOURCES
   ${CORE_DIR}plugin/io.cpp
 
   ${CORE_DIR}utils/gzip.cpp
-  ${CORE_DIR}utils/tar.cpp
 )
 
 file(GLOB YML "*.yml")
