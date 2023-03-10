@@ -252,6 +252,11 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 	double source_time = mlt_properties_get_double( unique_properties, "source_time");
 	double source_fps = mlt_properties_get_double( unique_properties, "source_fps");
 
+	if ( *format == mlt_image_movit )
+	{
+		*format = mlt_image_rgba;
+	}
+
 	// Get pointers to all the images for this frame
 	uint8_t* images[MAX_BLEND_IMAGES];
 	int image_count = 0;
@@ -338,6 +343,11 @@ static int link_get_image_nearest( mlt_frame frame, uint8_t** image, mlt_image_f
 		mlt_service_lock( MLT_LINK_SERVICE(self) );
 
 		mlt_properties_pass_list( MLT_FRAME_PROPERTIES(src_frame), MLT_FRAME_PROPERTIES(frame), "crop.left crop.right crop.top crop.bottom crop.original_width crop.original_height meta.media.width meta.media.height" );
+
+		if ( *format == mlt_image_movit )
+		{
+			*format = mlt_image_rgba;
+		}
 
 		int error = mlt_frame_get_image( src_frame, &in_image, format, width, height, 0 );
 		mlt_service_unlock( MLT_LINK_SERVICE(self) );
