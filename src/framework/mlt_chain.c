@@ -41,6 +41,7 @@ typedef struct
 	mlt_profile source_profile;
 	mlt_properties source_parameters;
 	mlt_producer begin;
+	int relink_required;
 }
 mlt_chain_base;
 
@@ -203,7 +204,7 @@ void mlt_chain_set_source( mlt_chain self, mlt_producer source )
 		mlt_producer_set_in_and_out( base->source, 0, mlt_producer_get_length( base->source ) - 1 );
 
 		// Reconfigure the chain
-		relink_chain( self );
+		base->relink_required = 1;
 		mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 	}
 }
@@ -259,7 +260,7 @@ int mlt_chain_attach( mlt_chain self, mlt_link link )
 				mlt_properties_inc_ref( MLT_LINK_PROPERTIES( link ) );
 				mlt_properties_set_data( MLT_LINK_PROPERTIES( link ), "chain", self, 0, NULL, NULL );
 				base->links[ base->link_count ++ ] = link;
-				relink_chain( self );
+				base->relink_required = 1;
 				mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 			}
 			else
@@ -298,7 +299,7 @@ int mlt_chain_detach( mlt_chain self, mlt_link link )
 				base->links[ i - 1 ] = base->links[ i ];
 			base->link_count --;
 			mlt_link_close( link );
-			relink_chain( self );
+			base->relink_required = 1;
 			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 		}
 	}
@@ -357,7 +358,7 @@ int mlt_chain_move_link( mlt_chain self, int from, int to )
 					base->links[i] = base->links[i + 1];
 			}
 			base->links[to] = link;
-			relink_chain( self );
+			base->relink_required = 1;
 			mlt_events_fire( MLT_CHAIN_PROPERTIES(self), "chain-changed", mlt_event_data_none() );
 			error = 0;
 		}
@@ -425,6 +426,30 @@ extern void mlt_chain_attach_normalizers( mlt_chain self )
 		return;
 	}
 
+	mlt_chain_base* base = self->local;
+
+	// Remove any normalizer filters on the source
+	for ( int i = 0; i < mlt_service_filter_count(MLT_PRODUCER_SERVICE(base->source)); i++ )
+	{
+		mlt_filter filter = mlt_service_filter( MLT_PRODUCER_SERVICE(base->source), i );
+		if ( filter && mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "_loader" ) == 1 )
+		{
+			mlt_service_detach( MLT_PRODUCER_SERVICE(base->source), filter );
+			i--;
+		}
+	}
+
+	// Remove any normalizer filters on this chain
+	for ( int i = 0; i < mlt_service_filter_count(MLT_CHAIN_SERVICE(self)); i++ )
+	{
+		mlt_filter filter = mlt_service_filter( MLT_CHAIN_SERVICE(self), i );
+		if ( filter && mlt_properties_get_int( MLT_FILTER_PROPERTIES(filter), "_loader" ) == 1 )
+		{
+			mlt_service_detach( MLT_CHAIN_SERVICE(self), filter );
+			i--;
+		}
+	}
+
 	static mlt_properties normalisers = NULL;
 
 	mlt_tokeniser tokenizer = mlt_tokeniser_init( );
@@ -439,18 +464,25 @@ extern void mlt_chain_attach_normalizers( mlt_chain self )
 	}
 
 	// Apply normalisers
+	int norm_count = 0;
 	for ( int i = 0; i < mlt_properties_count( normalisers ); i ++ )
 	{
 		char *value = mlt_properties_get_value( normalisers, i );
 		mlt_tokeniser_parse_new( tokenizer, value, "," );
 		for ( int j = 0; j < mlt_tokeniser_count( tokenizer ); j ++ )
 		{
-			mlt_link link = mlt_factory_link( mlt_tokeniser_get_string( tokenizer, j ), NULL );
+			char *id = strdup( mlt_tokeniser_get_string( tokenizer, j ) );
+			char *arg = strchr( id, ':' );
+			if ( arg != NULL )
+				*arg ++ = '\0';
+			mlt_link link = mlt_factory_link( id, arg );
+			free( id );
 			if ( link )
 			{
 				mlt_properties_set_int( MLT_LINK_PROPERTIES(link), "_loader", 1 );
 				mlt_chain_attach( self, link );
-				mlt_chain_move_link( self, mlt_chain_link_count( self ) - 1, 0 );
+				mlt_chain_move_link( self, mlt_chain_link_count( self ) - 1, norm_count );
+				norm_count++;
 				break;
 			}
 		}
@@ -468,6 +500,11 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int ind
 		if( self )
 		{
 			mlt_chain_base *base = self->local;
+			if ( base->relink_required )
+			{
+				relink_chain( self );
+				base->relink_required = 0;
+			}
 			mlt_producer_seek( base->begin, mlt_producer_frame( parent ) );
 			result = mlt_service_get_frame( MLT_PRODUCER_SERVICE( base->begin ), frame, index );
 			mlt_producer_prepare_next( parent );
@@ -529,12 +566,11 @@ static void relink_chain( mlt_chain self )
 	}
 	else
 	{
-		base->begin = MLT_LINK_PRODUCER( base->links[0] );
-		// Connect the links in reverse order so that a link can query the profile of the next link
-		mlt_link_connect_next( base->links[base->link_count -1], base->source, profile );
-		for ( i = base->link_count - 2; i >= 0; i-- )
+		base->begin = MLT_LINK_PRODUCER( base->links[base->link_count -1] );
+		mlt_link_connect_next( base->links[0], base->source, profile );
+		for ( i = 1; i < base->link_count; i++ )
 		{
-			mlt_link_connect_next( base->links[i], MLT_LINK_PRODUCER( base->links[i+1] ), profile );
+			mlt_link_connect_next( base->links[i], MLT_LINK_PRODUCER( base->links[i-1] ), profile );
 		}
 	}
 }

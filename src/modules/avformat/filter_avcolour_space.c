@@ -260,19 +260,6 @@ static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
 
 mlt_filter filter_avcolour_space_init( void *arg )
 {
-	// Test to see if swscale accepts the arg as resolution
-	if ( arg )
-	{
-		int *width = (int*) arg;
-		if ( *width > 0 )
-		{
-			struct SwsContext *context = sws_getContext( *width, *width, AV_PIX_FMT_RGB32, 64, 64, AV_PIX_FMT_RGB32, SWS_BILINEAR, NULL, NULL, NULL);
-			if ( context )
-				sws_freeContext( context );
-			else
-				return NULL;
-		}
-	}
 	mlt_filter filter = mlt_filter_new( );
 	if ( filter != NULL )
 		filter->process = filter_process;

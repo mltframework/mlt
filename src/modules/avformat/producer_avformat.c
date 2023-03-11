@@ -3321,19 +3321,15 @@ static int producer_probe( mlt_producer producer )
 	producer_avformat self = producer->child;
 	int error = 0;
 
-	pthread_mutex_lock( &self->video_mutex );
 	// Update the video properties if the index changed
 	int video_index = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(producer), "video_index" );
 	if ( self->video_format && video_index > -1 && video_index != self->video_index )
 		self->probe_complete = 0;
-	pthread_mutex_unlock( &self->video_mutex );
 
-	pthread_mutex_lock( &self->audio_mutex );
 	// Update the audio properties if the index changed
 	int audio_index = mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(producer), "audio_index" );
 	if ( self->audio_format && audio_index > -1 && audio_index != self->audio_index )
 		self->probe_complete = 0;
-	pthread_mutex_unlock( &self->audio_mutex );
 
 	if ( self->probe_complete )
 	{

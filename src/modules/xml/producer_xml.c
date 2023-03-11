@@ -606,8 +606,6 @@ static void on_start_chain( deserialise_context context, const xmlChar *name, co
 
 	track_service( context->destructors, service, (mlt_destructor) mlt_chain_close );
 
-	mlt_chain_attach_normalizers( chain );
-
 	for ( ; atts != NULL && *atts != NULL; atts += 2 )
 	{
 		mlt_properties_set_string( properties, (const char*) atts[0], atts[1] == NULL ? "" : (const char*) atts[1] );
@@ -700,6 +698,7 @@ static void on_end_chain( deserialise_context context, const xmlChar *name )
 		mlt_properties_inherit( MLT_PRODUCER_PROPERTIES( source ), properties );
 		// Add the source producer to the chain
 		mlt_chain_set_source( chain, source );
+		mlt_chain_attach_normalizers( chain );
 
 		// See if the chain should be added to a playlist or multitrack
 		if ( mlt_properties_get( properties, "in" ) )

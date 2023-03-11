@@ -13,4 +13,8 @@ set_target_properties(mltresample PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MOD
 
 install(TARGETS mltresample LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES filter_resample.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/resample)
+install(FILES
+  filter_resample.yml
+  link_resample.yml
+  DESTINATION ${MLT_INSTALL_DATA_DIR}/resample
+)

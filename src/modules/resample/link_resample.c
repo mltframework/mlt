@@ -134,7 +134,8 @@ static int link_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* for
 				break;
 			}
 			char key[19];
-			sprintf( key, "%d", pdata->continuity_frame );
+			int frame_delta = mlt_frame_get_position( frame ) - mlt_frame_original_position( frame );
+			sprintf( key, "%d", pdata->continuity_frame - frame_delta );
 			src_frame = (mlt_frame)mlt_properties_get_data( unique_properties, key, NULL );
 		}
 

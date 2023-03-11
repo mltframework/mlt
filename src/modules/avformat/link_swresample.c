@@ -68,7 +68,7 @@ static int link_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* for
 	struct mlt_audio_s in;
 	struct mlt_audio_s out;
 
-	mlt_audio_set_values( &in, *buffer, src_frequency, *format, src_samples, src_channels );
+	mlt_audio_set_values( &in, *buffer, src_frequency, mlt_audio_none, src_samples, src_channels );
 	mlt_audio_set_values( &out, NULL, requested_frequency, *format, requested_samples, *channels );
 
 	// Get the producer's audio
@@ -165,7 +165,8 @@ static int link_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* for
 				break;
 			}
 			char key[19];
-			sprintf( key, "%d", pdata->continuity_frame );
+			int frame_delta = mlt_frame_get_position( frame ) - mlt_frame_original_position( frame );
+			sprintf( key, "%d", pdata->continuity_frame - frame_delta );
 			mlt_frame src_frame = (mlt_frame)mlt_properties_get_data( unique_properties, key, NULL );
 			if ( !src_frame )
 			{
@@ -175,6 +176,7 @@ static int link_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* for
 
 			//  Get the audio from the in frame
 			in.samples = mlt_audio_calculate_frame_samples( mlt_producer_get_fps( MLT_LINK_PRODUCER( self ) ), in.frequency, pdata->continuity_frame );
+			in.format = mlt_audio_none;
 			error = mlt_frame_get_audio( src_frame, &in.data, &in.format, &in.frequency, &in.channels, &in.samples );
 			if (error)
 			{

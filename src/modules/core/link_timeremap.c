@@ -319,6 +319,11 @@ static int link_get_image_blend( mlt_frame frame, uint8_t** image, mlt_image_for
 	double source_time = mlt_properties_get_double( unique_properties, "source_time");
 	double source_fps = mlt_properties_get_double( unique_properties, "source_fps");
 
+	if ( *format == mlt_image_movit )
+	{
+		*format = mlt_image_rgba;
+	}
+
 	// Get pointers to all the images for this frame
 	uint8_t* images[MAX_BLEND_IMAGES];
 	int image_count = 0;
@@ -405,6 +410,11 @@ static int link_get_image_nearest( mlt_frame frame, uint8_t** image, mlt_image_f
 		mlt_service_lock( MLT_LINK_SERVICE(self) );
 
 		mlt_properties_pass_list( MLT_FRAME_PROPERTIES(src_frame), MLT_FRAME_PROPERTIES(frame), "crop.left crop.right crop.top crop.bottom crop.original_width crop.original_height meta.media.width meta.media.height" );
+
+		if ( *format == mlt_image_movit )
+		{
+			*format = mlt_image_rgba;
+		}
 
 		int error = mlt_frame_get_image( src_frame, &in_image, format, width, height, 0 );
 		mlt_service_unlock( MLT_LINK_SERVICE(self) );
@@ -540,6 +550,12 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	// Copy some useful properties from one of the source frames.
 	(*frame)->convert_image = src_frame->convert_image;
 	(*frame)->convert_audio = src_frame->convert_audio;
+	mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data( MLT_FRAME_PROPERTIES(src_frame), "_movit cpu_convert", NULL );
+	if (cpu_csc)
+	{
+		mlt_properties_inc_ref( MLT_FILTER_PROPERTIES(cpu_csc) );
+		mlt_properties_set_data( MLT_FRAME_PROPERTIES(*frame), "_movit cpu_convert", cpu_csc, 0, (mlt_destructor) mlt_filter_close, NULL );
+	}
 	mlt_properties_pass_list( MLT_FRAME_PROPERTIES(*frame), MLT_FRAME_PROPERTIES(src_frame), "audio_frequency" );
 	mlt_properties_set_data( MLT_FRAME_PROPERTIES(*frame), "_producer", mlt_frame_get_original_producer(src_frame), 0, NULL, NULL );
 
