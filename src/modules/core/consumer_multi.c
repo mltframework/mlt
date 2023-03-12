@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2022 Meltytech, LLC
+ * Copyright (C) 2011-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -338,8 +338,10 @@ static void foreach_consumer_update( mlt_consumer consumer )
 	do {
 		snprintf( key, sizeof(key), "%d.consumer", index++ );
 		nested = mlt_properties_get_data( properties, key, NULL );
-		if ( nested )
-            mlt_properties_pass_list( properties, MLT_CONSUMER_PROPERTIES(nested), "color_trc color_range" );
+		if ( nested ) {
+			mlt_properties_pass_list( properties, MLT_CONSUMER_PROPERTIES(nested),
+			                          "color_trc color_range progressive deinterlacer" );
+		}
 	} while ( nested );
 }
 
