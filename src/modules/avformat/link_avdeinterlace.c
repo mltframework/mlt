@@ -31,12 +31,10 @@
 #include <stdlib.h>
 
 // Private Types
-#define FRAME_CACHE_SIZE 2
+#define FUTURE_FRAMES 1
 
 typedef struct
 {
-	// Used by get_frame
-	mlt_frame frame_cache[FRAME_CACHE_SIZE];
 	// Used by image
 	mlt_position expected_frame;
 	mlt_position continuity_frame;
@@ -47,10 +45,25 @@ typedef struct
 	AVFrame* avoutframe;
 	mlt_deinterlacer method;
 	int informat;
-	int inwidth;
-	int inheight;
 	int outformat;
+	int width;
+	int height;
 } private_data;
+
+static mlt_image_format validate_format( mlt_image_format format )
+{
+	mlt_image_format ret_format = mlt_image_yuv422;
+	switch ( format )
+	{
+		case mlt_image_rgb:
+		case mlt_image_rgba:
+		case mlt_image_yuv422:
+		case mlt_image_yuv420p:
+		case mlt_image_yuv422p16:
+			ret_format = format;
+	}
+	return ret_format;
+}
 
 static void init_image_filtergraph( mlt_link self,AVRational sar )
 {
@@ -92,14 +105,14 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 		mlt_log_error( self, "Cannot create image buffer source\n" );
 		goto fail;
 	}
-	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "width", pdata->inwidth, AV_OPT_SEARCH_CHILDREN );
+	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "width", pdata->width, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
-		mlt_log_error( self, "Cannot set src width %d\n", pdata->inwidth );
+		mlt_log_error( self, "Cannot set src width %d\n", pdata->width );
 		goto fail;
 	}
-	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "height", pdata->inheight, AV_OPT_SEARCH_CHILDREN );
+	ret = av_opt_set_int( pdata->avbuffsrc_ctx, "height", pdata->height, AV_OPT_SEARCH_CHILDREN );
 	if( ret < 0 ) {
-		mlt_log_error( self, "Cannot set src height %d\n", pdata->inheight );
+		mlt_log_error( self, "Cannot set src height %d\n", pdata->height );
 		goto fail;
 	}
 	ret = av_opt_set_pixel_fmt( pdata->avbuffsrc_ctx, "pix_fmt", in_pixel_fmts[0], AV_OPT_SEARCH_CHILDREN );
@@ -289,56 +302,59 @@ static void link_configure( mlt_link self, mlt_profile chain_profile )
 
 static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
 {
-	int error = 0;
-	int ret = 0;
 	mlt_link self = (mlt_link)mlt_frame_pop_service( frame );
 	private_data* pdata = (private_data*)self->child;
 	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-
-	struct mlt_image_s srcimg = {0};
-	struct mlt_image_s dstimg = {0};
 	mlt_deinterlacer method = mlt_deinterlacer_id( mlt_properties_get( frame_properties, "consumer.deinterlacer" ) );
 
 	if ( !mlt_properties_get_int( frame_properties, "consumer.progressive" ) ||
 		 method == mlt_deinterlacer_none ||
 		 mlt_frame_is_test_card( frame ) )
 	{
-		mlt_log_debug( MLT_LINK_SERVICE(self), "Do not deinterlace\n" );
+		mlt_log_debug( MLT_LINK_SERVICE(self), "Do not deinterlace - progressive=%d\tmethod=%s\ttest card=%d\n", mlt_properties_get_int( frame_properties, "consumer.progressive"), mlt_deinterlacer_name( pdata->method ), mlt_frame_is_test_card( frame ) );
 		return mlt_frame_get_image( frame, image, format, width, height, writable );
 	}
 
 	// At this point, we know we need to deinterlace.
+	mlt_properties unique_properties = mlt_frame_get_unique_properties( frame, MLT_LINK_SERVICE(self) );
+	struct mlt_image_s srcimg = {0};
+	struct mlt_image_s dstimg = {0};
+	int error = 0;
+	int ret = 0;
+
+	// Operate on the native image format/size;
+	srcimg.width = mlt_properties_get_int( unique_properties, "width" );
+	srcimg.height = mlt_properties_get_int( unique_properties, "height" );
+	srcimg.format = mlt_properties_get_int( unique_properties, "format" );
+
+	// Sanitize the input
+	if ( srcimg.width <= 1 || srcimg.height <= 1 )
+	{
+		mlt_profile profile = mlt_service_profile( MLT_LINK_SERVICE(self) );
+		srcimg.width = profile->width;
+		srcimg.height = profile->height;
+	}
+	srcimg.format = validate_format( srcimg.format );
+	dstimg.format = validate_format( *format );
 
 	mlt_service_lock( MLT_LINK_SERVICE( self ) );
 
-	if ( !pdata->inwidth )
-	{
-		// Pull an image to determine incoming image parameters
-		mlt_image_format outformat = *format;
-		mlt_image_set_values( &srcimg, *image, *format, *width, *height );
-		error = mlt_frame_get_image( frame, (uint8_t**)&srcimg.data, &srcimg.format, &srcimg.width, &srcimg.height, writable );
-		if ( error )
-		{
-			mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get image\n" );
-			return error;
-		}
-		mlt_log_info( MLT_LINK_SERVICE(self), "Requested: %dx%d (%s) | Received: %dx%d (%s)\n", *width, *height, mlt_image_format_name( *format ), srcimg.width, srcimg.height, mlt_image_format_name( srcimg.format ) );
-
-		pdata->informat = srcimg.format;
-		pdata->inwidth = srcimg.width;
-		pdata->inheight = srcimg.height;
-		if (outformat == mlt_image_none || outformat >= mlt_image_invalid)
-			outformat = srcimg.format;
-		pdata->outformat = outformat;
-	}
-
 	if( !pdata->avfilter_graph ||
 		pdata->method != method ||
-		pdata->expected_frame != mlt_frame_get_position( frame ) )
+		pdata->expected_frame != mlt_frame_get_position( frame ) ||
+		pdata->informat != srcimg.format ||
+		pdata->width != srcimg.width ||
+		pdata->height != srcimg.height ||
+		pdata->outformat != dstimg.format )
 	{
+		mlt_log_debug( MLT_LINK_SERVICE(self), "Init: %s->%s\t%d->%d\n", mlt_deinterlacer_name( pdata->method ), mlt_deinterlacer_name( pdata->method ), pdata->expected_frame, mlt_frame_get_position( frame ) );
 		pdata->method = method;
 		pdata->continuity_frame = mlt_frame_get_position( frame );
 		pdata->expected_frame = mlt_frame_get_position( frame );
+		pdata->informat = srcimg.format;
+		pdata->width = srcimg.width;
+		pdata->height = srcimg.height;
+		pdata->outformat = dstimg.format;
 		init_image_filtergraph( self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024) );
 	}
 	pdata->expected_frame++;
@@ -353,14 +369,14 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 				src_frame = frame;
 				pdata->continuity_frame++;
 			} else {
-				mlt_properties unique_properties = mlt_frame_get_unique_properties( frame, MLT_LINK_SERVICE(self) );
 				if ( !unique_properties )
 				{
 					error = 1;
 					break;
 				}
 				char key[19];
-				sprintf( key, "%d", pdata->continuity_frame );
+				int frame_delta = mlt_frame_get_position( frame ) - mlt_frame_original_position( frame );
+				sprintf( key, "%d", pdata->continuity_frame - frame_delta );
 				src_frame = (mlt_frame)mlt_properties_get_data( unique_properties, key, NULL );
 				if ( !src_frame )
 				{
@@ -371,14 +387,11 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 				pdata->continuity_frame++;
 			}
 
-			if ( !srcimg.data ) { // Maybe already received during progressive check
-				mlt_image_set_values( &srcimg, *image, *format, *width, *height );
-				error = mlt_frame_get_image( src_frame, (uint8_t**)&srcimg.data, &srcimg.format, &srcimg.width, &srcimg.height, 0 );
-				if ( error )
-				{
-					mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get image\n" );
-					break;
-				}
+			error = mlt_frame_get_image( src_frame, (uint8_t**)&srcimg.data, &srcimg.format, &srcimg.width, &srcimg.height, 0 );
+			if ( error || srcimg.format != pdata->informat || srcimg.width != pdata->width || srcimg.height != pdata->height)
+			{
+				mlt_log_error( MLT_LINK_SERVICE(self), "Failed to get image\n" );
+				break;
 			}
 
 			mlt_image_to_avframe( &srcimg, src_frame, pdata->avinframe );
@@ -434,56 +447,25 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	{
 		return error;
 	}
-	else
-	{
-		// Source is interlaces. Pass future frames.
-		mlt_frame_close( *frame );
-	}
 
-	// Cycle out the first frame in the cache
-	mlt_frame_close( pdata->frame_cache[0] );
-	// Shift all the frames or get new
-	int i = 0;
-	for ( i = 0; i < FRAME_CACHE_SIZE - 1; i++ )
-	{
-		mlt_position pos = frame_pos + i;
-		mlt_frame next_frame = pdata->frame_cache[ i + 1 ];
-		if ( next_frame && mlt_frame_get_position( next_frame ) == pos )
-		{
-			// Shift the frame if it is correct
-			pdata->frame_cache[ i ] = next_frame;
-		}
-		else
-		{
-			// Get a new frame if the next cache frame is not the needed frame
-			mlt_frame_close( next_frame );
-			mlt_producer_seek( self->next, pos );
-			error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), &pdata->frame_cache[ i ], index );
-			if ( error )
-			{
-				mlt_log_error( MLT_LINK_SERVICE(self), "Error getting frame: %d\n", (int)pos );
-			}
-		}
-	}
-	// Get the new last frame in the cache
-	mlt_producer_seek( self->next, frame_pos + i );
-	error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), &pdata->frame_cache[ i ], index );
-	if ( error )
-	{
-		mlt_log_error( MLT_LINK_SERVICE(self), "Error getting frame: %d\n", (int)frame_pos + i );
-	}
-
-	*frame = pdata->frame_cache[0];
-	mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(*frame) );
-
-	// Attach the next frames to the current frame in case they are needed for deinterlacing
 	mlt_properties unique_properties = mlt_frame_unique_properties( *frame, MLT_LINK_SERVICE(self) );
-	for ( int i = 1; i < FRAME_CACHE_SIZE; i++ )
+	mlt_properties_pass_list( unique_properties, MLT_PRODUCER_PROPERTIES(original_producer), "width height format");
+
+	// Pass future frames
+	int i = 0;
+	for ( i = 0; i < FUTURE_FRAMES; i++ )
 	{
+		mlt_position future_pos = frame_pos + i + 1;
+		mlt_frame future_frame = NULL;
+		mlt_producer_seek( self->next, future_pos );
+		error = mlt_service_get_frame( MLT_PRODUCER_SERVICE( self->next ), &future_frame, index );
+		if ( error )
+		{
+			mlt_log_error( MLT_LINK_SERVICE(self), "Error getting frame: %d\n", (int)future_pos );
+		}
 		char key[19];
-		sprintf( key, "%d", (int)mlt_frame_get_position( pdata->frame_cache[i] ) );
-		mlt_properties_inc_ref( MLT_FRAME_PROPERTIES(pdata->frame_cache[i]) );
-		mlt_properties_set_data( unique_properties, key, pdata->frame_cache[i], 0, (mlt_destructor)mlt_frame_close, NULL );
+		sprintf( key, "%d", (int)future_pos );
+		mlt_properties_set_data( unique_properties, key, future_frame, 0, (mlt_destructor)mlt_frame_close, NULL );
 	}
 
 	mlt_frame_push_service( *frame, self );
@@ -500,10 +482,6 @@ static void link_close( mlt_link self )
 		private_data* pdata = (private_data*)self->child;
 		if ( pdata )
 		{
-			for ( int i = 0; i < FRAME_CACHE_SIZE; i++ )
-			{
-				mlt_frame_close( pdata->frame_cache[ i ] );
-			}
 			avfilter_graph_free( &pdata->avfilter_graph );
 			av_frame_free( &pdata->avinframe );
 			av_frame_free( &pdata->avoutframe );
