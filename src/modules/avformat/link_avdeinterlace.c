@@ -347,7 +347,7 @@ static int link_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *f
 		pdata->height != srcimg.height ||
 		pdata->outformat != dstimg.format )
 	{
-		mlt_log_debug( MLT_LINK_SERVICE(self), "Init: %s->%s\t%d->%d\n", mlt_deinterlacer_name( pdata->method ), mlt_deinterlacer_name( pdata->method ), pdata->expected_frame, mlt_frame_get_position( frame ) );
+		mlt_log_debug( MLT_LINK_SERVICE(self), "Init: %s->%s\t%d->%d\n", mlt_deinterlacer_name( pdata->method ), mlt_deinterlacer_name( method ), pdata->expected_frame, mlt_frame_get_position( frame ) );
 		pdata->method = method;
 		pdata->continuity_frame = mlt_frame_get_position( frame );
 		pdata->expected_frame = mlt_frame_get_position( frame );
