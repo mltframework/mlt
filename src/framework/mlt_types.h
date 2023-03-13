@@ -132,6 +132,7 @@ typedef enum
 	mlt_deinterlacer_yadif_nospatial,
 	mlt_deinterlacer_yadif,
 	mlt_deinterlacer_bwdif,
+	mlt_deinterlacer_estdif,
 	mlt_deinterlacer_invalid,
 }
 mlt_deinterlacer;

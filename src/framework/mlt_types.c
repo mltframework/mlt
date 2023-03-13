@@ -37,6 +37,7 @@ const char * mlt_deinterlacer_name( mlt_deinterlacer method )
 		case mlt_deinterlacer_yadif_nospatial:   return "yadif-nospatial";
 		case mlt_deinterlacer_yadif:             return "yadif";
 		case mlt_deinterlacer_bwdif:             return "bwdif";
+		case mlt_deinterlacer_estdif:            return "estdif";
 		case mlt_deinterlacer_invalid:           return "invalid";
 	}
 	return "invalid";

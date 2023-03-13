@@ -237,7 +237,7 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 			goto fail;
 		}
 		prev_ctx = avfilter_ctx;
-	} else {
+	} else if ( pdata->method <= mlt_deinterlacer_bwdif ) {
 		const AVFilter* deint = (AVFilter*)avfilter_get_by_name( "bwdif" );
 		avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, deint, deint->name );
 		if( !avfilter_ctx ) {
@@ -252,6 +252,24 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 		ret = avfilter_link( prev_ctx, 0, avfilter_ctx, 0 );
 		if( ret < 0 ) {
 			mlt_log_error( self, "Cannot link bwdif filter\n" );
+			goto fail;
+		}
+		prev_ctx = avfilter_ctx;
+	} else {
+		const AVFilter* deint = (AVFilter*)avfilter_get_by_name( "estdif" );
+		avfilter_ctx = avfilter_graph_alloc_filter( pdata->avfilter_graph, deint, deint->name );
+		if( !avfilter_ctx ) {
+			mlt_log_error( self, "Cannot create estdif filter\n" );
+			goto fail;
+		}
+		ret = avfilter_init_str( avfilter_ctx, "mode=frame:parity=auto:deint=all" );
+		if( ret < 0 ) {
+			mlt_log_error( self, "Cannot init estdif filter: %s\n", av_err2str(ret) );
+			goto fail;
+		}
+		ret = avfilter_link( prev_ctx, 0, avfilter_ctx, 0 );
+		if( ret < 0 ) {
+			mlt_log_error( self, "Cannot link estdif filter\n" );
 			goto fail;
 		}
 		prev_ctx = avfilter_ctx;
