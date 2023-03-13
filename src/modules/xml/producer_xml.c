@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -885,9 +885,10 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 
 		// Track this producer
 		track_service( context->destructors, producer, (mlt_destructor) mlt_producer_close );
-		mlt_properties_set_lcnumeric( MLT_SERVICE_PROPERTIES( producer ), context->lc_numeric );
-		if ( mlt_properties_get( MLT_SERVICE_PROPERTIES( producer ), "seekable" ) )
-			context->seekable &= mlt_properties_get_int( MLT_SERVICE_PROPERTIES( producer ), "seekable" );
+		mlt_properties producer_props = MLT_SERVICE_PROPERTIES(producer);
+		mlt_properties_set_lcnumeric(producer_props, context->lc_numeric);
+		if (mlt_properties_get(producer_props, "seekable"))
+			context->seekable &= mlt_properties_get_int(producer_props, "seekable");
 
 		// Propagate the properties
 		qualify_property( context, properties, "resource" );
@@ -914,15 +915,24 @@ static void on_end_producer( deserialise_context context, const xmlChar *name )
 		else if ( mlt_properties_get( properties, "clipEnd" ) )
 			out = mlt_properties_get_position( properties, "clipEnd" );
 		// Remove in and out
-		mlt_properties_set_string( properties, "in", NULL );
-		mlt_properties_set_string( properties, "out", NULL );
+		mlt_properties_clear(properties, "in");
+		mlt_properties_clear(properties, "out");
+
+		// Let a child XML length extend the length of a parent XML clip.
+		if (mlt_properties_get(producer_props, "mlt_service")
+		    && (!strcmp("xml", mlt_properties_get(producer_props, "mlt_service")) || !strcmp("consumer", mlt_properties_get(producer_props, "mlt_service")))
+		    && mlt_properties_get_position(producer_props, "length") > mlt_properties_get_position(properties, "length")) {
+			mlt_properties_set_position(properties, "length", mlt_properties_get_position(producer_props, "length"));
+			in = mlt_properties_get_position(producer_props, "in");
+			out = mlt_properties_get_position(producer_props, "out");
+		}
 
 		// Do not let XML overwrite these important properties set by mlt_factory.
 		mlt_properties_set_string( properties, "mlt_type", NULL );
 		mlt_properties_set_string( properties, "mlt_service", NULL );
 
 		// Inherit the properties
-		mlt_properties_inherit( MLT_SERVICE_PROPERTIES( producer ), properties );
+		mlt_properties_inherit(producer_props, properties);
 
 		// Attach all filters from service onto producer
 		attach_filters( producer, service );
