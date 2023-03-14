@@ -3340,7 +3340,9 @@ static int producer_probe( mlt_producer producer )
 	mlt_position save_position = mlt_producer_position( producer );
 
 	// Call producer_get_frame() directly so that the underlying service will not attach any normalizers
+	mlt_service_lock(MLT_PRODUCER_SERVICE(producer));
 	error = producer_get_frame( producer, &fr, 0 );
+	mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
 	if ( !error && fr && self->video_index > -1 )
 	{
 		// Some video metadata is not exposed until after the first get_image call.
