@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -685,6 +685,13 @@ static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt , int full
 			case AV_PIX_FMT_BGR8:
 			case AV_PIX_FMT_BAYER_RGGB16LE:
 				return mlt_image_rgb;
+		    case AV_PIX_FMT_YUV420P10LE:
+		    case AV_PIX_FMT_YUV422P10LE:
+			    return mlt_image_yuv422p10;
+		    case AV_PIX_FMT_YUV444P10LE:
+			    return mlt_image_yuv444p10;
+		    case AV_PIX_FMT_YUV422P16LE:
+			    return mlt_image_yuv422p16;
 			default:
 			    current_format = mlt_image_yuv422;
 		}
@@ -1562,26 +1569,46 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	pick_av_pixel_format( &src_pix_fmt );
 	if ( *format == mlt_image_yuv420p )
 	{
-		// This is a special case. Movit wants the full range, if available.
-		// Thankfully, there is not much other use of yuv420p except consumer
-		// avformat with no filters and explicitly requested.
 		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUV420P);
 		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
 			width, height, AV_PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
 
 		uint8_t *out_data[4];
 		int out_stride[4];
-		out_data[0] = buffer;
-		out_data[1] = buffer + width * height;
-		out_data[2] = buffer + ( 5 * width * height ) / 4;
-		out_stride[0] = width;
-		out_stride[1] = width >> 1;
-		out_stride[2] = width >> 1;
+		mlt_image_format_planes(*format, width, height, buffer, out_data, out_stride);
 		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range ) )
 			result = profile->colorspace;
 		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
 			out_data, out_stride);
 		sws_freeContext( context );
+	}
+	else if ( *format == mlt_image_yuv422p10 )
+	{
+		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUV422P10LE);
+		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
+		    width, height, AV_PIX_FMT_YUV422P10LE, flags, NULL, NULL, NULL);
+		uint8_t *out_data[4];
+		int out_stride[4];
+		mlt_image_format_planes(*format, width, height, buffer, out_data, out_stride);
+		if (!mlt_set_luma_transfer(context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range))
+			result = profile->colorspace;
+		sws_scale(context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
+		    out_data, out_stride);
+		sws_freeContext(context);
+	}
+	else if ( *format == mlt_image_yuv422p16 )
+	{
+		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUV422P16LE);
+		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
+		    width, height, AV_PIX_FMT_YUV422P16LE, flags, NULL, NULL, NULL);
+		uint8_t *out_data[4];
+		int out_stride[4];
+		mlt_image_format_planes(*format, width, height, buffer, out_data, out_stride);
+		if (!mlt_set_luma_transfer(context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range))
+			result = profile->colorspace;
+		sws_scale(context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
+		    out_data, out_stride);
+		sws_freeContext(context);
 	}
 	else if ( *format == mlt_image_rgb )
 	{

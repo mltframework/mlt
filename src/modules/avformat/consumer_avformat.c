@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -580,6 +580,10 @@ static enum AVPixelFormat pick_pix_fmt( mlt_image_format img_fmt )
 		return AV_PIX_FMT_YUV420P;
 	case mlt_image_yuv422p16:
 		return AV_PIX_FMT_YUV422P16LE;
+	case mlt_image_yuv422p10:
+		return AV_PIX_FMT_YUV422P10LE;
+	case mlt_image_yuv444p10:
+		return AV_PIX_FMT_YUV444P10LE;
 	default:
 		return AV_PIX_FMT_YUYV422;
 	}

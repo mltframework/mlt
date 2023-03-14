@@ -1,6 +1,6 @@
 /*
  * filter_avcolour_space.c -- Colour space filter
- * Copyright (C) 2004-2022 Meltytech, LLC
+ * Copyright (C) 2004-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -66,7 +66,13 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 		case mlt_image_yuv422p16:
 			value = AV_PIX_FMT_YUV422P16LE;
 			break;
-		default:
+	    case mlt_image_yuv422p10:
+		    value = AV_PIX_FMT_YUV422P10LE;
+		    break;
+	    case mlt_image_yuv444p10:
+		    value = AV_PIX_FMT_YUV444P10LE;
+		    break;
+	    default:
 			mlt_log_error( NULL, "[filter avcolor_space] Invalid format %s\n",
 				mlt_image_format_name( format ) );
 			break;
@@ -88,11 +94,11 @@ static int av_convert_image( uint8_t *out, uint8_t *in, int out_fmt, int in_fmt,
 	int error = -1;
 
 	if ( in_fmt == AV_PIX_FMT_YUV422P16LE )
-		mlt_image_format_planes(mlt_image_yuv422p16, in_width, in_height, in, in_data, in_stride);
+		mlt_image_format_planes(in_fmt, in_width, in_height, in, in_data, in_stride);
 	else
 		av_image_fill_arrays(in_data, in_stride, in, in_fmt, in_width, in_height, IMAGE_ALIGN);
 	if ( out_fmt == AV_PIX_FMT_YUV422P16LE )
-		mlt_image_format_planes(mlt_image_yuv422p16, out_width, out_height, out, out_data, out_stride);
+		mlt_image_format_planes(out_fmt, out_width, out_height, out, out_data, out_stride);
 	else
 		av_image_fill_arrays(out_data, out_stride, out, out_fmt, out_width, out_height, IMAGE_ALIGN);
 	struct SwsContext *context = sws_getContext( in_width, in_height, in_fmt,
@@ -140,9 +146,10 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 		if (out_height <= 0)
 			out_height = height;
 	
-		mlt_log_debug(NULL, "[filter avcolor_space] %s @ %dx%d -> %s @ %dx%d space %d->%d full %d->%d\n",
+		mlt_log_debug(NULL, "[filter avcolor_space] %s @ %dx%d -> %s @ %dx%d space %d->%d full %d->%d (%d)\n",
 			mlt_image_format_name(*format), width, height, mlt_image_format_name(output_format),
-			out_width, out_height, colorspace, profile_colorspace, src_full_range, dst_full_range);
+		    out_width, out_height, colorspace, profile_colorspace, src_full_range, dst_full_range,
+		                mlt_frame_get_position(frame));
 
 		int in_fmt = convert_mlt_to_av_cs( *format );
 		int out_fmt = convert_mlt_to_av_cs( output_format );
@@ -192,7 +199,9 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			// The new colorspace is only valid if destination is YUV.
 			if ( output_format == mlt_image_yuv422 ||
 				output_format == mlt_image_yuv420p ||
-				output_format == mlt_image_yuv422p16 )
+			    output_format == mlt_image_yuv422p16 ||
+			    output_format == mlt_image_yuv422p10 ||
+			    output_format == mlt_image_yuv444p10 )
 				mlt_properties_set_int( properties, "colorspace", profile_colorspace );
 			mlt_properties_set_int(properties, "full_range", dst_full_range);
 		}

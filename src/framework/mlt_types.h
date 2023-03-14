@@ -2,7 +2,7 @@
  * \file mlt_types.h
  * \brief Provides forward definitions of all public types
  *
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,6 +52,8 @@ typedef enum
 	mlt_image_movit,          /**< for movit module internal use only */
 	mlt_image_opengl_texture, /**< an OpenGL texture name */
 	mlt_image_yuv422p16,      /**< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian */
+	mlt_image_yuv422p10,      /**< planar YUV 4:2:2, 20bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian */
+	mlt_image_yuv444p10,      /**< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian */
 	mlt_image_invalid
 }
 mlt_image_format;

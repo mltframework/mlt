@@ -340,7 +340,7 @@ static void foreach_consumer_update( mlt_consumer consumer )
 		nested = mlt_properties_get_data( properties, key, NULL );
 		if ( nested ) {
 			mlt_properties_pass_list( properties, MLT_CONSUMER_PROPERTIES(nested),
-			                          "color_trc color_range progressive deinterlacer" );
+			                          "color_trc color_range progressive deinterlacer mlt_image_format" );
 		}
 	} while ( nested );
 }

@@ -430,8 +430,10 @@ static int generate_test_image( mlt_properties properties, uint8_t **buffer,  ml
 			case mlt_image_rgb:
 			case mlt_image_rgba:
 			case mlt_image_yuv422:
+		    case mlt_image_yuv420p:
 			case mlt_image_yuv422p16:
-			case mlt_image_yuv420p:
+		    case mlt_image_yuv422p10:
+		    case mlt_image_yuv444p10:
 				break;
 			case mlt_image_none:
 			case mlt_image_movit:

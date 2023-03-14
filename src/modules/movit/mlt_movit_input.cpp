@@ -67,7 +67,8 @@ void MltInput::useYCbCrInput(const ImageFormat& image_format, const YCbCrFormat&
 	if (!input) {
 		m_width = width;
 		m_height = height;
-		input = new YCbCrInput(image_format, ycbcr_format, width, height);
+		input = new YCbCrInput(image_format, ycbcr_format, width, height,
+		    YCBCR_INPUT_PLANAR, ycbcr_format.num_levels == 1024 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE);
 		isRGB = false;
 		m_ycbcr_format = ycbcr_format;
 	}
@@ -89,6 +90,12 @@ void MltInput::set_pixel_data(const unsigned char* data)
 	if (isRGB) {
 		FlatInput* flat = (FlatInput*) input;
 		flat->set_pixel_data(data);
+	} else if (m_ycbcr_format.num_levels == 1024) {
+		YCbCrInput* ycbcr = (YCbCrInput*) input;
+		auto p = reinterpret_cast<const uint16_t*>(data);
+		ycbcr->set_pixel_data(0, p);
+		ycbcr->set_pixel_data(1, &p[m_width * m_height]);
+		ycbcr->set_pixel_data(2, &p[m_width * m_height + (m_width / m_ycbcr_format.chroma_subsampling_x * m_height / m_ycbcr_format.chroma_subsampling_y)]);
 	} else {
 		YCbCrInput* ycbcr = (YCbCrInput*) input;
 		ycbcr->set_pixel_data(0, data);

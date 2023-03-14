@@ -59,7 +59,9 @@ static mlt_image_format validate_format( mlt_image_format format )
 		case mlt_image_rgba:
 		case mlt_image_yuv422:
 		case mlt_image_yuv420p:
-		case mlt_image_yuv422p16:
+	    case mlt_image_yuv422p16:
+	    case mlt_image_yuv422p10:
+	    case mlt_image_yuv444p10:
 			ret_format = format;
 	}
 	return ret_format;
@@ -307,7 +309,7 @@ static void init_image_filtergraph( mlt_link self,AVRational sar )
 	return;
 
 fail:
-	avfilter_graph_free( &pdata->avfilter_graph );
+	    avfilter_graph_free( &pdata->avfilter_graph );
 }
 
 static void link_configure( mlt_link self, mlt_profile chain_profile )
