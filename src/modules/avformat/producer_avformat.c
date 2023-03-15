@@ -1537,6 +1537,41 @@ static int sliced_h_pix_fmt_conv_proc( int id, int idx, int jobs, void* cookie )
 	return 0;
 }
 
+static int convert_image_yuvp(producer_avformat self, mlt_profile profile, AVFrame *frame, uint8_t *buffer,
+    mlt_image_format format, int width, int height, int src_pix_fmt, int dst_pix_fmt, int dst_full_range)
+{
+	int result = self->yuv_colorspace;
+	int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
+	struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
+	                                            width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
+	uint8_t *out_data[4];
+	int out_stride[4];
+
+	mlt_image_format_planes(format, width, height, buffer, out_data, out_stride);
+	if (!mlt_set_luma_transfer(context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range))
+		result = profile->colorspace;
+	sws_scale(context, (const uint8_t* const*) frame->data, frame->linesize, 0, height, out_data, out_stride);
+	sws_freeContext(context);
+
+	return result;
+}
+
+static void convert_image_rgb(producer_avformat self, mlt_profile profile, AVFrame *frame, uint8_t *buffer,
+    mlt_image_format format, int width, int height, int src_pix_fmt, int dst_pix_fmt, int dst_full_range)
+{
+	int result = self->yuv_colorspace;
+	int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
+	struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
+	                                             width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
+	uint8_t *out_data[4];
+	int out_stride[4];
+	av_image_fill_arrays(out_data, out_stride, buffer, dst_pix_fmt, width, height, IMAGE_ALIGN);
+	// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
+	mlt_set_luma_transfer(context, self->yuv_colorspace, 601, self->full_range, 1);
+	sws_scale(context, (const uint8_t* const*) frame->data, frame->linesize, 0, height, out_data, out_stride);
+	sws_freeContext( context );
+}
+
 // returns resulting YUV colorspace
 static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffer, int pix_fmt,
 	mlt_image_format *format, int width, int height, uint8_t **alpha, int dst_full_range )
@@ -1565,81 +1600,37 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 			memcpy( dst, src, FFMIN( width, frame->linesize[3] ) );
 	}
 
+	// Figure out source and destination pixel format
 	int src_pix_fmt = pix_fmt;
 	pick_av_pixel_format( &src_pix_fmt );
-	if ( *format == mlt_image_yuv420p )
-	{
-		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUV420P);
-		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_YUV420P, flags, NULL, NULL, NULL);
+	int dst_pix_fmt = AV_PIX_FMT_NONE;
+	switch (*format) {
+	case mlt_image_yuv420p:
+		dst_pix_fmt = AV_PIX_FMT_YUV420P;
+		break;
+	case mlt_image_yuv422p10:
+		dst_pix_fmt = AV_PIX_FMT_YUV422P10LE;
+		break;
+	case mlt_image_yuv444p10:
+		dst_pix_fmt = AV_PIX_FMT_YUV444P10LE;
+		break;
+	case mlt_image_yuv422p16:
+		dst_pix_fmt = AV_PIX_FMT_YUV422P16LE;
+		break;
+	case mlt_image_rgb:
+		dst_pix_fmt = AV_PIX_FMT_RGB24;
+		break;
+	case mlt_image_rgba:
+		dst_pix_fmt = AV_PIX_FMT_RGBA;
+		break;
+	}
 
-		uint8_t *out_data[4];
-		int out_stride[4];
-		mlt_image_format_planes(*format, width, height, buffer, out_data, out_stride);
-		if ( !mlt_set_luma_transfer( context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range ) )
-			result = profile->colorspace;
-		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			out_data, out_stride);
-		sws_freeContext( context );
-	}
-	else if ( *format == mlt_image_yuv422p10 )
-	{
-		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUV422P10LE);
-		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
-		    width, height, AV_PIX_FMT_YUV422P10LE, flags, NULL, NULL, NULL);
-		uint8_t *out_data[4];
-		int out_stride[4];
-		mlt_image_format_planes(*format, width, height, buffer, out_data, out_stride);
-		if (!mlt_set_luma_transfer(context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range))
-			result = profile->colorspace;
-		sws_scale(context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-		    out_data, out_stride);
-		sws_freeContext(context);
-	}
-	else if ( *format == mlt_image_yuv422p16 )
-	{
-		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_YUV422P16LE);
-		struct SwsContext *context = sws_getContext(width, height, src_pix_fmt,
-		    width, height, AV_PIX_FMT_YUV422P16LE, flags, NULL, NULL, NULL);
-		uint8_t *out_data[4];
-		int out_stride[4];
-		mlt_image_format_planes(*format, width, height, buffer, out_data, out_stride);
-		if (!mlt_set_luma_transfer(context, self->yuv_colorspace, profile->colorspace, self->full_range, dst_full_range))
-			result = profile->colorspace;
-		sws_scale(context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-		    out_data, out_stride);
-		sws_freeContext(context);
-	}
-	else if ( *format == mlt_image_rgb )
-	{
-		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGB24);
-		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_RGB24, flags, NULL, NULL, NULL);
-		uint8_t *out_data[4];
-		int out_stride[4];
-		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGB24, width, height, IMAGE_ALIGN);
-		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_range, 1 );
-		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			out_data, out_stride);
-		sws_freeContext( context );
-	}
-	else if ( *format == mlt_image_rgba )
-	{
-		int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, AV_PIX_FMT_RGBA);
-		struct SwsContext *context = sws_getContext( width, height, src_pix_fmt,
-			width, height, AV_PIX_FMT_RGBA, flags, NULL, NULL, NULL);
-		uint8_t *out_data[4];
-		int out_stride[4];
-		av_image_fill_arrays(out_data, out_stride, buffer, AV_PIX_FMT_RGBA, width, height, IMAGE_ALIGN);
-		// libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-		mlt_set_luma_transfer( context, self->yuv_colorspace, 601, self->full_range, 1 );
-		sws_scale( context, (const uint8_t* const*) frame->data, frame->linesize, 0, height,
-			out_data, out_stride);
-		sws_freeContext( context );
-	}
-	else
-	{
+	// Convert
+	if (mlt_image_rgb == *format || mlt_image_rgba == *format) {
+		convert_image_rgb(self, profile, frame, buffer, *format, width, height, src_pix_fmt, dst_pix_fmt, dst_full_range);
+	} else if (dst_pix_fmt != AV_PIX_FMT_NONE) {
+		result = convert_image_yuvp(self, profile, frame, buffer, *format, width, height, src_pix_fmt, dst_pix_fmt, dst_full_range);
+	} else {
 		int i, c;
 		struct sliced_pix_fmt_conv_t ctx =
 		{
