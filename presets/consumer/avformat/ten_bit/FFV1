@@ -1,0 +1,12 @@
+f=matroska
+acodec=flac
+vcodec=ffv1
+g=1
+bf=0
+coder=1
+context=1
+pix_fmt=yuv444p10le
+
+meta.preset.extension=mkv
+meta.preset.note=FFmpeg video codec 1, 10 bit, Y'CbCr 4:4:4
+meta.preset.name=ten_bit/10-bit FFV1

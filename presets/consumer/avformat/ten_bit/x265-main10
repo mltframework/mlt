@@ -1,0 +1,15 @@
+f=mp4
+
+acodec=aac
+ab=256k
+
+vcodec=libx265
+threads=0
+preset=medium
+vprofile=main10
+pix_fmt=yuv420p10le
+
+movflags=+faststart
+
+meta.preset.extension=mp4
+meta.preset.name=ten_bit/HEVC Main 10 Profile

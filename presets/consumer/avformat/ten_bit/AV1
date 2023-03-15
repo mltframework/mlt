@@ -1,0 +1,19 @@
+f=webm
+
+acodec=libopus
+ar=48000
+ab=128k
+
+vcodec=libaom-av1
+vb=0
+crf=45
+row-mt=1
+tile-columns=2
+tile-rows=1
+cpu-used=4
+strict=experimental
+pix_fmt=yuv420p10le
+
+meta.preset.name=ten_bit/10-bit AV1 WebM
+meta.preset.extension=webm
+meta.preset.note=10-bit AV1 video with Opus audio in Matroska container: Just say no to patents

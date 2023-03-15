@@ -1,0 +1,15 @@
+f=mp4
+
+acodec=aac
+ab=256k
+
+vcodec=libx264
+threads=0
+preset=medium
+vprofile=high10
+pix_fmt=yuv420p10le
+
+movflags=+faststart
+
+meta.preset.extension=mp4
+meta.preset.name=ten_bit/H.264 High 10 Profile

@@ -1,0 +1,14 @@
+f=mov
+acodec=pcm_s16le
+vcodec=prores_ks
+vb=0
+g=1
+bf=0
+vprofile=3
+vendor=apl0
+qscale=1
+movflags=+write_colr
+pix_fmt=yuv422p10le
+
+meta.preset.extension=mov
+meta.preset.note=Designed by Apple in California
