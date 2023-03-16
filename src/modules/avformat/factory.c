@@ -461,8 +461,8 @@ MLT_REPOSITORY
 		if (avfilter_pad_count(f->inputs) == 1 &&
 		    avfilter_pad_count(f->outputs) == 1 &&
 #else
-		if (avfilter_filter_pad_count(f, f->inputs) == 1 &&
-		    avfilter_filter_pad_count(f, f->outputs) == 1 &&
+		if (avfilter_filter_pad_count(f, 0) == 1 &&
+			avfilter_filter_pad_count(f, 1) == 1 &&
 #endif
 		    avfilter_pad_get_type(f->inputs, 0) == avfilter_pad_get_type(f->outputs, 0) &&
 		    !mlt_properties_get(blacklist, f->name))
