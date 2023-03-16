@@ -282,26 +282,35 @@ void mlt_image_fill_black( mlt_image self )
 		}
 		break;
 		case mlt_image_yuv422p16:
-	    case mlt_image_yuv422p10:
 		{
-			for ( int plane = 0; plane < 3; plane++ )
-			{
+			for (int plane = 0; plane < 3; plane++) {
 				uint16_t value = 16 << 8;
 				size_t width = self->width;
-				if ( plane > 0 )
-				{
+				if (plane > 0) {
 					value = 128 << 8;
-					width = self->width / 2;
+					width /= 2;
 				}
-				uint16_t* pRow = (uint16_t*)self->planes[plane];
-				for ( int i = 0; i < self->height; i++ )
-				{
-					uint16_t* p = pRow;
-					for ( int j = 0; j < width; j++ )
-					{
-						*p++ = value;
-					}
-					pRow += self->strides[plane];
+				uint16_t* p = (uint16_t*) self->planes[plane];
+				for (int i = 0; i < width * self->height; i++) {
+					p[i] = value;
+				}
+			}
+		}
+		break;
+		case mlt_image_yuv422p10:
+		case mlt_image_yuv444p10:
+		{
+			for (int plane = 0; plane < 3; plane++) {
+				uint16_t value = 16 << 2;
+				size_t width = self->width;
+				if (plane > 0) {
+					value = 128 << 2;
+					if (self->format == mlt_image_yuv422p10)
+						width /= 2;
+				}
+				uint16_t* p = (uint16_t*) self->planes[plane];
+				for (int i = 0; i < width * self->height; i++) {
+					p[i] = value;
 				}
 			}
 		}
@@ -324,21 +333,21 @@ void mlt_image_fill_black( mlt_image self )
   */
 void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
 {
-    if (!self->data) return;
+	if (!self->data) return;
 
 	if (sample_aspect_ratio == 0) sample_aspect_ratio = 1.0;
 	int h = 0.025 * MAX(self->width * sample_aspect_ratio, self->height);
 	int w = h / sample_aspect_ratio;
 
-    if (w <= 0 || h <= 0) return;
+	if (w <= 0 || h <= 0) return;
 
-    // compute center offsets
+	// compute center offsets
 	int ox = w * 2 - (self->width / 2) % (w * 2);
 	int oy = h * 2 - (self->height / 2) % (h * 2);
 	int bpp = self->strides[0] / self->width;
 	uint8_t color, gray1 = 0x7F, gray2 = 0xB2;
 
-    switch (self->format)
+	switch (self->format)
 	{
 		case mlt_image_invalid:
 		case mlt_image_none:
@@ -370,8 +379,7 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
 		}
 		break;
 		case mlt_image_yuv422p16:
-	    case mlt_image_yuv422p10:
-	    {
+		{
 			for (int plane = 0; plane < 3; plane++){
 				int width = plane > 0 ? self->width/2 : self->width;
 				uint16_t *p = (uint16_t*) self->planes[plane];
@@ -380,10 +388,27 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
 				for (int i = 0; i < self->height; i++) {
 					for (int j = 0; j < width; j++) {
 						color = plane > 0 ? 128 : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
-						p[i * self->strides[plane] + j * bpp] = color << 8;
+						p[i * width + j] = color << 8;
 					}
 				}
 
+			}
+		}
+		break;
+		case mlt_image_yuv422p10:
+		case mlt_image_yuv444p10:
+		{
+			for (int plane = 0; plane < 3; plane++){
+				int width = (plane > 0 && self->format == mlt_image_yuv422p10) ? self->width/2 : self->width;
+				uint16_t *p = (uint16_t*) self->planes[plane];
+				uint16_t color;
+
+				for (int i = 0; i < self->height; i++) {
+					for (int j = 0; j < width; j++) {
+						color = plane > 0 ? 128 : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+						p[i * width + j] = color << 2;
+					}
+				}
 			}
 		}
 		break;
@@ -393,7 +418,7 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
 			for (int i = 0; i < self->height; i++) {
 				for (int j = 0; j < self->width; j++) {
 					color = ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
-					p[i * self->strides[0] + j * bpp] = color;
+					p[i * self->width + j] = color;
 				}
 			}
 			memset(self->planes[1], 128, self->height * self->strides[1] / 2);
@@ -441,29 +466,36 @@ void mlt_image_fill_white(mlt_image self , int full_range)
 		}
 		break;
 		case mlt_image_yuv422p16:
-	    case mlt_image_yuv422p10:
 		{
-			for ( int plane = 0; plane < 3; plane++ )
-			{
+			for (int plane = 0; plane < 3; plane++) {
 				uint16_t value = white << 8;
 				size_t width = self->width;
-				if ( plane > 0 )
-				{
+				if (plane > 0) {
 					value = 128 << 8;
-					width = self->width / 2;
+					width /= 2;
 				}
-				uint16_t* pRow = (uint16_t*)self->planes[plane];
-				for ( int i = 0; i < self->height; i++ )
-				{
-					uint16_t* p = pRow;
-					for ( int j = 0; j < width; j++ )
-					{
-						*p++ = value;
-					}
-					pRow += self->strides[plane];
+				uint16_t* p = (uint16_t*) self->planes[plane];
+				for (int i = 0; i < width * self->height; i++) {
+					p[i] = value;
 				}
 			}
 		}
+		break;
+		case mlt_image_yuv422p10:
+		case mlt_image_yuv444p10:
+			for (int plane = 0; plane < 3; plane++) {
+				uint16_t value = white << 2;
+				size_t width = self->width;
+				if (plane > 0) {
+					value = 128 << 2;
+					if (self->format == mlt_image_yuv422p10)
+						width /= 2;
+				}
+				uint16_t* p = (uint16_t*) self->planes[plane];
+				for (int i = 0; i < width * self->height; i++) {
+					p[i] = value;
+				}
+			}
 		break;
 		case mlt_image_yuv420p:
 		{
