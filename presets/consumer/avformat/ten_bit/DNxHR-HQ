@@ -1,6 +1,6 @@
 progressive=1
 vcodec=dnxhd
-vprofile=dnxhr_hq
+vprofile=dnxhr_hqx
 qscale=1
 vb=0
 g=1
