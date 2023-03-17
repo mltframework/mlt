@@ -186,11 +186,12 @@ int mlt_image_calculate_size( mlt_image self )
 		case mlt_image_opengl_texture:
 			return 4;
 		case mlt_image_yuv422p16:
-	    case mlt_image_yuv422p10:
-		    return 4 * self->width * self->height;
-	    case mlt_image_yuv444p10:
-		    return 6 * self->width * self->height;
-	    case mlt_image_none:
+			return self->width * self->height * 4;
+		case mlt_image_yuv420p10:
+			return self->width * self->height * 3;
+		case mlt_image_yuv444p10:
+			return self->width * self->height * 6;
+		case mlt_image_none:
 		case mlt_image_invalid:
 			return 0;
 	}
@@ -217,9 +218,9 @@ const char * mlt_image_format_name( mlt_image_format format )
 		case mlt_image_movit:          return "glsl";
 		case mlt_image_opengl_texture: return "opengl_texture";
 		case mlt_image_yuv422p16:      return "yuv422p16";
-	    case mlt_image_yuv422p10:      return "yuv422p10";
-	    case mlt_image_yuv444p10:      return "yuv444p10";
-	    case mlt_image_invalid:        return "invalid";
+		case mlt_image_yuv420p10:      return "yuv420p10";
+		case mlt_image_yuv444p10:      return "yuv444p10";
+		case mlt_image_invalid:        return "invalid";
 	}
 	return "invalid";
 }
@@ -297,19 +298,22 @@ void mlt_image_fill_black( mlt_image self )
 			}
 		}
 		break;
-		case mlt_image_yuv422p10:
+		case mlt_image_yuv420p10:
 		case mlt_image_yuv444p10:
 		{
 			for (int plane = 0; plane < 3; plane++) {
 				uint16_t value = 16 << 2;
 				size_t width = self->width;
+				size_t height = self->height;
 				if (plane > 0) {
 					value = 128 << 2;
-					if (self->format == mlt_image_yuv422p10)
+					if (self->format == mlt_image_yuv420p10) {
 						width /= 2;
+						height /= 2;
+					}
 				}
 				uint16_t* p = (uint16_t*) self->planes[plane];
-				for (int i = 0; i < width * self->height; i++) {
+				for (int i = 0; i < width * height; i++) {
 					p[i] = value;
 				}
 			}
@@ -395,15 +399,20 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
 			}
 		}
 		break;
-		case mlt_image_yuv422p10:
+		case mlt_image_yuv420p10:
 		case mlt_image_yuv444p10:
 		{
 			for (int plane = 0; plane < 3; plane++){
-				int width = (plane > 0 && self->format == mlt_image_yuv422p10) ? self->width/2 : self->width;
 				uint16_t *p = (uint16_t*) self->planes[plane];
 				uint16_t color;
+				int width = self->width;
+				int height = self->height;
 
-				for (int i = 0; i < self->height; i++) {
+				if (plane > 0 && self->format == mlt_image_yuv420p10) {
+					width /= 2;
+					height /= 2;
+				}
+				for (int i = 0; i < height; i++) {
 					for (int j = 0; j < width; j++) {
 						color = plane > 0 ? 128 : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
 						p[i * width + j] = color << 2;
@@ -481,18 +490,21 @@ void mlt_image_fill_white(mlt_image self , int full_range)
 			}
 		}
 		break;
-		case mlt_image_yuv422p10:
+		case mlt_image_yuv420p10:
 		case mlt_image_yuv444p10:
 			for (int plane = 0; plane < 3; plane++) {
 				uint16_t value = white << 2;
 				size_t width = self->width;
+				size_t height = self->height;
 				if (plane > 0) {
 					value = 128 << 2;
-					if (self->format == mlt_image_yuv422p10)
+					if (self->format == mlt_image_yuv420p10) {
 						width /= 2;
+						height /= 2;
+					}
 				}
 				uint16_t* p = (uint16_t*) self->planes[plane];
-				for (int i = 0; i < width * self->height; i++) {
+				for (int i = 0; i < width * height; i++) {
 					p[i] = value;
 				}
 			}
@@ -563,13 +575,15 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
 			if ( bpp ) *bpp = 0;
 			return 4;
 		case mlt_image_yuv422p16:
-	    case mlt_image_yuv422p10:
-		    if ( bpp ) *bpp = 4;
+			if ( bpp ) *bpp = 4;
 			return 4 * height * width ;
-	    case mlt_image_yuv444p10:
-		    if ( bpp ) *bpp = 6;
-		    return 6 * height * width ;
-	    default:
+		case mlt_image_yuv420p10:
+			if ( bpp ) *bpp = 3;
+			return 3 * height * width ;
+		case mlt_image_yuv444p10:
+			if ( bpp ) *bpp = 6;
+			return 6 * height * width ;
+		default:
 			if ( bpp ) *bpp = 0;
 			return 0;
 	}
@@ -591,8 +605,8 @@ int mlt_image_format_size( mlt_image_format format, int width, int height, int *
  */
 void mlt_image_format_planes( mlt_image_format format, int width, int height, void* data, uint8_t* planes[4], int strides[4])
 {
-	if ( mlt_image_yuv422p16 == format || mlt_image_yuv422p10 == format)
-	{
+	switch (format) {
+	case mlt_image_yuv422p16:
 		strides[0] = width * 2;
 		strides[1] = width;
 		strides[2] = width;
@@ -602,9 +616,19 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 		planes[1] = planes[0] + height * strides[0];
 		planes[2] = planes[1] + height * strides[1];
 		planes[3] = 0;
-	}
-	else if ( mlt_image_yuv444p10 == format)
-	{
+		break;
+	case mlt_image_yuv420p10:
+		strides[0] = width * 2;
+		strides[1] = width;
+		strides[2] = width;
+		strides[3] = 0;
+
+		planes[0] = (unsigned char*)data;
+		planes[1] = planes[0] + height * strides[0];
+		planes[2] = planes[1] + (height >> 1) * strides[1];
+		planes[3] = 0;
+		break;
+	case mlt_image_yuv444p10:
 		strides[0] = width * 2;
 		strides[1] = width * 2;
 		strides[2] = width * 2;
@@ -614,9 +638,8 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 		planes[1] = planes[0] + height * strides[0];
 		planes[2] = planes[1] + height * strides[1];
 		planes[3] = 0;
-	}
-	else if ( mlt_image_yuv420p == format )
-	{
+		break;
+	case mlt_image_yuv420p:
 		strides[0] = width;
 		strides[1] = width >> 1;
 		strides[2] = width >> 1;
@@ -626,9 +649,8 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 		planes[1] = planes[0] + width * height;
 		planes[2] = planes[1] + (width >> 1) * (height >> 1);
 		planes[3] = 0;
-	}
-	else
-	{
+		break;
+	default:
 		planes[0] = data;
 		planes[1] = 0;
 		planes[2] = 0;
@@ -638,6 +660,7 @@ void mlt_image_format_planes( mlt_image_format format, int width, int height, vo
 		strides[1] = 0;
 		strides[2] = 0;
 		strides[3] = 0;
+		break;
 	};
 }
 

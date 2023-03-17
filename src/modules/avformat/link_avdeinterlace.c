@@ -59,9 +59,9 @@ static mlt_image_format validate_format( mlt_image_format format )
 		case mlt_image_rgba:
 		case mlt_image_yuv422:
 		case mlt_image_yuv420p:
-	    case mlt_image_yuv422p16:
-	    case mlt_image_yuv422p10:
-	    case mlt_image_yuv444p10:
+		case mlt_image_yuv422p16:
+		case mlt_image_yuv420p10:
+		case mlt_image_yuv444p10:
 			ret_format = format;
 	}
 	return ret_format;

@@ -66,13 +66,13 @@ static int convert_mlt_to_av_cs( mlt_image_format format )
 		case mlt_image_yuv422p16:
 			value = AV_PIX_FMT_YUV422P16LE;
 			break;
-	    case mlt_image_yuv422p10:
-		    value = AV_PIX_FMT_YUV422P10LE;
-		    break;
-	    case mlt_image_yuv444p10:
-		    value = AV_PIX_FMT_YUV444P10LE;
-		    break;
-	    default:
+		case mlt_image_yuv420p10:
+			value = AV_PIX_FMT_YUV420P10LE;
+			break;
+		case mlt_image_yuv444p10:
+			value = AV_PIX_FMT_YUV444P10LE;
+			break;
+		default:
 			mlt_log_error( NULL, "[filter avcolor_space] Invalid format %s\n",
 				mlt_image_format_name( format ) );
 			break;
@@ -200,7 +200,7 @@ static int convert_image( mlt_frame frame, uint8_t **image, mlt_image_format *fo
 			if ( output_format == mlt_image_yuv422 ||
 				output_format == mlt_image_yuv420p ||
 			    output_format == mlt_image_yuv422p16 ||
-			    output_format == mlt_image_yuv422p10 ||
+				output_format == mlt_image_yuv420p10 ||
 			    output_format == mlt_image_yuv444p10 )
 				mlt_properties_set_int( properties, "colorspace", profile_colorspace );
 			mlt_properties_set_int(properties, "full_range", dst_full_range);

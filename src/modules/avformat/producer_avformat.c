@@ -685,15 +685,15 @@ static mlt_image_format pick_image_format( enum AVPixelFormat pix_fmt , int full
 			case AV_PIX_FMT_BGR8:
 			case AV_PIX_FMT_BAYER_RGGB16LE:
 				return mlt_image_rgb;
-		    case AV_PIX_FMT_YUV420P10LE:
-		    case AV_PIX_FMT_YUV422P10LE:
-			    return mlt_image_yuv422p10;
-		    case AV_PIX_FMT_YUV444P10LE:
-			    return mlt_image_yuv444p10;
-		    case AV_PIX_FMT_YUV422P16LE:
-			    return mlt_image_yuv422p16;
+			case AV_PIX_FMT_YUV420P10LE:
+				return mlt_image_yuv420p10;
+			case AV_PIX_FMT_YUV422P10LE:
+			case AV_PIX_FMT_YUV444P10LE:
+				return mlt_image_yuv444p10;
+			case AV_PIX_FMT_YUV422P16LE:
+				return mlt_image_yuv422p16;
 			default:
-			    current_format = mlt_image_yuv422;
+				current_format = mlt_image_yuv422;
 		}
 	}
 	if (pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE
@@ -1608,8 +1608,8 @@ static int convert_image( producer_avformat self, AVFrame *frame, uint8_t *buffe
 	case mlt_image_yuv420p:
 		dst_pix_fmt = AV_PIX_FMT_YUV420P;
 		break;
-	case mlt_image_yuv422p10:
-		dst_pix_fmt = AV_PIX_FMT_YUV422P10LE;
+	case mlt_image_yuv420p10:
+		dst_pix_fmt = AV_PIX_FMT_YUV420P10LE;
 		break;
 	case mlt_image_yuv444p10:
 		dst_pix_fmt = AV_PIX_FMT_YUV444P10LE;

@@ -52,7 +52,7 @@ typedef enum
 	mlt_image_movit,          /**< for movit module internal use only */
 	mlt_image_opengl_texture, /**< an OpenGL texture name */
 	mlt_image_yuv422p16,      /**< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian */
-	mlt_image_yuv422p10,      /**< planar YUV 4:2:2, 20bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian */
+	mlt_image_yuv420p10,      /**< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian */
 	mlt_image_yuv444p10,      /**< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian */
 	mlt_image_invalid
 }

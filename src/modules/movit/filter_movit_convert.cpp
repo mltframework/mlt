@@ -331,7 +331,7 @@ static void finalize_movit_chain( mlt_service leaf_service, mlt_frame frame, mlt
 		ImageFormat output_format;
 		output_format.color_space = COLORSPACE_sRGB;
 		output_format.gamma_curve = getGammaCurve( MLT_FRAME_PROPERTIES(frame) );
-		if (format == mlt_image_yuv444p10 || format == mlt_image_yuv422p10) {
+		if (format == mlt_image_yuv444p10 || format == mlt_image_yuv420p10) {
 			YCbCrFormat ycbcr_format = {};
 			get_format_from_properties(MLT_FRAME_PROPERTIES(frame), nullptr, &ycbcr_format);
 			ycbcr_format.num_levels = 1024;
@@ -468,7 +468,7 @@ static int movit_render( EffectChain *chain, mlt_frame frame, mlt_image_format *
 	int error;
 	if ( output_format == mlt_image_opengl_texture ) {
 		error = glsl->render_frame_texture( chain, frame, width, height, image );
-	} else if (output_format == mlt_image_yuv444p10 || output_format == mlt_image_yuv422p10) {
+	} else if (output_format == mlt_image_yuv444p10 || output_format == mlt_image_yuv420p10) {
 		error = glsl->render_frame_ycbcr( chain, frame, width, height, image );
 		if ( !error && output_format != mlt_image_yuv444p10 ) {
 			*format = mlt_image_yuv444p10;
@@ -516,12 +516,12 @@ static MltInput* create_input( mlt_properties properties, mlt_image_format forma
 		ycbcr_format.chroma_subsampling_y = 1;
 		input->useYCbCrInput( image_format, ycbcr_format, width, height );
 	}
-	else if ( format == mlt_image_yuv422p10 ) {
+	else if ( format == mlt_image_yuv420p10 ) {
 		ImageFormat image_format = {};
 		YCbCrFormat ycbcr_format = {};
 		get_format_from_properties( properties, &image_format, &ycbcr_format );
 		ycbcr_format.chroma_subsampling_x = 2;
-		ycbcr_format.chroma_subsampling_y = 1;
+		ycbcr_format.chroma_subsampling_y = 2;
 		ycbcr_format.num_levels = 1024;
 		input->useYCbCrInput( image_format, ycbcr_format, width, height );
 	}
