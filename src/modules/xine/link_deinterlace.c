@@ -151,7 +151,8 @@ static int link_get_frame( mlt_link self, mlt_frame_ptr frame, int index )
 	mlt_producer original_producer = mlt_frame_get_original_producer( *frame );
 	mlt_producer_probe( original_producer );
 
-	if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "meta.media.progressive" ) )
+	if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "meta.media.progressive" ) ||
+		 mlt_properties_get_int( MLT_PRODUCER_PROPERTIES(original_producer), "progressive" ) )
 	{
 		// Source is progressive. Deinterlace is not required;
 		return error;
