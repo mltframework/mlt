@@ -777,7 +777,12 @@ static void *consumer_read_ahead_thread( void *arg )
 
 	// Get the first frame
 	frame = mlt_consumer_get_frame( self );
-	priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+	if ( priv->speed != mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" ) )
+	{
+		priv->speed = mlt_properties_get_int( MLT_FRAME_PROPERTIES( frame ), "_speed" );
+		// get_frame might want to recalculate the minimum queue size if the speed has changed.
+		pthread_cond_broadcast( &priv->queue_cond );
+	}
 
 	if ( frame )
 	{
@@ -1548,7 +1553,13 @@ mlt_frame mlt_consumer_rt_frame( mlt_consumer self )
 		pthread_mutex_lock( &priv->queue_mutex );
 		mlt_log_timings_begin();
 		while( priv->ahead && mlt_deque_count( priv->queue ) < size )
+		{
 			pthread_cond_wait( &priv->queue_cond, &priv->queue_mutex );
+			if ( priv->speed == 0 )
+			{
+				size = 1;
+			}
+		}
 		frame = mlt_deque_pop_front( priv->queue );
 		mlt_log_timings_end( NULL, "wait_for_frame_queue" );
 		pthread_cond_broadcast( &priv->queue_cond );
