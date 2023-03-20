@@ -17,7 +17,7 @@ jobs:
           echo VERSION=$VERSION
           sudo apt install -yqq s3cmd
           s3cmd --access_key=${{ secrets.AWS_ACCESS_KEY }} --secret_key=${{ secrets.AWS_SECRET_KEY }} --stop-on-error get s3://builds.us.meltytech/melt-build-macos.txt
-          s3cmd --access_key=${{ secrets.AWS_ACCESS_KEY }} --secret_key=${{ secrets.AWS_SECRET_KEY }} --stop-on-error get s3://builds.us.meltytech/melt/melt-macos-x86_64-$VERSION.tar.bz2
+          s3cmd --access_key=${{ secrets.AWS_ACCESS_KEY }} --secret_key=${{ secrets.AWS_SECRET_KEY }} --stop-on-error get s3://builds.us.meltytech/melt/melt-macos-$VERSION.tar.bz2
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
