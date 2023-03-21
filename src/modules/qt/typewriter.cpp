@@ -524,7 +524,7 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
             if (i_end == line.npos)
                 return -i_end-1;
 
-            // chack if endrange char is not escaped
+            // check if endrange char is not escaped
             if (line[i_end-1] != escape_char or line[i_end-2] == escape_char)
                 break;
 
@@ -601,7 +601,7 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
             if (i_end == line.npos)
                 return -i_end-1;
 
-            // chack if endrange char is not escaped
+            // check if endrange char is not escaped
             if (line[i_end-1] != escape_char or line[i_end-2] == escape_char)
                 break;
 

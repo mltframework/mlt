@@ -28,7 +28,7 @@ static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int i
 static void producer_close( mlt_producer producer );
 
 /** Constructor for the frame holding producer. Basically, all this producer does is
-	provide a producer wrapper for the requested producer, allows the specifcation of
+	provide a producer wrapper for the requested producer, allows the specification of
 	the frame required and will then repeatedly obtain that frame for each get_frame
 	and get_image requested.
 */

@@ -96,7 +96,7 @@ static double integrate_source_time( mlt_link self, mlt_position position )
 	}
 
 	// Remember the integration results so that the next frame can start
-	// integration from this position instead of from the begining.
+	// integration from this position instead of from the beginning.
 	pdata->prev_integration_position = position;
 	pdata->prev_integration_time = source_time;
 	return source_time;

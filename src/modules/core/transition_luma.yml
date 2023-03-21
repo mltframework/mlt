@@ -26,7 +26,7 @@ parameters:
     title: Luma map file
     type: string
     description: >
-      Either PGM or any other producable video. If not supplied, performs a dissolve.
+      Either PGM or any other producible video. If not supplied, performs a dissolve.
     argument: yes
 
   - identifier: factory

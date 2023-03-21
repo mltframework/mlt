@@ -1,5 +1,5 @@
 default:
-	@echo This Makefile is not used for builing. Use CMake instead.
+	@echo This Makefile is not used for building. Use CMake instead.
 	@echo Rather, this makefile is purely for holding some maintenance routines.
 
 dist:

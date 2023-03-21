@@ -694,7 +694,7 @@ static void on_end_chain( deserialise_context context, const xmlChar *name )
 		}
 		if ( !source )
 			source = mlt_factory_producer( context->profile, NULL, "colour:red" );
-		// Propogate properties to the source
+		// Propagate properties to the source
 		mlt_properties_inherit( MLT_PRODUCER_PROPERTIES( source ), properties );
 		// Add the source producer to the chain
 		mlt_chain_set_source( chain, source );
@@ -1853,7 +1853,7 @@ static xmlEntityPtr on_get_entity( void *ctx, const xmlChar* name )
 	
 	e = xmlGetPredefinedEntity( name );
 	
-	// Send signal to on_characters that an entity substitutin is pending
+	// Send signal to on_characters that an entity substitution is pending
 	if ( e == NULL )
 	{
 		e = xmlGetDocEntity( context->entity_doc, name );
