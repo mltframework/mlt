@@ -399,7 +399,7 @@ static void convert_crop_values_to_percentages(mlt_filter filter, mlt_frame fram
 		pdata->ui_crops.bot = (pdata->ui_crops.bot - v_min) / (v_max - v_min) * 100;
 		pdata->ui_crops.top = (pdata->ui_crops.top - v_min) / (v_max - v_min) * 100;
 	}
-	//this is just to cover all cases, I doubt someone would manually input coordonates or unix time (in milliseconds) when they can just visually set the percentage
+	//this is just to cover all cases, I doubt someone would manually input coordinates or unix time (in milliseconds) when they can just visually set the percentage
 	if (crop_mode_h)
 	{
 		if (pdata->graph_data_source == gspg_location_src) //longitude

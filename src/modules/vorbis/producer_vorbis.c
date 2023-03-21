@@ -102,7 +102,7 @@ mlt_producer producer_vorbis_init( mlt_profile profile, mlt_service_type type, c
 	return this;
 }
 
-/** Destuctor for ogg files.
+/** Destructor for ogg files.
 */
 
 static void producer_file_close( void *file )

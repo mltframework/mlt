@@ -236,7 +236,7 @@ int time_val_between_indices_proc(int64_t time_val, gps_point_proc* gp, int i, i
 
 /** Returns the [index of] nearest gps point in time, but not farther than MAX_GPS_DIFF (10 seconds)
  * or -1 if search fails
- * Seaches in raw values directly
+ * Searches in raw values directly
  * If force_result is nonzero, it will ignore MAX_GPS_DIFF restriction
 */
 int binary_search_gps(gps_private_data gdata, int64_t video_time, bool force_result /* = false */)
