@@ -25,21 +25,20 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class MLTPP_DECLSPEC Tokeniser
 {
-	class MLTPP_DECLSPEC Tokeniser
-	{
-		private:
-			mlt_tokeniser tokens;
-		public:
-			Tokeniser( char *text = NULL, char *delimiter = NULL );
-			~Tokeniser( );
-			int parse( char *text, char *delimiter = NULL );
-			int count( );
-			char *get( int index );
-			char *input( );
-	};
-}
+private:
+    mlt_tokeniser tokens;
+
+public:
+    Tokeniser(char *text = NULL, char *delimiter = NULL);
+    ~Tokeniser();
+    int parse(char *text, char *delimiter = NULL);
+    int count();
+    char *get(int index);
+    char *input();
+};
+} // namespace Mlt
 
 #endif
-

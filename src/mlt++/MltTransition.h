@@ -22,46 +22,46 @@
 
 #include "MltConfig.h"
 
-#include <framework/mlt.h>
 #include "MltService.h"
+#include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class Service;
+class Profile;
+class Frame;
+class Chain;
+class Link;
+
+class MLTPP_DECLSPEC Transition : public Service
 {
-	class Service;
-	class Profile;
-	class Frame;
-	class Chain;
-	class Link;
+private:
+    mlt_transition instance;
 
-	class MLTPP_DECLSPEC Transition : public Service
-	{
-		private:
-			mlt_transition instance;
-		public:
-			Transition();
-			Transition( Profile& profile, const char *id, const char *arg = NULL );
-			Transition( mlt_profile profile, const char *id, const char *arg = NULL );
-			Transition( Service &transition );
-			Transition( Transition &transition );
-			Transition( const Transition &transition );
-			Transition( mlt_transition transition );
-			virtual ~Transition( );
-			Transition& operator=( const Transition &transition );
-			virtual mlt_transition get_transition( );
-			mlt_service get_service( ) override;
-			void set_in_and_out( int in, int out );
-			void set_tracks( int a_track, int b_track );
-			int connect( Producer &producer, int a_track, int b_track );
-			int connect( Service &service, int a_track, int b_track );
-			int get_a_track( );
-			int get_b_track( );
-			int get_in( );
-			int get_out( );
-			int get_length( );
-			int get_position( Frame &frame );
-			double get_progress( Frame &frame );
-			double get_progress_delta( Frame &frame );
-	};
-}
+public:
+    Transition();
+    Transition(Profile &profile, const char *id, const char *arg = NULL);
+    Transition(mlt_profile profile, const char *id, const char *arg = NULL);
+    Transition(Service &transition);
+    Transition(Transition &transition);
+    Transition(const Transition &transition);
+    Transition(mlt_transition transition);
+    virtual ~Transition();
+    Transition &operator=(const Transition &transition);
+    virtual mlt_transition get_transition();
+    mlt_service get_service() override;
+    void set_in_and_out(int in, int out);
+    void set_tracks(int a_track, int b_track);
+    int connect(Producer &producer, int a_track, int b_track);
+    int connect(Service &service, int a_track, int b_track);
+    int get_a_track();
+    int get_b_track();
+    int get_in();
+    int get_out();
+    int get_length();
+    int get_position(Frame &frame);
+    double get_progress(Frame &frame);
+    double get_progress_delta(Frame &frame);
+};
+} // namespace Mlt
 
 #endif

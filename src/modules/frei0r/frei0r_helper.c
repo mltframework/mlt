@@ -19,318 +19,335 @@
  */
 #include "frei0r_helper.h"
 #include <frei0r.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
 const char *CAIROBLEND_MODE_PROPERTY = "frei0r.cairoblend.mode";
 
-static void rgba_bgra( uint8_t *src, uint8_t* dst, int width, int height )
+static void rgba_bgra(uint8_t *src, uint8_t *dst, int width, int height)
 {
-	int n = width * height + 1;
+    int n = width * height + 1;
 
-	while ( --n )
-	{
-		*dst++ = src[2];
-		*dst++ = src[1];
-		*dst++ = src[0];
-		*dst++ = src[3];
-		src += 4;
-	}	
+    while (--n) {
+        *dst++ = src[2];
+        *dst++ = src[1];
+        *dst++ = src[0];
+        *dst++ = src[3];
+        src += 4;
+    }
 }
 
-struct update_context {
-	f0r_instance_t frei0r;
-	int width;
-	int height;
-	double time;
-	uint32_t* inputs[2];
-	uint32_t* output;
-	void (*f0r_update)  (f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe);
-	void (*f0r_update2) (f0r_instance_t instance, double time, const uint32_t* inframe1,
-						 const uint32_t* inframe2,const uint32_t* inframe3, uint32_t* outframe);
+struct update_context
+{
+    f0r_instance_t frei0r;
+    int width;
+    int height;
+    double time;
+    uint32_t *inputs[2];
+    uint32_t *output;
+    void (*f0r_update)(f0r_instance_t instance,
+                       double time,
+                       const uint32_t *inframe,
+                       uint32_t *outframe);
+    void (*f0r_update2)(f0r_instance_t instance,
+                        double time,
+                        const uint32_t *inframe1,
+                        const uint32_t *inframe2,
+                        const uint32_t *inframe3,
+                        uint32_t *outframe);
 };
 
-static int f0r_update_slice( int id, int index, int count, void *context )
+static int f0r_update_slice(int id, int index, int count, void *context)
 {
-	struct update_context *ctx = context;
-	int slice_height = ctx->height / count;
-	int slice_offset = index * slice_height * ctx->width;
-	uint32_t *input = ctx->inputs[0] + slice_offset;
-	uint32_t *output = ctx->output + slice_offset;
-	ctx->f0r_update(ctx->frei0r, ctx->time, input, output);
-	return 0;
+    struct update_context *ctx = context;
+    int slice_height = ctx->height / count;
+    int slice_offset = index * slice_height * ctx->width;
+    uint32_t *input = ctx->inputs[0] + slice_offset;
+    uint32_t *output = ctx->output + slice_offset;
+    ctx->f0r_update(ctx->frei0r, ctx->time, input, output);
+    return 0;
 }
 
-static int f0r_update2_slice( int id, int index, int count, void *context )
+static int f0r_update2_slice(int id, int index, int count, void *context)
 {
-	struct update_context *ctx = context;
-	int slice_height = ctx->height / count;
-	int slice_offset = index * slice_height * ctx->width;
-	uint32_t *inputs[2] = {
-		ctx->inputs[0] + slice_offset,
-		ctx->inputs[1] + slice_offset
-	};
-	uint32_t *output = ctx->output + slice_offset;
-	ctx->f0r_update2(ctx->frei0r, ctx->time, inputs[0], inputs[1], NULL, output);
-	return 0;
+    struct update_context *ctx = context;
+    int slice_height = ctx->height / count;
+    int slice_offset = index * slice_height * ctx->width;
+    uint32_t *inputs[2] = {ctx->inputs[0] + slice_offset, ctx->inputs[1] + slice_offset};
+    uint32_t *output = ctx->output + slice_offset;
+    ctx->f0r_update2(ctx->frei0r, ctx->time, inputs[0], inputs[1], NULL, output);
+    return 0;
 }
 
-int process_frei0r_item( mlt_service service, mlt_position position, double time,
-	int length, mlt_frame frame, uint8_t **image, int *width, int *height )
+int process_frei0r_item(mlt_service service,
+                        mlt_position position,
+                        double time,
+                        int length,
+                        mlt_frame frame,
+                        uint8_t **image,
+                        int *width,
+                        int *height)
 {
-	int i=0;
-	mlt_properties prop = MLT_SERVICE_PROPERTIES(service);
-	f0r_instance_t (*f0r_construct) (unsigned int, unsigned int)
-			= mlt_properties_get_data(prop, "f0r_construct", NULL);
-	if (!f0r_construct) {
-		return -1;
-	}
-	void (*f0r_update) (f0r_instance_t instance, double time, const uint32_t* inframe, uint32_t* outframe)
-			= mlt_properties_get_data(prop, "f0r_update", NULL);
-	void (*f0r_get_plugin_info) (f0r_plugin_info_t*)
-			= mlt_properties_get_data(prop, "f0r_get_plugin_info", NULL);
-	void (*f0r_get_param_info) (f0r_param_info_t* info, int param_index)
-			= mlt_properties_get_data(prop, "f0r_get_param_info", NULL);
-	void (*f0r_set_param_value) (f0r_instance_t instance, f0r_param_t param, int param_index)
-			= mlt_properties_get_data(prop, "f0r_set_param_value", NULL);
-	void (*f0r_get_param_value) (f0r_instance_t instance, f0r_param_t param, int param_index)
-			= mlt_properties_get_data(prop, "f0r_get_param_value", NULL);
-	void (*f0r_update2) (f0r_instance_t instance, double time, const uint32_t* inframe1,
-	                     const uint32_t* inframe2, const uint32_t* inframe3, uint32_t* outframe)
-			= mlt_properties_get_data(prop, "f0r_update2", NULL);
-	mlt_service_type type = mlt_service_identify(service);
-	int not_thread_safe = mlt_properties_get_int(prop, "_not_thread_safe");
-	int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads") : -1;
-	const char *service_name = mlt_properties_get(prop, "mlt_service");
-	int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
-	double scale = mlt_profile_scale_width(mlt_service_profile(service), *width);
-	mlt_properties scale_map = mlt_properties_get_data(prop, "_resolution_scale", NULL);
+    int i = 0;
+    mlt_properties prop = MLT_SERVICE_PROPERTIES(service);
+    f0r_instance_t (*f0r_construct)(unsigned int, unsigned int)
+        = mlt_properties_get_data(prop, "f0r_construct", NULL);
+    if (!f0r_construct) {
+        return -1;
+    }
+    void (*f0r_update)(f0r_instance_t instance,
+                       double time,
+                       const uint32_t *inframe,
+                       uint32_t *outframe)
+        = mlt_properties_get_data(prop, "f0r_update", NULL);
+    void (*f0r_get_plugin_info)(f0r_plugin_info_t *)
+        = mlt_properties_get_data(prop, "f0r_get_plugin_info", NULL);
+    void (*f0r_get_param_info)(f0r_param_info_t * info, int param_index)
+        = mlt_properties_get_data(prop, "f0r_get_param_info", NULL);
+    void (*f0r_set_param_value)(f0r_instance_t instance, f0r_param_t param, int param_index)
+        = mlt_properties_get_data(prop, "f0r_set_param_value", NULL);
+    void (*f0r_get_param_value)(f0r_instance_t instance, f0r_param_t param, int param_index)
+        = mlt_properties_get_data(prop, "f0r_get_param_value", NULL);
+    void (*f0r_update2)(f0r_instance_t instance,
+                        double time,
+                        const uint32_t *inframe1,
+                        const uint32_t *inframe2,
+                        const uint32_t *inframe3,
+                        uint32_t *outframe)
+        = mlt_properties_get_data(prop, "f0r_update2", NULL);
+    mlt_service_type type = mlt_service_identify(service);
+    int not_thread_safe = mlt_properties_get_int(prop, "_not_thread_safe");
+    int slice_count = mlt_properties_get(prop, "threads") ? mlt_properties_get_int(prop, "threads")
+                                                          : -1;
+    const char *service_name = mlt_properties_get(prop, "mlt_service");
+    int is_cairoblend = service_name && !strcmp("frei0r.cairoblend", service_name);
+    double scale = mlt_profile_scale_width(mlt_service_profile(service), *width);
+    mlt_properties scale_map = mlt_properties_get_data(prop, "_resolution_scale", NULL);
 
-	// Determine the number of slices and slice height
-	if (slice_count == 0) {
-		slice_count = mlt_slices_count_normal();
-	} else {
-		slice_count = CLAMP(slice_count, 1, mlt_slices_count_normal());
-	}
-	// Reduce the slice count until the height is a multiple of slices
-	while (slice_count > 1 && (*height % slice_count)) {
-		--slice_count;
-	}
-	int slice_height = *height / slice_count;
+    // Determine the number of slices and slice height
+    if (slice_count == 0) {
+        slice_count = mlt_slices_count_normal();
+    } else {
+        slice_count = CLAMP(slice_count, 1, mlt_slices_count_normal());
+    }
+    // Reduce the slice count until the height is a multiple of slices
+    while (slice_count > 1 && (*height % slice_count)) {
+        --slice_count;
+    }
+    int slice_height = *height / slice_count;
 
-	// Use width and height in the frei0r instance key
-	char ctorname[1024] = "";
-	if (not_thread_safe)
-		sprintf(ctorname, "ctor-");
-	else
+    // Use width and height in the frei0r instance key
+    char ctorname[1024] = "";
+    if (not_thread_safe)
+        sprintf(ctorname, "ctor-");
+    else
 #ifdef _WIN32
-		sprintf(ctorname, "ctor-%lu", GetCurrentThreadId());
+        sprintf(ctorname, "ctor-%lu", GetCurrentThreadId());
 #else
-		sprintf(ctorname, "ctor-%p", (void*) pthread_self());
+        sprintf(ctorname, "ctor-%p", (void *) pthread_self());
 #endif
 
-	mlt_service_lock(service);
+    mlt_service_lock(service);
 
-	mlt_properties ctor = mlt_properties_get_properties(prop, ctorname);
-	if (!ctor || mlt_properties_get_int(ctor, "width") != *width || mlt_properties_get_int(ctor, "height") != slice_height)
-	{
-		mlt_properties_clear(prop, ctorname);
-		ctor = mlt_properties_new();
-		f0r_instance_t new_inst = f0r_construct(*width, slice_height);
-		mlt_properties_set_int(ctor, "width", *width);
-		mlt_properties_set_int(ctor, "height", slice_height);
-		mlt_properties_set_data(ctor, "inst", new_inst, 0, mlt_properties_get_data(prop, "f0r_destruct", NULL), NULL);
-		mlt_properties_set_properties(prop, ctorname, ctor);
-		mlt_properties_close(ctor);
-	}
-	f0r_instance_t inst = mlt_properties_get_data(ctor, "inst", NULL);
-	if (!inst) {
-		mlt_service_unlock(service);
-		return -1;
-	}
-	if (!not_thread_safe && slice_count == 1)
-		mlt_service_unlock(service);
+    mlt_properties ctor = mlt_properties_get_properties(prop, ctorname);
+    if (!ctor || mlt_properties_get_int(ctor, "width") != *width
+        || mlt_properties_get_int(ctor, "height") != slice_height) {
+        mlt_properties_clear(prop, ctorname);
+        ctor = mlt_properties_new();
+        f0r_instance_t new_inst = f0r_construct(*width, slice_height);
+        mlt_properties_set_int(ctor, "width", *width);
+        mlt_properties_set_int(ctor, "height", slice_height);
+        mlt_properties_set_data(ctor,
+                                "inst",
+                                new_inst,
+                                0,
+                                mlt_properties_get_data(prop, "f0r_destruct", NULL),
+                                NULL);
+        mlt_properties_set_properties(prop, ctorname, ctor);
+        mlt_properties_close(ctor);
+    }
+    f0r_instance_t inst = mlt_properties_get_data(ctor, "inst", NULL);
+    if (!inst) {
+        mlt_service_unlock(service);
+        return -1;
+    }
+    if (!not_thread_safe && slice_count == 1)
+        mlt_service_unlock(service);
 
-	f0r_plugin_info_t info;
-	memset(&info, 0, sizeof(info));
-	if (f0r_get_plugin_info) {
-		f0r_get_plugin_info(&info);
-		for (i = 0; i < info.num_params; i++) {
-			prop = MLT_SERVICE_PROPERTIES(service);
-			f0r_param_info_t pinfo;
-			f0r_get_param_info(&pinfo,i);
-			char index[20];
-			snprintf( index, sizeof(index), "%d", i );
-			const char *name = index;
-			char *val = mlt_properties_get(prop, name);
+    f0r_plugin_info_t info;
+    memset(&info, 0, sizeof(info));
+    if (f0r_get_plugin_info) {
+        f0r_get_plugin_info(&info);
+        for (i = 0; i < info.num_params; i++) {
+            prop = MLT_SERVICE_PROPERTIES(service);
+            f0r_param_info_t pinfo;
+            f0r_get_param_info(&pinfo, i);
+            char index[20];
+            snprintf(index, sizeof(index), "%d", i);
+            const char *name = index;
+            char *val = mlt_properties_get(prop, name);
 
-			// Special cairoblend handling for an override from the cairoblend_mode filter.
-			if (is_cairoblend && i == 1) {
-				if (mlt_properties_get(MLT_FRAME_PROPERTIES(frame), CAIROBLEND_MODE_PROPERTY)) {
-					name = CAIROBLEND_MODE_PROPERTY;
-					prop = MLT_FRAME_PROPERTIES(frame);
-					val = mlt_properties_get(prop, name);
-				} else if (!val && !mlt_properties_get(MLT_FRAME_PROPERTIES(frame), name)) {
-					// Reset plugin back to its default value.
-					char *default_val = "normal";
-					char *plugin_val = NULL;
-					f0r_get_param_value(inst, &plugin_val, i);
-					if (plugin_val && strcmp(default_val, plugin_val)) {
-						f0r_set_param_value(inst, &default_val, i);
-						continue;
-					}
-				}
-			}
-			if (!val) {
-				name = pinfo.name;
-				val = mlt_properties_get(prop, name);
-			}
-			if (!val) {
-				// Use the backwards-compatibility param name map.
-				mlt_properties map = mlt_properties_get_data(prop, "_param_name_map", NULL);
-				if (map) {
-					int j;
-					for (j = 0; !val && j < mlt_properties_count(map); j++) {
-						if (!strcmp(mlt_properties_get_value(map, j), index)) {
-							name = mlt_properties_get_name(map, j);
-							val = mlt_properties_get(prop, name);
-						}
-					}
-				}
-			}
-			if (val) {
-				switch (pinfo.type) {
-					case F0R_PARAM_DOUBLE:
-					case F0R_PARAM_BOOL:
-					{
-						double t = mlt_properties_anim_get_double(prop, name, position, length);
-						if (scale != 1.0) {
-							double scale2 = mlt_properties_get_double(scale_map, name);
-							if (scale2 != 0.0)
-								t *= scale * scale2;
-						}
-						f0r_set_param_value(inst,&t,i);
-						break;
-					}
-					case F0R_PARAM_COLOR:
-					{
-						f0r_param_color_t f_color;
-						mlt_color m_color = mlt_properties_get(prop, index) ?
-							mlt_properties_anim_get_color(prop, index, position, length) : mlt_properties_anim_get_color(prop, pinfo.name, position, length);
-						f_color.r = (float) m_color.r / 255.0f;
-						f_color.g = (float) m_color.g / 255.0f;
-						f_color.b = (float) m_color.b / 255.0f;
-						f0r_set_param_value(inst, &f_color, i);
-						break;
-					}
-					case F0R_PARAM_STRING:
-					{
-						val = mlt_properties_anim_get(prop, name, position, length);
-						f0r_set_param_value(inst, &val, i);
-						break;
-					}
-				}
-			}
-		}
-	}
+            // Special cairoblend handling for an override from the cairoblend_mode filter.
+            if (is_cairoblend && i == 1) {
+                if (mlt_properties_get(MLT_FRAME_PROPERTIES(frame), CAIROBLEND_MODE_PROPERTY)) {
+                    name = CAIROBLEND_MODE_PROPERTY;
+                    prop = MLT_FRAME_PROPERTIES(frame);
+                    val = mlt_properties_get(prop, name);
+                } else if (!val && !mlt_properties_get(MLT_FRAME_PROPERTIES(frame), name)) {
+                    // Reset plugin back to its default value.
+                    char *default_val = "normal";
+                    char *plugin_val = NULL;
+                    f0r_get_param_value(inst, &plugin_val, i);
+                    if (plugin_val && strcmp(default_val, plugin_val)) {
+                        f0r_set_param_value(inst, &default_val, i);
+                        continue;
+                    }
+                }
+            }
+            if (!val) {
+                name = pinfo.name;
+                val = mlt_properties_get(prop, name);
+            }
+            if (!val) {
+                // Use the backwards-compatibility param name map.
+                mlt_properties map = mlt_properties_get_data(prop, "_param_name_map", NULL);
+                if (map) {
+                    int j;
+                    for (j = 0; !val && j < mlt_properties_count(map); j++) {
+                        if (!strcmp(mlt_properties_get_value(map, j), index)) {
+                            name = mlt_properties_get_name(map, j);
+                            val = mlt_properties_get(prop, name);
+                        }
+                    }
+                }
+            }
+            if (val) {
+                switch (pinfo.type) {
+                case F0R_PARAM_DOUBLE:
+                case F0R_PARAM_BOOL: {
+                    double t = mlt_properties_anim_get_double(prop, name, position, length);
+                    if (scale != 1.0) {
+                        double scale2 = mlt_properties_get_double(scale_map, name);
+                        if (scale2 != 0.0)
+                            t *= scale * scale2;
+                    }
+                    f0r_set_param_value(inst, &t, i);
+                    break;
+                }
+                case F0R_PARAM_COLOR: {
+                    f0r_param_color_t f_color;
+                    mlt_color m_color
+                        = mlt_properties_get(prop, index)
+                              ? mlt_properties_anim_get_color(prop, index, position, length)
+                              : mlt_properties_anim_get_color(prop, pinfo.name, position, length);
+                    f_color.r = (float) m_color.r / 255.0f;
+                    f_color.g = (float) m_color.g / 255.0f;
+                    f_color.b = (float) m_color.b / 255.0f;
+                    f0r_set_param_value(inst, &f_color, i);
+                    break;
+                }
+                case F0R_PARAM_STRING: {
+                    val = mlt_properties_anim_get(prop, name, position, length);
+                    f0r_set_param_value(inst, &val, i);
+                    break;
+                }
+                }
+            }
+        }
+    }
 
-	int video_area = *width * *height;
-	uint32_t *result = mlt_pool_alloc(video_area * sizeof(uint32_t));
-	uint32_t *extra = NULL;
-	uint32_t *source[2] = { (uint32_t*) image[0], (uint32_t*) image[1] };
-	uint32_t *dest = result;
+    int video_area = *width * *height;
+    uint32_t *result = mlt_pool_alloc(video_area * sizeof(uint32_t));
+    uint32_t *extra = NULL;
+    uint32_t *source[2] = {(uint32_t *) image[0], (uint32_t *) image[1]};
+    uint32_t *dest = result;
 
-	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
-		if (type == mlt_service_producer_type) {
-			dest = source[0];
-		} else {
-			rgba_bgra(image[0], (uint8_t*) result, *width, *height);
-			source[0] = result;
-			dest = (uint32_t*) image[0];
-			if (type == mlt_service_transition_type && f0r_update2) {
-				extra = mlt_pool_alloc(video_area * sizeof(uint32_t));
-				rgba_bgra(image[1], (uint8_t*) extra, *width, *height);
-				source[1] = extra;
-			}
-		}
-	}
-	if (type == mlt_service_producer_type) {
-		if (slice_count > 0) {
-			struct update_context ctx = {
-				.frei0r = inst,
-				.width = *width,
-				.height = *height,
-				.time = time,
-				.inputs = { NULL, NULL },
-				.output = dest,
-				.f0r_update = f0r_update
-			};
-			mlt_slices_run_normal(slice_count, f0r_update_slice, &ctx);
-		} else {
-			f0r_update(inst, time, NULL, dest);
-		}
-	} else if (type == mlt_service_filter_type) {
-		if (slice_count > 0) {
-			struct update_context ctx = {
-				.frei0r = inst,
-				.width = *width,
-				.height = *height,
-				.time = time,
-				.inputs = { source[0], NULL },
-				.output = dest,
-				.f0r_update = f0r_update
-			};
-			mlt_slices_run_normal(slice_count, f0r_update_slice, &ctx);
-		} else {
-			f0r_update(inst, time, source[0], dest);
-		}
-	} else if (type == mlt_service_transition_type && f0r_update2) {
-		if (slice_count > 0) {
-			struct update_context ctx = {
-				.frei0r = inst,
-				.width = *width,
-				.height = *height,
-				.time = time,
-				.inputs = { source[0], source[1] },
-				.output = dest,
-				.f0r_update2 = f0r_update2
-			};
-			mlt_slices_run_normal(slice_count, f0r_update2_slice, &ctx);
-		} else {
-			f0r_update2(inst, time, source[0], source[1], NULL, dest);
-		}
-	}
-	if (not_thread_safe || slice_count != 1)
-		mlt_service_unlock(service);
-	if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
-		rgba_bgra((uint8_t*) dest, (uint8_t*) result, *width, *height);
-	}
-	*image = (uint8_t*) result;
-	mlt_frame_set_image(frame, (uint8_t*) result, video_area * sizeof(uint32_t), mlt_pool_release);
-	if (extra)
-		mlt_pool_release(extra);
+    if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
+        if (type == mlt_service_producer_type) {
+            dest = source[0];
+        } else {
+            rgba_bgra(image[0], (uint8_t *) result, *width, *height);
+            source[0] = result;
+            dest = (uint32_t *) image[0];
+            if (type == mlt_service_transition_type && f0r_update2) {
+                extra = mlt_pool_alloc(video_area * sizeof(uint32_t));
+                rgba_bgra(image[1], (uint8_t *) extra, *width, *height);
+                source[1] = extra;
+            }
+        }
+    }
+    if (type == mlt_service_producer_type) {
+        if (slice_count > 0) {
+            struct update_context ctx = {.frei0r = inst,
+                                         .width = *width,
+                                         .height = *height,
+                                         .time = time,
+                                         .inputs = {NULL, NULL},
+                                         .output = dest,
+                                         .f0r_update = f0r_update};
+            mlt_slices_run_normal(slice_count, f0r_update_slice, &ctx);
+        } else {
+            f0r_update(inst, time, NULL, dest);
+        }
+    } else if (type == mlt_service_filter_type) {
+        if (slice_count > 0) {
+            struct update_context ctx = {.frei0r = inst,
+                                         .width = *width,
+                                         .height = *height,
+                                         .time = time,
+                                         .inputs = {source[0], NULL},
+                                         .output = dest,
+                                         .f0r_update = f0r_update};
+            mlt_slices_run_normal(slice_count, f0r_update_slice, &ctx);
+        } else {
+            f0r_update(inst, time, source[0], dest);
+        }
+    } else if (type == mlt_service_transition_type && f0r_update2) {
+        if (slice_count > 0) {
+            struct update_context ctx = {.frei0r = inst,
+                                         .width = *width,
+                                         .height = *height,
+                                         .time = time,
+                                         .inputs = {source[0], source[1]},
+                                         .output = dest,
+                                         .f0r_update2 = f0r_update2};
+            mlt_slices_run_normal(slice_count, f0r_update2_slice, &ctx);
+        } else {
+            f0r_update2(inst, time, source[0], source[1], NULL, dest);
+        }
+    }
+    if (not_thread_safe || slice_count != 1)
+        mlt_service_unlock(service);
+    if (info.color_model == F0R_COLOR_MODEL_BGRA8888) {
+        rgba_bgra((uint8_t *) dest, (uint8_t *) result, *width, *height);
+    }
+    *image = (uint8_t *) result;
+    mlt_frame_set_image(frame, (uint8_t *) result, video_area * sizeof(uint32_t), mlt_pool_release);
+    if (extra)
+        mlt_pool_release(extra);
 
-	return 0;
+    return 0;
 }
 
-void destruct (mlt_properties prop ) {
-	void (*f0r_deinit) (void) = mlt_properties_get_data(prop, "f0r_deinit", NULL);
-	int i = 0;
+void destruct(mlt_properties prop)
+{
+    void (*f0r_deinit)(void) = mlt_properties_get_data(prop, "f0r_deinit", NULL);
+    int i = 0;
 
-	if (f0r_deinit)
-		f0r_deinit();
+    if (f0r_deinit)
+        f0r_deinit();
 
-	for (i=0; i < mlt_properties_count(prop); i++) {
-		if (strstr(mlt_properties_get_name(prop, i), "ctor-")) {
-			mlt_properties_clear(prop, mlt_properties_get_name(prop, i));
-		}
-	}
-	void (*dlclose) (void*) = mlt_properties_get_data(prop, "_dlclose", NULL);
-	void *handle = mlt_properties_get_data(prop, "_dlclose_handle", NULL);
+    for (i = 0; i < mlt_properties_count(prop); i++) {
+        if (strstr(mlt_properties_get_name(prop, i), "ctor-")) {
+            mlt_properties_clear(prop, mlt_properties_get_name(prop, i));
+        }
+    }
+    void (*dlclose)(void *) = mlt_properties_get_data(prop, "_dlclose", NULL);
+    void *handle = mlt_properties_get_data(prop, "_dlclose_handle", NULL);
 
-	if (handle && dlclose)
-		dlclose(handle);
+    if (handle && dlclose)
+        dlclose(handle);
 }

@@ -17,130 +17,121 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
-#include <string.h>
 #include "MltConsumer.h"
 #include "MltEvent.h"
 #include "MltProfile.h"
+#include <stdlib.h>
+#include <string.h>
 using namespace Mlt;
 
-Consumer::Consumer( ) :
-	instance( NULL )
+Consumer::Consumer()
+    : instance(NULL)
 {
-	instance = mlt_factory_consumer( NULL, NULL, NULL );
+    instance = mlt_factory_consumer(NULL, NULL, NULL);
 }
 
-Consumer::Consumer( Profile& profile ) :
-	instance( NULL )
+Consumer::Consumer(Profile &profile)
+    : instance(NULL)
 {
-	instance = mlt_factory_consumer( profile.get_profile(), NULL, NULL );
+    instance = mlt_factory_consumer(profile.get_profile(), NULL, NULL);
 }
 
-Consumer::Consumer( Profile& profile, const char *id, const char *arg ) :
-	Consumer ( profile.get_profile(), id, arg )
+Consumer::Consumer(Profile &profile, const char *id, const char *arg)
+    : Consumer(profile.get_profile(), id, arg)
+{}
+
+Consumer::Consumer(mlt_profile profile, const char *id, const char *arg)
+    : instance(NULL)
 {
+    if (id == NULL || arg != NULL) {
+        instance = mlt_factory_consumer(profile, id, arg);
+    } else {
+        if (strchr(id, ':')) {
+            char *temp = strdup(id);
+            char *arg = strchr(temp, ':') + 1;
+            *(arg - 1) = '\0';
+            instance = mlt_factory_consumer(profile, temp, arg);
+            free(temp);
+        } else {
+            instance = mlt_factory_consumer(profile, id, NULL);
+        }
+    }
 }
 
-Consumer::Consumer( mlt_profile profile, const char *id, const char *arg ) :
-	instance( NULL )
+Consumer::Consumer(Service &consumer)
+    : instance(NULL)
 {
-	if ( id == NULL || arg != NULL )
-	{
-		instance = mlt_factory_consumer( profile, id, arg );
-	}
-	else
-	{
-		if ( strchr( id, ':' ) )
-		{
-			char *temp = strdup( id );
-			char *arg = strchr( temp, ':' ) + 1;
-			*( arg - 1 ) = '\0';
-			instance = mlt_factory_consumer( profile, temp, arg );
-			free( temp );
-		}
-		else
-		{
-			instance = mlt_factory_consumer( profile, id, NULL );
-		}
-	}
+    if (consumer.type() == mlt_service_consumer_type) {
+        instance = (mlt_consumer) consumer.get_service();
+        inc_ref();
+    }
 }
 
-Consumer::Consumer( Service &consumer ) :
-	instance( NULL )
+Consumer::Consumer(Consumer &consumer)
+    : Mlt::Service(consumer)
+    , instance(consumer.get_consumer())
 {
-	if ( consumer.type( ) == mlt_service_consumer_type )
-	{
-		instance = ( mlt_consumer )consumer.get_service( );
-		inc_ref( );
-	}
+    inc_ref();
 }
 
-Consumer::Consumer( Consumer &consumer ) :
-	Mlt::Service( consumer ),
-	instance( consumer.get_consumer( ) )
+Consumer::Consumer(mlt_consumer consumer)
+    : instance(consumer)
 {
-	inc_ref( );
+    inc_ref();
 }
 
-Consumer::Consumer( mlt_consumer consumer ) :
-	instance( consumer )
+Consumer::~Consumer()
 {
-	inc_ref( );
+    mlt_consumer_close(instance);
 }
 
-Consumer::~Consumer( )
+mlt_consumer Consumer::get_consumer()
 {
-	mlt_consumer_close( instance );
+    return instance;
 }
 
-mlt_consumer Consumer::get_consumer( )
+mlt_service Consumer::get_service()
 {
-	return instance;
+    return mlt_consumer_service(get_consumer());
 }
 
-mlt_service Consumer::get_service( )
+int Consumer::connect(Service &service)
 {
-	return mlt_consumer_service( get_consumer( ) );
+    return connect_producer(service);
 }
 
-int Consumer::connect( Service &service )
+int Consumer::start()
 {
-	return connect_producer( service );
+    return mlt_consumer_start(get_consumer());
 }
 
-int Consumer::start( )
+void Consumer::purge()
 {
-	return mlt_consumer_start( get_consumer( ) );
+    mlt_consumer_purge(get_consumer());
 }
 
-void Consumer::purge( )
+int Consumer::stop()
 {
-	mlt_consumer_purge( get_consumer( ) );
+    return mlt_consumer_stop(get_consumer());
 }
 
-int Consumer::stop( )
+bool Consumer::is_stopped()
 {
-	return mlt_consumer_stop( get_consumer( ) );
+    return mlt_consumer_is_stopped(get_consumer()) != 0;
 }
 
-bool Consumer::is_stopped( )
+int Consumer::run()
 {
-	return mlt_consumer_is_stopped( get_consumer( ) ) != 0;
+    int ret = start();
+    if (!is_stopped()) {
+        Event *e = setup_wait_for("consumer-stopped");
+        wait_for(e);
+        delete e;
+    }
+    return ret;
 }
 
-int Consumer::run( )
+int Consumer::position()
 {
-	int ret = start( );
-	if ( !is_stopped( ) )
-	{
-		Event *e = setup_wait_for( "consumer-stopped" );
-		wait_for( e );
-		delete e;
-	}
-	return ret;
-}
-
-int Consumer::position( )
-{
-	return mlt_consumer_position( get_consumer() );
+    return mlt_consumer_position(get_consumer());
 }

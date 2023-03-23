@@ -17,36 +17,57 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <string.h>
 #include <framework/mlt.h>
 #include <limits.h>
+#include <string.h>
 
-extern mlt_consumer consumer_cbrts_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_burn_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_lumaliftgaingamma_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_rotoscoping_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_telecide_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_cbrts_init(mlt_profile profile,
+                                        mlt_service_type type,
+                                        const char *id,
+                                        char *arg);
+extern mlt_filter filter_burn_init(mlt_profile profile,
+                                   mlt_service_type type,
+                                   const char *id,
+                                   char *arg);
+extern mlt_filter filter_lumaliftgaingamma_init(mlt_profile profile,
+                                                mlt_service_type type,
+                                                const char *id,
+                                                char *arg);
+extern mlt_filter filter_rotoscoping_init(mlt_profile profile,
+                                          mlt_service_type type,
+                                          const char *id,
+                                          char *arg);
+extern mlt_filter filter_telecide_init(mlt_profile profile,
+                                       mlt_service_type type,
+                                       const char *id,
+                                       char *arg);
 
-static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
-	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/plusgpl/%s", mlt_environment( "MLT_DATA" ), (char*) data );
-	return mlt_properties_parse_yaml( file );
+    char file[PATH_MAX];
+    snprintf(file, PATH_MAX, "%s/plusgpl/%s", mlt_environment("MLT_DATA"), (char *) data);
+    return mlt_properties_parse_yaml(file);
 }
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( mlt_service_consumer_type, "cbrts", consumer_cbrts_init );
-	MLT_REGISTER( mlt_service_filter_type, "BurningTV", filter_burn_init );
-	MLT_REGISTER( mlt_service_filter_type, "burningtv", filter_burn_init );
-	MLT_REGISTER( mlt_service_filter_type, "lumaliftgaingamma", filter_lumaliftgaingamma_init );
-	MLT_REGISTER( mlt_service_filter_type, "rotoscoping", filter_rotoscoping_init );
-	MLT_REGISTER( mlt_service_filter_type, "telecide", filter_telecide_init );
+    MLT_REGISTER(mlt_service_consumer_type, "cbrts", consumer_cbrts_init);
+    MLT_REGISTER(mlt_service_filter_type, "BurningTV", filter_burn_init);
+    MLT_REGISTER(mlt_service_filter_type, "burningtv", filter_burn_init);
+    MLT_REGISTER(mlt_service_filter_type, "lumaliftgaingamma", filter_lumaliftgaingamma_init);
+    MLT_REGISTER(mlt_service_filter_type, "rotoscoping", filter_rotoscoping_init);
+    MLT_REGISTER(mlt_service_filter_type, "telecide", filter_telecide_init);
 
-	MLT_REGISTER_METADATA( mlt_service_consumer_type, "cbrts", metadata, "consumer_cbrts.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "BurningTV", metadata, "filter_burningtv.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "burningtv", metadata, "filter_burningtv.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "lumaliftgaingamma", metadata, "filter_lumaliftgaingamma.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "rotoscoping", metadata, "filter_rotoscoping.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "telecide", metadata, "filter_telecide.yml" );
+    MLT_REGISTER_METADATA(mlt_service_consumer_type, "cbrts", metadata, "consumer_cbrts.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "BurningTV", metadata, "filter_burningtv.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "burningtv", metadata, "filter_burningtv.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "lumaliftgaingamma",
+                          metadata,
+                          "filter_lumaliftgaingamma.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "rotoscoping",
+                          metadata,
+                          "filter_rotoscoping.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "telecide", metadata, "filter_telecide.yml");
 }

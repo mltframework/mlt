@@ -22,18 +22,16 @@
 #define _CONSUMER_SDL_OSX_H_
 
 #ifdef __APPLE__
-void* mlt_cocoa_autorelease_init();
-void  mlt_cocoa_autorelease_close( void* );
+void *mlt_cocoa_autorelease_init();
+void mlt_cocoa_autorelease_close(void *);
 
 #else
 static inline void *mlt_cocoa_autorelease_init()
 {
-	return NULL;
+    return NULL;
 }
 
-static inline void mlt_cocoa_autorelease_close(void* p)
-{
-}
+static inline void mlt_cocoa_autorelease_close(void *p) {}
 #endif
 
 #endif

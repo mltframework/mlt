@@ -21,7 +21,6 @@
 
 #include <framework/mlt_properties.h>
 
-size_t mlt_xml_prefix_size( mlt_properties properties, const char *name, const char *value );
+size_t mlt_xml_prefix_size(mlt_properties properties, const char *name, const char *value);
 
 #endif // MLT_XML_COMMON_H
-

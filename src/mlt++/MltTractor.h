@@ -27,46 +27,45 @@
 
 #include "MltProducer.h"
 
-namespace Mlt
-{
-	class Producer;
-	class Field;
-	class Multitrack;
-	class Transition;
-	class Filter;
-	class Profile;
+namespace Mlt {
+class Producer;
+class Field;
+class Multitrack;
+class Transition;
+class Filter;
+class Profile;
 
-	class MLTPP_DECLSPEC Tractor : public Producer
-	{
-		private:
-			mlt_tractor instance;
-		public:
-			Tractor( );
-			Tractor( Profile& profile );
-			Tractor( Service &tractor );
-			Tractor( mlt_tractor tractor );
-			Tractor( Tractor &tractor );
-			Tractor( Profile& profile, char *id, char *arg = NULL );
-			Tractor( mlt_profile profile, char *id, char *arg = NULL );
-			virtual ~Tractor( );
-			virtual mlt_tractor get_tractor( );
-			mlt_producer get_producer( ) override;
-			Multitrack *multitrack( );
-			Field *field( );
-			void refresh( );
-			int set_track( Producer &producer, int index );
-			int insert_track( Producer &producer, int index );
-			int remove_track( int index );
-			Producer *track( int index );
-			int count( );
-			void plant_transition( Transition &transition, int a_track = 0, int b_track = 1 );
-			void plant_transition( Transition *transition, int a_track = 0, int b_track = 1 );
-			void plant_filter( Filter &filter, int track = 0 );
-			void plant_filter( Filter *filter, int track = 0 );
-			bool locate_cut( Producer *producer, int &track, int &cut );
-			int connect( Producer &producer );
-	};
-}
+class MLTPP_DECLSPEC Tractor : public Producer
+{
+private:
+    mlt_tractor instance;
+
+public:
+    Tractor();
+    Tractor(Profile &profile);
+    Tractor(Service &tractor);
+    Tractor(mlt_tractor tractor);
+    Tractor(Tractor &tractor);
+    Tractor(Profile &profile, char *id, char *arg = NULL);
+    Tractor(mlt_profile profile, char *id, char *arg = NULL);
+    virtual ~Tractor();
+    virtual mlt_tractor get_tractor();
+    mlt_producer get_producer() override;
+    Multitrack *multitrack();
+    Field *field();
+    void refresh();
+    int set_track(Producer &producer, int index);
+    int insert_track(Producer &producer, int index);
+    int remove_track(int index);
+    Producer *track(int index);
+    int count();
+    void plant_transition(Transition &transition, int a_track = 0, int b_track = 1);
+    void plant_transition(Transition *transition, int a_track = 0, int b_track = 1);
+    void plant_filter(Filter &filter, int track = 0);
+    void plant_filter(Filter *filter, int track = 0);
+    bool locate_cut(Producer *producer, int &track, int &cut);
+    int connect(Producer &producer);
+};
+} // namespace Mlt
 
 #endif
-

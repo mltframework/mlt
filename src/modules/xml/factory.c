@@ -17,29 +17,38 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string.h>
-#include <limits.h>
 #include <framework/mlt.h>
+#include <limits.h>
+#include <string.h>
 
-extern mlt_consumer consumer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_producer producer_xml_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_xml_init(mlt_profile profile,
+                                      mlt_service_type type,
+                                      const char *id,
+                                      char *arg);
+extern mlt_producer producer_xml_init(mlt_profile profile,
+                                      mlt_service_type type,
+                                      const char *id,
+                                      char *arg);
 
-static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
-	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/xml/%s", mlt_environment( "MLT_DATA" ), (char*) data );
-	return mlt_properties_parse_yaml( file );
+    char file[PATH_MAX];
+    snprintf(file, PATH_MAX, "%s/xml/%s", mlt_environment("MLT_DATA"), (char *) data);
+    return mlt_properties_parse_yaml(file);
 }
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( mlt_service_consumer_type, "xml", consumer_xml_init );
-	MLT_REGISTER( mlt_service_producer_type, "xml", producer_xml_init );
-	MLT_REGISTER( mlt_service_producer_type, "xml-string", producer_xml_init );
-	MLT_REGISTER( mlt_service_producer_type, "xml-nogl", producer_xml_init );
+    MLT_REGISTER(mlt_service_consumer_type, "xml", consumer_xml_init);
+    MLT_REGISTER(mlt_service_producer_type, "xml", producer_xml_init);
+    MLT_REGISTER(mlt_service_producer_type, "xml-string", producer_xml_init);
+    MLT_REGISTER(mlt_service_producer_type, "xml-nogl", producer_xml_init);
 
-	MLT_REGISTER_METADATA( mlt_service_consumer_type, "xml", metadata, "consumer_xml.yml" );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "xml", metadata, "producer_xml.yml" );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "xml-string", metadata, "producer_xml-string.yml" );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "xml-nogl", metadata, "producer_xml-nogl.yml" );
+    MLT_REGISTER_METADATA(mlt_service_consumer_type, "xml", metadata, "consumer_xml.yml");
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "xml", metadata, "producer_xml.yml");
+    MLT_REGISTER_METADATA(mlt_service_producer_type,
+                          "xml-string",
+                          metadata,
+                          "producer_xml-string.yml");
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "xml-nogl", metadata, "producer_xml-nogl.yml");
 }

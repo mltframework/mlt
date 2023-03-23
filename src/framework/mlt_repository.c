@@ -21,17 +21,17 @@
  */
 
 #include "mlt_repository.h"
+#include "mlt_factory.h"
+#include "mlt_log.h"
 #include "mlt_properties.h"
 #include "mlt_tokeniser.h"
-#include "mlt_log.h"
-#include "mlt_factory.h"
 
+#include <dirent.h>
+#include <dlfcn.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 #include <string.h>
-#include <limits.h>
-#include <dirent.h>
 #include <sys/stat.h>
 
 /** \brief Repository class
@@ -44,12 +44,12 @@
 
 struct mlt_repository_s
 {
-	struct mlt_properties_s parent; /// a list of object files
-	mlt_properties consumers;       /// a list of entry points for consumers
-	mlt_properties filters;         /// a list of entry points for filters
-	mlt_properties links;           /// a list of entry points for links
-	mlt_properties producers;       /// a list of entry points for producers
-	mlt_properties transitions;     /// a list of entry points for transitions
+    struct mlt_properties_s parent; /// a list of object files
+    mlt_properties consumers;       /// a list of entry points for consumers
+    mlt_properties filters;         /// a list of entry points for filters
+    mlt_properties links;           /// a list of entry points for links
+    mlt_properties producers;       /// a list of entry points for producers
+    mlt_properties transitions;     /// a list of entry points for transitions
 };
 
 /** Construct a new repository.
@@ -59,130 +59,131 @@ struct mlt_repository_s
  * \return a new repository or NULL if failed
  */
 
-mlt_repository mlt_repository_init( const char *directory )
+mlt_repository mlt_repository_init(const char *directory)
 {
-	// Safety check
-	if ( directory == NULL || strcmp( directory, "" ) == 0 )
-		return NULL;
+    // Safety check
+    if (directory == NULL || strcmp(directory, "") == 0)
+        return NULL;
 
-	// Construct the repository
-	mlt_repository self = calloc( 1, sizeof( struct mlt_repository_s ));
-	mlt_properties_init( &self->parent, self );
-	self->consumers = mlt_properties_new();
-	self->filters = mlt_properties_new();
-	self->links = mlt_properties_new();
-	self->producers = mlt_properties_new();
-	self->transitions = mlt_properties_new();
+    // Construct the repository
+    mlt_repository self = calloc(1, sizeof(struct mlt_repository_s));
+    mlt_properties_init(&self->parent, self);
+    self->consumers = mlt_properties_new();
+    self->filters = mlt_properties_new();
+    self->links = mlt_properties_new();
+    self->producers = mlt_properties_new();
+    self->transitions = mlt_properties_new();
 
-	// Get the directory list
-	mlt_properties dir = mlt_properties_new();
-	int count = mlt_properties_dir_list( dir, directory, NULL, 0 );
-	int i;
-	int plugin_count = 0;
+    // Get the directory list
+    mlt_properties dir = mlt_properties_new();
+    int count = mlt_properties_dir_list(dir, directory, NULL, 0);
+    int i;
+    int plugin_count = 0;
 
 #ifdef _WIN32
-	char *syspath = getenv("PATH");
-	char *exedir = mlt_environment( "MLT_APPDIR" );
-	#ifdef NODEPLOY
-	char *sep = "\\bin;";
-	#else
-	char *sep = ";";
-	#endif
-	char *newpath;
-	newpath = calloc( 1, 5 + strlen( exedir ) + strlen( sep ) + strlen( syspath ) + 1 );
-	strcat( newpath, "PATH=" ); // len=5
-	strcat( newpath, exedir );
-	strcat( newpath, sep );
-	strcat( newpath, syspath );
-	putenv( newpath );
-	free(newpath);
+    char *syspath = getenv("PATH");
+    char *exedir = mlt_environment("MLT_APPDIR");
+#ifdef NODEPLOY
+    char *sep = "\\bin;";
+#else
+    char *sep = ";";
+#endif
+    char *newpath;
+    newpath = calloc(1, 5 + strlen(exedir) + strlen(sep) + strlen(syspath) + 1);
+    strcat(newpath, "PATH="); // len=5
+    strcat(newpath, exedir);
+    strcat(newpath, sep);
+    strcat(newpath, syspath);
+    putenv(newpath);
+    free(newpath);
 #endif
 
-	mlt_tokeniser tokeniser = mlt_tokeniser_init();
-	int dl_length = mlt_tokeniser_parse_new( tokeniser, getenv( "MLT_REPOSITORY_DENY" ), ":" );
+    mlt_tokeniser tokeniser = mlt_tokeniser_init();
+    int dl_length = mlt_tokeniser_parse_new(tokeniser, getenv("MLT_REPOSITORY_DENY"), ":");
 
-	// check if both qt5 and qt6 modules are available…
-	int qt_module_count = 0;
-	int glaxnimate_module_count = 0;
-	for ( i = 0; i < count; i++ )
-	{
-		const char *object_name = mlt_properties_get_value( dir, i);
-		qt_module_count += !!strstr(object_name, "libmltqt");
-		glaxnimate_module_count += !!strstr(object_name, "libmltglaxnimate");
-	}
-	// …and not blocked
-	for (int j = 0; j < dl_length; j++ )
-	{
-		char *denyfile = mlt_tokeniser_get_string( tokeniser, j );
-		qt_module_count -= !strncmp("libmltqt", denyfile, strlen("libmltqt"));
-		glaxnimate_module_count -= !strncmp("libmltglaxnimate", denyfile, strlen("libmltglaxnimate"));
-	}
+    // check if both qt5 and qt6 modules are available…
+    int qt_module_count = 0;
+    int glaxnimate_module_count = 0;
+    for (i = 0; i < count; i++) {
+        const char *object_name = mlt_properties_get_value(dir, i);
+        qt_module_count += !!strstr(object_name, "libmltqt");
+        glaxnimate_module_count += !!strstr(object_name, "libmltglaxnimate");
+    }
+    // …and not blocked
+    for (int j = 0; j < dl_length; j++) {
+        char *denyfile = mlt_tokeniser_get_string(tokeniser, j);
+        qt_module_count -= !strncmp("libmltqt", denyfile, strlen("libmltqt"));
+        glaxnimate_module_count -= !strncmp("libmltglaxnimate",
+                                            denyfile,
+                                            strlen("libmltglaxnimate"));
+    }
 
-	// Iterate over files
-	for ( i = 0; i < count; i++ )
-	{
-		int flags = RTLD_NOW;
-		const char *object_name = mlt_properties_get_value( dir, i);
+    // Iterate over files
+    for (i = 0; i < count; i++) {
+        int flags = RTLD_NOW;
+        const char *object_name = mlt_properties_get_value(dir, i);
 
-		// check if the plugin was asked to be skipped through MLT_REPOSITORY_DENY
-		int ignore = 0;
-		for (int j = 0; j < dl_length; j++ )
-		{
-			char *denyfile = calloc( 1, strlen( directory ) + strlen( mlt_tokeniser_get_string( tokeniser, j ) ) + 3 );
-			sprintf (denyfile, "%s/%s.", directory, mlt_tokeniser_get_string( tokeniser, j ));
-			ignore += !strncmp(object_name, denyfile, strlen( denyfile ) );
-			free (denyfile);
-		}
+        // check if the plugin was asked to be skipped through MLT_REPOSITORY_DENY
+        int ignore = 0;
+        for (int j = 0; j < dl_length; j++) {
+            char *denyfile
+                = calloc(1, strlen(directory) + strlen(mlt_tokeniser_get_string(tokeniser, j)) + 3);
+            sprintf(denyfile, "%s/%s.", directory, mlt_tokeniser_get_string(tokeniser, j));
+            ignore += !strncmp(object_name, denyfile, strlen(denyfile));
+            free(denyfile);
+        }
 
-		// in case we have both qt modules, we block qt6 to avoid conflicts
-		if ((qt_module_count == 2 && strstr(object_name, "libmltqt6")) ||
-		    (glaxnimate_module_count == 2 && strstr(object_name, "libmltglaxnimate-qt6"))) {
-			ignore = 1;
-		}
+        // in case we have both qt modules, we block qt6 to avoid conflicts
+        if ((qt_module_count == 2 && strstr(object_name, "libmltqt6"))
+            || (glaxnimate_module_count == 2 && strstr(object_name, "libmltglaxnimate-qt6"))) {
+            ignore = 1;
+        }
 
-		if (ignore)
-		{
-			mlt_log_info(NULL, "%s: skip plugin %s\n", __FUNCTION__, object_name);
-			continue;
-		}
+        if (ignore) {
+            mlt_log_info(NULL, "%s: skip plugin %s\n", __FUNCTION__, object_name);
+            continue;
+        }
 
-		mlt_log_debug(NULL, "%s: processing plugin at %s\n", __FUNCTION__, object_name);
+        mlt_log_debug(NULL, "%s: processing plugin at %s\n", __FUNCTION__, object_name);
 
-		// Open the shared object
-		void *object = dlopen( object_name, flags );
-		if ( object != NULL )
-		{
-			// Get the registration function
-			mlt_repository_callback symbol_ptr = dlsym( object, "mlt_register" );
+        // Open the shared object
+        void *object = dlopen(object_name, flags);
+        if (object != NULL) {
+            // Get the registration function
+            mlt_repository_callback symbol_ptr = dlsym(object, "mlt_register");
 
-			// Call the registration function
-			if ( symbol_ptr != NULL )
-			{
-				symbol_ptr( self );
+            // Call the registration function
+            if (symbol_ptr != NULL) {
+                symbol_ptr(self);
 
-				// Register the object file for closure
-				mlt_properties_set_data( &self->parent, object_name, object, 0, ( mlt_destructor )dlclose, NULL );
-				++plugin_count;
-			}
-			else
-			{
-				dlclose( object );
-			}
-		}
-		else if ( strstr( object_name, "libmlt" ) )
-		{
-			mlt_log_warning( NULL, "%s: failed to dlopen %s\n  (%s)\n", __FUNCTION__, object_name, dlerror() );
-		}
-	}
+                // Register the object file for closure
+                mlt_properties_set_data(&self->parent,
+                                        object_name,
+                                        object,
+                                        0,
+                                        (mlt_destructor) dlclose,
+                                        NULL);
+                ++plugin_count;
+            } else {
+                dlclose(object);
+            }
+        } else if (strstr(object_name, "libmlt")) {
+            mlt_log_warning(NULL,
+                            "%s: failed to dlopen %s\n  (%s)\n",
+                            __FUNCTION__,
+                            object_name,
+                            dlerror());
+        }
+    }
 
-	if ( !plugin_count )
-		mlt_log_error( NULL, "%s: no plugins found in \"%s\"\n", __FUNCTION__, directory );
+    if (!plugin_count)
+        mlt_log_error(NULL, "%s: no plugins found in \"%s\"\n", __FUNCTION__, directory);
 
-	mlt_properties_close( dir );
+    mlt_properties_close(dir);
 
-	mlt_tokeniser_close( tokeniser );
+    mlt_tokeniser_close(tokeniser);
 
-	return self;
+    return self;
 }
 
 /** Create a properties list for a service holding a function pointer to its constructor function.
@@ -192,11 +193,11 @@ mlt_repository mlt_repository_init( const char *directory )
  * \return a properties list
  */
 
-static mlt_properties new_service( void *symbol )
+static mlt_properties new_service(void *symbol)
 {
-	mlt_properties properties = mlt_properties_new();
-	mlt_properties_set_data( properties, "symbol", symbol, 0, NULL, NULL );
-	return properties;
+    mlt_properties properties = mlt_properties_new();
+    mlt_properties_set_data(properties, "symbol", symbol, 0, NULL, NULL);
+    return properties;
 }
 
 /** Register a service with the repository.
@@ -210,30 +211,57 @@ static mlt_properties new_service( void *symbol )
  * \param symbol a pointer to a function to create the service
  */
 
-void mlt_repository_register( mlt_repository self, mlt_service_type service_type, const char *service, mlt_register_callback symbol )
+void mlt_repository_register(mlt_repository self,
+                             mlt_service_type service_type,
+                             const char *service,
+                             mlt_register_callback symbol)
 {
-	// Add the entry point to the corresponding service list
-	switch ( service_type )
-	{
-		case mlt_service_consumer_type:
-			mlt_properties_set_data( self->consumers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
-			break;
-		case mlt_service_filter_type:
-			mlt_properties_set_data( self->filters, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
-			break;
-		case mlt_service_link_type:
-			mlt_properties_set_data( self->links, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
-			break;
-		case mlt_service_producer_type:
-			mlt_properties_set_data( self->producers, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
-			break;
-		case mlt_service_transition_type:
-			mlt_properties_set_data( self->transitions, service, new_service( symbol ), 0, ( mlt_destructor )mlt_properties_close, NULL );
-			break;
-		default:
-			mlt_log_error( NULL, "%s: Unable to register \"%s\"\n", __FUNCTION__, service );
-			break;
-	}
+    // Add the entry point to the corresponding service list
+    switch (service_type) {
+    case mlt_service_consumer_type:
+        mlt_properties_set_data(self->consumers,
+                                service,
+                                new_service(symbol),
+                                0,
+                                (mlt_destructor) mlt_properties_close,
+                                NULL);
+        break;
+    case mlt_service_filter_type:
+        mlt_properties_set_data(self->filters,
+                                service,
+                                new_service(symbol),
+                                0,
+                                (mlt_destructor) mlt_properties_close,
+                                NULL);
+        break;
+    case mlt_service_link_type:
+        mlt_properties_set_data(self->links,
+                                service,
+                                new_service(symbol),
+                                0,
+                                (mlt_destructor) mlt_properties_close,
+                                NULL);
+        break;
+    case mlt_service_producer_type:
+        mlt_properties_set_data(self->producers,
+                                service,
+                                new_service(symbol),
+                                0,
+                                (mlt_destructor) mlt_properties_close,
+                                NULL);
+        break;
+    case mlt_service_transition_type:
+        mlt_properties_set_data(self->transitions,
+                                service,
+                                new_service(symbol),
+                                0,
+                                (mlt_destructor) mlt_properties_close,
+                                NULL);
+        break;
+    default:
+        mlt_log_error(NULL, "%s: Unable to register \"%s\"\n", __FUNCTION__, service);
+        break;
+    }
 }
 
 /** Get the repository properties for particular service class.
@@ -245,32 +273,33 @@ void mlt_repository_register( mlt_repository self, mlt_service_type service_type
  * \return a properties list or NULL if error
  */
 
-static mlt_properties get_service_properties( mlt_repository self, mlt_service_type type, const char *service )
+static mlt_properties get_service_properties(mlt_repository self,
+                                             mlt_service_type type,
+                                             const char *service)
 {
-	mlt_properties service_properties = NULL;
+    mlt_properties service_properties = NULL;
 
-	// Get the entry point from the corresponding service list
-	switch ( type )
-	{
-		case mlt_service_consumer_type:
-			service_properties = mlt_properties_get_data( self->consumers, service, NULL );
-			break;
-		case mlt_service_filter_type:
-			service_properties = mlt_properties_get_data( self->filters, service, NULL );
-			break;
-		case mlt_service_link_type:
-			service_properties = mlt_properties_get_data( self->links, service, NULL );
-			break;
-		case mlt_service_producer_type:
-			service_properties = mlt_properties_get_data( self->producers, service, NULL );
-			break;
-		case mlt_service_transition_type:
-			service_properties = mlt_properties_get_data( self->transitions, service, NULL );
-			break;
-		default:
-			break;
-	}
-	return service_properties;
+    // Get the entry point from the corresponding service list
+    switch (type) {
+    case mlt_service_consumer_type:
+        service_properties = mlt_properties_get_data(self->consumers, service, NULL);
+        break;
+    case mlt_service_filter_type:
+        service_properties = mlt_properties_get_data(self->filters, service, NULL);
+        break;
+    case mlt_service_link_type:
+        service_properties = mlt_properties_get_data(self->links, service, NULL);
+        break;
+    case mlt_service_producer_type:
+        service_properties = mlt_properties_get_data(self->producers, service, NULL);
+        break;
+    case mlt_service_transition_type:
+        service_properties = mlt_properties_get_data(self->transitions, service, NULL);
+        break;
+    default:
+        break;
+    }
+    return service_properties;
 }
 
 /** Construct a new instance of a service.
@@ -283,17 +312,20 @@ static mlt_properties get_service_properties( mlt_repository self, mlt_service_t
  * \param input an optional argument to the service constructor
  */
 
-void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, const void *input )
+void *mlt_repository_create(mlt_repository self,
+                            mlt_profile profile,
+                            mlt_service_type type,
+                            const char *service,
+                            const void *input)
 {
-	mlt_properties properties = get_service_properties( self, type, service );
-	if ( properties != NULL )
-	{
-		mlt_register_callback symbol_ptr = mlt_properties_get_data( properties, "symbol", NULL );
+    mlt_properties properties = get_service_properties(self, type, service);
+    if (properties != NULL) {
+        mlt_register_callback symbol_ptr = mlt_properties_get_data(properties, "symbol", NULL);
 
-		// Construct the service
-		return ( symbol_ptr != NULL ) ? symbol_ptr( profile, type, service, input ) : NULL;
-	}
-	return NULL;
+        // Construct the service
+        return (symbol_ptr != NULL) ? symbol_ptr(profile, type, service, input) : NULL;
+    }
+    return NULL;
 }
 
 /** Destroy a repository and free its resources.
@@ -302,14 +334,14 @@ void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_servi
  * \param self a repository
  */
 
-void mlt_repository_close( mlt_repository self )
+void mlt_repository_close(mlt_repository self)
 {
-	mlt_properties_close( self->consumers );
-	mlt_properties_close( self->filters );
-	mlt_properties_close( self->producers );
-	mlt_properties_close( self->transitions );
-	mlt_properties_close( &self->parent );
-	free( self );
+    mlt_properties_close(self->consumers);
+    mlt_properties_close(self->filters);
+    mlt_properties_close(self->producers);
+    mlt_properties_close(self->transitions);
+    mlt_properties_close(&self->parent);
+    free(self);
 }
 
 /** Get the list of registered consumers.
@@ -319,9 +351,9 @@ void mlt_repository_close( mlt_repository self )
  * \return a properties list containing all of the consumers
  */
 
-mlt_properties mlt_repository_consumers( mlt_repository self )
+mlt_properties mlt_repository_consumers(mlt_repository self)
 {
-	return self->consumers;
+    return self->consumers;
 }
 
 /** Get the list of registered filters.
@@ -331,9 +363,9 @@ mlt_properties mlt_repository_consumers( mlt_repository self )
  * \return a properties list of all of the filters
  */
 
-mlt_properties mlt_repository_filters( mlt_repository self )
+mlt_properties mlt_repository_filters(mlt_repository self)
 {
-	return self->filters;
+    return self->filters;
 }
 
 /** Get the list of registered links.
@@ -343,9 +375,9 @@ mlt_properties mlt_repository_filters( mlt_repository self )
  * \return a properties list of all of the links
  */
 
-mlt_properties mlt_repository_links( mlt_repository self )
+mlt_properties mlt_repository_links(mlt_repository self)
 {
-	return self->links;
+    return self->links;
 }
 
 /** Get the list of registered producers.
@@ -355,9 +387,9 @@ mlt_properties mlt_repository_links( mlt_repository self )
  * \return a properties list of all of the producers
  */
 
-mlt_properties mlt_repository_producers( mlt_repository self )
+mlt_properties mlt_repository_producers(mlt_repository self)
 {
-	return self->producers;
+    return self->producers;
 }
 
 /** Get the list of registered transitions.
@@ -367,9 +399,9 @@ mlt_properties mlt_repository_producers( mlt_repository self )
  * \return a properties list of all of the transitions
  */
 
-mlt_properties mlt_repository_transitions( mlt_repository self )
+mlt_properties mlt_repository_transitions(mlt_repository self)
 {
-	return self->transitions;
+    return self->transitions;
 }
 
 /** Register the metadata for a service.
@@ -385,11 +417,15 @@ mlt_properties mlt_repository_transitions( mlt_repository self )
  * \param callback_data an opaque user data pointer to be supplied on the callback
  */
 
-void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_metadata_callback callback, void *callback_data )
+void mlt_repository_register_metadata(mlt_repository self,
+                                      mlt_service_type type,
+                                      const char *service,
+                                      mlt_metadata_callback callback,
+                                      void *callback_data)
 {
-	mlt_properties service_properties = get_service_properties( self, type, service );
-	mlt_properties_set_data( service_properties, "metadata_cb", callback, 0, NULL, NULL );
-	mlt_properties_set_data( service_properties, "metadata_cb_data", callback_data, 0, NULL, NULL );
+    mlt_properties service_properties = get_service_properties(self, type, service);
+    mlt_properties_set_data(service_properties, "metadata_cb", callback, 0, NULL, NULL);
+    mlt_properties_set_data(service_properties, "metadata_cb_data", callback_data, 0, NULL, NULL);
 }
 
 /** Get the metadata about a service.
@@ -403,38 +439,44 @@ void mlt_repository_register_metadata( mlt_repository self, mlt_service_type typ
  * \return the service metadata as a structured properties list
  */
 
-mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type type, const char *service )
+mlt_properties mlt_repository_metadata(mlt_repository self,
+                                       mlt_service_type type,
+                                       const char *service)
 {
-	mlt_properties metadata = NULL;
-	mlt_properties properties = get_service_properties( self, type, service );
+    mlt_properties metadata = NULL;
+    mlt_properties properties = get_service_properties(self, type, service);
 
-	// If this is a valid service
-	if ( properties )
-	{
-		// Lookup cached metadata
-		metadata = mlt_properties_get_data( properties, "metadata", NULL );
-		if ( ! metadata )
-		{
-			// Not cached, so get the registered metadata callback function
-			mlt_metadata_callback callback = mlt_properties_get_data( properties, "metadata_cb", NULL );
+    // If this is a valid service
+    if (properties) {
+        // Lookup cached metadata
+        metadata = mlt_properties_get_data(properties, "metadata", NULL);
+        if (!metadata) {
+            // Not cached, so get the registered metadata callback function
+            mlt_metadata_callback callback = mlt_properties_get_data(properties,
+                                                                     "metadata_cb",
+                                                                     NULL);
 
-			// If a metadata callback function is registered
-			if ( callback )
-			{
-				// Fetch the callback data arg
-				void *data = mlt_properties_get_data( properties, "metadata_cb_data", NULL );
+            // If a metadata callback function is registered
+            if (callback) {
+                // Fetch the callback data arg
+                void *data = mlt_properties_get_data(properties, "metadata_cb_data", NULL);
 
-				// Fetch the metadata through the callback
-				metadata = callback( type, service, data );
+                // Fetch the metadata through the callback
+                metadata = callback(type, service, data);
 
-				// Cache the metadata
-				if ( metadata )
-					// Include dellocation and serialisation
-					mlt_properties_set_data( properties, "metadata", metadata, 0, ( mlt_destructor )mlt_properties_close, ( mlt_serialiser )mlt_properties_serialise_yaml );
-			}
-		}
-	}
-	return metadata;
+                // Cache the metadata
+                if (metadata)
+                    // Include dellocation and serialisation
+                    mlt_properties_set_data(properties,
+                                            "metadata",
+                                            metadata,
+                                            0,
+                                            (mlt_destructor) mlt_properties_close,
+                                            (mlt_serialiser) mlt_properties_serialise_yaml);
+            }
+        }
+    }
+    return metadata;
 }
 
 /** Try to determine the locale from some commonly used environment variables.
@@ -445,19 +487,19 @@ mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type ty
 
 static char *getenv_locale()
 {
-	char *s = getenv( "LANGUAGE" );
-	if ( s && s[0] )
-		return s;
-	s = getenv( "LC_ALL" );
-	if ( s && s[0] )
-		return s;
-	s = getenv( "LC_MESSAGES" );
-	if ( s && s[0] )
-		return s;
-	s = getenv( "LANG" );
-	if ( s && s[0] )
-		return s;
-	return NULL;
+    char *s = getenv("LANGUAGE");
+    if (s && s[0])
+        return s;
+    s = getenv("LC_ALL");
+    if (s && s[0])
+        return s;
+    s = getenv("LC_MESSAGES");
+    if (s && s[0])
+        return s;
+    s = getenv("LANG");
+    if (s && s[0])
+        return s;
+    return NULL;
 }
 
 /** Return a list of user-preferred language codes taken from environment variables.
@@ -471,91 +513,87 @@ static char *getenv_locale()
  * overridden by environment variables, in order: LANGUAGE, LC_ALL, LC_MESSAGES, LANG
  */
 
-mlt_properties mlt_repository_languages( mlt_repository self )
+mlt_properties mlt_repository_languages(mlt_repository self)
 {
-	mlt_properties languages = mlt_properties_get_data( &self->parent, "languages", NULL );
-	if ( languages )
-		return languages;
+    mlt_properties languages = mlt_properties_get_data(&self->parent, "languages", NULL);
+    if (languages)
+        return languages;
 
-	languages = mlt_properties_new();
-	char *locale = getenv_locale();
-	if ( locale )
-	{
-		locale = strdup( locale );
-		mlt_tokeniser tokeniser = mlt_tokeniser_init();
-		int count = mlt_tokeniser_parse_new( tokeniser, locale, ":" );
-		if ( count )
-		{
-			int i;
-			for ( i = 0; i < count; i++ )
-			{
-				char *locale = mlt_tokeniser_get_string( tokeniser, i );
-				if ( strcmp( locale, "C" ) == 0 || strcmp( locale, "POSIX" ) == 0 )
-					locale = "en";
-				else if ( strlen( locale ) > 2 )
-					locale[2] = 0;
-				char string[21];
-				snprintf( string, sizeof(string), "%d", i );
-				mlt_properties_set( languages, string, locale );
-			}
-		}
-		else
-		{
-			mlt_properties_set( languages, "0", "en" );
-		}
-		free( locale );
-		mlt_tokeniser_close( tokeniser );
-	}
-	else
-	{
-		mlt_properties_set( languages, "0", "en" );
-	}
-	mlt_properties_set_data( &self->parent, "languages", languages, 0, ( mlt_destructor )mlt_properties_close, NULL );
-	return languages;
+    languages = mlt_properties_new();
+    char *locale = getenv_locale();
+    if (locale) {
+        locale = strdup(locale);
+        mlt_tokeniser tokeniser = mlt_tokeniser_init();
+        int count = mlt_tokeniser_parse_new(tokeniser, locale, ":");
+        if (count) {
+            int i;
+            for (i = 0; i < count; i++) {
+                char *locale = mlt_tokeniser_get_string(tokeniser, i);
+                if (strcmp(locale, "C") == 0 || strcmp(locale, "POSIX") == 0)
+                    locale = "en";
+                else if (strlen(locale) > 2)
+                    locale[2] = 0;
+                char string[21];
+                snprintf(string, sizeof(string), "%d", i);
+                mlt_properties_set(languages, string, locale);
+            }
+        } else {
+            mlt_properties_set(languages, "0", "en");
+        }
+        free(locale);
+        mlt_tokeniser_close(tokeniser);
+    } else {
+        mlt_properties_set(languages, "0", "en");
+    }
+    mlt_properties_set_data(&self->parent,
+                            "languages",
+                            languages,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
+    return languages;
 }
 
-static void list_presets( mlt_properties properties, const char *path, const char *dirname )
+static void list_presets(mlt_properties properties, const char *path, const char *dirname)
 {
-	DIR *dir = opendir( dirname );
+    DIR *dir = opendir(dirname);
 
-	if ( dir )
-	{
-		struct dirent *de = readdir( dir );
-		char fullname[ PATH_MAX ];
+    if (dir) {
+        struct dirent *de = readdir(dir);
+        char fullname[PATH_MAX];
 
-		while ( de != NULL )
-		{
-			if ( de->d_name[0] != '.' && de->d_name[strlen( de->d_name ) - 1] != '~' )
-			{
-				struct stat info;
+        while (de != NULL) {
+            if (de->d_name[0] != '.' && de->d_name[strlen(de->d_name) - 1] != '~') {
+                struct stat info;
 
-				snprintf( fullname, sizeof(fullname), "%s/%s", dirname, de->d_name );
-				stat( fullname, &info );
-				if ( S_ISDIR( info.st_mode ) )
-				{
-					// recurse into subdirectories
-					char sub[ PATH_MAX ];
-					if ( path )
-						snprintf( sub, sizeof(sub), "%s/%s", path, de->d_name );
-					else
-						strncpy( sub, de->d_name, sizeof(sub) );
-					list_presets( properties, sub, fullname );
-				}
-				else
-				{
-					// load the preset
-					mlt_properties preset = mlt_properties_load( fullname );
-					if ( preset && mlt_properties_count( preset ) )
-					{
-						snprintf( fullname, 1024, "%s/%s", path, de->d_name );
-						mlt_properties_set_data( properties, fullname, preset, 0, (mlt_destructor) mlt_properties_close, NULL );
-					}
-				}
-			}
-			de = readdir( dir );
-		}
-		closedir( dir );
-	}
+                snprintf(fullname, sizeof(fullname), "%s/%s", dirname, de->d_name);
+                stat(fullname, &info);
+                if (S_ISDIR(info.st_mode)) {
+                    // recurse into subdirectories
+                    char sub[PATH_MAX];
+                    if (path)
+                        snprintf(sub, sizeof(sub), "%s/%s", path, de->d_name);
+                    else
+                        strncpy(sub, de->d_name, sizeof(sub));
+                    list_presets(properties, sub, fullname);
+                } else {
+                    // load the preset
+                    mlt_properties preset = mlt_properties_load(fullname);
+                    if (preset && mlt_properties_count(preset)) {
+                        snprintf(fullname, 1024, "%s/%s", path, de->d_name);
+                        mlt_properties_set_data(properties,
+                                                fullname,
+                                                preset,
+                                                0,
+                                                (mlt_destructor) mlt_properties_close,
+                                                NULL);
+                    }
+                }
+            }
+            de = readdir(dir);
+        }
+        closedir(dir);
+    }
 }
 
 /** Get the list of presets.
@@ -564,9 +602,9 @@ static void list_presets( mlt_properties properties, const char *path, const cha
  * \return a properties list of all the presets
  */
 
-mlt_properties mlt_repository_presets( )
+mlt_properties mlt_repository_presets()
 {
-	mlt_properties result = mlt_properties_new();
-	list_presets( result, NULL, mlt_environment( "MLT_PRESETS_PATH" ) );
-	return result;
+    mlt_properties result = mlt_properties_new();
+    list_presets(result, NULL, mlt_environment("MLT_PRESETS_PATH"));
+    return result;
 }

@@ -23,50 +23,50 @@
 
 #include "MltConfig.h"
 
-#include <framework/mlt.h>
 #include "MltProperties.h"
+#include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class Properties;
+class Service;
+class Producer;
+class Playlist;
+class Tractor;
+class Multitrack;
+class Filter;
+class Transition;
+
+class MLTPP_DECLSPEC Parser : public Properties
 {
-	class Properties;
-	class Service;
-	class Producer;
-	class Playlist;
-	class Tractor;
-	class Multitrack;
-	class Filter;
-	class Transition;
+private:
+    mlt_parser parser;
 
-	class MLTPP_DECLSPEC Parser : public Properties
-	{
-		private:
-			mlt_parser parser;
-		public:
-			Parser( );
-			~Parser( );
-			int start( Service &service );
-			virtual mlt_properties get_properties( ) override;
-			virtual int on_invalid( Service *object );
-			virtual int on_unknown( Service *object );
-			virtual int on_start_producer( Producer *object );
-			virtual int on_end_producer( Producer *object );
-			virtual int on_start_playlist( Playlist *object );
-			virtual int on_end_playlist( Playlist *object );
-			virtual int on_start_tractor( Tractor *object );
-			virtual int on_end_tractor( Tractor *object );
-			virtual int on_start_multitrack( Multitrack *object );
-			virtual int on_end_multitrack( Multitrack *object );
-			virtual int on_start_track( );
-			virtual int on_end_track( );
-			virtual int on_start_filter( Filter *object );
-			virtual int on_end_filter( Filter *object );
-			virtual int on_start_transition( Transition *object );
-			virtual int on_end_transition( Transition *object );
-			virtual int on_start_chain( Chain *object );
-			virtual int on_end_chain( Chain *object );
-			virtual int on_start_link( Link *object );
-			virtual int on_end_link( Link *object );
-	};
-}
+public:
+    Parser();
+    ~Parser();
+    int start(Service &service);
+    virtual mlt_properties get_properties() override;
+    virtual int on_invalid(Service *object);
+    virtual int on_unknown(Service *object);
+    virtual int on_start_producer(Producer *object);
+    virtual int on_end_producer(Producer *object);
+    virtual int on_start_playlist(Playlist *object);
+    virtual int on_end_playlist(Playlist *object);
+    virtual int on_start_tractor(Tractor *object);
+    virtual int on_end_tractor(Tractor *object);
+    virtual int on_start_multitrack(Multitrack *object);
+    virtual int on_end_multitrack(Multitrack *object);
+    virtual int on_start_track();
+    virtual int on_end_track();
+    virtual int on_start_filter(Filter *object);
+    virtual int on_end_filter(Filter *object);
+    virtual int on_start_transition(Transition *object);
+    virtual int on_end_transition(Transition *object);
+    virtual int on_start_chain(Chain *object);
+    virtual int on_end_chain(Chain *object);
+    virtual int on_start_link(Link *object);
+    virtual int on_end_link(Link *object);
+};
+} // namespace Mlt
 
 #endif

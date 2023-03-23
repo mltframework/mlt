@@ -23,8 +23,8 @@
 #ifndef MLT_REPOSITORY_H
 #define MLT_REPOSITORY_H
 
-#include "mlt_types.h"
 #include "mlt_profile.h"
+#include "mlt_types.h"
 
 /** This callback is the main entry point into a module, which must be exported
  *  with the symbol "mlt_register".
@@ -32,40 +32,63 @@
  *  Inside the callback, the module registers the additional callbacks below.
  */
 
-typedef void ( *mlt_repository_callback )( mlt_repository );
+typedef void (*mlt_repository_callback)(mlt_repository);
 
 /** The callback function that modules implement to construct a service.
  */
 
-typedef void *( *mlt_register_callback )( mlt_profile, mlt_service_type, const char * /* service name */, const void * /* arg */ );
+typedef void *(*mlt_register_callback)(mlt_profile,
+                                       mlt_service_type,
+                                       const char * /* service name */,
+                                       const void * /* arg */);
 
 /** The callback function that modules implement to supply metadata as a properties list.
  */
 
-typedef mlt_properties ( *mlt_metadata_callback )( mlt_service_type, const char * /* service name */, void * /* callback_data */ );
+typedef mlt_properties (*mlt_metadata_callback)(mlt_service_type,
+                                                const char * /* service name */,
+                                                void * /* callback_data */);
 
 /** A convenience macro to create an entry point for service registration. */
-#define MLT_REPOSITORY void mlt_register( mlt_repository repository )
+#define MLT_REPOSITORY void mlt_register(mlt_repository repository)
 
 /** A convenience macro to a register service in a more declarative manner. */
-#define MLT_REGISTER( type, service, symbol  ) ( mlt_repository_register( repository, (type), (service), ( mlt_register_callback )(symbol) ) )
+#define MLT_REGISTER(type, service, symbol) \
+    (mlt_repository_register(repository, (type), (service), (mlt_register_callback)(symbol)))
 
 /** A convenience macro to a register metadata in a more declarative manner. */
-#define MLT_REGISTER_METADATA( type, service, callback, data ) ( mlt_repository_register_metadata( repository, (type), (service), ( mlt_metadata_callback )(callback), (data) ) )
+#define MLT_REGISTER_METADATA(type, service, callback, data) \
+    (mlt_repository_register_metadata(repository, \
+                                      (type), \
+                                      (service), \
+                                      (mlt_metadata_callback)(callback), \
+                                      (data)))
 
-extern mlt_repository mlt_repository_init( const char *directory );
-extern void mlt_repository_register( mlt_repository self, mlt_service_type service_type, const char *service, mlt_register_callback );
-extern void *mlt_repository_create( mlt_repository self, mlt_profile profile, mlt_service_type type, const char *service, const void *arg );
-extern void mlt_repository_close( mlt_repository self );
-extern mlt_properties mlt_repository_consumers( mlt_repository self );
-extern mlt_properties mlt_repository_filters( mlt_repository self );
-extern mlt_properties mlt_repository_links( mlt_repository self );
-extern mlt_properties mlt_repository_producers( mlt_repository self );
-extern mlt_properties mlt_repository_transitions( mlt_repository self );
-extern void mlt_repository_register_metadata( mlt_repository self, mlt_service_type type, const char *service, mlt_metadata_callback, void *callback_data );
-extern mlt_properties mlt_repository_metadata( mlt_repository self, mlt_service_type type, const char *service );
-extern mlt_properties mlt_repository_languages( mlt_repository self );
-extern mlt_properties mlt_repository_presets( );
+extern mlt_repository mlt_repository_init(const char *directory);
+extern void mlt_repository_register(mlt_repository self,
+                                    mlt_service_type service_type,
+                                    const char *service,
+                                    mlt_register_callback);
+extern void *mlt_repository_create(mlt_repository self,
+                                   mlt_profile profile,
+                                   mlt_service_type type,
+                                   const char *service,
+                                   const void *arg);
+extern void mlt_repository_close(mlt_repository self);
+extern mlt_properties mlt_repository_consumers(mlt_repository self);
+extern mlt_properties mlt_repository_filters(mlt_repository self);
+extern mlt_properties mlt_repository_links(mlt_repository self);
+extern mlt_properties mlt_repository_producers(mlt_repository self);
+extern mlt_properties mlt_repository_transitions(mlt_repository self);
+extern void mlt_repository_register_metadata(mlt_repository self,
+                                             mlt_service_type type,
+                                             const char *service,
+                                             mlt_metadata_callback,
+                                             void *callback_data);
+extern mlt_properties mlt_repository_metadata(mlt_repository self,
+                                              mlt_service_type type,
+                                              const char *service);
+extern mlt_properties mlt_repository_languages(mlt_repository self);
+extern mlt_properties mlt_repository_presets();
 
 #endif
-

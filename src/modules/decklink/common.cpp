@@ -23,117 +23,112 @@
 
 #ifdef __APPLE__
 
-char* getCString( DLString aDLString )
+char *getCString(DLString aDLString)
 {
-	char* CString = (char*) malloc( 64 );
-	CFStringGetCString( aDLString, CString, 64, kCFStringEncodingMacRoman );
-	return CString;
+    char *CString = (char *) malloc(64);
+    CFStringGetCString(aDLString, CString, 64, kCFStringEncodingMacRoman);
+    return CString;
 }
 
-void freeCString( char* aCString )
+void freeCString(char *aCString)
 {
-	if ( aCString ) free( aCString );
+    if (aCString)
+        free(aCString);
 }
 
-void freeDLString( DLString aDLString )
+void freeDLString(DLString aDLString)
 {
-	if ( aDLString ) CFRelease( aDLString );
+    if (aDLString)
+        CFRelease(aDLString);
 }
 
 #elif defined(_WIN32)
 
-char* getCString( DLString aDLString )
+char *getCString(DLString aDLString)
 {
-	char* CString = NULL;
-	if ( aDLString )
-	{
-		int size = WideCharToMultiByte( CP_UTF8, 0, aDLString, -1, NULL, 0, NULL, NULL );
-		if (size)
-		{
-			CString = new char[ size ];
-			size = WideCharToMultiByte( CP_UTF8, 0, aDLString, -1, CString, size, NULL, NULL );
-			if ( !size )
-			{
-				delete[] CString;
-				CString = NULL;
-			}
-		}
-	}
-	return CString;
+    char *CString = NULL;
+    if (aDLString) {
+        int size = WideCharToMultiByte(CP_UTF8, 0, aDLString, -1, NULL, 0, NULL, NULL);
+        if (size) {
+            CString = new char[size];
+            size = WideCharToMultiByte(CP_UTF8, 0, aDLString, -1, CString, size, NULL, NULL);
+            if (!size) {
+                delete[] CString;
+                CString = NULL;
+            }
+        }
+    }
+    return CString;
 }
 
-void freeCString( char* aCString )
+void freeCString(char *aCString)
 {
-	delete[] aCString;
+    delete[] aCString;
 }
 
-void freeDLString( DLString aDLString )
+void freeDLString(DLString aDLString)
 {
-	SysFreeString( aDLString );
+    SysFreeString(aDLString);
 }
 
 #else
 
-char* getCString( DLString aDLString )
+char *getCString(DLString aDLString)
 {
-	return aDLString? (char*) aDLString : NULL;
+    return aDLString ? (char *) aDLString : NULL;
 }
 
-void freeCString( char* aCString )
-{
-}
+void freeCString(char *aCString) {}
 
-void freeDLString( DLString aDLString )
+void freeDLString(DLString aDLString)
 {
-	if ( aDLString ) free( (void*) aDLString );
+    if (aDLString)
+        free((void *) aDLString);
 }
 
 #endif
 
-
-void swab2( const void *from, void *to, int n )
+void swab2(const void *from, void *to, int n)
 {
 #if defined(USE_SSE)
 #define SWAB_STEP 16
-	int cnt = n / SWAB_STEP;
+    int cnt = n / SWAB_STEP;
 
-	__asm__ volatile
-	(
-		/* "loop_start:                            \n\t" */
-		"1:                                     \n\t"
-		
-		/* load */
-		"movdqa         0(%[from]), %%xmm0      \n\t"
-		"add            $0x10, %[from]          \n\t"
+    __asm__ volatile(
+        /* "loop_start:                            \n\t" */
+        "1:                                     \n\t"
 
-		/* duplicate to temp registers */
-		"movdqa         %%xmm0, %%xmm1          \n\t"
+        /* load */
+        "movdqa         0(%[from]), %%xmm0      \n\t"
+        "add            $0x10, %[from]          \n\t"
 
-		/* shift right temp register */
-		"psrlw          $8, %%xmm1              \n\t"
+        /* duplicate to temp registers */
+        "movdqa         %%xmm0, %%xmm1          \n\t"
 
-		/* shift left main register */
-		"psllw          $8, %%xmm0              \n\t"
+        /* shift right temp register */
+        "psrlw          $8, %%xmm1              \n\t"
 
-		/* compose them back */
-		"por           %%xmm0, %%xmm1           \n\t"
+        /* shift left main register */
+        "psllw          $8, %%xmm0              \n\t"
 
-		/* save */
-		"movdqa         %%xmm1, 0(%[to])        \n\t"
-		"add            $0x10, %[to]            \n\t"
+        /* compose them back */
+        "por           %%xmm0, %%xmm1           \n\t"
 
-		"dec            %[cnt]                  \n\t"
-		"jnz            1b                      \n\t"
-		/* "jnz            loop_start              \n\t" */
+        /* save */
+        "movdqa         %%xmm1, 0(%[to])        \n\t"
+        "add            $0x10, %[to]            \n\t"
 
-		: [from]"+r"(from), [to]"+r"(to), [cnt]"+r"(cnt)
-		:
-		: "xmm0", "xmm1"
-	);
+        "dec            %[cnt]                  \n\t"
+        "jnz            1b                      \n\t"
+        /* "jnz            loop_start              \n\t" */
 
-	from = (unsigned char*) from + n - (n % SWAB_STEP);
-	to = (unsigned char*) to + n - (n % SWAB_STEP);
-	n = (n % SWAB_STEP);
+        : [from] "+r"(from), [to] "+r"(to), [cnt] "+r"(cnt)
+        :
+        : "xmm0", "xmm1");
+
+    from = (unsigned char *) from + n - (n % SWAB_STEP);
+    to = (unsigned char *) to + n - (n % SWAB_STEP);
+    n = (n % SWAB_STEP);
 #endif
-	swab((char*) from, (char*) to, n);
+    swab((char *) from, (char *) to, n);
 };

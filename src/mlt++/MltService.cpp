@@ -17,164 +17,160 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string.h>
 #include "MltService.h"
 #include "MltFilter.h"
 #include "MltProfile.h"
+#include <string.h>
 using namespace Mlt;
 
-Service::Service( ) :
-	Properties( false ),
-	instance( NULL )
+Service::Service()
+    : Properties(false)
+    , instance(NULL)
+{}
+
+Service::Service(Service &service)
+    : Properties(false)
+    , instance(service.get_service())
 {
+    inc_ref();
 }
 
-Service::Service( Service &service ) :
-	Properties( false ),
-	instance( service.get_service( ) )
-{
-	inc_ref( );
-}
+Service::Service(const Service &service)
+    : Service(const_cast<Service &>(service))
+{}
 
-Service::Service(const Service &service )
-	: Service(const_cast<Service&>(service))
+Service::Service(mlt_service service)
+    : Properties(false)
+    , instance(service)
 {
-}
-
-Service::Service( mlt_service service ) :
-	Properties( false ),
-	instance( service )
-{
-	inc_ref( );
+    inc_ref();
 }
 
 Service::Service(Service *service)
-	: Service(service? service->get_service() : nullptr)
-{
-}
+    : Service(service ? service->get_service() : nullptr)
+{}
 
-Service::~Service( )
+Service::~Service()
 {
-	mlt_service_close( instance );
+    mlt_service_close(instance);
 }
 
 Service &Service::operator=(const Service &service)
 {
-	if (this != &service)
-	{
-		mlt_service_close( instance );
-		instance = service.instance;
-		inc_ref( );
-	}
-	return *this;
+    if (this != &service) {
+        mlt_service_close(instance);
+        instance = service.instance;
+        inc_ref();
+    }
+    return *this;
 }
 
-mlt_service Service::get_service( )
+mlt_service Service::get_service()
 {
-	return instance;
+    return instance;
 }
 
-mlt_properties Service::get_properties( )
+mlt_properties Service::get_properties()
 {
-	return mlt_service_properties( get_service( ) );
+    return mlt_service_properties(get_service());
 }
 
-void Service::lock( )
+void Service::lock()
 {
-	mlt_service_lock( get_service( ) );
+    mlt_service_lock(get_service());
 }
 
-void Service::unlock( )
+void Service::unlock()
 {
-	mlt_service_unlock( get_service( ) );
+    mlt_service_unlock(get_service());
 }
 
-int Service::connect_producer( Service &producer, int index )
+int Service::connect_producer(Service &producer, int index)
 {
-	return mlt_service_connect_producer( get_service( ), producer.get_service( ), index );
+    return mlt_service_connect_producer(get_service(), producer.get_service(), index);
 }
 
 int Mlt::Service::insert_producer(Mlt::Service &producer, int index)
 {
-	return mlt_service_insert_producer( get_service(), producer.get_service(), index );
+    return mlt_service_insert_producer(get_service(), producer.get_service(), index);
 }
 
-int Service::disconnect_producer( int index )
+int Service::disconnect_producer(int index)
 {
-	return mlt_service_disconnect_producer( get_service(), index );
+    return mlt_service_disconnect_producer(get_service(), index);
 }
 
-int Service::disconnect_all_producers( )
+int Service::disconnect_all_producers()
 {
-	return mlt_service_disconnect_all_producers( get_service() );
+    return mlt_service_disconnect_all_producers(get_service());
 }
 
-Service *Service::producer( )
+Service *Service::producer()
 {
-	return new Service( mlt_service_producer( get_service( ) ) );
+    return new Service(mlt_service_producer(get_service()));
 }
 
-Service *Service::consumer( )
+Service *Service::consumer()
 {
-	return new Service( mlt_service_consumer( get_service( ) ) );
+    return new Service(mlt_service_consumer(get_service()));
 }
 
-Profile *Service::profile( )
+Profile *Service::profile()
 {
-	return new Profile( mlt_service_profile( get_service() ) );
+    return new Profile(mlt_service_profile(get_service()));
 }
 
 mlt_profile Service::get_profile()
 {
-	return mlt_service_profile( get_service() );
+    return mlt_service_profile(get_service());
 }
 
-Frame *Service::get_frame( int index )
+Frame *Service::get_frame(int index)
 {
-	mlt_frame frame = NULL;
-	mlt_service_get_frame( get_service( ), &frame, index );
-	Frame *result = new Frame( frame );
-	mlt_frame_close( frame );
-	return result;
+    mlt_frame frame = NULL;
+    mlt_service_get_frame(get_service(), &frame, index);
+    Frame *result = new Frame(frame);
+    mlt_frame_close(frame);
+    return result;
 }
 
-mlt_service_type Service::type( )
+mlt_service_type Service::type()
 {
-	return mlt_service_identify( get_service( ) );
+    return mlt_service_identify(get_service());
 }
 
-int Service::attach( Filter &filter )
+int Service::attach(Filter &filter)
 {
-	return mlt_service_attach( get_service( ), filter.get_filter( ) );
+    return mlt_service_attach(get_service(), filter.get_filter());
 }
 
-int Service::detach( Filter &filter )
+int Service::detach(Filter &filter)
 {
-	return mlt_service_detach( get_service( ), filter.get_filter( ) );
+    return mlt_service_detach(get_service(), filter.get_filter());
 }
 
 int Service::filter_count()
 {
-	return mlt_service_filter_count( get_service() );
+    return mlt_service_filter_count(get_service());
 }
 
 int Service::move_filter(int from, int to)
 {
-	return mlt_service_move_filter( get_service(), from, to );
+    return mlt_service_move_filter(get_service(), from, to);
 }
 
-Filter *Service::filter( int index )
+Filter *Service::filter(int index)
 {
-	mlt_filter result = mlt_service_filter( get_service( ), index );
-	return result == NULL ? NULL : new Filter( result );
+    mlt_filter result = mlt_service_filter(get_service(), index);
+    return result == NULL ? NULL : new Filter(result);
 }
 
-void Service::set_profile( mlt_profile profile )
+void Service::set_profile(mlt_profile profile)
 {
-    mlt_service_set_profile( get_service( ), profile );
+    mlt_service_set_profile(get_service(), profile);
 }
 
-void Service::set_profile( Profile &profile )
+void Service::set_profile(Profile &profile)
 {
-	set_profile( profile.get_profile( ) );
+    set_profile(profile.get_profile());
 }

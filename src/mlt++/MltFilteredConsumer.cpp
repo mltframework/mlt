@@ -21,98 +21,86 @@
 #include "MltFilteredConsumer.h"
 using namespace Mlt;
 
-FilteredConsumer::FilteredConsumer( Profile& profile, const char *id, const char *arg ) :
-	Consumer( profile, id, arg )
+FilteredConsumer::FilteredConsumer(Profile &profile, const char *id, const char *arg)
+    : Consumer(profile, id, arg)
 {
-	// Create a reference to the first service
-	first = new Service( *this );
+    // Create a reference to the first service
+    first = new Service(*this);
 }
 
-FilteredConsumer::FilteredConsumer( Consumer &consumer ) :
-	Consumer( consumer )
+FilteredConsumer::FilteredConsumer(Consumer &consumer)
+    : Consumer(consumer)
 {
-	// Create a reference to the first service
-	first = new Service( *this );
+    // Create a reference to the first service
+    first = new Service(*this);
 }
 
-FilteredConsumer::~FilteredConsumer( )
+FilteredConsumer::~FilteredConsumer()
 {
-	// Delete the reference to the first service
-	delete first;
+    // Delete the reference to the first service
+    delete first;
 }
 
-int FilteredConsumer::connect( Service &service )
+int FilteredConsumer::connect(Service &service)
 {
-	// All producers must connect to the first service, hence the use of the virtual here
-	return first->connect_producer( service );
+    // All producers must connect to the first service, hence the use of the virtual here
+    return first->connect_producer(service);
 }
 
-int FilteredConsumer::attach( Filter &filter )
+int FilteredConsumer::attach(Filter &filter)
 {
-	int error = 0;
-	if ( filter.is_valid( ) )
-	{
-		Service *producer = first->producer( );
-		error = filter.connect( *producer );
-		if ( error == 0 )
-		{
-			first->connect_producer( filter );
-			delete first;
-			first = new Service( filter );
-		}
-		delete producer;
-	}
-	else
-	{
-		error = 1;
-	}
-	return error;
+    int error = 0;
+    if (filter.is_valid()) {
+        Service *producer = first->producer();
+        error = filter.connect(*producer);
+        if (error == 0) {
+            first->connect_producer(filter);
+            delete first;
+            first = new Service(filter);
+        }
+        delete producer;
+    } else {
+        error = 1;
+    }
+    return error;
 }
 
-int FilteredConsumer::last( Filter &filter )
+int FilteredConsumer::last(Filter &filter)
 {
-	int error = 0;
-	if ( filter.is_valid( ) )
-	{
-		Service *producer = this->producer( );
-		error = filter.connect( *producer );
-		if ( error == 0 )
-			connect_producer( filter );
-		delete producer;
-	}
-	else
-	{
-		error = 1;
-	}
-	return error;
+    int error = 0;
+    if (filter.is_valid()) {
+        Service *producer = this->producer();
+        error = filter.connect(*producer);
+        if (error == 0)
+            connect_producer(filter);
+        delete producer;
+    } else {
+        error = 1;
+    }
+    return error;
 }
 
-int FilteredConsumer::detach( Filter &filter )
+int FilteredConsumer::detach(Filter &filter)
 {
-	if ( filter.is_valid( ) )
-	{
-		Service *it = new Service( *first );
-		while ( it->is_valid( ) && it->get_service( ) != filter.get_service( ) )
-		{
-			Service *consumer = it->consumer( );
-			delete it;
-			it = consumer;
-		}
-		if ( it->get_service( ) == filter.get_service( ) )
-		{
-			Service *producer = it->producer( );
-			Service *consumer = it->consumer( );
-			consumer->connect_producer( *producer );
-			Service dummy;
-			it->connect_producer( dummy );
-			if ( first->get_service( ) == it->get_service( ) )
-			{
-				delete first;
-				first = new Service( *consumer );
-			}
-		}
-		delete it;
-	}
-	return 0;
+    if (filter.is_valid()) {
+        Service *it = new Service(*first);
+        while (it->is_valid() && it->get_service() != filter.get_service()) {
+            Service *consumer = it->consumer();
+            delete it;
+            it = consumer;
+        }
+        if (it->get_service() == filter.get_service()) {
+            Service *producer = it->producer();
+            Service *consumer = it->consumer();
+            consumer->connect_producer(*producer);
+            Service dummy;
+            it->connect_producer(dummy);
+            if (first->get_service() == it->get_service()) {
+                delete first;
+                first = new Service(*consumer);
+            }
+        }
+        delete it;
+    }
+    return 0;
 }
-

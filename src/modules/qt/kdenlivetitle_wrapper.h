@@ -23,30 +23,29 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
-#include <framework/mlt_producer.h>
+
 #include <framework/mlt_cache.h>
 #include <framework/mlt_frame.h>
-
+#include <framework/mlt_producer.h>
 
 struct producer_ktitle_s
 {
-	struct mlt_producer_s parent;
-	uint8_t *rgba_image;
-	uint8_t *current_image;
-	uint8_t *current_alpha;
-	mlt_image_format format;
-	int current_width;
-	int current_height;
-	int has_alpha;
-	pthread_mutex_t mutex;
+    struct mlt_producer_s parent;
+    uint8_t *rgba_image;
+    uint8_t *current_image;
+    uint8_t *current_alpha;
+    mlt_image_format format;
+    int current_width;
+    int current_height;
+    int has_alpha;
+    pthread_mutex_t mutex;
 };
 
 typedef struct producer_ktitle_s *producer_ktitle;
 
-extern void drawKdenliveTitle( producer_ktitle self, mlt_frame frame, mlt_image_format format, int, int, double, int );
-extern int initTitleProducer( mlt_producer producer );
-
+extern void drawKdenliveTitle(
+    producer_ktitle self, mlt_frame frame, mlt_image_format format, int, int, double, int);
+extern int initTitleProducer(mlt_producer producer);
 
 #ifdef __cplusplus
 }

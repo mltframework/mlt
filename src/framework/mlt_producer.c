@@ -23,23 +23,23 @@
 #include "mlt_producer.h"
 #include "mlt_factory.h"
 #include "mlt_frame.h"
+#include "mlt_log.h"
 #include "mlt_parser.h"
 #include "mlt_profile.h"
-#include "mlt_log.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <sys/types.h> // for stat()
+#include <string.h>
 #include <sys/stat.h>  // for stat()
+#include <sys/types.h> // for stat()
 #include <time.h>      // for strftime() and gtime()
 #include <unistd.h>    // for stat()
 
 /* Forward references. */
 
-static int producer_get_frame( mlt_service self, mlt_frame_ptr frame, int index );
-static void mlt_producer_property_changed(mlt_service owner, mlt_producer self, mlt_event_data );
-static void mlt_producer_service_changed( mlt_service owner, mlt_producer self );
+static int producer_get_frame(mlt_service self, mlt_frame_ptr frame, int index);
+static void mlt_producer_property_changed(mlt_service owner, mlt_producer self, mlt_event_data);
+static void mlt_producer_service_changed(mlt_service owner, mlt_producer self);
 
 /* for debugging */
 //#define _MLT_PRODUCER_CHECKS_ 1
@@ -56,63 +56,67 @@ static int producers_destroyed = 0;
  * \return true if there was an error
  */
 
-int mlt_producer_init( mlt_producer self, void *child )
+int mlt_producer_init(mlt_producer self, void *child)
 {
-	// Check that we haven't received NULL
-	int error = self == NULL;
+    // Check that we haven't received NULL
+    int error = self == NULL;
 
-	// Continue if no error
-	if ( error == 0 )
-	{
+    // Continue if no error
+    if (error == 0) {
 #ifdef _MLT_PRODUCER_CHECKS_
-		producers_created ++;
+        producers_created++;
 #endif
 
-		// Initialise the producer
-		memset( self, 0, sizeof( struct mlt_producer_s ) );
+        // Initialise the producer
+        memset(self, 0, sizeof(struct mlt_producer_s));
 
-		// Associate with the child
-		self->child = child;
+        // Associate with the child
+        self->child = child;
 
-		// Initialise the service
-		if ( mlt_service_init( &self->parent, self ) == 0 )
-		{
-			// The parent is the service
-			mlt_service parent = &self->parent;
+        // Initialise the service
+        if (mlt_service_init(&self->parent, self) == 0) {
+            // The parent is the service
+            mlt_service parent = &self->parent;
 
-			// Define the parent close
-			parent->close = ( mlt_destructor )mlt_producer_close;
-			parent->close_object = self;
+            // Define the parent close
+            parent->close = (mlt_destructor) mlt_producer_close;
+            parent->close_object = self;
 
-			// For convenience, we'll assume the close_object is self
-			self->close_object = self;
+            // For convenience, we'll assume the close_object is self
+            self->close_object = self;
 
-			// Get the properties of the parent
-			mlt_properties properties = MLT_SERVICE_PROPERTIES( parent );
+            // Get the properties of the parent
+            mlt_properties properties = MLT_SERVICE_PROPERTIES(parent);
 
-			// Set the default properties
-			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
-			mlt_properties_set_position( properties, "_position", 0.0 );
-			mlt_properties_set_double( properties, "_frame", 0 );
-			mlt_properties_set_double( properties, "_speed", 1.0 );
-			mlt_properties_set_position( properties, "in", 0 );
-			char *e = getenv( "MLT_DEFAULT_PRODUCER_LENGTH" );
-			int p = e ? atoi( e ) : 15000;
-			mlt_properties_set_position( properties, "out", MAX(0, p - 1) );
-			mlt_properties_set_position( properties, "length", p );
-			mlt_properties_set( properties, "eof", "pause" );
-			mlt_properties_set( properties, "resource", "<producer>" );
+            // Set the default properties
+            mlt_properties_set(properties, "mlt_type", "mlt_producer");
+            mlt_properties_set_position(properties, "_position", 0.0);
+            mlt_properties_set_double(properties, "_frame", 0);
+            mlt_properties_set_double(properties, "_speed", 1.0);
+            mlt_properties_set_position(properties, "in", 0);
+            char *e = getenv("MLT_DEFAULT_PRODUCER_LENGTH");
+            int p = e ? atoi(e) : 15000;
+            mlt_properties_set_position(properties, "out", MAX(0, p - 1));
+            mlt_properties_set_position(properties, "length", p);
+            mlt_properties_set(properties, "eof", "pause");
+            mlt_properties_set(properties, "resource", "<producer>");
 
-			// Override service get_frame
-			parent->get_frame = producer_get_frame;
+            // Override service get_frame
+            parent->get_frame = producer_get_frame;
 
-			mlt_events_listen( properties, self, "service-changed", ( mlt_listener )mlt_producer_service_changed );
-			mlt_events_listen( properties, self, "property-changed", ( mlt_listener )mlt_producer_property_changed );
-			mlt_events_register( properties, "producer-changed" );
-		}
-	}
+            mlt_events_listen(properties,
+                              self,
+                              "service-changed",
+                              (mlt_listener) mlt_producer_service_changed);
+            mlt_events_listen(properties,
+                              self,
+                              "property-changed",
+                              (mlt_listener) mlt_producer_property_changed);
+            mlt_events_register(properties, "producer-changed");
+        }
+    }
 
-	return error;
+    return error;
 }
 
 /** Listener for property changes.
@@ -125,12 +129,17 @@ int mlt_producer_init( mlt_producer self, void *child )
  * \param name the property that changed
  */
 
-static void mlt_producer_property_changed( mlt_service owner, mlt_producer self, mlt_event_data event_data)
+static void mlt_producer_property_changed(mlt_service owner,
+                                          mlt_producer self,
+                                          mlt_event_data event_data)
 {
-	const char *name = mlt_event_data_to_string(event_data);
-	if (!name) return;
-	if ( !strcmp( name, "in" ) || !strcmp( name, "out" ) || !strcmp( name, "length" ) )
-		mlt_events_fire( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( self ) ), "producer-changed", mlt_event_data_none() );
+    const char *name = mlt_event_data_to_string(event_data);
+    if (!name)
+        return;
+    if (!strcmp(name, "in") || !strcmp(name, "out") || !strcmp(name, "length"))
+        mlt_events_fire(MLT_PRODUCER_PROPERTIES(mlt_producer_cut_parent(self)),
+                        "producer-changed",
+                        mlt_event_data_none());
 }
 
 /** Listener for service changes.
@@ -142,9 +151,11 @@ static void mlt_producer_property_changed( mlt_service owner, mlt_producer self,
  * \param self the producer
  */
 
-static void mlt_producer_service_changed( mlt_service owner, mlt_producer self )
+static void mlt_producer_service_changed(mlt_service owner, mlt_producer self)
 {
-	mlt_events_fire( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( self ) ), "producer-changed", mlt_event_data_none() );
+    mlt_events_fire(MLT_PRODUCER_PROPERTIES(mlt_producer_cut_parent(self)),
+                    "producer-changed",
+                    mlt_event_data_none());
 }
 
 /** Create and initialize a new producer.
@@ -153,23 +164,26 @@ static void mlt_producer_service_changed( mlt_service owner, mlt_producer self )
  * \return the new producer
  */
 
-mlt_producer mlt_producer_new( mlt_profile profile )
+mlt_producer mlt_producer_new(mlt_profile profile)
 {
-	mlt_producer self = malloc( sizeof( struct mlt_producer_s ) );
-	if ( self )
-	{
-		if ( mlt_producer_init( self, NULL ) == 0 )
-		{
-			mlt_properties_set_data( MLT_PRODUCER_PROPERTIES( self ), "_profile", profile, 0, NULL, NULL );
-			mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( self ), "aspect_ratio", mlt_profile_sar( profile ) );
-		}
-		else
-		{
-			free( self );
-			return NULL;
-		}
-	}
-	return self;
+    mlt_producer self = malloc(sizeof(struct mlt_producer_s));
+    if (self) {
+        if (mlt_producer_init(self, NULL) == 0) {
+            mlt_properties_set_data(MLT_PRODUCER_PROPERTIES(self),
+                                    "_profile",
+                                    profile,
+                                    0,
+                                    NULL,
+                                    NULL);
+            mlt_properties_set_double(MLT_PRODUCER_PROPERTIES(self),
+                                      "aspect_ratio",
+                                      mlt_profile_sar(profile));
+        } else {
+            free(self);
+            return NULL;
+        }
+    }
+    return self;
 }
 
 /** Determine if producer is a cut.
@@ -180,9 +194,9 @@ mlt_producer mlt_producer_new( mlt_profile profile )
  * \see mlt_producer_cut
  */
 
-int mlt_producer_is_cut( mlt_producer self )
+int mlt_producer_is_cut(mlt_producer self)
 {
-	return mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( self ), "_cut" );
+    return mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self), "_cut");
 }
 
 /** Determine if producer is a mix.
@@ -193,11 +207,12 @@ int mlt_producer_is_cut( mlt_producer self )
  * \todo Define a mix producer.
  */
 
-int mlt_producer_is_mix( mlt_producer self )
+int mlt_producer_is_mix(mlt_producer self)
 {
-	mlt_properties properties = self != NULL ? MLT_PRODUCER_PROPERTIES( self ) : NULL;
-	mlt_tractor tractor = properties != NULL ? mlt_properties_get_data( properties, "mlt_mix", NULL ) : NULL;
-	return tractor != NULL;
+    mlt_properties properties = self != NULL ? MLT_PRODUCER_PROPERTIES(self) : NULL;
+    mlt_tractor tractor = properties != NULL ? mlt_properties_get_data(properties, "mlt_mix", NULL)
+                                             : NULL;
+    return tractor != NULL;
 }
 
 /** Determine if the producer is a blank.
@@ -209,14 +224,15 @@ int mlt_producer_is_mix( mlt_producer self )
  * \see mlt_playlist_insert_blank
  */
 
-int mlt_producer_is_blank( mlt_producer self )
+int mlt_producer_is_blank(mlt_producer self)
 {
-	if ( self )
-	{
-		const char *resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( self ) ), "resource" );
-		return ( resource && !strcmp( "blank", resource ) );
-	}
-	return ( self == NULL );
+    if (self) {
+        const char *resource = mlt_properties_get(MLT_PRODUCER_PROPERTIES(
+                                                      mlt_producer_cut_parent(self)),
+                                                  "resource");
+        return (resource && !strcmp("blank", resource));
+    }
+    return (self == NULL);
 }
 
 /** Obtain the parent producer.
@@ -226,13 +242,13 @@ int mlt_producer_is_blank( mlt_producer self )
  * \return either the parent producer if \p self is a "cut" producer or \p self otherwise.
  */
 
-mlt_producer mlt_producer_cut_parent( mlt_producer self )
+mlt_producer mlt_producer_cut_parent(mlt_producer self)
 {
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
-	if ( mlt_producer_is_cut( self ) )
-		return mlt_properties_get_data( properties, "_cut_parent", NULL );
-	else
-		return self;
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
+    if (mlt_producer_is_cut(self))
+        return mlt_properties_get_data(properties, "_cut_parent", NULL);
+    else
+        return self;
 }
 
 /** Create a cut of this producer.
@@ -247,31 +263,40 @@ mlt_producer mlt_producer_cut_parent( mlt_producer self )
  * \todo Expand on the value of a cut.
  */
 
-mlt_producer mlt_producer_cut( mlt_producer self, int in, int out )
+mlt_producer mlt_producer_cut(mlt_producer self, int in, int out)
 {
-	mlt_producer result = mlt_producer_new( mlt_service_profile( MLT_PRODUCER_SERVICE( self ) ) );
-	mlt_producer parent = mlt_producer_cut_parent( self );
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( result );
-	mlt_properties parent_props = MLT_PRODUCER_PROPERTIES( parent );
+    mlt_producer result = mlt_producer_new(mlt_service_profile(MLT_PRODUCER_SERVICE(self)));
+    mlt_producer parent = mlt_producer_cut_parent(self);
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(result);
+    mlt_properties parent_props = MLT_PRODUCER_PROPERTIES(parent);
 
-	mlt_properties_set_lcnumeric( properties,
-		mlt_properties_get_lcnumeric( MLT_PRODUCER_PROPERTIES( self ) ) );
+    mlt_properties_set_lcnumeric(properties,
+                                 mlt_properties_get_lcnumeric(MLT_PRODUCER_PROPERTIES(self)));
 
-	mlt_events_block( MLT_PRODUCER_PROPERTIES( result ), MLT_PRODUCER_PROPERTIES( result ) );
-	// Special case - allow for a cut of the entire producer (this will squeeze all other cuts to 0)
-	if ( in <= 0 )
-		in = 0;
-	if ( ( out < 0 || out >= mlt_producer_get_length( parent ) ) && !mlt_producer_is_blank( self ) )
-		out = MAX(0, mlt_producer_get_length( parent ) - 1);
+    mlt_events_block(MLT_PRODUCER_PROPERTIES(result), MLT_PRODUCER_PROPERTIES(result));
+    // Special case - allow for a cut of the entire producer (this will squeeze all other cuts to 0)
+    if (in <= 0)
+        in = 0;
+    if ((out < 0 || out >= mlt_producer_get_length(parent)) && !mlt_producer_is_blank(self))
+        out = MAX(0, mlt_producer_get_length(parent) - 1);
 
-	mlt_properties_inc_ref( parent_props );
-	mlt_properties_set_int( properties, "_cut", 1 );
-	mlt_properties_set_data( properties, "_cut_parent", parent, 0, ( mlt_destructor )mlt_producer_close, NULL );
-	mlt_properties_set_position( properties, "length", mlt_properties_get_position( parent_props, "length" ) );
-	mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( parent_props, "aspect_ratio" ) );
-	mlt_producer_set_in_and_out( result, in, out );
+    mlt_properties_inc_ref(parent_props);
+    mlt_properties_set_int(properties, "_cut", 1);
+    mlt_properties_set_data(properties,
+                            "_cut_parent",
+                            parent,
+                            0,
+                            (mlt_destructor) mlt_producer_close,
+                            NULL);
+    mlt_properties_set_position(properties,
+                                "length",
+                                mlt_properties_get_position(parent_props, "length"));
+    mlt_properties_set_double(properties,
+                              "aspect_ratio",
+                              mlt_properties_get_double(parent_props, "aspect_ratio"));
+    mlt_producer_set_in_and_out(result, in, out);
 
-	return result;
+    return result;
 }
 
 /** Get the parent service object.
@@ -282,9 +307,9 @@ mlt_producer mlt_producer_cut( mlt_producer self, int in, int out )
  * \see MLT_PRODUCER_SERVICE
  */
 
-mlt_service mlt_producer_service( mlt_producer self )
+mlt_service mlt_producer_service(mlt_producer self)
 {
-	return self != NULL ? &self->parent : NULL;
+    return self != NULL ? &self->parent : NULL;
 }
 
 /** Get the producer properties.
@@ -295,9 +320,9 @@ mlt_service mlt_producer_service( mlt_producer self )
  * \see MLT_PRODUCER_PROPERTIES
  */
 
-mlt_properties mlt_producer_properties( mlt_producer self )
+mlt_properties mlt_producer_properties(mlt_producer self)
 {
-	return MLT_SERVICE_PROPERTIES( &self->parent );
+    return MLT_SERVICE_PROPERTIES(&self->parent);
 }
 
 /** Seek to a specified position.
@@ -310,49 +335,45 @@ mlt_properties mlt_producer_properties( mlt_producer self )
  * \see mlt_producer_seek_time
  */
 
-int mlt_producer_seek( mlt_producer self, mlt_position position )
+int mlt_producer_seek(mlt_producer self, mlt_position position)
 {
-	if ( self->seek )
-	{
-		return self->seek( self, position );
-	}
+    if (self->seek) {
+        return self->seek(self, position);
+    }
 
-	// Determine eof handling
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
-	char *eof = mlt_properties_get( properties, "eof" );
-	int use_points = 1 - mlt_properties_get_int( properties, "ignore_points" );
+    // Determine eof handling
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
+    char *eof = mlt_properties_get(properties, "eof");
+    int use_points = 1 - mlt_properties_get_int(properties, "ignore_points");
 
-	// Recursive behaviour for cuts - repositions parent and then repositions cut
-	// hence no return on this condition
-	if ( mlt_producer_is_cut( self ) )
-		mlt_producer_seek( mlt_producer_cut_parent( self ), position + mlt_producer_get_in( self ) );
+    // Recursive behaviour for cuts - repositions parent and then repositions cut
+    // hence no return on this condition
+    if (mlt_producer_is_cut(self))
+        mlt_producer_seek(mlt_producer_cut_parent(self), position + mlt_producer_get_in(self));
 
-	// Check bounds
-	if( mlt_service_identify( MLT_PRODUCER_SERVICE(self) ) == mlt_service_link_type )
-	{
-		// Do not bounds check a link.
-	}
-	else if ( position < 0 || mlt_producer_get_playtime( self ) == 0 )
-	{
-		position = 0;
-	}
-	else if ( use_points && ( eof == NULL || !strcmp( eof, "pause" ) ) && position >= mlt_producer_get_playtime( self ) )
-	{
-		mlt_producer_set_speed( self, 0 );
-		position = mlt_producer_get_playtime( self ) - 1;
-	}
-	else if ( use_points && eof && !strcmp( eof, "loop" ) && position >= mlt_producer_get_playtime( self ) )
-	{
-		position = (int)position % (int)mlt_producer_get_playtime( self );
-	}
+    // Check bounds
+    if (mlt_service_identify(MLT_PRODUCER_SERVICE(self)) == mlt_service_link_type) {
+        // Do not bounds check a link.
+    } else if (position < 0 || mlt_producer_get_playtime(self) == 0) {
+        position = 0;
+    } else if (use_points && (eof == NULL || !strcmp(eof, "pause"))
+               && position >= mlt_producer_get_playtime(self)) {
+        mlt_producer_set_speed(self, 0);
+        position = mlt_producer_get_playtime(self) - 1;
+    } else if (use_points && eof && !strcmp(eof, "loop")
+               && position >= mlt_producer_get_playtime(self)) {
+        position = (int) position % (int) mlt_producer_get_playtime(self);
+    }
 
-	// Set the position
-	mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( self ), "_position", position );
+    // Set the position
+    mlt_properties_set_position(MLT_PRODUCER_PROPERTIES(self), "_position", position);
 
-	// Calculate the absolute frame
-	mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( self ), "_frame", use_points * mlt_producer_get_in( self ) + position );
+    // Calculate the absolute frame
+    mlt_properties_set_position(MLT_PRODUCER_PROPERTIES(self),
+                                "_frame",
+                                use_points * mlt_producer_get_in(self) + position);
 
-	return 0;
+    return 0;
 }
 
 /** Seek to a specified time string.
@@ -364,11 +385,11 @@ int mlt_producer_seek( mlt_producer self, mlt_position position )
  * \see mlt_producer_seek
  */
 
-int mlt_producer_seek_time( mlt_producer self, const char* time )
+int mlt_producer_seek_time(mlt_producer self, const char *time)
 {
-    mlt_properties_set( MLT_PRODUCER_PROPERTIES(self), "_seek_time", time );
-    mlt_position position = mlt_properties_get_position( MLT_PRODUCER_PROPERTIES(self), "_seek_time" );
-    return mlt_producer_seek( self, position );
+    mlt_properties_set(MLT_PRODUCER_PROPERTIES(self), "_seek_time", time);
+    mlt_position position = mlt_properties_get_position(MLT_PRODUCER_PROPERTIES(self), "_seek_time");
+    return mlt_producer_seek(self, position);
 }
 
 /** Get the current position (relative to in point).
@@ -378,9 +399,9 @@ int mlt_producer_seek_time( mlt_producer self, const char* time )
  * \return the position of the "play head" relative to its beginning
  */
 
-mlt_position mlt_producer_position( mlt_producer self )
+mlt_position mlt_producer_position(mlt_producer self)
 {
-	return mlt_properties_get_position( MLT_PRODUCER_PROPERTIES( self ), "_position" );
+    return mlt_properties_get_position(MLT_PRODUCER_PROPERTIES(self), "_position");
 }
 
 /** Get the current position (relative to start of producer).
@@ -390,9 +411,9 @@ mlt_position mlt_producer_position( mlt_producer self )
  * \return the position of the "play head" regardless of the in point
  */
 
-mlt_position mlt_producer_frame( mlt_producer self )
+mlt_position mlt_producer_frame(mlt_producer self)
 {
-	return mlt_properties_get_position( MLT_PRODUCER_PROPERTIES( self ), "_frame" );
+    return mlt_properties_get_position(MLT_PRODUCER_PROPERTIES(self), "_frame");
 }
 
 /** Get the current position (relative to start of producer) as a time string.
@@ -403,9 +424,9 @@ mlt_position mlt_producer_frame( mlt_producer self )
  * \return the position of the "play head" regardless of the in point
  */
 
-char* mlt_producer_frame_time( mlt_producer self, mlt_time_format format )
+char *mlt_producer_frame_time(mlt_producer self, mlt_time_format format)
 {
-    return mlt_properties_get_time( MLT_PRODUCER_PROPERTIES( self ), "_frame", format );
+    return mlt_properties_get_time(MLT_PRODUCER_PROPERTIES(self), "_frame", format);
 }
 
 /** Set the playing speed.
@@ -416,9 +437,9 @@ char* mlt_producer_frame_time( mlt_producer self, mlt_time_format format )
  * \return true if error
  */
 
-int mlt_producer_set_speed( mlt_producer self, double speed )
+int mlt_producer_set_speed(mlt_producer self, double speed)
 {
-	return mlt_properties_set_double( MLT_PRODUCER_PROPERTIES( self ), "_speed", speed );
+    return mlt_properties_set_double(MLT_PRODUCER_PROPERTIES(self), "_speed", speed);
 }
 
 /** Get the playing speed.
@@ -428,9 +449,9 @@ int mlt_producer_set_speed( mlt_producer self, double speed )
  * \return the speed as a relative factor (1.0 = normal)
  */
 
-double mlt_producer_get_speed( mlt_producer self )
+double mlt_producer_get_speed(mlt_producer self)
 {
-	return mlt_properties_get_double( MLT_PRODUCER_PROPERTIES( self ), "_speed" );
+    return mlt_properties_get_double(MLT_PRODUCER_PROPERTIES(self), "_speed");
 }
 
 /** Get the frames per second.
@@ -442,10 +463,10 @@ double mlt_producer_get_speed( mlt_producer self )
  * \return the video refresh rate
  */
 
-double mlt_producer_get_fps( mlt_producer self )
+double mlt_producer_get_fps(mlt_producer self)
 {
-	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self ) );
-	return mlt_profile_fps( profile );
+    mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self));
+    return mlt_profile_fps(profile);
 }
 
 /** Set the in and out points.
@@ -463,43 +484,41 @@ double mlt_producer_get_fps( mlt_producer self )
  * \return false
  */
 
-int mlt_producer_set_in_and_out( mlt_producer self, mlt_position in, mlt_position out )
+int mlt_producer_set_in_and_out(mlt_producer self, mlt_position in, mlt_position out)
 {
-	if ( self->set_in_and_out )
-	{
-		return self->set_in_and_out( self, in, out );
-	}
+    if (self->set_in_and_out) {
+        return self->set_in_and_out(self, in, out);
+    }
 
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
 
-	// Correct ins and outs if necessary
-	if ( in < 0 )
-		in = 0;
-	else if ( in >= mlt_producer_get_length( self ) )
-		in = MAX(0, mlt_producer_get_length( self ) - 1);
+    // Correct ins and outs if necessary
+    if (in < 0)
+        in = 0;
+    else if (in >= mlt_producer_get_length(self))
+        in = MAX(0, mlt_producer_get_length(self) - 1);
 
-	if ( mlt_producer_is_blank( self ) && out >= mlt_producer_get_length( self ) )
-		// Extend the blank producer if needed.
-		mlt_properties_set_position( MLT_PRODUCER_PROPERTIES( self ), "length", out + 1 );
-	else if ( out < 0 || out >= mlt_producer_get_length( self ) )
-		// Get the out point from the length.
-		out = MAX(0, mlt_producer_get_length( self ) - 1);
+    if (mlt_producer_is_blank(self) && out >= mlt_producer_get_length(self))
+        // Extend the blank producer if needed.
+        mlt_properties_set_position(MLT_PRODUCER_PROPERTIES(self), "length", out + 1);
+    else if (out < 0 || out >= mlt_producer_get_length(self))
+        // Get the out point from the length.
+        out = MAX(0, mlt_producer_get_length(self) - 1);
 
-	// Swap ins and outs if wrong
-	if ( out < in )
-	{
-		mlt_position t = in;
-		in = out;
-		out = t;
-	}
+    // Swap ins and outs if wrong
+    if (out < in) {
+        mlt_position t = in;
+        in = out;
+        out = t;
+    }
 
-	// Set the values
-	mlt_events_block( properties, properties );
-	mlt_properties_set_position( properties, "in", in );
-	mlt_events_unblock( properties, properties );
-	mlt_properties_set_position( properties, "out", out );
+    // Set the values
+    mlt_events_block(properties, properties);
+    mlt_properties_set_position(properties, "in", in);
+    mlt_events_unblock(properties, properties);
+    mlt_properties_set_position(properties, "out", out);
 
-	return 0;
+    return 0;
 }
 
 /** Physically reduce the producer (typically a cut) to a 0 length.
@@ -510,17 +529,16 @@ int mlt_producer_set_in_and_out( mlt_producer self, mlt_position in, mlt_positio
  * \return false
  */
 
-int mlt_producer_clear( mlt_producer self )
+int mlt_producer_clear(mlt_producer self)
 {
-	if ( self != NULL )
-	{
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
-		mlt_events_block( properties, properties );
-		mlt_properties_set_position( properties, "in", 0 );
-		mlt_events_unblock( properties, properties );
-		mlt_properties_set_position( properties, "out", -1 );
-	}
-	return 0;
+    if (self != NULL) {
+        mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
+        mlt_events_block(properties, properties);
+        mlt_properties_set_position(properties, "in", 0);
+        mlt_events_unblock(properties, properties);
+        mlt_properties_set_position(properties, "out", -1);
+    }
+    return 0;
 }
 
 /** Get the in point.
@@ -530,9 +548,9 @@ int mlt_producer_clear( mlt_producer self )
  * \return the in point
  */
 
-mlt_position mlt_producer_get_in( mlt_producer self )
+mlt_position mlt_producer_get_in(mlt_producer self)
 {
-	return mlt_properties_get_position( MLT_PRODUCER_PROPERTIES( self ), "in" );
+    return mlt_properties_get_position(MLT_PRODUCER_PROPERTIES(self), "in");
 }
 
 /** Get the out point.
@@ -542,9 +560,9 @@ mlt_position mlt_producer_get_in( mlt_producer self )
  * \return the out point
  */
 
-mlt_position mlt_producer_get_out( mlt_producer self )
+mlt_position mlt_producer_get_out(mlt_producer self)
 {
-	return mlt_properties_get_position( MLT_PRODUCER_PROPERTIES( self ), "out" );
+    return mlt_properties_get_position(MLT_PRODUCER_PROPERTIES(self), "out");
 }
 
 /** Get the total play time.
@@ -554,9 +572,9 @@ mlt_position mlt_producer_get_out( mlt_producer self )
  * \return the playable (based on in and out points) duration
  */
 
-mlt_position mlt_producer_get_playtime( mlt_producer self )
+mlt_position mlt_producer_get_playtime(mlt_producer self)
 {
-	return mlt_producer_get_out( self ) - mlt_producer_get_in( self ) + 1;
+    return mlt_producer_get_out(self) - mlt_producer_get_in(self) + 1;
 }
 
 /** Get the total, unedited length of the producer.
@@ -568,9 +586,9 @@ mlt_position mlt_producer_get_playtime( mlt_producer self )
  * \return the duration of the producer regardless of in and out points
  */
 
-mlt_position mlt_producer_get_length( mlt_producer self )
+mlt_position mlt_producer_get_length(mlt_producer self)
 {
-	return mlt_properties_get_position( MLT_PRODUCER_PROPERTIES( self ), "length" );
+    return mlt_properties_get_position(MLT_PRODUCER_PROPERTIES(self), "length");
 }
 
 /** Get the total, unedited length of the producer as a time string.
@@ -583,9 +601,9 @@ mlt_position mlt_producer_get_length( mlt_producer self )
  * \return the duration of the producer regardless of in and out points
  */
 
-char* mlt_producer_get_length_time( mlt_producer self, mlt_time_format format )
+char *mlt_producer_get_length_time(mlt_producer self, mlt_time_format format)
 {
-    return mlt_properties_get_time( MLT_PRODUCER_PROPERTIES( self ), "length", format );
+    return mlt_properties_get_time(MLT_PRODUCER_PROPERTIES(self), "length", format);
 }
 
 /** Prepare for next frame.
@@ -597,10 +615,10 @@ char* mlt_producer_get_length_time( mlt_producer self, mlt_time_format format )
  * \param self a producer
  */
 
-void mlt_producer_prepare_next( mlt_producer self )
+void mlt_producer_prepare_next(mlt_producer self)
 {
-	if ( mlt_producer_get_speed( self ) != 0 )
-		mlt_producer_seek( self, mlt_producer_position( self ) + mlt_producer_get_speed( self ) );
+    if (mlt_producer_get_speed(self) != 0)
+        mlt_producer_seek(self, mlt_producer_position(self) + mlt_producer_get_speed(self));
 }
 
 /** Get a frame.
@@ -619,128 +637,124 @@ void mlt_producer_prepare_next( mlt_producer self )
  * its behavior.
  */
 
-static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int index )
+static int producer_get_frame(mlt_service service, mlt_frame_ptr frame, int index)
 {
-	int result = 1;
-	mlt_producer self = service != NULL ? service->child : NULL;
+    int result = 1;
+    mlt_producer self = service != NULL ? service->child : NULL;
 
-	if ( self != NULL && !mlt_producer_is_cut( self ) )
-	{
-		// Get the properties of this producer
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
+    if (self != NULL && !mlt_producer_is_cut(self)) {
+        // Get the properties of this producer
+        mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
 
-		// Determine eof handling
-		char *eof = mlt_properties_get( MLT_PRODUCER_PROPERTIES( self ), "eof" );
+        // Determine eof handling
+        char *eof = mlt_properties_get(MLT_PRODUCER_PROPERTIES(self), "eof");
 
-		// Get the speed of the producer
-		double speed = mlt_producer_get_speed( self );
+        // Get the speed of the producer
+        double speed = mlt_producer_get_speed(self);
 
-		// We need to use the clone if it's specified
-		mlt_producer clone = mlt_properties_get_data( properties, "use_clone", NULL );
+        // We need to use the clone if it's specified
+        mlt_producer clone = mlt_properties_get_data(properties, "use_clone", NULL);
 
-		// If no clone is specified, use self
-		clone = clone == NULL ? self : clone;
+        // If no clone is specified, use self
+        clone = clone == NULL ? self : clone;
 
-		// A properly instatiated producer will have a get_frame method...
-		if ( self->get_frame == NULL || ( eof && !strcmp( eof, "continue" ) && mlt_producer_position( self ) > mlt_producer_get_out( self ) ) )
-		{
-			// Generate a test frame
-			*frame = mlt_frame_init( service );
+        // A properly instatiated producer will have a get_frame method...
+        if (self->get_frame == NULL
+            || (eof && !strcmp(eof, "continue")
+                && mlt_producer_position(self) > mlt_producer_get_out(self))) {
+            // Generate a test frame
+            *frame = mlt_frame_init(service);
 
-			// Set the position
-			result = mlt_frame_set_position( *frame, mlt_producer_position( self ) );
+            // Set the position
+            result = mlt_frame_set_position(*frame, mlt_producer_position(self));
 
-			// Mark as a test card
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_image", 1 );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_audio", 1 );
+            // Mark as a test card
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(*frame), "test_image", 1);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(*frame), "test_audio", 1);
 
-			// Calculate the next position
-			mlt_producer_prepare_next( self );
-		}
-		else
-		{
-			// Get the frame from the implementation
-			result = self->get_frame( clone, frame, index );
-		}
+            // Calculate the next position
+            mlt_producer_prepare_next(self);
+        } else {
+            // Get the frame from the implementation
+            result = self->get_frame(clone, frame, index);
+        }
 
-		// Copy the fps and speed of the producer onto the frame
-		properties = MLT_FRAME_PROPERTIES( *frame );
-		mlt_properties_set_double( properties, "_speed", speed );
-		mlt_properties_set_int( properties, "test_audio", mlt_frame_is_test_audio( *frame ) );
-		mlt_properties_set_int( properties, "test_image", mlt_frame_is_test_card( *frame ) );
-		if ( mlt_properties_get_data( properties, "_producer", NULL ) == NULL )
-			mlt_properties_set_data( properties, "_producer", service, 0, NULL, NULL );
-	}
-	else if ( self != NULL )
-	{
-		// Get the speed of the cut
-		double speed = mlt_producer_get_speed( self );
+        // Copy the fps and speed of the producer onto the frame
+        properties = MLT_FRAME_PROPERTIES(*frame);
+        mlt_properties_set_double(properties, "_speed", speed);
+        mlt_properties_set_int(properties, "test_audio", mlt_frame_is_test_audio(*frame));
+        mlt_properties_set_int(properties, "test_image", mlt_frame_is_test_card(*frame));
+        if (mlt_properties_get_data(properties, "_producer", NULL) == NULL)
+            mlt_properties_set_data(properties, "_producer", service, 0, NULL, NULL);
+    } else if (self != NULL) {
+        // Get the speed of the cut
+        double speed = mlt_producer_get_speed(self);
 
-		// Get the parent of the cut
-		mlt_producer parent = mlt_producer_cut_parent( self );
+        // Get the parent of the cut
+        mlt_producer parent = mlt_producer_cut_parent(self);
 
-		// Get the properties of the parent
-		mlt_properties parent_properties = MLT_PRODUCER_PROPERTIES( parent );
+        // Get the properties of the parent
+        mlt_properties parent_properties = MLT_PRODUCER_PROPERTIES(parent);
 
-		// Get the properties of the cut
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
+        // Get the properties of the cut
+        mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
 
-		// Determine the clone index
-		int clone_index = mlt_properties_get_int( properties, "_clone" );
+        // Determine the clone index
+        int clone_index = mlt_properties_get_int(properties, "_clone");
 
-		// Determine the clone to use
-		mlt_producer clone = self;
+        // Determine the clone to use
+        mlt_producer clone = self;
 
-		if ( clone_index > 0 )
-		{
-			char key[ 25 ];
-			sprintf( key, "_clone.%d", clone_index - 1 );
-			clone = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES( mlt_producer_cut_parent( self ) ), key, NULL );
-			if ( clone == NULL ) mlt_log( service, MLT_LOG_ERROR, "requested clone doesn't exist %d\n", clone_index );
-			clone = clone == NULL ? self : clone;
-		}
-		else
-		{
-			clone = parent;
-		}
+        if (clone_index > 0) {
+            char key[25];
+            sprintf(key, "_clone.%d", clone_index - 1);
+            clone = mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(mlt_producer_cut_parent(self)),
+                                            key,
+                                            NULL);
+            if (clone == NULL)
+                mlt_log(service, MLT_LOG_ERROR, "requested clone doesn't exist %d\n", clone_index);
+            clone = clone == NULL ? self : clone;
+        } else {
+            clone = parent;
+        }
 
-		// We need to seek to the correct position in the clone
-		mlt_producer_seek( clone, mlt_producer_get_in( self ) + mlt_properties_get_int( properties, "_position" ) );
+        // We need to seek to the correct position in the clone
+        mlt_producer_seek(clone,
+                          mlt_producer_get_in(self)
+                              + mlt_properties_get_int(properties, "_position"));
 
-		// Assign the clone property to the parent
-		mlt_properties_set_data( parent_properties, "use_clone", clone, 0, NULL, NULL );
+        // Assign the clone property to the parent
+        mlt_properties_set_data(parent_properties, "use_clone", clone, 0, NULL, NULL);
 
-		// Now get the frame from the parents service
-		result = mlt_service_get_frame( MLT_PRODUCER_SERVICE( parent ), frame, index );
+        // Now get the frame from the parents service
+        result = mlt_service_get_frame(MLT_PRODUCER_SERVICE(parent), frame, index);
 
-		// We're done with the clone now
-		mlt_properties_set_data( parent_properties, "use_clone", NULL, 0, NULL, NULL );
+        // We're done with the clone now
+        mlt_properties_set_data(parent_properties, "use_clone", NULL, 0, NULL, NULL);
 
-		// This is useful and required by always_active transitions to determine in/out points of the cut
-		if ( mlt_properties_get_data( MLT_FRAME_PROPERTIES( *frame ), "_producer", NULL ) == MLT_PRODUCER_SERVICE( parent ) )
-			mlt_properties_set_data( MLT_FRAME_PROPERTIES( *frame ), "_producer", self, 0, NULL, NULL );
+        // This is useful and required by always_active transitions to determine in/out points of the cut
+        if (mlt_properties_get_data(MLT_FRAME_PROPERTIES(*frame), "_producer", NULL)
+            == MLT_PRODUCER_SERVICE(parent))
+            mlt_properties_set_data(MLT_FRAME_PROPERTIES(*frame), "_producer", self, 0, NULL, NULL);
 
-		mlt_properties_set_double( MLT_FRAME_PROPERTIES( *frame ), "_speed", speed );
-		mlt_producer_prepare_next( self );
-	}
-	else
-	{
-		*frame = mlt_frame_init( service );
-		result = 0;
-	}
+        mlt_properties_set_double(MLT_FRAME_PROPERTIES(*frame), "_speed", speed);
+        mlt_producer_prepare_next(self);
+    } else {
+        *frame = mlt_frame_init(service);
+        result = 0;
+    }
 
-	// Pass on all meta properties from the producer/cut on to the frame
-	if ( *frame != NULL && self != NULL )
-	{
-		mlt_properties p_props = MLT_PRODUCER_PROPERTIES( self );
-		mlt_properties f_props = MLT_FRAME_PROPERTIES( *frame );
-		mlt_properties_lock( p_props );
-		mlt_properties_copy(f_props, p_props, "meta.");
-		mlt_properties_pass(f_props, p_props, "set.");
-		mlt_properties_unlock( p_props );
-	}
+    // Pass on all meta properties from the producer/cut on to the frame
+    if (*frame != NULL && self != NULL) {
+        mlt_properties p_props = MLT_PRODUCER_PROPERTIES(self);
+        mlt_properties f_props = MLT_FRAME_PROPERTIES(*frame);
+        mlt_properties_lock(p_props);
+        mlt_properties_copy(f_props, p_props, "meta.");
+        mlt_properties_pass(f_props, p_props, "set.");
+        mlt_properties_unlock(p_props);
+    }
 
-	return result;
+    return result;
 }
 
 /** Attach a filter.
@@ -751,9 +765,9 @@ static int producer_get_frame( mlt_service service, mlt_frame_ptr frame, int ind
  * \return true if there was an error
  */
 
-int mlt_producer_attach( mlt_producer self, mlt_filter filter )
+int mlt_producer_attach(mlt_producer self, mlt_filter filter)
 {
-	return mlt_service_attach( MLT_PRODUCER_SERVICE( self ), filter );
+    return mlt_service_attach(MLT_PRODUCER_SERVICE(self), filter);
 }
 
 /** Detach a filter.
@@ -764,9 +778,9 @@ int mlt_producer_attach( mlt_producer self, mlt_filter filter )
  * \return true if there was an error
  */
 
-int mlt_producer_detach( mlt_producer self, mlt_filter filter )
+int mlt_producer_detach(mlt_producer self, mlt_filter filter)
 {
-	return mlt_service_detach( MLT_PRODUCER_SERVICE( self ), filter );
+    return mlt_service_detach(MLT_PRODUCER_SERVICE(self), filter);
 }
 
 /** Retrieve a filter.
@@ -777,9 +791,9 @@ int mlt_producer_detach( mlt_producer self, mlt_filter filter )
  * \return the filter or null if there was an error
  */
 
-mlt_filter mlt_producer_filter( mlt_producer self, int index )
+mlt_filter mlt_producer_filter(mlt_producer self, int index)
 {
-	return mlt_service_filter( MLT_PRODUCER_SERVICE( self ), index );
+    return mlt_service_filter(MLT_PRODUCER_SERVICE(self), index);
 }
 
 /** Clone a producer.
@@ -790,28 +804,28 @@ mlt_filter mlt_producer_filter( mlt_producer self, int index )
  * \see mlt_producer_set_clones
  */
 
-static mlt_producer mlt_producer_clone( mlt_producer self )
+static mlt_producer mlt_producer_clone(mlt_producer self)
 {
-	mlt_producer clone = NULL;
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( self );
-	char *resource = mlt_properties_get( properties, "resource" );
-	char *service = mlt_properties_get( properties, "mlt_service" );
-	mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( self ) );
+    mlt_producer clone = NULL;
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
+    char *resource = mlt_properties_get(properties, "resource");
+    char *service = mlt_properties_get(properties, "mlt_service");
+    mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self));
 
-	mlt_events_block( mlt_factory_event_object( ), mlt_factory_event_object( ) );
+    mlt_events_block(mlt_factory_event_object(), mlt_factory_event_object());
 
-	if ( service != NULL )
-		clone = mlt_factory_producer( profile, service, resource );
+    if (service != NULL)
+        clone = mlt_factory_producer(profile, service, resource);
 
-	if ( clone == NULL && resource != NULL )
-		clone = mlt_factory_producer( profile, NULL, resource );
+    if (clone == NULL && resource != NULL)
+        clone = mlt_factory_producer(profile, NULL, resource);
 
-	if ( clone != NULL )
-		mlt_properties_inherit( MLT_PRODUCER_PROPERTIES( clone ), properties );
+    if (clone != NULL)
+        mlt_properties_inherit(MLT_PRODUCER_PROPERTIES(clone), properties);
 
-	mlt_events_unblock( mlt_factory_event_object( ), mlt_factory_event_object( ) );
+    mlt_events_unblock(mlt_factory_event_object(), mlt_factory_event_object());
 
-	return clone;
+    return clone;
 }
 
 /** Create clones.
@@ -822,169 +836,166 @@ static mlt_producer mlt_producer_clone( mlt_producer self )
  * \see mlt_producer_optimise
  */
 
-static void mlt_producer_set_clones( mlt_producer self, int clones )
+static void mlt_producer_set_clones(mlt_producer self, int clones)
 {
-	mlt_producer parent = mlt_producer_cut_parent( self );
-	mlt_properties properties = MLT_PRODUCER_PROPERTIES( parent );
-	int existing = mlt_properties_get_int( properties, "_clones" );
-	int i = 0;
-	char key[ 25 ];
+    mlt_producer parent = mlt_producer_cut_parent(self);
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(parent);
+    int existing = mlt_properties_get_int(properties, "_clones");
+    int i = 0;
+    char key[25];
 
-	// If the number of existing clones is different, then create/remove as necessary
-	if ( existing != clones )
-	{
-		if ( existing < clones )
-		{
-			for ( i = existing; i < clones; i ++ )
-			{
-				mlt_producer clone = mlt_producer_clone( parent );
-				sprintf( key, "_clone.%d", i );
-				mlt_properties_set_data( properties, key, clone, 0, ( mlt_destructor )mlt_producer_close, NULL );
-			}
-		}
-		else
-		{
-			for ( i = clones; i < existing; i ++ )
-			{
-				sprintf( key, "_clone.%d", i );
-				mlt_properties_set_data( properties, key, NULL, 0, NULL, NULL );
-			}
-		}
-	}
+    // If the number of existing clones is different, then create/remove as necessary
+    if (existing != clones) {
+        if (existing < clones) {
+            for (i = existing; i < clones; i++) {
+                mlt_producer clone = mlt_producer_clone(parent);
+                sprintf(key, "_clone.%d", i);
+                mlt_properties_set_data(properties,
+                                        key,
+                                        clone,
+                                        0,
+                                        (mlt_destructor) mlt_producer_close,
+                                        NULL);
+            }
+        } else {
+            for (i = clones; i < existing; i++) {
+                sprintf(key, "_clone.%d", i);
+                mlt_properties_set_data(properties, key, NULL, 0, NULL, NULL);
+            }
+        }
+    }
 
-	// Ensure all properties on the parent are passed to the clones
-	for ( i = 0; i < clones; i ++ )
-	{
-		mlt_producer clone = NULL;
-		sprintf( key, "_clone.%d", i );
-		clone = mlt_properties_get_data( properties, key, NULL );
-		if ( clone != NULL )
-			mlt_properties_pass( MLT_PRODUCER_PROPERTIES( clone ), properties, "" );
-	}
+    // Ensure all properties on the parent are passed to the clones
+    for (i = 0; i < clones; i++) {
+        mlt_producer clone = NULL;
+        sprintf(key, "_clone.%d", i);
+        clone = mlt_properties_get_data(properties, key, NULL);
+        if (clone != NULL)
+            mlt_properties_pass(MLT_PRODUCER_PROPERTIES(clone), properties, "");
+    }
 
-	// Update the number of clones on the properties
-	mlt_properties_set_int( properties, "_clones", clones );
+    // Update the number of clones on the properties
+    mlt_properties_set_int(properties, "_clones", clones);
 }
 
 /** \brief private to mlt_producer_s, used by mlt_producer_optimise() */
 
 typedef struct
 {
-	int multitrack;
-	int track;
-	int position;
-	int length;
-	int offset;
-}
-track_info;
+    int multitrack;
+    int track;
+    int position;
+    int length;
+    int offset;
+} track_info;
 
 /** \brief private to mlt_producer_s, used by mlt_producer_optimise() */
 
 typedef struct
 {
-	mlt_producer cut;
-	int start;
-	int end;
-}
-clip_references;
+    mlt_producer cut;
+    int start;
+    int end;
+} clip_references;
 
-static int intersect( clip_references *a, clip_references *b )
+static int intersect(clip_references *a, clip_references *b)
 {
-	int diff = ( a->start - b->start ) + ( a->end - b->end );
-	return diff >= 0 && diff < ( a->end - a->start + 1 );
-}
-
-static int push( mlt_parser self, int multitrack, int track, int position )
-{
-	mlt_properties properties = mlt_parser_properties( self );
-	mlt_deque stack = mlt_properties_get_data( properties, "stack", NULL );
-	track_info *info = malloc( sizeof( track_info ) );
-	info->multitrack = multitrack;
-	info->track = track;
-	info->position = position;
-	info->length = 0;
-	info->offset = 0;
-	return mlt_deque_push_back( stack, info );
+    int diff = (a->start - b->start) + (a->end - b->end);
+    return diff >= 0 && diff < (a->end - a->start + 1);
 }
 
-static track_info *pop( mlt_parser self )
+static int push(mlt_parser self, int multitrack, int track, int position)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	mlt_deque stack = mlt_properties_get_data( properties, "stack", NULL );
-	return mlt_deque_pop_back( stack );
+    mlt_properties properties = mlt_parser_properties(self);
+    mlt_deque stack = mlt_properties_get_data(properties, "stack", NULL);
+    track_info *info = malloc(sizeof(track_info));
+    info->multitrack = multitrack;
+    info->track = track;
+    info->position = position;
+    info->length = 0;
+    info->offset = 0;
+    return mlt_deque_push_back(stack, info);
 }
 
-static track_info *peek( mlt_parser self )
+static track_info *pop(mlt_parser self)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	mlt_deque stack = mlt_properties_get_data( properties, "stack", NULL );
-	return mlt_deque_peek_back( stack );
+    mlt_properties properties = mlt_parser_properties(self);
+    mlt_deque stack = mlt_properties_get_data(properties, "stack", NULL);
+    return mlt_deque_pop_back(stack);
 }
 
-static int on_start_multitrack( mlt_parser self, mlt_multitrack object )
+static track_info *peek(mlt_parser self)
 {
-	track_info *info = peek( self );
-	return push( self, info->multitrack ++, info->track, info->position );
+    mlt_properties properties = mlt_parser_properties(self);
+    mlt_deque stack = mlt_properties_get_data(properties, "stack", NULL);
+    return mlt_deque_peek_back(stack);
 }
 
-static int on_start_track( mlt_parser self )
+static int on_start_multitrack(mlt_parser self, mlt_multitrack object)
 {
-	track_info *info = peek( self );
-	info->position -= info->offset;
-	info->length -= info->offset;
-	return push( self, info->multitrack, info->track ++, info->position );
+    track_info *info = peek(self);
+    return push(self, info->multitrack++, info->track, info->position);
 }
 
-static int on_start_producer( mlt_parser self, mlt_producer object )
+static int on_start_track(mlt_parser self)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	mlt_properties producers = mlt_properties_get_data( properties, "producers", NULL );
-	mlt_producer parent = mlt_producer_cut_parent( object );
-	if ( mlt_service_identify( ( mlt_service )mlt_producer_cut_parent( object ) ) == mlt_service_producer_type && mlt_producer_is_cut( object ) )
-	{
-		int ref_count = 0;
-		clip_references *old_refs = NULL;
-		clip_references *refs = NULL;
-		char key[ 50 ];
-		int count = 0;
-		track_info *info = peek( self );
-		sprintf( key, "%p", parent );
-		mlt_properties_get_data( producers, key, &count );
-		mlt_properties_set_data( producers, key, parent, ++ count, NULL, NULL );
-		old_refs = mlt_properties_get_data( properties, key, &ref_count );
-		refs = malloc( ( ref_count + 1 ) * sizeof( clip_references ) );
-		if ( old_refs != NULL )
-			memcpy( refs, old_refs, ref_count * sizeof( clip_references ) );
-		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( object ), "_clone", -1 );
-		refs[ ref_count ].cut = object;
-		refs[ ref_count ].start = info->position;
-		refs[ ref_count ].end = info->position + mlt_producer_get_playtime( object ) - 1;
-		mlt_properties_set_data( properties, key, refs, ++ ref_count, free, NULL );
-		info->position += mlt_producer_get_playtime( object );
-		info->length += mlt_producer_get_playtime( object );
-	}
-	return 0;
+    track_info *info = peek(self);
+    info->position -= info->offset;
+    info->length -= info->offset;
+    return push(self, info->multitrack, info->track++, info->position);
 }
 
-static int on_end_track( mlt_parser self )
+static int on_start_producer(mlt_parser self, mlt_producer object)
 {
-	track_info *track = pop( self );
-	track_info *multi = peek( self );
-	multi->length += track->length;
-	multi->position += track->length;
-	multi->offset = track->length;
-	free( track );
-	return 0;
+    mlt_properties properties = mlt_parser_properties(self);
+    mlt_properties producers = mlt_properties_get_data(properties, "producers", NULL);
+    mlt_producer parent = mlt_producer_cut_parent(object);
+    if (mlt_service_identify((mlt_service) mlt_producer_cut_parent(object))
+            == mlt_service_producer_type
+        && mlt_producer_is_cut(object)) {
+        int ref_count = 0;
+        clip_references *old_refs = NULL;
+        clip_references *refs = NULL;
+        char key[50];
+        int count = 0;
+        track_info *info = peek(self);
+        sprintf(key, "%p", parent);
+        mlt_properties_get_data(producers, key, &count);
+        mlt_properties_set_data(producers, key, parent, ++count, NULL, NULL);
+        old_refs = mlt_properties_get_data(properties, key, &ref_count);
+        refs = malloc((ref_count + 1) * sizeof(clip_references));
+        if (old_refs != NULL)
+            memcpy(refs, old_refs, ref_count * sizeof(clip_references));
+        mlt_properties_set_int(MLT_PRODUCER_PROPERTIES(object), "_clone", -1);
+        refs[ref_count].cut = object;
+        refs[ref_count].start = info->position;
+        refs[ref_count].end = info->position + mlt_producer_get_playtime(object) - 1;
+        mlt_properties_set_data(properties, key, refs, ++ref_count, free, NULL);
+        info->position += mlt_producer_get_playtime(object);
+        info->length += mlt_producer_get_playtime(object);
+    }
+    return 0;
 }
 
-static int on_end_multitrack( mlt_parser self, mlt_multitrack object )
+static int on_end_track(mlt_parser self)
 {
-	track_info *multi = pop( self );
-	track_info *track = peek( self );
-	track->position += multi->length;
-	track->length += multi->length;
-	free( multi );
-	return 0;
+    track_info *track = pop(self);
+    track_info *multi = peek(self);
+    multi->length += track->length;
+    multi->position += track->length;
+    multi->offset = track->length;
+    free(track);
+    return 0;
+}
+
+static int on_end_multitrack(mlt_parser self, mlt_multitrack object)
+{
+    track_info *multi = pop(self);
+    track_info *track = peek(self);
+    track->position += multi->length;
+    track->length += multi->length;
+    free(multi);
+    return 0;
 }
 
 /** Optimise for overlapping cuts from the same clip.
@@ -995,74 +1006,76 @@ static int on_end_multitrack( mlt_parser self, mlt_multitrack object )
  * \return true if there was an error
  */
 
-int mlt_producer_optimise( mlt_producer self )
+int mlt_producer_optimise(mlt_producer self)
 {
-	int error = 1;
-	mlt_parser parser = mlt_parser_new( );
-	if ( parser != NULL )
-	{
-		int i = 0, j = 0, k = 0;
-		mlt_properties properties = mlt_parser_properties( parser );
-		mlt_properties producers = mlt_properties_new( );
-		mlt_deque stack = mlt_deque_init( );
-		mlt_properties_set_data( properties, "producers", producers, 0, ( mlt_destructor )mlt_properties_close, NULL );
-		mlt_properties_set_data( properties, "stack", stack, 0, ( mlt_destructor )mlt_deque_close, NULL );
-		parser->on_start_producer = on_start_producer;
-		parser->on_start_track = on_start_track;
-		parser->on_end_track = on_end_track;
-		parser->on_start_multitrack = on_start_multitrack;
-		parser->on_end_multitrack = on_end_multitrack;
-		push( parser, 0, 0, 0 );
-		mlt_parser_start( parser, MLT_PRODUCER_SERVICE( self ) );
-		free( pop( parser ) );
-		for ( k = 0; k < mlt_properties_count( producers ); k ++ )
-		{
-			char *name = mlt_properties_get_name( producers, k );
-			int count = 0;
-			int clones = 0;
-			int max_clones = 0;
-			mlt_producer producer = mlt_properties_get_data_at( producers, k, &count );
-			if ( producer != NULL && count > 1 )
-			{
-				clip_references *refs = mlt_properties_get_data( properties, name, &count );
-				for ( i = 0; i < count; i ++ )
-				{
-					clones = 0;
-					for ( j = i + 1; j < count; j ++ )
-					{
-						if ( intersect( &refs[ i ], &refs[ j ] ) )
-						{
-							clones ++;
-							mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( refs[ j ].cut ), "_clone", clones );
-						}
-					}
-					if ( clones > max_clones )
-						max_clones = clones;
-				}
+    int error = 1;
+    mlt_parser parser = mlt_parser_new();
+    if (parser != NULL) {
+        int i = 0, j = 0, k = 0;
+        mlt_properties properties = mlt_parser_properties(parser);
+        mlt_properties producers = mlt_properties_new();
+        mlt_deque stack = mlt_deque_init();
+        mlt_properties_set_data(properties,
+                                "producers",
+                                producers,
+                                0,
+                                (mlt_destructor) mlt_properties_close,
+                                NULL);
+        mlt_properties_set_data(properties,
+                                "stack",
+                                stack,
+                                0,
+                                (mlt_destructor) mlt_deque_close,
+                                NULL);
+        parser->on_start_producer = on_start_producer;
+        parser->on_start_track = on_start_track;
+        parser->on_end_track = on_end_track;
+        parser->on_start_multitrack = on_start_multitrack;
+        parser->on_end_multitrack = on_end_multitrack;
+        push(parser, 0, 0, 0);
+        mlt_parser_start(parser, MLT_PRODUCER_SERVICE(self));
+        free(pop(parser));
+        for (k = 0; k < mlt_properties_count(producers); k++) {
+            char *name = mlt_properties_get_name(producers, k);
+            int count = 0;
+            int clones = 0;
+            int max_clones = 0;
+            mlt_producer producer = mlt_properties_get_data_at(producers, k, &count);
+            if (producer != NULL && count > 1) {
+                clip_references *refs = mlt_properties_get_data(properties, name, &count);
+                for (i = 0; i < count; i++) {
+                    clones = 0;
+                    for (j = i + 1; j < count; j++) {
+                        if (intersect(&refs[i], &refs[j])) {
+                            clones++;
+                            mlt_properties_set_int(MLT_PRODUCER_PROPERTIES(refs[j].cut),
+                                                   "_clone",
+                                                   clones);
+                        }
+                    }
+                    if (clones > max_clones)
+                        max_clones = clones;
+                }
 
-				for ( i = 0; i < count; i ++ )
-				{
-					mlt_producer cut = refs[ i ].cut;
-					if ( mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( cut ), "_clone" ) == -1 )
-						mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( cut ), "_clone", 0 );
-				}
+                for (i = 0; i < count; i++) {
+                    mlt_producer cut = refs[i].cut;
+                    if (mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(cut), "_clone") == -1)
+                        mlt_properties_set_int(MLT_PRODUCER_PROPERTIES(cut), "_clone", 0);
+                }
 
-				mlt_producer_set_clones( producer, max_clones );
-			}
-			else if ( producer != NULL )
-			{
-				clip_references *refs = mlt_properties_get_data( properties, name, &count );
-				for ( i = 0; i < count; i ++ )
-				{
-					mlt_producer cut = refs[ i ].cut;
-					mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( cut ), "_clone", 0 );
-				}
-				mlt_producer_set_clones( producer, 0 );
-			}
-		}
-		mlt_parser_close( parser );
-	}
-	return error;
+                mlt_producer_set_clones(producer, max_clones);
+            } else if (producer != NULL) {
+                clip_references *refs = mlt_properties_get_data(properties, name, &count);
+                for (i = 0; i < count; i++) {
+                    mlt_producer cut = refs[i].cut;
+                    mlt_properties_set_int(MLT_PRODUCER_PROPERTIES(cut), "_clone", 0);
+                }
+                mlt_producer_set_clones(producer, 0);
+            }
+        }
+        mlt_parser_close(parser);
+    }
+    return error;
 }
 
 /** Close the producer.
@@ -1076,38 +1089,37 @@ int mlt_producer_optimise( mlt_producer self )
  * \param self a producer
  */
 
-void mlt_producer_close( mlt_producer self )
+void mlt_producer_close(mlt_producer self)
 {
-	if ( self != NULL && mlt_properties_dec_ref( MLT_PRODUCER_PROPERTIES( self ) ) <= 0 )
-	{
-		self->parent.close = NULL;
+    if (self != NULL && mlt_properties_dec_ref(MLT_PRODUCER_PROPERTIES(self)) <= 0) {
+        self->parent.close = NULL;
 
-		if ( self->close != NULL )
-		{
-			self->close( self->close_object );
-		}
-		else
-		{
-			int destroy = mlt_producer_is_cut( self );
+        if (self->close != NULL) {
+            self->close(self->close_object);
+        } else {
+            int destroy = mlt_producer_is_cut(self);
 
 #if _MLT_PRODUCER_CHECKS_ == 1
-			// Show debug info
-			mlt_properties_debug( MLT_PRODUCER_PROPERTIES( self ), "Producer closing", stderr );
+            // Show debug info
+            mlt_properties_debug(MLT_PRODUCER_PROPERTIES(self), "Producer closing", stderr);
 #endif
 
 #ifdef _MLT_PRODUCER_CHECKS_
-			// Show current stats - these should match when the app is closed
-			mlt_log( MLT_PRODUCER_SERVICE( self ), MLT_LOG_DEBUG, "Producers created %d, destroyed %d\n", producers_created, ++producers_destroyed );
+            // Show current stats - these should match when the app is closed
+            mlt_log(MLT_PRODUCER_SERVICE(self),
+                    MLT_LOG_DEBUG,
+                    "Producers created %d, destroyed %d\n",
+                    producers_created,
+                    ++producers_destroyed);
 #endif
 
-			mlt_service_close( &self->parent );
+            mlt_service_close(&self->parent);
 
-			if ( destroy )
-				free( self );
-		}
-	}
+            if (destroy)
+                free(self);
+        }
+    }
 }
-
 
 /*
  * Boost implementation of timegm()
@@ -1117,65 +1129,59 @@ void mlt_producer_close( mlt_producer self )
 
 static inline int32_t is_leap(int32_t year)
 {
-	if(year % 400 == 0)
-		return 1;
-	if(year % 100 == 0)
-		return 0;
-	if(year % 4 == 0)
-		return 1;
-	return 0;
+    if (year % 400 == 0)
+        return 1;
+    if (year % 100 == 0)
+        return 0;
+    if (year % 4 == 0)
+        return 1;
+    return 0;
 }
 
 static inline int32_t days_from_0(int32_t year)
 {
-	year--;
-	return 365 * year + (year / 400) - (year/100) + (year / 4);
+    year--;
+    return 365 * year + (year / 400) - (year / 100) + (year / 4);
 }
 
 static inline int32_t days_from_1970(int32_t year)
 {
-	const int days_from_0_to_1970 = days_from_0(1970);
-	return days_from_0(year) - days_from_0_to_1970;
+    const int days_from_0_to_1970 = days_from_0(1970);
+    return days_from_0(year) - days_from_0_to_1970;
 }
 
-static inline int32_t days_from_1jan(int32_t year,int32_t month,int32_t day)
+static inline int32_t days_from_1jan(int32_t year, int32_t month, int32_t day)
 {
-	static const int32_t days[2][12] =
-	{
-		{ 0,31,59,90,120,151,181,212,243,273,304,334},
-		{ 0,31,60,91,121,152,182,213,244,274,305,335}
-	};
-	return days[is_leap(year)][month-1] + day - 1;
+    static const int32_t days[2][12] = {{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},
+                                        {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}};
+    return days[is_leap(year)][month - 1] + day - 1;
 }
 
 static inline time_t internal_timegm(struct tm const *t)
 {
-	int year = t->tm_year + 1900;
-	int month = t->tm_mon;
-	if(month > 11)
-	{
-		year += month/12;
-		month %= 12;
-	}
-	else if(month < 0)
-	{
-		int years_diff = (-month + 11)/12;
-		year -= years_diff;
-		month+=12 * years_diff;
-	}
-	month++;
-	int day = t->tm_mday;
-	int day_of_year = days_from_1jan(year,month,day);
-	int days_since_epoch = days_from_1970(year) + day_of_year;
+    int year = t->tm_year + 1900;
+    int month = t->tm_mon;
+    if (month > 11) {
+        year += month / 12;
+        month %= 12;
+    } else if (month < 0) {
+        int years_diff = (-month + 11) / 12;
+        year -= years_diff;
+        month += 12 * years_diff;
+    }
+    month++;
+    int day = t->tm_mday;
+    int day_of_year = days_from_1jan(year, month, day);
+    int days_since_epoch = days_from_1970(year) + day_of_year;
 
-	time_t seconds_in_day = 3600 * 24;
-	time_t result = seconds_in_day * days_since_epoch + 3600 * t->tm_hour + 60 * t->tm_min + t->tm_sec;
+    time_t seconds_in_day = 3600 * 24;
+    time_t result = seconds_in_day * days_since_epoch + 3600 * t->tm_hour + 60 * t->tm_min
+                    + t->tm_sec;
 
-	return result;
+    return result;
 }
 
 /* End of Boost implementation of timegm(). */
-
 
 /** Get the creation time for the producer.
  *
@@ -1190,74 +1196,72 @@ static inline time_t internal_timegm(struct tm const *t)
  * \return the creation time of the producer in seconds since the epoch
  */
 
-int64_t mlt_producer_get_creation_time( mlt_producer self )
+int64_t mlt_producer_get_creation_time(mlt_producer self)
 {
-	mlt_producer producer = mlt_producer_cut_parent( self );
-	// Prefer creation_time producer property if present
-	char* datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "creation_time");
-	if (!datestr)
-	{
-		// Fall back to quicktime creationdate metadata (common for .mov files)
-		// creationdate is preferred over creation_time metadata because
-		// creation_time may be recalculated if the device re-encodes the file.
-		datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "meta.attr.com.apple.quicktime.creationdate.markup");
+    mlt_producer producer = mlt_producer_cut_parent(self);
+    // Prefer creation_time producer property if present
+    char *datestr = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "creation_time");
+    if (!datestr) {
+        // Fall back to quicktime creationdate metadata (common for .mov files)
+        // creationdate is preferred over creation_time metadata because
+        // creation_time may be recalculated if the device re-encodes the file.
+        datestr = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer),
+                                     "meta.attr.com.apple.quicktime.creationdate.markup");
+    }
+    if (!datestr) {
+        // Fall back to creation_time metadata (common for most media handled by ffmpeg)
+        datestr = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer),
+                                     "meta.attr.creation_time.markup");
+    }
+    if (datestr) {
+        struct tm time_info = {0};
+        double seconds;
+        char offset_indicator = 0;
+        int hour_offset = 0;
+        int min_offset = 0;
+        int ret = sscanf(datestr,
+                         "%04d-%02d-%02dT%02d:%02d:%lf%c%02d%02d",
+                         &time_info.tm_year,
+                         &time_info.tm_mon,
+                         &time_info.tm_mday,
+                         &time_info.tm_hour,
+                         &time_info.tm_min,
+                         &seconds,
+                         &offset_indicator,
+                         &hour_offset,
+                         &min_offset);
 
-	}
-	if (!datestr)
-	{
-		// Fall back to creation_time metadata (common for most media handled by ffmpeg)
-		datestr = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "meta.attr.creation_time.markup");
-	}
-	if (datestr)
-	{
-		struct tm time_info = {0};
-		double seconds;
-		char offset_indicator = 0;
-		int hour_offset = 0;
-		int min_offset = 0;
-		int ret = sscanf(datestr, "%04d-%02d-%02dT%02d:%02d:%lf%c%02d%02d",
-					&time_info.tm_year, &time_info.tm_mon, &time_info.tm_mday,
-					&time_info.tm_hour, &time_info.tm_min, &seconds,
-					&offset_indicator, &hour_offset, &min_offset);
+        if (ret >= 6) {
+            time_info.tm_sec = (int) seconds;
+            time_info.tm_mon -= 1;
+            time_info.tm_year -= 1900;
+            time_info.tm_isdst = -1;
+            int64_t milliseconds = (int64_t) internal_timegm(&time_info) * 1000;
+            milliseconds += (seconds - (double) time_info.tm_sec) * 1000.0;
 
-		if (ret >= 6)
-		{
-			time_info.tm_sec   = (int) seconds;
-			time_info.tm_mon  -= 1;
-			time_info.tm_year -= 1900;
-			time_info.tm_isdst =-1;
-			int64_t milliseconds = (int64_t) internal_timegm(&time_info) * 1000;
-			milliseconds += (seconds - (double)time_info.tm_sec) * 1000.0;
+            // Apply time zone offset if present.
+            if (ret == 9 && offset_indicator == '-') {
+                milliseconds += ((hour_offset * 60) + min_offset) * 60000;
+            } else if (ret == 9 && offset_indicator == '+') {
+                milliseconds -= ((hour_offset * 60) + min_offset) * 60000;
+            }
+            return milliseconds;
+        }
+    }
 
-			// Apply time zone offset if present.
-			if (ret == 9 && offset_indicator == '-')
-			{
-				milliseconds += ((hour_offset * 60) + min_offset) * 60000;
-			}
-			else if (ret == 9 && offset_indicator == '+')
-			{
-				milliseconds -= ((hour_offset * 60) + min_offset) * 60000;
-			}
-			return milliseconds;
-		}
-	}
+    // Fall back to file modification time.
+    char *resource = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "resource");
+    if (!resource) {
+        resource = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "warp_resource");
+    }
+    if (resource) {
+        struct stat file_info;
+        if (!stat(resource, &file_info)) {
+            return (int64_t) file_info.st_mtime * 1000;
+        }
+    }
 
-	// Fall back to file modification time.
-	char* resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "resource");
-	if (!resource)
-	{
-		resource = mlt_properties_get( MLT_PRODUCER_PROPERTIES( producer ), "warp_resource");
-	}
-	if (resource)
-	{
-		struct stat file_info;
-		if ( !stat( resource, &file_info ) )
-		{
-			return (int64_t)file_info.st_mtime * 1000;
-		}
-	}
-
-	return 0;
+    return 0;
 }
 
 /** Set the creation time for the producer.
@@ -1270,14 +1274,14 @@ int64_t mlt_producer_get_creation_time( mlt_producer self )
  * \param creation_time the creation time of the producer in seconds since the epoch
  */
 
-void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time )
+void mlt_producer_set_creation_time(mlt_producer self, int64_t creation_time)
 {
-	time_t time = creation_time / 1000;
-	mlt_producer parent = mlt_producer_cut_parent( self );
-	char* datestr = calloc( 1, 20 );
-	strftime( datestr, 20, "%Y-%m-%dT%H:%M:%S", gmtime( &time ) );
-	mlt_properties_set( MLT_PRODUCER_PROPERTIES( parent ), "creation_time", datestr);
-	free( datestr );
+    time_t time = creation_time / 1000;
+    mlt_producer parent = mlt_producer_cut_parent(self);
+    char *datestr = calloc(1, 20);
+    strftime(datestr, 20, "%Y-%m-%dT%H:%M:%S", gmtime(&time));
+    mlt_properties_set(MLT_PRODUCER_PROPERTIES(parent), "creation_time", datestr);
+    free(datestr);
 }
 
 /** Probe the producer to publish metadata properties.
@@ -1289,13 +1293,14 @@ void mlt_producer_set_creation_time( mlt_producer self, int64_t creation_time )
   * \return true on error
  */
 
-int mlt_producer_probe( mlt_producer self )
+int mlt_producer_probe(mlt_producer self)
 {
-	if ( self )
-	{
-		int ( *probe )( mlt_producer ) = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES(self), "mlt_producer_probe", NULL );
-		if ( probe )
-			return probe( self );
-	}
-	return 0;
+    if (self) {
+        int (*probe)(mlt_producer) = mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(self),
+                                                             "mlt_producer_probe",
+                                                             NULL);
+        if (probe)
+            return probe(self);
+    }
+    return 0;
 }

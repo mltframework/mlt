@@ -32,39 +32,37 @@
  */
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "mlt_animation.h"
 #include "mlt_audio.h"
+#include "mlt_cache.h"
+#include "mlt_chain.h"
+#include "mlt_consumer.h"
+#include "mlt_deque.h"
 #include "mlt_factory.h"
+#include "mlt_field.h"
+#include "mlt_filter.h"
 #include "mlt_frame.h"
 #include "mlt_image.h"
-#include "mlt_deque.h"
-#include "mlt_multitrack.h"
-#include "mlt_producer.h"
-#include "mlt_transition.h"
-#include "mlt_consumer.h"
-#include "mlt_filter.h"
-#include "mlt_playlist.h"
-#include "mlt_properties.h"
-#include "mlt_field.h"
-#include "mlt_tractor.h"
-#include "mlt_tokeniser.h"
-#include "mlt_parser.h"
-#include "mlt_profile.h"
-#include "mlt_repository.h"
-#include "mlt_log.h"
-#include "mlt_cache.h"
-#include "mlt_version.h"
-#include "mlt_slices.h"
 #include "mlt_link.h"
-#include "mlt_chain.h"
+#include "mlt_log.h"
+#include "mlt_multitrack.h"
+#include "mlt_parser.h"
+#include "mlt_playlist.h"
+#include "mlt_producer.h"
+#include "mlt_profile.h"
+#include "mlt_properties.h"
+#include "mlt_repository.h"
+#include "mlt_slices.h"
+#include "mlt_tokeniser.h"
+#include "mlt_tractor.h"
+#include "mlt_transition.h"
+#include "mlt_version.h"
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

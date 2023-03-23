@@ -17,31 +17,46 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string.h>
-#include <limits.h>
 #include <framework/mlt.h>
+#include <limits.h>
+#include <string.h>
 
-extern mlt_filter filter_boxblur_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_freeze_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_filter filter_wave_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_producer producer_framebuffer_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_filter filter_boxblur_init(mlt_profile profile,
+                                      mlt_service_type type,
+                                      const char *id,
+                                      char *arg);
+extern mlt_filter filter_freeze_init(mlt_profile profile,
+                                     mlt_service_type type,
+                                     const char *id,
+                                     char *arg);
+extern mlt_filter filter_wave_init(mlt_profile profile,
+                                   mlt_service_type type,
+                                   const char *id,
+                                   char *arg);
+extern mlt_producer producer_framebuffer_init(mlt_profile profile,
+                                              mlt_service_type type,
+                                              const char *id,
+                                              char *arg);
 
-static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
-	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/kdenlive/%s", mlt_environment( "MLT_DATA" ), (char*) data );
-	return mlt_properties_parse_yaml( file );
+    char file[PATH_MAX];
+    snprintf(file, PATH_MAX, "%s/kdenlive/%s", mlt_environment("MLT_DATA"), (char *) data);
+    return mlt_properties_parse_yaml(file);
 }
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( mlt_service_filter_type, "boxblur", filter_boxblur_init );
-	MLT_REGISTER( mlt_service_filter_type, "freeze", filter_freeze_init );
-	MLT_REGISTER( mlt_service_filter_type, "wave", filter_wave_init );
-	MLT_REGISTER( mlt_service_producer_type, "framebuffer", producer_framebuffer_init );
+    MLT_REGISTER(mlt_service_filter_type, "boxblur", filter_boxblur_init);
+    MLT_REGISTER(mlt_service_filter_type, "freeze", filter_freeze_init);
+    MLT_REGISTER(mlt_service_filter_type, "wave", filter_wave_init);
+    MLT_REGISTER(mlt_service_producer_type, "framebuffer", producer_framebuffer_init);
 
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "boxblur", metadata, "filter_boxblur.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "freeze", metadata, "filter_freeze.yml" );
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "wave", metadata, "filter_wave.yml" );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "framebuffer", metadata, "producer_framebuffer.yml" );
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "boxblur", metadata, "filter_boxblur.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "freeze", metadata, "filter_freeze.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "wave", metadata, "filter_wave.yml");
+    MLT_REGISTER_METADATA(mlt_service_producer_type,
+                          "framebuffer",
+                          metadata,
+                          "producer_framebuffer.yml");
 }

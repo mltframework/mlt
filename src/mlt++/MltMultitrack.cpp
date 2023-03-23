@@ -22,75 +22,74 @@
 #include "MltProducer.h"
 using namespace Mlt;
 
-Multitrack::Multitrack( mlt_multitrack multitrack ) :
-	instance( multitrack )
+Multitrack::Multitrack(mlt_multitrack multitrack)
+    : instance(multitrack)
 {
-	inc_ref( );
+    inc_ref();
 }
 
-Multitrack::Multitrack( Service &multitrack ) :
-	instance( NULL )
+Multitrack::Multitrack(Service &multitrack)
+    : instance(NULL)
 {
-	if ( multitrack.type( ) == mlt_service_multitrack_type )
-	{
-		instance = ( mlt_multitrack )multitrack.get_service( );
-		inc_ref( );
-	}
+    if (multitrack.type() == mlt_service_multitrack_type) {
+        instance = (mlt_multitrack) multitrack.get_service();
+        inc_ref();
+    }
 }
 
-Multitrack::Multitrack( Multitrack &multitrack ) :
-	Mlt::Producer( multitrack ),
-	instance( multitrack.get_multitrack( ) )
+Multitrack::Multitrack(Multitrack &multitrack)
+    : Mlt::Producer(multitrack)
+    , instance(multitrack.get_multitrack())
 {
-	inc_ref( );
+    inc_ref();
 }
 
-Multitrack::~Multitrack( )
+Multitrack::~Multitrack()
 {
-	mlt_multitrack_close( instance );
+    mlt_multitrack_close(instance);
 }
 
-mlt_multitrack Multitrack::get_multitrack( )
+mlt_multitrack Multitrack::get_multitrack()
 {
-	return instance;
+    return instance;
 }
 
-mlt_producer Multitrack::get_producer( )
+mlt_producer Multitrack::get_producer()
 {
-	return mlt_multitrack_producer( get_multitrack( ) );
+    return mlt_multitrack_producer(get_multitrack());
 }
 
-int Multitrack::connect( Producer &producer, int index )
+int Multitrack::connect(Producer &producer, int index)
 {
-	return mlt_multitrack_connect( get_multitrack( ), producer.get_producer( ), index );
+    return mlt_multitrack_connect(get_multitrack(), producer.get_producer(), index);
 }
 
-int Multitrack::insert( Producer &producer, int index )
+int Multitrack::insert(Producer &producer, int index)
 {
-	return mlt_multitrack_insert( get_multitrack( ), producer.get_producer( ), index );
+    return mlt_multitrack_insert(get_multitrack(), producer.get_producer(), index);
 }
 
-int Multitrack::disconnect( int index )
+int Multitrack::disconnect(int index)
 {
-	return mlt_multitrack_disconnect( get_multitrack(), index );
+    return mlt_multitrack_disconnect(get_multitrack(), index);
 }
 
-int Multitrack::clip( mlt_whence whence, int index )
+int Multitrack::clip(mlt_whence whence, int index)
 {
-	return mlt_multitrack_clip( get_multitrack( ), whence, index );
+    return mlt_multitrack_clip(get_multitrack(), whence, index);
 }
 
-int Multitrack::count( )
+int Multitrack::count()
 {
-	return mlt_multitrack_count( get_multitrack( ) );
+    return mlt_multitrack_count(get_multitrack());
 }
 
-Producer *Multitrack::track( int index )
+Producer *Multitrack::track(int index)
 {
-	return new Producer( mlt_multitrack_track( get_multitrack( ), index ) );
+    return new Producer(mlt_multitrack_track(get_multitrack(), index));
 }
 
-void Multitrack::refresh( )
+void Multitrack::refresh()
 {
-	return mlt_multitrack_refresh( get_multitrack( ) );
+    return mlt_multitrack_refresh(get_multitrack());
 }

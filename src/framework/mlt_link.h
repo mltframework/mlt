@@ -35,46 +35,49 @@
 
 struct mlt_link_s
 {
-	/** \publicsection */
-	struct mlt_producer_s parent;
+    /** \publicsection */
+    struct mlt_producer_s parent;
 
-	/** \protectedsection */
+    /** \protectedsection */
 
-	/** Get a frame of data (virtual function).
+    /** Get a frame of data (virtual function).
 	 *
 	 * \param mlt_link a link
 	 * \param mlt_frame_ptr a frame pointer by reference
 	 * \param int an index
 	 * \return true if there was an error
 	 */
-	int ( *get_frame )( mlt_link, mlt_frame_ptr, int );
+    int (*get_frame)(mlt_link, mlt_frame_ptr, int);
 
-	/** Configure the link (virtual function).
+    /** Configure the link (virtual function).
 	 *
 	 * \param mlt_link a link
 	 * \param mlt_profile a default profile to use
 	 */
-	void ( *configure )( mlt_link, mlt_profile );
+    void (*configure)(mlt_link, mlt_profile);
 
-	/** Virtual close function */
-	void ( *close )( mlt_link );
+    /** Virtual close function */
+    void (*close)(mlt_link);
 
-	/** \privatesection */
-	mlt_producer next;
-	/** the object of a subclass */
-	void *child;
+    /** \privatesection */
+    mlt_producer next;
+    /** the object of a subclass */
+    void *child;
 };
 
-#define MLT_LINK_PRODUCER( link )		( &( link )->parent )
-#define MLT_LINK_SERVICE( link )		MLT_PRODUCER_SERVICE( MLT_LINK_PRODUCER( link ) )
-#define MLT_LINK_PROPERTIES( link )		MLT_SERVICE_PROPERTIES( MLT_LINK_SERVICE( link ) )
+#define MLT_LINK_PRODUCER(link) (&(link)->parent)
+#define MLT_LINK_SERVICE(link) MLT_PRODUCER_SERVICE(MLT_LINK_PRODUCER(link))
+#define MLT_LINK_PROPERTIES(link) MLT_SERVICE_PROPERTIES(MLT_LINK_SERVICE(link))
 
-extern mlt_link mlt_link_init( );
-extern int mlt_link_connect_next( mlt_link self, mlt_producer next, mlt_profile chain_profile );
-extern void mlt_link_close( mlt_link self );
+extern mlt_link mlt_link_init();
+extern int mlt_link_connect_next(mlt_link self, mlt_producer next, mlt_profile chain_profile);
+extern void mlt_link_close(mlt_link self);
 
 // Link filter wrapper functions
-extern mlt_link mlt_link_filter_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_properties mlt_link_filter_metadata( mlt_service_type type, const char *id, void *data );
+extern mlt_link mlt_link_filter_init(mlt_profile profile,
+                                     mlt_service_type type,
+                                     const char *id,
+                                     char *arg);
+extern mlt_properties mlt_link_filter_metadata(mlt_service_type type, const char *id, void *data);
 
 #endif

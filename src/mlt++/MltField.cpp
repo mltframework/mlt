@@ -23,46 +23,45 @@
 #include "MltTransition.h"
 using namespace Mlt;
 
-Field::Field( mlt_field field ) :
-	instance( field )
+Field::Field(mlt_field field)
+    : instance(field)
 {
-	inc_ref( );
+    inc_ref();
 }
 
-Field::Field( Field &field ) :
-	Mlt::Service( field ),
-	instance( field.get_field( ) )
+Field::Field(Field &field)
+    : Mlt::Service(field)
+    , instance(field.get_field())
 {
-	inc_ref( );
+    inc_ref();
 }
 
-Field::~Field( )
+Field::~Field()
 {
-	mlt_field_close( instance );
+    mlt_field_close(instance);
 }
 
-mlt_field Field::get_field( )
+mlt_field Field::get_field()
 {
-	return instance;
+    return instance;
 }
 
-mlt_service Field::get_service( )
+mlt_service Field::get_service()
 {
-	return mlt_field_service( get_field( ) );
+    return mlt_field_service(get_field());
 }
 
-int Field::plant_filter( Filter &filter, int track )
+int Field::plant_filter(Filter &filter, int track)
 {
-	return mlt_field_plant_filter( get_field( ), filter.get_filter( ), track );
+    return mlt_field_plant_filter(get_field(), filter.get_filter(), track);
 }
 
-int Field::plant_transition( Transition &transition, int a_track, int b_track )
+int Field::plant_transition(Transition &transition, int a_track, int b_track)
 {
-	return mlt_field_plant_transition( get_field( ), transition.get_transition( ), a_track, b_track );
+    return mlt_field_plant_transition(get_field(), transition.get_transition(), a_track, b_track);
 }
 
-void Field::disconnect_service( Service &service )
+void Field::disconnect_service(Service &service)
 {
-	mlt_field_disconnect_service( get_field(), service.get_service() );
+    mlt_field_disconnect_service(get_field(), service.get_service());
 }
-

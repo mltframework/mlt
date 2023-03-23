@@ -28,33 +28,38 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class Profile;
+class Properties;
+
+class MLTPP_DECLSPEC Repository
 {
-	class Profile;
-	class Properties;
+private:
+    mlt_repository instance;
+    Repository() {}
 
-	class MLTPP_DECLSPEC Repository
-	{
-		private:
-			mlt_repository instance;
-			Repository( ) { }
-		public:
-			Repository( const char* directory );
-			Repository( mlt_repository repository );
-			~Repository();
+public:
+    Repository(const char *directory);
+    Repository(mlt_repository repository);
+    ~Repository();
 
-			void register_service( mlt_service_type service_type, const char *service, mlt_register_callback symbol );
-			void *create( Profile& profile, mlt_service_type type, const char *service, void *arg );
-			Properties *consumers( ) const;
-			Properties *filters( ) const;
-			Properties *links( ) const;
-			Properties *producers( ) const;
-			Properties *transitions( ) const;
-			void register_metadata( mlt_service_type type, const char *service, mlt_metadata_callback, void *callback_data );
-			Properties *metadata( mlt_service_type type, const char *service ) const;
-			Properties *languages( ) const;
-			static Properties *presets();
-	};
-}
+    void register_service(mlt_service_type service_type,
+                          const char *service,
+                          mlt_register_callback symbol);
+    void *create(Profile &profile, mlt_service_type type, const char *service, void *arg);
+    Properties *consumers() const;
+    Properties *filters() const;
+    Properties *links() const;
+    Properties *producers() const;
+    Properties *transitions() const;
+    void register_metadata(mlt_service_type type,
+                           const char *service,
+                           mlt_metadata_callback,
+                           void *callback_data);
+    Properties *metadata(mlt_service_type type, const char *service) const;
+    Properties *languages() const;
+    static Properties *presets();
+};
+} // namespace Mlt
 
 #endif

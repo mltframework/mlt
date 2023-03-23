@@ -26,9 +26,9 @@
 #ifndef TYPEWRITER_H
 #define TYPEWRITER_H
 
+#include <random>
 #include <string>
 #include <vector>
-#include <random>
 
 #include <QDomElement>
 
@@ -64,34 +64,38 @@ public:
     void setStepSeed(float ss) { step_seed = ss; }
     uint getStepSeed() const { return step_seed; }
 
-    void setPattern(const std::string & str);
-    const std::string & getPattern() const { return raw_string; }
+    void setPattern(const std::string &str);
+    const std::string &getPattern() const { return raw_string; }
 
     int parse();
     void printParseResult();
 
-    const std::string & render(uint frame);
+    const std::string &render(uint frame);
 
     uint count() const;
-    bool isEnd() const { return last_used_idx == (int)frames.size()-1; }
+    bool isEnd() const { return last_used_idx == (int) frames.size() - 1; }
 
     void clear();
-    void debug() const { for (Frame f : frames) f.print(); }
+    void debug() const
+    {
+        for (Frame f : frames)
+            f.print();
+    }
 
 private:
-    int parseString(const std::string & line, int start_frame);
+    int parseString(const std::string &line, int start_frame);
 
     struct ParseOptions;
-    int parseOptions(const std::string& line, uint & i, ParseOptions & po);
-    int parseMacro(const std::string& line, uint & i, uint & frame);
+    int parseOptions(const std::string &line, uint &i, ParseOptions &po);
+    int parseMacro(const std::string &line, uint &i, uint &frame);
 
-    std::string detectUtf8(const std::string & str, size_t pos);
+    std::string detectUtf8(const std::string &str, size_t pos);
 
     void insertChar(char c, uint frame);
-    void insertString(const std::string & str, uint frame);
+    void insertString(const std::string &str, uint frame);
     void insertBypass(uint frame);
 
-    uint getFrameSkipFromOptions(const ParseOptions & po, bool steps = false);
+    uint getFrameSkipFromOptions(const ParseOptions &po, bool steps = false);
 
     uint getOrInsertFrame(uint frame);
     void addBypass(uint idx);
@@ -119,13 +123,13 @@ public:
     XmlParser();
     virtual ~XmlParser();
 
-    void setDocument(const char * xml);
+    void setDocument(const char *xml);
 
     int parse();
     uint getContentNodesNumber() const { return node_vec.size(); }
 
     QString getNodeContent(uint i) const;
-    void setNodeContent(uint i, const QString & content);
+    void setNodeContent(uint i, const QString &content);
 
     void clear();
 

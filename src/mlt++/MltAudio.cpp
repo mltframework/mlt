@@ -21,77 +21,76 @@
 
 using namespace Mlt;
 
-Audio::Audio( )
+Audio::Audio()
 {
-	instance = mlt_audio_new();
+    instance = mlt_audio_new();
 }
 
-Audio::Audio( mlt_audio audio )
- : instance( audio )
+Audio::Audio(mlt_audio audio)
+    : instance(audio)
+{}
+
+Audio::~Audio()
 {
+    mlt_audio_close(instance);
 }
 
-Audio::~Audio( )
+void *Audio::data()
 {
-	mlt_audio_close( instance );
+    return instance->data;
 }
 
-void* Audio::data()
+void Audio::set_data(void *data)
 {
-	return instance->data;
-}
-
-void Audio::set_data( void* data )
-{
-	instance->data = data;
+    instance->data = data;
 }
 
 int Audio::frequency()
 {
-	return instance->frequency;
+    return instance->frequency;
 }
 
-void Audio::set_frequency( int frequency )
+void Audio::set_frequency(int frequency)
 {
-	instance->frequency = frequency;
+    instance->frequency = frequency;
 }
 
 mlt_audio_format Audio::format()
 {
-	return instance->format;
+    return instance->format;
 }
 
-void Audio::set_format( mlt_audio_format format )
+void Audio::set_format(mlt_audio_format format)
 {
-	instance->format = format;
+    instance->format = format;
 }
 
 int Audio::samples()
 {
-	return instance->samples;
+    return instance->samples;
 }
 
-void Audio::set_samples( int samples )
+void Audio::set_samples(int samples)
 {
-	instance->samples = samples;
+    instance->samples = samples;
 }
 
 int Audio::channels()
 {
-	return instance->channels;
+    return instance->channels;
 }
 
-void Audio::set_channels( int channels )
+void Audio::set_channels(int channels)
 {
-	instance->channels = channels;
+    instance->channels = channels;
 }
 
 mlt_channel_layout Audio::layout()
 {
-	return instance->layout;
+    return instance->layout;
 }
 
-void Audio::set_layout( mlt_channel_layout layout )
+void Audio::set_layout(mlt_channel_layout layout)
 {
-	instance->layout = layout;
+    instance->layout = layout;
 }

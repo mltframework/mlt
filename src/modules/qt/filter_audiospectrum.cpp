@@ -19,314 +19,318 @@
 
 #include "common.h"
 #include "graph.h"
+#include <cstring> // memset
 #include <framework/mlt.h>
 #include <framework/mlt_log.h>
-#include <cstring> // memset
-#include <QPainter>
+#include <math.h> //pow
 #include <QImage>
+#include <QPainter>
 #include <QVector>
-#include <math.h>  //pow
 
 // Private Types
 typedef struct
 {
-	mlt_filter fft;
-	char* fft_prop_name;
-	int preprocess_warned;
+    mlt_filter fft;
+    char *fft_prop_name;
+    int preprocess_warned;
 } private_data;
 
-static int filter_get_audio( mlt_frame frame, void** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples )
+static int filter_get_audio(mlt_frame frame,
+                            void **buffer,
+                            mlt_audio_format *format,
+                            int *frequency,
+                            int *channels,
+                            int *samples)
 {
-	mlt_filter filter = (mlt_filter)mlt_frame_pop_audio( frame );
-	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
-	private_data* pdata = (private_data*)filter->child;
+    mlt_filter filter = (mlt_filter) mlt_frame_pop_audio(frame);
+    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+    private_data *pdata = (private_data *) filter->child;
 
-	// Create the FFT filter the first time.
-	if( !pdata->fft )
-	{
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
-		pdata->fft = mlt_factory_filter( profile, "fft", NULL );
-		mlt_properties_set_int( MLT_FILTER_PROPERTIES( pdata->fft ), "window_size",
-				mlt_properties_get_int( filter_properties, "window_size" ) );
-		if( !pdata->fft )
-		{
-			mlt_log_warning( MLT_FILTER_SERVICE(filter), "Unable to create FFT.\n" );
-			return 1;
-		}
-	}
+    // Create the FFT filter the first time.
+    if (!pdata->fft) {
+        mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+        pdata->fft = mlt_factory_filter(profile, "fft", NULL);
+        mlt_properties_set_int(MLT_FILTER_PROPERTIES(pdata->fft),
+                               "window_size",
+                               mlt_properties_get_int(filter_properties, "window_size"));
+        if (!pdata->fft) {
+            mlt_log_warning(MLT_FILTER_SERVICE(filter), "Unable to create FFT.\n");
+            return 1;
+        }
+    }
 
-	mlt_properties fft_properties = MLT_FILTER_PROPERTIES( pdata->fft );
+    mlt_properties fft_properties = MLT_FILTER_PROPERTIES(pdata->fft);
 
-	// The service must stay locked while using the private data
-	mlt_service_lock( MLT_FILTER_SERVICE( filter ) );
+    // The service must stay locked while using the private data
+    mlt_service_lock(MLT_FILTER_SERVICE(filter));
 
-	// Perform FFT processing on the frame
-	mlt_filter_process( pdata->fft, frame );
-	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
+    // Perform FFT processing on the frame
+    mlt_filter_process(pdata->fft, frame);
+    mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
 
-	float* bins = (float*)mlt_properties_get_data( fft_properties, "bins", NULL );
+    float *bins = (float *) mlt_properties_get_data(fft_properties, "bins", NULL);
 
-	if( bins )
-	{
-		double window_level = mlt_properties_get_double( fft_properties, "window_level" );
-		int bin_count = mlt_properties_get_int( fft_properties, "bin_count" );
-		size_t bins_size = bin_count * sizeof(float);
-		float* save_bins = (float*)mlt_pool_alloc( bins_size );
+    if (bins) {
+        double window_level = mlt_properties_get_double(fft_properties, "window_level");
+        int bin_count = mlt_properties_get_int(fft_properties, "bin_count");
+        size_t bins_size = bin_count * sizeof(float);
+        float *save_bins = (float *) mlt_pool_alloc(bins_size);
 
-		if( window_level == 1.0 )
-		{
-			memcpy( save_bins, bins, bins_size );
-		} else {
-			memset( save_bins, 0, bins_size );
-		}
+        if (window_level == 1.0) {
+            memcpy(save_bins, bins, bins_size);
+        } else {
+            memset(save_bins, 0, bins_size);
+        }
 
-		// Save the bin data as a property on the frame to be used in get_image()
-		mlt_properties_set_data( MLT_FRAME_PROPERTIES(frame), pdata->fft_prop_name, save_bins, bins_size, mlt_pool_release, NULL );
-	}
+        // Save the bin data as a property on the frame to be used in get_image()
+        mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame),
+                                pdata->fft_prop_name,
+                                save_bins,
+                                bins_size,
+                                mlt_pool_release,
+                                NULL);
+    }
 
-	mlt_service_unlock( MLT_FILTER_SERVICE( filter ) );
+    mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
-	return 0;
+    return 0;
 }
 
-static void convert_fft_to_spectrum( mlt_filter filter, mlt_frame frame, int spect_bands, float* spectrum )
+static void convert_fft_to_spectrum(mlt_filter filter,
+                                    mlt_frame frame,
+                                    int spect_bands,
+                                    float *spectrum)
 {
-	private_data* pdata = (private_data*)filter->child;
-	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_properties fft_properties = MLT_FILTER_PROPERTIES( pdata->fft );
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_position position = mlt_filter_get_position( filter, frame );
-	mlt_position length = mlt_filter_get_length2( filter, frame );
-	double low_freq = mlt_properties_anim_get_int( filter_properties, "frequency_low", position, length );
-	double hi_freq = mlt_properties_anim_get_int( filter_properties, "frequency_high", position, length );
-	int bin_count = mlt_properties_get_int( fft_properties, "bin_count" );
-	double bin_width = mlt_properties_get_double( fft_properties, "bin_width" );
-	float* bins = (float*)mlt_properties_get_data( frame_properties, pdata->fft_prop_name, NULL );
-	double threshold = mlt_properties_anim_get_int( filter_properties, "threshold", position, length );
-	int reverse = mlt_properties_get_int( filter_properties, "reverse" );
+    private_data *pdata = (private_data *) filter->child;
+    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_properties fft_properties = MLT_FILTER_PROPERTIES(pdata->fft);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_position position = mlt_filter_get_position(filter, frame);
+    mlt_position length = mlt_filter_get_length2(filter, frame);
+    double low_freq
+        = mlt_properties_anim_get_int(filter_properties, "frequency_low", position, length);
+    double hi_freq
+        = mlt_properties_anim_get_int(filter_properties, "frequency_high", position, length);
+    int bin_count = mlt_properties_get_int(fft_properties, "bin_count");
+    double bin_width = mlt_properties_get_double(fft_properties, "bin_width");
+    float *bins = (float *) mlt_properties_get_data(frame_properties, pdata->fft_prop_name, NULL);
+    double threshold = mlt_properties_anim_get_int(filter_properties, "threshold", position, length);
+    int reverse = mlt_properties_get_int(filter_properties, "reverse");
 
-	// Map the linear fft bin frequencies to a log scale spectrum.
-	double band_freq_factor = pow( hi_freq / low_freq, 1.0 / (double)spect_bands );
-	double band_freq_low = low_freq;
-	double band_freq_hi = band_freq_low * band_freq_factor;
-	int bin_index = 0;
-	int spect_index = 0;
-	double bin_freq = 0;
+    // Map the linear fft bin frequencies to a log scale spectrum.
+    double band_freq_factor = pow(hi_freq / low_freq, 1.0 / (double) spect_bands);
+    double band_freq_low = low_freq;
+    double band_freq_hi = band_freq_low * band_freq_factor;
+    int bin_index = 0;
+    int spect_index = 0;
+    double bin_freq = 0;
 
-	// Skip bins that occur before the low frequency of the spectrum
-	while( bin_freq < band_freq_low )
-	{
-		bin_freq += bin_width;
-		bin_index ++;
-	}
+    // Skip bins that occur before the low frequency of the spectrum
+    while (bin_freq < band_freq_low) {
+        bin_freq += bin_width;
+        bin_index++;
+    }
 
-	for( spect_index = 0; spect_index < spect_bands && bin_index < bin_count; spect_index++ )
-	{
-		float mag = 0.0;
+    for (spect_index = 0; spect_index < spect_bands && bin_index < bin_count; spect_index++) {
+        float mag = 0.0;
 
-		if( bin_freq > band_freq_hi )
-		{
-			// There is no bin for this point. Interpolate between the two closest.
-			if( bin_index == 0 )
-			{
-				mag = bins[bin_index];
-			}
-			else
-			{
-				double y0 = bins[bin_index - 1];
-				double y1 = bins[bin_index];
-				double spect_center = band_freq_low + (band_freq_hi - band_freq_low) / 2;
-				double prev_freq = bin_freq - bin_width;
-				double t = bin_width / ( spect_center - prev_freq );
-				mag = y0 + ( y1 - y0 ) * t;
-			}
-		}
-		else
-		{
-			// Find the bin frequency with the greatest magnitude in the range for
-			// this spectrum point.
-			while( bin_freq < band_freq_hi && bin_index < bin_count )
-			{
-				if( mag < bins[bin_index] )
-				{
-					mag = bins[bin_index];
-				}
+        if (bin_freq > band_freq_hi) {
+            // There is no bin for this point. Interpolate between the two closest.
+            if (bin_index == 0) {
+                mag = bins[bin_index];
+            } else {
+                double y0 = bins[bin_index - 1];
+                double y1 = bins[bin_index];
+                double spect_center = band_freq_low + (band_freq_hi - band_freq_low) / 2;
+                double prev_freq = bin_freq - bin_width;
+                double t = bin_width / (spect_center - prev_freq);
+                mag = y0 + (y1 - y0) * t;
+            }
+        } else {
+            // Find the bin frequency with the greatest magnitude in the range for
+            // this spectrum point.
+            while (bin_freq < band_freq_hi && bin_index < bin_count) {
+                if (mag < bins[bin_index]) {
+                    mag = bins[bin_index];
+                }
 
-				bin_freq += bin_width;
-				bin_index ++;
-			}
-		}
+                bin_freq += bin_width;
+                bin_index++;
+            }
+        }
 
-		// Scale the magnitude to the range 0.0-1.0 based on dB
-		double dB = mag > 0.0 ? 20 * log10( mag ) : -1000.0;
-		double spect_val = 0;
-		if( dB >= threshold )
-		{
-			spect_val = 1.0 - (dB / threshold);
-		}
+        // Scale the magnitude to the range 0.0-1.0 based on dB
+        double dB = mag > 0.0 ? 20 * log10(mag) : -1000.0;
+        double spect_val = 0;
+        if (dB >= threshold) {
+            spect_val = 1.0 - (dB / threshold);
+        }
 
-		if( reverse )
-		{
-			spectrum[spect_bands - spect_index - 1] = spect_val;
-		} else {
-			spectrum[spect_index] = spect_val;
-		}
+        if (reverse) {
+            spectrum[spect_bands - spect_index - 1] = spect_val;
+        } else {
+            spectrum[spect_index] = spect_val;
+        }
 
-		// Calculate the next spectrum point frequency range.
-		band_freq_low = band_freq_hi;
-		band_freq_hi = band_freq_hi * band_freq_factor;
-	}
+        // Calculate the next spectrum point frequency range.
+        band_freq_low = band_freq_hi;
+        band_freq_hi = band_freq_hi * band_freq_factor;
+    }
 }
 
-static void draw_spectrum( mlt_filter filter, mlt_frame frame, QImage* qimg, int width, int height )
+static void draw_spectrum(mlt_filter filter, mlt_frame frame, QImage *qimg, int width, int height)
 {
-	mlt_properties filter_properties = MLT_FILTER_PROPERTIES( filter );
-	mlt_position position = mlt_filter_get_position( filter, frame );
-	mlt_position length = mlt_filter_get_length2( filter, frame );
-	mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-	mlt_rect rect = mlt_properties_anim_get_rect( filter_properties, "rect", position, length );
-	if ( strchr( mlt_properties_get( filter_properties, "rect" ), '%' ) ) {
-		rect.x *= qimg->width();
-		rect.w *= qimg->width();
-		rect.y *= qimg->height();
-		rect.h *= qimg->height();
-	}
-	double scale = mlt_profile_scale_width(profile, width);
-	rect.x *= scale;
-	rect.w *= scale;
-	scale = mlt_profile_scale_height(profile, height);
-	rect.y *= scale;
-	rect.h *= scale;
-	char* graph_type = mlt_properties_get( filter_properties, "type" );
-	int mirror = mlt_properties_get_int( filter_properties, "mirror" );
-	int fill = mlt_properties_get_int( filter_properties, "fill" );
-	double tension = mlt_properties_anim_get_double( filter_properties, "tension", position, length );
-	int segments = mlt_properties_anim_get_int( filter_properties, "segments", position, length );
-	int segment_gap = mlt_properties_anim_get_int( filter_properties, "segment_gap", position, length ) * scale;
-	int segment_width = mlt_properties_anim_get_int( filter_properties, "thickness", position, length ) * scale;
-	QVector<QColor> colors = get_graph_colors( filter_properties, position, length );
+    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_position position = mlt_filter_get_position(filter, frame);
+    mlt_position length = mlt_filter_get_length2(filter, frame);
+    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+    mlt_rect rect = mlt_properties_anim_get_rect(filter_properties, "rect", position, length);
+    if (strchr(mlt_properties_get(filter_properties, "rect"), '%')) {
+        rect.x *= qimg->width();
+        rect.w *= qimg->width();
+        rect.y *= qimg->height();
+        rect.h *= qimg->height();
+    }
+    double scale = mlt_profile_scale_width(profile, width);
+    rect.x *= scale;
+    rect.w *= scale;
+    scale = mlt_profile_scale_height(profile, height);
+    rect.y *= scale;
+    rect.h *= scale;
+    char *graph_type = mlt_properties_get(filter_properties, "type");
+    int mirror = mlt_properties_get_int(filter_properties, "mirror");
+    int fill = mlt_properties_get_int(filter_properties, "fill");
+    double tension = mlt_properties_anim_get_double(filter_properties, "tension", position, length);
+    int segments = mlt_properties_anim_get_int(filter_properties, "segments", position, length);
+    int segment_gap = mlt_properties_anim_get_int(filter_properties, "segment_gap", position, length)
+                      * scale;
+    int segment_width = mlt_properties_anim_get_int(filter_properties, "thickness", position, length)
+                        * scale;
+    QVector<QColor> colors = get_graph_colors(filter_properties, position, length);
 
-	QRectF r( rect.x, rect.y, rect.w, rect.h );
-	QPainter p( qimg );
+    QRectF r(rect.x, rect.y, rect.w, rect.h);
+    QPainter p(qimg);
 
-	if( mirror ) {
-		// Draw two half rectangle instead of one full rectangle.
-		r.setHeight( r.height() / 2.0 );
-	}
+    if (mirror) {
+        // Draw two half rectangle instead of one full rectangle.
+        r.setHeight(r.height() / 2.0);
+    }
 
-	setup_graph_painter( p, r, filter_properties, position, length );
-	setup_graph_pen( p, r, filter_properties, scale, position, length );
+    setup_graph_painter(p, r, filter_properties, position, length);
+    setup_graph_pen(p, r, filter_properties, scale, position, length);
 
-	int bands = mlt_properties_anim_get_int( filter_properties, "bands", position, length );
-	if ( bands == 0 ) {
-		// "0" means match rectangle width
-		bands = r.width();
-	}
-	float* spectrum = (float*)mlt_pool_alloc( bands * sizeof(float) );
+    int bands = mlt_properties_anim_get_int(filter_properties, "bands", position, length);
+    if (bands == 0) {
+        // "0" means match rectangle width
+        bands = r.width();
+    }
+    float *spectrum = (float *) mlt_pool_alloc(bands * sizeof(float));
 
-	convert_fft_to_spectrum( filter, frame, bands, spectrum );
+    convert_fft_to_spectrum(filter, frame, bands, spectrum);
 
-	if( graph_type && graph_type[0] == 'b' ) {
-		paint_bar_graph( p, r, bands, spectrum );
-	} else if ( graph_type && graph_type[0] == 's' ) {
-		paint_segment_graph( p, r, bands, spectrum, colors, segments, segment_gap, segment_width );
-	} else {
-		paint_line_graph( p, r, bands, spectrum, tension, fill );
-	}
+    if (graph_type && graph_type[0] == 'b') {
+        paint_bar_graph(p, r, bands, spectrum);
+    } else if (graph_type && graph_type[0] == 's') {
+        paint_segment_graph(p, r, bands, spectrum, colors, segments, segment_gap, segment_width);
+    } else {
+        paint_line_graph(p, r, bands, spectrum, tension, fill);
+    }
 
-	if( mirror ) {
-		// Second rectangle is mirrored.
-		p.translate( 0, r.y() * 2 + r.height() * 2 );
-		p.scale( 1, -1 );
+    if (mirror) {
+        // Second rectangle is mirrored.
+        p.translate(0, r.y() * 2 + r.height() * 2);
+        p.scale(1, -1);
 
-		if( graph_type && graph_type[0] == 'b' ) {
-			paint_bar_graph( p, r, bands, spectrum );
-		} else if ( graph_type && graph_type[0] == 's' ) {
-			paint_segment_graph( p, r, bands, spectrum, colors, segments, segment_gap, segment_width );
-		} else {
-			paint_line_graph( p, r, bands, spectrum, tension, fill );
-		}
-	}
+        if (graph_type && graph_type[0] == 'b') {
+            paint_bar_graph(p, r, bands, spectrum);
+        } else if (graph_type && graph_type[0] == 's') {
+            paint_segment_graph(p, r, bands, spectrum, colors, segments, segment_gap, segment_width);
+        } else {
+            paint_line_graph(p, r, bands, spectrum, tension, fill);
+        }
+    }
 
-	mlt_pool_release( spectrum );
+    mlt_pool_release(spectrum);
 
-	p.end();
+    p.end();
 }
 /** Get the image.
 */
-static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image(mlt_frame frame,
+                            uint8_t **image,
+                            mlt_image_format *format,
+                            int *width,
+                            int *height,
+                            int writable)
 {
-	int error = 0;
-	mlt_filter filter = (mlt_filter)mlt_frame_pop_service( frame );
-	private_data* pdata = (private_data*)filter->child;
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+    int error = 0;
+    mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
+    private_data *pdata = (private_data *) filter->child;
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
-	if( mlt_properties_get_data( frame_properties, pdata->fft_prop_name, NULL ) )
-	{
-		// Get the current image
-		*format = mlt_image_rgba;
-		error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+    if (mlt_properties_get_data(frame_properties, pdata->fft_prop_name, NULL)) {
+        // Get the current image
+        *format = mlt_image_rgba;
+        error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
-		// Draw the spectrum
-		if( !error ) {
-			QImage qimg( *width, *height, QImage::Format_ARGB32 );
-			convert_mlt_to_qimage_rgba( *image, &qimg, *width, *height );
-			draw_spectrum( filter, frame, &qimg, *width, *height );
-			convert_qimage_to_mlt_rgba( &qimg, *image, *width, *height );
-		}
-	} else {
-		if ( pdata->preprocess_warned++ == 2 )
-		{
-			// This filter depends on the consumer processing the audio before
-			// the video.
-			mlt_log_warning( MLT_FILTER_SERVICE(filter), "Audio not preprocessed.\n" );
-		}
-		mlt_frame_get_image( frame, image, format, width, height, writable );
-	}
+        // Draw the spectrum
+        if (!error) {
+            QImage qimg(*width, *height, QImage::Format_ARGB32);
+            convert_mlt_to_qimage_rgba(*image, &qimg, *width, *height);
+            draw_spectrum(filter, frame, &qimg, *width, *height);
+            convert_qimage_to_mlt_rgba(&qimg, *image, *width, *height);
+        }
+    } else {
+        if (pdata->preprocess_warned++ == 2) {
+            // This filter depends on the consumer processing the audio before
+            // the video.
+            mlt_log_warning(MLT_FILTER_SERVICE(filter), "Audio not preprocessed.\n");
+        }
+        mlt_frame_get_image(frame, image, format, width, height, writable);
+    }
 
-	return error;
+    return error;
 }
 
 /** Filter processing.
 */
-static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
+static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-	if( mlt_frame_is_test_card( frame ) ) {
-		// The producer does not generate video. This filter will create an
-		// image on the producer's behalf.
-		mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE(filter) );
-		mlt_properties_set_int( frame_properties, "progressive", 1 );
-		mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_profile_sar( profile ) );
-		mlt_properties_set_int( frame_properties, "meta.media.width", profile->width );
-		mlt_properties_set_int( frame_properties, "meta.media.height", profile->height );
-		// Tell the framework that there really is an image.
-		mlt_properties_set_int( frame_properties, "test_image", 0 );
-		// Push a callback to create the image.
-		mlt_frame_push_get_image( frame, create_image );
-	}
+    if (mlt_frame_is_test_card(frame)) {
+        // The producer does not generate video. This filter will create an
+        // image on the producer's behalf.
+        mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+        mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+        mlt_properties_set_int(frame_properties, "progressive", 1);
+        mlt_properties_set_double(frame_properties, "aspect_ratio", mlt_profile_sar(profile));
+        mlt_properties_set_int(frame_properties, "meta.media.width", profile->width);
+        mlt_properties_set_int(frame_properties, "meta.media.height", profile->height);
+        // Tell the framework that there really is an image.
+        mlt_properties_set_int(frame_properties, "test_image", 0);
+        // Push a callback to create the image.
+        mlt_frame_push_get_image(frame, create_image);
+    }
 
-	mlt_frame_push_audio( frame, filter );
-	mlt_frame_push_audio( frame, (void*)filter_get_audio );
-	mlt_frame_push_service( frame, filter );
-	mlt_frame_push_get_image( frame, filter_get_image );
-	return frame;
+    mlt_frame_push_audio(frame, filter);
+    mlt_frame_push_audio(frame, (void *) filter_get_audio);
+    mlt_frame_push_service(frame, filter);
+    mlt_frame_push_get_image(frame, filter_get_image);
+    return frame;
 }
 
-static void filter_close( mlt_filter filter )
+static void filter_close(mlt_filter filter)
 {
-	private_data* pdata = (private_data*)filter->child;
+    private_data *pdata = (private_data *) filter->child;
 
-	if ( pdata )
-	{
-		mlt_filter_close( pdata->fft );
-		free( pdata->fft_prop_name );
-		free( pdata );
-	}
-	filter->child = NULL;
-	filter->close = NULL;
-	filter->parent.close = NULL;
-	mlt_service_close( &filter->parent );
+    if (pdata) {
+        mlt_filter_close(pdata->fft);
+        free(pdata->fft_prop_name);
+        free(pdata);
+    }
+    filter->child = NULL;
+    filter->close = NULL;
+    filter->parent.close = NULL;
+    mlt_service_close(&filter->parent);
 }
 
 /** Constructor for the filter.
@@ -334,62 +338,58 @@ static void filter_close( mlt_filter filter )
 
 extern "C" {
 
-mlt_filter filter_audiospectrum_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_filter filter_audiospectrum_init(mlt_profile profile,
+                                     mlt_service_type type,
+                                     const char *id,
+                                     char *arg)
 {
-	mlt_filter filter = mlt_filter_new();
-	private_data* pdata = (private_data*)calloc( 1, sizeof(private_data) );
+    mlt_filter filter = mlt_filter_new();
+    private_data *pdata = (private_data *) calloc(1, sizeof(private_data));
 
-	if ( filter && pdata && createQApplicationIfNeeded( MLT_FILTER_SERVICE(filter) ) )
-	{
-		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-		mlt_properties_set_int( properties, "_filter_private", 1 );
-		mlt_properties_set_int( properties, "frequency_low", 20 );
-		mlt_properties_set_int( properties, "frequency_high", 20000 );
-		mlt_properties_set( properties, "type", "line" );
-		mlt_properties_set( properties, "bgcolor", "0x00000000" );
-		mlt_properties_set( properties, "color.1", "0xffffffff" );
-		mlt_properties_set( properties, "rect", "0% 0% 100% 100%" );
-		mlt_properties_set( properties, "thickness", "0" );
-		mlt_properties_set( properties, "fill", "0" );
-		mlt_properties_set( properties, "mirror", "0" );
-		mlt_properties_set( properties, "reverse", "0" );
-		mlt_properties_set( properties, "tension", "0.4" );
-		mlt_properties_set( properties, "angle", "0" );
-		mlt_properties_set( properties, "gorient", "v" );
-		mlt_properties_set_int( properties, "segment_gap", 10 );
-		mlt_properties_set_int( properties, "bands", 31 );
-		mlt_properties_set_double( properties, "threshold", -60.0 );
-		mlt_properties_set_int( properties, "window_size", 8192 );
+    if (filter && pdata && createQApplicationIfNeeded(MLT_FILTER_SERVICE(filter))) {
+        mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
+        mlt_properties_set_int(properties, "_filter_private", 1);
+        mlt_properties_set_int(properties, "frequency_low", 20);
+        mlt_properties_set_int(properties, "frequency_high", 20000);
+        mlt_properties_set(properties, "type", "line");
+        mlt_properties_set(properties, "bgcolor", "0x00000000");
+        mlt_properties_set(properties, "color.1", "0xffffffff");
+        mlt_properties_set(properties, "rect", "0% 0% 100% 100%");
+        mlt_properties_set(properties, "thickness", "0");
+        mlt_properties_set(properties, "fill", "0");
+        mlt_properties_set(properties, "mirror", "0");
+        mlt_properties_set(properties, "reverse", "0");
+        mlt_properties_set(properties, "tension", "0.4");
+        mlt_properties_set(properties, "angle", "0");
+        mlt_properties_set(properties, "gorient", "v");
+        mlt_properties_set_int(properties, "segment_gap", 10);
+        mlt_properties_set_int(properties, "bands", 31);
+        mlt_properties_set_double(properties, "threshold", -60.0);
+        mlt_properties_set_int(properties, "window_size", 8192);
 
-		// Create a unique ID for storing data on the frame
-		pdata->fft_prop_name = (char*)calloc( 1, 20 );
-		snprintf( pdata->fft_prop_name, 20, "fft.%p", filter );
-		pdata->fft_prop_name[20 - 1] = '\0';
+        // Create a unique ID for storing data on the frame
+        pdata->fft_prop_name = (char *) calloc(1, 20);
+        snprintf(pdata->fft_prop_name, 20, "fft.%p", filter);
+        pdata->fft_prop_name[20 - 1] = '\0';
 
-		pdata->fft = 0;
+        pdata->fft = 0;
 
-		filter->close = filter_close;
-		filter->process = filter_process;
-		filter->child = pdata;
-	}
-	else
-	{
-		mlt_log_error( MLT_FILTER_SERVICE(filter), "Filter audio spectrum failed\n" );
+        filter->close = filter_close;
+        filter->process = filter_process;
+        filter->child = pdata;
+    } else {
+        mlt_log_error(MLT_FILTER_SERVICE(filter), "Filter audio spectrum failed\n");
 
-		if( filter )
-		{
-			mlt_filter_close( filter );
-		}
+        if (filter) {
+            mlt_filter_close(filter);
+        }
 
-		if( pdata )
-		{
-			free( pdata );
-		}
+        if (pdata) {
+            free(pdata);
+        }
 
-		filter = NULL;
-	}
-	return filter;
+        filter = NULL;
+    }
+    return filter;
 }
-
 }
-

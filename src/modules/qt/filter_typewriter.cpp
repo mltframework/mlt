@@ -27,30 +27,29 @@
 #include <cstring>
 #include <vector>
 
-#include "typewriter.h"
 #include "kdenlivetitle_wrapper.h"
+#include "typewriter.h"
 
-struct FilterContainer {
+struct FilterContainer
+{
     XmlParser xp;
 
-    std::vector<TypeWriter> renders;      // rendered data [array]
-    bool init;               // 1 if initialized
+    std::vector<TypeWriter> renders; // rendered data [array]
+    bool init;                       // 1 if initialized
 
-    int current_frame;      // currently parsed frame
+    int current_frame; // currently parsed frame
 
-    std::string xml_data;   // data field content (xml data)
+    std::string xml_data; // data field content (xml data)
     bool is_template;
-    int step_length;        // frame step value
-    float sigma;            // sigma of fluctuations
-    int seed;               // seed for random fluctuations
-    int macro;              // macro type: 0 - custom, 1 - char, 2 - word, 3 - line
+    int step_length; // frame step value
+    float sigma;     // sigma of fluctuations
+    int seed;        // seed for random fluctuations
+    int macro;       // macro type: 0 - custom, 1 - char, 2 - word, 3 - line
 
-    int producer_type;      // 1 - kdenlivetitle
-    mlt_producer producer;  // hold producer pointer
+    int producer_type;     // 1 - kdenlivetitle
+    mlt_producer producer; // hold producer pointer
 
-    FilterContainer() {
-        clean();
-    }
+    FilterContainer() { clean(); }
 
     void clean()
     {
@@ -71,12 +70,12 @@ struct FilterContainer {
 /*
  * Get data for display.
  */
-static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, FilterContainer * cont)
+static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, FilterContainer *cont)
 {
     if (cont == nullptr)
         return 0;
 
-    char * d = nullptr;
+    char *d = nullptr;
     int step_length = 0;
     int sigma = 0;
     int seed = 0;
@@ -88,23 +87,23 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
     unsigned int update_mask = 0;
 
     /* Try with kdenlivetitle */
-    producer_ktitle kt = static_cast<producer_ktitle>(mlt_properties_get_data( frame_p, "producer_kdenlivetitle", NULL ) );
-    if (kt != nullptr)
-    {
+    producer_ktitle kt = static_cast<producer_ktitle>(
+        mlt_properties_get_data(frame_p, "producer_kdenlivetitle", NULL));
+    if (kt != nullptr) {
         /* Obtain properties of producer */
         producer = &kt->parent;
-        producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+        producer_properties = MLT_PRODUCER_PROPERTIES(producer);
 
         if (producer == nullptr || producer_properties == nullptr)
             return 0;
 
-        d = mlt_properties_get( producer_properties, "resource" );
+        d = mlt_properties_get(producer_properties, "resource");
         cont->is_template = (d && d[0] != '\0');
 
         if (cont->is_template)
-            d = mlt_properties_get( producer_properties, "_xmldata");
+            d = mlt_properties_get(producer_properties, "_xmldata");
         else
-            d = mlt_properties_get( producer_properties, "xmldata" );
+            d = mlt_properties_get(producer_properties, "xmldata");
 
         if (d == nullptr)
             return 0;
@@ -124,14 +123,11 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
         // clear and prepare for new parsing
         if (0 == update_mask)
             return 1;
-    }
-    else
-    {
+    } else {
         return 0;
     }
 
-    if (update_mask & 0x1)
-    {
+    if (update_mask & 0x1) {
         cont->clean();
 
         // save new data field name
@@ -141,24 +137,30 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
         cont->xp.setDocument(d);
         cont->xp.parse();
         unsigned int n = cont->xp.getContentNodesNumber();
-        for (uint i = 0; i < n; ++i)
-        {
+        for (uint i = 0; i < n; ++i) {
             std::string key = cont->xp.getNodeContent(i).toStdString();
             TypeWriter data;
 
             if (macro) {
-                char * buff = new char[key.length()+5];
+                char *buff = new char[key.length() + 5];
                 char c = 0;
                 switch (macro) {
-                    case 1: c = 'c'; break;
-                    case 2: c = 'w'; break;
-                    case 3: c = 'l'; break;
-                    default: break;
+                case 1:
+                    c = 'c';
+                    break;
+                case 2:
+                    c = 'w';
+                    break;
+                case 3:
+                    c = 'l';
+                    break;
+                default:
+                    break;
                 }
 
                 sprintf(buff, ":%c{%s}", c, key.c_str());
                 data.setPattern(buff);
-                delete [] buff;
+                delete[] buff;
             } else {
                 data.setPattern(key);
             }
@@ -173,10 +175,8 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
         cont->init = true;
     }
 
-    if (update_mask & 0x2)
-    {
-        for (auto & render : cont->renders)
-        {
+    if (update_mask & 0x2) {
+        for (auto &render : cont->renders) {
             render.setFrameStep(step_length);
             render.setStepSigma(sigma);
             render.setStepSeed(seed);
@@ -190,32 +190,33 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
     return 1;
 }
 
-static int update_producer(mlt_frame frame, mlt_properties /*frame_p*/, FilterContainer * cont, bool restore)
+static int update_producer(mlt_frame frame,
+                           mlt_properties /*frame_p*/,
+                           FilterContainer *cont,
+                           bool restore)
 {
     if (cont->init == false)
         return 0;
 
-    mlt_position pos = mlt_frame_original_position( frame );
+    mlt_position pos = mlt_frame_original_position(frame);
 
     mlt_properties producer_properties = nullptr;
-    if (cont->producer_type == 1)
-    {
-        producer_properties = MLT_PRODUCER_PROPERTIES( cont->producer );
+    if (cont->producer_type == 1) {
+        producer_properties = MLT_PRODUCER_PROPERTIES(cont->producer);
         if (restore)
-            mlt_properties_set_int( producer_properties, "force_reload", 0 );
+            mlt_properties_set_int(producer_properties, "force_reload", 0);
         else
-            mlt_properties_set_int( producer_properties, "force_reload", 1 );
+            mlt_properties_set_int(producer_properties, "force_reload", 1);
     }
 
     if (producer_properties == nullptr)
         return 0;
 
-    if (restore == true)
-    {
+    if (restore == true) {
         if (cont->is_template)
-            mlt_properties_set( producer_properties, "_xmldata", cont->xml_data.c_str() );
+            mlt_properties_set(producer_properties, "_xmldata", cont->xml_data.c_str());
         else
-            mlt_properties_set( producer_properties, "xmldata", cont->xml_data.c_str() );
+            mlt_properties_set(producer_properties, "xmldata", cont->xml_data.c_str());
         return 1;
     }
 
@@ -230,34 +231,39 @@ static int update_producer(mlt_frame frame, mlt_properties /*frame_p*/, FilterCo
     QString dom = cont->xp.getDocument();
 
     if (cont->is_template)
-        mlt_properties_set( producer_properties, "_xmldata", dom.toStdString().c_str() );
+        mlt_properties_set(producer_properties, "_xmldata", dom.toStdString().c_str());
     else
-        mlt_properties_set( producer_properties, "xmldata", dom.toStdString().c_str() );
+        mlt_properties_set(producer_properties, "xmldata", dom.toStdString().c_str());
 
     cont->current_frame = pos;
 
     return 1;
 }
 
-static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int /*writable*/ )
+static int filter_get_image(mlt_frame frame,
+                            uint8_t **image,
+                            mlt_image_format *format,
+                            int *width,
+                            int *height,
+                            int /*writable*/)
 {
     int error = 0;
-    mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
-    mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+    mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
-    mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
+    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
 
-    FilterContainer * cont = (FilterContainer*) filter->child;
+    FilterContainer *cont = (FilterContainer *) filter->child;
 
     mlt_service_lock(MLT_FILTER_SERVICE(filter));
 
     int res = get_producer_data(properties, frame_properties, cont);
     if (res == 0)
-        return mlt_frame_get_image( frame, image, format, width, height, 1 );
+        return mlt_frame_get_image(frame, image, format, width, height, 1);
 
     update_producer(frame, frame_properties, cont, false);
 
-    error = mlt_frame_get_image( frame, image, format, width, height, 1 );
+    error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
     update_producer(frame, frame_properties, cont, true);
 
@@ -266,35 +272,37 @@ static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format 
     return error;
 }
 
-static mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
+static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-    mlt_frame_push_service( frame, filter );
-    mlt_frame_push_get_image( frame, filter_get_image );
+    mlt_frame_push_service(frame, filter);
+    mlt_frame_push_get_image(frame, filter_get_image);
     return frame;
 }
 
-static void filter_close( mlt_filter filter)
+static void filter_close(mlt_filter filter)
 {
-    FilterContainer * cont = (FilterContainer *) filter->child;
+    FilterContainer *cont = (FilterContainer *) filter->child;
 
     cont->clean();
 }
 
 extern "C" {
-mlt_filter filter_typewriter_init( mlt_profile /*profile*/, mlt_service_type /*type*/, const char */*id*/, char */*arg*/ )
+mlt_filter filter_typewriter_init(mlt_profile /*profile*/,
+                                  mlt_service_type /*type*/,
+                                  const char * /*id*/,
+                                  char * /*arg*/)
 {
-    mlt_filter filter = mlt_filter_new( );
-    FilterContainer* cont = new FilterContainer;
+    mlt_filter filter = mlt_filter_new();
+    FilterContainer *cont = new FilterContainer;
 
-    if ( filter != nullptr && cont != nullptr)
-    {
+    if (filter != nullptr && cont != nullptr) {
         filter->process = filter_process;
         filter->child = cont;
         filter->close = filter_close;
     }
 
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
-    mlt_properties_set_int(properties, "step_length", 25 );
+    mlt_properties_set_int(properties, "step_length", 25);
     mlt_properties_set_int(properties, "step_sigma", 0);
     mlt_properties_set_int(properties, "random_seed", 0);
     mlt_properties_set_int(properties, "macro_type", 1);

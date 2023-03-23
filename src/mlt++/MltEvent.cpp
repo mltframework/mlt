@@ -21,87 +21,82 @@
 #include "MltFrame.h"
 using namespace Mlt;
 
-
-Event::Event( mlt_event event ) :
-	instance( event )
+Event::Event(mlt_event event)
+    : instance(event)
 {
-	mlt_event_inc_ref( instance );
+    mlt_event_inc_ref(instance);
 }
 
-Event::Event( Event &event ) :
-	instance( event.get_event( ) )
+Event::Event(Event &event)
+    : instance(event.get_event())
 {
-	mlt_event_inc_ref( instance );
+    mlt_event_inc_ref(instance);
 }
 
-Event::~Event( )
+Event::~Event()
 {
-	mlt_event_close( instance );
+    mlt_event_close(instance);
 }
 
-mlt_event Event::get_event( )
+mlt_event Event::get_event()
 {
-	return instance;
+    return instance;
 }
 
-bool Event::is_valid( )
+bool Event::is_valid()
 {
-	return instance != NULL;
+    return instance != NULL;
 }
 
-void Event::block( )
+void Event::block()
 {
-	mlt_event_block( get_event( ) );
+    mlt_event_block(get_event());
 }
 
-void Event::unblock( )
+void Event::unblock()
 {
-	mlt_event_unblock( get_event( ) );
+    mlt_event_unblock(get_event());
 }
-
 
 EventData::EventData(mlt_event_data data)
-	: instance(data)
-{
-}
+    : instance(data)
+{}
 
-EventData::EventData(EventData& data)
-	: instance(data.get_event_data())
-{
-}
+EventData::EventData(EventData &data)
+    : instance(data.get_event_data())
+{}
 
-EventData::EventData(const EventData& data)
-	: instance(data.get_event_data())
-{
-}
+EventData::EventData(const EventData &data)
+    : instance(data.get_event_data())
+{}
 
-EventData& EventData::operator=(const EventData& data)
+EventData &EventData::operator=(const EventData &data)
 {
-	instance = data.get_event_data();
-	return *this;
+    instance = data.get_event_data();
+    return *this;
 }
 
 mlt_event_data EventData::get_event_data() const
 {
-	return instance;
+    return instance;
 }
 
 int EventData::to_int() const
 {
-	return mlt_event_data_to_int(instance);
+    return mlt_event_data_to_int(instance);
 }
 
-const char* EventData::to_string() const
+const char *EventData::to_string() const
 {
-	return mlt_event_data_to_string(instance);
+    return mlt_event_data_to_string(instance);
 }
 
 Frame EventData::to_frame() const
 {
-	return Frame(mlt_event_data_to_frame(instance));
+    return Frame(mlt_event_data_to_frame(instance));
 }
 
-void* EventData::to_object() const
+void *EventData::to_object() const
 {
-	return mlt_event_data_to_object(instance);
+    return mlt_event_data_to_object(instance);
 }

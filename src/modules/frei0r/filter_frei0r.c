@@ -23,38 +23,47 @@
 #include "frei0r_helper.h"
 #include <string.h>
 
-static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image(mlt_frame frame,
+                            uint8_t **image,
+                            mlt_image_format *format,
+                            int *width,
+                            int *height,
+                            int writable)
 {
+    mlt_filter filter = mlt_frame_pop_service(frame);
+    *format = mlt_image_rgba;
+    mlt_log_debug(MLT_FILTER_SERVICE(filter), "frei0r %dx%d\n", *width, *height);
+    int error = mlt_frame_get_image(frame, image, format, width, height, 0);
 
-	mlt_filter filter = mlt_frame_pop_service( frame );
-	*format = mlt_image_rgba;
-	mlt_log_debug( MLT_FILTER_SERVICE( filter ), "frei0r %dx%d\n", *width, *height );
-	int error = mlt_frame_get_image( frame, image, format, width, height, 0 );
+    if (error == 0 && *image) {
+        mlt_position position = mlt_filter_get_position(filter, frame);
+        mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+        double time = (double) position / mlt_profile_fps(profile);
+        int length = mlt_filter_get_length2(filter, frame);
+        process_frei0r_item(MLT_FILTER_SERVICE(filter),
+                            position,
+                            time,
+                            length,
+                            frame,
+                            image,
+                            width,
+                            height);
+    }
 
-	if ( error == 0 && *image )
-	{
-		mlt_position position = mlt_filter_get_position( filter, frame );
-		mlt_profile profile = mlt_service_profile( MLT_FILTER_SERVICE( filter ) );
-		double time = (double) position / mlt_profile_fps( profile );
-		int length = mlt_filter_get_length2( filter, frame );
-		process_frei0r_item( MLT_FILTER_SERVICE(filter), position, time, length, frame, image, width, height );
-	}
-
-	return error;
+    return error;
 }
 
-
-mlt_frame filter_process( mlt_filter filter, mlt_frame frame )
+mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-	mlt_frame_push_service( frame, filter );
-	mlt_frame_push_get_image( frame, filter_get_image );
-	return frame;
+    mlt_frame_push_service(frame, filter);
+    mlt_frame_push_get_image(frame, filter_get_image);
+    return frame;
 }
 
-void filter_close( mlt_filter filter )
+void filter_close(mlt_filter filter)
 {
-	destruct( MLT_FILTER_PROPERTIES ( filter ) );
-	filter->close = NULL;
-	filter->parent.close = NULL;
-	mlt_service_close( &filter->parent );
+    destruct(MLT_FILTER_PROPERTIES(filter));
+    filter->close = NULL;
+    filter->parent.close = NULL;
+    mlt_service_close(&filter->parent);
 }

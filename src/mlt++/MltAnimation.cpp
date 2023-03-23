@@ -17,88 +17,82 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
 #include "MltAnimation.h"
+#include <stdlib.h>
 using namespace Mlt;
 
-
 Animation::Animation()
-	: instance( 0 )
-{
-}
+    : instance(0)
+{}
 
-Animation::Animation( mlt_animation animation )
-	: instance( animation )
-{
-}
+Animation::Animation(mlt_animation animation)
+    : instance(animation)
+{}
 
-Animation::Animation( const Animation &animation )
-	: instance( animation.instance )
-{
-}
+Animation::Animation(const Animation &animation)
+    : instance(animation.instance)
+{}
 
 Animation::~Animation()
 {
-	// Do not call mlt_animation_close() because mlt_animation is not reference-
-	// counted, and typically a mlt_properties owns it.
-	instance = 0;
+    // Do not call mlt_animation_close() because mlt_animation is not reference-
+    // counted, and typically a mlt_properties owns it.
+    instance = 0;
 }
 
 bool Animation::is_valid() const
 {
-	return instance != 0;
+    return instance != 0;
 }
 
 mlt_animation Animation::get_animation() const
 {
-	return instance;
+    return instance;
 }
 
-Animation &Animation::operator=( const Animation &animation )
+Animation &Animation::operator=(const Animation &animation)
 {
-	if ( this != &animation )
-	{
-		instance = animation.instance;
-	}
-	return *this;
+    if (this != &animation) {
+        instance = animation.instance;
+    }
+    return *this;
 }
 
 int Animation::length()
 {
-	return mlt_animation_get_length( instance );
+    return mlt_animation_get_length(instance);
 }
 
-int Animation::get_item( int position, bool& is_key, mlt_keyframe_type& type )
+int Animation::get_item(int position, bool &is_key, mlt_keyframe_type &type)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	int error = mlt_animation_get_item( instance, &item, position );
-	if ( !error )
-	{
-		is_key = item.is_key;
-		type = item.keyframe_type;
-	}
-	return error;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    int error = mlt_animation_get_item(instance, &item, position);
+    if (!error) {
+        is_key = item.is_key;
+        type = item.keyframe_type;
+    }
+    return error;
 }
 
-bool Animation::is_key( int position )
+bool Animation::is_key(int position)
 {
-	struct mlt_animation_item_s item;
-	item.is_key = 0;
-	item.property = NULL;
-	mlt_animation_get_item( instance, &item, position );
-	return item.is_key;
+    struct mlt_animation_item_s item;
+    item.is_key = 0;
+    item.property = NULL;
+    mlt_animation_get_item(instance, &item, position);
+    return item.is_key;
 }
 
-mlt_keyframe_type Animation::keyframe_type( int position )
+mlt_keyframe_type Animation::keyframe_type(int position)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	int error = mlt_animation_get_item( instance, &item, position );
-	if ( !error )
-		return item.keyframe_type;
-	else
-		return (mlt_keyframe_type) -1;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    int error = mlt_animation_get_item(instance, &item, position);
+    if (!error)
+        return item.keyframe_type;
+    else
+        return (mlt_keyframe_type) -1;
 }
 
 /** Get the keyfame at the position or the next following.
@@ -110,15 +104,15 @@ mlt_keyframe_type Animation::keyframe_type( int position )
  * \return the position of the next keyframe
  */
 
-int Animation::next_key( int position )
+int Animation::next_key(int position)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	int error = mlt_animation_next_key( instance, &item, position );
-	if ( !error )
-		return item.frame;
-	else
-		return error;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    int error = mlt_animation_next_key(instance, &item, position);
+    if (!error)
+        return item.frame;
+    else
+        return error;
 }
 
 /** Get the keyfame at the position or the next following.
@@ -130,16 +124,15 @@ int Animation::next_key( int position )
  * \return true if there was an error
  */
 
-bool Animation::next_key( int position, int& key )
+bool Animation::next_key(int position, int &key)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	bool error = mlt_animation_next_key( instance, &item, position );
-	if ( !error )
-	{
-		key = item.frame;
-	}
-	return error;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    bool error = mlt_animation_next_key(instance, &item, position);
+    if (!error) {
+        key = item.frame;
+    }
+    return error;
 }
 
 /** Get the keyfame at the position or the previous keyframe before.
@@ -151,15 +144,15 @@ bool Animation::next_key( int position, int& key )
  * \return the position of the previous keyframe
  */
 
-int Animation::previous_key( int position )
+int Animation::previous_key(int position)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	int error = mlt_animation_prev_key( instance, &item, position );
-	if ( !error )
-		return item.frame;
-	else
-		return error;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    int error = mlt_animation_prev_key(instance, &item, position);
+    if (!error)
+        return item.frame;
+    else
+        return error;
 }
 
 /** Get the keyfame at the position or the previous before.
@@ -171,95 +164,93 @@ int Animation::previous_key( int position )
  * \return true if there was an error
  */
 
-bool Animation::previous_key( int position, int& key )
+bool Animation::previous_key(int position, int &key)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	bool error = mlt_animation_prev_key( instance, &item, position );
-	if ( !error )
-	{
-		key = item.frame;
-	}
-	return error;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    bool error = mlt_animation_prev_key(instance, &item, position);
+    if (!error) {
+        key = item.frame;
+    }
+    return error;
 }
 
 int Animation::key_count()
 {
-	return mlt_animation_key_count( instance );
+    return mlt_animation_key_count(instance);
 }
 
-int Animation::key_get( int index, int& frame, mlt_keyframe_type& type )
+int Animation::key_get(int index, int &frame, mlt_keyframe_type &type)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	int error = mlt_animation_key_get( instance, &item, index );
-	if ( !error )
-	{
-		frame = item.frame;
-		type = item.keyframe_type;
-	}
-	return error;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    int error = mlt_animation_key_get(instance, &item, index);
+    if (!error) {
+        frame = item.frame;
+        type = item.keyframe_type;
+    }
+    return error;
 }
 
-int Animation::key_get_frame( int index )
+int Animation::key_get_frame(int index)
 {
-	struct mlt_animation_item_s item;
-	item.is_key = 0;
-	item.property = NULL;
-	int error = mlt_animation_key_get( instance, &item, index );
-	if ( !error )
-		return item.frame;
-	else
-		return -1;
+    struct mlt_animation_item_s item;
+    item.is_key = 0;
+    item.property = NULL;
+    int error = mlt_animation_key_get(instance, &item, index);
+    if (!error)
+        return item.frame;
+    else
+        return -1;
 }
 
-mlt_keyframe_type Animation::key_get_type( int index )
+mlt_keyframe_type Animation::key_get_type(int index)
 {
-	struct mlt_animation_item_s item;
-	item.property = NULL;
-	int error = mlt_animation_key_get( instance, &item, index );
-	if ( !error )
-		return item.keyframe_type;
-	else
-		return (mlt_keyframe_type) -1;
+    struct mlt_animation_item_s item;
+    item.property = NULL;
+    int error = mlt_animation_key_get(instance, &item, index);
+    if (!error)
+        return item.keyframe_type;
+    else
+        return (mlt_keyframe_type) -1;
 }
 
 int Animation::key_set_type(int index, mlt_keyframe_type type)
 {
-	return mlt_animation_key_set_type(instance, index, type);
+    return mlt_animation_key_set_type(instance, index, type);
 }
 
 int Animation::key_set_frame(int index, int frame)
 {
-	return mlt_animation_key_set_frame(instance, index, frame);
+    return mlt_animation_key_set_frame(instance, index, frame);
 }
 
-void Animation::shift_frames( int shift )
+void Animation::shift_frames(int shift)
 {
-	return mlt_animation_shift_frames(instance, shift);
+    return mlt_animation_shift_frames(instance, shift);
 }
 
-void Animation::set_length( int length )
+void Animation::set_length(int length)
 {
-	return mlt_animation_set_length( instance, length );
+    return mlt_animation_set_length(instance, length);
 }
 
-int Animation::remove( int position )
+int Animation::remove(int position)
 {
-	return mlt_animation_remove( instance, position );
+    return mlt_animation_remove(instance, position);
 }
 
 void Animation::interpolate()
 {
-	mlt_animation_interpolate( instance );
+    mlt_animation_interpolate(instance);
 }
 
-char *Animation::serialize_cut( int in, int out )
+char *Animation::serialize_cut(int in, int out)
 {
-	return mlt_animation_serialize_cut( instance, in, out );
+    return mlt_animation_serialize_cut(instance, in, out);
 }
 
-char *Animation::serialize_cut( mlt_time_format format , int in, int out )
+char *Animation::serialize_cut(mlt_time_format format, int in, int out)
 {
-	return mlt_animation_serialize_cut_tf( instance, in, out, format );
+    return mlt_animation_serialize_cut_tf(instance, in, out, format);
 }

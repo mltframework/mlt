@@ -25,40 +25,40 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#define MLT_LOG_QUIET    -8
+#define MLT_LOG_QUIET -8
 
 /**
  * something went really wrong and we will crash now
  */
-#define MLT_LOG_PANIC     0
+#define MLT_LOG_PANIC 0
 
 /**
  * something went wrong and recovery is not possible
  * like no header in a format which depends on it or a combination
  * of parameters which are not allowed
  */
-#define MLT_LOG_FATAL     8
+#define MLT_LOG_FATAL 8
 
 /**
  * something went wrong and cannot losslessly be recovered
  * but not all future data is affected
  */
-#define MLT_LOG_ERROR    16
+#define MLT_LOG_ERROR 16
 
 /**
  * something somehow does not look correct / something which may or may not
  * lead to some problems
  */
-#define MLT_LOG_WARNING  24
+#define MLT_LOG_WARNING 24
 
-#define MLT_LOG_INFO     32
-#define MLT_LOG_VERBOSE  40
-#define MLT_LOG_TIMINGS  44
+#define MLT_LOG_INFO 32
+#define MLT_LOG_VERBOSE 40
+#define MLT_LOG_TIMINGS 44
 
 /**
  * stuff which is only useful for MLT developers
  */
-#define MLT_LOG_DEBUG    48
+#define MLT_LOG_DEBUG 48
 
 /**
  * Send the specified message to the log if the level is less than or equal to
@@ -74,35 +74,43 @@
  * \see mlt_vlog
  */
 #ifdef __GNUC__
-void mlt_log( void *service, int level, const char *fmt, ... ) __attribute__ ((__format__ (__printf__, 3, 4)));
+void mlt_log(void *service, int level, const char *fmt, ...)
+    __attribute__((__format__(__printf__, 3, 4)));
 #else
-void mlt_log( void *service, int level, const char *fmt, ... );
+void mlt_log(void *service, int level, const char *fmt, ...);
 #endif
 
-#define mlt_log_panic(service, format, args...) mlt_log((service), MLT_LOG_PANIC, (format), ## args)
-#define mlt_log_fatal(service, format, args...) mlt_log((service), MLT_LOG_FATAL, (format), ## args)
-#define mlt_log_error(service, format, args...) mlt_log((service), MLT_LOG_ERROR, (format), ## args)
-#define mlt_log_warning(service, format, args...) mlt_log((service), MLT_LOG_WARNING, (format), ## args)
-#define mlt_log_info(service, format, args...) mlt_log((service), MLT_LOG_INFO, (format), ## args)
-#define mlt_log_verbose(service, format, args...) mlt_log((service), MLT_LOG_VERBOSE, (format), ## args)
-#define mlt_log_timings(service, format, args...) mlt_log((service), MLT_LOG_TIMINGS, (format), ## args)
-#define mlt_log_debug(service, format, args...) mlt_log((service), MLT_LOG_DEBUG, (format), ## args)
+#define mlt_log_panic(service, format, args...) mlt_log((service), MLT_LOG_PANIC, (format), ##args)
+#define mlt_log_fatal(service, format, args...) mlt_log((service), MLT_LOG_FATAL, (format), ##args)
+#define mlt_log_error(service, format, args...) mlt_log((service), MLT_LOG_ERROR, (format), ##args)
+#define mlt_log_warning(service, format, args...) \
+    mlt_log((service), MLT_LOG_WARNING, (format), ##args)
+#define mlt_log_info(service, format, args...) mlt_log((service), MLT_LOG_INFO, (format), ##args)
+#define mlt_log_verbose(service, format, args...) \
+    mlt_log((service), MLT_LOG_VERBOSE, (format), ##args)
+#define mlt_log_timings(service, format, args...) \
+    mlt_log((service), MLT_LOG_TIMINGS, (format), ##args)
+#define mlt_log_debug(service, format, args...) mlt_log((service), MLT_LOG_DEBUG, (format), ##args)
 
-void mlt_vlog( void *service, int level, const char *fmt, va_list );
-int mlt_log_get_level( void );
-void mlt_log_set_level( int );
-void mlt_log_set_callback( void (*)( void*, int, const char*, va_list ) );
+void mlt_vlog(void *service, int level, const char *fmt, va_list);
+int mlt_log_get_level(void);
+void mlt_log_set_level(int);
+void mlt_log_set_callback(void (*)(void *, int, const char *, va_list));
 
 #define mlt_log_timings_begin() \
-{ \
-	int64_t _mlt_log_timings_begin = mlt_log_timings_now(), _mlt_log_timings_end;
+    { \
+        int64_t _mlt_log_timings_begin = mlt_log_timings_now(), _mlt_log_timings_end;
 
 #define mlt_log_timings_end(service, msg) \
-	_mlt_log_timings_end = mlt_log_timings_now(); \
-	mlt_log_timings( service, "%s:%d: T(%s)=%" PRId64 " us\n", \
-		__FILE__, __LINE__, msg, _mlt_log_timings_end - _mlt_log_timings_begin ); \
-}
+    _mlt_log_timings_end = mlt_log_timings_now(); \
+    mlt_log_timings(service, \
+                    "%s:%d: T(%s)=%" PRId64 " us\n", \
+                    __FILE__, \
+                    __LINE__, \
+                    msg, \
+                    _mlt_log_timings_end - _mlt_log_timings_begin); \
+    }
 
-int64_t mlt_log_timings_now( void );
+int64_t mlt_log_timings_now(void);
 
 #endif /* MLT_LOG_H */

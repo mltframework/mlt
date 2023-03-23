@@ -24,33 +24,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char * mlt_deinterlacer_name( mlt_deinterlacer method )
+const char *mlt_deinterlacer_name(mlt_deinterlacer method)
 {
-	switch ( method )
-	{
-		case mlt_deinterlacer_none:              return "none";
-		case mlt_deinterlacer_onefield:          return "onefield";
-		case mlt_deinterlacer_linearblend:       return "linearblend";
-		case mlt_deinterlacer_bob:               return "bob";
-		case mlt_deinterlacer_weave:             return "weave";
-		case mlt_deinterlacer_greedy:            return "greedy";
-		case mlt_deinterlacer_yadif_nospatial:   return "yadif-nospatial";
-		case mlt_deinterlacer_yadif:             return "yadif";
-		case mlt_deinterlacer_bwdif:             return "bwdif";
-		case mlt_deinterlacer_estdif:            return "estdif";
-		case mlt_deinterlacer_invalid:           return "invalid";
-	}
-	return "invalid";
+    switch (method) {
+    case mlt_deinterlacer_none:
+        return "none";
+    case mlt_deinterlacer_onefield:
+        return "onefield";
+    case mlt_deinterlacer_linearblend:
+        return "linearblend";
+    case mlt_deinterlacer_bob:
+        return "bob";
+    case mlt_deinterlacer_weave:
+        return "weave";
+    case mlt_deinterlacer_greedy:
+        return "greedy";
+    case mlt_deinterlacer_yadif_nospatial:
+        return "yadif-nospatial";
+    case mlt_deinterlacer_yadif:
+        return "yadif";
+    case mlt_deinterlacer_bwdif:
+        return "bwdif";
+    case mlt_deinterlacer_estdif:
+        return "estdif";
+    case mlt_deinterlacer_invalid:
+        return "invalid";
+    }
+    return "invalid";
 }
 
-mlt_deinterlacer mlt_deinterlacer_id( const char * name )
+mlt_deinterlacer mlt_deinterlacer_id(const char *name)
 {
-	mlt_deinterlacer m;
+    mlt_deinterlacer m;
 
-	for ( m = mlt_deinterlacer_none; name && m < mlt_deinterlacer_invalid; m++ )
-	{
-		if ( !strcmp( mlt_deinterlacer_name( m ), name ) )
-			return m;
-	}
-	return mlt_deinterlacer_invalid;
+    for (m = mlt_deinterlacer_none; name && m < mlt_deinterlacer_invalid; m++) {
+        if (!strcmp(mlt_deinterlacer_name(m), name))
+            return m;
+    }
+    return mlt_deinterlacer_invalid;
 }

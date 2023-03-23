@@ -18,8 +18,8 @@
 
 #include "common.h"
 #include <QApplication>
-#include <QLocale>
 #include <QImage>
+#include <QLocale>
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
 #include <X11/Xlib.h>
@@ -28,101 +28,105 @@
 
 bool createQApplicationIfNeeded(mlt_service service)
 {
-	if (!qApp) {
+    if (!qApp) {
 #if defined(Q_OS_WIN) && defined(NODEPLOY)
-		QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))+QStringLiteral("/bin"));
-		QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))+QStringLiteral("/plugins"));
+        QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))
+                                         + QStringLiteral("/bin"));
+        QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))
+                                         + QStringLiteral("/plugins"));
 #endif
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
-		if (getenv("DISPLAY") == 0) {
-			mlt_log_error(service,
-				"The MLT Qt module requires a X11 environment.\n"
-				"Please either run melt from an X session or use a fake X server like xvfb:\n"
-				"xvfb-run -a melt (...)\n" );
-			return false;
-		}
+        if (getenv("DISPLAY") == 0) {
+            mlt_log_error(
+                service,
+                "The MLT Qt module requires a X11 environment.\n"
+                "Please either run melt from an X session or use a fake X server like xvfb:\n"
+                "xvfb-run -a melt (...)\n");
+            return false;
+        }
 #endif
-		if (!mlt_properties_get(mlt_global_properties(), "qt_argv"))
-			mlt_properties_set(mlt_global_properties(), "qt_argv", "MLT");
-		static int argc = 1;
-		static char* argv[] = { mlt_properties_get(mlt_global_properties(), "qt_argv") };
-		new QApplication(argc, argv);
-		const char *localename = mlt_properties_get_lcnumeric(MLT_SERVICE_PROPERTIES(service));
-		QLocale::setDefault(QLocale(localename));
-	}
-	return true;
+        if (!mlt_properties_get(mlt_global_properties(), "qt_argv"))
+            mlt_properties_set(mlt_global_properties(), "qt_argv", "MLT");
+        static int argc = 1;
+        static char *argv[] = {mlt_properties_get(mlt_global_properties(), "qt_argv")};
+        new QApplication(argc, argv);
+        const char *localename = mlt_properties_get_lcnumeric(MLT_SERVICE_PROPERTIES(service));
+        QLocale::setDefault(QLocale(localename));
+    }
+    return true;
 }
 
-void convert_qimage_to_mlt_rgba( QImage* qImg, uint8_t* mImg, int width, int height )
+void convert_qimage_to_mlt_rgba(QImage *qImg, uint8_t *mImg, int width, int height)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-	// QImage::Format_RGBA8888 was added in Qt5.2
-	// Nothing to do in this case  because the image was modified directly.
-	// Destination pointer must be the same pointer that was provided to
-	// convert_mlt_to_qimage_rgba()
-	Q_ASSERT(mImg == qImg->constBits());
+    // QImage::Format_RGBA8888 was added in Qt5.2
+    // Nothing to do in this case  because the image was modified directly.
+    // Destination pointer must be the same pointer that was provided to
+    // convert_mlt_to_qimage_rgba()
+    Q_ASSERT(mImg == qImg->constBits());
 #else
-	int y = height + 1;
-	while (--y)
-	{
-		QRgb* src = (QRgb*)qImg->scanLine(height - y);
-		int x = width + 1;
-		while (--x)
-		{
-			*mImg++ = qRed(*src);
-			*mImg++ = qGreen(*src);
-			*mImg++ = qBlue(*src);
-			*mImg++ = qAlpha(*src);
-			src++;
-		}
-	}
+    int y = height + 1;
+    while (--y) {
+        QRgb *src = (QRgb *) qImg->scanLine(height - y);
+        int x = width + 1;
+        while (--x) {
+            *mImg++ = qRed(*src);
+            *mImg++ = qGreen(*src);
+            *mImg++ = qBlue(*src);
+            *mImg++ = qAlpha(*src);
+            src++;
+        }
+    }
 #endif
 }
 
-void convert_mlt_to_qimage_rgba( uint8_t* mImg, QImage* qImg, int width, int height )
+void convert_mlt_to_qimage_rgba(uint8_t *mImg, QImage *qImg, int width, int height)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-	// QImage::Format_RGBA8888 was added in Qt5.2
-	// Initialize the QImage with the MLT image because the data formats match.
-	*qImg = QImage( mImg, width, height, QImage::Format_RGBA8888 );
+    // QImage::Format_RGBA8888 was added in Qt5.2
+    // Initialize the QImage with the MLT image because the data formats match.
+    *qImg = QImage(mImg, width, height, QImage::Format_RGBA8888);
 #else
-	*qImg = QImage( width, height, QImage::Format_ARGB32 );
-	int y = height + 1;
-	while (--y)
-	{
-		QRgb *dst = (QRgb*)qImg->scanLine(height - y);
-		int x = width + 1;
-		while (--x)
-		{
-			*dst++ = qRgba(mImg[0], mImg[1], mImg[2], mImg[3]);
-			mImg += 4;
-		}
-	}
+    *qImg = QImage(width, height, QImage::Format_ARGB32);
+    int y = height + 1;
+    while (--y) {
+        QRgb *dst = (QRgb *) qImg->scanLine(height - y);
+        int x = width + 1;
+        while (--x) {
+            *dst++ = qRgba(mImg[0], mImg[1], mImg[2], mImg[3]);
+            mImg += 4;
+        }
+    }
 #endif
 }
 
-int create_image( mlt_frame frame, uint8_t **image, mlt_image_format *image_format, int *width, int *height, int writable )
+int create_image(mlt_frame frame,
+                 uint8_t **image,
+                 mlt_image_format *image_format,
+                 int *width,
+                 int *height,
+                 int writable)
 {
-	int error = 0;
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+    int error = 0;
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
-	*image_format = mlt_image_rgba;
+    *image_format = mlt_image_rgba;
 
-	// Use the width and height suggested by the rescale filter.
-	if( mlt_properties_get_int( frame_properties, "rescale_width" ) > 0 )
-		*width = mlt_properties_get_int( frame_properties, "rescale_width" );
-	if( mlt_properties_get_int( frame_properties, "rescale_height" ) > 0 )
-		*height = mlt_properties_get_int( frame_properties, "rescale_height" );
-	// If no size is requested, use native size.
-	if( *width <=0 )
-		*width = mlt_properties_get_int( frame_properties, "meta.media.width" );
-	if( *height <=0 )
-		*height = mlt_properties_get_int( frame_properties, "meta.media.height" );
+    // Use the width and height suggested by the rescale filter.
+    if (mlt_properties_get_int(frame_properties, "rescale_width") > 0)
+        *width = mlt_properties_get_int(frame_properties, "rescale_width");
+    if (mlt_properties_get_int(frame_properties, "rescale_height") > 0)
+        *height = mlt_properties_get_int(frame_properties, "rescale_height");
+    // If no size is requested, use native size.
+    if (*width <= 0)
+        *width = mlt_properties_get_int(frame_properties, "meta.media.width");
+    if (*height <= 0)
+        *height = mlt_properties_get_int(frame_properties, "meta.media.height");
 
-	int size = mlt_image_format_size( *image_format, *width, *height, NULL );
-	*image = static_cast<uint8_t*>( mlt_pool_alloc( size ) );
-	memset( *image, 0, size ); // Transparent
-	mlt_frame_set_image( frame, *image, size, mlt_pool_release );
+    int size = mlt_image_format_size(*image_format, *width, *height, NULL);
+    *image = static_cast<uint8_t *>(mlt_pool_alloc(size));
+    memset(*image, 0, size); // Transparent
+    mlt_frame_set_image(frame, *image, size, mlt_pool_release);
 
-	return error;
+    return error;
 }

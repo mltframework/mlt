@@ -25,74 +25,84 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+static int producer_get_image(mlt_frame frame,
+                              uint8_t **buffer,
+                              mlt_image_format *format,
+                              int *width,
+                              int *height,
+                              int writable)
 {
-	mlt_producer producer = mlt_frame_pop_service( frame );
+    mlt_producer producer = mlt_frame_pop_service(frame);
 
-	// Choose suitable out values if nothing specific requested
-	if ( *width <= 0 )
-		*width = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->width;
-	if ( *height <= 0 )
-		*height = mlt_service_profile( MLT_PRODUCER_SERVICE(producer) )->height;
+    // Choose suitable out values if nothing specific requested
+    if (*width <= 0)
+        *width = mlt_service_profile(MLT_PRODUCER_SERVICE(producer))->width;
+    if (*height <= 0)
+        *height = mlt_service_profile(MLT_PRODUCER_SERVICE(producer))->height;
 
-	// Allocate the image
-	*format = mlt_image_rgba;
-	int size = mlt_image_format_size( *format, *width, *height, NULL );
+    // Allocate the image
+    *format = mlt_image_rgba;
+    int size = mlt_image_format_size(*format, *width, *height, NULL);
 
-	// Allocate the image
-	*buffer = mlt_pool_alloc( size );
+    // Allocate the image
+    *buffer = mlt_pool_alloc(size);
 
-	// Update the frame
-	mlt_frame_set_image( frame, *buffer, size, mlt_pool_release );
+    // Update the frame
+    mlt_frame_set_image(frame, *buffer, size, mlt_pool_release);
 
-	if ( *buffer != NULL )
-	{
-		mlt_position position = mlt_frame_get_position( frame );
-		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
-		double time = (double) position / mlt_profile_fps( profile );
-		int length = mlt_producer_get_playtime( producer );
-		process_frei0r_item( MLT_PRODUCER_SERVICE(producer), position, time, length, frame, buffer, width, height );
-	}
+    if (*buffer != NULL) {
+        mlt_position position = mlt_frame_get_position(frame);
+        mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
+        double time = (double) position / mlt_profile_fps(profile);
+        int length = mlt_producer_get_playtime(producer);
+        process_frei0r_item(MLT_PRODUCER_SERVICE(producer),
+                            position,
+                            time,
+                            length,
+                            frame,
+                            buffer,
+                            width,
+                            height);
+    }
 
-	return 0;
+    return 0;
 }
 
-int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
+int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int index)
 {
-	// Generate a frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
+    // Generate a frame
+    *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(producer));
 
-	if ( *frame != NULL )
-	{
-		// Obtain properties of frame and producer
-		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
+    if (*frame != NULL) {
+        // Obtain properties of frame and producer
+        mlt_properties properties = MLT_FRAME_PROPERTIES(*frame);
 
-		// Update timecode on the frame we're creating
-		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
+        // Update timecode on the frame we're creating
+        mlt_frame_set_position(*frame, mlt_producer_position(producer));
 
-		// Set producer-specific frame properties
-		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_profile profile = mlt_service_profile( MLT_PRODUCER_SERVICE( producer ) );
-		mlt_properties_set_double( properties, "aspect_ratio", mlt_profile_sar( profile ) );
-		mlt_properties_set_int( properties, "meta.media.width", profile->width );
-		mlt_properties_set_int( properties, "meta.media.height", profile->height );
-		// Inform framework that this producer creates rgba frames by default
-		mlt_properties_set_int( properties, "format", mlt_image_rgba );
+        // Set producer-specific frame properties
+        mlt_properties_set_int(properties, "progressive", 1);
+        mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
+        mlt_properties_set_double(properties, "aspect_ratio", mlt_profile_sar(profile));
+        mlt_properties_set_int(properties, "meta.media.width", profile->width);
+        mlt_properties_set_int(properties, "meta.media.height", profile->height);
+        // Inform framework that this producer creates rgba frames by default
+        mlt_properties_set_int(properties, "format", mlt_image_rgba);
 
-		// Push the get_image method
-		mlt_frame_push_service( *frame, producer );
-		mlt_frame_push_get_image( *frame, producer_get_image );
-	}
+        // Push the get_image method
+        mlt_frame_push_service(*frame, producer);
+        mlt_frame_push_get_image(*frame, producer_get_image);
+    }
 
-	// Calculate the next timecode
-	mlt_producer_prepare_next( producer );
+    // Calculate the next timecode
+    mlt_producer_prepare_next(producer);
 
-	return 0;
+    return 0;
 }
 
-void producer_close( mlt_producer producer )
+void producer_close(mlt_producer producer)
 {
-	producer->close = NULL;
-	mlt_producer_close( producer );
-	free( producer );
+    producer->close = NULL;
+    mlt_producer_close(producer);
+    free(producer);
 }

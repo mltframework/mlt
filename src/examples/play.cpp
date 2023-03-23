@@ -3,26 +3,26 @@ using namespace Mlt;
 
 void play(const char *filename)
 {
-	Profile profile; // defaults to dv_pal
-	Producer producer(profile, filename);
-	Consumer consumer(profile); // defaults to sdl
+    Profile profile; // defaults to dv_pal
+    Producer producer(profile, filename);
+    Consumer consumer(profile); // defaults to sdl
 
-	// Prevent scaling to the profile size.
-	// Let the sdl consumer do all scaling.
-	consumer.set("rescale", "none");
+    // Prevent scaling to the profile size.
+    // Let the sdl consumer do all scaling.
+    consumer.set("rescale", "none");
 
-	// Automatically exit at end of file.
-	consumer.set("terminate_on_pause", 1);
+    // Automatically exit at end of file.
+    consumer.set("terminate_on_pause", 1);
 
-	consumer.connect(producer);
-	consumer.run();
-	consumer.stop();
+    consumer.connect(producer);
+    consumer.run();
+    consumer.stop();
 }
 
-int main( int, char **argv )
+int main(int, char **argv)
 {
-	Factory::init();
-	play(argv[1]);
-	Factory::close();
-	return 0;
+    Factory::init();
+    play(argv[1]);
+    Factory::close();
+    return 0;
 }

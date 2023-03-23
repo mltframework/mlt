@@ -22,33 +22,36 @@
 
 #include <framework/mlt_types.h>
 
+#include <effect_chain.h>
 #include <flat_input.h>
 #include <ycbcr_input.h>
-#include <effect_chain.h>
 
 class MltInput
 {
 public:
-	MltInput( mlt_image_format format );
-	~MltInput();
+    MltInput(mlt_image_format format);
+    ~MltInput();
 
-	void useFlatInput(movit::MovitPixelFormat pix_fmt, unsigned width, unsigned height);
-	void useYCbCrInput(const movit::ImageFormat& image_format, const movit::YCbCrFormat& ycbcr_format, unsigned width, unsigned height);
-	void set_pixel_data(const unsigned char* data);
-	void invalidate_pixel_data();
-	movit::Input *get_input() { return input; }
+    void useFlatInput(movit::MovitPixelFormat pix_fmt, unsigned width, unsigned height);
+    void useYCbCrInput(const movit::ImageFormat &image_format,
+                       const movit::YCbCrFormat &ycbcr_format,
+                       unsigned width,
+                       unsigned height);
+    void set_pixel_data(const unsigned char *data);
+    void invalidate_pixel_data();
+    movit::Input *get_input() { return input; }
 
-	// The original pixel format that was used to create this MltInput,
-	// in case we change our mind later and want to convert on the CPU instead.
-	mlt_image_format get_format() const { return m_format; }
+    // The original pixel format that was used to create this MltInput,
+    // in case we change our mind later and want to convert on the CPU instead.
+    mlt_image_format get_format() const { return m_format; }
 
 private:
-	mlt_image_format m_format;
-	unsigned m_width, m_height;
-	// Note: Owned by the EffectChain, so should not be deleted by us.
-	movit::Input *input;
-	bool isRGB;
-	movit::YCbCrFormat m_ycbcr_format;
+    mlt_image_format m_format;
+    unsigned m_width, m_height;
+    // Note: Owned by the EffectChain, so should not be deleted by us.
+    movit::Input *input;
+    bool isRGB;
+    movit::YCbCrFormat m_ycbcr_format;
 };
 
 #endif // MLT_MOVIT_INPUT_H

@@ -24,33 +24,33 @@ using namespace Mlt;
 
 class TestAudio : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 private Q_SLOTS:
 
-	void DefaultConstructor()
-	{
-		Audio a;
-		QVERIFY(a.samples() == 0);
-	}
+    void DefaultConstructor()
+    {
+        Audio a;
+        QVERIFY(a.samples() == 0);
+    }
 
-	void ConstructFromAudio()
-	{
-		mlt_audio audio = mlt_audio_new();
-		audio->samples = 500;
-		Audio a(audio);
-		QVERIFY(a.samples() == 500);
-	}
+    void ConstructFromAudio()
+    {
+        mlt_audio audio = mlt_audio_new();
+        audio->samples = 500;
+        Audio a(audio);
+        QVERIFY(a.samples() == 500);
+    }
 
-	void GetSetData()
-	{
-		Audio a;
-		void* data = malloc(500);
-		a.set_data(data);
-		QVERIFY(a.data() == data);
-		free(data);
-		a.set_data(nullptr);
-	}
+    void GetSetData()
+    {
+        Audio a;
+        void *data = malloc(500);
+        a.set_data(data);
+        QVERIFY(a.data() == data);
+        free(data);
+        a.set_data(nullptr);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestAudio)

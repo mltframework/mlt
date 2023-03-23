@@ -33,32 +33,32 @@
 
 struct mlt_profile_s
 {
-	char* description;      /**< a brief description suitable as a label in UI menu */
-	int frame_rate_num;     /**< the numerator of the video frame rate */
-	int frame_rate_den;     /**< the denominator of the video frame rate */
-	int width;              /**< the horizontal resolution of the video */
-	int height;             /**< the vertical resolution of the video */
-	int progressive;        /**< a flag to indicate if the video is progressive scan, interlace if not set */
-	int sample_aspect_num;  /**< the numerator of the pixel aspect ratio */
-	int sample_aspect_den;  /**< the denominator of the pixel aspect ratio */
-	int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
-	int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
-	int colorspace;         /**< the Y'CbCr colorspace standard: =601 for ITU-R 601, =709 for ITU-R 709, or =240 for SMPTE240M */
-	int is_explicit;        /**< used internally to indicate if the profile was requested explicitly or computed or defaulted */
+    char *description;  /**< a brief description suitable as a label in UI menu */
+    int frame_rate_num; /**< the numerator of the video frame rate */
+    int frame_rate_den; /**< the denominator of the video frame rate */
+    int width;          /**< the horizontal resolution of the video */
+    int height;         /**< the vertical resolution of the video */
+    int progressive; /**< a flag to indicate if the video is progressive scan, interlace if not set */
+    int sample_aspect_num;  /**< the numerator of the pixel aspect ratio */
+    int sample_aspect_den;  /**< the denominator of the pixel aspect ratio */
+    int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
+    int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
+    int colorspace; /**< the Y'CbCr colorspace standard: =601 for ITU-R 601, =709 for ITU-R 709, or =240 for SMPTE240M */
+    int is_explicit; /**< used internally to indicate if the profile was requested explicitly or computed or defaulted */
 };
 
-extern mlt_profile mlt_profile_init( const char *name );
-extern mlt_profile mlt_profile_load_file( const char *file );
-extern mlt_profile mlt_profile_load_properties( mlt_properties properties );
-extern mlt_profile mlt_profile_load_string( const char *string );
-extern double mlt_profile_fps( mlt_profile profile );
-extern double mlt_profile_sar( mlt_profile profile );
-extern double mlt_profile_dar( mlt_profile profile );
-extern void mlt_profile_close( mlt_profile profile );
-extern mlt_profile mlt_profile_clone( mlt_profile profile );
-extern mlt_properties mlt_profile_list( );
-extern void mlt_profile_from_producer( mlt_profile profile, mlt_producer producer );
-extern char *mlt_profile_lumas_dir( mlt_profile profile );
-extern double mlt_profile_scale_width( mlt_profile profile, int width );
-extern double mlt_profile_scale_height( mlt_profile profile, int height );
+extern mlt_profile mlt_profile_init(const char *name);
+extern mlt_profile mlt_profile_load_file(const char *file);
+extern mlt_profile mlt_profile_load_properties(mlt_properties properties);
+extern mlt_profile mlt_profile_load_string(const char *string);
+extern double mlt_profile_fps(mlt_profile profile);
+extern double mlt_profile_sar(mlt_profile profile);
+extern double mlt_profile_dar(mlt_profile profile);
+extern void mlt_profile_close(mlt_profile profile);
+extern mlt_profile mlt_profile_clone(mlt_profile profile);
+extern mlt_properties mlt_profile_list();
+extern void mlt_profile_from_producer(mlt_profile profile, mlt_producer producer);
+extern char *mlt_profile_lumas_dir(mlt_profile profile);
+extern double mlt_profile_scale_width(mlt_profile profile, int width);
+extern double mlt_profile_scale_height(mlt_profile profile, int height);
 #endif

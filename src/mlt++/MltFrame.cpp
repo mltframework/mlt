@@ -22,114 +22,112 @@
 #include "MltProducer.h"
 using namespace Mlt;
 
-Frame::Frame() :
-	Mlt::Properties( (mlt_properties)NULL ),
-	instance( NULL )
+Frame::Frame()
+    : Mlt::Properties((mlt_properties) NULL)
+    , instance(NULL)
+{}
+
+Frame::Frame(mlt_frame frame)
+    : Mlt::Properties((mlt_properties) NULL)
+    , instance(frame)
 {
+    inc_ref();
 }
 
-Frame::Frame( mlt_frame frame ) :
-	Mlt::Properties( (mlt_properties)NULL ),
-	instance( frame )
+Frame::Frame(Frame &frame)
+    : Mlt::Properties((mlt_properties) NULL)
+    , instance(frame.instance)
 {
-	inc_ref( );
+    inc_ref();
 }
 
-Frame::Frame( Frame &frame ) :
-	Mlt::Properties( (mlt_properties)NULL ),
-	instance( frame.instance )
+Frame::Frame(const Frame &frame)
+    : Mlt::Properties((mlt_properties) NULL)
+    , instance(frame.instance)
 {
-	inc_ref( );
+    inc_ref();
 }
 
-Frame::Frame( const Frame &frame ) :
-	Mlt::Properties( (mlt_properties)NULL ),
-	instance( frame.instance )
+Frame::~Frame()
 {
-	inc_ref( );
+    mlt_frame_close(instance);
 }
 
-Frame::~Frame( )
+Frame &Frame::operator=(const Frame &frame)
 {
-	mlt_frame_close( instance );
+    if (this != &frame) {
+        mlt_frame_close(instance);
+        instance = frame.instance;
+        inc_ref();
+    }
+    return *this;
 }
 
-Frame& Frame::operator=( const Frame &frame )
+mlt_frame Frame::get_frame()
 {
-	if (this != &frame)
-	{
-		mlt_frame_close( instance );
-		instance = frame.instance;
-		inc_ref( );
-	}
-	return *this;
+    return instance;
 }
 
-mlt_frame Frame::get_frame( )
+mlt_properties Frame::get_properties()
 {
-	return instance;
+    return mlt_frame_properties(get_frame());
 }
 
-mlt_properties Frame::get_properties( )
+uint8_t *Frame::get_image(mlt_image_format &format, int &w, int &h, int writable)
 {
-	return mlt_frame_properties( get_frame( ) );
+    uint8_t *image = NULL;
+    if (get_double("consumer_aspect_ratio") == 0.0)
+        set("consumer_aspect_ratio", 1.0);
+    mlt_frame_get_image(get_frame(), &image, &format, &w, &h, writable);
+    set("format", format);
+    set("writable", writable);
+    return image;
 }
 
-uint8_t *Frame::get_image( mlt_image_format &format, int &w, int &h, int writable )
+unsigned char *Frame::fetch_image(mlt_image_format f, int w, int h, int writable)
 {
-	uint8_t *image = NULL;
-	if ( get_double( "consumer_aspect_ratio" ) == 0.0 )
-		set( "consumer_aspect_ratio", 1.0 );
-	mlt_frame_get_image( get_frame( ), &image, &format, &w, &h, writable );
-	set( "format", format );
-	set( "writable", writable );
-	return image;
+    uint8_t *image = NULL;
+    if (get_double("consumer_aspect_ratio") == 0.0)
+        set("consumer_aspect_ratio", 1.0);
+    mlt_frame_get_image(get_frame(), &image, &f, &w, &h, writable);
+    set("format", f);
+    set("writable", writable);
+    return image;
 }
 
-unsigned char *Frame::fetch_image( mlt_image_format f, int w, int h, int writable )
+void *Frame::get_audio(mlt_audio_format &format, int &frequency, int &channels, int &samples)
 {
-	uint8_t *image = NULL;
-	if ( get_double( "consumer_aspect_ratio" ) == 0.0 )
-		set( "consumer_aspect_ratio", 1.0 );
-	mlt_frame_get_image( get_frame( ), &image, &f, &w, &h, writable );
-	set( "format", f );
-	set( "writable", writable );
-	return image;
+    void *audio = NULL;
+    mlt_frame_get_audio(get_frame(), &audio, &format, &frequency, &channels, &samples);
+    return audio;
 }
 
-void *Frame::get_audio( mlt_audio_format &format, int &frequency, int &channels, int &samples )
+unsigned char *Frame::get_waveform(int w, int h)
 {
-	void *audio = NULL;
-	mlt_frame_get_audio( get_frame( ), &audio, &format, &frequency, &channels, &samples );
-	return audio;
+    return mlt_frame_get_waveform(get_frame(), w, h);
 }
 
-unsigned char *Frame::get_waveform( int w, int h )
+Producer *Frame::get_original_producer()
 {
-	return mlt_frame_get_waveform( get_frame( ), w, h );
+    return new Producer(mlt_frame_get_original_producer(get_frame()));
 }
 
-Producer *Frame::get_original_producer( )
+mlt_properties Frame::get_unique_properties(Service &service)
 {
-	return new Producer( mlt_frame_get_original_producer( get_frame( ) ) );
+    return mlt_frame_unique_properties(get_frame(), service.get_service());
 }
 
-mlt_properties Frame::get_unique_properties( Service &service )
+int Frame::get_position()
 {
-	return mlt_frame_unique_properties( get_frame(), service.get_service() );
+    return mlt_frame_get_position(get_frame());
 }
 
-int Frame::get_position( )
+int Frame::set_image(uint8_t *image, int size, mlt_destructor destroy)
 {
-	return mlt_frame_get_position( get_frame() );
+    return mlt_frame_set_image(get_frame(), image, size, destroy);
 }
 
-int Frame::set_image( uint8_t *image, int size, mlt_destructor destroy )
+int Frame::set_alpha(uint8_t *alpha, int size, mlt_destructor destroy)
 {
-	return mlt_frame_set_image( get_frame(), image, size, destroy );
-}
-
-int Frame::set_alpha( uint8_t *alpha, int size, mlt_destructor destroy )
-{
-	return mlt_frame_set_alpha( get_frame(), alpha, size, destroy );
+    return mlt_frame_set_alpha(get_frame(), alpha, size, destroy);
 }

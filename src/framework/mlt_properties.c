@@ -26,23 +26,23 @@
 #endif
 
 #include "mlt_properties.h"
-#include "mlt_property.h"
 #include "mlt_deque.h"
-#include "mlt_log.h"
 #include "mlt_factory.h"
+#include "mlt_log.h"
+#include "mlt_property.h"
 
+#include <ctype.h>
+#include <dirent.h>
+#include <errno.h>
+#include <float.h>
+#include <locale.h>
+#include <pthread.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <pthread.h>
-#include <sys/types.h>
-#include <dirent.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <locale.h>
-#include <float.h>
+#include <sys/types.h>
 
 #define MAX_LOAD_LINE_SIZE 4096
 
@@ -50,20 +50,19 @@
 
 typedef struct
 {
-	int hash[ 199 ];
-	char **name;
-	mlt_property *value;
-	int count;
-	int size;
-	mlt_properties mirror;
-	int ref_count;
-	pthread_mutex_t mutex;
-	mlt_locale_t locale;
-	mlt_properties* children_properties;
-	char** children_names;
-	int children_count;
-}
-property_list;
+    int hash[199];
+    char **name;
+    mlt_property *value;
+    int count;
+    int size;
+    mlt_properties mirror;
+    int ref_count;
+    pthread_mutex_t mutex;
+    mlt_locale_t locale;
+    mlt_properties *children_properties;
+    char **children_names;
+    int children_count;
+} property_list;
 
 /* Memory leak checks */
 
@@ -82,31 +81,31 @@ static int properties_destroyed = 0;
  * \return true if failed
  */
 
-int mlt_properties_init( mlt_properties self, void *child )
+int mlt_properties_init(mlt_properties self, void *child)
 {
-	if ( self != NULL )
-	{
+    if (self != NULL) {
 #ifdef _MLT_PROPERTY_CHECKS_
-		// Increment number of properties created
-		properties_created ++;
+        // Increment number of properties created
+        properties_created++;
 #endif
 
-		// NULL all methods
-		memset( self, 0, sizeof( struct mlt_properties_s ) );
+        // NULL all methods
+        memset(self, 0, sizeof(struct mlt_properties_s));
 
-		// Assign the child of the object
-		self->child = child;
+        // Assign the child of the object
+        self->child = child;
 
-		// Allocate the local structure
-		self->local = calloc( 1, sizeof( property_list ) );
+        // Allocate the local structure
+        self->local = calloc(1, sizeof(property_list));
 
-		// Increment the ref count
-		( ( property_list * )self->local )->ref_count = 1;
-		pthread_mutex_init( &( ( property_list * )self->local )->mutex, NULL );;
-	}
+        // Increment the ref count
+        ((property_list *) self->local)->ref_count = 1;
+        pthread_mutex_init(&((property_list *) self->local)->mutex, NULL);
+        ;
+    }
 
-	// Check that initialisation was successful
-	return self != NULL && self->local == NULL;
+    // Check that initialisation was successful
+    return self != NULL && self->local == NULL;
 }
 
 /** Create a properties object.
@@ -117,16 +116,16 @@ int mlt_properties_init( mlt_properties self, void *child )
  * \return a new properties object
  */
 
-mlt_properties mlt_properties_new( )
+mlt_properties mlt_properties_new()
 {
-	// Construct a standalone properties object
-	mlt_properties self = calloc( 1, sizeof( struct mlt_properties_s ) );
+    // Construct a standalone properties object
+    mlt_properties self = calloc(1, sizeof(struct mlt_properties_s));
 
-	// Initialise self
-	mlt_properties_init( self, NULL );
+    // Initialise self
+    mlt_properties_init(self, NULL);
 
-	// Return the pointer
-	return self;
+    // Return the pointer
+    return self;
 }
 
 /** Set the numeric locale used for string/double conversions.
@@ -137,30 +136,28 @@ mlt_properties mlt_properties_new( )
  * \return true if error
  */
 
-int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
+int mlt_properties_set_lcnumeric(mlt_properties self, const char *locale)
 {
-	int error = 0;
+    int error = 0;
 
 #if !defined(_WIN32)
-	if ( self && locale )
-	{
-		property_list *list = self->local;
+    if (self && locale) {
+        property_list *list = self->local;
 
 #if defined(__GLIBC__) || defined(__APPLE__)
-		if ( list->locale )
-			freelocale( list->locale );
-		list->locale = newlocale( LC_NUMERIC_MASK, locale, NULL );
+        if (list->locale)
+            freelocale(list->locale);
+        list->locale = newlocale(LC_NUMERIC_MASK, locale, NULL);
 #else
 
-		free( list->locale );
-		list->locale = strdup( locale );
+        free(list->locale);
+        list->locale = strdup(locale);
 #endif
-	}
-	else
-		error = 1;
+    } else
+        error = 1;
 #endif // _WIN32
 
-	return error;
+    return error;
 }
 
 /** Get the numeric locale for this properties object.
@@ -171,80 +168,74 @@ int mlt_properties_set_lcnumeric( mlt_properties self, const char *locale )
  * \return the locale name if this properties has a specific locale it is using, NULL otherwise
  */
 
-const char* mlt_properties_get_lcnumeric( mlt_properties self )
+const char *mlt_properties_get_lcnumeric(mlt_properties self)
 {
-	if ( !self ) return NULL;
+    if (!self)
+        return NULL;
 
-	const char *result = NULL;
+    const char *result = NULL;
 
 #if !defined(_WIN32)
-	property_list *list = self->local;
-	if ( list->locale )
-	{
+    property_list *list = self->local;
+    if (list->locale) {
 #if defined(__APPLE__)
-        result = querylocale( LC_NUMERIC_MASK, list->locale );
+        result = querylocale(LC_NUMERIC_MASK, list->locale);
 #elif defined(__GLIBC__)
-        result = list->locale->__names[ LC_NUMERIC ];
+        result = list->locale->__names[LC_NUMERIC];
 #else
-		result = list->locale;
+        result = list->locale;
 #endif
 #if defined(_WIN32)
-		if ( result )
-		{
-			// Convert the string from ANSI code page to UTF-8.
-			mlt_properties_set_string( self, "_lcnumeric_in", result );
-			mlt_properties_to_utf8( self, "_lcnumeric_in", "_lcnumeric_out" );
-			result = mlt_properties_get( self, "_lcnumeric_out" );
-		}
+        if (result) {
+            // Convert the string from ANSI code page to UTF-8.
+            mlt_properties_set_string(self, "_lcnumeric_in", result);
+            mlt_properties_to_utf8(self, "_lcnumeric_in", "_lcnumeric_out");
+            result = mlt_properties_get(self, "_lcnumeric_out");
+        }
 #endif
     }
 #endif // _WIN32
-	return result;
+    return result;
 }
 
-static int load_properties( mlt_properties self, const char *filename )
+static int load_properties(mlt_properties self, const char *filename)
 {
-	// Open the file
-	FILE *file = mlt_fopen( filename, "r" );
+    // Open the file
+    FILE *file = mlt_fopen(filename, "r");
 
-	// Load contents of file
-	if ( file != NULL )
-	{
-		// Temp string
-		char temp[ MAX_LOAD_LINE_SIZE ];
-		char last[ MAX_LOAD_LINE_SIZE ] = "";
+    // Load contents of file
+    if (file != NULL) {
+        // Temp string
+        char temp[MAX_LOAD_LINE_SIZE];
+        char last[MAX_LOAD_LINE_SIZE] = "";
 
-		// Read each string from the file
-		while( fgets( temp, MAX_LOAD_LINE_SIZE, file ) )
-		{
-			// Chomp the new line character from the string
-			int x = strlen( temp ) - 1;
-			if ( temp[x] == '\n' || temp[x] == '\r' )
-				temp[x] = '\0';
+        // Read each string from the file
+        while (fgets(temp, MAX_LOAD_LINE_SIZE, file)) {
+            // Chomp the new line character from the string
+            int x = strlen(temp) - 1;
+            if (temp[x] == '\n' || temp[x] == '\r')
+                temp[x] = '\0';
 
-			// Check if the line starts with a .
-			if ( temp[ 0 ] == '.' )
-			{
-				char temp2[ MAX_LOAD_LINE_SIZE ];
-				strcpy( temp2, last );
-				strncat( temp2, temp, sizeof(temp2) - strlen(temp2) - 1 );
-				strcpy( temp, temp2 );
-			}
-			else if ( strchr( temp, '=' ) )
-			{
-				strcpy( last, temp );
-				*( strchr( last, '=' ) ) = '\0';
-			}
+            // Check if the line starts with a .
+            if (temp[0] == '.') {
+                char temp2[MAX_LOAD_LINE_SIZE];
+                strcpy(temp2, last);
+                strncat(temp2, temp, sizeof(temp2) - strlen(temp2) - 1);
+                strcpy(temp, temp2);
+            } else if (strchr(temp, '=')) {
+                strcpy(last, temp);
+                *(strchr(last, '=')) = '\0';
+            }
 
-			// Parse and set the property
-			if ( strcmp( temp, "" ) && temp[ 0 ] != '#' )
-				mlt_properties_parse( self, temp );
-		}
+            // Parse and set the property
+            if (strcmp(temp, "") && temp[0] != '#')
+                mlt_properties_parse(self, temp);
+        }
 
-		// Close the file
-		fclose( file );
-	}
-	return file? 0 : errno;
+        // Close the file
+        fclose(file);
+    }
+    return file ? 0 : errno;
 }
 
 /** Create a properties object by reading a .properties text file.
@@ -256,16 +247,16 @@ static int load_properties( mlt_properties self, const char *filename )
  * \return a new properties object
  */
 
-mlt_properties mlt_properties_load( const char *filename )
+mlt_properties mlt_properties_load(const char *filename)
 {
-	// Construct a standalone properties object
-	mlt_properties self = mlt_properties_new( );
+    // Construct a standalone properties object
+    mlt_properties self = mlt_properties_new();
 
-	if ( self != NULL )
-		load_properties( self, filename );
+    if (self != NULL)
+        load_properties(self, filename);
 
-	// Return the pointer
-	return self;
+    // Return the pointer
+    return self;
 }
 
 /** Set properties from a preset.
@@ -287,45 +278,39 @@ mlt_properties mlt_properties_load( const char *filename )
  * \return true if error
  */
 
-int mlt_properties_preset( mlt_properties self, const char *name )
+int mlt_properties_preset(mlt_properties self, const char *name)
 {
-	struct stat stat_buff;
+    struct stat stat_buff;
 
-	// validate input
-	if ( !( self && name && strlen( name ) ) )
-		return 1;
+    // validate input
+    if (!(self && name && strlen(name)))
+        return 1;
 
-	// See if name is an explicit file
-	if ( ! stat( name, &stat_buff ) )
-	{
-		return load_properties( self, name );
-	}
-	else
-	{
-		// Look for profile-specific preset before a generic one.
-		const char *data    = mlt_environment( "MLT_PRESETS_PATH" );
-		const char *type    = mlt_properties_get( self, "mlt_type" );
-		const char *service = mlt_properties_get( self, "mlt_service" );
-		const char *profile = mlt_environment( "MLT_PROFILE" );
-		int error = 0;
+    // See if name is an explicit file
+    if (!stat(name, &stat_buff)) {
+        return load_properties(self, name);
+    } else {
+        // Look for profile-specific preset before a generic one.
+        const char *data = mlt_environment("MLT_PRESETS_PATH");
+        const char *type = mlt_properties_get(self, "mlt_type");
+        const char *service = mlt_properties_get(self, "mlt_service");
+        const char *profile = mlt_environment("MLT_PROFILE");
+        int error = 0;
 
-		if ( data && type && service )
-		{
-			char *path = malloc( 5 + strlen(name) + strlen(data) + strlen(type) + strlen(service) + ( profile? strlen(profile) : 0 ) );
-			sprintf( path, "%s/%s/%s/%s/%s", data, type, service, profile, name );
-			if ( load_properties( self, path ) )
-			{
-				sprintf( path, "%s/%s/%s/%s", data, type, service, name );
-				error = load_properties( self, path );
-			}
-			free( path );
-		}
-		else
-		{
-			error = 1;
-		}
-		return error;
-	}
+        if (data && type && service) {
+            char *path = malloc(5 + strlen(name) + strlen(data) + strlen(type) + strlen(service)
+                                + (profile ? strlen(profile) : 0));
+            sprintf(path, "%s/%s/%s/%s/%s", data, type, service, profile, name);
+            if (load_properties(self, path)) {
+                sprintf(path, "%s/%s/%s/%s", data, type, service, name);
+                error = load_properties(self, path);
+            }
+            free(path);
+        } else {
+            error = 1;
+        }
+        return error;
+    }
 }
 
 /** Generate a hash key.
@@ -335,12 +320,12 @@ int mlt_properties_preset( mlt_properties self, const char *name )
  * \return an integer
  */
 
-static inline int generate_hash( const char *name )
+static inline int generate_hash(const char *name)
 {
-	unsigned int hash = 5381;
-	while ( *name )
-		hash = hash * 33 + (unsigned int) ( *name ++ );
-	return hash % 199;
+    unsigned int hash = 5381;
+    while (*name)
+        hash = hash * 33 + (unsigned int) (*name++);
+    return hash % 199;
 }
 
 /** Copy a serializable property to a properties list that is mirroring this one.
@@ -353,16 +338,16 @@ static inline int generate_hash( const char *name )
  * \param name the name of the property to copy
  */
 
-static inline void mlt_properties_do_mirror( mlt_properties self, const char *name )
+static inline void mlt_properties_do_mirror(mlt_properties self, const char *name)
 {
-	if ( !self ) return;
-	property_list *list = self->local;
-	if ( list->mirror != NULL )
-	{
-		char *value = mlt_properties_get( self, name );
-		if ( value != NULL )
-			mlt_properties_set_string( list->mirror, name, value );
-	}
+    if (!self)
+        return;
+    property_list *list = self->local;
+    if (list->mirror != NULL) {
+        char *value = mlt_properties_get(self, name);
+        if (value != NULL)
+            mlt_properties_set_string(list->mirror, name, value);
+    }
 }
 
 /** Increment the reference count.
@@ -372,17 +357,16 @@ static inline void mlt_properties_do_mirror( mlt_properties self, const char *na
  * \return the new reference count
  */
 
-int mlt_properties_inc_ref( mlt_properties self )
+int mlt_properties_inc_ref(mlt_properties self)
 {
-	int result = 0;
-	if ( self != NULL )
-	{
-		property_list *list = self->local;
-		pthread_mutex_lock( &list->mutex );
-		result = ++ list->ref_count;
-		pthread_mutex_unlock( &list->mutex );
-	}
-	return result;
+    int result = 0;
+    if (self != NULL) {
+        property_list *list = self->local;
+        pthread_mutex_lock(&list->mutex);
+        result = ++list->ref_count;
+        pthread_mutex_unlock(&list->mutex);
+    }
+    return result;
 }
 
 /** Decrement the reference count.
@@ -392,17 +376,16 @@ int mlt_properties_inc_ref( mlt_properties self )
  * \return the new reference count
  */
 
-int mlt_properties_dec_ref( mlt_properties self )
+int mlt_properties_dec_ref(mlt_properties self)
 {
-	int result = 0;
-	if ( self != NULL )
-	{
-		property_list *list = self->local;
-		pthread_mutex_lock( &list->mutex );
-		result = -- list->ref_count;
-		pthread_mutex_unlock( &list->mutex );
-	}
-	return result;
+    int result = 0;
+    if (self != NULL) {
+        property_list *list = self->local;
+        pthread_mutex_lock(&list->mutex);
+        result = --list->ref_count;
+        pthread_mutex_unlock(&list->mutex);
+    }
+    return result;
 }
 
 /** Get the reference count.
@@ -412,14 +395,13 @@ int mlt_properties_dec_ref( mlt_properties self )
  * \return the current reference count
  */
 
-int mlt_properties_ref_count( mlt_properties self )
+int mlt_properties_ref_count(mlt_properties self)
 {
-	if ( self != NULL )
-	{
-		property_list *list = self->local;
-		return list->ref_count;
-	}
-	return 0;
+    if (self != NULL) {
+        property_list *list = self->local;
+        return list->ref_count;
+    }
+    return 0;
 }
 
 /** Set a properties list to be a mirror copy of another.
@@ -431,11 +413,12 @@ int mlt_properties_ref_count( mlt_properties self )
  * \param self the properties to mirror
  */
 
-void mlt_properties_mirror( mlt_properties self, mlt_properties that )
+void mlt_properties_mirror(mlt_properties self, mlt_properties that)
 {
-	if ( !self ) return;
-	property_list *list = self->local;
-	list->mirror = that;
+    if (!self)
+        return;
+    property_list *list = self->local;
+    list->mirror = that;
 }
 
 /** Copy all serializable properties to another properties list.
@@ -446,45 +429,40 @@ void mlt_properties_mirror( mlt_properties self, mlt_properties that )
  * \return true if error
  */
 
-int mlt_properties_inherit( mlt_properties self, mlt_properties that )
+int mlt_properties_inherit(mlt_properties self, mlt_properties that)
 {
-	if ( !self || !that ) return 1;
+    if (!self || !that)
+        return 1;
 
-	// Set "properties" first so preset overrides are reliable.
-	char *value = mlt_properties_get(that, "properties");
-	if (value)
-		mlt_properties_set_string(self, "properties", value);
+    // Set "properties" first so preset overrides are reliable.
+    char *value = mlt_properties_get(that, "properties");
+    if (value)
+        mlt_properties_set_string(self, "properties", value);
 
-	mlt_properties_lock( that );
+    mlt_properties_lock(that);
 
-	int count = mlt_properties_count( that );
-	int i = 0;
-	for ( i = 0; i < count; i ++ )
-	{
-		char *name = mlt_properties_get_name( that, i );
-		if (name && strcmp("properties", name))
-		{
-			char *value = mlt_properties_get_value( that, i );
-			if ( value != NULL )
-			{
-				mlt_properties_set_string( self, name, value );
-			}
-			else
-			{
-				mlt_properties that_child_props = mlt_properties_get_properties_at( that, i );
-				if ( that_child_props != NULL )
-				{
-					mlt_properties child_props = mlt_properties_new();
-					mlt_properties_set_properties( self, name, child_props );
-					mlt_properties_inherit( child_props, that_child_props );
-				}
-			}
-		}
-	}
+    int count = mlt_properties_count(that);
+    int i = 0;
+    for (i = 0; i < count; i++) {
+        char *name = mlt_properties_get_name(that, i);
+        if (name && strcmp("properties", name)) {
+            char *value = mlt_properties_get_value(that, i);
+            if (value != NULL) {
+                mlt_properties_set_string(self, name, value);
+            } else {
+                mlt_properties that_child_props = mlt_properties_get_properties_at(that, i);
+                if (that_child_props != NULL) {
+                    mlt_properties child_props = mlt_properties_new();
+                    mlt_properties_set_properties(self, name, child_props);
+                    mlt_properties_inherit(child_props, that_child_props);
+                }
+            }
+        }
+    }
 
-	mlt_properties_unlock( that );
+    mlt_properties_unlock(that);
 
-	return 0;
+    return 0;
 }
 
 /** Copy all serializable properties that match a prefix to another properties object
@@ -496,23 +474,22 @@ int mlt_properties_inherit( mlt_properties self, mlt_properties that )
  * \return true if error
  */
 
-int mlt_properties_copy( mlt_properties self, mlt_properties that, const char *prefix )
+int mlt_properties_copy(mlt_properties self, mlt_properties that, const char *prefix)
 {
-	if ( !self || !that ) return 1;
-	int count = mlt_properties_count( that );
-	int length = strlen( prefix );
-	int i = 0;
-	for ( i = 0; i < count; i ++ )
-	{
-		char *name = mlt_properties_get_name( that, i );
-		if ( !strncmp( name, prefix, length ) )
-		{
-			char *value = mlt_properties_get_value( that, i );
-			if ( value != NULL )
-				mlt_properties_set_string( self, name, value );
-		}
-	}
-	return 0;
+    if (!self || !that)
+        return 1;
+    int count = mlt_properties_count(that);
+    int length = strlen(prefix);
+    int i = 0;
+    for (i = 0; i < count; i++) {
+        char *name = mlt_properties_get_name(that, i);
+        if (!strncmp(name, prefix, length)) {
+            char *value = mlt_properties_get_value(that, i);
+            if (value != NULL)
+                mlt_properties_set_string(self, name, value);
+        }
+    }
+    return 0;
 }
 
 /** Pass all serializable properties that match a prefix to another properties object
@@ -527,23 +504,22 @@ int mlt_properties_copy( mlt_properties self, mlt_properties that, const char *p
  * \return true if error
  */
 
-int mlt_properties_pass( mlt_properties self, mlt_properties that, const char *prefix )
+int mlt_properties_pass(mlt_properties self, mlt_properties that, const char *prefix)
 {
-	if ( !self || !that ) return 1;
-	int count = mlt_properties_count( that );
-	int length = strlen( prefix );
-	int i = 0;
-	for ( i = 0; i < count; i ++ )
-	{
-		char *name = mlt_properties_get_name( that, i );
-		if ( !strncmp( name, prefix, length ) )
-		{
-			char *value = mlt_properties_get_value( that, i );
-			if ( value != NULL )
-				mlt_properties_set_string( self, name + length, value );
-		}
-	}
-	return 0;
+    if (!self || !that)
+        return 1;
+    int count = mlt_properties_count(that);
+    int length = strlen(prefix);
+    int i = 0;
+    for (i = 0; i < count; i++) {
+        char *name = mlt_properties_get_name(that, i);
+        if (!strncmp(name, prefix, length)) {
+            char *value = mlt_properties_get_value(that, i);
+            if (value != NULL)
+                mlt_properties_set_string(self, name + length, value);
+        }
+    }
+    return 0;
 }
 
 /** Locate a property by name.
@@ -554,31 +530,30 @@ int mlt_properties_pass( mlt_properties self, mlt_properties that, const char *p
  * \return the property or NULL for failure
  */
 
-static inline mlt_property mlt_properties_find( mlt_properties self, const char *name )
+static inline mlt_property mlt_properties_find(mlt_properties self, const char *name)
 {
-	if ( !self || !name ) return NULL;
-	property_list *list = self->local;
-	mlt_property value = NULL;
-	int key = generate_hash( name );
+    if (!self || !name)
+        return NULL;
+    property_list *list = self->local;
+    mlt_property value = NULL;
+    int key = generate_hash(name);
 
-	mlt_properties_lock( self );
+    mlt_properties_lock(self);
 
-	int i = list->hash[ key ] - 1;
-	if ( i >= 0 )
-	{
-		// Check if we're hashed
-		if ( list->count > 0 && list->name[ i ] &&
-		 	!strcmp( list->name[ i ], name ) )
-			value = list->value[ i ];
+    int i = list->hash[key] - 1;
+    if (i >= 0) {
+        // Check if we're hashed
+        if (list->count > 0 && list->name[i] && !strcmp(list->name[i], name))
+            value = list->value[i];
 
-		// Locate the item
-		for ( i = list->count - 1; value == NULL && i >= 0; i -- )
-			if ( list->name[ i ] && !strcmp( list->name[ i ], name ) )
-				value = list->value[ i ];
-	}
-	mlt_properties_unlock( self );
+        // Locate the item
+        for (i = list->count - 1; value == NULL && i >= 0; i--)
+            if (list->name[i] && !strcmp(list->name[i], name))
+                value = list->value[i];
+    }
+    mlt_properties_unlock(self);
 
-	return value;
+    return value;
 }
 
 /** Add a new property.
@@ -589,36 +564,35 @@ static inline mlt_property mlt_properties_find( mlt_properties self, const char 
  * \return the new property
  */
 
-static mlt_property mlt_properties_add( mlt_properties self, const char *name )
+static mlt_property mlt_properties_add(mlt_properties self, const char *name)
 {
-	property_list *list = self->local;
-	int key = generate_hash( name );
-	mlt_property result;
+    property_list *list = self->local;
+    int key = generate_hash(name);
+    mlt_property result;
 
-	mlt_properties_lock( self );
+    mlt_properties_lock(self);
 
-	// Check that we have space and resize if necessary
-	if ( list->count == list->size )
-	{
-		list->size += 50;
-		list->name = realloc( list->name, list->size * sizeof( const char * ) );
-		list->value = realloc( list->value, list->size * sizeof( mlt_property ) );
-	}
+    // Check that we have space and resize if necessary
+    if (list->count == list->size) {
+        list->size += 50;
+        list->name = realloc(list->name, list->size * sizeof(const char *));
+        list->value = realloc(list->value, list->size * sizeof(mlt_property));
+    }
 
-	// Assign name/value pair
-	list->name[ list->count ] = strdup( name );
-	list->value[ list->count ] = mlt_property_init( );
+    // Assign name/value pair
+    list->name[list->count] = strdup(name);
+    list->value[list->count] = mlt_property_init();
 
-	// Assign to hash table
-	if ( list->hash[ key ] == 0 )
-		list->hash[ key ] = list->count + 1;
+    // Assign to hash table
+    if (list->hash[key] == 0)
+        list->hash[key] = list->count + 1;
 
-	// Return and increment count accordingly
-	result = list->value[ list->count ++ ];
+    // Return and increment count accordingly
+    result = list->value[list->count++];
 
-	mlt_properties_unlock( self );
+    mlt_properties_unlock(self);
 
-	return result;
+    return result;
 }
 
 /** Fetch a property by name and add one if not found.
@@ -629,22 +603,22 @@ static mlt_property mlt_properties_add( mlt_properties self, const char *name )
  * \return the property
  */
 
-static mlt_property mlt_properties_fetch( mlt_properties self, const char *name )
+static mlt_property mlt_properties_fetch(mlt_properties self, const char *name)
 {
-	// Try to find an existing property first
-	mlt_property property = mlt_properties_find( self, name );
+    // Try to find an existing property first
+    mlt_property property = mlt_properties_find(self, name);
 
-	// If it wasn't found, create one
-	if ( property == NULL )
-		property = mlt_properties_add( self, name );
+    // If it wasn't found, create one
+    if (property == NULL)
+        property = mlt_properties_add(self, name);
 
-	// Return the property
-	return property;
+    // Return the property
+    return property;
 }
 
 static void fire_property_changed(mlt_properties self, const char *name)
 {
-	mlt_events_fire(self, "property-changed", mlt_event_data_from_string(name));
+    mlt_events_fire(self, "property-changed", mlt_event_data_from_string(name));
 }
 
 /** Copy a property to another properties list.
@@ -656,15 +630,15 @@ static void fire_property_changed(mlt_properties self, const char *name)
  * \param name the name of the property to copy
  */
 
-void mlt_properties_pass_property( mlt_properties self, mlt_properties that, const char *name )
+void mlt_properties_pass_property(mlt_properties self, mlt_properties that, const char *name)
 {
-	// Make sure the source property isn't null.
-	mlt_property that_prop = mlt_properties_find( that, name );
-	if( that_prop == NULL )
-		return;
+    // Make sure the source property isn't null.
+    mlt_property that_prop = mlt_properties_find(that, name);
+    if (that_prop == NULL)
+        return;
 
-	mlt_property_pass( mlt_properties_fetch( self, name ), that_prop );
-	fire_property_changed(self, name);
+    mlt_property_pass(mlt_properties_fetch(self, name), that_prop);
+    fire_property_changed(self, name);
 }
 
 /** Copy all properties specified in a comma-separated list to another properties list.
@@ -678,61 +652,60 @@ void mlt_properties_pass_property( mlt_properties self, mlt_properties that, con
  * \return true if error
  */
 
-
-int mlt_properties_pass_list( mlt_properties self, mlt_properties that, const char *list )
+int mlt_properties_pass_list(mlt_properties self, mlt_properties that, const char *list)
 {
-	if ( !self || !that || !list ) return 1;
-	char *props = strdup( list );
-	char *ptr = props;
-	const char *delim = " ,\t\n";	// Any combination of spaces, commas, tabs, and newlines
-	int count, done = 0;
+    if (!self || !that || !list)
+        return 1;
+    char *props = strdup(list);
+    char *ptr = props;
+    const char *delim = " ,\t\n"; // Any combination of spaces, commas, tabs, and newlines
+    int count, done = 0;
 
-	while( !done )
-	{
-		count = strcspn( ptr, delim );
+    while (!done) {
+        count = strcspn(ptr, delim);
 
-		if( ptr[count] == '\0' )
-			done = 1;
-		else
-			ptr[count] = '\0';	// Make it a real string
+        if (ptr[count] == '\0')
+            done = 1;
+        else
+            ptr[count] = '\0'; // Make it a real string
 
-		mlt_properties_pass_property( self, that, ptr );
+        mlt_properties_pass_property(self, that, ptr);
 
-		ptr += count + 1;
-		if ( !done )
-			ptr += strspn( ptr, delim );
-	}
+        ptr += count + 1;
+        if (!done)
+            ptr += strspn(ptr, delim);
+    }
 
-	free( props );
+    free(props);
 
-	return 0;
+    return 0;
 }
 
-static int is_valid_expression(mlt_properties self, const char* value)
+static int is_valid_expression(mlt_properties self, const char *value)
 {
-	int result = *value != '\0';
-	char id[255];
+    int result = *value != '\0';
+    char id[255];
 
-	while (*value != '\0') {
-		size_t length = strcspn(value, "+-*/");
+    while (*value != '\0') {
+        size_t length = strcspn(value, "+-*/");
 
-		// Get the identifier
-		length = MIN(sizeof(id) - 1, length);
-		strncpy(id, value, length);
-		id[length] = '\0';
-		value += length;
+        // Get the identifier
+        length = MIN(sizeof(id) - 1, length);
+        strncpy(id, value, length);
+        id[length] = '\0';
+        value += length;
 
-		// Determine if the property exists
-		if (!isdigit(id[0]) && !mlt_properties_get(self, id)) {
-			result = 0;
-			break;
-		}
+        // Determine if the property exists
+        if (!isdigit(id[0]) && !mlt_properties_get(self, id)) {
+            result = 0;
+            break;
+        }
 
-		// Get the next op
-		if (value[0] != '\0')
-			++value;
-	}
-	return result;
+        // Get the next op
+        if (value[0] != '\0')
+            ++value;
+    }
+    return result;
 }
 
 /** Set a property to a string.
@@ -750,95 +723,84 @@ static int is_valid_expression(mlt_properties self, const char* value)
  * \return true if error
  */
 
-int mlt_properties_set( mlt_properties self, const char *name, const char *value )
+int mlt_properties_set(mlt_properties self, const char *name, const char *value)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property == NULL )
-	{
-		mlt_log( NULL, MLT_LOG_FATAL, "Whoops - %s not found (should never occur)\n", name );
-	}
-	else if ( value == NULL )
-	{
-		error = mlt_property_set_string( property, value );
-		mlt_properties_do_mirror( self, name );
-	}
-	else if ( value[ 0 ] == '@' && is_valid_expression(self, &value[1]) )
-	{
-		double total = 0;
-		double current = 0;
-		char id[ 255 ];
-		char op = '+';
+    // Set it if not NULL
+    if (property == NULL) {
+        mlt_log(NULL, MLT_LOG_FATAL, "Whoops - %s not found (should never occur)\n", name);
+    } else if (value == NULL) {
+        error = mlt_property_set_string(property, value);
+        mlt_properties_do_mirror(self, name);
+    } else if (value[0] == '@' && is_valid_expression(self, &value[1])) {
+        double total = 0;
+        double current = 0;
+        char id[255];
+        char op = '+';
 
-		value ++;
+        value++;
 
-		while ( *value != '\0' )
-		{
-			size_t length = strcspn( value, "+-*/" );
+        while (*value != '\0') {
+            size_t length = strcspn(value, "+-*/");
 
-			// Get the identifier
-			length = MIN(sizeof(id) - 1, length);
-			strncpy( id, value, length );
-			id[ length ] = '\0';
-			value += length;
+            // Get the identifier
+            length = MIN(sizeof(id) - 1, length);
+            strncpy(id, value, length);
+            id[length] = '\0';
+            value += length;
 
-			// Determine the value
-			if ( isdigit( id[ 0 ] ) )
-			{
+            // Determine the value
+            if (isdigit(id[0])) {
 #if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
-				property_list *list = self->local;
-				if ( list->locale )
-					current = strtod_l( id, NULL, list->locale );
+                property_list *list = self->local;
+                if (list->locale)
+                    current = strtod_l(id, NULL, list->locale);
                 else
 #endif
-					current = strtod( id, NULL );
-			}
-			else
-			{
-				current = mlt_properties_get_double( self, id );
-			}
+                    current = strtod(id, NULL);
+            } else {
+                current = mlt_properties_get_double(self, id);
+            }
 
-			// Apply the operation
-			switch( op )
-			{
-				case '+':
-					total += current;
-					break;
-				case '-':
-					total -= current;
-					break;
-				case '*':
-					total *= current;
-					break;
-				case '/':
-					total = total / current;
-					break;
-			}
+            // Apply the operation
+            switch (op) {
+            case '+':
+                total += current;
+                break;
+            case '-':
+                total -= current;
+                break;
+            case '*':
+                total *= current;
+                break;
+            case '/':
+                total = total / current;
+                break;
+            }
 
-			// Get the next op
-			op = *value != '\0' ? *value ++ : ' ';
-		}
+            // Get the next op
+            op = *value != '\0' ? *value++ : ' ';
+        }
 
-		error = mlt_property_set_double( property, total );
-		mlt_properties_do_mirror( self, name );
-	}
-	else
-	{
-		error = mlt_property_set_string( property, value );
-		mlt_properties_do_mirror( self, name );
-		if ( !strcmp( name, "properties" ) )
-			mlt_properties_preset( self, value );
-	}
+        error = mlt_property_set_double(property, total);
+        mlt_properties_do_mirror(self, name);
+    } else {
+        error = mlt_property_set_string(property, value);
+        mlt_properties_do_mirror(self, name);
+        if (!strcmp(name, "properties"))
+            mlt_properties_preset(self, value);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Set or default a property to a string.
@@ -852,9 +814,12 @@ int mlt_properties_set( mlt_properties self, const char *name, const char *value
  * \return true if error
  */
 
-int mlt_properties_set_or_default( mlt_properties self, const char *name, const char *value, const char *def )
+int mlt_properties_set_or_default(mlt_properties self,
+                                  const char *name,
+                                  const char *value,
+                                  const char *def)
 {
-	return mlt_properties_set( self, name, value == NULL ? def : value );
+    return mlt_properties_set(self, name, value == NULL ? def : value);
 }
 
 /** Set a property to a string.
@@ -871,36 +836,32 @@ int mlt_properties_set_or_default( mlt_properties self, const char *name, const 
  * \return true if error
  */
 
-int mlt_properties_set_string( mlt_properties self, const char *name, const char *value )
+int mlt_properties_set_string(mlt_properties self, const char *name, const char *value)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property == NULL )
-	{
-		mlt_log( NULL, MLT_LOG_FATAL, "Whoops - %s not found (should never occur)\n", name );
-	}
-	else if ( value == NULL )
-	{
-		error = mlt_property_set_string( property, value );
-		mlt_properties_do_mirror( self, name );
-	}
-	else
-	{
-		error = mlt_property_set_string( property, value );
-		mlt_properties_do_mirror( self, name );
-		if ( !strcmp( name, "properties" ) )
-			mlt_properties_preset( self, value );
-	}
+    // Set it if not NULL
+    if (property == NULL) {
+        mlt_log(NULL, MLT_LOG_FATAL, "Whoops - %s not found (should never occur)\n", name);
+    } else if (value == NULL) {
+        error = mlt_property_set_string(property, value);
+        mlt_properties_do_mirror(self, name);
+    } else {
+        error = mlt_property_set_string(property, value);
+        mlt_properties_do_mirror(self, name);
+        if (!strcmp(name, "properties"))
+            mlt_properties_preset(self, value);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a string value by name.
@@ -913,16 +874,15 @@ int mlt_properties_set_string( mlt_properties self, const char *name, const char
  * \return the property's string value or NULL if it does not exist
  */
 
-char *mlt_properties_get( mlt_properties self, const char *name )
+char *mlt_properties_get(mlt_properties self, const char *name)
 {
-	char *result = NULL;
-	mlt_property value = mlt_properties_find( self, name );
-	if ( value )
-	{
-		property_list *list = self->local;
-		result = mlt_property_get_string_l( value, list->locale );
-	}
-	return result;
+    char *result = NULL;
+    mlt_property value = mlt_properties_find(self, name);
+    if (value) {
+        property_list *list = self->local;
+        result = mlt_property_get_string_l(value, list->locale);
+    }
+    return result;
 }
 
 /** Get a property name by index.
@@ -934,13 +894,14 @@ char *mlt_properties_get( mlt_properties self, const char *name )
  * \return the name of the property or NULL if index is out of range
  */
 
-char *mlt_properties_get_name( mlt_properties self, int index )
+char *mlt_properties_get_name(mlt_properties self, int index)
 {
-	if ( !self ) return NULL;
-	property_list *list = self->local;
-	if ( index >= 0 && index < list->count )
-		return list->name[ index ];
-	return NULL;
+    if (!self)
+        return NULL;
+    property_list *list = self->local;
+    if (index >= 0 && index < list->count)
+        return list->name[index];
+    return NULL;
 }
 
 /** Get a property's string value by index (with time format).
@@ -953,13 +914,14 @@ char *mlt_properties_get_name( mlt_properties self, int index )
  * \return the property value as a string or NULL if the index is out of range
  */
 
-char *mlt_properties_get_value_tf( mlt_properties self, int index, mlt_time_format time_format )
+char *mlt_properties_get_value_tf(mlt_properties self, int index, mlt_time_format time_format)
 {
-	if ( !self ) return NULL;
-	property_list *list = self->local;
-	if ( index >= 0 && index < list->count )
-		return mlt_property_get_string_l_tf( list->value[ index ], list->locale, time_format );
-	return NULL;
+    if (!self)
+        return NULL;
+    property_list *list = self->local;
+    if (index >= 0 && index < list->count)
+        return mlt_property_get_string_l_tf(list->value[index], list->locale, time_format);
+    return NULL;
 }
 
 /** Get a property's string value by index.
@@ -971,9 +933,9 @@ char *mlt_properties_get_value_tf( mlt_properties self, int index, mlt_time_form
  * \return the property value as a string or NULL if the index is out of range
  */
 
-char *mlt_properties_get_value( mlt_properties self, int index )
+char *mlt_properties_get_value(mlt_properties self, int index)
 {
-	return mlt_properties_get_value_tf( self, index, mlt_time_frames );
+    return mlt_properties_get_value_tf(self, index, mlt_time_frames);
 }
 
 /** Get a data value by index.
@@ -986,13 +948,14 @@ char *mlt_properties_get_value( mlt_properties self, int index )
  * \param[out] size the size of the binary data in bytes or NULL if the index is out of range
  */
 
-void *mlt_properties_get_data_at( mlt_properties self, int index, int *size )
+void *mlt_properties_get_data_at(mlt_properties self, int index, int *size)
 {
-	if ( !self ) return NULL;
-	property_list *list = self->local;
-	if ( index >= 0 && index < list->count )
-		return mlt_property_get_data( list->value[ index ], size );
-	return NULL;
+    if (!self)
+        return NULL;
+    property_list *list = self->local;
+    if (index >= 0 && index < list->count)
+        return mlt_property_get_data(list->value[index], size);
+    return NULL;
 }
 
 /** Return the number of items in the list.
@@ -1002,11 +965,12 @@ void *mlt_properties_get_data_at( mlt_properties self, int index, int *size )
  * \return the number of property objects or -1 if error
  */
 
-int mlt_properties_count( mlt_properties self )
+int mlt_properties_count(mlt_properties self)
 {
-	if ( !self ) return -1;
-	property_list *list = self->local;
-	return list->count;
+    if (!self)
+        return -1;
+    property_list *list = self->local;
+    return list->count;
 }
 
 /** Set a value by parsing a name=value string.
@@ -1017,41 +981,36 @@ int mlt_properties_count( mlt_properties self )
  * \return true if there was an error
  */
 
-int mlt_properties_parse( mlt_properties self, const char *namevalue )
+int mlt_properties_parse(mlt_properties self, const char *namevalue)
 {
-	if ( !self ) return 1;
-	char *name = strdup( namevalue );
-	char *value = NULL;
-	int error = 0;
-	char *ptr = strchr( name, '=' );
+    if (!self)
+        return 1;
+    char *name = strdup(namevalue);
+    char *value = NULL;
+    int error = 0;
+    char *ptr = strchr(name, '=');
 
-	if ( ptr )
-	{
-		*( ptr ++ ) = '\0';
+    if (ptr) {
+        *(ptr++) = '\0';
 
-		if ( *ptr != '\"' )
-		{
-			value = strdup( ptr );
-		}
-		else
-		{
-			ptr ++;
-			value = strdup( ptr );
-			if ( value != NULL && value[ strlen( value ) - 1 ] == '\"' )
-				value[ strlen( value ) - 1 ] = '\0';
-		}
-	}
-	else
-	{
-		value = strdup( "" );
-	}
+        if (*ptr != '\"') {
+            value = strdup(ptr);
+        } else {
+            ptr++;
+            value = strdup(ptr);
+            if (value != NULL && value[strlen(value) - 1] == '\"')
+                value[strlen(value) - 1] = '\0';
+        }
+    } else {
+        value = strdup("");
+    }
 
-	error = mlt_properties_set( self, name, value );
+    error = mlt_properties_set(self, name, value);
 
-	free( name );
-	free( value );
+    free(name);
+    free(value);
 
-	return error;
+    return error;
 }
 
 /** Get an integer associated to the name.
@@ -1062,18 +1021,17 @@ int mlt_properties_parse( mlt_properties self, const char *namevalue )
  * \return The integer value, 0 if not found (which may also be a legitimate value)
  */
 
-int mlt_properties_get_int( mlt_properties self, const char *name )
+int mlt_properties_get_int(mlt_properties self, const char *name)
 {
-	int result = 0;
-	mlt_property value = mlt_properties_find( self, name );
-	if ( value )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		result = mlt_property_get_int( value, fps, list->locale );
-	}
-	return result;
+    int result = 0;
+    mlt_property value = mlt_properties_find(self, name);
+    if (value) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        result = mlt_property_get_int(value, fps, list->locale);
+    }
+    return result;
 }
 
 /** Set a property to an integer value.
@@ -1085,25 +1043,25 @@ int mlt_properties_get_int( mlt_properties self, const char *name )
  * \return true if error
  */
 
-int mlt_properties_set_int( mlt_properties self, const char *name, int value )
+int mlt_properties_set_int(mlt_properties self, const char *name, int value)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		error = mlt_property_set_int( property, value );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        error = mlt_property_set_int(property, value);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a 64-bit integer associated to the name.
@@ -1114,10 +1072,10 @@ int mlt_properties_set_int( mlt_properties self, const char *name, int value )
  * \return the integer value, 0 if not found (which may also be a legitimate value)
  */
 
-int64_t mlt_properties_get_int64( mlt_properties self, const char *name )
+int64_t mlt_properties_get_int64(mlt_properties self, const char *name)
 {
-	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_get_int64( value );
+    mlt_property value = mlt_properties_find(self, name);
+    return value == NULL ? 0 : mlt_property_get_int64(value);
 }
 
 /** Set a property to a 64-bit integer value.
@@ -1129,25 +1087,25 @@ int64_t mlt_properties_get_int64( mlt_properties self, const char *name )
  * \return true if error
  */
 
-int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t value )
+int mlt_properties_set_int64(mlt_properties self, const char *name, int64_t value)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		error = mlt_property_set_int64( property, value );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        error = mlt_property_set_int64(property, value);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a floating point value associated to the name.
@@ -1158,18 +1116,17 @@ int mlt_properties_set_int64( mlt_properties self, const char *name, int64_t val
  * \return the floating point, 0 if not found (which may also be a legitimate value)
  */
 
-double mlt_properties_get_double( mlt_properties self, const char *name )
+double mlt_properties_get_double(mlt_properties self, const char *name)
 {
-	double result = 0;
-	mlt_property value = mlt_properties_find( self, name );
-	if ( value )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		result = mlt_property_get_double( value, fps, list->locale );
-	}
-	return result;
+    double result = 0;
+    mlt_property value = mlt_properties_find(self, name);
+    if (value) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        result = mlt_property_get_double(value, fps, list->locale);
+    }
+    return result;
 }
 
 /** Set a property to a floating point value.
@@ -1181,25 +1138,25 @@ double mlt_properties_get_double( mlt_properties self, const char *name )
  * \return true if error
  */
 
-int mlt_properties_set_double( mlt_properties self, const char *name, double value )
+int mlt_properties_set_double(mlt_properties self, const char *name, double value)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		error = mlt_property_set_double( property, value );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        error = mlt_property_set_double(property, value);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a position value associated to the name.
@@ -1210,18 +1167,17 @@ int mlt_properties_set_double( mlt_properties self, const char *name, double val
  * \return the position, 0 if not found (which may also be a legitimate value)
  */
 
-mlt_position mlt_properties_get_position( mlt_properties self, const char *name )
+mlt_position mlt_properties_get_position(mlt_properties self, const char *name)
 {
-	mlt_position result = 0;
-	mlt_property value = mlt_properties_find( self, name );
-	if ( value )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		result = mlt_property_get_position( value, fps, list->locale );
-	}
-	return result;
+    mlt_position result = 0;
+    mlt_property value = mlt_properties_find(self, name);
+    if (value) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        result = mlt_property_get_position(value, fps, list->locale);
+    }
+    return result;
 }
 
 /** Set a property to a position value.
@@ -1233,25 +1189,25 @@ mlt_position mlt_properties_get_position( mlt_properties self, const char *name 
  * \return true if error
  */
 
-int mlt_properties_set_position( mlt_properties self, const char *name, mlt_position value )
+int mlt_properties_set_position(mlt_properties self, const char *name, mlt_position value)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		error = mlt_property_set_position( property, value );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        error = mlt_property_set_position(property, value);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a binary data value associated to the name.
@@ -1264,10 +1220,10 @@ int mlt_properties_set_position( mlt_properties self, const char *name, mlt_posi
  * \param[out] length The size of the binary data in bytes, if available (often it is not, you should know)
  */
 
-void *mlt_properties_get_data( mlt_properties self, const char *name, int *length )
+void *mlt_properties_get_data(mlt_properties self, const char *name, int *length)
 {
-	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? NULL : mlt_property_get_data( value, length );
+    mlt_property value = mlt_properties_find(self, name);
+    return value == NULL ? NULL : mlt_property_get_data(value, length);
 }
 
 /** Store binary data as a property.
@@ -1282,22 +1238,28 @@ void *mlt_properties_get_data( mlt_properties self, const char *name, int *lengt
  * \return true if error
  */
 
-int mlt_properties_set_data( mlt_properties self, const char *name, void *value, int length, mlt_destructor destroy, mlt_serialiser serialise )
+int mlt_properties_set_data(mlt_properties self,
+                            const char *name,
+                            void *value,
+                            int length,
+                            mlt_destructor destroy,
+                            mlt_serialiser serialise)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-		error = mlt_property_set_data( property, value, length, destroy, serialise );
+    // Set it if not NULL
+    if (property != NULL)
+        error = mlt_property_set_data(property, value, length, destroy, serialise);
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Rename a property.
@@ -1309,31 +1271,28 @@ int mlt_properties_set_data( mlt_properties self, const char *name, void *value,
  * \return true if the name is already in use
  */
 
-int mlt_properties_rename( mlt_properties self, const char *source, const char *dest )
+int mlt_properties_rename(mlt_properties self, const char *source, const char *dest)
 {
-	mlt_property value = mlt_properties_find( self, dest );
+    mlt_property value = mlt_properties_find(self, dest);
 
-	if ( value == NULL )
-	{
-		property_list *list = self->local;
-		int i = 0;
+    if (value == NULL) {
+        property_list *list = self->local;
+        int i = 0;
 
-		// Locate the item
-		mlt_properties_lock( self );
-		for ( i = 0; i < list->count; i ++ )
-		{
-			if ( list->name[ i ] && !strcmp( list->name[ i ], source ) )
-			{
-				free( list->name[ i ] );
-				list->name[ i ] = strdup( dest );
-				list->hash[ generate_hash( dest ) ] = i + 1;
-				break;
-			}
-		}
-		mlt_properties_unlock( self );
-	}
+        // Locate the item
+        mlt_properties_lock(self);
+        for (i = 0; i < list->count; i++) {
+            if (list->name[i] && !strcmp(list->name[i], source)) {
+                free(list->name[i]);
+                list->name[i] = strdup(dest);
+                list->hash[generate_hash(dest)] = i + 1;
+                break;
+            }
+        }
+        mlt_properties_unlock(self);
+    }
 
-	return value != NULL;
+    return value != NULL;
 }
 
 /** Dump the properties to a file handle.
@@ -1343,14 +1302,15 @@ int mlt_properties_rename( mlt_properties self, const char *source, const char *
  * \param output a file handle
  */
 
-void mlt_properties_dump( mlt_properties self, FILE *output )
+void mlt_properties_dump(mlt_properties self, FILE *output)
 {
-	if ( !self || !output ) return;
-	property_list *list = self->local;
-	int i = 0;
-	for ( i = 0; i < list->count; i ++ )
-		if ( mlt_properties_get( self, list->name[ i ] ) != NULL )
-			fprintf( output, "%s=%s\n", list->name[ i ], mlt_properties_get( self, list->name[ i ] ) );
+    if (!self || !output)
+        return;
+    property_list *list = self->local;
+    int i = 0;
+    for (i = 0; i < list->count; i++)
+        if (mlt_properties_get(self, list->name[i]) != NULL)
+            fprintf(output, "%s=%s\n", list->name[i], mlt_properties_get(self, list->name[i]));
 }
 
 /** Output the properties to a file handle.
@@ -1361,26 +1321,33 @@ void mlt_properties_dump( mlt_properties self, FILE *output )
  * \param title a string to preface the output
  * \param output a file handle
  */
-void mlt_properties_debug( mlt_properties self, const char *title, FILE *output )
+void mlt_properties_debug(mlt_properties self, const char *title, FILE *output)
 {
-	if ( !self || !output ) return;
-	if ( output == NULL ) output = stderr;
-	fprintf( output, "%s: ", title );
-	if ( self != NULL )
-	{
-		property_list *list = self->local;
-		int i = 0;
-		fprintf( output, "[ ref=%d", list->ref_count );
-		for ( i = 0; i < list->count; i ++ )
-			if ( mlt_properties_get( self, list->name[ i ] ) != NULL )
-				fprintf( output, ", %s=%s", list->name[ i ], mlt_properties_get( self, list->name[ i ] ) );
-			else if ( mlt_properties_get_data( self, list->name[ i ], NULL ) != NULL )
-				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_data( self, list->name[ i ], NULL ) );
-			else
-				fprintf( output, ", %s=%p", list->name[ i ], mlt_properties_get_properties( self, list->name[ i ] ) );
-		fprintf( output, " ]" );
-	}
-	fprintf( output, "\n" );
+    if (!self || !output)
+        return;
+    if (output == NULL)
+        output = stderr;
+    fprintf(output, "%s: ", title);
+    if (self != NULL) {
+        property_list *list = self->local;
+        int i = 0;
+        fprintf(output, "[ ref=%d", list->ref_count);
+        for (i = 0; i < list->count; i++)
+            if (mlt_properties_get(self, list->name[i]) != NULL)
+                fprintf(output, ", %s=%s", list->name[i], mlt_properties_get(self, list->name[i]));
+            else if (mlt_properties_get_data(self, list->name[i], NULL) != NULL)
+                fprintf(output,
+                        ", %s=%p",
+                        list->name[i],
+                        mlt_properties_get_data(self, list->name[i], NULL));
+            else
+                fprintf(output,
+                        ", %s=%p",
+                        list->name[i],
+                        mlt_properties_get_properties(self, list->name[i]));
+        fprintf(output, " ]");
+    }
+    fprintf(output, "\n");
 }
 
 /** Save the properties to a file by name.
@@ -1392,19 +1359,19 @@ void mlt_properties_debug( mlt_properties self, const char *title, FILE *output 
  * \return true if there was an error
  */
 
-int mlt_properties_save( mlt_properties self, const char *filename )
+int mlt_properties_save(mlt_properties self, const char *filename)
 {
-	int error = 1;
-	if ( !self || !filename ) return error;
+    int error = 1;
+    if (!self || !filename)
+        return error;
 
-	FILE *f = mlt_fopen( filename, "w" );
-	if ( f != NULL )
-	{
-		mlt_properties_dump( self, f );
-		fclose( f );
-		error = 0;
-	}
-	return error;
+    FILE *f = mlt_fopen(filename, "w");
+    if (f != NULL) {
+        mlt_properties_dump(self, f);
+        fclose(f);
+        error = 0;
+    }
+    return error;
 }
 
 /* This is a very basic cross platform fnmatch replacement - it will fail in
@@ -1419,37 +1386,29 @@ int mlt_properties_save( mlt_properties self, const char *filename )
  * \return true if the file name matches the wildcard pattern
  */
 
-static int mlt_fnmatch( const char *wild, const char *file )
+static int mlt_fnmatch(const char *wild, const char *file)
 {
-	int f = 0;
-	int w = 0;
+    int f = 0;
+    int w = 0;
 
-	while( f < strlen( file ) && w < strlen( wild ) )
-	{
-		if ( wild[ w ] == '*' )
-		{
-			w ++;
-			if ( w == strlen( wild ) )
-				f = strlen( file );
-			while ( f != strlen( file ) && tolower( file[ f ] ) != tolower( wild[ w ] ) )
-				f ++;
-		}
-		else if ( wild[ w ] == '?' || tolower( file[ f ] ) == tolower( wild[ w ] ) )
-		{
-			f ++;
-			w ++;
-		}
-		else if ( wild[ 0 ] == '*' )
-		{
-			w = 0;
-		}
-		else
-		{
-			return 0;
-		}
-	}
+    while (f < strlen(file) && w < strlen(wild)) {
+        if (wild[w] == '*') {
+            w++;
+            if (w == strlen(wild))
+                f = strlen(file);
+            while (f != strlen(file) && tolower(file[f]) != tolower(wild[w]))
+                f++;
+        } else if (wild[w] == '?' || tolower(file[f]) == tolower(wild[w])) {
+            f++;
+            w++;
+        } else if (wild[0] == '*') {
+            w = 0;
+        } else {
+            return 0;
+        }
+    }
 
-	return strlen( file ) == f &&  strlen( wild ) == w;
+    return strlen(file) == f && strlen(wild) == w;
 }
 
 /** Compare the string or serialized value of two properties.
@@ -1460,9 +1419,10 @@ static int mlt_fnmatch( const char *wild, const char *file )
  * \return < 0 if \p self less than \p that, 0 if equal, or > 0 if \p self is greater than \p that
  */
 
-static int mlt_compare( const void *self, const void *that )
+static int mlt_compare(const void *self, const void *that)
 {
-    return strcmp( mlt_property_get_string( *( const mlt_property * )self ), mlt_property_get_string( *( const mlt_property * )that ) );
+    return strcmp(mlt_property_get_string(*(const mlt_property *) self),
+                  mlt_property_get_string(*(const mlt_property *) that));
 }
 
 /** Get the contents of a directory.
@@ -1478,38 +1438,35 @@ static int mlt_compare( const void *self, const void *that )
  * \return the number of items in the directory listing
  */
 
-int mlt_properties_dir_list( mlt_properties self, const char *dirname, const char *pattern, int sort )
+int mlt_properties_dir_list(mlt_properties self, const char *dirname, const char *pattern, int sort)
 {
-	DIR *dir = opendir( dirname );
+    DIR *dir = opendir(dirname);
 
-	if ( dir )
-	{
-		char key[ 20 ];
-		struct dirent *de = readdir( dir );
-		char fullname[ 1024 ];
-		while( de != NULL )
-		{
-			sprintf( key, "%d", mlt_properties_count( self ) );
-			snprintf( fullname, 1024, "%s/%s", dirname, de->d_name );
-			if ( pattern == NULL )
-				mlt_properties_set_string( self, key, fullname );
-			else if ( de->d_name[ 0 ] != '.' && mlt_fnmatch( pattern, de->d_name ) )
-				mlt_properties_set_string( self, key, fullname );
-			de = readdir( dir );
-		}
+    if (dir) {
+        char key[20];
+        struct dirent *de = readdir(dir);
+        char fullname[1024];
+        while (de != NULL) {
+            sprintf(key, "%d", mlt_properties_count(self));
+            snprintf(fullname, 1024, "%s/%s", dirname, de->d_name);
+            if (pattern == NULL)
+                mlt_properties_set_string(self, key, fullname);
+            else if (de->d_name[0] != '.' && mlt_fnmatch(pattern, de->d_name))
+                mlt_properties_set_string(self, key, fullname);
+            de = readdir(dir);
+        }
 
-		closedir( dir );
-	}
+        closedir(dir);
+    }
 
-	if ( sort && mlt_properties_count( self ) )
-	{
-		property_list *list = self->local;
-		mlt_properties_lock( self );
-		qsort( list->value, mlt_properties_count( self ), sizeof( mlt_property ), mlt_compare );
-		mlt_properties_unlock( self );
-	}
+    if (sort && mlt_properties_count(self)) {
+        property_list *list = self->local;
+        mlt_properties_lock(self);
+        qsort(list->value, mlt_properties_count(self), sizeof(mlt_property), mlt_compare);
+        mlt_properties_unlock(self);
+    }
 
-	return mlt_properties_count( self );
+    return mlt_properties_count(self);
 }
 
 /** Close a properties object.
@@ -1519,59 +1476,58 @@ int mlt_properties_dir_list( mlt_properties self, const char *dirname, const cha
  * \param self a properties object
  */
 
-void mlt_properties_close( mlt_properties self )
+void mlt_properties_close(mlt_properties self)
 {
-	if ( self != NULL && mlt_properties_dec_ref( self ) <= 0 )
-	{
-		if ( self->close != NULL )
-		{
-			self->close( self->close_object );
-		}
-		else
-		{
-			property_list *list = self->local;
-			int index = 0;
+    if (self != NULL && mlt_properties_dec_ref(self) <= 0) {
+        if (self->close != NULL) {
+            self->close(self->close_object);
+        } else {
+            property_list *list = self->local;
+            int index = 0;
 
 #if _MLT_PROPERTY_CHECKS_ == 1
-			// Show debug info
-			mlt_properties_debug( self, "Closing", stderr );
+            // Show debug info
+            mlt_properties_debug(self, "Closing", stderr);
 #endif
 
 #ifdef _MLT_PROPERTY_CHECKS_
-			// Increment destroyed count
-			properties_destroyed ++;
+            // Increment destroyed count
+            properties_destroyed++;
 
-			// Show current stats - these should match when the app is closed
-			mlt_log( NULL, MLT_LOG_DEBUG, "Created %d, destroyed %d\n", properties_created, properties_destroyed );
+            // Show current stats - these should match when the app is closed
+            mlt_log(NULL,
+                    MLT_LOG_DEBUG,
+                    "Created %d, destroyed %d\n",
+                    properties_created,
+                    properties_destroyed);
 #endif
 
-			// Clean up names and values
-			for ( index = list->count - 1; index >= 0; index -- )
-			{
-				mlt_property_close( list->value[ index ] );
-				free( list->name[ index ] );
-			}
+            // Clean up names and values
+            for (index = list->count - 1; index >= 0; index--) {
+                mlt_property_close(list->value[index]);
+                free(list->name[index]);
+            }
 
 #if defined(__GLIBC__) || defined(__APPLE__)
-			// Cleanup locale
-			if ( list->locale )
-				freelocale( list->locale );
+            // Cleanup locale
+            if (list->locale)
+                freelocale(list->locale);
 #else
 
-			free( list->locale );
+            free(list->locale);
 #endif
 
-			// Clear up the list
-			pthread_mutex_destroy( &list->mutex );
-			free( list->name );
-			free( list->value );
-			free( list );
+            // Clear up the list
+            pthread_mutex_destroy(&list->mutex);
+            free(list->name);
+            free(list->value);
+            free(list);
 
-			// Free self now if self has no child
-			if ( self->child == NULL )
-				free( self );
-		}
-	}
+            // Free self now if self has no child
+            if (self->child == NULL)
+                free(self);
+        }
+    }
 }
 
 /** Determine if the properties list is really just a sequence or ordered list.
@@ -1581,14 +1537,14 @@ void mlt_properties_close( mlt_properties self )
  * \return true if all of the property names are numeric (a sequence)
  */
 
-int mlt_properties_is_sequence( mlt_properties properties )
+int mlt_properties_is_sequence(mlt_properties properties)
 {
-	int i;
-	int n = mlt_properties_count( properties );
-	for ( i = 0; i < n; i++ )
-		if ( ! isdigit( mlt_properties_get_name( properties, i )[0] ) )
-			return 0;
-	return 1;
+    int i;
+    int n = mlt_properties_count(properties);
+    for (i = 0; i < n; i++)
+        if (!isdigit(mlt_properties_get_name(properties, i)[0]))
+            return 0;
+    return 1;
 }
 
 /** \brief YAML Tiny Parser context structure
@@ -1606,14 +1562,13 @@ int mlt_properties_is_sequence( mlt_properties properties )
 
 struct yaml_parser_context
 {
-	mlt_deque stack;
-	unsigned int level;
-	int index;
-	mlt_deque index_stack;
-	char block;
-	char *block_name;
-	unsigned int block_indent;
-
+    mlt_deque stack;
+    unsigned int level;
+    int index;
+    mlt_deque index_stack;
+    char block;
+    char *block_name;
+    unsigned int block_indent;
 };
 typedef struct yaml_parser_context *yaml_parser;
 
@@ -1623,14 +1578,15 @@ typedef struct yaml_parser_context *yaml_parser;
  * \return the number of characters removed
  */
 
-static unsigned int ltrim( char **s )
+static unsigned int ltrim(char **s)
 {
-	unsigned int i = 0;
-	char *c = *s;
-	int n = strlen( c );
-	for ( i = 0; i < n && *c == ' '; i++, c++ );
-	*s = c;
-	return i;
+    unsigned int i = 0;
+    char *c = *s;
+    int n = strlen(c);
+    for (i = 0; i < n && *c == ' '; i++, c++)
+        ;
+    *s = c;
+    return i;
 }
 
 /** Remove spaces from the right side of a string.
@@ -1639,13 +1595,13 @@ static unsigned int ltrim( char **s )
  * \return the number of characters removed
  */
 
-static unsigned int rtrim( char *s )
+static unsigned int rtrim(char *s)
 {
-	int n = strlen( s );
-	int i;
-	for ( i = n; i > 0 && s[i - 1] == ' '; --i )
-		s[i - 1] = 0;
-	return n - i;
+    int n = strlen(s);
+    int i;
+    for (i = n; i > 0 && s[i - 1] == ' '; --i)
+        s[i - 1] = 0;
+    return n - i;
 }
 
 /** Parse a line of YAML Tiny.
@@ -1657,252 +1613,238 @@ static unsigned int rtrim( char *s )
  * \return true if there was an error
  */
 
-static int parse_yaml( yaml_parser context, const char *namevalue )
+static int parse_yaml(yaml_parser context, const char *namevalue)
 {
-	char *name_ = strdup( namevalue );
-	char *name = name_;
-	char *value = NULL;
-	int error = 0;
-	char *ptr = strchr( name, ':' );
-	unsigned int indent = ltrim( &name );
-	mlt_properties properties = mlt_deque_peek_back( context->stack );
+    char *name_ = strdup(namevalue);
+    char *name = name_;
+    char *value = NULL;
+    int error = 0;
+    char *ptr = strchr(name, ':');
+    unsigned int indent = ltrim(&name);
+    mlt_properties properties = mlt_deque_peek_back(context->stack);
 
-	// If name is quoted
-	if ( ptr && name[0] == '\"' ) {
-		// Look for ending quote.
-		ptr = strchr( ptr + 1, '\"');
-		if ( ptr )
-			// Locate delimiter after ending quote.
-			ptr = strchr( ptr + 1, ':' );
-		else
-			// No ending quote!
-			ptr = strchr( name, ':' );
-	}
+    // If name is quoted
+    if (ptr && name[0] == '\"') {
+        // Look for ending quote.
+        ptr = strchr(ptr + 1, '\"');
+        if (ptr)
+            // Locate delimiter after ending quote.
+            ptr = strchr(ptr + 1, ':');
+        else
+            // No ending quote!
+            ptr = strchr(name, ':');
+    }
 
-	// Ascending one more levels in the tree
-	if ( indent < context->level )
-	{
-		unsigned int i;
-		unsigned int n = ( context->level - indent ) / 2;
-		for ( i = 0; i < n; i++ )
-		{
-			mlt_deque_pop_back( context->stack );
-			context->index = mlt_deque_pop_back_int( context->index_stack );
-		}
-		properties = mlt_deque_peek_back( context->stack );
-		context->level = indent;
-	}
+    // Ascending one more levels in the tree
+    if (indent < context->level) {
+        unsigned int i;
+        unsigned int n = (context->level - indent) / 2;
+        for (i = 0; i < n; i++) {
+            mlt_deque_pop_back(context->stack);
+            context->index = mlt_deque_pop_back_int(context->index_stack);
+        }
+        properties = mlt_deque_peek_back(context->stack);
+        context->level = indent;
+    }
 
-	// Descending a level in the tree
-	else if ( indent > context->level && context->block == 0 )
-	{
-		context->level = indent;
-	}
+    // Descending a level in the tree
+    else if (indent > context->level && context->block == 0) {
+        context->level = indent;
+    }
 
-	// If there is a colon that is not part of a block
-	if ( ptr && ( indent == context->level ) )
-	{
-		// Reset block processing
-		if ( context->block_name )
-		{
-			free( context->block_name );
-			context->block_name = NULL;
-			context->block = 0;
-		}
+    // If there is a colon that is not part of a block
+    if (ptr && (indent == context->level)) {
+        // Reset block processing
+        if (context->block_name) {
+            free(context->block_name);
+            context->block_name = NULL;
+            context->block = 0;
+        }
 
-		// Terminate the name and setup the value pointer
-		*( ptr ++ ) = 0;
+        // Terminate the name and setup the value pointer
+        *(ptr++) = 0;
 
-		// Trim comment
-		char *comment = strchr( ptr, '#' );
-		if ( comment )
-		{
-			const char* quote = strchr( ptr, '\"' );
-			if ( !quote || quote > comment )
-				*comment = 0;
-		}
+        // Trim comment
+        char *comment = strchr(ptr, '#');
+        if (comment) {
+            const char *quote = strchr(ptr, '\"');
+            if (!quote || quote > comment)
+                *comment = 0;
+        }
 
-		// Trim leading and trailing spaces from bare value
-		ltrim( &ptr );
-		rtrim( ptr );
+        // Trim leading and trailing spaces from bare value
+        ltrim(&ptr);
+        rtrim(ptr);
 
-		// No value means a child
-		if ( strcmp( ptr, "" ) == 0 )
-		{
-			mlt_properties child = mlt_properties_new();
-			mlt_properties_set_lcnumeric( child, mlt_properties_get_lcnumeric( properties ) );
-			mlt_properties_set_data( properties, name, child, 0,
-				( mlt_destructor )mlt_properties_close, NULL );
-			mlt_deque_push_back( context->stack, child );
-			mlt_deque_push_back_int( context->index_stack, context->index );
-			context->index = 0;
-			free( name_ );
-			return error;
-		}
+        // No value means a child
+        if (strcmp(ptr, "") == 0) {
+            mlt_properties child = mlt_properties_new();
+            mlt_properties_set_lcnumeric(child, mlt_properties_get_lcnumeric(properties));
+            mlt_properties_set_data(properties,
+                                    name,
+                                    child,
+                                    0,
+                                    (mlt_destructor) mlt_properties_close,
+                                    NULL);
+            mlt_deque_push_back(context->stack, child);
+            mlt_deque_push_back_int(context->index_stack, context->index);
+            context->index = 0;
+            free(name_);
+            return error;
+        }
 
-		// A dash indicates a sequence item
-		if ( name[0] == '-' )
-		{
-			mlt_properties child = mlt_properties_new();
-			char key[20];
+        // A dash indicates a sequence item
+        if (name[0] == '-') {
+            mlt_properties child = mlt_properties_new();
+            char key[20];
 
-			mlt_properties_set_lcnumeric( child, mlt_properties_get_lcnumeric( properties ) );
-			snprintf( key, sizeof(key), "%d", context->index++ );
-			mlt_properties_set_data( properties, key, child, 0,
-				( mlt_destructor )mlt_properties_close, NULL );
-			mlt_deque_push_back( context->stack, child );
-			mlt_deque_push_back_int( context->index_stack, context->index );
+            mlt_properties_set_lcnumeric(child, mlt_properties_get_lcnumeric(properties));
+            snprintf(key, sizeof(key), "%d", context->index++);
+            mlt_properties_set_data(properties,
+                                    key,
+                                    child,
+                                    0,
+                                    (mlt_destructor) mlt_properties_close,
+                                    NULL);
+            mlt_deque_push_back(context->stack, child);
+            mlt_deque_push_back_int(context->index_stack, context->index);
 
-			name ++;
-			context->level += ltrim( &name ) + 1;
-			properties = child;
-		}
+            name++;
+            context->level += ltrim(&name) + 1;
+            properties = child;
+        }
 
-		// Value is quoted
-		if ( *ptr == '\"' )
-		{
-			ptr ++;
-			value = strdup( ptr );
-			if ( value && value[ strlen( value ) - 1 ] == '\"' )
-				value[ strlen( value ) - 1 ] = 0;
-		}
+        // Value is quoted
+        if (*ptr == '\"') {
+            ptr++;
+            value = strdup(ptr);
+            if (value && value[strlen(value) - 1] == '\"')
+                value[strlen(value) - 1] = 0;
+        }
 
-		// Value is folded or unfolded block
-		else if ( *ptr == '|' || *ptr == '>' )
-		{
-			context->block = *ptr;
-			context->block_name = strdup( name );
-			context->block_indent = 0;
-			value = strdup( "" );
-		}
+        // Value is folded or unfolded block
+        else if (*ptr == '|' || *ptr == '>') {
+            context->block = *ptr;
+            context->block_name = strdup(name);
+            context->block_indent = 0;
+            value = strdup("");
+        }
 
-		// Bare value
-		else
-		{
-			value = strdup( ptr );
-		}
-	}
+        // Bare value
+        else {
+            value = strdup(ptr);
+        }
+    }
 
-	// A list of scalars
-	else if ( name[0] == '-' )
-	{
-		// Reset block processing
-		if ( context->block_name )
-		{
-			free( context->block_name );
-			context->block_name = NULL;
-			context->block = 0;
-		}
+    // A list of scalars
+    else if (name[0] == '-') {
+        // Reset block processing
+        if (context->block_name) {
+            free(context->block_name);
+            context->block_name = NULL;
+            context->block = 0;
+        }
 
-		char key[20];
+        char key[20];
 
-		snprintf( key, sizeof(key), "%d", context->index++ );
-		ptr = name + 1;
+        snprintf(key, sizeof(key), "%d", context->index++);
+        ptr = name + 1;
 
-		// Trim comment
-		char *comment = strchr( ptr, '#' );
-		if ( comment )
-		{
-			const char* quote = strchr( ptr, '\"' );
-			if ( !quote || quote > comment )
-				*comment = 0;
-		}
+        // Trim comment
+        char *comment = strchr(ptr, '#');
+        if (comment) {
+            const char *quote = strchr(ptr, '\"');
+            if (!quote || quote > comment)
+                *comment = 0;
+        }
 
-		// Trim leading and trailing spaces from bare value
-		ltrim( &ptr );
-		rtrim( ptr );
+        // Trim leading and trailing spaces from bare value
+        ltrim(&ptr);
+        rtrim(ptr);
 
-		// Value is quoted
-		if ( *ptr == '\"' )
-		{
-			ptr ++;
-			value = strdup( ptr );
-			if ( value && value[ strlen( value ) - 1 ] == '\"' )
-				value[ strlen( value ) - 1 ] = 0;
-		}
+        // Value is quoted
+        if (*ptr == '\"') {
+            ptr++;
+            value = strdup(ptr);
+            if (value && value[strlen(value) - 1] == '\"')
+                value[strlen(value) - 1] = 0;
+        }
 
-		// Value is folded or unfolded block
-		else if ( *ptr == '|' || *ptr == '>' )
-		{
-			context->block = *ptr;
-			context->block_name = strdup( key );
-			context->block_indent = 0;
-			value = strdup( "" );
-		}
+        // Value is folded or unfolded block
+        else if (*ptr == '|' || *ptr == '>') {
+            context->block = *ptr;
+            context->block_name = strdup(key);
+            context->block_indent = 0;
+            value = strdup("");
+        }
 
-		// Bare value
-		else
-		{
-			value = strdup( ptr );
-		}
+        // Bare value
+        else {
+            value = strdup(ptr);
+        }
 
-		free( name_ );
-		name = name_ = strdup( key );
-	}
+        free(name_);
+        name = name_ = strdup(key);
+    }
 
-	// Non-folded block
-	else if ( context->block == '|' )
-	{
-		if ( context->block_indent == 0 )
-			context->block_indent = indent;
-		if ( indent > context->block_indent )
-			name = &name_[ context->block_indent ];
-		rtrim( name );
-		char *old_value = mlt_properties_get( properties, context->block_name );
-		value = calloc( 1, strlen( old_value ) + strlen( name ) + 2 );
-		strcpy( value, old_value );
-		if ( strcmp( old_value, "" ) )
-			strcat( value, "\n" );
-		strcat( value, name );
-		name = context->block_name;
-	}
+    // Non-folded block
+    else if (context->block == '|') {
+        if (context->block_indent == 0)
+            context->block_indent = indent;
+        if (indent > context->block_indent)
+            name = &name_[context->block_indent];
+        rtrim(name);
+        char *old_value = mlt_properties_get(properties, context->block_name);
+        value = calloc(1, strlen(old_value) + strlen(name) + 2);
+        strcpy(value, old_value);
+        if (strcmp(old_value, ""))
+            strcat(value, "\n");
+        strcat(value, name);
+        name = context->block_name;
+    }
 
-	// Folded block
-	else if ( context->block == '>' )
-	{
-		ltrim( &name );
-		rtrim( name );
-		char *old_value = mlt_properties_get( properties, context->block_name );
+    // Folded block
+    else if (context->block == '>') {
+        ltrim(&name);
+        rtrim(name);
+        char *old_value = mlt_properties_get(properties, context->block_name);
 
-		// Blank line (prepended with spaces) is new line
-		if ( strcmp( name, "" ) == 0 )
-		{
-			value = calloc( 1, strlen( old_value ) + 2 );
-			strcat( value, old_value );
-			strcat( value, "\n" );
-		}
-		// Concatenate with space
-		else
-		{
-			value = calloc( 1, strlen( old_value ) + strlen( name ) + 2 );
-			strcat( value, old_value );
-			if ( strcmp( old_value, "" ) && old_value[ strlen( old_value ) - 1 ] != '\n' )
-				strcat( value, " " );
-			strcat( value, name );
-		}
-		name = context->block_name;
-	}
+        // Blank line (prepended with spaces) is new line
+        if (strcmp(name, "") == 0) {
+            value = calloc(1, strlen(old_value) + 2);
+            strcat(value, old_value);
+            strcat(value, "\n");
+        }
+        // Concatenate with space
+        else {
+            value = calloc(1, strlen(old_value) + strlen(name) + 2);
+            strcat(value, old_value);
+            if (strcmp(old_value, "") && old_value[strlen(old_value) - 1] != '\n')
+                strcat(value, " ");
+            strcat(value, name);
+        }
+        name = context->block_name;
+    }
 
-	else
-	{
-		value = strdup( "" );
-	}
+    else {
+        value = strdup("");
+    }
 
-	// Remove quotes around the name.
-	if ( name && name[0] == '"' && name[strlen(name) - 1] == '"' ) {
-		name ++;
-		name[strlen(name) - 1] = '\0';
-	}
+    // Remove quotes around the name.
+    if (name && name[0] == '"' && name[strlen(name) - 1] == '"') {
+        name++;
+        name[strlen(name) - 1] = '\0';
+    }
 
-	error = mlt_properties_set_string( properties, name, value );
+    error = mlt_properties_set_string(properties, name, value);
 
-	if ( !strcmp( name, "LC_NUMERIC" ) )
-		mlt_properties_set_lcnumeric( properties, value );
+    if (!strcmp(name, "LC_NUMERIC"))
+        mlt_properties_set_lcnumeric(properties, value);
 
-	free( name_ );
-	free( value );
+    free(name_);
+    free(value);
 
-	return error;
+    return error;
 }
 
 /** Parse a YAML Tiny file by name.
@@ -1912,60 +1854,57 @@ static int parse_yaml( yaml_parser context, const char *namevalue )
  * \return a new properties list
  */
 
-mlt_properties mlt_properties_parse_yaml( const char *filename )
+mlt_properties mlt_properties_parse_yaml(const char *filename)
 {
-	// Construct a standalone properties object
-	mlt_properties self = mlt_properties_new( );
+    // Construct a standalone properties object
+    mlt_properties self = mlt_properties_new();
 
-	if ( self )
-	{
-		// Open the file
-		FILE *file = mlt_fopen( filename, "r" );
+    if (self) {
+        // Open the file
+        FILE *file = mlt_fopen(filename, "r");
 
-		// Load contents of file
-		if ( file )
-		{
-			// Temp string
-			char temp[ MAX_LOAD_LINE_SIZE ];
-			char *ptemp = &temp[ 0 ];
+        // Load contents of file
+        if (file) {
+            // Temp string
+            char temp[MAX_LOAD_LINE_SIZE];
+            char *ptemp = &temp[0];
 
-			// Default to LC_NUMERIC = C
-			mlt_properties_set_lcnumeric( self, "C" );
+            // Default to LC_NUMERIC = C
+            mlt_properties_set_lcnumeric(self, "C");
 
-			// Parser context
-			yaml_parser context = calloc( 1, sizeof( struct yaml_parser_context ) );
-			context->stack = mlt_deque_init();
-			context->index_stack = mlt_deque_init();
-			mlt_deque_push_back( context->stack, self );
-			mlt_deque_push_back_int( context->index_stack, 0 );
+            // Parser context
+            yaml_parser context = calloc(1, sizeof(struct yaml_parser_context));
+            context->stack = mlt_deque_init();
+            context->index_stack = mlt_deque_init();
+            mlt_deque_push_back(context->stack, self);
+            mlt_deque_push_back_int(context->index_stack, 0);
 
-			// Read each string from the file
-			while( fgets( temp, MAX_LOAD_LINE_SIZE, file ) )
-			{
-				// Check for end-of-stream
-				if ( strncmp( ptemp, "...", 3 ) == 0 )
-					break;
+            // Read each string from the file
+            while (fgets(temp, MAX_LOAD_LINE_SIZE, file)) {
+                // Check for end-of-stream
+                if (strncmp(ptemp, "...", 3) == 0)
+                    break;
 
-				// Chomp the string
-				temp[ strlen( temp ) - 1 ] = '\0';
+                // Chomp the string
+                temp[strlen(temp) - 1] = '\0';
 
-				// Skip blank lines, comment lines, and document separator
-				if ( strcmp( ptemp, "" ) && ptemp[ 0 ] != '#' && strncmp( ptemp, "---", 3 )
-				     && strncmp( ptemp, "%YAML", 5 ) && strncmp( ptemp, "% YAML", 6 ) )
-					parse_yaml( context, temp );
-			}
+                // Skip blank lines, comment lines, and document separator
+                if (strcmp(ptemp, "") && ptemp[0] != '#' && strncmp(ptemp, "---", 3)
+                    && strncmp(ptemp, "%YAML", 5) && strncmp(ptemp, "% YAML", 6))
+                    parse_yaml(context, temp);
+            }
 
-			// Close the file
-			fclose( file );
-			mlt_deque_close( context->stack );
-			mlt_deque_close( context->index_stack );
-			free( context->block_name );
-			free( context );
-		}
-	}
+            // Close the file
+            fclose(file);
+            mlt_deque_close(context->stack);
+            mlt_deque_close(context->index_stack);
+            free(context->block_name);
+            free(context);
+        }
+    }
 
-	// Return the pointer
-	return self;
+    // Return the pointer
+    return self;
 }
 
 /*
@@ -1981,8 +1920,8 @@ mlt_properties mlt_properties_parse_yaml( const char *filename )
 
 struct strbuf_s
 {
-	size_t size;
-	char *string;
+    size_t size;
+    char *string;
 };
 
 typedef struct strbuf_s *strbuf;
@@ -1993,12 +1932,12 @@ typedef struct strbuf_s *strbuf;
  * \return a new string buffer
  */
 
-static strbuf strbuf_new( )
+static strbuf strbuf_new()
 {
-	strbuf buffer = calloc( 1, sizeof( struct strbuf_s ) );
-	buffer->size = STRBUF_GROWTH;
-	buffer->string = calloc( 1, buffer->size );
-	return buffer;
+    strbuf buffer = calloc(1, sizeof(struct strbuf_s));
+    buffer->size = STRBUF_GROWTH;
+    buffer->string = calloc(1, buffer->size);
+    return buffer;
 }
 
 /** Destroy a string buffer
@@ -2007,11 +1946,11 @@ static strbuf strbuf_new( )
  * \param buffer the string buffer to close
  */
 
-static void strbuf_close( strbuf buffer )
+static void strbuf_close(strbuf buffer)
 {
-	// We do not free buffer->string; strbuf user must save that pointer
-	// and free it.
-	free( buffer );
+    // We do not free buffer->string; strbuf user must save that pointer
+    // and free it.
+    free(buffer);
 }
 
 /** Format a string into a string buffer
@@ -2024,23 +1963,22 @@ static void strbuf_close( strbuf buffer )
  * \return the formatted string
  */
 
-static char *strbuf_printf( strbuf buffer, const char *format, ... )
+static char *strbuf_printf(strbuf buffer, const char *format, ...)
 {
-	while ( buffer->string )
-	{
-		va_list ap;
-		va_start( ap, format );
-		size_t len = strlen( buffer->string );
-		size_t remain = buffer->size - len - 1;
-		int need = vsnprintf( buffer->string + len, remain, format, ap );
-		va_end( ap );
-		if ( need > -1 && need < remain )
-			break;
-		buffer->string[ len ] = 0;
-		buffer->size += need + STRBUF_GROWTH;
-		buffer->string = realloc( buffer->string, buffer->size );
-	}
-	return buffer->string;
+    while (buffer->string) {
+        va_list ap;
+        va_start(ap, format);
+        size_t len = strlen(buffer->string);
+        size_t remain = buffer->size - len - 1;
+        int need = vsnprintf(buffer->string + len, remain, format, ap);
+        va_end(ap);
+        if (need > -1 && need < remain)
+            break;
+        buffer->string[len] = 0;
+        buffer->size += need + STRBUF_GROWTH;
+        buffer->string = realloc(buffer->string, buffer->size);
+    }
+    return buffer->string;
 }
 
 /** Indent a line of YAML Tiny.
@@ -2050,33 +1988,33 @@ static char *strbuf_printf( strbuf buffer, const char *format, ... )
  * \param indent the number of spaces to indent
  */
 
-static inline void indent_yaml( strbuf output, int indent )
+static inline void indent_yaml(strbuf output, int indent)
 {
-	int j;
-	for ( j = 0; j < indent; j++ )
-		strbuf_printf( output, " " );
+    int j;
+    for (j = 0; j < indent; j++)
+        strbuf_printf(output, " ");
 }
 
-static void strbuf_escape( strbuf output, const char *value, char c )
+static void strbuf_escape(strbuf output, const char *value, char c)
 {
-	char *v = strdup( value );
-	char *s = v;
-	char *found = strchr( s, c );
+    char *v = strdup(value);
+    char *s = v;
+    char *found = strchr(s, c);
 
-	while ( found )
-	{
-		*found = '\0';
-		strbuf_printf( output, "%s\\%c", s, c );
-		s = found + 1;
-		found = strchr( s, c );
-	}
-	strbuf_printf( output, "%s", s );
-	free( v );
+    while (found) {
+        *found = '\0';
+        strbuf_printf(output, "%s\\%c", s, c);
+        s = found + 1;
+        found = strchr(s, c);
+    }
+    strbuf_printf(output, "%s", s);
+    free(v);
 }
 
-static inline int has_reserved_char( const char* string )
+static inline int has_reserved_char(const char *string)
 {
-	return strchr( string, ':' ) || strchr( string, '[' ) || strchr( string, '\'' ) || strchr( string, '#' );
+    return strchr(string, ':') || strchr(string, '[') || strchr(string, '\'')
+           || strchr(string, '#');
 }
 
 /** Convert a line string into a YAML block literal.
@@ -2087,23 +2025,22 @@ static inline int has_reserved_char( const char* string )
  * \param indent the number of spaces to indent
  */
 
-static void output_yaml_block_literal( strbuf output, const char *value, int indent )
+static void output_yaml_block_literal(strbuf output, const char *value, int indent)
 {
-	char *v = strdup( value );
-	char *sol = v;
-	char *eol = strchr( sol, '\n' );
+    char *v = strdup(value);
+    char *sol = v;
+    char *eol = strchr(sol, '\n');
 
-	while ( eol )
-	{
-		indent_yaml( output, indent );
-		*eol = '\0';
-		strbuf_printf( output, "%s\n", sol );
-		sol = eol + 1;
-		eol = strchr( sol, '\n' );
-	}
-	indent_yaml( output, indent );
-	strbuf_printf( output, "%s\n", sol );
-	free( v );
+    while (eol) {
+        indent_yaml(output, indent);
+        *eol = '\0';
+        strbuf_printf(output, "%s\n", sol);
+        sol = eol + 1;
+        eol = strchr(sol, '\n');
+    }
+    indent_yaml(output, indent);
+    strbuf_printf(output, "%s\n", sol);
+    free(v);
 }
 
 /** Recursively serialize a properties list into a string buffer as YAML Tiny.
@@ -2115,120 +2052,100 @@ static void output_yaml_block_literal( strbuf output, const char *value, int ind
  * \param is_parent_sequence Is this properties list really just a sequence (for recursion, initialize to 0)?
  */
 
-static void serialise_yaml( mlt_properties self, strbuf output, int indent, int is_parent_sequence )
+static void serialise_yaml(mlt_properties self, strbuf output, int indent, int is_parent_sequence)
 {
-	property_list *list = self->local;
-	int i = 0;
-	int is_sequence = mlt_properties_is_sequence( self );
+    property_list *list = self->local;
+    int i = 0;
+    int is_sequence = mlt_properties_is_sequence(self);
 
-	for ( i = 0; i < list->count; i ++ )
-	{
-		// This implementation assumes that all data elements are property lists.
-		// Unfortunately, we do not have run time type identification.
-		mlt_properties child = mlt_property_get_data( list->value[ i ], NULL );
-		const char *name = list->name[i];
-		const char *value = mlt_properties_get( self, name );
+    for (i = 0; i < list->count; i++) {
+        // This implementation assumes that all data elements are property lists.
+        // Unfortunately, we do not have run time type identification.
+        mlt_properties child = mlt_property_get_data(list->value[i], NULL);
+        const char *name = list->name[i];
+        const char *value = mlt_properties_get(self, name);
 
-		if ( is_sequence )
-		{
-			// Ignore hidden/non-serialisable items
-			if ( name[ 0 ] != '_' )
-			{
-				// Indicate a sequence item
-				indent_yaml( output, indent );
-				strbuf_printf( output, "- " );
+        if (is_sequence) {
+            // Ignore hidden/non-serialisable items
+            if (name[0] != '_') {
+                // Indicate a sequence item
+                indent_yaml(output, indent);
+                strbuf_printf(output, "- ");
 
-				// If the value can be represented as a string
-				if ( value && strcmp( value, "" ) )
-				{
-					// Determine if this is an unfolded block literal
-					if ( strchr( value, '\n' ) )
-					{
-						strbuf_printf( output, "|\n" );
-						output_yaml_block_literal( output, value, indent + strlen( name ) + strlen( "|" ) );
-					}
-					else if ( has_reserved_char( value ) )
-					{
-						strbuf_printf( output, "\"" );
-						strbuf_escape( output, value, '"' );
-						strbuf_printf( output, "\"\n", value );
-					}
-					else if ( strchr( value, '"') )
-					{
-						strbuf_printf( output, "'%s'\n", value );
-					}
-					else
-					{
-						strbuf_printf( output, "%s\n", value );
-					}
-				}
-			}
-			// Recurse on child
-			if ( child && child->local )
-				serialise_yaml( child, output, indent + 2, 1 );
-		}
-		else
-		{
-			// Assume this is a normal map-oriented properties list
+                // If the value can be represented as a string
+                if (value && strcmp(value, "")) {
+                    // Determine if this is an unfolded block literal
+                    if (strchr(value, '\n')) {
+                        strbuf_printf(output, "|\n");
+                        output_yaml_block_literal(output,
+                                                  value,
+                                                  indent + strlen(name) + strlen("|"));
+                    } else if (has_reserved_char(value)) {
+                        strbuf_printf(output, "\"");
+                        strbuf_escape(output, value, '"');
+                        strbuf_printf(output, "\"\n", value);
+                    } else if (strchr(value, '"')) {
+                        strbuf_printf(output, "'%s'\n", value);
+                    } else {
+                        strbuf_printf(output, "%s\n", value);
+                    }
+                }
+            }
+            // Recurse on child
+            if (child && child->local)
+                serialise_yaml(child, output, indent + 2, 1);
+        } else {
+            // Assume this is a normal map-oriented properties list
 
-			// Ignore hidden/non-serialisable items
-			// If the value can be represented as a string
-			if ( name[ 0 ] != '_' && value && strcmp( value, "" ) )
-			{
-				if ( is_parent_sequence == 0 )
-					indent_yaml( output, indent );
-				else
-					is_parent_sequence = 0;
+            // Ignore hidden/non-serialisable items
+            // If the value can be represented as a string
+            if (name[0] != '_' && value && strcmp(value, "")) {
+                if (is_parent_sequence == 0)
+                    indent_yaml(output, indent);
+                else
+                    is_parent_sequence = 0;
 
-				// Output the name.
-				if ( has_reserved_char( name) ) {
-					strbuf_printf( output, "\"" );
-					strbuf_escape( output, name, '"' );
-					strbuf_printf( output, "\": " );
-				} else {
-					strbuf_printf( output, "%s: ", name );
-				}
+                // Output the name.
+                if (has_reserved_char(name)) {
+                    strbuf_printf(output, "\"");
+                    strbuf_escape(output, name, '"');
+                    strbuf_printf(output, "\": ");
+                } else {
+                    strbuf_printf(output, "%s: ", name);
+                }
 
-				// Determine if this is an unfolded block literal
-				if ( strchr( value, '\n' ) )
-				{
-					strbuf_printf( output, "|\n" );
-					output_yaml_block_literal( output, value, indent + strlen( name ) + strlen( ": " ) );
-				}
-				else if ( has_reserved_char( value ) )
-				{
-					strbuf_printf( output, "\"" );
-					strbuf_escape( output, value, '"' );
-					strbuf_printf( output, "\"\n" );
-				}
-				else if ( strchr( value, '"') )
-				{
-					strbuf_printf( output, "'%s'\n", value );
-				}
-				else
-				{
-					strbuf_printf( output, "%s\n", value );
-				}
-			}
+                // Determine if this is an unfolded block literal
+                if (strchr(value, '\n')) {
+                    strbuf_printf(output, "|\n");
+                    output_yaml_block_literal(output, value, indent + strlen(name) + strlen(": "));
+                } else if (has_reserved_char(value)) {
+                    strbuf_printf(output, "\"");
+                    strbuf_escape(output, value, '"');
+                    strbuf_printf(output, "\"\n");
+                } else if (strchr(value, '"')) {
+                    strbuf_printf(output, "'%s'\n", value);
+                } else {
+                    strbuf_printf(output, "%s\n", value);
+                }
+            }
 
-			// Output a child as a map item
-			if ( child && child->local )
-			{
-				indent_yaml( output, indent );
+            // Output a child as a map item
+            if (child && child->local) {
+                indent_yaml(output, indent);
 
-				if ( has_reserved_char( name ) ) {
-					strbuf_printf( output, "\"" );
-					strbuf_escape( output, name, '"' );
-					strbuf_printf( output, "\":\n" );
-				} else {
-					strbuf_printf( output, "%s:\n", name );
-				}
+                if (has_reserved_char(name)) {
+                    strbuf_printf(output, "\"");
+                    strbuf_escape(output, name, '"');
+                    strbuf_printf(output, "\":\n");
+                } else {
+                    strbuf_printf(output, "%s:\n", name);
+                }
 
-				// Recurse on child
-				serialise_yaml( child, output, indent + 2, 0 );
-			}
-		}
-	}
+                // Recurse on child
+                serialise_yaml(child, output, indent + 2, 0);
+            }
+        }
+    }
 }
 
 /** Serialize a properties list as a string of YAML Tiny.
@@ -2241,19 +2158,20 @@ static void serialise_yaml( mlt_properties self, strbuf output, int indent, int 
  * \return a string containing YAML Tiny that represents the properties list
  */
 
-char *mlt_properties_serialise_yaml( mlt_properties self )
+char *mlt_properties_serialise_yaml(mlt_properties self)
 {
-	if ( !self ) return NULL;
-	const char *lc_numeric = mlt_properties_get_lcnumeric( self );
-	strbuf b = strbuf_new();
-	strbuf_printf( b, "---\n" );
-	mlt_properties_set_lcnumeric( self, "C" );
-	serialise_yaml( self, b, 0, 0 );
-	mlt_properties_set_lcnumeric( self, lc_numeric );
-	strbuf_printf( b, "...\n" );
-	char *ret = b->string;
-	strbuf_close( b );
-	return ret;
+    if (!self)
+        return NULL;
+    const char *lc_numeric = mlt_properties_get_lcnumeric(self);
+    strbuf b = strbuf_new();
+    strbuf_printf(b, "---\n");
+    mlt_properties_set_lcnumeric(self, "C");
+    serialise_yaml(self, b, 0, 0);
+    mlt_properties_set_lcnumeric(self, lc_numeric);
+    strbuf_printf(b, "...\n");
+    char *ret = b->string;
+    strbuf_close(b);
+    return ret;
 }
 
 /** Protect a properties list against concurrent access.
@@ -2262,10 +2180,10 @@ char *mlt_properties_serialise_yaml( mlt_properties self )
  * \param self a properties list
  */
 
-void mlt_properties_lock( mlt_properties self )
+void mlt_properties_lock(mlt_properties self)
 {
-	if ( self )
-		pthread_mutex_lock( &( ( property_list* )( self->local ) )->mutex );
+    if (self)
+        pthread_mutex_lock(&((property_list *) (self->local))->mutex);
 }
 
 /** End protecting a properties list against concurrent access.
@@ -2274,10 +2192,10 @@ void mlt_properties_lock( mlt_properties self )
  * \param self a properties list
  */
 
-void mlt_properties_unlock( mlt_properties self )
+void mlt_properties_unlock(mlt_properties self)
 {
-	if ( self )
-		pthread_mutex_unlock( &( ( property_list* )( self->local ) )->mutex );
+    if (self)
+        pthread_mutex_unlock(&((property_list *) (self->local))->mutex);
 }
 
 /** Remove the value for a property.
@@ -2289,18 +2207,19 @@ void mlt_properties_unlock( mlt_properties self )
  * \param name the name of the property to clear
  */
 
-void mlt_properties_clear( mlt_properties self, const char *name )
+void mlt_properties_clear(mlt_properties self, const char *name)
 {
-	if ( !self || !name ) return;
+    if (!self || !name)
+        return;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property )
-		mlt_property_clear( property );
+    // Set it if not NULL
+    if (property)
+        mlt_property_clear(property);
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 }
 
 /** Check if a property exists.
@@ -2317,9 +2236,9 @@ void mlt_properties_clear( mlt_properties self, const char *name )
  * \return true if the property exists
  */
 
-int mlt_properties_exists( mlt_properties self, const char *name )
+int mlt_properties_exists(mlt_properties self, const char *name)
 {
-	return !mlt_property_is_clear( mlt_properties_find( self, name ) );
+    return !mlt_property_is_clear(mlt_properties_find(self, name));
 }
 
 /** Get a time string associated to the name.
@@ -2332,17 +2251,16 @@ int mlt_properties_exists( mlt_properties self, const char *name )
  * \return the property's time value or NULL if \p name does not exist or there is no profile
  */
 
-char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_format format )
+char *mlt_properties_get_time(mlt_properties self, const char *name, mlt_time_format format)
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	if ( profile )
-	{
-		double fps = mlt_profile_fps( profile );
-		mlt_property value = mlt_properties_find( self, name );
-		property_list *list = self->local;
-		return value == NULL ? NULL : mlt_property_get_time( value, format, fps, list->locale );
-	}
-	return NULL;
+    mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+    if (profile) {
+        double fps = mlt_profile_fps(profile);
+        mlt_property value = mlt_properties_find(self, name);
+        property_list *list = self->local;
+        return value == NULL ? NULL : mlt_property_get_time(value, format, fps, list->locale);
+    }
+    return NULL;
 }
 
 /** Convert a frame count to a time string.
@@ -2355,11 +2273,11 @@ char *mlt_properties_get_time( mlt_properties self, const char* name, mlt_time_f
  * \return the time string or NULL if error, e.g. there is no profile
  */
 
-char *mlt_properties_frames_to_time( mlt_properties self, mlt_position frames, mlt_time_format format )
+char *mlt_properties_frames_to_time(mlt_properties self, mlt_position frames, mlt_time_format format)
 {
-	const char *name = "_mlt_properties_time";
-	mlt_properties_set_position( self, name, frames );
-	return mlt_properties_get_time( self, name, format );
+    const char *name = "_mlt_properties_time";
+    mlt_properties_set_position(self, name, frames);
+    return mlt_properties_get_time(self, name, format);
 }
 
 /** Convert a time string to a frame count.
@@ -2370,11 +2288,11 @@ char *mlt_properties_frames_to_time( mlt_properties self, mlt_position frames, m
  * \return a frame count or a negative value if error, e.g. there is no profile
  */
 
-mlt_position mlt_properties_time_to_frames( mlt_properties self, const char *time )
+mlt_position mlt_properties_time_to_frames(mlt_properties self, const char *time)
 {
-	const char *name = "_mlt_properties_time";
-	mlt_properties_set_string( self, name, time );
-	return mlt_properties_get_position( self, name );
+    const char *name = "_mlt_properties_time";
+    mlt_properties_set_string(self, name, time);
+    return mlt_properties_get_position(self, name);
 }
 
 /** Set a property to an integer value by color.
@@ -2386,25 +2304,25 @@ mlt_position mlt_properties_time_to_frames( mlt_properties self, const char *tim
  * \return true if error
  */
 
-int mlt_properties_set_color( mlt_properties self, const char *name, mlt_color color )
+int mlt_properties_set_color(mlt_properties self, const char *name, mlt_color color)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		error = mlt_property_set_color( property, color );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        error = mlt_property_set_color(property, color);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Convert a numeric property to a tuple of color components.
@@ -2418,18 +2336,17 @@ int mlt_properties_set_color( mlt_properties self, const char *name, mlt_color c
  * \return a color structure
  */
 
-mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
+mlt_color mlt_properties_get_color(mlt_properties self, const char *name)
 {
-	mlt_property value = mlt_properties_find( self, name );
-	mlt_color result = { 0xff, 0xff, 0xff, 0xff };
-	if ( value )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		result = mlt_property_get_color(value, fps, list->locale );
-	}
-	return result;
+    mlt_property value = mlt_properties_find(self, name);
+    mlt_color result = {0xff, 0xff, 0xff, 0xff};
+    if (value) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        result = mlt_property_get_color(value, fps, list->locale);
+    }
+    return result;
 }
 
 /** Set a property to an integer value by color at a frame position.
@@ -2445,29 +2362,39 @@ mlt_color mlt_properties_get_color( mlt_properties self, const char* name )
  * \return true if error
  */
 
-extern int mlt_properties_anim_set_color( mlt_properties self, const char *name, mlt_color value,
-	int position, int length , mlt_keyframe_type keyframe_type )
+extern int mlt_properties_anim_set_color(mlt_properties self,
+                                         const char *name,
+                                         mlt_color value,
+                                         int position,
+                                         int length,
+                                         mlt_keyframe_type keyframe_type)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		error = mlt_property_anim_set_color( property, value, fps, list->locale, position, length, keyframe_type );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        error = mlt_property_anim_set_color(property,
+                                            value,
+                                            fps,
+                                            list->locale,
+                                            position,
+                                            length,
+                                            keyframe_type);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a color associated to the name at a frame position.
@@ -2481,14 +2408,18 @@ extern int mlt_properties_anim_set_color( mlt_properties self, const char *name,
  * \return a color structure
  */
 
-mlt_color mlt_properties_anim_get_color( mlt_properties self, const char *name, int position, int length )
+mlt_color mlt_properties_anim_get_color(mlt_properties self,
+                                        const char *name,
+                                        int position,
+                                        int length)
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	property_list *list = self->local;
-	mlt_property value = mlt_properties_find( self, name );
-	mlt_color color = { 0xff, 0xff, 0xff, 0xff };
-	return value == NULL ? color : mlt_property_anim_get_color( value, fps, list->locale, position, length );
+    mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+    double fps = mlt_profile_fps(profile);
+    property_list *list = self->local;
+    mlt_property value = mlt_properties_find(self, name);
+    mlt_color color = {0xff, 0xff, 0xff, 0xff};
+    return value == NULL ? color
+                         : mlt_property_anim_get_color(value, fps, list->locale, position, length);
 }
 
 /** Get a string value by name at a frame position.
@@ -2510,13 +2441,14 @@ mlt_color mlt_properties_anim_get_color( mlt_properties self, const char *name, 
  * \return the property's string value or NULL if it does not exist
  */
 
-char* mlt_properties_anim_get( mlt_properties self, const char *name, int position, int length )
+char *mlt_properties_anim_get(mlt_properties self, const char *name, int position, int length)
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	mlt_property value = mlt_properties_find( self, name );
-	property_list *list = self->local;
-	return value == NULL ? NULL : mlt_property_anim_get_string( value, fps, list->locale, position, length );
+    mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+    double fps = mlt_profile_fps(profile);
+    mlt_property value = mlt_properties_find(self, name);
+    property_list *list = self->local;
+    return value == NULL ? NULL
+                         : mlt_property_anim_get_string(value, fps, list->locale, position, length);
 }
 
 /** Set a property to a string at a frame position.
@@ -2534,29 +2466,29 @@ char* mlt_properties_anim_get( mlt_properties self, const char *name, int positi
  * \return true if error
  */
 
-int mlt_properties_anim_set( mlt_properties self, const char *name, const char *value, int position, int length )
+int mlt_properties_anim_set(
+    mlt_properties self, const char *name, const char *value, int position, int length)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		error = mlt_property_anim_set_string( property, value,
-			fps, list->locale, position, length );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        error = mlt_property_anim_set_string(property, value, fps, list->locale, position, length);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get an integer associated to the name at a frame position.
@@ -2570,13 +2502,14 @@ int mlt_properties_anim_set( mlt_properties self, const char *name, const char *
  * \return the integer value, 0 if not found (which may also be a legitimate value)
  */
 
-int mlt_properties_anim_get_int( mlt_properties self, const char *name, int position, int length )
+int mlt_properties_anim_get_int(mlt_properties self, const char *name, int position, int length)
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	property_list *list = self->local;
-	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0 : mlt_property_anim_get_int( value, fps, list->locale, position, length );
+    mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+    double fps = mlt_profile_fps(profile);
+    property_list *list = self->local;
+    mlt_property value = mlt_properties_find(self, name);
+    return value == NULL ? 0
+                         : mlt_property_anim_get_int(value, fps, list->locale, position, length);
 }
 
 /** Set a property to an integer value at a frame position.
@@ -2592,29 +2525,39 @@ int mlt_properties_anim_get_int( mlt_properties self, const char *name, int posi
  * \return true if error
  */
 
-int mlt_properties_anim_set_int( mlt_properties self, const char *name, int value,
-	int position, int length, mlt_keyframe_type keyframe_type )
+int mlt_properties_anim_set_int(mlt_properties self,
+                                const char *name,
+                                int value,
+                                int position,
+                                int length,
+                                mlt_keyframe_type keyframe_type)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		error = mlt_property_anim_set_int( property, value, fps, list->locale, position, length, keyframe_type );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        error = mlt_property_anim_set_int(property,
+                                          value,
+                                          fps,
+                                          list->locale,
+                                          position,
+                                          length,
+                                          keyframe_type);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a real number associated to the name at a frame position.
@@ -2628,13 +2571,17 @@ int mlt_properties_anim_set_int( mlt_properties self, const char *name, int valu
  * \return the real number, 0 if not found (which may also be a legitimate value)
  */
 
-double mlt_properties_anim_get_double( mlt_properties self, const char *name, int position, int length )
+double mlt_properties_anim_get_double(mlt_properties self,
+                                      const char *name,
+                                      int position,
+                                      int length)
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	property_list *list = self->local;
-	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? 0.0 : mlt_property_anim_get_double( value, fps, list->locale, position, length );
+    mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+    double fps = mlt_profile_fps(profile);
+    property_list *list = self->local;
+    mlt_property value = mlt_properties_find(self, name);
+    return value == NULL ? 0.0
+                         : mlt_property_anim_get_double(value, fps, list->locale, position, length);
 }
 
 /** Set a property to a real number at a frame position.
@@ -2650,29 +2597,39 @@ double mlt_properties_anim_get_double( mlt_properties self, const char *name, in
  * \return true if error
  */
 
-int mlt_properties_anim_set_double( mlt_properties self, const char *name, double value,
-	int position, int length, mlt_keyframe_type keyframe_type )
+int mlt_properties_anim_set_double(mlt_properties self,
+                                   const char *name,
+                                   double value,
+                                   int position,
+                                   int length,
+                                   mlt_keyframe_type keyframe_type)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		error = mlt_property_anim_set_double( property, value, fps, list->locale, position, length, keyframe_type );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        error = mlt_property_anim_set_double(property,
+                                             value,
+                                             fps,
+                                             list->locale,
+                                             position,
+                                             length,
+                                             keyframe_type);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get the animation associated to the name.
@@ -2683,10 +2640,10 @@ int mlt_properties_anim_set_double( mlt_properties self, const char *name, doubl
  * \return The animation object or NULL if the property has no animation
  */
 
-mlt_animation mlt_properties_get_animation( mlt_properties self, const char *name )
+mlt_animation mlt_properties_get_animation(mlt_properties self, const char *name)
 {
-	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? NULL : mlt_property_get_animation( value );
+    mlt_property value = mlt_properties_find(self, name);
+    return value == NULL ? NULL : mlt_property_get_animation(value);
 }
 
 /** Set a property to a rectangle value.
@@ -2698,25 +2655,25 @@ mlt_animation mlt_properties_get_animation( mlt_properties self, const char *nam
  * \return true if error
  */
 
-extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_rect value )
+extern int mlt_properties_set_rect(mlt_properties self, const char *name, mlt_rect value)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		error = mlt_property_set_rect( property, value );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        error = mlt_property_set_rect(property, value);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a rectangle associated to the name.
@@ -2727,12 +2684,12 @@ extern int mlt_properties_set_rect( mlt_properties self, const char *name, mlt_r
  * \return the rectangle value, the rectangle fields will be DBL_MIN if not found
  */
 
-extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char* name )
+extern mlt_rect mlt_properties_get_rect(mlt_properties self, const char *name)
 {
-	property_list *list = self->local;
-	mlt_property value = mlt_properties_find( self, name );
-	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
-	return value == NULL ? rect : mlt_property_get_rect( value, list->locale );
+    property_list *list = self->local;
+    mlt_property value = mlt_properties_find(self, name);
+    mlt_rect rect = {DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN};
+    return value == NULL ? rect : mlt_property_get_rect(value, list->locale);
 }
 
 /** Set a property to a rectangle value at a frame position.
@@ -2748,29 +2705,39 @@ extern mlt_rect mlt_properties_get_rect( mlt_properties self, const char* name )
  * \return true if error
  */
 
-extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, mlt_rect value,
-	int position, int length , mlt_keyframe_type keyframe_type )
+extern int mlt_properties_anim_set_rect(mlt_properties self,
+                                        const char *name,
+                                        mlt_rect value,
+                                        int position,
+                                        int length,
+                                        mlt_keyframe_type keyframe_type)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name ) return error;
+    if (!self || !name)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-		double fps = mlt_profile_fps( profile );
-		property_list *list = self->local;
-		error = mlt_property_anim_set_rect( property, value, fps, list->locale, position, length, keyframe_type );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+        double fps = mlt_profile_fps(profile);
+        property_list *list = self->local;
+        error = mlt_property_anim_set_rect(property,
+                                           value,
+                                           fps,
+                                           list->locale,
+                                           position,
+                                           length,
+                                           keyframe_type);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a rectangle associated to the name at a frame position.
@@ -2784,14 +2751,18 @@ extern int mlt_properties_anim_set_rect( mlt_properties self, const char *name, 
  * \return the rectangle value, the rectangle fields will be DBL_MIN if not found
  */
 
-extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *name, int position, int length )
+extern mlt_rect mlt_properties_anim_get_rect(mlt_properties self,
+                                             const char *name,
+                                             int position,
+                                             int length)
 {
-	mlt_profile profile = mlt_properties_get_data( self, "_profile", NULL );
-	double fps = mlt_profile_fps( profile );
-	property_list *list = self->local;
-	mlt_property value = mlt_properties_find( self, name );
-	mlt_rect rect = { DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN };
-	return value == NULL ? rect : mlt_property_anim_get_rect( value, fps, list->locale, position, length );
+    mlt_profile profile = mlt_properties_get_data(self, "_profile", NULL);
+    double fps = mlt_profile_fps(profile);
+    property_list *list = self->local;
+    mlt_property value = mlt_properties_find(self, name);
+    mlt_rect rect = {DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN};
+    return value == NULL ? rect
+                         : mlt_property_anim_get_rect(value, fps, list->locale, position, length);
 }
 
 #ifndef _WIN32
@@ -2809,14 +2780,14 @@ extern mlt_rect mlt_properties_anim_get_rect( mlt_properties self, const char *n
  * \return true if error
  */
 
-int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, const char *name_to )
+int mlt_properties_from_utf8(mlt_properties properties, const char *name_from, const char *name_to)
 {
-	// On non-Windows platforms, assume UTF-8 will always work and does not need conversion.
-	// This function just becomes a pass-through operation.
-	// This was largely chosen to prevent adding a libiconv dependency to the framework per policy.
-	// However, for file open operations on Windows, especially when processing XML, a text codec
-	// dependency is hardly avoidable.
-	return mlt_properties_set_string( properties, name_to, mlt_properties_get( properties, name_from ) );
+    // On non-Windows platforms, assume UTF-8 will always work and does not need conversion.
+    // This function just becomes a pass-through operation.
+    // This was largely chosen to prevent adding a libiconv dependency to the framework per policy.
+    // However, for file open operations on Windows, especially when processing XML, a text codec
+    // dependency is hardly avoidable.
+    return mlt_properties_set_string(properties, name_to, mlt_properties_get(properties, name_from));
 }
 
 #endif
@@ -2830,25 +2801,25 @@ int mlt_properties_from_utf8( mlt_properties properties, const char *name_from, 
  * \return true if error
  */
 
-int mlt_properties_set_properties( mlt_properties self, const char *name, mlt_properties properties )
+int mlt_properties_set_properties(mlt_properties self, const char *name, mlt_properties properties)
 {
-	int error = 1;
+    int error = 1;
 
-	if ( !self || !name || !properties) return error;
+    if (!self || !name || !properties)
+        return error;
 
-	// Fetch the property to work with
-	mlt_property property = mlt_properties_fetch( self, name );
+    // Fetch the property to work with
+    mlt_property property = mlt_properties_fetch(self, name);
 
-	// Set it if not NULL
-	if ( property != NULL )
-	{
-		error = mlt_property_set_properties( property, properties );
-		mlt_properties_do_mirror( self, name );
-	}
+    // Set it if not NULL
+    if (property != NULL) {
+        error = mlt_property_set_properties(property, properties);
+        mlt_properties_do_mirror(self, name);
+    }
 
-	fire_property_changed(self, name);
+    fire_property_changed(self, name);
 
-	return error;
+    return error;
 }
 
 /** Get a nested properties object by name.
@@ -2859,10 +2830,10 @@ int mlt_properties_set_properties( mlt_properties self, const char *name, mlt_pr
  * \return the nested properties list
  */
 
-mlt_properties mlt_properties_get_properties( mlt_properties self, const char *name )
+mlt_properties mlt_properties_get_properties(mlt_properties self, const char *name)
 {
-	mlt_property value = mlt_properties_find( self, name );
-	return value == NULL ? NULL : mlt_property_get_properties( value );
+    mlt_property value = mlt_properties_find(self, name);
+    return value == NULL ? NULL : mlt_property_get_properties(value);
 }
 
 /** Get a nested properties object by index.
@@ -2873,13 +2844,14 @@ mlt_properties mlt_properties_get_properties( mlt_properties self, const char *n
  * \return the nested properties list
  */
 
-mlt_properties mlt_properties_get_properties_at( mlt_properties self, int index )
+mlt_properties mlt_properties_get_properties_at(mlt_properties self, int index)
 {
-	if ( !self ) return NULL;
-	property_list *list = self->local;
-	if ( index >= 0 && index < list->count )
-		return mlt_property_get_properties( list->value[ index ] );
-	return NULL;
+    if (!self)
+        return NULL;
+    property_list *list = self->local;
+    if (index >= 0 && index < list->count)
+        return mlt_property_get_properties(list->value[index]);
+    return NULL;
 }
 
 /** Check if a property is animated.
@@ -2892,11 +2864,12 @@ mlt_properties mlt_properties_get_properties_at( mlt_properties self, int index 
 
 int mlt_properties_is_anim(mlt_properties self, const char *name)
 {
-	mlt_property property = mlt_properties_find(self, name);
-	if (!property) return 0;
-	property_list *list = self->local;
-	pthread_mutex_lock(&list->mutex);
-	int result = mlt_property_is_anim(property);
-	pthread_mutex_unlock(&list->mutex);
-	return result;
+    mlt_property property = mlt_properties_find(self, name);
+    if (!property)
+        return 0;
+    property_list *list = self->local;
+    pthread_mutex_lock(&list->mutex);
+    int result = mlt_property_is_anim(property);
+    pthread_mutex_unlock(&list->mutex);
+    return result;
 }

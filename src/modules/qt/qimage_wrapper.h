@@ -30,32 +30,34 @@ extern "C" {
 
 struct producer_qimage_s
 {
-	struct mlt_producer_s parent;
-	mlt_properties filenames;
-	int count;
-	int image_idx;
-	int qimage_idx;
-	uint8_t *current_image;
-	uint8_t *current_alpha;
-	int current_width;
-	int current_height;
-	int alpha_size;
-	mlt_cache_item image_cache;
-	mlt_cache_item alpha_cache;
-	mlt_cache_item qimage_cache;
-	void *qimage;
-	mlt_image_format format;
+    struct mlt_producer_s parent;
+    mlt_properties filenames;
+    int count;
+    int image_idx;
+    int qimage_idx;
+    uint8_t *current_image;
+    uint8_t *current_alpha;
+    int current_width;
+    int current_height;
+    int alpha_size;
+    mlt_cache_item image_cache;
+    mlt_cache_item alpha_cache;
+    mlt_cache_item qimage_cache;
+    void *qimage;
+    mlt_image_format format;
 };
 
 typedef struct producer_qimage_s *producer_qimage;
 
-extern int refresh_qimage( producer_qimage self, mlt_frame frame, int enable_caching );
-extern void refresh_image( producer_qimage, mlt_frame, mlt_image_format, int width, int height, int enable_caching );
-extern void make_tempfile( producer_qimage, const char *xml );
+extern int refresh_qimage(producer_qimage self, mlt_frame frame, int enable_caching);
+extern void refresh_image(
+    producer_qimage, mlt_frame, mlt_image_format, int width, int height, int enable_caching);
+extern void make_tempfile(producer_qimage, const char *xml);
 extern int init_qimage(mlt_producer producer, const char *filename);
-extern int load_sequence_sprintf( producer_qimage self, mlt_properties properties, const char *filename );
-extern int load_folder( producer_qimage self, const char *filename );
-
+extern int load_sequence_sprintf(producer_qimage self,
+                                 mlt_properties properties,
+                                 const char *filename);
+extern int load_folder(producer_qimage self, const char *filename);
 
 #ifdef __cplusplus
 }

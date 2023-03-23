@@ -27,34 +27,34 @@
 
 #include "MltService.h"
 
-namespace Mlt
-{
-	class Service;
-	class Profile;
+namespace Mlt {
+class Service;
+class Profile;
 
-	class MLTPP_DECLSPEC Consumer : public Service
-	{
-		private:
-			mlt_consumer instance;
-		public:
-			Consumer( );
-			Consumer( Profile& profile );
-			Consumer( Profile& profile, const char *id , const char *service = NULL );
-			Consumer( mlt_profile profile, const char *id , const char *service = NULL );
-			Consumer( Service &consumer );
-			Consumer( Consumer &consumer );
-			Consumer( mlt_consumer consumer );
-			virtual ~Consumer( );
-			virtual mlt_consumer get_consumer( );
-			mlt_service get_service( ) override;
-			virtual int connect( Service &service );
-			int run( );
-			int start( );
-			void purge( );
-			int stop( );
-			bool is_stopped( );
-			int position( );
-	};
-}
+class MLTPP_DECLSPEC Consumer : public Service
+{
+private:
+    mlt_consumer instance;
+
+public:
+    Consumer();
+    Consumer(Profile &profile);
+    Consumer(Profile &profile, const char *id, const char *service = NULL);
+    Consumer(mlt_profile profile, const char *id, const char *service = NULL);
+    Consumer(Service &consumer);
+    Consumer(Consumer &consumer);
+    Consumer(mlt_consumer consumer);
+    virtual ~Consumer();
+    virtual mlt_consumer get_consumer();
+    mlt_service get_service() override;
+    virtual int connect(Service &service);
+    int run();
+    int start();
+    void purge();
+    int stop();
+    bool is_stopped();
+    int position();
+};
+} // namespace Mlt
 
 #endif

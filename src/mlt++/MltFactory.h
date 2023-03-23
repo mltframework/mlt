@@ -29,27 +29,26 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt
-{
-	class Properties;
-	class Producer;
-	class Filter;
-	class Transition;
-	class Consumer;
-	class Profile;
-	class Repository;
+namespace Mlt {
+class Properties;
+class Producer;
+class Filter;
+class Transition;
+class Consumer;
+class Profile;
+class Repository;
 
-	class MLTPP_DECLSPEC Factory
-	{
-		public:
-			static Repository *init( const char *directory = NULL );
-			static Properties *event_object( );
-			static Producer *producer( Profile& profile, char *id, char *arg = NULL );
-			static Filter *filter( Profile& profile, char *id, char *arg = NULL );
-			static Transition *transition( Profile& profile, char *id, char *arg = NULL );
-			static Consumer *consumer( Profile& profile, char *id, char *arg = NULL );
-			static void close( );
-	};
-}
+class MLTPP_DECLSPEC Factory
+{
+public:
+    static Repository *init(const char *directory = NULL);
+    static Properties *event_object();
+    static Producer *producer(Profile &profile, char *id, char *arg = NULL);
+    static Filter *filter(Profile &profile, char *id, char *arg = NULL);
+    static Transition *transition(Profile &profile, char *id, char *arg = NULL);
+    static Consumer *consumer(Profile &profile, char *id, char *arg = NULL);
+    static void close();
+};
+} // namespace Mlt
 
 #endif

@@ -23,8 +23,8 @@
 #ifndef MLT_CONSUMER_H
 #define MLT_CONSUMER_H
 
-#include "mlt_service.h"
 #include "mlt_events.h"
+#include "mlt_service.h"
 #include <pthread.h>
 
 /** \brief Consumer abstract service class
@@ -92,63 +92,63 @@
 
 struct mlt_consumer_s
 {
-	/** A consumer is a service. */
-	struct mlt_service_s parent;
+    /** A consumer is a service. */
+    struct mlt_service_s parent;
 
-	/** Start the consumer to pull frames (virtual function).
+    /** Start the consumer to pull frames (virtual function).
 	 *
 	 * \param mlt_consumer a consumer
 	 * \return true if there was an error
 	 */
-	int ( *start )( mlt_consumer );
+    int (*start)(mlt_consumer);
 
-	/** Stop the consumer (virtual function).
+    /** Stop the consumer (virtual function).
 	 *
 	 * \param mlt_consumer a consumer
 	 * \return true if there was an error
 	 */
-	int ( *stop )( mlt_consumer );
+    int (*stop)(mlt_consumer);
 
-	/** Get whether the consumer is running or stopped (virtual function).
+    /** Get whether the consumer is running or stopped (virtual function).
 	 *
 	 * \param mlt_consumer a consumer
 	 * \return true if the consumer is stopped
 	 */
-	int ( *is_stopped )( mlt_consumer );
+    int (*is_stopped)(mlt_consumer);
 
-	/** Purge the consumer of buffered data (virtual function).
+    /** Purge the consumer of buffered data (virtual function).
 	 *
 	 * \param mlt_consumer a consumer
 	 */
-	void ( *purge )( mlt_consumer );
+    void (*purge)(mlt_consumer);
 
-	/** The destructor virtual function
+    /** The destructor virtual function
 	 *
 	 * \param mlt_consumer a consumer
 	 */
-	void ( *close )( mlt_consumer );
+    void (*close)(mlt_consumer);
 
-	void *local; /**< \private instance object */
-	void *child; /**< \private the object of a subclass */
+    void *local; /**< \private instance object */
+    void *child; /**< \private the object of a subclass */
 };
 
-#define MLT_CONSUMER_SERVICE( consumer )	( &( consumer )->parent )
-#define MLT_CONSUMER_PROPERTIES( consumer )	MLT_SERVICE_PROPERTIES( MLT_CONSUMER_SERVICE( consumer ) )
+#define MLT_CONSUMER_SERVICE(consumer) (&(consumer)->parent)
+#define MLT_CONSUMER_PROPERTIES(consumer) MLT_SERVICE_PROPERTIES(MLT_CONSUMER_SERVICE(consumer))
 
-extern int mlt_consumer_init( mlt_consumer self, void *child, mlt_profile profile );
-extern mlt_consumer mlt_consumer_new( mlt_profile profile );
-extern mlt_service mlt_consumer_service( mlt_consumer self );
-extern mlt_properties mlt_consumer_properties( mlt_consumer self );
-extern int mlt_consumer_connect( mlt_consumer self, mlt_service producer );
-extern int mlt_consumer_start( mlt_consumer self );
-extern void mlt_consumer_purge( mlt_consumer self );
-extern int mlt_consumer_put_frame( mlt_consumer self, mlt_frame frame );
-extern mlt_frame mlt_consumer_get_frame( mlt_consumer self );
-extern mlt_frame mlt_consumer_rt_frame( mlt_consumer self );
-extern int mlt_consumer_stop( mlt_consumer self );
-extern int mlt_consumer_is_stopped( mlt_consumer self );
-extern void mlt_consumer_stopped( mlt_consumer self );
-extern void mlt_consumer_close( mlt_consumer );
-extern mlt_position mlt_consumer_position( mlt_consumer );
+extern int mlt_consumer_init(mlt_consumer self, void *child, mlt_profile profile);
+extern mlt_consumer mlt_consumer_new(mlt_profile profile);
+extern mlt_service mlt_consumer_service(mlt_consumer self);
+extern mlt_properties mlt_consumer_properties(mlt_consumer self);
+extern int mlt_consumer_connect(mlt_consumer self, mlt_service producer);
+extern int mlt_consumer_start(mlt_consumer self);
+extern void mlt_consumer_purge(mlt_consumer self);
+extern int mlt_consumer_put_frame(mlt_consumer self, mlt_frame frame);
+extern mlt_frame mlt_consumer_get_frame(mlt_consumer self);
+extern mlt_frame mlt_consumer_rt_frame(mlt_consumer self);
+extern int mlt_consumer_stop(mlt_consumer self);
+extern int mlt_consumer_is_stopped(mlt_consumer self);
+extern void mlt_consumer_stopped(mlt_consumer self);
+extern void mlt_consumer_close(mlt_consumer);
+extern mlt_position mlt_consumer_position(mlt_consumer);
 
 #endif

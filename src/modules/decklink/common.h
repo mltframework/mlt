@@ -21,23 +21,27 @@
 #define DECKLINK_COMMON_H
 
 #ifdef _WIN32
-#	include <objbase.h>
-#	include "DeckLinkAPI_h.h"
-	typedef BSTR DLString;
+#include "DeckLinkAPI_h.h"
+#include <objbase.h>
+typedef BSTR DLString;
 #else
-#	include "DeckLinkAPI.h"
-#	ifdef __APPLE__
-		typedef CFStringRef DLString;
-#	else
-		typedef const char* DLString;
-#	endif
+#include "DeckLinkAPI.h"
+#ifdef __APPLE__
+typedef CFStringRef DLString;
+#else
+typedef const char *DLString;
+#endif
 #endif
 
-#define SAFE_RELEASE(V) if (V) { V->Release(); V = NULL; }
+#define SAFE_RELEASE(V) \
+    if (V) { \
+        V->Release(); \
+        V = NULL; \
+    }
 
-char* getCString( DLString aDLString );
-void freeCString( char* aCString );
-void freeDLString( DLString aDLString );
-void swab2( const void *from, void *to, int n );
+char *getCString(DLString aDLString);
+void freeCString(char *aCString);
+void freeDLString(DLString aDLString);
+void swab2(const void *from, void *to, int n);
 
 #endif // DECKLINK_COMMON_H

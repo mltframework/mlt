@@ -24,50 +24,50 @@
 
 #include <framework/mlt.h>
 
-#include "MltProperties.h"
 #include "MltFrame.h"
+#include "MltProperties.h"
 
-namespace Mlt
+namespace Mlt {
+class Properties;
+class Filter;
+class Frame;
+class Profile;
+
+class MLTPP_DECLSPEC Service : public Properties
 {
-	class Properties;
-	class Filter;
-	class Frame;
-	class Profile;
+private:
+    mlt_service instance;
 
-	class MLTPP_DECLSPEC Service : public Properties
-	{
-		private:
-			mlt_service instance;
-		public:
-			Service( );
-			Service( Service &service );
-			Service( const Service &service );
-			Service( mlt_service service );
-			Service( Service *service );
-			virtual ~Service( );
-			Service& operator=( const Service &service );
-			virtual mlt_service get_service( );
-			void lock( );
-			void unlock( );
-			virtual mlt_properties get_properties( ) override;
-			int connect_producer( Service &producer, int index = 0 );
-			int insert_producer( Service &producer, int index = 0 );
-			int disconnect_producer( int index = 0 );
-			int disconnect_all_producers( );
-			Service *consumer( );
-			Service *producer( );
-			Profile *profile( );
-			mlt_profile get_profile( );
-			Frame *get_frame( int index = 0 );
-			mlt_service_type type( );
-			int attach( Filter &filter );
-			int detach( Filter &filter );
-			int filter_count( );
-			int move_filter( int from, int to );
-			Filter *filter( int index );
-			void set_profile( mlt_profile profile );
-			void set_profile( Profile &profile );
-	};
-}
+public:
+    Service();
+    Service(Service &service);
+    Service(const Service &service);
+    Service(mlt_service service);
+    Service(Service *service);
+    virtual ~Service();
+    Service &operator=(const Service &service);
+    virtual mlt_service get_service();
+    void lock();
+    void unlock();
+    virtual mlt_properties get_properties() override;
+    int connect_producer(Service &producer, int index = 0);
+    int insert_producer(Service &producer, int index = 0);
+    int disconnect_producer(int index = 0);
+    int disconnect_all_producers();
+    Service *consumer();
+    Service *producer();
+    Profile *profile();
+    mlt_profile get_profile();
+    Frame *get_frame(int index = 0);
+    mlt_service_type type();
+    int attach(Filter &filter);
+    int detach(Filter &filter);
+    int filter_count();
+    int move_filter(int from, int to);
+    Filter *filter(int index);
+    void set_profile(mlt_profile profile);
+    void set_profile(Profile &profile);
+};
+} // namespace Mlt
 
 #endif

@@ -22,6 +22,6 @@
 
 #include <SDL.h>
 
-SDL_AudioDeviceID sdl2_open_audio( const SDL_AudioSpec* desired, SDL_AudioSpec* obtained );
+SDL_AudioDeviceID sdl2_open_audio(const SDL_AudioSpec *desired, SDL_AudioSpec *obtained);
 
 #endif // COMMON_H

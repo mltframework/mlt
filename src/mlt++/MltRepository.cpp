@@ -22,73 +22,77 @@
 #include "MltProperties.h"
 using namespace Mlt;
 
-Repository::Repository( const char* directory ) :
-	instance( NULL )
+Repository::Repository(const char *directory)
+    : instance(NULL)
 {
-	instance = mlt_repository_init( directory );
+    instance = mlt_repository_init(directory);
 }
 
-Repository::Repository( mlt_repository repository ) :
-	instance( repository )
+Repository::Repository(mlt_repository repository)
+    : instance(repository)
+{}
+
+Repository::~Repository()
 {
+    instance = NULL;
 }
 
-Repository::~Repository( )
+void Repository::register_service(mlt_service_type service_type,
+                                  const char *service,
+                                  mlt_register_callback symbol)
 {
-	instance = NULL;
+    mlt_repository_register(instance, service_type, service, symbol);
 }
 
-void Repository::register_service( mlt_service_type service_type, const char *service, mlt_register_callback symbol )
+void *Repository::create(Profile &profile, mlt_service_type type, const char *service, void *arg)
 {
-	mlt_repository_register( instance, service_type, service, symbol );
+    return mlt_repository_create(instance, profile.get_profile(), type, service, arg);
 }
 
-void *Repository::create( Profile& profile, mlt_service_type type, const char *service, void *arg )
+Properties *Repository::consumers() const
 {
-	return mlt_repository_create( instance, profile.get_profile(), type, service, arg );
+    return new Properties(mlt_repository_consumers(instance));
 }
 
-Properties *Repository::consumers( ) const
+Properties *Repository::filters() const
 {
-	return new Properties( mlt_repository_consumers( instance ) );
+    return new Properties(mlt_repository_filters(instance));
 }
 
-Properties *Repository::filters( ) const
+Properties *Repository::links() const
 {
-	return new Properties( mlt_repository_filters( instance ) );
+    return new Properties(mlt_repository_links(instance));
 }
 
-Properties *Repository::links( ) const
+Properties *Repository::producers() const
 {
-	return new Properties( mlt_repository_links( instance ) );
+    return new Properties(mlt_repository_producers(instance));
 }
 
-Properties *Repository::producers( ) const
+Properties *Repository::transitions() const
 {
-	return new Properties( mlt_repository_producers( instance ) );
+    return new Properties(mlt_repository_transitions(instance));
 }
 
-Properties *Repository::transitions( ) const
+void Repository::register_metadata(mlt_service_type type,
+                                   const char *service,
+                                   mlt_metadata_callback callback,
+                                   void *callback_data)
 {
-	return new Properties( mlt_repository_transitions( instance ) );
+    mlt_repository_register_metadata(instance, type, service, callback, callback_data);
 }
 
-void Repository::register_metadata( mlt_service_type type, const char *service, mlt_metadata_callback callback, void *callback_data )
+Properties *Repository::metadata(mlt_service_type type, const char *service) const
 {
-	mlt_repository_register_metadata( instance, type, service, callback, callback_data );
+    return new Properties(mlt_repository_metadata(instance, type, service));
 }
 
-Properties *Repository::metadata( mlt_service_type type, const char *service ) const
+Properties *Repository::languages() const
 {
-	return new Properties( mlt_repository_metadata( instance, type, service ) );
+    return new Properties(mlt_repository_languages(instance));
 }
 
-Properties *Repository::languages( ) const
+Properties *Repository::presets()
 {
-	return new Properties( mlt_repository_languages( instance ) );
-}
-
-Properties *Repository::presets( )
-{
-	return new Properties( mlt_repository_presets( ) );
+    return new Properties(mlt_repository_presets());
 }

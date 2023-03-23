@@ -22,9 +22,19 @@
 
 #include <framework/mlt_transition.h>
 
-extern mlt_transition transition_composite_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_transition transition_composite_init(mlt_profile profile,
+                                                mlt_service_type type,
+                                                const char *id,
+                                                char *arg);
 
-extern void composite_line_yuv( uint8_t *dest, uint8_t *src, int width, uint8_t *alpha_b,
-                                uint8_t *alpha_a, int weight, uint16_t *luma, int soft, uint32_t step );
+extern void composite_line_yuv(uint8_t *dest,
+                               uint8_t *src,
+                               int width,
+                               uint8_t *alpha_b,
+                               uint8_t *alpha_a,
+                               int weight,
+                               uint16_t *luma,
+                               int soft,
+                               uint32_t step);
 
 #endif

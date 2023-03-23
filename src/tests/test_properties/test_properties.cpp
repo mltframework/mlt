@@ -17,37 +17,39 @@
  */
 
 #include <QString>
-#include <QtTest>
 #include <QTemporaryFile>
+#include <QtTest>
 
 #include <mlt++/Mlt.h>
 using namespace Mlt;
 
 extern "C" {
 #define __APPLE__
-#include <framework/mlt_property.h>
 #include <framework/mlt_animation.h>
+#include <framework/mlt_property.h>
 }
 #include <cfloat>
 
 static const bool kRunLongTests = true;
 
-class TestProperties: public QObject
+class TestProperties : public QObject
 {
     Q_OBJECT
     mlt_locale_t locale;
 
 public:
-    TestProperties() {
+    TestProperties()
+    {
 #if !defined(_WIN32) && (defined(__GLIBC__) || defined(__APPLE__))
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+        locale = newlocale(LC_NUMERIC_MASK, "POSIX", NULL);
 #else
-		locale = 0;
+        locale = 0;
 #endif
         Factory::init();
     }
 
-    ~TestProperties() {
+    ~TestProperties()
+    {
 #if !defined(_WIN32) && (defined(__GLIBC__) || defined(__APPLE__))
         freelocale(locale);
 #endif
@@ -70,7 +72,7 @@ private Q_SLOTS:
     void DestructionRemovesReference()
     {
         Properties p;
-        Properties* q = new Properties(p);
+        Properties *q = new Properties(p);
         QCOMPARE(p.ref_count(), 2);
         delete q;
         QCOMPARE(p.ref_count(), 1);
@@ -113,10 +115,10 @@ private Q_SLOTS:
     {
         Properties p;
         const char *value = "value";
-        char* const s = strdup(value);
+        char *const s = strdup(value);
         p.set("key", s, strlen(s), free);
         int size = 0;
-        QCOMPARE((char*) p.get_data("key", size), value);
+        QCOMPARE((char *) p.get_data("key", size), value);
         QCOMPARE(size, int(strlen(value)));
     }
 
@@ -197,7 +199,7 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_smpte_df), timeString);
     }
 
-	void SetAndGetTimeCodeNtscFps()
+    void SetAndGetTimeCodeNtscFps()
     {
         Profile profile("atsc_720p_2997");
         Properties p;
@@ -266,12 +268,12 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_clock), "00:02:00.000");
 
         if (kRunLongTests)
-        for (int i = 0; i < 9999999; ++i) {
-            p.set("key", i);
-//            QWARN(p.get_time("key", mlt_time_smpte_df));
-            p.set("test", p.get_time("key", mlt_time_smpte_df));
-            QCOMPARE(p.get_int("test"), i);
-        }
+            for (int i = 0; i < 9999999; ++i) {
+                p.set("key", i);
+                //            QWARN(p.get_time("key", mlt_time_smpte_df));
+                p.set("test", p.get_time("key", mlt_time_smpte_df));
+                QCOMPARE(p.get_int("test"), i);
+            }
     }
 
     void SetAndGetTimeCodeNonDropFrame()
@@ -310,12 +312,12 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_clock), timeString);
 
         if (kRunLongTests)
-        for (int i = 0; i < 9999999; ++i) {
-            p.set("key", i);
-//            QWARN(p.get_time("key", mlt_time_clock));
-            p.set("test", p.get_time("key", mlt_time_clock));
-            QCOMPARE(p.get_int("test"), i);
-        }
+            for (int i = 0; i < 9999999; ++i) {
+                p.set("key", i);
+                //            QWARN(p.get_time("key", mlt_time_clock));
+                p.set("test", p.get_time("key", mlt_time_clock));
+                QCOMPARE(p.get_int("test"), i);
+            }
     }
 
     void SetAndGetTimeClockNonIntFps()
@@ -325,12 +327,12 @@ private Q_SLOTS:
         p.set("_profile", profile.get_profile(), 0);
 
         if (kRunLongTests)
-        for (int i = 0; i < 9999999; ++i) {
-            p.set("key", i);
-//            QWARN(p.get_time("key", mlt_time_clock));
-            p.set("test", p.get_time("key", mlt_time_clock));
-            QCOMPARE(p.get_int("test"), i);
-        }
+            for (int i = 0; i < 9999999; ++i) {
+                p.set("key", i);
+                //            QWARN(p.get_time("key", mlt_time_clock));
+                p.set("test", p.get_time("key", mlt_time_clock));
+                QCOMPARE(p.get_int("test"), i);
+            }
     }
 
     void SetSimpleMathExpression()
@@ -338,7 +340,7 @@ private Q_SLOTS:
         Properties p;
         p.set("key", "@16.0/9.0 *2 +3 -1");
         QCOMPARE(p.get_int("key"), 5);
-        QCOMPARE(p.get_double("key"), 16.0/9.0 *2 +3 -1);
+        QCOMPARE(p.get_double("key"), 16.0 / 9.0 * 2 + 3 - 1);
     }
 
     void SetMathExpressionWithProperty()
@@ -354,7 +356,7 @@ private Q_SLOTS:
         Properties p[2];
         const char *s = "value";
         p[0].set("key", s);
-        QCOMPARE(p[1].get("key"), (void*) 0);
+        QCOMPARE(p[1].get("key"), (void *) 0);
         p[1].pass_property(p[0], "key");
         QCOMPARE(p[1].get("key"), s);
     }
@@ -365,8 +367,8 @@ private Q_SLOTS:
         const char *s = "value";
         p[0].set("key.one", s);
         p[0].set("key.two", s);
-        QCOMPARE(p[1].get("key.one"), (void*) 0);
-        QCOMPARE(p[1].get("key.two"), (void*) 0);
+        QCOMPARE(p[1].get("key.one"), (void *) 0);
+        QCOMPARE(p[1].get("key.two"), (void *) 0);
         p[1].pass_values(p[0], "key.");
         QCOMPARE(p[1].get("one"), s);
         QCOMPARE(p[1].get("two"), s);
@@ -378,8 +380,8 @@ private Q_SLOTS:
         const char *s = "value";
         p[0].set("key.one", s);
         p[0].set("key.two", s);
-        QCOMPARE(p[1].get("key.one"), (void*) 0);
-        QCOMPARE(p[1].get("key.two"), (void*) 0);
+        QCOMPARE(p[1].get("key.one"), (void *) 0);
+        QCOMPARE(p[1].get("key.two"), (void *) 0);
         p[1].pass_list(p[0], "key.one key.two");
         QCOMPARE(p[1].get("key.one"), s);
         QCOMPARE(p[1].get("key.two"), s);
@@ -405,7 +407,7 @@ private Q_SLOTS:
     void ParseString()
     {
         Properties p;
-        QCOMPARE(p.get("key"), (void*) 0);
+        QCOMPARE(p.get("key"), (void *) 0);
         p.parse("key=value");
         QCOMPARE(p.get("key"), "value");
         p.parse("key=\"new value\"");
@@ -443,39 +445,39 @@ private Q_SLOTS:
         p[2].set("2", "\"value6\"");
         p[0].set("seq1", p[1].get_properties(), 0);
         p[0].set("seq'2", p[2].get_properties(), 0);
-        char* serializedYaml = p[0].serialise_yaml();
+        char *serializedYaml = p[0].serialise_yaml();
         QCOMPARE(serializedYaml,
-                "---\n"
-                "key1: value1\n"
-                "\"key:2\": \"value[2]\"\n"
-                "seq1:\n"
-                "  - value3\n"
-                "  - \"value:4\"\n"
-                "\"seq'2\":\n"
-                "  - value5\n"
-                "  - '\"value6\"'\n"
-                "...\n");
+                 "---\n"
+                 "key1: value1\n"
+                 "\"key:2\": \"value[2]\"\n"
+                 "seq1:\n"
+                 "  - value3\n"
+                 "  - \"value:4\"\n"
+                 "\"seq'2\":\n"
+                 "  - value5\n"
+                 "  - '\"value6\"'\n"
+                 "...\n");
         free(serializedYaml);
     }
-    
+
     void ParsesYamlTiny()
     {
         QTemporaryFile tempFile;
         if (tempFile.open()) {
-            tempFile.write(
-                        "---\n"
-                        "key1: value1\n"
-                        "\"key:2\":\"value[2]\"\n"
-                        "seq1:\n"
-                        "  - value3\n"
-                        "  - \"value:4\"\n"
-                        "\"seq'2\":\n"
-                        "  - value5\n"
-                        "  - \"value:6\"\n"
-                        "...\n");
+            tempFile.write("---\n"
+                           "key1: value1\n"
+                           "\"key:2\":\"value[2]\"\n"
+                           "seq1:\n"
+                           "  - value3\n"
+                           "  - \"value:4\"\n"
+                           "\"seq'2\":\n"
+                           "  - value5\n"
+                           "  - \"value:6\"\n"
+                           "...\n");
             tempFile.close();
         }
-        QScopedPointer<Properties> p(Properties::parse_yaml(tempFile.fileName().toUtf8().constData()));
+        QScopedPointer<Properties> p(
+            Properties::parse_yaml(tempFile.fileName().toUtf8().constData()));
         QVERIFY(!p.isNull());
         QVERIFY(p->is_valid());
         QCOMPARE(p->get("key1"), "value1");
@@ -522,7 +524,8 @@ private Q_SLOTS:
         char *a_serialized = mlt_animation_serialize(a);
         mlt_animation_parse(a, a_serialized, 0, fps, locale);
         QCOMPARE(a_serialized, "0|=0;1|=1;2|=2");
-        if (a_serialized) free(a_serialized);
+        if (a_serialized)
+            free(a_serialized);
 
         mlt_property_close(item.property);
         mlt_animation_close(a);
@@ -538,7 +541,8 @@ private Q_SLOTS:
         mlt_animation_remove(a, 60);
         char *a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50=1;100=0");
-        if (a_serialized) free(a_serialized);
+        if (a_serialized)
+            free(a_serialized);
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
@@ -575,7 +579,8 @@ private Q_SLOTS:
         mlt_animation_remove(a, 60);
         char *a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50=100;100=0");
-        if (a_serialized) free(a_serialized);
+        if (a_serialized)
+            free(a_serialized);
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
@@ -612,7 +617,8 @@ private Q_SLOTS:
         char *a_serialized = mlt_animation_serialize(a);
         // Time serializes to frame units :-\.
         QCOMPARE(a_serialized, "50=1;100=0");
-        if (a_serialized) free(a_serialized);
+        if (a_serialized)
+            free(a_serialized);
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
@@ -648,7 +654,8 @@ private Q_SLOTS:
         mlt_animation_parse(a, "50|=100; 60|=60; 100|=0", 100, fps, locale);
         char *a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50|=100;60|=60;100|=0");
-        if (a_serialized) free(a_serialized);
+        if (a_serialized)
+            free(a_serialized);
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
@@ -692,18 +699,21 @@ private Q_SLOTS:
         mlt_animation_parse(a, "50=hello world; 60=\"good night\"; 100=bar", 100, fps, locale);
         char *a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50=hello world;60=good night;100=bar");
-        if (a_serialized) free(a_serialized);
+        if (a_serialized)
+            free(a_serialized);
 
         mlt_animation_parse(a, "50=hello world; 60=\"good; night\"; 100=bar", 100, fps, locale);
         a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50=hello world;60=\"good; night\";100=bar");
-        if (a_serialized) free(a_serialized);
-        
+        if (a_serialized)
+            free(a_serialized);
+
         mlt_animation_parse(a, "50=hello world; 60=\"\"good night\"\"; 100=bar", 100, fps, locale);
         a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "50=hello world;60=\"good night\";100=bar");
-        if (a_serialized) free(a_serialized);
-        
+        if (a_serialized)
+            free(a_serialized);
+
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
@@ -737,7 +747,7 @@ private Q_SLOTS:
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
         QCOMPARE(mlt_property_get_double(p, fps, locale), 10.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale,  0, len), 100.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 0, len), 100.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 15, len), 150.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 20, len), 200.0);
 
@@ -755,7 +765,7 @@ private Q_SLOTS:
         mlt_property p = mlt_property_init();
         mlt_property_set_string(p, "10=100; 20=200");
         QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale,  0, len), 100);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 0, len), 100);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 15, len), 150);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 20, len), 200);
 
@@ -771,7 +781,7 @@ private Q_SLOTS:
         double fps = 25.0;
         int len = 100;
         mlt_property p = mlt_property_init();
-		mlt_property_set_string(p, "10=#ffff00ff;20=green");
+        mlt_property_set_string(p, "10=#ffff00ff;20=green");
 
         QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
 
@@ -780,7 +790,6 @@ private Q_SLOTS:
         QCOMPARE(color.g, 0);
         QCOMPARE(color.b, 255);
         QCOMPARE(color.a, 255);
-
 
         color = mlt_property_anim_get_color(p, fps, locale, 15, len);
         QCOMPARE(color.r, 127);
@@ -803,11 +812,16 @@ private Q_SLOTS:
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
 
-        mlt_animation_parse(a, "0=80;10~=80; 20~=30; 30~=40; 40~=28; 50=90; 60=0; 70=60; 80=20", 100, fps, locale);
+        mlt_animation_parse(a,
+                            "0=80;10~=80; 20~=30; 30~=40; 40~=28; 50=90; 60=0; 70=60; 80=20",
+                            100,
+                            fps,
+                            locale);
         item.property = mlt_property_init();
         char *a_serialized = mlt_animation_serialize(a);
         QCOMPARE(a_serialized, "0=80;10~=80;20~=30;30~=40;40~=28;50=90;60=0;70=60;80=20");
-        if (a_serialized) free(a_serialized);
+        if (a_serialized)
+            free(a_serialized);
 
         mlt_animation_get_item(a, &item, 10);
         QCOMPARE(mlt_property_get_int(item.property, fps, locale), 80);
@@ -849,7 +863,7 @@ private Q_SLOTS:
         mlt_property_set_string(p, "10=100; 20=200");
         mlt_property_anim_set_double(p, 1.5, fps, locale, 30, len, mlt_keyframe_linear);
         QCOMPARE(mlt_property_get_double(p, fps, locale), 10.0);
-        QCOMPARE(mlt_property_anim_get_double(p, fps, locale,  0, len), 100.0);
+        QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 0, len), 100.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 15, len), 150.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 20, len), 200.0);
         QCOMPARE(mlt_property_anim_get_double(p, fps, locale, 25, len), 100.75);
@@ -865,7 +879,7 @@ private Q_SLOTS:
         mlt_property_set_string(p, "10=100; 20=200");
         mlt_property_anim_set_int(p, 300, fps, locale, 30, len, mlt_keyframe_linear);
         QCOMPARE(mlt_property_get_int(p, fps, locale), 10);
-        QCOMPARE(mlt_property_anim_get_int(p, fps, locale,  0, len), 100);
+        QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 0, len), 100);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 15, len), 150);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 20, len), 200);
         QCOMPARE(mlt_property_anim_get_int(p, fps, locale, 25, len), 250);
@@ -888,16 +902,16 @@ private Q_SLOTS:
         p.set_lcnumeric("POSIX");
 
         // Construct animation from scratch
-        p.anim_set("foo",   0,  0);
+        p.anim_set("foo", 0, 0);
         p.anim_set("foo", 100, 50, -1, mlt_keyframe_smooth);
-        QCOMPARE(p.anim_get_int("foo",  0), 0);
+        QCOMPARE(p.anim_get_int("foo", 0), 0);
         QCOMPARE(p.anim_get_int("foo", 25), 50);
         QCOMPARE(p.anim_get_int("foo", 50), 100);
         QCOMPARE(p.get("foo"), "0=0;50~=100");
 
         // Animation from string value
         p.set("foo", "10=100;20=200");
-        QCOMPARE(p.anim_get_int("foo",  0), 100);
+        QCOMPARE(p.anim_get_int("foo", 0), 100);
         QCOMPARE(p.anim_get_int("foo", 15), 150);
         QCOMPARE(p.anim_get_int("foo", 20), 200);
 
@@ -906,7 +920,7 @@ private Q_SLOTS:
         Profile profile("dv_pal");
         p.set("_profile", profile.get_profile(), 0);
         p.set("foo", ":0.0=100; :2.0=200");
-        QCOMPARE(p.anim_get_int("foo",  0), 100);
+        QCOMPARE(p.anim_get_int("foo", 0), 100);
         QCOMPARE(p.anim_get_int("foo", 25), 150);
         QCOMPARE(p.anim_get_int("foo", 50), 200);
     }
@@ -917,16 +931,16 @@ private Q_SLOTS:
         p.set_lcnumeric("POSIX");
 
         // Construct animation from scratch
-        p.anim_set("foo",   0.0,  0);
+        p.anim_set("foo", 0.0, 0);
         p.anim_set("foo", 100.0, 50, -1, mlt_keyframe_smooth);
-        QCOMPARE(p.anim_get_double("foo",  0), 0.0);
+        QCOMPARE(p.anim_get_double("foo", 0), 0.0);
         QCOMPARE(p.anim_get_double("foo", 25), 50.0);
         QCOMPARE(p.anim_get_double("foo", 50), 100.0);
         QCOMPARE(p.get("foo"), "0=0;50~=100");
 
         // Animation from string value
         p.set("foo", "10=100.2;20=200.8");
-        QCOMPARE(p.anim_get_double("foo",  0), 100.2);
+        QCOMPARE(p.anim_get_double("foo", 0), 100.2);
         QCOMPARE(p.anim_get_double("foo", 15), 150.5);
         QCOMPARE(p.anim_get_double("foo", 20), 200.8);
 
@@ -935,7 +949,7 @@ private Q_SLOTS:
         Profile profile("dv_pal");
         p.set("_profile", profile.get_profile(), 0);
         p.set("foo", ":0.0=100; :2.0=200");
-        QCOMPARE(p.anim_get_double("foo",  0), 100.0);
+        QCOMPARE(p.anim_get_double("foo", 0), 100.0);
         QCOMPARE(p.anim_get_double("foo", 25), 150.0);
         QCOMPARE(p.anim_get_double("foo", 50), 200.0);
 
@@ -951,11 +965,10 @@ private Q_SLOTS:
         p.anim_set("key", "bar", 30);
         QCOMPARE(p.get("key"), "10|=foo;30|=bar");
         p.set("key", "0=; 10=foo bar; 30=hello world");
-        QCOMPARE(p.anim_get("key",  1), "");
+        QCOMPARE(p.anim_get("key", 1), "");
         QCOMPARE(p.anim_get("key", 15), "foo bar");
         QCOMPARE(p.anim_get("key", 45), "hello world");
     }
-
 
     void PropertyRefreshOnAnimationChange()
     {
@@ -968,7 +981,7 @@ private Q_SLOTS:
             p.set("foo", "10=100; 20=200");
             QCOMPARE(p.get_double("foo"), 10.0);
             // Call anim_get_double() to create the animation
-            QCOMPARE(p.anim_get_double("foo", 15, 20 ), 150.0);
+            QCOMPARE(p.anim_get_double("foo", 15, 20), 150.0);
             Mlt::Animation animation = p.get_animation("foo");
             animation.key_set_frame(0, 15);
             QCOMPARE(p.get_double("foo"), 15.0);
@@ -977,10 +990,10 @@ private Q_SLOTS:
         {
             Properties p;
             p.set("foo", "10=100;20=200");
-            QCOMPARE(p.anim_get_double("foo", 15, 20 ), 150.0);
+            QCOMPARE(p.anim_get_double("foo", 15, 20), 150.0);
             Mlt::Animation animation = p.get_animation("foo");
             animation.key_set_frame(0, 15);
-            QCOMPARE(p.anim_get_double("foo", 15, 0 ), 100.0);
+            QCOMPARE(p.anim_get_double("foo", 15, 0), 100.0);
         }
 
         {
@@ -988,7 +1001,7 @@ private Q_SLOTS:
             p.set("foo", "10=100; 20=200");
             QCOMPARE(p.get_int("foo"), 10);
             // Call anim_get_int() to create the animation
-            QCOMPARE(p.anim_get_int("foo", 15, 20 ), 150);
+            QCOMPARE(p.anim_get_int("foo", 15, 20), 150);
             Mlt::Animation animation = p.get_animation("foo");
             animation.key_set_frame(0, 15);
             QCOMPARE(p.get_int("foo"), 15);
@@ -997,17 +1010,17 @@ private Q_SLOTS:
         {
             Properties p;
             p.set("foo", "10=100; 20=200");
-            QCOMPARE(p.anim_get_int("foo", 15, 20 ), 150);
+            QCOMPARE(p.anim_get_int("foo", 15, 20), 150);
             Mlt::Animation animation = p.get_animation("foo");
             animation.key_set_frame(0, 15);
-            QCOMPARE(p.anim_get_int("foo", 15, 0 ), 100);
+            QCOMPARE(p.anim_get_int("foo", 15, 0), 100);
         }
 
         {
             Properties p;
             p.set("foo", "10=100;20=200");
             // Call anim_get_int() to create the animation
-            QCOMPARE(p.anim_get_int("foo", 15, 20 ), 150);
+            QCOMPARE(p.anim_get_int("foo", 15, 20), 150);
             Mlt::Animation animation = p.get_animation("foo");
             QCOMPARE(p.get("foo"), "10=100;20=200");
             animation.key_set_frame(0, 15);
@@ -1018,16 +1031,16 @@ private Q_SLOTS:
     void test_mlt_rect()
     {
         mlt_property p = mlt_property_init();
-        mlt_rect r = { 1, 2, 3, 4, 5 };
+        mlt_rect r = {1, 2, 3, 4, 5};
 
-        mlt_property_set_rect( p, r );
+        mlt_property_set_rect(p, r);
         QCOMPARE(mlt_property_get_string(p), "1 2 3 4 5");
         r.o = DBL_MIN;
-        mlt_property_set_rect( p, r );
+        mlt_property_set_rect(p, r);
         QCOMPARE(mlt_property_get_string(p), "1 2 3 4");
         r.w = DBL_MIN;
         r.h = DBL_MIN;
-        mlt_property_set_rect( p, r );
+        mlt_property_set_rect(p, r);
         QCOMPARE(mlt_property_get_string(p), "1 2");
 
         mlt_property_set_string(p, "1.1/2.2:3.3x4.4:5.5");
@@ -1080,7 +1093,7 @@ private Q_SLOTS:
         Properties p;
         p.set_lcnumeric("POSIX");
         const char *s = "1.1 2.2 3.3 4.4 5.5";
-        mlt_rect r = { 1.1, 2.2, 3.3, 4.4, 5.5 };
+        mlt_rect r = {1.1, 2.2, 3.3, 4.4, 5.5};
         p.set("key", r);
         QCOMPARE(p.get("key"), s);
         p.set("key", s);
@@ -1094,15 +1107,15 @@ private Q_SLOTS:
 
     void RectAnimation()
     {
-        mlt_rect r1 = { 0, 0, 200, 200, 0 };
-        mlt_rect r2 = { 100, 100, 400, 400, 1.0 };
+        mlt_rect r1 = {0, 0, 200, 200, 0};
+        mlt_rect r2 = {100, 100, 400, 400, 1.0};
         Properties p;
         p.set_lcnumeric("POSIX");
 
         // Construct animation from scratch
-        p.anim_set("key", r1,  0);
+        p.anim_set("key", r1, 0);
         p.anim_set("key", r2, 50);
-        QCOMPARE(p.anim_get_rect("key",  0).x, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 0).x, 0.0);
         QCOMPARE(p.anim_get_rect("key", 25).x, 50.0);
         QCOMPARE(p.anim_get_rect("key", 25).y, 50.0);
         QCOMPARE(p.anim_get_rect("key", 25).w, 300.0);
@@ -1112,11 +1125,11 @@ private Q_SLOTS:
         QCOMPARE(p.get("key"), "0=0 0 200 200 0;50=100 100 400 400 1");
 
         // Animation from string value
-        QCOMPARE(p.anim_get_rect("key",  0).x, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0).y, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0).w, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0).h, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0).o, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 0).x, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 0).y, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 0).w, 200.0);
+        QCOMPARE(p.anim_get_rect("key", 0).h, 200.0);
+        QCOMPARE(p.anim_get_rect("key", 0).o, 0.0);
         QCOMPARE(p.anim_get_rect("key", 50).x, 100.0);
         QCOMPARE(p.anim_get_rect("key", 50).y, 100.0);
         QCOMPARE(p.anim_get_rect("key", 50).w, 400.0);
@@ -1130,11 +1143,11 @@ private Q_SLOTS:
 
         // Smooth animation
         p.set("key", "0~=0/0:200x200:0; 50=100/100:400x400:1");
-        QCOMPARE(p.anim_get_rect("key",  0).x, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0).y, 0.0);
-        QCOMPARE(p.anim_get_rect("key",  0).w, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0).h, 200.0);
-        QCOMPARE(p.anim_get_rect("key",  0).o, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 0).x, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 0).y, 0.0);
+        QCOMPARE(p.anim_get_rect("key", 0).w, 200.0);
+        QCOMPARE(p.anim_get_rect("key", 0).h, 200.0);
+        QCOMPARE(p.anim_get_rect("key", 0).o, 0.0);
         QCOMPARE(p.anim_get_rect("key", 50).x, 100.0);
         QCOMPARE(p.anim_get_rect("key", 50).y, 100.0);
         QCOMPARE(p.anim_get_rect("key", 50).w, 400.0);
@@ -1176,14 +1189,14 @@ private Q_SLOTS:
         QCOMPARE(color.g, quint8(0x00));
         QCOMPARE(color.b, quint8(0x00));
         QCOMPARE(color.a, quint8(0xff));
-		//pattern #AARRGGBB
+        //pattern #AARRGGBB
         p.set("key", "#deadd00d");
         color = p.get_color("key");
         QCOMPARE(color.r, quint8(0xad));
         QCOMPARE(color.g, quint8(0xd0));
         QCOMPARE(color.b, quint8(0x0d));
         QCOMPARE(color.a, quint8(0xde));
-		//pattern #0xRRGGBBAA
+        //pattern #0xRRGGBBAA
         p.set("key", "0xadd00dde");
         color = p.get_color("key");
         QCOMPARE(color.r, quint8(0xad));
@@ -1192,98 +1205,99 @@ private Q_SLOTS:
         QCOMPARE(color.a, quint8(0xde));
     }
 
-	void StringFromColor()
-	{
-		mlt_color color;
-		color.r = quint8(0xad);
-		color.g = quint8(0xd0);
-		color.b = quint8(0x0d);
-		color.a = quint8(0xde);
-		int len = 100;
-		mlt_property p = mlt_property_init();
-		mlt_property_set_color(p, color);
-		QCOMPARE(mlt_property_get_string(p), "#deadd00d");
-		mlt_property_close(p);
+    void StringFromColor()
+    {
+        mlt_color color;
+        color.r = quint8(0xad);
+        color.g = quint8(0xd0);
+        color.b = quint8(0x0d);
+        color.a = quint8(0xde);
+        int len = 100;
+        mlt_property p = mlt_property_init();
+        mlt_property_set_color(p, color);
+        QCOMPARE(mlt_property_get_string(p), "#deadd00d");
+        mlt_property_close(p);
 
-		Properties pies;
+        Properties pies;
 
-		pies.set("key", color);
-		QCOMPARE(pies.get("key"), "#deadd00d");
-	}
+        pies.set("key", color);
+        QCOMPARE(pies.get("key"), "#deadd00d");
+    }
 
-	void ColorAnimationCpp()
-	{
-		mlt_color c1 = { 0xff, 0xef, 0xab, 0x00 };
-		mlt_color c2 = { 0x00, 0xff, 0xab, 0xdf };
-		Properties p;
-		p.set_lcnumeric("POSIX");
+    void ColorAnimationCpp()
+    {
+        mlt_color c1 = {0xff, 0xef, 0xab, 0x00};
+        mlt_color c2 = {0x00, 0xff, 0xab, 0xdf};
+        Properties p;
+        p.set_lcnumeric("POSIX");
 
-		// Construct animation from scratch
-		p.anim_set("key", c1,  0);
-		p.anim_set("key", c2, 50);
-		QCOMPARE(p.anim_get_color("key",  0).r, 255);
-		QCOMPARE(p.anim_get_color("key", 25).g, 247);
-		QCOMPARE(p.anim_get_color("key", 25).b, 171);
-		QCOMPARE(p.anim_get_color("key", 25).a, 111);
-		QCOMPARE(p.get("key"), "0=#ffefab;50=#df00ffab");
+        // Construct animation from scratch
+        p.anim_set("key", c1, 0);
+        p.anim_set("key", c2, 50);
+        QCOMPARE(p.anim_get_color("key", 0).r, 255);
+        QCOMPARE(p.anim_get_color("key", 25).g, 247);
+        QCOMPARE(p.anim_get_color("key", 25).b, 171);
+        QCOMPARE(p.anim_get_color("key", 25).a, 111);
+        QCOMPARE(p.get("key"), "0=#ffefab;50=#df00ffab");
 
-		// Animation from string value
-		QCOMPARE(p.anim_get_color("key", 0).r, 255);
-		QCOMPARE(p.anim_get_color("key", 0).g, 239);
-		QCOMPARE(p.anim_get_color("key", 0).b, 171);
-		QCOMPARE(p.anim_get_color("key", 0).a, 0);
-		QCOMPARE(p.anim_get_color("key", 50).r, 0);
-		QCOMPARE(p.anim_get_color("key", 50).g, 255);
-		QCOMPARE(p.anim_get_color("key", 50).b, 171);
-		QCOMPARE(p.anim_get_color("key", 50).a, 223);
-		QCOMPARE(p.anim_get_color("key", 15).r, 178);
-		QCOMPARE(p.anim_get_color("key", 15).g, 243);
-		QCOMPARE(p.anim_get_color("key", 15).b, 171);
-		QCOMPARE(p.anim_get_color("key", 15).a, 66);
-	}
+        // Animation from string value
+        QCOMPARE(p.anim_get_color("key", 0).r, 255);
+        QCOMPARE(p.anim_get_color("key", 0).g, 239);
+        QCOMPARE(p.anim_get_color("key", 0).b, 171);
+        QCOMPARE(p.anim_get_color("key", 0).a, 0);
+        QCOMPARE(p.anim_get_color("key", 50).r, 0);
+        QCOMPARE(p.anim_get_color("key", 50).g, 255);
+        QCOMPARE(p.anim_get_color("key", 50).b, 171);
+        QCOMPARE(p.anim_get_color("key", 50).a, 223);
+        QCOMPARE(p.anim_get_color("key", 15).r, 178);
+        QCOMPARE(p.anim_get_color("key", 15).g, 243);
+        QCOMPARE(p.anim_get_color("key", 15).b, 171);
+        QCOMPARE(p.anim_get_color("key", 15).a, 66);
+    }
 
-	void SmoothColorAnimationCpp()
-	{
-		Properties p;
-		p.set_lcnumeric("POSIX");
+    void SmoothColorAnimationCpp()
+    {
+        Properties p;
+        p.set_lcnumeric("POSIX");
 
-		// Smooth animation
-		p.set("key", "0~=#00ffefab; 50~=#df00ffab; 100~=#df00ffab; 150~=#df00ffab");
-		QCOMPARE(p.anim_get_color("key", 0).r, 255);
-		QCOMPARE(p.anim_get_color("key", 0).g, 239);
-		QCOMPARE(p.anim_get_color("key", 0).b, 171);
-		QCOMPARE(p.anim_get_color("key", 0).a, 0);
-		QCOMPARE(p.anim_get_color("key", 25).r, 127);
-		QCOMPARE(p.anim_get_color("key", 25).g, 247);
-		QCOMPARE(p.anim_get_color("key", 25).b, 171);
-		QCOMPARE(p.anim_get_color("key", 25).a, 111);
-		QCOMPARE(p.anim_get_color("key", 50).r, 0);
-		QCOMPARE(p.anim_get_color("key", 50).g, 255);
-		QCOMPARE(p.anim_get_color("key", 50).b, 171);
-		QCOMPARE(p.anim_get_color("key", 50).a, 223);
-		QCOMPARE(p.anim_get_color("key", 60).a, 237);
-		QCOMPARE(p.anim_get_color("key", 70).a, 239);
-		QCOMPARE(p.anim_get_color("key", 75).r, 0);
-		QCOMPARE(p.anim_get_color("key", 75).g, 255);
-		QCOMPARE(p.anim_get_color("key", 75).b, 171);
-		QCOMPARE(p.anim_get_color("key", 75).a, 236);
-		QCOMPARE(p.anim_get_color("key", 100).r, 0);
-		QCOMPARE(p.anim_get_color("key", 100).g, 255);
-		QCOMPARE(p.anim_get_color("key", 100).b, 171);
-		QCOMPARE(p.anim_get_color("key", 100).a, 223);
-	}
+        // Smooth animation
+        p.set("key", "0~=#00ffefab; 50~=#df00ffab; 100~=#df00ffab; 150~=#df00ffab");
+        QCOMPARE(p.anim_get_color("key", 0).r, 255);
+        QCOMPARE(p.anim_get_color("key", 0).g, 239);
+        QCOMPARE(p.anim_get_color("key", 0).b, 171);
+        QCOMPARE(p.anim_get_color("key", 0).a, 0);
+        QCOMPARE(p.anim_get_color("key", 25).r, 127);
+        QCOMPARE(p.anim_get_color("key", 25).g, 247);
+        QCOMPARE(p.anim_get_color("key", 25).b, 171);
+        QCOMPARE(p.anim_get_color("key", 25).a, 111);
+        QCOMPARE(p.anim_get_color("key", 50).r, 0);
+        QCOMPARE(p.anim_get_color("key", 50).g, 255);
+        QCOMPARE(p.anim_get_color("key", 50).b, 171);
+        QCOMPARE(p.anim_get_color("key", 50).a, 223);
+        QCOMPARE(p.anim_get_color("key", 60).a, 237);
+        QCOMPARE(p.anim_get_color("key", 70).a, 239);
+        QCOMPARE(p.anim_get_color("key", 75).r, 0);
+        QCOMPARE(p.anim_get_color("key", 75).g, 255);
+        QCOMPARE(p.anim_get_color("key", 75).b, 171);
+        QCOMPARE(p.anim_get_color("key", 75).a, 236);
+        QCOMPARE(p.anim_get_color("key", 100).r, 0);
+        QCOMPARE(p.anim_get_color("key", 100).g, 255);
+        QCOMPARE(p.anim_get_color("key", 100).b, 171);
+        QCOMPARE(p.anim_get_color("key", 100).a, 223);
+    }
 
-	void ColorAnimationCssString()
+    void ColorAnimationCssString()
     {
         double fps = 25.0;
         mlt_animation a = mlt_animation_new();
         struct mlt_animation_item_s item;
 
-		mlt_animation_parse(a, "50=0xff00ffff; 60=0xaa00ffff; 100=0x00ff00ff", 100, fps, locale);
+        mlt_animation_parse(a, "50=0xff00ffff; 60=0xaa00ffff; 100=0x00ff00ff", 100, fps, locale);
         mlt_animation_remove(a, 60);
         char *a_serialized = mlt_animation_serialize(a);
-		QCOMPARE(a_serialized, "50=0xff00ffff;100=0x00ff00ff");
-        if (a_serialized) free(a_serialized);
+        QCOMPARE(a_serialized, "50=0xff00ffff;100=0x00ff00ff");
+        if (a_serialized)
+            free(a_serialized);
         item.property = mlt_property_init();
 
         mlt_animation_get_item(a, &item, 10);
@@ -1295,7 +1309,7 @@ private Q_SLOTS:
         QCOMPARE(item.is_key, 0);
 
         mlt_animation_get_item(a, &item, 50);
-		color = mlt_property_get_color(item.property, fps, locale);
+        color = mlt_property_get_color(item.property, fps, locale);
         QCOMPARE(color.r, 255);
         QCOMPARE(color.g, 0);
         QCOMPARE(color.b, 255);
@@ -1304,9 +1318,9 @@ private Q_SLOTS:
 
         mlt_animation_get_item(a, &item, 75);
         color = mlt_property_get_color(item.property, fps, locale);
-		QCOMPARE(color.r, 127);
-		QCOMPARE(color.g, 127);
-		QCOMPARE(color.b, 127);
+        QCOMPARE(color.r, 127);
+        QCOMPARE(color.g, 127);
+        QCOMPARE(color.b, 127);
         QCOMPARE(color.a, 255);
         QCOMPARE(item.is_key, 0);
 
@@ -1330,62 +1344,63 @@ private Q_SLOTS:
         mlt_animation_close(a);
     }
 
-	void ColorAnimationHexString()
-	{
-		double fps = 25.0;
-		mlt_animation a = mlt_animation_new();
-		struct mlt_animation_item_s item;
+    void ColorAnimationHexString()
+    {
+        double fps = 25.0;
+        mlt_animation a = mlt_animation_new();
+        struct mlt_animation_item_s item;
 
-		mlt_animation_parse(a, "50=#ffff00ff; 60=#ffaa00ff; 100=#ff00ff00", 100, fps, locale);
-		mlt_animation_remove(a, 60);
-		char *a_serialized = mlt_animation_serialize(a);
-		QCOMPARE(a_serialized, "50=#ffff00ff;100=#ff00ff00");
-		if (a_serialized) free(a_serialized);
-		item.property = mlt_property_init();
+        mlt_animation_parse(a, "50=#ffff00ff; 60=#ffaa00ff; 100=#ff00ff00", 100, fps, locale);
+        mlt_animation_remove(a, 60);
+        char *a_serialized = mlt_animation_serialize(a);
+        QCOMPARE(a_serialized, "50=#ffff00ff;100=#ff00ff00");
+        if (a_serialized)
+            free(a_serialized);
+        item.property = mlt_property_init();
 
-		mlt_animation_get_item(a, &item, 10);
-		mlt_color color = mlt_property_get_color(item.property, fps, locale);
-		QCOMPARE(color.r, 255);
-		QCOMPARE(color.g, 0);
-		QCOMPARE(color.b, 255);
-		QCOMPARE(color.a, 255);
-		QCOMPARE(item.is_key, 0);
+        mlt_animation_get_item(a, &item, 10);
+        mlt_color color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 255);
+        QCOMPARE(color.g, 0);
+        QCOMPARE(color.b, 255);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 0);
 
-		mlt_animation_get_item(a, &item, 50);
-		color = mlt_property_get_color(item.property, fps, locale);
-		QCOMPARE(color.r, 255);
-		QCOMPARE(color.g, 0);
-		QCOMPARE(color.b, 255);
-		QCOMPARE(color.a, 255);
-		QCOMPARE(item.is_key, 1);
+        mlt_animation_get_item(a, &item, 50);
+        color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 255);
+        QCOMPARE(color.g, 0);
+        QCOMPARE(color.b, 255);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 1);
 
-		mlt_animation_get_item(a, &item, 75);
-		color = mlt_property_get_color(item.property, fps, locale);
-		QCOMPARE(color.r, 127);
-		QCOMPARE(color.g, 127);
-		QCOMPARE(color.b, 127);
-		QCOMPARE(color.a, 255);
-		QCOMPARE(item.is_key, 0);
+        mlt_animation_get_item(a, &item, 75);
+        color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 127);
+        QCOMPARE(color.g, 127);
+        QCOMPARE(color.b, 127);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 0);
 
-		mlt_animation_get_item(a, &item, 100);
-		color = mlt_property_get_color(item.property, fps, locale);
-		QCOMPARE(color.r, 0);
-		QCOMPARE(color.g, 255);
-		QCOMPARE(color.b, 0);
-		QCOMPARE(color.a, 255);
-		QCOMPARE(item.is_key, 1);
+        mlt_animation_get_item(a, &item, 100);
+        color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 0);
+        QCOMPARE(color.g, 255);
+        QCOMPARE(color.b, 0);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 1);
 
-		mlt_animation_get_item(a, &item, 110);
-		color = mlt_property_get_color(item.property, fps, locale);
-		QCOMPARE(color.r, 0);
-		QCOMPARE(color.g, 255);
-		QCOMPARE(color.b, 0);
-		QCOMPARE(color.a, 255);
-		QCOMPARE(item.is_key, 0);
+        mlt_animation_get_item(a, &item, 110);
+        color = mlt_property_get_color(item.property, fps, locale);
+        QCOMPARE(color.r, 0);
+        QCOMPARE(color.g, 255);
+        QCOMPARE(color.b, 0);
+        QCOMPARE(color.a, 255);
+        QCOMPARE(item.is_key, 0);
 
-		mlt_property_close(item.property);
-		mlt_animation_close(a);
-	}
+        mlt_property_close(item.property);
+        mlt_animation_close(a);
+    }
 
     void SetIntAndGetAnim()
     {
@@ -1437,11 +1452,11 @@ private Q_SLOTS:
 
         QCOMPARE(parent.count(), 2);
 
-        Properties* pChild1 = parent.get_props("c1");
+        Properties *pChild1 = parent.get_props("c1");
         QCOMPARE(pChild1->get("c1B"), "B");
         delete pChild1;
 
-        Properties* pChild2 = parent.get_props_at(1);
+        Properties *pChild2 = parent.get_props_at(1);
         QCOMPARE(pChild1->get("c2D"), "D");
         delete pChild2;
     }
@@ -1453,8 +1468,8 @@ private Q_SLOTS:
         QCOMPARE(p.get_int("key"), 1);
         QCOMPARE(p.get("key"), "1");
         p.clear("key");
-        QCOMPARE(p.get("key"), (char*) 0);
-        QCOMPARE(p.get_data("key"), (void*) 0);
+        QCOMPARE(p.get("key"), (char *) 0);
+        QCOMPARE(p.get_data("key"), (void *) 0);
         QCOMPARE(p.get_animation("key"), mlt_animation(0));
         QCOMPARE(p.get_int("key"), 0);
     }
@@ -1481,7 +1496,7 @@ private Q_SLOTS:
         Mlt::Animation animation = p.get_animation("key");
         QCOMPARE(p.property_exists("key"), false);
         // Set animation should return true
-        p.anim_set("key", 1, 0 );
+        p.anim_set("key", 1, 0);
         QCOMPARE(p.property_exists("key"), true);
         // Cleared should return false
         p.clear("key");
@@ -1501,4 +1516,3 @@ private Q_SLOTS:
 QTEST_APPLESS_MAIN(TestProperties)
 
 #include "test_properties.moc"
-

@@ -21,21 +21,20 @@
 #define _DEMO_IO_H_
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-extern char *chomp( char * );
-extern char *trim( char * );
-extern char *strip_quotes( char * );
-extern char *get_string( char *, int, char * );
-extern int *get_int( int *, int );
-extern void term_init( );
-extern int term_read( );
-extern void term_exit( );
-extern char get_keypress( );
-extern void wait_for_any_key( char * );
-extern void beep( );
+extern char *chomp(char *);
+extern char *trim(char *);
+extern char *strip_quotes(char *);
+extern char *get_string(char *, int, char *);
+extern int *get_int(int *, int);
+extern void term_init();
+extern int term_read();
+extern void term_exit();
+extern char get_keypress();
+extern void wait_for_any_key(char *);
+extern void beep();
 
 #ifdef __cplusplus
 }

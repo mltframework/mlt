@@ -24,27 +24,27 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class MLTPP_DECLSPEC Image
 {
-	class MLTPP_DECLSPEC Image
-	{
-		private:
-			mlt_image instance;
-		public:
-			Image();
-			Image( mlt_image image );
-			Image( int width, int height, mlt_image_format format );
-			virtual ~Image( );
-			mlt_image_format format();
-			int width();
-			int height();
-			void set_colorspace( int colorspace );
-			int colorspace();
-			void alloc( int width, int height, mlt_image_format format, bool alpha = false );
-			void init_alpha();
-			uint8_t* plane( int plane );
-			int stride( int plane );
-	};
-}
+private:
+    mlt_image instance;
+
+public:
+    Image();
+    Image(mlt_image image);
+    Image(int width, int height, mlt_image_format format);
+    virtual ~Image();
+    mlt_image_format format();
+    int width();
+    int height();
+    void set_colorspace(int colorspace);
+    int colorspace();
+    void alloc(int width, int height, mlt_image_format format, bool alpha = false);
+    void init_alpha();
+    uint8_t *plane(int plane);
+    int stride(int plane);
+};
+} // namespace Mlt
 
 #endif
