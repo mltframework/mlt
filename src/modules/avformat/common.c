@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -307,19 +307,20 @@ int mlt_to_av_image_format(mlt_image_format format)
 mlt_image_format mlt_get_supported_image_format(mlt_image_format format)
 {
     switch (format) {
+    case mlt_image_none:
+    case mlt_image_movit:
+    case mlt_image_opengl_texture:
     case mlt_image_rgba:
         return mlt_image_rgba;
     case mlt_image_rgb:
         return mlt_image_rgb;
     case mlt_image_yuv420p:
         return mlt_image_yuv420p;
+    case mlt_image_yuv422:
+        return mlt_image_yuv422;
     default:
         mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format);
-    case mlt_image_none:
-    case mlt_image_yuv422:
-    case mlt_image_movit:
-    case mlt_image_opengl_texture:
-        return mlt_image_yuv422;
+        break;
     }
 }
 

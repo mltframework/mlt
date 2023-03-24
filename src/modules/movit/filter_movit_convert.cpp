@@ -622,6 +622,12 @@ static int convert_image(mlt_frame frame,
     // If we're at the beginning of a series of Movit effects, store the input
     // sent into the chain.
     if (output_format == mlt_image_movit) {
+        if (*format != mlt_image_rgba && mlt_frame_get_alpha(frame)) {
+            if (!convert_on_cpu(frame, image, format, mlt_image_rgba)) {
+                *format = mlt_image_rgba;
+            }
+        }
+
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
         mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
         MltInput *input
