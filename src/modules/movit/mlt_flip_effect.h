@@ -20,6 +20,8 @@
 #ifndef MLT_FLIP_EFFECT_H
 #define MLT_FLIP_EFFECT_H
 
+#include <effect_chain.h>
+
 namespace Mlt {
 
 class VerticalFlip : public movit::Effect
