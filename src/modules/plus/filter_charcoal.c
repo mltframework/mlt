@@ -130,12 +130,12 @@ static int slice_proc(int id, int index, int jobs, void *data)
             sum = d->scale * sqrti(sum1 * sum1 + sum2 * sum2);
 
             // Assign value
-            *p++ = !d->invert
-                       ? (sum >= d->min && sum <= d->max_luma ? d->invert_luma - sum
-                                                              : sum < d->min ? d->max_luma : d->min)
-                       : (sum >= d->min && sum <= d->max_luma
-                              ? sum
-                              : sum < d->min ? d->min : d->max_luma);
+            *p++ = !d->invert ? (sum >= d->min && sum <= d->max_luma ? d->invert_luma - sum
+                                 : sum < d->min                      ? d->max_luma
+                                                                     : d->min)
+                              : (sum >= d->min && sum <= d->max_luma ? sum
+                                 : sum < d->min                      ? d->min
+                                                                     : d->max_luma);
             q++;
             val = 128 + d->mix * (*q++ - 128);
             val = CLAMP(val, d->min, d->max_chroma);

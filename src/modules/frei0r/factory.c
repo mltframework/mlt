@@ -73,10 +73,9 @@ static char *get_frei0r_path()
     strcat(dirname, FREI0R_PLUGIN_PATH);
     return dirname;
 #else
-    return strdup(getenv("FREI0R_PATH")
-                      ? getenv("FREI0R_PATH")
-                      : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH")
-                                                         : FREI0R_PLUGIN_PATH);
+    return strdup(getenv("FREI0R_PATH")              ? getenv("FREI0R_PATH")
+                  : getenv("MLT_FREI0R_PLUGIN_PATH") ? getenv("MLT_FREI0R_PLUGIN_PATH")
+                                                     : FREI0R_PLUGIN_PATH);
 #endif
 }
 

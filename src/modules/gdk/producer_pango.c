@@ -860,7 +860,7 @@ static GdkPixbuf *pango_get_pixbuf(const char *markup,
     pango_font_description_set_weight(desc, (PangoWeight) weight);
 
     if (stretch)
-        pango_font_description_set_stretch(desc, (PangoStretch)(stretch - 1));
+        pango_font_description_set_stretch(desc, (PangoStretch) (stretch - 1));
 
     // set line_spacing
     if (line_spacing)

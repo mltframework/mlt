@@ -232,9 +232,7 @@ static void affine_max_output(
     int tlx = MapX(affine, -max_width, max_height) / dz;
     int tly = MapY(affine, -max_width, max_height) / dz;
     int trx = MapX(affine, max_width, max_height) / dz;
-    int
-    try
-        = MapY(affine, max_width, max_height) / dz;
+    int try = MapY(affine, max_width, max_height) / dz;
     int blx = MapX(affine, -max_width, -max_height) / dz;
     int bly = MapY(affine, -max_width, -max_height) / dz;
     int brx = MapX(affine, max_width, -max_height) / dz;

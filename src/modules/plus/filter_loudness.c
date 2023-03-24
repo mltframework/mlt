@@ -41,21 +41,18 @@ static void destroy_analyze_data(mlt_filter filter)
     private_data *private = (private_data *) filter->child;
     ebur128_destroy(&private->analyze->state);
     free(private->analyze);
-private
-    ->analyze = NULL;
+    private->analyze = NULL;
 }
 
 static void init_analyze_data(mlt_filter filter, int channels, int samplerate)
 {
     private_data *private = (private_data *) filter->child;
-private
-    ->analyze = (analyze_data *) calloc(1, sizeof(analyze_data));
-private
-    ->analyze->state = ebur128_init((unsigned int) channels,
-                                    (unsigned long) samplerate,
-                                    EBUR128_MODE_I | EBUR128_MODE_LRA | EBUR128_MODE_SAMPLE_PEAK);
-private
-    ->last_position = 0;
+    private->analyze = (analyze_data *) calloc(1, sizeof(analyze_data));
+    private->analyze->state = ebur128_init((unsigned int) channels,
+                                           (unsigned long) samplerate,
+                                           EBUR128_MODE_I | EBUR128_MODE_LRA
+                                               | EBUR128_MODE_SAMPLE_PEAK);
+    private->last_position = 0;
 }
 
 static void analyze(mlt_filter filter,
@@ -108,8 +105,7 @@ static void analyze(mlt_filter filter,
             destroy_analyze_data(filter);
         }
 
-    private
-        ->last_position = pos;
+        private->last_position = pos;
     }
 }
 

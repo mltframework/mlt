@@ -56,7 +56,7 @@ static int filter_get_image(mlt_frame frame,
             int i;
 
             for (i = 0; i < 256; i++)
-                lookup[i] = (uint8_t)(pow((double) i / 255.0, exp) * 255);
+                lookup[i] = (uint8_t) (pow((double) i / 255.0, exp) * 255);
 
             while (p != q) {
                 *p = lookup[*p];

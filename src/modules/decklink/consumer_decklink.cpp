@@ -410,9 +410,9 @@ protected:
         // Set the video output mode
         if (S_OK
             != m_deckLinkOutput->EnableVideoOutput(m_displayMode->GetDisplayMode(),
-                                                   (BMDVideoOutputFlags)(bmdVideoOutputFlagDefault
-                                                                         | bmdVideoOutputRP188
-                                                                         | bmdVideoOutputVITC))) {
+                                                   (BMDVideoOutputFlags) (bmdVideoOutputFlagDefault
+                                                                          | bmdVideoOutputRP188
+                                                                          | bmdVideoOutputVITC))) {
             mlt_log_error(getConsumer(), "Failed to enable video output\n");
             return false;
         }
@@ -686,8 +686,14 @@ protected:
     {
         return E_NOINTERFACE;
     }
-    virtual ULONG STDMETHODCALLTYPE AddRef() { return 1; }
-    virtual ULONG STDMETHODCALLTYPE Release() { return 1; }
+    virtual ULONG STDMETHODCALLTYPE AddRef()
+    {
+        return 1;
+    }
+    virtual ULONG STDMETHODCALLTYPE Release()
+    {
+        return 1;
+    }
 
     /************************* DeckLink API Delegate Methods *****************************/
 

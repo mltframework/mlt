@@ -54,14 +54,14 @@ typedef mlt_properties (*mlt_metadata_callback)(mlt_service_type,
 
 /** A convenience macro to a register service in a more declarative manner. */
 #define MLT_REGISTER(type, service, symbol) \
-    (mlt_repository_register(repository, (type), (service), (mlt_register_callback)(symbol)))
+    (mlt_repository_register(repository, (type), (service), (mlt_register_callback) (symbol)))
 
 /** A convenience macro to a register metadata in a more declarative manner. */
 #define MLT_REGISTER_METADATA(type, service, callback, data) \
     (mlt_repository_register_metadata(repository, \
                                       (type), \
                                       (service), \
-                                      (mlt_metadata_callback)(callback), \
+                                      (mlt_metadata_callback) (callback), \
                                       (data)))
 
 extern mlt_repository mlt_repository_init(const char *directory);

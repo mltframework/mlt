@@ -1995,7 +1995,7 @@ static int producer_get_image(mlt_frame frame,
                         / mlt_properties_get_double(properties, "meta.media.frame_rate_den");
 
     // This is the physical frame position in the source
-    int64_t req_position = (int64_t)(position / mlt_producer_get_fps(producer) * source_fps + 0.5);
+    int64_t req_position = (int64_t) (position / mlt_producer_get_fps(producer) * source_fps + 0.5);
 
     // Determines if we have to decode all frames in a sequence - when there temporal compression is used.
     const AVCodecDescriptor *descriptor = avcodec_descriptor_get(codec_params->codec_id);
@@ -2128,8 +2128,9 @@ static int producer_get_image(mlt_frame frame,
                         pts -= self->first_pts;
                     else if (context->start_time != AV_NOPTS_VALUE)
                         pts -= context->start_time;
-                    int_position = (int64_t)(
-                        (av_q2d(self->video_time_base) * pts + delay) * source_fps + 0.5);
+                    int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
+                                                  * source_fps
+                                              + 0.5);
                     if (int_position == self->last_position)
                         int_position = self->last_position + 1;
                 }
@@ -2229,8 +2230,9 @@ static int producer_get_image(mlt_frame frame,
                             pts -= self->first_pts;
                         else if (context->start_time != AV_NOPTS_VALUE)
                             pts -= context->start_time;
-                        int_position = (int64_t)(
-                            (av_q2d(self->video_time_base) * pts + delay) * source_fps + 0.5);
+                        int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
+                                                      * source_fps
+                                                  + 0.5);
                     }
 
                     if (int_position < req_position)

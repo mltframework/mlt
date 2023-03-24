@@ -515,8 +515,8 @@ int64_t mlt_audio_calculate_samples_to_position(float fps, int frequency, int64_
     int64_t samples = 0;
 
     if (fps) {
-        samples = (int64_t)((double) position * (double) frequency / (double) fps
-                            + (position < 0 ? -0.5 : 0.5));
+        samples = (int64_t) ((double) position * (double) frequency / (double) fps
+                             + (position < 0 ? -0.5 : 0.5));
     }
 
     return samples;

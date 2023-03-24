@@ -35,10 +35,10 @@ extern pthread_mutex_t g_activate_mutex;
 
 #define BUFFER_LEN 204800 * 6
 #define JACKSTATE(x) \
-    (x == JackTransportStopped \
-         ? "stopped" \
-         : x == JackTransportStarting ? "starting" \
-                                      : x == JackTransportRolling ? "rolling" : "unknown")
+    (x == JackTransportStopped    ? "stopped" \
+     : x == JackTransportStarting ? "starting" \
+     : x == JackTransportRolling  ? "rolling" \
+                                  : "unknown")
 
 static int jack_sync(jack_transport_state_t state, jack_position_t *jack_pos, void *arg)
 {

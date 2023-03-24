@@ -441,8 +441,14 @@ public:
     {
         return E_NOINTERFACE;
     }
-    virtual ULONG STDMETHODCALLTYPE AddRef() { return 1; }
-    virtual ULONG STDMETHODCALLTYPE Release() { return 1; }
+    virtual ULONG STDMETHODCALLTYPE AddRef()
+    {
+        return 1;
+    }
+    virtual ULONG STDMETHODCALLTYPE Release()
+    {
+        return 1;
+    }
 
     /************************* DeckLink API Delegate Methods *****************************/
 

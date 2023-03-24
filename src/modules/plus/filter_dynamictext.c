@@ -162,8 +162,8 @@ static void get_resource_str(mlt_filter filter, mlt_frame frame, char *text)
 
 static void get_createdate_str(const char *keyword, mlt_filter filter, mlt_frame frame, char *text)
 {
-    time_t creation_date = (time_t)(
-        mlt_producer_get_creation_time(mlt_frame_get_original_producer(frame)) / 1000);
+    time_t creation_date
+        = (time_t) (mlt_producer_get_creation_time(mlt_frame_get_original_producer(frame)) / 1000);
     const char *format = "%Y/%m/%d";
     int n = strlen("createdate") + 1;
     if (strlen(keyword) > n)

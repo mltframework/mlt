@@ -612,7 +612,7 @@ mlt_position mlt_property_get_position(mlt_property self, double fps, mlt_locale
     else if (self->types & mlt_prop_int64)
         result = (mlt_position) self->prop_int64;
     else if (self->types & mlt_prop_rect && self->data)
-        result = (mlt_position)((mlt_rect *) self->data)->x;
+        result = (mlt_position) ((mlt_rect *) self->data)->x;
     else {
         if (self->animation && !mlt_animation_get_string(self->animation))
             mlt_property_get_string(self);
@@ -661,7 +661,7 @@ int64_t mlt_property_get_int64(mlt_property self)
     else if (self->types & mlt_prop_position)
         result = (int64_t) self->prop_position;
     else if (self->types & mlt_prop_rect && self->data)
-        result = (int64_t)((mlt_rect *) self->data)->x;
+        result = (int64_t) ((mlt_rect *) self->data)->x;
     else {
         if (self->animation && !mlt_animation_get_string(self->animation))
             mlt_property_get_string(self);
@@ -992,7 +992,9 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
             mins,
             secs,
             frame_sep,
-            (fps > 999 ? 4 : fps > 99 ? 3 : 2),
+            (fps > 999  ? 4
+             : fps > 99 ? 3
+                        : 2),
             frames);
 }
 

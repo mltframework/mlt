@@ -238,7 +238,7 @@ void paint_segment_graph(QPainter &p,
             colorIndex = qBound(0, colorIndex, colors.size());
             QColor segmentColor = colors[colorIndex];
             qreal minSegmentValue = segmentRatio * (qreal) s;
-            qreal maxSegmentValue = segmentRatio * (qreal)(s + 1);
+            qreal maxSegmentValue = segmentRatio * (qreal) (s + 1);
             if (values[i] < minSegmentValue) {
                 break;
             } else if (values[i] < maxSegmentValue) {

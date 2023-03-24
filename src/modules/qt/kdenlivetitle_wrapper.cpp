@@ -194,7 +194,10 @@ public:
         m_path.setFillRule(Qt::WindingFill);
     }
 
-    virtual QRectF boundingRect() const { return m_boundingRect; }
+    virtual QRectF boundingRect() const
+    {
+        return m_boundingRect;
+    }
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *w)
     {

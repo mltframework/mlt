@@ -274,7 +274,9 @@ static mlt_frame get_text_frame(mlt_producer producer, time_info *info)
                      info->minutes,
                      info->seconds,
                      info->sep,
-                     (info->fps > 999 ? 4 : info->fps > 99 ? 3 : 2),
+                     (info->fps > 999  ? 4
+                      : info->fps > 99 ? 3
+                                       : 2),
                      info->frames);
         } else if (!strcmp(style, "clock")) {
             snprintf(text,

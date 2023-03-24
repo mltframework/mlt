@@ -393,9 +393,9 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
 
             for (int i = 0; i < self->height; i++) {
                 for (int j = 0; j < width; j++) {
-                    color = plane > 0
-                                ? 128
-                                : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+                    color = plane > 0                                       ? 128
+                            : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1
+                                                                            : gray2;
                     p[i * width + j] = color << 8;
                 }
             }
@@ -415,9 +415,9 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
             }
             for (int i = 0; i < height; i++) {
                 for (int j = 0; j < width; j++) {
-                    color = plane > 0
-                                ? 128
-                                : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+                    color = plane > 0                                       ? 128
+                            : ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1
+                                                                            : gray2;
                     p[i * width + j] = color << 2;
                 }
             }

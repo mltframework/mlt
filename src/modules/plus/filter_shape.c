@@ -60,7 +60,7 @@ static int slice_alpha_add(int id, int index, int jobs, void *data)
     uint32_t b;
 
     for (int i = 0; i < size; ++i) {
-        b = (uint32_t)(q[i] ^ desc->invert_mask);
+        b = (uint32_t) (q[i] ^ desc->invert_mask);
         p[i] = ((uint8_t) MIN((uint32_t) p[i] + b, 255)) ^ desc->invert;
     }
 
@@ -151,7 +151,7 @@ static int slice_alpha_proc(int id, int index, int jobs, void *data)
     for (int i = 0; i < size; ++i) {
         a = (double) (q[i] ^ desc->invert_mask) / desc->divisor;
         a = 1.0 - smoothstep(a, a + desc->softness, desc->mix);
-        p[i] = (uint8_t)(p[i] * a) ^ desc->invert;
+        p[i] = (uint8_t) (p[i] * a) ^ desc->invert;
     }
 
     return 0;
@@ -171,7 +171,7 @@ static int slice_luma_proc(int id, int index, int jobs, void *data)
     for (int i = 0; i < size; ++i) {
         a = ((double) (q[i * 2] ^ desc->invert_mask) - desc->offset) / desc->divisor;
         a = smoothstep(a, a + desc->softness, desc->mix);
-        p[i] = (uint8_t)(p[i] * a) ^ desc->invert;
+        p[i] = (uint8_t) (p[i] * a) ^ desc->invert;
     }
 
     return 0;

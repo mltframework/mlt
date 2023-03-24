@@ -926,8 +926,8 @@ static AVStream *add_video_stream(mlt_consumer consumer,
 
         // Default to the codec's first pix_fmt if possible.
         c->pix_fmt = pix_fmt ? av_get_pix_fmt(pix_fmt)
-                             : codec ? (codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV422P)
-                                     : AV_PIX_FMT_YUV420P;
+                     : codec ? (codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV422P)
+                             : AV_PIX_FMT_YUV420P;
 
 #if defined(AVFILTER)
         if (AV_PIX_FMT_VAAPI == c->pix_fmt) {

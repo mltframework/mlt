@@ -195,11 +195,10 @@ mlt_producer producer_melt_init(mlt_profile profile,
                     properties = group;
             } else if (!strcmp(argv[i], "-attach") || !strcmp(argv[i], "-attach-cut")
                        || !strcmp(argv[i], "-attach-track") || !strcmp(argv[i], "-attach-clip")) {
-                int type = !strcmp(argv[i], "-attach")
-                               ? 0
-                               : !strcmp(argv[i], "-attach-cut")
-                                     ? 1
-                                     : !strcmp(argv[i], "-attach-track") ? 2 : 3;
+                int type = !strcmp(argv[i], "-attach")         ? 0
+                           : !strcmp(argv[i], "-attach-cut")   ? 1
+                           : !strcmp(argv[i], "-attach-track") ? 2
+                                                               : 3;
                 mlt_filter filter = create_attach(profile, field, argv[++i], track);
                 if (producer != NULL && !mlt_producer_is_cut(producer)) {
                     mlt_playlist_clip_info info;

@@ -50,41 +50,31 @@ static int initFft(mlt_filter filter)
     private_data *private = (private_data *) filter->child;
     mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
     if (private->window_size < MIN_WINDOW_SIZE) {
-    private
-        ->window_size = mlt_properties_get_int(filter_properties, "window_size");
+        private->window_size = mlt_properties_get_int(filter_properties, "window_size");
         if (private->window_size >= MIN_WINDOW_SIZE) {
-        private
-            ->initialized = 1;
-        private
-            ->bin_count = private->window_size / 2 + 1;
-        private
-            ->sample_buff_count = 0;
-        private
-            ->out_bins = mlt_pool_alloc(private->bin_count * sizeof(*private->out_bins));
+            private->initialized = 1;
+            private->bin_count = private->window_size / 2 + 1;
+            private->sample_buff_count = 0;
+            private->out_bins = mlt_pool_alloc(private->bin_count * sizeof(*private->out_bins));
 
             // Initialize sample buffer
-        private
-            ->sample_buff = mlt_pool_alloc(private->window_size * sizeof(*private->sample_buff));
+            private->sample_buff = mlt_pool_alloc(private->window_size
+                                                  * sizeof(*private->sample_buff));
             memset(private->sample_buff, 0, sizeof(*private->sample_buff) * private->window_size);
 
             // Initialize fftw variables
-        private
-            ->fft_in = fftw_alloc_real(private->window_size);
-        private
-            ->fft_out = fftw_alloc_complex(private->bin_count);
-        private
-            ->fft_plan = fftw_plan_dft_r2c_1d(private->window_size,
-                                              private->fft_in,
-                                              private->fft_out,
-                                              FFTW_ESTIMATE);
+            private->fft_in = fftw_alloc_real(private->window_size);
+            private->fft_out = fftw_alloc_complex(private->bin_count);
+            private->fft_plan = fftw_plan_dft_r2c_1d(private->window_size,
+                                                     private->fft_in,
+                                                     private->fft_out,
+                                                     FFTW_ESTIMATE);
 
             // Initialize the hanning window function
-        private
-            ->hann = mlt_pool_alloc(private->window_size * sizeof(*private->hann));
+            private->hann = mlt_pool_alloc(private->window_size * sizeof(*private->hann));
             int i = 0;
             for (i = 0; i < private->window_size; i++) {
-            private
-                ->hann[i] = 0.5 * (1 - cos(2 * PI * i / private->window_size));
+                private->hann[i] = 0.5 * (1 - cos(2 * PI * i / private->window_size));
             }
 
             mlt_properties_set_int(filter_properties, "bin_count", private->bin_count);
@@ -95,8 +85,7 @@ static int initFft(mlt_filter filter)
             || !private->fft_plan) {
             mlt_log_error(MLT_FILTER_SERVICE(filter), "Unable to initialize FFT\n");
             error = 1;
-        private
-            ->window_size = 0;
+            private->window_size = 0;
         }
     }
     return error;
@@ -126,22 +115,19 @@ static int filter_get_audio(mlt_frame frame,
     mlt_service_lock(MLT_FILTER_SERVICE(filter));
 
     if (!private->initialized) {
-    private
-        ->expected_pos = mlt_frame_get_position(frame);
+        private->expected_pos = mlt_frame_get_position(frame);
     }
 
     if (!initFft(filter)) {
         if (private->expected_pos != mlt_frame_get_position(frame)) {
             // Reset the sample buffer when seeking occurs.
             memset(private->sample_buff, 0, sizeof(*private->sample_buff) * private->window_size);
-        private
-            ->sample_buff_count = 0;
+            private->sample_buff_count = 0;
             mlt_log_info(MLT_FILTER_SERVICE(filter),
                          "Buffer Reset %d:%d\n",
                          private->expected_pos,
                          mlt_frame_get_position(frame));
-        private
-            ->expected_pos = mlt_frame_get_position(frame);
+            private->expected_pos = mlt_frame_get_position(frame);
         }
 
         int new_samples = 0;
@@ -172,8 +158,7 @@ static int filter_get_audio(mlt_frame frame,
                     // Scale to +/-1
                     sample /= MAX_S16_AMPLITUDE;
                     sample /= (double) *channels;
-                private
-                    ->sample_buff[old_samples + s] += sample;
+                    private->sample_buff[old_samples + s] += sample;
                 }
             }
         } else if (*format == mlt_audio_float) {
@@ -183,24 +168,20 @@ static int filter_get_audio(mlt_frame frame,
                 for (s = 0; s < new_samples; s++) {
                     double sample = aud[c * *samples + s];
                     sample /= (double) *channels;
-                private
-                    ->sample_buff[old_samples + s] += sample;
+                    private->sample_buff[old_samples + s] += sample;
                 }
             }
         } else {
             mlt_log_error(MLT_FILTER_SERVICE(filter), "Unsupported format %d\n", *format);
         }
-    private
-        ->sample_buff_count += *samples;
+        private->sample_buff_count += *samples;
         if (private->sample_buff_count > private->window_size) {
-        private
-            ->sample_buff_count = private->window_size;
+            private->sample_buff_count = private->window_size;
         }
 
         // Copy samples to fft input while applying window function
         for (s = 0; s < private->window_size; s++) {
-        private
-            ->fft_in[s] = private->sample_buff[s] * private->hann[s];
+            private->fft_in[s] = private->sample_buff[s] * private->hann[s];
         }
 
         // Perform the FFT
@@ -210,16 +191,13 @@ static int filter_get_audio(mlt_frame frame,
         int bin = 0;
         for (bin = 0; bin < private->bin_count; bin++) {
             // Convert FFT output to magnitudes
-        private
-            ->out_bins[bin] = sqrt(private->fft_out[bin][0] * private->fft_out[bin][0]
-                                   + private->fft_out[bin][1] * private->fft_out[bin][1]);
+            private->out_bins[bin] = sqrt(private->fft_out[bin][0] * private->fft_out[bin][0]
+                                          + private->fft_out[bin][1] * private->fft_out[bin][1]);
             // Scale to 0.0 - 1.0
-        private
-            ->out_bins[bin] = (4.0 * private->out_bins[bin]) / (float) private->window_size;
+            private->out_bins[bin] = (4.0 * private->out_bins[bin]) / (float) private->window_size;
         }
 
-    private
-        ->expected_pos++;
+        private->expected_pos++;
     }
 
     mlt_properties_set_double(filter_properties,

@@ -906,7 +906,7 @@ static void *consumer_read_ahead_thread(void *arg)
             mlt_log_debug(self,
                           "current %" PRId64 " threshold %" PRId64 " count %d\n",
                           time_current,
-                          (int64_t)(time_process / count * 20),
+                          (int64_t) (time_process / count * 20),
                           count);
             // Ignore the cost of this frame's time
             count--;

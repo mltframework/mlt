@@ -1550,7 +1550,7 @@ static void on_end_properties(deserialise_context context, const xmlChar *name)
 static void on_start_element(void *ctx, const xmlChar *name, const xmlChar **atts)
 {
     struct _xmlParserCtxt *xmlcontext = (struct _xmlParserCtxt *) ctx;
-    deserialise_context context = (deserialise_context)(xmlcontext->_private);
+    deserialise_context context = (deserialise_context) (xmlcontext->_private);
 
     if (context->pass == 0) {
         if (xmlStrcmp(name, _x("mlt")) == 0 || xmlStrcmp(name, _x("profile")) == 0
@@ -1631,7 +1631,7 @@ static void on_start_element(void *ctx, const xmlChar *name, const xmlChar **att
 static void on_end_element(void *ctx, const xmlChar *name)
 {
     struct _xmlParserCtxt *xmlcontext = (struct _xmlParserCtxt *) ctx;
-    deserialise_context context = (deserialise_context)(xmlcontext->_private);
+    deserialise_context context = (deserialise_context) (xmlcontext->_private);
 
     if (context->is_value == 1 && context->pass == 1 && xmlStrcmp(name, _x("property")) != 0)
         context_pop_node(context);
@@ -1669,7 +1669,7 @@ static void on_end_element(void *ctx, const xmlChar *name)
 static void on_characters(void *ctx, const xmlChar *ch, int len)
 {
     struct _xmlParserCtxt *xmlcontext = (struct _xmlParserCtxt *) ctx;
-    deserialise_context context = (deserialise_context)(xmlcontext->_private);
+    deserialise_context context = (deserialise_context) (xmlcontext->_private);
     char *value = calloc(1, len + 1);
     mlt_properties properties = current_properties(context);
 
@@ -1734,7 +1734,7 @@ static void on_internal_subset(void *ctx,
                                const xmlChar *systemId)
 {
     struct _xmlParserCtxt *xmlcontext = (struct _xmlParserCtxt *) ctx;
-    deserialise_context context = (deserialise_context)(xmlcontext->_private);
+    deserialise_context context = (deserialise_context) (xmlcontext->_private);
 
     context->publicId = publicId;
     context->systemId = systemId;
@@ -1754,7 +1754,7 @@ static void on_entity_declaration(void *ctx,
                                   xmlChar *content)
 {
     struct _xmlParserCtxt *xmlcontext = (struct _xmlParserCtxt *) ctx;
-    deserialise_context context = (deserialise_context)(xmlcontext->_private);
+    deserialise_context context = (deserialise_context) (xmlcontext->_private);
 
     xmlAddDocEntity(context->entity_doc, name, type, publicId, systemId, content);
 }
@@ -1763,7 +1763,7 @@ static void on_entity_declaration(void *ctx,
 static xmlEntityPtr on_get_entity(void *ctx, const xmlChar *name)
 {
     struct _xmlParserCtxt *xmlcontext = (struct _xmlParserCtxt *) ctx;
-    deserialise_context context = (deserialise_context)(xmlcontext->_private);
+    deserialise_context context = (deserialise_context) (xmlcontext->_private);
     xmlEntityPtr e = NULL;
 
     // Setup for entity declarations if not ready

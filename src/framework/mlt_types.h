@@ -236,17 +236,17 @@ typedef void (*mlt_destructor)(void *);              /**< pointer to destructor 
 typedef char *(*mlt_serialiser)(void *, int length); /**< pointer to serialization function */
 typedef void *(*mlt_thread_function_t)(void *);      /**< generic thread function pointer */
 
-#define MLT_SERVICE(x) ((mlt_service)(x))       /**< Cast to a Service pointer */
-#define MLT_PRODUCER(x) ((mlt_producer)(x))     /**< Cast to a Producer pointer */
-#define MLT_MULTITRACK(x) ((mlt_multitrack)(x)) /**< Cast to a Multitrack pointer */
-#define MLT_PLAYLIST(x) ((mlt_playlist)(x))     /**< Cast to a Playlist pointer */
-#define MLT_TRACTOR(x) ((mlt_tractor)(x))       /**< Cast to a Tractor pointer */
-#define MLT_FILTER(x) ((mlt_filter)(x))         /**< Cast to a Filter pointer */
-#define MLT_TRANSITION(x) ((mlt_transition)(x)) /**< Cast to a Transition pointer */
-#define MLT_CONSUMER(x) ((mlt_consumer)(x))     /**< Cast to a Consumer pointer */
-#define MLT_FRAME(x) ((mlt_frame)(x))           /**< Cast to a Frame pointer */
-#define MLT_LINK(x) ((mlt_link)(x))             /**< Cast to a Link pointer */
-#define MLT_CHAIN(x) ((mlt_chain)(x))           /**< Cast to a Chain pointer */
+#define MLT_SERVICE(x) ((mlt_service) (x))       /**< Cast to a Service pointer */
+#define MLT_PRODUCER(x) ((mlt_producer) (x))     /**< Cast to a Producer pointer */
+#define MLT_MULTITRACK(x) ((mlt_multitrack) (x)) /**< Cast to a Multitrack pointer */
+#define MLT_PLAYLIST(x) ((mlt_playlist) (x))     /**< Cast to a Playlist pointer */
+#define MLT_TRACTOR(x) ((mlt_tractor) (x))       /**< Cast to a Tractor pointer */
+#define MLT_FILTER(x) ((mlt_filter) (x))         /**< Cast to a Filter pointer */
+#define MLT_TRANSITION(x) ((mlt_transition) (x)) /**< Cast to a Transition pointer */
+#define MLT_CONSUMER(x) ((mlt_consumer) (x))     /**< Cast to a Consumer pointer */
+#define MLT_FRAME(x) ((mlt_frame) (x))           /**< Cast to a Frame pointer */
+#define MLT_LINK(x) ((mlt_link) (x))             /**< Cast to a Link pointer */
+#define MLT_CHAIN(x) ((mlt_chain) (x))           /**< Cast to a Chain pointer */
 
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
