@@ -26,533 +26,474 @@
 #define MELT_FILE_MAX_LINES (100000)
 #define MELT_FILE_MAX_LENGTH (2048)
 
-mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv );
+mlt_producer producer_melt_init(mlt_profile profile,
+                                mlt_service_type type,
+                                const char *id,
+                                char **argv);
 
-mlt_producer producer_melt_file_init( mlt_profile profile, mlt_service_type type, const char *id, char *file )
+mlt_producer producer_melt_file_init(mlt_profile profile,
+                                     mlt_service_type type,
+                                     const char *id,
+                                     char *file)
 {
-	FILE *input = mlt_fopen( file, "r" );
-	char **args = calloc( sizeof( char * ), MELT_FILE_MAX_LINES );
-	int count = 0;
-	char temp[ MELT_FILE_MAX_LENGTH ];
+    FILE *input = mlt_fopen(file, "r");
+    char **args = calloc(sizeof(char *), MELT_FILE_MAX_LINES);
+    int count = 0;
+    char temp[MELT_FILE_MAX_LENGTH];
 
-	if ( input != NULL )
-	{
-		while( fgets( temp, MELT_FILE_MAX_LENGTH, input ) && count < MELT_FILE_MAX_LINES )
-		{
-			if ( temp[ strlen( temp ) - 1 ] != '\n' )
-				mlt_log_warning( NULL, "Exceeded maximum line length (%d) while reading a melt file.\n", MELT_FILE_MAX_LENGTH );
-			temp[ strlen( temp ) - 1 ] = '\0';
-			if ( strcmp( temp, "" ) )
-				args[ count ++ ] = strdup( temp );
-		}
-		fclose( input );
-		if ( count == MELT_FILE_MAX_LINES )
-			mlt_log_warning( NULL, "Reached the maximum number of lines (%d) while reading a melt file.\n"
-			"Consider using MLT XML.\n", MELT_FILE_MAX_LINES );
-	}
+    if (input != NULL) {
+        while (fgets(temp, MELT_FILE_MAX_LENGTH, input) && count < MELT_FILE_MAX_LINES) {
+            if (temp[strlen(temp) - 1] != '\n')
+                mlt_log_warning(NULL,
+                                "Exceeded maximum line length (%d) while reading a melt file.\n",
+                                MELT_FILE_MAX_LENGTH);
+            temp[strlen(temp) - 1] = '\0';
+            if (strcmp(temp, ""))
+                args[count++] = strdup(temp);
+        }
+        fclose(input);
+        if (count == MELT_FILE_MAX_LINES)
+            mlt_log_warning(NULL,
+                            "Reached the maximum number of lines (%d) while reading a melt file.\n"
+                            "Consider using MLT XML.\n",
+                            MELT_FILE_MAX_LINES);
+    }
 
-	mlt_producer result = producer_melt_init( profile, type, id, args );
+    mlt_producer result = producer_melt_init(profile, type, id, args);
 
-	if ( result != NULL )
-	{
-		mlt_properties_set( MLT_PRODUCER_PROPERTIES( result ), "resource", file );
-		mlt_properties_set_int( MLT_PRODUCER_PROPERTIES( result ), "loader_normalized", 1);
-	}
+    if (result != NULL) {
+        mlt_properties_set(MLT_PRODUCER_PROPERTIES(result), "resource", file);
+        mlt_properties_set_int(MLT_PRODUCER_PROPERTIES(result), "loader_normalized", 1);
+    }
 
-	while( count -- )
-		free( args[ count ] );
-	free( args );
+    while (count--)
+        free(args[count]);
+    free(args);
 
-	return result;
+    return result;
 }
 
-static void track_service( mlt_field field, void *service, mlt_destructor destructor )
+static void track_service(mlt_field field, void *service, mlt_destructor destructor)
 {
-	mlt_properties properties = mlt_field_properties( field );
-	int registered = mlt_properties_get_int( properties, "registered" );
-	char *key = mlt_properties_get( properties, "registered" );
-	mlt_properties_set_data( properties, key, service, 0, destructor, NULL );
-	mlt_properties_set_int( properties, "registered", ++ registered );
+    mlt_properties properties = mlt_field_properties(field);
+    int registered = mlt_properties_get_int(properties, "registered");
+    char *key = mlt_properties_get(properties, "registered");
+    mlt_properties_set_data(properties, key, service, 0, destructor, NULL);
+    mlt_properties_set_int(properties, "registered", ++registered);
 }
 
-static mlt_producer create_producer( mlt_profile profile, mlt_field field, char *file )
+static mlt_producer create_producer(mlt_profile profile, mlt_field field, char *file)
 {
-	mlt_producer result = mlt_factory_producer( profile, NULL, file );
+    mlt_producer result = mlt_factory_producer(profile, NULL, file);
 
-	if ( result != NULL )
-		track_service( field, result, ( mlt_destructor )mlt_producer_close );
+    if (result != NULL)
+        track_service(field, result, (mlt_destructor) mlt_producer_close);
 
-	return result;
+    return result;
 }
 
-static mlt_filter create_attach( mlt_profile profile, mlt_field field, char *id, int track )
+static mlt_filter create_attach(mlt_profile profile, mlt_field field, char *id, int track)
 {
-	char *temp = strdup( id );
-	char *arg = strchr( temp, ':' );
-	if ( arg != NULL )
-		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( profile, temp, arg );
-	if ( filter != NULL )
-		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
-	free( temp );
-	return filter;
+    char *temp = strdup(id);
+    char *arg = strchr(temp, ':');
+    if (arg != NULL)
+        *arg++ = '\0';
+    mlt_filter filter = mlt_factory_filter(profile, temp, arg);
+    if (filter != NULL)
+        track_service(field, filter, (mlt_destructor) mlt_filter_close);
+    free(temp);
+    return filter;
 }
 
-static mlt_filter create_filter( mlt_profile profile, mlt_field field, char *id, int track )
+static mlt_filter create_filter(mlt_profile profile, mlt_field field, char *id, int track)
 {
-	char *temp = strdup( id );
-	char *arg = strchr( temp, ':' );
-	if ( arg != NULL )
-		*arg ++ = '\0';
-	mlt_filter filter = mlt_factory_filter( profile, temp, arg );
-	if ( filter != NULL )
-	{
-		mlt_field_plant_filter( field, filter, track );
-		track_service( field, filter, ( mlt_destructor )mlt_filter_close );
-	}
-	free( temp );
-	return filter;
+    char *temp = strdup(id);
+    char *arg = strchr(temp, ':');
+    if (arg != NULL)
+        *arg++ = '\0';
+    mlt_filter filter = mlt_factory_filter(profile, temp, arg);
+    if (filter != NULL) {
+        mlt_field_plant_filter(field, filter, track);
+        track_service(field, filter, (mlt_destructor) mlt_filter_close);
+    }
+    free(temp);
+    return filter;
 }
 
-static mlt_transition create_transition( mlt_profile profile, mlt_field field, char *id, int track )
+static mlt_transition create_transition(mlt_profile profile, mlt_field field, char *id, int track)
 {
-	char *temp = strdup( id );
-	char *arg = strchr( temp, ':' );
-	if ( arg != NULL )
-		*arg ++ = '\0';
-	mlt_transition transition = mlt_factory_transition( profile, temp, arg );
-	if ( transition != NULL )
-	{
-		mlt_field_plant_transition( field, transition, track, track + 1 );
-		track_service( field, transition, ( mlt_destructor )mlt_transition_close );
-	}
-	free( temp );
-	return transition;
+    char *temp = strdup(id);
+    char *arg = strchr(temp, ':');
+    if (arg != NULL)
+        *arg++ = '\0';
+    mlt_transition transition = mlt_factory_transition(profile, temp, arg);
+    if (transition != NULL) {
+        mlt_field_plant_transition(field, transition, track, track + 1);
+        track_service(field, transition, (mlt_destructor) mlt_transition_close);
+    }
+    free(temp);
+    return transition;
 }
 
-static mlt_link create_link( mlt_field field, char *id )
+static mlt_link create_link(mlt_field field, char *id)
 {
-	char *temp = strdup( id );
-	char *arg = strchr( temp, ':' );
-	if ( arg != NULL )
-		*arg ++ = '\0';
-	mlt_link link = mlt_factory_link( temp, arg );
-	if ( link != NULL )
-		track_service( field, link, ( mlt_destructor )mlt_link_close );
-	free( temp );
-	return link;
+    char *temp = strdup(id);
+    char *arg = strchr(temp, ':');
+    if (arg != NULL)
+        *arg++ = '\0';
+    mlt_link link = mlt_factory_link(temp, arg);
+    if (link != NULL)
+        track_service(field, link, (mlt_destructor) mlt_link_close);
+    free(temp);
+    return link;
 }
 
-mlt_producer producer_melt_init( mlt_profile profile, mlt_service_type type, const char *id, char **argv )
+mlt_producer producer_melt_init(mlt_profile profile,
+                                mlt_service_type type,
+                                const char *id,
+                                char **argv)
 {
-	int i;
-	int track = 0;
-	mlt_producer producer = NULL;
-	mlt_tractor mix = NULL;
-	mlt_playlist playlist = mlt_playlist_new( profile );
-	mlt_properties group = mlt_properties_new( );
-	mlt_tractor tractor = mlt_tractor_new( );
-	mlt_properties properties = MLT_TRACTOR_PROPERTIES( tractor );
-	mlt_field field = mlt_tractor_field( tractor );
-	mlt_properties field_properties = mlt_field_properties( field );
-	mlt_multitrack multitrack = mlt_tractor_multitrack( tractor );
-	mlt_chain chain = NULL;
-	char *title = NULL;
+    int i;
+    int track = 0;
+    mlt_producer producer = NULL;
+    mlt_tractor mix = NULL;
+    mlt_playlist playlist = mlt_playlist_new(profile);
+    mlt_properties group = mlt_properties_new();
+    mlt_tractor tractor = mlt_tractor_new();
+    mlt_properties properties = MLT_TRACTOR_PROPERTIES(tractor);
+    mlt_field field = mlt_tractor_field(tractor);
+    mlt_properties field_properties = mlt_field_properties(field);
+    mlt_multitrack multitrack = mlt_tractor_multitrack(tractor);
+    mlt_chain chain = NULL;
+    char *title = NULL;
 
-	// Assistance for template construction (allows -track usage to specify the first track)
-	mlt_properties_set_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first", 1 );
+    // Assistance for template construction (allows -track usage to specify the first track)
+    mlt_properties_set_int(MLT_PLAYLIST_PROPERTIES(playlist), "_melt_first", 1);
 
-	// We need to track the number of registered filters
-	mlt_properties_set_int( field_properties, "registered", 0 );
+    // We need to track the number of registered filters
+    mlt_properties_set_int(field_properties, "registered", 0);
 
-	// Parse the arguments
-	if ( argv )
-	for ( i = 0; argv[ i ] != NULL; i ++ )
-	{
-		if ( argv[ i + 1 ] == NULL && (
-			!strcmp( argv[ i ], "-attach" ) ||
-			!strcmp( argv[ i ], "-attach-cut" ) ||
-			!strcmp( argv[ i ], "-attach-track" ) ||
-			!strcmp( argv[ i ], "-attach-clip" ) ||
-			!strcmp( argv[ i ], "-repeat" ) ||
-			!strcmp( argv[ i ], "-split" ) ||
-			!strcmp( argv[ i ], "-join" ) ||
-			!strcmp( argv[ i ], "-mixer" ) ||
-			!strcmp( argv[ i ], "-mix" ) ||
-			!strcmp( argv[ i ], "-filter" ) ||
-			!strcmp( argv[ i ], "-transition" ) ||
-			!strcmp( argv[ i ], "-blank" ) ) )
-		{
-			fprintf( stderr, "Argument missing for %s.\n", argv[ i ] );
-			break;
-		}
-		if ( !strcmp( argv[ i ], "-group" ) )
-		{
-			if ( mlt_properties_count( group ) != 0 )
-			{
-				mlt_properties_close( group );
-				group = mlt_properties_new( );
-			}
-			if ( group != NULL )
-				properties = group;
-		}
-		else if ( !strcmp( argv[ i ], "-attach" ) || 
-				  !strcmp( argv[ i ], "-attach-cut" ) ||
-				  !strcmp( argv[ i ], "-attach-track" ) ||
-				  !strcmp( argv[ i ], "-attach-clip" ) )
-		{
-			int type = !strcmp( argv[ i ], "-attach" ) ? 0 : 
-					   !strcmp( argv[ i ], "-attach-cut" ) ? 1 : 
-					   !strcmp( argv[ i ], "-attach-track" ) ? 2 : 3;
-			mlt_filter filter = create_attach( profile, field, argv[ ++ i ], track );
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-			{
-				mlt_playlist_clip_info info;
-				mlt_playlist_append( playlist, producer );
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				producer = info.cut;
-			}
+    // Parse the arguments
+    if (argv)
+        for (i = 0; argv[i] != NULL; i++) {
+            if (argv[i + 1] == NULL
+                && (!strcmp(argv[i], "-attach") || !strcmp(argv[i], "-attach-cut")
+                    || !strcmp(argv[i], "-attach-track") || !strcmp(argv[i], "-attach-clip")
+                    || !strcmp(argv[i], "-repeat") || !strcmp(argv[i], "-split")
+                    || !strcmp(argv[i], "-join") || !strcmp(argv[i], "-mixer")
+                    || !strcmp(argv[i], "-mix") || !strcmp(argv[i], "-filter")
+                    || !strcmp(argv[i], "-transition") || !strcmp(argv[i], "-blank"))) {
+                fprintf(stderr, "Argument missing for %s.\n", argv[i]);
+                break;
+            }
+            if (!strcmp(argv[i], "-group")) {
+                if (mlt_properties_count(group) != 0) {
+                    mlt_properties_close(group);
+                    group = mlt_properties_new();
+                }
+                if (group != NULL)
+                    properties = group;
+            } else if (!strcmp(argv[i], "-attach") || !strcmp(argv[i], "-attach-cut")
+                       || !strcmp(argv[i], "-attach-track") || !strcmp(argv[i], "-attach-clip")) {
+                int type = !strcmp(argv[i], "-attach")
+                               ? 0
+                               : !strcmp(argv[i], "-attach-cut")
+                                     ? 1
+                                     : !strcmp(argv[i], "-attach-track") ? 2 : 3;
+                mlt_filter filter = create_attach(profile, field, argv[++i], track);
+                if (producer != NULL && !mlt_producer_is_cut(producer)) {
+                    mlt_playlist_clip_info info;
+                    mlt_playlist_append(playlist, producer);
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    producer = info.cut;
+                }
 
-			if ( type == 1 || type == 2 )
-			{
-				mlt_playlist_clip_info info;
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				producer = info.cut;
-			}
+                if (type == 1 || type == 2) {
+                    mlt_playlist_clip_info info;
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    producer = info.cut;
+                }
 
-			if ( filter != NULL && mlt_playlist_count( playlist ) > 0 )
-			{
-				if ( type == 0 )
-					mlt_service_attach( ( mlt_service )properties, filter );
-				else if ( type == 1 )
-					mlt_service_attach( ( mlt_service )producer, filter );
-				else if ( type == 2 )
-					mlt_service_attach( ( mlt_service )playlist, filter );
-				else if ( type == 3 )
-					mlt_service_attach( ( mlt_service )mlt_producer_cut_parent( producer ), filter );
+                if (filter != NULL && mlt_playlist_count(playlist) > 0) {
+                    if (type == 0)
+                        mlt_service_attach((mlt_service) properties, filter);
+                    else if (type == 1)
+                        mlt_service_attach((mlt_service) producer, filter);
+                    else if (type == 2)
+                        mlt_service_attach((mlt_service) playlist, filter);
+                    else if (type == 3)
+                        mlt_service_attach((mlt_service) mlt_producer_cut_parent(producer), filter);
 
-				properties = MLT_FILTER_PROPERTIES( filter );
-				mlt_properties_inherit( properties, group );
-			}
-			else if ( filter != NULL )
-			{
-				mlt_service_attach( ( mlt_service )playlist, filter );
-				properties = MLT_FILTER_PROPERTIES( filter );
-				mlt_properties_inherit( properties, group );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-repeat" ) )
-		{
-			int repeat = atoi( argv[ ++ i ] );
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( mlt_playlist_count( playlist ) > 0 )
-			{
-				mlt_playlist_clip_info info;
-				mlt_playlist_repeat_clip( playlist, mlt_playlist_count( playlist ) - 1, repeat );
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				producer = info.cut;
-				properties = MLT_PRODUCER_PROPERTIES( producer );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-split" ) )
-		{
-			int split = atoi( argv[ ++ i ] );
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( mlt_playlist_count( playlist ) > 0 )
-			{
-				mlt_playlist_clip_info info;
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				split = split < 0 ? info.frame_out + split : split;
-				mlt_playlist_split( playlist, mlt_playlist_count( playlist ) - 1, split );
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				producer = info.cut;
-				properties = MLT_PRODUCER_PROPERTIES( producer );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-swap" ) )
-		{
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( mlt_playlist_count( playlist ) >= 2 )
-			{
-				mlt_playlist_clip_info info;
-				mlt_playlist_move( playlist, mlt_playlist_count( playlist ) - 2, mlt_playlist_count( playlist ) - 1 );
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				producer = info.cut;
-				properties = MLT_PRODUCER_PROPERTIES( producer );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-join" ) )
-		{
-			int clips = atoi( argv[ ++ i ] );
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( mlt_playlist_count( playlist ) > 0 )
-			{
-				mlt_playlist_clip_info info;
-				int clip = clips <= 0 ? 0 : mlt_playlist_count( playlist ) - clips - 1;
-				if ( clip < 0 ) clip = 0;
-				if ( clip >= mlt_playlist_count( playlist ) ) clip = mlt_playlist_count( playlist ) - 2;
-				if ( clips < 0 ) clips =  mlt_playlist_count( playlist ) - 1;
-				mlt_playlist_join( playlist, clip, clips, 0 );
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				producer = info.cut;
-				properties = MLT_PRODUCER_PROPERTIES( producer );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-remove" ) )
-		{
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( mlt_playlist_count( playlist ) > 0 )
-			{
-				mlt_playlist_clip_info info;
-				mlt_playlist_remove( playlist, mlt_playlist_count( playlist ) - 1 );
-				mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-				producer = info.cut;
-				properties = MLT_PRODUCER_PROPERTIES( producer );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-mix" ) )
-		{
-			int length = atoi( argv[ ++ i ] );
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( mlt_playlist_count( playlist ) >= 2 )
-			{
-				if ( mlt_playlist_mix( playlist, mlt_playlist_count( playlist ) - 2, length, NULL ) == 0 )
-				{
-					mlt_playlist_clip_info info;
-					mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 1 );
-					if ( mlt_properties_get_data( ( mlt_properties )info.producer, "mlt_mix", NULL ) == NULL )
-						mlt_playlist_get_clip_info( playlist, &info, mlt_playlist_count( playlist ) - 2 );
-					mix = ( mlt_tractor )mlt_properties_get_data( ( mlt_properties )info.producer, "mlt_mix", NULL );
-					properties = NULL;
-				}
-				else
-				{
-					fprintf( stderr, "Mix failed?\n" );
-				}
-			}
-			else
-			{
-				fprintf( stderr, "Invalid position for a mix...\n" );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-mixer" ) )
-		{
-			if ( mix != NULL )
-			{
-				char *id = strdup( argv[ ++ i ] );
-				char *arg = strchr( id, ':' );
-				mlt_field field = mlt_tractor_field( mix );
-				mlt_transition transition = NULL;
-				if ( arg != NULL )
-					*arg ++ = '\0';
-				transition = mlt_factory_transition( profile, id, arg );
-				if ( transition != NULL )
-				{
-					properties = MLT_TRANSITION_PROPERTIES( transition );
-					mlt_properties_inherit( properties, group );
-					mlt_field_plant_transition( field, transition, 0, 1 );
-					mlt_properties_set_position( properties, "in", 0 );
-					mlt_properties_set_position( properties, "out", mlt_producer_get_out( ( mlt_producer )mix ) );
-					mlt_transition_close( transition );
-				}
-				free( id );
-			}
-			else
-			{
-				fprintf( stderr, "Invalid mixer...\n" );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-filter" ) )
-		{
-			mlt_filter filter = create_filter( profile, field, argv[ ++ i ], track );
-			if ( filter != NULL )
-			{
-				properties = MLT_FILTER_PROPERTIES( filter );
-				mlt_properties_inherit( properties, group );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-transition" ) )
-		{
-			mlt_transition transition = create_transition( profile, field, argv[ ++ i ], track - 1 );
-			if ( transition != NULL )
-			{
-				properties = MLT_TRANSITION_PROPERTIES( transition );
-				mlt_properties_inherit( properties, group );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-blank" ) )
-		{
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( strchr( argv[ i + 1 ], ':' ) )
-				mlt_playlist_blank_time( playlist, argv[ ++ i ] );
-			else
-				// support for legacy where plain int is an out point instead of length
-				mlt_playlist_blank( playlist, atof( argv[ ++ i ] ) );
-		}
-		else if ( !strcmp( argv[ i ], "-track" ) ||
-				  !strcmp( argv[ i ], "-null-track" ) ||
-				  !strcmp( argv[ i ], "-video-track" ) ||
-				  !strcmp( argv[ i ], "-audio-track" ) ||
-				  !strcmp( argv[ i ], "-hide-track" ) ||
-				  !strcmp( argv[ i ], "-hide-video" ) ||
-				  !strcmp( argv[ i ], "-hide-audio" ) )
-		{
-			if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			producer = NULL;
-			if ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first" ) || 
-				  mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 )
-			{
-				mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track ++ );
-				track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
-				playlist = mlt_playlist_new( profile );
-			}
-			if ( playlist != NULL )
-			{
-				properties = MLT_PLAYLIST_PROPERTIES( playlist );
-				if ( !strcmp( argv[ i ], "-null-track" ) || !strcmp( argv[ i ], "-hide-track" ) )
-					mlt_properties_set_int( properties, "hide", 3 );
-				else if ( !strcmp( argv[ i ], "-audio-track" ) || !strcmp( argv[ i ], "-hide-video" ) )
-					mlt_properties_set_int( properties, "hide", 1 );
-				else if ( !strcmp( argv[ i ], "-video-track" ) || !strcmp( argv[ i ], "-hide-audio" ) )
-					mlt_properties_set_int( properties, "hide", 2 );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-chain" ) )
-		{
-			if ( chain == NULL && producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			else if ( chain != NULL && mlt_chain_get_source( chain ) != NULL )
-			{
-				mlt_playlist_append( playlist, producer );
-			}
+                    properties = MLT_FILTER_PROPERTIES(filter);
+                    mlt_properties_inherit(properties, group);
+                } else if (filter != NULL) {
+                    mlt_service_attach((mlt_service) playlist, filter);
+                    properties = MLT_FILTER_PROPERTIES(filter);
+                    mlt_properties_inherit(properties, group);
+                }
+            } else if (!strcmp(argv[i], "-repeat")) {
+                int repeat = atoi(argv[++i]);
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (mlt_playlist_count(playlist) > 0) {
+                    mlt_playlist_clip_info info;
+                    mlt_playlist_repeat_clip(playlist, mlt_playlist_count(playlist) - 1, repeat);
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    producer = info.cut;
+                    properties = MLT_PRODUCER_PROPERTIES(producer);
+                }
+            } else if (!strcmp(argv[i], "-split")) {
+                int split = atoi(argv[++i]);
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (mlt_playlist_count(playlist) > 0) {
+                    mlt_playlist_clip_info info;
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    split = split < 0 ? info.frame_out + split : split;
+                    mlt_playlist_split(playlist, mlt_playlist_count(playlist) - 1, split);
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    producer = info.cut;
+                    properties = MLT_PRODUCER_PROPERTIES(producer);
+                }
+            } else if (!strcmp(argv[i], "-swap")) {
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (mlt_playlist_count(playlist) >= 2) {
+                    mlt_playlist_clip_info info;
+                    mlt_playlist_move(playlist,
+                                      mlt_playlist_count(playlist) - 2,
+                                      mlt_playlist_count(playlist) - 1);
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    producer = info.cut;
+                    properties = MLT_PRODUCER_PROPERTIES(producer);
+                }
+            } else if (!strcmp(argv[i], "-join")) {
+                int clips = atoi(argv[++i]);
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (mlt_playlist_count(playlist) > 0) {
+                    mlt_playlist_clip_info info;
+                    int clip = clips <= 0 ? 0 : mlt_playlist_count(playlist) - clips - 1;
+                    if (clip < 0)
+                        clip = 0;
+                    if (clip >= mlt_playlist_count(playlist))
+                        clip = mlt_playlist_count(playlist) - 2;
+                    if (clips < 0)
+                        clips = mlt_playlist_count(playlist) - 1;
+                    mlt_playlist_join(playlist, clip, clips, 0);
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    producer = info.cut;
+                    properties = MLT_PRODUCER_PROPERTIES(producer);
+                }
+            } else if (!strcmp(argv[i], "-remove")) {
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (mlt_playlist_count(playlist) > 0) {
+                    mlt_playlist_clip_info info;
+                    mlt_playlist_remove(playlist, mlt_playlist_count(playlist) - 1);
+                    mlt_playlist_get_clip_info(playlist, &info, mlt_playlist_count(playlist) - 1);
+                    producer = info.cut;
+                    properties = MLT_PRODUCER_PROPERTIES(producer);
+                }
+            } else if (!strcmp(argv[i], "-mix")) {
+                int length = atoi(argv[++i]);
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (mlt_playlist_count(playlist) >= 2) {
+                    if (mlt_playlist_mix(playlist, mlt_playlist_count(playlist) - 2, length, NULL)
+                        == 0) {
+                        mlt_playlist_clip_info info;
+                        mlt_playlist_get_clip_info(playlist,
+                                                   &info,
+                                                   mlt_playlist_count(playlist) - 1);
+                        if (mlt_properties_get_data((mlt_properties) info.producer, "mlt_mix", NULL)
+                            == NULL)
+                            mlt_playlist_get_clip_info(playlist,
+                                                       &info,
+                                                       mlt_playlist_count(playlist) - 2);
+                        mix = (mlt_tractor) mlt_properties_get_data((mlt_properties) info.producer,
+                                                                    "mlt_mix",
+                                                                    NULL);
+                        properties = NULL;
+                    } else {
+                        fprintf(stderr, "Mix failed?\n");
+                    }
+                } else {
+                    fprintf(stderr, "Invalid position for a mix...\n");
+                }
+            } else if (!strcmp(argv[i], "-mixer")) {
+                if (mix != NULL) {
+                    char *id = strdup(argv[++i]);
+                    char *arg = strchr(id, ':');
+                    mlt_field field = mlt_tractor_field(mix);
+                    mlt_transition transition = NULL;
+                    if (arg != NULL)
+                        *arg++ = '\0';
+                    transition = mlt_factory_transition(profile, id, arg);
+                    if (transition != NULL) {
+                        properties = MLT_TRANSITION_PROPERTIES(transition);
+                        mlt_properties_inherit(properties, group);
+                        mlt_field_plant_transition(field, transition, 0, 1);
+                        mlt_properties_set_position(properties, "in", 0);
+                        mlt_properties_set_position(properties,
+                                                    "out",
+                                                    mlt_producer_get_out((mlt_producer) mix));
+                        mlt_transition_close(transition);
+                    }
+                    free(id);
+                } else {
+                    fprintf(stderr, "Invalid mixer...\n");
+                }
+            } else if (!strcmp(argv[i], "-filter")) {
+                mlt_filter filter = create_filter(profile, field, argv[++i], track);
+                if (filter != NULL) {
+                    properties = MLT_FILTER_PROPERTIES(filter);
+                    mlt_properties_inherit(properties, group);
+                }
+            } else if (!strcmp(argv[i], "-transition")) {
+                mlt_transition transition = create_transition(profile, field, argv[++i], track - 1);
+                if (transition != NULL) {
+                    properties = MLT_TRANSITION_PROPERTIES(transition);
+                    mlt_properties_inherit(properties, group);
+                }
+            } else if (!strcmp(argv[i], "-blank")) {
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (strchr(argv[i + 1], ':'))
+                    mlt_playlist_blank_time(playlist, argv[++i]);
+                else
+                    // support for legacy where plain int is an out point instead of length
+                    mlt_playlist_blank(playlist, atof(argv[++i]));
+            } else if (!strcmp(argv[i], "-track") || !strcmp(argv[i], "-null-track")
+                       || !strcmp(argv[i], "-video-track") || !strcmp(argv[i], "-audio-track")
+                       || !strcmp(argv[i], "-hide-track") || !strcmp(argv[i], "-hide-video")
+                       || !strcmp(argv[i], "-hide-audio")) {
+                if (producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                producer = NULL;
+                if (!mlt_properties_get_int(MLT_PLAYLIST_PROPERTIES(playlist), "_melt_first")
+                    || mlt_producer_get_playtime(MLT_PLAYLIST_PRODUCER(playlist)) > 0) {
+                    mlt_multitrack_connect(multitrack, MLT_PLAYLIST_PRODUCER(playlist), track++);
+                    track_service(field, playlist, (mlt_destructor) mlt_playlist_close);
+                    playlist = mlt_playlist_new(profile);
+                }
+                if (playlist != NULL) {
+                    properties = MLT_PLAYLIST_PROPERTIES(playlist);
+                    if (!strcmp(argv[i], "-null-track") || !strcmp(argv[i], "-hide-track"))
+                        mlt_properties_set_int(properties, "hide", 3);
+                    else if (!strcmp(argv[i], "-audio-track") || !strcmp(argv[i], "-hide-video"))
+                        mlt_properties_set_int(properties, "hide", 1);
+                    else if (!strcmp(argv[i], "-video-track") || !strcmp(argv[i], "-hide-audio"))
+                        mlt_properties_set_int(properties, "hide", 2);
+                }
+            } else if (!strcmp(argv[i], "-chain")) {
+                if (chain == NULL && producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                else if (chain != NULL && mlt_chain_get_source(chain) != NULL) {
+                    mlt_playlist_append(playlist, producer);
+                }
 
-			chain = mlt_chain_init( profile );
-			if ( chain != NULL )
-			{
-				producer = MLT_CHAIN_PRODUCER( chain );
-				properties = MLT_PRODUCER_PROPERTIES( producer );
-				mlt_properties_inherit( properties, group );
-				track_service( field, chain, ( mlt_destructor )mlt_chain_close );
-			}
-		}
-		else if ( !strcmp( argv[ i ], "-link" ) )
-		{
-			if ( chain == NULL || mlt_chain_get_source( chain ) == NULL )
-			{
-				fprintf( stderr, "A link can only be added to a chain with a producer.\n" );
-			}
-			else
-			{
-				mlt_link link = create_link( field, argv[ ++ i ] );
-				if ( link != NULL )
-				{
-					mlt_chain_attach( chain, link );
-					properties = MLT_LINK_PROPERTIES( link );
-					mlt_properties_inherit( properties, group );
-				}
-			}
-		}
-		else if ( strchr( argv[ i ], '=' ) && strstr( argv[ i ], "<?xml" ) != argv[ i ] &&
-			// Prevent interpreting URL with parameters as a property.
-			// This does not support property names containing a colon.
-			( !strchr( argv[ i ], ':' ) || strchr( argv[ i ], ':' ) > strchr( argv[ i ], '=' ) ) )
-		{
-			mlt_properties_parse( properties, argv[ i ] );
-		}
-		else if ( argv[ i ][ 0 ] != '-' )
-		{
-			if ( chain == NULL && producer != NULL && !mlt_producer_is_cut( producer ) )
-				mlt_playlist_append( playlist, producer );
-			else if ( chain != NULL && mlt_chain_get_source( chain ) != NULL )
-			{
-				mlt_playlist_append( playlist, producer );
-				chain = NULL;
-			}
-			if ( title == NULL && strstr( argv[ i ], "<?xml" ) != argv[ i ] )
-				title = argv[ i ];
+                chain = mlt_chain_init(profile);
+                if (chain != NULL) {
+                    producer = MLT_CHAIN_PRODUCER(chain);
+                    properties = MLT_PRODUCER_PROPERTIES(producer);
+                    mlt_properties_inherit(properties, group);
+                    track_service(field, chain, (mlt_destructor) mlt_chain_close);
+                }
+            } else if (!strcmp(argv[i], "-link")) {
+                if (chain == NULL || mlt_chain_get_source(chain) == NULL) {
+                    fprintf(stderr, "A link can only be added to a chain with a producer.\n");
+                } else {
+                    mlt_link link = create_link(field, argv[++i]);
+                    if (link != NULL) {
+                        mlt_chain_attach(chain, link);
+                        properties = MLT_LINK_PROPERTIES(link);
+                        mlt_properties_inherit(properties, group);
+                    }
+                }
+            } else if (strchr(argv[i], '=') && strstr(argv[i], "<?xml") != argv[i] &&
+                       // Prevent interpreting URL with parameters as a property.
+                       // This does not support property names containing a colon.
+                       (!strchr(argv[i], ':') || strchr(argv[i], ':') > strchr(argv[i], '='))) {
+                mlt_properties_parse(properties, argv[i]);
+            } else if (argv[i][0] != '-') {
+                if (chain == NULL && producer != NULL && !mlt_producer_is_cut(producer))
+                    mlt_playlist_append(playlist, producer);
+                else if (chain != NULL && mlt_chain_get_source(chain) != NULL) {
+                    mlt_playlist_append(playlist, producer);
+                    chain = NULL;
+                }
+                if (title == NULL && strstr(argv[i], "<?xml") != argv[i])
+                    title = argv[i];
 
-			producer = create_producer( profile, field, argv[ i ] );
-			if ( producer != NULL && chain != NULL )
-			{
-				mlt_chain_set_source( chain, producer );
-				mlt_chain_attach_normalizers( chain );
-				producer = MLT_CHAIN_PRODUCER( chain );
-			}
-			else if ( producer != NULL )
-			{
-				properties = MLT_PRODUCER_PROPERTIES( producer );
-				mlt_properties_inherit( properties, group );
-			}
-			else
-			{
-				fprintf( stderr, "Failed to load \"%s\"\n", argv[ i ] );
-			}
-		}
-		else
-		{
-			int backtrack = 0;
-			if ( !strcmp( argv[ i ], "-serialise" ) ||
-			     !strcmp( argv[ i ], "-consumer" ) ||
-			     !strcmp( argv[ i ], "-profile" ) )
-			{
-				i += 2;
-				backtrack = 1;
-			}
+                producer = create_producer(profile, field, argv[i]);
+                if (producer != NULL && chain != NULL) {
+                    mlt_chain_set_source(chain, producer);
+                    mlt_chain_attach_normalizers(chain);
+                    producer = MLT_CHAIN_PRODUCER(chain);
+                } else if (producer != NULL) {
+                    properties = MLT_PRODUCER_PROPERTIES(producer);
+                    mlt_properties_inherit(properties, group);
+                } else {
+                    fprintf(stderr, "Failed to load \"%s\"\n", argv[i]);
+                }
+            } else {
+                int backtrack = 0;
+                if (!strcmp(argv[i], "-serialise") || !strcmp(argv[i], "-consumer")
+                    || !strcmp(argv[i], "-profile")) {
+                    i += 2;
+                    backtrack = 1;
+                }
 
-			while ( argv[ i ] != NULL && strchr( argv[ i ], '=' ) &&
-				( !strchr( argv[ i ], ':' ) || strchr( argv[ i ], ':' ) > strchr( argv[ i ], '=' ) ) )
-			{
-				i ++;
-				backtrack = 1;
-			}
-			if ( backtrack )
-				i --;
-		}
-	}
+                while (argv[i] != NULL && strchr(argv[i], '=')
+                       && (!strchr(argv[i], ':') || strchr(argv[i], ':') > strchr(argv[i], '='))) {
+                    i++;
+                    backtrack = 1;
+                }
+                if (backtrack)
+                    i--;
+            }
+        }
 
-	// Connect last producer to playlist
-	if ( producer != NULL && !mlt_producer_is_cut( producer ) )
-		mlt_playlist_append( playlist, producer );
+    // Connect last producer to playlist
+    if (producer != NULL && !mlt_producer_is_cut(producer))
+        mlt_playlist_append(playlist, producer);
 
-	// Track the last playlist too
-	track_service( field, playlist, ( mlt_destructor )mlt_playlist_close );
+    // Track the last playlist too
+    track_service(field, playlist, (mlt_destructor) mlt_playlist_close);
 
-	// We must have a playlist to connect
-	if ( playlist && ( !mlt_properties_get_int( MLT_PLAYLIST_PROPERTIES( playlist ), "_melt_first" ) ||
-		   mlt_producer_get_playtime( MLT_PLAYLIST_PRODUCER( playlist ) ) > 0 ) )
-		mlt_multitrack_connect( multitrack, MLT_PLAYLIST_PRODUCER( playlist ), track );
+    // We must have a playlist to connect
+    if (playlist
+        && (!mlt_properties_get_int(MLT_PLAYLIST_PROPERTIES(playlist), "_melt_first")
+            || mlt_producer_get_playtime(MLT_PLAYLIST_PRODUCER(playlist)) > 0))
+        mlt_multitrack_connect(multitrack, MLT_PLAYLIST_PRODUCER(playlist), track);
 
-	mlt_producer prod = MLT_TRACTOR_PRODUCER( tractor );
-	mlt_producer_optimise( prod );
-	mlt_properties props = MLT_TRACTOR_PROPERTIES( tractor );
-	mlt_properties_set_data( props, "group", group, 0, ( mlt_destructor )mlt_properties_close, NULL );
-	mlt_properties_set_position( props, "length", mlt_producer_get_out( MLT_MULTITRACK_PRODUCER( multitrack ) ) + 1 );
-	mlt_producer_set_in_and_out( prod, 0, mlt_producer_get_out( MLT_MULTITRACK_PRODUCER( multitrack ) ) );
-	if ( title != NULL )
-		mlt_properties_set( props, "title", strchr( title, '/' ) ? strrchr( title, '/' ) + 1 : title );
+    mlt_producer prod = MLT_TRACTOR_PRODUCER(tractor);
+    mlt_producer_optimise(prod);
+    mlt_properties props = MLT_TRACTOR_PROPERTIES(tractor);
+    mlt_properties_set_data(props, "group", group, 0, (mlt_destructor) mlt_properties_close, NULL);
+    mlt_properties_set_position(props,
+                                "length",
+                                mlt_producer_get_out(MLT_MULTITRACK_PRODUCER(multitrack)) + 1);
+    mlt_producer_set_in_and_out(prod, 0, mlt_producer_get_out(MLT_MULTITRACK_PRODUCER(multitrack)));
+    if (title != NULL)
+        mlt_properties_set(props, "title", strchr(title, '/') ? strrchr(title, '/') + 1 : title);
 
-	// If the last producer has a consumer property connect it tractor
-	if ( producer )
-	{
-		mlt_consumer consumer = mlt_properties_get_data( MLT_PRODUCER_PROPERTIES(producer), "consumer", NULL );
-		if ( consumer )
-			mlt_consumer_connect( consumer, MLT_PRODUCER_SERVICE(prod) );
-	}
+    // If the last producer has a consumer property connect it tractor
+    if (producer) {
+        mlt_consumer consumer = mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(producer),
+                                                        "consumer",
+                                                        NULL);
+        if (consumer)
+            mlt_consumer_connect(consumer, MLT_PRODUCER_SERVICE(prod));
+    }
 
-	return prod;
+    return prod;
 }

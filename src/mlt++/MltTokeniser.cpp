@@ -18,39 +18,38 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
 #include "MltTokeniser.h"
+#include <stdlib.h>
 using namespace Mlt;
 
-Tokeniser::Tokeniser( char *text, char *delimiter )
+Tokeniser::Tokeniser(char *text, char *delimiter)
 {
-	tokens = mlt_tokeniser_init( );
-	if ( text != NULL )
-		mlt_tokeniser_parse_new( tokens, text, delimiter? delimiter : " " );
+    tokens = mlt_tokeniser_init();
+    if (text != NULL)
+        mlt_tokeniser_parse_new(tokens, text, delimiter ? delimiter : " ");
 }
 
-Tokeniser::~Tokeniser( )
+Tokeniser::~Tokeniser()
 {
-	mlt_tokeniser_close( tokens );
+    mlt_tokeniser_close(tokens);
 }
 
-int Tokeniser::parse( char *text, char *delimiter )
+int Tokeniser::parse(char *text, char *delimiter)
 {
-	return mlt_tokeniser_parse_new( tokens, text, delimiter? delimiter : " " );
+    return mlt_tokeniser_parse_new(tokens, text, delimiter ? delimiter : " ");
 }
 
-int Tokeniser::count( )
+int Tokeniser::count()
 {
-	return mlt_tokeniser_count( tokens );
+    return mlt_tokeniser_count(tokens);
 }
 
-char *Tokeniser::get( int index )
+char *Tokeniser::get(int index)
 {
-	return mlt_tokeniser_get_string( tokens, index );
+    return mlt_tokeniser_get_string(tokens, index);
 }
 
-char *Tokeniser::input( )
+char *Tokeniser::input()
 {
-	return mlt_tokeniser_get_input( tokens );
+    return mlt_tokeniser_get_input(tokens);
 }
-

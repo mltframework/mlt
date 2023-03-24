@@ -24,29 +24,29 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class MLTPP_DECLSPEC Audio
 {
-	class MLTPP_DECLSPEC Audio
-	{
-		private:
-			mlt_audio instance;
-		public:
-			Audio();
-			Audio( mlt_audio audio );
-			virtual ~Audio( );
-			void* data();
-			void set_data( void* data );
-			int frequency();
-			void set_frequency( int frequency );
-			mlt_audio_format format();
-			void set_format( mlt_audio_format format );
-			int samples();
-			void set_samples( int samples );
-			int channels();
-			void set_channels( int channels );
-			mlt_channel_layout layout();
-			void set_layout( mlt_channel_layout layout );
-	};
-}
+private:
+    mlt_audio instance;
+
+public:
+    Audio();
+    Audio(mlt_audio audio);
+    virtual ~Audio();
+    void *data();
+    void set_data(void *data);
+    int frequency();
+    void set_frequency(int frequency);
+    mlt_audio_format format();
+    void set_format(mlt_audio_format format);
+    int samples();
+    void set_samples(int samples);
+    int channels();
+    void set_channels(int channels);
+    mlt_channel_layout layout();
+    void set_layout(mlt_channel_layout layout);
+};
+} // namespace Mlt
 
 #endif

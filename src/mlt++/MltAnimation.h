@@ -24,43 +24,43 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class MLTPP_DECLSPEC Animation
 {
-	class MLTPP_DECLSPEC Animation
-	{
-		private:
-			mlt_animation instance;
-		public:
-			Animation();
-			Animation( mlt_animation animation );
-			Animation( const Animation& );
-			~Animation();
+private:
+    mlt_animation instance;
 
-			bool is_valid() const;
-			mlt_animation get_animation() const;
-			Animation& operator=( const Animation& );
+public:
+    Animation();
+    Animation(mlt_animation animation);
+    Animation(const Animation &);
+    ~Animation();
 
-			int length();
-			int get_item( int position, bool& is_key, mlt_keyframe_type& );
-			bool is_key( int position );
-			mlt_keyframe_type keyframe_type( int position );
-			int next_key( int position );
-			bool next_key( int position, int& key );
-			int previous_key( int position );
-			bool previous_key( int position, int& key );
-			int key_count();
-			int key_get( int index, int& frame, mlt_keyframe_type& );
-			int key_get_frame( int index );
-			mlt_keyframe_type key_get_type( int index );
-			int key_set_type( int index, mlt_keyframe_type type );
-			int key_set_frame( int index, int frame );
-			void shift_frames( int shift );
-			void set_length( int length );
-			int remove( int position );
-			void interpolate();
-			char* serialize_cut( int in = -1, int out = -1 );
-			char* serialize_cut( mlt_time_format format, int in = -1, int out = -1 );
-	};
-}
+    bool is_valid() const;
+    mlt_animation get_animation() const;
+    Animation &operator=(const Animation &);
+
+    int length();
+    int get_item(int position, bool &is_key, mlt_keyframe_type &);
+    bool is_key(int position);
+    mlt_keyframe_type keyframe_type(int position);
+    int next_key(int position);
+    bool next_key(int position, int &key);
+    int previous_key(int position);
+    bool previous_key(int position, int &key);
+    int key_count();
+    int key_get(int index, int &frame, mlt_keyframe_type &);
+    int key_get_frame(int index);
+    mlt_keyframe_type key_get_type(int index);
+    int key_set_type(int index, mlt_keyframe_type type);
+    int key_set_frame(int index, int frame);
+    void shift_frames(int shift);
+    void set_length(int length);
+    int remove(int position);
+    void interpolate();
+    char *serialize_cut(int in = -1, int out = -1);
+    char *serialize_cut(mlt_time_format format, int in = -1, int out = -1);
+};
+} // namespace Mlt
 
 #endif

@@ -18,185 +18,184 @@
  */
 
 #include "MltProfile.h"
-#include "MltProperties.h"
 #include "MltProducer.h"
+#include "MltProperties.h"
 
 using namespace Mlt;
 
-Profile::Profile( ) :
-	instance( NULL )
+Profile::Profile()
+    : instance(NULL)
 {
-	instance = mlt_profile_init( NULL );
+    instance = mlt_profile_init(NULL);
 }
 
-Profile::Profile( const char* name ) :
-	instance( NULL )
+Profile::Profile(const char *name)
+    : instance(NULL)
 {
-	instance = mlt_profile_init( name );
+    instance = mlt_profile_init(name);
 }
 
-Profile::Profile( Properties& properties ) :
-	instance( NULL )
+Profile::Profile(Properties &properties)
+    : instance(NULL)
 {
-	instance = mlt_profile_load_properties( properties.get_properties() );
+    instance = mlt_profile_load_properties(properties.get_properties());
 }
 
-Profile::Profile( mlt_profile profile ) :
-	instance( profile )
-{
-}
+Profile::Profile(mlt_profile profile)
+    : instance(profile)
+{}
 
-Profile::~Profile( )
+Profile::~Profile()
 {
-	if ( instance )
-		mlt_profile_close( instance );
-	instance = NULL;
+    if (instance)
+        mlt_profile_close(instance);
+    instance = NULL;
 }
 
 bool Profile::is_valid() const
 {
-	return instance != NULL;
+    return instance != NULL;
 }
 
-mlt_profile Profile::get_profile( ) const
+mlt_profile Profile::get_profile() const
 {
-	return instance;
+    return instance;
 }
 
-char* Profile::description() const
+char *Profile::description() const
 {
-	return instance->description;
+    return instance->description;
 }
 
 int Profile::frame_rate_num() const
 {
-	return instance->frame_rate_num;
+    return instance->frame_rate_num;
 }
 
 int Profile::frame_rate_den() const
 {
-	return instance->frame_rate_den;
+    return instance->frame_rate_den;
 }
 
 double Profile::fps() const
 {
-	return mlt_profile_fps( instance );
+    return mlt_profile_fps(instance);
 }
 
 int Profile::width() const
 {
-	return instance->width;
+    return instance->width;
 }
 
 int Profile::height() const
 {
-	return instance->height;
+    return instance->height;
 }
 
 bool Profile::progressive() const
 {
-	return instance->progressive;
+    return instance->progressive;
 }
 
 int Profile::sample_aspect_num() const
 {
-	return instance->sample_aspect_num;
+    return instance->sample_aspect_num;
 }
 
 int Profile::sample_aspect_den() const
 {
-	return instance->sample_aspect_den;
+    return instance->sample_aspect_den;
 }
 
 double Profile::sar() const
 {
-	return mlt_profile_sar( instance );
+    return mlt_profile_sar(instance);
 }
 
 int Profile::display_aspect_num() const
 {
-	return instance->display_aspect_num;
+    return instance->display_aspect_num;
 }
 
 int Profile::display_aspect_den() const
 {
-	return instance->display_aspect_den;
+    return instance->display_aspect_den;
 }
 
 double Profile::dar() const
 {
-	return mlt_profile_dar( instance );
+    return mlt_profile_dar(instance);
 }
 
 int Profile::is_explicit() const
 {
-	return instance->is_explicit;
+    return instance->is_explicit;
 }
 
 int Profile::colorspace() const
 {
-	return instance->colorspace;
+    return instance->colorspace;
 }
 
-Properties* Profile::list()
+Properties *Profile::list()
 {
-	return new Properties( mlt_profile_list() );
+    return new Properties(mlt_profile_list());
 }
 
-void Profile::from_producer( Producer &producer )
+void Profile::from_producer(Producer &producer)
 {
-	mlt_profile_from_producer( instance, producer.get_producer() );
+    mlt_profile_from_producer(instance, producer.get_producer());
 }
 
-void Profile::set_width( int width )
+void Profile::set_width(int width)
 {
-	instance->width = width;
+    instance->width = width;
 }
 
-void Profile::set_height( int height )
+void Profile::set_height(int height)
 {
-	instance->height = height;
+    instance->height = height;
 }
 
-void Profile::set_sample_aspect( int numerator, int denominator )
+void Profile::set_sample_aspect(int numerator, int denominator)
 {
-	instance->sample_aspect_num = numerator;
-	instance->sample_aspect_den = denominator;
+    instance->sample_aspect_num = numerator;
+    instance->sample_aspect_den = denominator;
 }
 
 void Profile::set_display_aspect(int numerator, int denominator)
 {
-	instance->display_aspect_num = numerator;
-	instance->display_aspect_den = denominator;
+    instance->display_aspect_num = numerator;
+    instance->display_aspect_den = denominator;
 }
 
-void Profile::set_progressive( int progressive )
+void Profile::set_progressive(int progressive)
 {
-	instance->progressive = progressive;
+    instance->progressive = progressive;
 }
 
-void Profile::set_colorspace( int colorspace )
+void Profile::set_colorspace(int colorspace)
 {
-	instance->colorspace = colorspace;
+    instance->colorspace = colorspace;
 }
 
-void Profile::set_frame_rate( int numerator, int denominator )
+void Profile::set_frame_rate(int numerator, int denominator)
 {
-	instance->frame_rate_num = numerator;
-	instance->frame_rate_den = denominator;
+    instance->frame_rate_num = numerator;
+    instance->frame_rate_den = denominator;
 }
 
-void Profile::set_explicit( int boolean )
+void Profile::set_explicit(int boolean)
 {
-	instance->is_explicit = boolean;
+    instance->is_explicit = boolean;
 }
 
 double Profile::scale_width(int width)
 {
-	return mlt_profile_scale_width(instance, width);
+    return mlt_profile_scale_width(instance, width);
 }
 
 double Profile::scale_height(int height)
 {
-	return mlt_profile_scale_height(instance, height);
+    return mlt_profile_scale_height(instance, height);
 }

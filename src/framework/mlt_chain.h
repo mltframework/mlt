@@ -35,23 +35,23 @@
 
 struct mlt_chain_s
 {
-	struct mlt_producer_s parent;
-	void* local; /**< \private instance object */
+    struct mlt_producer_s parent;
+    void *local; /**< \private instance object */
 };
 
-#define MLT_CHAIN_PRODUCER( chain )		( &( chain )->parent )
-#define MLT_CHAIN_SERVICE( chain )		MLT_PRODUCER_SERVICE( MLT_CHAIN_PRODUCER( chain ) )
-#define MLT_CHAIN_PROPERTIES( chain )	MLT_SERVICE_PROPERTIES( MLT_CHAIN_SERVICE( chain ) )
+#define MLT_CHAIN_PRODUCER(chain) (&(chain)->parent)
+#define MLT_CHAIN_SERVICE(chain) MLT_PRODUCER_SERVICE(MLT_CHAIN_PRODUCER(chain))
+#define MLT_CHAIN_PROPERTIES(chain) MLT_SERVICE_PROPERTIES(MLT_CHAIN_SERVICE(chain))
 
-extern mlt_chain mlt_chain_init( mlt_profile );
-extern void mlt_chain_set_source( mlt_chain self, mlt_producer source );
-extern mlt_producer mlt_chain_get_source( mlt_chain self );
-extern int mlt_chain_attach( mlt_chain self, mlt_link link );
-extern int mlt_chain_detach( mlt_chain self, mlt_link link );
-extern int mlt_chain_link_count( mlt_chain self );
-extern int mlt_chain_move_link( mlt_chain self, int from, int to );
-extern mlt_link mlt_chain_link( mlt_chain self, int index );
-extern void mlt_chain_close( mlt_chain self );
-extern void mlt_chain_attach_normalizers( mlt_chain self );
+extern mlt_chain mlt_chain_init(mlt_profile);
+extern void mlt_chain_set_source(mlt_chain self, mlt_producer source);
+extern mlt_producer mlt_chain_get_source(mlt_chain self);
+extern int mlt_chain_attach(mlt_chain self, mlt_link link);
+extern int mlt_chain_detach(mlt_chain self, mlt_link link);
+extern int mlt_chain_link_count(mlt_chain self);
+extern int mlt_chain_move_link(mlt_chain self, int from, int to);
+extern mlt_link mlt_chain_link(mlt_chain self, int index);
+extern void mlt_chain_close(mlt_chain self);
+extern void mlt_chain_attach_normalizers(mlt_chain self);
 
 #endif

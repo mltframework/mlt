@@ -30,49 +30,46 @@ using namespace Mlt;
 
 class TestXml : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	TestXml()
-	{
-		Factory::init();
-	}
+    TestXml() { Factory::init(); }
 
 private Q_SLOTS:
 
-	void NestedPropertiesRoundTrip()
-	{
-		// Create a producer
-		Profile profile;
-		Producer producer(profile, "noise");
+    void NestedPropertiesRoundTrip()
+    {
+        // Create a producer
+        Profile profile;
+        Producer producer(profile, "noise");
 
-		// Nest properties two deep
-		Properties child1;
-		producer.set("child1", child1);
-		Properties child2;
-		child2.set("test_param", "C2");
-		child1.set("child2", child2);
+        // Nest properties two deep
+        Properties child1;
+        producer.set("child1", child1);
+        Properties child2;
+        child2.set("test_param", "C2");
+        child1.set("child2", child2);
 
-		// Convert to XML
-		Consumer c(profile, "xml", "string");
-		c.connect(producer);
-		c.start();
+        // Convert to XML
+        Consumer c(profile, "xml", "string");
+        c.connect(producer);
+        c.start();
 
-		Producer retProducer(profile, "xml-string", c.get("string"));
-		QCOMPARE(retProducer.get("mlt_service"), "noise");
+        Producer retProducer(profile, "xml-string", c.get("string"));
+        QCOMPARE(retProducer.get("mlt_service"), "noise");
 
-		Properties* pchild1 = retProducer.get_props("child1");
-		QVERIFY(pchild1 != nullptr);
-		QVERIFY(pchild1->is_valid());
+        Properties *pchild1 = retProducer.get_props("child1");
+        QVERIFY(pchild1 != nullptr);
+        QVERIFY(pchild1->is_valid());
 
-		Properties* pchild2 = pchild1->get_props("child2");
-		QVERIFY(pchild2 != nullptr);
-		QVERIFY(pchild2->is_valid());
-		QCOMPARE(pchild2->get("test_param"), "C2");
+        Properties *pchild2 = pchild1->get_props("child2");
+        QVERIFY(pchild2 != nullptr);
+        QVERIFY(pchild2->is_valid());
+        QCOMPARE(pchild2->get("test_param"), "C2");
 
-		delete pchild1;
-		delete pchild2;
-	}
+        delete pchild1;
+        delete pchild2;
+    }
 };
 
 QTEST_APPLESS_MAIN(TestXml)

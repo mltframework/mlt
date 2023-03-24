@@ -20,14 +20,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "mlt_types.h"
-#include "mlt_log.h"
-#include "mlt_properties.h"
 #include "mlt_cache.h"
 #include "mlt_frame.h"
+#include "mlt_log.h"
+#include "mlt_properties.h"
+#include "mlt_types.h"
 
-#include <stdlib.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 /** the maximum number of data objects to cache per line */
 #define MAX_CACHE_SIZE (200)
@@ -48,12 +48,12 @@
 
 typedef struct mlt_cache_item_s
 {
-	mlt_cache cache;           /**< a reference to the cache to which this belongs */
-	void *object;              /**< a parent object to the cache data that uniquely identifies this cached item */
-	void *data;                /**< the opaque pointer to the cached data */
-	int size;                  /**< the size of the cached data */
-	int refcount;              /**< a reference counter to control when destructor is called */
-	mlt_destructor destructor; /**< a function to release or destroy the cached data */
+    mlt_cache cache; /**< a reference to the cache to which this belongs */
+    void *object; /**< a parent object to the cache data that uniquely identifies this cached item */
+    void *data;   /**< the opaque pointer to the cached data */
+    int size;     /**< the size of the cached data */
+    int refcount;              /**< a reference counter to control when destructor is called */
+    mlt_destructor destructor; /**< a function to release or destroy the cached data */
 } mlt_cache_item_s;
 
 /** \brief Cache class
@@ -80,17 +80,17 @@ typedef struct mlt_cache_item_s
 
 struct mlt_cache_s
 {
-	int count;             /**< the number of items currently in the cache */
-	int size;              /**< the maximum number of items permitted in the cache <= \p MAX_CACHE_SIZE */
-	int is_frames;         /**< indicates if this cache is used to cache frames */
-	void* *current;        /**< pointer to the current array of pointers */
-	void* A[ MAX_CACHE_SIZE ];
-	void* B[ MAX_CACHE_SIZE ];
-	pthread_mutex_t mutex; /**< a mutex to prevent multi-threaded race conditions */
-	mlt_properties active; /**< a list of cache items some of which may no longer
+    int count;      /**< the number of items currently in the cache */
+    int size;       /**< the maximum number of items permitted in the cache <= \p MAX_CACHE_SIZE */
+    int is_frames;  /**< indicates if this cache is used to cache frames */
+    void **current; /**< pointer to the current array of pointers */
+    void *A[MAX_CACHE_SIZE];
+    void *B[MAX_CACHE_SIZE];
+    pthread_mutex_t mutex;  /**< a mutex to prevent multi-threaded race conditions */
+    mlt_properties active;  /**< a list of cache items some of which may no longer
 	                            be in \p current but to which there are
 	                            outstanding references */
-	mlt_properties garbage;/**< a list cache items pending release. A cache item
+    mlt_properties garbage; /**< a list cache items pending release. A cache item
 	                            is copied to this list when it is updated but there
 	                            are outstanding references to the old data object. */
 };
@@ -103,11 +103,11 @@ struct mlt_cache_s
  * \return the data pointer
  */
 
-void *mlt_cache_item_data( mlt_cache_item item, int *size )
+void *mlt_cache_item_data(mlt_cache_item item, int *size)
 {
-	if ( size && item )
-		*size = item->size;
-	return item? item->data : NULL;
+    if (size && item)
+        *size = item->size;
+    return item ? item->data : NULL;
 }
 
 /** Close a cache item given its parent object pointer.
@@ -118,54 +118,59 @@ void *mlt_cache_item_data( mlt_cache_item item, int *size )
  * \param data the data object, which might be in the garbage list (optional)
  */
 
-static void cache_object_close( mlt_cache cache, void *object, void* data )
+static void cache_object_close(mlt_cache cache, void *object, void *data)
 {
-	char key[19];
+    char key[19];
 
-	if ( cache->is_frames )
-	{
-		// Frame caches are easy - just close the object as mlt_frame.
-		mlt_frame_close( object );
-		return;
-	}
+    if (cache->is_frames) {
+        // Frame caches are easy - just close the object as mlt_frame.
+        mlt_frame_close(object);
+        return;
+    }
 
-	// Fetch the cache item from the active list by its owner's address
-	sprintf( key, "%p", object );
-	mlt_cache_item item = mlt_properties_get_data( cache->active, key, NULL );
-	if ( item )
-	{
-		mlt_log( NULL, MLT_LOG_DEBUG, "%s: item %p object %p data %p refcount %d\n", __FUNCTION__,
-			item, item->object, item->data, item->refcount );
-		if ( item->destructor && --item->refcount <= 0 )
-		{
-			// Destroy the data object
-			item->destructor( item->data );
-			item->data = NULL;
-			item->destructor = NULL;
-			// Do not dispose of the cache item because it could likely be used
-			// again.
-		}
-	}
+    // Fetch the cache item from the active list by its owner's address
+    sprintf(key, "%p", object);
+    mlt_cache_item item = mlt_properties_get_data(cache->active, key, NULL);
+    if (item) {
+        mlt_log(NULL,
+                MLT_LOG_DEBUG,
+                "%s: item %p object %p data %p refcount %d\n",
+                __FUNCTION__,
+                item,
+                item->object,
+                item->data,
+                item->refcount);
+        if (item->destructor && --item->refcount <= 0) {
+            // Destroy the data object
+            item->destructor(item->data);
+            item->data = NULL;
+            item->destructor = NULL;
+            // Do not dispose of the cache item because it could likely be used
+            // again.
+        }
+    }
 
-	// Fetch the cache item from the garbage collection by its data address
-	if ( data )
-	{
-		sprintf( key, "%p", data );
-		item = mlt_properties_get_data( cache->garbage, key, NULL );
-		if ( item )
-		{
-			mlt_log( NULL, MLT_LOG_DEBUG, "collecting garbage item %p object %p data %p refcount %d\n",
-				item, item->object, item->data, item->refcount );
-			if ( item->destructor && --item->refcount <= 0 )
-			{
-				item->destructor( item->data );
-				item->data = NULL;
-				item->destructor = NULL;
-				// We do not need the garbage-collected cache item
-				mlt_properties_set_data( cache->garbage, key, NULL, 0, NULL, NULL );
-			}
-		}
-	}
+    // Fetch the cache item from the garbage collection by its data address
+    if (data) {
+        sprintf(key, "%p", data);
+        item = mlt_properties_get_data(cache->garbage, key, NULL);
+        if (item) {
+            mlt_log(NULL,
+                    MLT_LOG_DEBUG,
+                    "collecting garbage item %p object %p data %p refcount %d\n",
+                    item,
+                    item->object,
+                    item->data,
+                    item->refcount);
+            if (item->destructor && --item->refcount <= 0) {
+                item->destructor(item->data);
+                item->data = NULL;
+                item->destructor = NULL;
+                // We do not need the garbage-collected cache item
+                mlt_properties_set_data(cache->garbage, key, NULL, 0, NULL, NULL);
+            }
+        }
+    }
 }
 
 /** Close a cache item.
@@ -177,14 +182,13 @@ static void cache_object_close( mlt_cache cache, void *object, void* data )
  * \param item a cache item
  */
 
-void mlt_cache_item_close( mlt_cache_item item )
+void mlt_cache_item_close(mlt_cache_item item)
 {
-	if ( item )
-	{
-		pthread_mutex_lock( &item->cache->mutex );
-		cache_object_close( item->cache, item->object, item->data );
-		pthread_mutex_unlock( &item->cache->mutex );
-	}
+    if (item) {
+        pthread_mutex_lock(&item->cache->mutex);
+        cache_object_close(item->cache, item->object, item->data);
+        pthread_mutex_unlock(&item->cache->mutex);
+    }
 }
 
 /** Create a new cache.
@@ -196,16 +200,15 @@ void mlt_cache_item_close( mlt_cache_item item )
 
 mlt_cache mlt_cache_init()
 {
-	mlt_cache result = calloc( 1, sizeof( struct mlt_cache_s ) );
-	if ( result )
-	{
-		result->size = DEFAULT_CACHE_SIZE;
-		result->current = result->A;
-		pthread_mutex_init( &result->mutex, NULL );
-		result->active = mlt_properties_new();
-		result->garbage = mlt_properties_new();
-	}
-	return result;
+    mlt_cache result = calloc(1, sizeof(struct mlt_cache_s));
+    if (result) {
+        result->size = DEFAULT_CACHE_SIZE;
+        result->current = result->A;
+        pthread_mutex_init(&result->mutex, NULL);
+        result->active = mlt_properties_new();
+        result->garbage = mlt_properties_new();
+    }
+    return result;
 }
 
 /** Set the number of items to cache.
@@ -217,10 +220,10 @@ mlt_cache mlt_cache_init()
  * \param size the new size of the cache
  */
 
-void mlt_cache_set_size( mlt_cache cache, int size )
+void mlt_cache_set_size(mlt_cache cache, int size)
 {
-	if ( size <= MAX_CACHE_SIZE )
-		cache->size = size;
+    if (size <= MAX_CACHE_SIZE)
+        cache->size = size;
 }
 
 /** Get the number of possible cache items.
@@ -230,7 +233,7 @@ void mlt_cache_set_size( mlt_cache cache, int size )
  * \return the current maximum size of the cache
  */
 
-int mlt_cache_get_size( mlt_cache cache )
+int mlt_cache_get_size(mlt_cache cache)
 {
     return cache->size;
 }
@@ -241,21 +244,19 @@ int mlt_cache_get_size( mlt_cache cache )
  * \param cache the cache to destroy
  */
 
-void mlt_cache_close( mlt_cache cache )
+void mlt_cache_close(mlt_cache cache)
 {
-	if ( cache )
-	{
-		while ( cache->count-- )
-		{
-			void *object = cache->current[ cache->count ];
-			mlt_log( NULL, MLT_LOG_DEBUG, "%s: %d = %p\n", __FUNCTION__, cache->count, object );
-			cache_object_close( cache, object, NULL );
-		}
-		mlt_properties_close( cache->active );
-		mlt_properties_close( cache->garbage );
-		pthread_mutex_destroy( &cache->mutex );
-		free( cache );
-	}
+    if (cache) {
+        while (cache->count--) {
+            void *object = cache->current[cache->count];
+            mlt_log(NULL, MLT_LOG_DEBUG, "%s: %d = %p\n", __FUNCTION__, cache->count, object);
+            cache_object_close(cache, object, NULL);
+        }
+        mlt_properties_close(cache->active);
+        mlt_properties_close(cache->garbage);
+        pthread_mutex_destroy(&cache->mutex);
+        free(cache);
+    }
 }
 
 /** Remove cache entries for an object.
@@ -265,32 +266,28 @@ void mlt_cache_close( mlt_cache cache )
  * \param object the object that owns the cached data
  */
 
-void mlt_cache_purge( mlt_cache cache, void *object )
+void mlt_cache_purge(mlt_cache cache, void *object)
 {
-	if (!cache) return;
-	pthread_mutex_lock( &cache->mutex );
-	if ( cache && object )
-	{
-		int i, j;
-		void **alt = cache->current == cache->A ? cache->B : cache->A;
+    if (!cache)
+        return;
+    pthread_mutex_lock(&cache->mutex);
+    if (cache && object) {
+        int i, j;
+        void **alt = cache->current == cache->A ? cache->B : cache->A;
 
-		for ( i = 0, j = 0; i < cache->count; i++ )
-		{
-			void *o = cache->current[ i ];
+        for (i = 0, j = 0; i < cache->count; i++) {
+            void *o = cache->current[i];
 
-			if ( o == object )
-			{
-				cache_object_close( cache, o, NULL );
-			}
-			else
-			{
-				alt[ j++ ] = o;
-			}
-		}
-		cache->count = j;
-		cache->current = alt;
-	}
-	pthread_mutex_unlock( &cache->mutex );
+            if (o == object) {
+                cache_object_close(cache, o, NULL);
+            } else {
+                alt[j++] = o;
+            }
+        }
+        cache->count = j;
+        cache->current = alt;
+    }
+    pthread_mutex_unlock(&cache->mutex);
 }
 
 /** Shuffle the cache entries between the two arrays and return the cache entry for an object.
@@ -301,47 +298,41 @@ void mlt_cache_purge( mlt_cache cache, void *object )
  * \return a cache entry if there was a hit or NULL for a miss
  */
 
-static void** shuffle_get_hit( mlt_cache cache, void *object )
+static void **shuffle_get_hit(mlt_cache cache, void *object)
 {
-	int i = cache->count;
-	int j = cache->count - 1;
-	void **hit = NULL;
-	void **alt = cache->current == cache->A ? cache->B : cache->A;
+    int i = cache->count;
+    int j = cache->count - 1;
+    void **hit = NULL;
+    void **alt = cache->current == cache->A ? cache->B : cache->A;
 
-	if ( cache->count > 0 && cache->count < cache->size )
-	{
-		// first determine if we have a hit
-		while ( i-- && !hit )
-		{
-			void **o = &cache->current[ i ];
-			if ( *o == object )
-				hit = o;
-		}
-		// if there was no hit, we will not be shuffling out an entry
-		// and are still filling the cache
-		if ( !hit )
-			++j;
-		// reset these
-		i = cache->count;
-		hit = NULL;
-	}
+    if (cache->count > 0 && cache->count < cache->size) {
+        // first determine if we have a hit
+        while (i-- && !hit) {
+            void **o = &cache->current[i];
+            if (*o == object)
+                hit = o;
+        }
+        // if there was no hit, we will not be shuffling out an entry
+        // and are still filling the cache
+        if (!hit)
+            ++j;
+        // reset these
+        i = cache->count;
+        hit = NULL;
+    }
 
-	// shuffle the existing entries to the alternate array
-	while ( i-- )
-	{
-		void **o = &cache->current[ i ];
+    // shuffle the existing entries to the alternate array
+    while (i--) {
+        void **o = &cache->current[i];
 
-		if ( !hit && *o == object )
-		{
-			hit = o;
-		}
-		else if ( j > 0 )
-		{
-			alt[ --j ] = *o;
-// 			mlt_log( NULL, MLT_LOG_DEBUG, "%s: shuffle %d = %p\n", __FUNCTION__, j, alt[j] );
-		}
-	}
-	return hit;
+        if (!hit && *o == object) {
+            hit = o;
+        } else if (j > 0) {
+            alt[--j] = *o;
+            // 			mlt_log( NULL, MLT_LOG_DEBUG, "%s: shuffle %d = %p\n", __FUNCTION__, j, alt[j] );
+        }
+    }
+    return hit;
 }
 
 /** Put a chunk of data in the cache.
@@ -359,75 +350,76 @@ static void** shuffle_get_hit( mlt_cache cache, void *object )
  * \param destructor a pointer to a function that can destroy or release a reference to the data.
  */
 
-void mlt_cache_put( mlt_cache cache, void *object, void* data, int size, mlt_destructor destructor )
+void mlt_cache_put(mlt_cache cache, void *object, void *data, int size, mlt_destructor destructor)
 {
-	pthread_mutex_lock( &cache->mutex );
-	void **hit = shuffle_get_hit( cache, object );
-	void **alt = cache->current == cache->A ? cache->B : cache->A;
+    pthread_mutex_lock(&cache->mutex);
+    void **hit = shuffle_get_hit(cache, object);
+    void **alt = cache->current == cache->A ? cache->B : cache->A;
 
-	// add the object to the cache
-	if ( hit )
-	{
-		// release the old data
-		cache_object_close( cache, *hit, NULL );
-		// the MRU end gets the updated data
-		hit = &alt[ cache->count - 1 ];
-	}
-	else if ( cache->count < cache->size )
-	{
-		// more room in cache, add it to MRU end
-		hit = &alt[ cache->count++ ];
-	}
-	else
-	{
-		// release the entry at the LRU end
-		cache_object_close( cache, cache->current[0], NULL );
+    // add the object to the cache
+    if (hit) {
+        // release the old data
+        cache_object_close(cache, *hit, NULL);
+        // the MRU end gets the updated data
+        hit = &alt[cache->count - 1];
+    } else if (cache->count < cache->size) {
+        // more room in cache, add it to MRU end
+        hit = &alt[cache->count++];
+    } else {
+        // release the entry at the LRU end
+        cache_object_close(cache, cache->current[0], NULL);
 
-		// The MRU end gets the new item
-		hit = &alt[ cache->count - 1 ];
-	}
-	*hit = object;
-	mlt_log( NULL, MLT_LOG_DEBUG, "%s: put %d = %p, %p\n", __FUNCTION__, cache->count - 1, object, data );
+        // The MRU end gets the new item
+        hit = &alt[cache->count - 1];
+    }
+    *hit = object;
+    mlt_log(NULL,
+            MLT_LOG_DEBUG,
+            "%s: put %d = %p, %p\n",
+            __FUNCTION__,
+            cache->count - 1,
+            object,
+            data);
 
-	// Fetch the cache item
-	char key[19];
-	sprintf( key, "%p", object );
-	mlt_cache_item item = mlt_properties_get_data( cache->active, key, NULL );
-	if ( !item )
-	{
-		item = calloc( 1, sizeof( mlt_cache_item_s ) );
-		if ( item )
-			mlt_properties_set_data( cache->active, key, item, 0, free, NULL );
-	}
-	if ( item )
-	{
-		// If updating the cache item but not all references are released
-		// copy the item to the garbage collection.
-		if ( item->refcount > 0 && item->data )
-		{
-			mlt_cache_item orphan = calloc( 1, sizeof( mlt_cache_item_s ) );
-			if ( orphan )
-			{
-				mlt_log( NULL, MLT_LOG_DEBUG, "adding to garbage collection object %p data %p\n", item->object, item->data );
-				*orphan = *item;
-				sprintf( key, "%p", orphan->data );
-				// We store in the garbage collection by data address, not the owner's!
-				mlt_properties_set_data( cache->garbage, key, orphan, 0, free, NULL );
-			}
-		}
+    // Fetch the cache item
+    char key[19];
+    sprintf(key, "%p", object);
+    mlt_cache_item item = mlt_properties_get_data(cache->active, key, NULL);
+    if (!item) {
+        item = calloc(1, sizeof(mlt_cache_item_s));
+        if (item)
+            mlt_properties_set_data(cache->active, key, item, 0, free, NULL);
+    }
+    if (item) {
+        // If updating the cache item but not all references are released
+        // copy the item to the garbage collection.
+        if (item->refcount > 0 && item->data) {
+            mlt_cache_item orphan = calloc(1, sizeof(mlt_cache_item_s));
+            if (orphan) {
+                mlt_log(NULL,
+                        MLT_LOG_DEBUG,
+                        "adding to garbage collection object %p data %p\n",
+                        item->object,
+                        item->data);
+                *orphan = *item;
+                sprintf(key, "%p", orphan->data);
+                // We store in the garbage collection by data address, not the owner's!
+                mlt_properties_set_data(cache->garbage, key, orphan, 0, free, NULL);
+            }
+        }
 
-		// Set/update the cache item
-		item->cache = cache;
-		item->object = object;
-		item->data = data;
-		item->size = size;
-		item->destructor = destructor;
-		item->refcount = 1;
-	}
-	
-	// swap the current array
-	cache->current = alt;
-	pthread_mutex_unlock( &cache->mutex );
+        // Set/update the cache item
+        item->cache = cache;
+        item->object = object;
+        item->data = data;
+        item->size = size;
+        item->destructor = destructor;
+        item->refcount = 1;
+    }
+
+    // swap the current array
+    cache->current = alt;
+    pthread_mutex_unlock(&cache->mutex);
 }
 
 /** Get a chunk of data from the cache.
@@ -438,34 +430,38 @@ void mlt_cache_put( mlt_cache cache, void *object, void* data, int size, mlt_des
  * \return a mlt_cache_item if found or NULL if not found or has been flushed from the cache
  */
 
-mlt_cache_item mlt_cache_get( mlt_cache cache, void *object )
+mlt_cache_item mlt_cache_get(mlt_cache cache, void *object)
 {
-	mlt_cache_item result = NULL;
-	pthread_mutex_lock( &cache->mutex );
-	void **hit = shuffle_get_hit( cache, object );
-	void **alt = cache->current == cache->A ? cache->B : cache->A;
+    mlt_cache_item result = NULL;
+    pthread_mutex_lock(&cache->mutex);
+    void **hit = shuffle_get_hit(cache, object);
+    void **alt = cache->current == cache->A ? cache->B : cache->A;
 
-	if ( hit )
-	{
-		// copy the hit to the MRU end
-		alt[ cache->count - 1 ] = *hit;
-		hit = &alt[ cache->count - 1 ];
+    if (hit) {
+        // copy the hit to the MRU end
+        alt[cache->count - 1] = *hit;
+        hit = &alt[cache->count - 1];
 
-		char key[19];
-		sprintf( key, "%p", *hit );
-		result = mlt_properties_get_data( cache->active, key, NULL );
-		if ( result && result->data )
-		{
-			result->refcount++;
-			mlt_log( NULL, MLT_LOG_DEBUG, "%s: get %d = %p, %p\n", __FUNCTION__, cache->count - 1, *hit, result->data );
-		}
+        char key[19];
+        sprintf(key, "%p", *hit);
+        result = mlt_properties_get_data(cache->active, key, NULL);
+        if (result && result->data) {
+            result->refcount++;
+            mlt_log(NULL,
+                    MLT_LOG_DEBUG,
+                    "%s: get %d = %p, %p\n",
+                    __FUNCTION__,
+                    cache->count - 1,
+                    *hit,
+                    result->data);
+        }
 
-		// swap the current array
-		cache->current = alt;
-	}
-	pthread_mutex_unlock( &cache->mutex );
-	
-	return result;
+        // swap the current array
+        cache->current = alt;
+    }
+    pthread_mutex_unlock(&cache->mutex);
+
+    return result;
 }
 
 /** Shuffle the cache entries between the two arrays and return the frame for a position.
@@ -476,47 +472,41 @@ mlt_cache_item mlt_cache_get( mlt_cache cache, void *object )
  * \return a frame if there was a hit or NULL for a miss
  */
 
-static mlt_frame* shuffle_get_frame( mlt_cache cache, mlt_position position )
+static mlt_frame *shuffle_get_frame(mlt_cache cache, mlt_position position)
 {
-	int i = cache->count;
-	int j = cache->count - 1;
-	mlt_frame *hit = NULL;
-	mlt_frame *alt = (mlt_frame*) ( cache->current == cache->A ? cache->B : cache->A );
+    int i = cache->count;
+    int j = cache->count - 1;
+    mlt_frame *hit = NULL;
+    mlt_frame *alt = (mlt_frame *) (cache->current == cache->A ? cache->B : cache->A);
 
-	if ( cache->count > 0 && cache->count < cache->size )
-	{
-		// first determine if we have a hit
-		while ( i-- && !hit )
-		{
-			mlt_frame *o = (mlt_frame*) &cache->current[ i ];
-			if ( mlt_frame_original_position( *o ) == position )
-				hit = o;
-		}
-		// if there was no hit, we will not be shuffling out an entry
-		// and are still filling the cache
-		if ( !hit )
-			++j;
-		// reset these
-		i = cache->count;
-		hit = NULL;
-	}
+    if (cache->count > 0 && cache->count < cache->size) {
+        // first determine if we have a hit
+        while (i-- && !hit) {
+            mlt_frame *o = (mlt_frame *) &cache->current[i];
+            if (mlt_frame_original_position(*o) == position)
+                hit = o;
+        }
+        // if there was no hit, we will not be shuffling out an entry
+        // and are still filling the cache
+        if (!hit)
+            ++j;
+        // reset these
+        i = cache->count;
+        hit = NULL;
+    }
 
-	// shuffle the existing entries to the alternate array
-	while ( i-- )
-	{
-		mlt_frame *o = (mlt_frame*) &cache->current[ i ];
+    // shuffle the existing entries to the alternate array
+    while (i--) {
+        mlt_frame *o = (mlt_frame *) &cache->current[i];
 
-		if ( !hit && mlt_frame_original_position( *o ) == position )
-		{
-			hit = o;
-		}
-		else if ( j > 0 )
-		{
-			alt[ --j ] = *o;
-// 			mlt_log( NULL, MLT_LOG_DEBUG, "%s: shuffle %d = %p\n", __FUNCTION__, j, alt[j] );
-		}
-	}
-	return hit;
+        if (!hit && mlt_frame_original_position(*o) == position) {
+            hit = o;
+        } else if (j > 0) {
+            alt[--j] = *o;
+            // 			mlt_log( NULL, MLT_LOG_DEBUG, "%s: shuffle %d = %p\n", __FUNCTION__, j, alt[j] );
+        }
+    }
+    return hit;
 }
 
 /** Put a frame in the cache.
@@ -532,40 +522,35 @@ static mlt_frame* shuffle_get_frame( mlt_cache cache, mlt_position position )
  * \see mlt_frame_get_frame
  */
 
-void mlt_cache_put_frame( mlt_cache cache, mlt_frame frame )
+void mlt_cache_put_frame(mlt_cache cache, mlt_frame frame)
 {
-	pthread_mutex_lock( &cache->mutex );
-	mlt_frame *hit = shuffle_get_frame( cache, mlt_frame_original_position( frame ) );
-	mlt_frame *alt = (mlt_frame*) ( cache->current == cache->A ? cache->B : cache->A );
+    pthread_mutex_lock(&cache->mutex);
+    mlt_frame *hit = shuffle_get_frame(cache, mlt_frame_original_position(frame));
+    mlt_frame *alt = (mlt_frame *) (cache->current == cache->A ? cache->B : cache->A);
 
-	// add the frame to the cache
-	if ( hit )
-	{
-		// release the old data
-		mlt_frame_close( *hit );
-		// the MRU end gets the updated data
-		hit = &alt[ cache->count - 1 ];
-	}
-	else if ( cache->count < cache->size )
-	{
-		// more room in cache, add it to MRU end
-		hit = &alt[ cache->count++ ];
-	}
-	else
-	{
-		// release the entry at the LRU end
-		mlt_frame_close( cache->current[0] );
+    // add the frame to the cache
+    if (hit) {
+        // release the old data
+        mlt_frame_close(*hit);
+        // the MRU end gets the updated data
+        hit = &alt[cache->count - 1];
+    } else if (cache->count < cache->size) {
+        // more room in cache, add it to MRU end
+        hit = &alt[cache->count++];
+    } else {
+        // release the entry at the LRU end
+        mlt_frame_close(cache->current[0]);
 
-		// The MRU end gets the new item
-		hit = &alt[ cache->count - 1 ];
-	}
-	*hit = mlt_frame_clone( frame, 1 );
-	mlt_log( NULL, MLT_LOG_DEBUG, "%s: put %d = %p\n", __FUNCTION__, cache->count - 1, frame );
+        // The MRU end gets the new item
+        hit = &alt[cache->count - 1];
+    }
+    *hit = mlt_frame_clone(frame, 1);
+    mlt_log(NULL, MLT_LOG_DEBUG, "%s: put %d = %p\n", __FUNCTION__, cache->count - 1, frame);
 
-	// swap the current array
-	cache->current = (void**) alt;
-	cache->is_frames = 1;
-	pthread_mutex_unlock( &cache->mutex );
+    // swap the current array
+    cache->current = (void **) alt;
+    cache->is_frames = 1;
+    pthread_mutex_unlock(&cache->mutex);
 }
 
 /** Get a frame from the cache.
@@ -579,26 +564,25 @@ void mlt_cache_put_frame( mlt_cache cache, mlt_frame frame )
  * \see mlt_frame_put_frame
  */
 
-mlt_frame mlt_cache_get_frame( mlt_cache cache, mlt_position position )
+mlt_frame mlt_cache_get_frame(mlt_cache cache, mlt_position position)
 {
-	mlt_frame result = NULL;
-	pthread_mutex_lock( &cache->mutex );
-	mlt_frame *hit = shuffle_get_frame( cache, position );
-	mlt_frame *alt = (mlt_frame*) ( cache->current == cache->A ? cache->B : cache->A );
+    mlt_frame result = NULL;
+    pthread_mutex_lock(&cache->mutex);
+    mlt_frame *hit = shuffle_get_frame(cache, position);
+    mlt_frame *alt = (mlt_frame *) (cache->current == cache->A ? cache->B : cache->A);
 
-	if ( hit )
-	{
-		// copy the hit to the MRU end
-		alt[ cache->count - 1 ] = *hit;
-		hit = &alt[ cache->count - 1 ];
+    if (hit) {
+        // copy the hit to the MRU end
+        alt[cache->count - 1] = *hit;
+        hit = &alt[cache->count - 1];
 
-		result = mlt_frame_clone( *hit, 1 );
-		mlt_log( NULL, MLT_LOG_DEBUG, "%s: get %d = %p\n", __FUNCTION__, cache->count - 1, *hit );
+        result = mlt_frame_clone(*hit, 1);
+        mlt_log(NULL, MLT_LOG_DEBUG, "%s: get %d = %p\n", __FUNCTION__, cache->count - 1, *hit);
 
-		// swap the current array
-		cache->current = (void**) alt;
-	}
-	pthread_mutex_unlock( &cache->mutex );
+        // swap the current array
+        cache->current = (void **) alt;
+    }
+    pthread_mutex_unlock(&cache->mutex);
 
-	return result;
+    return result;
 }

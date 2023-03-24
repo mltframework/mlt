@@ -19,46 +19,44 @@
  */
 
 #include "MltFactory.h"
-#include "MltProducer.h"
-#include "MltFilter.h"
-#include "MltTransition.h"
 #include "MltConsumer.h"
+#include "MltFilter.h"
+#include "MltProducer.h"
 #include "MltRepository.h"
+#include "MltTransition.h"
 using namespace Mlt;
 
-Repository *Factory::init( const char *directory )
+Repository *Factory::init(const char *directory)
 {
-	return new Repository( mlt_factory_init( directory ) );
+    return new Repository(mlt_factory_init(directory));
 }
 
-Properties *Factory::event_object( )
+Properties *Factory::event_object()
 {
-	return new Properties( mlt_factory_event_object( ) );
+    return new Properties(mlt_factory_event_object());
 }
 
-Producer *Factory::producer( Profile& profile, char *id, char *arg )
+Producer *Factory::producer(Profile &profile, char *id, char *arg)
 {
-	return new Producer( profile, id, arg );
+    return new Producer(profile, id, arg);
 }
 
-Filter *Factory::filter( Profile& profile, char *id, char *arg )
+Filter *Factory::filter(Profile &profile, char *id, char *arg)
 {
-	return new Filter( profile, id, arg );
+    return new Filter(profile, id, arg);
 }
 
-Transition *Factory::transition( Profile& profile, char *id, char *arg )
+Transition *Factory::transition(Profile &profile, char *id, char *arg)
 {
-	return new Transition( profile, id, arg );
+    return new Transition(profile, id, arg);
 }
 
-Consumer *Factory::consumer( Profile& profile, char *id, char *arg )
+Consumer *Factory::consumer(Profile &profile, char *id, char *arg)
 {
-	return new Consumer( profile, id, arg );
+    return new Consumer(profile, id, arg);
 }
 
-void Factory::close( )
+void Factory::close()
 {
-	mlt_factory_close( );
+    mlt_factory_close();
 }
-
-

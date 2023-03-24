@@ -24,10 +24,10 @@
  */
 
 #include "typewriter.h"
-#include <string>
+#include <cmath>
 #include <cstring>
 #include <sstream>
-#include <cmath>
+#include <string>
 
 using namespace std;
 
@@ -50,17 +50,16 @@ std::string null_string;
 TypeWriter::TypeWriter()
     : frame_rate(25)
     , frame_step(1)
-    , parsing_err(0), last_used_idx(-1)
-{
-}
-
+    , parsing_err(0)
+    , last_used_idx(-1)
+{}
 
 void TypeWriter::clear()
 {
     frames.clear();
 }
 
-void TypeWriter::setPattern(const std::string& str)
+void TypeWriter::setPattern(const std::string &str)
 {
     raw_string = str;
     frames.reserve(raw_string.length());
@@ -82,13 +81,10 @@ int TypeWriter::parse()
 
 void TypeWriter::printParseResult()
 {
-    if (parsing_err < 0)
-    {
-        fprintf(stderr, "Parsing error:\n%.*s\n", -parsing_err-1, raw_string.c_str());
-        fprintf(stderr, "%*c%c\n", -parsing_err-2, ' ', '^');
-    }
-    else
-    {
+    if (parsing_err < 0) {
+        fprintf(stderr, "Parsing error:\n%.*s\n", -parsing_err - 1, raw_string.c_str());
+        fprintf(stderr, "%*c%c\n", -parsing_err - 2, ' ', '^');
+    } else {
         printf("Parsing OK:  frames=%u  strings=%ld\n", count(), frames.size());
     }
 }
@@ -97,7 +93,6 @@ uint TypeWriter::count() const
 {
     return frames.back().frame;
 }
-
 
 uint TypeWriter::getOrInsertFrame(uint frame)
 {
@@ -108,34 +103,32 @@ uint TypeWriter::getOrInsertFrame(uint frame)
     int real_frame = frame * frame_step;
 
     uint n = frames.size();
-    if (!n)
-    {
+    if (!n) {
         int s = step_sigma > 0. ? std::round(d(gen)) : 0;
 
         if ((s + real_frame) > 0)
             real_frame += s;
         if (real_frame <= previous_total_frame)
-            real_frame = previous_total_frame+1;
+            real_frame = previous_total_frame + 1;
         previous_total_frame = real_frame;
 
         frames.push_back(Frame(frame, real_frame));
         return 0;
     }
 
-    if (frames[n-1].frame >= frame)
-        return n-1;
+    if (frames[n - 1].frame >= frame)
+        return n - 1;
 
     int s = step_sigma > 0. ? std::round(d(gen)) : 0;
 
     if ((s + real_frame) > 0)
         real_frame += s;
     if (real_frame <= previous_total_frame)
-        real_frame = previous_total_frame+1;
+        real_frame = previous_total_frame + 1;
     previous_total_frame = real_frame;
 
-
     Frame f = Frame(frame, real_frame);
-    f.s = frames[n-1].s;
+    f.s = frames[n - 1].s;
     frames.push_back(f);
 
     return n;
@@ -148,10 +141,10 @@ void TypeWriter::insertChar(char c, uint frame)
     insertString(buff, frame);
 }
 
-void TypeWriter::insertString(const std::string & str, uint frame)
+void TypeWriter::insertString(const std::string &str, uint frame)
 {
     uint n = getOrInsertFrame(frame);
-    Frame & f = frames[n];
+    Frame &f = frames[n];
     f.s.append(str);
 }
 
@@ -162,7 +155,7 @@ void TypeWriter::insertBypass(uint frame)
     addBypass(n);
 }
 
-const std::string & TypeWriter::render(uint frame)
+const std::string &TypeWriter::render(uint frame)
 {
     uint n = frames.size();
     if (!n)
@@ -181,9 +174,8 @@ const std::string & TypeWriter::render(uint frame)
     if (frames[last_used_idx].real_frame > frame)
         return null_string;
 
-    for (; last_used_idx < (int)n-1; ++last_used_idx)
-    {
-        f = frames[last_used_idx+1];
+    for (; last_used_idx < (int) n - 1; ++last_used_idx) {
+        f = frames[last_used_idx + 1];
         if (f.real_frame > frame)
             return frames[last_used_idx].s;
     }
@@ -193,8 +185,7 @@ const std::string & TypeWriter::render(uint frame)
 
 void TypeWriter::addBypass(uint idx)
 {
-    if (idx == 0)
-    {
+    if (idx == 0) {
         frames[idx].s.clear();
         return;
     }
@@ -202,21 +193,17 @@ void TypeWriter::addBypass(uint idx)
     int pidx = -1;
 
     if (frames[idx].bypass == -2)
-        pidx = idx-1;
+        pidx = idx - 1;
     else
         pidx = frames[idx].bypass;
 
     if (pidx == -1)
         return;
 
-    while (true)
-    {
-        if (frames[pidx].bypass != -2)
-        {
+    while (true) {
+        if (frames[pidx].bypass != -2) {
             pidx = frames[pidx].bypass;
-        }
-        else
-        {
+        } else {
             --pidx;
             break;
         }
@@ -229,19 +216,18 @@ void TypeWriter::addBypass(uint idx)
         frames[idx].s.clear();
 }
 
-Frame::Frame(uint frame, uint real_frame) : frame(frame), real_frame(real_frame), bypass(-2)
-{
-}
+Frame::Frame(uint frame, uint real_frame)
+    : frame(frame)
+    , real_frame(real_frame)
+    , bypass(-2)
+{}
 
 void Frame::print()
 {
-    printf("%c [%d] (%d) %s %c\n",
-           true ? '-' : '|',
-           frame, real_frame, s.c_str(),
-           true ? '-' : '|');
+    printf("%c [%d] (%d) %s %c\n", true ? '-' : '|', frame, real_frame, s.c_str(), true ? '-' : '|');
 }
 
-std::string TypeWriter::detectUtf8(const std::string& str, size_t pos)
+std::string TypeWriter::detectUtf8(const std::string &str, size_t pos)
 {
     /*
      * 0x00 do 0x7F            – bits 0xxxxxxx
@@ -253,13 +239,13 @@ std::string TypeWriter::detectUtf8(const std::string& str, size_t pos)
      */
     unsigned char c = str[pos];
 
-    const unsigned char mask = 0xfc;  // largest possible utf char
+    const unsigned char mask = 0xfc; // largest possible utf char
 
     // five patterns possible
     for (int i = 0; i < 5; ++i) {
         unsigned char m = mask << i;
         if ((c & m) == m)
-            return str.substr(pos, 6-i);
+            return str.substr(pos, 6 - i);
     }
 
     return str.substr(pos, 1);
@@ -267,14 +253,18 @@ std::string TypeWriter::detectUtf8(const std::string& str, size_t pos)
 
 struct TypeWriter::ParseOptions
 {
-    ParseOptions() : n(0), fskip(0), sskip(0) {}
+    ParseOptions()
+        : n(0)
+        , fskip(0)
+        , sskip(0)
+    {}
 
     uint n;
     uint fskip;
     uint sskip;
 };
 
-uint TypeWriter::getFrameSkipFromOptions(const ParseOptions & po, bool steps)
+uint TypeWriter::getFrameSkipFromOptions(const ParseOptions &po, bool steps)
 {
     if (steps)
         return (po.n + po.sskip) * frame_rate;
@@ -282,7 +272,7 @@ uint TypeWriter::getFrameSkipFromOptions(const ParseOptions & po, bool steps)
         return po.sskip * frame_rate + po.fskip + po.n;
 }
 
-int TypeWriter::parseString(const std::string& line, int start_frame)
+int TypeWriter::parseString(const std::string &line, int start_frame)
 {
     size_t limit = line.length();
 
@@ -292,33 +282,25 @@ int TypeWriter::parseString(const std::string& line, int start_frame)
     char check_for_options = 0;
     bool was_escaped = false;
     uint i = 0;
-    while (i < limit)
-    {
+    while (i < limit) {
         was_escaped = false;
         check_for_options = 0;
 
         char c = line[i];
-        if (c == escape_char)
-        {
+        if (c == escape_char) {
             ++i;
             c = line[i];
             if (!c)
-                return -i-1;
+                return -i - 1;
 
             was_escaped = true;
-        }
-        else if (c == nextframe_char)
-        {
-            ++frame;    // increase frame number
+        } else if (c == nextframe_char) {
+            ++frame; // increase frame number
             check_for_options = nextframe_char;
-        }
-        else if (c == nextstep_char)
-        {
+        } else if (c == nextstep_char) {
             frame += frame_rate;
             check_for_options = nextstep_char;
-        }
-        else if (c == macro_char)
-        {
+        } else if (c == macro_char) {
             ++i;
             int ret = parseMacro(line, i, frame);
             if (ret < 0)
@@ -327,27 +309,22 @@ int TypeWriter::parseString(const std::string& line, int start_frame)
             continue;
         }
 
-        if (check_for_options)
-        {
+        if (check_for_options) {
             // get next char and check whether it is an option
             ++i;
             c = line[i];
 
             ParseOptions po;
             int ret = parseOptions(line, i, po);
-            if (ret < 0)
-            {
+            if (ret < 0) {
                 return ret;
             }
 
             uint n = getFrameSkipFromOptions(po, check_for_options == nextstep_char);
-            if (check_for_options == nextframe_char)
-            {
+            if (check_for_options == nextframe_char) {
                 if (n > 0)
                     frame += (n - 1);
-            }
-            else if (check_for_options == nextstep_char)
-            {
+            } else if (check_for_options == nextstep_char) {
                 if (n > 0)
                     frame += (n - frame_rate);
             }
@@ -356,8 +333,7 @@ int TypeWriter::parseString(const std::string& line, int start_frame)
         }
 
         // append values
-        if (!was_escaped and c == delkey_char)
-        {
+        if (!was_escaped and c == delkey_char) {
             // get next char and check whether it is an option
             ++i;
             c = line[i];
@@ -365,18 +341,14 @@ int TypeWriter::parseString(const std::string& line, int start_frame)
             ParseOptions po;
             po.n = 1;
             int ret = parseOptions(line, i, po);
-            if (ret < 0)
-            {
+            if (ret < 0) {
                 return ret;
             }
 
             for (uint i = 0; i < po.n; ++i)
                 insertBypass(frame);
-        }
-        else
-        {
-            if (was_escaped)
-            {
+        } else {
+            if (was_escaped) {
                 if (c == 'n')
                     c = '\n';
                 else if (c == 't')
@@ -391,7 +363,7 @@ int TypeWriter::parseString(const std::string& line, int start_frame)
     return frame;
 }
 
-int TypeWriter::parseOptions(const std::string& line, uint & i, ParseOptions & po)
+int TypeWriter::parseOptions(const std::string &line, uint &i, ParseOptions &po)
 {
     char c = line[i];
     if (c != optbeg_char)
@@ -400,37 +372,29 @@ int TypeWriter::parseOptions(const std::string& line, uint & i, ParseOptions & p
     ++i;
     c = line[i];
 
-    int n = 0;  // stores number of frames to skip
+    int n = 0; // stores number of frames to skip
 
-    while (c != optend_char and c)
-    {
+    while (c != optend_char and c) {
         // if is digit then add to frames skip number
-        if (isdigit(c))
-        {
+        if (isdigit(c)) {
             int v = c - 48; // quick conv from char to int
-            n = n*10 + v;
+            n = n * 10 + v;
         }
         // s if for seconds: mult frames by f. rate
-        else if (c == 's')
-        {
+        else if (c == 's') {
             po.sskip = n;
             n = 0;
         }
         // just frames
-        else if (c == 'f')
-        {
+        else if (c == 'f') {
             po.fskip = n;
             n = 0;
-        }
-        else if (c == ',')
-        {
+        } else if (c == ',') {
             if (n)
                 po.n = n;
-        }
-        else
-        {
+        } else {
             // unknown char, return error
-            return -i-1;
+            return -i - 1;
         }
 
         ++i;
@@ -445,20 +409,19 @@ int TypeWriter::parseOptions(const std::string& line, uint & i, ParseOptions & p
     return i;
 }
 
-int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
+int TypeWriter::parseMacro(const std::string &line, uint &i, uint &frame)
 {
     std::vector<std::string> string_list;
     uint n = 0;
     char c = line[i];
-    if (c == 'c')   // split by characters
+    if (c == 'c') // split by characters
     {
         ++i;
 
         // calculate skip from options
         ParseOptions po;
         int ret = parseOptions(line, i, po);
-        if (ret < 0)
-        {
+        if (ret < 0) {
             return ret;
         }
         n = getFrameSkipFromOptions(po);
@@ -468,19 +431,17 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
         c = line[i];
 
         if (c != rangebeg_char)
-            return -i-1;
+            return -i - 1;
 
         ++i;
         c = line[i];
 
-        while (c != rangeend_char and c)
-        {
-            if (c == escape_char)
-            {
+        while (c != rangeend_char and c) {
+            if (c == escape_char) {
                 ++i;
                 c = line[i];
                 if (!c)
-                    return -i-1;
+                    return -i - 1;
             }
 
             std::string test_str = detectUtf8(line, i);
@@ -490,16 +451,14 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
             i += test_str.length();
             c = line[i];
         }
-    }
-    else if (c == 'w')   // split by words
+    } else if (c == 'w') // split by words
     {
         ++i;
 
         // calculate skip from options
         ParseOptions po;
         int ret = parseOptions(line, i, po);
-        if (ret < 0)
-        {
+        if (ret < 0) {
             return ret;
         }
         n = getFrameSkipFromOptions(po);
@@ -509,33 +468,31 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
         c = line[i];
 
         if (c != rangebeg_char)
-            return -i-1;
+            return -i - 1;
 
         ++i;
         c = line[i];
 
         size_t i_end = i;
-        while (true)
-        {
+        while (true) {
             // search for range end
             i_end = line.find_first_of(rangeend_char, i_end);
 
             // if end of string, error
             if (i_end == line.npos)
-                return -i_end-1;
+                return -i_end - 1;
 
             // check if endrange char is not escaped
-            if (line[i_end-1] != escape_char or line[i_end-2] == escape_char)
+            if (line[i_end - 1] != escape_char or line[i_end - 2] == escape_char)
                 break;
 
             ++i_end;
         }
 
-        std::string substr = line.substr(i, i_end-i);
+        std::string substr = line.substr(i, i_end - i);
 
         size_t pos = 0;
-        while (true)
-        {
+        while (true) {
             pos = substr.find_first_of(escape_char, pos);
             if (pos == substr.npos)
                 break;
@@ -545,19 +502,15 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
         pos = 0;
         size_t pos2 = 0;
         std::string s;
-        while (pos2 != substr.npos)
-        {
+        while (pos2 != substr.npos) {
             pos2 = substr.find_first_of(" \t\n", pos);
-            if (pos2 != substr.npos)
-            {
+            if (pos2 != substr.npos) {
                 pos2 = substr.find_first_not_of(" \t\n", pos2);
                 if (pos2 != substr.npos)
-                    s = substr.substr(pos, pos2-pos);
+                    s = substr.substr(pos, pos2 - pos);
                 else
                     s = substr.substr(pos, -1);
-            }
-            else
-            {
+            } else {
                 s = substr.substr(pos, -1);
             }
 
@@ -567,16 +520,14 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
         }
         i = i_end;
         ++i;
-    }
-    else if (c == 'l')   // split by lines
+    } else if (c == 'l') // split by lines
     {
         ++i;
 
         // calculate skip from options
         ParseOptions po;
         int ret = parseOptions(line, i, po);
-        if (ret < 0)
-        {
+        if (ret < 0) {
             return ret;
         }
         n = getFrameSkipFromOptions(po);
@@ -586,33 +537,31 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
         c = line[i];
 
         if (c != rangebeg_char)
-            return -i-1;
+            return -i - 1;
 
         ++i;
         c = line[i];
 
         size_t i_end = i;
-        while (true)
-        {
+        while (true) {
             // search for range end
             i_end = line.find_first_of(rangeend_char, i_end);
 
             // if end of string, error
             if (i_end == line.npos)
-                return -i_end-1;
+                return -i_end - 1;
 
             // check if endrange char is not escaped
-            if (line[i_end-1] != escape_char or line[i_end-2] == escape_char)
+            if (line[i_end - 1] != escape_char or line[i_end - 2] == escape_char)
                 break;
 
             ++i_end;
         }
 
-        std::string substr = line.substr(i, i_end-i);
+        std::string substr = line.substr(i, i_end - i);
 
         size_t pos = 0;
-        while (true)
-        {
+        while (true) {
             pos = substr.find_first_of(escape_char, pos);
             if (pos == substr.npos)
                 break;
@@ -622,19 +571,15 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
         pos = 0;
         size_t pos2 = 0;
         std::string s;
-        while (pos2 != substr.npos)
-        {
+        while (pos2 != substr.npos) {
             pos2 = substr.find_first_of("\n", pos);
-            if (pos2 != substr.npos)
-            {
+            if (pos2 != substr.npos) {
                 pos2 = substr.find_first_not_of("\n", pos2);
                 if (pos2 != substr.npos)
-                    s = substr.substr(pos, pos2-pos);
+                    s = substr.substr(pos, pos2 - pos);
                 else
                     s = substr.substr(pos, -1);
-            }
-            else
-            {
+            } else {
                 s = substr.substr(pos, -1);
             }
 
@@ -644,10 +589,9 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
         }
         i = i_end;
         ++i;
-    }
-    else    // error
+    } else // error
     {
-        return -i-1;
+        return -i - 1;
     }
 
     ++i;
@@ -658,26 +602,21 @@ int TypeWriter::parseMacro(const std::string& line, uint & i, uint & frame)
  XML Parser related stuff
 *======================================================================*/
 
-char* clone_string(const char* string) {
-    char* new_string = new char[strlen(string)+1];
+char *clone_string(const char *string)
+{
+    char *new_string = new char[strlen(string) + 1];
     if (new_string)
         strcpy(new_string, string);
     return new_string;
 }
 
-XmlParser::XmlParser()
-{
-}
+XmlParser::XmlParser() {}
 
-XmlParser::~XmlParser()
-{
-}
+XmlParser::~XmlParser() {}
 
-void XmlParser::clear()
-{
-}
+void XmlParser::clear() {}
 
-void XmlParser::setDocument(const char * xml)
+void XmlParser::setDocument(const char *xml)
 {
     clear();
     doc = QString::fromUtf8(xml);
@@ -692,13 +631,11 @@ int XmlParser::parse()
 {
     node_vec.clear();
 
-    for (int i = 0; i < items.count(); ++i)
-    {
-        QDomNode node = items.item( i );
+    for (int i = 0; i < items.count(); ++i) {
+        QDomNode node = items.item(i);
         QDomNamedNodeMap nodeAttributes = node.attributes();
-        if ( nodeAttributes.namedItem( "type" ).nodeValue() == "QGraphicsTextItem" )
-        {
-            QDomNode lnode = node.namedItem( "content" ).firstChild();
+        if (nodeAttributes.namedItem("type").nodeValue() == "QGraphicsTextItem") {
+            QDomNode lnode = node.namedItem("content").firstChild();
             node_vec.push_back(lnode);
         }
     }
@@ -714,7 +651,7 @@ QString XmlParser::getNodeContent(uint i) const
     return node_vec[i].nodeValue();
 }
 
-void XmlParser::setNodeContent(uint i, const QString & content)
+void XmlParser::setNodeContent(uint i, const QString &content)
 {
     if (i >= node_vec.size())
         return;

@@ -32,33 +32,33 @@
  * \param b the second object
  * \returns 0 if equal, < 0 if a < b, or > 0 if a > b
 */
-typedef int ( *mlt_deque_compare )( void *a, void *b );
+typedef int (*mlt_deque_compare)(void *a, void *b);
 
-extern mlt_deque mlt_deque_init( );
-extern int mlt_deque_count( mlt_deque self );
-extern int mlt_deque_push_back( mlt_deque self, void *item );
-extern void *mlt_deque_pop_back( mlt_deque self );
-extern int mlt_deque_push_front( mlt_deque self, void *item );
-extern void *mlt_deque_pop_front( mlt_deque self );
-extern void *mlt_deque_peek_back( mlt_deque self );
-extern void *mlt_deque_peek_front( mlt_deque self );
-extern void *mlt_deque_peek( mlt_deque self, int index );
-extern int mlt_deque_insert( mlt_deque self, void *item, mlt_deque_compare );
+extern mlt_deque mlt_deque_init();
+extern int mlt_deque_count(mlt_deque self);
+extern int mlt_deque_push_back(mlt_deque self, void *item);
+extern void *mlt_deque_pop_back(mlt_deque self);
+extern int mlt_deque_push_front(mlt_deque self, void *item);
+extern void *mlt_deque_pop_front(mlt_deque self);
+extern void *mlt_deque_peek_back(mlt_deque self);
+extern void *mlt_deque_peek_front(mlt_deque self);
+extern void *mlt_deque_peek(mlt_deque self, int index);
+extern int mlt_deque_insert(mlt_deque self, void *item, mlt_deque_compare);
 
-extern int mlt_deque_push_back_int( mlt_deque self, int item );
-extern int mlt_deque_pop_back_int( mlt_deque self );
-extern int mlt_deque_push_front_int( mlt_deque self, int item );
-extern int mlt_deque_pop_front_int( mlt_deque self );
-extern int mlt_deque_peek_back_int( mlt_deque self );
-extern int mlt_deque_peek_front_int( mlt_deque self );
+extern int mlt_deque_push_back_int(mlt_deque self, int item);
+extern int mlt_deque_pop_back_int(mlt_deque self);
+extern int mlt_deque_push_front_int(mlt_deque self, int item);
+extern int mlt_deque_pop_front_int(mlt_deque self);
+extern int mlt_deque_peek_back_int(mlt_deque self);
+extern int mlt_deque_peek_front_int(mlt_deque self);
 
-extern int mlt_deque_push_back_double( mlt_deque self, double item );
-extern double mlt_deque_pop_back_double( mlt_deque self );
-extern int mlt_deque_push_front_double( mlt_deque self, double item );
-extern double mlt_deque_pop_front_double( mlt_deque self );
-extern double mlt_deque_peek_back_double( mlt_deque self );
-extern double mlt_deque_peek_front_double( mlt_deque self );
+extern int mlt_deque_push_back_double(mlt_deque self, double item);
+extern double mlt_deque_pop_back_double(mlt_deque self);
+extern int mlt_deque_push_front_double(mlt_deque self, double item);
+extern double mlt_deque_pop_front_double(mlt_deque self);
+extern double mlt_deque_peek_back_double(mlt_deque self);
+extern double mlt_deque_peek_front_double(mlt_deque self);
 
-extern void mlt_deque_close( mlt_deque self );
+extern void mlt_deque_close(mlt_deque self);
 
 #endif

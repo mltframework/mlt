@@ -17,33 +17,54 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string.h>
-#include <limits.h>
-#include <framework/mlt.h>
 #include <SDL_version.h>
+#include <framework/mlt.h>
+#include <limits.h>
+#include <string.h>
 
-extern mlt_consumer consumer_sdl_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_consumer consumer_sdl_audio_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_sdl_init(mlt_profile profile,
+                                      mlt_service_type type,
+                                      const char *id,
+                                      char *arg);
+extern mlt_consumer consumer_sdl_audio_init(mlt_profile profile,
+                                            mlt_service_type type,
+                                            const char *id,
+                                            char *arg);
 
-extern mlt_consumer consumer_sdl_still_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
-extern mlt_consumer consumer_sdl_preview_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_consumer consumer_sdl_still_init(mlt_profile profile,
+                                            mlt_service_type type,
+                                            const char *id,
+                                            char *arg);
+extern mlt_consumer consumer_sdl_preview_init(mlt_profile profile,
+                                              mlt_service_type type,
+                                              const char *id,
+                                              char *arg);
 
-static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
-	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/sdl/%s", mlt_environment( "MLT_DATA" ), (char*) data );
-	return mlt_properties_parse_yaml( file );
+    char file[PATH_MAX];
+    snprintf(file, PATH_MAX, "%s/sdl/%s", mlt_environment("MLT_DATA"), (char *) data);
+    return mlt_properties_parse_yaml(file);
 }
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( mlt_service_consumer_type, "sdl", consumer_sdl_init );
-	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl", metadata, "consumer_sdl.yml" );
-	MLT_REGISTER( mlt_service_consumer_type, "sdl_audio", consumer_sdl_audio_init );
-	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl_audio", metadata, "consumer_sdl_audio.yml" );
+    MLT_REGISTER(mlt_service_consumer_type, "sdl", consumer_sdl_init);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type, "sdl", metadata, "consumer_sdl.yml");
+    MLT_REGISTER(mlt_service_consumer_type, "sdl_audio", consumer_sdl_audio_init);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type,
+                          "sdl_audio",
+                          metadata,
+                          "consumer_sdl_audio.yml");
 
-	MLT_REGISTER( mlt_service_consumer_type, "sdl_preview", consumer_sdl_preview_init );
-	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl_preview", metadata, "consumer_sdl_preview.yml" );
-	MLT_REGISTER( mlt_service_consumer_type, "sdl_still", consumer_sdl_still_init );
-	MLT_REGISTER_METADATA( mlt_service_consumer_type, "sdl_still", metadata, "consumer_sdl_still.yml" );
+    MLT_REGISTER(mlt_service_consumer_type, "sdl_preview", consumer_sdl_preview_init);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type,
+                          "sdl_preview",
+                          metadata,
+                          "consumer_sdl_preview.yml");
+    MLT_REGISTER(mlt_service_consumer_type, "sdl_still", consumer_sdl_still_init);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type,
+                          "sdl_still",
+                          metadata,
+                          "consumer_sdl_still.yml");
 }

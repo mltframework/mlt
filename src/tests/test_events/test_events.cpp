@@ -16,8 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <QtTest>
 #include <QString>
+#include <QtTest>
 
 #include <mlt++/Mlt.h>
 using namespace Mlt;
@@ -28,23 +28,18 @@ class TestEvents : public QObject
 
 private:
     mlt_properties m_properties;
-    
+
 public:
     TestEvents()
         : m_properties(nullptr)
     {
         Factory::init();
     }
-    
-    
+
 private:
+    void checkOwner(mlt_properties owner) { QVERIFY(owner == m_properties); }
 
-    void checkOwner(mlt_properties owner)
-    {
-        QVERIFY(owner == m_properties);
-    }
-
-    static void onPropertyChanged(mlt_properties owner, TestEvents* self, mlt_event_data data)
+    static void onPropertyChanged(mlt_properties owner, TestEvents *self, mlt_event_data data)
     {
         QVERIFY(self != nullptr);
         QCOMPARE(Mlt::EventData(data).to_string(), "foo");
@@ -52,39 +47,41 @@ private:
     }
 
 private Q_SLOTS:
-    
+
     void ListenToPropertyChanged()
     {
         Profile profile;
         Producer producer(profile, "noise");
         QVERIFY(producer.is_valid());
-        Event* event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
+        Event *event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         m_properties = producer.get_properties();
         producer.set("foo", 1);
         delete event;
     }
-   
+
     void BlockEvent()
     {
         Profile profile;
         Producer producer(profile, "noise");
         m_properties = nullptr;
-        Event* event = producer.listen("property-changed", nullptr, (mlt_listener) onPropertyChanged);
+        Event *event = producer.listen("property-changed",
+                                       nullptr,
+                                       (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         event->block();
         producer.set("bar", 1);
         delete event;
     }
-  
+
     void UnblockEvent()
     {
         Profile profile;
         Producer producer(profile, "noise");
         m_properties = producer.get_properties();
-        Event* event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
+        Event *event = producer.listen("property-changed", this, (mlt_listener) onPropertyChanged);
         QVERIFY(event != nullptr);
         QVERIFY(event->is_valid());
         event->block();
@@ -93,7 +90,6 @@ private Q_SLOTS:
         producer.set("foo", 1);
         delete event;
     }
-  
 };
 
 QTEST_APPLESS_MAIN(TestEvents)

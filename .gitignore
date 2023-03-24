@@ -59,4 +59,4 @@ src/modules/qt/mltqt6_autogen/
 src/modules/glaxnimate/mltglaxnimate_autogen/
 src/modules/glaxnimate/mltglaxnimate-qt6_autogen/
 .qt/
-
+..clang-format.swp

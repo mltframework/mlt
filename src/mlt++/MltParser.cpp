@@ -21,322 +21,322 @@
 #include "Mlt.h"
 using namespace Mlt;
 
-static int on_invalid_cb( mlt_parser self, mlt_service object )
+static int on_invalid_cb(mlt_parser self, mlt_service object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Service service( object );
-	return parser->on_invalid( &service );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Service service(object);
+    return parser->on_invalid(&service);
 }
 
-static int on_unknown_cb( mlt_parser self, mlt_service object )
+static int on_unknown_cb(mlt_parser self, mlt_service object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Service service( object );
-	return parser->on_unknown( &service );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Service service(object);
+    return parser->on_unknown(&service);
 }
 
-static int on_start_producer_cb( mlt_parser self, mlt_producer object )
+static int on_start_producer_cb(mlt_parser self, mlt_producer object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Producer producer( object );
-	return parser->on_start_producer( &producer );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Producer producer(object);
+    return parser->on_start_producer(&producer);
 }
 
-static int on_end_producer_cb( mlt_parser self, mlt_producer object )
+static int on_end_producer_cb(mlt_parser self, mlt_producer object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Producer producer( object );
-	return parser->on_end_producer( &producer );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Producer producer(object);
+    return parser->on_end_producer(&producer);
 }
 
-static int on_start_playlist_cb( mlt_parser self, mlt_playlist object )
+static int on_start_playlist_cb(mlt_parser self, mlt_playlist object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Playlist playlist( object );
-	return parser->on_start_playlist( &playlist );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Playlist playlist(object);
+    return parser->on_start_playlist(&playlist);
 }
 
-static int on_end_playlist_cb( mlt_parser self, mlt_playlist object )
+static int on_end_playlist_cb(mlt_parser self, mlt_playlist object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Playlist playlist( object );
-	return parser->on_end_playlist( &playlist );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Playlist playlist(object);
+    return parser->on_end_playlist(&playlist);
 }
 
-static int on_start_tractor_cb( mlt_parser self, mlt_tractor object )
+static int on_start_tractor_cb(mlt_parser self, mlt_tractor object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Tractor tractor( object );
-	return parser->on_start_tractor( &tractor );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Tractor tractor(object);
+    return parser->on_start_tractor(&tractor);
 }
 
-static int on_end_tractor_cb( mlt_parser self, mlt_tractor object )
+static int on_end_tractor_cb(mlt_parser self, mlt_tractor object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Tractor tractor( object );
-	return parser->on_end_tractor( &tractor );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Tractor tractor(object);
+    return parser->on_end_tractor(&tractor);
 }
 
-static int on_start_multitrack_cb( mlt_parser self, mlt_multitrack object )
+static int on_start_multitrack_cb(mlt_parser self, mlt_multitrack object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Multitrack multitrack( object );
-	return parser->on_start_multitrack( &multitrack );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Multitrack multitrack(object);
+    return parser->on_start_multitrack(&multitrack);
 }
 
-static int on_end_multitrack_cb( mlt_parser self, mlt_multitrack object )
+static int on_end_multitrack_cb(mlt_parser self, mlt_multitrack object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Multitrack multitrack( object );
-	return parser->on_end_multitrack( &multitrack );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Multitrack multitrack(object);
+    return parser->on_end_multitrack(&multitrack);
 }
 
-static int on_start_track_cb( mlt_parser self )
+static int on_start_track_cb(mlt_parser self)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	return parser->on_start_track( );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    return parser->on_start_track();
 }
 
-static int on_end_track_cb( mlt_parser self )
+static int on_end_track_cb(mlt_parser self)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	return parser->on_end_track( );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    return parser->on_end_track();
 }
 
-static int on_start_filter_cb( mlt_parser self, mlt_filter object )
+static int on_start_filter_cb(mlt_parser self, mlt_filter object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Filter filter( object );
-	return parser->on_start_filter( &filter );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Filter filter(object);
+    return parser->on_start_filter(&filter);
 }
 
-static int on_end_filter_cb( mlt_parser self, mlt_filter object )
+static int on_end_filter_cb(mlt_parser self, mlt_filter object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Filter filter( object );
-	return parser->on_end_filter( &filter );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Filter filter(object);
+    return parser->on_end_filter(&filter);
 }
 
-static int on_start_transition_cb( mlt_parser self, mlt_transition object )
+static int on_start_transition_cb(mlt_parser self, mlt_transition object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Transition transition( object );
-	return parser->on_start_transition( &transition );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Transition transition(object);
+    return parser->on_start_transition(&transition);
 }
 
-static int on_end_transition_cb( mlt_parser self, mlt_transition object )
+static int on_end_transition_cb(mlt_parser self, mlt_transition object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Transition transition( object );
-	return parser->on_end_transition( &transition );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Transition transition(object);
+    return parser->on_end_transition(&transition);
 }
 
-static int on_start_chain_cb( mlt_parser self, mlt_chain object )
+static int on_start_chain_cb(mlt_parser self, mlt_chain object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Chain chain( object );
-	return parser->on_start_chain( &chain );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Chain chain(object);
+    return parser->on_start_chain(&chain);
 }
 
-static int on_end_chain_cb( mlt_parser self, mlt_chain object )
+static int on_end_chain_cb(mlt_parser self, mlt_chain object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Chain chain( object );
-	return parser->on_end_chain( &chain );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Chain chain(object);
+    return parser->on_end_chain(&chain);
 }
 
-static int on_start_link_cb( mlt_parser self, mlt_link object )
+static int on_start_link_cb(mlt_parser self, mlt_link object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Link link( object );
-	return parser->on_start_link( &link );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Link link(object);
+    return parser->on_start_link(&link);
 }
 
-static int on_end_link_cb( mlt_parser self, mlt_link object )
+static int on_end_link_cb(mlt_parser self, mlt_link object)
 {
-	mlt_properties properties = mlt_parser_properties( self );
-	Parser *parser = ( Parser * )mlt_properties_get_data( properties, "_parser_object", NULL );
-	Link link( object );
-	return parser->on_end_link( &link );
+    mlt_properties properties = mlt_parser_properties(self);
+    Parser *parser = (Parser *) mlt_properties_get_data(properties, "_parser_object", NULL);
+    Link link(object);
+    return parser->on_end_link(&link);
 }
 
-Parser::Parser( ) :
-	Properties( false )
+Parser::Parser()
+    : Properties(false)
 {
-	parser = mlt_parser_new( );
-	set( "_parser_object", this, 0 );
-	parser->on_invalid = on_invalid_cb;
-	parser->on_unknown = on_unknown_cb;
-	parser->on_start_producer = on_start_producer_cb;
-	parser->on_end_producer = on_end_producer_cb;
-	parser->on_start_playlist = on_start_playlist_cb;
-	parser->on_end_playlist = on_end_playlist_cb;
-	parser->on_start_tractor = on_start_tractor_cb;
-	parser->on_end_tractor = on_end_tractor_cb;
-	parser->on_start_multitrack = on_start_multitrack_cb;
-	parser->on_end_multitrack = on_end_multitrack_cb;
-	parser->on_start_track = on_start_track_cb;
-	parser->on_end_track = on_end_track_cb;
-	parser->on_start_filter = on_start_filter_cb;
-	parser->on_end_filter = on_end_filter_cb;
-	parser->on_start_transition = on_start_transition_cb;
-	parser->on_end_transition = on_end_transition_cb;
-	parser->on_start_chain = on_start_chain_cb;
-	parser->on_end_chain = on_end_chain_cb;
-	parser->on_start_link = on_start_link_cb;
-	parser->on_end_link = on_end_link_cb;
+    parser = mlt_parser_new();
+    set("_parser_object", this, 0);
+    parser->on_invalid = on_invalid_cb;
+    parser->on_unknown = on_unknown_cb;
+    parser->on_start_producer = on_start_producer_cb;
+    parser->on_end_producer = on_end_producer_cb;
+    parser->on_start_playlist = on_start_playlist_cb;
+    parser->on_end_playlist = on_end_playlist_cb;
+    parser->on_start_tractor = on_start_tractor_cb;
+    parser->on_end_tractor = on_end_tractor_cb;
+    parser->on_start_multitrack = on_start_multitrack_cb;
+    parser->on_end_multitrack = on_end_multitrack_cb;
+    parser->on_start_track = on_start_track_cb;
+    parser->on_end_track = on_end_track_cb;
+    parser->on_start_filter = on_start_filter_cb;
+    parser->on_end_filter = on_end_filter_cb;
+    parser->on_start_transition = on_start_transition_cb;
+    parser->on_end_transition = on_end_transition_cb;
+    parser->on_start_chain = on_start_chain_cb;
+    parser->on_end_chain = on_end_chain_cb;
+    parser->on_start_link = on_start_link_cb;
+    parser->on_end_link = on_end_link_cb;
 }
 
-Parser::~Parser( )
+Parser::~Parser()
 {
-	mlt_parser_close( parser );
+    mlt_parser_close(parser);
 }
 
-mlt_properties Parser::get_properties( )
+mlt_properties Parser::get_properties()
 {
-	return mlt_parser_properties( parser );
+    return mlt_parser_properties(parser);
 }
 
-int Parser::start( Service &service )
+int Parser::start(Service &service)
 {
-	return mlt_parser_start( parser, service.get_service( ) );
+    return mlt_parser_start(parser, service.get_service());
 }
 
-int Parser::on_invalid( Service *object )
+int Parser::on_invalid(Service *object)
 {
-	object->debug( "Invalid" );
-	return 0;
+    object->debug("Invalid");
+    return 0;
 }
 
-int Parser::on_unknown( Service *object )
+int Parser::on_unknown(Service *object)
 {
-	object->debug( "Unknown" );
-	return 0;
+    object->debug("Unknown");
+    return 0;
 }
 
-int Parser::on_start_producer( Producer *object )
+int Parser::on_start_producer(Producer *object)
 {
-	object->debug( "on_start_producer" );
-	return 0;
+    object->debug("on_start_producer");
+    return 0;
 }
 
-int Parser::on_end_producer( Producer *object )
+int Parser::on_end_producer(Producer *object)
 {
-	object->debug( "on_end_producer" );
-	return 0;
+    object->debug("on_end_producer");
+    return 0;
 }
 
-int Parser::on_start_playlist( Playlist *object )
+int Parser::on_start_playlist(Playlist *object)
 {
-	object->debug( "on_start_playlist" );
-	return 0;
+    object->debug("on_start_playlist");
+    return 0;
 }
 
-int Parser::on_end_playlist( Playlist *object )
+int Parser::on_end_playlist(Playlist *object)
 {
-	object->debug( "on_end_playlist" );
-	return 0;
+    object->debug("on_end_playlist");
+    return 0;
 }
 
-int Parser::on_start_tractor( Tractor *object )
+int Parser::on_start_tractor(Tractor *object)
 {
-	object->debug( "on_start_tractor" );
-	return 0;
+    object->debug("on_start_tractor");
+    return 0;
 }
 
-int Parser::on_end_tractor( Tractor *object )
+int Parser::on_end_tractor(Tractor *object)
 {
-	object->debug( "on_end_tractor" );
-	return 0;
+    object->debug("on_end_tractor");
+    return 0;
 }
 
-int Parser::on_start_multitrack( Multitrack *object )
+int Parser::on_start_multitrack(Multitrack *object)
 {
-	object->debug( "on_start_multitrack" );
-	return 0;
+    object->debug("on_start_multitrack");
+    return 0;
 }
 
-int Parser::on_end_multitrack( Multitrack *object )
+int Parser::on_end_multitrack(Multitrack *object)
 {
-	object->debug( "on_end_multitrack" );
-	return 0;
+    object->debug("on_end_multitrack");
+    return 0;
 }
 
-int Parser::on_start_track( )
+int Parser::on_start_track()
 {
-	fprintf( stderr, "on_start_track\n" );
-	return 0;
+    fprintf(stderr, "on_start_track\n");
+    return 0;
 }
 
-int Parser::on_end_track( )
+int Parser::on_end_track()
 {
-	fprintf( stderr, "on_end_track\n" );
-	return 0;
+    fprintf(stderr, "on_end_track\n");
+    return 0;
 }
 
-int Parser::on_start_filter( Filter *object )
+int Parser::on_start_filter(Filter *object)
 {
-	object->debug( "on_start_filter" );
-	return 0;
+    object->debug("on_start_filter");
+    return 0;
 }
 
-int Parser::on_end_filter( Filter *object )
+int Parser::on_end_filter(Filter *object)
 {
-	object->debug( "on_end_filter" );
-	return 0;
+    object->debug("on_end_filter");
+    return 0;
 }
 
-int Parser::on_start_transition( Transition *object )
+int Parser::on_start_transition(Transition *object)
 {
-	object->debug( "on_start_transition" );
-	return 0;
+    object->debug("on_start_transition");
+    return 0;
 }
 
-int Parser::on_end_transition( Transition *object )
+int Parser::on_end_transition(Transition *object)
 {
-	object->debug( "on_end_transition" );
-	return 0;
+    object->debug("on_end_transition");
+    return 0;
 }
 
-int Parser::on_start_chain( Chain *object )
+int Parser::on_start_chain(Chain *object)
 {
-	object->debug( "on_start_chain" );
-	return 0;
+    object->debug("on_start_chain");
+    return 0;
 }
 
-int Parser::on_end_chain( Chain *object )
+int Parser::on_end_chain(Chain *object)
 {
-	object->debug( "on_end_chain" );
-	return 0;
+    object->debug("on_end_chain");
+    return 0;
 }
 
-int Parser::on_start_link( Link *object )
+int Parser::on_start_link(Link *object)
 {
-	object->debug( "on_start_link" );
-	return 0;
+    object->debug("on_start_link");
+    return 0;
 }
 
-int Parser::on_end_link( Link *object )
+int Parser::on_end_link(Link *object)
 {
-	object->debug( "on_end_link" );
-	return 0;
+    object->debug("on_end_link");
+    return 0;
 }

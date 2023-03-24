@@ -21,53 +21,52 @@
 #include "MltDeque.h"
 using namespace Mlt;
 
-Deque::Deque( )
+Deque::Deque()
 {
-	deque = mlt_deque_init( );
+    deque = mlt_deque_init();
 }
 
-Deque::~Deque( )
+Deque::~Deque()
 {
-	mlt_deque_close( deque );
+    mlt_deque_close(deque);
 }
 
-int Deque::count( )
+int Deque::count()
 {
-	return mlt_deque_count( deque );
+    return mlt_deque_count(deque);
 }
 
-int Deque::push_back( void *item )
+int Deque::push_back(void *item)
 {
-	return mlt_deque_push_back( deque, item );
+    return mlt_deque_push_back(deque, item);
 }
 
-void *Deque::pop_back( )
+void *Deque::pop_back()
 {
-	return mlt_deque_pop_back( deque );
+    return mlt_deque_pop_back(deque);
 }
 
-int Deque::push_front( void *item )
+int Deque::push_front(void *item)
 {
-	return mlt_deque_push_front( deque, item );
+    return mlt_deque_push_front(deque, item);
 }
 
-void *Deque::pop_front( )
+void *Deque::pop_front()
 {
-	return mlt_deque_pop_front( deque );
+    return mlt_deque_pop_front(deque);
 }
 
-void *Deque::peek_back( )
+void *Deque::peek_back()
 {
-	return mlt_deque_peek_back( deque );
+    return mlt_deque_peek_back(deque);
 }
 
-void *Deque::peek_front( )
+void *Deque::peek_front()
 {
-	return mlt_deque_peek_front( deque );
+    return mlt_deque_peek_front(deque);
 }
 
-void *Deque::peek( int index )
+void *Deque::peek(int index)
 {
-	return mlt_deque_peek( deque, index );
+    return mlt_deque_peek(deque, index);
 }
-

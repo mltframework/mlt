@@ -26,40 +26,40 @@
 
 #include "MltService.h"
 
-namespace Mlt
-{
-	class Service;
-	class Profile;
-	class Frame;
+namespace Mlt {
+class Service;
+class Profile;
+class Frame;
 
-	class MLTPP_DECLSPEC Filter : public Service
-	{
-		private:
-			mlt_filter instance;
-		public:
-			Filter();
-			Filter( Profile& profile, const char *id, const char *service = NULL );
-			Filter( mlt_profile profile, const char *id, const char *service = NULL );
-			Filter( Service &filter );
-			Filter( Filter &filter );
-			Filter( const Filter &filter );
-			Filter( mlt_filter filter );
-			Filter( Filter *filter );
-			virtual ~Filter( );
-			Filter& operator=( const Filter &filter );
-			virtual mlt_filter get_filter( );
-			mlt_service get_service( ) override;
-			int connect( Service &service, int index = 0 );
-			void set_in_and_out( int in, int out );
-			int get_in( );
-			int get_out( );
-			int get_length( );
-			int get_length2( Frame &frame );
-			int get_track( );
-			int get_position( Frame &frame );
-			double get_progress( Frame &frame );
-			void process( Frame &frame );
-	};
-}
+class MLTPP_DECLSPEC Filter : public Service
+{
+private:
+    mlt_filter instance;
+
+public:
+    Filter();
+    Filter(Profile &profile, const char *id, const char *service = NULL);
+    Filter(mlt_profile profile, const char *id, const char *service = NULL);
+    Filter(Service &filter);
+    Filter(Filter &filter);
+    Filter(const Filter &filter);
+    Filter(mlt_filter filter);
+    Filter(Filter *filter);
+    virtual ~Filter();
+    Filter &operator=(const Filter &filter);
+    virtual mlt_filter get_filter();
+    mlt_service get_service() override;
+    int connect(Service &service, int index = 0);
+    void set_in_and_out(int in, int out);
+    int get_in();
+    int get_out();
+    int get_length();
+    int get_length2(Frame &frame);
+    int get_track();
+    int get_position(Frame &frame);
+    double get_progress(Frame &frame);
+    void process(Frame &frame);
+};
+} // namespace Mlt
 
 #endif

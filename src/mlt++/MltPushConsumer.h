@@ -25,27 +25,27 @@
 
 #include "MltConsumer.h"
 
-namespace Mlt
-{
-	class Frame;
-	class Service;
-	class PushPrivate;
-	class Profile;
+namespace Mlt {
+class Frame;
+class Service;
+class PushPrivate;
+class Profile;
 
-	class MLTPP_DECLSPEC PushConsumer : public Consumer
-	{
-		private:
-			PushPrivate *m_private;
-		public:
-			PushConsumer( Profile& profile, const char *id , const char *service = NULL );
-			virtual ~PushConsumer( );
-			void set_render( int width, int height, double aspect_ratio );
-			virtual int connect( Service &service ) override;
-			int push( Frame *frame );
-			int push( Frame &frame );
-			int drain( );
-			Frame *construct( int );
-	};
-}
+class MLTPP_DECLSPEC PushConsumer : public Consumer
+{
+private:
+    PushPrivate *m_private;
+
+public:
+    PushConsumer(Profile &profile, const char *id, const char *service = NULL);
+    virtual ~PushConsumer();
+    void set_render(int width, int height, double aspect_ratio);
+    virtual int connect(Service &service) override;
+    int push(Frame *frame);
+    int push(Frame &frame);
+    int drain();
+    Frame *construct(int);
+};
+} // namespace Mlt
 
 #endif

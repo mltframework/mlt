@@ -17,348 +17,351 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <framework/mlt_producer.h>
+#include "qimage_wrapper.h"
 #include <framework/mlt_cache.h>
 #include <framework/mlt_events.h>
-#include "qimage_wrapper.h"
+#include <framework/mlt_producer.h>
 
+#include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <ctype.h>
 
-static void load_filenames( producer_qimage self, mlt_properties producer_properties );
-static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int index );
-static void producer_close( mlt_producer parent );
+static void load_filenames(producer_qimage self, mlt_properties producer_properties);
+static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int index);
+static void producer_close(mlt_producer parent);
 
-static void refresh_length( mlt_properties properties, producer_qimage self )
+static void refresh_length(mlt_properties properties, producer_qimage self)
 {
-	if ( self->count > mlt_properties_get_int( properties, "length" ) ||
-	     mlt_properties_get_int( properties, "autolength" ) )
-	{
-		int ttl = mlt_properties_get_int( properties, "ttl" );
-		mlt_position length = self->count * ttl;
-		mlt_properties_set_position( properties, "length", length );
-		mlt_properties_set_position( properties, "out", length - 1 );
-	}
+    if (self->count > mlt_properties_get_int(properties, "length")
+        || mlt_properties_get_int(properties, "autolength")) {
+        int ttl = mlt_properties_get_int(properties, "ttl");
+        mlt_position length = self->count * ttl;
+        mlt_properties_set_position(properties, "length", length);
+        mlt_properties_set_position(properties, "out", length - 1);
+    }
 }
 
-static void on_property_changed( mlt_service owner, mlt_producer producer, mlt_event_data event_data )
+static void on_property_changed(mlt_service owner, mlt_producer producer, mlt_event_data event_data)
 {
-	const char *name = mlt_event_data_to_string(event_data);
-	if ( name && !strcmp( name, "ttl" ) )
-		refresh_length( MLT_PRODUCER_PROPERTIES(producer), producer->child );
+    const char *name = mlt_event_data_to_string(event_data);
+    if (name && !strcmp(name, "ttl"))
+        refresh_length(MLT_PRODUCER_PROPERTIES(producer), producer->child);
 }
 
-mlt_producer producer_qimage_init( mlt_profile profile, mlt_service_type type, const char *id, char *filename )
+mlt_producer producer_qimage_init(mlt_profile profile,
+                                  mlt_service_type type,
+                                  const char *id,
+                                  char *filename)
 {
-	producer_qimage self = calloc( 1, sizeof( struct producer_qimage_s ) );
-	if ( self != NULL && mlt_producer_init( &self->parent, self ) == 0 )
-	{
-		mlt_producer producer = &self->parent;
+    producer_qimage self = calloc(1, sizeof(struct producer_qimage_s));
+    if (self != NULL && mlt_producer_init(&self->parent, self) == 0) {
+        mlt_producer producer = &self->parent;
 
-		// Get the properties interface
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( &self->parent );
+        // Get the properties interface
+        mlt_properties properties = MLT_PRODUCER_PROPERTIES(&self->parent);
 
-		// Initialize KDE image plugins and get supported animation frame count
-		self->count = init_qimage(producer, filename);
-		if (!self->count) {
-			mlt_producer_close(producer);
-			free(self);
-			return NULL;
-		}
+        // Initialize KDE image plugins and get supported animation frame count
+        self->count = init_qimage(producer, filename);
+        if (!self->count) {
+            mlt_producer_close(producer);
+            free(self);
+            return NULL;
+        }
 
-		// Callback registration
-		producer->get_frame = producer_get_frame;
-		producer->close = ( mlt_destructor )producer_close;
+        // Callback registration
+        producer->get_frame = producer_get_frame;
+        producer->close = (mlt_destructor) producer_close;
 
-		// Set the default properties
-		mlt_properties_set( properties, "resource", filename );
-		mlt_properties_set_int( properties, "ttl", self->count > 1 ? 1 : 25 );
-		mlt_properties_set_int( properties, "aspect_ratio", 1 );
-		mlt_properties_set_int( properties, "progressive", 1 );
-		mlt_properties_set_int( properties, "seekable", 1 );
+        // Set the default properties
+        mlt_properties_set(properties, "resource", filename);
+        mlt_properties_set_int(properties, "ttl", self->count > 1 ? 1 : 25);
+        mlt_properties_set_int(properties, "aspect_ratio", 1);
+        mlt_properties_set_int(properties, "progressive", 1);
+        mlt_properties_set_int(properties, "seekable", 1);
 
-		// Validate the resource
-		if (self->count == 1 && filename) {
-			load_filenames(self, properties);
-		} else {
-			refresh_length(properties, self);
-		}
-		if ( self->count )
-		{
-			mlt_frame frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
-			if ( frame )
-			{
-				mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-				mlt_properties_set_data( frame_properties, "producer_qimage", self, 0, NULL, NULL );
-				mlt_frame_set_position( frame, mlt_producer_position( producer ) );
-				int enable_caching = self->count == 1;
-				refresh_qimage( self, frame, enable_caching );
-				if ( enable_caching )
-				{
-					mlt_cache_item_close( self->qimage_cache );
-				}
-				mlt_frame_close( frame );
-			}
-		}
-		if ( self->current_width == 0 )
-		{
-			producer_close( producer );
-			producer = NULL;
-		}
-		else
-		{
-			mlt_events_listen( properties, self, "property-changed", (mlt_listener) on_property_changed );
-		}
-		return producer;
-	}
-	free( self );
-	return NULL;
+        // Validate the resource
+        if (self->count == 1 && filename) {
+            load_filenames(self, properties);
+        } else {
+            refresh_length(properties, self);
+        }
+        if (self->count) {
+            mlt_frame frame = mlt_frame_init(MLT_PRODUCER_SERVICE(producer));
+            if (frame) {
+                mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+                mlt_properties_set_data(frame_properties, "producer_qimage", self, 0, NULL, NULL);
+                mlt_frame_set_position(frame, mlt_producer_position(producer));
+                int enable_caching = self->count == 1;
+                refresh_qimage(self, frame, enable_caching);
+                if (enable_caching) {
+                    mlt_cache_item_close(self->qimage_cache);
+                }
+                mlt_frame_close(frame);
+            }
+        }
+        if (self->current_width == 0) {
+            producer_close(producer);
+            producer = NULL;
+        } else {
+            mlt_events_listen(properties,
+                              self,
+                              "property-changed",
+                              (mlt_listener) on_property_changed);
+        }
+        return producer;
+    }
+    free(self);
+    return NULL;
 }
 
-static int load_svg( producer_qimage self, mlt_properties properties, const char *filename )
+static int load_svg(producer_qimage self, mlt_properties properties, const char *filename)
 {
-	int result = 0;
+    int result = 0;
 
-	// Read xml string
-	if ( strstr( filename, "<svg" ) )
-	{
-		make_tempfile( self, filename );
-		result = 1;
-	}
-	return result;
+    // Read xml string
+    if (strstr(filename, "<svg")) {
+        make_tempfile(self, filename);
+        result = 1;
+    }
+    return result;
 }
 
-static int load_sequence_deprecated( producer_qimage self, mlt_properties properties, const char *filename )
+static int load_sequence_deprecated(producer_qimage self,
+                                    mlt_properties properties,
+                                    const char *filename)
 {
-	int result = 0;
-	const char *start;
+    int result = 0;
+    const char *start;
 
-	// Obtain filenames with pattern containing a begin value, e.g. foo%1234d.png
-	if ( ( start = strchr( filename, '%' ) ) )
-	{
-		const char *end = ++start;
-		while ( isdigit( *end ) ) end++;
-		if ( end > start && ( end[0] == 'd' || end[0] == 'i' || end[0] == 'u' ) )
-		{
-			int n = end - start;
-			char *s = calloc( 1, n + 1 );
-			strncpy( s, start, n );
-			mlt_properties_set( properties, "begin", s );
-			free( s );
-			s = calloc( 1, strlen( filename ) + 2 );
-			strncpy( s, filename, start - filename );
-			sprintf( s + ( start - filename ), ".%d%s", n, end );
-			result = load_sequence_sprintf( self, properties, s );
-			free( s );
-		}
-	}
-	return result;
+    // Obtain filenames with pattern containing a begin value, e.g. foo%1234d.png
+    if ((start = strchr(filename, '%'))) {
+        const char *end = ++start;
+        while (isdigit(*end))
+            end++;
+        if (end > start && (end[0] == 'd' || end[0] == 'i' || end[0] == 'u')) {
+            int n = end - start;
+            char *s = calloc(1, n + 1);
+            strncpy(s, start, n);
+            mlt_properties_set(properties, "begin", s);
+            free(s);
+            s = calloc(1, strlen(filename) + 2);
+            strncpy(s, filename, start - filename);
+            sprintf(s + (start - filename), ".%d%s", n, end);
+            result = load_sequence_sprintf(self, properties, s);
+            free(s);
+        }
+    }
+    return result;
 }
 
-static int load_sequence_querystring( producer_qimage self, mlt_properties properties, const char *filename )
+static int load_sequence_querystring(producer_qimage self,
+                                     mlt_properties properties,
+                                     const char *filename)
 {
-	int result = 0;
+    int result = 0;
 
-	// Obtain filenames with pattern and begin value in query string
-	if ( strchr( filename, '%' ) && strchr( filename, '?' ) )
-	{
-		// Split filename into pattern and query string
-		char *s = strdup( filename );
-		char *querystring = strrchr( s, '?' );
-		*querystring++ = '\0';
-		if ( strstr( filename, "begin=" ) )
-			mlt_properties_set( properties, "begin", strstr( querystring, "begin=" ) + 6 );
-		else if ( strstr( filename, "begin:" ) )
-			mlt_properties_set( properties, "begin", strstr( querystring, "begin:" ) + 6 );
-		// Coerce to an int value so serialization does not have any extra query string cruft
-		mlt_properties_set_int( properties, "begin", mlt_properties_get_int( properties, "begin" ) );
-		result = load_sequence_sprintf( self, properties, s );
-		free( s );
-	}
-	return result;
+    // Obtain filenames with pattern and begin value in query string
+    if (strchr(filename, '%') && strchr(filename, '?')) {
+        // Split filename into pattern and query string
+        char *s = strdup(filename);
+        char *querystring = strrchr(s, '?');
+        *querystring++ = '\0';
+        if (strstr(filename, "begin="))
+            mlt_properties_set(properties, "begin", strstr(querystring, "begin=") + 6);
+        else if (strstr(filename, "begin:"))
+            mlt_properties_set(properties, "begin", strstr(querystring, "begin:") + 6);
+        // Coerce to an int value so serialization does not have any extra query string cruft
+        mlt_properties_set_int(properties, "begin", mlt_properties_get_int(properties, "begin"));
+        result = load_sequence_sprintf(self, properties, s);
+        free(s);
+    }
+    return result;
 }
 
-static void load_filenames( producer_qimage self, mlt_properties properties )
+static void load_filenames(producer_qimage self, mlt_properties properties)
 {
-	char *filename = mlt_properties_get( properties, "resource" );
-	self->filenames = mlt_properties_new( );
+    char *filename = mlt_properties_get(properties, "resource");
+    self->filenames = mlt_properties_new();
 
-	if (!load_svg( self, properties, filename ) &&
-		!load_sequence_querystring( self, properties, filename ) &&
-		!load_sequence_sprintf( self, properties, filename ) &&
-		!load_sequence_deprecated( self, properties, filename ) &&
-		!load_folder( self, filename ) )
-	{
-		mlt_properties_set( self->filenames, "0", filename );
-	}
-	self->count = mlt_properties_count( self->filenames );
-	refresh_length( properties, self );
+    if (!load_svg(self, properties, filename)
+        && !load_sequence_querystring(self, properties, filename)
+        && !load_sequence_sprintf(self, properties, filename)
+        && !load_sequence_deprecated(self, properties, filename) && !load_folder(self, filename)) {
+        mlt_properties_set(self->filenames, "0", filename);
+    }
+    self->count = mlt_properties_count(self->filenames);
+    refresh_length(properties, self);
 }
 
-static int producer_get_image( mlt_frame frame, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+static int producer_get_image(mlt_frame frame,
+                              uint8_t **buffer,
+                              mlt_image_format *format,
+                              int *width,
+                              int *height,
+                              int writable)
 {
-	int error = 0;
+    int error = 0;
 
-	// Obtain properties of frame and producer
-	mlt_properties properties = MLT_FRAME_PROPERTIES( frame );
-	producer_qimage self = mlt_properties_get_data( properties, "producer_qimage", NULL );
-	mlt_producer producer = &self->parent;
+    // Obtain properties of frame and producer
+    mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+    producer_qimage self = mlt_properties_get_data(properties, "producer_qimage", NULL);
+    mlt_producer producer = &self->parent;
 
-	// Use the width and height suggested by the rescale filter because we can do our own scaling.
-	if ( mlt_properties_get_int( properties, "rescale_width" ) > 0 )
-		*width = mlt_properties_get_int( properties, "rescale_width" );
-	if ( mlt_properties_get_int( properties, "rescale_height" ) > 0 )
-		*height = mlt_properties_get_int( properties, "rescale_height" );
-	mlt_service_lock( MLT_PRODUCER_SERVICE( &self->parent ) );
-	int enable_caching = ( self->count <= 1 || mlt_properties_get_int( MLT_PRODUCER_PROPERTIES( producer ), "ttl" ) > 1 );
+    // Use the width and height suggested by the rescale filter because we can do our own scaling.
+    if (mlt_properties_get_int(properties, "rescale_width") > 0)
+        *width = mlt_properties_get_int(properties, "rescale_width");
+    if (mlt_properties_get_int(properties, "rescale_height") > 0)
+        *height = mlt_properties_get_int(properties, "rescale_height");
+    mlt_service_lock(MLT_PRODUCER_SERVICE(&self->parent));
+    int enable_caching = (self->count <= 1
+                          || mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(producer), "ttl") > 1);
 
-	// Refresh the image
-	if ( enable_caching )
-	{
-		self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
-		self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
-		self->image_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.image" );
-		self->current_image = mlt_cache_item_data( self->image_cache, NULL );
-		self->alpha_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.alpha" );
-		self->current_alpha = mlt_cache_item_data( self->alpha_cache, &self->alpha_size );
-	}
-	refresh_image( self, frame, *format, *width, *height, enable_caching );
+    // Refresh the image
+    if (enable_caching) {
+        self->qimage_cache = mlt_service_cache_get(MLT_PRODUCER_SERVICE(producer), "qimage.qimage");
+        self->qimage = mlt_cache_item_data(self->qimage_cache, NULL);
+        self->image_cache = mlt_service_cache_get(MLT_PRODUCER_SERVICE(producer), "qimage.image");
+        self->current_image = mlt_cache_item_data(self->image_cache, NULL);
+        self->alpha_cache = mlt_service_cache_get(MLT_PRODUCER_SERVICE(producer), "qimage.alpha");
+        self->current_alpha = mlt_cache_item_data(self->alpha_cache, &self->alpha_size);
+    }
+    refresh_image(self, frame, *format, *width, *height, enable_caching);
 
-	// Get width and height (may have changed during the refresh)
-	*width = mlt_properties_get_int( properties, "width" );
-	*height = mlt_properties_get_int( properties, "height" );
-	*format = self->format;
+    // Get width and height (may have changed during the refresh)
+    *width = mlt_properties_get_int(properties, "width");
+    *height = mlt_properties_get_int(properties, "height");
+    *format = self->format;
 
-	// NB: Cloning is necessary with this producer (due to processing of images ahead of use)
-	// The fault is not in the design of mlt, but in the implementation of the qimage producer...
-	if ( self->current_image )
-	{
-		int image_size = mlt_image_format_size( self->format, self->current_width, self->current_height, NULL );
-		if ( enable_caching )
-		{
-			// Clone the image and the alpha
-			uint8_t *image_copy = mlt_pool_alloc( image_size );
-			memcpy( image_copy, self->current_image, image_size );
-			// Now update properties so we free the copy after
-			mlt_frame_set_image( frame, image_copy, image_size, mlt_pool_release );
-			// We're going to pass the copy on
-			*buffer = image_copy;
-			mlt_log_debug( MLT_PRODUCER_SERVICE( &self->parent ), "%dx%d (%s)\n",
-				self->current_width, self->current_height, mlt_image_format_name( *format ) );
-			// Clone the alpha channel
-			if ( self->current_alpha )
-			{
-				if ( !self->alpha_size )
-					self->alpha_size = self->current_width * self->current_height;
-				uint8_t * alpha_copy = mlt_pool_alloc( self->alpha_size );
-				memcpy( alpha_copy, self->current_alpha, self->alpha_size );
-				mlt_frame_set_alpha( frame, alpha_copy, self->alpha_size, mlt_pool_release );
-			}
-		}
-		else
-		{
-			// For image sequences with ttl = 1 we recreate self->current_image on each frame, no need to clone
-			mlt_frame_set_image( frame, self->current_image, image_size, mlt_pool_release );
-			*buffer = self->current_image;
-			if ( self->current_alpha )
-			{
-				if ( !self->alpha_size )
-					self->alpha_size = self->current_width * self->current_height;
-				mlt_frame_set_alpha( frame, self->current_alpha, self->alpha_size, mlt_pool_release );
-			}
-		}
-	}
-	else
-	{
-		error = 1;
-	}
+    // NB: Cloning is necessary with this producer (due to processing of images ahead of use)
+    // The fault is not in the design of mlt, but in the implementation of the qimage producer...
+    if (self->current_image) {
+        int image_size
+            = mlt_image_format_size(self->format, self->current_width, self->current_height, NULL);
+        if (enable_caching) {
+            // Clone the image and the alpha
+            uint8_t *image_copy = mlt_pool_alloc(image_size);
+            memcpy(image_copy, self->current_image, image_size);
+            // Now update properties so we free the copy after
+            mlt_frame_set_image(frame, image_copy, image_size, mlt_pool_release);
+            // We're going to pass the copy on
+            *buffer = image_copy;
+            mlt_log_debug(MLT_PRODUCER_SERVICE(&self->parent),
+                          "%dx%d (%s)\n",
+                          self->current_width,
+                          self->current_height,
+                          mlt_image_format_name(*format));
+            // Clone the alpha channel
+            if (self->current_alpha) {
+                if (!self->alpha_size)
+                    self->alpha_size = self->current_width * self->current_height;
+                uint8_t *alpha_copy = mlt_pool_alloc(self->alpha_size);
+                memcpy(alpha_copy, self->current_alpha, self->alpha_size);
+                mlt_frame_set_alpha(frame, alpha_copy, self->alpha_size, mlt_pool_release);
+            }
+        } else {
+            // For image sequences with ttl = 1 we recreate self->current_image on each frame, no need to clone
+            mlt_frame_set_image(frame, self->current_image, image_size, mlt_pool_release);
+            *buffer = self->current_image;
+            if (self->current_alpha) {
+                if (!self->alpha_size)
+                    self->alpha_size = self->current_width * self->current_height;
+                mlt_frame_set_alpha(frame, self->current_alpha, self->alpha_size, mlt_pool_release);
+            }
+        }
+    } else {
+        error = 1;
+    }
 
-	if ( enable_caching )
-	{
-		// Release references and locks
-		mlt_cache_item_close( self->qimage_cache );
-		mlt_cache_item_close( self->image_cache );
-		mlt_cache_item_close( self->alpha_cache );
-	}
-	mlt_service_unlock( MLT_PRODUCER_SERVICE( &self->parent ) );
+    if (enable_caching) {
+        // Release references and locks
+        mlt_cache_item_close(self->qimage_cache);
+        mlt_cache_item_close(self->image_cache);
+        mlt_cache_item_close(self->alpha_cache);
+    }
+    mlt_service_unlock(MLT_PRODUCER_SERVICE(&self->parent));
 
-	return error;
+    return error;
 }
 
-static int producer_get_frame( mlt_producer producer, mlt_frame_ptr frame, int index )
+static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int index)
 {
-	// Get the real structure for this producer
-	producer_qimage self = producer->child;
+    // Get the real structure for this producer
+    producer_qimage self = producer->child;
 
-	// Fetch the producers properties
-	mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES( producer );
+    // Fetch the producers properties
+    mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES(producer);
 
-	// Cache miss
-	if (!self->filenames && !self->count && mlt_properties_get(producer_properties, "resource")) {
-		self->count = init_qimage(producer, mlt_properties_get(producer_properties, "resource"));
-		if (!self->count) {
-			return 1;
-		}
-		if (self->count == 1) {
-			load_filenames(self, producer_properties);
-		} else {
-			refresh_length(producer_properties, self);
-		}
-	}
+    // Cache miss
+    if (!self->filenames && !self->count && mlt_properties_get(producer_properties, "resource")) {
+        self->count = init_qimage(producer, mlt_properties_get(producer_properties, "resource"));
+        if (!self->count) {
+            return 1;
+        }
+        if (self->count == 1) {
+            load_filenames(self, producer_properties);
+        } else {
+            refresh_length(producer_properties, self);
+        }
+    }
 
-	// Generate a frame
-	*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( producer ) );
+    // Generate a frame
+    *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(producer));
 
-	if ( *frame != NULL && self->count > 0 )
-	{
-		// Obtain properties of frame and producer
-		mlt_properties properties = MLT_FRAME_PROPERTIES( *frame );
+    if (*frame != NULL && self->count > 0) {
+        // Obtain properties of frame and producer
+        mlt_properties properties = MLT_FRAME_PROPERTIES(*frame);
 
-		// Set the producer on the frame properties
-		mlt_properties_set_data( properties, "producer_qimage", self, 0, NULL, NULL );
+        // Set the producer on the frame properties
+        mlt_properties_set_data(properties, "producer_qimage", self, 0, NULL, NULL);
 
-		// Update timecode on the frame we're creating
-		mlt_frame_set_position( *frame, mlt_producer_position( producer ) );
+        // Update timecode on the frame we're creating
+        mlt_frame_set_position(*frame, mlt_producer_position(producer));
 
-		// Refresh the image
-		if ( self->count == 1 || mlt_properties_get_int( producer_properties, "ttl" ) > 1 )
-		{
-			self->qimage_cache = mlt_service_cache_get( MLT_PRODUCER_SERVICE( producer ), "qimage.qimage" );
-			self->qimage = mlt_cache_item_data( self->qimage_cache, NULL );
-			refresh_qimage( self, *frame, 1 );
-			mlt_cache_item_close( self->qimage_cache );
-		}
+        // Refresh the image
+        if (self->count == 1 || mlt_properties_get_int(producer_properties, "ttl") > 1) {
+            self->qimage_cache = mlt_service_cache_get(MLT_PRODUCER_SERVICE(producer),
+                                                       "qimage.qimage");
+            self->qimage = mlt_cache_item_data(self->qimage_cache, NULL);
+            refresh_qimage(self, *frame, 1);
+            mlt_cache_item_close(self->qimage_cache);
+        }
 
-		// Set producer-specific frame properties
-		mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( producer_properties, "progressive" ) );
-		mlt_properties_set_int( properties, "format", mlt_properties_get_int( producer_properties, "format" ) );
-		double force_ratio = mlt_properties_get_double( producer_properties, "force_aspect_ratio" );
-		if ( force_ratio > 0.0 )
-			mlt_properties_set_double( properties, "aspect_ratio", force_ratio );
-		else
-			mlt_properties_set_double( properties, "aspect_ratio", mlt_properties_get_double( producer_properties, "aspect_ratio" ) );
+        // Set producer-specific frame properties
+        mlt_properties_set_int(properties,
+                               "progressive",
+                               mlt_properties_get_int(producer_properties, "progressive"));
+        mlt_properties_set_int(properties,
+                               "format",
+                               mlt_properties_get_int(producer_properties, "format"));
+        double force_ratio = mlt_properties_get_double(producer_properties, "force_aspect_ratio");
+        if (force_ratio > 0.0)
+            mlt_properties_set_double(properties, "aspect_ratio", force_ratio);
+        else
+            mlt_properties_set_double(properties,
+                                      "aspect_ratio",
+                                      mlt_properties_get_double(producer_properties,
+                                                                "aspect_ratio"));
 
-		// Push the get_image method
-		mlt_frame_push_get_image( *frame, producer_get_image );
-	}
+        // Push the get_image method
+        mlt_frame_push_get_image(*frame, producer_get_image);
+    }
 
-	// Calculate the next timecode
-	mlt_producer_prepare_next( producer );
+    // Calculate the next timecode
+    mlt_producer_prepare_next(producer);
 
-	return 0;
+    return 0;
 }
 
-static void producer_close( mlt_producer parent )
+static void producer_close(mlt_producer parent)
 {
-	producer_qimage self = parent->child;
-	parent->close = NULL;
-	mlt_service_cache_purge( MLT_PRODUCER_SERVICE(parent) );
-	mlt_producer_close( parent );
-	mlt_properties_close( self->filenames );
-	free( self );
+    producer_qimage self = parent->child;
+    parent->close = NULL;
+    mlt_service_cache_purge(MLT_PRODUCER_SERVICE(parent));
+    mlt_producer_close(parent);
+    mlt_properties_close(self->filenames);
+    free(self);
 }

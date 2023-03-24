@@ -16,24 +16,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <QtTest>
 #include <mlt++/Mlt.h>
+#include <QtTest>
 using namespace Mlt;
 
-class TestFilter: public QObject
+class TestFilter : public QObject
 {
     Q_OBJECT
     mlt_locale_t locale;
 
 public:
-    TestFilter() {
+    TestFilter()
+    {
 #if defined(__linux__) || defined(__APPLE__)
-        locale = newlocale( LC_NUMERIC_MASK, "POSIX", NULL );
+        locale = newlocale(LC_NUMERIC_MASK, "POSIX", NULL);
 #endif
         Factory::init();
     }
 
-    ~TestFilter() {
+    ~TestFilter()
+    {
 #if defined(__linux__) || defined(__APPLE__)
         freelocale(locale);
 #endif
@@ -50,7 +52,7 @@ private Q_SLOTS:
         mlt_image_format format = mlt_image_rgb;
 
         // Get a frame from the producer
-        Frame* frame = producer.get_frame();
+        Frame *frame = producer.get_frame();
 
         // Get the default image size: width should match profile
         frame->get_image(format, width, height, 0);
@@ -69,10 +71,8 @@ private Q_SLOTS:
 
         delete frame;
     }
-
 };
 
 QTEST_APPLESS_MAIN(TestFilter)
 
 #include "test_filter.moc"
-

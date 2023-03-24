@@ -17,83 +17,80 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string.h>
 #include <framework/mlt.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef USE_PIXBUF
-extern mlt_producer producer_pixbuf_init( char *filename );
-extern mlt_filter filter_rescale_init( mlt_profile profile, char *arg );
+extern mlt_producer producer_pixbuf_init(char *filename);
+extern mlt_filter filter_rescale_init(mlt_profile profile, char *arg);
 #endif
 
 #ifdef USE_PANGO
-extern mlt_producer producer_pango_init( const char *filename );
+extern mlt_producer producer_pango_init(const char *filename);
 #endif
 
-static void initialise( )
+static void initialise()
 {
-	static int init = 0;
-	if ( init == 0 )
-	{
-		init = 1;
+    static int init = 0;
+    if (init == 0) {
+        init = 1;
 
-#if !GLIB_CHECK_VERSION (2,35,0)
-		g_type_init();
+#if !GLIB_CHECK_VERSION(2, 35, 0)
+        g_type_init();
 #endif
-		if ( getenv("MLT_PIXBUF_PRODUCER_CACHE") )
-		{
-			int n = atoi( getenv("MLT_PIXBUF_PRODUCER_CACHE" )  );
-			mlt_service_cache_set_size( NULL, "pixbuf.image", n );
-			mlt_service_cache_set_size( NULL, "pixbuf.alpha", n );
-			mlt_service_cache_set_size( NULL, "pixbuf.pixbuf", n );
-		}
-		if ( getenv("MLT_PANGO_PRODUCER_CACHE") )
-		{
-			int n = atoi( getenv("MLT_PANGO_PRODUCER_CACHE" )  );
-			mlt_service_cache_set_size( NULL, "pango.image", n );
-		}
-	}
+        if (getenv("MLT_PIXBUF_PRODUCER_CACHE")) {
+            int n = atoi(getenv("MLT_PIXBUF_PRODUCER_CACHE"));
+            mlt_service_cache_set_size(NULL, "pixbuf.image", n);
+            mlt_service_cache_set_size(NULL, "pixbuf.alpha", n);
+            mlt_service_cache_set_size(NULL, "pixbuf.pixbuf", n);
+        }
+        if (getenv("MLT_PANGO_PRODUCER_CACHE")) {
+            int n = atoi(getenv("MLT_PANGO_PRODUCER_CACHE"));
+            mlt_service_cache_set_size(NULL, "pango.image", n);
+        }
+    }
 }
 
-void *create_service( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+void *create_service(mlt_profile profile, mlt_service_type type, const char *id, char *arg)
 {
-	initialise( );
+    initialise();
 
 #ifdef USE_PIXBUF
-	if ( !strcmp( id, "pixbuf" ) )
-		return producer_pixbuf_init( arg );
+    if (!strcmp(id, "pixbuf"))
+        return producer_pixbuf_init(arg);
 #endif
 
 #ifdef USE_PANGO
-	if ( !strcmp( id, "pango" ) )
-		return producer_pango_init( arg );
+    if (!strcmp(id, "pango"))
+        return producer_pango_init(arg);
 #endif
 
 #ifdef USE_PIXBUF
-	if ( !strcmp( id, "gtkrescale" ) )
-		return filter_rescale_init( profile, arg );
+    if (!strcmp(id, "gtkrescale"))
+        return filter_rescale_init(profile, arg);
 #endif
 
-	return NULL;
+    return NULL;
 }
 
-static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
+static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
-	char file[ PATH_MAX ];
-	snprintf( file, PATH_MAX, "%s/gdk/%s", mlt_environment( "MLT_DATA" ), (char*) data );
-	return mlt_properties_parse_yaml( file );
+    char file[PATH_MAX];
+    snprintf(file, PATH_MAX, "%s/gdk/%s", mlt_environment("MLT_DATA"), (char *) data);
+    return mlt_properties_parse_yaml(file);
 }
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( mlt_service_filter_type, "gtkrescale", create_service );
-	MLT_REGISTER( mlt_service_link_type, "gtkrescale", mlt_link_filter_init );
-	MLT_REGISTER( mlt_service_producer_type, "pango", create_service );
-	MLT_REGISTER( mlt_service_producer_type, "pixbuf", create_service );
+    MLT_REGISTER(mlt_service_filter_type, "gtkrescale", create_service);
+    MLT_REGISTER(mlt_service_link_type, "gtkrescale", mlt_link_filter_init);
+    MLT_REGISTER(mlt_service_producer_type, "pango", create_service);
+    MLT_REGISTER(mlt_service_producer_type, "pixbuf", create_service);
 
-	MLT_REGISTER_METADATA( mlt_service_filter_type, "gtkrescale", metadata, "filter_rescale.yml" );
-	MLT_REGISTER_METADATA( mlt_service_link_type, "gtkrescale", mlt_link_filter_metadata, NULL );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "pango", metadata, "producer_pango.yml" );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "pixbuf", metadata, "producer_pixbuf.yml" );
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "gtkrescale", metadata, "filter_rescale.yml");
+    MLT_REGISTER_METADATA(mlt_service_link_type, "gtkrescale", mlt_link_filter_metadata, NULL);
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "pango", metadata, "producer_pango.yml");
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "pixbuf", metadata, "producer_pixbuf.yml");
 }

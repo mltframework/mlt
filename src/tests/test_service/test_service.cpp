@@ -16,25 +16,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <QtTest>
 #include <mlt++/Mlt.h>
+#include <QtTest>
 using namespace Mlt;
 
 class TestService : public QObject
 {
     Q_OBJECT
-    
-public:
-    TestService()
-    {
-        repo = Factory::init();
-    }
 
-    ~TestService()
-    {
-        Factory::close();
-    }
-    
+public:
+    TestService() { repo = Factory::init(); }
+
+    ~TestService() { Factory::close(); }
+
 private Q_SLOTS:
     void CanIdentifyServicesFromFactory()
     {
@@ -48,7 +42,7 @@ private Q_SLOTS:
         Consumer consumer(profile, "null");
         QCOMPARE(mlt_service_identify(consumer.get_service()), mlt_service_consumer_type);
     }
-    
+
     void CanIdentifyServicesFromAPI()
     {
         mlt_profile profile = mlt_profile_init(NULL);
@@ -57,20 +51,22 @@ private Q_SLOTS:
         QCOMPARE(mlt_service_identify(MLT_PLAYLIST_SERVICE(playlist)), mlt_service_playlist_type);
         mlt_tractor tractor = mlt_tractor_new();
         QCOMPARE(mlt_service_identify(MLT_TRACTOR_SERVICE(tractor)), mlt_service_tractor_type);
-        QCOMPARE(mlt_service_identify(MLT_MULTITRACK_SERVICE(mlt_tractor_multitrack(tractor))), mlt_service_multitrack_type);
+        QCOMPARE(mlt_service_identify(MLT_MULTITRACK_SERVICE(mlt_tractor_multitrack(tractor))),
+                 mlt_service_multitrack_type);
 
         mlt_producer producer = mlt_producer_new(profile);
         QCOMPARE(mlt_service_identify(MLT_PRODUCER_SERVICE(producer)), mlt_service_producer_type);
         mlt_filter filter = mlt_filter_new();
         QCOMPARE(mlt_service_identify(MLT_FILTER_SERVICE(filter)), mlt_service_filter_type);
         mlt_transition transition = mlt_transition_new();
-        QCOMPARE(mlt_service_identify(MLT_TRANSITION_SERVICE(transition)), mlt_service_transition_type);
+        QCOMPARE(mlt_service_identify(MLT_TRANSITION_SERVICE(transition)),
+                 mlt_service_transition_type);
         mlt_consumer consumer = mlt_consumer_new(profile);
         QCOMPARE(mlt_service_identify(MLT_CONSUMER_SERVICE(consumer)), mlt_service_consumer_type);
     }
 
 private:
-    Repository* repo;
+    Repository *repo;
 };
 
 QTEST_APPLESS_MAIN(TestService)

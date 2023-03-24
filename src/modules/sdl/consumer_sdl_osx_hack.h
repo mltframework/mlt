@@ -27,11 +27,11 @@
 @implementation DummyThread
 - init
 {
-	[super init];
-	return self;
+    [super init];
+    return self;
 }
 - (void)startThread:(id)arg
 {
-	return;
+    return;
 }
 @end

@@ -71,7 +71,7 @@ private Q_SLOTS:
         pl.append(p);
         QCOMPARE(pl.count(), 1);
         int result = pl.remove(10); // Invalid index
-        QCOMPARE(result, 1); // Fail
+        QCOMPARE(result, 1);        // Fail
         QCOMPARE(pl.count(), 1);
     }
 
@@ -101,9 +101,9 @@ private Q_SLOTS:
         QCOMPARE(pl.count(), 3);
 
         // New order: 2, 3, 1
-        Producer* pp1 = pl.get_clip(0);
-        Producer* pp2 = pl.get_clip(1);
-        Producer* pp3 = pl.get_clip(2);
+        Producer *pp1 = pl.get_clip(0);
+        Producer *pp2 = pl.get_clip(1);
+        Producer *pp3 = pl.get_clip(2);
         QCOMPARE(pp1->parent().get_int("id"), 2);
         QCOMPARE(pp2->parent().get_int("id"), 3);
         QCOMPARE(pp3->parent().get_int("id"), 1);
@@ -139,9 +139,9 @@ private Q_SLOTS:
         QCOMPARE(pl.count(), 3);
 
         // The first will be moved to the last after move() corrects the index.
-        Producer* pp1 = pl.get_clip(0);
-        Producer* pp2 = pl.get_clip(1);
-        Producer* pp3 = pl.get_clip(2);
+        Producer *pp1 = pl.get_clip(0);
+        Producer *pp2 = pl.get_clip(1);
+        Producer *pp3 = pl.get_clip(2);
         QCOMPARE(pp1->parent().get_int("id"), 2);
         QCOMPARE(pp2->parent().get_int("id"), 3);
         QCOMPARE(pp3->parent().get_int("id"), 1);
@@ -177,9 +177,9 @@ private Q_SLOTS:
         QCOMPARE(pl.count(), 3);
 
         // The order will be reversed.
-        Producer* pp1 = pl.get_clip(0);
-        Producer* pp2 = pl.get_clip(1);
-        Producer* pp3 = pl.get_clip(2);
+        Producer *pp1 = pl.get_clip(0);
+        Producer *pp2 = pl.get_clip(1);
+        Producer *pp3 = pl.get_clip(2);
         QCOMPARE(pp1->parent().get_int("id"), 3);
         QCOMPARE(pp2->parent().get_int("id"), 2);
         QCOMPARE(pp3->parent().get_int("id"), 1);
@@ -215,9 +215,9 @@ private Q_SLOTS:
         QCOMPARE(pl.count(), 3);
 
         // The order will unchanged.
-        Producer* pp1 = pl.get_clip(0);
-        Producer* pp2 = pl.get_clip(1);
-        Producer* pp3 = pl.get_clip(2);
+        Producer *pp1 = pl.get_clip(0);
+        Producer *pp2 = pl.get_clip(1);
+        Producer *pp3 = pl.get_clip(2);
         QCOMPARE(pp1->parent().get_int("id"), 1);
         QCOMPARE(pp2->parent().get_int("id"), 2);
         QCOMPARE(pp3->parent().get_int("id"), 3);
@@ -253,9 +253,9 @@ private Q_SLOTS:
         QCOMPARE(pl.count(), 3);
 
         // The order will unchanged.
-        Producer* pp1 = pl.get_clip(0);
-        Producer* pp2 = pl.get_clip(1);
-        Producer* pp3 = pl.get_clip(2);
+        Producer *pp1 = pl.get_clip(0);
+        Producer *pp2 = pl.get_clip(1);
+        Producer *pp3 = pl.get_clip(2);
         QCOMPARE(pp1->parent().get_int("id"), 1);
         QCOMPARE(pp2->parent().get_int("id"), 2);
         QCOMPARE(pp3->parent().get_int("id"), 3);

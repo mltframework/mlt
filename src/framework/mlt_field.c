@@ -21,11 +21,11 @@
  */
 
 #include "mlt_field.h"
-#include "mlt_service.h"
 #include "mlt_filter.h"
-#include "mlt_transition.h"
 #include "mlt_multitrack.h"
+#include "mlt_service.h"
 #include "mlt_tractor.h"
+#include "mlt_transition.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -37,14 +37,14 @@
 
 struct mlt_field_s
 {
-	/// This is the producer we're connected to
-	mlt_service producer;
+    /// This is the producer we're connected to
+    mlt_service producer;
 
-	/// Multitrack
-	mlt_multitrack multitrack;
+    /// Multitrack
+    mlt_multitrack multitrack;
 
-	/// Tractor
-	mlt_tractor tractor;
+    /// Tractor
+    mlt_tractor tractor;
 };
 
 /** Construct a field, mulitrack, and tractor.
@@ -53,29 +53,28 @@ struct mlt_field_s
  * \return a new field
  */
 
-mlt_field mlt_field_init( )
+mlt_field mlt_field_init()
 {
-	// Initialise the field
-	mlt_field self = calloc( 1, sizeof( struct mlt_field_s ) );
+    // Initialise the field
+    mlt_field self = calloc(1, sizeof(struct mlt_field_s));
 
-	// Initialise it
-	if ( self != NULL )
-	{
-		// Construct a multitrack
-		self->multitrack = mlt_multitrack_init( );
+    // Initialise it
+    if (self != NULL) {
+        // Construct a multitrack
+        self->multitrack = mlt_multitrack_init();
 
-		// Construct a tractor
-		self->tractor = mlt_tractor_init( );
+        // Construct a tractor
+        self->tractor = mlt_tractor_init();
 
-		// The first plant will be connected to the mulitrack
-		self->producer = MLT_MULTITRACK_SERVICE( self->multitrack );
+        // The first plant will be connected to the mulitrack
+        self->producer = MLT_MULTITRACK_SERVICE(self->multitrack);
 
-		// Connect the tractor to the multitrack
-		mlt_tractor_connect( self->tractor, self->producer );
-	}
+        // Connect the tractor to the multitrack
+        mlt_tractor_connect(self->tractor, self->producer);
+    }
 
-	// Return self
-	return self;
+    // Return self
+    return self;
 }
 
 /** Construct a field and initialize with supplied multitrack and tractor.
@@ -86,29 +85,28 @@ mlt_field mlt_field_init( )
  * \return a new field
  */
 
-mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
+mlt_field mlt_field_new(mlt_multitrack multitrack, mlt_tractor tractor)
 {
-	// Initialise the field
-	mlt_field self = calloc( 1, sizeof( struct mlt_field_s ) );
+    // Initialise the field
+    mlt_field self = calloc(1, sizeof(struct mlt_field_s));
 
-	// Initialise it
-	if ( self != NULL )
-	{
-		// Construct a multitrack
-		self->multitrack = multitrack;
+    // Initialise it
+    if (self != NULL) {
+        // Construct a multitrack
+        self->multitrack = multitrack;
 
-		// Construct a tractor
-		self->tractor = tractor;
+        // Construct a tractor
+        self->tractor = tractor;
 
-		// The first plant will be connected to the mulitrack
-		self->producer = MLT_MULTITRACK_SERVICE( self->multitrack );
+        // The first plant will be connected to the mulitrack
+        self->producer = MLT_MULTITRACK_SERVICE(self->multitrack);
 
-		// Connect the tractor to the multitrack
-		mlt_tractor_connect( self->tractor, self->producer );
-	}
+        // Connect the tractor to the multitrack
+        mlt_tractor_connect(self->tractor, self->producer);
+    }
 
-	// Return self
-	return self;
+    // Return self
+    return self;
 }
 
 /** Get the service associated to this field.
@@ -118,9 +116,9 @@ mlt_field mlt_field_new( mlt_multitrack multitrack, mlt_tractor tractor )
  * \return the tractor as a service
  */
 
-mlt_service mlt_field_service( mlt_field self )
+mlt_service mlt_field_service(mlt_field self)
 {
-	return self != NULL ? MLT_TRACTOR_SERVICE( self->tractor ) : NULL;
+    return self != NULL ? MLT_TRACTOR_SERVICE(self->tractor) : NULL;
 }
 
 /** Get the multitrack.
@@ -130,9 +128,9 @@ mlt_service mlt_field_service( mlt_field self )
  * \return the multitrack
  */
 
-mlt_multitrack mlt_field_multitrack( mlt_field self )
+mlt_multitrack mlt_field_multitrack(mlt_field self)
 {
-	return self != NULL ? self->multitrack : NULL;
+    return self != NULL ? self->multitrack : NULL;
 }
 
 /** Get the tractor.
@@ -142,9 +140,9 @@ mlt_multitrack mlt_field_multitrack( mlt_field self )
  * \return the tractor
  */
 
-mlt_tractor mlt_field_tractor( mlt_field self )
+mlt_tractor mlt_field_tractor(mlt_field self)
 {
-	return self != NULL ? self->tractor : NULL;
+    return self != NULL ? self->tractor : NULL;
 }
 
 /** Get the properties associated to this field.
@@ -154,9 +152,9 @@ mlt_tractor mlt_field_tractor( mlt_field self )
  * \return a properties list
  */
 
-mlt_properties mlt_field_properties( mlt_field self )
+mlt_properties mlt_field_properties(mlt_field self)
 {
-	return MLT_SERVICE_PROPERTIES( mlt_field_service( self ) );
+    return MLT_SERVICE_PROPERTIES(mlt_field_service(self));
 }
 
 /** Plant a filter.
@@ -168,25 +166,24 @@ mlt_properties mlt_field_properties( mlt_field self )
  * \return true if there was an error
  */
 
-int mlt_field_plant_filter( mlt_field self, mlt_filter that, int track )
+int mlt_field_plant_filter(mlt_field self, mlt_filter that, int track)
 {
-	// Connect the filter to the last producer
-	int result = mlt_filter_connect( that, self->producer, track );
+    // Connect the filter to the last producer
+    int result = mlt_filter_connect(that, self->producer, track);
 
-	// If successful, then we'll use this for connecting in the future
-	if ( result == 0 )
-	{
-		// This is now the new producer
-		self->producer = MLT_FILTER_SERVICE( that );
+    // If successful, then we'll use this for connecting in the future
+    if (result == 0) {
+        // This is now the new producer
+        self->producer = MLT_FILTER_SERVICE(that);
 
-		// Reconnect tractor to new producer
-		mlt_tractor_connect( self->tractor, self->producer );
+        // Reconnect tractor to new producer
+        mlt_tractor_connect(self->tractor, self->producer);
 
-		// Fire an event
-		mlt_events_fire( mlt_field_properties( self ), "service-changed", mlt_event_data_none() );
-	}
+        // Fire an event
+        mlt_events_fire(mlt_field_properties(self), "service-changed", mlt_event_data_none());
+    }
 
-	return result;
+    return result;
 }
 
 /** Plant a transition.
@@ -199,25 +196,24 @@ int mlt_field_plant_filter( mlt_field self, mlt_filter that, int track )
  * \return true if there was an error
  */
 
-int mlt_field_plant_transition( mlt_field self, mlt_transition that, int a_track, int b_track )
+int mlt_field_plant_transition(mlt_field self, mlt_transition that, int a_track, int b_track)
 {
-	// Connect the transition to the last producer
-	int result = mlt_transition_connect( that, self->producer, a_track, b_track );
+    // Connect the transition to the last producer
+    int result = mlt_transition_connect(that, self->producer, a_track, b_track);
 
-	// If successful, then we'll use self for connecting in the future
-	if ( result == 0 )
-	{
-		// This is now the new producer
-		self->producer = MLT_TRANSITION_SERVICE( that );
+    // If successful, then we'll use self for connecting in the future
+    if (result == 0) {
+        // This is now the new producer
+        self->producer = MLT_TRANSITION_SERVICE(that);
 
-		// Reconnect tractor to new producer
-		mlt_tractor_connect( self->tractor, self->producer );
+        // Reconnect tractor to new producer
+        mlt_tractor_connect(self->tractor, self->producer);
 
-		// Fire an event
-		mlt_events_fire( mlt_field_properties( self ), "service-changed", mlt_event_data_none() );
-	}
+        // Fire an event
+        mlt_events_fire(mlt_field_properties(self), "service-changed", mlt_event_data_none());
+    }
 
-	return result;
+    return result;
 }
 
 /** Close the field.
@@ -226,14 +222,13 @@ int mlt_field_plant_transition( mlt_field self, mlt_transition that, int a_track
  * \param self a field
  */
 
-void mlt_field_close( mlt_field self )
+void mlt_field_close(mlt_field self)
 {
-	if ( self != NULL && mlt_properties_dec_ref( mlt_field_properties( self ) ) <= 0 )
-	{
-		//mlt_tractor_close( self->tractor );
-		//mlt_multitrack_close( self->multitrack );
-		free( self );
-	}
+    if (self != NULL && mlt_properties_dec_ref(mlt_field_properties(self)) <= 0) {
+        //mlt_tractor_close( self->tractor );
+        //mlt_multitrack_close( self->multitrack );
+        free(self);
+    }
 }
 
 /** Remove a filter or transition from the field.
@@ -243,27 +238,26 @@ void mlt_field_close( mlt_field self )
  * \param service the filter or transition to remove
  */
 
-void mlt_field_disconnect_service( mlt_field self, mlt_service service )
+void mlt_field_disconnect_service(mlt_field self, mlt_service service)
 {
-	mlt_service p = mlt_service_producer( service );
-	mlt_service c = mlt_service_consumer( service);
-	int i;
-	switch ( mlt_service_identify(c) )
-	{
-		case mlt_service_filter_type:
-			i = mlt_filter_get_track( MLT_FILTER(c) );
-			mlt_service_connect_producer( c, p, i );
-			break;
-		case mlt_service_transition_type:
-			i = mlt_transition_get_a_track ( MLT_TRANSITION(c) );
-			mlt_service_connect_producer( c, p, i );
-			MLT_TRANSITION(c)->producer = p;
-			break;
-		case mlt_service_tractor_type:
-			self->producer = p;
-			mlt_tractor_connect( MLT_TRACTOR(c), p );
-		default:
-			break;
-	}
-	mlt_events_fire( mlt_field_properties( self ), "service-changed", mlt_event_data_none() );
+    mlt_service p = mlt_service_producer(service);
+    mlt_service c = mlt_service_consumer(service);
+    int i;
+    switch (mlt_service_identify(c)) {
+    case mlt_service_filter_type:
+        i = mlt_filter_get_track(MLT_FILTER(c));
+        mlt_service_connect_producer(c, p, i);
+        break;
+    case mlt_service_transition_type:
+        i = mlt_transition_get_a_track(MLT_TRANSITION(c));
+        mlt_service_connect_producer(c, p, i);
+        MLT_TRANSITION(c)->producer = p;
+        break;
+    case mlt_service_tractor_type:
+        self->producer = p;
+        mlt_tractor_connect(MLT_TRACTOR(c), p);
+    default:
+        break;
+    }
+    mlt_events_fire(mlt_field_properties(self), "service-changed", mlt_event_data_none());
 }

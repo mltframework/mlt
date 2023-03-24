@@ -21,125 +21,116 @@
 #include "MltFilter.h"
 using namespace Mlt;
 
-namespace Mlt
+namespace Mlt {
+class PushPrivate
 {
-	class PushPrivate
-	{
-		public:
-			PushPrivate( )
-			{
-			}
-	};
+public:
+    PushPrivate() {}
+};
+} // namespace Mlt
+
+static void filter_destructor(void *arg)
+{
+    Filter *filter = (Filter *) arg;
+    delete filter;
 }
 
-static void filter_destructor( void *arg )
+PushConsumer::PushConsumer(Profile &profile, const char *id, const char *service)
+    : Consumer(profile, id, service)
+    , m_private(new PushPrivate())
 {
-	Filter *filter = ( Filter * )arg;
-	delete filter;
+    if (is_valid()) {
+        // Set up push mode (known as put mode in mlt)
+        set("real_time", 0);
+        set("put_mode", 1);
+        set("terminate_on_pause", 0);
+        set("buffer", 0);
+
+        // We might need resize and rescale filters so we'll create them now
+        // NB: Try to use the best rescaler available here
+        Filter *resize = new Filter(profile, "resize");
+        Filter *rescale = new Filter(profile, "mcrescale");
+        if (!rescale->is_valid()) {
+            delete rescale;
+            rescale = new Filter(profile, "gtkrescale");
+        }
+        if (!rescale->is_valid()) {
+            delete rescale;
+            rescale = new Filter(profile, "rescale");
+        }
+
+        Filter *convert = new Filter(profile, "avcolour_space");
+
+        set("filter_convert", convert, 0, filter_destructor);
+        set("filter_resize", resize, 0, filter_destructor);
+        set("filter_rescale", rescale, 0, filter_destructor);
+    }
 }
 
-PushConsumer::PushConsumer( Profile& profile, const char *id , const char *service ) :
-	Consumer( profile, id, service ),
-	m_private( new PushPrivate( ) )
+PushConsumer::~PushConsumer() {}
+
+void PushConsumer::set_render(int width, int height, double aspect_ratio)
 {
-	if ( is_valid( ) )
-	{
-		// Set up push mode (known as put mode in mlt)
-		set( "real_time", 0 );
-		set( "put_mode", 1 );
-		set( "terminate_on_pause", 0 );
-		set( "buffer", 0 );
-
-		// We might need resize and rescale filters so we'll create them now
-		// NB: Try to use the best rescaler available here
-		Filter *resize = new Filter( profile, "resize" );
-		Filter *rescale = new Filter( profile, "mcrescale" );
-		if ( !rescale->is_valid( ) )
-		{
-			delete rescale;
-			rescale = new Filter( profile, "gtkrescale" );
-		}
-		if ( !rescale->is_valid( ) )
-		{
-			delete rescale;
-			rescale = new Filter( profile, "rescale" );
-		}
-
-		Filter *convert = new Filter( profile, "avcolour_space" );
-
-		set( "filter_convert", convert, 0, filter_destructor );
-		set( "filter_resize", resize, 0, filter_destructor );
-		set( "filter_rescale", rescale, 0, filter_destructor );
-	}
+    set("render_width", width);
+    set("render_height", height);
+    set("render_aspect_ratio", aspect_ratio);
 }
 
-PushConsumer::~PushConsumer( )
+int PushConsumer::connect(Service & /*service*/)
 {
+    return -1;
 }
 
-void PushConsumer::set_render( int width, int height, double aspect_ratio )
+int PushConsumer::push(Frame *frame)
 {
-	set( "render_width", width );
-	set( "render_height", height );
-	set( "render_aspect_ratio", aspect_ratio );
+    frame->inc_ref();
+
+    // Here we have the option to process the frame at a render resolution (this will
+    // typically be PAL or NTSC) prior to scaling according to the consumers profile
+    // This is done to optimise quality, esp. with regard to compositing positions
+    if (get_int("render_width")) {
+        // Process the projects render resolution first
+        mlt_image_format format = mlt_image_yuv422;
+        int w = get_int("render_width");
+        int h = get_int("render_height");
+        frame->set("consumer_aspect_ratio", get_double("render_aspect_ratio"));
+        frame->set("consumer.progressive", get_int("progressive") | get_int("deinterlace"));
+        frame->set("consumer.deinterlacer",
+                   get("deinterlacer") ? get("deinterlacer") : get("deinterlace_method"));
+        frame->set("consumer.rescale", get("rescale"));
+
+        // Render the frame
+        frame->get_image(format, w, h);
+
+        // Now set up the post image scaling
+        Filter *convert = (Filter *) get_data("filter_convert");
+        mlt_filter_process(convert->get_filter(), frame->get_frame());
+        Filter *rescale = (Filter *) get_data("filter_rescale");
+        mlt_filter_process(rescale->get_filter(), frame->get_frame());
+        Filter *resize = (Filter *) get_data("filter_resize");
+        mlt_filter_process(resize->get_filter(), frame->get_frame());
+    }
+
+    return mlt_consumer_put_frame((mlt_consumer) get_service(), frame->get_frame());
 }
 
-int PushConsumer::connect( Service &/*service*/ )
+int PushConsumer::push(Frame &frame)
 {
-	return -1;
+    return push(&frame);
 }
 
-int PushConsumer::push( Frame *frame )
+int PushConsumer::drain()
 {
-	frame->inc_ref( );
-
-	// Here we have the option to process the frame at a render resolution (this will 
-	// typically be PAL or NTSC) prior to scaling according to the consumers profile
-	// This is done to optimise quality, esp. with regard to compositing positions 
-	if ( get_int( "render_width" ) )
-	{
-		// Process the projects render resolution first
-		mlt_image_format format = mlt_image_yuv422;
-		int w = get_int( "render_width" );
-		int h = get_int( "render_height" );
-		frame->set( "consumer_aspect_ratio", get_double( "render_aspect_ratio" ) );
-		frame->set( "consumer.progressive", get_int( "progressive" ) | get_int( "deinterlace" ) );
-		frame->set( "consumer.deinterlacer", get("deinterlacer")? get("deinterlacer") : get("deinterlace_method") );
-		frame->set( "consumer.rescale", get( "rescale" ) );
-
-		// Render the frame
-		frame->get_image( format, w, h );
-
-		// Now set up the post image scaling
-		Filter *convert = ( Filter * )get_data( "filter_convert" );
-		mlt_filter_process( convert->get_filter( ), frame->get_frame( ) );
-		Filter *rescale = ( Filter * )get_data( "filter_rescale" );
-		mlt_filter_process( rescale->get_filter( ), frame->get_frame( ) );
-		Filter *resize = ( Filter * )get_data( "filter_resize" );
-		mlt_filter_process( resize->get_filter( ), frame->get_frame( ) );
-	}
-
-	return mlt_consumer_put_frame( ( mlt_consumer )get_service( ), frame->get_frame( ) );
-}
-
-int PushConsumer::push( Frame &frame )
-{
-	return push( &frame );
-}
-
-int PushConsumer::drain( )
-{
-	return 0;
+    return 0;
 }
 
 // Convenience function - generates a frame with an image of a given size
-Frame *PushConsumer::construct( int size )
+Frame *PushConsumer::construct(int size)
 {
-	mlt_frame f = mlt_frame_init( get_service() );
-	Frame *frame = new Frame( f );
-	uint8_t *buffer = ( uint8_t * )mlt_pool_alloc( size );
-	frame->set( "image", buffer, size, mlt_pool_release );
-	mlt_frame_close( f );
-	return frame;
+    mlt_frame f = mlt_frame_init(get_service());
+    Frame *frame = new Frame(f);
+    uint8_t *buffer = (uint8_t *) mlt_pool_alloc(size);
+    frame->set("image", buffer, size, mlt_pool_release);
+    mlt_frame_close(f);
+    return frame;
 }
-

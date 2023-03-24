@@ -17,71 +17,77 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
+#include <assert.h>
 #include <framework/mlt.h>
 #include <string.h>
-#include <assert.h>
 
 #include "filter_glsl_manager.h"
-#include <init.h>
 #include <effect_chain.h>
-#include <util.h>
+#include <init.h>
 #include <overlay_effect.h>
+#include <util.h>
 
 using namespace movit;
 
-static int get_image( mlt_frame a_frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int get_image(mlt_frame a_frame,
+                     uint8_t **image,
+                     mlt_image_format *format,
+                     int *width,
+                     int *height,
+                     int writable)
 {
-	int error;
+    int error;
 
-	// Get the b frame from the stack
-	mlt_frame b_frame = (mlt_frame) mlt_frame_pop_frame( a_frame );
+    // Get the b frame from the stack
+    mlt_frame b_frame = (mlt_frame) mlt_frame_pop_frame(a_frame);
 
-	// Get the transition object
-	mlt_transition transition = (mlt_transition) mlt_frame_pop_service( a_frame );
-	mlt_service service = MLT_TRANSITION_SERVICE( transition );
-	mlt_service_lock( service );
+    // Get the transition object
+    mlt_transition transition = (mlt_transition) mlt_frame_pop_service(a_frame);
+    mlt_service service = MLT_TRANSITION_SERVICE(transition);
+    mlt_service_lock(service);
 
-	uint8_t *a_image, *b_image;
+    uint8_t *a_image, *b_image;
 
-	// Get the two images.
-	*format = mlt_image_movit;
-	error = mlt_frame_get_image( a_frame, &a_image, format, width, height, writable );
-	error = mlt_frame_get_image( b_frame, &b_image, format, width, height, writable );
+    // Get the two images.
+    *format = mlt_image_movit;
+    error = mlt_frame_get_image(a_frame, &a_image, format, width, height, writable);
+    error = mlt_frame_get_image(b_frame, &b_image, format, width, height, writable);
 
-	if (*width < 1 || *height < 1) {
-		mlt_log_error( service, "Invalid size for get_image: %dx%d", *width, *height);
-		return error;
-	}
+    if (*width < 1 || *height < 1) {
+        mlt_log_error(service, "Invalid size for get_image: %dx%d", *width, *height);
+        return error;
+    }
 
-	GlslManager::set_effect_input( service, a_frame, (mlt_service) a_image );
-	GlslManager::set_effect_secondary_input( service, a_frame, (mlt_service) b_image, b_frame );
-	GlslManager::set_effect( service, a_frame, new OverlayEffect );
-	*image = (uint8_t *) service;
+    GlslManager::set_effect_input(service, a_frame, (mlt_service) a_image);
+    GlslManager::set_effect_secondary_input(service, a_frame, (mlt_service) b_image, b_frame);
+    GlslManager::set_effect(service, a_frame, new OverlayEffect);
+    *image = (uint8_t *) service;
 
-	mlt_service_unlock( service );
-	return error;
+    mlt_service_unlock(service);
+    return error;
 }
 
-static mlt_frame process( mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame )
+static mlt_frame process(mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame)
 {
-	mlt_frame_push_service( a_frame, transition );
-	mlt_frame_push_frame( a_frame, b_frame );
-	mlt_frame_push_get_image( a_frame, get_image );
+    mlt_frame_push_service(a_frame, transition);
+    mlt_frame_push_frame(a_frame, b_frame);
+    mlt_frame_push_get_image(a_frame, get_image);
 
-	return a_frame;
+    return a_frame;
 }
 
-extern "C"
-mlt_transition transition_movit_overlay_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+extern "C" mlt_transition transition_movit_overlay_init(mlt_profile profile,
+                                                        mlt_service_type type,
+                                                        const char *id,
+                                                        char *arg)
 {
-	mlt_transition transition = NULL;
-	GlslManager* glsl = GlslManager::get_instance();
-	if ( glsl && ( transition = mlt_transition_new() ) ) {
-		transition->process = process;
-		
-		// Inform apps and framework that this is a video only transition
-		mlt_properties_set_int( MLT_TRANSITION_PROPERTIES( transition ), "_transition_type", 1 );
-	}
-	return transition;
+    mlt_transition transition = NULL;
+    GlslManager *glsl = GlslManager::get_instance();
+    if (glsl && (transition = mlt_transition_new())) {
+        transition->process = process;
+
+        // Inform apps and framework that this is a video only transition
+        mlt_properties_set_int(MLT_TRANSITION_PROPERTIES(transition), "_transition_type", 1);
+    }
+    return transition;
 }

@@ -17,54 +17,63 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <assert.h>
 #include <framework/mlt.h>
 #include <string.h>
-#include <assert.h>
 
 #include "filter_glsl_manager.h"
 #include <mirror_effect.h>
 
 using namespace movit;
 
-static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int get_image(mlt_frame frame,
+                     uint8_t **image,
+                     mlt_image_format *format,
+                     int *width,
+                     int *height,
+                     int writable)
 {
-	mlt_filter filter = (mlt_filter) mlt_frame_pop_service( frame );
+    mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
 
-	*format = mlt_image_movit;
-	int error = mlt_frame_get_image( frame, image, format, width, height, writable );
+    *format = mlt_image_movit;
+    int error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
-	if (*width < 1 || *height < 1) {
-		mlt_log_error( MLT_FILTER_SERVICE(filter), "Invalid size for get_image: %dx%d", *width, *height);
-		return error;
-	}
+    if (*width < 1 || *height < 1) {
+        mlt_log_error(MLT_FILTER_SERVICE(filter),
+                      "Invalid size for get_image: %dx%d",
+                      *width,
+                      *height);
+        return error;
+    }
 
-	GlslManager::set_effect_input( MLT_FILTER_SERVICE( filter ), frame, (mlt_service) *image );
-	GlslManager::set_effect( MLT_FILTER_SERVICE( filter ), frame, new MirrorEffect );
-	*image = (uint8_t *) MLT_FILTER_SERVICE( filter );
-	return error;
+    GlslManager::set_effect_input(MLT_FILTER_SERVICE(filter), frame, (mlt_service) *image);
+    GlslManager::set_effect(MLT_FILTER_SERVICE(filter), frame, new MirrorEffect);
+    *image = (uint8_t *) MLT_FILTER_SERVICE(filter);
+    return error;
 }
 
-static mlt_frame process( mlt_filter filter, mlt_frame frame )
+static mlt_frame process(mlt_filter filter, mlt_frame frame)
 {
-	mlt_frame_push_service( frame, filter );
-	mlt_frame_push_get_image( frame, get_image );
-	return frame;
+    mlt_frame_push_service(frame, filter);
+    mlt_frame_push_get_image(frame, get_image);
+    return frame;
 }
 
 extern "C" {
 
-mlt_filter filter_movit_mirror_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_filter filter_movit_mirror_init(mlt_profile profile,
+                                    mlt_service_type type,
+                                    const char *id,
+                                    char *arg)
 {
-	mlt_filter filter = NULL;
-	GlslManager* glsl = GlslManager::get_instance();
+    mlt_filter filter = NULL;
+    GlslManager *glsl = GlslManager::get_instance();
 
-	if ( glsl && ( filter = mlt_filter_new() ) ) {
-		mlt_properties properties = MLT_FILTER_PROPERTIES( filter );
-		glsl->add_ref( properties );
-		filter->process = process;
-	}
-	return filter;
+    if (glsl && (filter = mlt_filter_new())) {
+        mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
+        glsl->add_ref(properties);
+        filter->process = process;
+    }
+    return filter;
 }
-
 }
-

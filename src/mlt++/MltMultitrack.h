@@ -27,31 +27,30 @@
 
 #include "MltProducer.h"
 
-namespace Mlt
-{
-	class Service;
-	class Producer;
+namespace Mlt {
+class Service;
+class Producer;
 
-	class MLTPP_DECLSPEC Multitrack : public Producer
-	{
-		private:
-			mlt_multitrack instance;
-		public:
-			Multitrack( mlt_multitrack multitrack );
-			Multitrack( Service &multitrack );
-			Multitrack( Multitrack &multitrack );
-			virtual ~Multitrack( );
-			mlt_multitrack get_multitrack( );
-			mlt_producer get_producer( ) override;
-			int connect( Producer &producer, int index );
-			int insert( Producer &producer, int index );
-			int disconnect( int index );
-			int clip( mlt_whence whence, int index );
-			int count( );
-			Producer *track( int index );
-			void refresh( );
-	};
-}
+class MLTPP_DECLSPEC Multitrack : public Producer
+{
+private:
+    mlt_multitrack instance;
+
+public:
+    Multitrack(mlt_multitrack multitrack);
+    Multitrack(Service &multitrack);
+    Multitrack(Multitrack &multitrack);
+    virtual ~Multitrack();
+    mlt_multitrack get_multitrack();
+    mlt_producer get_producer() override;
+    int connect(Producer &producer, int index);
+    int insert(Producer &producer, int index);
+    int disconnect(int index);
+    int clip(mlt_whence whence, int index);
+    int count();
+    Producer *track(int index);
+    void refresh();
+};
+} // namespace Mlt
 
 #endif
-

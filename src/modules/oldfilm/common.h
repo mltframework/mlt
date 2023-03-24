@@ -21,11 +21,11 @@
 
 typedef struct
 {
-	unsigned int x;
-	unsigned int y;
+    unsigned int x;
+    unsigned int y;
 } oldfilm_rand_seed;
 
-void oldfilm_init_seed( oldfilm_rand_seed* seed, int init );
-int oldfilm_fast_rand( oldfilm_rand_seed* seed );
+void oldfilm_init_seed(oldfilm_rand_seed *seed, int init);
+int oldfilm_fast_rand(oldfilm_rand_seed *seed);
 
 #endif // COMMON_H

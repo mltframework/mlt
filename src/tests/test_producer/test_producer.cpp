@@ -30,38 +30,35 @@ using namespace Mlt;
 
 class TestProducer : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	TestProducer()
-	{
-		Factory::init();
-	}
+    TestProducer() { Factory::init(); }
 
 private Q_SLOTS:
 
-	void DefaultConstructorIsInvalid()
-	{
-		Producer p;
-		QVERIFY(!p.is_valid());
-	}
+    void DefaultConstructorIsInvalid()
+    {
+        Producer p;
+        QVERIFY(!p.is_valid());
+    }
 
-	void CutIdentifiesAsProducer()
-	{
-		Profile profile;
-		Producer producer(profile, "noise");
-		QCOMPARE(producer.type(), mlt_service_producer_type);
+    void CutIdentifiesAsProducer()
+    {
+        Profile profile;
+        Producer producer(profile, "noise");
+        QCOMPARE(producer.type(), mlt_service_producer_type);
 
-		// Taken as a service, the identity is correct
-		Mlt::Service* cutService = producer.cut(0, 1);
-		QCOMPARE(cutService->type(), mlt_service_producer_type);
+        // Taken as a service, the identity is correct
+        Mlt::Service *cutService = producer.cut(0, 1);
+        QCOMPARE(cutService->type(), mlt_service_producer_type);
 
-		// Promoted to a producer and the identity is correct
-		Mlt::Producer cutProducer(*cutService);
-		QCOMPARE(cutProducer.type(), mlt_service_producer_type);
+        // Promoted to a producer and the identity is correct
+        Mlt::Producer cutProducer(*cutService);
+        QCOMPARE(cutProducer.type(), mlt_service_producer_type);
 
-		delete cutService;
-	}
+        delete cutService;
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProducer)

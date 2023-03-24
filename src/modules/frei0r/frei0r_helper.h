@@ -19,7 +19,13 @@
  */
 #include <framework/mlt.h>
 
-int process_frei0r_item( mlt_service, mlt_position position, double time, int length,
-	mlt_frame, uint8_t **image, int *width, int *height );
-void destruct (mlt_properties prop );
+int process_frei0r_item(mlt_service,
+                        mlt_position position,
+                        double time,
+                        int length,
+                        mlt_frame,
+                        uint8_t **image,
+                        int *width,
+                        int *height);
+void destruct(mlt_properties prop);
 extern const char *CAIROBLEND_MODE_PROPERTY;

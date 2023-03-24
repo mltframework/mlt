@@ -17,152 +17,140 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
-#include <string.h>
 #include "MltFilter.h"
 #include "MltProfile.h"
+#include <stdlib.h>
+#include <string.h>
 using namespace Mlt;
 
 Filter::Filter()
-	: Service()
-	, instance(nullptr)
+    : Service()
+    , instance(nullptr)
+{}
+
+Filter::Filter(Profile &profile, const char *id, const char *arg)
+    : Filter(profile.get_profile(), id, arg)
+{}
+
+Filter::Filter(mlt_profile profile, const char *id, const char *arg)
+    : instance(NULL)
 {
+    if (arg != NULL) {
+        instance = mlt_factory_filter(profile, id, arg);
+    } else {
+        if (strchr(id, ':')) {
+            char *temp = strdup(id);
+            char *arg = strchr(temp, ':') + 1;
+            *(arg - 1) = '\0';
+            instance = mlt_factory_filter(profile, temp, arg);
+            free(temp);
+        } else {
+            instance = mlt_factory_filter(profile, id, NULL);
+        }
+    }
 }
 
-Filter::Filter( Profile& profile, const char *id, const char *arg ) :
-	Filter( profile.get_profile(), id, arg )
+Filter::Filter(Service &filter)
+    : instance(NULL)
 {
+    if (filter.type() == mlt_service_filter_type) {
+        instance = (mlt_filter) filter.get_service();
+        inc_ref();
+    }
 }
 
-Filter::Filter( mlt_profile profile, const char *id, const char *arg ) :
-	instance( NULL )
+Filter::Filter(Filter &filter)
+    : Mlt::Service(filter)
+    , instance(filter.get_filter())
 {
-	if ( arg != NULL )
-	{
-		instance = mlt_factory_filter( profile, id, arg );
-	}
-	else
-	{
-		if ( strchr( id, ':' ) )
-		{
-			char *temp = strdup( id );
-			char *arg = strchr( temp, ':' ) + 1;
-			*( arg - 1 ) = '\0';
-			instance = mlt_factory_filter( profile, temp, arg );
-			free( temp );
-		}
-		else
-		{
-			instance = mlt_factory_filter( profile, id, NULL );
-		}
-	}
+    inc_ref();
 }
 
-Filter::Filter( Service &filter ) :
-	instance( NULL )
-{
-	if ( filter.type( ) == mlt_service_filter_type )
-	{
-		instance = ( mlt_filter )filter.get_service( );
-		inc_ref( );
-	}
-}
+Filter::Filter(const Filter &filter)
+    : Filter(const_cast<Filter &>(filter))
+{}
 
-Filter::Filter( Filter &filter ) :
-	Mlt::Service( filter ),
-	instance( filter.get_filter( ) )
+Filter::Filter(mlt_filter filter)
+    : instance(filter)
 {
-	inc_ref( );
-}
-
-Filter::Filter( const Filter &filter ) :
-	Filter( const_cast<Filter&>(filter) )
-{
-}
-
-Filter::Filter( mlt_filter filter ) :
-	instance( filter )
-{
-	inc_ref( );
+    inc_ref();
 }
 
 Filter::Filter(Filter *filter)
-	: Filter(filter? filter->get_filter() : nullptr)
-{
-}
+    : Filter(filter ? filter->get_filter() : nullptr)
+{}
 
-Filter::~Filter( )
+Filter::~Filter()
 {
-	mlt_filter_close( instance );
+    mlt_filter_close(instance);
 }
 
 Filter &Filter::operator=(const Filter &filter)
 {
-	if (this != &filter)
-	{
-		mlt_filter_close( instance );
-		instance = filter.instance;
-		inc_ref( );
-	}
-	return *this;
+    if (this != &filter) {
+        mlt_filter_close(instance);
+        instance = filter.instance;
+        inc_ref();
+    }
+    return *this;
 }
 
-mlt_filter Filter::get_filter( )
+mlt_filter Filter::get_filter()
 {
-	return instance;
+    return instance;
 }
 
-mlt_service Filter::get_service( )
+mlt_service Filter::get_service()
 {
-	return mlt_filter_service( get_filter( ) );
+    return mlt_filter_service(get_filter());
 }
 
-int Filter::connect( Service &service, int index )
+int Filter::connect(Service &service, int index)
 {
-	return mlt_filter_connect( get_filter( ), service.get_service( ), index );
+    return mlt_filter_connect(get_filter(), service.get_service(), index);
 }
 
-void Filter::set_in_and_out( int in, int out )
+void Filter::set_in_and_out(int in, int out)
 {
-	mlt_filter_set_in_and_out( get_filter( ), in, out );
+    mlt_filter_set_in_and_out(get_filter(), in, out);
 }
 
-int Filter::get_in( )
+int Filter::get_in()
 {
-	return mlt_filter_get_in( get_filter( ) );
+    return mlt_filter_get_in(get_filter());
 }
 
-int Filter::get_out( )
+int Filter::get_out()
 {
-	return mlt_filter_get_out( get_filter( ) );
+    return mlt_filter_get_out(get_filter());
 }
 
-int Filter::get_length( )
+int Filter::get_length()
 {
-	return mlt_filter_get_length( get_filter( ) );
+    return mlt_filter_get_length(get_filter());
 }
 
-int Filter::get_length2( Frame &frame )
+int Filter::get_length2(Frame &frame)
 {
-	return mlt_filter_get_length2( get_filter( ), frame.get_frame() );
+    return mlt_filter_get_length2(get_filter(), frame.get_frame());
 }
 
-int Filter::get_track( )
+int Filter::get_track()
 {
-	return mlt_filter_get_track( get_filter( ) );
+    return mlt_filter_get_track(get_filter());
 }
 
-int Filter::get_position( Frame &frame )
+int Filter::get_position(Frame &frame)
 {
-	return mlt_filter_get_position( get_filter( ), frame.get_frame( ) );
+    return mlt_filter_get_position(get_filter(), frame.get_frame());
 }
 
-double Filter::get_progress( Frame &frame )
+double Filter::get_progress(Frame &frame)
 {
-	return mlt_filter_get_progress( get_filter( ), frame.get_frame( ) );
+    return mlt_filter_get_progress(get_filter(), frame.get_frame());
 }
 
-void Filter::process( Frame &frame )
+void Filter::process(Frame &frame)
 {
-	mlt_filter_process( get_filter( ), frame.get_frame() );
+    mlt_filter_process(get_filter(), frame.get_frame());
 }

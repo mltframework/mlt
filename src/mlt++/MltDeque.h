@@ -25,24 +25,24 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt
+namespace Mlt {
+class MLTPP_DECLSPEC Deque
 {
-	class MLTPP_DECLSPEC Deque
-	{
-		private:
-			mlt_deque deque;
-		public:
-			Deque( );
-			~Deque( );
-			int count( );
-			int push_back( void *item );
-			void *pop_back( );
-			int push_front( void *item );
-			void *pop_front( );
-			void *peek_back( );
-			void *peek_front( );
-			void *peek( int index );
-	};
-}
+private:
+    mlt_deque deque;
+
+public:
+    Deque();
+    ~Deque();
+    int count();
+    int push_back(void *item);
+    void *pop_back();
+    int push_front(void *item);
+    void *pop_front();
+    void *peek_back();
+    void *peek_front();
+    void *peek(int index);
+};
+} // namespace Mlt
 
 #endif

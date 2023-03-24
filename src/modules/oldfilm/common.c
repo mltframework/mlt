@@ -19,20 +19,19 @@
 #include "common.h"
 #include <stdlib.h>
 
-
-void oldfilm_init_seed( oldfilm_rand_seed* seed, int init )
+void oldfilm_init_seed(oldfilm_rand_seed *seed, int init)
 {
-	// Use the initial value to initialize the seed to arbitrary values.
-	// This causes the algorithm to produce consistent results each time for the same frame number.
-	seed->x = 521288629 + init - ( init << 16 );
-	seed->y = 362436069 - init + ( init << 16 );
+    // Use the initial value to initialize the seed to arbitrary values.
+    // This causes the algorithm to produce consistent results each time for the same frame number.
+    seed->x = 521288629 + init - (init << 16);
+    seed->y = 362436069 - init + (init << 16);
 }
 
-int oldfilm_fast_rand( oldfilm_rand_seed* seed )
+int oldfilm_fast_rand(oldfilm_rand_seed *seed)
 {
-	static unsigned int a = 18000, b = 30903;
-	seed->x = a * ( seed->x & 65535 ) + ( seed->x >> 16 );
-	seed->y = b * ( seed->y & 65535 ) + ( seed->y >> 16 );
-	int r = ( seed->x << 16 ) + ( seed->y & 65535 );
-	return abs(r);
+    static unsigned int a = 18000, b = 30903;
+    seed->x = a * (seed->x & 65535) + (seed->x >> 16);
+    seed->y = b * (seed->y & 65535) + (seed->y >> 16);
+    int r = (seed->x << 16) + (seed->y & 65535);
+    return abs(r);
 }

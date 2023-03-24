@@ -23,28 +23,27 @@
 
 #include "MltConfig.h"
 
-#include "MltProducer.h"
 #include "MltFilter.h"
+#include "MltProducer.h"
 #include "MltService.h"
 
-namespace Mlt
-{
-	class Producer;
-	class Service;
-	class Filter;
-	class Profile;
+namespace Mlt {
+class Producer;
+class Service;
+class Filter;
+class Profile;
 
-	class MLTPP_DECLSPEC FilteredProducer : public Producer
-	{
-		private:
-			Service *last;
-		public:
-			FilteredProducer( Profile& profile, const char *id, const char *arg = NULL );
-			virtual ~FilteredProducer( );
-			int attach( Filter &filter );
-			int detach( Filter &filter );
-	};
-}
+class MLTPP_DECLSPEC FilteredProducer : public Producer
+{
+private:
+    Service *last;
+
+public:
+    FilteredProducer(Profile &profile, const char *id, const char *arg = NULL);
+    virtual ~FilteredProducer();
+    int attach(Filter &filter);
+    int detach(Filter &filter);
+};
+} // namespace Mlt
 
 #endif
-

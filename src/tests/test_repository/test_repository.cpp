@@ -25,15 +25,15 @@ using namespace Mlt;
 class TestRepository : public QObject
 {
     Q_OBJECT
-    
+
 public:
     TestRepository() {}
-    
+
 private Q_SLOTS:
     void ThereAreProducers()
     {
-        Repository* r = Factory::init();
-        Properties* producers = r->producers();
+        Repository *r = Factory::init();
+        Properties *producers = r->producers();
         QVERIFY(producers->is_valid());
         if (producers->is_valid())
             QVERIFY(producers->count() > 0);
@@ -42,8 +42,8 @@ private Q_SLOTS:
 
     void ThereAreConsumers()
     {
-        Repository* r = Factory::init();
-        Properties* consumers = r->consumers();
+        Repository *r = Factory::init();
+        Properties *consumers = r->consumers();
         QVERIFY(consumers->is_valid());
         if (consumers->is_valid())
             QVERIFY(consumers->count() > 0);

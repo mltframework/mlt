@@ -21,120 +21,115 @@
 
 using namespace Mlt;
 
-Chain::Chain( ) :
-	instance( nullptr )
+Chain::Chain()
+    : instance(nullptr)
+{}
+
+Chain::Chain(Profile &profile, const char *id, const char *service)
+    : instance(nullptr)
 {
+    if (!id || !service) {
+        service = id ? id : service;
+        id = nullptr;
+    }
+
+    mlt_producer source = mlt_factory_producer(profile.get_profile(), id, service);
+    if (source) {
+        instance = mlt_chain_init(profile.get_profile());
+        mlt_chain_set_source(instance, source);
+        if (id == NULL)
+            mlt_chain_attach_normalizers(instance);
+        mlt_producer_close(source);
+    }
 }
 
-Chain::Chain( Profile& profile, const char *id, const char *service ) :
-	instance( nullptr )
-{
-	if ( !id || !service )
-	{
-		service = id ? id : service;
-		id = nullptr;
-	}
+Chain::Chain(Profile &profile)
+    : instance(mlt_chain_init(profile.get_profile()))
+{}
 
-	mlt_producer source = mlt_factory_producer( profile.get_profile(), id, service );
-	if ( source )
-	{
-		instance = mlt_chain_init( profile.get_profile() );
-		mlt_chain_set_source( instance, source );
-		if ( id == NULL )
-			mlt_chain_attach_normalizers( instance );
-		mlt_producer_close ( source );
-	}
+Chain::Chain(mlt_chain chain)
+    : instance(chain)
+{
+    inc_ref();
 }
 
-Chain::Chain( Profile& profile ) :
-	instance( mlt_chain_init( profile.get_profile() ) )
+Chain::Chain(Chain &chain)
+    : Mlt::Producer(chain)
+    , instance(chain.get_chain())
 {
+    inc_ref();
 }
 
-Chain::Chain( mlt_chain chain ) :
-	instance( chain )
+Chain::Chain(Chain *chain)
+    : Mlt::Producer(chain)
+    , instance(chain != NULL ? chain->get_chain() : NULL)
 {
-	inc_ref( );
+    if (is_valid())
+        inc_ref();
 }
 
-Chain::Chain( Chain& chain ) :
-	Mlt::Producer( chain ),
-	instance( chain.get_chain( ) )
+Chain::Chain(Service &chain)
+    : instance(NULL)
 {
-	inc_ref( );
+    if (chain.type() == mlt_service_chain_type) {
+        instance = (mlt_chain) chain.get_service();
+        inc_ref();
+    }
 }
 
-Chain::Chain( Chain* chain ) :
-	Mlt::Producer( chain ),
-	instance( chain != NULL ? chain->get_chain( ) : NULL )
+Chain::~Chain()
 {
-	if ( is_valid( ) )
-		inc_ref( );
+    mlt_chain_close(instance);
+    instance = nullptr;
 }
 
-Chain::Chain( Service& chain ) :
-	instance( NULL )
+mlt_chain Chain::get_chain()
 {
-	if ( chain.type( ) == mlt_service_chain_type )
-	{
-		instance = ( mlt_chain )chain.get_service( );
-		inc_ref( );
-	}
+    return instance;
 }
 
-Chain::~Chain( )
+mlt_producer Chain::get_producer()
 {
-	mlt_chain_close( instance );
-	instance = nullptr;
+    return MLT_CHAIN_PRODUCER(instance);
 }
 
-mlt_chain Chain::get_chain( )
+void Chain::set_source(Mlt::Producer &source)
 {
-	return instance;
+    mlt_chain_set_source(instance, source.get_producer());
 }
 
-mlt_producer Chain::get_producer( )
+Mlt::Producer Chain::get_source()
 {
-	return MLT_CHAIN_PRODUCER( instance );
+    return Mlt::Producer(mlt_chain_get_source(instance));
 }
 
-void Chain::set_source( Mlt::Producer& source )
+int Chain::attach(Mlt::Link &link)
 {
-	mlt_chain_set_source( instance, source.get_producer() );
+    return mlt_chain_attach(instance, link.get_link());
 }
 
-Mlt::Producer Chain::get_source( )
+int Chain::detach(Mlt::Link &link)
 {
-	return Mlt::Producer( mlt_chain_get_source(instance) );
-}
-
-int Chain::attach( Mlt::Link& link )
-{
-	return mlt_chain_attach( instance, link.get_link() );
-}
-
-int Chain::detach( Mlt::Link& link )
-{
-	return mlt_chain_detach( instance, link.get_link() );
+    return mlt_chain_detach(instance, link.get_link());
 }
 
 int Chain::link_count() const
 {
-	return mlt_chain_link_count( instance );
+    return mlt_chain_link_count(instance);
 }
 
-bool Chain::move_link( int from, int to )
+bool Chain::move_link(int from, int to)
 {
-	return (bool)mlt_chain_move_link( instance, from, to );
+    return (bool) mlt_chain_move_link(instance, from, to);
 }
 
-Mlt::Link* Chain::link( int index )
+Mlt::Link *Chain::link(int index)
 {
-	mlt_link result = mlt_chain_link( instance, index );
-	return result == NULL ? NULL : new Link( result );
+    mlt_link result = mlt_chain_link(instance, index);
+    return result == NULL ? NULL : new Link(result);
 }
 
-void Chain::attach_normalizers( )
+void Chain::attach_normalizers()
 {
-	mlt_chain_attach_normalizers( instance );
+    mlt_chain_attach_normalizers(instance);
 }

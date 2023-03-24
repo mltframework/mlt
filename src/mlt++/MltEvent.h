@@ -24,41 +24,41 @@
 
 #include <framework/mlt.h>
 
-namespace Mlt 
+namespace Mlt {
+class Frame;
+
+class MLTPP_DECLSPEC Event
 {
-    class Frame;
+private:
+    mlt_event instance;
 
-	class MLTPP_DECLSPEC Event
-	{
-		private:
-			mlt_event instance;
-		public:
-			Event( mlt_event );
-			Event( Event & );
-			~Event( );
-			mlt_event get_event( );
-			bool is_valid( );
-			void block( );
-			void unblock( );
-	};
+public:
+    Event(mlt_event);
+    Event(Event &);
+    ~Event();
+    mlt_event get_event();
+    bool is_valid();
+    void block();
+    void unblock();
+};
 
-	class MLTPP_DECLSPEC EventData
-	{
-	    private:
-			mlt_event_data instance;
-	    public:
-			EventData(mlt_event_data);
-			EventData(EventData&);
-			EventData(const EventData&);
-			EventData& operator=(const EventData&);
-			~EventData() {};
-			mlt_event_data get_event_data() const;
-			int to_int() const;
-			const char* to_string() const;
-			Frame to_frame() const;
-			void* to_object() const;
-	};
-}
+class MLTPP_DECLSPEC EventData
+{
+private:
+    mlt_event_data instance;
+
+public:
+    EventData(mlt_event_data);
+    EventData(EventData &);
+    EventData(const EventData &);
+    EventData &operator=(const EventData &);
+    ~EventData(){};
+    mlt_event_data get_event_data() const;
+    int to_int() const;
+    const char *to_string() const;
+    Frame to_frame() const;
+    void *to_object() const;
+};
+} // namespace Mlt
 
 #endif
-

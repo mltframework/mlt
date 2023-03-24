@@ -18,33 +18,33 @@
 
 #include "common.h"
 
-#include <string.h>
 #include <ctype.h>
+#include <string.h>
 
 // Returns string length of "plain:" prefix if webvx or speed parameter if timewarp.
 // Otherwise, returns 0.
-size_t mlt_xml_prefix_size( mlt_properties properties, const char *name, const char *value )
+size_t mlt_xml_prefix_size(mlt_properties properties, const char *name, const char *value)
 {
-	size_t result = 0;
+    size_t result = 0;
 
-	if ( !strcmp( "resource", name ) ) {
-		const char *mlt_service = mlt_properties_get( properties, "mlt_service" );
-		const char *plain = "plain:";
-		size_t plain_len = strlen( plain );
+    if (!strcmp("resource", name)) {
+        const char *mlt_service = mlt_properties_get(properties, "mlt_service");
+        const char *plain = "plain:";
+        size_t plain_len = strlen(plain);
 
-		if ( mlt_service && !strcmp( "timewarp", mlt_service ) ) {
-			const char *delimiter = strchr( value, ':' );
-			if ( delimiter )
-				result = delimiter - value;
-			if ( result && ( value[result - 1] == '.' || value[result - 1] == ',' || isdigit(value[result - 1]) ) )
-				++result; // include the delimiter
-			else
-				result = 0; // invalid
-		} else if ( !strncmp( value, plain, plain_len ) ) {
-			result = plain_len;
-		}
-	}
-	return result;
+        if (mlt_service && !strcmp("timewarp", mlt_service)) {
+            const char *delimiter = strchr(value, ':');
+            if (delimiter)
+                result = delimiter - value;
+            if (result
+                && (value[result - 1] == '.' || value[result - 1] == ','
+                    || isdigit(value[result - 1])))
+                ++result; // include the delimiter
+            else
+                result = 0; // invalid
+        } else if (!strncmp(value, plain, plain_len)) {
+            result = plain_len;
+        }
+    }
+    return result;
 }
-
-

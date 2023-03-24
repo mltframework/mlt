@@ -24,21 +24,19 @@
 #include "mlt_deque.h"
 
 // System header files
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdatomic.h>
 
 /** \brief Deque entry class
  *
  */
 
-typedef union
-{
-	void *addr;
-	int value;
-	double floating;
-}
-deque_entry;
+typedef union {
+    void *addr;
+    int value;
+    double floating;
+} deque_entry;
 
 /** \brief Double-Ended Queue (deque) class
  *
@@ -48,9 +46,9 @@ deque_entry;
 
 struct mlt_deque_s
 {
-	deque_entry *list;
-	int size;
-	atomic_int count;
+    deque_entry *list;
+    int size;
+    atomic_int count;
 };
 
 /** Create a deque.
@@ -59,10 +57,10 @@ struct mlt_deque_s
  * \return a new deque
  */
 
-mlt_deque mlt_deque_init( )
+mlt_deque mlt_deque_init()
 {
-	mlt_deque self = calloc( 1, sizeof( struct mlt_deque_s ) );
-	return self;
+    mlt_deque self = calloc(1, sizeof(struct mlt_deque_s));
+    return self;
 }
 
 /** Return the number of items in the deque.
@@ -72,12 +70,12 @@ mlt_deque mlt_deque_init( )
  * \return the number of items
  */
 
-int mlt_deque_count( mlt_deque self )
+int mlt_deque_count(mlt_deque self)
 {
-	if ( self )
-		return self->count;
-	else
-		return 0;
+    if (self)
+        return self->count;
+    else
+        return 0;
 }
 
 /** Allocate space on the deque.
@@ -87,14 +85,13 @@ int mlt_deque_count( mlt_deque self )
  * \return true if there was an error
  */
 
-static int mlt_deque_allocate( mlt_deque self )
+static int mlt_deque_allocate(mlt_deque self)
 {
-	if ( self->count == self->size )
-	{
-		self->list = realloc( self->list, sizeof( deque_entry ) * ( self->size + 20 ) );
-		self->size += 20;
-	}
-	return self->list == NULL;
+    if (self->count == self->size) {
+        self->list = realloc(self->list, sizeof(deque_entry) * (self->size + 20));
+        self->size += 20;
+    }
+    return self->list == NULL;
 }
 
 /** Push an item to the end.
@@ -105,14 +102,14 @@ static int mlt_deque_allocate( mlt_deque self )
  * \return true if there was an error
  */
 
-int mlt_deque_push_back( mlt_deque self, void *item )
+int mlt_deque_push_back(mlt_deque self, void *item)
 {
-	int error = mlt_deque_allocate( self );
+    int error = mlt_deque_allocate(self);
 
-	if ( error == 0 )
-		self->list[ self->count ++ ].addr = item;
+    if (error == 0)
+        self->list[self->count++].addr = item;
 
-	return error;
+    return error;
 }
 
 /** Pop an item.
@@ -122,9 +119,9 @@ int mlt_deque_push_back( mlt_deque self, void *item )
  * \return an opaque pointer
  */
 
-void *mlt_deque_pop_back( mlt_deque self )
+void *mlt_deque_pop_back(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ -- self->count ].addr : NULL;
+    return self->count > 0 ? self->list[--self->count].addr : NULL;
 }
 
 /** Queue an item at the start.
@@ -135,17 +132,16 @@ void *mlt_deque_pop_back( mlt_deque self )
  * \return true if there was an error
  */
 
-int mlt_deque_push_front( mlt_deque self, void *item )
+int mlt_deque_push_front(mlt_deque self, void *item)
 {
-	int error = mlt_deque_allocate( self );
+    int error = mlt_deque_allocate(self);
 
-	if ( error == 0 )
-	{
-		memmove( &self->list[ 1 ], self->list, ( self->count ++ ) * sizeof( deque_entry ) );
-		self->list[ 0 ].addr = item;
-	}
+    if (error == 0) {
+        memmove(&self->list[1], self->list, (self->count++) * sizeof(deque_entry));
+        self->list[0].addr = item;
+    }
 
-	return error;
+    return error;
 }
 
 /** Remove an item from the start.
@@ -155,17 +151,16 @@ int mlt_deque_push_front( mlt_deque self, void *item )
  * \return an opaque pointer
  */
 
-void *mlt_deque_pop_front( mlt_deque self )
+void *mlt_deque_pop_front(mlt_deque self)
 {
-	void *item = NULL;
+    void *item = NULL;
 
-	if ( self->count > 0 )
-	{
-		item = self->list[ 0 ].addr;
-		memmove( self->list, &self->list[ 1 ], ( -- self->count ) * sizeof( deque_entry ) );
-	}
+    if (self->count > 0) {
+        item = self->list[0].addr;
+        memmove(self->list, &self->list[1], (--self->count) * sizeof(deque_entry));
+    }
 
-	return item;
+    return item;
 }
 
 /** Inquire on item at back of deque but don't remove.
@@ -175,9 +170,9 @@ void *mlt_deque_pop_front( mlt_deque self )
  * \return an opaque pointer
  */
 
-void *mlt_deque_peek_back( mlt_deque self )
+void *mlt_deque_peek_back(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ self->count - 1 ].addr : NULL;
+    return self->count > 0 ? self->list[self->count - 1].addr : NULL;
 }
 
 /** Inquire on item at front of deque but don't remove.
@@ -187,9 +182,9 @@ void *mlt_deque_peek_back( mlt_deque self )
  * \return an opaque pointer
  */
 
-void *mlt_deque_peek_front( mlt_deque self )
+void *mlt_deque_peek_front(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ 0 ].addr : NULL;
+    return self->count > 0 ? self->list[0].addr : NULL;
 }
 
 /** Inquire on item in deque but don't remove.
@@ -200,9 +195,9 @@ void *mlt_deque_peek_front( mlt_deque self )
  * \return an opaque pointer
  */
 
-void *mlt_deque_peek( mlt_deque self, int index )
+void *mlt_deque_peek(mlt_deque self, int index)
 {
-	return self->count > index ? self->list[ index ].addr : NULL;
+    return self->count > index ? self->list[index].addr : NULL;
 }
 
 /** Insert an item in a sorted fashion.
@@ -216,21 +211,20 @@ void *mlt_deque_peek( mlt_deque self, int index )
  * \return true if there was an error
  */
 
-int mlt_deque_insert( mlt_deque self, void *item, mlt_deque_compare cmp )
+int mlt_deque_insert(mlt_deque self, void *item, mlt_deque_compare cmp)
 {
-	int error = mlt_deque_allocate( self );
+    int error = mlt_deque_allocate(self);
 
-	if ( error == 0 )
-	{
-		int n = self->count + 1;
-		while ( --n )
-			if ( cmp( item, self->list[ n - 1 ].addr ) >= 0 )
-				break;
-		memmove( &self->list[ n + 1 ], &self->list[ n ], ( self->count - n ) * sizeof( deque_entry ) );
-		self->list[ n ].addr = item;
-		self->count++;
-	}
-	return error;
+    if (error == 0) {
+        int n = self->count + 1;
+        while (--n)
+            if (cmp(item, self->list[n - 1].addr) >= 0)
+                break;
+        memmove(&self->list[n + 1], &self->list[n], (self->count - n) * sizeof(deque_entry));
+        self->list[n].addr = item;
+        self->count++;
+    }
+    return error;
 }
 
 /** Push an integer to the end.
@@ -241,14 +235,14 @@ int mlt_deque_insert( mlt_deque self, void *item, mlt_deque_compare cmp )
  * \return true if there was an error
  */
 
-int mlt_deque_push_back_int( mlt_deque self, int item )
+int mlt_deque_push_back_int(mlt_deque self, int item)
 {
-	int error = mlt_deque_allocate( self );
+    int error = mlt_deque_allocate(self);
 
-	if ( error == 0 )
-		self->list[ self->count ++ ].value = item;
+    if (error == 0)
+        self->list[self->count++].value = item;
 
-	return error;
+    return error;
 }
 
 /** Pop an integer.
@@ -258,9 +252,9 @@ int mlt_deque_push_back_int( mlt_deque self, int item )
  * \return an integer
  */
 
-int mlt_deque_pop_back_int( mlt_deque self )
+int mlt_deque_pop_back_int(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ -- self->count ].value : 0;
+    return self->count > 0 ? self->list[--self->count].value : 0;
 }
 
 /** Queue an integer at the start.
@@ -271,17 +265,16 @@ int mlt_deque_pop_back_int( mlt_deque self )
  * \return true if there was an error
  */
 
-int mlt_deque_push_front_int( mlt_deque self, int item )
+int mlt_deque_push_front_int(mlt_deque self, int item)
 {
-	int error = mlt_deque_allocate( self );
+    int error = mlt_deque_allocate(self);
 
-	if ( error == 0 )
-	{
-		memmove( &self->list[ 1 ], self->list, ( self->count ++ ) * sizeof( deque_entry ) );
-		self->list[ 0 ].value = item;
-	}
+    if (error == 0) {
+        memmove(&self->list[1], self->list, (self->count++) * sizeof(deque_entry));
+        self->list[0].value = item;
+    }
 
-	return error;
+    return error;
 }
 
 /** Remove an integer from the start.
@@ -291,17 +284,16 @@ int mlt_deque_push_front_int( mlt_deque self, int item )
  * \return an integer
  */
 
-int mlt_deque_pop_front_int( mlt_deque self )
+int mlt_deque_pop_front_int(mlt_deque self)
 {
-	int item = 0;
+    int item = 0;
 
-	if ( self->count > 0 )
-	{
-		item = self->list[ 0 ].value;
-		memmove( self->list, &self->list[ 1 ], ( -- self->count ) * sizeof( deque_entry ) );
-	}
+    if (self->count > 0) {
+        item = self->list[0].value;
+        memmove(self->list, &self->list[1], (--self->count) * sizeof(deque_entry));
+    }
 
-	return item;
+    return item;
 }
 
 /** Inquire on an integer at back of deque but don't remove.
@@ -311,9 +303,9 @@ int mlt_deque_pop_front_int( mlt_deque self )
  * \return an integer
  */
 
-int mlt_deque_peek_back_int( mlt_deque self )
+int mlt_deque_peek_back_int(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ self->count - 1 ].value : 0;
+    return self->count > 0 ? self->list[self->count - 1].value : 0;
 }
 
 /** Inquire on an integer at front of deque but don't remove.
@@ -323,9 +315,9 @@ int mlt_deque_peek_back_int( mlt_deque self )
  * \return an integer
  */
 
-int mlt_deque_peek_front_int( mlt_deque self )
+int mlt_deque_peek_front_int(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ 0 ].value : 0;
+    return self->count > 0 ? self->list[0].value : 0;
 }
 
 /** Push a double float to the end.
@@ -336,14 +328,14 @@ int mlt_deque_peek_front_int( mlt_deque self )
  * \return true if there was an error
  */
 
-int mlt_deque_push_back_double( mlt_deque self, double item )
+int mlt_deque_push_back_double(mlt_deque self, double item)
 {
-	int error = mlt_deque_allocate( self );
+    int error = mlt_deque_allocate(self);
 
-	if ( error == 0 )
-		self->list[ self->count ++ ].floating = item;
+    if (error == 0)
+        self->list[self->count++].floating = item;
 
-	return error;
+    return error;
 }
 
 /** Pop a double float.
@@ -353,9 +345,9 @@ int mlt_deque_push_back_double( mlt_deque self, double item )
  * \return a double float
  */
 
-double mlt_deque_pop_back_double( mlt_deque self )
+double mlt_deque_pop_back_double(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ -- self->count ].floating : 0;
+    return self->count > 0 ? self->list[--self->count].floating : 0;
 }
 
 /** Queue a double float at the start.
@@ -366,17 +358,16 @@ double mlt_deque_pop_back_double( mlt_deque self )
  * \return true if there was an error
  */
 
-int mlt_deque_push_front_double( mlt_deque self, double item )
+int mlt_deque_push_front_double(mlt_deque self, double item)
 {
-	int error = mlt_deque_allocate( self );
+    int error = mlt_deque_allocate(self);
 
-	if ( error == 0 )
-	{
-		memmove( &self->list[ 1 ], self->list, ( self->count ++ ) * sizeof( deque_entry ) );
-		self->list[ 0 ].floating = item;
-	}
+    if (error == 0) {
+        memmove(&self->list[1], self->list, (self->count++) * sizeof(deque_entry));
+        self->list[0].floating = item;
+    }
 
-	return error;
+    return error;
 }
 
 /** Remove a double float from the start.
@@ -386,17 +377,16 @@ int mlt_deque_push_front_double( mlt_deque self, double item )
  * \return a double float
  */
 
-double mlt_deque_pop_front_double( mlt_deque self )
+double mlt_deque_pop_front_double(mlt_deque self)
 {
-	double item = 0;
+    double item = 0;
 
-	if ( self->count > 0 )
-	{
-		item = self->list[ 0 ].floating;
-		memmove( self->list, &self->list[ 1 ], ( -- self->count ) * sizeof( deque_entry ) );
-	}
+    if (self->count > 0) {
+        item = self->list[0].floating;
+        memmove(self->list, &self->list[1], (--self->count) * sizeof(deque_entry));
+    }
 
-	return item;
+    return item;
 }
 
 /** Inquire on a double float at back of deque but don't remove.
@@ -406,9 +396,9 @@ double mlt_deque_pop_front_double( mlt_deque self )
  * \return a double float
  */
 
-double mlt_deque_peek_back_double( mlt_deque self )
+double mlt_deque_peek_back_double(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ self->count - 1 ].floating : 0;
+    return self->count > 0 ? self->list[self->count - 1].floating : 0;
 }
 
 /** Inquire on a double float at front of deque but don't remove.
@@ -418,9 +408,9 @@ double mlt_deque_peek_back_double( mlt_deque self )
  * \return a double float
  */
 
-double mlt_deque_peek_front_double( mlt_deque self )
+double mlt_deque_peek_front_double(mlt_deque self)
 {
-	return self->count > 0 ? self->list[ 0 ].floating : 0;
+    return self->count > 0 ? self->list[0].floating : 0;
 }
 
 /** Destroy the queue.
@@ -429,8 +419,8 @@ double mlt_deque_peek_front_double( mlt_deque self )
  * \param self a deque
  */
 
-void mlt_deque_close( mlt_deque self )
+void mlt_deque_close(mlt_deque self)
 {
-	free( self->list );
-	free( self );
+    free(self->list);
+    free(self);
 }

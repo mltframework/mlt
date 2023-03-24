@@ -26,37 +26,36 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 struct mlt_luma_map_s
 {
-	int type;
-	int w;
-	int h;
-	int bands;
-	int rband;
-	int vmirror;
-	int hmirror;
-	int dmirror;
-	int invert;
-	int offset;
-	int flip;
-	int flop;
-	int pflip;
-	int pflop;
-	int quart;
-	int rotate;
+    int type;
+    int w;
+    int h;
+    int bands;
+    int rband;
+    int vmirror;
+    int hmirror;
+    int dmirror;
+    int invert;
+    int offset;
+    int flip;
+    int flop;
+    int pflip;
+    int pflop;
+    int quart;
+    int rotate;
 };
 
 typedef struct mlt_luma_map_s *mlt_luma_map;
 
-extern void mlt_luma_map_init( mlt_luma_map self );
-extern mlt_luma_map mlt_luma_map_new( const char *path );
-extern uint16_t *mlt_luma_map_render( mlt_luma_map self );
-extern int mlt_luma_map_from_pgm( const char *filename, uint16_t **map, int *width, int *height );
-extern void mlt_luma_map_from_yuv422( uint8_t *image, uint16_t **map, int width, int height );
+extern void mlt_luma_map_init(mlt_luma_map self);
+extern mlt_luma_map mlt_luma_map_new(const char *path);
+extern uint16_t *mlt_luma_map_render(mlt_luma_map self);
+extern int mlt_luma_map_from_pgm(const char *filename, uint16_t **map, int *width, int *height);
+extern void mlt_luma_map_from_yuv422(uint8_t *image, uint16_t **map, int width, int height);
 
 #ifdef __cplusplus
 }

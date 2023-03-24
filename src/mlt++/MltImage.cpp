@@ -21,73 +21,72 @@
 
 using namespace Mlt;
 
-Image::Image( )
+Image::Image()
 {
-	instance = mlt_image_new();
+    instance = mlt_image_new();
 }
 
-Image::Image( mlt_image image )
- : instance( image )
+Image::Image(mlt_image image)
+    : instance(image)
+{}
+
+Image::Image(int width, int height, mlt_image_format format)
 {
+    instance = mlt_image_new();
+    alloc(width, height, format);
 }
 
-Image::Image( int width, int height, mlt_image_format format )
+Image::~Image()
 {
-	instance = mlt_image_new();
-	alloc( width, height, format );
-}
-
-Image::~Image( )
-{
-	mlt_image_close( instance );
+    mlt_image_close(instance);
 }
 
 mlt_image_format Image::format()
 {
-	return instance->format;
+    return instance->format;
 }
 
 int Image::width()
 {
-	return instance->width;
+    return instance->width;
 }
 
 int Image::height()
 {
-	return instance->height;
+    return instance->height;
 }
 
-void Image::set_colorspace( int colorspace )
+void Image::set_colorspace(int colorspace)
 {
-	instance->colorspace = colorspace;
+    instance->colorspace = colorspace;
 }
 
 int Image::colorspace()
 {
-	return instance->colorspace;
+    return instance->colorspace;
 }
 
-void Image::alloc( int width, int height, mlt_image_format format, bool alpha )
+void Image::alloc(int width, int height, mlt_image_format format, bool alpha)
 {
-	instance->width = width;
-	instance->height = height;
-	instance->format = format;
-	mlt_image_alloc_data( instance );
-	if ( alpha )
-		mlt_image_alloc_alpha( instance );
+    instance->width = width;
+    instance->height = height;
+    instance->format = format;
+    mlt_image_alloc_data(instance);
+    if (alpha)
+        mlt_image_alloc_alpha(instance);
 }
 
 void Image::init_alpha()
 {
-	mlt_image_alloc_alpha( instance );
+    mlt_image_alloc_alpha(instance);
 }
 
-uint8_t* Image::plane( int plane )
+uint8_t *Image::plane(int plane)
 {
-	return instance->planes[plane];
+    return instance->planes[plane];
 }
 
-int Image::stride( int plane )
+int Image::stride(int plane)
 {
-	return instance->strides[plane];
+    return instance->strides[plane];
 }

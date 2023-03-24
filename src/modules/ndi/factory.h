@@ -24,12 +24,18 @@
 
 #define NDI_CON_STR_MAX 32768
 
-mlt_producer producer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+mlt_producer producer_ndi_init(mlt_profile profile,
+                               mlt_service_type type,
+                               const char *id,
+                               char *arg);
 
-mlt_consumer consumer_ndi_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+mlt_consumer consumer_ndi_init(mlt_profile profile,
+                               mlt_service_type type,
+                               const char *id,
+                               char *arg);
 
-int swab_sliced( int id, int idx, int jobs, void* cookie );
+int swab_sliced(int id, int idx, int jobs, void *cookie);
 
-void swab2( const void *from, void *to, int n );
+void swab2(const void *from, void *to, int n);
 
 #endif /* FACTORY_H */

@@ -16,11 +16,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <QtTest>
 #include <mlt++/Mlt.h>
+#include <QtTest>
 using namespace Mlt;
 
-class TestFrame: public QObject
+class TestFrame : public QObject
 {
     Q_OBJECT
 
@@ -40,7 +40,7 @@ private Q_SLOTS:
     void CopyConstructorAddsReference()
     {
         mlt_frame frame = mlt_frame_init(NULL);
-        QCOMPARE(mlt_properties_ref_count( MLT_FRAME_PROPERTIES(frame) ), 1);
+        QCOMPARE(mlt_properties_ref_count(MLT_FRAME_PROPERTIES(frame)), 1);
         Frame f1(frame);
         QCOMPARE(f1.ref_count(), 2);
         Frame f2(f1);
@@ -54,7 +54,7 @@ private Q_SLOTS:
         QCOMPARE(mlt_properties_ref_count(MLT_FRAME_PROPERTIES(frame)), 1);
         Frame f1(frame);
         QCOMPARE(f1.ref_count(), 2);
-        const Frame& cf1 = f1; // Force const to avoid non-const constructor.
+        const Frame &cf1 = f1; // Force const to avoid non-const constructor.
         Frame f2(cf1);
         QCOMPARE(f1.ref_count(), 3);
         QCOMPARE(f2.ref_count(), 3);
@@ -87,7 +87,7 @@ private Q_SLOTS:
         QCOMPARE(mlt_properties_ref_count(MLT_FRAME_PROPERTIES(frame)), 1);
         Frame f1(frame);
         QCOMPARE(f1.ref_count(), 2);
-        Frame* f2 = new Frame(f1);
+        Frame *f2 = new Frame(f1);
         QCOMPARE(f2->ref_count(), 3);
         delete f2;
         QCOMPARE(f1.ref_count(), 2);
@@ -98,4 +98,3 @@ private Q_SLOTS:
 QTEST_APPLESS_MAIN(TestFrame)
 
 #include "test_frame.moc"
-

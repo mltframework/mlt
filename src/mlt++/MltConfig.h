@@ -22,17 +22,17 @@
 #define MLTPP_CONFIG_H
 
 #if defined(_WIN32)
-    #ifdef MLTPP_EXPORTS
-        #define MLTPP_DECLSPEC __declspec( dllexport )
-    #else
-        #define MLTPP_DECLSPEC __declspec( dllimport )
-    #endif
+#ifdef MLTPP_EXPORTS
+#define MLTPP_DECLSPEC __declspec(dllexport)
 #else
-    #if __GNUC__ >= 4
-        #define MLTPP_DECLSPEC __attribute__ ((visibility ("default")))
-    #else
-        #define MLTPP_DECLSPEC
-    #endif
+#define MLTPP_DECLSPEC __declspec(dllimport)
+#endif
+#else
+#if __GNUC__ >= 4
+#define MLTPP_DECLSPEC __attribute__((visibility("default")))
+#else
+#define MLTPP_DECLSPEC
+#endif
 #endif
 
 #endif

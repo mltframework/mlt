@@ -21,16 +21,18 @@
 #ifndef VIDSTAB_COMMON_H_
 #define VIDSTAB_COMMON_H_
 
-#include <vid.stab/libvidstab.h>
 #include <framework/mlt.h>
+#include <vid.stab/libvidstab.h>
 
-mlt_image_format validate_format( mlt_image_format format );
-VSPixelFormat mltimage_to_vsimage( mlt_image_format mlt_format, int width, int height, uint8_t* mlt_img, uint8_t** vs_img );
-void vsimage_to_mltimage( uint8_t* vs_img, uint8_t* mlt_img, mlt_image_format mlt_format, int width, int height );
-void free_vsimage( uint8_t* vs_img, VSPixelFormat format );
+mlt_image_format validate_format(mlt_image_format format);
+VSPixelFormat mltimage_to_vsimage(
+    mlt_image_format mlt_format, int width, int height, uint8_t *mlt_img, uint8_t **vs_img);
+void vsimage_to_mltimage(
+    uint8_t *vs_img, uint8_t *mlt_img, mlt_image_format mlt_format, int width, int height);
+void free_vsimage(uint8_t *vs_img, VSPixelFormat format);
 
-int compare_motion_config( VSMotionDetectConfig* a, VSMotionDetectConfig* b );
-int compare_transform_config( VSTransformConfig* a, VSTransformConfig* b );
+int compare_motion_config(VSMotionDetectConfig *a, VSMotionDetectConfig *b);
+int compare_transform_config(VSTransformConfig *a, VSTransformConfig *b);
 
 void init_vslog();
 

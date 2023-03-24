@@ -17,85 +17,97 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <framework/mlt_filter.h>
-#include <stdlib.h>
 #include <framework/mlt_factory.h>
+#include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
+#include <stdlib.h>
 
-static inline int in_range( uint8_t v, uint8_t c, int var )
+static inline int in_range(uint8_t v, uint8_t c, int var)
 {
-	return ( ( int )v >= c - var ) && ( ( int )v <= c + var );
+    return ((int) v >= c - var) && ((int) v <= c + var);
 }
 
-static inline uint8_t alpha_value( uint8_t a, uint8_t *p, uint8_t u, uint8_t v, int var, int odd )
+static inline uint8_t alpha_value(uint8_t a, uint8_t *p, uint8_t u, uint8_t v, int var, int odd)
 {
-	if ( odd == 0 )
-		return ( in_range( *( p + 1 ), u, var ) && in_range( *( p + 3 ), v, var ) ) ? 0 : a;
-	else
-		return ( in_range( ( *( p + 1 ) + *( p + 5 ) ) / 2, u, var ) && in_range( ( *( p + 3 ) + *( p + 7 ) ) / 2, v, var ) ) ? 0 : a;
+    if (odd == 0)
+        return (in_range(*(p + 1), u, var) && in_range(*(p + 3), v, var)) ? 0 : a;
+    else
+        return (in_range((*(p + 1) + *(p + 5)) / 2, u, var)
+                && in_range((*(p + 3) + *(p + 7)) / 2, v, var))
+                   ? 0
+                   : a;
 }
 
 /** Get the images and map the chroma to the alpha of the frame.
 */
 
-static int filter_get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int filter_get_image(mlt_frame frame,
+                            uint8_t **image,
+                            mlt_image_format *format,
+                            int *width,
+                            int *height,
+                            int writable)
 {
-	mlt_filter this = mlt_frame_pop_service( frame );
-	mlt_position position = mlt_filter_get_position(this, frame);
-	mlt_position length = mlt_filter_get_length2(this, frame);
-	int variance = 200 * mlt_properties_anim_get_double( MLT_FILTER_PROPERTIES( this ), "variance", position, length);
-	mlt_color key_val = mlt_properties_anim_get_color( MLT_FILTER_PROPERTIES( this ), "key", position, length);
-	uint8_t r = key_val.r;
-	uint8_t g = key_val.g;
-	uint8_t b = key_val.b;
-	uint8_t u, v;
+    mlt_filter this = mlt_frame_pop_service(frame);
+    mlt_position position = mlt_filter_get_position(this, frame);
+    mlt_position length = mlt_filter_get_length2(this, frame);
+    int variance = 200
+                   * mlt_properties_anim_get_double(MLT_FILTER_PROPERTIES(this),
+                                                    "variance",
+                                                    position,
+                                                    length);
+    mlt_color key_val
+        = mlt_properties_anim_get_color(MLT_FILTER_PROPERTIES(this), "key", position, length);
+    uint8_t r = key_val.r;
+    uint8_t g = key_val.g;
+    uint8_t b = key_val.b;
+    uint8_t u, v;
 
-	RGB2UV_601_SCALED( r, g, b, u, v );
+    RGB2UV_601_SCALED(r, g, b, u, v);
 
-	*format = mlt_image_yuv422;
-	if ( mlt_frame_get_image( frame, image, format, width, height, writable ) == 0 )
-	{
-		uint8_t alpha = 0;
-		uint8_t *p = *image;
-		int size = *width * *height / 2;
-		while ( size -- )
-		{
-			alpha = alpha_value( 255, p, u, v, variance, 0 );
-			if ( alpha ) 
-				*( p + 1 )= 128;
-			alpha = alpha_value( 255, p, u, v, variance, 1 );
-			if ( alpha ) 
-				*( p + 3 ) = 128;
-			p += 4;
-		}
-	}
+    *format = mlt_image_yuv422;
+    if (mlt_frame_get_image(frame, image, format, width, height, writable) == 0) {
+        uint8_t alpha = 0;
+        uint8_t *p = *image;
+        int size = *width * *height / 2;
+        while (size--) {
+            alpha = alpha_value(255, p, u, v, variance, 0);
+            if (alpha)
+                *(p + 1) = 128;
+            alpha = alpha_value(255, p, u, v, variance, 1);
+            if (alpha)
+                *(p + 3) = 128;
+            p += 4;
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 /** Filter processing.
 */
 
-static mlt_frame filter_process( mlt_filter this, mlt_frame frame )
+static mlt_frame filter_process(mlt_filter this, mlt_frame frame)
 {
-	mlt_frame_push_service( frame, this );
-	mlt_frame_push_service( frame, filter_get_image );
-	return frame;
+    mlt_frame_push_service(frame, this);
+    mlt_frame_push_service(frame, filter_get_image);
+    return frame;
 }
 
 /** Constructor for the filter.
 */
 
-mlt_filter filter_chroma_hold_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_filter filter_chroma_hold_init(mlt_profile profile,
+                                   mlt_service_type type,
+                                   const char *id,
+                                   char *arg)
 {
-	mlt_filter this = mlt_filter_new( );
-	if ( this != NULL )
-	{
-		mlt_properties_set( MLT_FILTER_PROPERTIES( this ), "key", arg == NULL ? "#c00000" : arg );
-		mlt_properties_set_double( MLT_FILTER_PROPERTIES( this ), "variance", 0.15 );
-		this->process = filter_process;
-	}
-	return this;
+    mlt_filter this = mlt_filter_new();
+    if (this != NULL) {
+        mlt_properties_set(MLT_FILTER_PROPERTIES(this), "key", arg == NULL ? "#c00000" : arg);
+        mlt_properties_set_double(MLT_FILTER_PROPERTIES(this), "variance", 0.15);
+        this->process = filter_process;
+    }
+    return this;
 }
-

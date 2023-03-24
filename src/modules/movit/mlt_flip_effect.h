@@ -20,19 +20,22 @@
 #ifndef MLT_FLIP_EFFECT_H
 #define MLT_FLIP_EFFECT_H
 
-namespace Mlt
-{
+#include <effect_chain.h>
 
-class VerticalFlip : public movit::Effect {
+namespace Mlt {
+
+class VerticalFlip : public movit::Effect
+{
 public:
-	VerticalFlip() {}
-	virtual std::string effect_type_id() const { return "MltVerticalFlip"; }
-	std::string output_fragment_shader() {
-		return "vec4 FUNCNAME(vec2 tc) { tc.y = 1.0 - tc.y; return INPUT(tc); }\n";
-	}
-	virtual bool needs_linear_light() const { return false; }
-	virtual bool needs_srgb_primaries() const { return false; }
-	AlphaHandling alpha_handling() const { return DONT_CARE_ALPHA_TYPE; }
+    VerticalFlip() {}
+    virtual std::string effect_type_id() const { return "MltVerticalFlip"; }
+    std::string output_fragment_shader()
+    {
+        return "vec4 FUNCNAME(vec2 tc) { tc.y = 1.0 - tc.y; return INPUT(tc); }\n";
+    }
+    virtual bool needs_linear_light() const { return false; }
+    virtual bool needs_srgb_primaries() const { return false; }
+    AlphaHandling alpha_handling() const { return DONT_CARE_ALPHA_TYPE; }
 };
 
 } // namespace Mlt

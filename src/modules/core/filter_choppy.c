@@ -24,60 +24,71 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format, int *width, int *height, int writable )
+static int get_image(mlt_frame frame,
+                     uint8_t **image,
+                     mlt_image_format *format,
+                     int *width,
+                     int *height,
+                     int writable)
 {
-	int error;
-	mlt_filter filter = mlt_frame_pop_service(frame);
-	mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
-	mlt_position position = mlt_filter_get_position( filter, frame );
-	mlt_position length = mlt_filter_get_length2( filter, frame );
-	int amount = mlt_properties_anim_get_int(properties, "amount", position, length) + 1;
+    int error;
+    mlt_filter filter = mlt_frame_pop_service(frame);
+    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_position position = mlt_filter_get_position(filter, frame);
+    mlt_position length = mlt_filter_get_length2(filter, frame);
+    int amount = mlt_properties_anim_get_int(properties, "amount", position, length) + 1;
 
-	if (amount > 1) {
-		mlt_service_lock(MLT_FILTER_SERVICE(filter));
-		mlt_frame cloned_frame = mlt_properties_get_data( properties, "cloned_frame", NULL);
-		mlt_position cloned_pos = mlt_frame_get_position(cloned_frame);
+    if (amount > 1) {
+        mlt_service_lock(MLT_FILTER_SERVICE(filter));
+        mlt_frame cloned_frame = mlt_properties_get_data(properties, "cloned_frame", NULL);
+        mlt_position cloned_pos = mlt_frame_get_position(cloned_frame);
 
-		position = mlt_frame_get_position(frame);
-		if (!cloned_frame || MLT_POSITION_MOD(position, amount) == 0 || abs(position - cloned_pos) > amount) {
-			error = mlt_frame_get_image(frame, image, format, width, height, writable);
-			cloned_frame = mlt_frame_clone(frame,  1);
-			mlt_properties_set_data(properties, "cloned_frame", cloned_frame, 0, (mlt_destructor) mlt_frame_close, NULL);
-			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
-		} else {
-			mlt_service_unlock(MLT_FILTER_SERVICE(filter));
-			error = mlt_frame_get_image(frame, image, format, width, height, writable);
-			if (!error) {
-				mlt_properties cloned_props = MLT_FRAME_PROPERTIES(cloned_frame);
-				int size = 0;
-				void *data = mlt_properties_get_data(cloned_props, "image", &size);
-				if (data) {
-					*width = mlt_properties_get_int(cloned_props, "width");
-					*height = mlt_properties_get_int(cloned_props, "height");
-					*format = mlt_properties_get_int(cloned_props, "format");
-					if (!size) {
-						size = mlt_image_format_size(*format, *width, *height, NULL);
-					}
-					*image = mlt_pool_alloc(size);
-					memcpy(*image, data, size);
-					mlt_frame_set_image(frame, *image, size, mlt_pool_release);
+        position = mlt_frame_get_position(frame);
+        if (!cloned_frame || MLT_POSITION_MOD(position, amount) == 0
+            || abs(position - cloned_pos) > amount) {
+            error = mlt_frame_get_image(frame, image, format, width, height, writable);
+            cloned_frame = mlt_frame_clone(frame, 1);
+            mlt_properties_set_data(properties,
+                                    "cloned_frame",
+                                    cloned_frame,
+                                    0,
+                                    (mlt_destructor) mlt_frame_close,
+                                    NULL);
+            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+        } else {
+            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+            error = mlt_frame_get_image(frame, image, format, width, height, writable);
+            if (!error) {
+                mlt_properties cloned_props = MLT_FRAME_PROPERTIES(cloned_frame);
+                int size = 0;
+                void *data = mlt_properties_get_data(cloned_props, "image", &size);
+                if (data) {
+                    *width = mlt_properties_get_int(cloned_props, "width");
+                    *height = mlt_properties_get_int(cloned_props, "height");
+                    *format = mlt_properties_get_int(cloned_props, "format");
+                    if (!size) {
+                        size = mlt_image_format_size(*format, *width, *height, NULL);
+                    }
+                    *image = mlt_pool_alloc(size);
+                    memcpy(*image, data, size);
+                    mlt_frame_set_image(frame, *image, size, mlt_pool_release);
 
-					data = mlt_frame_get_alpha_size(cloned_frame, &size);
-					if (data) {
-						if (!size) {
-							size = (*width) * (*height);
-						}
-						void *copy = mlt_pool_alloc(size);
-						memcpy(copy, data, size);
-						mlt_frame_set_alpha(frame, copy, size, mlt_pool_release);
-					}
-				}
-			}
-		}
-	} else {
-		error = mlt_frame_get_image(frame, image, format, width, height, writable);
-	}
-	return error;
+                    data = mlt_frame_get_alpha_size(cloned_frame, &size);
+                    if (data) {
+                        if (!size) {
+                            size = (*width) * (*height);
+                        }
+                        void *copy = mlt_pool_alloc(size);
+                        memcpy(copy, data, size);
+                        mlt_frame_set_alpha(frame, copy, size, mlt_pool_release);
+                    }
+                }
+            }
+        }
+    } else {
+        error = mlt_frame_get_image(frame, image, format, width, height, writable);
+    }
+    return error;
 }
 
 /** Filter processing.
@@ -85,9 +96,9 @@ static int get_image( mlt_frame frame, uint8_t **image, mlt_image_format *format
 
 static mlt_frame process(mlt_filter filter, mlt_frame frame)
 {
-	mlt_frame_push_service(frame, filter);
-	mlt_frame_push_get_image(frame, get_image);
-	return frame;
+    mlt_frame_push_service(frame, filter);
+    mlt_frame_push_get_image(frame, get_image);
+    return frame;
 }
 
 /** Constructor for the filter.
@@ -95,10 +106,10 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
 
 mlt_filter filter_choppy_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg)
 {
-	mlt_filter filter = mlt_filter_new();
-	if (filter) {
-		filter->process = process;
-		mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "amount", arg? arg : "0");
-	}
-	return filter;
+    mlt_filter filter = mlt_filter_new();
+    if (filter) {
+        filter->process = process;
+        mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "amount", arg ? arg : "0");
+    }
+    return filter;
 }

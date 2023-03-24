@@ -21,22 +21,22 @@
  */
 
 #include "mlt_tractor.h"
-#include "mlt_frame.h"
-#include "mlt_multitrack.h"
 #include "mlt_field.h"
+#include "mlt_frame.h"
 #include "mlt_log.h"
+#include "mlt_multitrack.h"
 #include "mlt_transition.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 /* Forward references to static methods.
 */
 
-static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track );
-static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor self );
+static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int track);
+static void mlt_tractor_listener(mlt_multitrack tracks, mlt_tractor self);
 
 /** Construct a tractor without a field or multitrack.
  *
@@ -47,34 +47,30 @@ static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor self );
  * \return the new tractor
  */
 
-mlt_tractor mlt_tractor_init( )
+mlt_tractor mlt_tractor_init()
 {
-	mlt_tractor self = calloc( 1, sizeof( struct mlt_tractor_s ) );
-	if ( self != NULL )
-	{
-		mlt_producer producer = &self->parent;
-		if ( mlt_producer_init( producer, self ) == 0 )
-		{
-			mlt_properties properties = MLT_PRODUCER_PROPERTIES( producer );
+    mlt_tractor self = calloc(1, sizeof(struct mlt_tractor_s));
+    if (self != NULL) {
+        mlt_producer producer = &self->parent;
+        if (mlt_producer_init(producer, self) == 0) {
+            mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
 
-			mlt_properties_set( properties, "resource", "<tractor>" );
-			mlt_properties_set( properties, "mlt_type", "mlt_producer" );
-			mlt_properties_set( properties, "mlt_service", "tractor" );
-			mlt_properties_set_int( properties, "in", 0 );
-			mlt_properties_set_int( properties, "out", -1 );
-			mlt_properties_set_int( properties, "length", 0 );
+            mlt_properties_set(properties, "resource", "<tractor>");
+            mlt_properties_set(properties, "mlt_type", "mlt_producer");
+            mlt_properties_set(properties, "mlt_service", "tractor");
+            mlt_properties_set_int(properties, "in", 0);
+            mlt_properties_set_int(properties, "out", -1);
+            mlt_properties_set_int(properties, "length", 0);
 
-			producer->get_frame = producer_get_frame;
-			producer->close = ( mlt_destructor )mlt_tractor_close;
-			producer->close_object = self;
-		}
-		else
-		{
-			free( self );
-			self = NULL;
-		}
-	}
-	return self;
+            producer->get_frame = producer_get_frame;
+            producer->close = (mlt_destructor) mlt_tractor_close;
+            producer->close_object = self;
+        } else {
+            free(self);
+            self = NULL;
+        }
+    }
+    return self;
 }
 
 /** Construct a tractor as well as a field and multitrack.
@@ -86,40 +82,44 @@ mlt_tractor mlt_tractor_init( )
  * \return the new tractor
  */
 
-mlt_tractor mlt_tractor_new( )
+mlt_tractor mlt_tractor_new()
 {
-	mlt_tractor self = calloc( 1, sizeof( struct mlt_tractor_s ) );
-	if ( self != NULL )
-	{
-		mlt_producer producer = &self->parent;
-		if ( mlt_producer_init( producer, self ) == 0 )
-		{
-			mlt_multitrack multitrack = mlt_multitrack_init( );
-			mlt_field field = mlt_field_new( multitrack, self );
-			mlt_properties props = MLT_PRODUCER_PROPERTIES( producer );
+    mlt_tractor self = calloc(1, sizeof(struct mlt_tractor_s));
+    if (self != NULL) {
+        mlt_producer producer = &self->parent;
+        if (mlt_producer_init(producer, self) == 0) {
+            mlt_multitrack multitrack = mlt_multitrack_init();
+            mlt_field field = mlt_field_new(multitrack, self);
+            mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
 
-			mlt_properties_set( props, "resource", "<tractor>" );
-			mlt_properties_set( props, "mlt_type", "mlt_producer" );
-			mlt_properties_set( props, "mlt_service", "tractor" );
-			mlt_properties_set_position( props, "in", 0 );
-			mlt_properties_set_position( props, "out", 0 );
-			mlt_properties_set_position( props, "length", 0 );
-			mlt_properties_set_data( props, "multitrack", multitrack, 0, ( mlt_destructor )mlt_multitrack_close, NULL );
-			mlt_properties_set_data( props, "field", field, 0, ( mlt_destructor )mlt_field_close, NULL );
+            mlt_properties_set(props, "resource", "<tractor>");
+            mlt_properties_set(props, "mlt_type", "mlt_producer");
+            mlt_properties_set(props, "mlt_service", "tractor");
+            mlt_properties_set_position(props, "in", 0);
+            mlt_properties_set_position(props, "out", 0);
+            mlt_properties_set_position(props, "length", 0);
+            mlt_properties_set_data(props,
+                                    "multitrack",
+                                    multitrack,
+                                    0,
+                                    (mlt_destructor) mlt_multitrack_close,
+                                    NULL);
+            mlt_properties_set_data(props, "field", field, 0, (mlt_destructor) mlt_field_close, NULL);
 
-			mlt_events_listen( MLT_MULTITRACK_PROPERTIES( multitrack ), self, "producer-changed", ( mlt_listener )mlt_tractor_listener );
+            mlt_events_listen(MLT_MULTITRACK_PROPERTIES(multitrack),
+                              self,
+                              "producer-changed",
+                              (mlt_listener) mlt_tractor_listener);
 
-			producer->get_frame = producer_get_frame;
-			producer->close = ( mlt_destructor )mlt_tractor_close;
-			producer->close_object = self;
-		}
-		else
-		{
-			free( self );
-			self = NULL;
-		}
-	}
-	return self;
+            producer->get_frame = producer_get_frame;
+            producer->close = (mlt_destructor) mlt_tractor_close;
+            producer->close_object = self;
+        } else {
+            free(self);
+            self = NULL;
+        }
+    }
+    return self;
 }
 
 /** Get the service object associated to the tractor.
@@ -130,9 +130,9 @@ mlt_tractor mlt_tractor_new( )
  * \see MLT_TRACTOR_SERVICE
  */
 
-mlt_service mlt_tractor_service( mlt_tractor self )
+mlt_service mlt_tractor_service(mlt_tractor self)
 {
-	return MLT_PRODUCER_SERVICE( &self->parent );
+    return MLT_PRODUCER_SERVICE(&self->parent);
 }
 
 /** Get the producer object associated to the tractor.
@@ -143,9 +143,9 @@ mlt_service mlt_tractor_service( mlt_tractor self )
  * \see MLT_TRACTOR_PRODUCER
  */
 
-mlt_producer mlt_tractor_producer( mlt_tractor self )
+mlt_producer mlt_tractor_producer(mlt_tractor self)
 {
-	return self != NULL ? &self->parent : NULL;
+    return self != NULL ? &self->parent : NULL;
 }
 
 /** Get the properties object associated to the tractor.
@@ -156,9 +156,9 @@ mlt_producer mlt_tractor_producer( mlt_tractor self )
  * \see MLT_TRACTOR_PROPERTIES
  */
 
-mlt_properties mlt_tractor_properties( mlt_tractor self )
+mlt_properties mlt_tractor_properties(mlt_tractor self)
 {
-	return MLT_PRODUCER_PROPERTIES( &self->parent );
+    return MLT_PRODUCER_PROPERTIES(&self->parent);
 }
 
 /** Get the field self tractor is harvesting.
@@ -168,9 +168,9 @@ mlt_properties mlt_tractor_properties( mlt_tractor self )
  * \return a field or NULL if there is no field for this tractor
  */
 
-mlt_field mlt_tractor_field( mlt_tractor self )
+mlt_field mlt_tractor_field(mlt_tractor self)
 {
-	return mlt_properties_get_data( MLT_TRACTOR_PROPERTIES( self ), "field", NULL );
+    return mlt_properties_get_data(MLT_TRACTOR_PROPERTIES(self), "field", NULL);
 }
 
 /** Get the multitrack a tractor is pulling.
@@ -180,9 +180,9 @@ mlt_field mlt_tractor_field( mlt_tractor self )
  * \return a multitrack or NULL if there is none
  */
 
-mlt_multitrack mlt_tractor_multitrack( mlt_tractor self )
+mlt_multitrack mlt_tractor_multitrack(mlt_tractor self)
 {
-	return mlt_properties_get_data( MLT_TRACTOR_PROPERTIES( self ), "multitrack", NULL );
+    return mlt_properties_get_data(MLT_TRACTOR_PROPERTIES(self), "multitrack", NULL);
 }
 
 /** Ensure the tractors in/out points match the multitrack.
@@ -191,24 +191,28 @@ mlt_multitrack mlt_tractor_multitrack( mlt_tractor self )
  * \param self a tractor
  */
 
-void mlt_tractor_refresh( mlt_tractor self )
+void mlt_tractor_refresh(mlt_tractor self)
 {
-	mlt_multitrack multitrack = mlt_tractor_multitrack( self );
-	mlt_properties multitrack_props = MLT_MULTITRACK_PROPERTIES( multitrack );
-	mlt_properties properties = MLT_TRACTOR_PROPERTIES( self );
-	mlt_events_block( multitrack_props, properties );
-	mlt_events_block( properties, properties );
-	mlt_multitrack_refresh( multitrack );
-	mlt_properties_set_position( properties, "in", 0 );
-	mlt_properties_set_position( properties, "out", mlt_properties_get_position( multitrack_props, "out" ) );
-	mlt_events_unblock( properties, properties );
-	mlt_events_unblock( multitrack_props, properties );
-	mlt_properties_set_position( properties, "length", mlt_properties_get_position( multitrack_props, "length" ) );
+    mlt_multitrack multitrack = mlt_tractor_multitrack(self);
+    mlt_properties multitrack_props = MLT_MULTITRACK_PROPERTIES(multitrack);
+    mlt_properties properties = MLT_TRACTOR_PROPERTIES(self);
+    mlt_events_block(multitrack_props, properties);
+    mlt_events_block(properties, properties);
+    mlt_multitrack_refresh(multitrack);
+    mlt_properties_set_position(properties, "in", 0);
+    mlt_properties_set_position(properties,
+                                "out",
+                                mlt_properties_get_position(multitrack_props, "out"));
+    mlt_events_unblock(properties, properties);
+    mlt_events_unblock(multitrack_props, properties);
+    mlt_properties_set_position(properties,
+                                "length",
+                                mlt_properties_get_position(multitrack_props, "length"));
 }
 
-static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor self )
+static void mlt_tractor_listener(mlt_multitrack tracks, mlt_tractor self)
 {
-	mlt_tractor_refresh( self );
+    mlt_tractor_refresh(self);
 }
 
 /** Connect the tractor.
@@ -219,15 +223,15 @@ static void mlt_tractor_listener( mlt_multitrack tracks, mlt_tractor self )
  * \return true on error
  */
 
-int mlt_tractor_connect( mlt_tractor self, mlt_service producer )
+int mlt_tractor_connect(mlt_tractor self, mlt_service producer)
 {
-	int ret = mlt_service_connect_producer( MLT_TRACTOR_SERVICE( self ), producer, 0 );
+    int ret = mlt_service_connect_producer(MLT_TRACTOR_SERVICE(self), producer, 0);
 
-	// This is the producer we're going to connect to
-	if ( ret == 0 )
-		self->producer = producer;
+    // This is the producer we're going to connect to
+    if (ret == 0)
+        self->producer = producer;
 
-	return ret;
+    return ret;
 }
 
 /** Set the producer for a specific track.
@@ -239,9 +243,9 @@ int mlt_tractor_connect( mlt_tractor self, mlt_service producer )
  * \return true on error
  */
 
-int mlt_tractor_set_track( mlt_tractor self, mlt_producer producer, int index )
+int mlt_tractor_set_track(mlt_tractor self, mlt_producer producer, int index)
 {
-	return mlt_multitrack_connect( mlt_tractor_multitrack( self ), producer, index );
+    return mlt_multitrack_connect(mlt_tractor_multitrack(self), producer, index);
 }
 
 /** Insert a producer before a specific track.
@@ -255,41 +259,35 @@ int mlt_tractor_set_track( mlt_tractor self, mlt_producer producer, int index )
  * \return true on error
  */
 
-int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index )
+int mlt_tractor_insert_track(mlt_tractor self, mlt_producer producer, int index)
 {
-	int error = mlt_multitrack_insert( mlt_tractor_multitrack( self ), producer, index );
-	if ( !error )
-	{
-		// Update the track indices of transitions and track filters.
-		mlt_service service = mlt_service_producer( MLT_TRACTOR_SERVICE( self ) );
-		while ( service )
-		{
-			mlt_service_type type = mlt_service_identify( service );
-			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
+    int error = mlt_multitrack_insert(mlt_tractor_multitrack(self), producer, index);
+    if (!error) {
+        // Update the track indices of transitions and track filters.
+        mlt_service service = mlt_service_producer(MLT_TRACTOR_SERVICE(self));
+        while (service) {
+            mlt_service_type type = mlt_service_identify(service);
+            mlt_properties properties = MLT_SERVICE_PROPERTIES(service);
 
-			if ( type == mlt_service_transition_type )
-			{
-				mlt_transition transition = MLT_TRANSITION( service );
-				int a_track = mlt_transition_get_a_track( transition );
-				int b_track = mlt_transition_get_b_track( transition );
+            if (type == mlt_service_transition_type) {
+                mlt_transition transition = MLT_TRANSITION(service);
+                int a_track = mlt_transition_get_a_track(transition);
+                int b_track = mlt_transition_get_b_track(transition);
 
-				if ( a_track >= index || b_track >= index )
-				{
-					a_track = a_track >= index ? a_track + 1 : a_track;
-					b_track = b_track >= index ? b_track + 1 : b_track;
-					mlt_transition_set_tracks( transition, a_track, b_track );
-				}
-			}
-			else if ( type == mlt_service_filter_type )
-			{
-				int current_track = mlt_properties_get_int( properties, "track" );
-				if ( current_track >= index )
-					mlt_properties_set_int( properties, "track", current_track + 1 );
-			}
-			service = mlt_service_producer( service );
-		}
-	}
-	return error;
+                if (a_track >= index || b_track >= index) {
+                    a_track = a_track >= index ? a_track + 1 : a_track;
+                    b_track = b_track >= index ? b_track + 1 : b_track;
+                    mlt_transition_set_tracks(transition, a_track, b_track);
+                }
+            } else if (type == mlt_service_filter_type) {
+                int current_track = mlt_properties_get_int(properties, "track");
+                if (current_track >= index)
+                    mlt_properties_set_int(properties, "track", current_track + 1);
+            }
+            service = mlt_service_producer(service);
+        }
+    }
+    return error;
 }
 
 /** Remove a track by its index.
@@ -300,42 +298,38 @@ int mlt_tractor_insert_track( mlt_tractor self, mlt_producer producer, int index
  * \return true on error
  */
 
-int mlt_tractor_remove_track( mlt_tractor self, int index )
+int mlt_tractor_remove_track(mlt_tractor self, int index)
 {
-	int error = mlt_multitrack_disconnect( mlt_tractor_multitrack( self ), index );
-	if ( !error )
-	{
-		// Update the track indices of transitions and track filters.
-		mlt_service service = mlt_service_producer( MLT_TRACTOR_SERVICE( self ) );
-		while ( service )
-		{
-			mlt_service_type type = mlt_service_identify( service );
-			mlt_properties properties = MLT_SERVICE_PROPERTIES( service );
-			int track_max = MAX( mlt_multitrack_count( mlt_tractor_multitrack( self ) ) - 1, 0 );
+    int error = mlt_multitrack_disconnect(mlt_tractor_multitrack(self), index);
+    if (!error) {
+        // Update the track indices of transitions and track filters.
+        mlt_service service = mlt_service_producer(MLT_TRACTOR_SERVICE(self));
+        while (service) {
+            mlt_service_type type = mlt_service_identify(service);
+            mlt_properties properties = MLT_SERVICE_PROPERTIES(service);
+            int track_max = MAX(mlt_multitrack_count(mlt_tractor_multitrack(self)) - 1, 0);
 
-			if ( type == mlt_service_transition_type )
-			{
-				mlt_transition transition = MLT_TRANSITION( service );
-				int a_track = mlt_transition_get_a_track( transition );
-				int b_track = mlt_transition_get_b_track( transition );
+            if (type == mlt_service_transition_type) {
+                mlt_transition transition = MLT_TRANSITION(service);
+                int a_track = mlt_transition_get_a_track(transition);
+                int b_track = mlt_transition_get_b_track(transition);
 
-				if ( a_track > index || b_track >= index )
-				{
-					a_track = CLAMP( a_track > index ? a_track - 1 : a_track, 0,  track_max );
-					b_track = CLAMP( b_track >= index ? b_track - 1 : b_track, 0, track_max );
-					mlt_transition_set_tracks( transition, a_track, b_track );
-				}
-			}
-			else if ( type == mlt_service_filter_type )
-			{
-				int current_track = mlt_properties_get_int( properties, "track" );
-				if ( current_track >= index )
-					mlt_properties_set_int( properties, "track", CLAMP( current_track - 1, 0, track_max ) );
-			}
-			service = mlt_service_producer( service );
-		}
-	}
-	return error;
+                if (a_track > index || b_track >= index) {
+                    a_track = CLAMP(a_track > index ? a_track - 1 : a_track, 0, track_max);
+                    b_track = CLAMP(b_track >= index ? b_track - 1 : b_track, 0, track_max);
+                    mlt_transition_set_tracks(transition, a_track, b_track);
+                }
+            } else if (type == mlt_service_filter_type) {
+                int current_track = mlt_properties_get_int(properties, "track");
+                if (current_track >= index)
+                    mlt_properties_set_int(properties,
+                                           "track",
+                                           CLAMP(current_track - 1, 0, track_max));
+            }
+            service = mlt_service_producer(service);
+        }
+    }
+    return error;
 }
 
 /** Get the producer for a specific track.
@@ -346,79 +340,128 @@ int mlt_tractor_remove_track( mlt_tractor self, int index )
  * \return the producer for track \p index
  */
 
-mlt_producer mlt_tractor_get_track( mlt_tractor self, int index )
+mlt_producer mlt_tractor_get_track(mlt_tractor self, int index)
 {
-	return mlt_multitrack_track( mlt_tractor_multitrack( self ), index );
+    return mlt_multitrack_track(mlt_tractor_multitrack(self), index);
 }
 
-static int producer_get_image( mlt_frame self, uint8_t **buffer, mlt_image_format *format, int *width, int *height, int writable )
+static int producer_get_image(mlt_frame self,
+                              uint8_t **buffer,
+                              mlt_image_format *format,
+                              int *width,
+                              int *height,
+                              int writable)
 {
-	uint8_t *data = NULL;
-	int size = 0;
-	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
-	mlt_frame frame = mlt_frame_pop_service( self );
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
+    uint8_t *data = NULL;
+    int size = 0;
+    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
+    mlt_frame frame = mlt_frame_pop_service(self);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
-	mlt_properties_set_int( frame_properties, "resize_alpha", mlt_properties_get_int( properties, "resize_alpha" ) );
-	mlt_properties_set_int( frame_properties, "distort", mlt_properties_get_int( properties, "distort" ) );
-	mlt_properties_copy(frame_properties, properties, "consumer.");
-	// WebVfx uses this to setup a consumer-stopping event handler.
-	mlt_properties_set_data( frame_properties, "consumer", mlt_properties_get_data( properties, "consumer", NULL ), 0, NULL, NULL );
+    mlt_properties_set_int(frame_properties,
+                           "resize_alpha",
+                           mlt_properties_get_int(properties, "resize_alpha"));
+    mlt_properties_set_int(frame_properties,
+                           "distort",
+                           mlt_properties_get_int(properties, "distort"));
+    mlt_properties_copy(frame_properties, properties, "consumer.");
+    // WebVfx uses this to setup a consumer-stopping event handler.
+    mlt_properties_set_data(frame_properties,
+                            "consumer",
+                            mlt_properties_get_data(properties, "consumer", NULL),
+                            0,
+                            NULL,
+                            NULL);
 
-	mlt_frame_get_image( frame, buffer, format, width, height, writable );
-	mlt_frame_set_image( self, *buffer, 0, NULL );
+    mlt_frame_get_image(frame, buffer, format, width, height, writable);
+    mlt_frame_set_image(self, *buffer, 0, NULL);
 
-	mlt_properties_set_int( properties, "width", *width );
-	mlt_properties_set_int( properties, "height", *height );
-	mlt_properties_set_int( properties, "format", *format );
-	mlt_properties_set_double( properties, "aspect_ratio", mlt_frame_get_aspect_ratio( frame ) );
-	mlt_properties_set_int( properties, "progressive", mlt_properties_get_int( frame_properties, "progressive" ) );
-	mlt_properties_set_int( properties, "distort", mlt_properties_get_int( frame_properties, "distort" ) );
-	mlt_properties_set_int( properties, "colorspace", mlt_properties_get_int( frame_properties, "colorspace" ) );
-	mlt_properties_set_int( properties, "full_range", mlt_properties_get_int( frame_properties, "full_range" ) );
-	mlt_properties_set_int( properties, "force_full_luma", mlt_properties_get_int( frame_properties, "force_full_luma" ) );
-	mlt_properties_set_int( properties, "top_field_first", mlt_properties_get_int( frame_properties, "top_field_first" ) );
-	mlt_properties_set( properties, "color_trc", mlt_properties_get( frame_properties, "color_trc" ) );
-	mlt_properties_set_data( properties, "movit.convert.fence",
-		mlt_properties_get_data( frame_properties, "movit.convert.fence", NULL ),
-		0, NULL, NULL );
-	mlt_properties_set_data( properties, "movit.convert.texture",
-		mlt_properties_get_data( frame_properties, "movit.convert.texture", NULL ),
-		0, NULL, NULL );
-	mlt_properties_set_int( properties, "movit.convert.use_texture", mlt_properties_get_int( frame_properties, "movit.convert.use_texture" ) );
-	int i;
-	for ( i = 0; i < mlt_properties_count( frame_properties ); i++ )
-	{
-		char *name = mlt_properties_get_name( frame_properties, i );
-		if ( name && !strncmp( name, "_movit ", 7 ) ) {
-			mlt_properties_set_data( properties, name,
-				mlt_properties_get_data_at( frame_properties, i, NULL ),
-				0, NULL, NULL );
-		}
-	}
+    mlt_properties_set_int(properties, "width", *width);
+    mlt_properties_set_int(properties, "height", *height);
+    mlt_properties_set_int(properties, "format", *format);
+    mlt_properties_set_double(properties, "aspect_ratio", mlt_frame_get_aspect_ratio(frame));
+    mlt_properties_set_int(properties,
+                           "progressive",
+                           mlt_properties_get_int(frame_properties, "progressive"));
+    mlt_properties_set_int(properties,
+                           "distort",
+                           mlt_properties_get_int(frame_properties, "distort"));
+    mlt_properties_set_int(properties,
+                           "colorspace",
+                           mlt_properties_get_int(frame_properties, "colorspace"));
+    mlt_properties_set_int(properties,
+                           "full_range",
+                           mlt_properties_get_int(frame_properties, "full_range"));
+    mlt_properties_set_int(properties,
+                           "force_full_luma",
+                           mlt_properties_get_int(frame_properties, "force_full_luma"));
+    mlt_properties_set_int(properties,
+                           "top_field_first",
+                           mlt_properties_get_int(frame_properties, "top_field_first"));
+    mlt_properties_set(properties, "color_trc", mlt_properties_get(frame_properties, "color_trc"));
+    mlt_properties_set_data(properties,
+                            "movit.convert.fence",
+                            mlt_properties_get_data(frame_properties, "movit.convert.fence", NULL),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_data(properties,
+                            "movit.convert.texture",
+                            mlt_properties_get_data(frame_properties, "movit.convert.texture", NULL),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_int(properties,
+                           "movit.convert.use_texture",
+                           mlt_properties_get_int(frame_properties, "movit.convert.use_texture"));
+    int i;
+    for (i = 0; i < mlt_properties_count(frame_properties); i++) {
+        char *name = mlt_properties_get_name(frame_properties, i);
+        if (name && !strncmp(name, "_movit ", 7)) {
+            mlt_properties_set_data(properties,
+                                    name,
+                                    mlt_properties_get_data_at(frame_properties, i, NULL),
+                                    0,
+                                    NULL,
+                                    NULL);
+        }
+    }
 
-	data = mlt_frame_get_alpha_size(frame, &size);
-	if (data) {
-		mlt_frame_set_alpha(self, data, size, NULL);
-	}
-	self->convert_image = frame->convert_image;
-	self->convert_audio = frame->convert_audio;
-	return 0;
+    data = mlt_frame_get_alpha_size(frame, &size);
+    if (data) {
+        mlt_frame_set_alpha(self, data, size, NULL);
+    }
+    self->convert_image = frame->convert_image;
+    self->convert_audio = frame->convert_audio;
+    return 0;
 }
 
-static int producer_get_audio( mlt_frame self, void **buffer, mlt_audio_format *format, int *frequency, int *channels, int *samples )
+static int producer_get_audio(mlt_frame self,
+                              void **buffer,
+                              mlt_audio_format *format,
+                              int *frequency,
+                              int *channels,
+                              int *samples)
 {
-	mlt_properties properties = MLT_FRAME_PROPERTIES( self );
-	mlt_frame frame = mlt_frame_pop_audio( self );
-	mlt_properties frame_properties = MLT_FRAME_PROPERTIES( frame );
-	mlt_properties_set( frame_properties, "consumer.channel_layout", mlt_properties_get( properties, "consumer.channel_layout" ) );
-	mlt_properties_set( frame_properties, "producer_consumer_fps", mlt_properties_get( properties, "producer_consumer_fps" ) );
-	mlt_frame_get_audio( frame, buffer, format, frequency, channels, samples );
-	mlt_frame_set_audio( self, *buffer, *format, mlt_audio_format_size( *format, *samples, *channels ), NULL );
-	mlt_properties_set_int( properties, "audio_frequency", *frequency );
-	mlt_properties_set_int( properties, "audio_channels", *channels );
-	mlt_properties_set_int( properties, "audio_samples", *samples );
-	return 0;
+    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
+    mlt_frame frame = mlt_frame_pop_audio(self);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_properties_set(frame_properties,
+                       "consumer.channel_layout",
+                       mlt_properties_get(properties, "consumer.channel_layout"));
+    mlt_properties_set(frame_properties,
+                       "producer_consumer_fps",
+                       mlt_properties_get(properties, "producer_consumer_fps"));
+    mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
+    mlt_frame_set_audio(self,
+                        *buffer,
+                        *format,
+                        mlt_audio_format_size(*format, *samples, *channels),
+                        NULL);
+    mlt_properties_set_int(properties, "audio_frequency", *frequency);
+    mlt_properties_set_int(properties, "audio_channels", *channels);
+    mlt_properties_set_int(properties, "audio_samples", *samples);
+    return 0;
 }
 
 /** Get the next frame.
@@ -430,174 +473,183 @@ static int producer_get_audio( mlt_frame self, void **buffer, mlt_audio_format *
  * \return true on error
  */
 
-static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int track )
+static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int track)
 {
-	mlt_tractor self = parent->child;
+    mlt_tractor self = parent->child;
 
-	// We only respond to the first track requests
-	if ( track == 0 && self->producer != NULL )
-	{
-		int i = 0;
-		int done = 0;
-		mlt_frame temp = NULL;
-		int count = 0;
-		int image_count = 0;
+    // We only respond to the first track requests
+    if (track == 0 && self->producer != NULL) {
+        int i = 0;
+        int done = 0;
+        mlt_frame temp = NULL;
+        int count = 0;
+        int image_count = 0;
 
-		// Get the properties of the parent producer
-		mlt_properties properties = MLT_PRODUCER_PROPERTIES( parent );
+        // Get the properties of the parent producer
+        mlt_properties properties = MLT_PRODUCER_PROPERTIES(parent);
 
-		// Try to obtain the multitrack associated to the tractor
-		mlt_multitrack multitrack = mlt_properties_get_data( properties, "multitrack", NULL );
+        // Try to obtain the multitrack associated to the tractor
+        mlt_multitrack multitrack = mlt_properties_get_data(properties, "multitrack", NULL);
 
-		// Or a specific producer
-		mlt_producer producer = mlt_properties_get_data( properties, "producer", NULL );
+        // Or a specific producer
+        mlt_producer producer = mlt_properties_get_data(properties, "producer", NULL);
 
-		// If we don't have one, we're in trouble...
-		if ( multitrack != NULL )
-		{
-			// Used to garbage collect all frames
-			char label[64];
+        // If we don't have one, we're in trouble...
+        if (multitrack != NULL) {
+            // Used to garbage collect all frames
+            char label[64];
 
-			// Get the id of the tractor
-			char *id = mlt_properties_get( properties, "_unique_id" );
-			if ( !id ) {
-				mlt_properties_set_int64( properties, "_unique_id", (int64_t) properties );
-				id = mlt_properties_get( properties, "_unique_id" );
-			}
+            // Get the id of the tractor
+            char *id = mlt_properties_get(properties, "_unique_id");
+            if (!id) {
+                mlt_properties_set_int64(properties, "_unique_id", (int64_t) properties);
+                id = mlt_properties_get(properties, "_unique_id");
+            }
 
-			// Will be used to store the frame properties object
-			mlt_properties frame_properties = NULL;
+            // Will be used to store the frame properties object
+            mlt_properties frame_properties = NULL;
 
-			// We'll store audio and video frames to use here
-			mlt_frame audio = NULL;
-			mlt_frame video = NULL;
-			mlt_frame first_video = NULL;
+            // We'll store audio and video frames to use here
+            mlt_frame audio = NULL;
+            mlt_frame video = NULL;
+            mlt_frame first_video = NULL;
 
-			// Temporary properties
-			mlt_properties temp_properties = NULL;
+            // Temporary properties
+            mlt_properties temp_properties = NULL;
 
-			// Get the multitrack's producer
-			mlt_producer target = MLT_MULTITRACK_PRODUCER( multitrack );
-			mlt_producer_seek( target, mlt_producer_frame( parent ) );
-			mlt_producer_set_speed( target, mlt_producer_get_speed( parent ) );
+            // Get the multitrack's producer
+            mlt_producer target = MLT_MULTITRACK_PRODUCER(multitrack);
+            mlt_producer_seek(target, mlt_producer_frame(parent));
+            mlt_producer_set_speed(target, mlt_producer_get_speed(parent));
 
-			// We will create one frame and attach everything to it
-			*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( parent ) );
+            // We will create one frame and attach everything to it
+            *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(parent));
 
-			// Get the properties of the frame
-			frame_properties = MLT_FRAME_PROPERTIES( *frame );
+            // Get the properties of the frame
+            frame_properties = MLT_FRAME_PROPERTIES(*frame);
 
-			// Loop through each of the tracks we're harvesting
-			for ( i = 0; !done; i ++ )
-			{
-				// Get a frame from the producer
-				mlt_service_get_frame( self->producer, &temp, i );
+            // Loop through each of the tracks we're harvesting
+            for (i = 0; !done; i++) {
+                // Get a frame from the producer
+                mlt_service_get_frame(self->producer, &temp, i);
 
-				// Get the temporary properties
-				temp_properties = MLT_FRAME_PROPERTIES( temp );
+                // Get the temporary properties
+                temp_properties = MLT_FRAME_PROPERTIES(temp);
 
-				// Pass all unique meta properties from the producer's frame to the new frame
-				mlt_properties_lock( temp_properties );
-				mlt_properties_copy(frame_properties, temp_properties, "meta.");
-				mlt_properties_unlock( temp_properties );
+                // Pass all unique meta properties from the producer's frame to the new frame
+                mlt_properties_lock(temp_properties);
+                mlt_properties_copy(frame_properties, temp_properties, "meta.");
+                mlt_properties_unlock(temp_properties);
 
-				// Copy the format conversion virtual functions
-				if ( ! (*frame)->convert_image && temp->convert_image )
-					(*frame)->convert_image = temp->convert_image;
-				if ( ! (*frame)->convert_audio && temp->convert_audio )
-					(*frame)->convert_audio = temp->convert_audio;
+                // Copy the format conversion virtual functions
+                if (!(*frame)->convert_image && temp->convert_image)
+                    (*frame)->convert_image = temp->convert_image;
+                if (!(*frame)->convert_audio && temp->convert_audio)
+                    (*frame)->convert_audio = temp->convert_audio;
 
-				// Check for last track
-				done = mlt_properties_get_int( temp_properties, "last_track" );
+                // Check for last track
+                done = mlt_properties_get_int(temp_properties, "last_track");
 
-				// Handle fx only tracks
-				if ( mlt_properties_get_int( temp_properties, "fx_cut" ) )
-				{
-					int hide = ( video == NULL ? 1 : 0 ) | ( audio == NULL ? 2 : 0 );
-					mlt_properties_set_int( temp_properties, "hide", hide );
-				}
+                // Handle fx only tracks
+                if (mlt_properties_get_int(temp_properties, "fx_cut")) {
+                    int hide = (video == NULL ? 1 : 0) | (audio == NULL ? 2 : 0);
+                    mlt_properties_set_int(temp_properties, "hide", hide);
+                }
 
-				// We store all frames with a destructor on the output frame
-				snprintf( label, sizeof(label), "mlt_tractor %s_%d", id, count ++ );
-				mlt_properties_set_data( frame_properties, label, temp, 0, ( mlt_destructor )mlt_frame_close, NULL );
+                // We store all frames with a destructor on the output frame
+                snprintf(label, sizeof(label), "mlt_tractor %s_%d", id, count++);
+                mlt_properties_set_data(frame_properties,
+                                        label,
+                                        temp,
+                                        0,
+                                        (mlt_destructor) mlt_frame_close,
+                                        NULL);
 
-				// Pick up first video and audio frames
-				if ( !done && !mlt_frame_is_test_audio( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 2 ) )
-				{
-					// Order of frame creation is starting to get problematic
-					if ( audio != NULL )
-					{
-						mlt_deque_push_front( MLT_FRAME_AUDIO_STACK( temp ), producer_get_audio );
-						mlt_deque_push_front( MLT_FRAME_AUDIO_STACK( temp ), audio );
-					}
-					audio = temp;
-				}
-				if ( !done && !mlt_frame_is_test_card( temp ) && !( mlt_properties_get_int( temp_properties, "hide" ) & 1 ) )
-				{
-					if ( video != NULL )
-					{
-						mlt_deque_push_front( MLT_FRAME_IMAGE_STACK( temp ), producer_get_image );
-						mlt_deque_push_front( MLT_FRAME_IMAGE_STACK( temp ), video );
-					}
-					video = temp;
-					if ( first_video == NULL )
-						first_video = temp;
+                // Pick up first video and audio frames
+                if (!done && !mlt_frame_is_test_audio(temp)
+                    && !(mlt_properties_get_int(temp_properties, "hide") & 2)) {
+                    // Order of frame creation is starting to get problematic
+                    if (audio != NULL) {
+                        mlt_deque_push_front(MLT_FRAME_AUDIO_STACK(temp), producer_get_audio);
+                        mlt_deque_push_front(MLT_FRAME_AUDIO_STACK(temp), audio);
+                    }
+                    audio = temp;
+                }
+                if (!done && !mlt_frame_is_test_card(temp)
+                    && !(mlt_properties_get_int(temp_properties, "hide") & 1)) {
+                    if (video != NULL) {
+                        mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(temp), producer_get_image);
+                        mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(temp), video);
+                    }
+                    video = temp;
+                    if (first_video == NULL)
+                        first_video = temp;
 
-					mlt_properties_set_int( MLT_FRAME_PROPERTIES( temp ), "image_count", ++ image_count );
-					image_count = 1;
-				}
-			}
+                    mlt_properties_set_int(MLT_FRAME_PROPERTIES(temp), "image_count", ++image_count);
+                    image_count = 1;
+                }
+            }
 
-			// Now stack callbacks
-			if ( audio != NULL )
-			{
-				mlt_frame_push_audio( *frame, audio );
-				mlt_frame_push_audio( *frame, producer_get_audio );
-			}
+            // Now stack callbacks
+            if (audio != NULL) {
+                mlt_frame_push_audio(*frame, audio);
+                mlt_frame_push_audio(*frame, producer_get_audio);
+            }
 
-			if ( video != NULL )
-			{
-				mlt_properties video_properties = MLT_FRAME_PROPERTIES( first_video );
-				mlt_frame_push_service( *frame, video );
-				mlt_frame_push_service( *frame, producer_get_image );
-				mlt_properties_set_int( frame_properties, "width", mlt_properties_get_int( video_properties, "width" ) );
-				mlt_properties_set_int( frame_properties, "height", mlt_properties_get_int( video_properties, "height" ) );
-				mlt_properties_set_int( frame_properties, "format", mlt_properties_get_int( video_properties, "format" ) );
-				mlt_properties_pass_list( frame_properties, video_properties, "meta.media.width, meta.media.height" );
-				mlt_properties_set_int( frame_properties, "progressive", mlt_properties_get_int( video_properties, "progressive" ) );
-				mlt_properties_set_double( frame_properties, "aspect_ratio", mlt_properties_get_double( video_properties, "aspect_ratio" ) );
-				mlt_properties_set_int( frame_properties, "image_count", image_count );
-				mlt_properties_set_data( frame_properties, "_producer", mlt_frame_get_original_producer( first_video ), 0, NULL, NULL );
-			}
+            if (video != NULL) {
+                mlt_properties video_properties = MLT_FRAME_PROPERTIES(first_video);
+                mlt_frame_push_service(*frame, video);
+                mlt_frame_push_service(*frame, producer_get_image);
+                mlt_properties_set_int(frame_properties,
+                                       "width",
+                                       mlt_properties_get_int(video_properties, "width"));
+                mlt_properties_set_int(frame_properties,
+                                       "height",
+                                       mlt_properties_get_int(video_properties, "height"));
+                mlt_properties_set_int(frame_properties,
+                                       "format",
+                                       mlt_properties_get_int(video_properties, "format"));
+                mlt_properties_pass_list(frame_properties,
+                                         video_properties,
+                                         "meta.media.width, meta.media.height");
+                mlt_properties_set_int(frame_properties,
+                                       "progressive",
+                                       mlt_properties_get_int(video_properties, "progressive"));
+                mlt_properties_set_double(frame_properties,
+                                          "aspect_ratio",
+                                          mlt_properties_get_double(video_properties,
+                                                                    "aspect_ratio"));
+                mlt_properties_set_int(frame_properties, "image_count", image_count);
+                mlt_properties_set_data(frame_properties,
+                                        "_producer",
+                                        mlt_frame_get_original_producer(first_video),
+                                        0,
+                                        NULL,
+                                        NULL);
+            }
 
-			mlt_frame_set_position( *frame, mlt_producer_frame( parent ) );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_audio", audio == NULL );
-			mlt_properties_set_int( MLT_FRAME_PROPERTIES( *frame ), "test_image", video == NULL );
-		}
-		else if ( producer != NULL )
-		{
-			mlt_producer_seek( producer, mlt_producer_frame( parent ) );
-			mlt_producer_set_speed( producer, mlt_producer_get_speed( parent ) );
-			mlt_service_get_frame( self->producer, frame, track );
-		}
-		else
-		{
-			mlt_log( MLT_PRODUCER_SERVICE( parent ), MLT_LOG_ERROR, "tractor without a multitrack!!\n" );
-			mlt_service_get_frame( self->producer, frame, track );
-		}
+            mlt_frame_set_position(*frame, mlt_producer_frame(parent));
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(*frame), "test_audio", audio == NULL);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(*frame), "test_image", video == NULL);
+        } else if (producer != NULL) {
+            mlt_producer_seek(producer, mlt_producer_frame(parent));
+            mlt_producer_set_speed(producer, mlt_producer_get_speed(parent));
+            mlt_service_get_frame(self->producer, frame, track);
+        } else {
+            mlt_log(MLT_PRODUCER_SERVICE(parent), MLT_LOG_ERROR, "tractor without a multitrack!!\n");
+            mlt_service_get_frame(self->producer, frame, track);
+        }
 
-		// Prepare the next frame
-		mlt_producer_prepare_next( parent );
+        // Prepare the next frame
+        mlt_producer_prepare_next(parent);
 
-		// Indicate our found status
-		return 0;
-	}
-	else
-	{
-		// Generate a test card
-		*frame = mlt_frame_init( MLT_PRODUCER_SERVICE( parent ) );
-		return 0;
-	}
+        // Indicate our found status
+        return 0;
+    } else {
+        // Generate a test card
+        *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(parent));
+        return 0;
+    }
 }
 
 /** Close the tractor and free its resources.
@@ -606,13 +658,11 @@ static int producer_get_frame( mlt_producer parent, mlt_frame_ptr frame, int tra
  * \param self a tractor
  */
 
-void mlt_tractor_close( mlt_tractor self )
+void mlt_tractor_close(mlt_tractor self)
 {
-	if ( self != NULL && mlt_properties_dec_ref( MLT_TRACTOR_PROPERTIES( self ) ) <= 0 )
-	{
-		self->parent.close = NULL;
-		mlt_producer_close( &self->parent );
-		free( self );
-	}
+    if (self != NULL && mlt_properties_dec_ref(MLT_TRACTOR_PROPERTIES(self)) <= 0) {
+        self->parent.close = NULL;
+        mlt_producer_close(&self->parent);
+        free(self);
+    }
 }
-

@@ -24,114 +24,111 @@ using namespace Mlt;
 
 class TestImage : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	TestImage()
-    {
-        Factory::init();
-    }
+    TestImage() { Factory::init(); }
 
 private Q_SLOTS:
 
-	void DefaultConstructor()
-	{
-		Image i;
-		QVERIFY(i.width() == 0);
-	}
+    void DefaultConstructor()
+    {
+        Image i;
+        QVERIFY(i.width() == 0);
+    }
 
-	void ConstructFromImage()
-	{
-		mlt_image image = mlt_image_new();
-		image->width = 500;
-		Image i(image);
-		QCOMPARE(i.width(), 500);
-	}
+    void ConstructFromImage()
+    {
+        mlt_image image = mlt_image_new();
+        image->width = 500;
+        Image i(image);
+        QCOMPARE(i.width(), 500);
+    }
 
-	void ConstructAndAlloc()
-	{
-		Image i(1920, 1080, mlt_image_rgb );
-		QVERIFY(i.plane(0) != nullptr);
-	}
+    void ConstructAndAlloc()
+    {
+        Image i(1920, 1080, mlt_image_rgb);
+        QVERIFY(i.plane(0) != nullptr);
+    }
 
-	void PlaneAndStrideRgb()
-	{
-		Image i(1920, 1080, mlt_image_rgb );
-		QVERIFY(i.plane(0) != nullptr);
-		QCOMPARE(i.stride(0), 1920 * 3);
-		QVERIFY(i.plane(1) == nullptr);
-		QCOMPARE(i.stride(1), 0);
-		QVERIFY(i.plane(2) == nullptr);
-		QCOMPARE(i.stride(2), 0);
-		QVERIFY(i.plane(3) == nullptr);
-		QCOMPARE(i.stride(3), 0);
-	}
+    void PlaneAndStrideRgb()
+    {
+        Image i(1920, 1080, mlt_image_rgb);
+        QVERIFY(i.plane(0) != nullptr);
+        QCOMPARE(i.stride(0), 1920 * 3);
+        QVERIFY(i.plane(1) == nullptr);
+        QCOMPARE(i.stride(1), 0);
+        QVERIFY(i.plane(2) == nullptr);
+        QCOMPARE(i.stride(2), 0);
+        QVERIFY(i.plane(3) == nullptr);
+        QCOMPARE(i.stride(3), 0);
+    }
 
-	void PlaneAndStrideRgba()
-	{
-		Image i(1920, 1080, mlt_image_rgba );
-		QVERIFY(i.plane(0) != nullptr);
-		QCOMPARE(i.stride(0), 1920 * 4);
-		QVERIFY(i.plane(1) == nullptr);
-		QCOMPARE(i.stride(1), 0);
-		QVERIFY(i.plane(2) == nullptr);
-		QCOMPARE(i.stride(2), 0);
-		QVERIFY(i.plane(3) == nullptr);
-		QCOMPARE(i.stride(3), 0);
-	}
+    void PlaneAndStrideRgba()
+    {
+        Image i(1920, 1080, mlt_image_rgba);
+        QVERIFY(i.plane(0) != nullptr);
+        QCOMPARE(i.stride(0), 1920 * 4);
+        QVERIFY(i.plane(1) == nullptr);
+        QCOMPARE(i.stride(1), 0);
+        QVERIFY(i.plane(2) == nullptr);
+        QCOMPARE(i.stride(2), 0);
+        QVERIFY(i.plane(3) == nullptr);
+        QCOMPARE(i.stride(3), 0);
+    }
 
-	void PlaneAndStrideYuv422()
-	{
-		Image i(1920, 1080, mlt_image_yuv422 );
-		QVERIFY(i.plane(0) != nullptr);
-		QCOMPARE(i.stride(0), 1920 * 2);
-		QVERIFY(i.plane(1) == nullptr);
-		QCOMPARE(i.stride(1), 0);
-		QVERIFY(i.plane(2) == nullptr);
-		QCOMPARE(i.stride(2), 0);
-		QVERIFY(i.plane(3) == nullptr);
-		QCOMPARE(i.stride(3), 0);
-	}
+    void PlaneAndStrideYuv422()
+    {
+        Image i(1920, 1080, mlt_image_yuv422);
+        QVERIFY(i.plane(0) != nullptr);
+        QCOMPARE(i.stride(0), 1920 * 2);
+        QVERIFY(i.plane(1) == nullptr);
+        QCOMPARE(i.stride(1), 0);
+        QVERIFY(i.plane(2) == nullptr);
+        QCOMPARE(i.stride(2), 0);
+        QVERIFY(i.plane(3) == nullptr);
+        QCOMPARE(i.stride(3), 0);
+    }
 
-	void PlaneAndStrideYuv420p()
-	{
-		Image i(1920, 1080, mlt_image_yuv420p );
-		QVERIFY(i.plane(0) != nullptr);
-		QCOMPARE(i.stride(0), 1920);
-		QVERIFY(i.plane(1) != nullptr);
-		QCOMPARE(i.stride(1), 1920 / 2);
-		QVERIFY(i.plane(2) != nullptr);
-		QCOMPARE(i.stride(2), 1920 / 2);
-		QVERIFY(i.plane(3) == nullptr);
-		QCOMPARE(i.stride(3), 0);
-	}
+    void PlaneAndStrideYuv420p()
+    {
+        Image i(1920, 1080, mlt_image_yuv420p);
+        QVERIFY(i.plane(0) != nullptr);
+        QCOMPARE(i.stride(0), 1920);
+        QVERIFY(i.plane(1) != nullptr);
+        QCOMPARE(i.stride(1), 1920 / 2);
+        QVERIFY(i.plane(2) != nullptr);
+        QCOMPARE(i.stride(2), 1920 / 2);
+        QVERIFY(i.plane(3) == nullptr);
+        QCOMPARE(i.stride(3), 0);
+    }
 
-	void PlaneAndStrideYuv422p16()
-	{
-		Image i(1920, 1080, mlt_image_yuv420p );
-		QVERIFY(i.plane(0) != nullptr);
-		QCOMPARE(i.stride(0), 1920);
-		QVERIFY(i.plane(1) != nullptr);
-		QCOMPARE(i.stride(1), 1920 / 2);
-		QVERIFY(i.plane(2) != nullptr);
-		QCOMPARE(i.stride(2), 1920 / 2);
-		QVERIFY(i.plane(3) == nullptr);
-		QCOMPARE(i.stride(3), 0);
-	}
+    void PlaneAndStrideYuv422p16()
+    {
+        Image i(1920, 1080, mlt_image_yuv420p);
+        QVERIFY(i.plane(0) != nullptr);
+        QCOMPARE(i.stride(0), 1920);
+        QVERIFY(i.plane(1) != nullptr);
+        QCOMPARE(i.stride(1), 1920 / 2);
+        QVERIFY(i.plane(2) != nullptr);
+        QCOMPARE(i.stride(2), 1920 / 2);
+        QVERIFY(i.plane(3) == nullptr);
+        QCOMPARE(i.stride(3), 0);
+    }
 
-	void GetSetColorspace()
-	{
-		Image i(1920, 1080, mlt_image_rgb );
-		i.set_colorspace(mlt_colorspace_bt709);
-		QCOMPARE(i.colorspace(), mlt_colorspace_bt709);
-	}
+    void GetSetColorspace()
+    {
+        Image i(1920, 1080, mlt_image_rgb);
+        i.set_colorspace(mlt_colorspace_bt709);
+        QCOMPARE(i.colorspace(), mlt_colorspace_bt709);
+    }
 
-	void InitAlpha()
-	{
-		Image i(1920, 1080, mlt_image_rgb );
-		i.init_alpha();
-		QVERIFY(i.plane(3) != nullptr);
-	}
+    void InitAlpha()
+    {
+        Image i(1920, 1080, mlt_image_rgb);
+        i.init_alpha();
+        QVERIFY(i.plane(3) != nullptr);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestImage)

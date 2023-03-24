@@ -22,67 +22,59 @@
 #include "MltProfile.h"
 using namespace Mlt;
 
-FilteredProducer::FilteredProducer( Profile& profile, const char *id, const char *arg ) :
-	Producer( profile, id, arg )
+FilteredProducer::FilteredProducer(Profile &profile, const char *id, const char *arg)
+    : Producer(profile, id, arg)
 {
-	// Create a reference to the last service
-	last = new Service( *this );
+    // Create a reference to the last service
+    last = new Service(*this);
 }
 
-FilteredProducer::~FilteredProducer( )
+FilteredProducer::~FilteredProducer()
 {
-	// Delete the reference to the last service
-	delete last;
+    // Delete the reference to the last service
+    delete last;
 }
 
-int FilteredProducer::attach( Filter &filter )
+int FilteredProducer::attach(Filter &filter)
 {
-	int error = 0;
-	if ( filter.is_valid( ) )
-	{
-		Service *consumer = last->consumer( );
-		filter.connect_producer( *last );
-		if ( consumer->is_valid( ) )
-			consumer->connect_producer( filter );
-		delete consumer;
-		delete last;
-		last = new Service( filter );
-	}
-	else
-	{
-		error = 1;
-	}
-	return error;
+    int error = 0;
+    if (filter.is_valid()) {
+        Service *consumer = last->consumer();
+        filter.connect_producer(*last);
+        if (consumer->is_valid())
+            consumer->connect_producer(filter);
+        delete consumer;
+        delete last;
+        last = new Service(filter);
+    } else {
+        error = 1;
+    }
+    return error;
 }
 
-int FilteredProducer::detach( Filter &filter )
+int FilteredProducer::detach(Filter &filter)
 {
-	if ( filter.is_valid( ) )
-	{
-		Service *it = new Service( *last );
-		while ( it->is_valid( ) && it->get_service( ) != filter.get_service( ) )
-		{
-			Service *producer = it->producer( );
-			delete it;
-			it = producer;
-		}
-		if ( it->get_service( ) == filter.get_service( ) )
-		{
-			Service *producer = it->producer( );
-			Service *consumer = it->consumer( );
-			if ( consumer->is_valid( ) )
-				consumer->connect_producer( *producer );
-			Profile p( get_profile() );
-			Producer dummy( p, "colour" );
-			dummy.connect_producer( *it );
-			if ( last->get_service( ) == it->get_service( ) )
-			{
-				delete last;
-				last = new Service( *producer );
-			}
-		}
-		delete it;
-	}
-	return 0;
+    if (filter.is_valid()) {
+        Service *it = new Service(*last);
+        while (it->is_valid() && it->get_service() != filter.get_service()) {
+            Service *producer = it->producer();
+            delete it;
+            it = producer;
+        }
+        if (it->get_service() == filter.get_service()) {
+            Service *producer = it->producer();
+            Service *consumer = it->consumer();
+            if (consumer->is_valid())
+                consumer->connect_producer(*producer);
+            Profile p(get_profile());
+            Producer dummy(p, "colour");
+            dummy.connect_producer(*it);
+            if (last->get_service() == it->get_service()) {
+                delete last;
+                last = new Service(*producer);
+            }
+        }
+        delete it;
+    }
+    return 0;
 }
-

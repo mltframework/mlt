@@ -22,6 +22,6 @@
 #include <framework/mlt_events.h>
 #include <framework/mlt_image.h>
 
-void mlt_image_box_blur( mlt_image self, int hradius, int vradius );
+void mlt_image_box_blur(mlt_image self, int hradius, int vradius);
 
 #endif // IMAGE_PROC_H

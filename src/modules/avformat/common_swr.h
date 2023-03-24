@@ -25,21 +25,20 @@
 
 typedef struct
 {
-	SwrContext* ctx;
-	uint8_t** in_buffers;
-	uint8_t** out_buffers;
-	mlt_audio_format in_format;
-	mlt_audio_format out_format;
-	int in_frequency;
-	int out_frequency;
-	int in_channels;
-	int out_channels;
-	mlt_channel_layout in_layout;
-	mlt_channel_layout out_layout;
+    SwrContext *ctx;
+    uint8_t **in_buffers;
+    uint8_t **out_buffers;
+    mlt_audio_format in_format;
+    mlt_audio_format out_format;
+    int in_frequency;
+    int out_frequency;
+    int in_channels;
+    int out_channels;
+    mlt_channel_layout in_layout;
+    mlt_channel_layout out_layout;
 } mlt_swr_private_data;
 
-int mlt_configure_swr_context( mlt_service service, mlt_swr_private_data *pdata );
-void mlt_free_swr_context( mlt_swr_private_data *pdata );
-
+int mlt_configure_swr_context(mlt_service service, mlt_swr_private_data *pdata);
+void mlt_free_swr_context(mlt_swr_private_data *pdata);
 
 #endif // COMMON_H

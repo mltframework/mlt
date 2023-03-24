@@ -21,29 +21,27 @@
 
 #include "mlt_version.h"
 
-int mlt_version_get_int( )
+int mlt_version_get_int()
 {
-	return LIBMLT_VERSION_INT;
+    return LIBMLT_VERSION_INT;
 }
 
-char *mlt_version_get_string( )
+char *mlt_version_get_string()
 {
-	return LIBMLT_VERSION;
+    return LIBMLT_VERSION;
 }
 
-int mlt_version_get_major( )
+int mlt_version_get_major()
 {
-	return LIBMLT_VERSION_MAJOR;
+    return LIBMLT_VERSION_MAJOR;
 }
 
-int mlt_version_get_minor( )
+int mlt_version_get_minor()
 {
-	return LIBMLT_VERSION_MINOR;
+    return LIBMLT_VERSION_MINOR;
 }
 
-int mlt_version_get_revision( )
+int mlt_version_get_revision()
 {
-	return LIBMLT_VERSION_REVISION;
+    return LIBMLT_VERSION_REVISION;
 }
-
-
