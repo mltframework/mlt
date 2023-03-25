@@ -1033,11 +1033,11 @@ static void on_data_received(mlt_properties properties,
         if (!self->thread_running)
             start_output_thread(self);
         mlt_log_debug(MLT_CONSUMER_SERVICE(consumer),
-                      "%s: %p 0x%x (%d)\n",
+                      "%s: %p 0x%x (%u)\n",
                       __FUNCTION__,
                       buf,
                       *buf,
-                      size % TSP_BYTES);
+                      (unsigned int) size % TSP_BYTES);
 
         // Do direct output
         //		result = self->write_tsp( self, buf, size );
