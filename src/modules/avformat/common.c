@@ -298,15 +298,28 @@ int mlt_to_av_image_format(mlt_image_format format)
         return AV_PIX_FMT_YUYV422;
     case mlt_image_yuv420p:
         return AV_PIX_FMT_YUV420P;
-    default:
-        mlt_log_error(NULL, "[filter_avfilter] Unknown image format: %d\n", format);
+    case mlt_image_yuv420p10:
+        return AV_PIX_FMT_YUV420P10LE;
+    case mlt_image_yuv444p10:
+        return AV_PIX_FMT_YUV444P10LE;
+    case mlt_image_yuv422p16:
+        return AV_PIX_FMT_YUV422P16LE;
+    case mlt_image_movit:
+    case mlt_image_opengl_texture:
+    case mlt_image_invalid:
+        mlt_log_error(NULL,
+                      "[filter_avfilter] Unexpected image format: %s\n",
+                      mlt_image_format_name(format));
         return AV_PIX_FMT_NONE;
     }
+    mlt_log_error(NULL, "[filter_avfilter] Unknown image format: %d\n", format);
+    return AV_PIX_FMT_NONE;
 }
 
 mlt_image_format mlt_get_supported_image_format(mlt_image_format format)
 {
     switch (format) {
+    case mlt_image_invalid:
     case mlt_image_none:
     case mlt_image_movit:
     case mlt_image_opengl_texture:
@@ -318,10 +331,15 @@ mlt_image_format mlt_get_supported_image_format(mlt_image_format format)
         return mlt_image_yuv420p;
     case mlt_image_yuv422:
         return mlt_image_yuv422;
-    default:
-        mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format);
-        break;
+    case mlt_image_yuv420p10:
+        return mlt_image_yuv420p10;
+    case mlt_image_yuv444p10:
+        return mlt_image_yuv444p10;
+    case mlt_image_yuv422p16:
+        return mlt_image_yuv422p16;
     }
+    mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format);
+    return mlt_image_rgba;
 }
 
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
