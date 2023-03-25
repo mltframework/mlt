@@ -85,6 +85,7 @@ int init_qimage(mlt_producer producer, const char *filename)
     return 1;
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
 static QImage *reorient_with_exif(producer_qimage self, int image_idx, QImage *qimage)
 {
 #ifdef USE_EXIF
@@ -141,6 +142,7 @@ static QImage *reorient_with_exif(producer_qimage self, int image_idx, QImage *q
 #endif
     return qimage;
 }
+#endif
 
 int refresh_qimage(producer_qimage self, mlt_frame frame, int enable_caching)
 {
