@@ -62,6 +62,13 @@ static mlt_image_format validate_format(mlt_image_format format)
     case mlt_image_yuv420p10:
     case mlt_image_yuv444p10:
         ret_format = format;
+        break;
+    case mlt_image_none:
+    case mlt_image_movit:
+    case mlt_image_opengl_texture:
+    case mlt_image_invalid:
+        ret_format = mlt_image_yuv422;
+        break;
     }
     return ret_format;
 }

@@ -448,6 +448,9 @@ static int generate_test_image(mlt_properties properties,
         case mlt_image_opengl_texture:
             *format = mlt_image_yuv422;
             break;
+        case mlt_image_invalid:
+            *format = mlt_image_invalid;
+            break;
         }
 
         struct mlt_image_s img;

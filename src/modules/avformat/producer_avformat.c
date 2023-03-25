@@ -1699,6 +1699,12 @@ static int convert_image(producer_avformat self,
     case mlt_image_rgba:
         dst_pix_fmt = AV_PIX_FMT_RGBA;
         break;
+    case mlt_image_none:
+    case mlt_image_yuv422:
+    case mlt_image_movit:
+    case mlt_image_opengl_texture:
+    case mlt_image_invalid:
+        break;
     }
 
     // Convert
