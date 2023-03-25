@@ -327,7 +327,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     int b_width = mlt_properties_get_int(frame_properties, "meta.media.width");
     int b_height = mlt_properties_get_int(frame_properties, "meta.media.height");
-    if (b_height == 0) {
+    if (b_width == 0 || b_height == 0) {
         b_width = normalized_width;
         b_height = normalized_height;
     }

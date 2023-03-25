@@ -146,7 +146,7 @@ endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Treat warnings as errors when in debug mode (except some which are allowed)
-  set(GCC_FLAGS "-Wall -Werror -Wno-deprecated-declarations -Wno-unused-but-set-variable -Wno-format -Wno-format-truncation")
+  set(GCC_FLAGS "-Wall -Werror -Wno-deprecated-declarations -Wno-format -Wno-format-truncation")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS}")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_FLAGS} -Wno-discarded-qualifiers")
 endif ()
