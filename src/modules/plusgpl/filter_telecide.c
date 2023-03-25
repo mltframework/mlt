@@ -121,6 +121,7 @@ static void Show(context cx, int frame, mlt_properties properties)
 {
     char use;
     char buf[512];
+    char tmp_buf[512];
 
     if (cx->chosen == P)
         use = 'p';
@@ -135,9 +136,9 @@ static void Show(context cx, int frame, mlt_properties properties)
              cx->p,
              cx->c,
              cx->np);
-    if (cx->post)
-        snprintf(buf,
-                 sizeof(buf),
+    if (cx->post) {
+        snprintf(tmp_buf,
+                 sizeof(tmp_buf),
                  "%sTelecide: frame %d: vmetrics: %d %d %d [chosen=%d]\n",
                  buf,
                  frame,
@@ -145,10 +146,14 @@ static void Show(context cx, int frame, mlt_properties properties)
                  cx->cblock,
                  cx->npblock,
                  cx->vmetric);
-    if (cx->guide)
-        snprintf(buf, sizeof(buf), "%spattern mismatch=%0.2f%%\n", buf, cx->mismatch);
-    snprintf(buf,
-             sizeof(buf),
+        strncpy(buf, tmp_buf, sizeof(buf));
+    }
+    if (cx->guide) {
+        snprintf(tmp_buf, sizeof(tmp_buf), "%spattern mismatch=%0.2f%%\n", buf, cx->mismatch);
+        strncpy(buf, tmp_buf, sizeof(buf));
+    }
+    snprintf(tmp_buf,
+             sizeof(tmp_buf),
              "%sTelecide: frame %d: [%s %c]%s %s\n",
              buf,
              frame,
@@ -156,6 +161,7 @@ static void Show(context cx, int frame, mlt_properties properties)
              use,
              cx->post ? (cx->film ? " [progressive]" : " [interlaced]") : "",
              cx->guide ? cx->status : "");
+    strncpy(buf, tmp_buf, sizeof(buf));
     mlt_properties_set(properties, "meta.attr.telecide.markup", buf);
 }
 
