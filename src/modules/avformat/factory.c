@@ -81,20 +81,22 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
         return filter_avcolour_space_init(arg);
     if (!strcmp(id, "avcolour_space"))
         return filter_avcolour_space_init(arg);
-    if (!strcmp(id, "avdeinterlace"))
+    if (!strcmp(id, "avdeinterlace")) {
         if (type == mlt_service_filter_type)
             return filter_avdeinterlace_init(arg);
         else if (type == mlt_service_link_type)
             return link_avdeinterlace_init(profile, type, id, arg);
+    }
     if (!strcmp(id, "swscale"))
         return filter_swscale_init(profile, arg);
 #endif
 #ifdef SWRESAMPLE
-    if (!strcmp(id, "swresample"))
+    if (!strcmp(id, "swresample")) {
         if (type == mlt_service_filter_type)
             return filter_swresample_init(profile, arg);
         else if (type == mlt_service_link_type)
             return link_swresample_init(profile, arg);
+    }
 #endif
     return NULL;
 }
