@@ -144,6 +144,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   endif()
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(GCC_FLAGS "-Wall -Werror -Wno-unused-variable -Wno-unused-function -Wno-switch -Wno-parentheses -Wno-sequence-point -Wno-deprecated-declarations -Wno-return-type -Wno-restrict -Wno-unused-but-set-variable -Wno-format -Wno-format-truncation")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_FLAGS} -Wno-discarded-qualifiers")
+endif ()
+
 if(MSVC)
   list(APPEND MLT_COMPILE_OPTIONS "$<$<CONFIG:Release>:/fp:fast>")
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")

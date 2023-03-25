@@ -742,7 +742,8 @@ static AVStream *add_audio_stream(mlt_consumer consumer,
         c->sample_fmt = pick_sample_fmt(properties, codec);
         c->channel_layout = channel_layout;
 
-#if 0 // disabled until some audio codecs are multi-threaded \
+// disabled until some audio codecs are multi-threaded
+#if 0
       // Setup multi-threading
 		int thread_count = mlt_properties_get_int( properties, "threads" );
 		if ( thread_count == 0 && getenv( "MLT_AVFORMAT_THREADS" ) )
