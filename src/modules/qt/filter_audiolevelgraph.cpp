@@ -42,7 +42,6 @@ static int filter_get_audio(mlt_frame frame,
                             int *samples)
 {
     mlt_filter filter = (mlt_filter) mlt_frame_pop_audio(frame);
-    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
     private_data *pdata = (private_data *) filter->child;
 
     // Create the audiolevel filter the first time.
@@ -76,12 +75,10 @@ double get_level_from_frame(mlt_frame frame, int channel)
 
 static void convert_levels(mlt_filter filter, mlt_frame frame, int channels, float *levels)
 {
-    private_data *pdata = (private_data *) filter->child;
     mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
-    mlt_properties levels_properties = MLT_FILTER_PROPERTIES(pdata->levels_filter);
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     int reverse = mlt_properties_get_int(filter_properties, "reverse");
-    int real_channels = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "audio_channels");
+    int real_channels = mlt_properties_get_int(frame_properties, "audio_channels");
     if (real_channels == 0)
         real_channels = 1;
 

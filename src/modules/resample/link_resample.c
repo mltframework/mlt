@@ -230,7 +230,6 @@ static int link_get_audio(mlt_frame frame,
 static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
 {
     int result = 0;
-    mlt_properties properties = MLT_LINK_PROPERTIES(self);
     private_data *pdata = (private_data *) self->child;
     mlt_position frame_pos = mlt_producer_position(MLT_LINK_PRODUCER(self));
 

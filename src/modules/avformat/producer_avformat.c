@@ -889,7 +889,6 @@ static int setup_filters(producer_avformat self)
     if (!self->vfilter_graph && (self->autorotate || filtergraph) && self->video_index != -1) {
         AVFilterContext *last_filter = NULL;
         if (self->autorotate) {
-            mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
             if (fabs(theta - 90) < 1.0) {
                 error = (setup_video_filters(self) < 0);
                 last_filter = self->vfilter_out;
@@ -1622,7 +1621,6 @@ static void convert_image_rgb(producer_avformat self,
                               int dst_pix_fmt,
                               int dst_full_range)
 {
-    int result = self->yuv_colorspace;
     int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
     struct SwsContext *context = sws_getContext(
         width, height, src_pix_fmt, width, height, dst_pix_fmt, flags, NULL, NULL, NULL);

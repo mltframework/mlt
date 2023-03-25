@@ -56,9 +56,6 @@ static int get_image(mlt_frame a_frame,
 
     // Obtain the normalized width and height from the a_frame
     mlt_profile profile = mlt_service_profile(MLT_TRANSITION_SERVICE(transition));
-    int normalized_width = profile->width;
-    int normalized_height = profile->height;
-    double consumer_ar = mlt_profile_sar(profile);
     int b_width = mlt_properties_get_int(b_properties, "meta.media.width");
     int b_height = mlt_properties_get_int(b_properties, "meta.media.height");
     bool distort = mlt_properties_get_int(transition_properties, "distort");

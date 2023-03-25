@@ -35,8 +35,6 @@ typedef struct
 
 static void link_configure(mlt_link self, mlt_profile chain_profile)
 {
-    private_data *pdata = (private_data *) self->child;
-
     // Operate at the same frame rate as the next link
     mlt_service_set_profile(MLT_LINK_SERVICE(self),
                             mlt_service_profile(MLT_PRODUCER_SERVICE(self->next)));
@@ -50,7 +48,6 @@ static int link_get_image(mlt_frame frame,
                           int writable)
 {
     int error = 0;
-    int ret = 0;
     mlt_link self = (mlt_link) mlt_frame_pop_service(frame);
     private_data *pdata = (private_data *) self->child;
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);

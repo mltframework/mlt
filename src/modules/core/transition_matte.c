@@ -156,9 +156,6 @@ static int transition_get_image(mlt_frame a_frame,
     // Get the properties of the a frame
     mlt_properties a_props = MLT_FRAME_PROPERTIES(a_frame);
 
-    // Get the properties of the b frame
-    mlt_properties b_props = MLT_FRAME_PROPERTIES(b_frame);
-
     int width_a = mlt_properties_get_int(a_props, "width"), width_b = width_a,
         height_a = mlt_properties_get_int(a_props, "height"), height_b = height_a;
 

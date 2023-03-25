@@ -283,7 +283,7 @@ static void analyze(mlt_filter filter,
             }
             // init anim property
             mlt_properties_anim_get_int(filter_properties, "_results", 0, -1);
-            mlt_animation anim = mlt_properties_get_animation(filter_properties, "_results");
+            mlt_properties_get_animation(filter_properties, "_results");
         }
     } else {
         if (data->legacyTracking) {

@@ -57,7 +57,6 @@ static int filter_get_image(mlt_frame frame,
     int normalized_width = profile->width;
     int normalized_height = profile->height;
     double consumer_ar = mlt_profile_sar(profile);
-    double consumer_dar = mlt_profile_dar(profile);
 
     // Destination rect
     mlt_rect rect = {0,

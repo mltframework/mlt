@@ -42,7 +42,6 @@ static int do_slice_proc(int id, int index, int jobs, void *data)
     slice_desc *desc = (slice_desc *) data;
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-    int slice_line_end = slice_line_start + slice_height;
     int size = desc->width * slice_height * 2;
     uint8_t white = desc->full_luma ? 255 : 235;
     uint8_t black = desc->full_luma ? 0 : 16;

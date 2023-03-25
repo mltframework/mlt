@@ -139,8 +139,6 @@ static mlt_frame process(mlt_transition transition, mlt_frame a_frame, mlt_frame
     // If we haven't created the wipe producer or it has changed
     if (resource)
         if (!producer || strcmp(resource, last_resource)) {
-            char temp[PATH_MAX];
-            const char *extension = strrchr(resource, '.');
             mlt_profile profile = mlt_service_profile(MLT_TRANSITION_SERVICE(transition));
 
             // Store the last resource now

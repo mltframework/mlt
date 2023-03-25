@@ -117,7 +117,6 @@ static void apply(mlt_filter filter,
                   int *channels,
                   int *samples)
 {
-    private_data *private = (private_data *) filter->child;
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     char *results = mlt_properties_get(properties, "results");
     double in_loudness;

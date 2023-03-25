@@ -315,8 +315,6 @@ fail:
 
 static void link_configure(mlt_link self, mlt_profile chain_profile)
 {
-    private_data *pdata = (private_data *) self->child;
-
     // Operate at the same frame rate as the next link
     mlt_service_set_profile(MLT_LINK_SERVICE(self),
                             mlt_service_profile(MLT_PRODUCER_SERVICE(self->next)));
@@ -473,7 +471,6 @@ static int link_get_image(mlt_frame frame,
 static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
 {
     int error = 0;
-    private_data *pdata = (private_data *) self->child;
     mlt_position frame_pos = mlt_producer_position(MLT_LINK_PRODUCER(self));
 
     mlt_producer_seek(self->next, frame_pos);

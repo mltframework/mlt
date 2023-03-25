@@ -1024,7 +1024,6 @@ int mlt_playlist_split(mlt_playlist self, int clip, mlt_position position)
             mlt_events_block(MLT_PLAYLIST_PROPERTIES(self), self);
             mlt_playlist_resize_clip(self, clip, in, in + position);
             if (!mlt_producer_is_blank(entry->producer)) {
-                int i = 0;
                 mlt_properties entry_properties = MLT_PRODUCER_PROPERTIES(entry->producer);
                 mlt_producer split = mlt_producer_cut(entry->producer, in + position + 1, out);
                 mlt_properties split_properties = MLT_PRODUCER_PROPERTIES(split);
