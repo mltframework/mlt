@@ -120,8 +120,10 @@ static inline void BitBlt(
 static void Show(context cx, int frame, mlt_properties properties)
 {
     char use;
-    char buf[512];
-    char tmp_buf[512];
+    char buf1[64] = {0};
+    char buf2[64] = {0};
+    char buf3[64] = {0};
+    char buf4[512] = {0};
 
     if (cx->chosen == P)
         use = 'p';
@@ -129,40 +131,38 @@ static void Show(context cx, int frame, mlt_properties properties)
         use = 'c';
     else
         use = 'n';
-    snprintf(buf,
-             sizeof(buf),
+    snprintf(buf1,
+             sizeof(buf1),
              "Telecide: frame %d: matches: %d %d %d\n",
              frame,
              cx->p,
              cx->c,
              cx->np);
     if (cx->post) {
-        snprintf(tmp_buf,
-                 sizeof(tmp_buf),
-                 "%sTelecide: frame %d: vmetrics: %d %d %d [chosen=%d]\n",
-                 buf,
+        snprintf(buf2,
+                 sizeof(buf2),
+                 "Telecide: frame %d: vmetrics: %d %d %d [chosen=%d]\n",
                  frame,
                  cx->pblock,
                  cx->cblock,
                  cx->npblock,
                  cx->vmetric);
-        strncpy(buf, tmp_buf, sizeof(buf));
     }
     if (cx->guide) {
-        snprintf(tmp_buf, sizeof(tmp_buf), "%spattern mismatch=%0.2f%%\n", buf, cx->mismatch);
-        strncpy(buf, tmp_buf, sizeof(buf));
+        snprintf(buf3, sizeof(buf3), "pattern mismatch=%0.2f%%\n", cx->mismatch);
     }
-    snprintf(tmp_buf,
-             sizeof(tmp_buf),
-             "%sTelecide: frame %d: [%s %c]%s %s\n",
-             buf,
+    snprintf(buf4,
+             sizeof(buf4),
+             "%s%s%sTelecide: frame %d: [%s %c]%s %s\n",
+             buf1,
+             buf2,
+             buf3,
              frame,
              cx->found ? "forcing" : "using",
              use,
              cx->post ? (cx->film ? " [progressive]" : " [interlaced]") : "",
              cx->guide ? cx->status : "");
-    strncpy(buf, tmp_buf, sizeof(buf));
-    mlt_properties_set(properties, "meta.attr.telecide.markup", buf);
+    mlt_properties_set(properties, "meta.attr.telecide.markup", buf4);
 }
 
 static void Debug(context cx, int frame)

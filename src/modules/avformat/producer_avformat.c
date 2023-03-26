@@ -545,7 +545,7 @@ static void get_aspect_ratio(mlt_properties properties,
 
 static char *parse_url(mlt_profile profile,
                        const char *URL,
-                       AVInputFormat **format,
+                       const AVInputFormat **format,
                        AVDictionary **params)
 {
     (void) profile; // unused
@@ -997,7 +997,7 @@ static int producer_open(
     mlt_events_block(properties, self->parent);
 
     // Parse URL
-    AVInputFormat *format = NULL;
+    const AVInputFormat *format = NULL;
     AVDictionary *params = NULL;
     char *filename = parse_url(profile, URL, &format, &params);
 
