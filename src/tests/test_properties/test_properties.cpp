@@ -1212,7 +1212,6 @@ private Q_SLOTS:
         color.g = quint8(0xd0);
         color.b = quint8(0x0d);
         color.a = quint8(0xde);
-        int len = 100;
         mlt_property p = mlt_property_init();
         mlt_property_set_color(p, color);
         QCOMPARE(mlt_property_get_string(p), "#deadd00d");
