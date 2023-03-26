@@ -324,13 +324,6 @@ static int filter_get_image(mlt_frame frame,
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE((mlt_filter) unique));
     int normalized_width = profile->width;
     int normalized_height = profile->height;
-    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
-    int b_width = mlt_properties_get_int(frame_properties, "meta.media.width");
-    int b_height = mlt_properties_get_int(frame_properties, "meta.media.height");
-    if (b_width == 0 || b_height == 0) {
-        b_width = normalized_width;
-        b_height = normalized_height;
-    }
 
     // Special case - aspect_ratio = 0
     if (mlt_frame_get_aspect_ratio(frame) == 0) {
