@@ -700,8 +700,8 @@ char *mlt_property_get_string_tf(mlt_property self, mlt_time_format time_format)
         } else if (self->types & mlt_prop_color) {
             self->types |= mlt_prop_string;
             self->prop_string = malloc(10);
-            uint32_t int_value = (((self->prop_int & 0xff) << 24) | (self->prop_int >> 8))
-                                 & 0xffffff;
+            uint32_t int_value = ((self->prop_int & 0xff) << 24)
+                                 | ((self->prop_int >> 8) & 0xffffff);
             sprintf(self->prop_string, "#%x", int_value);
         } else if (self->types & mlt_prop_double) {
             self->types |= mlt_prop_string;
@@ -800,8 +800,8 @@ char *mlt_property_get_string_l_tf(mlt_property self,
         } else if (self->types & mlt_prop_color) {
             self->types |= mlt_prop_string;
             self->prop_string = malloc(10);
-            uint32_t int_value = (((self->prop_int & 0xff) << 24) | (self->prop_int >> 8))
-                                 & 0xffffff;
+            uint32_t int_value = ((self->prop_int & 0xff) << 24)
+                                 | ((self->prop_int >> 8) & 0xffffff);
             sprintf(self->prop_string, "#%x", int_value);
         } else if (self->types & mlt_prop_double) {
             self->types |= mlt_prop_string;
