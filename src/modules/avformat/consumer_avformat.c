@@ -1500,7 +1500,7 @@ static void *consumer_thread(void *arg)
     long int total_time = 0;
 
     // Determine the format
-    AVOutputFormat *fmt = NULL;
+    const AVOutputFormat *fmt = NULL;
     const char *filename = mlt_properties_get(properties, "target");
     char *format = mlt_properties_get(properties, "f");
     char *vcodec = mlt_properties_get(properties, "vcodec");

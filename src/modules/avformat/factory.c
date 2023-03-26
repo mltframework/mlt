@@ -102,7 +102,7 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
 }
 
 static void add_parameters(mlt_properties params,
-                           void *object,
+                           const void *object,
                            int req_flags,
                            const char *unit,
                            const char *subclass,
