@@ -144,7 +144,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   endif()
 endif()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # Treat warnings as errors when in debug mode (except some which are allowed)
   set(GCC_FLAGS "-Wall -Werror -Wno-deprecated-declarations")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS}")
