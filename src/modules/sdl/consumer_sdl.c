@@ -80,10 +80,6 @@ static void consumer_purge(mlt_consumer parent);
 static void consumer_close(mlt_consumer parent);
 static void *consumer_thread(void *);
 static int consumer_get_dimensions(int *width, int *height);
-static void consumer_sdl_event(mlt_listener listener,
-                               mlt_properties owner,
-                               mlt_service self,
-                               void **args);
 
 /** This is what will be called by the factory - anything can be passed in
 	via the argument, but keep it simple.
