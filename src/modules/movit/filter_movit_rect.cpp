@@ -27,7 +27,10 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
     // Drive the resize and resample filters on the b_frame for these composite parameters
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     mlt_properties frame_props = MLT_FRAME_PROPERTIES(frame);
-    mlt_properties_set(frame_props, "resize.rect", mlt_properties_get(properties, "rect"));
+    mlt_position position = mlt_filter_get_position(filter, frame);
+    mlt_position length = mlt_filter_get_length2(filter, frame);
+    auto rect = mlt_properties_anim_get_rect(properties, "rect", position, length);
+    mlt_properties_set_rect(frame_props, "resize.rect", rect);
     mlt_properties_set(frame_props, "resize.fill", mlt_properties_get(properties, "fill"));
     mlt_properties_set(frame_props, "distort", mlt_properties_get(properties, "distort"));
     mlt_properties_set(frame_props, "resize.halign", mlt_properties_get(properties, "halign"));
