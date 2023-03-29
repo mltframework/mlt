@@ -85,7 +85,7 @@ void TypeWriter::printParseResult()
         fprintf(stderr, "Parsing error:\n%.*s\n", -parsing_err - 1, raw_string.c_str());
         fprintf(stderr, "%*c%c\n", -parsing_err - 2, ' ', '^');
     } else {
-        printf("Parsing OK:  frames=%u  strings=%llu\n", count(), frames.size());
+        printf("Parsing OK:  frames=%u  strings=%zu\n", count(), frames.size());
     }
 }
 
