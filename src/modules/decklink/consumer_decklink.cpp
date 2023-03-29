@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2021 Meltytech, LLC
+ * Copyright (C) 2010-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -994,7 +994,7 @@ static void on_property_changed(void *, mlt_properties properties, mlt_event_dat
             if (decklink->GetModelName(&name) == S_OK) {
                 char *name_cstr = getCString(name);
                 const char *format = "device.%d";
-                char *key = (char *) calloc(1, strlen(format) + 1);
+                char *key = (char *) calloc(1, strlen(format) + 10);
 
                 sprintf(key, format, i);
                 mlt_properties_set(properties, key, name_cstr);

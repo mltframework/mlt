@@ -444,11 +444,11 @@ static int writen(consumer_cbrts self, const void *buf, size_t count)
     return result;
 }
 
+#ifdef CBRTS_BSD_SOCKETS
 static int sendn(consumer_cbrts self, const void *buf, size_t count)
 {
     int result = 0;
 
-#ifdef CBRTS_BSD_SOCKETS
     int written = 0;
     while (written < count) {
         result = sendto(self->fd,
@@ -466,10 +466,10 @@ static int sendn(consumer_cbrts self, const void *buf, size_t count)
         }
         written += result;
     }
-#endif
 
     return result;
 }
+#endif
 
 static int write_udp(consumer_cbrts self, const void *buf, size_t count)
 {

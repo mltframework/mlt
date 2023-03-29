@@ -123,8 +123,8 @@ static char *serialise_branch(deserialise_context context, char *s)
         int len = strlen(s);
         snprintf(s + len,
                  BRANCH_SIG_LEN - len,
-                 "%lu.",
-                 (unsigned long) mlt_deque_peek(context->stack_branch, i));
+                 "%" PRIu64 ".",
+                 (uint64_t) mlt_deque_peek(context->stack_branch, i));
     }
     return s;
 }

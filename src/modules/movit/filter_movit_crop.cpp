@@ -1,6 +1,6 @@
 /*
  * filter_movit_crop.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,11 +116,9 @@ static int get_image(mlt_frame frame,
     Effect *effect = GlslManager::set_effect(MLT_FILTER_SERVICE(filter),
                                              frame,
                                              new OptionalEffect<PaddingEffect>);
-    assert(effect);
     *image = (uint8_t *) MLT_FILTER_SERVICE(filter);
     RGBATuple border_color(0.0f, 0.0f, 0.0f, 1.0f);
-    bool ok = effect->set_vec4("border_color", (float *) &border_color);
-    assert(ok);
+    effect->set_vec4("border_color", (float *) &border_color);
     return error;
 }
 

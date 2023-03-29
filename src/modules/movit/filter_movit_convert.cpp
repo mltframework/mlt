@@ -212,8 +212,6 @@ static void build_fingerprint(mlt_service service, mlt_frame frame, std::string 
         return;
     }
 
-    Effect *effect = GlslManager::get_effect(service, frame);
-    assert(effect);
     mlt_service input_a = GlslManager::get_effect_input(service, frame);
     fingerprint->push_back('(');
     build_fingerprint(input_a, frame, fingerprint);
@@ -402,15 +400,13 @@ static void set_movit_parameters(GlslChain *chain, mlt_service service, mlt_fram
         const char *name = mlt_properties_get_name(properties, i);
         if (strncmp(name, "_movit.parms.float.", strlen("_movit.parms.float.")) == 0
             && mlt_properties_get_value(properties, i)) {
-            bool ok = effect->set_float(name + strlen("_movit.parms.float."),
-                                        mlt_properties_get_double(properties, name));
-            assert(ok);
+            effect->set_float(name + strlen("_movit.parms.float."),
+                              mlt_properties_get_double(properties, name));
         }
         if (strncmp(name, "_movit.parms.int.", strlen("_movit.parms.int.")) == 0
             && mlt_properties_get_value(properties, i)) {
-            bool ok = effect->set_int(name + strlen("_movit.parms.int."),
-                                      mlt_properties_get_int(properties, name));
-            assert(ok);
+            effect->set_int(name + strlen("_movit.parms.int."),
+                            mlt_properties_get_int(properties, name));
         }
         if (strncmp(name, "_movit.parms.vec3.", strlen("_movit.parms.vec3.")) == 0
             && strcmp(name + strlen(name) - 3, "[0]") == 0
@@ -424,8 +420,7 @@ static void set_movit_parameters(GlslChain *chain, mlt_service service, mlt_fram
             *index_char = '2';
             val[2] = mlt_properties_get_double(properties, name_copy);
             index_char[-1] = '\0';
-            bool ok = effect->set_vec3(name_copy + strlen("_movit.parms.vec3."), val);
-            assert(ok);
+            effect->set_vec3(name_copy + strlen("_movit.parms.vec3."), val);
             free(name_copy);
         }
         if (strncmp(name, "_movit.parms.vec4.", strlen("_movit.parms.vec4.")) == 0
@@ -442,8 +437,7 @@ static void set_movit_parameters(GlslChain *chain, mlt_service service, mlt_fram
             *index_char = '3';
             val[3] = mlt_properties_get_double(properties, name_copy);
             index_char[-1] = '\0';
-            bool ok = effect->set_vec4(name_copy + strlen("_movit.parms.vec4."), val);
-            assert(ok);
+            effect->set_vec4(name_copy + strlen("_movit.parms.vec4."), val);
             free(name_copy);
         }
     }
