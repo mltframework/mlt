@@ -1757,7 +1757,7 @@ static void *consumer_thread(void *arg)
     }
 
     // Allocate picture
-    enum AVPixelFormat pix_fmt;
+    enum AVPixelFormat pix_fmt = AV_PIX_FMT_YUV420P;
     if (enc_ctx->video_st) {
 #if defined(AVFILTER)
         pix_fmt = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI ? AV_PIX_FMT_NV12
