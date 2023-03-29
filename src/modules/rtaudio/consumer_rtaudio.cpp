@@ -61,6 +61,8 @@ static const char *rtaudio_api_str(RtAudio::Api api)
         return "WINDOWS_DS";
     case RtAudio::RTAUDIO_DUMMY:
         return "RTAUDIO_DUMMY";
+    default:
+        break;
     }
     return "UNKNOWN!?!";
 }

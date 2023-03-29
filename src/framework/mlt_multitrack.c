@@ -411,14 +411,13 @@ static int add_unique(mlt_position *array, int size, mlt_position position)
 
 static mlt_position *resize_set(mlt_position *map, int count, int *size)
 {
-    mlt_position *result = map;
     // Resize only if needed.
     if (count + 1 >= *size) {
-        result = realloc(map, (*size + 1000) * sizeof(*map));
+        map = realloc(map, (*size + 1000) * sizeof(*map));
         memset(map + *size, 0, 1000 * sizeof(*map));
         *size += 1000;
     }
-    return result;
+    return map;
 }
 
 /** Determine the clip point.
