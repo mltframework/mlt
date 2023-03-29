@@ -221,6 +221,7 @@ static int load_properties(mlt_properties self, const char *filename)
                 char temp2[MAX_LOAD_LINE_SIZE];
                 strcpy(temp2, last);
                 strncat(temp2, temp, sizeof(temp2) - strlen(temp2) - 1);
+                temp2[sizeof(temp2) - 1] = '\0';
                 strcpy(temp, temp2);
             } else if (strchr(temp, '=')) {
                 strcpy(last, temp);
