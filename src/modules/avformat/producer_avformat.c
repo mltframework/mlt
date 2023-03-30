@@ -1837,6 +1837,13 @@ static int ignore_send_packet_result(int result)
            || result == AVERROR_INVALIDDATA || result == AVERROR(EINVAL);
 }
 
+static int is_album_art(producer_avformat self)
+{
+    return self->video_index >= 0
+           && (self->video_format->streams[self->video_index]->disposition
+               & AV_DISPOSITION_ATTACHED_PIC);
+}
+
 static void *packets_worker(void *param)
 {
     producer_avformat self = param;
@@ -1869,7 +1876,8 @@ static void *packets_worker(void *param)
             if (ret == 0) {
                 if (pkt->stream_index == self->video_index) {
                     mlt_deque_push_back(self->vpackets, av_packet_clone(pkt));
-                } else if (!self->video_seekable && pkt->stream_index == self->audio_index) {
+                } else if (!self->video_seekable && pkt->stream_index == self->audio_index
+                           && !is_album_art(self)) {
                     mlt_deque_push_back(self->apackets, av_packet_clone(pkt));
                 }
                 av_packet_unref(pkt);
@@ -1941,8 +1949,7 @@ static int producer_get_image(mlt_frame frame,
     codec_params = stream->codecpar;
 
     // Always use the image cache for album art.
-    int is_album_art = stream->disposition & AV_DISPOSITION_ATTACHED_PIC;
-    if (is_album_art)
+    if (is_album_art(self))
         position = 0;
 
     // Get the image cache
@@ -2326,7 +2333,7 @@ static int producer_get_image(mlt_frame frame,
         mlt_properties_set_int(frame_properties, "format", *format);
         // Cache the image for rapid repeated access.
         if (self->image_cache) {
-            if (is_album_art) {
+            if (is_album_art(self)) {
                 mlt_position original_pos = mlt_frame_original_position(frame);
                 mlt_properties_set_position(frame_properties, "original_position", 0);
                 mlt_cache_put_frame(self->image_cache, frame);
