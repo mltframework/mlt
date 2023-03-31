@@ -2189,6 +2189,10 @@ static int producer_get_image(mlt_frame frame,
                                         self->video_send_result);
                     } else {
                         int error = avcodec_receive_frame(self->video_codec, self->video_frame);
+                        while (error == AVERROR(EAGAIN) && ++decode_errors < 16) {
+                            self->video_send_result = avcodec_send_packet(self->video_codec, &self->pkt);
+                            error = avcodec_receive_frame(self->video_codec, self->video_frame);
+                        }
                         if (error < 0) {
                             if (error != AVERROR(EAGAIN) && ++decode_errors > 10) {
                                 mlt_log_warning(MLT_PRODUCER_SERVICE(producer),
