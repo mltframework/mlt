@@ -266,11 +266,8 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties_set_int(properties, "resize_height", *height);
 
     // If there will be padding, then we need packed image format.
-    if (*format == mlt_image_yuv420p) {
-        int iwidth = mlt_properties_get_int(properties, "width");
-        int iheight = mlt_properties_get_int(properties, "height");
-        if (iwidth < owidth || iheight < oheight)
-            *format = mlt_image_yuv422;
+    if (*format == mlt_image_yuv420p && (owidth < *width || oheight < *height)) {
+        *format = mlt_image_yuv422;
     }
 
     // Now get the image
