@@ -86,6 +86,7 @@ int mlt_tokeniser_parse_new(mlt_tokeniser tokeniser, char *string, const char *d
     int delimiter_size = strlen(delimiter);
     int index = 0;
     char *token = strdup(string);
+    int token_size = strlen(token);
 
     mlt_tokeniser_clear(tokeniser);
     tokeniser->input = strdup(string);
@@ -109,7 +110,8 @@ int mlt_tokeniser_parse_new(mlt_tokeniser tokeniser, char *string, const char *d
                 count++;
             } else
                 while (strncmp(string + index, delimiter, delimiter_size) == 0) {
-                    strncat(token, delimiter, delimiter_size);
+                    strncat(token, delimiter, token_size);
+                    token[token_size] = '\0';
                     index += delimiter_size;
                 }
         } else {
