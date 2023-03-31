@@ -32,7 +32,7 @@ extern mlt_filter filter_swscale_init(mlt_profile profile, char *arg);
 extern mlt_producer producer_avformat_init(mlt_profile profile, const char *service, char *file);
 extern mlt_filter filter_avfilter_init(mlt_profile, mlt_service_type, const char *, char *);
 extern mlt_link link_avdeinterlace_init(mlt_profile, mlt_service_type, const char *, char *);
-extern mlt_link link_swresample_init(mlt_profile profile, char *arg);
+extern mlt_link link_swresample_init(mlt_profile profile, mlt_service_type, const char *, char *);
 
 // ffmpeg Header files
 #include <libavcodec/avcodec.h>
@@ -95,7 +95,7 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
         if (type == mlt_service_filter_type)
             return filter_swresample_init(profile, arg);
         else if (type == mlt_service_link_type)
-            return link_swresample_init(profile, arg);
+            return link_swresample_init(profile, type, id, arg);
     }
 #endif
     return NULL;
