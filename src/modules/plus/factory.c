@@ -105,7 +105,10 @@ extern mlt_producer producer_blipflash_init(mlt_profile profile,
                                             mlt_service_type type,
                                             const char *id,
                                             char *arg);
-extern mlt_producer producer_count_init(const char *arg);
+extern mlt_producer producer_count_init(mlt_profile profile,
+                                        mlt_service_type type,
+                                        const char *id,
+                                        char *arg);
 extern mlt_producer producer_pgm_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
