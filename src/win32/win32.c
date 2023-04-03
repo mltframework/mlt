@@ -70,7 +70,7 @@ int setenv(const char *name, const char *value, int overwrite)
 
 static int iconv_from_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out, const char* encoding )
 {
-	const char *text = mlt_properties_get( properties, prop_name );
+	char *text = mlt_properties_get( properties, prop_name );
 	int result = 0;
 
 	if ( text ) {
@@ -99,7 +99,7 @@ static int iconv_from_utf8( mlt_properties properties, const char *prop_name, co
 
 static int iconv_to_utf8( mlt_properties properties, const char *prop_name, const char *prop_name_out, const char* encoding )
 {
-	const char *text = mlt_properties_get( properties, prop_name );
+	char *text = mlt_properties_get( properties, prop_name );
 	int result = 0;
 
 	if ( text ) {
