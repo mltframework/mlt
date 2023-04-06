@@ -2,7 +2,7 @@ schema_version: 0.1
 type: producer
 identifier: kdenlivetitle
 title: Kdenlive Titler
-version: 2
+version: 3
 copyright: Marco Gittler, Jean-Baptiste Mardelle
 creator: Marco Gittler, Jean-Baptiste Mardelle
 license: LGPLv2.1

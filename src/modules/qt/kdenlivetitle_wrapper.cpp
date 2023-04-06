@@ -204,10 +204,10 @@ public:
         if (!m_shadow.isNull()) {
             painter->drawImage(m_shadowOffset, m_shadow);
         }
-        painter->fillPath(m_path, m_brush);
         if (m_outline > 0) {
             painter->strokePath(m_path.simplified(), m_pen);
         }
+        painter->fillPath(m_path, m_brush);
     }
 
     void addShadow(QStringList params)
