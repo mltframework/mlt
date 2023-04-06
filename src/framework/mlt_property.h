@@ -39,6 +39,8 @@ typedef locale_t mlt_locale_t;
 #elif defined(__OpenBSD__)
 /* XXX matches __nop_locale glue in libc++ */
 typedef void *mlt_locale_t;
+#elif (defined _WIN32 && defined _LIBCPP_VERSION)
+struct mlt_locale_t;
 #else
 typedef char *mlt_locale_t;
 #endif
