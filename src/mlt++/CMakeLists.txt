@@ -85,12 +85,8 @@ set_target_properties(mlt++ PROPERTIES
 
 if(WIN32)
   if(MINGW)
-    install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt++-${MLT_VERSION_MAJOR}.dll"
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      RENAME libmlt++.dll
-    )
-    target_link_options(mlt++ PRIVATE -Wl,--output-def,libmlt++.def)
-    install(FILES "${CMAKE_BINARY_DIR}/libmlt++.def" DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    target_link_options(mlt++ PRIVATE -Wl,--output-def,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt++-${MLT_VERSION_MAJOR}.def)
+    install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt++-${MLT_VERSION_MAJOR}.def" DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
   target_compile_definitions(mlt++ PRIVATE MLTPP_EXPORTS)
 endif()
