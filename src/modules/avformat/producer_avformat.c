@@ -2100,13 +2100,14 @@ static int producer_get_image(mlt_frame frame,
                     av_packet_free(&tmp);
                     pthread_cond_signal(&self->packets_cond);
                 } else {
+                    if (self->packets_thread_ret == AVERROR_EOF) {
+                        self->pkt.stream_index = self->video_index;
+                    }
+
                     // notify packets_worker that we've seen the error
                     self->packets_thread_ret = 0;
                     pthread_cond_signal(&self->packets_cond);
 
-                    if (self->packets_thread_ret == AVERROR_EOF) {
-                        self->pkt.stream_index = self->video_index;
-                    }
                     if (!self->video_seekable && mlt_properties_get_int(properties, "reconnect")) {
                         // Try to reconnect to live sources by closing context and codecs,
                         // and letting next call to get_frame() reopen.
