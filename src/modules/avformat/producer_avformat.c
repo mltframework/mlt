@@ -2190,7 +2190,8 @@ static int producer_get_image(mlt_frame frame,
                     } else {
                         int error = avcodec_receive_frame(self->video_codec, self->video_frame);
                         while (error == AVERROR(EAGAIN) && ++decode_errors < 16) {
-                            self->video_send_result = avcodec_send_packet(self->video_codec, &self->pkt);
+                            self->video_send_result = avcodec_send_packet(self->video_codec,
+                                                                          &self->pkt);
                             error = avcodec_receive_frame(self->video_codec, self->video_frame);
                         }
                         if (error < 0) {
