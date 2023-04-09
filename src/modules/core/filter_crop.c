@@ -97,10 +97,18 @@ static int filter_get_image(mlt_frame frame,
     if ((owidth != *width || oheight != *height) && error == 0 && *image != NULL && owidth > 0
         && oheight > 0) {
         int bpp;
+        mlt_image_format requested_format = *format;
 
-        // Subsampled YUV is messy and less precise.
-        if (*format == mlt_image_yuv422 && frame->convert_image && (left & 1 || right & 1)) {
-            mlt_image_format requested_format = mlt_image_rgb;
+        if (requested_format == mlt_image_yuv420p) {
+            // The crop function does not support planar.
+            requested_format = mlt_image_yuv422;
+        }
+        if (requested_format == mlt_image_yuv422 && (left & 1 || right & 1)) {
+            // Subsampled YUV requires even dimensions. Use RGB for odd dimensions.
+            requested_format = mlt_image_rgb;
+        }
+
+        if (*format != requested_format && frame->convert_image) {
             frame->convert_image(frame, image, format, requested_format);
         }
 
