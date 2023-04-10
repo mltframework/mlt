@@ -930,7 +930,10 @@ int main(int argc, char **argv)
     if (melt) {
         // Generate an automatic profile if needed.
         if (!profile->is_explicit) {
-            mlt_profile_from_producer(profile, melt);
+            mlt_producer first_producer = mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(melt),
+                                                                  "first_producer",
+                                                                  NULL);
+            mlt_profile_from_producer(profile, first_producer);
             mlt_consumer melt_consumer = MLT_CONSUMER(
                 mlt_service_consumer(MLT_PRODUCER_SERVICE(melt)));
             if (melt_consumer)

@@ -156,6 +156,7 @@ mlt_producer producer_melt_init(mlt_profile profile,
     int i;
     int track = 0;
     mlt_producer producer = NULL;
+    mlt_producer first_producer = NULL;
     mlt_tractor mix = NULL;
     mlt_playlist playlist = mlt_playlist_new(profile);
     mlt_properties group = mlt_properties_new();
@@ -433,6 +434,9 @@ mlt_producer producer_melt_init(mlt_profile profile,
                     title = argv[i];
 
                 producer = create_producer(profile, field, argv[i]);
+                if (!first_producer) {
+                    first_producer = producer;
+                }
                 if (producer != NULL && chain != NULL) {
                     mlt_chain_set_source(chain, producer);
                     mlt_chain_attach_normalizers(chain);
@@ -478,6 +482,7 @@ mlt_producer producer_melt_init(mlt_profile profile,
     mlt_producer_optimise(prod);
     mlt_properties props = MLT_TRACTOR_PROPERTIES(tractor);
     mlt_properties_set_data(props, "group", group, 0, (mlt_destructor) mlt_properties_close, NULL);
+    mlt_properties_set_data(props, "first_producer", first_producer, 0, NULL, NULL);
     mlt_properties_set_position(props,
                                 "length",
                                 mlt_producer_get_out(MLT_MULTITRACK_PRODUCER(multitrack)) + 1);

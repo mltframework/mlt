@@ -78,6 +78,17 @@ static void clip_property_changed(mlt_service owner,
     }
 }
 
+static int producer_probe(mlt_producer parent)
+{
+    if (parent && parent->child) {
+        private_data *pdata = (private_data *) parent->child;
+        if (pdata->clip_producer) {
+            return mlt_producer_probe(pdata->clip_producer);
+        }
+    }
+    return 1;
+}
+
 static int producer_get_audio(mlt_frame frame,
                               void **buffer,
                               mlt_audio_format *format,
@@ -221,6 +232,13 @@ mlt_producer producer_timewarp_init(mlt_profile profile,
         producer->child = pdata;
         producer->get_frame = producer_get_frame;
         producer->close = (mlt_destructor) producer_close;
+
+        mlt_properties_set_data(producer_properties,
+                                "mlt_producer_probe",
+                                producer_probe,
+                                0,
+                                NULL,
+                                NULL);
 
         // Get the resource to be passed to the clip producer
         char *resource = strchr(arg, ':');
