@@ -1,6 +1,6 @@
 /*
  * filter_volume.c -- adjust audio volume
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -191,7 +191,9 @@ static int filter_get_audio(mlt_frame frame,
 
     // Get the producer's audio
     *format = normalize ? mlt_audio_s16 : mlt_audio_f32le;
-    mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
+    int error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
+    if (error || !buffer || !buffer[0])
+        return error;
 
     mlt_service_lock(MLT_FILTER_SERVICE(filter));
 

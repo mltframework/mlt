@@ -2,7 +2,7 @@
  * filter_audiolevel.c -- get the audio level of each channel
  * Copyright (C) 2002 Steve Harris
  * Copyright (C) 2010 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2012 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2012-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ static int filter_get_audio(mlt_frame frame,
     int dbPeak = mlt_properties_get_int(filter_props, "dbpeak");
     *format = mlt_audio_s16;
     int error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
-    if (error || !buffer)
+    if (error || !buffer || !buffer[0])
         return error;
 
     int num_channels = *channels;

@@ -1,6 +1,6 @@
 /*
  * filter_loudness.c -- normalize audio according to EBU R128
- * Copyright (C) 2014 Meltytech, LLC
+ * Copyright (C) 20142-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -157,7 +157,7 @@ static int filter_get_audio(mlt_frame frame,
     mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
 
     char *results = mlt_properties_get(properties, "results");
-    if (results && strcmp(results, "")) {
+    if (buffer && buffer[0] && results && strcmp(results, "")) {
         apply(filter, frame, buffer, format, frequency, channels, samples);
     } else {
         analyze(filter, frame, buffer, format, frequency, channels, samples);
