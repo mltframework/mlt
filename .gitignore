@@ -44,7 +44,7 @@ src/tests/*/*
 !src/tests/*/*.pro
 *CTestTestfile.cmake
 src/tests/test_*_autogen
-build
+build*
 *cmake_install.cmake
 .ninja_*
 build.ninja
@@ -60,3 +60,7 @@ src/modules/glaxnimate/mltglaxnimate_autogen/
 src/modules/glaxnimate/mltglaxnimate-qt6_autogen/
 .qt/
 ..clang-format.swp
+out
+src/swig/ruby/markdown/
+CMakeLists.txt.user
+

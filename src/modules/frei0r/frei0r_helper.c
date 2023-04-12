@@ -142,12 +142,12 @@ int process_frei0r_item(mlt_service service,
     // Use width and height in the frei0r instance key
     char ctorname[1024] = "";
     if (not_thread_safe)
-        sprintf(ctorname, "ctor-");
+        sprintf(ctorname, "_ctor-");
     else
 #ifdef _WIN32
-        sprintf(ctorname, "ctor-%lu", GetCurrentThreadId());
+        sprintf(ctorname, "_ctor-%lu", GetCurrentThreadId());
 #else
-        sprintf(ctorname, "ctor-%p", (void *) pthread_self());
+        sprintf(ctorname, "_ctor-%p", (void *) pthread_self());
 #endif
 
     mlt_service_lock(service);
@@ -341,7 +341,7 @@ void destruct(mlt_properties prop)
         f0r_deinit();
 
     for (i = 0; i < mlt_properties_count(prop); i++) {
-        if (strstr(mlt_properties_get_name(prop, i), "ctor-")) {
+        if (strstr(mlt_properties_get_name(prop, i), "_ctor-")) {
             mlt_properties_clear(prop, mlt_properties_get_name(prop, i));
         }
     }
