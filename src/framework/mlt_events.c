@@ -22,6 +22,7 @@
 
 #include <limits.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -60,8 +61,8 @@ typedef struct mlt_events_struct *mlt_events;
 struct mlt_event_struct
 {
     mlt_events parent;
-    int ref_count;
-    int block_count;
+    atomic_int_fast32_t ref_count;
+    atomic_int_fast32_t block_count;
     mlt_listener listener;
     void *listener_data;
 };
