@@ -1923,8 +1923,8 @@ static int producer_get_image(mlt_frame frame,
     int dst_full_range = dst_color_range
                          && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
 
-    pthread_mutex_lock(&self->video_mutex);
     mlt_service_lock(MLT_PRODUCER_SERVICE(producer));
+    pthread_mutex_lock(&self->video_mutex);
     mlt_log_timings_begin();
 
 #ifdef AVFILTER
