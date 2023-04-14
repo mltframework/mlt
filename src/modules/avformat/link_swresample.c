@@ -30,12 +30,10 @@
 #include <string.h>
 
 // Private Types
-#define FRAME_CACHE_SIZE 3
+#define FUTURE_FRAMES 1
 
 typedef struct
 {
-    // Used by get_frame
-    mlt_frame frame_cache[FRAME_CACHE_SIZE];
     // Used by get_audio
     mlt_position expected_frame;
     mlt_position continuity_frame;
@@ -260,76 +258,53 @@ static int link_get_audio(mlt_frame frame,
 
 static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
 {
-    int result = 0;
-    private_data *pdata = (private_data *) self->child;
+    int error = 0;
     mlt_position frame_pos = mlt_producer_position(MLT_LINK_PRODUCER(self));
 
-    // Cycle out the first frame in the cache
-    mlt_frame_close(pdata->frame_cache[0]);
-    // Shift all the frames or get new
-    int i = 0;
-    for (i = 0; i < FRAME_CACHE_SIZE - 1; i++) {
-        mlt_position pos = frame_pos + i;
-        mlt_frame next_frame = pdata->frame_cache[i + 1];
-        if (next_frame && mlt_frame_get_position(next_frame) == pos) {
-            // Shift the frame if it is correct
-            pdata->frame_cache[i] = next_frame;
-        } else {
-            // Get a new frame if the next cache frame is not the needed frame
-            mlt_frame_close(next_frame);
-            mlt_producer_seek(self->next, pos);
-            result = mlt_service_get_frame(MLT_PRODUCER_SERVICE(self->next),
-                                           &pdata->frame_cache[i],
-                                           index);
-            if (result) {
-                mlt_log_error(MLT_LINK_SERVICE(self), "Error getting frame: %d\n", (int) pos);
-            }
-        }
-    }
-    // Get the new last frame in the cache
-    mlt_producer_seek(self->next, frame_pos + i);
-    result = mlt_service_get_frame(MLT_PRODUCER_SERVICE(self->next), &pdata->frame_cache[i], index);
-    if (result) {
-        mlt_log_error(MLT_LINK_SERVICE(self), "Error getting frame: %d\n", (int) frame_pos + i);
+    mlt_producer_seek(self->next, frame_pos);
+    error = mlt_service_get_frame(MLT_PRODUCER_SERVICE(self->next), frame, index);
+    if (error) {
+        return error;
     }
 
-    *frame = pdata->frame_cache[0];
-    mlt_properties_inc_ref(MLT_FRAME_PROPERTIES(*frame));
-
-    // Attach the next frames to the current frame in case they are needed for sample rate conversion
     mlt_properties unique_properties = mlt_frame_unique_properties(*frame, MLT_LINK_SERVICE(self));
-    for (int i = 1; i < FRAME_CACHE_SIZE; i++) {
+
+    // Pass future frames
+    int i = 0;
+    for (i = 0; i < FUTURE_FRAMES; i++) {
+        mlt_position future_pos = frame_pos + i + 1;
+        mlt_frame future_frame = NULL;
+        mlt_producer_seek(self->next, future_pos);
+        error = mlt_service_get_frame(MLT_PRODUCER_SERVICE(self->next), &future_frame, index);
+        if (error) {
+            mlt_log_error(MLT_LINK_SERVICE(self), "Error getting frame: %d\n", (int) future_pos);
+        }
         char key[19];
-        sprintf(key, "%d", (int) mlt_frame_get_position(pdata->frame_cache[i]));
-        mlt_properties_inc_ref(MLT_FRAME_PROPERTIES(pdata->frame_cache[i]));
+        sprintf(key, "%d", (int) future_pos);
         mlt_properties_set_data(unique_properties,
                                 key,
-                                pdata->frame_cache[i],
+                                future_frame,
                                 0,
                                 (mlt_destructor) mlt_frame_close,
                                 NULL);
     }
+
     mlt_frame_push_audio(*frame, (void *) self);
     mlt_frame_push_audio(*frame, link_get_audio);
 
     mlt_producer_prepare_next(MLT_LINK_PRODUCER(self));
 
-    return result;
+    return error;
 }
 
 static void link_close(mlt_link self)
 {
     if (self) {
         private_data *pdata = (private_data *) self->child;
-        if (pdata) {
-            for (int i = 0; i < FRAME_CACHE_SIZE; i++) {
-                mlt_frame_close(pdata->frame_cache[i]);
-            }
-            if (pdata->swr.ctx) {
-                mlt_free_swr_context(&pdata->swr);
-            }
-            free(pdata);
+        if (pdata && pdata->swr.ctx) {
+            mlt_free_swr_context(&pdata->swr);
         }
+        free(pdata);
         self->close = NULL;
         self->child = NULL;
         mlt_link_close(self);
