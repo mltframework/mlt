@@ -1013,3 +1013,165 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
 
     return new_frame;
 }
+
+/** Make a copy of a frame and audio.
+ *
+ * This does not copy the get_image/get_audio processing stacks or any
+ * data properties other than the audio.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self the frame to clone
+ * \param is_deep a boolean to indicate whether to make a deep copy of the audio
+ * data chunks or to make a shallow copy by pointing to the supplied frame
+ * \return a almost-complete copy of the frame
+ * \todo copy the processing deques
+ */
+
+mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep)
+{
+    mlt_frame new_frame = mlt_frame_init(NULL);
+    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
+    mlt_properties new_props = MLT_FRAME_PROPERTIES(new_frame);
+    void *data, *copy;
+    int size = 0;
+
+    mlt_properties_inherit(new_props, properties);
+
+    // Carry over some special data properties for the multi consumer.
+    mlt_properties_set_data(new_props,
+                            "_producer",
+                            mlt_frame_get_original_producer(self),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_data(new_props,
+                            "movit.convert",
+                            mlt_properties_get_data(properties, "movit.convert", NULL),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_data(new_props,
+                            "_movit cpu_convert",
+                            mlt_properties_get_data(properties, "_movit cpu_convert", NULL),
+                            0,
+                            NULL,
+                            NULL);
+
+    if (is_deep) {
+        data = mlt_properties_get_data(properties, "audio", &size);
+        if (data) {
+            if (!size)
+                size = mlt_audio_format_size(mlt_properties_get_int(properties, "audio_format"),
+                                             mlt_properties_get_int(properties, "audio_samples"),
+                                             mlt_properties_get_int(properties, "audio_channels"));
+            copy = mlt_pool_alloc(size);
+            memcpy(copy, data, size);
+            mlt_properties_set_data(new_props, "audio", copy, size, mlt_pool_release, NULL);
+        }
+    } else {
+        // This frame takes a reference on the original frame since the data is a shallow copy.
+        mlt_properties_inc_ref(properties);
+        mlt_properties_set_data(new_props,
+                                "_cloned_frame",
+                                self,
+                                0,
+                                (mlt_destructor) mlt_frame_close,
+                                NULL);
+
+        // Copy properties
+        data = mlt_properties_get_data(properties, "audio", &size);
+        mlt_properties_set_data(new_props, "audio", data, size, NULL, NULL);
+    }
+
+    return new_frame;
+}
+
+/** Make a copy of a frame and image.
+ *
+ * This does not copy the get_image/get_audio processing stacks or any
+ * data properties other than the image.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self the frame to clone
+ * \param is_deep a boolean to indicate whether to make a deep copy of the
+ * video data chunks or to make a shallow copy by pointing to the supplied frame
+ * \return a almost-complete copy of the frame
+ * \todo copy the processing deques
+ */
+
+mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
+{
+    mlt_frame new_frame = mlt_frame_init(NULL);
+    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
+    mlt_properties new_props = MLT_FRAME_PROPERTIES(new_frame);
+    void *data, *copy;
+    int size = 0;
+
+    mlt_properties_inherit(new_props, properties);
+
+    // Carry over some special data properties for the multi consumer.
+    mlt_properties_set_data(new_props,
+                            "_producer",
+                            mlt_frame_get_original_producer(self),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_data(new_props,
+                            "movit.convert",
+                            mlt_properties_get_data(properties, "movit.convert", NULL),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_data(new_props,
+                            "_movit cpu_convert",
+                            mlt_properties_get_data(properties, "_movit cpu_convert", NULL),
+                            0,
+                            NULL,
+                            NULL);
+
+    if (is_deep) {
+        data = mlt_properties_get_data(properties, "image", &size);
+        if (data) {
+            int width = mlt_properties_get_int(properties, "width");
+            int height = mlt_properties_get_int(properties, "height");
+
+            if (!size)
+                size = mlt_image_format_size(mlt_properties_get_int(properties, "format"),
+                                             width,
+                                             height,
+                                             NULL);
+            copy = mlt_pool_alloc(size);
+            memcpy(copy, data, size);
+            mlt_properties_set_data(new_props, "image", copy, size, mlt_pool_release, NULL);
+
+            size = 0;
+            data = mlt_frame_get_alpha_size(self, &size);
+            if (data) {
+                if (!size)
+                    size = width * height;
+                copy = mlt_pool_alloc(size);
+                memcpy(copy, data, size);
+                mlt_properties_set_data(new_props, "alpha", copy, size, mlt_pool_release, NULL);
+            };
+        }
+    } else {
+        // This frame takes a reference on the original frame since the data is a shallow copy.
+        mlt_properties_inc_ref(properties);
+        mlt_properties_set_data(new_props,
+                                "_cloned_frame",
+                                self,
+                                0,
+                                (mlt_destructor) mlt_frame_close,
+                                NULL);
+
+        // Copy properties
+        size = 0;
+        data = mlt_properties_get_data(properties, "image", &size);
+        mlt_properties_set_data(new_props, "image", data, size, NULL, NULL);
+        size = 0;
+        data = mlt_frame_get_alpha_size(self, &size);
+        mlt_properties_set_data(new_props, "alpha", data, size, NULL, NULL);
+    }
+
+    return new_frame;
+}

@@ -3,7 +3,7 @@
  * \brief least recently used cache
  * \see mlt_profile_s
  *
- * Copyright (C) 2007-2014 Meltytech, LLC
+ * Copyright (C) 2007-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -509,20 +509,7 @@ static mlt_frame *shuffle_get_frame(mlt_cache cache, mlt_position position)
     return hit;
 }
 
-/** Put a frame in the cache.
- *
- * Unlike mlt_cache_put() this version is more suitable for caching frames
- * and their data - like images. However, this version does not use reference
- * counting and garbage collection. Rather, frames are cloned with deep copy
- * to avoid those things.
- *
- * \public \memberof mlt_cache_s
- * \param cache a cache object
- * \param frame the frame to cache
- * \see mlt_frame_get_frame
- */
-
-void mlt_cache_put_frame(mlt_cache cache, mlt_frame frame)
+static void cache_put_frame(mlt_cache cache, mlt_frame frame, int audio, int image)
 {
     pthread_mutex_lock(&cache->mutex);
     mlt_frame *hit = shuffle_get_frame(cache, mlt_frame_original_position(frame));
@@ -544,13 +531,73 @@ void mlt_cache_put_frame(mlt_cache cache, mlt_frame frame)
         // The MRU end gets the new item
         hit = &alt[cache->count - 1];
     }
-    *hit = mlt_frame_clone(frame, 1);
+    if (audio && image) {
+        *hit = mlt_frame_clone(frame, 1);
+    } else if (audio) {
+        *hit = mlt_frame_clone_audio(frame, 1);
+    } else if (image) {
+        *hit = mlt_frame_clone_image(frame, 1);
+    }
     mlt_log(NULL, MLT_LOG_DEBUG, "%s: put %d = %p\n", __FUNCTION__, cache->count - 1, frame);
 
     // swap the current array
     cache->current = (void **) alt;
     cache->is_frames = 1;
     pthread_mutex_unlock(&cache->mutex);
+}
+
+/** Put a frame in the cache with audio and video.
+ *
+ * Unlike mlt_cache_put() this version is more suitable for caching frames
+ * and their data - like images. However, this version does not use reference
+ * counting and garbage collection. Rather, frames are cloned with deep copy
+ * to avoid those things.
+ *
+ * \public \memberof mlt_cache_s
+ * \param cache a cache object
+ * \param frame the frame to cache
+ * \see mlt_frame_get_frame
+ */
+
+void mlt_cache_put_frame(mlt_cache cache, mlt_frame frame)
+{
+    cache_put_frame(cache, frame, 1, 1);
+}
+
+/** Put a frame in the cache with audio.
+ *
+ * Unlike mlt_cache_put() this version is more suitable for caching frames
+ * and their data - like images. However, this version does not use reference
+ * counting and garbage collection. Rather, frames are cloned with deep copy
+ * to avoid those things.
+ *
+ * \public \memberof mlt_cache_s
+ * \param cache a cache object
+ * \param frame the frame to cache
+ * \see mlt_frame_get_frame
+ */
+
+void mlt_cache_put_frame_audio(mlt_cache cache, mlt_frame frame)
+{
+    cache_put_frame(cache, frame, 1, 0);
+}
+
+/** Put a frame in the cache with image.
+ *
+ * Unlike mlt_cache_put() this version is more suitable for caching frames
+ * and their data - like images. However, this version does not use reference
+ * counting and garbage collection. Rather, frames are cloned with deep copy
+ * to avoid those things.
+ *
+ * \public \memberof mlt_cache_s
+ * \param cache a cache object
+ * \param frame the frame to cache
+ * \see mlt_frame_get_frame
+ */
+
+void mlt_cache_put_frame_image(mlt_cache cache, mlt_frame frame)
+{
+    cache_put_frame(cache, frame, 0, 1);
 }
 
 /** Get a frame from the cache.

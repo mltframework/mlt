@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -167,6 +167,8 @@ extern void mlt_frame_close(mlt_frame self);
 extern mlt_properties mlt_frame_unique_properties(mlt_frame self, mlt_service service);
 extern mlt_properties mlt_frame_get_unique_properties(mlt_frame self, mlt_service service);
 extern mlt_frame mlt_frame_clone(mlt_frame self, int is_deep);
+extern mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep);
+extern mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep);
 
 /* convenience functions */
 extern void mlt_frame_write_ppm(mlt_frame frame);

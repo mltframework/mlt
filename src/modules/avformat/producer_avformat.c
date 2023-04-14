@@ -114,6 +114,7 @@ struct producer_avformat_s
     unsigned int invalid_pts_counter;
     unsigned int invalid_dts_counter;
     mlt_cache image_cache;
+    mlt_cache audio_cache;
     int yuv_colorspace, color_primaries, color_trc;
     int full_range;
     pthread_mutex_t video_mutex;
@@ -1892,6 +1893,29 @@ static void *packets_worker(void *param)
     }
 }
 
+static void init_cache(mlt_properties properties, mlt_cache *cache)
+{
+    // if cache size supplied by environment variable
+    int cache_supplied = getenv("MLT_AVFORMAT_CACHE") != NULL;
+    int cache_size = cache_supplied ? atoi(getenv("MLT_AVFORMAT_CACHE")) : 0;
+
+    // cache size supplied via property
+    if (mlt_properties_get(properties, "cache")) {
+        cache_supplied = 1;
+        cache_size = mlt_properties_get_int(properties, "cache");
+    }
+    if (mlt_properties_get_int(properties, "noimagecache")) {
+        cache_supplied = 1;
+        cache_size = 0;
+    }
+    // create cache if not disabled
+    if (!cache_supplied || cache_size > 0)
+        *cache = mlt_cache_init();
+    // set cache size if supplied
+    if (*cache && cache_supplied)
+        mlt_cache_set_size(*cache, cache_size);
+}
+
 /** Get an image from a frame.
 */
 
@@ -1954,25 +1978,7 @@ static int producer_get_image(mlt_frame frame,
 
     // Get the image cache
     if (!self->image_cache) {
-        // if cache size supplied by environment variable
-        int cache_supplied = getenv("MLT_AVFORMAT_CACHE") != NULL;
-        int cache_size = cache_supplied ? atoi(getenv("MLT_AVFORMAT_CACHE")) : 0;
-
-        // cache size supplied via property
-        if (mlt_properties_get(properties, "cache")) {
-            cache_supplied = 1;
-            cache_size = mlt_properties_get_int(properties, "cache");
-        }
-        if (mlt_properties_get_int(properties, "noimagecache")) {
-            cache_supplied = 1;
-            cache_size = 0;
-        }
-        // create cache if not disabled
-        if (!cache_supplied || cache_size > 0)
-            self->image_cache = mlt_cache_init();
-        // set cache size if supplied
-        if (self->image_cache && cache_supplied)
-            mlt_cache_set_size(self->image_cache, cache_size);
+        init_cache(properties, &self->image_cache);
     }
     if (self->image_cache) {
         mlt_frame original = mlt_cache_get_frame(self->image_cache, position);
@@ -2342,10 +2348,10 @@ static int producer_get_image(mlt_frame frame,
             if (is_album_art(self)) {
                 mlt_position original_pos = mlt_frame_original_position(frame);
                 mlt_properties_set_position(frame_properties, "original_position", 0);
-                mlt_cache_put_frame(self->image_cache, frame);
+                mlt_cache_put_frame_image(self->image_cache, frame);
                 mlt_properties_set_position(frame_properties, "original_position", original_pos);
             } else {
-                mlt_cache_put_frame(self->image_cache, frame);
+                mlt_cache_put_frame_image(self->image_cache, frame);
             }
         }
         // Clone frame for error concealment.
@@ -3056,11 +3062,38 @@ static int producer_get_audio(mlt_frame frame,
 {
     // Get the producer
     producer_avformat self = mlt_frame_pop_audio(frame);
+    mlt_producer producer = self->parent;
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
     pthread_mutex_lock(&self->audio_mutex);
 
     // Obtain the frame number of this frame
     mlt_position position = mlt_frame_original_position(frame);
+
+    if (!(position + 1 == self->audio_expected
+          && mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self->parent), "mute_on_pause"))) {
+        // Check the audio cache if not paused
+        if (!self->audio_cache) {
+            init_cache(properties, &self->audio_cache);
+        }
+        if (self->audio_cache) {
+            mlt_frame original = mlt_cache_get_frame(self->audio_cache, position);
+            if (original) {
+                mlt_frame_get_audio(original, buffer, format, frequency, channels, samples);
+                mlt_properties_set_data(frame_properties,
+                                        "avformat.audio_cache",
+                                        original,
+                                        0,
+                                        (mlt_destructor) mlt_frame_close,
+                                        NULL);
+                mlt_properties_pass_property(frame_properties,
+                                             MLT_FRAME_PROPERTIES(original),
+                                             "channel_layout");
+                goto done_get_audio;
+            }
+        }
+    }
 
     // Calculate the real time code
     double real_timecode = producer_time_of_frame(self->parent, position);
@@ -3289,11 +3322,20 @@ static int producer_get_audio(mlt_frame frame,
                 memset(*buffer, silence, *samples * *channels * sizeof_sample);
             }
         }
+
+        mlt_properties_set_int(frame_properties, "audio_samples", *samples);
+
+        if (self->audio_cache) {
+            mlt_cache_put_frame_audio(self->audio_cache, frame);
+        }
+
     } else {
     exit_get_audio:
         // Get silence and don't touch the context
         mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
     }
+
+done_get_audio:
 
     // Regardless of speed (other than paused), we expect to get the next frame
     if (!paused)
@@ -3637,6 +3679,7 @@ static void producer_avformat_close(producer_avformat self)
 
     // Cleanup caches.
     mlt_cache_close(self->image_cache);
+    mlt_cache_close(self->audio_cache);
     if (self->last_good_frame)
         mlt_frame_close(self->last_good_frame);
 
