@@ -42,6 +42,11 @@
  */
 pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/** mlt_frame_s::is_processing can not be made atomic, so protect it with a mutex.
+ */
+pthread_mutex_t mlt_frame_processing_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
 /** \brief private members of mlt_consumer */
 
 typedef struct
@@ -115,8 +120,8 @@ int mlt_consumer_init(mlt_consumer self, void *child, mlt_profile profile)
             // Normally the application creates the profile and controls its lifetime
             // This is the fallback exception handling
             profile = mlt_profile_init(NULL);
-            mlt_properties properties = MLT_CONSUMER_PROPERTIES(self);
-            mlt_properties_set_data(properties,
+            mlt_properties self_props = MLT_CONSUMER_PROPERTIES(self);
+            mlt_properties_set_data(self_props,
                                     "_profile",
                                     profile,
                                     0,
@@ -984,9 +989,11 @@ static inline int first_unprocessed_frame(mlt_consumer self)
 {
     consumer_private *priv = self->local;
     int index = priv->real_time <= 0 ? 0 : priv->process_head;
+    pthread_mutex_lock(&mlt_frame_processing_mutex);
     while (index < mlt_deque_count(priv->queue)
            && MLT_FRAME(mlt_deque_peek(priv->queue, index))->is_processing)
         index++;
+    pthread_mutex_unlock(&mlt_frame_processing_mutex);
     return index;
 }
 
@@ -1047,7 +1054,9 @@ static void *consumer_worker_thread(void *arg)
                           index,
                           mlt_frame_get_position(frame),
                           mlt_deque_count(priv->queue));
+            pthread_mutex_lock(&mlt_frame_processing_mutex);
             frame->is_processing = 1;
+            pthread_mutex_unlock(&mlt_frame_processing_mutex);
             mlt_properties_inc_ref(MLT_FRAME_PROPERTIES(frame));
         }
         pthread_mutex_unlock(&priv->queue_mutex);
