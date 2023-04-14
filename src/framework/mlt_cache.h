@@ -3,7 +3,7 @@
  * \brief least recently used cache
  * \see mlt_cache_s
  *
- * Copyright (C) 2007-2014 Meltytech, LLC
+ * Copyright (C) 2007-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,8 @@ extern void mlt_cache_put(
     mlt_cache cache, void *object, void *data, int size, mlt_destructor destructor);
 extern mlt_cache_item mlt_cache_get(mlt_cache cache, void *object);
 extern void mlt_cache_put_frame(mlt_cache cache, mlt_frame frame);
+extern void mlt_cache_put_frame_audio(mlt_cache cache, mlt_frame frame);
+extern void mlt_cache_put_frame_image(mlt_cache cache, mlt_frame frame);
 extern mlt_frame mlt_cache_get_frame(mlt_cache cache, mlt_position position);
 
 #endif

@@ -671,4 +671,8 @@ MLT_7.16.0 {
     mlt_deinterlacer_id;
     mlt_link_filter_init;
     mlt_link_filter_metadata;
+    mlt_cache_put_frame_audio;
+    mlt_cache_put_frame_image;
+    mlt_frame_clone_audio;
+    mlt_frame_clone_image;
 } MLT_7.14.0;
