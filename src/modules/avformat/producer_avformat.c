@@ -3062,9 +3062,6 @@ static int producer_get_audio(mlt_frame frame,
 {
     // Get the producer
     producer_avformat self = mlt_frame_pop_audio(frame);
-    mlt_producer producer = self->parent;
-    mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
-    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
     pthread_mutex_lock(&self->audio_mutex);
 
@@ -3075,19 +3072,18 @@ static int producer_get_audio(mlt_frame frame,
           && mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self->parent), "mute_on_pause"))) {
         // Check the audio cache if not paused
         if (!self->audio_cache) {
-            init_cache(properties, &self->audio_cache);
-        }
-        if (self->audio_cache) {
+            init_cache(MLT_PRODUCER_PROPERTIES(self->parent), &self->audio_cache);
+        } else {
             mlt_frame original = mlt_cache_get_frame(self->audio_cache, position);
             if (original) {
                 mlt_frame_get_audio(original, buffer, format, frequency, channels, samples);
-                mlt_properties_set_data(frame_properties,
+                mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame),
                                         "avformat.audio_cache",
                                         original,
                                         0,
                                         (mlt_destructor) mlt_frame_close,
                                         NULL);
-                mlt_properties_pass_property(frame_properties,
+                mlt_properties_pass_property(MLT_FRAME_PROPERTIES(frame),
                                              MLT_FRAME_PROPERTIES(original),
                                              "channel_layout");
                 goto done_get_audio;
@@ -3323,7 +3319,7 @@ static int producer_get_audio(mlt_frame frame,
             }
         }
 
-        mlt_properties_set_int(frame_properties, "audio_samples", *samples);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_samples", *samples);
 
         if (self->audio_cache) {
             mlt_cache_put_frame_audio(self->audio_cache, frame);
@@ -3331,6 +3327,9 @@ static int producer_get_audio(mlt_frame frame,
 
     } else {
     exit_get_audio:
+        if (*format == mlt_audio_none) {
+            *format = mlt_audio_s16;
+        }
         // Get silence and don't touch the context
         mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
     }
@@ -3476,6 +3475,8 @@ static void producer_set_up_audio(producer_avformat self, mlt_frame frame)
             }
         }
         set_up_discard(self, index, self->video_index);
+        mlt_cache_close(self->audio_cache);
+        self->audio_cache = NULL;
         pthread_mutex_unlock(&self->open_mutex);
     }
 
