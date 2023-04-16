@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -124,12 +124,14 @@ static inline int dissolve_yuv(mlt_frame frame,
                                int width,
                                int height,
                                int threads,
-                               int alpha_over)
+                               int alpha_over,
+                               int fix_background_alpha)
 {
     int ret = 0;
     int i = height + 1;
     int width_src = width, height_src = height;
-    mlt_image_format format = mlt_image_yuv422;
+    mlt_image_format format = (fix_background_alpha && frame->convert_image) ? mlt_image_rgba
+                                                                             : mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src;
     uint8_t *alpha_dst;
@@ -138,8 +140,14 @@ static inline int dissolve_yuv(mlt_frame frame,
     if (mlt_properties_get(&frame->parent, "distort"))
         mlt_properties_set(&that->parent, "distort", mlt_properties_get(&frame->parent, "distort"));
     mlt_frame_get_image(frame, &p_dest, &format, &width, &height, 1);
+    if (fix_background_alpha && frame->convert_image)
+        frame->convert_image(frame, &p_dest, &format, mlt_image_yuv422);
     alpha_dst = mlt_frame_get_alpha(frame);
+    if (fix_background_alpha && that->convert_image)
+        format = mlt_image_rgba;
     mlt_frame_get_image(that, &p_src, &format, &width_src, &height_src, 0);
+    if (that->convert_image)
+        that->convert_image(that, &p_src, &format, mlt_image_yuv422);
     alpha_src = mlt_frame_get_alpha(that);
     int is_translucent = (alpha_dst && !is_opaque(alpha_dst, width, height))
                          || (alpha_src && !is_opaque(alpha_src, width_src, height_src));
@@ -216,11 +224,17 @@ static void luma_composite(mlt_frame a_frame,
                            int field_order,
                            int *width,
                            int *height,
-                           int invert)
+                           int invert,
+                           int fix_background_alpha)
 {
     int width_src = *width, height_src = *height;
     int width_dest = *width, height_dest = *height;
-    mlt_image_format format_src = mlt_image_yuv422, format_dest = mlt_image_yuv422;
+    mlt_image_format format_src = (fix_background_alpha && a_frame->convert_image)
+                                      ? mlt_image_rgba
+                                      : mlt_image_yuv422;
+    mlt_image_format format_dest = (fix_background_alpha && b_frame->convert_image)
+                                       ? mlt_image_rgba
+                                       : mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src, *alpha_dest;
     int i, j;
@@ -232,8 +246,12 @@ static void luma_composite(mlt_frame a_frame,
                            "distort",
                            mlt_properties_get(&a_frame->parent, "distort"));
     mlt_frame_get_image(a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1);
+    if (fix_background_alpha && a_frame->convert_image)
+        a_frame->convert_image(a_frame, &p_dest, &format_dest, mlt_image_yuv422);
     alpha_dest = mlt_frame_get_alpha(a_frame);
     mlt_frame_get_image(b_frame, &p_src, &format_src, &width_src, &height_src, 0);
+    if (fix_background_alpha && b_frame->convert_image)
+        b_frame->convert_image(b_frame, &p_src, &format_src, mlt_image_yuv422);
     alpha_src = mlt_frame_get_alpha(b_frame);
 
     if (*width == 0 || *height == 0)
@@ -579,6 +597,7 @@ static int transition_get_image(mlt_frame a_frame,
         mlt_service_unlock(MLT_TRANSITION_SERVICE(transition));
     }
 
+    int fix_background_alpha = mlt_properties_get_int(properties, "fix_background_alpha");
     if (luma_width > 0 && luma_height > 0 && luma_bitmap != NULL) {
         reverse = invert ? !reverse : reverse;
         mix = reverse ? 1 - mix : mix;
@@ -595,12 +614,20 @@ static int transition_get_image(mlt_frame a_frame,
                        progressive ? -1 : top_field_first,
                        width,
                        height,
-                       invert);
+                       invert,
+                       fix_background_alpha);
     } else {
         mix = (reverse || invert) ? 1 - mix : mix;
         invert = 0;
         // Dissolve the frames using the time offset for mix value
-        dissolve_yuv(a_frame, b_frame, mix, *width, *height, threads, alpha_over);
+        dissolve_yuv(a_frame,
+                     b_frame,
+                     mix,
+                     *width,
+                     *height,
+                     threads,
+                     alpha_over,
+                     fix_background_alpha);
     }
     if (producer) {
         mlt_service_unlock(MLT_TRANSITION_SERVICE(transition));

@@ -2,7 +2,7 @@ schema_version: 0.3
 type: transition
 identifier: luma
 title: Wipe
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -62,6 +62,18 @@ parameters:
 
   - identifier: alpha_over
     title: Use over-blending on the alpha channel
+    type: boolean
+    default: 0
+    mutable: yes
+
+  - identifier: fix_background_alpha
+    title: Ensure padding is transparent
+    description: >
+      This is a fix for version 2 that ensures the background of sources
+      without an alpha channel and aspect ratio that does not match the profile
+      get padding that includes an alpha channel. Basically, this should be the
+      new default behavior, but a property is needed to not unexpectedly change
+      the result of existing projects and scripts.
     type: boolean
     default: 0
     mutable: yes
