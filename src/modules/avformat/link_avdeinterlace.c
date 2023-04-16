@@ -35,20 +35,33 @@
 
 typedef struct
 {
-    // Used by image
     mlt_position expected_frame;
     mlt_position continuity_frame;
-    AVFilterContext *avbuffsink_ctx;
-    AVFilterContext *avbuffsrc_ctx;
-    AVFilterGraph *avfilter_graph;
-    AVFrame *avinframe;
-    AVFrame *avoutframe;
     mlt_deinterlacer method;
     int informat;
     int outformat;
     int width;
     int height;
 } private_data;
+
+typedef struct
+{
+    AVFilterContext *avbuffsink_ctx;
+    AVFilterContext *avbuffsrc_ctx;
+    AVFilterGraph *avfilter_graph;
+    AVFrame *avinframe;
+    AVFrame *avoutframe;
+} filter_data;
+
+static void destroy_filter_data(filter_data *fdata)
+{
+    if (fdata) {
+        avfilter_graph_free(&fdata->avfilter_graph);
+        av_frame_free(&fdata->avinframe);
+        av_frame_free(&fdata->avoutframe);
+        free(fdata);
+    }
+}
 
 static mlt_image_format validate_format(mlt_image_format format)
 {
@@ -76,6 +89,7 @@ static mlt_image_format validate_format(mlt_image_format format)
 static void init_image_filtergraph(mlt_link self, AVRational sar)
 {
     private_data *pdata = (private_data *) self->child;
+    filter_data *fdata = (filter_data *) calloc(1, sizeof(filter_data));
     mlt_profile profile = mlt_service_profile(MLT_LINK_SERVICE(self));
     const AVFilter *buffersrc = avfilter_get_by_name("buffer");
     const AVFilter *buffersink = avfilter_get_by_name("buffersink");
@@ -87,43 +101,38 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
     AVFilterContext *avfilter_ctx = NULL;
     int ret;
 
-    if (!pdata->avinframe)
-        pdata->avinframe = av_frame_alloc();
-    if (!pdata->avoutframe)
-        pdata->avoutframe = av_frame_alloc();
+    fdata->avinframe = av_frame_alloc();
+    fdata->avoutframe = av_frame_alloc();
 
     // Set up formats
     in_pixel_fmts[0] = mlt_to_av_image_format(pdata->informat);
     out_pixel_fmts[0] = mlt_to_av_image_format(pdata->outformat);
 
-    // Destroy the current filter graph
-    avfilter_graph_free(&pdata->avfilter_graph);
-
     // Create the new filter graph
-    pdata->avfilter_graph = avfilter_graph_alloc();
-    if (!pdata->avfilter_graph) {
+    fdata->avfilter_graph = avfilter_graph_alloc();
+    if (!fdata->avfilter_graph) {
         mlt_log_error(self, "Cannot create filter graph\n");
         goto fail;
     }
-    pdata->avfilter_graph->scale_sws_opts = av_strdup("flags=" MLT_AVFILTER_SWS_FLAGS);
+    fdata->avfilter_graph->scale_sws_opts = av_strdup("flags=" MLT_AVFILTER_SWS_FLAGS);
 
     // Initialize the buffer source filter context
-    pdata->avbuffsrc_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, buffersrc, "in");
-    if (!pdata->avbuffsrc_ctx) {
+    fdata->avbuffsrc_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, buffersrc, "in");
+    if (!fdata->avbuffsrc_ctx) {
         mlt_log_error(self, "Cannot create image buffer source\n");
         goto fail;
     }
-    ret = av_opt_set_int(pdata->avbuffsrc_ctx, "width", pdata->width, AV_OPT_SEARCH_CHILDREN);
+    ret = av_opt_set_int(fdata->avbuffsrc_ctx, "width", pdata->width, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src width %d\n", pdata->width);
         goto fail;
     }
-    ret = av_opt_set_int(pdata->avbuffsrc_ctx, "height", pdata->height, AV_OPT_SEARCH_CHILDREN);
+    ret = av_opt_set_int(fdata->avbuffsrc_ctx, "height", pdata->height, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src height %d\n", pdata->height);
         goto fail;
     }
-    ret = av_opt_set_pixel_fmt(pdata->avbuffsrc_ctx,
+    ret = av_opt_set_pixel_fmt(fdata->avbuffsrc_ctx,
                                "pix_fmt",
                                in_pixel_fmts[0],
                                AV_OPT_SEARCH_CHILDREN);
@@ -131,32 +140,32 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         mlt_log_error(self, "Cannot set src pixel format %d\n", in_pixel_fmts[0]);
         goto fail;
     }
-    ret = av_opt_set_q(pdata->avbuffsrc_ctx, "sar", sar, AV_OPT_SEARCH_CHILDREN);
+    ret = av_opt_set_q(fdata->avbuffsrc_ctx, "sar", sar, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src sar %d/%d\n", sar.num, sar.den);
         goto fail;
     }
-    ret = av_opt_set_q(pdata->avbuffsrc_ctx, "time_base", timebase, AV_OPT_SEARCH_CHILDREN);
+    ret = av_opt_set_q(fdata->avbuffsrc_ctx, "time_base", timebase, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src time_base %d/%d\n", timebase.num, timebase.den);
         goto fail;
     }
-    ret = av_opt_set_q(pdata->avbuffsrc_ctx, "frame_rate", framerate, AV_OPT_SEARCH_CHILDREN);
+    ret = av_opt_set_q(fdata->avbuffsrc_ctx, "frame_rate", framerate, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src frame_rate %d/%d\n", framerate.num, framerate.den);
         goto fail;
     }
-    ret = avfilter_init_str(pdata->avbuffsrc_ctx, NULL);
+    ret = avfilter_init_str(fdata->avbuffsrc_ctx, NULL);
     if (ret < 0) {
         mlt_log_error(self, "Cannot init buffer source\n");
         goto fail;
     }
-    prev_ctx = pdata->avbuffsrc_ctx;
+    prev_ctx = fdata->avbuffsrc_ctx;
 
     // Initialize the deinterlace filter context
     if (pdata->method <= mlt_deinterlacer_onefield) {
         const AVFilter *deint = (AVFilter *) avfilter_get_by_name("field");
-        avfilter_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, deint, deint->name);
+        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
         if (!avfilter_ctx) {
             mlt_log_error(self, "Cannot create field filter\n");
             goto fail;
@@ -173,7 +182,7 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         }
         prev_ctx = avfilter_ctx;
         const AVFilter *scale = (AVFilter *) avfilter_get_by_name("scale");
-        avfilter_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, scale, scale->name);
+        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, scale, scale->name);
         if (!avfilter_ctx) {
             mlt_log_error(self, "Cannot create scale filter\n");
             goto fail;
@@ -191,7 +200,7 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         prev_ctx = avfilter_ctx;
     } else if (pdata->method <= mlt_deinterlacer_linearblend) {
         const AVFilter *deint = (AVFilter *) avfilter_get_by_name("pp");
-        avfilter_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, deint, deint->name);
+        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
         if (!avfilter_ctx) {
             mlt_log_error(self, "Cannot create video filter\n");
             goto fail;
@@ -209,7 +218,7 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         prev_ctx = avfilter_ctx;
     } else if (pdata->method <= mlt_deinterlacer_yadif_nospatial) {
         const AVFilter *deint = (AVFilter *) avfilter_get_by_name("yadif");
-        avfilter_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, deint, deint->name);
+        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
         if (!avfilter_ctx) {
             mlt_log_error(self, "Cannot create yadif filter\n");
             goto fail;
@@ -227,7 +236,7 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         prev_ctx = avfilter_ctx;
     } else if (pdata->method <= mlt_deinterlacer_yadif) {
         const AVFilter *deint = (AVFilter *) avfilter_get_by_name("yadif");
-        avfilter_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, deint, deint->name);
+        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
         if (!avfilter_ctx) {
             mlt_log_error(self, "Cannot create yadif filter\n");
             goto fail;
@@ -245,7 +254,7 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         prev_ctx = avfilter_ctx;
     } else if (pdata->method <= mlt_deinterlacer_bwdif) {
         const AVFilter *deint = (AVFilter *) avfilter_get_by_name("bwdif");
-        avfilter_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, deint, deint->name);
+        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
         if (!avfilter_ctx) {
             mlt_log_error(self, "Cannot create bwdif filter\n");
             goto fail;
@@ -263,7 +272,7 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         prev_ctx = avfilter_ctx;
     } else {
         const AVFilter *deint = (AVFilter *) avfilter_get_by_name("estdif");
-        avfilter_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, deint, deint->name);
+        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
         if (!avfilter_ctx) {
             mlt_log_error(self, "Cannot create estdif filter\n");
             goto fail;
@@ -282,12 +291,12 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
     }
 
     // Initialize the buffer sink filter context
-    pdata->avbuffsink_ctx = avfilter_graph_alloc_filter(pdata->avfilter_graph, buffersink, "out");
-    if (!pdata->avbuffsink_ctx) {
+    fdata->avbuffsink_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, buffersink, "out");
+    if (!fdata->avbuffsink_ctx) {
         mlt_log_error(self, "Cannot create image buffer sink\n");
         goto fail;
     }
-    ret = av_opt_set_int_list(pdata->avbuffsink_ctx,
+    ret = av_opt_set_int_list(fdata->avbuffsink_ctx,
                               "pix_fmts",
                               out_pixel_fmts,
                               -1,
@@ -296,28 +305,34 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         mlt_log_error(self, "Cannot set sink pixel formats %d\n", out_pixel_fmts[0]);
         goto fail;
     }
-    ret = avfilter_init_str(pdata->avbuffsink_ctx, NULL);
+    ret = avfilter_init_str(fdata->avbuffsink_ctx, NULL);
     if (ret < 0) {
         mlt_log_error(self, "Cannot init buffer sink\n");
         goto fail;
     }
-    ret = avfilter_link(prev_ctx, 0, pdata->avbuffsink_ctx, 0);
+    ret = avfilter_link(prev_ctx, 0, fdata->avbuffsink_ctx, 0);
     if (ret < 0) {
         mlt_log_error(self, "Cannot link filter to sink\n");
         goto fail;
     }
 
     // Configure the graph.
-    ret = avfilter_graph_config(pdata->avfilter_graph, NULL);
+    ret = avfilter_graph_config(fdata->avfilter_graph, NULL);
     if (ret < 0) {
         mlt_log_error(self, "Cannot configure the filter graph\n");
         goto fail;
     }
 
+    mlt_service_cache_put(MLT_LINK_SERVICE(self),
+                          "link_avdeinterlace",
+                          fdata,
+                          0,
+                          (mlt_destructor) destroy_filter_data);
+
     return;
 
 fail:
-    avfilter_graph_free(&pdata->avfilter_graph);
+    destroy_filter_data(fdata);
 }
 
 static void link_configure(mlt_link self, mlt_profile chain_profile)
@@ -374,8 +389,7 @@ static int link_get_image(mlt_frame frame,
 
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
-    if (!pdata->avfilter_graph || pdata->method != method
-        || pdata->expected_frame != mlt_frame_get_position(frame)
+    if (pdata->method != method || pdata->expected_frame != mlt_frame_get_position(frame)
         || pdata->informat != srcimg.format || pdata->width != srcimg.width
         || pdata->height != srcimg.height || pdata->outformat != dstimg.format) {
         mlt_log_debug(MLT_LINK_SERVICE(self),
@@ -393,9 +407,19 @@ static int link_get_image(mlt_frame frame,
         pdata->outformat = dstimg.format;
         init_image_filtergraph(self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024));
     }
+
+    filter_data *fdata = NULL;
+    mlt_cache_item cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_avdeinterlace");
+    if (!cache_item) {
+        mlt_log_error(MLT_LINK_SERVICE(self), "Cache miss\n");
+        init_image_filtergraph(self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024));
+        cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_avdeinterlace");
+    }
+    fdata = mlt_cache_item_data(cache_item, NULL);
+
     pdata->expected_frame++;
 
-    if (pdata->avfilter_graph) {
+    if (fdata && fdata->avfilter_graph) {
         while (1) {
             mlt_frame src_frame = NULL;
 
@@ -432,17 +456,17 @@ static int link_get_image(mlt_frame frame,
                 break;
             }
 
-            mlt_image_to_avframe(&srcimg, src_frame, pdata->avinframe);
+            mlt_image_to_avframe(&srcimg, src_frame, fdata->avinframe);
 
             // Run the frame through the filter graph
-            ret = av_buffersrc_add_frame(pdata->avbuffsrc_ctx, pdata->avinframe);
-            av_frame_unref(pdata->avinframe);
+            ret = av_buffersrc_add_frame(fdata->avbuffsrc_ctx, fdata->avinframe);
+            av_frame_unref(fdata->avinframe);
             if (ret < 0) {
                 mlt_log_error(self, "Cannot add frame to buffer source\n");
                 error = 1;
                 break;
             }
-            ret = av_buffersink_get_frame(pdata->avbuffsink_ctx, pdata->avoutframe);
+            ret = av_buffersink_get_frame(fdata->avbuffsink_ctx, fdata->avoutframe);
             if (ret >= 0)
                 break;
             else if (ret == AVERROR(EAGAIN))
@@ -460,18 +484,19 @@ static int link_get_image(mlt_frame frame,
             mlt_image_set_values(&dstimg,
                                  NULL,
                                  pdata->outformat,
-                                 pdata->avoutframe->width,
-                                 pdata->avoutframe->height);
+                                 fdata->avoutframe->width,
+                                 fdata->avoutframe->height);
             mlt_image_alloc_data(&dstimg);
-            avframe_to_mlt_image(pdata->avoutframe, &dstimg);
+            avframe_to_mlt_image(fdata->avoutframe, &dstimg);
         }
-        av_frame_unref(pdata->avoutframe);
+        av_frame_unref(fdata->avoutframe);
     }
 
     mlt_service_unlock(MLT_LINK_SERVICE(self));
     mlt_image_get_values(&dstimg, (void **) image, format, width, height);
     mlt_frame_set_image(frame, dstimg.data, 0, dstimg.release_data);
     mlt_properties_set_int(frame_properties, "progressive", 1);
+    mlt_cache_item_close(cache_item);
     return 0;
 }
 
@@ -524,13 +549,8 @@ static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
 static void link_close(mlt_link self)
 {
     if (self) {
-        private_data *pdata = (private_data *) self->child;
-        if (pdata) {
-            avfilter_graph_free(&pdata->avfilter_graph);
-            av_frame_free(&pdata->avinframe);
-            av_frame_free(&pdata->avoutframe);
-            free(pdata);
-        }
+        mlt_service_cache_purge(MLT_LINK_SERVICE(self));
+        free(self->child);
         self->close = NULL;
         self->child = NULL;
         mlt_link_close(self);
