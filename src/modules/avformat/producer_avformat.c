@@ -3063,8 +3063,10 @@ static int producer_get_audio(mlt_frame frame,
     // Obtain the frame number of this frame
     mlt_position position = mlt_frame_original_position(frame);
 
-    if (!(position + 1 == self->audio_expected
-          && mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self->parent), "mute_on_pause"))) {
+    int paused = position + 1 == self->audio_expected
+                 && mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self->parent), "mute_on_pause");
+
+    if (!paused) {
         // Check the audio cache if not paused
         if (!self->audio_cache) {
             init_cache(MLT_PRODUCER_PROPERTIES(self->parent), &self->audio_cache);
@@ -3099,7 +3101,7 @@ static int producer_get_audio(mlt_frame frame,
 
     // Flag for paused (silence)
     double timecode = self->audio_expected > 0 ? real_timecode : FFMAX(real_timecode - 0.25, 0.0);
-    int paused = seek_audio(self, position, timecode);
+    paused = seek_audio(self, position, timecode);
 
     // Initialize ignore for all streams from the seek return value
     int i = MAX_AUDIO_STREAMS;
