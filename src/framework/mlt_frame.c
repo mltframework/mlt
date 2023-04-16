@@ -967,7 +967,7 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
         }
         size = 0;
         data = mlt_properties_get_data(properties, "image", &size);
-        if (data) {
+        if (data && mlt_image_movit != mlt_properties_get_int(properties, "format")) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
@@ -1131,7 +1131,7 @@ mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
 
     if (is_deep) {
         data = mlt_properties_get_data(properties, "image", &size);
-        if (data) {
+        if (data && mlt_image_movit != mlt_properties_get_int(properties, "format")) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
