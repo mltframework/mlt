@@ -34,11 +34,17 @@
 
 typedef struct
 {
-    // Used by get_audio
     mlt_position expected_frame;
     mlt_position continuity_frame;
-    mlt_swr_private_data swr;
 } private_data;
+
+static void destroy_swr_data(mlt_swr_private_data *swr)
+{
+    if (swr) {
+        mlt_free_swr_context(swr);
+        free(swr);
+    }
+}
 
 static void link_configure(mlt_link self, mlt_profile chain_profile)
 {
@@ -119,40 +125,57 @@ static int link_get_audio(mlt_frame frame,
 
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
+    mlt_swr_private_data *swr = NULL;
+    int cache_miss = 0;
+    mlt_cache_item cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_swresample");
+    swr = mlt_cache_item_data(cache_item, NULL);
+    if (!cache_item) {
+        cache_miss = 1;
+    }
+
     // Detect configuration change
-    if (!pdata->swr.ctx || pdata->swr.in_format != in.format || pdata->swr.out_format != out.format
-        || pdata->swr.in_frequency != in.frequency || pdata->swr.out_frequency != out.frequency
-        || pdata->swr.in_channels != in.channels || pdata->swr.out_channels != out.channels
-        || pdata->swr.in_layout != in.layout || pdata->swr.out_layout != out.layout
+    if (cache_miss || swr->in_format != in.format || swr->out_format != out.format
+        || swr->in_frequency != in.frequency || swr->out_frequency != out.frequency
+        || swr->in_channels != in.channels || swr->out_channels != out.channels
+        || swr->in_layout != in.layout || swr->out_layout != out.layout
         || pdata->expected_frame != mlt_frame_get_position(frame)) {
+        mlt_cache_item_close(cache_item);
+        swr = calloc(1, sizeof(mlt_swr_private_data));
         // Save the configuration
-        pdata->swr.in_format = in.format;
-        pdata->swr.out_format = out.format;
-        pdata->swr.in_frequency = in.frequency;
-        pdata->swr.out_frequency = out.frequency;
-        pdata->swr.in_channels = in.channels;
-        pdata->swr.out_channels = out.channels;
-        pdata->swr.in_layout = in.layout;
-        pdata->swr.out_layout = out.layout;
+        swr->in_format = in.format;
+        swr->out_format = out.format;
+        swr->in_frequency = in.frequency;
+        swr->out_frequency = out.frequency;
+        swr->in_channels = in.channels;
+        swr->out_channels = out.channels;
+        swr->in_layout = in.layout;
+        swr->out_layout = out.layout;
         // Reconfigure the context
-        error = mlt_configure_swr_context(MLT_LINK_SERVICE(self), &pdata->swr);
+        error = mlt_configure_swr_context(MLT_LINK_SERVICE(self), swr);
+        mlt_service_cache_put(MLT_LINK_SERVICE(self),
+                              "link_swresample",
+                              swr,
+                              0,
+                              (mlt_destructor) destroy_swr_data);
+        cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_swresample");
+        swr = mlt_cache_item_data(cache_item, NULL);
         pdata->continuity_frame = mlt_frame_get_position(frame);
         pdata->expected_frame = mlt_frame_get_position(frame);
     }
 
-    if (!error) {
+    if (swr && !error) {
         int total_received_samples = 0;
         out.samples = requested_samples;
         mlt_audio_alloc_data(&out);
 
         if (pdata->continuity_frame == mlt_frame_get_position(frame)) {
             // This is the nominal case when sample rate is not changing
-            mlt_audio_get_planes(&in, pdata->swr.in_buffers);
-            mlt_audio_get_planes(&out, pdata->swr.out_buffers);
-            total_received_samples = swr_convert(pdata->swr.ctx,
-                                                 pdata->swr.out_buffers,
+            mlt_audio_get_planes(&in, swr->in_buffers);
+            mlt_audio_get_planes(&out, swr->out_buffers);
+            total_received_samples = swr_convert(swr->ctx,
+                                                 swr->out_buffers,
                                                  out.samples,
-                                                 (const uint8_t **) pdata->swr.in_buffers,
+                                                 (const uint8_t **) swr->in_buffers,
                                                  in.samples);
             if (total_received_samples < 0) {
                 mlt_log_error(MLT_LINK_SERVICE(self),
@@ -201,7 +224,7 @@ static int link_get_audio(mlt_frame frame,
             }
 
             // Set up the SWR buffer for the audio from the in frame
-            mlt_audio_get_planes(&in, pdata->swr.in_buffers);
+            mlt_audio_get_planes(&in, swr->in_buffers);
 
             // Set up the SWR buffer for the audio from the out frame,
             // shifting according to what has already been received.
@@ -211,14 +234,14 @@ static int link_get_audio(mlt_frame frame,
             int p = 0;
             for (p = 0; p < plane_count; p++) {
                 uint8_t *pAudio = (uint8_t *) out.data + (out_step_size * total_received_samples);
-                pdata->swr.out_buffers[p] = pAudio + (p * plane_size);
+                swr->out_buffers[p] = pAudio + (p * plane_size);
             }
 
             int samples_needed = requested_samples - total_received_samples;
-            int received_samples = swr_convert(pdata->swr.ctx,
-                                               pdata->swr.out_buffers,
+            int received_samples = swr_convert(swr->ctx,
+                                               swr->out_buffers,
                                                samples_needed,
-                                               (const uint8_t **) pdata->swr.in_buffers,
+                                               (const uint8_t **) swr->in_buffers,
                                                in.samples);
             if (received_samples < 0) {
                 mlt_log_error(MLT_LINK_SERVICE(self),
@@ -252,6 +275,7 @@ static int link_get_audio(mlt_frame frame,
         pdata->expected_frame = mlt_frame_get_position(frame) + 1;
     }
 
+    mlt_cache_item_close(cache_item);
     mlt_service_unlock(MLT_LINK_SERVICE(self));
     return error;
 }
@@ -300,11 +324,8 @@ static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
 static void link_close(mlt_link self)
 {
     if (self) {
-        private_data *pdata = (private_data *) self->child;
-        if (pdata && pdata->swr.ctx) {
-            mlt_free_swr_context(&pdata->swr);
-        }
-        free(pdata);
+        mlt_service_cache_purge(MLT_LINK_SERVICE(self));
+        free(self->child);
         self->close = NULL;
         self->child = NULL;
         mlt_link_close(self);
