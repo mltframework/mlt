@@ -46,7 +46,6 @@ pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 pthread_mutex_t mlt_frame_processing_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-
 /** \brief private members of mlt_consumer */
 
 typedef struct
