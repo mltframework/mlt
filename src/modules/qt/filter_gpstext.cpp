@@ -24,6 +24,8 @@ static QMutex f_mutex;
 
 #define MAX_TEXT_LEN 1024
 
+namespace {
+
 typedef struct
 {
     gps_point_raw *gps_points_r;  //raw gps data from file
@@ -41,6 +43,8 @@ typedef struct
     char interpolated;
     int swap_180;
 } private_data;
+
+} // namespace
 
 // Sets the private data to default values and frees gps points array
 static void default_priv_data(private_data *pdata)

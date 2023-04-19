@@ -27,12 +27,14 @@
 #include <QPainter>
 #include <QVector>
 
+namespace {
 // Private Types
 typedef struct
 {
     mlt_filter levels_filter;
     int preprocess_warned;
 } private_data;
+} // namespace
 
 static int filter_get_audio(mlt_frame frame,
                             void **buffer,
