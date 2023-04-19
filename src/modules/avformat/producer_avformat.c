@@ -235,7 +235,7 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                                       self,
                                       0,
                                       (mlt_destructor) producer_avformat_close);
-                mlt_properties_set_int(properties, "mute_on_pause", 1);
+                mlt_properties_set_int(properties, "mute_on_pause", 0);
             }
         }
     }

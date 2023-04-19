@@ -211,12 +211,12 @@ parameters:
     type: boolean
     widget: checkbox
 
-  - identifier: mute_on_pause
+  - identifier: mute_on_pause (*DEPRECATED*)
     title: Mute on Pause
     description: >
       Mute the audio when the same frame is requested twice in a row.
     type: boolean
-    default: 1
+    default: 0
     widget: checkbox
 
   - identifier: seek_threshold
