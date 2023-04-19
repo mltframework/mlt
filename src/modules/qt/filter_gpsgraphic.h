@@ -29,6 +29,8 @@ struct s_gps_data_bounds
     }
 };
 
+namespace {
+
 typedef struct
 {
     gps_point_raw *gps_points_r;  //raw gps data from file
@@ -52,6 +54,8 @@ typedef struct
     QRectF bg_img_matched_rect;
     int swap_180;
 } private_data;
+
+} // namespace
 
 typedef enum {
     gspg_location_src = 0,

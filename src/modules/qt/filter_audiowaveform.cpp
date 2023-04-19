@@ -27,6 +27,7 @@
 
 static const qreal MAX_S16_AMPLITUDE = 32768.0;
 
+namespace {
 // Private Types
 typedef struct
 {
@@ -44,6 +45,8 @@ typedef struct
     int samples;
     int channels;
 } save_buffer;
+
+} // namespace
 
 static save_buffer *create_save_buffer(int samples, int channels, int16_t *buffer)
 {

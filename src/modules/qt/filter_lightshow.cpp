@@ -27,6 +27,8 @@
 // Private Constants
 static const double PI = 3.14159265358979323846;
 
+namespace {
+
 // Private Types
 typedef struct
 {
@@ -35,6 +37,8 @@ typedef struct
     int rel_pos;
     int preprocess_warned;
 } private_data;
+
+} // namespace
 
 static int filter_get_audio(mlt_frame frame,
                             void **buffer,
