@@ -645,8 +645,9 @@ mlt_producer producer_count_init(mlt_profile profile,
         mlt_properties_set(properties, "sound", "none");
         mlt_properties_set(properties, "background", "clock");
         mlt_properties_set(properties, "drop", "0");
+        mlt_properties_clear(properties, "resource");
         // Let the arg specify the producer to use with the factory, e.g. loader-nogl
-        if (arg && strcmp(arg, "") && strcmp(arg, "<producer>"))
+        if (arg && strcmp(arg, ""))
             mlt_properties_set(properties, FACTORY_PRODUCER, arg);
 
         // Callback registration
