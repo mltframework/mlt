@@ -1623,21 +1623,62 @@ static void convert_image_rgb(producer_avformat self,
                               int dst_full_range)
 {
     int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
-    struct SwsContext *context = sws_getContext(
-        width, height, src_pix_fmt, width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
     uint8_t *out_data[4];
     int out_stride[4];
-    av_image_fill_arrays(out_data, out_stride, buffer, dst_pix_fmt, width, height, IMAGE_ALIGN);
-    // libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-    mlt_set_luma_transfer(context, self->yuv_colorspace, 601, self->full_range, 1);
-    sws_scale(context,
-              (const uint8_t *const *) frame->data,
-              frame->linesize,
-              0,
-              height,
-              out_data,
-              out_stride);
-    sws_freeContext(context);
+
+    if (src_pix_fmt == AV_PIX_FMT_YUV420P && frame->interlaced_frame) {
+        // Perform field-aware conversion for 4:2:0
+        int field_height = height / 2;
+        const uint8_t *in_data[4];
+        int in_stride[4];
+        struct SwsContext *context = sws_getContext(width,
+                                                    field_height,
+                                                    src_pix_fmt,
+                                                    width,
+                                                    field_height,
+                                                    dst_pix_fmt,
+                                                    flags,
+                                                    NULL,
+                                                    NULL,
+                                                    NULL);
+        // libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
+        mlt_set_luma_transfer(context, self->yuv_colorspace, 601, self->full_range, 1);
+        av_image_fill_arrays(out_data, out_stride, buffer, dst_pix_fmt, width, height, IMAGE_ALIGN);
+        // Copy the input frame arrays
+        for (int i = 0; i < 4; i++) {
+            in_data[i] = frame->data[i];
+            in_stride[i] = frame->linesize[i];
+        }
+        // Modify the strides to skip every other line
+        for (int i = 0; i < 4; i++) {
+            in_stride[i] *= 2;
+            out_stride[i] *= 2;
+        }
+        // Convert the first field
+        sws_scale(context, in_data, in_stride, 0, field_height, out_data, out_stride);
+        // Offset the data to point at the second field
+        for (int i = 0; i < 4; i++) {
+            in_data[i] += in_stride[i] / 2;
+            out_data[i] += out_stride[i] / 2;
+        }
+        // Convert the second field
+        sws_scale(context, in_data, in_stride, 0, field_height, out_data, out_stride);
+        sws_freeContext(context);
+    } else {
+        struct SwsContext *context = sws_getContext(
+            width, height, src_pix_fmt, width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
+        av_image_fill_arrays(out_data, out_stride, buffer, dst_pix_fmt, width, height, IMAGE_ALIGN);
+        // libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
+        mlt_set_luma_transfer(context, self->yuv_colorspace, 601, self->full_range, 1);
+        sws_scale(context,
+                  (const uint8_t *const *) frame->data,
+                  frame->linesize,
+                  0,
+                  height,
+                  out_data,
+                  out_stride);
+        sws_freeContext(context);
+    }
 }
 
 // returns resulting YUV colorspace
