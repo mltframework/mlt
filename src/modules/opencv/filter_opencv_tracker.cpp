@@ -269,17 +269,23 @@ static void analyze(mlt_filter filter,
             if (data->tracker->init(cvFrame, data->boundingBox)) {
 #else
             {
-                if (data->legacyTracking) {
+                try {
+                    if (data->legacyTracking) {
 #if CV_VERSION_INT > 0x040502
-                    data->legacyTracker->init(cvFrame, data->boundingBox);
+                        data->legacyTracker->init(cvFrame, data->boundingBox);
 #endif
-                } else {
-                    data->tracker->init(cvFrame, data->boundingBox);
+                    } else {
+                        data->tracker->init(cvFrame, data->boundingBox);
+                    }
+#endif
+                    data->initialized = true;
+                    data->analyze = true;
+                    data->last_position = position - 1;
+                } catch (cv::Exception &e) {
+                    mlt_log_warning(MLT_FILTER_SERVICE(filter),
+                                "failed to initialize tracker: %s\n",
+                                e.what());
                 }
-#endif
-                data->initialized = true;
-                data->analyze = true;
-                data->last_position = position - 1;
             }
             // init anim property
             mlt_properties_anim_get_int(filter_properties, "_results", 0, -1);
