@@ -1,7 +1,7 @@
 schema_version: 0.3
 type: producer
-identifier: ranged
-title: Ranged
+identifier: krita
+title: Krita
 version: 1
 copyright: Eoin O'Neill, Emmet O'Neill
 creator: Eoin O'Neill, Emmet O'Neill

@@ -22,7 +22,7 @@
 #include <limits.h>
 #include <framework/mlt.h>
 
-extern mlt_producer producer_ranged_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
+extern mlt_producer producer_krita_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg );
 
 
 static mlt_properties metadata( mlt_service_type type, const char *id, void *data )
@@ -34,6 +34,6 @@ static mlt_properties metadata( mlt_service_type type, const char *id, void *dat
 
 MLT_REPOSITORY
 {
-	MLT_REGISTER( mlt_service_producer_type, "ranged", producer_ranged_init );
-	MLT_REGISTER_METADATA( mlt_service_producer_type, "ranged", metadata, "producer_ranged.yml" );
+	MLT_REGISTER( mlt_service_producer_type, "krita", producer_krita_init );
+	MLT_REGISTER_METADATA( mlt_service_producer_type, "krita", metadata, "producer_krita.yml" );
 }

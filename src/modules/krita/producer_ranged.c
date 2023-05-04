@@ -154,7 +154,7 @@ static void producer_close( mlt_producer producer )
 
 /** Constructor for the producer.
 */
-mlt_producer producer_ranged_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
+mlt_producer producer_krita_init( mlt_profile profile, mlt_service_type type, const char *id, char *arg )
 {
 	// Create a new producer object
 	mlt_producer producer = mlt_producer_new( profile );
