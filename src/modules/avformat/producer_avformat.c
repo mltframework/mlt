@@ -141,6 +141,7 @@ struct producer_avformat_s
     double rotation;
     int is_audio_synchronizing;
     int video_send_result;
+    int reset_image_cache;
 #if USE_HWACCEL
     struct
     {
@@ -168,6 +169,7 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
 static void get_audio_streams_info(producer_avformat self);
 static mlt_audio_format pick_audio_format(int sample_fmt);
 static int pick_av_pixel_format(int *pix_fmt, int full_range);
+static void property_changed(mlt_service owner, producer_avformat self, char *name);
 
 /** Constructor for libavformat.
 */
@@ -236,6 +238,10 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                                       0,
                                       (mlt_destructor) producer_avformat_close);
                 mlt_properties_set_int(properties, "mute_on_pause", 0);
+                mlt_events_listen(properties,
+                                  self,
+                                  "property-changed",
+                                  (mlt_listener) property_changed);
             }
         }
     }
@@ -1460,6 +1466,31 @@ static int pick_av_pixel_format(int *pix_fmt, int full_range)
     return 0;
 }
 
+static void property_changed(mlt_service owner, producer_avformat self, char *name)
+{
+    if (self && name) {
+        if (!strcmp("color_range", name)) {
+            mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+            if (self->video_codec
+                && !av_opt_set(self->video_codec,
+                               name,
+                               mlt_properties_get(properties, name),
+                               AV_OPT_SEARCH_CHILDREN)) {
+                if (self->full_range != (self->video_codec->color_range == AVCOL_RANGE_JPEG)) {
+                    self->full_range = self->video_codec->color_range == AVCOL_RANGE_JPEG;
+                    self->reset_image_cache = 1;
+                }
+            }
+        } else if (!strcmp("force_full_range", name) || !strcmp("set.force_full_luma", name)) {
+            mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+            if (self->full_range != mlt_properties_get_int(properties, name)) {
+                self->full_range = mlt_properties_get_int(properties, name);
+                self->reset_image_cache = 1;
+            }
+        }
+    }
+}
+
 struct sliced_pix_fmt_conv_t
 {
     int width, height, slice_w;
@@ -1989,7 +2020,6 @@ static int producer_get_image(mlt_frame frame,
     uint8_t *alpha = NULL;
     int got_picture = 0;
     int image_size = 0;
-    int reset_cache = 0;
     const char *dst_color_range = mlt_properties_get(frame_properties, "consumer.color_range");
     int dst_full_range = dst_color_range
                          && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
@@ -1998,31 +2028,17 @@ static int producer_get_image(mlt_frame frame,
     pthread_mutex_lock(&self->video_mutex);
     mlt_log_timings_begin();
 
-    if (self->video_codec) {
-        int full_range = self->video_codec->color_range == AVCOL_RANGE_JPEG;
-        if (mlt_properties_get(properties, "color_range")) {
-            full_range = mlt_properties_get_int(properties, "color_range") == 2;
-        } else if (mlt_properties_get(properties, "force_full_range")) {
-            full_range = mlt_properties_get_int(properties, "force_full_range");
-        } else if (mlt_properties_get(properties, "set.force_full_luma")) { // deprecated
-            full_range = mlt_properties_get_int(properties, "set.force_full_luma");
-        }
-        if (full_range != self->full_range) {
-            reset_cache = 1;
-            self->full_range = full_range;
-        }
-    }
-
 #ifdef AVFILTER
     if (self->autorotate && self->video_index != -1
         && get_rotation(properties, self->video_format->streams[self->video_index])
                != self->rotation) {
         // Rotation has changed. Clear any cached frames.
-        reset_cache = 1;
+        self->reset_image_cache = 1;
     }
 #endif
 
-    if (reset_cache) {
+    if (self->reset_image_cache) {
+        self->reset_image_cache = 0;
         mlt_cache_close(self->image_cache);
         self->image_cache = NULL;
         av_frame_free(&self->video_frame);
