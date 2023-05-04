@@ -1586,6 +1586,16 @@ static int convert_image_yuvp(producer_avformat self,
                               int dst_full_range)
 {
     int result = self->yuv_colorspace;
+
+    // Workaround: swscale does not convert the range if the src & dst are both 420P
+    // Use the deprecated formats to force the conversion.
+    if (self->full_range && src_pix_fmt == AV_PIX_FMT_YUV420P) {
+        src_pix_fmt = AV_PIX_FMT_YUVJ420P;
+    }
+    if (dst_full_range && dst_pix_fmt == AV_PIX_FMT_YUV420P) {
+        dst_pix_fmt = AV_PIX_FMT_YUVJ420P;
+    }
+
     int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
     struct SwsContext *context = sws_getContext(
         width, height, src_pix_fmt, width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
@@ -1992,16 +2002,35 @@ static int producer_get_image(mlt_frame frame,
     pthread_mutex_lock(&self->video_mutex);
     mlt_log_timings_begin();
 
+    int reset_cache = 0;
+
+    if (self->video_codec) {
+        int dst_full_range = self->video_codec->color_range == AVCOL_RANGE_JPEG;
+        if (mlt_properties_get(properties, "force_full_range")) {
+            dst_full_range = mlt_properties_get_int(properties, "force_full_range");
+        } else if (mlt_properties_get(properties, "set.force_full_luma")) { // deprecated
+            dst_full_range = mlt_properties_get_int(properties, "set.force_full_luma");
+        }
+        if (dst_full_range != self->full_range) {
+            reset_cache = 1;
+            self->full_range = dst_full_range;
+        }
+    }
+
 #ifdef AVFILTER
     if (self->autorotate && self->video_index != -1
         && get_rotation(properties, self->video_format->streams[self->video_index])
                != self->rotation) {
         // Rotation has changed. Clear any cached frames.
+        reset_cache = 1;
+    }
+#endif
+
+    if (reset_cache) {
         mlt_cache_close(self->image_cache);
         self->image_cache = NULL;
         av_frame_free(&self->video_frame);
     }
-#endif
 
     // Fetch the video format context
     AVFormatContext *context = self->video_format;
