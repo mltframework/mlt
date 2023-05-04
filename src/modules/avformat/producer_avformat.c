@@ -167,7 +167,7 @@ static void apply_properties(void *obj, mlt_properties properties, int flags);
 static int video_codec_init(producer_avformat self, int index, mlt_properties properties);
 static void get_audio_streams_info(producer_avformat self);
 static mlt_audio_format pick_audio_format(int sample_fmt);
-static int pick_av_pixel_format(int *pix_fmt);
+static int pick_av_pixel_format(int *pix_fmt, int full_range);
 
 /** Constructor for libavformat.
 */
@@ -778,7 +778,7 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
 #else
         int pix_fmt = codec_params->format;
 #endif
-        pick_av_pixel_format(&pix_fmt);
+        pick_av_pixel_format(&pix_fmt, self->full_range);
         if (pix_fmt != AV_PIX_FMT_NONE) {
             // Verify that we can convert this to one of our image formats.
             struct SwsContext *context = sws_getContext(codec_params->width,
@@ -1433,23 +1433,28 @@ static mlt_audio_format pick_audio_format(int sample_fmt)
  * Replace pix_fmt with the official pixel format to use.
  * @return 0 if no pix_fmt replacement, 1 otherwise
  */
-static int pick_av_pixel_format(int *pix_fmt)
+static int pick_av_pixel_format(int *pix_fmt, int full_range)
 {
     switch (*pix_fmt) {
+    case AV_PIX_FMT_YUV420P:
     case AV_PIX_FMT_YUVJ420P:
-        *pix_fmt = AV_PIX_FMT_YUV420P;
+        *pix_fmt = full_range ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P;
         return 1;
+    case AV_PIX_FMT_YUV411P:
     case AV_PIX_FMT_YUVJ411P:
-        *pix_fmt = AV_PIX_FMT_YUV411P;
+        *pix_fmt = full_range ? AV_PIX_FMT_YUVJ411P : AV_PIX_FMT_YUV411P;
         return 1;
+    case AV_PIX_FMT_YUV422P:
     case AV_PIX_FMT_YUVJ422P:
-        *pix_fmt = AV_PIX_FMT_YUV422P;
+        *pix_fmt = full_range ? AV_PIX_FMT_YUVJ422P : AV_PIX_FMT_YUV422P;
         return 1;
+    case AV_PIX_FMT_YUV444P:
     case AV_PIX_FMT_YUVJ444P:
-        *pix_fmt = AV_PIX_FMT_YUV444P;
+        *pix_fmt = full_range ? AV_PIX_FMT_YUVJ444P : AV_PIX_FMT_YUV444P;
         return 1;
+    case AV_PIX_FMT_YUV440P:
     case AV_PIX_FMT_YUVJ440P:
-        *pix_fmt = AV_PIX_FMT_YUV440P;
+        *pix_fmt = full_range ? AV_PIX_FMT_YUVJ440P : AV_PIX_FMT_YUV440P;
         return 1;
     }
     return 0;
@@ -1720,7 +1725,7 @@ static int convert_image(producer_avformat self,
 
     // Figure out source and destination pixel format
     int src_pix_fmt = pix_fmt;
-    pick_av_pixel_format(&src_pix_fmt);
+    pick_av_pixel_format(&src_pix_fmt, self->full_range);
     int dst_pix_fmt = AV_PIX_FMT_NONE;
     switch (*format) {
     case mlt_image_yuv420p:
@@ -1984,6 +1989,7 @@ static int producer_get_image(mlt_frame frame,
     uint8_t *alpha = NULL;
     int got_picture = 0;
     int image_size = 0;
+    int reset_cache = 0;
     const char *dst_color_range = mlt_properties_get(frame_properties, "consumer.color_range");
     int dst_full_range = dst_color_range
                          && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
@@ -1992,16 +1998,35 @@ static int producer_get_image(mlt_frame frame,
     pthread_mutex_lock(&self->video_mutex);
     mlt_log_timings_begin();
 
+    if (self->video_codec) {
+        int full_range = self->video_codec->color_range == AVCOL_RANGE_JPEG;
+        if (mlt_properties_get(properties, "color_range")) {
+            full_range = mlt_properties_get_int(properties, "color_range") == 2;
+        } else if (mlt_properties_get(properties, "force_full_range")) {
+            full_range = mlt_properties_get_int(properties, "force_full_range");
+        } else if (mlt_properties_get(properties, "set.force_full_luma")) { // deprecated
+            full_range = mlt_properties_get_int(properties, "set.force_full_luma");
+        }
+        if (full_range != self->full_range) {
+            reset_cache = 1;
+            self->full_range = full_range;
+        }
+    }
+
 #ifdef AVFILTER
     if (self->autorotate && self->video_index != -1
         && get_rotation(properties, self->video_format->streams[self->video_index])
                != self->rotation) {
         // Rotation has changed. Clear any cached frames.
+        reset_cache = 1;
+    }
+#endif
+
+    if (reset_cache) {
         mlt_cache_close(self->image_cache);
         self->image_cache = NULL;
         av_frame_free(&self->video_frame);
     }
-#endif
 
     // Fetch the video format context
     AVFormatContext *context = self->video_format;
