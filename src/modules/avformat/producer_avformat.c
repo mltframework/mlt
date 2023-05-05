@@ -881,7 +881,7 @@ static int setup_filters(producer_avformat self)
     int error = 0;
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
     const char *filtergraph = mlt_properties_get(properties, "filtergraph");
-    double theta = 0;
+    double theta = 0.0;
 
     if (self->video_index != -1 && self->autorotate) {
         theta = get_rotation(properties, self->video_format->streams[self->video_index]);
@@ -1470,11 +1470,10 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
 {
     if (self && name) {
         if (!strcmp("color_range", name)) {
-            mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
             if (self->video_codec
                 && !av_opt_set(self->video_codec,
                                name,
-                               mlt_properties_get(properties, name),
+                               mlt_properties_get(MLT_PRODUCER_PROPERTIES(self->parent), name),
                                AV_OPT_SEARCH_CHILDREN)) {
                 if (self->full_range != (self->video_codec->color_range == AVCOL_RANGE_JPEG)) {
                     self->full_range = self->video_codec->color_range == AVCOL_RANGE_JPEG;
@@ -1486,6 +1485,17 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
             if (self->full_range != mlt_properties_get_int(properties, name)) {
                 self->full_range = mlt_properties_get_int(properties, name);
                 self->reset_image_cache = 1;
+            }
+        } else if (!strcmp("autorotate", name)) {
+            self->autorotate = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self->parent), name);
+            if (self->video_index != -1) {
+                mlt_service_lock(MLT_PRODUCER_SERVICE(self->parent));
+                avfilter_graph_free(&self->vfilter_graph);
+                self->vfilter_out = NULL;
+                self->rotation = 0.0;
+                setup_filters(self);
+                self->reset_image_cache = 1;
+                mlt_service_unlock(MLT_PRODUCER_SERVICE(self->parent));
             }
         }
     }
