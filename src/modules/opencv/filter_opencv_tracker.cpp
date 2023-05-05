@@ -170,6 +170,10 @@ static void analyze(mlt_filter filter,
                 strcat(model1, "/dasiamrpn_model.onnx");
                 strcat(model2, "/dasiamrpn_kernel_cls1.onnx");
                 strcat(model3, "/dasiamrpn_kernel_r1.onnx");
+                // Models can be downloaded from:
+                // - network:     https://www.dropbox.com/s/rr1lk9355vzolqv/dasiamrpn_model.onnx?dl=0
+                // - kernel_r1:   https://www.dropbox.com/s/999cqx5zrfi7w4p/dasiamrpn_kernel_r1.onnx?dl=0
+                // - kernel_cls1: https://www.dropbox.com/s/qvmtszx5h339a0w/dasiamrpn_kernel_cls1.onnx?dl=0
                 struct stat file_info;
                 if (stat(model1, &file_info) == 0 && stat(model2, &file_info) == 0
                     && stat(model3, &file_info) == 0) {
@@ -187,6 +191,34 @@ static void analyze(mlt_filter filter,
                 free(model2);
                 free(model3);
             }
+#if CV_VERSION_INT > 0x040600
+        } else if (!strcmp(data->algo, "Nano")) {
+            if (mlt_properties_exists(filter_properties, "modelsfolder")) {
+                char *modelsdir = mlt_properties_get(filter_properties, "modelsfolder");
+                cv::TrackerNano::Params parameters;
+                char *model1 = (char *) calloc(1, 1000);
+                char *model2 = (char *) calloc(1, 1000);
+                strcat(model1, modelsdir);
+                strcat(model2, modelsdir);
+                strcat(model1, "/nanotrack_backbone_sim.onnx");
+                strcat(model2, "/nanotrack_head_sim.onnx");
+                // Models can be downloaded from:
+                // https://github.com/HonglinChu/SiamTrackers/tree/master/NanoTrack/models/nanotrackv2
+                struct stat file_info;
+                if (stat(model1, &file_info) == 0 && stat(model2, &file_info) == 0) {
+                    // Models found, process
+                    parameters.backbone = model1;
+                    parameters.neckhead = model2;
+                    data->tracker = cv::TrackerNano::create(parameters);
+                } else {
+                    mlt_log_error(
+                        MLT_FILTER_SERVICE(filter),
+                        "Nano models not found, please provide a modelsfolder parameter\n");
+                }
+                free(model1);
+                free(model2);
+            }
+#endif
         } else if (!strcmp(data->algo, "MOSSE")) {
             data->legacyTracking = true;
             data->legacyTracker = cv::legacy::tracking::TrackerMOSSE::create();
