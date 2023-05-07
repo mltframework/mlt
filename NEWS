@@ -1,6 +1,92 @@
 MLT Release Notes
 -----------------
 
+Version 7.16.0
+
+Framework
+
+  * Added a `chain_normalizers.ini` to the data directory.
+  * Added New C functions to support deinterlacer links:
+    - `mlt_deinterlacer_name()`
+    - `mlt_deinterlacer_id()`
+    - `mlt_link_filter_init()`
+    - `mlt_link_filter_metadata()`
+    - `mlt_cache_put_frame_audio()`
+    - `mlt_cache_put_frame_image()`
+    - `mlt_frame_clone_audio()`
+    - `mlt_frame_clone_image()`
+  * Added support for loading a filter as a link via `mlt_link_filter_init()`.
+  * Added enum `mlt_deinterlacer` with:
+    - `mlt_deinterlacer_none`
+    - `mlt_deinterlacer_onefield`
+    - `mlt_deinterlacer_linearblend`
+    - `mlt_deinterlacer_weave`
+    - `mlt_deinterlacer_bob`
+    - `mlt_deinterlacer_greedy`
+    - `mlt_deinterlacer_yadif_nospatial`
+    - `mlt_deinterlacer_yadif`
+    - `mlt_deinterlacer_bwdif`
+    - `mlt_deinterlacer_estdif`
+    - `mlt_deinterlacer_invalid`
+  * Added new 10-bit YUV members to enum `mlt_image_format`:
+    - `mlt_image_yuv420p10`
+    - `mlt_image_yuv444p10`
+  * Fixed a deadlock and improved quality of start of playback when
+    `mlt_consumer` property `prefill` is greater than 1.
+  * Fixed a couple of data races in `mlt_events` and `mlt_consumer`.
+  * Fixed a crash in `mlt_frame_clone()` with movit and the `mask_start` filter.
+
+Modules
+
+  * Fixed regressions in version 7.14.0:
+    - memory and thread count usage in `swresample` and `resample` links
+    - automatic profile support in `melt`
+    - crash in `count` producer
+  * Upgraded the `glaxnimate` git submodule to version 0.5.3.
+  * Added avformat/`avdeinterlace` (default) and xine/`deinterlace` links.
+  * Fixed deinterlacing in the `multi` and `qglsl` consumers.
+  * Added 10-bit video support to `movit.convert` filter.
+  * Several things in the `avformat` producer:
+    - Fixed artifacts decoding raw FLAC audio.
+    - Fixed a potential crash on `mlt_producer_probe()`.
+    - Fixed seeking on music with album art.
+    - Fixed possible infinite loop on end-of-file.
+    - Fixed a potential deadlock.
+    - Fixed chroma bleeding on interlaced yuv420p.
+    - Fixed `color_range` or `force_full_range` sometimes not working.
+    - Fixed `autorotate` property not working with a chain.
+    - Added audio caching.
+    - Deprecated the `mute_on_pause` property.
+  * Fixed FFmpeg version 6 compilation error.
+  * Fixed rendering the text outline in `kdenlivetitle` producer.
+  * Fixed `'movit.rect` property animation.
+  * Fixed corrupt video in `crop` filter when `mlt_image_yuv420p` requested.
+  * Fixed possible null pointer crashes in some audio filters:
+    - `audiolevel`
+    - `volume`
+    - `loudness`
+  * Fixed a possible roi assert crash in `opencv.tracker` filter.
+  * Added support for "Nano" `algo` to the `opencv.tracker` filter.
+  * Added the property `fix_background_alpha` to the `luma` transition.
+
+Other
+
+  * Added `-query links` to `melt` command line.
+  * Added `avformat` consumer presets for 10-bit video:
+    - AV1
+    - DNxHR-HQ
+    - FFV1
+    - ProRes 422
+    - ProRes 444
+    - ProRes HQ
+    - x264-high10
+    - x265-main10
+  * Added a `clang-format` target to CMake and reformatted all code.
+  * Added warnings as errors with some exceptions to CMake with `Debug`
+    build type and gcc.
+  * Fixed numerous warnings throughout the code.
+
+
 Version 7.14.0
 
 Framework
