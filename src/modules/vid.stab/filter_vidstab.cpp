@@ -42,6 +42,7 @@ typedef struct
     VSTransformData td;
     VSTransformConfig conf;
     VSTransformations trans;
+    VSPixelFormat format;
 } vs_apply;
 
 typedef struct
@@ -82,7 +83,7 @@ static void get_transform_config(VSTransformConfig *conf, mlt_filter filter, mlt
         conf->interpolType = VS_BiLinear;
 }
 
-static int check_apply_config(mlt_filter filter, mlt_frame frame)
+static int check_apply_config(mlt_filter filter, mlt_frame frame, VSPixelFormat format)
 {
     vs_apply *apply_data = ((vs_data *) filter->child)->apply_data;
 
@@ -90,7 +91,8 @@ static int check_apply_config(mlt_filter filter, mlt_frame frame)
         VSTransformConfig new_conf;
         memset(&new_conf, 0, sizeof(VSTransformConfig));
         get_transform_config(&new_conf, filter, frame);
-        return compare_transform_config(&apply_data->conf, &new_conf);
+        return format != apply_data->format
+               || compare_transform_config(&apply_data->conf, &new_conf);
     }
 
     return 0;
@@ -134,6 +136,7 @@ static void init_apply_data(
     vsFrameInfoInit(&fi_src, width, height, vs_format);
     vsFrameInfoInit(&fi_dst, width, height, vs_format);
     vsTransformDataInit(&apply_data->td, &apply_data->conf, &fi_src, &fi_dst);
+    apply_data->format = vs_format;
 
     // Initialize VSTransformations
     vsTransformationsInit(&apply_data->trans);
@@ -234,7 +237,8 @@ static int apply_results(mlt_filter filter,
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     vs_data *data = (vs_data *) filter->child;
 
-    if (check_apply_config(filter, frame) || mlt_properties_get_int(properties, "reload")) {
+    if (check_apply_config(filter, frame, vs_format)
+        || mlt_properties_get_int(properties, "reload")) {
         mlt_properties_set_int(properties, "reload", 0);
         destroy_apply_data(data->apply_data);
         data->apply_data = NULL;
