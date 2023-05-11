@@ -2,7 +2,7 @@
  * filter_vidstab.cpp
  * Copyright (C) 2013 Marco Gittler <g.marco@freenet.de>
  * Copyright (C) 2013 Jakub Ksiezniak <j.ksiezniak@gmail.com>
- * Copyright (C) 2014-2021 Meltytech, LLC
+ * Copyright (C) 2014-2023 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ static int check_apply_config(mlt_filter filter, mlt_frame frame)
     return 0;
 }
 
-static void destory_apply_data(vs_apply *apply_data)
+static void destroy_apply_data(vs_apply *apply_data)
 {
     if (apply_data) {
         vsTransformDataCleanup(&apply_data->td);
@@ -162,7 +162,7 @@ static void init_apply_data(
         data->apply_data = apply_data;
     } else {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Can not read results file: %s\n", filename);
-        destory_apply_data(apply_data);
+        destroy_apply_data(apply_data);
         data->apply_data = NULL;
     }
 
@@ -236,7 +236,7 @@ static int apply_results(mlt_filter filter,
 
     if (check_apply_config(filter, frame) || mlt_properties_get_int(properties, "reload")) {
         mlt_properties_set_int(properties, "reload", 0);
-        destory_apply_data(data->apply_data);
+        destroy_apply_data(data->apply_data);
         data->apply_data = NULL;
     }
 
@@ -384,7 +384,7 @@ static void filter_close(mlt_filter filter)
         if (data->analyze_data)
             destroy_analyze_data(data->analyze_data);
         if (data->apply_data)
-            destory_apply_data(data->apply_data);
+            destroy_apply_data(data->apply_data);
         free(data);
     }
     filter->close = NULL;
