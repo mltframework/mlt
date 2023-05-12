@@ -58,7 +58,11 @@ static QRectF get_text_path(QPainterPath *qpath,
     QFont font;
     font.setPixelSize(mlt_properties_get_int(filter_properties, "size") * scale);
     font.setFamily(mlt_properties_get(filter_properties, "family"));
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     font.setWeight(QFont::Weight((mlt_properties_get_int(filter_properties, "weight") / 10) - 1));
+#else
+    font.setWeight(QFont::Weight(mlt_properties_get_int(filter_properties, "weight")));
+#endif
     switch (style) {
     case 'i':
     case 'I':
