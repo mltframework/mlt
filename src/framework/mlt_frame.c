@@ -644,6 +644,7 @@ int mlt_frame_get_audio(mlt_frame self,
         *samples = *samples <= 0 ? 1920 : *samples;
         *channels = *channels <= 0 ? 2 : *channels;
         *frequency = *frequency <= 0 ? 48000 : *frequency;
+        *format = *format == mlt_audio_none ? mlt_audio_s16 : *format;
         mlt_properties_set_int(properties, "audio_frequency", *frequency);
         mlt_properties_set_int(properties, "audio_channels", *channels);
         mlt_properties_set_int(properties, "audio_samples", *samples);
