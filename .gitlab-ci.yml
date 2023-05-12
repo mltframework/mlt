@@ -5,8 +5,7 @@ ubuntu-latest:
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
-            # there's no `check` or `test` `make` target
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
 ubuntu-lts:
     image: ubuntu:20.04
@@ -15,8 +14,7 @@ ubuntu-lts:
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
-            # there's no `check` or `test` `make` target
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
 debian-unstable:
     image: debian:unstable
@@ -25,8 +23,7 @@ debian-unstable:
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
         - apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
-            # there's no `check` or `test` `make` target
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
 debian-testing:
     image: debian:testing
@@ -35,8 +32,7 @@ debian-testing:
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
         - apt-get -yqq install cmake
-        - cmake -DGPL=qON -DGPL3=ON . && make -j -f Makefile install
-            # there's no `check` or `test` `make` target
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
 debian-stable:
     image: debian:stable
@@ -46,37 +42,36 @@ debian-stable:
         - apt-get -qq update
         - apt-get -yqq build-dep mlt
         - apt-get -yqq install cmake
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
-            # there's no `check` or `test` `make` target
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
-fedora-33:
-    image: fedora:33
+fedora-38:
+    image: fedora:38
     script:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
-fedora-32:
+fedora-36:
+    image: fedora:36
+    script:
+        - yum --assumeyes groupinstall "Development Tools"
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
+            # unclear why `gcc-c++` isn't in `Development Tools`
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
+
+fedora-34:
+    image: fedora:34
+    script:
+        - yum --assumeyes groupinstall "Development Tools"
+        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
+            # unclear why `gcc-c++` isn't in `Development Tools`
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
+
+fedora-30:
     image: fedora:32
     script:
         - yum --assumeyes groupinstall "Development Tools"
         - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
             # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
-
-fedora-31:
-    image: fedora:31
-    script:
-        - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
-            # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
-
-fedora-30:
-    image: fedora:30
-    script:
-        - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
-            # unclear why `gcc-c++` isn't in `Development Tools`
-        - cmake -DGPL=ON -DGPL3=ON . && make -j -f Makefile install
+        - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
