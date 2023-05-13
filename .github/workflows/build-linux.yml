@@ -27,7 +27,7 @@ jobs:
           flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
 
   build-cmake:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
 
@@ -39,7 +39,7 @@ jobs:
           sudo apt-get -qq update
           sudo apt-get -yqq build-dep mlt
           sudo apt-get -yqq install cmake ninja-build kwalify
-          cmake -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build -G Ninja
+          cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build -G Ninja
           cmake --build build
           sudo cmake --install build
 
