@@ -237,6 +237,12 @@ public:
         m_shadowOffset = QPoint(offsetX, offsetY);
         shadowPath.translate(2 * blurRadius, 2 * blurRadius);
         QPainter shadowPainter(&m_shadow);
+        if (m_outline > 0) {
+            QPainterPathStroker strokePath;
+            strokePath.setWidth(m_outline);
+            QPainterPath stroke = strokePath.createStroke(shadowPath);
+            shadowPath.addPath(stroke);
+        }
         shadowPainter.fillPath(shadowPath, QBrush(shadowColor));
         shadowPainter.end();
         blur(m_shadow, blurRadius);
