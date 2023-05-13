@@ -239,8 +239,8 @@ static int filter_get_image(mlt_frame frame,
                           interps);
 
             // If valid colorspace
-            if (*format == mlt_image_yuv422 || *format == mlt_image_rgb
-                || *format == mlt_image_rgba) {
+            if (*format == mlt_image_yuv422 || *format == mlt_image_rgb || *format == mlt_image_rgba
+                || *format == mlt_image_yuv420p) {
                 // Call the virtual function
                 scaler_method(frame, image, format, iwidth, iheight, owidth, oheight);
                 *width = owidth;
