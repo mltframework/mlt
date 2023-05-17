@@ -498,7 +498,7 @@ mlt_producer producer_qtext_init(mlt_profile profile,
         mlt_properties_set(producer_properties, "style", "normal");
         mlt_properties_set(producer_properties, "weight", "400");
         mlt_properties_set(producer_properties, "encoding", "UTF-8");
-        mlt_properties_set_int(producer_properties, "progressive", 1);
+        mlt_properties_set_int(producer_properties, "meta.media.progressive", 1);
 
         // Parse the filename argument
         if (filename == NULL || !strcmp(filename, "") || strstr(filename, "<producer>")) {

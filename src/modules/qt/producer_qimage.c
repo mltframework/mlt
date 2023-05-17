@@ -80,7 +80,7 @@ mlt_producer producer_qimage_init(mlt_profile profile,
         mlt_properties_set(properties, "resource", filename);
         mlt_properties_set_int(properties, "ttl", self->count > 1 ? 1 : 25);
         mlt_properties_set_int(properties, "aspect_ratio", 1);
-        mlt_properties_set_int(properties, "progressive", 1);
+        mlt_properties_set_int(properties, "meta.media.progressive", 1);
         mlt_properties_set_int(properties, "seekable", 1);
 
         // Validate the resource
@@ -331,9 +331,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         }
 
         // Set producer-specific frame properties
-        mlt_properties_set_int(properties,
-                               "progressive",
-                               mlt_properties_get_int(producer_properties, "progressive"));
+        mlt_properties_set_int(properties, "progressive", 1);
         mlt_properties_set_int(properties,
                                "format",
                                mlt_properties_get_int(producer_properties, "format"));

@@ -226,6 +226,7 @@ mlt_producer producer_pango_init(const char *filename)
         mlt_properties_set_int(properties, "stretch", PANGO_STRETCH_NORMAL + 1);
         mlt_properties_set_int(properties, "rotate", 0);
         mlt_properties_set_int(properties, "seekable", 1);
+        mlt_properties_set_int(properties, "meta.media.progressive", 1);
 
         if (filename == NULL
             || (filename

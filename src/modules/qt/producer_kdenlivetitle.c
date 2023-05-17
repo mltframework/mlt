@@ -159,9 +159,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         mlt_frame_set_position(*frame, mlt_producer_position(producer));
 
         // Set producer-specific frame properties
-        mlt_properties_set_int(properties,
-                               "progressive",
-                               mlt_properties_get_int(producer_props, "progressive"));
+        mlt_properties_set_int(properties, "progressive", 1);
 
         // Inform framework that this producer creates rgba frames by default
         // TODO: read the producer's xml on opening so we know if we have RGB or RGBA data
@@ -210,7 +208,7 @@ mlt_producer producer_kdenlivetitle_init(mlt_profile profile,
         producer->get_frame = producer_get_frame;
         producer->close = (mlt_destructor) producer_close;
         mlt_properties_set(properties, "resource", filename);
-        mlt_properties_set_int(properties, "progressive", 1);
+        mlt_properties_set_int(properties, "meta.media.progressive", 1);
         mlt_properties_set_int(properties, "aspect_ratio", 1);
         mlt_properties_set_int(properties, "seekable", 1);
         if (!initTitleProducer(producer)) {
