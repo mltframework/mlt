@@ -36,7 +36,6 @@
 #define OUTER_RING_RATIO 90
 #define INNER_RING_RATIO 80
 #define TEXT_SIZE_RATIO 70
-#define FACTORY_PRODUCER "_factory_producer"
 
 typedef struct
 {
@@ -193,8 +192,7 @@ static mlt_frame get_background_frame(mlt_producer producer)
 
     if (!color_producer) {
         mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
-        const char *factory_producer = mlt_properties_get(producer_properties, FACTORY_PRODUCER);
-        color_producer = mlt_factory_producer(profile, factory_producer, "colour");
+        color_producer = mlt_factory_producer(profile, "loader-nogl", "colour");
         mlt_properties_set_data(producer_properties,
                                 "_color_producer",
                                 color_producer,
@@ -224,12 +222,11 @@ static mlt_frame get_text_frame(mlt_producer producer, time_info *info)
     mlt_frame text_frame = NULL;
 
     if (!text_producer) {
-        const char *factory_producer = mlt_properties_get(producer_properties, FACTORY_PRODUCER);
-        text_producer = mlt_factory_producer(profile, factory_producer, "qtext");
+        text_producer = mlt_factory_producer(profile, "loader-nogl", "qtext");
 
         // Use pango if qtext is not available.
         if (!text_producer)
-            text_producer = mlt_factory_producer(profile, factory_producer, "pango");
+            text_producer = mlt_factory_producer(profile, "loader-nogl", "pango");
 
         if (!text_producer)
             mlt_log_warning(MLT_PRODUCER_SERVICE(producer),
@@ -646,9 +643,6 @@ mlt_producer producer_count_init(mlt_profile profile,
         mlt_properties_set(properties, "background", "clock");
         mlt_properties_set(properties, "drop", "0");
         mlt_properties_clear(properties, "resource");
-        // Let the arg specify the producer to use with the factory, e.g. loader-nogl
-        if (arg && strcmp(arg, ""))
-            mlt_properties_set(properties, FACTORY_PRODUCER, arg);
 
         // Callback registration
         producer->get_frame = producer_get_frame;
