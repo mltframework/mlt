@@ -152,7 +152,7 @@ int process_frei0r_item(mlt_service service,
 
     mlt_service_lock(service);
 
-    mlt_properties ctor = mlt_properties_get_properties(prop, ctorname);
+    mlt_properties ctor = mlt_properties_get_data(prop, ctorname, NULL);
     if (!ctor || mlt_properties_get_int(ctor, "width") != *width
         || mlt_properties_get_int(ctor, "height") != slice_height) {
         mlt_properties_clear(prop, ctorname);
@@ -166,8 +166,7 @@ int process_frei0r_item(mlt_service service,
                                 0,
                                 mlt_properties_get_data(prop, "f0r_destruct", NULL),
                                 NULL);
-        mlt_properties_set_properties(prop, ctorname, ctor);
-        mlt_properties_close(ctor);
+        mlt_properties_set_data(prop, ctorname, ctor, 0, (mlt_destructor) mlt_properties_close, NULL);
     }
     f0r_instance_t inst = mlt_properties_get_data(ctor, "inst", NULL);
     if (!inst) {
