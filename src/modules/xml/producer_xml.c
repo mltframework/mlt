@@ -650,10 +650,11 @@ static void on_end_chain(deserialise_context context, const xmlChar *name)
         if (!source && resource)
             source = mlt_factory_producer(context->profile, NULL, resource);
         if (!source) {
-            mlt_log_error(NULL, "[producer_xml] failed to load producer \"%s\"\n", resource);
+            mlt_log_error(NULL, "[producer_xml] failed to load chain \"%s\"\n", resource);
             source = mlt_factory_producer(context->profile, NULL, "+INVALID.txt");
             if (source) {
                 // Save the original mlt_service for the consumer to serialize it as original.
+                mlt_properties_set_int(properties, "progressive", 1);
                 mlt_properties_set_string(properties,
                                           "_xml_mlt_service",
                                           mlt_properties_get(properties, "mlt_service"));
