@@ -1273,7 +1273,7 @@ static int seek_video(producer_avformat self,
     int paused = 0;
     int seek_threshold = mlt_properties_get_int(properties, "seek_threshold");
     if (seek_threshold <= 0)
-        seek_threshold = 12;
+        seek_threshold = 64;
 
     pthread_mutex_lock(&self->packets_mutex);
 
@@ -1937,7 +1937,7 @@ static void *packets_worker(void *param)
     producer_avformat self = param;
     AVPacket *pkt = av_packet_alloc();
     if (!pkt) {
-        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent), "av_packet_alloc failed\n");
+        mlt_log_fatal(MLT_PRODUCER_SERVICE(self->parent), "av_packet_alloc failed\n");
         exit(EXIT_FAILURE);
     }
 

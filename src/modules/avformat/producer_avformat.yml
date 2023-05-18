@@ -228,6 +228,7 @@ parameters:
       cause libavformat to face issues in seeking and where user tries to minimize the
       number of seek calls.
     type: integer
+    default: 64
     unit: frames
 
   - identifier: autorotate
