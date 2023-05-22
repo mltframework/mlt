@@ -102,6 +102,7 @@ struct producer_avformat_s
     atomic_int_fast64_t current_position;
     mlt_position nonseek_position;
     atomic_int top_field_first;
+    int progressive;
     uint8_t *audio_buffer[MAX_AUDIO_STREAMS];
     int audio_buffer_size[MAX_AUDIO_STREAMS];
     uint8_t *decode_buffer[MAX_AUDIO_STREAMS];
@@ -1486,6 +1487,8 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
                 self->full_range = mlt_properties_get_int(properties, name);
                 self->reset_image_cache = 1;
             }
+        } else if (!strcmp("force_progressive", name) || !strcmp("force_tff", name)) {
+            self->reset_image_cache = 1;
         } else if (!strcmp("autorotate", name)) {
             self->autorotate = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self->parent), name);
             if (self->video_index != -1) {
@@ -2074,7 +2077,9 @@ static int producer_get_image(mlt_frame frame,
     }
     if (self->image_cache) {
         mlt_frame original = mlt_cache_get_frame(self->image_cache, position);
-        if (original) {
+        if (original
+            && (*format == mlt_image_none
+                || *format == mlt_properties_get_int(MLT_FRAME_PROPERTIES(original), "format"))) {
             mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
             int size = 0;
 
@@ -2363,6 +2368,26 @@ static int producer_get_image(mlt_frame frame,
 
             // Now handle the picture if we have one
             if (got_picture) {
+                // Detect and correct scan type
+                if (mlt_properties_get(properties, "force_progressive")) {
+                    self->progressive = !!mlt_properties_get_int(properties, "force_progressive");
+                } else if (self->video_frame && codec_params) {
+                    self->progressive = !self->video_frame->interlaced_frame
+                                        && (codec_params->field_order == AV_FIELD_PROGRESSIVE
+                                            || codec_params->field_order == AV_FIELD_UNKNOWN);
+                } else {
+                    self->progressive = 0;
+                }
+                self->video_frame->interlaced_frame = !self->progressive;
+                // Detect and correct field order
+                if (mlt_properties_get(properties, "force_tff")) {
+                    self->top_field_first = !!mlt_properties_get_int(properties, "force_tff");
+                } else {
+                    self->top_field_first = self->video_frame->top_field_first
+                                            || codec_params->field_order == AV_FIELD_TT
+                                            || codec_params->field_order == AV_FIELD_TB;
+                }
+                self->video_frame->top_field_first = self->top_field_first;
 #ifdef AVFILTER
                 if ((self->autorotate || mlt_properties_get(properties, "filtergraph"))
                     && !setup_filters(self) && self->vfilter_graph) {
@@ -2408,9 +2433,6 @@ static int producer_get_image(mlt_frame frame,
 #endif
                     mlt_properties_set_int(frame_properties, "colorspace", yuv_colorspace);
                     mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
-                    self->top_field_first |= self->video_frame->top_field_first;
-                    self->top_field_first |= codec_params->field_order == AV_FIELD_TT;
-                    self->top_field_first |= codec_params->field_order == AV_FIELD_TB;
                     self->current_position = int_position;
                 } else {
                     got_picture = 0;
@@ -2476,32 +2498,12 @@ static int producer_get_image(mlt_frame frame,
 exit_get_image:
     pthread_mutex_unlock(&self->video_mutex);
 
-    // Set the progressive flag
-    if (mlt_properties_get(properties, "force_progressive")) {
-        mlt_properties_set_int(frame_properties,
-                               "progressive",
-                               !!mlt_properties_get_int(properties, "force_progressive"));
-    } else if (self->video_frame && codec_params) {
-        mlt_properties_set_int(frame_properties,
-                               "progressive",
-                               !self->video_frame->interlaced_frame
-                                   && (codec_params->field_order == AV_FIELD_PROGRESSIVE
-                                       || codec_params->field_order == AV_FIELD_UNKNOWN));
-    }
-
-    // Set the field order property for this frame
-    if (mlt_properties_get(properties, "force_tff"))
-        mlt_properties_set_int(frame_properties,
-                               "top_field_first",
-                               !!mlt_properties_get_int(properties, "force_tff"));
-    else
-        mlt_properties_set_int(frame_properties, "top_field_first", self->top_field_first);
+    mlt_properties_set_int(frame_properties, "progressive", self->progressive);
+    mlt_properties_set_int(frame_properties, "top_field_first", self->top_field_first);
 
     // Set immutable properties of the selected track's (or overridden) source attributes.
     mlt_properties_set_int(properties, "meta.media.top_field_first", self->top_field_first);
-    mlt_properties_set_int(properties,
-                           "meta.media.progressive",
-                           mlt_properties_get_int(frame_properties, "progressive"));
+    mlt_properties_set_int(properties, "meta.media.progressive", self->progressive);
     self->probe_complete = 1;
     mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
 
