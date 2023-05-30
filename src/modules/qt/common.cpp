@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2014-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
 
 #include "common.h"
 #include <QApplication>
-#include <QImage>
+#include <QImageReader>
 #include <QLocale>
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
@@ -52,6 +52,9 @@ bool createQApplicationIfNeeded(mlt_service service)
         new QApplication(argc, argv);
         const char *localename = mlt_properties_get_lcnumeric(MLT_SERVICE_PROPERTIES(service));
         QLocale::setDefault(QLocale(localename));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QImageReader::setAllocationLimit(1024);
+#endif
     }
     return true;
 }
