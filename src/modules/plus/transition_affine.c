@@ -399,6 +399,8 @@ static int transition_get_image(mlt_frame a_frame,
     mlt_image_format b_format = mlt_image_rgba;
     int b_width = mlt_properties_get_int(b_props, "meta.media.width");
     int b_height = mlt_properties_get_int(b_props, "meta.media.height");
+    int b_real_width = b_width;
+    int b_real_height = b_height;
     double b_ar = mlt_frame_get_aspect_ratio(b_frame);
     double b_dar = b_ar * b_width / b_height;
 
@@ -549,15 +551,15 @@ static int transition_get_image(mlt_frame a_frame,
     }
     mlt_log_debug(MLT_TRANSITION_SERVICE(transition),
                   "requesting image B at resolution %dx%d\n",
-                  b_width,
-                  b_height);
+                  b_real_width,
+                  b_real_height);
 
     // This is not a field-aware transform.
     mlt_properties_set_int(b_props, "consumer.progressive", 1);
 
-    error = mlt_frame_get_image(b_frame, &b_image, &b_format, &b_width, &b_height, 0);
+    error = mlt_frame_get_image(b_frame, &b_image, &b_format, &b_real_width, &b_real_height, 0);
     if (error || !b_image) {
-        // Remove potentially large image on the B frame.
+        // Remove image on the B frame.
         mlt_frame_set_image(b_frame, NULL, 0, NULL);
         if (threads != 1)
             mlt_service_unlock(MLT_TRANSITION_SERVICE(transition));
@@ -578,25 +580,25 @@ static int transition_get_image(mlt_frame a_frame,
                                    .interp = interpBL_b32,
                                    .a_width = *width,
                                    .a_height = *height,
-                                   .b_width = b_width,
-                                   .b_height = b_height,
+                                   .b_width = b_real_width,
+                                   .b_height = b_real_height,
                                    .lower_x = -(result.x + result.w / 2.0), // center
                                    .lower_y = -(result.y + result.h / 2.0), // middle
                                    .mix = result.o,
-                                   .x_offset = (double) b_width / 2.0,
-                                   .y_offset = (double) b_height / 2.0,
+                                   .x_offset = (double) b_real_width / 2.0,
+                                   .y_offset = (double) b_real_height / 2.0,
                                    .b_alpha = mlt_properties_get_int(properties, "b_alpha"),
                                    // Affine boundaries
                                    .minima = 0,
-                                   .xmax = b_width - 1,
-                                   .ymax = b_height - 1};
+                                   .xmax = b_real_width - 1,
+                                   .ymax = b_real_height - 1};
 
         // Recalculate vars if alignment supplied.
         if (mlt_properties_get(properties, "halign") || mlt_properties_get(properties, "valign")) {
             double halign = alignment_parse(mlt_properties_get(properties, "halign"));
             double valign = alignment_parse(mlt_properties_get(properties, "valign"));
-            desc.x_offset = halign * b_width / 2.0;
-            desc.y_offset = valign * b_height / 2.0;
+            desc.x_offset = halign * desc.b_width / 2.0;
+            desc.y_offset = valign * desc.b_height / 2.0;
             desc.lower_x = -(result.x + geometry_w * halign / 2.0f);
             desc.lower_y = -(result.y + geometry_h * valign / 2.0f);
         }
@@ -643,6 +645,8 @@ static int transition_get_image(mlt_frame a_frame,
         } else if (scale_x != 0 && scale_y != 0) {
             affine_scale(desc.affine.matrix, scale_x, scale_y);
         }
+        // Apply size of the B frame in its rect.
+        affine_scale(desc.affine.matrix, (double) b_real_width / b_width, (double) b_real_height / b_height);
 
         char *interps = mlt_properties_get(a_props, "consumer.rescale");
         // Copy in case string is changed.
@@ -677,7 +681,7 @@ static int transition_get_image(mlt_frame a_frame,
         else
             mlt_slices_run_normal(threads, sliced_proc, &desc);
 
-        // Remove potentially large image on the B frame.
+        // Remove image on the B frame.
         mlt_frame_set_image(b_frame, NULL, 0, NULL);
     }
     if (threads != 1)
