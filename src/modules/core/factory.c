@@ -65,6 +65,10 @@ extern mlt_filter filter_crop_init(mlt_profile profile,
                                    mlt_service_type type,
                                    const char *id,
                                    char *arg);
+extern mlt_filter filter_audioseam_init(mlt_profile profile,
+                                        mlt_service_type type,
+                                        const char *id,
+                                        char *arg);
 extern mlt_filter filter_fieldorder_init(mlt_profile profile,
                                          mlt_service_type type,
                                          const char *id,
@@ -197,6 +201,7 @@ MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "audiochannels", filter_audiochannels_init);
     MLT_REGISTER(mlt_service_filter_type, "audioconvert", filter_audioconvert_init);
     MLT_REGISTER(mlt_service_filter_type, "audiomap", filter_audiomap_init);
+    MLT_REGISTER(mlt_service_filter_type, "audioseam", filter_audioseam_init);
     MLT_REGISTER(mlt_service_filter_type, "audiowave", filter_audiowave_init);
     MLT_REGISTER(mlt_service_filter_type, "box_blur", filter_box_blur_init);
     MLT_REGISTER(mlt_service_filter_type, "brightness", filter_brightness_init);
@@ -257,6 +262,7 @@ MLT_REPOSITORY
                           metadata,
                           "filter_audioconvert.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "audiomap", metadata, "filter_audiomap.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "audioseam", metadata, "filter_audioseam.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "audiowave", metadata, "filter_audiowave.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "box_blur", metadata, "filter_box_blur.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "brightness", metadata, "filter_brightness.yml");
