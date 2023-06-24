@@ -676,3 +676,8 @@ MLT_7.16.0 {
     mlt_frame_clone_audio;
     mlt_frame_clone_image;
 } MLT_7.14.0;
+
+MLT_7.18.0 {
+  global:
+    mlt_audio_free_data;
+} MLT_7.16.0;

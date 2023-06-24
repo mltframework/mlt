@@ -391,11 +391,16 @@ static mlt_producer mlt_playlist_locate(mlt_playlist self,
  * \private \memberof mlt_playlist_s
  * \param self a playlist
  * \param[out] progressive true if the producer should be displayed progressively
+ * \param[out] clip_index the index of the returned service
+ * \param[out] clip_position the position in the returned service relative to the begining
  * \return the service interface of the producer at the play head
  * \see producer_get_frame
  */
 
-static mlt_service mlt_playlist_virtual_seek(mlt_playlist self, int *progressive)
+static mlt_service mlt_playlist_virtual_seek(mlt_playlist self,
+                                             int *progressive,
+                                             int *clip_index,
+                                             int *clip_position)
 {
     // Map playlist position to real producer in virtual playlist
     mlt_position position = mlt_producer_frame(&self->parent);
@@ -457,6 +462,11 @@ static mlt_service mlt_playlist_virtual_seek(mlt_playlist self, int *progressive
         mlt_producer_seek(producer, 0);
     } else {
         producer = &self->blank;
+    }
+
+    if (i < self->count && clip_index && clip_position) {
+        *clip_index = i;
+        *clip_position = position;
     }
 
     // Determine if we have moved to the next entry in the playlist.
@@ -2005,9 +2015,11 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
 
     // Need to ensure the frame is deinterlaced when repeating 1 frame
     int progressive = 0;
+    int clip_index = -1;
+    int clip_position = -1;
 
     // Get the real producer
-    mlt_service real = mlt_playlist_virtual_seek(self, &progressive);
+    mlt_service real = mlt_playlist_virtual_seek(self, &progressive, &clip_index, &clip_position);
 
     // Check that we have a producer
     if (real == NULL) {
@@ -2041,6 +2053,13 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
     if (progressive) {
         mlt_properties_set_int(properties, "consumer.progressive", progressive);
         mlt_properties_set_int(properties, "test_audio", 1);
+    }
+
+    if (clip_index >= 0 && clip_index < self->size) {
+        mlt_properties_set_int(properties, "meta.playlist.clip_position", clip_position);
+        mlt_properties_set_int(properties,
+                               "meta.playlist.clip_length",
+                               self->list[clip_index]->frame_count);
     }
 
     // Check for notifier and call with appropriate argument

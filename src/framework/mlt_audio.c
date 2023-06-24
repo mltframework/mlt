@@ -127,13 +127,35 @@ void mlt_audio_alloc_data(mlt_audio self)
     if (!self)
         return;
 
-    if (self->release_data) {
-        self->release_data(self->data);
-    }
+    mlt_audio_free_data(self);
 
     int size = mlt_audio_calculate_size(self);
     self->data = mlt_pool_alloc(size);
     self->release_data = mlt_pool_release;
+}
+
+/** Free the data field using the destructor function.
+ *
+ * If the constructor function does not exist, the value will be set to NULL
+ * without being released.
+ *
+ * After this function call, the data and release_data fields will be NULL.
+ *
+ * \public \memberof mlt_audio_s
+ * \param self the Audio object
+ */
+
+void mlt_audio_free_data(mlt_audio self)
+{
+    if (!self)
+        return;
+
+    if (self->release_data) {
+        self->release_data(self->data);
+    }
+
+    self->data = NULL;
+    self->release_data = NULL;
 }
 
 /** Calculate the number of bytes needed for the Audio data.
