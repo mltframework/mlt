@@ -1,0 +1,37 @@
+schema_version: 0.3
+type: filter
+identifier: audioseam
+title: Audio Seam
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+description: >
+  Seam audio splices between clips in a playlist.
+  Only to be used as a filter on playlist producers.
+  Uses the "meta.playlist.clip_position" and "meta.playlist.clip_length"
+  properties that are added by the playlist producer to determine where
+  the seams between clips occur.
+
+parameters:
+  - identifier: discontinuity_threshold
+    title: Discontinuity Threshold
+    type: float
+    description: >
+      The delta between the last sample of one clip and the first sample of the following clip that
+      are spliced. If the delta is above the discontinuity threshold, then smoothing will be applied.
+    readonly: no
+    mutable: yes
+    default: 2
+    minimum: 0
+    maximum: 30
+    unit: dB
+
+  - identifier: seam_count
+    title: Seam Count
+    type: integer
+    description: >
+      The number of splices that have exceeded the discontinuity threshold and have been seamed.
+    readonly: yes

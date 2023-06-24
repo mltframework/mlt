@@ -53,6 +53,7 @@ extern void mlt_audio_get_values(mlt_audio self,
                                  int *samples,
                                  int *channels);
 extern void mlt_audio_alloc_data(mlt_audio self);
+extern void mlt_audio_free_data(mlt_audio self);
 extern int mlt_audio_calculate_size(mlt_audio self);
 extern int mlt_audio_plane_count(mlt_audio self);
 extern int mlt_audio_plane_size(mlt_audio self);

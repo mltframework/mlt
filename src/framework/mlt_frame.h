@@ -80,6 +80,10 @@ typedef int (*mlt_get_audio)(mlt_frame self,
  * \properties \em height the vertical resolution of the image
  * \properties \em aspect_ratio the sample aspect ratio of the image
  * \properties \em full_range set if the video is full range - only applies to Y'CbCr
+ * \properties \em meta.playlist.clip_position mlt_playlist sets this property
+ * to the time position of this frame's clip in the playlist
+ * \properties \em meta.playlist.clip_length mlt_playlist sets this property to
+ * the playlist index of this frame's clip in the playlist
  */
 
 struct mlt_frame_s

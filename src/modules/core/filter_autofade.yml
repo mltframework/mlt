@@ -1,0 +1,45 @@
+schema_version: 0.3
+type: filter
+identifier: autofade
+title: Auto Fade
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+description: >
+  Automatically fade audio between clips in a playlist.
+  This filter will fade the audio out at the end of a clip and fade the
+  audio in at the  begining of a clip.
+  Only to be used as a filter on playlist producers.
+  Uses the "meta.playlist.clip_position" and "meta.playlist.clip_length"
+  properties that are added by the playlist producer to determine where
+  the splices between clips occur.
+
+parameters:
+  - identifier: fade_duration
+    title: Fade Duration
+    type: integer
+    description: >
+      The duration of each fade in and fade out.
+    readonly: no
+    mutable: yes
+    default: 20
+    minimum: 1
+    maximum: 1000
+    unit: ms
+
+  - identifier: fade_in_count
+    title: Fade In Count
+    type: integer
+    description: >
+      The number of time fade in has been applied.
+    readonly: yes
+
+  - identifier: fade_out_count
+    title: Fade Out Count
+    type: integer
+    description: >
+      The number of time fade out has been applied.
+    readonly: yes

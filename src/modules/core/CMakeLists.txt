@@ -5,7 +5,9 @@ add_library(mltcore MODULE
   filter_audiochannels.c
   filter_audioconvert.c
   filter_audiomap.c
+  filter_audioseam.c
   filter_audiowave.c
+  filter_autofade.c
   filter_box_blur.c
   filter_brightness.c
   filter_channelcopy.c
@@ -76,6 +78,7 @@ install(FILES
   consumer_multi.yml
   filter_audiomap.yml
   filter_audiowave.yml
+  filter_autofade.yml
   filter_box_blur.yml
   filter_brightness.yml
   filter_channelcopy.yml
