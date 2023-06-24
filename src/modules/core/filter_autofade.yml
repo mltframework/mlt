@@ -17,6 +17,7 @@ description: >
   properties that are added by the playlist producer to determine where
   the splices between clips occur.
 
+parameters:
   - identifier: fade_duration
     title: Fade Duration
     type: integer

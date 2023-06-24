@@ -15,6 +15,7 @@ description: >
   properties that are added by the playlist producer to determine where
   the seams between clips occur.
 
+parameters:
   - identifier: discontinuity_threshold
     title: Discontinuity Threshold
     type: float

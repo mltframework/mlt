@@ -3,7 +3,7 @@
  * \brief playlist service class
  * \see mlt_playlist_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -392,7 +392,7 @@ static mlt_producer mlt_playlist_locate(mlt_playlist self,
  * \param self a playlist
  * \param[out] progressive true if the producer should be displayed progressively
  * \param[out] clip_index the index of the returned service
- * \param[out] clip_position the position in the returned service relative to the begining
+ * \param[out] clip_position the position in the returned service relative to the beginning
  * \return the service interface of the producer at the play head
  * \see producer_get_frame
  */
