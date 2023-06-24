@@ -63,9 +63,9 @@ static double integrate_source_time(mlt_link self, mlt_position position)
     mlt_position length = mlt_producer_get_length(MLT_LINK_PRODUCER(self));
     mlt_position in = mlt_producer_get_in(MLT_LINK_PRODUCER(self));
     double link_fps = mlt_producer_get_fps(MLT_LINK_PRODUCER(self));
+    mlt_position integration_distance = abs(pdata->prev_integration_position - position);
 
-    if (pdata->prev_integration_position < in
-        || (pdata->prev_integration_position > (position * 2))) {
+    if (pdata->prev_integration_position < in || integration_distance > (position - in)) {
         // Restart integration from the beginning
         pdata->prev_integration_position = in;
         pdata->prev_integration_time = 0.0;
@@ -75,15 +75,13 @@ static double integrate_source_time(mlt_link self, mlt_position position)
 
     if (pdata->prev_integration_position < position) {
         for (mlt_position p = pdata->prev_integration_position; p < position; p++) {
-            double speed
-                = mlt_properties_anim_get_double(properties, "speed_map", position - in, length);
+            double speed = mlt_properties_anim_get_double(properties, "speed_map", p - in, length);
             double time_delta = speed / link_fps;
             source_time += time_delta;
         }
     } else if (pdata->prev_integration_position > position) {
         for (mlt_position p = position; p < pdata->prev_integration_position; p++) {
-            double speed
-                = mlt_properties_anim_get_double(properties, "speed_map", position - in, length);
+            double speed = mlt_properties_anim_get_double(properties, "speed_map", p - in, length);
             double time_delta = speed / link_fps;
             source_time -= time_delta;
         }
