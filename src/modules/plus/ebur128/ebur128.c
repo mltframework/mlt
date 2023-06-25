@@ -118,12 +118,12 @@ static double histogram_energy_boundaries[1001];
 
 static interpolator*
 interp_create(unsigned int taps, unsigned int factor, unsigned int channels) {
-  int errcode; /* unused */
+  int errcode = EBUR128_SUCCESS;
   interpolator* interp;
   unsigned int j;
 
   interp = (interpolator*) calloc(1, sizeof(interpolator));
-  CHECK_ERROR(!interp, 0, exit);
+  CHECK_ERROR(!interp, EBUR128_ERROR_NOMEM, exit);
 
   interp->taps = taps;
   interp->factor = factor;
@@ -134,22 +134,22 @@ interp_create(unsigned int taps, unsigned int factor, unsigned int channels) {
    * One subfilter per interpolation factor. */
   interp->filter =
       (interp_filter*) calloc(interp->factor, sizeof(*interp->filter));
-  CHECK_ERROR(!interp->filter, 0, free_interp);
+  CHECK_ERROR(!interp->filter, EBUR128_ERROR_NOMEM, free_interp);
 
   for (j = 0; j < interp->factor; j++) {
     interp->filter[j].index =
         (unsigned int*) calloc(interp->delay, sizeof(unsigned int));
     interp->filter[j].coeff = (double*) calloc(interp->delay, sizeof(double));
-    CHECK_ERROR(!interp->filter[j].index || !interp->filter[j].coeff, 0,
-                free_filter_index_coeff);
+    CHECK_ERROR(!interp->filter[j].index || !interp->filter[j].coeff,
+                EBUR128_ERROR_NOMEM, free_filter_index_coeff);
   }
 
   /* One delay buffer per channel. */
   interp->z = (float**) calloc(interp->channels, sizeof(float*));
-  CHECK_ERROR(!interp->z, 0, free_filter_index_coeff);
+  CHECK_ERROR(!interp->z, EBUR128_ERROR_NOMEM, free_filter_index_coeff);
   for (j = 0; j < interp->channels; j++) {
     interp->z[j] = (float*) calloc(interp->delay, sizeof(float));
-    CHECK_ERROR(!interp->z[j], 0, free_filter_z);
+    CHECK_ERROR(!interp->z[j], EBUR128_ERROR_NOMEM, free_filter_z);
   }
 
   /* Calculate the filter coefficients */
@@ -171,7 +171,10 @@ interp_create(unsigned int taps, unsigned int factor, unsigned int channels) {
       interp->filter[f].index[t] = j / interp->factor;
     }
   }
-  return interp;
+
+  if (errcode == EBUR128_SUCCESS) {
+    return interp;
+  }
 
 free_filter_z:
   for (j = 0; j < interp->channels; j++) {
