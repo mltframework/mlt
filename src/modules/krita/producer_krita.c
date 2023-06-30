@@ -149,6 +149,10 @@ static void producer_close( mlt_producer producer )
 		mlt_producer_close( pdata->producer_internal );
 		free( pdata );
 	}
+
+	producer->close = NULL;
+	mlt_producer_close( producer );
+	free( producer );
 }
 
 
