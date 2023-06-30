@@ -336,12 +336,14 @@ void *mlt_repository_create(mlt_repository self,
 
 void mlt_repository_close(mlt_repository self)
 {
-    mlt_properties_close(self->consumers);
-    mlt_properties_close(self->filters);
-    mlt_properties_close(self->producers);
-    mlt_properties_close(self->transitions);
-    mlt_properties_close(&self->parent);
-    free(self);
+	mlt_properties_close( self->consumers );
+	mlt_properties_close( self->filters );
+	mlt_properties_close( self->links );
+	mlt_properties_close( self->producers );
+	mlt_properties_close( self->transitions );
+	mlt_properties_close( &self->parent );
+
+	free( self );
 }
 
 /** Get the list of registered consumers.
