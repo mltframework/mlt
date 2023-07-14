@@ -1,6 +1,6 @@
 /*
  * mlt_movit_input.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ void MltInput::useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned h
         m_height = height;
         ImageFormat image_format;
         image_format.color_space = COLORSPACE_sRGB;
-        image_format.gamma_curve = GAMMA_sRGB;
+        image_format.gamma_curve = GAMMA_REC_709; // GAMMA_sRGB causes a color level problem
         input = new FlatInput(image_format, pix_fmt, GL_UNSIGNED_BYTE, width, height);
     }
 }
