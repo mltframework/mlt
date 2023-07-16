@@ -1151,13 +1151,9 @@ static void prepare_reopen(producer_avformat self)
         self->audio_buffer[i] = NULL;
         av_free(self->decode_buffer[i]);
         self->decode_buffer[i] = NULL;
-        if (self->audio_codec[i])
-            avcodec_close(self->audio_codec[i]);
-        self->audio_codec[i] = NULL;
+        avcodec_free_context(&self->audio_codec[i]);
     }
-    if (self->video_codec)
-        avcodec_close(self->video_codec);
-    self->video_codec = NULL;
+    avcodec_free_context(&self->video_codec);
     av_frame_unref(self->video_frame);
 #if USE_HWACCEL
     av_buffer_unref(&self->hwaccel.device_ctx);
@@ -2849,9 +2845,7 @@ static void producer_set_up_video(producer_avformat self, mlt_frame frame)
         self->video_index = index;
         self->probe_complete = 0;
         pthread_mutex_lock(&self->open_mutex);
-        if (self->video_codec)
-            avcodec_close(self->video_codec);
-        self->video_codec = NULL;
+        avcodec_free_context(&self->video_codec);
         set_up_discard(self, self->audio_index, index);
         pthread_mutex_unlock(&self->open_mutex);
     }
@@ -3497,6 +3491,7 @@ static int audio_codec_init(producer_avformat self, int index, mlt_properties pr
             apply_properties(codec_context->priv_data,
                              properties,
                              AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM);
+
     }
     return self->audio_codec[index] && self->audio_index > -1;
 }
@@ -3560,10 +3555,7 @@ static void producer_set_up_audio(producer_avformat self, mlt_frame frame)
         unsigned i = 0;
         int index_max = FFMIN(MAX_AUDIO_STREAMS, context->nb_streams);
         for (i = 0; i < index_max; i++) {
-            if (self->audio_codec[i]) {
-                avcodec_close(self->audio_codec[i]);
-                self->audio_codec[i] = NULL;
-            }
+            avcodec_free_context(&self->audio_codec[i]);
         }
         set_up_discard(self, index, self->video_index);
         mlt_cache_close(self->audio_cache);
@@ -3741,13 +3733,9 @@ static void producer_avformat_close(producer_avformat self)
     for (i = 0; i < MAX_AUDIO_STREAMS; i++) {
         mlt_pool_release(self->audio_buffer[i]);
         av_free(self->decode_buffer[i]);
-        if (self->audio_codec[i])
-            avcodec_close(self->audio_codec[i]);
-        self->audio_codec[i] = NULL;
+        avcodec_free_context(&self->audio_codec[i]);
     }
-    if (self->video_codec)
-        avcodec_close(self->video_codec);
-    self->video_codec = NULL;
+    avcodec_free_context(&self->video_codec);
     // Close the file
     if (self->is_thread_init) {
         pthread_mutex_lock(&self->packets_mutex);
