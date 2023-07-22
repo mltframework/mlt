@@ -617,7 +617,7 @@ fail:
     avfilter_graph_free(&pdata->avfilter_graph);
 }
 
-mlt_position get_position(mlt_filter filter, mlt_frame frame)
+static mlt_position get_position(mlt_filter filter, mlt_frame frame)
 {
     mlt_position position = mlt_frame_get_position(frame);
     const char *pos_type = mlt_properties_get(MLT_FILTER_PROPERTIES(filter), "position");
