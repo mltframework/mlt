@@ -345,11 +345,6 @@ mlt_producer mlt_tractor_get_track(mlt_tractor self, int index)
     return mlt_multitrack_track(mlt_tractor_multitrack(self), index);
 }
 
-const char *mlt_tractor_passthrough_properties()
-{
-    return "progressive,progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc";
-}
-
 static int producer_get_image(mlt_frame self,
                               uint8_t **buffer,
                               mlt_image_format *format,
@@ -386,7 +381,7 @@ static int producer_get_image(mlt_frame self,
     mlt_properties_set_int(properties, "format", *format);
     mlt_properties_set_double(properties, "aspect_ratio", mlt_frame_get_aspect_ratio(frame));
     // Pass all required frame properties
-    mlt_properties_pass_list(properties, frame_properties, mlt_tractor_passthrough_properties());
+    mlt_properties_pass_list(properties, frame_properties, "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
 
     mlt_properties_set_data(properties,
                             "movit.convert.fence",

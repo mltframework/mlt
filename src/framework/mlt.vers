@@ -680,5 +680,4 @@ MLT_7.16.0 {
 MLT_7.18.0 {
   global:
     mlt_audio_free_data;
-    mlt_tractor_passthrough_properties;
 } MLT_7.16.0;

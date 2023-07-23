@@ -72,7 +72,7 @@ static int transition_get_image(mlt_frame a_frame,
             error = mlt_frame_get_image(a_frame, image, format, width, height, 0);
         } else {
             // Pass all required frame properties
-            mlt_properties_pass_list(a_props, b_props, mlt_tractor_passthrough_properties());
+            mlt_properties_pass_list(a_props, b_props, "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
             *image = images[1];
         }
     } else {

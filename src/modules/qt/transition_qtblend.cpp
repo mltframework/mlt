@@ -189,7 +189,7 @@ static int get_image(mlt_frame a_frame,
         }
         if (!hasAlpha) {
             // Pass all required frame properties
-            mlt_properties_pass_list(properties, b_properties, mlt_tractor_passthrough_properties());
+            mlt_properties_pass_list(properties, b_properties, "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
             // Prepare output image
             if (b_frame->convert_image && (b_width != request_width || b_height != request_height)) {
                 mlt_properties_set_int(b_properties, "convert_image_width", request_width);
