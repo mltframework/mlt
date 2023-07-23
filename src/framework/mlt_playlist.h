@@ -71,7 +71,7 @@ typedef struct playlist_entry_s playlist_entry;
 struct mlt_playlist_s
 {
     struct mlt_producer_s parent;
-    struct mlt_producer_s blank;
+    struct mlt_producer_s blank; // Deprecated
 
     int size;
     int count;

@@ -141,6 +141,10 @@ extern mlt_link link_timeremap_init(mlt_profile profile,
                                     mlt_service_type type,
                                     const char *id,
                                     char *arg);
+extern mlt_producer producer_blank_init(mlt_profile profile,
+                                        mlt_service_type type,
+                                        const char *id,
+                                        char *arg);
 extern mlt_producer producer_colour_init(mlt_profile profile,
                                          mlt_service_type type,
                                          const char *id,
@@ -240,6 +244,7 @@ MLT_REPOSITORY
     MLT_REGISTER(mlt_service_link_type, "resize", mlt_link_filter_init);
     MLT_REGISTER(mlt_service_link_type, "timeremap", link_timeremap_init);
     MLT_REGISTER(mlt_service_producer_type, "abnormal", producer_loader_init);
+    MLT_REGISTER(mlt_service_producer_type, "blank", producer_blank_init);
     MLT_REGISTER(mlt_service_producer_type, "color", producer_colour_init);
     MLT_REGISTER(mlt_service_producer_type, "colour", producer_colour_init);
     MLT_REGISTER(mlt_service_producer_type, "consumer", producer_consumer_init);
@@ -314,6 +319,7 @@ MLT_REPOSITORY
     MLT_REGISTER_METADATA(mlt_service_link_type, "resize", mlt_link_filter_metadata, NULL);
     MLT_REGISTER_METADATA(mlt_service_link_type, "timeremap", metadata, "link_timeremap.yml");
     MLT_REGISTER_METADATA(mlt_service_producer_type, "abnormal", metadata, "producer_abnormal.yml");
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "blank", metadata, "producer_blank.yml");
     MLT_REGISTER_METADATA(mlt_service_producer_type, "colour", metadata, "producer_colour.yml");
     MLT_REGISTER_METADATA(mlt_service_producer_type, "color", metadata, "producer_colour.yml");
     MLT_REGISTER_METADATA(mlt_service_producer_type, "consumer", metadata, "producer_consumer.yml");
