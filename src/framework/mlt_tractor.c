@@ -345,6 +345,11 @@ mlt_producer mlt_tractor_get_track(mlt_tractor self, int index)
     return mlt_multitrack_track(mlt_tractor_multitrack(self), index);
 }
 
+const char *mlt_tractor_passthrough_properties()
+{
+    return "progressive,progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc";
+}
+
 static int producer_get_image(mlt_frame self,
                               uint8_t **buffer,
                               mlt_image_format *format,
@@ -380,25 +385,9 @@ static int producer_get_image(mlt_frame self,
     mlt_properties_set_int(properties, "height", *height);
     mlt_properties_set_int(properties, "format", *format);
     mlt_properties_set_double(properties, "aspect_ratio", mlt_frame_get_aspect_ratio(frame));
-    mlt_properties_set_int(properties,
-                           "progressive",
-                           mlt_properties_get_int(frame_properties, "progressive"));
-    mlt_properties_set_int(properties,
-                           "distort",
-                           mlt_properties_get_int(frame_properties, "distort"));
-    mlt_properties_set_int(properties,
-                           "colorspace",
-                           mlt_properties_get_int(frame_properties, "colorspace"));
-    mlt_properties_set_int(properties,
-                           "full_range",
-                           mlt_properties_get_int(frame_properties, "full_range"));
-    mlt_properties_set_int(properties,
-                           "force_full_luma",
-                           mlt_properties_get_int(frame_properties, "force_full_luma"));
-    mlt_properties_set_int(properties,
-                           "top_field_first",
-                           mlt_properties_get_int(frame_properties, "top_field_first"));
-    mlt_properties_set(properties, "color_trc", mlt_properties_get(frame_properties, "color_trc"));
+    // Pass all required frame properties
+    mlt_properties_pass_list(properties, frame_properties, mlt_tractor_passthrough_properties());
+
     mlt_properties_set_data(properties,
                             "movit.convert.fence",
                             mlt_properties_get_data(frame_properties, "movit.convert.fence", NULL),
