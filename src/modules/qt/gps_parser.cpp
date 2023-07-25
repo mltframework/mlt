@@ -124,7 +124,7 @@ double distance_haversine_2p(double p1_lat, double p1_lon, double p2_lat, double
     return R * c; //return is in meters because radius is in meters
 }
 
-// Returns the distance between 2 gps points, accurate enough (<0.1% error) for distances below 4km
+// Returns the distance between 2 gps points (uses haversine formula if needed)
 double distance_equirectangular_2p(double p1_lat, double p1_lon, double p2_lat, double p2_lon)
 {
     //use the haversine formula for very far points
@@ -342,6 +342,16 @@ int decimals_needed(double x)
     return 0;
 }
 
+/** Returns a nicer number of decimal values for floats, max 1 digit after .
+ *  [ 1.2% | 12% ]
+*/
+int decimals_needed_maxone(double x) 
+{
+    if (fabs(x) < 10) 
+        return 1;
+    return 0;
+}
+
 /** Converts the distance (stored in meters) to the unit requested in extended keyword
 */
 double convert_distance_to_format(double x, const char *format)
@@ -491,12 +501,15 @@ void recalculate_gps_data(gps_private_data gdata)
             smooth_index++;
         if (smooth_index < i)
             prev_nrsmooth_point = &gps_points[smooth_index];
+        else
+            prev_nrsmooth_point = NULL;
 
         //1) get distance difference between last 2 valid points
         double d_dist = distance_equirectangular_2p(prev_point->lat,
                                                     prev_point->lon,
                                                     crt_point->lat,
                                                     crt_point->lon);
+        double d_dist_smoothed = d_dist;
 
         //if time difference is way longer for one point than usual, don't do math on that gap (treat recording paused, move far, then resume)
         //5*average time
@@ -518,18 +531,16 @@ void recalculate_gps_data(gps_private_data gdata)
             crt_point->speed = d_dist / ((crt_point->time - prev_point->time) / 1000.0); //in m/s
             crt_point->bearing
                 = bearing_2p(prev_point->lat, prev_point->lon, crt_point->lat, crt_point->lon);
-        } else //for "smoothing" we calculate distance between 2 points "nr_smoothing" distance behind
-        {
-            if (prev_nrsmooth_point) {
-                double d_dist = crt_point->total_dist - prev_nrsmooth_point->total_dist;
-                int64_t d_time = crt_point->time - prev_nrsmooth_point->time;
-                crt_point->speed = d_dist / (d_time / 1000.0);
+        } else if (prev_nrsmooth_point) {
+            //for "smoothing" we calculate distance between 2 points "nr_smoothing" distance behind
+            d_dist_smoothed = crt_point->total_dist - prev_nrsmooth_point->total_dist;
+            int64_t d_time = crt_point->time - prev_nrsmooth_point->time;
+            crt_point->speed = d_dist_smoothed / (d_time / 1000.0);
 
-                crt_point->bearing = bearing_2p(prev_nrsmooth_point->lat,
-                                                prev_nrsmooth_point->lon,
-                                                crt_point->lat,
-                                                crt_point->lon);
-            }
+            crt_point->bearing = bearing_2p(prev_nrsmooth_point->lat,
+                                            prev_nrsmooth_point->lon,
+                                            crt_point->lat,
+                                            crt_point->lon);
         }
 
         //4) altitude stuff
@@ -551,6 +562,26 @@ void recalculate_gps_data(gps_private_data gdata)
             crt_point->dist_up = total_dist_up;
             crt_point->dist_down = total_dist_down;
             crt_point->dist_flat = total_dist_flat;
+        }
+
+        
+        //5) grade (if altitude present)
+        if (crt_point->ele != GPS_UNINIT) {
+            double grade_d_elev = 0, grade_d_dist = d_dist;
+            if (prev_nrsmooth_point && prev_nrsmooth_point->ele != GPS_UNINIT) {
+                grade_d_elev = crt_point->ele - prev_nrsmooth_point->ele;
+                grade_d_dist = d_dist_smoothed;
+            }
+            else if (prev_point->ele != GPS_UNINIT)
+                grade_d_elev = crt_point->ele - prev_point->ele;
+
+            //NOTE: experimenting with different cut-off points, this seems fine to eliminate some stand still errors
+            //but weird cases still remain; larger smoothing filter setting should fix most of those
+            if (grade_d_dist > 1 && crt_point->speed > 0.27) 
+                crt_point->grade_p = 100.0 * grade_d_elev / grade_d_dist;
+            else 
+                crt_point->grade_p = 0;
+            //mlt_log_info(NULL, "grade_v3[%d] = 100 * %f / %f = %f \n", i, grade_d_elev, grade_d_dist, crt_point->grade_p);
         }
 
         prev_point = crt_point;
@@ -700,6 +731,9 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
                                                max_gps_diff_ms);
     crt_point.hr
         = weighted_middle_double(p1->hr, p1->time, p2->hr, p2->time, new_t, max_gps_diff_ms);
+    crt_point.cad = weighted_middle_double(p1->cad, p1->time, p2->cad, p2->time, new_t, max_gps_diff_ms);
+    crt_point.grade_p = weighted_middle_double(p1->grade_p, p1->time, p2->grade_p, p2->time, new_t, max_gps_diff_ms);
+    crt_point.atemp = weighted_middle_double(p1->atemp, p1->time, p2->atemp, p2->time, new_t, max_gps_diff_ms);
     return crt_point;
 }
 
@@ -740,23 +774,28 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
     }
 
     int max_gps_diff_ms = get_max_gps_diff_ms(gdata);
-    int i, j, nr_hr = 0, nr_ele = 0;
-    double hr = GPS_UNINIT;
-    double ele = GPS_UNINIT;
+    int i, j, nr_hr = 0, nr_ele = 0, nr_cad = 0, nr_atemp = 0;
+    double hr = GPS_UNINIT, ele = GPS_UNINIT, cad = GPS_UNINIT, atemp = GPS_UNINIT;
 
-    //linear interpolation for heart rate and elevation, one time per file, ignores start offset
+    //linear interpolation for heart rate, elevation, cadence and temperature, one time per file, ignores start offset
     if (*gdata.interpolated == 0) {
-        //NOTE: interpolation limit is now 60 values = arbitrarily chosen @ 1min (if 1sec interval), find a better value?
+        //figure out how many seconds are between 2 average fixes so we can set a limit (in time) to interpolation
+        double avg_time = (*gdata.last_gps_time - *gdata.first_gps_time) / 1000 / (double) *gdata.gps_points_size;
+        double nr_one_minute = 60.0 / (avg_time ? avg_time : 1);
+        
         gps_point_raw *gp_r = gdata.gps_points_r;
         gps_point_proc *gp_p = gdata.gps_points_p;
         for (i = 0; i < *gdata.gps_points_size; i++) {
-            gp_p[i].hr = gp_r[i].hr; //calloc made everything 0, fill back with GPS_UNINIT if needed
+            //calloc made everything 0, fill back with GPS_UNINIT if needed
+            gp_p[i].hr = gp_r[i].hr; 
             gp_p[i].ele = gp_r[i].ele;
+            gp_p[i].cad = gp_r[i].cad;
+            gp_p[i].atemp = gp_r[i].atemp;
 
             //heart rate
             if (gp_r[i].hr != GPS_UNINIT) { //found valid hr
                 if (hr != GPS_UNINIT && nr_hr > 0
-                    && nr_hr <= 60) { //there were missing values and had a hr before
+                    && nr_hr <= nr_one_minute) { //there were missing values and had a hr before
                     nr_hr++;
                     for (j = i; j > i - nr_hr; j--) { //go backwards and fill values
                         gp_p[j].hr = hr + (gp_r[i].hr - hr) * (1.0 * (j - (i - nr_hr)) / nr_hr);
@@ -770,7 +809,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 
             //altitude
             if (gp_r[i].ele != GPS_UNINIT) {
-                if (ele != GPS_UNINIT && nr_ele > 0 && nr_ele <= 60) {
+                if (ele != GPS_UNINIT && nr_ele > 0 && nr_ele <= nr_one_minute*10) {
                     nr_ele++;
                     for (j = i; j > i - nr_ele; j--) {
                         gp_p[j].ele = ele
@@ -783,6 +822,35 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
                 nr_ele = 0;
             } else
                 nr_ele++;
+
+            //cadence
+            if(gp_r[i].cad != GPS_UNINIT) {
+                if (cad != GPS_UNINIT && nr_cad > 0 && nr_cad <= nr_one_minute) {
+                    nr_cad++;
+                    for (j=i; j>i-nr_cad; j--) {
+                        gp_p[j].cad = cad + 1.0*(gp_r[i].cad - cad) * (1.0*(j-(i-nr_cad))/nr_cad);
+                    }
+                }
+                cad = gp_r[i].cad;
+                nr_cad = 0;
+            }
+            else 
+                nr_cad++;
+
+                
+            //temperature 
+            if(gp_r[i].atemp != GPS_UNINIT) {
+                if (atemp != GPS_UNINIT && nr_atemp > 0 && nr_atemp <= nr_one_minute*60) {
+                    nr_atemp++;
+                    for (j=i; j>i-nr_atemp; j--) {
+                        gp_p[j].atemp = atemp + 1.0*(gp_r[i].atemp - atemp) * (1.0*(j-(i-nr_atemp))/nr_atemp);
+                    }
+                }
+                atemp = gp_r[i].atemp;
+                nr_atemp = 0;
+            }
+            else 
+                nr_atemp++;
 
             //these are not interpolated but as long as we're iterating we can copy them now
             gp_p[i].time = gp_r[i].time;
@@ -831,7 +899,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             double lat_sum = 0, lon_sum = 0;
             int nr_div = 0;
 
-            //TODO: treat case of points on opposite sides of 180*
+            //passing 180 meridian is ok, but passing both 180 and 0 (so more than one full circle around the earth) will smooth out badly; no fix planned for this
             for (j = MAX(0, i - req_smooth / 2); j < MIN(i + req_smooth / 2, gps_points_size); j++) {
                 if (has_valid_location(gps_points_r[j]) && in_gps_time_window(gdata, i, j)) {
                     lat_sum += gps_points_r[j].lat;
@@ -861,19 +929,21 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 {
     int64_t last_time = -1;
     /*
-	// sample point from .GPX file (version 1.0) + HR extension
-	<trkpt lat="45.227621666484104" lon="25.16533185322889">
-		<ele>868.3005248873908</ele>
-		<time>2020-07-11T09:03:23.000Z</time>
-		<speed>0.0</speed>
-		<course>337.1557</course>
-		<extensions>
-		 <gpxtpx:TrackPointExtension>
-		  <gpxtpx:hr>132</gpxtpx:hr>
-		 </gpxtpx:TrackPointExtension>
-		</extensions>
-	</trkpt>
-	*/
+    // sample point from .GPX file (version 1.0) + TrackPointExtension
+    <trkpt lat="45.227621666484104" lon="25.16533185322889">
+        <ele>868.3005248873908</ele>
+        <time>2020-07-11T09:03:23.000Z</time>
+        <speed>0.0</speed>
+        <course>337.1557</course>
+        <extensions>
+            <gpxtpx:TrackPointExtension>          //official garmin extension
+                <gpxtpx:hr>132</gpxtpx:hr>            //heart rate in beats per minute
+                <gpxtpx:cad>75</gpxtpx:cad>           //cadence in revolutions per minute
+                <gpxtpx:atemp>27.5</gpxtpx:atemp>     //ambient temperature in degrees celsius
+            </gpxtpx:TrackPointExtension>
+        </extensions>
+    </trkpt>
+    */
     while (!reader.atEnd() && !reader.hasError()) {
         reader.readNext();
         // mlt_log_info(NULL, " readNext tag: %s type = %d\n", _qxml_getthestring(reader.name()), reader.tokenType());
@@ -906,9 +976,17 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                 else if (reader.name() == QString("extensions")) {
                     reader.readNextStartElement();
                     if (reader.name() == QString("TrackPointExtension")) {
-                        reader.readNextStartElement();
-                        if (reader.name() == QString("hr"))
-                            crt_point.hr = reader.readElementText().toDouble();
+                        while (reader.readNext()
+                            && !(reader.name() == QString("TrackPointExtension")
+                            && reader.tokenType() == QXmlStreamReader::EndElement))
+                            {
+                                if (reader.name() == QString("hr"))
+                                    crt_point.hr = reader.readElementText().toDouble();
+                                else if (reader.name() == QString("cad"))
+                                    crt_point.cad = reader.readElementText().toDouble();
+                                else if (reader.name() == QString("atemp"))
+                                    crt_point.atemp = reader.readElementText().toDouble();
+                            }
                     }
                 }
             }
@@ -944,20 +1022,22 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
     int64_t last_time = -1;
 
     /*
-	//sample point from .TCX file
-	  <Trackpoint>
-		<Time>2021-02-27T14:03:02+00:00</Time>
-		<Position>
-		  <LatitudeDegrees>44.48205950925148</LatitudeDegrees>
-		  <LongitudeDegrees>26.1843781367422</LongitudeDegrees>
-		</Position>
-		<AltitudeMeters>65.0</AltitudeMeters>
-		<DistanceMeters>25919.213486999884</DistanceMeters>
-		<HeartRateBpm xsi:type="HeartRateInBeatsPerMinute_t">
-		  <Value>124</Value>
-		</HeartRateBpm>
-	  </Trackpoint>
-	*/
+    //sample point from .TCX file
+    <Trackpoint>
+        <Time>2021-02-27T14:03:02+00:00</Time>
+        <Position>
+            <LatitudeDegrees>44.48205950925148</LatitudeDegrees>
+            <LongitudeDegrees>26.1843781367422</LongitudeDegrees>
+        </Position>
+        <AltitudeMeters>65.0</AltitudeMeters>
+        <DistanceMeters>25919.213486999884</DistanceMeters>
+        <HeartRateBpm xsi:type="HeartRateInBeatsPerMinute_t">
+            <Value>124</Value>
+        </HeartRateBpm>
+        <Cadence>78</Cadence>                   //unofficial, but some popular converters use it
+        <Temperature>25</Temperature>           //unofficial/not widely used
+    </Trackpoint>
+    */
     while (!reader.atEnd() && !reader.hasError()) {
         reader.readNext();
         // mlt_log_info(NULL, " readNextStartElement tag: %s \n", _qxml_getthestring(reader.name()));
@@ -991,6 +1071,10 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                     reader.readNextStartElement();
                     if (reader.name() == QString("Value"))
                         crt_point.hr = reader.readElementText().toDouble();
+                } else if (reader.name() == QString("Cadence")) {
+                    crt_point.cad = reader.readElementText().toDouble();
+                } else if (reader.name() == QString("Temperature")) {
+                    crt_point.atemp = reader.readElementText().toDouble();
                 }
             }
             //now add the point to linked list (but only if increasing time)
@@ -1121,8 +1205,8 @@ int qxml_parse_file(gps_private_data gdata)
     // //debug result:
     // 	for (int i = 0; i<*gdata.gps_points_size; i+=100) {
     // 		gps_point_raw* crt_point = &gps_array[i];
-    // 		mlt_log_info(NULL, "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, distance:%f, hr:%f\n",
-    // 				i, crt_point->time/1000, crt_point->lat, crt_point->lon, crt_point->ele, crt_point->total_dist, crt_point->hr);
+    // 		mlt_log_info(NULL, "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, distance:%f, hr:%f, bearing:%f, cadence:%f, temp:%f\n",
+    // 				i, crt_point->time/1000, crt_point->lat, crt_point->lon, crt_point->ele, crt_point->total_dist, crt_point->hr, crt_point->bearing, crt_point->cad, crt_point->atemp);
     // 	}
 
     return 1;

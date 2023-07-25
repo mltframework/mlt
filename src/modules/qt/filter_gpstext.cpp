@@ -178,6 +178,8 @@ static void gps_point_to_output(mlt_filter filter,
         crt_point.ele = raw.ele;
         crt_point.bearing = raw.bearing;
         crt_point.hr = raw.hr;
+        crt_point.cad = raw.cad;
+        crt_point.atemp = raw.atemp;
     } else {
         if (pdata->gps_points_p == NULL)
             return;
@@ -252,7 +254,31 @@ static void gps_point_to_output(mlt_filter filter,
             snprintf(gps_text, 4, "%s", bearing_to_compass(raw.bearing));
         } else
             snprintf(gps_text, 4, "%s", bearing_to_compass(crt_point.bearing));
-    } else if (!strncmp(keyword, "gps_vdist_up", strlen("gps_vdist_up"))
+    }
+	else if (!strncmp(keyword, "gps_cadence", strlen("gps_cadence")) && crt_point.cad!=GPS_UNINIT) {
+		if (strstr(keyword, "RAW")) {
+			if (raw.cad == GPS_UNINIT) return;
+			snprintf(gps_text, 10, "%.0f", raw.cad);
+		}
+		else
+			snprintf(gps_text, 10, "%.0f", crt_point.cad);
+	}
+	else if (!strncmp(keyword, "gps_temperature", strlen("gps_temperature")) && crt_point.atemp!=GPS_UNINIT) {
+        double atemp;
+		if (strstr(keyword, "RAW")) {
+			if (raw.atemp == GPS_UNINIT) return;
+            atemp = raw.atemp;
+		}
+		else
+            atemp = crt_point.atemp;
+		if (strstr(keyword, "F"))
+            atemp = atemp * 1.8 + 32;
+        else if (strstr(keyword, "K"))
+            atemp = atemp + 273.15;
+
+        snprintf(gps_text, 10, "%.*f", decimals_needed_maxone(atemp), atemp);
+	}
+    else if (!strncmp(keyword, "gps_vdist_up", strlen("gps_vdist_up"))
                && crt_point.elev_up != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_vdist_up"))
             format = keyword + strlen("gps_vdist_up");
@@ -296,7 +322,16 @@ static void gps_point_to_output(mlt_filter filter,
         } else
             val = convert_distance_to_format(crt_point.total_dist, format);
         snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
-    } else if (!strncmp(keyword, "gps_datetime_now", strlen("gps_datetime_now"))
+    }
+	else if (!strncmp(keyword, "gps_grade_percentage", strlen("gps_grade_percentage") ) && crt_point.grade_p != GPS_UNINIT) {
+		double val = crt_point.grade_p;
+		snprintf(gps_text, 10, "%+.*f", decimals_needed_maxone(val), val);
+	}
+	else if (!strncmp(keyword, "gps_grade_degrees", strlen("gps_grade_degrees") ) && crt_point.grade_p != GPS_UNINIT) {
+		double val = to_deg( atan(crt_point.grade_p / 100.0) );
+		snprintf(gps_text, 10, "%+.*f", decimals_needed_maxone(val), val);
+	}
+    else if (!strncmp(keyword, "gps_datetime_now", strlen("gps_datetime_now"))
                && raw.time != GPS_UNINIT) {
         int64_t val = 0;
         char *offset = NULL;

@@ -28,7 +28,7 @@
 
 typedef struct
 {
-    double lat, lon, speed, total_dist, ele, hr, bearing;
+    double lat, lon, speed, total_dist, ele, hr, bearing, cad, atemp;
     int64_t time; //epoch milliseconds
 } gps_point_raw;
 
@@ -40,9 +40,9 @@ typedef struct gps_point_raw_list
 
 typedef struct
 {
-    double lat, lon, speed, total_dist, ele, hr, bearing;
+    double lat, lon, speed, total_dist, ele, hr, bearing, cad, atemp;
     int64_t time;
-    double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat;
+    double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat, grade_p;
 } gps_point_proc;
 
 //0 is a valid value for many fields, use GPS_UNINIT (-9999) to differentiate missing values
@@ -53,6 +53,8 @@ static const gps_point_raw uninit_gps_raw_point = {.lat = GPS_UNINIT,
                                                    .ele = GPS_UNINIT,
                                                    .hr = GPS_UNINIT,
                                                    .bearing = GPS_UNINIT,
+                                                   .cad = GPS_UNINIT,
+                                                   .atemp = GPS_UNINIT,
                                                    .time = GPS_UNINIT};
 
 static const gps_point_proc uninit_gps_proc_point = {.lat = GPS_UNINIT,
@@ -62,13 +64,16 @@ static const gps_point_proc uninit_gps_proc_point = {.lat = GPS_UNINIT,
                                                      .ele = GPS_UNINIT,
                                                      .hr = GPS_UNINIT,
                                                      .bearing = GPS_UNINIT,
+                                                     .cad = GPS_UNINIT,
+                                                     .atemp = GPS_UNINIT,
                                                      .time = GPS_UNINIT,
                                                      .d_elev = GPS_UNINIT,
                                                      .elev_up = GPS_UNINIT,
                                                      .elev_down = GPS_UNINIT,
                                                      .dist_up = GPS_UNINIT,
                                                      .dist_down = GPS_UNINIT,
-                                                     .dist_flat = GPS_UNINIT};
+                                                     .dist_flat = GPS_UNINIT,
+                                                     .grade_p = GPS_UNINIT};
 
 //structure used to ease argument passing between filter and GPS parser api
 typedef struct
@@ -108,6 +113,7 @@ double get_avg_gps_time_ms(gps_private_data gdata);
 int get_max_gps_diff_ms(gps_private_data gdata);
 int binary_search_gps(gps_private_data gdata, int64_t video_time, bool force_result = false);
 int decimals_needed(double x);
+int decimals_needed_maxone(double x);
 double convert_distance_to_format(double x, const char *format);
 double convert_speed_to_format(double x, const char *format);
 const char *bearing_to_compass(double x);
