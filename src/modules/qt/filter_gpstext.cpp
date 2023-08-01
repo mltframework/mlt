@@ -271,8 +271,9 @@ static void gps_point_to_output(mlt_filter filter,
             if (raw.cad == GPS_UNINIT)
                 return;
             snprintf(gps_text, 10, "%.0f", raw.cad);
-        } else
+        } else {
             snprintf(gps_text, 10, "%.0f", crt_point.cad);
+        }
     } else if (!strncmp(keyword, "gps_temperature", strlen("gps_temperature"))
                && crt_point.atemp != GPS_UNINIT) {
         double atemp;
@@ -280,8 +281,9 @@ static void gps_point_to_output(mlt_filter filter,
             if (raw.atemp == GPS_UNINIT)
                 return;
             atemp = raw.atemp;
-        } else
+        } else {
             atemp = crt_point.atemp;
+        }
         if (strstr(keyword, "F"))
             atemp = atemp * 1.8 + 32;
         else if (strstr(keyword, "K"))

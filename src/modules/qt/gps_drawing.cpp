@@ -348,18 +348,16 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                 perc = calc_perc(pdata->gps_points_p[i].time,
                                  pdata->ui_crops.min_crop_time,
                                  pdata->ui_crops.max_crop_time);
-            }
-            if (color_style == gpsg_color_by_altitude) {
+            } else if (color_style == gpsg_color_by_altitude) {
                 perc = calc_perc(pdata->gps_points_p[i].ele,
                                  pdata->minmax.min_ele,
                                  pdata->minmax.max_ele);
-            }
-            if (color_style == gpsg_color_by_hr) {
+            } else if (color_style == gpsg_color_by_hr) {
                 perc = calc_perc(pdata->gps_points_p[i].hr,
                                  pdata->minmax.min_hr,
                                  pdata->minmax.max_hr);
-            }
-            if (color_style == gpsg_color_by_speed || color_style == gpsg_color_by_speed_max100) {
+            } else if (color_style == gpsg_color_by_speed
+                       || color_style == gpsg_color_by_speed_max100) {
                 //max 100km/h (27.777 m/s) variant to cover for bad GPS errors
                 double used_max_speed = pdata->minmax.max_speed;
                 if (color_style == gpsg_color_by_speed_max100 && used_max_speed > 27.777)
@@ -367,9 +365,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                 perc = calc_perc(pdata->gps_points_p[i].speed,
                                  pdata->minmax.min_speed,
                                  used_max_speed);
-            }
-            if (color_style == gpsg_color_by_grade_max90
-                || color_style == gpsg_color_by_grade_max20) {
+            } else if (color_style == gpsg_color_by_grade_max90
+                       || color_style == gpsg_color_by_grade_max20) {
                 //limit to 90* (100%) or 20* (36.397%) - only if max is over this value
                 double max_allowed_percentage = MAX(abs(pdata->minmax.min_grade_p),
                                                     abs(pdata->minmax.max_grade_p));
