@@ -49,10 +49,13 @@ parameters:
       output and a number (representing seconds) preceeded by '+' or '-' which will 
       offset the actual time. For example,  "#gps_datetime_now %I:%M:%S %p +3600#" shows 
       only the time in 12-hour format, offset by 1 hour.
+      The speed keyword can have an extra "vertical" or "3D" word as a format to show
+      vertical speed, and 3D speed (takes into account altitude).
       Speed and distance keywords may include an extra format keyword to convert 
       the value to metric/imperial units. Default is meters and km/h respectively.
       Supported formats, distance: m|meter, km|kilometer*, mi|mile*, ft|feet, nm|nautical*;
-      speed: ms|m/s|meter, km|km/h|kilo, mi|mi/h|mile, ft|ft/s|feet, kn|nm/h|knots.
+      speed: ms|m/s|meter, km|km/h|kilo, mi|mi/h|mile, ft|ft/s|feet, kn|nm/h|knots,
+      mmin|m/min, ftmin|ft/min.
       Computed values are calculated since beginning of GPS file or since 
       "gps_processing_start_time" property, if set.
       Temperature can include the extra uppercase letter "F" or "K" to convert degrees 

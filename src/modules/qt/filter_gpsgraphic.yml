@@ -377,7 +377,8 @@ parameters:
       so extra spaces can be used to tweak displaying.
 
       Supported formats, distance: m|meter, km|kilometer*, mi|mile*, ft|feet, nm|nautical*;
-      speed: ms|m/s|meter, km|km/h|kilometer, mi|mi/h|mile, ft|ft/s|feet, kn|nm/h|knots.
+      speed: ms|m/s|meter, km|km/h|kilometer, mi|mi/h|mile, ft|ft/s|feet, kn|nm/h|knots,
+      mmin|m/min, ftmin|ft/min.
     type: string
     default: m
     readonly: no
