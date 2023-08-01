@@ -40,7 +40,7 @@ typedef struct gps_point_raw_list
 
 typedef struct
 {
-    double lat, lon, speed, total_dist, ele, hr, bearing, cad, atemp;
+    double lat, lon, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing, cad, atemp;
     int64_t time;
     double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat, grade_p;
 } gps_point_proc;
@@ -60,6 +60,8 @@ static const gps_point_raw uninit_gps_raw_point = {.lat = GPS_UNINIT,
 static const gps_point_proc uninit_gps_proc_point = {.lat = GPS_UNINIT,
                                                      .lon = GPS_UNINIT,
                                                      .speed = GPS_UNINIT,
+                                                     .speed_vertical = GPS_UNINIT,
+                                                     .speed_3d = GPS_UNINIT,
                                                      .total_dist = GPS_UNINIT,
                                                      .ele = GPS_UNINIT,
                                                      .hr = GPS_UNINIT,
@@ -91,7 +93,7 @@ typedef struct
     //read only:
     int64_t gps_proc_start_t; //process only points after this time (epoch miliseconds)
     int last_smooth_lvl;
-    char *last_filename; //gps file fullpath
+    char *last_filename;      //gps file fullpath
     mlt_filter filter;
 } gps_private_data;
 

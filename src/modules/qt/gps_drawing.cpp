@@ -97,6 +97,7 @@ static bool rect_intersects_line(QRectF rect, point_2d pt1, point_2d pt2)
 static QColor interpolate_color_from_gradient(double p, QVector<QColor> &colors)
 {
     QColor ret = Qt::black;
+    p = CLAMP(p, 0, 1);
     if (colors.size() == 0)
         return ret;
     if (p == 1 || colors.size() == 1)
@@ -108,6 +109,7 @@ static QColor interpolate_color_from_gradient(double p, QVector<QColor> &colors)
     int c2 = c1 + 1;
     c2 = CLAMP(c2, 0, colors.size() - 1);
     double ratio = (p * (colors.size() - 1)) - c1; //=the fractional part
+    ratio = CLAMP(ratio, 0, 1);
 //Result = (color2 - color1) * ratio + color1
 #define interp(v1, v2, r) (v2 - v1) * r + v1
     ret.setRed(interp(colors[c1].red(), colors[c2].red(), ratio));
@@ -312,9 +314,9 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
         if (color_style == gpsg_color_by_solid) {
             p.setPen(pen_solid_color0);
         } else if (color_style == gpsg_color_by_solid_past_future) {
-            if (i <= i_now) {
+            if (i <= i_now)
                 p.setPen(pen_solid_color0);
-            } else if (i > i_now)
+            else if (i > i_now)
                 p.setPen(pen_solid_color1);
         } else if ((color_style == gpsg_color_by_solid_past && i <= i_now)
                    || (color_style == gpsg_color_by_solid_future && i > i_now)) {
@@ -335,28 +337,54 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                 gradient.setColorAt((qreal) i * step, colors[i]);
             pen_gradients.setBrush(gradient);
             p.setPen(pen_gradients);
-        } else if (color_style >= gpsg_color_by_duration && color_style <= gpsg_color_by_speed) {
+        } else if (color_style >= gpsg_color_by_duration
+                   && color_style <= gpsg_color_by_grade_max20) {
 //compute current value as a percentage of min..max
-#define calc_perc(v, min, max) (double) (v - min) / ((max - min) != 0 ? (max - min) : (v - min))
+#define calc_perc(v, min, max) \
+    (double) (v - min) / ((max - min) != 0 ? (max - min) : ((v - min) ? (v - min) : 1))
             double perc = 0;
-            if (color_style
-                == gpsg_color_by_duration) //this one is relative to trim, not entire gps track
+            if (color_style == gpsg_color_by_duration) {
+                //this one is relative to trim, not entire gps track
                 perc = calc_perc(pdata->gps_points_p[i].time,
                                  pdata->ui_crops.min_crop_time,
                                  pdata->ui_crops.max_crop_time);
-            if (color_style == gpsg_color_by_altitude)
+            }
+            if (color_style == gpsg_color_by_altitude) {
                 perc = calc_perc(pdata->gps_points_p[i].ele,
                                  pdata->minmax.min_ele,
                                  pdata->minmax.max_ele);
-            if (color_style == gpsg_color_by_hr)
+            }
+            if (color_style == gpsg_color_by_hr) {
                 perc = calc_perc(pdata->gps_points_p[i].hr,
                                  pdata->minmax.min_hr,
                                  pdata->minmax.max_hr);
-            if (color_style == gpsg_color_by_speed)
+            }
+            if (color_style == gpsg_color_by_speed || color_style == gpsg_color_by_speed_max100) {
+                //max 100km/h (27.777 m/s) variant to cover for bad GPS errors
+                double used_max_speed = pdata->minmax.max_speed;
+                if (color_style == gpsg_color_by_speed_max100 && used_max_speed > 27.777)
+                    used_max_speed = 27.777;
                 perc = calc_perc(pdata->gps_points_p[i].speed,
                                  pdata->minmax.min_speed,
-                                 pdata->minmax.max_speed);
-
+                                 used_max_speed);
+            }
+            if (color_style == gpsg_color_by_grade_max90
+                || color_style == gpsg_color_by_grade_max20) {
+                //limit to 90* (100%) or 20* (36.397%) - only if max is over this value
+                double max_allowed_percentage = MAX(abs(pdata->minmax.min_grade_p),
+                                                    abs(pdata->minmax.max_grade_p));
+                max_allowed_percentage = MIN(max_allowed_percentage,
+                                             (color_style == gpsg_color_by_grade_max20 ? 36.397
+                                                                                       : 100));
+                double safe_grade_p = CLAMP(pdata->gps_points_p[i].grade_p,
+                                            -max_allowed_percentage,
+                                            max_allowed_percentage);
+                //this one is special because middle color is always for value 0;
+                if (pdata->gps_points_p[i].grade_p < 0)
+                    perc = calc_perc(safe_grade_p, -max_allowed_percentage, 0) / 2.0;
+                else
+                    perc = calc_perc(safe_grade_p, 0, max_allowed_percentage) / 2.0 + 0.5;
+            }
             //assign the interpolated color at p% in the colors array
             pen_gradients.setColor(interpolate_color_from_gradient(perc, colors));
             p.setPen(pen_gradients);

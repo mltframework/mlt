@@ -482,6 +482,8 @@ static void find_minmax_of_data(mlt_filter filter)
         assign_if_bigger(crt->speed, pdata->minmax.max_speed);
         assign_if_smaller(crt->hr, pdata->minmax.min_hr);
         assign_if_bigger(crt->hr, pdata->minmax.max_hr);
+        assign_if_smaller(crt->grade_p, pdata->minmax.min_grade_p);
+        assign_if_bigger(crt->grade_p, pdata->minmax.max_grade_p);
     }
 #undef assign_if_smaller
 #undef assign_if_bigger
@@ -518,8 +520,10 @@ static void find_minmax_of_data(mlt_filter filter)
     mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "map_coords_hint", middle_point);
 
     mlt_log_info(filter,
-                 "gps file minmax: min_lat,lon-max_lat,lon: %f,%f:%f,%f; ele: %f,%f; speed:%f,%f; "
-                 "hr:%f,%f; map_ar:%f, mid_point:%s \n",
+                 "gps file [%d points] minmax: min_lat,lon-max_lat,lon: %f,%f:%f,%f; ele: %f,%f; "
+                 "speed:%f,%f; "
+                 "hr:%f,%f; grade_p:%f,%f%%, map_ar:%f, mid_point:%s \n",
+                 pdata->gps_points_size,
                  pdata->minmax.min_lat,
                  pdata->minmax.min_lon,
                  pdata->minmax.max_lat,
@@ -530,6 +534,8 @@ static void find_minmax_of_data(mlt_filter filter)
                  pdata->minmax.max_speed,
                  pdata->minmax.min_hr,
                  pdata->minmax.max_hr,
+                 pdata->minmax.min_grade_p,
+                 pdata->minmax.max_grade_p,
                  map_aspect_ratio,
                  middle_point);
 }
