@@ -345,9 +345,9 @@ int decimals_needed(double x)
 /** Returns a nicer number of decimal values for floats, max 1 digit after .
  *  [ 1.2% | 12% ]
 */
-int decimals_needed_maxone(double x) 
+int decimals_needed_maxone(double x)
 {
-    if (fabs(x) < 10) 
+    if (fabs(x) < 10)
         return 1;
     return 0;
 }
@@ -564,22 +564,20 @@ void recalculate_gps_data(gps_private_data gdata)
             crt_point->dist_flat = total_dist_flat;
         }
 
-        
         //5) grade (if altitude present)
         if (crt_point->ele != GPS_UNINIT) {
             double grade_d_elev = 0, grade_d_dist = d_dist;
             if (prev_nrsmooth_point && prev_nrsmooth_point->ele != GPS_UNINIT) {
                 grade_d_elev = crt_point->ele - prev_nrsmooth_point->ele;
                 grade_d_dist = d_dist_smoothed;
-            }
-            else if (prev_point->ele != GPS_UNINIT)
+            } else if (prev_point->ele != GPS_UNINIT)
                 grade_d_elev = crt_point->ele - prev_point->ele;
 
             //NOTE: experimenting with different cut-off points, this seems fine to eliminate some stand still errors
             //but weird cases still remain; larger smoothing filter setting should fix most of those
-            if (grade_d_dist > 1 && crt_point->speed > 0.27) 
+            if (grade_d_dist > 1 && crt_point->speed > 0.27)
                 crt_point->grade_p = 100.0 * grade_d_elev / grade_d_dist;
-            else 
+            else
                 crt_point->grade_p = 0;
             //mlt_log_info(NULL, "grade_v3[%d] = 100 * %f / %f = %f \n", i, grade_d_elev, grade_d_dist, crt_point->grade_p);
         }
@@ -731,9 +729,16 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
                                                max_gps_diff_ms);
     crt_point.hr
         = weighted_middle_double(p1->hr, p1->time, p2->hr, p2->time, new_t, max_gps_diff_ms);
-    crt_point.cad = weighted_middle_double(p1->cad, p1->time, p2->cad, p2->time, new_t, max_gps_diff_ms);
-    crt_point.grade_p = weighted_middle_double(p1->grade_p, p1->time, p2->grade_p, p2->time, new_t, max_gps_diff_ms);
-    crt_point.atemp = weighted_middle_double(p1->atemp, p1->time, p2->atemp, p2->time, new_t, max_gps_diff_ms);
+    crt_point.cad
+        = weighted_middle_double(p1->cad, p1->time, p2->cad, p2->time, new_t, max_gps_diff_ms);
+    crt_point.grade_p = weighted_middle_double(p1->grade_p,
+                                               p1->time,
+                                               p2->grade_p,
+                                               p2->time,
+                                               new_t,
+                                               max_gps_diff_ms);
+    crt_point.atemp
+        = weighted_middle_double(p1->atemp, p1->time, p2->atemp, p2->time, new_t, max_gps_diff_ms);
     return crt_point;
 }
 
@@ -780,14 +785,15 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
     //linear interpolation for heart rate, elevation, cadence and temperature, one time per file, ignores start offset
     if (*gdata.interpolated == 0) {
         //figure out how many seconds are between 2 average fixes so we can set a limit (in time) to interpolation
-        double avg_time = (*gdata.last_gps_time - *gdata.first_gps_time) / 1000 / (double) *gdata.gps_points_size;
+        double avg_time = (*gdata.last_gps_time - *gdata.first_gps_time) / 1000
+                          / (double) *gdata.gps_points_size;
         double nr_one_minute = 60.0 / (avg_time ? avg_time : 1);
-        
+
         gps_point_raw *gp_r = gdata.gps_points_r;
         gps_point_proc *gp_p = gdata.gps_points_p;
         for (i = 0; i < *gdata.gps_points_size; i++) {
             //calloc made everything 0, fill back with GPS_UNINIT if needed
-            gp_p[i].hr = gp_r[i].hr; 
+            gp_p[i].hr = gp_r[i].hr;
             gp_p[i].ele = gp_r[i].ele;
             gp_p[i].cad = gp_r[i].cad;
             gp_p[i].atemp = gp_r[i].atemp;
@@ -809,7 +815,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 
             //altitude
             if (gp_r[i].ele != GPS_UNINIT) {
-                if (ele != GPS_UNINIT && nr_ele > 0 && nr_ele <= nr_one_minute*10) {
+                if (ele != GPS_UNINIT && nr_ele > 0 && nr_ele <= nr_one_minute * 10) {
                     nr_ele++;
                     for (j = i; j > i - nr_ele; j--) {
                         gp_p[j].ele = ele
@@ -824,32 +830,33 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
                 nr_ele++;
 
             //cadence
-            if(gp_r[i].cad != GPS_UNINIT) {
+            if (gp_r[i].cad != GPS_UNINIT) {
                 if (cad != GPS_UNINIT && nr_cad > 0 && nr_cad <= nr_one_minute) {
                     nr_cad++;
-                    for (j=i; j>i-nr_cad; j--) {
-                        gp_p[j].cad = cad + 1.0*(gp_r[i].cad - cad) * (1.0*(j-(i-nr_cad))/nr_cad);
+                    for (j = i; j > i - nr_cad; j--) {
+                        gp_p[j].cad = cad
+                                      + 1.0 * (gp_r[i].cad - cad)
+                                            * (1.0 * (j - (i - nr_cad)) / nr_cad);
                     }
                 }
                 cad = gp_r[i].cad;
                 nr_cad = 0;
-            }
-            else 
+            } else
                 nr_cad++;
 
-                
-            //temperature 
-            if(gp_r[i].atemp != GPS_UNINIT) {
-                if (atemp != GPS_UNINIT && nr_atemp > 0 && nr_atemp <= nr_one_minute*60) {
+            //temperature
+            if (gp_r[i].atemp != GPS_UNINIT) {
+                if (atemp != GPS_UNINIT && nr_atemp > 0 && nr_atemp <= nr_one_minute * 60) {
                     nr_atemp++;
-                    for (j=i; j>i-nr_atemp; j--) {
-                        gp_p[j].atemp = atemp + 1.0*(gp_r[i].atemp - atemp) * (1.0*(j-(i-nr_atemp))/nr_atemp);
+                    for (j = i; j > i - nr_atemp; j--) {
+                        gp_p[j].atemp = atemp
+                                        + 1.0 * (gp_r[i].atemp - atemp)
+                                              * (1.0 * (j - (i - nr_atemp)) / nr_atemp);
                     }
                 }
                 atemp = gp_r[i].atemp;
                 nr_atemp = 0;
-            }
-            else 
+            } else
                 nr_atemp++;
 
             //these are not interpolated but as long as we're iterating we can copy them now
@@ -977,16 +984,15 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                     reader.readNextStartElement();
                     if (reader.name() == QString("TrackPointExtension")) {
                         while (reader.readNext()
-                            && !(reader.name() == QString("TrackPointExtension")
-                            && reader.tokenType() == QXmlStreamReader::EndElement))
-                            {
-                                if (reader.name() == QString("hr"))
-                                    crt_point.hr = reader.readElementText().toDouble();
-                                else if (reader.name() == QString("cad"))
-                                    crt_point.cad = reader.readElementText().toDouble();
-                                else if (reader.name() == QString("atemp"))
-                                    crt_point.atemp = reader.readElementText().toDouble();
-                            }
+                               && !(reader.name() == QString("TrackPointExtension")
+                                    && reader.tokenType() == QXmlStreamReader::EndElement)) {
+                            if (reader.name() == QString("hr"))
+                                crt_point.hr = reader.readElementText().toDouble();
+                            else if (reader.name() == QString("cad"))
+                                crt_point.cad = reader.readElementText().toDouble();
+                            else if (reader.name() == QString("atemp"))
+                                crt_point.atemp = reader.readElementText().toDouble();
+                        }
                     }
                 }
             }
