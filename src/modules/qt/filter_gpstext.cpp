@@ -191,23 +191,25 @@ static void gps_point_to_output(mlt_filter filter,
     }
 
     /* for every keyword: we first check if the "RAW" keyword is used and if so, we print the value read from file (or --)
-	   then we check if there's a format keyword and apply the necessary conversion/format.
-	   The format must appear after the main keyword, RAW and format order is not important (strstr is used)
-	*/
+       then we check if there's a format keyword and apply the necessary conversion/format.
+       The format must appear after the main keyword, RAW and format order is not important (strstr is used)
+    */
     if (!strncmp(keyword, "gps_lat", strlen("gps_lat")) && crt_point.lat != GPS_UNINIT) {
         if (strstr(keyword, "RAW")) {
             if (raw.lat == GPS_UNINIT)
                 return;
             snprintf(gps_text, 10, "%3.6f", raw.lat);
-        } else
+        } else {
             snprintf(gps_text, 10, "%3.6f", crt_point.lat);
+        }
     } else if (!strncmp(keyword, "gps_lon", strlen("gps_lon")) && crt_point.lon != GPS_UNINIT) {
         if (strstr(keyword, "RAW")) {
             if (raw.lon == GPS_UNINIT)
                 return;
             snprintf(gps_text, 10, "%3.6f", swap_180_if_needed(raw.lon));
-        } else
+        } else {
             snprintf(gps_text, 10, "%3.6f", swap_180_if_needed(crt_point.lon));
+        }
     } else if (!strncmp(keyword, "gps_elev", strlen("gps_elev")) && crt_point.ele != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_elev"))
             format = keyword + strlen("gps_elev");
@@ -216,8 +218,9 @@ static void gps_point_to_output(mlt_filter filter,
             if (raw.ele == GPS_UNINIT)
                 return;
             val = convert_distance_to_format(raw.ele, format);
-        } else
+        } else {
             val = convert_distance_to_format(crt_point.ele, format);
+        }
         snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
     } else if (!strncmp(keyword, "gps_speed", strlen("gps_speed"))
                && crt_point.speed != GPS_UNINIT) {
@@ -241,24 +244,27 @@ static void gps_point_to_output(mlt_filter filter,
             if (raw.hr == GPS_UNINIT)
                 return;
             snprintf(gps_text, 10, "%.0f", raw.hr);
-        } else
+        } else {
             snprintf(gps_text, 10, "%.0f", crt_point.hr);
+        }
     } else if (!strncmp(keyword, "gps_bearing", strlen("gps_bearing"))
                && crt_point.bearing != GPS_UNINIT) {
         if (strstr(keyword, "RAW")) {
             if (raw.bearing == GPS_UNINIT)
                 return;
             snprintf(gps_text, 10, "%.0f", raw.bearing);
-        } else
+        } else {
             snprintf(gps_text, 10, "%.0f", crt_point.bearing);
+        }
     } else if (!strncmp(keyword, "gps_compass", strlen("gps_compass"))
                && crt_point.bearing != GPS_UNINIT) {
         if (strstr(keyword, "RAW")) {
             if (raw.bearing == GPS_UNINIT)
                 return;
             snprintf(gps_text, 4, "%s", bearing_to_compass(raw.bearing));
-        } else
+        } else {
             snprintf(gps_text, 4, "%s", bearing_to_compass(crt_point.bearing));
+        }
     } else if (!strncmp(keyword, "gps_cadence", strlen("gps_cadence"))
                && crt_point.cad != GPS_UNINIT) {
         if (strstr(keyword, "RAW")) {
@@ -323,8 +329,9 @@ static void gps_point_to_output(mlt_filter filter,
             if (raw.total_dist == GPS_UNINIT)
                 return;
             val = convert_distance_to_format(raw.total_dist, format);
-        } else
+        } else {
             val = convert_distance_to_format(crt_point.total_dist, format);
+        }
         snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
     } else if (!strncmp(keyword, "gps_grade_percentage", strlen("gps_grade_percentage"))
                && crt_point.grade_p != GPS_UNINIT) {

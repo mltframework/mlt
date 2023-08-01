@@ -932,8 +932,9 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
                 }
                 atemp = gp_r[i].atemp;
                 nr_atemp = 0;
-            } else
+            } else {
                 nr_atemp++;
+            }
 
             //these are not interpolated but as long as we're iterating we can copy them now
             gp_p[i].time = gp_r[i].time;
@@ -1118,8 +1119,8 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
     //if no points had time, we replace the real list with the no_time one
     if (*count_pts == 0 && no_time_count > 0) {
         mlt_log_info(NULL,
-                        "qxml_parse_gpx: all GPS points are missing time values, inserting each "
-                        "point at 1 second interval!");
+                     "qxml_parse_gpx: all GPS points are missing time values, inserting each "
+                     "point at 1 second interval!");
         *gps_list = no_time_head;
         *count_pts = no_time_count;
     } else if (*count_pts > 0 && no_time_count > 0) {
