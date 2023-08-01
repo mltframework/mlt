@@ -561,7 +561,8 @@ void recalculate_gps_data(gps_private_data gdata)
 
         //continuously compute speed average
         if (crt_point->speed > 0.27) {
-            speed_avg = (speed_avg * speed_avg_count + crt_point->speed) / ++speed_avg_count;
+            speed_avg = (speed_avg * speed_avg_count + crt_point->speed) / (speed_avg_count + 1);
+            ++speed_avg_count;
         }
 
         //4) altitude stuff
