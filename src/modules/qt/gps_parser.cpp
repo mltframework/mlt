@@ -1011,7 +1011,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
     int64_t last_time = -1;
-    //support no time .gpx because many services (Strava included) do this for exported routes
+    //support no time in file because many services (Strava included) do this for exported routes
     gps_point_ll *no_time_head = NULL, *no_time_prev = NULL;
     int no_time_count = 0;
     /*
@@ -1142,7 +1142,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
     int64_t last_time = -1;
-    //support no time .gpx because many services (Strava included) do this for exported routes
+    //support no time in file because many services (Strava included) do this for exported routes
     gps_point_ll *no_time_head = NULL, *no_time_prev = NULL;
     int no_time_count = 0;
     /*

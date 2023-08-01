@@ -288,7 +288,6 @@ static void gps_point_to_output(mlt_filter filter,
             atemp = atemp * 1.8 + 32;
         else if (strstr(keyword, "K"))
             atemp = atemp + 273.15;
-
         snprintf(gps_text, 10, "%.*f", decimals_needed_maxone(atemp), atemp);
     } else if (!strncmp(keyword, "gps_vdist_up", strlen("gps_vdist_up"))
                && crt_point.elev_up != GPS_UNINIT) {
