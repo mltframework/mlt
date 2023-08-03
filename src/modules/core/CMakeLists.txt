@@ -76,5 +76,7 @@ install(TARGETS mltcore LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   ${YML}
+  loader.dict
+  loader.ini
   DESTINATION ${MLT_INSTALL_DATA_DIR}/core
 )
