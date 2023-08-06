@@ -915,7 +915,9 @@ static void start_output_thread(consumer_cbrts self)
         priority.sched_priority = rtprio;
         pthread_attr_setschedpolicy(&thread_attributes, SCHED_FIFO);
         pthread_attr_setschedparam(&thread_attributes, &priority);
+#if !defined(__ANDROID__) || (defined(__ANDROID__) && __ANDROID_API__ >= 28)
         pthread_attr_setinheritsched(&thread_attributes, PTHREAD_EXPLICIT_SCHED);
+#endif
         pthread_attr_setscope(&thread_attributes, PTHREAD_SCOPE_SYSTEM);
         if (pthread_create(&self->output_thread, &thread_attributes, output_thread, self) < 0) {
             mlt_log_info(MLT_CONSUMER_SERVICE(&self->parent),
