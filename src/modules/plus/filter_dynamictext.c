@@ -18,6 +18,8 @@
  */
 
 #include <framework/mlt.h>
+
+#include <libgen.h> // for basename()
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -160,6 +162,32 @@ static void get_resource_str(mlt_filter filter, mlt_frame frame, char *text)
             MAX_TEXT_LEN - strlen(text) - 1);
 }
 
+static void get_filename_str(mlt_filter filter, mlt_frame frame, char *text)
+{
+    mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+    mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES(producer);
+    char *filename = mlt_properties_get(producer_properties, "resource");
+    if (access(filename, F_OK) == 0) {
+        strncat(text, basename(filename), MAX_TEXT_LEN - strlen(text) - 1);
+    }
+}
+
+static void get_basename_str(mlt_filter filter, mlt_frame frame, char *text)
+{
+    mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+    mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES(producer);
+    char *filename = strdup(mlt_properties_get(producer_properties, "resource"));
+    if (access(filename, F_OK) == 0) {
+        char *bname = basename(filename);
+        char *ext = strrchr(bname, '.');
+        if (ext) {
+            *ext = '\0';
+        }
+        strncat(text, bname, MAX_TEXT_LEN - strlen(text) - 1);
+    }
+    free(filename);
+}
+
 static void get_createdate_str(const char *keyword, mlt_filter filter, mlt_frame frame, char *text)
 {
     time_t creation_date
@@ -196,6 +224,10 @@ static void substitute_keywords(mlt_filter filter, char *result, char *value, ml
             get_localtime_str(keyword, result);
         } else if (!strcmp(keyword, "resource")) {
             get_resource_str(filter, frame, result);
+        } else if (!strcmp(keyword, "filename")) {
+            get_filename_str(filter, frame, result);
+        } else if (!strcmp(keyword, "basename")) {
+            get_basename_str(filter, frame, result);
         } else if (!strncmp(keyword, "createdate", 10)) {
             get_createdate_str(keyword, filter, frame, result);
         } else {
