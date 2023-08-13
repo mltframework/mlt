@@ -21,7 +21,7 @@
 #include <QImageReader>
 #include <QLocale>
 
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC) && !defined(Q_OS_ANDROID)
 #include <X11/Xlib.h>
 #include <cstdlib>
 #endif
@@ -35,7 +35,7 @@ bool createQApplicationIfNeeded(mlt_service service)
         QCoreApplication::addLibraryPath(QString(mlt_environment("MLT_APPDIR"))
                                          + QStringLiteral("/plugins"));
 #endif
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC) && !defined(Q_OS_ANDROID)
         if (getenv("DISPLAY") == 0) {
             mlt_log_error(
                 service,
