@@ -374,17 +374,21 @@ double convert_distance_to_format(double x, const char *format)
 */
 double convert_speed_to_format(double x, const char *format)
 {
+    //order is important as short keywords will match anywhere (ms in kms and mi in min[utes])
     if (format == NULL || strstr(format, "kms") || strstr(format, "km/s")
         || strstr(format, "kilometer"))
         return x * 3.6; //default km/h
-
     if (strstr(format, "ms") || strstr(format, "m/s") || strstr(format, "meter"))
         return x;
-    else if (strstr(format, "mi") || strstr(format, "mi/h") || strstr(format, "mile"))
+    if (strstr(format, "mmin") || strstr(format, "m/min"))
+        return x * 60;
+    if (strstr(format, "ftmin") || strstr(format, "ft/min"))
+        return x * 196.850393;
+    if (strstr(format, "mi") || strstr(format, "mi/h") || strstr(format, "mile"))
         return x * 2.23693629;
-    else if (strstr(format, "kn") || strstr(format, "nm/h") || strstr(format, "knots"))
+    if (strstr(format, "kn") || strstr(format, "nm/h") || strstr(format, "knots"))
         return x * 1.94384449;
-    else if (strstr(format, "ft") || strstr(format, "ft/s") || strstr(format, "feet"))
+    if (strstr(format, "ft") || strstr(format, "ft/s") || strstr(format, "feet"))
         return x * 3.2808399;
 
     return x * 3.6;
@@ -458,6 +462,10 @@ void recalculate_gps_data(gps_private_data gdata)
            start_dist_up = 0, start_dist_down = 0, start_dist_flat = 0;
     gps_point_proc *crt_point = NULL, *prev_point = NULL, *prev_nrsmooth_point = NULL;
 
+    int grade_bucket[100], speed_avg_count = 0;
+    double speed_avg = 0, last_grade = 0;
+    memset(&grade_bucket, 0, 100 * sizeof(int));
+
     for (i = 0; i < gps_points_size; i++) {
         //store values at processing_start_time to substract them at the end
         if (i - 1 == offset_start) {
@@ -509,12 +517,14 @@ void recalculate_gps_data(gps_private_data gdata)
                                                     prev_point->lon,
                                                     crt_point->lat,
                                                     crt_point->lon);
-        double d_dist_smoothed = d_dist;
+        double d_elev = 0, d_dist_smoothed = 0, d_elev_smoothed = 0;
+        //the int64 diff will be small enough for double
+        double d_time_sec = (crt_point->time - prev_point->time) / 1000.0;
+        double d_time_smoothed_sec = d_time_sec;
 
         //if time difference is way longer for one point than usual, don't do math on that gap (treat recording paused, move far, then resume)
-        //5*average time
-        if ((crt_point->time - prev_point->time)
-            > 5.0 * (*gdata.last_gps_time - *gdata.first_gps_time) / *gdata.gps_points_size) {
+        if (d_time_sec
+            > 10.0 * (*gdata.last_gps_time - *gdata.first_gps_time) / *gdata.gps_points_size) {
             prev_nrsmooth_point = NULL;
             ignore_points_before = i;
             crt_point->total_dist = total_dist;
@@ -526,16 +536,22 @@ void recalculate_gps_data(gps_private_data gdata)
         total_dist += d_dist;
         crt_point->total_dist = total_dist;
 
+        //distance and height difference if smoothed point can be used
+        if (prev_nrsmooth_point) {
+            d_time_smoothed_sec = (crt_point->time - prev_nrsmooth_point->time) / 1000.0;
+            d_dist_smoothed = crt_point->total_dist - prev_nrsmooth_point->total_dist;
+            if (crt_point->ele != GPS_UNINIT && prev_nrsmooth_point->ele != GPS_UNINIT)
+                d_elev_smoothed = crt_point->ele - prev_nrsmooth_point->ele;
+        }
+
         //2)+3) speed and bearing
         if (req_smooth < 2) {
-            crt_point->speed = d_dist / ((crt_point->time - prev_point->time) / 1000.0); //in m/s
+            crt_point->speed = d_dist / d_time_sec; //in m/s
             crt_point->bearing
                 = bearing_2p(prev_point->lat, prev_point->lon, crt_point->lat, crt_point->lon);
         } else if (prev_nrsmooth_point) {
             //for "smoothing" we calculate distance between 2 points "nr_smoothing" distance behind
-            d_dist_smoothed = crt_point->total_dist - prev_nrsmooth_point->total_dist;
-            int64_t d_time = crt_point->time - prev_nrsmooth_point->time;
-            crt_point->speed = d_dist_smoothed / (d_time / 1000.0);
+            crt_point->speed = d_dist_smoothed / d_time_smoothed_sec;
 
             crt_point->bearing = bearing_2p(prev_nrsmooth_point->lat,
                                             prev_nrsmooth_point->lon,
@@ -543,9 +559,15 @@ void recalculate_gps_data(gps_private_data gdata)
                                             crt_point->lon);
         }
 
+        //continuously compute speed average
+        if (crt_point->speed > 0.27) {
+            speed_avg = (speed_avg * speed_avg_count + crt_point->speed) / (speed_avg_count + 1);
+            ++speed_avg_count;
+        }
+
         //4) altitude stuff
         if (crt_point->ele != GPS_UNINIT && prev_point->ele != GPS_UNINIT) {
-            double d_elev = crt_point->ele - prev_point->ele;
+            d_elev = crt_point->ele - prev_point->ele;
             total_d_elev += d_elev;
             if (crt_point->ele > prev_point->ele) {
                 total_elev_up += d_elev;
@@ -553,9 +575,9 @@ void recalculate_gps_data(gps_private_data gdata)
             } else if (crt_point->ele < prev_point->ele) {
                 total_elev_down += d_elev;
                 total_dist_down += d_dist;
-            } else
+            } else {
                 total_dist_flat += d_dist;
-
+            }
             crt_point->d_elev = total_d_elev;
             crt_point->elev_up = total_elev_up;
             crt_point->elev_down = total_elev_down;
@@ -564,25 +586,68 @@ void recalculate_gps_data(gps_private_data gdata)
             crt_point->dist_flat = total_dist_flat;
         }
 
-        //5) grade (if altitude present)
+        //5) grade, vertical and 3d speed (if altitude present)
         if (crt_point->ele != GPS_UNINIT) {
-            double grade_d_elev = 0, grade_d_dist = d_dist;
+            bool ok = 1;
+            double used_d_elev = d_elev, used_d_dist = d_dist, used_d_time_sec = d_time_sec;
             if (prev_nrsmooth_point && prev_nrsmooth_point->ele != GPS_UNINIT) {
-                grade_d_elev = crt_point->ele - prev_nrsmooth_point->ele;
-                grade_d_dist = d_dist_smoothed;
-            } else if (prev_point->ele != GPS_UNINIT)
-                grade_d_elev = crt_point->ele - prev_point->ele;
+                used_d_elev = d_elev_smoothed;
+                used_d_dist = d_dist_smoothed;
+                used_d_time_sec = d_time_smoothed_sec;
+            } else if (prev_point->ele == GPS_UNINIT) {
+                //this looks cleaner; no previous elevation available
+                ok = 0;
+            }
 
-            //NOTE: experimenting with different cut-off points, this seems fine to eliminate some stand still errors
-            //but weird cases still remain; larger smoothing filter setting should fix most of those
-            if (grade_d_dist > 1 && crt_point->speed > 0.27)
-                crt_point->grade_p = 100.0 * grade_d_elev / grade_d_dist;
-            else
-                crt_point->grade_p = 0;
-            //mlt_log_info(NULL, "grade_v3[%d] = 100 * %f / %f = %f \n", i, grade_d_elev, grade_d_dist, crt_point->grade_p);
+            if (ok) {
+                //cut-off grade computation (->just duplicate it) under 2km/h and half the avg speed (but don't cut-off over 15km/h)
+                if (used_d_dist > 0.28 * (req_smooth + 1) //this covers division by 0
+                    && used_d_dist > MIN(speed_avg / 2, 4) * req_smooth) {
+                    crt_point->grade_p = 100.0 * used_d_elev / used_d_dist;
+                    int indx = CLAMP(abs(crt_point->grade_p) / 10, 0, 99);
+                    grade_bucket[indx]++;
+                    last_grade = crt_point->grade_p;
+                } else {
+                    //better option: set this to GPS_UNINIT and run an interpolation at the end to re-fill
+                    crt_point->grade_p = last_grade / 2;
+                }
+                //vertical + 3d speed
+                crt_point->speed_vertical = used_d_elev / used_d_time_sec;
+                crt_point->speed_3d = sqrt(used_d_dist * used_d_dist + used_d_elev * used_d_elev)
+                                      / used_d_time_sec;
+            }
         }
-
         prev_point = crt_point;
+    }
+
+    //for gps grade only: trim down the highest 1st percentile of values
+    if (req_smooth > 1) {
+        int nr_1p = gps_points_size / 100;
+        int max_grade_1p = -1;
+        for (i = 99; i > 1; --i) {
+            if (grade_bucket[i] > nr_1p) {
+                max_grade_1p = (i + 1) * 10;
+                break;
+            }
+        }
+        if (max_grade_1p > 1) {
+            for (i = 0; i < gps_points_size; i++) {
+                if (gps_points[i].grade_p != GPS_UNINIT
+                    && abs(gps_points[i].grade_p) > max_grade_1p) {
+                    //if speed is over 15km/h assume grade is correct
+                    if (gps_points[i].speed < MAX(speed_avg / 2, 4)) {
+                        // mlt_log_info(NULL,
+                        //              "clamping [%d].grade_p from %f to %d; speed = %f",
+                        //              i,
+                        //              gps_points[i].grade_p,
+                        //              max_grade_1p,
+                        //              gps_points[i].speed);
+                        gps_points[i].grade_p = (gps_points[i].grade_p >= 0 ? max_grade_1p
+                                                                            : -max_grade_1p);
+                    }
+                }
+            }
+        }
     }
 
     //clean up computed values for relative stuff (distances mostly) before gps_processing_start time
@@ -679,6 +744,18 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
         = weighted_middle_double(p1->lon, p1->time, p2->lon, p2->time, new_t, max_gps_diff_ms);
     crt_point.speed
         = weighted_middle_double(p1->speed, p1->time, p2->speed, p2->time, new_t, max_gps_diff_ms);
+    crt_point.speed_vertical = weighted_middle_double(p1->speed_vertical,
+                                                      p1->time,
+                                                      p2->speed_vertical,
+                                                      p2->time,
+                                                      new_t,
+                                                      max_gps_diff_ms);
+    crt_point.speed_3d = weighted_middle_double(p1->speed_3d,
+                                                p1->time,
+                                                p2->speed_3d,
+                                                p2->time,
+                                                new_t,
+                                                max_gps_diff_ms);
     crt_point.total_dist = weighted_middle_double(p1->total_dist,
                                                   p1->time,
                                                   p2->total_dist,
@@ -799,7 +876,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             gp_p[i].atemp = gp_r[i].atemp;
 
             //heart rate
-            if (gp_r[i].hr != GPS_UNINIT) { //found valid hr
+            if (gp_r[i].hr != GPS_UNINIT) {      //found valid hr
                 if (hr != GPS_UNINIT && nr_hr > 0
                     && nr_hr <= nr_one_minute) { //there were missing values and had a hr before
                     nr_hr++;
@@ -856,8 +933,9 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
                 }
                 atemp = gp_r[i].atemp;
                 nr_atemp = 0;
-            } else
+            } else {
                 nr_atemp++;
+            }
 
             //these are not interpolated but as long as we're iterating we can copy them now
             gp_p[i].time = gp_r[i].time;
@@ -871,9 +949,8 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
     const int gps_points_size = *gdata.gps_points_size;
 
     for (i = 0; i < gps_points_size; i++) {
-        if (req_smooth
-            == 1) //copy raw lat/lon to calc lat/lon and interpolate 1 location if necessary
-        {
+        if (req_smooth == 1) {
+            //copy raw lat/lon to calc lat/lon and interpolate 1 location if necessary
             gps_points_p[i].lat = gps_points_r[i].lat;
             gps_points_p[i].lon = gps_points_r[i].lon;
 
@@ -881,7 +958,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             if (i - 1 >= 0 && i + 1 < gps_points_size //if we're not at start/end
                 && !has_valid_location(gps_points_r[i]) && has_valid_location(gps_points_r[i - 1])
                 && has_valid_location(
-                    gps_points_r[i + 1]) //if current point has no lat/lon but nearby ones do
+                    gps_points_r[i + 1])  //if current point has no lat/lon but nearby ones do
                 && llabs(gps_points_r[i + 1].time - gps_points_r[i - 1].time)
                        < max_gps_diff_ms) //if time difference is lower than max_gps_diff_ms
             {
@@ -901,8 +978,8 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 
                 //mlt_log_info(gdata.filter, "interpolating position for smooth=1, new point[%d]:%f,%f @time=%d s", i, gps_points_p[i].lat, gps_points_p[i].lon, gps_points_r[i].time/1000);
             }
-        } else if (req_smooth > 1) //for each point average "req_smooth/2" values before and after
-        {
+        } else if (req_smooth > 1) {
+            //for each point average "req_smooth/2" values before and after
             double lat_sum = 0, lon_sum = 0;
             int nr_div = 0;
 
@@ -935,6 +1012,9 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
     int64_t last_time = -1;
+    //support no time in file because many services (Strava included) do this for exported routes
+    gps_point_ll *no_time_head = NULL, *no_time_prev = NULL;
+    int no_time_count = 0;
     /*
     // sample point from .GPX file (version 1.0) + TrackPointExtension
     <trkpt lat="45.227621666484104" lon="25.16533185322889">
@@ -1007,7 +1087,23 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                 (*gps_list)->next = NULL;
                 gps_list = &(*gps_list)->next;
                 last_time = crt_point.time;
-            } else
+            } else if (crt_point.time == GPS_UNINIT) {
+                //if no time is stored, we make it up starting from 1
+                gps_point_ll *tmp = (gps_point_ll *) calloc(1, sizeof(gps_point_ll));
+                if (tmp == NULL)
+                    return;
+                if (no_time_head == NULL) {
+                    no_time_head = tmp;
+                    no_time_prev = tmp;
+                } else {
+                    no_time_prev->next = tmp;
+                    no_time_prev = tmp;
+                }
+                no_time_count += 1;
+                crt_point.time = no_time_count * 1000;
+                tmp->gp = crt_point;
+                tmp->next = NULL;
+            } else {
                 mlt_log_info(NULL,
                              "qxml_parse_gpx: skipping point due to time [%d] %f,%f - crt:%u.%u, "
                              "last:%u.%u\n",
@@ -1018,6 +1114,27 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                              (unsigned) (crt_point.time % 1000),
                              (unsigned) (last_time / 1000),
                              (unsigned) (last_time % 1000));
+            }
+        }
+    }
+    //if no points had time, we replace the real list with the no_time one
+    if (*count_pts == 0 && no_time_count > 0) {
+        mlt_log_info(NULL,
+                     "qxml_parse_gpx: all GPS points are missing time values, inserting each "
+                     "point at 1 second interval!");
+        *gps_list = no_time_head;
+        *count_pts = no_time_count;
+    } else if (*count_pts > 0 && no_time_count > 0) {
+        mlt_log_info(NULL,
+                     "qxml_parse_gpx: %d GPS points have no time in original file and have been "
+                     "discarded (total valid points kept: %d)!",
+                     no_time_count,
+                     *count_pts);
+        //cleanup the no_time list as we're not using it
+        while (no_time_head) {
+            gps_point_ll *tmp = no_time_head;
+            no_time_head = no_time_head->next;
+            free(tmp);
         }
     }
 }
@@ -1026,7 +1143,9 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts)
 {
     int64_t last_time = -1;
-
+    //support no time in file because many services (Strava included) do this for exported routes
+    gps_point_ll *no_time_head = NULL, *no_time_prev = NULL;
+    int no_time_count = 0;
     /*
     //sample point from .TCX file
     <Trackpoint>
@@ -1094,6 +1213,22 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                 (*gps_list)->next = NULL;
                 gps_list = &(*gps_list)->next;
                 last_time = crt_point.time;
+            } else if (crt_point.time == GPS_UNINIT) {
+                //if no time is stored, we make it up starting from 1
+                gps_point_ll *tmp = (gps_point_ll *) calloc(1, sizeof(gps_point_ll));
+                if (tmp == NULL)
+                    return;
+                if (no_time_head == NULL) {
+                    no_time_head = tmp;
+                    no_time_prev = tmp;
+                } else {
+                    no_time_prev->next = tmp;
+                    no_time_prev = tmp;
+                }
+                no_time_count += 1;
+                crt_point.time = no_time_count * 1000;
+                tmp->gp = crt_point;
+                tmp->next = NULL;
             } else
                 mlt_log_info(NULL,
                              "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%u.%u, "
@@ -1105,6 +1240,26 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                              (unsigned) (crt_point.time % 1000),
                              (unsigned) (last_time / 1000),
                              (unsigned) (last_time % 1000));
+        }
+    }
+    //if no points had time, we replace the real list with the no_time one
+    if (*count_pts == 0 && no_time_count > 0) {
+        mlt_log_info(NULL,
+                     "qxml_parse_gpx: all GPS points are missing time values, inserting each "
+                     "point at 1 second interval!");
+        *gps_list = no_time_head;
+        *count_pts = no_time_count;
+    } else if (*count_pts > 0 && no_time_count > 0) {
+        //cleanup the no_time list as we're not using it
+        mlt_log_info(NULL,
+                     "qxml_parse_gpx: %d GPS points have no time in original file and have been "
+                     "discarded (total valid points kept: %d)!",
+                     no_time_count,
+                     *count_pts);
+        while (no_time_head) {
+            gps_point_ll *tmp = no_time_head;
+            no_time_head = no_time_head->next;
+            free(tmp);
         }
     }
 }
@@ -1163,6 +1318,13 @@ int qxml_parse_file(gps_private_data gdata)
 
     qxml_reader.clear(); //not sure if really needed if not reused
 
+    if (count_pts < 2) {
+        mlt_log_warning(gdata.filter,
+                        "qxml_parse_file: less than 2 gps points read (%d). Aborting. \n",
+                        count_pts);
+        return 0;
+    }
+
     *gdata.ptr_to_gps_points_r = (gps_point_raw *) calloc(count_pts, sizeof(gps_point_raw));
     gps_array = *gdata.ptr_to_gps_points_r; //just an alias
     if (gps_array == NULL) {
@@ -1209,11 +1371,22 @@ int qxml_parse_file(gps_private_data gdata)
         swap_to_180 = 0;
 
     // //debug result:
-    // 	for (int i = 0; i<*gdata.gps_points_size; i+=100) {
-    // 		gps_point_raw* crt_point = &gps_array[i];
-    // 		mlt_log_info(NULL, "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, distance:%f, hr:%f, bearing:%f, cadence:%f, temp:%f\n",
-    // 				i, crt_point->time/1000, crt_point->lat, crt_point->lon, crt_point->ele, crt_point->total_dist, crt_point->hr, crt_point->bearing, crt_point->cad, crt_point->atemp);
-    // 	}
+    // for (int i = 0; i < *gdata.gps_points_size; i += 100) {
+    //     gps_point_raw *crt_point = &gps_array[i];
+    //     mlt_log_info(NULL,
+    //                  "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, "
+    //                  "distance:%f, hr:%f, bearing:%f, cadence:%f, temp:%f\n",
+    //                  i,
+    //                  crt_point->time / 1000,
+    //                  crt_point->lat,
+    //                  crt_point->lon,
+    //                  crt_point->ele,
+    //                  crt_point->total_dist,
+    //                  crt_point->hr,
+    //                  crt_point->bearing,
+    //                  crt_point->cad,
+    //                  crt_point->atemp);
+    // }
 
     return 1;
 }

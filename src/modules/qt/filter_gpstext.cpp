@@ -226,14 +226,18 @@ static void gps_point_to_output(mlt_filter filter,
                && crt_point.speed != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_speed"))
             format = keyword + strlen("gps_speed");
-        double val;
+        double val = 0;
         if (strstr(keyword, "RAW")) {
             if (raw.speed == GPS_UNINIT)
                 return;
-            val = convert_speed_to_format(raw.speed, format);
         } else {
-            val = convert_speed_to_format(crt_point.speed, format);
+            val = crt_point.speed;
+            if (strstr(keyword, "vertical"))
+                val = crt_point.speed_vertical;
+            else if (strstr(keyword, "3d"))
+                val = crt_point.speed_3d;
         }
+        val = convert_speed_to_format(val, format);
         snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
     } else if (!strncmp(keyword, "gps_hr", strlen("gps_hr")) && crt_point.hr != GPS_UNINIT) {
         if (strstr(keyword, "RAW")) {
