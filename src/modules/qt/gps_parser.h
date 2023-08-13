@@ -93,7 +93,7 @@ typedef struct
     //read only:
     int64_t gps_proc_start_t; //process only points after this time (epoch miliseconds)
     int last_smooth_lvl;
-    char *last_filename;      //gps file fullpath
+    char *last_filename; //gps file fullpath
     mlt_filter filter;
 } gps_private_data;
 

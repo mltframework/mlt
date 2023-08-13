@@ -876,7 +876,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             gp_p[i].atemp = gp_r[i].atemp;
 
             //heart rate
-            if (gp_r[i].hr != GPS_UNINIT) {      //found valid hr
+            if (gp_r[i].hr != GPS_UNINIT) { //found valid hr
                 if (hr != GPS_UNINIT && nr_hr > 0
                     && nr_hr <= nr_one_minute) { //there were missing values and had a hr before
                     nr_hr++;
@@ -958,7 +958,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             if (i - 1 >= 0 && i + 1 < gps_points_size //if we're not at start/end
                 && !has_valid_location(gps_points_r[i]) && has_valid_location(gps_points_r[i - 1])
                 && has_valid_location(
-                    gps_points_r[i + 1])  //if current point has no lat/lon but nearby ones do
+                    gps_points_r[i + 1]) //if current point has no lat/lon but nearby ones do
                 && llabs(gps_points_r[i + 1].time - gps_points_r[i - 1].time)
                        < max_gps_diff_ms) //if time difference is lower than max_gps_diff_ms
             {

@@ -1756,7 +1756,10 @@ static void mlt_thread_create(mlt_consumer self, mlt_thread_function_t function)
             pthread_attr_init(&thread_attributes);
             pthread_attr_setschedpolicy(&thread_attributes, SCHED_OTHER);
             pthread_attr_setschedparam(&thread_attributes, &priority);
-#if !defined(__ANDROID__) || (defined(__ANDROID__) && __ANDROID_API__ >= 28) // pthread_attr_setinheritsched is not available until API level 28
+#if !defined(__ANDROID__) \
+    || (defined(__ANDROID__) \
+        && __ANDROID_API__ \
+               >= 28) // pthread_attr_setinheritsched is not available until API level 28
             pthread_attr_setinheritsched(&thread_attributes, PTHREAD_EXPLICIT_SCHED);
 #endif
             pthread_attr_setscope(&thread_attributes, PTHREAD_SCOPE_SYSTEM);
