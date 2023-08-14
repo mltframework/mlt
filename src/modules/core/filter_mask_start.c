@@ -31,56 +31,71 @@ static int get_image(mlt_frame frame,
                      int *height,
                      int writable)
 {
-    mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_filter filter = mlt_frame_pop_service(frame);
+    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+    const char *name = mlt_properties_get(filter_properties, "filter");
     int error = mlt_frame_get_image(frame, image, format, width, height, writable);
-    if (!error) {
+    if (!error && name && strcmp("", name)) {
         mlt_frame clone = mlt_frame_clone(frame, 1);
         clone->convert_audio = frame->convert_audio;
         clone->convert_image = frame->convert_image;
-        mlt_properties_set_data(properties,
-                                "mask frame",
-                                clone,
-                                0,
-                                (mlt_destructor) mlt_frame_close,
-                                NULL);
+
+        mlt_service_lock(MLT_FILTER_SERVICE(filter));
+        mlt_filter instance = mlt_properties_get_data(filter_properties, "instance", NULL);
+        // Create the filter if needed.
+        if (!instance || !mlt_properties_get(MLT_FILTER_PROPERTIES(instance), "mlt_service")
+            || strcmp(name, mlt_properties_get(MLT_FILTER_PROPERTIES(instance), "mlt_service"))) {
+            mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+            instance = mlt_factory_filter(profile, name, NULL);
+            mlt_properties_set_data(filter_properties,
+                                    "instance",
+                                    instance,
+                                    0,
+                                    (mlt_destructor) mlt_filter_close,
+                                    NULL);
+        }
+        if (instance) {
+            mlt_properties instance_props = MLT_FILTER_PROPERTIES(instance);
+            mlt_properties_pass_list(instance_props, filter_properties, "in out");
+            mlt_properties_pass(instance_props, filter_properties, "filter.");
+            mlt_properties_clear(filter_properties, "filter.producer.refresh");
+            mlt_filter_process(instance, clone);
+        } else {
+            mlt_properties_debug(filter_properties, "failed to create filter", stderr);
+        }
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+
+        // Get the image from the clone frame to generate the mask
+        uint8_t *cimage = NULL;
+        mlt_image_format cformat = mlt_image_rgba;
+        int cwidth = *width;
+        int cheight = *height;
+        error = mlt_frame_get_image(clone, &cimage, &cformat, &cwidth, &cheight, 1);
+        if (!error && cimage) {
+            // Invert the alpha mask
+            for (int i = 0; i < cwidth * cheight * 4; i += 4) {
+                cimage[i + 3] = 255 - cimage[i + 3];
+            }
+
+            mlt_properties_set_data(frame_properties,
+                                    "mask frame",
+                                    clone,
+                                    0,
+                                    (mlt_destructor) mlt_frame_close,
+                                    NULL);
+        } else {
+            mlt_frame_close(clone);
+        }
     }
     return error;
 }
 
 static mlt_frame process(mlt_filter filter, mlt_frame frame)
 {
-    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
-    mlt_filter instance = mlt_properties_get_data(properties, "instance", NULL);
-    const char *name = mlt_properties_get(properties, "filter");
-
-    if (!name || !strcmp("", name))
-        return frame;
-
-    // Create the filter if needed.
-    if (!instance || !mlt_properties_get(MLT_FILTER_PROPERTIES(instance), "mlt_service")
-        || strcmp(name, mlt_properties_get(MLT_FILTER_PROPERTIES(instance), "mlt_service"))) {
-        mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-        instance = mlt_factory_filter(profile, name, NULL);
-        mlt_properties_set_data(properties,
-                                "instance",
-                                instance,
-                                0,
-                                (mlt_destructor) mlt_filter_close,
-                                NULL);
-    }
-
-    if (instance) {
-        mlt_properties instance_props = MLT_FILTER_PROPERTIES(instance);
-
-        mlt_properties_pass_list(instance_props, properties, "in out");
-        mlt_properties_pass(instance_props, properties, "filter.");
-        mlt_properties_clear(properties, "filter.producer.refresh");
-        mlt_frame_push_get_image(frame, get_image);
-        return mlt_filter_process(instance, frame);
-    } else {
-        mlt_properties_debug(properties, "failed to create filter", stderr);
-        return frame;
-    }
+    mlt_frame_push_service(frame, filter);
+    mlt_frame_push_get_image(frame, get_image);
+    return frame;
 }
 
 mlt_filter filter_mask_start_init(mlt_profile profile,
