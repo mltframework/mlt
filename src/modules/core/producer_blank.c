@@ -27,7 +27,7 @@ static int producer_get_frame(mlt_producer self, mlt_frame_ptr frame, int index)
     // Generate a frame
     *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(self));
 
-    if (*frame != NULL) {
+    if (*frame) {
         mlt_properties frame_properties = MLT_FRAME_PROPERTIES(*frame);
 
         mlt_frame_set_position(*frame, mlt_producer_position(self));
@@ -55,7 +55,7 @@ mlt_producer producer_blank_init(mlt_profile profile,
                                  char *arg)
 {
     mlt_producer self = calloc(1, sizeof(struct mlt_producer_s));
-    if (self != NULL && mlt_producer_init(self, NULL) == 0) {
+    if (self && !mlt_producer_init(self, NULL)) {
         mlt_properties_set(MLT_PRODUCER_PROPERTIES(self), "mlt_service", "blank");
         mlt_properties_set(MLT_PRODUCER_PROPERTIES(self), "resource", "blank");
         // Callback registration

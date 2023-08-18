@@ -3491,7 +3491,6 @@ static int audio_codec_init(producer_avformat self, int index, mlt_properties pr
             apply_properties(codec_context->priv_data,
                              properties,
                              AV_OPT_FLAG_AUDIO_PARAM | AV_OPT_FLAG_DECODING_PARAM);
-
     }
     return self->audio_codec[index] && self->audio_index > -1;
 }

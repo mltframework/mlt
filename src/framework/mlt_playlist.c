@@ -56,15 +56,7 @@ static int mlt_playlist_unmix(mlt_playlist self, int clip);
 static int mlt_playlist_resize_mix(mlt_playlist self, int clip, int in, int out);
 static mlt_producer blank_producer(mlt_playlist self);
 
-/** Construct a playlist.
- *
- * Sets the resource property to "<playlist>".
- * Set the mlt_type to property to "mlt_producer".
- * \public \memberof mlt_playlist_s
- * \return a new playlist
- */
-
-mlt_playlist mlt_playlist_init()
+mlt_playlist mlt_playlist_alloc()
 {
     mlt_playlist self = calloc(1, sizeof(struct mlt_playlist_s));
     if (self != NULL) {
@@ -108,6 +100,20 @@ error1:
     return NULL;
 }
 
+/** Construct a playlist.
+ *
+ * Sets the resource property to "<playlist>".
+ * Set the mlt_type to property to "mlt_producer".
+ * \deprecated use mlt_playlist_new()
+ * \public \memberof mlt_playlist_s
+ * \return a new playlist
+ */
+
+mlt_playlist mlt_playlist_init()
+{
+    return mlt_playlist_alloc();
+}
+
 /** Construct a playlist with a profile.
  *
  * Sets the resource property to "<playlist>".
@@ -119,7 +125,7 @@ error1:
 
 mlt_playlist mlt_playlist_new(mlt_profile profile)
 {
-    mlt_playlist self = mlt_playlist_init();
+    mlt_playlist self = mlt_playlist_alloc();
     if (self)
         mlt_properties_set_data(MLT_PLAYLIST_PROPERTIES(self), "_profile", profile, 0, NULL, NULL);
     return self;
