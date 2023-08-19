@@ -2,7 +2,7 @@ schema_version: 7.0
 type: filter
 identifier: box_blur
 title: Box Blur
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -33,3 +33,10 @@ parameters:
     animation: yes
     minimum: 0
     default: 1
+
+  - identifier: preserve_alpha
+    title: Preserve Alpha
+    type: boolean
+    description: Exclude the alpha channel from the blur operation
+    mutable: yes
+    default: 0
