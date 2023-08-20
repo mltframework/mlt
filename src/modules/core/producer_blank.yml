@@ -1,0 +1,15 @@
+schema_version: 0.3
+type: producer
+identifier: blank
+title: Blank
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Audio
+description: >
+  A "Blank" producer returns frames that are white and silent. These frames
+  are suitable for creating blank spaces in a playlist.
+  mlt_producer_is_blank() will return 1 on this producer.

@@ -21,8 +21,10 @@
  */
 
 #include "mlt_playlist.h"
+#include "mlt_factory.h"
 #include "mlt_field.h"
 #include "mlt_frame.h"
+#include "mlt_log.h"
 #include "mlt_multitrack.h"
 #include "mlt_tractor.h"
 #include "mlt_transition.h"
@@ -52,16 +54,9 @@ struct playlist_entry_s
 static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int index);
 static int mlt_playlist_unmix(mlt_playlist self, int clip);
 static int mlt_playlist_resize_mix(mlt_playlist self, int clip, int in, int out);
+static mlt_producer blank_producer(mlt_playlist self);
 
-/** Construct a playlist.
- *
- * Sets the resource property to "<playlist>".
- * Set the mlt_type to property to "mlt_producer".
- * \public \memberof mlt_playlist_s
- * \return a new playlist
- */
-
-mlt_playlist mlt_playlist_init()
+mlt_playlist mlt_playlist_alloc()
 {
     mlt_playlist self = calloc(1, sizeof(struct mlt_playlist_s));
     if (self != NULL) {
@@ -77,12 +72,6 @@ mlt_playlist mlt_playlist_init()
         // Define the destructor
         producer->close = (mlt_destructor) mlt_playlist_close;
         producer->close_object = self;
-
-        // Initialise blank
-        if (mlt_producer_init(&self->blank, NULL) != 0)
-            goto error1;
-        mlt_properties_set(MLT_PRODUCER_PROPERTIES(&self->blank), "mlt_service", "blank");
-        mlt_properties_set(MLT_PRODUCER_PROPERTIES(&self->blank), "resource", "blank");
 
         // Indicate that this producer is a playlist
         mlt_properties_set_data(MLT_PLAYLIST_PROPERTIES(self), "playlist", self, 0, NULL, NULL);
@@ -111,6 +100,20 @@ error1:
     return NULL;
 }
 
+/** Construct a playlist.
+ *
+ * Sets the resource property to "<playlist>".
+ * Set the mlt_type to property to "mlt_producer".
+ * \deprecated use mlt_playlist_new()
+ * \public \memberof mlt_playlist_s
+ * \return a new playlist
+ */
+
+mlt_playlist mlt_playlist_init()
+{
+    return mlt_playlist_alloc();
+}
+
 /** Construct a playlist with a profile.
  *
  * Sets the resource property to "<playlist>".
@@ -122,7 +125,7 @@ error1:
 
 mlt_playlist mlt_playlist_new(mlt_profile profile)
 {
-    mlt_playlist self = mlt_playlist_init();
+    mlt_playlist self = mlt_playlist_alloc();
     if (self)
         mlt_properties_set_data(MLT_PLAYLIST_PROPERTIES(self), "_profile", profile, 0, NULL, NULL);
     return self;
@@ -258,20 +261,21 @@ static int mlt_playlist_virtual_append(mlt_playlist self,
     // If we have a cut, then use the in/out points from the cut
     if (mlt_producer_is_blank(source)) {
         mlt_position length = out - in + 1;
+        mlt_producer blank = blank_producer(self);
 
         // Make sure the blank is long enough to accommodate the length specified
-        if (length > mlt_producer_get_length(&self->blank)) {
-            mlt_properties blank_props = MLT_PRODUCER_PROPERTIES(&self->blank);
+        if (length > mlt_producer_get_length(blank)) {
+            mlt_properties blank_props = MLT_PRODUCER_PROPERTIES(blank);
             mlt_events_block(blank_props, blank_props);
-            mlt_producer_set_in_and_out(&self->blank, in, out);
+            mlt_producer_set_in_and_out(blank, in, out);
             mlt_events_unblock(blank_props, blank_props);
         }
 
-        // Now make sure the cut comes from this self->blank
+        // Now make sure the cut comes from this blank
         if (source == NULL) {
-            producer = mlt_producer_cut(&self->blank, in, out);
-        } else if (!mlt_producer_is_cut(source) || mlt_producer_cut_parent(source) != &self->blank) {
-            producer = mlt_producer_cut(&self->blank, in, out);
+            producer = mlt_producer_cut(blank, in, out);
+        } else if (!mlt_producer_is_cut(source) || mlt_producer_cut_parent(source) != blank) {
+            producer = mlt_producer_cut(blank, in, out);
         } else {
             producer = source;
             mlt_properties_inc_ref(MLT_PRODUCER_PROPERTIES(producer));
@@ -461,7 +465,7 @@ static mlt_service mlt_playlist_virtual_seek(mlt_playlist self,
         producer = entry->producer;
         mlt_producer_seek(producer, 0);
     } else {
-        producer = &self->blank;
+        producer = blank_producer(self);
     }
 
     if (i < self->count && clip_index && clip_position) {
@@ -487,8 +491,7 @@ static mlt_service mlt_playlist_virtual_seek(mlt_playlist self,
 
 static mlt_producer mlt_playlist_virtual_set_out(mlt_playlist self)
 {
-    // Default producer to blank
-    mlt_producer producer = &self->blank;
+    mlt_producer producer = NULL;
 
     // Map playlist position to real producer in virtual playlist
     mlt_position position = mlt_producer_frame(&self->parent);
@@ -505,6 +508,10 @@ static mlt_producer mlt_playlist_virtual_set_out(mlt_playlist self)
             // Decrement position by length of this entry
             position -= self->list[i]->frame_count;
         }
+    }
+
+    if (!producer) {
+        producer = blank_producer(self);
     }
 
     // Seek in real producer to relative position
@@ -561,7 +568,7 @@ mlt_producer mlt_playlist_current(mlt_playlist self)
     if (i < self->count)
         return self->list[i]->producer;
     else
-        return &self->blank;
+        return blank_producer(self);
 }
 
 /** Get the position which corresponds to the start of the next clip.
@@ -717,9 +724,9 @@ int mlt_playlist_append_io(mlt_playlist self,
 int mlt_playlist_blank(mlt_playlist self, mlt_position out)
 {
     // Append to the virtual list
-    if (out >= 0)
-        return mlt_playlist_virtual_append(self, &self->blank, 0, out);
-    else
+    if (out >= 0) {
+        return mlt_playlist_virtual_append(self, blank_producer(self), 0, out);
+    } else
         return 1;
 }
 
@@ -982,12 +989,13 @@ int mlt_playlist_resize_clip(mlt_playlist self, int clip, mlt_position in, mlt_p
 
         if (mlt_producer_is_blank(producer)) {
             mlt_position length = out - in + 1;
+            mlt_producer blank = blank_producer(self);
 
             // Make sure the parent blank is long enough to accommodate the length specified
-            if (length > mlt_producer_get_length(&self->blank)) {
-                mlt_properties blank_props = MLT_PRODUCER_PROPERTIES(&self->blank);
+            if (length > mlt_producer_get_length(blank)) {
+                mlt_properties blank_props = MLT_PRODUCER_PROPERTIES(blank);
                 mlt_properties_set_int(blank_props, "length", length);
-                mlt_producer_set_in_and_out(&self->blank, 0, out - in);
+                mlt_producer_set_in_and_out(blank, 0, out - in);
             }
             // Make sure this cut of blank is long enough
             if (length > mlt_producer_get_length(producer))
@@ -1043,7 +1051,7 @@ int mlt_playlist_split(mlt_playlist self, int clip, mlt_position position)
                 mlt_properties_unlock(entry_properties);
                 mlt_producer_close(split);
             } else {
-                mlt_playlist_insert(self, &self->blank, clip + 1, 0, out - position - 1);
+                mlt_playlist_insert(self, blank_producer(self), clip + 1, 0, out - position - 1);
             }
             mlt_events_unblock(MLT_PLAYLIST_PROPERTIES(self), self);
             mlt_playlist_virtual_refresh(self);
@@ -2095,9 +2103,30 @@ void mlt_playlist_close(mlt_playlist self)
             mlt_producer_close(self->list[i]->producer);
             free(self->list[i]);
         }
-        mlt_producer_close(&self->blank);
         mlt_producer_close(&self->parent);
         free(self->list);
         free(self);
     }
+}
+
+mlt_producer blank_producer(mlt_playlist self)
+{
+    mlt_producer blank = (mlt_producer) mlt_properties_get_data(MLT_PLAYLIST_PROPERTIES(self),
+                                                                "_blank",
+                                                                NULL);
+    if (!blank) {
+        mlt_profile profile = mlt_service_profile(MLT_PLAYLIST_SERVICE(self));
+        if (!profile) {
+            mlt_log_error(self, "Playlist can not create blank producer without profile\n");
+        } else {
+            blank = mlt_factory_producer(profile, NULL, "blank");
+            mlt_properties_set_data(MLT_PLAYLIST_PROPERTIES(self),
+                                    "_blank",
+                                    blank,
+                                    0,
+                                    (mlt_destructor) mlt_producer_close,
+                                    NULL);
+        }
+    }
+    return blank;
 }

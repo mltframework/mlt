@@ -81,7 +81,7 @@ void ClipInfo::update(mlt_playlist_clip_info *info)
 Playlist::Playlist()
     : instance(NULL)
 {
-    instance = mlt_playlist_init();
+    instance = mlt_playlist_new(nullptr);
 }
 
 Playlist::Playlist(Profile &profile)

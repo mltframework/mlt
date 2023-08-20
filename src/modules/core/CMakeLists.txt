@@ -31,6 +31,7 @@ add_library(mltcore MODULE
   filter_watermark.c
   image_proc.c image_proc.h
   link_timeremap.c
+  producer_blank.c
   producer_colour.c
   producer_consumer.c
   producer_hold.c
