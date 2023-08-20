@@ -67,10 +67,16 @@ static int transition_get_image(mlt_frame a_frame,
         && (!blend_mode || !strcmp("normal", blend_mode))
         // Check if the alpha channel is entirely opaque.
         && mlt_image_rgba_opaque(images[1], *width, *height)) {
-        if (invert)
+        if (invert) {
             error = mlt_frame_get_image(a_frame, image, format, width, height, 0);
-        else
+        } else {
+            // Pass all required frame properties
+            mlt_properties_pass_list(a_props,
+                                     b_props,
+                                     "progressive,distort,colorspace,full_range,force_full_luma,"
+                                     "top_field_first,color_trc");
             *image = images[1];
+        }
     } else {
         error = mlt_frame_get_image(a_frame, &images[0], format, width, height, 0);
         if (error)

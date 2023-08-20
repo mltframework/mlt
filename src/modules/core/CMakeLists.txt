@@ -76,46 +76,7 @@ set_target_properties(mltcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_
 install(TARGETS mltcore LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
-  consumer_multi.yml
-  filter_audiomap.yml
-  filter_audiowave.yml
-  filter_autofade.yml
-  filter_box_blur.yml
-  filter_brightness.yml
-  filter_channelcopy.yml
-  filter_choppy.yml
-  filter_crop.yml
-  filter_fieldorder.yml
-  filter_gamma.yml
-  filter_greyscale.yml
-  filter_luma.yml
-  filter_mask_apply.yml
-  filter_mask_start.yml
-  filter_mirror.yml
-  filter_mono.yml
-  filter_obscure.yml
-  filter_panner.yml
-  filter_pillar_echo.yml
-  filter_rescale.yml
-  filter_resize.yml
-  filter_transition.yml
-  filter_watermark.yml
-  link_timeremap.yml
-  producer_blank.yml
-  producer_colour.yml
-  producer_consumer.yml
-  producer_hold.yml
-  producer_loader.yml
-  producer_loader-nogl.yml
-  producer_melt_file.yml
-  producer_melt.yml
-  producer_noise.yml
-  producer_timewarp.yml
-  producer_tone.yml
-  transition_composite.yml
-  transition_luma.yml
-  transition_matte.yml
-  transition_mix.yml
+  ${YML}
   loader.dict
   loader.ini
   DESTINATION ${MLT_INSTALL_DATA_DIR}/core

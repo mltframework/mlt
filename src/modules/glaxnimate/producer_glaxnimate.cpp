@@ -1,6 +1,6 @@
 /*
  * producer_glaxnimate.cpp -- a Glaxnimate/Qt based producer for MLT
- * Copyright (C) 2022 Meltytech, LLC
+ * Copyright (C) 2022-2023 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -256,7 +256,11 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     }
     snprintf(file,
              PATH_MAX,
+#if QT_VERSION_MAJOR < 6
              "%s/glaxnimate/%s_%s.yml",
+#else
+             "%s/glaxnimate-qt6/%s_%s.yml",
+#endif
              mlt_environment("MLT_DATA"),
              service_type,
              id);

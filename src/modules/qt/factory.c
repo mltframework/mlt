@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2022 Meltytech, LLC
+ * Copyright (C) 2008-2023 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -93,7 +93,11 @@ extern mlt_filter filter_lightshow_init(mlt_profile profile,
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
     char file[PATH_MAX];
+#if QT_VERSION_MAJOR < 6
     snprintf(file, PATH_MAX, "%s/qt/%s", mlt_environment("MLT_DATA"), (char *) data);
+#else
+    snprintf(file, PATH_MAX, "%s/qt6/%s", mlt_environment("MLT_DATA"), (char *) data);
+#endif
     return mlt_properties_parse_yaml(file);
 }
 

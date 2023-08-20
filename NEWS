@@ -1,6 +1,43 @@
 MLT Release Notes
 -----------------
 
+Version 7.18.0
+
+Framework
+
+  * Fixed `mlt_frame_get_audio` fails on `mlt_audio_none`.
+  * Added `mlt_audio_free_data()`.
+  * Added `meta.playlist.clip_position` and `meta.playlist.clip_length`
+    properties to `mlt_playlist`.
+
+Modules
+
+  * Added two audio filters to core module to be used on a playlist/track:
+    - `audioseam`
+    - `autofade`
+  * Fixed a crash in `vidstab` filter on image format change.
+  * Fixed font weight in `qtext` filter on Qt 6.
+  * Fixed yuv420p not working in `rescale` filter.
+  * Fixed text shadow outline in `kdenlivetitle` producer.
+  * Fixed crash when changing the profile with `count` producer.
+  * Fixed constructor corruption in `frei0r` module.
+  * Fixed `deinterlace` link was added to invalid producer in `xml` producer.
+  * Fixed producers not indicating progressive scan video:
+    - `kdenlivetitle`
+    - `pango`
+    - `qimage`
+    - `qtext`
+  * Fixed video scan mode detection in `avformat` producers that only indicate
+    on their container format and not on frames such as Ut Video in Matroska.
+  * Fixed very large images in `qimage` producer on Qt 6.
+  * Fixed seeking on clips that use `speed_map` in `timeremap` link.
+  * Fixed a color level problem with sRGB inputs in the `movit` module.
+  * Fixed `avformat` producer's deallocation function for `AVCodecContext`.
+  * Fixed field order of `qtblend` and `frei0r.cairoblend` transitions.
+  * Changed the `avformat` producer `seek_threshold` default to 64.
+  * Updated `ebur128` filter to version 1.2.6.
+
+
 Version 7.16.0
 
 Framework

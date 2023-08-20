@@ -32,6 +32,7 @@ extern mlt_filter filter_swscale_init(mlt_profile profile, char *arg);
 extern mlt_producer producer_avformat_init(mlt_profile profile, const char *service, char *file);
 extern mlt_filter filter_avfilter_init(mlt_profile, mlt_service_type, const char *, char *);
 extern mlt_link link_avdeinterlace_init(mlt_profile, mlt_service_type, const char *, char *);
+extern mlt_link link_avfilter_init(mlt_profile, mlt_service_type, const char *, char *);
 extern mlt_link link_swresample_init(mlt_profile profile, mlt_service_type, const char *, char *);
 
 // ffmpeg Header files
@@ -345,7 +346,11 @@ static mlt_properties avfilter_metadata(mlt_service_type type, const char *id, v
         "numeric properties have type string because they accept an expression (see FFmpeg "
         "documentation) even though they evaluate to a numeric value.");
     mlt_properties_set(metadata, "creator", "libavfilter maintainers");
-    mlt_properties_set(metadata, "type", "filter");
+    if (type == mlt_service_filter_type) {
+        mlt_properties_set(metadata, "type", "filter");
+    } else {
+        mlt_properties_set(metadata, "type", "link");
+    }
 
     mlt_properties tags = mlt_properties_new();
     mlt_properties_set_data(metadata, "tags", tags, 0, (mlt_destructor) mlt_properties_close, NULL);
@@ -503,6 +508,11 @@ MLT_REPOSITORY
             strncat(service_name, f->name, sizeof(service_name) - strlen(service_name) - 1);
             MLT_REGISTER(mlt_service_filter_type, service_name, filter_avfilter_init);
             MLT_REGISTER_METADATA(mlt_service_filter_type,
+                                  service_name,
+                                  avfilter_metadata,
+                                  (void *) f->name);
+            MLT_REGISTER(mlt_service_link_type, service_name, link_avfilter_init);
+            MLT_REGISTER_METADATA(mlt_service_link_type,
                                   service_name,
                                   avfilter_metadata,
                                   (void *) f->name);

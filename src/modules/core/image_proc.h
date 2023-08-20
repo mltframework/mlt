@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Meltytech, LLC
+ * Copyright (c) 2022-20023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,6 @@
 #include <framework/mlt_events.h>
 #include <framework/mlt_image.h>
 
-void mlt_image_box_blur(mlt_image self, int hradius, int vradius);
+void mlt_image_box_blur(mlt_image self, int hradius, int vradius, int preserve_alpha);
 
 #endif // IMAGE_PROC_H

@@ -19,13 +19,13 @@ struct s_gps_data_bounds
 {
     double min_lat, max_lat, min_lon, max_lon;
     double min_ele, max_ele, min_speed, max_speed;
-    double min_hr, max_hr;
+    double min_hr, max_hr, min_grade_p, max_grade_p;
 
     void set_defaults()
     {
         min_lat = 90, min_lon = 180, max_lat = -90, max_lon = -180;
         min_ele = 99999, max_ele = -99999, min_speed = 99999, max_speed = -99999;
-        min_hr = 99999, max_hr = 0;
+        min_hr = 99999, max_hr = 0, min_grade_p = 99999, max_grade_p = -99999;
     }
 };
 
@@ -87,7 +87,10 @@ typedef enum {
     gpsg_color_by_duration,
     gpsg_color_by_altitude,
     gpsg_color_by_hr,
-    gpsg_color_by_speed
+    gpsg_color_by_speed,
+    gpsg_color_by_speed_max100,
+    gpsg_color_by_grade_max90,
+    gpsg_color_by_grade_max20
 } gpsg_color_styles;
 
 struct s_base_crops

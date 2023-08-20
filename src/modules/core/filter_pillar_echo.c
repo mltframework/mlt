@@ -1,6 +1,6 @@
 /*
  * filter_pillar_echo.c -- filter to interpolate pixels outside an area of interest
- * Copyright (c) 2020-2021 Meltytech, LLC
+ * Copyright (c) 2020-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -265,7 +265,7 @@ static int filter_get_image(mlt_frame frame,
 
     bilinear_scale_rgba(&src, &dst, rect);
     if (blur != 0) {
-        mlt_image_box_blur(&dst, blur, blur);
+        mlt_image_box_blur(&dst, blur, blur, 0);
     }
     blit_rect(&src, &dst, rect);
 

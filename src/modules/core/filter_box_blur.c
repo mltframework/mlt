@@ -1,6 +1,6 @@
 /*
  * filter_box_blur.c
- * Copyright (C) 2011-2021 Meltytech, LLC
+ * Copyright (C) 2011-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
     double hradius = mlt_properties_anim_get_double(properties, "hradius", position, length);
     double vradius = mlt_properties_anim_get_double(properties, "vradius", position, length);
+    int preserve_alpha = mlt_properties_get_int(properties, "preserve_alpha");
     // Convert from percent to pixels as a factor of 10% image width.
     double pixelScale = (double) profile->width * mlt_profile_scale_width(profile, *width) / 1000.0;
     hradius = MAX(round(hradius * pixelScale), 0);
@@ -56,7 +57,7 @@ static int filter_get_image(mlt_frame frame,
         if (error == 0) {
             struct mlt_image_s img;
             mlt_image_set_values(&img, *image, *format, *width, *height);
-            mlt_image_box_blur(&img, hradius, vradius);
+            mlt_image_box_blur(&img, hradius, vradius, preserve_alpha);
         }
     }
     return error;
