@@ -452,7 +452,15 @@ static int link_get_image(mlt_frame frame,
                                         0);
             if (error || srcimg.format != pdata->informat || srcimg.width != pdata->width
                 || srcimg.height != pdata->height) {
-                mlt_log_error(MLT_LINK_SERVICE(self), "Failed to get image\n");
+                mlt_log_error(MLT_LINK_SERVICE(self),
+                              "Failed to get image\t%d\t%d=%d\t%d=%d\t%d=%d\n",
+                              error,
+                              srcimg.format,
+                              pdata->informat,
+                              srcimg.width,
+                              pdata->width,
+                              srcimg.height,
+                              pdata->height);
                 break;
             }
 

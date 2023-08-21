@@ -2871,24 +2871,30 @@ static void producer_set_up_video(producer_avformat self, mlt_frame frame)
             if (self->video_codec->height == 1088 && dar == 16.0 / 9.0) {
                 mlt_properties_set_int(frame_properties, "width", 1080);
                 mlt_properties_set_int(properties, "meta.media.width", 1080);
+                mlt_properties_set_int(properties, "width", 1080);
             } else {
                 mlt_properties_set_int(frame_properties, "width", self->video_codec->height);
                 mlt_properties_set_int(properties, "meta.media.width", self->video_codec->height);
+                mlt_properties_set_int(properties, "width", self->video_codec->height);
             }
             mlt_properties_set_int(frame_properties, "height", self->video_codec->width);
             mlt_properties_set_int(properties, "meta.media.height", self->video_codec->width);
+            mlt_properties_set_int(properties, "height", self->video_codec->width);
             aspect_ratio = (force_aspect_ratio > 0.0) ? force_aspect_ratio : 1.0 / aspect_ratio;
             mlt_properties_set_double(frame_properties, "aspect_ratio", 1.0 / aspect_ratio);
         } else {
             mlt_properties_set_int(frame_properties, "width", self->video_codec->width);
             mlt_properties_set_int(properties, "meta.media.width", self->video_codec->width);
+            mlt_properties_set_int(properties, "width", self->video_codec->width);
             // Workaround 1088 encodings missing cropping info.
             if (self->video_codec->height == 1088 && dar == 16.0 / 9.0) {
                 mlt_properties_set_int(frame_properties, "height", 1080);
                 mlt_properties_set_int(properties, "meta.media.height", 1080);
+                mlt_properties_set_int(properties, "height", 1080);
             } else {
                 mlt_properties_set_int(frame_properties, "height", self->video_codec->height);
                 mlt_properties_set_int(properties, "meta.media.height", self->video_codec->height);
+                mlt_properties_set_int(properties, "height", self->video_codec->height);
             }
             mlt_properties_set_double(frame_properties, "aspect_ratio", aspect_ratio);
         }
