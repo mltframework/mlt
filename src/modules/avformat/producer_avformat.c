@@ -2830,25 +2830,25 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
     return self->video_index > -1;
 }
 
-static int pick_video_stream(producer_avformat self, int index)
+static int pick_video_stream(producer_avformat self, int absolute_index)
 {
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
 
     if (self->video_format && mlt_properties_get(properties, "vstream")) {
         // Get the relative stream index
-        index = absolute_stream_index(self->video_format,
-                                      AVMEDIA_TYPE_VIDEO,
-                                      mlt_properties_get_int(properties, "vstream"));
+        absolute_index = absolute_stream_index(self->video_format,
+                                               AVMEDIA_TYPE_VIDEO,
+                                               mlt_properties_get_int(properties, "vstream"));
     } else {
         // Failover to the absolute index
-        index = mlt_properties_get_int(properties, "video_index");
+        absolute_index = mlt_properties_get_int(properties, "video_index");
     }
-    if (mlt_properties_get_int(properties, "video_index") != index) {
+    if (mlt_properties_get_int(properties, "video_index") != absolute_index) {
         // Update the absolute index
-        mlt_properties_set_int(properties, "video_index", index);
-        self->video_index = index;
+        mlt_properties_set_int(properties, "video_index", absolute_index);
+        self->video_index = absolute_index;
     }
-    return index;
+    return absolute_index;
 }
 
 /** Set up video handling.
@@ -3563,65 +3563,66 @@ static int audio_codec_init(producer_avformat self, int index, mlt_properties pr
     return self->audio_codec[index] && self->audio_index > -1;
 }
 
-static int pick_audio_stream(producer_avformat self, int index)
+static int pick_audio_stream(producer_avformat self, int absolute_index)
 {
     AVFormatContext *context = self->audio_format;
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
 
     if (context && mlt_properties_get(properties, "astream")) {
         // Get the relative stream index
-        index = absolute_stream_index(context,
-                                      AVMEDIA_TYPE_AUDIO,
-                                      mlt_properties_get_int(properties, "astream"));
+        absolute_index = absolute_stream_index(context,
+                                               AVMEDIA_TYPE_AUDIO,
+                                               mlt_properties_get_int(properties, "astream"));
     } else {
         // Failover to the absolute index
-        index = mlt_properties_get_int(properties, "audio_index");
+        absolute_index = mlt_properties_get_int(properties, "audio_index");
     }
-    if (mlt_properties_get_int(properties, "audio_index") != index) {
+    if (mlt_properties_get_int(properties, "audio_index") != absolute_index) {
         // Update the absolute index
-        mlt_properties_set_int(properties, "audio_index", index);
-        self->audio_index = index;
+        mlt_properties_set_int(properties, "audio_index", absolute_index);
+        self->audio_index = absolute_index;
     }
 
     // Handle all audio tracks
     if (self->audio_index > -1) {
         if (mlt_properties_get(properties, "audio_index")
             && !strcmp(mlt_properties_get(properties, "audio_index"), "all")) {
-            index = INT_MAX;
+            absolute_index = INT_MAX;
             mlt_properties_set(properties, "astream", "all");
         }
         if (mlt_properties_get(properties, "astream")
             && !strcmp(mlt_properties_get(properties, "astream"), "all")) {
-            index = INT_MAX;
+            absolute_index = INT_MAX;
             mlt_properties_set(properties, "audio_index", "all");
         }
     }
 
     // Exception handling for audio_index
-    if (context && index >= (int) context->nb_streams && index < INT_MAX) {
-        for (index = context->nb_streams - 1;
-             index >= 0 && context->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO;
-             index--)
+    if (context && absolute_index >= (int) context->nb_streams && absolute_index < INT_MAX) {
+        for (absolute_index = context->nb_streams - 1;
+             absolute_index >= 0
+             && context->streams[absolute_index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO;
+             absolute_index--)
             ;
-        mlt_properties_set_int(properties, "audio_index", index);
+        mlt_properties_set_int(properties, "audio_index", absolute_index);
         mlt_properties_set_int(properties,
                                "astream",
-                               relative_stream_index(context, AVMEDIA_TYPE_AUDIO, index));
+                               relative_stream_index(context, AVMEDIA_TYPE_AUDIO, absolute_index));
     }
-    if (context && index > -1 && index < INT_MAX
-        && context->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
-        index = self->audio_index;
-        mlt_properties_set_int(properties, "audio_index", index);
+    if (context && absolute_index > -1 && absolute_index < INT_MAX
+        && context->streams[absolute_index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
+        absolute_index = self->audio_index;
+        mlt_properties_set_int(properties, "audio_index", absolute_index);
         mlt_properties_set_int(properties,
                                "astream",
-                               relative_stream_index(context, AVMEDIA_TYPE_AUDIO, index));
+                               relative_stream_index(context, AVMEDIA_TYPE_AUDIO, absolute_index));
     }
-    if (context && index > -1 && index < INT_MAX
-        && pick_audio_format(context->streams[index]->codecpar->format) == mlt_audio_none) {
-        index = -1;
+    if (context && absolute_index > -1 && absolute_index < INT_MAX
+        && pick_audio_format(context->streams[absolute_index]->codecpar->format) == mlt_audio_none) {
+        absolute_index = -1;
     }
 
-    return index;
+    return absolute_index;
 }
 
 /** Set up audio handling.
