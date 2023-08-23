@@ -2830,9 +2830,10 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
     return self->video_index > -1;
 }
 
-static int pick_video_stream(producer_avformat self, int absolute_index)
+static int pick_video_stream(producer_avformat self)
 {
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+    int absolute_index;
 
     if (self->video_format && mlt_properties_get(properties, "vstream")) {
         // Get the relative stream index
@@ -2883,7 +2884,7 @@ static void producer_set_up_video(producer_avformat self, mlt_frame frame)
                       0);
         context = self->video_format;
     }
-    index = pick_video_stream(self, index);
+    index = pick_video_stream(self);
 
     // Exception handling for video_index
     if (context && index >= (int) context->nb_streams) {
@@ -3563,10 +3564,11 @@ static int audio_codec_init(producer_avformat self, int index, mlt_properties pr
     return self->audio_codec[index] && self->audio_index > -1;
 }
 
-static int pick_audio_stream(producer_avformat self, int absolute_index)
+static int pick_audio_stream(producer_avformat self)
 {
     AVFormatContext *context = self->audio_format;
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+    int absolute_index;
 
     if (context && mlt_properties_get(properties, "astream")) {
         // Get the relative stream index
@@ -3656,7 +3658,7 @@ static void producer_set_up_audio(producer_avformat self, mlt_frame frame)
         context = self->audio_format;
         self->probe_complete = 0;
     }
-    index = pick_audio_stream(self, index);
+    index = pick_audio_stream(self);
 
     // Update the audio properties if the index changed
     if (context && self->audio_index > -1 && index != self->audio_index) {
@@ -3790,13 +3792,13 @@ static int producer_probe(mlt_producer producer)
     int error = 0;
 
     // Update the video properties if the index changed
-    int video_index = pick_video_stream(self, -1);
+    int video_index = pick_video_stream(self);
 
     if (self->video_format && video_index > -1 && video_index != self->video_index)
         self->probe_complete = 0;
 
     // Update the audio properties if the index changed
-    int audio_index = pick_audio_stream(self, -1);
+    int audio_index = pick_audio_stream(self);
 
     if (self->audio_format && audio_index > -1 && audio_index != self->audio_index)
         self->probe_complete = 0;
