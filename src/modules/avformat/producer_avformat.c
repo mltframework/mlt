@@ -3584,11 +3584,18 @@ static int pick_audio_stream(producer_avformat self, int index)
     }
 
     // Handle all audio tracks
-    if (self->audio_index > -1 && mlt_properties_get(properties, "audio_index")
-        && (!strcmp(mlt_properties_get(properties, "audio_index"), "all")
-            || (mlt_properties_get(properties, "astream")
-                && !strcmp(mlt_properties_get(properties, "astream"), "all"))))
-        index = INT_MAX;
+    if (self->audio_index > -1) {
+        if (mlt_properties_get(properties, "audio_index")
+            && !strcmp(mlt_properties_get(properties, "audio_index"), "all")) {
+            index = INT_MAX;
+            mlt_properties_set(properties, "astream", "all");
+        }
+        if (mlt_properties_get(properties, "astream")
+            && !strcmp(mlt_properties_get(properties, "astream"), "all")) {
+            index = INT_MAX;
+            mlt_properties_set(properties, "audio_index", "all");
+        }
+    }
 
     // Exception handling for audio_index
     if (context && index >= (int) context->nb_streams && index < INT_MAX) {
