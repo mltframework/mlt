@@ -3151,10 +3151,12 @@ static int decode_audio(producer_avformat self,
         int64_t pts_offset = lrint((double) audio_used_at_start / timebase
                                    / (double) codec_context->sample_rate);
         int64_t pts = pkt->pts - pts_offset;
-        if (self->first_pts != AV_NOPTS_VALUE)
+        if (self->first_pts != AV_NOPTS_VALUE && self->video_index != -1)
             pts -= av_rescale_q(self->first_pts,
                                 context->streams[self->video_index]->time_base,
                                 context->streams[index]->time_base);
+        else if (self->first_pts != AV_NOPTS_VALUE)
+            pts -= self->first_pts;
         else if (context->start_time != AV_NOPTS_VALUE && self->video_index != -1)
             pts -= av_rescale_q(context->start_time,
                                 AV_TIME_BASE_Q,
