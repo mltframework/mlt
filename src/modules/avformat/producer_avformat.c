@@ -172,6 +172,36 @@ static mlt_audio_format pick_audio_format(int sample_fmt);
 static int pick_av_pixel_format(int *pix_fmt, int full_range);
 static void property_changed(mlt_service owner, producer_avformat self, char *name);
 
+static int absolute_stream_index(AVFormatContext *context, enum AVMediaType media_type, int relative)
+{
+    if (context) {
+        int n = -1;
+        for (int i = 0; i < context->nb_streams; i++) {
+            AVCodecParameters *codec_params = context->streams[i]->codecpar;
+            if (codec_params->codec_type == media_type && ++n == relative) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+static int relative_stream_index(AVFormatContext *context, enum AVMediaType media_type, int absolute)
+{
+    if (context) {
+        int n = -1;
+        for (int i = 0; i < context->nb_streams; i++) {
+            AVCodecParameters *codec_params = context->streams[i]->codecpar;
+            if (codec_params->codec_type == media_type) {
+                ++n;
+                if (absolute == i)
+                    return n;
+            }
+        }
+    }
+    return -1;
+}
+
 /** Constructor for libavformat.
 */
 
@@ -220,13 +250,21 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                     producer = NULL;
                     producer_avformat_close(self);
                 } else if (self->seekable) {
+                    mlt_properties_set_int(properties,
+                                           "astream",
+                                           relative_stream_index(self->video_format,
+                                                                 AVMEDIA_TYPE_AUDIO,
+                                                                 self->audio_index));
+                    mlt_properties_set_int(properties,
+                                           "vstream",
+                                           relative_stream_index(self->video_format,
+                                                                 AVMEDIA_TYPE_VIDEO,
+                                                                 self->video_index));
                     // Close the file to release resources for large playlists - reopen later as needed
                     if (self->audio_format)
                         avformat_close_input(&self->audio_format);
                     if (self->video_format)
                         avformat_close_input(&self->video_format);
-                    self->audio_format = NULL;
-                    self->video_format = NULL;
                 }
             }
             if (producer) {
@@ -2792,6 +2830,36 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
     return self->video_index > -1;
 }
 
+static int pick_video_stream(producer_avformat self)
+{
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+    int absolute_index;
+
+    if (self->video_format && mlt_properties_get(properties, "vstream")) {
+        // Get the relative stream index
+        absolute_index = absolute_stream_index(self->video_format,
+                                               AVMEDIA_TYPE_VIDEO,
+                                               mlt_properties_get_int(properties, "vstream"));
+    } else {
+        // Failover to the absolute index
+        absolute_index = mlt_properties_get_int(properties, "video_index");
+        if (self->video_format) {
+            // Compute the relative stream index
+            mlt_properties_set_int(properties,
+                                   "vstream",
+                                   relative_stream_index(self->video_format,
+                                                         AVMEDIA_TYPE_VIDEO,
+                                                         absolute_index));
+        }
+    }
+    if (mlt_properties_get_int(properties, "video_index") != absolute_index) {
+        // Update the absolute index
+        mlt_properties_set_int(properties, "video_index", absolute_index);
+        self->video_index = absolute_index;
+    }
+    return absolute_index;
+}
+
 /** Set up video handling.
 */
 
@@ -2806,8 +2874,10 @@ static void producer_set_up_video(producer_avformat self, mlt_frame frame)
     // Fetch the video format context
     AVFormatContext *context = self->video_format;
 
-    // Get the video_index
-    int index = mlt_properties_get_int(properties, "video_index");
+    // Get the video stream index
+    int index = mlt_properties_get(properties, "vstream")
+                    ? mlt_properties_get_int(properties, "vstream")
+                    : mlt_properties_get_int(properties, "video_index");
 
     int unlock_needed = 0;
 
@@ -2822,6 +2892,7 @@ static void producer_set_up_video(producer_avformat self, mlt_frame frame)
                       0);
         context = self->video_format;
     }
+    index = pick_video_stream(self);
 
     // Exception handling for video_index
     if (context && index >= (int) context->nb_streams) {
@@ -2831,12 +2902,18 @@ static void producer_set_up_video(producer_avformat self, mlt_frame frame)
              index--)
             ;
         mlt_properties_set_int(properties, "video_index", index);
+        mlt_properties_set_int(properties,
+                               "vstream",
+                               relative_stream_index(context, AVMEDIA_TYPE_VIDEO, index));
     }
     if (context && index > -1
         && context->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_VIDEO) {
         // Invalidate the video stream
         index = -1;
         mlt_properties_set_int(properties, "video_index", index);
+        mlt_properties_set_int(properties,
+                               "vstream",
+                               relative_stream_index(context, AVMEDIA_TYPE_VIDEO, index));
     }
 
     // Update the video properties if the index changed
@@ -3088,10 +3165,12 @@ static int decode_audio(producer_avformat self,
         int64_t pts_offset = lrint((double) audio_used_at_start / timebase
                                    / (double) codec_context->sample_rate);
         int64_t pts = pkt->pts - pts_offset;
-        if (self->first_pts != AV_NOPTS_VALUE)
+        if (self->first_pts != AV_NOPTS_VALUE && self->video_index != -1)
             pts -= av_rescale_q(self->first_pts,
                                 context->streams[self->video_index]->time_base,
                                 context->streams[index]->time_base);
+        else if (self->first_pts != AV_NOPTS_VALUE)
+            pts -= self->first_pts;
         else if (context->start_time != AV_NOPTS_VALUE && self->video_index != -1)
             pts -= av_rescale_q(context->start_time,
                                 AV_TIME_BASE_Q,
@@ -3501,6 +3580,77 @@ static int audio_codec_init(producer_avformat self, int index, mlt_properties pr
     return self->audio_codec[index] && self->audio_index > -1;
 }
 
+static int pick_audio_stream(producer_avformat self)
+{
+    AVFormatContext *context = self->audio_format;
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+    int absolute_index;
+
+    if (context && mlt_properties_get(properties, "astream")) {
+        // Get the relative stream index
+        absolute_index = absolute_stream_index(context,
+                                               AVMEDIA_TYPE_AUDIO,
+                                               mlt_properties_get_int(properties, "astream"));
+    } else {
+        // Failover to the absolute index
+        absolute_index = mlt_properties_get_int(properties, "audio_index");
+        if (context) {
+            // Compute the relative stream index
+            mlt_properties_set_int(properties,
+                                   "astream",
+                                   relative_stream_index(context,
+                                                         AVMEDIA_TYPE_AUDIO,
+                                                         absolute_index));
+        }
+    }
+    if (mlt_properties_get_int(properties, "audio_index") != absolute_index) {
+        // Update the absolute index
+        mlt_properties_set_int(properties, "audio_index", absolute_index);
+        self->audio_index = absolute_index;
+    }
+
+    // Handle all audio tracks
+    if (self->audio_index > -1) {
+        if (mlt_properties_get(properties, "audio_index")
+            && !strcmp(mlt_properties_get(properties, "audio_index"), "all")) {
+            absolute_index = INT_MAX;
+            mlt_properties_set(properties, "astream", "all");
+        }
+        if (mlt_properties_get(properties, "astream")
+            && !strcmp(mlt_properties_get(properties, "astream"), "all")) {
+            absolute_index = INT_MAX;
+            mlt_properties_set(properties, "audio_index", "all");
+        }
+    }
+
+    // Exception handling for audio_index
+    if (context && absolute_index >= (int) context->nb_streams && absolute_index < INT_MAX) {
+        for (absolute_index = context->nb_streams - 1;
+             absolute_index >= 0
+             && context->streams[absolute_index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO;
+             absolute_index--)
+            ;
+        mlt_properties_set_int(properties, "audio_index", absolute_index);
+        mlt_properties_set_int(properties,
+                               "astream",
+                               relative_stream_index(context, AVMEDIA_TYPE_AUDIO, absolute_index));
+    }
+    if (context && absolute_index > -1 && absolute_index < INT_MAX
+        && context->streams[absolute_index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
+        absolute_index = self->audio_index;
+        mlt_properties_set_int(properties, "audio_index", absolute_index);
+        mlt_properties_set_int(properties,
+                               "astream",
+                               relative_stream_index(context, AVMEDIA_TYPE_AUDIO, absolute_index));
+    }
+    if (context && absolute_index > -1 && absolute_index < INT_MAX
+        && pick_audio_format(context->streams[absolute_index]->codecpar->format) == mlt_audio_none) {
+        absolute_index = -1;
+    }
+
+    return absolute_index;
+}
+
 /** Set up audio handling.
 */
 
@@ -3517,13 +3667,10 @@ static void producer_set_up_audio(producer_avformat self, mlt_frame frame)
 
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
 
-    // Get the audio_index
-    int index = mlt_properties_get_int(properties, "audio_index");
-
-    // Handle all audio tracks
-    if (self->audio_index > -1 && mlt_properties_get(properties, "audio_index")
-        && !strcmp(mlt_properties_get(properties, "audio_index"), "all"))
-        index = INT_MAX;
+    // Get the audio index
+    int index = mlt_properties_get(properties, "astream")
+                    ? mlt_properties_get_int(properties, "astream")
+                    : mlt_properties_get_int(properties, "audio_index");
 
     // Reopen the file if necessary
     if (!context && self->audio_index > -1 && index > -1) {
@@ -3535,27 +3682,11 @@ static void producer_set_up_audio(producer_avformat self, mlt_frame frame)
         context = self->audio_format;
         self->probe_complete = 0;
     }
-
-    // Exception handling for audio_index
-    if (context && index >= (int) context->nb_streams && index < INT_MAX) {
-        for (index = context->nb_streams - 1;
-             index >= 0 && context->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO;
-             index--)
-            ;
-        mlt_properties_set_int(properties, "audio_index", index);
-    }
-    if (context && index > -1 && index < INT_MAX
-        && context->streams[index]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
-        index = self->audio_index;
-        mlt_properties_set_int(properties, "audio_index", index);
-    }
-    if (context && index > -1 && index < INT_MAX
-        && pick_audio_format(context->streams[index]->codecpar->format) == mlt_audio_none) {
-        index = -1;
-    }
+    index = pick_audio_stream(self);
 
     // Update the audio properties if the index changed
     if (context && self->audio_index > -1 && index != self->audio_index) {
+        self->audio_index = index;
         pthread_mutex_lock(&self->open_mutex);
         unsigned i = 0;
         int index_max = FFMIN(MAX_AUDIO_STREAMS, context->nb_streams);
@@ -3685,12 +3816,14 @@ static int producer_probe(mlt_producer producer)
     int error = 0;
 
     // Update the video properties if the index changed
-    int video_index = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(producer), "video_index");
+    int video_index = pick_video_stream(self);
+
     if (self->video_format && video_index > -1 && video_index != self->video_index)
         self->probe_complete = 0;
 
     // Update the audio properties if the index changed
-    int audio_index = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(producer), "audio_index");
+    int audio_index = pick_audio_stream(self);
+
     if (self->audio_format && audio_index > -1 && audio_index != self->audio_index)
         self->probe_complete = 0;
 

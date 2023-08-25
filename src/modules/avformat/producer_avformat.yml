@@ -55,11 +55,11 @@ parameters:
     mutable: no
     widget: fileopen # could provide a button to use a file-open dialog 
 
-  - identifier: audio_index # the name is the mlt_properties name
+  - identifier: audio_index
     title: Audio index
     type: integer
     description: >
-      Choose the index of audio stream to use (-1 is off).
+      Choose the absolute stream index of audio stream to use (-1 is off).
       When this value is equal to the maximum size of a 32-bit signed integer
       or the string "all" then all audio tracks are coalesced into a bundle of
       channels on one audio track.
@@ -69,10 +69,37 @@ parameters:
     default: 0
     widget: spinner
 
+  - identifier: astream
+    title: Audio Stream
+    type: integer
+    description: >
+      Choose the relative stream index (n-th) of audio to use (-1 is off).
+      When this value is equal to the maximum size of a 32-bit signed integer
+      or the string "all" then all audio tracks are coalesced into a bundle of
+      channels on one audio track.
+      This property has a higher priority than audio_index.
+    readonly: no
+    mutable: no
+    minimum: -1
+    default: 0
+    widget: spinner
+
   - identifier: video_index
     title: Video index
     type: integer
-    description: Choose the index of video stream to use (-1 is off)
+    description: Choose the absolute index of video stream to use (-1 is off)
+    readonly: no
+    mutable: no
+    minimum: -1
+    default: 0
+    widget: spinner
+
+  - identifier: vstream
+    title: Video Stream
+    type: integer
+    description: >
+      Choose the relative stream index (n-th) of video to use (-1 is off).
+      This property has a higher priority than video_index.
     readonly: no
     mutable: no
     minimum: -1
