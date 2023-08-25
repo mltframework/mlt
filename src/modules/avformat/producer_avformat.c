@@ -2843,6 +2843,14 @@ static int pick_video_stream(producer_avformat self)
     } else {
         // Failover to the absolute index
         absolute_index = mlt_properties_get_int(properties, "video_index");
+        if (self->video_format) {
+            // Compute the relative stream index
+            mlt_properties_set_int(properties,
+                                   "vstream",
+                                   relative_stream_index(self->video_format,
+                                                         AVMEDIA_TYPE_VIDEO,
+                                                         absolute_index));
+        }
     }
     if (mlt_properties_get_int(properties, "video_index") != absolute_index) {
         // Update the absolute index
@@ -3580,6 +3588,14 @@ static int pick_audio_stream(producer_avformat self)
     } else {
         // Failover to the absolute index
         absolute_index = mlt_properties_get_int(properties, "audio_index");
+        if (context) {
+            // Compute the relative stream index
+            mlt_properties_set_int(properties,
+                                   "astream",
+                                   relative_stream_index(context,
+                                                         AVMEDIA_TYPE_AUDIO,
+                                                         absolute_index));
+        }
     }
     if (mlt_properties_get_int(properties, "audio_index") != absolute_index) {
         // Update the absolute index
