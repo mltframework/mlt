@@ -1237,7 +1237,7 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_color("key", 25).g, 247);
         QCOMPARE(p.anim_get_color("key", 25).b, 171);
         QCOMPARE(p.anim_get_color("key", 25).a, 111);
-        QCOMPARE(p.get("key"), "0=#ffefab;50=#df00ffab");
+        QCOMPARE(p.get("key"), "0=#00ffefab;50=#df00ffab");
 
         // Animation from string value
         QCOMPARE(p.anim_get_color("key", 0).r, 255);
