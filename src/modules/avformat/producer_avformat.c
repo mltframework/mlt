@@ -252,7 +252,7 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                 } else if (self->seekable) {
                     mlt_properties_set_int(properties,
                                            "astream",
-                                           relative_stream_index(self->video_format,
+                                           relative_stream_index(self->audio_format,
                                                                  AVMEDIA_TYPE_AUDIO,
                                                                  self->audio_index));
                     mlt_properties_set_int(properties,
