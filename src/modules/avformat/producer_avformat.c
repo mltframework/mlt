@@ -996,15 +996,17 @@ static int setup_filters(producer_avformat self)
 static void set_up_discard(producer_avformat self, int audio_index, int video_index)
 {
     // The open_mutex must be locked when this function is called
-    for (int x = 0; x < self->audio_format->nb_streams; x++) {
-        if (audio_index == INT_MAX || x == audio_index
-            || (self->audio_format == self->video_format && x == video_index))
-            self->audio_format->streams[x]->discard = AVDISCARD_DEFAULT;
-        else
-            self->audio_format->streams[x]->discard = AVDISCARD_ALL;
+    if (self->audio_format) {
+        for (int x = 0; x < self->audio_format->nb_streams; x++) {
+            if (audio_index == INT_MAX || x == audio_index
+                || (self->audio_format == self->video_format && x == video_index))
+                self->audio_format->streams[x]->discard = AVDISCARD_DEFAULT;
+            else
+                self->audio_format->streams[x]->discard = AVDISCARD_ALL;
+        }
     }
 
-    if (self->audio_format != self->video_format) {
+    if (self->video_format && self->video_format != self->audio_format) {
         for (int x = 0; x < self->video_format->nb_streams; x++) {
             if (x == video_index)
                 self->video_format->streams[x]->discard = AVDISCARD_DEFAULT;
