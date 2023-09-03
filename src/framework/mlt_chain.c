@@ -128,8 +128,10 @@ void mlt_chain_set_source(mlt_chain self, mlt_producer source)
         // Save the native source producer frame rate
         base->source_profile = mlt_profile_clone(mlt_service_profile(MLT_CHAIN_SERVICE(self)));
         mlt_frame frame = NULL;
-        mlt_service_get_frame(MLT_PRODUCER_SERVICE(source), &frame, 0);
-        mlt_frame_close(frame);
+        if (!mlt_properties_exists(source_properties, "meta.media.frame_rate_num") || !mlt_properties_exists(source_properties, "meta.media.frame_rate_den")) {
+            mlt_service_get_frame(MLT_PRODUCER_SERVICE(source), &frame, 0);
+            mlt_frame_close(frame);
+        }
         if (mlt_properties_get_int(source_properties, "meta.media.frame_rate_num") > 0
             && mlt_properties_get_int(source_properties, "meta.media.frame_rate_den") > 0) {
             base->source_profile->frame_rate_num
