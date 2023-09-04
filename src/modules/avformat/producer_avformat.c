@@ -3828,7 +3828,7 @@ static int producer_probe(mlt_producer producer)
         int video_in_use = mlt_properties_get_int(properties, "vstream") > -1;
         if (video_in_use && mlt_properties_exists(properties, "meta.media.progressive")) {
             return error;
-        } else if (!video_in_use && mlt_properties_exists(properties, "meta.media.0.codec.name")) {
+        } else if (!video_in_use && mlt_properties_exists(properties, "meta.media.nb_streams")) {
             return error;
         }
     }
