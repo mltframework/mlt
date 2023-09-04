@@ -99,13 +99,14 @@ static int future_frames_needed(mlt_link self)
     int future_frames = 0;
 
     if (strcmp(pdata->avfilter->name, "adeclick") == 0) {
-        int windowms = mlt_properties_get_int(MLT_LINK_PROPERTIES(self), "window");
+        int windowms = mlt_properties_get_int(MLT_LINK_PROPERTIES(self), "av.window");
         if (windowms <= 0) {
             // Default value is 100
             windowms = 100;
         }
         double fps = mlt_profile_fps(mlt_service_profile(MLT_LINK_SERVICE(self)));
-        future_frames = ceil(fps * windowms / 1000);
+        // Provide future frames for 1.5x window duration (determined empirically)
+        future_frames = ceil(1.5 * fps * windowms / 1000);
     }
 
     return future_frames;
@@ -730,16 +731,15 @@ static int link_get_audio(mlt_frame frame,
         in.samples = mlt_audio_calculate_frame_samples(mlt_producer_get_fps(MLT_LINK_PRODUCER(self)),
                                                        in.frequency,
                                                        mlt_frame_get_position(src_frame));
-        int error = mlt_frame_get_audio(src_frame,
-                                        &in.data,
-                                        &in.format,
-                                        &in.frequency,
-                                        &in.channels,
-                                        &in.samples);
+        error = mlt_frame_get_audio(src_frame,
+                                    &in.data,
+                                    &in.format,
+                                    &in.frequency,
+                                    &in.channels,
+                                    &in.samples);
         if (error || in.format != *format || in.frequency != *frequency
             || in.channels != *channels) {
             // Error situation. Do not attempt to process.
-            mlt_audio_get_values(&in, buffer, frequency, format, samples, channels);
             mlt_log_error(MLT_LINK_SERVICE(self),
                           "Invalid Return: E: %d %dS - %dHz %dC %s\n",
                           error,
@@ -747,6 +747,7 @@ static int link_get_audio(mlt_frame frame,
                           in.frequency,
                           in.channels,
                           mlt_audio_format_name(in.format));
+            error = 1;
             break;
         }
 
@@ -826,14 +827,21 @@ static int link_get_audio(mlt_frame frame,
             memcpy((uint8_t *) *buffer, pdata->avoutframe->extended_data[0], bufsize);
         }
         mlt_frame_set_audio(frame, *buffer, *format, bufsize, mlt_pool_release);
-        // Clear the audio stack in case get_audio was not called on this frame.
-        while (mlt_frame_pop_audio(frame)) {
-        };
         break;
     }
 
     av_frame_unref(pdata->avinframe);
     av_frame_unref(pdata->avoutframe);
+
+    if (error) {
+        // Return unprocessed audio if an error occurs
+        error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
+    } else {
+        // Clear the audio stack in case get_audio was not called on this frame.
+        while (mlt_frame_pop_audio(frame)) {
+        };
+    }
+
     mlt_service_unlock(MLT_LINK_SERVICE(self));
     return error;
 }
