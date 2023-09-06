@@ -394,6 +394,8 @@ void mlt_chain_close(mlt_chain self)
         for (i = 0; i < base->link_count; i++)
             mlt_link_close(base->links[i]);
         free(base->links);
+        mlt_producer_close(base->source);
+        mlt_properties_close(base->source_parameters);
         mlt_profile_close(base->source_profile);
         free(base);
         self->parent.close = NULL;
