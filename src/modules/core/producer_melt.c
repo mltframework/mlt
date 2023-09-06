@@ -439,6 +439,7 @@ mlt_producer producer_melt_init(mlt_profile profile,
                 }
                 if (producer != NULL && chain != NULL) {
                     mlt_chain_set_source(chain, producer);
+                    mlt_producer_close(producer);
                     mlt_chain_attach_normalizers(chain);
                     producer = MLT_CHAIN_PRODUCER(chain);
                 } else if (producer != NULL) {

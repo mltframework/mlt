@@ -665,6 +665,7 @@ static void on_end_chain(deserialise_context context, const xmlChar *name)
         mlt_properties_inherit(MLT_PRODUCER_PROPERTIES(source), properties);
         // Add the source producer to the chain
         mlt_chain_set_source(chain, source);
+        mlt_producer_close(source);
         mlt_chain_attach_normalizers(chain);
 
         // See if the chain should be added to a playlist or multitrack
