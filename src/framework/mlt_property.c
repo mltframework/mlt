@@ -1236,7 +1236,7 @@ int mlt_property_interpolate(mlt_property self,
     int colorstring = 0;
     const char *value = self->prop_string;
     if (value
-        && (((strlen(value) == 6 || strlen(value) == 8) && value[0] == '#')
+        && (((strlen(value) == 7 || strlen(value) == 9) && value[0] == '#')
             || (strlen(value) == 10 && value[0] == '0' && value[1] == 'x'))) {
         colorstring = 1;
     }
