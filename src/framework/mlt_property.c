@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -689,8 +689,7 @@ char *mlt_property_get_string_tf(mlt_property self, mlt_time_format time_format)
     // Construct a string if need be
     pthread_mutex_lock(&self->mutex);
     if (self->animation && self->serialiser) {
-        if (self->prop_string)
-            free(self->prop_string);
+        free(self->prop_string);
         self->prop_string = self->serialiser(self->animation, time_format);
     } else if (!(self->types & mlt_prop_string)) {
         if (self->types & mlt_prop_int) {
@@ -772,8 +771,7 @@ char *mlt_property_get_string_l_tf(mlt_property self,
     // Construct a string if need be
     pthread_mutex_lock(&self->mutex);
     if (self->animation && self->serialiser) {
-        if (self->prop_string)
-            free(self->prop_string);
+        free(self->prop_string);
         self->prop_string = self->serialiser(self->animation, time_format);
     } else if (!(self->types & mlt_prop_string)) {
 #if !defined(_WIN32)
@@ -1403,8 +1401,7 @@ static void refresh_animation(mlt_property self, double fps, mlt_locale_t locale
         // The animation clears its string if it is modified.
         // Do not use a property string that is out of sync.
         self->types &= ~mlt_prop_string;
-        if (self->prop_string)
-            free(self->prop_string);
+        free(self->prop_string);
         self->prop_string = NULL;
     } else if ((self->types & mlt_prop_string) && self->prop_string) {
         mlt_animation_refresh(self->animation, self->prop_string, length);
