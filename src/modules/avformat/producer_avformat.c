@@ -245,9 +245,9 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                 if (producer_open(self, profile, mlt_properties_get(properties, "resource"), 1, 1)
                     != 0) {
                     // Clean up
+                    producer_avformat_close(self);
                     mlt_producer_close(producer);
                     producer = NULL;
-                    producer_avformat_close(self);
                 } else if (self->seekable) {
                     mlt_properties_set_int(properties,
                                            "astream",
@@ -3857,6 +3857,8 @@ static int producer_probe(mlt_producer producer)
 static void producer_avformat_close(producer_avformat self)
 {
     mlt_log_debug(NULL, "producer_avformat_close\n");
+
+    mlt_events_disconnect(MLT_PRODUCER_PROPERTIES(self->parent), self);
 
     // Cleanup av contexts
     av_packet_unref(&self->pkt);
