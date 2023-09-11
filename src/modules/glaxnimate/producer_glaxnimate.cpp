@@ -25,6 +25,9 @@
 #include <QApplication>
 
 #include "io/io_registry.hpp"
+#include "model/assets/assets.hpp"
+#include "model/assets/composition.hpp"
+#include "model/document.hpp"
 using namespace glaxnimate;
 
 class Glaxnimate
@@ -44,12 +47,17 @@ public:
 
     mlt_properties properties() const { return MLT_PRODUCER_PROPERTIES(m_producer); }
 
-    QSize size() const { return m_document->size(); }
+    glaxnimate::model::Composition *composition() const
+    {
+        return m_document->assets()->compositions->values[0];
+    }
+
+    QSize size() const { return composition()->size(); }
 
     int duration() const
     {
-        auto frames = m_document->main()->animation->last_frame.get()
-                      - m_document->main()->animation->first_frame.get() + 1.f;
+        auto frames = composition()->animation->last_frame.get()
+                      - composition()->animation->first_frame.get() + 1.f;
         return toMltFps(frames);
     }
 
@@ -63,9 +71,9 @@ public:
         return frame * fps() * m_profile->frame_rate_den / m_profile->frame_rate_num;
     }
 
-    int firstFrame() const { return toMltFps(m_document->main()->animation->first_frame.get()); }
+    int firstFrame() const { return toMltFps(composition()->animation->first_frame.get()); }
 
-    float fps() const { return m_document->main()->get_fps(); }
+    float fps() const { return composition()->get_fps(); }
 
     int getImage(mlt_frame frame,
                  uint8_t **buffer,
@@ -82,8 +90,10 @@ public:
         }
         auto bg = mlt_properties_get_color(properties(), "background");
         auto background = QColor(bg.r, bg.g, bg.b, bg.a);
-        pos += toMltFps(m_document->main()->animation->first_frame.get());
-        auto image = m_document->render_image(toGlaxnimateFps(pos), {*width, *height}, background);
+        pos += toMltFps(composition()->animation->first_frame.get());
+        auto image = composition()->render_image(toGlaxnimateFps(pos),
+                                                 {*width, *height},
+                                                 background);
 
         *format = mlt_image_rgba;
         int size = mlt_image_format_size(*format, *width, *height, NULL);

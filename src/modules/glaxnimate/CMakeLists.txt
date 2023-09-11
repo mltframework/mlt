@@ -38,6 +38,7 @@ set(GLAX_SOURCES
 
   ${CORE_DIR}io/base.cpp
   ${CORE_DIR}io/binary_stream.cpp
+  ${CORE_DIR}io/utils.cpp
   ${CORE_DIR}io/glaxnimate/glaxnimate_format.cpp
   ${CORE_DIR}io/glaxnimate/glaxnimate_importer.cpp
   ${CORE_DIR}io/glaxnimate/glaxnimate_mime.cpp
@@ -62,6 +63,10 @@ set(GLAX_SOURCES
   ${CORE_DIR}io/avd/avd_parser.cpp
   ${CORE_DIR}io/avd/avd_format.cpp
   ${CORE_DIR}io/avd/avd_renderer.cpp
+  ${CORE_DIR}io/aep/aep_format.cpp
+  ${CORE_DIR}io/aep/aep_loader.cpp
+  ${CORE_DIR}io/aep/string_decoder.cpp
+  ${CORE_DIR}io/aep/gradient_xml.cpp
 
   ${CORE_DIR}math/geom.cpp
   ${CORE_DIR}math/polynomial.cpp
@@ -73,8 +78,6 @@ set(GLAX_SOURCES
   ${CORE_DIR}math/bezier/meta.cpp
   ${CORE_DIR}math/bezier/bezier_length.cpp
 
-  ${CORE_DIR}model/main_composition.cpp
-  ${CORE_DIR}model/composition.cpp
   ${CORE_DIR}model/document.cpp
   ${CORE_DIR}model/document_node.cpp
   ${CORE_DIR}model/object.cpp
@@ -101,8 +104,9 @@ set(GLAX_SOURCES
   ${CORE_DIR}model/assets/gradient.cpp
   ${CORE_DIR}model/assets/asset_base.cpp
   ${CORE_DIR}model/assets/asset.cpp
-  ${CORE_DIR}model/assets/precomposition.cpp
+  ${CORE_DIR}model/assets/composition.cpp
   ${CORE_DIR}model/assets/embedded_font.cpp
+  ${CORE_DIR}model/assets/network_downloader.cpp
 
   ${CORE_DIR}model/shapes/shape.cpp
   ${CORE_DIR}model/shapes/fill.cpp
@@ -182,6 +186,7 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
       Threads::Threads
       Qt${ARG_QT_VERSION}::Core
       Qt${ARG_QT_VERSION}::Gui
+      Qt${ARG_QT_VERSION}::Network
       Qt${ARG_QT_VERSION}::Widgets
       Qt${ARG_QT_VERSION}::Xml
       ${LibArchive_LIBRARIES}

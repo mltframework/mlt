@@ -307,7 +307,7 @@ endif()
 
 
 if(MOD_GLAXNIMATE_QT6)
-  find_package(Qt6 COMPONENTS Core Gui Widgets Xml)
+  find_package(Qt6 COMPONENTS Core Gui Network Widgets Xml)
   if(Qt6_FOUND)
     list(APPEND MLT_SUPPORTED_COMPONENTS glaxnimate-qt6)
   else()
@@ -337,7 +337,7 @@ if(MOD_QT)
 endif()
 
 if(MOD_GLAXNIMATE)
-  find_package(Qt5 COMPONENTS Core Gui Widgets Xml)
+  find_package(Qt5 COMPONENTS Core Gui Network Widgets Xml)
   if(Qt5_FOUND)
     list(APPEND MLT_SUPPORTED_COMPONENTS glaxnimate)
   else()
