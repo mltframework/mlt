@@ -219,10 +219,11 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
 
         // Initialise it
         if (mlt_producer_init(producer, self) == 0) {
-            self->parent = producer;
-
             // Get the properties
             mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
+
+            self->parent = producer;
+            mlt_properties_inc_ref(properties);
 
             // Set the resource property (required for all producers)
             mlt_properties_set(properties, "resource", file);
@@ -3745,6 +3746,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
     if (!self) {
         self = calloc(1, sizeof(struct producer_avformat_s));
         self->parent = producer;
+        mlt_properties_inc_ref(MLT_PRODUCER_PROPERTIES(producer));
         mlt_service_cache_put(service,
                               "producer_avformat",
                               self,
@@ -3930,6 +3932,7 @@ static void producer_avformat_close(producer_avformat self)
         self->vpackets = NULL;
     }
 
+    mlt_properties_dec_ref(MLT_PRODUCER_PROPERTIES(self->parent));
     free(self);
 }
 
