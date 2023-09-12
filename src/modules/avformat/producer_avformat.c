@@ -123,6 +123,7 @@ struct producer_avformat_s
     mlt_deque vpackets;
     pthread_mutex_t packets_mutex;
     pthread_mutex_t open_mutex;
+    pthread_mutex_t close_mutex;
     int is_mutex_init;
     pthread_t packets_thread;
     pthread_cond_t packets_cond;
@@ -1033,6 +1034,7 @@ static int producer_open(
         pthread_mutex_init(&self->video_mutex, &attr);
         pthread_mutex_init(&self->packets_mutex, &attr);
         pthread_mutex_init(&self->open_mutex, &attr);
+        pthread_mutex_init(&self->close_mutex, &attr);
         self->is_mutex_init = 1;
     }
 
@@ -3858,8 +3860,10 @@ static void producer_avformat_close(producer_avformat self)
 {
     mlt_log_debug(NULL, "producer_avformat_close\n");
 
+    pthread_mutex_lock(&self->close_mutex);
     if (self->parent && self->parent->close)
         mlt_events_disconnect(MLT_PRODUCER_PROPERTIES(self->parent), self);
+    pthread_mutex_unlock(&self->close_mutex);
 
     // Cleanup av contexts
     av_packet_unref(&self->pkt);
@@ -3912,6 +3916,7 @@ static void producer_avformat_close(producer_avformat self)
         pthread_mutex_destroy(&self->video_mutex);
         pthread_mutex_destroy(&self->packets_mutex);
         pthread_mutex_destroy(&self->open_mutex);
+        pthread_mutex_destroy(&self->close_mutex);
     }
 
     // Cleanup the packet queues
@@ -3939,8 +3944,21 @@ static void producer_close(mlt_producer parent)
     // Remove this instance from the cache
     mlt_service_cache_purge(MLT_PRODUCER_SERVICE(parent));
 
+    // Detach the producer_avformat struct
+    mlt_cache_item cache_item = mlt_service_cache_get(MLT_PRODUCER_SERVICE(parent),
+                                                      "producer_avformat");
+    producer_avformat self = mlt_cache_item_data(cache_item, NULL);
+    if (self) {
+        pthread_mutex_lock(&self->close_mutex);
+        self->parent = NULL;
+        parent->close = NULL;
+        pthread_mutex_unlock(&self->close_mutex);
+    } else {
+        parent->close = NULL;
+    }
+    mlt_cache_item_close(cache_item);
+
     // Close the parent
-    parent->close = NULL;
     mlt_producer_close(parent);
 
     // Free the memory
