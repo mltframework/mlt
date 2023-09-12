@@ -3858,7 +3858,8 @@ static void producer_avformat_close(producer_avformat self)
 {
     mlt_log_debug(NULL, "producer_avformat_close\n");
 
-    mlt_events_disconnect(MLT_PRODUCER_PROPERTIES(self->parent), self);
+    if (self->parent && self->parent->close)
+        mlt_events_disconnect(MLT_PRODUCER_PROPERTIES(self->parent), self);
 
     // Cleanup av contexts
     av_packet_unref(&self->pkt);
