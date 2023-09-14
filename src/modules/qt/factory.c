@@ -19,6 +19,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
+#include <QtGlobal>
 
 #ifdef USE_QT_OPENGL
 extern mlt_consumer consumer_qglsl_init(mlt_profile profile,
