@@ -3,7 +3,7 @@
  * \brief Property Animation class definition
  * \see mlt_animation_s
  *
- * Copyright (C) 2004-2021 Meltytech, LLC
+ * Copyright (C) 2004-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,8 @@
 #include "mlt_properties.h"
 #include "mlt_tokeniser.h"
 
+#include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,6 +57,10 @@ struct mlt_animation_s
 };
 
 static void mlt_animation_clear_string(mlt_animation self);
+static int interpolate_item(mlt_animation_item item,
+                            mlt_animation_item p[],
+                            double fps,
+                            mlt_locale_t locale);
 
 /** Create a new animation object.
  *
@@ -81,8 +87,7 @@ void mlt_animation_interpolate(mlt_animation self)
         animation_node current = self->nodes;
         while (current) {
             if (!current->item.is_key) {
-                double progress;
-                mlt_property points[4];
+                mlt_animation_item points[4];
                 animation_node prev = current->prev;
                 animation_node next = current->next;
 
@@ -98,18 +103,11 @@ void mlt_animation_interpolate(mlt_animation self)
                 if (!next) {
                     next = current;
                 }
-                points[0] = prev->prev ? prev->prev->item.property : prev->item.property;
-                points[1] = prev->item.property;
-                points[2] = next->item.property;
-                points[3] = next->next ? next->next->item.property : next->item.property;
-                progress = current->item.frame - prev->item.frame;
-                progress /= next->item.frame - prev->item.frame;
-                mlt_property_interpolate(current->item.property,
-                                         points,
-                                         progress,
-                                         self->fps,
-                                         self->locale,
-                                         current->item.keyframe_type);
+                points[0] = prev->prev ? &prev->prev->item : &prev->item;
+                points[1] = &prev->item;
+                points[2] = &next->item;
+                points[3] = next->next ? &next->next->item : &next->item;
+                interpolate_item(&current->item, points, self->fps, self->locale);
             }
 
             // Move to the next item
@@ -420,21 +418,13 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
         // Interpolation needed.
         else {
             if (item->property) {
-                double progress;
-                mlt_property points[4];
-                points[0] = node->prev ? node->prev->item.property : node->item.property;
-                points[1] = node->item.property;
-                points[2] = node->next->item.property;
-                points[3] = node->next->next ? node->next->next->item.property
-                                             : node->next->item.property;
-                progress = position - node->item.frame;
-                progress /= node->next->item.frame - node->item.frame;
-                mlt_property_interpolate(item->property,
-                                         points,
-                                         progress,
-                                         self->fps,
-                                         self->locale,
-                                         item->keyframe_type);
+                mlt_animation_item points[4];
+                points[0] = node->prev ? &node->prev->item : &node->item;
+                points[1] = &node->item;
+                points[2] = &node->next->item;
+                points[3] = node->next->next ? &node->next->next->item : &node->next->item;
+                item->frame = position;
+                interpolate_item(item, points, self->fps, self->locale);
             }
             item->is_key = 0;
         }
@@ -972,4 +962,290 @@ void mlt_animation_clear_string(mlt_animation self)
         return;
     free(self->data);
     self->data = NULL;
+}
+
+/** A linear interpolation function.
+ *
+ * \private \memberof mlt_animation_s
+ */
+
+static inline double linear_interpolate(double y1, double y2, double t)
+{
+    return y1 + (y2 - y1) * t;
+}
+
+/** Calculate the distance between two points.
+ *
+ * \private \memberof mlt_animation_s
+ */
+
+static inline double distance(double x0, double y0, double x1, double y1)
+{
+    return sqrt(pow(x1 - x0, 2) + pow(y1 - y0, 2));
+}
+
+/** A Catmull–Rom interpolation function.
+ *
+ * \private \memberof mlt_animation_s
+ *
+ * As described here:
+ *   https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline
+ * And further reduced here with tension added:
+ *   https://qroph.github.io/2018/07/30/smooth-paths-using-catmull-rom-splines.html
+ *
+ * This imlementation supports the alpha value which is set to 0.5 to result in
+ * centripetal Catmull–Rom splines. Centripital Catmull–Rom splines are guaranteed
+ * to not have any cusps or loops. These are not desirable because they result in the
+ * value reversing direction when interpolation from one point to the next.
+ *
+ * To use this function for animation item interpolation, provide 4 points: two points preceeding t
+ * and two points following t. Use the item frame number as the x and the item value as y for each
+ * point. t should represent the fractional progress between point 1 and point 2.
+ *
+ * If fewer than 2 points are available, then duplicate the first and/or last points as necessary to
+ * meet the requirement for 4 points.
+ */
+
+static inline double catmull_rom_interpolate(
+    double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double t)
+{
+    // Correct first and last values.
+    // If points are duplicated (e.g. for the first and last segments) assume the duplicated point
+    // is far away to create a horizontal segment.
+    if (x0 == x1) {
+        x0 -= 10000;
+    }
+    if (x3 == x2) {
+        x3 += 10000;
+    }
+    // Alpha:
+    //  0.0 for the uniform spline
+    //  0.5 for the centripetal spline (no cusps)
+    //  1.0 for the chordal spline.
+    const double alpha = 0.50;
+    // Tension: 0-1.0. Could be made user configurable in the future.
+    //  A value of 1 results in a horizontal tangent at x1,y1 and x2,y2 (slope of 0).
+    //  A value of 0 results in the most natural slope at x1,y1 and x2,y2
+    const double tension = 0;
+    // m1 and m2 are the slope of the tangent line at points x1,y1 and x2,y2 respectively.
+    // In the case of peaks (direction change), make the tangent slope 0 so that the slope change
+    // occurs on the point that the user expected it. However, for the case that direction is not
+    // changing through the point, calculate a natural slope for m1, m2 between adjacent points.
+    double m1 = 0;
+    double m2 = 0;
+    double t12 = pow(distance(x1, y1, x2, y2), alpha);
+    if ((y1 < y0 && y1 > y2) || (y1 > y0 && y1 < y2)) {
+        double t01 = pow(distance(x0, y0, x1, y1), alpha);
+        m1 = (1.0 - tension) * (y2 - y1 + t12 * ((y1 - y0) / t01 - (y2 - y0) / (t01 + t12)));
+    }
+    if ((y2 < y1 && y2 > y3) || (y2 > y1 && y2 < y3)) {
+        double t23 = pow(distance(x2, y2, x3, y3), alpha);
+        m2 = (1.0 - tension) * (y2 - y1 + t12 * ((y3 - y2) / t23 - (y3 - y1) / (t12 + t23)));
+    }
+    double a = 2.0 * (y1 - y2) + m1 + m2;
+    double b = -3.0 * (y1 - y2) - m1 - m1 - m2;
+    double c = m1;
+    double d = y1;
+    return a * t * t * t + b * t * t + c * t + d;
+}
+
+/** Interpolate a new animation item given a set of other items.
+ *
+ * \private \memberof mlt_animation_s
+ *
+ * \param item an unpopulated animation item to be interpolated.
+ *  The frame and keyframe_type fields must already be set. The value for "frame" is the postion
+ *  at which the value will be interpolated. The value for "keyframe_type" determines which
+ *  interpolation will be used.
+ * \param p a sequential array of 4 animation items. The frame value for item must lie between the
+    frame values for p[1] and p[2].
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+  * \return true if there was an error
+ */
+
+static int interpolate_item(mlt_animation_item item,
+                            mlt_animation_item p[],
+                            double fps,
+                            mlt_locale_t locale)
+{
+    int error = 0;
+    double progress = (double) (item->frame - p[1]->frame) / (double) (p[2]->frame - p[1]->frame);
+    if (item->keyframe_type == mlt_keyframe_discrete) {
+        mlt_property_pass(item->property, p[1]->property);
+    } else if (mlt_property_is_color(p[1]->property)) {
+        mlt_color value = {0xff, 0xff, 0xff, 0xff};
+        if (item->keyframe_type == mlt_keyframe_linear) {
+            mlt_color colors[2];
+            mlt_color zero = {0xff, 0xff, 0xff, 0xff};
+            colors[0] = p[1] ? mlt_property_get_color(p[1]->property, fps, locale) : zero;
+            if (p[2]) {
+                colors[1] = mlt_property_get_color(p[2]->property, fps, locale);
+                value.r = linear_interpolate(colors[0].r, colors[1].r, progress);
+                value.g = linear_interpolate(colors[0].g, colors[1].g, progress);
+                value.b = linear_interpolate(colors[0].b, colors[1].b, progress);
+                value.a = linear_interpolate(colors[0].a, colors[1].a, progress);
+            } else {
+                value = colors[0];
+            }
+        } else if (item->keyframe_type == mlt_keyframe_smooth) {
+            mlt_color colors[4];
+            mlt_color zero = {0xff, 0xff, 0xff, 0xff};
+            colors[1] = p[1] ? mlt_property_get_color(p[1]->property, fps, locale) : zero;
+            if (p[2]) {
+                colors[0] = p[0] ? mlt_property_get_color(p[0]->property, fps, locale) : zero;
+                colors[2] = p[2] ? mlt_property_get_color(p[2]->property, fps, locale) : zero;
+                colors[3] = p[3] ? mlt_property_get_color(p[3]->property, fps, locale) : zero;
+                value.r = CLAMP(catmull_rom_interpolate(p[0]->frame,
+                                                        colors[0].r,
+                                                        p[1]->frame,
+                                                        colors[1].r,
+                                                        p[2]->frame,
+                                                        colors[2].r,
+                                                        p[3]->frame,
+                                                        colors[3].r,
+                                                        progress),
+                                0,
+                                255);
+                value.g = CLAMP(catmull_rom_interpolate(p[0]->frame,
+                                                        colors[0].g,
+                                                        p[1]->frame,
+                                                        colors[1].g,
+                                                        p[2]->frame,
+                                                        colors[2].g,
+                                                        p[3]->frame,
+                                                        colors[3].g,
+                                                        progress),
+                                0,
+                                255);
+                value.b = CLAMP(catmull_rom_interpolate(p[0]->frame,
+                                                        colors[0].b,
+                                                        p[1]->frame,
+                                                        colors[1].b,
+                                                        p[2]->frame,
+                                                        colors[2].b,
+                                                        p[3]->frame,
+                                                        colors[3].b,
+                                                        progress),
+                                0,
+                                255);
+                value.a = CLAMP(catmull_rom_interpolate(p[0]->frame,
+                                                        colors[0].a,
+                                                        p[1]->frame,
+                                                        colors[1].a,
+                                                        p[2]->frame,
+                                                        colors[2].a,
+                                                        p[3]->frame,
+                                                        colors[3].a,
+                                                        progress),
+                                0,
+                                255);
+            } else {
+                value = colors[1];
+            }
+        }
+        error = mlt_property_set_color(item->property, value);
+    } else if (mlt_property_is_rect(item->property)) {
+        mlt_rect value = {DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN};
+        if (item->keyframe_type == mlt_keyframe_linear) {
+            mlt_rect points[2];
+            mlt_rect zero = {0, 0, 0, 0, 0};
+            points[0] = p[1] ? mlt_property_get_rect(p[1]->property, locale) : zero;
+            if (p[2]) {
+                points[1] = mlt_property_get_rect(p[2]->property, locale);
+                value.x = linear_interpolate(points[0].x, points[1].x, progress);
+                value.y = linear_interpolate(points[0].y, points[1].y, progress);
+                value.w = linear_interpolate(points[0].w, points[1].w, progress);
+                value.h = linear_interpolate(points[0].h, points[1].h, progress);
+                value.o = linear_interpolate(points[0].o, points[1].o, progress);
+            } else {
+                value = points[0];
+            }
+        } else if (item->keyframe_type == mlt_keyframe_smooth) {
+            mlt_rect points[4];
+            mlt_rect zero = {0, 0, 0, 0, 0};
+            points[1] = p[1] ? mlt_property_get_rect(p[1]->property, locale) : zero;
+            if (p[2]) {
+                points[0] = p[0] ? mlt_property_get_rect(p[0]->property, locale) : zero;
+                points[2] = p[2] ? mlt_property_get_rect(p[2]->property, locale) : zero;
+                points[3] = p[3] ? mlt_property_get_rect(p[3]->property, locale) : zero;
+                value.x = catmull_rom_interpolate(p[0]->frame,
+                                                  points[0].x,
+                                                  p[1]->frame,
+                                                  points[1].x,
+                                                  p[2]->frame,
+                                                  points[2].x,
+                                                  p[3]->frame,
+                                                  points[3].x,
+                                                  progress);
+                value.y = catmull_rom_interpolate(p[0]->frame,
+                                                  points[0].y,
+                                                  p[1]->frame,
+                                                  points[1].y,
+                                                  p[2]->frame,
+                                                  points[2].y,
+                                                  p[3]->frame,
+                                                  points[3].y,
+                                                  progress);
+                value.w = catmull_rom_interpolate(p[0]->frame,
+                                                  points[0].w,
+                                                  p[1]->frame,
+                                                  points[1].w,
+                                                  p[2]->frame,
+                                                  points[2].w,
+                                                  p[3]->frame,
+                                                  points[3].w,
+                                                  progress);
+                value.h = catmull_rom_interpolate(p[0]->frame,
+                                                  points[0].h,
+                                                  p[1]->frame,
+                                                  points[1].h,
+                                                  p[2]->frame,
+                                                  points[2].h,
+                                                  p[3]->frame,
+                                                  points[3].h,
+                                                  progress);
+                value.o = catmull_rom_interpolate(p[0]->frame,
+                                                  points[0].o,
+                                                  p[1]->frame,
+                                                  points[1].o,
+                                                  p[2]->frame,
+                                                  points[2].o,
+                                                  p[3]->frame,
+                                                  points[3].o,
+                                                  progress);
+            } else {
+                value = points[1];
+            }
+        }
+        error = mlt_property_set_rect(item->property, value);
+    } else if (mlt_property_is_numeric(p[1]->property, locale)) {
+        double value = 0.0;
+        if (item->keyframe_type == mlt_keyframe_linear) {
+            double points[2];
+            points[0] = p[1] ? mlt_property_get_double(p[1]->property, fps, locale) : 0;
+            points[1] = p[2] ? mlt_property_get_double(p[2]->property, fps, locale) : 0;
+            value = p[2] ? linear_interpolate(points[0], points[1], progress) : points[0];
+        } else if (item->keyframe_type == mlt_keyframe_smooth) {
+            double points[4];
+            points[0] = p[0] ? mlt_property_get_double(p[0]->property, fps, locale) : 0;
+            points[1] = p[1] ? mlt_property_get_double(p[1]->property, fps, locale) : 0;
+            points[2] = p[2] ? mlt_property_get_double(p[2]->property, fps, locale) : 0;
+            points[3] = p[3] ? mlt_property_get_double(p[3]->property, fps, locale) : 0;
+            value = p[2] ? catmull_rom_interpolate(p[0]->frame,
+                                                   points[0],
+                                                   p[1]->frame,
+                                                   points[1],
+                                                   p[2]->frame,
+                                                   points[2],
+                                                   p[3]->frame,
+                                                   points[3],
+                                                   progress)
+                         : points[1];
+        }
+        error = mlt_property_set_double(item->property, value);
+    } else {
+        mlt_property_pass(item->property, p[1]->property);
+    }
+    return error;
 }

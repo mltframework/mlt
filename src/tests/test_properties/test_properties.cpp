@@ -1153,11 +1153,11 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_rect("key", 50).w, 400.0);
         QCOMPARE(p.anim_get_rect("key", 50).h, 400.0);
         QCOMPARE(p.anim_get_rect("key", 50).o, 1.0);
-        QCOMPARE(p.anim_get_rect("key", 15).x, 25.8);
-        QCOMPARE(p.anim_get_rect("key", 15).y, 25.8);
-        QCOMPARE(p.anim_get_rect("key", 15).w, 251.6);
-        QCOMPARE(p.anim_get_rect("key", 15).h, 251.6);
-        QCOMPARE(p.anim_get_rect("key", 15).o, 0.258);
+        QCOMPARE(p.anim_get_rect("key", 15).x, 21.6);
+        QCOMPARE(p.anim_get_rect("key", 15).y, 21.6);
+        QCOMPARE(p.anim_get_rect("key", 15).w, 243.2);
+        QCOMPARE(p.anim_get_rect("key", 15).h, 243.2);
+        QCOMPARE(p.anim_get_rect("key", 15).o, 0.216);
 
         // Using percentages
         p.set("key", "0=0 0; 50=100% 200%");
@@ -1273,12 +1273,12 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_color("key", 50).g, 255);
         QCOMPARE(p.anim_get_color("key", 50).b, 171);
         QCOMPARE(p.anim_get_color("key", 50).a, 223);
-        QCOMPARE(p.anim_get_color("key", 60).a, 237);
-        QCOMPARE(p.anim_get_color("key", 70).a, 239);
+        QCOMPARE(p.anim_get_color("key", 60).a, 223);
+        QCOMPARE(p.anim_get_color("key", 70).a, 223);
         QCOMPARE(p.anim_get_color("key", 75).r, 0);
         QCOMPARE(p.anim_get_color("key", 75).g, 255);
         QCOMPARE(p.anim_get_color("key", 75).b, 171);
-        QCOMPARE(p.anim_get_color("key", 75).a, 236);
+        QCOMPARE(p.anim_get_color("key", 75).a, 223);
         QCOMPARE(p.anim_get_color("key", 100).r, 0);
         QCOMPARE(p.anim_get_color("key", 100).g, 255);
         QCOMPARE(p.anim_get_color("key", 100).b, 171);
