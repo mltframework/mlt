@@ -144,7 +144,11 @@ typedef enum {
     mlt_keyframe_discrete
     = 0,                 /**< non-interpolated; value changes instantaneously at the key frame */
     mlt_keyframe_linear, /**< simple, constant pace from this key frame to the next */
-    mlt_keyframe_smooth /**< eased pacing from this keyframe to the next using a Catmull-Rom spline */
+    mlt_keyframe_smooth, /**< deprecated use mlt_keyframe_smooth_loose */
+    mlt_keyframe_smooth_loose
+    = mlt_keyframe_smooth, /**< Unity Catmull-Rom spline interpolation. May have cusps or overshoots*/
+    mlt_keyframe_smooth_natural, /**< Centripetal Catmull-Rom spline interpolation with natural slope at each keyframe. Will not have cusps or overshoots*/
+    mlt_keyframe_smooth_tight, /**< Centripetal Catmull-Rom spline interpolation with 0 slope at each keyframe. Will not have cusps or overshoots*/
 } mlt_keyframe_type;
 
 /** The relative time qualifiers */

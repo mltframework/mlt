@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2015-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -664,6 +664,170 @@ private Q_SLOTS:
         }
         // Values from 260 to 300 should only go up
         prev = 49;
+        for (int i = 260; i <= 300; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 200.01);
+            prev = current;
+        }
+        // Values above 301 to 350 should go up from 10 to 11
+        prev = 9.99;
+        for (int i = 301; i <= 350; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 11.01);
+            prev = current;
+        }
+        // Values above 350 should be 11
+        for (int i = 350; i <= 360; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 11);
+        }
+    }
+
+    void SmoothLooseCanReverse()
+    {
+        Properties p;
+        p.set("foo",
+              "50~=0; 60~=100; 100~=110; 150~=200; 200~=110; 240~=100; 260~=50; 300~=200; 301~=10; "
+              "350~=11");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 50 should all be 0
+        for (int i = 0; i <= 50; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 0);
+        }
+        // Values from 50 to 150 will cusp
+        for (int i = 50; i <= 150; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current >= 0);
+            QVERIFY(current < 200.01);
+        }
+        // Values from 150 to 260 will cusp
+        for (int i = 150; i <= 260; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current < 200.01);
+            QVERIFY(current > 47);
+        }
+        // Values from 260 to 300 will overshoot
+        for (int i = 260; i <= 300; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > 49.99);
+            QVERIFY(current < 205.01);
+        }
+        // Values above 301 to 350 will overshoot below 10
+        for (int i = 301; i <= 350; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > -3.8);
+            QVERIFY(current < 11.01);
+        }
+        // Values above 350 should be 11
+        for (int i = 350; i <= 360; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 11);
+        }
+    }
+
+    void SmoothNaturalDoesNotReverse()
+    {
+        Properties p;
+        double prev;
+        // This sequence of keyframes has abrupt changes. For some interpolation algorithms, this
+        // can result in values changing direction along the interpolation path (cusp or
+        // overshoot).
+        // The purpose of this test is to ensure that values do not reverse direction (exept as
+        // expected at keyframes if the user specified a direction change).
+        p.set("foo",
+              "50$=0; 60$=100; 100$=110; 150$=200; 200$=110; 240$=100; 260$=50; 300$=200; 301$=10; "
+              "350$=11");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 50 should all be 0
+        for (int i = 0; i <= 50; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 0);
+        }
+        // Values from 50 to 150 should only go up
+        prev = -0.01;
+        for (int i = 50; i <= 150; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 200.01);
+            prev = current;
+        }
+        // Values from 150 to 260 should only go down
+        prev = 200.01;
+        for (int i = 150; i <= 260; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current < prev);
+            prev = current;
+        }
+        // Values from 260 to 300 should only go up
+        prev = 49.99;
+        for (int i = 260; i <= 300; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 200.01);
+            prev = current;
+        }
+        // Values above 301 to 350 should go up from 10 to 11
+        prev = 9.99;
+        for (int i = 301; i <= 350; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 11.01);
+            prev = current;
+        }
+        // Values above 350 should be 11
+        for (int i = 350; i <= 360; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 11);
+        }
+    }
+
+    void SmoothTightDoesNotReverse()
+    {
+        Properties p;
+        double prev;
+        // This sequence of keyframes has abrupt changes. For some interpolation algorithms, this
+        // can result in values changing direction along the interpolation path (cusp or
+        // overshoot).
+        // The purpose of this test is to ensure that values do not reverse direction (exept as
+        // expected at keyframes if the user specified a direction change).
+        p.set("foo",
+              "50-=0; 60-=100; 100-=110; 150-=200; 200-=110; 240-=100; 260-=50; 300-=200; 301-=10; "
+              "350-=11");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 50 should all be 0
+        for (int i = 0; i <= 50; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 0);
+        }
+        // Values from 50 to 150 should only go up
+        prev = -0.01;
+        for (int i = 50; i <= 150; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 200.01);
+            prev = current;
+        }
+        // Values from 150 to 260 should only go down
+        prev = 200.01;
+        for (int i = 150; i <= 260; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current < prev);
+            prev = current;
+        }
+        // Values from 260 to 300 should only go up
+        prev = 49.99;
         for (int i = 260; i <= 300; i++) {
             double current = p.anim_get_double("foo", i);
             QVERIFY(current > prev);
