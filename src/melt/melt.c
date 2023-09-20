@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2022 Meltytech, LLC
+ * Copyright (C) 2002-2023 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -371,6 +371,8 @@ static void event_handling(mlt_producer producer, mlt_consumer consumer)
 #if SDL_MAJOR_VERSION == 2
             if (event.key.keysym.sym < 0x80 && event.key.keysym.sym > 0) {
                 char keyboard[2] = {event.key.keysym.sym, 0};
+                if (event.key.keysym.mod & KMOD_SHIFT)
+                    keyboard[0] += 'A' - 'a';
                 transport_action(producer, keyboard);
             }
             break;
