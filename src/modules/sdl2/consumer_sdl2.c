@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017-2021 Meltytech, LLC
+ * Copyright (C) 2017-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -221,8 +221,17 @@ int consumer_start(mlt_consumer parent)
         }
 
         // Initialize SDL video if needed.
-        if (setup_sdl_video(self))
-            return 1;
+        if (!SDL_WasInit(SDL_INIT_VIDEO)) {
+            pthread_mutex_lock(&mlt_sdl_mutex);
+            int ret = SDL_Init(SDL_INIT_VIDEO);
+            pthread_mutex_unlock(&mlt_sdl_mutex);
+            if (ret < 0) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent),
+                              "Failed to initialize SDL: %s\n",
+                              SDL_GetError());
+                return 1;
+            }
+        }
 
         pthread_create(&self->thread, NULL, consumer_thread, self);
     }
@@ -482,18 +491,6 @@ static int setup_sdl_video(consumer_sdl self)
     if (video_off || preview_off)
         return error;
 
-    if (!SDL_WasInit(SDL_INIT_VIDEO)) {
-        pthread_mutex_lock(&mlt_sdl_mutex);
-        int ret = SDL_Init(SDL_INIT_VIDEO);
-        pthread_mutex_unlock(&mlt_sdl_mutex);
-        if (ret < 0) {
-            mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent),
-                          "Failed to initialize SDL: %s\n",
-                          SDL_GetError());
-            return -1;
-        }
-    }
-
 #ifdef MLT_IMAGE_FORMAT
     int image_format = mlt_properties_get_int(self->properties, "mlt_image_format");
 
@@ -580,6 +577,12 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
     int display_off = video_off | preview_off;
 
     if (self->running && !display_off) {
+        if (!self->sdl_window) {
+            int error = setup_sdl_video(self);
+            if (error)
+                return error;
+        }
+
         // Get the image, width and height
         mlt_frame_get_image(frame, &image, &vfmt, &width, &height, 0);
 
