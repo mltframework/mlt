@@ -54,7 +54,48 @@ struct mlt_animation_s
     animation_node nodes; /**< a linked list of keyframes (and possibly non-keyframe values) */
 };
 
+/** \brief Keyframe type to string mapping
+ *
+ * Used for serialization and deserialization of keyframe types
+ */
+
+struct
+{
+    mlt_keyframe_type t;
+    const char *s;
+} keyframe_type_map[] = {
+    // Map keyframe type to any single character except numeric values.
+    {mlt_keyframe_discrete, "|"},
+    {mlt_keyframe_discrete, "!"},
+    {mlt_keyframe_linear, ""},
+    {mlt_keyframe_smooth, "~"},
+};
+
 static void mlt_animation_clear_string(mlt_animation self);
+
+static const char *keyframe_type_to_str(mlt_keyframe_type t)
+{
+    int map_count = sizeof(keyframe_type_map) / sizeof(*keyframe_type_map);
+    for (int i = 0; i < map_count; i++) {
+        if (keyframe_type_map[i].t == t) {
+            return keyframe_type_map[i].s;
+        }
+    }
+    return "";
+}
+
+static mlt_keyframe_type str_to_keyframe_type(const char *s)
+{
+    if (s && (s[0] < '0' || s[0] > '9')) {
+        int map_count = sizeof(keyframe_type_map) / sizeof(*keyframe_type_map);
+        for (int i = 0; i < map_count; i++) {
+            if (!strncmp(s, keyframe_type_map[i].s, 1)) {
+                return keyframe_type_map[i].t;
+            }
+        }
+    }
+    return mlt_keyframe_linear;
+}
 
 /** Create a new animation object.
  *
@@ -342,12 +383,7 @@ int mlt_animation_parse_item(mlt_animation self, mlt_animation_item item, const 
 
             // The character preceding the equal sign indicates interpolation method.
             p = strchr(value, '=') - 1;
-            if (p[0] == '|' || p[0] == '!')
-                item->keyframe_type = mlt_keyframe_discrete;
-            else if (p[0] == '~')
-                item->keyframe_type = mlt_keyframe_smooth;
-            else
-                item->keyframe_type = mlt_keyframe_linear;
+            item->keyframe_type = str_to_keyframe_type(p);
             value = &p[2];
 
             // Check if the value is quoted.
@@ -693,18 +729,7 @@ char *mlt_animation_serialize_cut_tf(mlt_animation self,
             }
             if (ret) {
                 // Append keyframe time and keyframe/value delimiter (=).
-                const char *s;
-                switch (item.keyframe_type) {
-                case mlt_keyframe_discrete:
-                    s = "|";
-                    break;
-                case mlt_keyframe_smooth:
-                    s = "~";
-                    break;
-                default:
-                    s = "";
-                    break;
-                }
+                const char *s = keyframe_type_to_str(item.keyframe_type);
                 if (time_property && self->fps > 0.0) {
                     mlt_property_set_int(time_property, item.frame - in);
                     const char *time = mlt_property_get_time(time_property,
