@@ -250,16 +250,6 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                     mlt_producer_close(producer);
                     producer = NULL;
                 } else if (self->seekable) {
-                    mlt_properties_set_int(properties,
-                                           "astream",
-                                           relative_stream_index(self->audio_format,
-                                                                 AVMEDIA_TYPE_AUDIO,
-                                                                 self->audio_index));
-                    mlt_properties_set_int(properties,
-                                           "vstream",
-                                           relative_stream_index(self->video_format,
-                                                                 AVMEDIA_TYPE_VIDEO,
-                                                                 self->video_index));
                     // Close the file to release resources for large playlists - reopen later as needed
                     if (self->audio_format)
                         avformat_close_input(&self->audio_format);
