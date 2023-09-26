@@ -462,6 +462,228 @@ private Q_SLOTS:
         QCOMPARE(ret, false);
         QCOMPARE(key, 100);
     }
+
+    void LinearInterpolationOneKey()
+    {
+        Properties p;
+        p.set("foo", "50=10");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 10 should all be 10
+        for (int i = 0; i <= 50; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 10);
+        }
+    }
+
+    void SmoothInterpolationOneKey()
+    {
+        Properties p;
+        p.set("foo", "50~=10");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 10 should all be 10
+        for (int i = 0; i <= 50; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 10);
+        }
+    }
+
+    void LinearInterpolationTwoKey()
+    {
+        Properties p;
+        double prev;
+        p.set("foo", "10=50; 20=100");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 10 should all be 50
+        for (int i = 0; i <= 10; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 50);
+        }
+        // Values from 10 to 20 should step by 5
+        prev = 50 - 5;
+        for (int i = 10; i <= 20; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, prev + 5);
+            prev = current;
+        }
+        // Values after 20 should all be 100
+        for (int i = 20; i <= 30; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 100);
+        }
+    }
+
+    void SmoothInterpolationTwoKey()
+    {
+        Properties p;
+        double prev;
+        p.set("foo", "10~=50; 20~=100");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 10 should all be 50
+        for (int i = 0; i <= 10; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 50);
+        }
+        // Values from 10 to 20 should increase but not exceed 100
+        prev = 49;
+        for (int i = 10; i <= 20; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current <= 100);
+            prev = current;
+        }
+        // Values after 20 should all be 100
+        for (int i = 20; i <= 30; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 100);
+        }
+    }
+
+    void LinearInterpolationThreeKey()
+    {
+        Properties p;
+        double prev;
+        p.set("foo", "10=50; 20=100; 30=50");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 10 should all be 50
+        for (int i = 0; i <= 10; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 50);
+        }
+        // Values from 10 to 20 should step up by 5
+        prev = 50 - 5;
+        for (int i = 10; i <= 20; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, prev + 5);
+            prev = current;
+        }
+        // Values from 20 to 30 should step down by 5
+        prev = 100 + 5;
+        for (int i = 20; i <= 30; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, prev - 5);
+            prev = current;
+        }
+        // Values after 30 should all be 50
+        for (int i = 30; i <= 40; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 50);
+        }
+    }
+
+    void SmoothInterpolationThreeKey()
+    {
+        Properties p;
+        double prev;
+        p.set("foo", "10~=50; 20~=100; 30~=50");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 10 should all be 50
+        for (int i = 0; i <= 10; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 50);
+        }
+        // Values from 10 to 20 should increase but not exceed 100
+        prev = 49;
+        for (int i = 10; i <= 20; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current <= 100);
+            prev = current;
+        }
+        // Test two arbitrary intermediate points
+        QCOMPARE(p.anim_get_double("foo", 13), 64.475);
+        QCOMPARE(p.anim_get_double("foo", 18), 95.6);
+        // Values from 20 to 30 should decrease but not exceed 50
+        prev = 101;
+        for (int i = 20; i <= 30; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current < prev);
+            QVERIFY(current >= 50);
+            prev = current;
+        }
+        // Test two arbitrary intermediate points
+        QCOMPARE(p.anim_get_double("foo", 23), 90.775);
+        QCOMPARE(p.anim_get_double("foo", 28), 58.4);
+        // Values after 30 should all be 50
+        for (int i = 30; i <= 40; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 50);
+        }
+    }
+
+    void LinearDoesNotReverse()
+    {
+        Properties p;
+        double prev;
+        // This sequence of keyframes has abrupt changes. For some interpolation algorithms, this
+        // can result in values changing direction along the interpolation path (cusp or
+        // overshoot).
+        // The purpose of this test is to ensure that values do not reverse direction (exept as
+        // expected at keyframes if the user specified a direction change).
+        p.set("foo",
+              "50=0; 60=100; 100=110; 150=200; 200=110; 240=100; 260=50; 300=200; 301=10; 350=11");
+        // Cause the string to be interpreted as animated value.
+        p.anim_get_int("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        // Values from 0 to 50 should all be 0
+        for (int i = 0; i <= 50; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 0);
+        }
+        // Values from 50 to 150 should only go up
+        prev = 0;
+        for (int i = 50; i <= 150; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current >= prev);
+            prev = current;
+        }
+        // Values from 150 to 260 should only go down
+        prev = 201;
+        for (int i = 150; i <= 260; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current < prev);
+            prev = current;
+        }
+        // Values from 260 to 300 should only go up
+        prev = 49;
+        for (int i = 260; i <= 300; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 200.01);
+            prev = current;
+        }
+        // Values above 301 to 350 should go up from 10 to 11
+        prev = 9.99;
+        for (int i = 301; i <= 350; i++) {
+            double current = p.anim_get_double("foo", i);
+            QVERIFY(current > prev);
+            QVERIFY(current < 11.01);
+            prev = current;
+        }
+        // Values above 350 should be 11
+        for (int i = 350; i <= 360; i++) {
+            double current = p.anim_get_double("foo", i);
+            QCOMPARE(current, 11);
+        }
+    }
 };
 
 QTEST_APPLESS_MAIN(TestAnimation)
