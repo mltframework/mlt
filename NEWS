@@ -1,6 +1,62 @@
 MLT Release Notes
 -----------------
 
+Version 7.20.0
+
+Framework
+
+  * Fixed "blank" in a playlist does not have audio normalization filters.
+  * Fixed serializing `mlt_color` transparent black as "#00000000" when
+    the property was set using an integer or `mlt_color`.
+  * Fixed `mlt_chain_set_source()` would always fetch a frame from the producer
+    even if it has "meta.media.frame_rate_num" and "meta.media.frame_rate_den"
+    properties making things slow.
+  * Fixed `Mlt::Chain` leaking memory.
+
+Modules
+
+  * Added a `blank` producer to the `core` module.
+  * Added keywords to `gpstext` filter:
+    - `#gps_cadence#`
+    - `#gps_grade_degrees#`
+    - `#gps_grade_percentage#`
+    - `#gps_temperature#`
+  * Added some `color_style`s to the `gpsgraphic` filter:
+    - 10 = color by speed (max 100 km/h)
+    - 11 = color by grade (max 90 degrees)
+    - 12 = color by grade (max 20 degrees)
+  * Added more unit formats to `legend_unit` property of `gpsgraphic` filter:
+    - `mmin` or `m/min`
+    - `ftmin` or `ft/min`
+  * Added keywords to `dynamictext` filter:
+    - `#basename#`
+    - `#filename#`
+  * Fixed installing `filter_audioseam.yml`.
+  * Added an `avlink` link to the `avformat` module for FFmpeg filters that can
+    benefit from future frames such as `adeclick`.
+  * Added the `preserve_alpha` property to the `box_blur` filter.
+  * Fixed loading service metadata for the `qt6` and `glaxnimate-qt6` modules.
+  * Fixed a crash when changing the `rotate` property in `avformat` producer
+    with interlace video.
+  * Add `astream` and `vstream` properties to avformat producer. Unlike
+    `audio_index` and `video_index` are absolute indices across the entire
+    array of streams regardless their type, these new 0-based properties are
+    relative to the type audio or video. For example, astream=1 is the second
+    audio stream.
+  * Fixed a possible crash in the `avformat` producer's `mlt_producer_probe`
+    virtual function.
+  * Updated the `glaxnimate` module to version 0.5.4.
+  * Fixed the `sdl2` consumer crashing with the Linux radeonsi_dri driver and
+    showing only all black with the Linux `nvidia` driver.
+
+Other
+
+  * Fix compiling on Android (not supported by the core developers).
+  * Changed the `avformat` consumer `FLAC` preset to use the `flac` format.
+  * Fixed the `melt` <kbd>Shift+H</kbd> and <kbd>Shift+L</kbd> keyboard
+    shortcuts when the SDL2 window has focus.
+
+
 Version 7.18.0
 
 Framework
