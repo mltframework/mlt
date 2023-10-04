@@ -337,7 +337,7 @@ static int filter_get_image(mlt_frame frame,
     int offsetx = 0;
     int offsety = 0;
     // Compare aspect ratio
-    if (100 * *width / *height != 100 * normalized_width / normalized_height) {
+    if (*height > 0 && 100 * *width / *height != 100 * normalized_width / normalized_height) {
         // Source has a different aspect ratio, apply scaling
         double xfactor = normalized_width / *width;
         double yfactor = normalized_height / *height;
