@@ -121,6 +121,9 @@ static int get_image(mlt_frame a_frame,
             // we will process operations on top frame, so also process b_frame
             forceAlpha = true;
         }
+        // Ensure we don't request an image with a 0 width or height
+        b_width = qMax(1, b_width);
+        b_height = qMax(1, b_height);
     } else {
         b_height = *height;
         b_width = *width;
