@@ -682,7 +682,7 @@ MLT_7.18.0 {
     mlt_audio_free_data;
 } MLT_7.16.0;
 
-MLT_7.20.0 {
+MLT_7.22.0 {
   global:
     mlt_property_is_color;
     mlt_property_is_numeric;
