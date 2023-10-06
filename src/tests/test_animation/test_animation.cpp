@@ -848,6 +848,214 @@ private Q_SLOTS:
             QCOMPARE(current, 11);
         }
     }
+
+    void EaseIn()
+    {
+        Properties p;
+        p.set("sinu", "0a=0; 100a=100;");
+        p.set("quad", "0d=0; 100d=100;");
+        p.set("cube", "0g=0; 100g=100;");
+        p.set("quar", "0j=0; 100j=100;");
+        p.set("quin", "0m=0; 100m=100;");
+        p.set("expo", "0p=0; 100p=100;");
+        p.set("circ", "0s=0; 100s=100;");
+        p.set("back", "0v=0; 100v=100;");
+        p.set("elas", "0y=0; 100y=100;");
+        p.set("boun", "0B=0; 100B=100;");
+        p.anim_get_int("sinu", 0);
+        p.anim_get_int("quad", 0);
+        p.anim_get_int("cube", 0);
+        p.anim_get_int("quar", 0);
+        p.anim_get_int("quin", 0);
+        p.anim_get_int("expo", 0);
+        p.anim_get_int("circ", 0);
+        p.anim_get_int("back", 0);
+        p.anim_get_int("elas", 0);
+        p.anim_get_int("boun", 0);
+
+        // fprintf(stderr, "sinu\tquad\tcube\tquar\tquin\texpo\tcirc\tback\telas\tboun\n");
+
+        for (int i = 0; i <= 100; i++) {
+            double sinu = p.anim_get_double("sinu", i);
+            double quad = p.anim_get_double("quad", i);
+            double cube = p.anim_get_double("cube", i);
+            double quar = p.anim_get_double("quar", i);
+            double quin = p.anim_get_double("quin", i);
+            double expo = p.anim_get_double("expo", i);
+            double circ = p.anim_get_double("circ", i);
+            double back = p.anim_get_double("back", i);
+            double elas = p.anim_get_double("elas", i);
+            double boun = p.anim_get_double("boun", i);
+
+            // fprintf(stderr,"%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", sinu, quad, cube, quar, quin, expo, circ, back, elas, boun);
+
+            QVERIFY(sinu >= 0.0);
+            QVERIFY(sinu <= 100.0);
+            QVERIFY(quad >= 0.0);
+            QVERIFY(quad <= 100.0);
+            QVERIFY(quad <= sinu);
+            QVERIFY(cube >= 0.0);
+            QVERIFY(cube <= 100.0);
+            QVERIFY(cube <= quad);
+            QVERIFY(quar >= 0.0);
+            QVERIFY(quar <= 100.0);
+            QVERIFY(quar <= cube);
+            QVERIFY(quin >= 0.0);
+            QVERIFY(quin <= 100.0);
+            QVERIFY(quin <= quar);
+            QVERIFY(expo >= 0.0);
+            QVERIFY(expo <= 100.0);
+            QVERIFY(circ >= 0.0);
+            QVERIFY(circ <= 100.0);
+            QVERIFY(back >= -37.88);
+            QVERIFY(back <= 100.0);
+            QVERIFY(elas >= -36.39);
+            QVERIFY(elas <= 100.0);
+            QVERIFY(boun >= -0.00000001);
+            QVERIFY(boun <= 100.0);
+        }
+    }
+
+    void EaseOut()
+    {
+        Properties p;
+        p.set("sinu", "0b=0; 100b=100;");
+        p.set("quad", "0e=0; 100e=100;");
+        p.set("cube", "0h=0; 100h=100;");
+        p.set("quar", "0k=0; 100k=100;");
+        p.set("quin", "0n=0; 100n=100;");
+        p.set("expo", "0q=0; 100q=100;");
+        p.set("circ", "0t=0; 100t=100;");
+        p.set("back", "0w=0; 100w=100;");
+        p.set("elas", "0z=0; 100z=100;");
+        p.set("boun", "0C=0; 100C=100;");
+        p.anim_get_int("sinu", 0);
+        p.anim_get_int("quad", 0);
+        p.anim_get_int("cube", 0);
+        p.anim_get_int("quar", 0);
+        p.anim_get_int("quin", 0);
+        p.anim_get_int("expo", 0);
+        p.anim_get_int("circ", 0);
+        p.anim_get_int("back", 0);
+        p.anim_get_int("elas", 0);
+        p.anim_get_int("boun", 0);
+
+        // fprintf(stderr, "sinu\tquad\tcube\tquar\tquin\texpo\tcirc\tback\telas\tboun\n");
+
+        for (int i = 0; i <= 100; i++) {
+            double sinu = p.anim_get_double("sinu", i);
+            double quad = p.anim_get_double("quad", i);
+            double cube = p.anim_get_double("cube", i);
+            double quar = p.anim_get_double("quar", i);
+            double quin = p.anim_get_double("quin", i);
+            double expo = p.anim_get_double("expo", i);
+            double circ = p.anim_get_double("circ", i);
+            double back = p.anim_get_double("back", i);
+            double elas = p.anim_get_double("elas", i);
+            double boun = p.anim_get_double("boun", i);
+
+            // fprintf(stderr,"%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", sinu, quad, cube, quar, quin, expo, circ, back, elas, boun);
+
+            QVERIFY(sinu >= 0.0);
+            QVERIFY(sinu <= 100.0);
+            QVERIFY(quad >= 0.0);
+            QVERIFY(quad <= 100.0);
+            QVERIFY(quad >= sinu);
+            QVERIFY(cube >= 0.0);
+            QVERIFY(cube <= 100.0);
+            QVERIFY(cube >= quad);
+            QVERIFY(quar >= 0.0);
+            QVERIFY(quar <= 100.0);
+            QVERIFY(quar >= cube);
+            QVERIFY(quin >= 0.0);
+            QVERIFY(quin <= 100.0);
+            QVERIFY(quin >= quar);
+            QVERIFY(expo >= 0.0);
+            QVERIFY(expo <= 100.0);
+            QVERIFY(circ >= 0.0);
+            QVERIFY(circ <= 100.0);
+            QVERIFY(back >= 0.0);
+            QVERIFY(back <= 137.9);
+            QVERIFY(elas >= 0.0);
+            QVERIFY(elas <= 136.4);
+            QVERIFY(boun >= 0.0);
+            QVERIFY(boun <= 100.1);
+        }
+    }
+
+    void EaseInOut()
+    {
+        Properties p;
+        p.set("sinu", "0c=0; 100c=100;");
+        p.set("quad", "0f=0; 100f=100;");
+        p.set("cube", "0i=0; 100i=100;");
+        p.set("quar", "0l=0; 100l=100;");
+        p.set("quin", "0o=0; 100o=100;");
+        p.set("expo", "0r=0; 100r=100;");
+        p.set("circ", "0u=0; 100u=100;");
+        p.set("back", "0x=0; 100x=100;");
+        p.set("elas", "0A=0; 100A=100;");
+        p.set("boun", "0D=0; 100D=100;");
+        p.anim_get_int("sinu", 0);
+        p.anim_get_int("quad", 0);
+        p.anim_get_int("cube", 0);
+        p.anim_get_int("quar", 0);
+        p.anim_get_int("quin", 0);
+        p.anim_get_int("expo", 0);
+        p.anim_get_int("circ", 0);
+        p.anim_get_int("back", 0);
+        p.anim_get_int("elas", 0);
+        p.anim_get_int("boun", 0);
+
+        // fprintf(stderr, "sinu\tquad\tcube\tquar\tquin\texpo\tcirc\tback\telas\tboun\n");
+
+        for (int i = 0; i <= 100; i++) {
+            double sinu = p.anim_get_double("sinu", i);
+            double quad = p.anim_get_double("quad", i);
+            double cube = p.anim_get_double("cube", i);
+            double quar = p.anim_get_double("quar", i);
+            double quin = p.anim_get_double("quin", i);
+            double expo = p.anim_get_double("expo", i);
+            double circ = p.anim_get_double("circ", i);
+            double back = p.anim_get_double("back", i);
+            double elas = p.anim_get_double("elas", i);
+            double boun = p.anim_get_double("boun", i);
+
+            // fprintf(stderr,"%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", sinu, quad, cube, quar, quin, expo, circ, back, elas, boun);
+
+            if (i < 50) {
+                QVERIFY(quad <= sinu);
+                QVERIFY(cube <= quad);
+                QVERIFY(quar <= cube);
+                QVERIFY(quin <= quar);
+            } else {
+                QVERIFY(quad >= sinu);
+                QVERIFY(cube >= quad);
+                QVERIFY(quar >= cube);
+                QVERIFY(quin >= quar);
+            }
+            QVERIFY(sinu >= 0.0);
+            QVERIFY(sinu <= 100.0);
+            QVERIFY(quad >= 0.0);
+            QVERIFY(quad <= 100.0);
+            QVERIFY(cube >= 0.0);
+            QVERIFY(cube <= 100.0);
+            QVERIFY(quar >= 0.0);
+            QVERIFY(quar <= 100.0);
+            QVERIFY(quin >= 0.0);
+            QVERIFY(quin <= 100.0);
+            QVERIFY(expo >= 0.0);
+            QVERIFY(expo <= 100.0);
+            QVERIFY(circ >= 0.0);
+            QVERIFY(circ <= 100.0);
+            QVERIFY(back >= -19.0);
+            QVERIFY(back <= 119.0);
+            QVERIFY(elas >= -18.2);
+            QVERIFY(elas <= 118.2);
+            QVERIFY(boun >= -0.01);
+            QVERIFY(boun <= 100.1);
+        }
+    }
 };
 
 QTEST_APPLESS_MAIN(TestAnimation)

@@ -149,6 +149,36 @@ typedef enum {
     = mlt_keyframe_smooth, /**< Unity Catmull-Rom spline interpolation. May have cusps or overshoots*/
     mlt_keyframe_smooth_natural, /**< Centripetal Catmull-Rom spline interpolation with natural slope at each keyframe. Will not have cusps or overshoots*/
     mlt_keyframe_smooth_tight, /**< Centripetal Catmull-Rom spline interpolation with 0 slope at each keyframe. Will not have cusps or overshoots*/
+    mlt_keyframe_sinusoidal_in,
+    mlt_keyframe_sinusoidal_out,
+    mlt_keyframe_sinusoidal_in_out,
+    mlt_keyframe_quadratic_in,
+    mlt_keyframe_quadratic_out,
+    mlt_keyframe_quadratic_in_out,
+    mlt_keyframe_cubic_in,
+    mlt_keyframe_cubic_out,
+    mlt_keyframe_cubic_in_out,
+    mlt_keyframe_quartic_in,
+    mlt_keyframe_quartic_out,
+    mlt_keyframe_quartic_in_out,
+    mlt_keyframe_quintic_in,
+    mlt_keyframe_quintic_out,
+    mlt_keyframe_quintic_in_out,
+    mlt_keyframe_exponential_in,
+    mlt_keyframe_exponential_out,
+    mlt_keyframe_exponential_in_out,
+    mlt_keyframe_circular_in,
+    mlt_keyframe_circular_out,
+    mlt_keyframe_circular_in_out,
+    mlt_keyframe_back_in,
+    mlt_keyframe_back_out,
+    mlt_keyframe_back_in_out,
+    mlt_keyframe_elastic_in,
+    mlt_keyframe_elastic_out,
+    mlt_keyframe_elastic_in_out,
+    mlt_keyframe_bounce_in,
+    mlt_keyframe_bounce_out,
+    mlt_keyframe_bounce_in_out,
 } mlt_keyframe_type;
 
 /** The relative time qualifiers */

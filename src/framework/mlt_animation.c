@@ -74,6 +74,36 @@ struct
     {mlt_keyframe_smooth_loose, "~"},
     {mlt_keyframe_smooth_natural, "$"},
     {mlt_keyframe_smooth_tight, "-"},
+    {mlt_keyframe_sinusoidal_in, "a"},
+    {mlt_keyframe_sinusoidal_out, "b"},
+    {mlt_keyframe_sinusoidal_in_out, "c"},
+    {mlt_keyframe_quadratic_in, "d"},
+    {mlt_keyframe_quadratic_out, "e"},
+    {mlt_keyframe_quadratic_in_out, "f"},
+    {mlt_keyframe_cubic_in, "g"},
+    {mlt_keyframe_cubic_out, "h"},
+    {mlt_keyframe_cubic_in_out, "i"},
+    {mlt_keyframe_quartic_in, "j"},
+    {mlt_keyframe_quartic_out, "k"},
+    {mlt_keyframe_quartic_in_out, "l"},
+    {mlt_keyframe_quintic_in, "m"},
+    {mlt_keyframe_quintic_out, "n"},
+    {mlt_keyframe_quintic_in_out, "o"},
+    {mlt_keyframe_exponential_in, "p"},
+    {mlt_keyframe_exponential_out, "q"},
+    {mlt_keyframe_exponential_in_out, "r"},
+    {mlt_keyframe_circular_in, "s"},
+    {mlt_keyframe_circular_out, "t"},
+    {mlt_keyframe_circular_in_out, "u"},
+    {mlt_keyframe_back_in, "v"},
+    {mlt_keyframe_back_out, "w"},
+    {mlt_keyframe_back_in_out, "x"},
+    {mlt_keyframe_elastic_in, "y"},
+    {mlt_keyframe_elastic_out, "z"},
+    {mlt_keyframe_elastic_in_out, "A"},
+    {mlt_keyframe_bounce_in, "B"},
+    {mlt_keyframe_bounce_out, "C"},
+    {mlt_keyframe_bounce_in_out, "D"},
 };
 
 static void mlt_animation_clear_string(mlt_animation self);
@@ -1056,6 +1086,16 @@ static inline double catmull_rom_interpolate(double x0,
                                              double alpha,
                                              double tension)
 {
+    // Correct first and last values.
+    // If points are duplicated (e.g. for the first and last segments) assume the duplicated point
+    // is far away to create a horizontal segment.
+    if (x0 == x1) {
+        x0 -= 10000;
+    }
+    if (x3 == x2) {
+        x3 += 10000;
+    }
+
     double m1 = 0;
     double m2 = 0;
     double t12 = pow(distance(x1, y1, x2, y2), alpha);
@@ -1074,6 +1114,148 @@ static inline double catmull_rom_interpolate(double x0,
     return a * t * t * t + b * t * t + c * t + d;
 }
 
+/** Easing functions
+ *
+ * The following easing functions are based on Robert Penner's Easing Functions
+ * http://robertpenner.com/easing/
+ */
+
+typedef enum {
+    ease_in,
+    ease_out,
+    ease_inout,
+} ease_type;
+
+static inline double sinusoidal_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = sin((t - 1) * M_PI_2) + 1;
+    } else if (ease == ease_out) {
+        factor = sin(t * M_PI_2);
+    } else { // ease_inout
+        factor = 0.5 * (1 - cos(t * M_PI));
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double power_interpolate(double y1, double y2, double t, double order, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = pow(t, order);
+    } else if (ease == ease_out) {
+        factor = 1 - pow(1 - t, order);
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = pow(2, order) * pow(t, order) / 2;
+        } else {
+            factor = 1.0 - pow(-2 * t + 2, order) / 2;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double exponential_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (t == 0.0) {
+        factor = 0;
+    } else if (t == 1.0) {
+        factor = 1.0;
+    } else if (ease == ease_in) {
+        factor = pow(2.0, 10 * t - 10);
+    } else if (ease == ease_out) {
+        factor = 1.0 - pow(2.0, -10 * t);
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = pow(2, 20 * t - 10) / 2;
+        } else {
+            factor = (2 - pow(2, -20 * t + 10)) / 2;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double circular_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = 1.0 - sqrt(1.0 - pow(t, 2.0));
+    } else if (ease == ease_out) {
+        factor = sqrt(1.0 - pow(t - 1.0, 2.0));
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = 0.5 * (1 - sqrt(1 - 4 * (t * t)));
+        } else {
+            factor = 0.5 * (sqrt(-((2 * t) - 3) * ((2 * t) - 1)) + 1);
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double back_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = t * t * t - t * sin(t * M_PI);
+    } else if (ease == ease_out) {
+        double f = (1 - t);
+        factor = 1 - (f * f * f - f * sin(f * M_PI));
+    } else { // ease_inout
+        if (t < 0.5) {
+            double f = 2 * t;
+            factor = 0.5 * (f * f * f - f * sin(f * M_PI));
+        } else {
+            double f = (1 - (2 * t - 1));
+            factor = 0.5 * (1 - (f * f * f - f * sin(f * M_PI))) + 0.5;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double elastic_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = sin(13 * M_PI_2 * t) * pow(2, 10 * (t - 1));
+    } else if (ease == ease_out) {
+        factor = sin(-13 * M_PI_2 * (t + 1)) * pow(2, -10 * t) + 1;
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = 0.5 * sin(13 * M_PI_2 * (2 * t)) * pow(2, 10 * ((2 * t) - 1));
+        } else {
+            factor = 0.5 * (sin(-13 * M_PI_2 * ((2 * t - 1) + 1)) * pow(2, -10 * (2 * t - 1)) + 2);
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double bounce_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = 1.0 - bounce_interpolate(0.0, 1.0, 1.0 - t, ease_out);
+    } else if (ease == ease_out) {
+        if (t < 4 / 11.0) {
+            factor = (121 * t * t) / 16.0;
+        } else if (t < 8 / 11.0) {
+            factor = (363 / 40.0 * t * t) - (99 / 10.0 * t) + 17 / 5.0;
+        } else if (t < 9 / 10.0) {
+            factor = (4356 / 361.0 * t * t) - (35442 / 1805.0 * t) + 16061 / 1805.0;
+        } else {
+            factor = (54 / 5.0 * t * t) - (513 / 25.0 * t) + 268 / 25.0;
+        }
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = 0.5 * bounce_interpolate(0.0, 1.0, t * 2, ease_in);
+        } else {
+            factor = 0.5 * bounce_interpolate(0.0, 1.0, 2.0 * t - 1.0, ease_out) + 0.5;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
 static inline double interpolate_value(double x0,
                                        double y0,
                                        double x1,
@@ -1085,15 +1267,6 @@ static inline double interpolate_value(double x0,
                                        double t,
                                        mlt_keyframe_type type)
 {
-    // Correct first and last values.
-    // If points are duplicated (e.g. for the first and last segments) assume the duplicated point
-    // is far away to create a horizontal segment.
-    if (x0 == x1) {
-        x0 -= 10000;
-    }
-    if (x3 == x2) {
-        x3 += 10000;
-    }
     switch (type) {
     case mlt_keyframe_discrete:
         return y1;
@@ -1105,6 +1278,66 @@ static inline double interpolate_value(double x0,
         return catmull_rom_interpolate(x0, y0, x1, y1, x2, y2, x3, y3, t, 0.5, -1.0);
     case mlt_keyframe_smooth_tight:
         return catmull_rom_interpolate(x0, y0, x1, y1, x2, y2, x3, y3, t, 0.5, 0.0);
+    case mlt_keyframe_sinusoidal_in:
+        return sinusoidal_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_sinusoidal_out:
+        return sinusoidal_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_sinusoidal_in_out:
+        return sinusoidal_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_quadratic_in:
+        return power_interpolate(y1, y2, t, 2, ease_in);
+    case mlt_keyframe_quadratic_out:
+        return power_interpolate(y1, y2, t, 2, ease_out);
+    case mlt_keyframe_quadratic_in_out:
+        return power_interpolate(y1, y2, t, 2, ease_inout);
+    case mlt_keyframe_cubic_in:
+        return power_interpolate(y1, y2, t, 3, ease_in);
+    case mlt_keyframe_cubic_out:
+        return power_interpolate(y1, y2, t, 3, ease_out);
+    case mlt_keyframe_cubic_in_out:
+        return power_interpolate(y1, y2, t, 3, ease_inout);
+    case mlt_keyframe_quartic_in:
+        return power_interpolate(y1, y2, t, 4, ease_in);
+    case mlt_keyframe_quartic_out:
+        return power_interpolate(y1, y2, t, 4, ease_out);
+    case mlt_keyframe_quartic_in_out:
+        return power_interpolate(y1, y2, t, 4, ease_inout);
+    case mlt_keyframe_quintic_in:
+        return power_interpolate(y1, y2, t, 5, ease_in);
+    case mlt_keyframe_quintic_out:
+        return power_interpolate(y1, y2, t, 5, ease_out);
+    case mlt_keyframe_quintic_in_out:
+        return power_interpolate(y1, y2, t, 5, ease_inout);
+    case mlt_keyframe_exponential_in:
+        return exponential_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_exponential_out:
+        return exponential_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_exponential_in_out:
+        return exponential_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_circular_in:
+        return circular_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_circular_out:
+        return circular_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_circular_in_out:
+        return circular_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_back_in:
+        return back_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_back_out:
+        return back_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_back_in_out:
+        return back_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_elastic_in:
+        return elastic_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_elastic_out:
+        return elastic_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_elastic_in_out:
+        return elastic_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_bounce_in:
+        return bounce_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_bounce_out:
+        return bounce_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_bounce_in_out:
+        return bounce_interpolate(y1, y2, t, ease_inout);
     }
     return y1;
 }
