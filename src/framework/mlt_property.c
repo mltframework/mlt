@@ -1134,13 +1134,13 @@ char *mlt_property_get_time(mlt_property self,
 
 /** Determine if the property holds a numeric or numeric string value.
  *
- * \private \memberof mlt_property_s
+ * \public \memberof mlt_property_s
  * \param self a property
  * \param locale the locale to use for string evaluation
  * \return true if it is numeric
  */
 
-static int is_property_numeric(mlt_property self, mlt_locale_t locale)
+int mlt_property_is_numeric(mlt_property self, mlt_locale_t locale)
 {
     int result = (self->types & mlt_prop_int) || (self->types & mlt_prop_color)
                  || (self->types & mlt_prop_int64) || (self->types & mlt_prop_double)
@@ -1186,6 +1186,7 @@ static int is_property_numeric(mlt_property self, mlt_locale_t locale)
 
 /** A linear interpolation function for animation.
  *
+ * \deprecated
  * \private \memberof mlt_property_s
  */
 
@@ -1196,6 +1197,7 @@ static inline double linear_interpolate(double y1, double y2, double t)
 
 /** A smooth spline interpolation for animation.
  *
+ * \deprecated
  * For non-closed curves, you need to also supply the tangent vector at the first and last control point.
  * This is commonly done: T(P[0]) = P[1] - P[0] and T(P[n]) = P[n] - P[n-1].
  * \private \memberof mlt_property_s
@@ -1213,6 +1215,7 @@ static inline double catmull_rom_interpolate(double y0, double y1, double y2, do
 
 /** Interpolate a new property value given a set of other properties.
  *
+ * \deprecated
  * \public \memberof mlt_property_s
  * \param self the property onto which to set the computed value
  * \param p an array of at least 1 value in p[1] if \p interp is discrete,
@@ -1297,8 +1300,8 @@ int mlt_property_interpolate(mlt_property self,
             }
         }
         error = mlt_property_set_color(self, value);
-    } else if (interp != mlt_keyframe_discrete && is_property_numeric(p[1], locale)
-               && is_property_numeric(p[2], locale)) {
+    } else if (interp != mlt_keyframe_discrete && mlt_property_is_numeric(p[1], locale)
+               && mlt_property_is_numeric(p[2], locale)) {
         if (self->types & mlt_prop_rect) {
             mlt_rect value = {DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN};
             if (interp == mlt_keyframe_linear) {
@@ -2072,4 +2075,47 @@ mlt_properties mlt_property_get_properties(mlt_property self)
 int mlt_property_is_anim(mlt_property self)
 {
     return self->animation || (self->prop_string && strchr(self->prop_string, '='));
+}
+
+/** Check if a property is a color.
+
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return true if the property is color
+ */
+
+extern int mlt_property_is_color(mlt_property self)
+{
+    int result = 0;
+    if (self) {
+        pthread_mutex_lock(&self->mutex);
+        if (self->types & mlt_prop_color) {
+            result = 1;
+        } else {
+            const char *value = self->prop_string;
+            if (value
+                && ((strlen(value) > 6 && value[0] == '#')
+                    || (strlen(value) > 7 && value[0] == '0' && value[1] == 'x'))) {
+                result = 1;
+            }
+        }
+        pthread_mutex_unlock(&self->mutex);
+    }
+    return result;
+}
+
+/** Check if a property is a rect.
+
+ * \public \memberof mlt_property_s
+ * \param self a property
+ * \return true if the property is a rect
+ */
+
+extern int mlt_property_is_rect(mlt_property self)
+{
+    int result = 0;
+    if (self) {
+        result = self->types & mlt_prop_rect;
+    }
+    return result;
 }

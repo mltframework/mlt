@@ -3,7 +3,7 @@
  * \brief Property Animation class definition
  * \see mlt_animation_s
  *
- * Copyright (C) 2004-2021 Meltytech, LLC
+ * Copyright (C) 2004-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,8 @@
 #include "mlt_properties.h"
 #include "mlt_tokeniser.h"
 
+#include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,7 +56,85 @@ struct mlt_animation_s
     animation_node nodes; /**< a linked list of keyframes (and possibly non-keyframe values) */
 };
 
+/** \brief Keyframe type to string mapping
+ *
+ * Used for serialization and deserialization of keyframe types
+ */
+
+struct
+{
+    mlt_keyframe_type t;
+    const char *s;
+} keyframe_type_map[] = {
+    // Map keyframe type to any single character except numeric values.
+    {mlt_keyframe_discrete, "|"},
+    {mlt_keyframe_discrete, "!"},
+    {mlt_keyframe_linear, ""},
+    {mlt_keyframe_smooth, "~"},
+    {mlt_keyframe_smooth_loose, "~"},
+    {mlt_keyframe_smooth_natural, "$"},
+    {mlt_keyframe_smooth_tight, "-"},
+    {mlt_keyframe_sinusoidal_in, "a"},
+    {mlt_keyframe_sinusoidal_out, "b"},
+    {mlt_keyframe_sinusoidal_in_out, "c"},
+    {mlt_keyframe_quadratic_in, "d"},
+    {mlt_keyframe_quadratic_out, "e"},
+    {mlt_keyframe_quadratic_in_out, "f"},
+    {mlt_keyframe_cubic_in, "g"},
+    {mlt_keyframe_cubic_out, "h"},
+    {mlt_keyframe_cubic_in_out, "i"},
+    {mlt_keyframe_quartic_in, "j"},
+    {mlt_keyframe_quartic_out, "k"},
+    {mlt_keyframe_quartic_in_out, "l"},
+    {mlt_keyframe_quintic_in, "m"},
+    {mlt_keyframe_quintic_out, "n"},
+    {mlt_keyframe_quintic_in_out, "o"},
+    {mlt_keyframe_exponential_in, "p"},
+    {mlt_keyframe_exponential_out, "q"},
+    {mlt_keyframe_exponential_in_out, "r"},
+    {mlt_keyframe_circular_in, "s"},
+    {mlt_keyframe_circular_out, "t"},
+    {mlt_keyframe_circular_in_out, "u"},
+    {mlt_keyframe_back_in, "v"},
+    {mlt_keyframe_back_out, "w"},
+    {mlt_keyframe_back_in_out, "x"},
+    {mlt_keyframe_elastic_in, "y"},
+    {mlt_keyframe_elastic_out, "z"},
+    {mlt_keyframe_elastic_in_out, "A"},
+    {mlt_keyframe_bounce_in, "B"},
+    {mlt_keyframe_bounce_out, "C"},
+    {mlt_keyframe_bounce_in_out, "D"},
+};
+
 static void mlt_animation_clear_string(mlt_animation self);
+static int interpolate_item(mlt_animation_item item,
+                            mlt_animation_item p[],
+                            double fps,
+                            mlt_locale_t locale);
+
+static const char *keyframe_type_to_str(mlt_keyframe_type t)
+{
+    int map_count = sizeof(keyframe_type_map) / sizeof(*keyframe_type_map);
+    for (int i = 0; i < map_count; i++) {
+        if (keyframe_type_map[i].t == t) {
+            return keyframe_type_map[i].s;
+        }
+    }
+    return "";
+}
+
+static mlt_keyframe_type str_to_keyframe_type(const char *s)
+{
+    if (s && (s[0] < '0' || s[0] > '9')) {
+        int map_count = sizeof(keyframe_type_map) / sizeof(*keyframe_type_map);
+        for (int i = 0; i < map_count; i++) {
+            if (!strncmp(s, keyframe_type_map[i].s, 1)) {
+                return keyframe_type_map[i].t;
+            }
+        }
+    }
+    return mlt_keyframe_linear;
+}
 
 /** Create a new animation object.
  *
@@ -81,8 +161,7 @@ void mlt_animation_interpolate(mlt_animation self)
         animation_node current = self->nodes;
         while (current) {
             if (!current->item.is_key) {
-                double progress;
-                mlt_property points[4];
+                mlt_animation_item points[4];
                 animation_node prev = current->prev;
                 animation_node next = current->next;
 
@@ -98,18 +177,11 @@ void mlt_animation_interpolate(mlt_animation self)
                 if (!next) {
                     next = current;
                 }
-                points[0] = prev->prev ? prev->prev->item.property : prev->item.property;
-                points[1] = prev->item.property;
-                points[2] = next->item.property;
-                points[3] = next->next ? next->next->item.property : next->item.property;
-                progress = current->item.frame - prev->item.frame;
-                progress /= next->item.frame - prev->item.frame;
-                mlt_property_interpolate(current->item.property,
-                                         points,
-                                         progress,
-                                         self->fps,
-                                         self->locale,
-                                         current->item.keyframe_type);
+                points[0] = prev->prev ? &prev->prev->item : &prev->item;
+                points[1] = &prev->item;
+                points[2] = &next->item;
+                points[3] = next->next ? &next->next->item : &next->item;
+                interpolate_item(&current->item, points, self->fps, self->locale);
             }
 
             // Move to the next item
@@ -342,12 +414,7 @@ int mlt_animation_parse_item(mlt_animation self, mlt_animation_item item, const 
 
             // The character preceding the equal sign indicates interpolation method.
             p = strchr(value, '=') - 1;
-            if (p[0] == '|' || p[0] == '!')
-                item->keyframe_type = mlt_keyframe_discrete;
-            else if (p[0] == '~')
-                item->keyframe_type = mlt_keyframe_smooth;
-            else
-                item->keyframe_type = mlt_keyframe_linear;
+            item->keyframe_type = str_to_keyframe_type(p);
             value = &p[2];
 
             // Check if the value is quoted.
@@ -420,21 +487,13 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
         // Interpolation needed.
         else {
             if (item->property) {
-                double progress;
-                mlt_property points[4];
-                points[0] = node->prev ? node->prev->item.property : node->item.property;
-                points[1] = node->item.property;
-                points[2] = node->next->item.property;
-                points[3] = node->next->next ? node->next->next->item.property
-                                             : node->next->item.property;
-                progress = position - node->item.frame;
-                progress /= node->next->item.frame - node->item.frame;
-                mlt_property_interpolate(item->property,
-                                         points,
-                                         progress,
-                                         self->fps,
-                                         self->locale,
-                                         item->keyframe_type);
+                mlt_animation_item points[4];
+                points[0] = node->prev ? &node->prev->item : &node->item;
+                points[1] = &node->item;
+                points[2] = &node->next->item;
+                points[3] = node->next->next ? &node->next->next->item : &node->next->item;
+                item->frame = position;
+                interpolate_item(item, points, self->fps, self->locale);
             }
             item->is_key = 0;
         }
@@ -693,18 +752,7 @@ char *mlt_animation_serialize_cut_tf(mlt_animation self,
             }
             if (ret) {
                 // Append keyframe time and keyframe/value delimiter (=).
-                const char *s;
-                switch (item.keyframe_type) {
-                case mlt_keyframe_discrete:
-                    s = "|";
-                    break;
-                case mlt_keyframe_smooth:
-                    s = "~";
-                    break;
-                default:
-                    s = "";
-                    break;
-                }
+                const char *s = keyframe_type_to_str(item.keyframe_type);
                 if (time_property && self->fps > 0.0) {
                     mlt_property_set_int(time_property, item.frame - in);
                     const char *time = mlt_property_get_time(time_property,
@@ -972,4 +1020,497 @@ void mlt_animation_clear_string(mlt_animation self)
         return;
     free(self->data);
     self->data = NULL;
+}
+
+/** A linear interpolation function.
+ *
+ * \private \memberof mlt_animation_s
+ */
+
+static inline double linear_interpolate(double y1, double y2, double t)
+{
+    return y1 + (y2 - y1) * t;
+}
+
+/** Calculate the distance between two points.
+ *
+ * \private \memberof mlt_animation_s
+ */
+
+static inline double distance(double x0, double y0, double x1, double y1)
+{
+    return sqrt(pow(x1 - x0, 2) + pow(y1 - y0, 2));
+}
+
+/** A Catmull–Rom interpolation function.
+ *
+ * As described here:
+ *   https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline
+ * And further reduced here with tension added:
+ *   https://qroph.github.io/2018/07/30/smooth-paths-using-catmull-rom-splines.html
+ *
+ * This imlementation supports the alpha value which can be set to 0.5 to result in
+ * centripetal Catmull–Rom splines. Centripital Catmull–Rom splines are guaranteed
+ * to not have any cusps or loops. These are not desirable because they result in the
+ * value reversing direction when interpolation from one point to the next.
+ *
+ * To use this function for animation item interpolation, provide 4 points: two points preceeding t
+ * and two points following t. Use the item frame number as the x and the item value as y for each
+ * point. t should represent the fractional progress between point 1 and point 2.
+ *
+ * If fewer than 2 points are available, then duplicate the first and/or last points as necessary to
+ * meet the requirement for 4 points.
+ 
+ * \private \memberof mlt_animation_s
+ * \param alpha
+ *      0.0 for the uniform spline
+ *      0.5 for the centripetal spline (no cusps)
+ *      1.0 for the chordal spline.
+ * \param tension
+ *      1.0 results in the most natural slope at x1,y1 and x2,y2
+ *      0.0 results in a horizontal tangent at x1,y1 and x2,y2 (slope of 0).
+ *      -1.0 results in the most natural slope at x1,y1 and x2,y2 unless x1 or x2 represents a peak.
+ *      In the case of peaks, a horizontal tangent will be used to avoid overshoot.
+
+ */
+
+static inline double catmull_rom_interpolate(double x0,
+                                             double y0,
+                                             double x1,
+                                             double y1,
+                                             double x2,
+                                             double y2,
+                                             double x3,
+                                             double y3,
+                                             double t,
+                                             double alpha,
+                                             double tension)
+{
+    // Correct first and last values.
+    // If points are duplicated (e.g. for the first and last segments) assume the duplicated point
+    // is far away to create a horizontal segment.
+    if (x0 == x1) {
+        x0 -= 10000;
+    }
+    if (x3 == x2) {
+        x3 += 10000;
+    }
+
+    double m1 = 0;
+    double m2 = 0;
+    double t12 = pow(distance(x1, y1, x2, y2), alpha);
+    if (tension > 0.0 || (y1 < y0 && y1 > y2) || (y1 > y0 && y1 < y2)) {
+        double t01 = pow(distance(x0, y0, x1, y1), alpha);
+        m1 = abs(tension) * (y2 - y1 + t12 * ((y1 - y0) / t01 - (y2 - y0) / (t01 + t12)));
+    }
+    if (tension > 0.0 || (y2 < y1 && y2 > y3) || (y2 > y1 && y2 < y3)) {
+        double t23 = pow(distance(x2, y2, x3, y3), alpha);
+        m2 = abs(tension) * (y2 - y1 + t12 * ((y3 - y2) / t23 - (y3 - y1) / (t12 + t23)));
+    }
+    double a = 2.0 * (y1 - y2) + m1 + m2;
+    double b = -3.0 * (y1 - y2) - m1 - m1 - m2;
+    double c = m1;
+    double d = y1;
+    return a * t * t * t + b * t * t + c * t + d;
+}
+
+/** Easing functions
+ *
+ * The following easing functions are based on Robert Penner's Easing Functions
+ * http://robertpenner.com/easing/
+ */
+
+typedef enum {
+    ease_in,
+    ease_out,
+    ease_inout,
+} ease_type;
+
+static inline double sinusoidal_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = sin((t - 1) * M_PI_2) + 1;
+    } else if (ease == ease_out) {
+        factor = sin(t * M_PI_2);
+    } else { // ease_inout
+        factor = 0.5 * (1 - cos(t * M_PI));
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double power_interpolate(double y1, double y2, double t, double order, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = pow(t, order);
+    } else if (ease == ease_out) {
+        factor = 1 - pow(1 - t, order);
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = pow(2, order) * pow(t, order) / 2;
+        } else {
+            factor = 1.0 - pow(-2 * t + 2, order) / 2;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double exponential_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (t == 0.0) {
+        factor = 0;
+    } else if (t == 1.0) {
+        factor = 1.0;
+    } else if (ease == ease_in) {
+        factor = pow(2.0, 10 * t - 10);
+    } else if (ease == ease_out) {
+        factor = 1.0 - pow(2.0, -10 * t);
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = pow(2, 20 * t - 10) / 2;
+        } else {
+            factor = (2 - pow(2, -20 * t + 10)) / 2;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double circular_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = 1.0 - sqrt(1.0 - pow(t, 2.0));
+    } else if (ease == ease_out) {
+        factor = sqrt(1.0 - pow(t - 1.0, 2.0));
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = 0.5 * (1 - sqrt(1 - 4 * (t * t)));
+        } else {
+            factor = 0.5 * (sqrt(-((2 * t) - 3) * ((2 * t) - 1)) + 1);
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double back_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = t * t * t - t * sin(t * M_PI);
+    } else if (ease == ease_out) {
+        double f = (1 - t);
+        factor = 1 - (f * f * f - f * sin(f * M_PI));
+    } else { // ease_inout
+        if (t < 0.5) {
+            double f = 2 * t;
+            factor = 0.5 * (f * f * f - f * sin(f * M_PI));
+        } else {
+            double f = (1 - (2 * t - 1));
+            factor = 0.5 * (1 - (f * f * f - f * sin(f * M_PI))) + 0.5;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double elastic_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = sin(13 * M_PI_2 * t) * pow(2, 10 * (t - 1));
+    } else if (ease == ease_out) {
+        factor = sin(-13 * M_PI_2 * (t + 1)) * pow(2, -10 * t) + 1;
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = 0.5 * sin(13 * M_PI_2 * (2 * t)) * pow(2, 10 * ((2 * t) - 1));
+        } else {
+            factor = 0.5 * (sin(-13 * M_PI_2 * ((2 * t - 1) + 1)) * pow(2, -10 * (2 * t - 1)) + 2);
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double bounce_interpolate(double y1, double y2, double t, ease_type ease)
+{
+    double factor = 0;
+    if (ease == ease_in) {
+        factor = 1.0 - bounce_interpolate(0.0, 1.0, 1.0 - t, ease_out);
+    } else if (ease == ease_out) {
+        if (t < 4 / 11.0) {
+            factor = (121 * t * t) / 16.0;
+        } else if (t < 8 / 11.0) {
+            factor = (363 / 40.0 * t * t) - (99 / 10.0 * t) + 17 / 5.0;
+        } else if (t < 9 / 10.0) {
+            factor = (4356 / 361.0 * t * t) - (35442 / 1805.0 * t) + 16061 / 1805.0;
+        } else {
+            factor = (54 / 5.0 * t * t) - (513 / 25.0 * t) + 268 / 25.0;
+        }
+    } else { // ease_inout
+        if (t < 0.5) {
+            factor = 0.5 * bounce_interpolate(0.0, 1.0, t * 2, ease_in);
+        } else {
+            factor = 0.5 * bounce_interpolate(0.0, 1.0, 2.0 * t - 1.0, ease_out) + 0.5;
+        }
+    }
+    return y1 + (y2 - y1) * factor;
+}
+
+static inline double interpolate_value(double x0,
+                                       double y0,
+                                       double x1,
+                                       double y1,
+                                       double x2,
+                                       double y2,
+                                       double x3,
+                                       double y3,
+                                       double t,
+                                       mlt_keyframe_type type)
+{
+    switch (type) {
+    case mlt_keyframe_discrete:
+        return y1;
+    case mlt_keyframe_linear:
+        return linear_interpolate(y1, y2, t);
+    case mlt_keyframe_smooth_loose:
+        return catmull_rom_interpolate(x0, y0, x1, y1, x2, y2, x3, y3, t, 0.0, 1.0);
+    case mlt_keyframe_smooth_natural:
+        return catmull_rom_interpolate(x0, y0, x1, y1, x2, y2, x3, y3, t, 0.5, -1.0);
+    case mlt_keyframe_smooth_tight:
+        return catmull_rom_interpolate(x0, y0, x1, y1, x2, y2, x3, y3, t, 0.5, 0.0);
+    case mlt_keyframe_sinusoidal_in:
+        return sinusoidal_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_sinusoidal_out:
+        return sinusoidal_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_sinusoidal_in_out:
+        return sinusoidal_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_quadratic_in:
+        return power_interpolate(y1, y2, t, 2, ease_in);
+    case mlt_keyframe_quadratic_out:
+        return power_interpolate(y1, y2, t, 2, ease_out);
+    case mlt_keyframe_quadratic_in_out:
+        return power_interpolate(y1, y2, t, 2, ease_inout);
+    case mlt_keyframe_cubic_in:
+        return power_interpolate(y1, y2, t, 3, ease_in);
+    case mlt_keyframe_cubic_out:
+        return power_interpolate(y1, y2, t, 3, ease_out);
+    case mlt_keyframe_cubic_in_out:
+        return power_interpolate(y1, y2, t, 3, ease_inout);
+    case mlt_keyframe_quartic_in:
+        return power_interpolate(y1, y2, t, 4, ease_in);
+    case mlt_keyframe_quartic_out:
+        return power_interpolate(y1, y2, t, 4, ease_out);
+    case mlt_keyframe_quartic_in_out:
+        return power_interpolate(y1, y2, t, 4, ease_inout);
+    case mlt_keyframe_quintic_in:
+        return power_interpolate(y1, y2, t, 5, ease_in);
+    case mlt_keyframe_quintic_out:
+        return power_interpolate(y1, y2, t, 5, ease_out);
+    case mlt_keyframe_quintic_in_out:
+        return power_interpolate(y1, y2, t, 5, ease_inout);
+    case mlt_keyframe_exponential_in:
+        return exponential_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_exponential_out:
+        return exponential_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_exponential_in_out:
+        return exponential_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_circular_in:
+        return circular_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_circular_out:
+        return circular_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_circular_in_out:
+        return circular_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_back_in:
+        return back_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_back_out:
+        return back_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_back_in_out:
+        return back_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_elastic_in:
+        return elastic_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_elastic_out:
+        return elastic_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_elastic_in_out:
+        return elastic_interpolate(y1, y2, t, ease_inout);
+    case mlt_keyframe_bounce_in:
+        return bounce_interpolate(y1, y2, t, ease_in);
+    case mlt_keyframe_bounce_out:
+        return bounce_interpolate(y1, y2, t, ease_out);
+    case mlt_keyframe_bounce_in_out:
+        return bounce_interpolate(y1, y2, t, ease_inout);
+    }
+    return y1;
+}
+
+/** Interpolate a new animation item given a set of other items.
+ *
+ * \private \memberof mlt_animation_s
+ *
+ * \param item an unpopulated animation item to be interpolated.
+ *  The frame and keyframe_type fields must already be set. The value for "frame" is the postion
+ *  at which the value will be interpolated. The value for "keyframe_type" determines which
+ *  interpolation will be used.
+ * \param p a sequential array of 4 animation items. The frame value for item must lie between the
+    frame values for p[1] and p[2].
+ * \param fps the frame rate, which may be needed for converting a time string to frame units
+ * \param locale the locale, which may be needed for converting a string to a real number
+  * \return true if there was an error
+ */
+
+static int interpolate_item(mlt_animation_item item,
+                            mlt_animation_item p[],
+                            double fps,
+                            mlt_locale_t locale)
+{
+    int error = 0;
+    double progress = (double) (item->frame - p[1]->frame) / (double) (p[2]->frame - p[1]->frame);
+    if (item->keyframe_type == mlt_keyframe_discrete) {
+        mlt_property_pass(item->property, p[1]->property);
+    } else if (mlt_property_is_color(p[1]->property)) {
+        mlt_color value = {0xff, 0xff, 0xff, 0xff};
+        mlt_color colors[4];
+        mlt_color zero = {0xff, 0xff, 0xff, 0xff};
+        colors[1] = p[1] ? mlt_property_get_color(p[1]->property, fps, locale) : zero;
+        if (p[2]) {
+            colors[0] = p[0] ? mlt_property_get_color(p[0]->property, fps, locale) : zero;
+            colors[2] = p[2] ? mlt_property_get_color(p[2]->property, fps, locale) : zero;
+            colors[3] = p[3] ? mlt_property_get_color(p[3]->property, fps, locale) : zero;
+            value.r = CLAMP(interpolate_value(p[0]->frame,
+                                              colors[0].r,
+                                              p[1]->frame,
+                                              colors[1].r,
+                                              p[2]->frame,
+                                              colors[2].r,
+                                              p[3]->frame,
+                                              colors[3].r,
+                                              progress,
+                                              item->keyframe_type),
+                            0,
+                            255);
+            value.g = CLAMP(interpolate_value(p[0]->frame,
+                                              colors[0].g,
+                                              p[1]->frame,
+                                              colors[1].g,
+                                              p[2]->frame,
+                                              colors[2].g,
+                                              p[3]->frame,
+                                              colors[3].g,
+                                              progress,
+                                              item->keyframe_type),
+                            0,
+                            255);
+            value.b = CLAMP(interpolate_value(p[0]->frame,
+                                              colors[0].b,
+                                              p[1]->frame,
+                                              colors[1].b,
+                                              p[2]->frame,
+                                              colors[2].b,
+                                              p[3]->frame,
+                                              colors[3].b,
+                                              progress,
+                                              item->keyframe_type),
+                            0,
+                            255);
+            value.a = CLAMP(interpolate_value(p[0]->frame,
+                                              colors[0].a,
+                                              p[1]->frame,
+                                              colors[1].a,
+                                              p[2]->frame,
+                                              colors[2].a,
+                                              p[3]->frame,
+                                              colors[3].a,
+                                              progress,
+                                              item->keyframe_type),
+                            0,
+                            255);
+        } else {
+            value = colors[1];
+        }
+        error = mlt_property_set_color(item->property, value);
+    } else if (mlt_property_is_rect(item->property)) {
+        mlt_rect value = {DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN};
+        mlt_rect points[4];
+        mlt_rect zero = {0, 0, 0, 0, 0};
+        points[1] = p[1] ? mlt_property_get_rect(p[1]->property, locale) : zero;
+        if (p[2]) {
+            points[0] = p[0] ? mlt_property_get_rect(p[0]->property, locale) : zero;
+            points[2] = p[2] ? mlt_property_get_rect(p[2]->property, locale) : zero;
+            points[3] = p[3] ? mlt_property_get_rect(p[3]->property, locale) : zero;
+            value.x = interpolate_value(p[0]->frame,
+                                        points[0].x,
+                                        p[1]->frame,
+                                        points[1].x,
+                                        p[2]->frame,
+                                        points[2].x,
+                                        p[3]->frame,
+                                        points[3].x,
+                                        progress,
+                                        item->keyframe_type);
+            value.y = interpolate_value(p[0]->frame,
+                                        points[0].y,
+                                        p[1]->frame,
+                                        points[1].y,
+                                        p[2]->frame,
+                                        points[2].y,
+                                        p[3]->frame,
+                                        points[3].y,
+                                        progress,
+                                        item->keyframe_type);
+            value.w = interpolate_value(p[0]->frame,
+                                        points[0].w,
+                                        p[1]->frame,
+                                        points[1].w,
+                                        p[2]->frame,
+                                        points[2].w,
+                                        p[3]->frame,
+                                        points[3].w,
+                                        progress,
+                                        item->keyframe_type);
+            value.h = interpolate_value(p[0]->frame,
+                                        points[0].h,
+                                        p[1]->frame,
+                                        points[1].h,
+                                        p[2]->frame,
+                                        points[2].h,
+                                        p[3]->frame,
+                                        points[3].h,
+                                        progress,
+                                        item->keyframe_type);
+            value.o = interpolate_value(p[0]->frame,
+                                        points[0].o,
+                                        p[1]->frame,
+                                        points[1].o,
+                                        p[2]->frame,
+                                        points[2].o,
+                                        p[3]->frame,
+                                        points[3].o,
+                                        progress,
+                                        item->keyframe_type);
+        } else {
+            value = points[1];
+        }
+        error = mlt_property_set_rect(item->property, value);
+    } else if (mlt_property_is_numeric(p[1]->property, locale)) {
+        double value = 0.0;
+        double points[4];
+        points[0] = p[0] ? mlt_property_get_double(p[0]->property, fps, locale) : 0;
+        points[1] = p[1] ? mlt_property_get_double(p[1]->property, fps, locale) : 0;
+        points[2] = p[2] ? mlt_property_get_double(p[2]->property, fps, locale) : 0;
+        points[3] = p[3] ? mlt_property_get_double(p[3]->property, fps, locale) : 0;
+        value = p[2] ? interpolate_value(p[0]->frame,
+                                         points[0],
+                                         p[1]->frame,
+                                         points[1],
+                                         p[2]->frame,
+                                         points[2],
+                                         p[3]->frame,
+                                         points[3],
+                                         progress,
+                                         item->keyframe_type)
+                     : points[1];
+        error = mlt_property_set_double(item->property, value);
+    } else {
+        mlt_property_pass(item->property, p[1]->property);
+    }
+    return error;
 }

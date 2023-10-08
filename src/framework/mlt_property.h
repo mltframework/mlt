@@ -3,7 +3,7 @@
  * \brief Property class declaration
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -126,5 +126,8 @@ extern mlt_rect mlt_property_anim_get_rect(
 
 extern int mlt_property_set_properties(mlt_property self, mlt_properties properties);
 extern mlt_properties mlt_property_get_properties(mlt_property self);
+extern int mlt_property_is_color(mlt_property self);
+extern int mlt_property_is_numeric(mlt_property self, mlt_locale_t locale);
+extern int mlt_property_is_rect(mlt_property self);
 
 #endif
