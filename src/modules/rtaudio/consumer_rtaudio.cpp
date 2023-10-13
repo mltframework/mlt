@@ -1,6 +1,6 @@
 /*
  * consumer_rtaudio.c -- output through RtAudio audio wrapper
- * Copyright (C) 2011-2021 Meltytech, LLC
+ * Copyright (C) 2011-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,10 @@
 #include "RtAudio.h"
 #else
 #include <RtAudio.h>
+#endif
+
+#if defined(RTAUDIO_VERSION_MAJOR) && RTAUDIO_VERSION_MAJOR >= 6
+#define RTAUDIO_VERSION_6
 #endif
 
 static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer consumer, mlt_event_data);
@@ -93,9 +97,9 @@ public:
     mlt_consumer getConsumer() { return &consumer; }
 
     RtAudioConsumer()
-        : rt(NULL)
+        : rt(nullptr)
         , device_id(-1)
-        , queue(NULL)
+        , queue(nullptr)
         , joined(0)
         , running(0)
         , audio_avail(0)
@@ -122,7 +126,7 @@ public:
         if (rt && rt->isStreamOpen())
             rt->closeStream();
         delete rt;
-        rt = NULL;
+        rt = nullptr;
     }
 
     bool create_rtaudio(RtAudio::Api api, int channels, int frequency)
@@ -145,22 +149,34 @@ public:
         if (rt->getDeviceCount() < 1) {
             mlt_log_warning(getConsumer(), "no audio devices found\n");
             delete rt;
-            rt = NULL;
+            rt = nullptr;
             return false;
         }
 
-#ifndef __LINUX_ALSA__
+#if defined(RTAUDIO_VERSION_6) || !defined(__LINUX_ALSA__)
         device_id = rt->getDefaultOutputDevice();
 #endif
         if (resource && strcmp(resource, "") && strcmp(resource, "default")) {
             // Get device ID by name
-            unsigned int n = rt->getDeviceCount();
             RtAudio::DeviceInfo info;
             unsigned int i;
 
+#ifdef RTAUDIO_VERSION_6
+            auto ids = rt->getDeviceIds();
+            for (i = 0; i < ids.size(); i++) {
+                info = rt->getDeviceInfo(ids[i]);
+                mlt_log_verbose(nullptr, "RtAudio device %u = %s\n", ids[i], info.name.c_str());
+                if (info.name.find(resource) != std::string::npos) {
+                    device_id = info.ID;
+                    break;
+                }
+            }
+            if (i == ids.size())
+#else
+            unsigned int n = rt->getDeviceCount();
             for (i = 0; i < n; i++) {
                 info = rt->getDeviceInfo(i);
-                mlt_log_verbose(NULL, "RtAudio device %d = %s\n", i, info.name.c_str());
+                mlt_log_verbose(nullptr, "RtAudio device %d = %s\n", i, info.name.c_str());
                 if (info.probed && info.name == resource) {
                     device_id = i;
                     break;
@@ -168,7 +184,8 @@ public:
             }
             // Name selection failed, try arg as numeric
             if (i == n)
-                device_id = (int) strtol(resource, NULL, 0);
+#endif
+                device_id = (int) strtol(resource, nullptr, 0);
         }
 
         RtAudio::StreamParameters parameters;
@@ -182,6 +199,16 @@ public:
             parameters.deviceId = 0;
         }
         if (resource) {
+#ifdef RTAUDIO_VERSION_6
+            auto ids = rt->getDeviceIds();
+            for (unsigned i = 0; i < ids.size(); i++) {
+                auto info = rt->getDeviceInfo(ids[i]);
+                if (info.name == resource) {
+                    device_id = parameters.deviceId = info.ID;
+                    break;
+                }
+            }
+#else
             unsigned n = rt->getDeviceCount();
             for (unsigned i = 0; i < n; i++) {
                 RtAudio::DeviceInfo info = rt->getDeviceInfo(i);
@@ -190,14 +217,34 @@ public:
                     break;
                 }
             }
+#endif
         }
 
+#ifdef RTAUDIO_VERSION_6
+        if (rt->isStreamOpen()) {
+            rt->closeStream();
+        }
+        if (rt->openStream(&parameters,
+                           nullptr,
+                           RTAUDIO_SINT16,
+                           frequency,
+                           &bufferFrames,
+                           &rtaudio_callback,
+                           this,
+                           &options)
+            || rt->startStream()) {
+            mlt_log_info(getConsumer(), "%s\n", rt->getErrorText().c_str());
+            delete rt;
+            rt = nullptr;
+            return false;
+        }
+#else
         try {
             if (rt->isStreamOpen()) {
                 rt->closeStream();
             }
             rt->openStream(&parameters,
-                           NULL,
+                           nullptr,
                            RTAUDIO_SINT16,
                            frequency,
                            &bufferFrames,
@@ -213,9 +260,10 @@ public:
 #endif
             mlt_log_info(getConsumer(), "%s\n", e.getMessage().c_str());
             delete rt;
-            rt = NULL;
+            rt = nullptr;
             return false;
         }
+#endif
         mlt_log_info(getConsumer(),
                      "Opened RtAudio: %s\t%d\t%d\n",
                      rtaudio_api_str(rt->getCurrentApi()),
@@ -288,10 +336,10 @@ public:
         mlt_properties_set_double(properties, "volume", 1.0);
 
         // This is the initialisation of the consumer
-        pthread_mutex_init(&audio_mutex, NULL);
-        pthread_cond_init(&audio_cond, NULL);
-        pthread_mutex_init(&video_mutex, NULL);
-        pthread_cond_init(&video_cond, NULL);
+        pthread_mutex_init(&audio_mutex, nullptr);
+        pthread_cond_init(&audio_cond, nullptr);
+        pthread_mutex_init(&video_mutex, nullptr);
+        pthread_cond_init(&video_cond, nullptr);
 
         // Default scaler (for now we'll use nearest)
         mlt_properties_set(properties, "rescale", "nearest");
@@ -310,8 +358,8 @@ public:
         joined = 1;
 
         // Initialize the refresh handler
-        pthread_cond_init(&refresh_cond, NULL);
-        pthread_mutex_init(&refresh_mutex, NULL);
+        pthread_cond_init(&refresh_cond, nullptr);
+        pthread_mutex_init(&refresh_mutex, nullptr);
         mlt_events_listen(properties, this, "property-changed", (mlt_listener) consumer_refresh_cb);
 
         return true;
@@ -323,7 +371,7 @@ public:
             stop();
             running = 1;
             joined = 0;
-            pthread_create(&thread, NULL, consumer_thread_proxy, this);
+            pthread_create(&thread, nullptr, consumer_thread_proxy, this);
         }
 
         return 0;
@@ -342,7 +390,7 @@ public:
             pthread_mutex_unlock(&refresh_mutex);
 
             // Cleanup the main thread
-            pthread_join(thread, NULL);
+            pthread_join(thread, nullptr);
 
             // Unlatch the video thread
             pthread_mutex_lock(&video_mutex);
@@ -355,6 +403,11 @@ public:
             pthread_mutex_unlock(&audio_mutex);
 
             if (rt && rt->isStreamOpen())
+#ifdef RTAUDIO_VERSION_6
+                if (rt->stopStream()) {
+                    mlt_log_error(getConsumer(), "%s\n", rt->getErrorText().c_str());
+                }
+#else
                 try {
                     // Stop the stream
                     rt->stopStream();
@@ -366,8 +419,9 @@ public:
 #endif
                     mlt_log_error(getConsumer(), "%s\n", e.getMessage().c_str());
                 }
+#endif
             delete rt;
-            rt = NULL;
+            rt = nullptr;
         }
 
         return 0;
@@ -402,8 +456,8 @@ public:
         // internal initialization
         int init_audio = 1;
         int init_video = 1;
-        mlt_frame frame = NULL;
-        mlt_properties properties = NULL;
+        mlt_frame frame = nullptr;
+        mlt_properties properties = nullptr;
         int64_t duration = 0;
         int64_t playtime = mlt_properties_get_int(consumer_props, "video_delay") * 1000;
         struct timespec tm = {0, 100000};
@@ -440,7 +494,7 @@ public:
                 // Determine the start time now
                 if (playing && init_video) {
                     // Create the video thread
-                    pthread_create(&thread, NULL, video_thread_proxy, this);
+                    pthread_create(&thread, nullptr, video_thread_proxy, this);
 
                     // Video doesn't need to be initialised any more
                     init_video = 0;
@@ -450,7 +504,7 @@ public:
                 mlt_properties_set_int64(properties, "playtime", playtime);
 
                 while (running && speed != 0 && mlt_deque_count(queue) > 15)
-                    nanosleep(&tm, NULL);
+                    nanosleep(&tm, nullptr);
 
                 // Push this frame to the back of the video queue
                 if (running && speed) {
@@ -477,7 +531,7 @@ public:
                     pthread_mutex_unlock(&refresh_mutex);
                 } else {
                     mlt_frame_close(frame);
-                    frame = NULL;
+                    frame = nullptr;
                 }
 
                 // Optimisation to reduce latency
@@ -498,7 +552,7 @@ public:
             pthread_mutex_lock(&video_mutex);
             pthread_cond_broadcast(&video_cond);
             pthread_mutex_unlock(&video_mutex);
-            pthread_join(thread, NULL);
+            pthread_join(thread, nullptr);
         }
 
         while (mlt_deque_count(queue))
@@ -588,7 +642,7 @@ public:
                 init_audio = 0;
                 playing = 1;
             } else {
-                rt = NULL;
+                rt = nullptr;
                 mlt_log_error(getConsumer(), "Unable to initialize RtAudio\n");
                 init_audio = 2;
             }
@@ -661,7 +715,7 @@ public:
         int64_t start = 0;
         int64_t elapsed = 0;
         struct timespec tm;
-        mlt_frame next = NULL;
+        mlt_frame next = nullptr;
         mlt_properties consumerProperties = MLT_CONSUMER_PROPERTIES(getConsumer());
         double speed = 0;
 
@@ -669,7 +723,7 @@ public:
         int real_time = mlt_properties_get_int(consumerProperties, "real_time");
 
         // Get the current time
-        gettimeofday(&now, NULL);
+        gettimeofday(&now, nullptr);
 
         // Determine start time
         start = (int64_t) now.tv_sec * 1000000 + now.tv_usec;
@@ -678,13 +732,13 @@ public:
             // Pop the next frame
             pthread_mutex_lock(&video_mutex);
             next = (mlt_frame) mlt_deque_pop_front(queue);
-            while (next == NULL && running) {
+            while (next == nullptr && running) {
                 pthread_cond_wait(&video_cond, &video_mutex);
                 next = (mlt_frame) mlt_deque_pop_front(queue);
             }
             pthread_mutex_unlock(&video_mutex);
 
-            if (!running || next == NULL)
+            if (!running || next == nullptr)
                 break;
 
             // Get the properties
@@ -694,7 +748,7 @@ public:
             speed = mlt_properties_get_double(properties, "_speed");
 
             // Get the current time
-            gettimeofday(&now, NULL);
+            gettimeofday(&now, nullptr);
 
             // Get the elapsed time
             elapsed = ((int64_t) now.tv_sec * 1000000 + now.tv_usec) - start;
@@ -711,7 +765,7 @@ public:
                 if (real_time && (difference > 20000 && speed == 1.0)) {
                     tm.tv_sec = difference / 1000000;
                     tm.tv_nsec = (difference % 1000000) * 1000;
-                    nanosleep(&tm, NULL);
+                    nanosleep(&tm, nullptr);
                 }
 
                 // Show current frame if not too old
@@ -721,7 +775,7 @@ public:
 
                 // If the queue is empty, recalculate start to allow build up again
                 if (real_time && (mlt_deque_count(queue) == 0 && speed == 1.0)) {
-                    gettimeofday(&now, NULL);
+                    gettimeofday(&now, nullptr);
                     start = ((int64_t) now.tv_sec * 1000000 + now.tv_usec) - scheduled + 20000;
                     start += mlt_properties_get_int(consumerProperties, "video_delay") * 1000;
                 }
@@ -729,10 +783,10 @@ public:
 
             // This frame can now be closed
             mlt_frame_close(next);
-            next = NULL;
+            next = nullptr;
         }
 
-        if (next != NULL)
+        if (next != nullptr)
             mlt_frame_close(next);
 
         mlt_consumer_stopped(getConsumer());
@@ -770,14 +824,14 @@ static void *consumer_thread_proxy(void *arg)
 {
     RtAudioConsumer *rtaudio = (RtAudioConsumer *) arg;
     rtaudio->consumer_thread();
-    return NULL;
+    return nullptr;
 }
 
 static void *video_thread_proxy(void *arg)
 {
     RtAudioConsumer *rtaudio = (RtAudioConsumer *) arg;
     rtaudio->video_thread();
-    return NULL;
+    return nullptr;
 }
 
 /** Start the consumer.
@@ -822,7 +876,7 @@ static void close(mlt_consumer consumer)
     mlt_consumer_stop(consumer);
 
     // Close the parent
-    consumer->close = NULL;
+    consumer->close = nullptr;
     mlt_consumer_close(consumer);
 
     // Free the memory
@@ -838,7 +892,7 @@ mlt_consumer consumer_rtaudio_init(mlt_profile profile,
 {
     // Allocate the consumer
     RtAudioConsumer *rtaudio = new RtAudioConsumer();
-    mlt_consumer consumer = NULL;
+    mlt_consumer consumer = nullptr;
 
     // If allocated
     if (rtaudio && !mlt_consumer_init(rtaudio->getConsumer(), rtaudio, profile)) {
@@ -872,7 +926,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
 MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "rtaudio", consumer_rtaudio_init);
-    MLT_REGISTER_METADATA(mlt_service_consumer_type, "rtaudio", metadata, NULL);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type, "rtaudio", metadata, nullptr);
 }
 
 } // extern C
