@@ -196,7 +196,8 @@ static void get_createdate_str(const char *keyword, mlt_filter filter, mlt_frame
     int n = strlen("createdate") + 1;
     if (strlen(keyword) > n)
         format = &keyword[n];
-    strftime(text, MAX_TEXT_LEN - strlen(text) - 1, format, localtime(&creation_date));
+    int text_length = strlen(text);
+    strftime(text + text_length, MAX_TEXT_LEN - text_length - 1, format, localtime(&creation_date));
 }
 
 /** Perform substitution for keywords that are enclosed in "# #".
