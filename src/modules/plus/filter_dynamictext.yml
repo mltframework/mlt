@@ -179,7 +179,7 @@ parameters:
   - identifier: opacity
     title: Opacity
     type: float
-    description: Opacity of all elements: text, outline, and background
+    description: Opacity of all elements - text, outline, and background
     readonly: no
     default: 1.0
     minimum: 0
