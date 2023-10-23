@@ -329,6 +329,14 @@ static int filter_get_image(mlt_frame frame,
     mlt_position length = mlt_filter_get_length2(filter, frame);
     bool isRichText = qstrlen(mlt_properties_get(filter_properties, "html")) > 0
                       || qstrlen(mlt_properties_get(filter_properties, "resource")) > 0;
+    double opacity = 1.0;
+    if (mlt_properties_exists(filter_properties, "opacity")) {
+        opacity = mlt_properties_anim_get_double(filter_properties, "opacity", position, length);
+    }
+    if (opacity == 0.0) {
+        free(argument);
+        return mlt_frame_get_image(frame, image, image_format, width, height, writable);
+    }
     QString geom_str = QString::fromLatin1(mlt_properties_get(filter_properties, "geometry"));
     if (geom_str.isEmpty()) {
         free(argument);
@@ -374,6 +382,7 @@ static int filter_get_image(mlt_frame frame,
                                | QPainter::HighQualityAntialiasing
 #endif
         );
+        painter.setOpacity(opacity);
         if (isRichText) {
             auto overflowY = mlt_properties_exists(filter_properties, "overflow-y")
                                  ? !!mlt_properties_get_int(filter_properties, "overflow-y")
@@ -478,6 +487,7 @@ mlt_filter filter_qtext_init(mlt_profile profile, mlt_service_type type, const c
     mlt_properties_set_string(filter_properties, "valign", "top");
     mlt_properties_set_string(filter_properties, "outline", "0");
     mlt_properties_set_double(filter_properties, "pixel_ratio", 1.0);
+    mlt_properties_set_double(filter_properties, "opacity", 1.0);
     mlt_properties_set_int(filter_properties, "_filter_private", 1);
 
     return filter;

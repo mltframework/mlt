@@ -2,7 +2,7 @@ schema_version: 7.0
 type: filter
 identifier: qtext
 title: QText
-version: 3
+version: 4
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -229,3 +229,14 @@ parameters:
     minimum: 1.0
     default: 1.0
     mutable: yes
+
+  - identifier: opacity
+    title: Opacity
+    type: float
+    description: Opacity of all elements: text, outline, and background
+    readonly: no
+    default: 1.0
+    minimum: 0
+    maximum: 1.0
+    mutable: yes
+    widget: slider

@@ -260,10 +260,10 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     substitute_keywords(filter, result, dynamic_text, frame);
     mlt_properties_set_string(text_filter_properties, "argument", result);
     free(result);
-    mlt_properties_pass_list(
-        text_filter_properties,
-        properties,
-        "geometry family size weight style fgcolour bgcolour olcolour pad halign valign outline");
+    mlt_properties_pass_list(text_filter_properties,
+                             properties,
+                             "geometry family size weight style fgcolour bgcolour olcolour pad "
+                             "halign valign outline opacity");
     mlt_filter_set_in_and_out(text_filter, mlt_filter_get_in(filter), mlt_filter_get_out(filter));
     return mlt_filter_process(text_filter, frame);
 }
@@ -309,6 +309,7 @@ mlt_filter filter_dynamictext_init(mlt_profile profile,
         mlt_properties_set_string(my_properties, "halign", "left");
         mlt_properties_set_string(my_properties, "valign", "top");
         mlt_properties_set_string(my_properties, "outline", "0");
+        mlt_properties_set_string(my_properties, "opacity", "1.0");
         mlt_properties_set_int(my_properties, "_filter_private", 1);
 
         filter->process = filter_process;

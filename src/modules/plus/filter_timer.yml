@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter
 identifier: timer
 title: Timer
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -232,3 +232,14 @@ parameters:
       - bottom
     mutable: yes
     widget: combo
+
+  - identifier: opacity
+    title: Opacity
+    type: float
+    description: Opacity of all elements: text, outline, and background
+    readonly: no
+    default: 1.0
+    minimum: 0
+    maximum: 1.0
+    mutable: yes
+    widget: slider
