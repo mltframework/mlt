@@ -30,6 +30,32 @@ parameters:
     maximum: 1000
     unit: ms
 
+  - identifier: fade_video
+    title: Fade Video
+    type: boolean
+    description: Fade the video to/from the fade color
+    mutable: yes
+    default: 0
+
+  - identifier: fade_audio
+    title: Fade Audio
+    type: boolean
+    description: Fade the audio to/from silence
+    mutable: yes
+    default: 1
+
+  - identifier: fade_color
+    title: Fade color
+    type: color
+    description: >
+      The color to fade to.
+      A color value is a hexadecimal representation of RGB plus alpha channel
+      as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
+      or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb
+    default: 0x000000ff
+    mutable: yes
+    widget: color
+
   - identifier: fade_in_count
     title: Fade In Count
     type: integer
