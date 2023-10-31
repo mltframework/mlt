@@ -1,7 +1,7 @@
 /*
  * factory.c -- the factory method interfaces
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2022 Meltytech, LLC
+ * Copyright (C) 2009-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -453,7 +453,11 @@ static void *create_frei0r_item(mlt_profile profile,
                      firstname);
 
         if (firstname) {
-            void *handle = dlopen(soname, RTLD_LAZY);
+            const char *alias = mlt_properties_get(mlt_properties_get_data(mlt_global_properties(),
+                                                                           "frei0r.aliases",
+                                                                           NULL),
+                                                   id);
+            void *handle = dlopen(alias ? alias : soname, RTLD_LAZY);
 
             if (handle) {
                 ret = load_lib(profile, type, handle, firstname);
@@ -477,7 +481,6 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
 
 MLT_REPOSITORY
 {
-    int i = 0;
     mlt_tokeniser tokeniser = mlt_tokeniser_init();
     char *frei0r_path = get_frei0r_path();
     int dircount = mlt_tokeniser_parse_new(tokeniser, frei0r_path, MLT_DIRLIST_DELIMITER);
@@ -504,6 +507,17 @@ MLT_REPOSITORY
                             (mlt_destructor) mlt_properties_close,
                             NULL);
 
+    // Load a list of plugin alias names.
+    snprintf(dirname, PATH_MAX, "%s/frei0r/aliases.yaml", mlt_environment("MLT_DATA"));
+    mlt_properties aliases = mlt_properties_parse_yaml(dirname);
+    mlt_properties reverse_aliases = mlt_properties_new();
+    mlt_properties_set_data(mlt_global_properties(),
+                            "frei0r.aliases",
+                            reverse_aliases,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
+
     while (dircount--) {
         mlt_properties direntries = mlt_properties_new();
         char *directory = mlt_tokeniser_get_string(tokeniser, dircount);
@@ -514,7 +528,7 @@ MLT_REPOSITORY
             snprintf(dirname, PATH_MAX, "%s%s", getenv("HOME"), strchr(directory, '/'));
         mlt_properties_dir_list(direntries, dirname, "*" LIBSUF, 1);
 
-        for (i = 0; i < mlt_properties_count(direntries); i++) {
+        for (int i = 0; i < mlt_properties_count(direntries); i++) {
             char *name = mlt_properties_get_value(direntries, i);
             char *shortname = name + strlen(dirname) + 1;
 #ifdef _WIN32
@@ -527,8 +541,10 @@ MLT_REPOSITORY
             if (firstname)
                 strncat(pluginname, firstname, sizeof(pluginname) - strlen(pluginname) - 1);
 
-            if (firstname && mlt_properties_get(blacklist, firstname))
+            if (firstname && mlt_properties_exists(blacklist, firstname))
                 continue;
+
+            mlt_properties plugin_aliases = mlt_properties_get_data(aliases, pluginname, NULL);
 
             void *handle = dlopen(strcat(name, LIBSUF), RTLD_LAZY);
             if (handle) {
@@ -547,6 +563,15 @@ MLT_REPOSITORY
                                               pluginname,
                                               fill_param_info,
                                               name);
+                        for (int j = 0; j < mlt_properties_count(plugin_aliases); j++) {
+                            const char *alias = mlt_properties_get_value(plugin_aliases, j);
+                            mlt_properties_set(reverse_aliases, alias, name);
+                            MLT_REGISTER(mlt_service_producer_type, alias, create_frei0r_item);
+                            MLT_REGISTER_METADATA(mlt_service_producer_type,
+                                                  alias,
+                                                  fill_param_info,
+                                                  name);
+                        }
                     } else if (firstname && info.plugin_type == F0R_PLUGIN_TYPE_FILTER) {
                         if (mlt_properties_get(mlt_repository_filters(repository), pluginname)) {
                             dlclose(handle);
@@ -557,6 +582,15 @@ MLT_REPOSITORY
                                               pluginname,
                                               fill_param_info,
                                               name);
+                        for (int j = 0; j < mlt_properties_count(plugin_aliases); j++) {
+                            const char *alias = mlt_properties_get_value(plugin_aliases, j);
+                            mlt_properties_set(reverse_aliases, alias, name);
+                            MLT_REGISTER(mlt_service_filter_type, alias, create_frei0r_item);
+                            MLT_REGISTER_METADATA(mlt_service_filter_type,
+                                                  alias,
+                                                  fill_param_info,
+                                                  name);
+                        }
                     } else if (firstname && info.plugin_type == F0R_PLUGIN_TYPE_MIXER2) {
                         if (mlt_properties_get(mlt_repository_transitions(repository), pluginname)) {
                             dlclose(handle);
@@ -567,6 +601,15 @@ MLT_REPOSITORY
                                               pluginname,
                                               fill_param_info,
                                               name);
+                        for (int j = 0; j < mlt_properties_count(plugin_aliases); j++) {
+                            const char *alias = mlt_properties_get_value(plugin_aliases, j);
+                            mlt_properties_set(reverse_aliases, alias, name);
+                            MLT_REGISTER(mlt_service_transition_type, alias, create_frei0r_item);
+                            MLT_REGISTER_METADATA(mlt_service_transition_type,
+                                                  alias,
+                                                  fill_param_info,
+                                                  name);
+                        }
                     }
                 }
                 dlclose(handle);
