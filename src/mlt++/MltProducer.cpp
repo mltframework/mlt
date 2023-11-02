@@ -50,7 +50,7 @@ Producer::Producer(Service &producer)
     mlt_service_type type = producer.type();
     if (type == mlt_service_producer_type || type == mlt_service_playlist_type
         || type == mlt_service_tractor_type || type == mlt_service_multitrack_type
-        || type == mlt_service_transition || type == mlt_service_chain_type
+        || type == mlt_service_transition_type || type == mlt_service_chain_type
         || type == mlt_service_link_type) {
         instance = (mlt_producer) producer.get_service();
         inc_ref();
