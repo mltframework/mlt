@@ -12,6 +12,7 @@ threads=0
 crf=23
 g=15
 bf=2
+vprofile=high
 
 meta.preset.extension=mp4
 meta.preset.note=H.264/AAC MP4 for YouTube
