@@ -279,7 +279,7 @@ int process_frei0r_item(mlt_service service,
         }
     }
     if (type == mlt_service_producer_type) {
-        if (slice_count > 0) {
+        if (slice_count > 1) {
             struct update_context ctx = {.frei0r = inst,
                                          .width = *width,
                                          .height = *height,
@@ -292,7 +292,7 @@ int process_frei0r_item(mlt_service service,
             f0r_update(inst, time, NULL, dest);
         }
     } else if (type == mlt_service_filter_type) {
-        if (slice_count > 0) {
+        if (slice_count > 1) {
             struct update_context ctx = {.frei0r = inst,
                                          .width = *width,
                                          .height = *height,
@@ -305,7 +305,7 @@ int process_frei0r_item(mlt_service service,
             f0r_update(inst, time, source[0], dest);
         }
     } else if (type == mlt_service_transition_type && f0r_update2) {
-        if (slice_count > 0) {
+        if (slice_count > 1) {
             struct update_context ctx = {.frei0r = inst,
                                          .width = *width,
                                          .height = *height,
