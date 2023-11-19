@@ -2108,9 +2108,7 @@ static int producer_get_image(mlt_frame frame,
     }
     if (self->image_cache) {
         mlt_frame original = mlt_cache_get_frame(self->image_cache, position);
-        if (original
-            && (*format == mlt_image_none
-                || *format == mlt_properties_get_int(MLT_FRAME_PROPERTIES(original), "format"))) {
+        if (original) {
             mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
             int size = 0;
 
