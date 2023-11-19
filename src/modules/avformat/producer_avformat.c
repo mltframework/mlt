@@ -2131,6 +2131,8 @@ static int producer_get_image(mlt_frame frame,
             mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
             got_picture = 1;
             goto exit_get_image;
+        } else {
+            mlt_frame_close(original);
         }
     }
     // Cache miss
