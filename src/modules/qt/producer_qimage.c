@@ -331,6 +331,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         }
 
         // Set producer-specific frame properties
+        mlt_properties_set_int(properties, "full_range", 1);
         mlt_properties_set_int(properties, "progressive", 1);
         mlt_properties_set_int(properties,
                                "format",
