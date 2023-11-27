@@ -1,6 +1,6 @@
 /*
  * producer_image.c -- a Qt/QImage based producer for MLT
- * Copyright (C) 2006-2022 Meltytech, LLC
+ * Copyright (C) 2006-2023 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -228,6 +228,12 @@ static int producer_get_image(mlt_frame frame,
         self->current_image = mlt_cache_item_data(self->image_cache, NULL);
         self->alpha_cache = mlt_service_cache_get(MLT_PRODUCER_SERVICE(producer), "qimage.alpha");
         self->current_alpha = mlt_cache_item_data(self->alpha_cache, &self->alpha_size);
+
+        const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
+        int dst_full_range = dst_color_range
+                             && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
+        if (dst_full_range)
+            mlt_properties_set_int(properties, "full_range", 1);
     }
     refresh_image(self, frame, *format, *width, *height, enable_caching);
 
@@ -331,7 +337,6 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         }
 
         // Set producer-specific frame properties
-        mlt_properties_set_int(properties, "full_range", 1);
         mlt_properties_set_int(properties, "progressive", 1);
         mlt_properties_set_int(properties,
                                "format",
