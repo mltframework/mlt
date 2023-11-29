@@ -1,6 +1,80 @@
 MLT Release Notes
 -----------------
 
+Version 7.22.0
+
+Framework
+  * Added new functions:
+    - `mlt_property_is_color()`
+    - `mlt_property_is_numeric()`
+    - `mlt_property_is_rect()`
+  * Many new keyframe types:
+    - `mlt_keyframe_smooth_loose` - `~=` (same as old `mlt_keyframe_smooth` - Unity Catmull-Rom spline)
+    - `mlt_keyframe_smooth_natural` - `$=` (Centripetal Catmull-Rom spline with natural slope)
+    - `mlt_keyframe_smooth_tight` - `-=` (Centripetal Catmull-Rom spline with 0 slope)
+    - `mlt_keyframe_sinusoidal_in` - `a=`
+    - `mlt_keyframe_sinusoidal_out` - `b=`
+    - `mlt_keyframe_sinusoidal_in_out` - `c=`
+    - `mlt_keyframe_quadratic_in` - `d=`
+    - `mlt_keyframe_quadratic_out` - `e=`
+    - `mlt_keyframe_quadratic_in_out` - `f=`
+    - `mlt_keyframe_cubic_in` - `g=`
+    - `mlt_keyframe_cubic_out` - `h=`
+    - `mlt_keyframe_cubic_in_out` - `i=`
+    - `mlt_keyframe_quartic_in` - `j=`
+    - `mlt_keyframe_quartic_out` - `k=`
+    - `mlt_keyframe_quartic_in_out` - `l=`
+    - `mlt_keyframe_quintic_in` - `m=`
+    - `mlt_keyframe_quintic_out` - `n=`
+    - `mlt_keyframe_quintic_in_out` - `o=`
+    - `mlt_keyframe_exponential_in` - `p=`
+    - `mlt_keyframe_exponential_out` - `q=`
+    - `mlt_keyframe_exponential_in_out` - `r=`
+    - `mlt_keyframe_circular_in` - `s=`
+    - `mlt_keyframe_circular_out` - `t=`
+    - `mlt_keyframe_circular_in_out` - `u=`
+    - `mlt_keyframe_back_in` - `v=`
+    - `mlt_keyframe_back_out` - `w=`
+    - `mlt_keyframe_back_in_out` - `x=`
+    - `mlt_keyframe_elastic_in` - `y=`
+    - `mlt_keyframe_elastic_out` - `z=`
+    - `mlt_keyframe_elastic_in_out` - `A=`
+    - `mlt_keyframe_bounce_in` - `B=`
+    - `mlt_keyframe_bounce_out` - `C=`
+    - `mlt_keyframe_bounce_in_out` - `D=`
+  * Fixed missing support for `mlt_service_transition` in `Mlt::Producer()` C++
+    constructor.
+
+Modules
+  * Fixed `rotoscoping` filter crash on image with height = 0.
+  * Fixed crashed due to `qtblend` transition requesting an image of 0 width or
+    height.
+  * Added support for RtAudio 6 in the `rtaudio` consumer.
+  * Fixed `createdate` keyword deletes preceeding text in `dynamictext` filter.
+  * Added `opacity` property to filters that use `qtext`:
+    - `dynamictext`
+    - `gpstext`
+    - `qtext`
+    - `timer`
+  * Added `fade_video`, `fade_audio`, and `fade_color` properties to `autofade`
+    filter.
+  * Added backwards compatibility for changed filter names in frei0r v2.3.1:
+    - `frei0r.measure_pr0be`
+    - `frei0r.measure_pr0file`
+    - `frei0r.tehroxx0r`
+    - `frei0r.alpha0ps_alpha0ps`
+    - `frei0r.alpha0ps_alphagrad`
+    - `frei0r.alpha0ps_alphaspot`
+    - `frei0r.denoise_hqdn3d`
+  * Fixed a memory leak in `avformat` producer with consumer deinterlacer=yadif.
+  * Fixed `qimage` producer color if consumer color_range=pc pix_fmt=yuv444p.
+
+Other
+  * Fixed `ten_bit/ProRes 422` avformat preset produced ProRes 444.
+  * Fixed `YouTube` avformat preset did not output high profile with some
+    hardware encoders.
+
+
 Version 7.20.0
 
 Framework
