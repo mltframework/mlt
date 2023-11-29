@@ -874,7 +874,7 @@ int main(int argc, char **argv)
         } else if (!strcmp(argv[i], "-version") || !strcmp(argv[i], "--version")) {
             fprintf(stdout,
                     "%s " VERSION "\n"
-                    "Copyright (C) 2002-2022 Meltytech, LLC\n"
+                    "Copyright (C) 2002-2023 Meltytech, LLC\n"
                     "<https://www.mltframework.org/>\n"
                     "This is free software; see the source for copying conditions.  There is NO\n"
                     "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
