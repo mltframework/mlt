@@ -127,27 +127,23 @@ static void producer_property_changed(mlt_service owner,
     if (!name)
         return;
 
-    if (strcmp(name, "start_frame") || strcmp(name, "end_frame")) {
-        private_data *pdata = (private_data *) self->child;
-        mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
+    private_data *pdata = (private_data *) self->child;
+    mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
+
+    if (!strcmp(name, "start_frame") || !strcmp(name, "end_frame")) {
         pdata->frame_start = mlt_properties_get_int(props, "start_frame");
         pdata->frame_end = mlt_properties_get_int(props, "end_frame");
     }
 
-    // TODO: Find out why this strcmp doesn't work...
-    //if (strcmp(name, "limit_enabled")) {
-    private_data *pdata = (private_data *) self->child;
-    mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
-    pdata->limit_enabled = mlt_properties_get_int(props, "limit_enabled");
-    //}
+    if (!strcmp(name, "limit_enabled")) {
+        pdata->limit_enabled = mlt_properties_get_int(props, "limit_enabled");
+    }
 
-    if (strcmp(name, "speed")) {
-        mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
+    if (!strcmp(name, "speed")) {
         pdata->speed = mlt_properties_get_double(props, "speed");
     }
 
-    if (strcmp(name, "_profile")) {
-        private_data *pdata = (private_data *) self->child;
+    if (!strcmp(name, "_profile")) {
         mlt_service_set_profile((mlt_service) pdata->producer_internal,
                                 mlt_service_profile((mlt_service) self));
     }
