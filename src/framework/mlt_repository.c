@@ -342,7 +342,6 @@ void mlt_repository_close(mlt_repository self)
 	mlt_properties_close( self->producers );
 	mlt_properties_close( self->transitions );
 	mlt_properties_close( &self->parent );
-
 	free( self );
 }
 
