@@ -29,6 +29,7 @@
 #include <ctype.h>
 
 #include <ladspa.h>
+#include <libxml/parser.h>
 #include <libxml/tree.h>
 
 #include "jack_rack.h"
