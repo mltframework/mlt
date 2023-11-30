@@ -1,5 +1,5 @@
 /*
- * filter_freeze.c -- simple frame freezing filter
+ * producer_krita.c -- Produces variable-speed audio within a restricted range of frames. Used internally by Krita to drive audio-synced animation playback.
  * Copyright (C) 2022 Eoin O'Neill <eoinoneill1991@gmail.com>
  * Copyright (C) 2022 Emmet O'Neill <emmetoneill.pdx@gmail.com>
  *
