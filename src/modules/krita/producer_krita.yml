@@ -7,27 +7,47 @@ copyright: Eoin O'Neill, Emmet O'Neill
 creator: Eoin O'Neill, Emmet O'Neill
 license: LGPLv2.1
 language: en
+description: Produces variable-speed audio within a restricted range of frames. Used internally by Krita to drive audio-synced animation playback.
 tags:
   - Video
   - Audio
 parameters:
+  - identifier: resource
+    title: Audio File Resource
+    type: string
+    argument: yes
+    description: |
+      The producer resource, which can be a file name or any producer service name. 
+      The resource will be passed to the loader to create the encapsulated 
+      producer.
+    readonly: no
+    required: yes
+    mutable: no
+
   - identifier: frame_start
     title: Start Frame
     type: integer
-    description: First frame of the acceptable playback range.
+    description: First frame of the restricted playback range.
     default: 0
     mutable: true
 
   - identifier: frame_end
     title: End Frame
     type: integer
-    description: Last frame of the acceptable playback range.
-    default: 100
+    description: Last frame of the restricted playback range.
+    default: 120
     mutable: true
 
   - identifier: limit_enabled
     title: Limit Enabled
     type: integer
-    description: Whether the frame limiting feature should be enabled.
+    description: Whether the frame range should be restricted to the specified start/end limits.
     default: 0
+    mutable: true
+
+  - identifier: speed
+    title: Playback Speed
+    type: double
+    description: Normalized playback speed.
+    default: 1.0
     mutable: true
