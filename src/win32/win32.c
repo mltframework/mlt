@@ -254,11 +254,12 @@ FILE* win32_fopen(const char *filename_utf8, const char *mode_utf8)
 					MultiByteToWideChar(CP_UTF8, 0, filename_utf8, -1, filename_w, n);
 					MultiByteToWideChar(CP_UTF8, 0, mode_utf8, -1, mode_w, n);
 					FILE *fh = _wfopen(filename_w, mode_w);
-					free(filename_w);
+					free(mode_w);
 					if (fh)
 						return fh;
 				}
 			}
+			free(filename_w);
 		}
 	}
 	// Try with regular old fopen.
