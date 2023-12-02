@@ -1,6 +1,6 @@
 /*
  * qimage_wrapper.cpp -- a Qt/QImage based producer for MLT
- * Copyright (C) 2006-2022 Meltytech, LLC
+ * Copyright (C) 2006-2023 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -500,7 +500,7 @@ int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const
         for (int gap = 0; gap < 100;) {
             struct stat buf;
             snprintf(full, 1023, filename, i++);
-            if (stat(full, &buf) == 0) {
+            if (mlt_stat(full, &buf) == 0) {
                 sprintf(key, "%d", keyvalue++);
                 mlt_properties_set(self->filenames, key, full);
                 gap = 0;

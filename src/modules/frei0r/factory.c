@@ -125,7 +125,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
              servicetype,
              service_name);
     memset(&stat_buff, 0, sizeof(stat_buff));
-    stat(file, &stat_buff);
+    mlt_stat(file, &stat_buff);
 
     if (S_ISREG(stat_buff.st_mode)) {
         return mlt_properties_parse_yaml(file);

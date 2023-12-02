@@ -100,7 +100,7 @@ static void get_filedate_str(const char *keyword, mlt_filter filter, mlt_frame f
     char *filename = mlt_properties_get(producer_properties, "resource");
     struct stat file_info;
 
-    if (!stat(filename, &file_info)) {
+    if (!mlt_stat(filename, &file_info)) {
         const char *format = "%Y/%m/%d";
         int n = strlen("filedate") + 1;
         struct tm *time_info = gmtime(&(file_info.st_mtime));
@@ -124,7 +124,7 @@ static void get_localfiledate_str(const char *keyword,
     char *filename = mlt_properties_get(producer_properties, "resource");
     struct stat file_info;
 
-    if (!stat(filename, &file_info)) {
+    if (!mlt_stat(filename, &file_info)) {
         const char *format = "%Y/%m/%d";
         int n = strlen("localfiledate") + 1;
         struct tm *time_info = localtime(&(file_info.st_mtime));
@@ -167,7 +167,8 @@ static void get_filename_str(mlt_filter filter, mlt_frame frame, char *text)
     mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
     mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES(producer);
     char *filename = mlt_properties_get(producer_properties, "resource");
-    if (access(filename, F_OK) == 0) {
+    struct stat file_info;
+    if (!mlt_stat(filename, &file_info)) {
         strncat(text, basename(filename), MAX_TEXT_LEN - strlen(text) - 1);
     }
 }
@@ -177,7 +178,8 @@ static void get_basename_str(mlt_filter filter, mlt_frame frame, char *text)
     mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
     mlt_properties producer_properties = MLT_PRODUCER_PROPERTIES(producer);
     char *filename = strdup(mlt_properties_get(producer_properties, "resource"));
-    if (access(filename, F_OK) == 0) {
+    struct stat file_info;
+    if (!mlt_stat(filename, &file_info)) {
         char *bname = basename(filename);
         char *ext = strrchr(bname, '.');
         if (ext) {

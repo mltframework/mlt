@@ -1,6 +1,7 @@
 /*
  * filter_tracker.cpp -- Motion tracker
  * Copyright (C) 2016 Jean-Baptiste Mardelle
+ * Copyright (C) 2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -175,8 +176,8 @@ static void analyze(mlt_filter filter,
                 // - kernel_r1:   https://www.dropbox.com/s/999cqx5zrfi7w4p/dasiamrpn_kernel_r1.onnx?dl=0
                 // - kernel_cls1: https://www.dropbox.com/s/qvmtszx5h339a0w/dasiamrpn_kernel_cls1.onnx?dl=0
                 struct stat file_info;
-                if (stat(model1, &file_info) == 0 && stat(model2, &file_info) == 0
-                    && stat(model3, &file_info) == 0) {
+                if (mlt_stat(model1, &file_info) == 0 && mlt_stat(model2, &file_info) == 0
+                    && mlt_stat(model3, &file_info) == 0) {
                     // Models found, process
                     parameters.model = model1;
                     parameters.kernel_cls1 = model2;
@@ -205,7 +206,7 @@ static void analyze(mlt_filter filter,
                 // Models can be downloaded from:
                 // https://github.com/HonglinChu/SiamTrackers/tree/master/NanoTrack/models/nanotrackv2
                 struct stat file_info;
-                if (stat(model1, &file_info) == 0 && stat(model2, &file_info) == 0) {
+                if (mlt_stat(model1, &file_info) == 0 && mlt_stat(model2, &file_info) == 0) {
                     // Models found, process
                     parameters.backbone = model1;
                     parameters.neckhead = model2;

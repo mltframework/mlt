@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -288,7 +288,7 @@ int mlt_properties_preset(mlt_properties self, const char *name)
         return 1;
 
     // See if name is an explicit file
-    if (!stat(name, &stat_buff)) {
+    if (!mlt_stat(name, &stat_buff)) {
         return load_properties(self, name);
     } else {
         // Look for profile-specific preset before a generic one.

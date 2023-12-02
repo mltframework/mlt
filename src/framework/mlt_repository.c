@@ -567,7 +567,7 @@ static void list_presets(mlt_properties properties, const char *path, const char
                 struct stat info;
 
                 snprintf(fullname, sizeof(fullname), "%s/%s", dirname, de->d_name);
-                stat(fullname, &info);
+                mlt_stat(fullname, &info);
                 if (S_ISDIR(info.st_mode)) {
                     // recurse into subdirectories
                     char sub[PATH_MAX];

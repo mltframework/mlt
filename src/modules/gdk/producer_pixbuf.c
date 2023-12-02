@@ -1,6 +1,6 @@
 /*
  * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -212,7 +212,7 @@ static int load_sequence_sprintf(producer_pixbuf self,
         while (gap < 100) {
             struct stat buf;
             snprintf(full, 1023, filename, i++);
-            if (stat(full, &buf) == 0) {
+            if (mlt_stat(full, &buf) == 0) {
                 sprintf(key, "%d", keyvalue++);
                 mlt_properties_set(self->filenames, key, full);
                 gap = 0;
@@ -341,7 +341,7 @@ static int load_sequence_csv(producer_pixbuf self, mlt_properties properties, co
                             break;
                         }
 
-                        if (stat(line, &buf) != 0) {
+                        if (mlt_stat(line, &buf) != 0) {
                             break;
                         }
 

@@ -2,7 +2,7 @@
  * \file win32.c
  * \brief Miscellaneous utility functions for Windows.
  *
- * Copyright (C) 2003-2016 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,8 @@
 #include <locale.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "../framework/mlt_properties.h"
 #include "../framework/mlt_log.h"
 
@@ -264,4 +266,24 @@ FILE* win32_fopen(const char *filename_utf8, const char *mode_utf8)
 	}
 	// Try with regular old fopen.
 	return fopen(filename_utf8, mode_utf8);
+}
+
+int win32_stat(const char *filename_utf8, struct stat *buffer)
+{
+	int ret = stat(filename_utf8, buffer);
+	if (!ret) {
+		return ret;
+	}
+	// Convert UTF-8 to wide chars.
+	int n = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename_utf8, -1, NULL, 0);
+	if (n > 0) {
+		wchar_t *filename_w = (wchar_t *) calloc(n, sizeof(wchar_t));
+		if (filename_w) {
+			MultiByteToWideChar(CP_UTF8, 0, filename_utf8, -1, filename_w, n);
+			ret = _wstat(filename_w, (struct _stat *)buffer);
+			free(filename_w);
+			return ret;
+		}
+	}
+	return ret;
 }

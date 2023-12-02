@@ -3,7 +3,7 @@
  * \brief abstraction for all producer services
  * \see mlt_producer_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2023 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1256,7 +1256,7 @@ int64_t mlt_producer_get_creation_time(mlt_producer self)
     }
     if (resource) {
         struct stat file_info;
-        if (!stat(resource, &file_info)) {
+        if (!mlt_stat(resource, &file_info)) {
             return (int64_t) file_info.st_mtime * 1000;
         }
     }
