@@ -34,28 +34,23 @@
 
 typedef struct
 {
-    int frame_start;
-    int frame_end;
-    int limit_enabled;
-    double speed;
     mlt_producer producer_internal;
 } private_data;
 
-static int restrict_range(int input, int min, int max)
+/** Restricts frame index to within range by modulus wrapping (not clamping).
+*/
+static int restrict_range(int index, int min, int max)
 {
     const int span = max - min;
-    return (MAX(input - min, 0) % (span + 1)) + min;
+    return (MAX(index - min, 0) % (span + 1)) + min;
 }
 
-int is_valid_range(const private_data *pdata)
+static int is_valid_range(const int frame_start, const int frame_end)
 {
-    return pdata->frame_start > -1 && pdata->frame_end > -1
-           && pdata->frame_end > pdata->frame_start;
-}
+    const bool NON_NEGATIVE = frame_start >= 0 && frame_end >= 0;
+    const bool NON_INVERTED = frame_end > frame_start;
 
-int is_limit_enabled(const private_data *pdata)
-{
-    return pdata->limit_enabled != 0;
+    return NON_NEGATIVE && NON_INVERTED;
 }
 
 static int producer_get_audio(mlt_frame frame,
@@ -66,8 +61,9 @@ static int producer_get_audio(mlt_frame frame,
                               int *samples)
 {
     mlt_producer producer = mlt_frame_pop_audio(frame);
-    private_data *pdata = (private_data *) producer->child;
+
     struct mlt_audio_s audio;
+
     mlt_audio_set_values(&audio, *buffer, *frequency, *format, *samples, *channels);
 
     int error = mlt_frame_get_audio(frame,
@@ -77,10 +73,13 @@ static int producer_get_audio(mlt_frame frame,
                                     &audio.channels,
                                     &audio.samples);
 
-    // Scale the frequency to account for the speed change.
-    audio.frequency = (double) audio.frequency * fabs(pdata->speed);
+    mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
 
-    if (pdata->speed < 0.0) {
+    // Scale the frequency to account for the dynamic speed (normalized).
+    const double SPEED = mlt_properties_get_double(props, "speed");
+
+    audio.frequency = (double) audio.frequency * fabs(SPEED);
+    if (SPEED < 0.0) {
         mlt_audio_reverse(&audio);
     }
 
@@ -91,62 +90,37 @@ static int producer_get_audio(mlt_frame frame,
 
 static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int index)
 {
-    private_data *pdata = (private_data *) producer->child;
+    mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
+    const int FRAME_START = mlt_properties_get_int(props, "start_frame");
+    const int FRAME_END = mlt_properties_get_int(props, "end_frame");
+    const bool IS_RANGE_LIMITED = mlt_properties_get_int(props, "limit_enabled");
 
-    const int position = mlt_producer_position(pdata->producer_internal);
-    if (is_valid_range(pdata) && is_limit_enabled(pdata)) {
+    private_data *pdata = (private_data *) producer->child;
+    const int POSITION = mlt_producer_position(pdata->producer_internal);
+
+    if (IS_RANGE_LIMITED && is_valid_range(FRAME_START, FRAME_END)) {
         mlt_properties_set_position(MLT_PRODUCER_PROPERTIES(pdata->producer_internal),
                                     "_position",
-                                    restrict_range(position, pdata->frame_start, pdata->frame_end));
+                                    restrict_range(POSITION, FRAME_START, FRAME_END));
     }
 
-    int r = mlt_service_get_frame((mlt_service) pdata->producer_internal, frame, index);
+    int retval = mlt_service_get_frame((mlt_service) pdata->producer_internal, frame, index);
 
     if (!mlt_frame_is_test_audio(*frame)) {
         mlt_frame_push_audio(*frame, producer);
         mlt_frame_push_audio(*frame, producer_get_audio);
     }
 
-    return r;
+    return retval;
 }
 
 static int producer_seek(mlt_producer producer, mlt_position position)
 {
     private_data *pdata = (private_data *) producer->child;
 
-    int r = mlt_producer_seek(pdata->producer_internal, position);
+    int retval = mlt_producer_seek(pdata->producer_internal, position);
 
-    return r;
-}
-
-static void producer_property_changed(mlt_service owner,
-                                      mlt_producer self,
-                                      mlt_event_data event_data)
-{
-    const char *name = mlt_event_data_to_string(event_data);
-    if (!name)
-        return;
-
-    private_data *pdata = (private_data *) self->child;
-    mlt_properties props = MLT_PRODUCER_PROPERTIES(self);
-
-    if (!strcmp(name, "start_frame") || !strcmp(name, "end_frame")) {
-        pdata->frame_start = mlt_properties_get_int(props, "start_frame");
-        pdata->frame_end = mlt_properties_get_int(props, "end_frame");
-    }
-
-    if (!strcmp(name, "limit_enabled")) {
-        pdata->limit_enabled = mlt_properties_get_int(props, "limit_enabled");
-    }
-
-    if (!strcmp(name, "speed")) {
-        pdata->speed = mlt_properties_get_double(props, "speed");
-    }
-
-    if (!strcmp(name, "_profile")) {
-        mlt_service_set_profile((mlt_service) pdata->producer_internal,
-                                mlt_service_profile((mlt_service) self));
-    }
+    return retval;
 }
 
 static void producer_close(mlt_producer producer)
@@ -187,32 +161,16 @@ mlt_producer producer_krita_init(mlt_profile profile,
         // Get the resource to be passed to the clip producer
         char *resource = arg;
 
-        // Default frame start / end props.
-        pdata->frame_start = -1;
-        pdata->frame_end = -1;
-        pdata->limit_enabled = 1;
-        pdata->speed = 1.0;
-
-        // Initialize property values for start / end frames.
-        mlt_properties_set_int(producer_properties, "start_frame", pdata->frame_start);
-        mlt_properties_set_int(producer_properties, "end_frame", pdata->frame_end);
-        mlt_properties_set_int(producer_properties, "limit_enabled", pdata->limit_enabled);
-        mlt_properties_set_double(producer_properties, "speed", pdata->speed);
-
         // Create a producer for the clip using the false profile.
         pdata->producer_internal = mlt_factory_producer(profile, "abnormal", resource);
 
         if (pdata->producer_internal) {
             mlt_producer_set_speed(pdata->producer_internal, 1.0);
         }
-
-        mlt_events_listen(producer_properties,
-                          producer,
-                          "property-changed",
-                          (mlt_listener) producer_property_changed);
     }
 
-    if (!producer || !pdata || !pdata->producer_internal) {
+    const bool INVALID_CONTEXT = !producer || !pdata || !pdata->producer_internal;
+    if (INVALID_CONTEXT) { // Clean up early...
         if (pdata) {
             mlt_producer_close(pdata->producer_internal);
             free(pdata);
