@@ -266,3 +266,8 @@ bool Producer::probe()
 {
     return mlt_producer_probe(get_producer());
 }
+
+void Producer::set_loop_range(int start, int end)
+{
+    return mlt_producer_set_loop_range(get_producer(), start, end);
+}

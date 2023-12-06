@@ -78,6 +78,7 @@ public:
     int64_t get_creation_time();
     void set_creation_time(int64_t creation_time);
     bool probe();
+    void set_loop_range(int start, int end);
 };
 } // namespace Mlt
 

@@ -356,6 +356,14 @@ int mlt_producer_seek(mlt_producer self, mlt_position position)
         // Do not bounds check a link.
     } else if (position < 0 || mlt_producer_get_playtime(self) == 0) {
         position = 0;
+    } else if (mlt_properties_exists(MLT_PRODUCER_PROPERTIES(self), "_loop_start")) {
+        int loopStart = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self), "_loop_start");
+        int loopEnd = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(self), "_loop_end");
+        if (loopStart >= 0 && loopEnd > 0 && loopStart < loopEnd) {
+            if (position > loopEnd || position < loopStart) {
+                position = loopStart;
+            }
+        }
     } else if (use_points && (eof == NULL || !strcmp(eof, "pause"))
                && position >= mlt_producer_get_playtime(self)) {
         mlt_producer_set_speed(self, 0);
@@ -1303,4 +1311,29 @@ int mlt_producer_probe(mlt_producer self)
             return probe(self);
     }
     return 0;
+}
+
+/** Set the loop range for the producer.
+ *
+ * When the loop range is set, the producer will automatically seek to the start frame
+ * after it provides the end frame. Set start to -1 to disable looping.
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \param start the frame number for the beginning of the loop
+ * \param end the frame number for the end of the loop
+ */
+
+void mlt_producer_set_loop_range(mlt_producer self, int start, int end)
+{
+    if (!self)
+        return;
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
+    if (start < 0 || end < 0) {
+        mlt_properties_clear(properties, "_loop_start");
+        mlt_properties_clear(properties, "_loop_end");
+    } else {
+        mlt_properties_set_int(properties, "_loop_start", start);
+        mlt_properties_set_int(properties, "_loop_end", end);
+    }
 }

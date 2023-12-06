@@ -688,3 +688,8 @@ MLT_7.22.0 {
     mlt_property_is_numeric;
     mlt_property_is_rect;
 } MLT_7.18.0;
+
+MLT_7.24.0 {
+  global:
+    mlt_producer_set_loop_range;
+} MLT_7.22.0;

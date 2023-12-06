@@ -145,5 +145,6 @@ extern void mlt_producer_close(mlt_producer self);
 int64_t mlt_producer_get_creation_time(mlt_producer self);
 void mlt_producer_set_creation_time(mlt_producer self, int64_t creation_time);
 extern int mlt_producer_probe(mlt_producer self);
+extern void mlt_producer_set_loop_range(mlt_producer self, int start, int end);
 
 #endif
