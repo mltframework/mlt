@@ -161,7 +161,7 @@ mlt_producer producer_krita_init(mlt_profile profile,
         // Get the resource to be passed to the clip producer
         char *resource = arg;
 
-        // Create a producer for the clip using the false profile.
+        // Create internal producer
         pdata->producer_internal = mlt_factory_producer(profile, "abnormal", resource);
 
         if (pdata->producer_internal) {
