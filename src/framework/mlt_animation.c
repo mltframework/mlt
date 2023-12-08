@@ -1101,11 +1101,11 @@ static inline double catmull_rom_interpolate(double x0,
     double t12 = pow(distance(x1, y1, x2, y2), alpha);
     if (tension > 0.0 || (y1 < y0 && y1 > y2) || (y1 > y0 && y1 < y2)) {
         double t01 = pow(distance(x0, y0, x1, y1), alpha);
-        m1 = abs(tension) * (y2 - y1 + t12 * ((y1 - y0) / t01 - (y2 - y0) / (t01 + t12)));
+        m1 = fabs(tension) * (y2 - y1 + t12 * ((y1 - y0) / t01 - (y2 - y0) / (t01 + t12)));
     }
     if (tension > 0.0 || (y2 < y1 && y2 > y3) || (y2 > y1 && y2 < y3)) {
         double t23 = pow(distance(x2, y2, x3, y3), alpha);
-        m2 = abs(tension) * (y2 - y1 + t12 * ((y3 - y2) / t23 - (y3 - y1) / (t12 + t23)));
+        m2 = fabs(tension) * (y2 - y1 + t12 * ((y3 - y2) / t23 - (y3 - y1) / (t12 + t23)));
     }
     double a = 2.0 * (y1 - y2) + m1 + m2;
     double b = -3.0 * (y1 - y2) - m1 - m1 - m2;
