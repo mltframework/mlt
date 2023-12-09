@@ -2973,6 +2973,7 @@ static void producer_set_up_video(producer_avformat self, mlt_frame frame)
                 mlt_properties_set_int(properties, "height", self->video_codec->height);
             }
             mlt_properties_set_double(frame_properties, "aspect_ratio", aspect_ratio);
+            mlt_properties_set_double(properties, "meta.media.aspect_ratio", aspect_ratio);
         }
         mlt_properties_set_int(frame_properties, "colorspace", self->yuv_colorspace);
         mlt_properties_set_int(frame_properties, "color_trc", self->color_trc);
@@ -3785,6 +3786,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         // If video index is valid, get_image() must be called before the probe is complete
         mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "meta.media.width");
         mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "meta.media.height");
+        mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "meta.media.aspect_ratio");
         mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "meta.media.color_range");
         mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "meta.media.aspect_ratio");
         mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "meta.media.progressive");
