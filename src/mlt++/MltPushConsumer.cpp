@@ -67,7 +67,8 @@ PushConsumer::PushConsumer(Profile &profile, const char *id, const char *service
     }
 }
 
-PushConsumer::~PushConsumer() {
+PushConsumer::~PushConsumer()
+{
     delete m_private;
 }
 
