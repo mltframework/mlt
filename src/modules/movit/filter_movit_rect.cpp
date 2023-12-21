@@ -1,6 +1,6 @@
 /*
  * filter_movit_rect.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
     auto rect = mlt_properties_anim_get_rect(properties, "rect", position, length);
     mlt_properties_set_rect(frame_props, "resize.rect", rect);
     mlt_properties_set(frame_props, "resize.fill", mlt_properties_get(properties, "fill"));
-    mlt_properties_set(frame_props, "distort", mlt_properties_get(properties, "distort"));
+    mlt_properties_set(frame_props, "resize.distort", mlt_properties_get(properties, "distort"));
     mlt_properties_set(frame_props, "resize.halign", mlt_properties_get(properties, "halign"));
     mlt_properties_set(frame_props, "resize.valign", mlt_properties_get(properties, "valign"));
     return frame;

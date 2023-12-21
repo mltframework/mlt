@@ -1,6 +1,6 @@
 /*
  * filter_movit_resize.cpp
- * Copyright (C) 2013-2020 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ static int get_image(mlt_frame frame,
     if (*format == mlt_image_none || (rescale && !strcmp(rescale, "none")))
         return mlt_frame_get_image(frame, image, format, width, height, writable);
 
-    if (mlt_properties_get_int(properties, "distort") == 0) {
+    if (mlt_properties_get_int(properties, "resize.distort") == 0) {
         // Normalize the input and out display aspect
         int normalized_width = profile->width;
         int normalized_height = profile->height;
@@ -158,7 +158,7 @@ static int get_image(mlt_frame frame,
         mlt_frame_set_aspect_ratio(frame, consumer_aspect);
     }
 
-    mlt_properties_set_int(properties, "distort", 0);
+    mlt_properties_set_int(properties, "resize.distort", 0);
 
     // Now get the image
     *format = mlt_image_movit;
