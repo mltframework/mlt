@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2023 Meltytech, LLC
+ * Copyright (C) 2011-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -399,6 +399,13 @@ static void foreach_consumer_put(mlt_consumer consumer, mlt_frame frame)
             current_size += prev_size;
             current_samples += mlt_properties_get_int(nested_props, "_multi_samples");
 
+            // This log line somehow fixes a bug in release build on clang/macOS
+            // https://forum.shotcut.org/t/shotcut-export-drops-frames/42676
+            mlt_log_debug(MLT_CONSUMER_SERVICE(consumer),
+                          "%d: nested_time %g self_time %g\n",
+                          nested_pos,
+                          nested_time,
+                          self_time);
             while (nested_time <= self_time) {
                 // put ideal number of samples into cloned frame
                 int deeply = index > 1 ? 1 : 0;
