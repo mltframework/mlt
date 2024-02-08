@@ -1,0 +1,43 @@
+schema_version: 7.0
+type: filter
+identifier: ambisonic-decoder
+title: Ambisonic Decoder
+version: 1
+copyright: Meltytech, LLC
+license: LGPL
+language: en
+url: https://github.com/videolabs/libspatialaudio
+tags:
+  - Audio
+description: Decode, rotate (pan), and zoom Ambisonic audio.
+notes: >
+  This only supports first order for now. It can render to stereo, quad
+  surround, and 5.1 surround depending on the number of channels
+  configured on the consumer (2, 4, or 6, respectively).
+
+parameters:
+  - identifier: yaw
+    title: Yaw
+    type: float
+    default: 0
+    unit: degrees
+
+  - identifier: pitch
+    title: Pitch
+    type: float
+    default: 0
+    unit: degrees
+
+  - identifier: roll
+    title: Roll
+    type: float
+    default: 0
+    unit: degrees
+
+  - identifier: zoom
+    title: Zoom
+    type: float
+    default: 0
+    minimum: -1
+    maxium: 1
+    unit: percent

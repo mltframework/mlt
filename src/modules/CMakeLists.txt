@@ -84,6 +84,10 @@ if(MOD_SOX)
   add_subdirectory(sox)
 endif()
 
+if(MOD_SPATIALAUDIO)
+  add_subdirectory(spatialaudio)
+endif()
+
 if(MOD_VIDSTAB)
   add_subdirectory(vid.stab)
 endif()
