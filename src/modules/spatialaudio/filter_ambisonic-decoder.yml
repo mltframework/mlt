@@ -39,5 +39,5 @@ parameters:
     type: float
     default: 0
     minimum: -1
-    maxium: 1
+    maximum: 1
     unit: percent
