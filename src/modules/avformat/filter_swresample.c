@@ -1,6 +1,6 @@
 /*
  * filter_swresample.c -- convert from one format/ configuration to another
- * Copyright (C) 2018-2022 Meltytech, LLC
+ * Copyright (C) 2018-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -173,7 +173,6 @@ mlt_filter filter_swresample_init(mlt_profile profile, char *arg)
     mlt_swr_private_data *pdata = (mlt_swr_private_data *) calloc(1, sizeof(mlt_swr_private_data));
 
     if (filter && pdata) {
-        memset(pdata, 0, sizeof(*pdata));
         filter->close = filter_close;
         filter->process = filter_process;
         filter->child = pdata;
