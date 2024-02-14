@@ -72,10 +72,12 @@ public:
     {
         bool error = false;
         if (decoder.GetChannelCount() == 0) {
-            mlt_log_verbose(MLT_FILTER_SERVICE(filter()), "configuring spatial audio decoder\n");
+            mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
+                            "configuring spatial audio decoder for %d channels\n",
+                            channels);
             error = !decoder.Configure(AMBISONICS_ORDER,
                                        true,
-                                       /*AMBISONICS_BLOCK_SIZE*/ samples,
+                                       AMBISONICS_BLOCK_SIZE,
                                        channels == 6   ? kAmblib_51
                                        : channels == 2 ? kAmblib_Stereo
                                        : channels == 4 ? kAmblib_Quad
@@ -115,8 +117,18 @@ public:
             zoomer.Refresh();
             zoomer.Process(&bformat, samples);
 
-            for (int i = 0; i < channels; ++i)
-                speakers[i] = &buffer[samples * i];
+            if (channels == 6) {
+                // libspatialaudio has a different channel order for 5.1
+                speakers[0] = &buffer[samples * 0]; // left
+                speakers[1] = &buffer[samples * 1]; // right
+                speakers[2] = &buffer[samples * 4]; // center
+                speakers[3] = &buffer[samples * 5]; // LFE (subwoofer)
+                speakers[4] = &buffer[samples * 2]; // left surround
+                speakers[5] = &buffer[samples * 3]; // right surround
+            } else {
+                for (int i = 0; i < channels; ++i)
+                    speakers[i] = &buffer[samples * i];
+            }
             decoder.Process(&bformat, samples, speakers);
         }
         return error;
