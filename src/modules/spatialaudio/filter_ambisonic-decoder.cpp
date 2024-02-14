@@ -101,7 +101,7 @@ public:
         if (!error) {
             CBFormat bformat;
             bformat.Configure(1, true, samples);
-            for (unsigned i = 0; i < 4; ++i)
+            for (unsigned i = 0; i < AMBISONICS_1_CHANNELS; ++i)
                 bformat.InsertStream(&buffer[samples * i], i, samples);
 
             mlt_position position = mlt_filter_get_position(filter(), frame);
@@ -142,7 +142,19 @@ static int get_audio(mlt_frame frame,
     if (*channels > 1) {
         *format = mlt_audio_float;
         int requestChannels = MAX(AMBISONICS_1_CHANNELS, *channels);
+        auto properties = MLT_FRAME_PROPERTIES(frame);
+        auto channel_layout = mlt_audio_channel_layout_id(
+            mlt_properties_get(properties, "consumer.channel_layout"));
+        mlt_properties_set(MLT_FRAME_PROPERTIES(frame),
+                           "consumer.channel_layout",
+                           mlt_audio_channel_layout_name(mlt_channel_independent));
+
         error = mlt_frame_get_audio(frame, buffer, format, frequency, &requestChannels, samples);
+
+        // Restore the saved channel layout
+        mlt_properties_set(properties,
+                           "consumer.channel_layout",
+                           mlt_audio_channel_layout_name(channel_layout));
 
         if (!error && requestChannels >= AMBISONICS_1_CHANNELS) {
             auto spatial = static_cast<SpatialAudio *>(filter->child);
