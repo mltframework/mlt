@@ -1,6 +1,6 @@
 /*
  * filter_loudness.c -- normalize audio according to EBU R128
- * Copyright (C) 2014 Meltytech, LLC
+ * Copyright (C) 2014-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -151,8 +151,15 @@ static int filter_get_audio(mlt_frame frame,
     check_for_reset(filter, *channels, *frequency);
 
     if (o_pos != pdata->prev_o_pos) {
-        // Only analyze the audio is the producer is not paused.
+        // Only analyze the audio if the producer is not paused.
         analyze_audio(filter, *buffer, *samples, *frequency);
+    }
+
+    pdata->prev_o_pos = o_pos;
+
+    if (isnan(pdata->start_gain) || isnan(pdata->end_gain)) {
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+        return 0;
     }
 
     double start_coeff = pdata->start_gain > -90.0 ? pow(10.0, pdata->start_gain / 20.0) : 0.0;
@@ -169,8 +176,6 @@ static int filter_get_audio(mlt_frame frame,
             p++;
         }
     }
-
-    pdata->prev_o_pos = o_pos;
 
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
