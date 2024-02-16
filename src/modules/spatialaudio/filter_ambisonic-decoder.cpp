@@ -60,12 +60,10 @@ public:
     }
 
     mlt_filter filter() { return m_filter; }
+    mlt_properties properties() { return MLT_FILTER_PROPERTIES(filter()); }
     double getDouble(const char *name, int position, int length)
     {
-        return mlt_properties_anim_get_double(MLT_FILTER_PROPERTIES(filter()),
-                                              name,
-                                              position,
-                                              length);
+        return mlt_properties_anim_get_double(properties(), name, position, length);
     }
 
     bool getAudio(mlt_frame frame, float *buffer, int samples, int channels)
@@ -125,11 +123,15 @@ public:
                 speakers[3] = &buffer[samples * 5]; // LFE (subwoofer)
                 speakers[4] = &buffer[samples * 2]; // left surround
                 speakers[5] = &buffer[samples * 3]; // right surround
+                decoder.Process(&bformat, samples, speakers);
+            } else if (channels == 4 && mlt_properties_get_int(properties(), "ambisonic")) {
+                for (int i = 0; i < channels; ++i)
+                    bformat.ExtractStream(&buffer[samples * i], i, samples);
             } else {
                 for (int i = 0; i < channels; ++i)
                     speakers[i] = &buffer[samples * i];
+                decoder.Process(&bformat, samples, speakers);
             }
-            decoder.Process(&bformat, samples, speakers);
         }
         return error;
     }

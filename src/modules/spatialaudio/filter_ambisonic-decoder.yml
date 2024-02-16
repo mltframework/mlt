@@ -21,18 +21,24 @@ parameters:
     type: float
     default: 0
     unit: degrees
+    mutable: yes
+    animation: yes
 
   - identifier: pitch
     title: Pitch
     type: float
     default: 0
     unit: degrees
+    mutable: yes
+    animation: yes
 
   - identifier: roll
     title: Roll
     type: float
     default: 0
     unit: degrees
+    mutable: yes
+    animation: yes
 
   - identifier: zoom
     title: Zoom
@@ -41,3 +47,14 @@ parameters:
     minimum: -1
     maximum: 1
     unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: ambisonic
+    title: Keep Ambisonic
+    description: >
+      This indicates whether to keep the Ambisonics or render to speakers.
+      This only works at the moment when the channel count is 4 for first order.
+    type: boolean
+    default: 0
+    mutable: yes
