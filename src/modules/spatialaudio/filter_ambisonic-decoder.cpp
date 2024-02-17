@@ -71,7 +71,7 @@ public:
     bool getAudio(mlt_frame frame, float *buffer, int samples, int channels)
     {
         bool error = false;
-        bool binaural = channels == 2 && mlt_properties_get_int(properties(), "binaural");
+        bool binaural = channels >= 2 && mlt_properties_get_int(properties(), "binaural");
 
         // First time setup
         if (binaural && !binauralizer.GetChannelCount()) {
@@ -158,10 +158,15 @@ public:
             } else {
                 for (int i = 0; i < channels; ++i)
                     speakers[i] = &buffer[samples * i];
-                if (binaural)
+                if (binaural) {
                     binauralizer.Process(&bformat, speakers, samples);
-                else
+                    if (channels > 2) {
+                        for (int i = 2; i < channels; ++i)
+                            ::memset(speakers[i], 0, samples * sizeof(float));
+                    }
+                } else {
                     decoder.Process(&bformat, samples, speakers);
+                }
             }
         }
         return error;

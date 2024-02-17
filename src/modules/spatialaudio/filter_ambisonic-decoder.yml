@@ -63,7 +63,7 @@ parameters:
     title: Binaural Output
     description: >
       This indicates whether to render as binaural instead of stereo.
-      This only applies when the channel count is 2.
+      This property overrides the "ambisonic" property.
     type: boolean
     default: 0
     mutable: no
