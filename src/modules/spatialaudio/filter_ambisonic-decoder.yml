@@ -58,3 +58,12 @@ parameters:
     type: boolean
     default: 0
     mutable: yes
+
+  - identifier: binaural
+    title: Binaural Output
+    description: >
+      This indicates whether to render as binaural instead of stereo.
+      This only applies when the channel count is 2.
+    type: boolean
+    default: 0
+    mutable: no

@@ -34,6 +34,8 @@ class SpatialAudio
 {
 private:
     mlt_filter m_filter;
+    CAmbisonicBinauralizer binauralizer;
+    unsigned tailLength;
     CAmbisonicDecoder decoder;
     CAmbisonicProcessor processor;
     CAmbisonicZoomer zoomer;
@@ -69,7 +71,25 @@ public:
     bool getAudio(mlt_frame frame, float *buffer, int samples, int channels)
     {
         bool error = false;
-        if (decoder.GetChannelCount() == 0) {
+        bool binaural = channels == 2 && mlt_properties_get_int(properties(), "binaural");
+
+        // First time setup
+        if (binaural && !binauralizer.GetChannelCount()) {
+            mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
+                            "configuring spatial audio binauralizer\n");
+            error = !binauralizer.Configure(AMBISONICS_ORDER,
+                                            true,
+                                            mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame),
+                                                                   "audio_frequency"),
+                                            samples,
+                                            tailLength);
+            if (!error) {
+                binauralizer.Reset();
+            } else {
+                mlt_log_error(MLT_FILTER_SERVICE(filter()),
+                              "failed to configure spatial audio binauralizer\n");
+            }
+        } else if (!binaural && !decoder.GetChannelCount()) {
             mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
                             "configuring spatial audio decoder for %d channels\n",
                             channels);
@@ -89,31 +109,39 @@ public:
                     mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
                                     "configuring spatial audio zoomer\n");
                     error = !zoomer.Configure(AMBISONICS_ORDER, true, AMBISONICS_BLOCK_SIZE, 0);
+                    if (error) {
+                        mlt_log_error(MLT_FILTER_SERVICE(filter()),
+                                      "failed to configure spatial audio zoomer\n");
+                    }
                 } else {
                     mlt_log_error(MLT_FILTER_SERVICE(filter()),
-                                  "failed to configure spatial audio zoomer\n");
+                                  "failed to configure spatial audio processor\n");
                 }
             } else {
                 mlt_log_error(MLT_FILTER_SERVICE(filter()),
-                              "failed to configure spatial audio processor\n");
+                              "failed to configure spatial audio decoder\n");
             }
         }
+
+        // Processing
         if (!error) {
             CBFormat bformat;
-            bformat.Configure(1, true, samples);
+            bformat.Configure(AMBISONICS_ORDER, true, samples);
             for (unsigned i = 0; i < AMBISONICS_1_CHANNELS; ++i)
                 bformat.InsertStream(&buffer[samples * i], i, samples);
 
-            mlt_position position = mlt_filter_get_position(filter(), frame);
-            mlt_position length = mlt_filter_get_length2(filter(), frame);
-            processor.SetOrientation({-DegreesToRadians(getDouble("yaw", position, length)),
-                                      DegreesToRadians(getDouble("pitch", position, length)),
-                                      DegreesToRadians(getDouble("roll", position, length))});
-            processor.Refresh();
-            processor.Process(&bformat, samples);
-            zoomer.SetZoom(getDouble("zoom", position, length));
-            zoomer.Refresh();
-            zoomer.Process(&bformat, samples);
+            if (!binaural) {
+                mlt_position position = mlt_filter_get_position(filter(), frame);
+                mlt_position length = mlt_filter_get_length2(filter(), frame);
+                processor.SetOrientation({-DegreesToRadians(getDouble("yaw", position, length)),
+                                          DegreesToRadians(getDouble("pitch", position, length)),
+                                          DegreesToRadians(getDouble("roll", position, length))});
+                processor.Refresh();
+                processor.Process(&bformat, samples);
+                zoomer.SetZoom(getDouble("zoom", position, length));
+                zoomer.Refresh();
+                zoomer.Process(&bformat, samples);
+            }
 
             if (channels == 6) {
                 // libspatialaudio has a different channel order for 5.1
@@ -130,7 +158,10 @@ public:
             } else {
                 for (int i = 0; i < channels; ++i)
                     speakers[i] = &buffer[samples * i];
-                decoder.Process(&bformat, samples, speakers);
+                if (binaural)
+                    binauralizer.Process(&bformat, speakers, samples);
+                else
+                    decoder.Process(&bformat, samples, speakers);
             }
         }
         return error;
