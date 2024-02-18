@@ -100,7 +100,7 @@ static int filter_get_audio(mlt_frame frame,
         for (i = 0; i < *samples; i++) {
             int32_t mixdown = 0;
             for (j = 0; j < *channels; j++)
-                mixdown += ((int32_t *) *buffer)[(j * *channels) + i];
+                mixdown += ((int32_t *) *buffer)[(j * *samples) + i];
             for (j = 0; j < channels_out; j++)
                 new_buffer[(j * *samples) + i] = mixdown;
         }
@@ -112,7 +112,7 @@ static int filter_get_audio(mlt_frame frame,
         for (i = 0; i < *samples; i++) {
             float mixdown = 0;
             for (j = 0; j < *channels; j++)
-                mixdown += ((float *) *buffer)[(j * *channels) + i];
+                mixdown += ((float *) *buffer)[(j * *samples) + i];
             for (j = 0; j < channels_out; j++)
                 new_buffer[(j * *samples) + i] = mixdown;
         }
