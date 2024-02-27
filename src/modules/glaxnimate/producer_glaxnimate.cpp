@@ -140,11 +140,11 @@ static bool createQApplicationIfNeeded(mlt_service service)
                                          + QStringLiteral("/plugins"));
 #endif
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
-        if (getenv("DISPLAY") == 0) {
+        if (getenv("DISPLAY") == 0 && getenv("WAYLAND_DISPLAY") == 0) {
             mlt_log_error(
                 service,
-                "The MLT Qt module requires a X11 environment.\n"
-                "Please either run melt from an X session or use a fake X server like xvfb:\n"
+                "The MLT Glaxnimate module requires a X11 or Wayland environment.\n"
+                "Please either run melt from a session with a display server or use a fake X server like xvfb:\n"
                 "xvfb-run -a melt (...)\n");
             return false;
         }
