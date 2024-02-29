@@ -2,7 +2,7 @@
  * wave.c -- wave filter
  * Copyright (C) ?-2007 Leny Grisel <leny.grisel@laposte.net>
  * Copyright (C) 2007 Jean-Baptiste Mardelle <jb@ader.ch>
- * Copyright (c) 2022 Meltytech, LLC
+ * Copyright (c) 2022-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -139,7 +139,7 @@ static int filter_get_image(mlt_frame frame,
             desc.dst = dst;
             desc.position = position;
             desc.speed = speed;
-            desc.factor = factor;
+            desc.factor = MAX(factor, 1);
             desc.deformX = deformX;
             desc.deformY = deformY;
             mlt_slices_run_normal(0, do_wave_slice_proc, &desc);
