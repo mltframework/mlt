@@ -37,11 +37,11 @@ bool createQApplicationIfNeeded(mlt_service service)
 #endif
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC) && !defined(Q_OS_ANDROID)
         if (getenv("DISPLAY") == 0 && getenv("WAYLAND_DISPLAY") == 0) {
-            mlt_log_error(
-                service,
-                "The MLT Qt module requires a X11 or Wayland environment.\n"
-                "Please either run melt from a session with a display server or use a fake X server like xvfb:\n"
-                "xvfb-run -a melt (...)\n");
+            mlt_log_error(service,
+                          "The MLT Qt module requires a X11 or Wayland environment.\n"
+                          "Please either run melt from a session with a display server or use a "
+                          "fake X server like xvfb:\n"
+                          "xvfb-run -a melt (...)\n");
             return false;
         }
 #endif
