@@ -72,6 +72,11 @@ static int producer_get_audio(mlt_frame frame,
     // Set the buffer for destruction
     mlt_frame_set_audio(frame, *buffer, *format, size, mlt_pool_release);
 
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_properties_set(frame_properties,
+                       "channel_layout",
+                       mlt_properties_get(frame_properties, "consumer.channel_layout"));
+
     return 0;
 }
 
