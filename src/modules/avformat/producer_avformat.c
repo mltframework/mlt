@@ -519,6 +519,15 @@ static mlt_properties find_default_streams(producer_avformat self)
             mlt_properties_set_int(meta_media, key, codec_params->sample_rate);
             snprintf(key, sizeof(key), "meta.media.%u.codec.channels", i);
             mlt_properties_set_int(meta_media, key, codec_params->channels);
+            snprintf(key, sizeof(key), "meta.media.%u.codec.layout", i);
+            mlt_channel_layout mlt_layout = mlt_channel_independent;
+            if (codec_params->channel_layout == 0)
+                mlt_layout = av_channel_layout_to_mlt(
+                    av_get_default_channel_layout(codec_params->channels));
+            else
+                mlt_layout = av_channel_layout_to_mlt(codec_params->channel_layout);
+            char *layout = mlt_audio_channel_layout_name(mlt_layout);
+            mlt_properties_set(meta_media, key, layout);
             break;
         default:
             break;
