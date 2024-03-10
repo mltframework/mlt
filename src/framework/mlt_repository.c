@@ -581,7 +581,7 @@ static void list_presets(mlt_properties properties, const char *path, const char
                     // load the preset
                     mlt_properties preset = mlt_properties_load(fullname);
                     if (preset && mlt_properties_count(preset)) {
-                        snprintf(fullname, 1024, "%s/%s", path, de->d_name);
+                        snprintf(fullname, sizeof(fullname), "%s/%s", path, de->d_name);
                         mlt_properties_set_data(properties,
                                                 fullname,
                                                 preset,
