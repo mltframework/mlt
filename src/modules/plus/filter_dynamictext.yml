@@ -136,7 +136,6 @@ parameters:
     readonly: no
     default: 0
     minimum: 0
-    maximum: 3
     mutable: yes
     widget: spinner
 
