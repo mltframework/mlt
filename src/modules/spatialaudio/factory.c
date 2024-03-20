@@ -26,6 +26,10 @@ extern mlt_filter filter_ambisonic_decoder_init(mlt_profile profile,
                                                 mlt_service_type type,
                                                 const char *id,
                                                 char *arg);
+extern mlt_filter filter_ambisonic_encoder_init(mlt_profile profile,
+                                                mlt_service_type type,
+                                                const char *id,
+                                                char *arg);
 
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
@@ -43,4 +47,6 @@ MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "ambisonic-decoder", filter_ambisonic_decoder_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "ambisonic-decoder", metadata, NULL);
+    MLT_REGISTER(mlt_service_filter_type, "ambisonic-encoder", filter_ambisonic_encoder_init);
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "ambisonic-encoder", metadata, NULL);
 }

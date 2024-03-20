@@ -1,0 +1,40 @@
+schema_version: 7.0
+type: filter
+identifier: ambisonic-encoder
+title: Ambisonic Encoder
+version: 1
+copyright: Meltytech, LLC
+license: LGPL
+language: en
+url: https://github.com/videolabs/libspatialaudio
+tags:
+  - Audio
+description: Position a mono sound in Ambisonic space.
+notes: >
+  This only supports first order for now. The consumer should be configured
+  for 4 or more channels. If the source has more than one channel, only the
+  first channel is used.
+
+parameters:
+  - identifier: azimuth
+    title: Azimuth
+    type: float
+    default: 0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: elevation
+    title: Elevation
+    type: float
+    default: 0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: distance
+    title: Distance
+    type: float
+    default: 0
+    mutable: yes
+    animation: yes

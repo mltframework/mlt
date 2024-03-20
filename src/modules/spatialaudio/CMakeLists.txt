@@ -1,4 +1,8 @@
-add_library(mltspatialaudio MODULE factory.c filter_ambisonic-decoder.cpp)
+add_library(mltspatialaudio MODULE
+    factory.c
+    filter_ambisonic-decoder.cpp
+    filter_ambisonic-encoder.cpp
+)
 
 file(GLOB YML "*.yml")
 add_custom_target(Other_spatialaudio_Files SOURCES
@@ -13,4 +17,8 @@ set_target_properties(mltspatialaudio PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT
 
 install(TARGETS mltspatialaudio LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES filter_ambisonic-decoder.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/spatialaudio)
+install(FILES
+    filter_ambisonic-decoder.yml
+    filter_ambisonic-encoder.yml
+    DESTINATION ${MLT_INSTALL_DATA_DIR}/spatialaudio
+)
