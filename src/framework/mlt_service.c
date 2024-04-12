@@ -207,13 +207,12 @@ int mlt_service_connect_producer(mlt_service self, mlt_service producer, int ind
     }
 
     // If we have space, assign the input
-    if (base->in != NULL && index >= 0 && index < base->size) {
+    if (producer != NULL && base->in != NULL && index >= 0 && index < base->size) {
         // Get the current service
         mlt_service current = (index < base->count) ? base->in[index] : NULL;
 
         // Increment the reference count on this producer
-        if (producer != NULL)
-            mlt_properties_inc_ref(MLT_SERVICE_PROPERTIES(producer));
+        mlt_properties_inc_ref(MLT_SERVICE_PROPERTIES(producer));
 
         // Now we disconnect the producer service from its consumer
         mlt_service_disconnect(producer);
