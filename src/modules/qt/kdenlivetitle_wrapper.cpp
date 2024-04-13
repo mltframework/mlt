@@ -300,8 +300,7 @@ QTransform stringToTransform(const QString &s)
 static void qscene_delete(void *data)
 {
     QGraphicsScene *scene = (QGraphicsScene *) data;
-    if (scene)
-        delete scene;
+    delete scene;
     scene = NULL;
 }
 

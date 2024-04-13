@@ -1,6 +1,6 @@
 /*
  * filter_rbpitch.c -- adjust audio pitch
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -295,11 +295,7 @@ mlt_filter filter_rbpitch_init(mlt_profile profile, mlt_service_type type, const
         if (filter) {
             mlt_filter_close(filter);
         }
-
-        if (pdata) {
-            free(pdata);
-        }
-
+        free(pdata);
         filter = NULL;
     }
     return filter;
