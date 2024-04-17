@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,10 +25,15 @@
 #include <libswscale/swscale.h>
 
 #define MLT_AVFILTER_SWS_FLAGS "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp"
+#define HAVE_FFMPEG_CH_LAYOUT (LIBAVUTIL_VERSION_MAJOR >= 59)
 
 int mlt_to_av_sample_format(mlt_audio_format format);
 int64_t mlt_to_av_channel_layout(mlt_channel_layout layout);
+#if HAVE_FFMPEG_CH_LAYOUT
+mlt_channel_layout av_channel_layout_to_mlt(AVChannelLayout *layout);
+#else
 mlt_channel_layout av_channel_layout_to_mlt(int64_t layout);
+#endif
 mlt_channel_layout mlt_get_channel_layout_or_default(const char *name, int channels);
 int mlt_set_luma_transfer(struct SwsContext *context,
                           int src_colorspace,

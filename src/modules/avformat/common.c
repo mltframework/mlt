@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2018-2023 Meltytech, LLC
+ * Copyright (C) 2018-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -156,9 +156,18 @@ int64_t mlt_to_av_channel_layout(mlt_channel_layout layout)
     return 0;
 }
 
+#if HAVE_FFMPEG_CH_LAYOUT
+mlt_channel_layout av_channel_layout_to_mlt(AVChannelLayout *layout)
+{
+    if (layout->order != AV_CHANNEL_ORDER_NATIVE && layout->order != AV_CHANNEL_ORDER_AMBISONIC) {
+        return mlt_channel_independent;
+    }
+    switch (layout->u.mask) {
+#else
 mlt_channel_layout av_channel_layout_to_mlt(int64_t layout)
 {
     switch (layout) {
+#endif
     case 0:
         return mlt_channel_independent;
     case AV_CH_LAYOUT_MONO:

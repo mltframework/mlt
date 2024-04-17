@@ -1,6 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 2016-2022 Meltytech, LLC
+ * Copyright (C) 2016-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -182,7 +182,6 @@ static void init_audio_filtergraph(mlt_filter filter,
     int sample_fmts[] = {-1, -1};
     int sample_rates[] = {-1, -1};
     int channel_counts[] = {-1, -1};
-    int64_t channel_layouts[] = {-1, -1};
     char channel_layout_str[64];
     int ret;
 
@@ -192,11 +191,19 @@ static void init_audio_filtergraph(mlt_filter filter,
     sample_fmts[0] = mlt_to_av_sample_format(format);
     sample_rates[0] = frequency;
     channel_counts[0] = channels;
+#if HAVE_FFMPEG_CH_LAYOUT
+    AVChannelLayout ch_layout;
+    av_channel_layout_default(&ch_layout, channels);
+    av_channel_layout_describe(&ch_layout, channel_layout_str, sizeof(channel_layout_str));
+    av_channel_layout_uninit(&ch_layout);
+#else
+    int64_t channel_layouts[] = {-1, -1};
     channel_layouts[0] = av_get_default_channel_layout(channels);
     av_get_channel_layout_string(channel_layout_str,
                                  sizeof(channel_layout_str),
                                  0,
                                  channel_layouts[0]);
+#endif
 
     // Destroy the current filter graph
     avfilter_graph_free(&pdata->avfilter_graph);
@@ -290,6 +297,16 @@ static void init_audio_filtergraph(mlt_filter filter,
         mlt_log_error(filter, "Cannot set sink channel counts\n");
         goto fail;
     }
+#if HAVE_FFMPEG_CH_LAYOUT
+    ret = av_opt_set(pdata->avbuffsink_ctx,
+                     "ch_layouts",
+                     channel_layout_str,
+                     AV_OPT_SEARCH_CHILDREN);
+    if (ret < 0) {
+        mlt_log_error(filter, "Cannot set sink ch_layouts\n");
+        goto fail;
+    }
+#else
     ret = av_opt_set_int_list(pdata->avbuffsink_ctx,
                               "channel_layouts",
                               channel_layouts,
@@ -299,6 +316,7 @@ static void init_audio_filtergraph(mlt_filter filter,
         mlt_log_error(filter, "Cannot set sink channel_layouts\n");
         goto fail;
     }
+#endif
     ret = avfilter_init_str(pdata->avbuffsink_ctx, NULL);
     if (ret < 0) {
         mlt_log_error(filter, "Cannot init buffer sink\n");
@@ -676,8 +694,12 @@ static int filter_get_audio(mlt_frame frame,
                                                 *channels);
         pdata->avinframe->sample_rate = *frequency;
         pdata->avinframe->format = mlt_to_av_sample_format(*format);
+#if HAVE_FFMPEG_CH_LAYOUT
+        av_channel_layout_from_mask(&pdata->avinframe->ch_layout, mlt_to_av_channel_layout(layout));
+#else
         pdata->avinframe->channel_layout = mlt_to_av_channel_layout(layout);
         pdata->avinframe->channels = *channels;
+#endif
         pdata->avinframe->nb_samples = *samples;
         pdata->avinframe->pts = samplepos;
         ret = av_frame_get_buffer(pdata->avinframe, 1);
@@ -707,7 +729,12 @@ static int filter_get_audio(mlt_frame frame,
         }
 
         // Sanity check the output frame
-        if (*channels != pdata->avoutframe->channels || *samples != pdata->avoutframe->nb_samples
+#if HAVE_FFMPEG_CH_LAYOUT
+        if (*channels != pdata->avoutframe->ch_layout.nb_channels
+#else
+        if (*channels != pdata->avoutframe->channels
+#endif
+            || *samples != pdata->avoutframe->nb_samples
             || *frequency != pdata->avoutframe->sample_rate) {
             mlt_log_error(filter, "Unexpected return format\n");
             goto exit;

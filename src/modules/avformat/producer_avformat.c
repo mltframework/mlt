@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -506,7 +506,11 @@ static mlt_properties find_default_streams(producer_avformat self)
             }
             break;
         case AVMEDIA_TYPE_AUDIO:
+#if HAVE_FFMPEG_CH_LAYOUT
+            if (!codec_params->ch_layout.nb_channels)
+#else
             if (!codec_params->channels)
+#endif
                 break;
             // Use first audio stream
             if (self->audio_index < 0 && pick_audio_format(codec_params->format) != mlt_audio_none)
@@ -518,15 +522,27 @@ static mlt_properties find_default_streams(producer_avformat self)
             snprintf(key, sizeof(key), "meta.media.%u.codec.sample_rate", i);
             mlt_properties_set_int(meta_media, key, codec_params->sample_rate);
             snprintf(key, sizeof(key), "meta.media.%u.codec.channels", i);
-            mlt_properties_set_int(meta_media, key, codec_params->channels);
-            snprintf(key, sizeof(key), "meta.media.%u.codec.layout", i);
             mlt_channel_layout mlt_layout = mlt_channel_independent;
+#if HAVE_FFMPEG_CH_LAYOUT
+            mlt_properties_set_int(meta_media, key, codec_params->ch_layout.nb_channels);
+            if (av_channel_layout_check(&codec_params->ch_layout)) {
+                mlt_layout = av_channel_layout_to_mlt(&codec_params->ch_layout);
+            } else {
+                AVChannelLayout ch_layout;
+                av_channel_layout_default(&ch_layout, codec_params->ch_layout.nb_channels);
+                mlt_layout = av_channel_layout_to_mlt(&ch_layout);
+                av_channel_layout_uninit(&ch_layout);
+            }
+#else
+            mlt_properties_set_int(meta_media, key, codec_params->channels);
             if (codec_params->channel_layout == 0)
                 mlt_layout = av_channel_layout_to_mlt(
                     av_get_default_channel_layout(codec_params->channels));
             else
                 mlt_layout = av_channel_layout_to_mlt(codec_params->channel_layout);
+#endif
             char *layout = mlt_audio_channel_layout_name(mlt_layout);
+            snprintf(key, sizeof(key), "meta.media.%u.codec.layout", i);
             mlt_properties_set(meta_media, key, layout);
             break;
         default:
@@ -1425,9 +1441,15 @@ static void get_audio_streams_info(producer_avformat self)
             if (codec && avcodec_open2(codec_context, codec, NULL) >= 0) {
                 self->audio_streams++;
                 self->audio_max_stream = i;
+#if HAVE_FFMPEG_CH_LAYOUT
+                self->total_channels += codec_params->ch_layout.nb_channels;
+                if (codec_params->ch_layout.nb_channels > self->max_channel)
+                    self->max_channel = codec_params->ch_layout.nb_channels;
+#else
                 self->total_channels += codec_params->channels;
                 if (codec_params->channels > self->max_channel)
                     self->max_channel = codec_params->channels;
+#endif
                 if (codec_params->sample_rate > self->max_frequency)
                     self->max_frequency = codec_params->sample_rate;
                 avcodec_close(codec_context);
@@ -2320,7 +2342,9 @@ static int producer_get_image(mlt_frame frame,
 
                 // Decode the image
                 if (must_decode || int_position >= req_position || !self->pkt.data) {
+#if LIBAVCODEC_VERSION_MAJOR < 61
                     self->video_codec->reordered_opaque = int_position;
+#endif
                     if (int_position >= req_position)
                         self->video_codec->skip_loop_filter = AVDISCARD_NONE;
                     self->video_send_result = avcodec_send_packet(self->video_codec, &self->pkt);
@@ -2373,7 +2397,9 @@ static int producer_get_image(mlt_frame frame,
 
                 if (got_picture) {
                     // Get position of reordered frame
+#if LIBAVCODEC_VERSION_MAJOR < 61
                     int_position = self->video_frame->reordered_opaque;
+#endif
                     pts = best_pts(self, self->video_frame->pts, self->video_frame->pkt_dts);
                     if (pts != AV_NOPTS_VALUE) {
                         // Some streams are not marking their key frames even though
@@ -3083,8 +3109,11 @@ static int decode_audio(producer_avformat self,
 
     // Obtain the audio buffers
     uint8_t *audio_buffer = self->audio_buffer[index];
-
+#if HAVE_FFMPEG_CH_LAYOUT
+    int channels = codec_context->ch_layout.nb_channels;
+#else
     int channels = codec_context->channels;
+#endif
     int audio_used = self->audio_used[index];
     int audio_used_at_start = audio_used;
     int ret = 0;
@@ -3117,7 +3146,11 @@ static int decode_audio(producer_avformat self,
             } else {
                 // Figure out how many samples will be needed after resampling
                 int convert_samples = self->audio_frame->nb_samples;
+#if HAVE_FFMPEG_CH_LAYOUT
+                channels = codec_context->ch_layout.nb_channels;
+#else
                 channels = codec_context->channels;
+#endif
                 ret += convert_samples * channels * sizeof_sample;
 
                 // Resize audio buffer to prevent overflow
@@ -3314,10 +3347,12 @@ static int producer_get_audio(mlt_frame frame,
         AVCodecContext *codec_context = self->audio_codec[index];
 
         if (codec_context && !self->audio_buffer[index]) {
+#if !HAVE_FFMPEG_CH_LAYOUT
             if (self->audio_index != INT_MAX
                 && !mlt_properties_get(MLT_PRODUCER_PROPERTIES(self->parent),
                                        "request_channel_layout"))
                 codec_context->request_channel_layout = av_get_default_channel_layout(*channels);
+#endif
             sizeof_sample = sample_bytes(codec_context);
 
             // Check for audio buffer and create if necessary
@@ -3334,7 +3369,7 @@ static int producer_get_audio(mlt_frame frame,
         int ret = 0;
         int got_audio = 0;
         AVPacket pkt;
-        mlt_channel_layout layout = mlt_channel_auto;
+        mlt_channel_layout mlt_layout = mlt_channel_auto;
 
         av_init_packet(&pkt);
 
@@ -3417,18 +3452,31 @@ static int producer_get_audio(mlt_frame frame,
         // Set some additional return values
         *format = mlt_audio_s16;
         if (self->audio_index != INT_MAX) {
+            AVCodecContext *codec_ctx = self->audio_codec[self->audio_index];
             index = self->audio_index;
-            *channels = self->audio_codec[index]->channels;
-            *frequency = self->audio_codec[index]->sample_rate;
-            *format = pick_audio_format(self->audio_codec[index]->sample_fmt);
-            sizeof_sample = sample_bytes(self->audio_codec[index]);
-            if (self->audio_codec[index]->channel_layout == 0)
-                layout = av_channel_layout_to_mlt(
-                    av_get_default_channel_layout(self->audio_codec[index]->channels));
+            *frequency = codec_ctx->sample_rate;
+            *format = pick_audio_format(codec_ctx->sample_fmt);
+            sizeof_sample = sample_bytes(codec_ctx);
+#if HAVE_FFMPEG_CH_LAYOUT
+            *channels = codec_ctx->ch_layout.nb_channels;
+            if (av_channel_layout_check(&codec_ctx->ch_layout)) {
+                mlt_layout = av_channel_layout_to_mlt(&codec_ctx->ch_layout);
+            } else {
+                AVChannelLayout ch_layout;
+                av_channel_layout_default(&ch_layout, codec_ctx->ch_layout.nb_channels);
+                mlt_layout = av_channel_layout_to_mlt(&ch_layout);
+                av_channel_layout_uninit(&ch_layout);
+            }
+#else
+            *channels = codec_ctx->channels;
+            if (codec_ctx->channel_layout == 0)
+                mlt_layout = av_channel_layout_to_mlt(
+                    av_get_default_channel_layout(codec_ctx->channels));
             else
-                layout = av_channel_layout_to_mlt(self->audio_codec[index]->channel_layout);
+                mlt_layout = av_channel_layout_to_mlt(codec_ctx->channel_layout);
+#endif
         } else if (self->audio_index == INT_MAX) {
-            layout = mlt_channel_independent;
+            mlt_layout = mlt_channel_independent;
             for (index = 0; index < index_max; index++)
                 if (self->audio_codec[index]) {
                     // XXX: This only works if all audio tracks have the same sample format.
@@ -3439,7 +3487,7 @@ static int producer_get_audio(mlt_frame frame,
         }
         mlt_properties_set(MLT_FRAME_PROPERTIES(frame),
                            "channel_layout",
-                           mlt_audio_channel_layout_name(layout));
+                           mlt_audio_channel_layout_name(mlt_layout));
 
         // Allocate and set the frame's audio buffer
         int size = mlt_audio_format_size(*format, *samples, *channels);
@@ -3453,7 +3501,11 @@ static int producer_get_audio(mlt_frame frame,
             for (i = 0; i < *samples; i++) {
                 for (index = 0; index < index_max; index++)
                     if (self->audio_codec[index]) {
+#if HAVE_FFMPEG_CH_LAYOUT
+                        int current_channels = self->audio_codec[index]->ch_layout.nb_channels;
+#else
                         int current_channels = self->audio_codec[index]->channels;
+#endif
                         uint8_t *src = self->audio_buffer[index]
                                        + i * current_channels * sizeof_sample;
                         memcpy(dest, src, current_channels * sizeof_sample);
@@ -3462,7 +3514,11 @@ static int producer_get_audio(mlt_frame frame,
             }
             for (index = 0; index < index_max; index++)
                 if (self->audio_codec[index] && self->audio_used[index] >= *samples) {
+#if HAVE_FFMPEG_CH_LAYOUT
+                    int current_channels = self->audio_codec[index]->ch_layout.nb_channels;
+#else
                     int current_channels = self->audio_codec[index]->channels;
+#endif
                     uint8_t *src = self->audio_buffer[index]
                                    + *samples * current_channels * sizeof_sample;
                     self->audio_used[index] -= *samples;
@@ -3725,7 +3781,11 @@ static void producer_set_up_audio(producer_avformat self, mlt_frame frame)
                                self->audio_codec[index]->sample_rate);
         mlt_properties_set_int(frame_properties,
                                "audio_channels",
+#if HAVE_FFMPEG_CH_LAYOUT
+                               self->audio_codec[index]->ch_layout.nb_channels);
+#else
                                self->audio_codec[index]->channels);
+#endif
     }
     if (context && index > -1) {
         // Add our audio operation

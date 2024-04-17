@@ -1,6 +1,6 @@
 /*
- * common.h
- * Copyright (C) 2022-2023 Meltytech, LLC
+ * common_swr.c
+ * Copyright (C) 2022-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,16 +50,27 @@ int mlt_configure_swr_context(mlt_service service, mlt_swr_private_data *pdata)
     // Configure format, frequency and channels.
     av_opt_set_int(pdata->ctx, "osf", mlt_to_av_sample_format(pdata->out_format), 0);
     av_opt_set_int(pdata->ctx, "osr", pdata->out_frequency, 0);
-    av_opt_set_int(pdata->ctx, "och", pdata->out_channels, 0);
     av_opt_set_int(pdata->ctx, "isf", mlt_to_av_sample_format(pdata->in_format), 0);
     av_opt_set_int(pdata->ctx, "isr", pdata->in_frequency, 0);
+#if !HAVE_FFMPEG_CH_LAYOUT
+    av_opt_set_int(pdata->ctx, "och", pdata->out_channels, 0);
     av_opt_set_int(pdata->ctx, "ich", pdata->in_channels, 0);
+#endif
 
     if (pdata->in_layout != mlt_channel_independent
         && pdata->out_layout != mlt_channel_independent) {
         // Use standard channel layout and matrix for known channel configurations.
+#if HAVE_FFMPEG_CH_LAYOUT
+        AVChannelLayout ochl = AV_CHANNEL_LAYOUT_MASK(pdata->out_channels,
+                                                      mlt_to_av_channel_layout(pdata->out_layout));
+        AVChannelLayout ichl = AV_CHANNEL_LAYOUT_MASK(pdata->in_channels,
+                                                      mlt_to_av_channel_layout(pdata->in_layout));
+        av_opt_set_chlayout(pdata->ctx, "ochl", &ochl, 0);
+        av_opt_set_chlayout(pdata->ctx, "ichl", &ichl, 0);
+#else
         av_opt_set_int(pdata->ctx, "ocl", mlt_to_av_channel_layout(pdata->out_layout), 0);
         av_opt_set_int(pdata->ctx, "icl", mlt_to_av_channel_layout(pdata->in_layout), 0);
+#endif
     } else {
         // Use a custom channel layout and matrix for independent channels.
         // This matrix will simply map input channels to output channels in order.
@@ -81,8 +92,17 @@ int mlt_configure_swr_context(mlt_service service, mlt_swr_private_data *pdata)
                 matrix_row[i] = 1.0;
             }
         }
+#if HAVE_FFMPEG_CH_LAYOUT
+        AVChannelLayout ochl
+            = {AV_CHANNEL_ORDER_UNSPEC, pdata->out_channels, {custom_out_layout}, NULL};
+        AVChannelLayout ichl
+            = {AV_CHANNEL_ORDER_UNSPEC, pdata->in_channels, {custom_in_layout}, NULL};
+        av_opt_set_chlayout(pdata->ctx, "ochl", &ochl, 0);
+        av_opt_set_chlayout(pdata->ctx, "ichl", &ichl, 0);
+#else
         av_opt_set_int(pdata->ctx, "ocl", custom_out_layout, 0);
         av_opt_set_int(pdata->ctx, "icl", custom_in_layout, 0);
+#endif
         error = swr_set_matrix(pdata->ctx, matrix, stride);
         av_free(matrix);
         if (error != 0) {
