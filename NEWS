@@ -1,6 +1,42 @@
 MLT Release Notes
 -----------------
 
+Version 7.24.0
+
+Framework
+  * Fixed a small memory leak in `mlt_repository`.
+  * Fixed a small memory leak in `MltPushConsumer` C++ class.
+  * Block connecting a null producer to a service.
+  * Include `locale.h` on any GNU libc platform.
+
+Modules
+  * Added a new `spatialaudio` module with filters:
+    - `ambisonic-decoder`
+    - `ambisonic-encoder`
+  * Fixed building with FFmpeg 7.
+  * Fixed text keywords do not work with non-ASCII filenames on Windows:
+    - `pixbuf` producer
+    - `opencv_tracker` filter
+    - `dynamictext` filter
+    - `qimage` producer
+  * Added "meta.media.aspect_ratio" property to the `avformat` producer.
+  * Fixed `distort` property not working in `movit.rect` filter.
+  * Fixed frames dropping or repeating in the `multi` consumer.
+  * Fixed the `dynamic_loudness` filter maximizing audio gain.
+  * Fixed distortion in the `mono` filter.
+  * Also check for `WAYLAND_DISPLAY` to detect a graphical session in the `qt`
+    and `glaxnimate` modules.
+  * Fixed the `wave` filter distorts if `wave` = 1 with preview scaling.
+  * Added the read-only `meta.media.%u.codec.layout` property to `avformat` producer.
+  * Set the `channel_layout` property on the frame for the `noise` and `tone`
+    audio producers.
+  * Fixed `outline` maximum for the `text` and `dynamictext` filters.
+
+Other
+  * Fixed crash when using `-chain` from `melt`.
+  * Fixed a small memory leak on Windows `fopen()`.
+
+
 Version 7.22.0
 
 Framework
