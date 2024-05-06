@@ -1,13 +1,13 @@
-ubuntu-latest:
-    image: ubuntu:latest
+ubuntu-24.04:
+    image: ubuntu:24.04
     script:
-        - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+        - sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
         - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
-ubuntu-lts:
+ubuntu-22.04:
     image: ubuntu:22.04
     script:
         - sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
