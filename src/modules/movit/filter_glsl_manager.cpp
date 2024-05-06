@@ -1,7 +1,7 @@
 /*
  * filter_glsl_manager.cpp
  * Copyright (C) 2011-2012 Christophe Thommeret <hftom@free.fr>
- * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
  */
 
 #include "filter_glsl_manager.h"
-#include "mlt_flip_effect.h"
 #include "mlt_movit_input.h"
 #include <effect_chain.h>
 #include <init.h>
@@ -263,20 +262,6 @@ void GlslManager::onInit(mlt_properties owner, GlslManager *filter, mlt_event_da
 void GlslManager::onClose(mlt_properties owner, GlslManager *filter, mlt_event_data)
 {
     filter->cleanupContext();
-}
-
-void GlslManager::onServiceChanged(mlt_properties owner, mlt_service aservice)
-{
-    Mlt::Service service(aservice);
-    service.lock();
-    service.set("movit chain", NULL, 0);
-    service.unlock();
-}
-
-void GlslManager::onPropertyChanged(mlt_properties owner, mlt_service service, const char *property)
-{
-    if (property && std::string(property) == "disable")
-        onServiceChanged(owner, service);
 }
 
 extern "C" {

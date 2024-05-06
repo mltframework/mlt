@@ -1,6 +1,6 @@
 /*
  * filter_movit_convert.cpp
- * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -205,16 +205,23 @@ static void get_format_from_properties(mlt_properties properties,
     ycbcr_format->cb_y_position = ycbcr_format->cr_y_position = 0.5f;
 }
 
-static void build_fingerprint(mlt_service service, mlt_frame frame, std::string *fingerprint)
+static void build_fingerprint(GlslChain *chain,
+                              mlt_service service,
+                              mlt_frame frame,
+                              std::string *fingerprint)
 {
     if (service == (mlt_service) -1) {
-        fingerprint->append("input");
+        mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+        if (producer && chain && chain->inputs[producer])
+            fingerprint->append(mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "_unique_id"));
+        else
+            fingerprint->append("input");
         return;
     }
 
     mlt_service input_a = GlslManager::get_effect_input(service, frame);
     fingerprint->push_back('(');
-    build_fingerprint(input_a, frame, fingerprint);
+    build_fingerprint(chain, input_a, frame, fingerprint);
     fingerprint->push_back(')');
 
     mlt_frame frame_b;
@@ -222,14 +229,14 @@ static void build_fingerprint(mlt_service service, mlt_frame frame, std::string 
     GlslManager::get_effect_secondary_input(service, frame, &input_b, &frame_b);
     if (input_b) {
         fingerprint->push_back('(');
-        build_fingerprint(input_b, frame_b, fingerprint);
+        build_fingerprint(chain, input_b, frame_b, fingerprint);
         fingerprint->push_back(')');
     }
 
     GlslManager::get_effect_third_input(service, frame, &input_b, &frame_b);
     if (input_b) {
         fingerprint->push_back('(');
-        build_fingerprint(input_b, frame_b, fingerprint);
+        build_fingerprint(chain, input_b, frame_b, fingerprint);
         fingerprint->push_back(')');
     }
 
@@ -321,15 +328,15 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
     GlslChain *chain = GlslManager::get_chain(leaf_service);
 
     std::string new_fingerprint;
-    build_fingerprint(leaf_service, frame, &new_fingerprint);
+    build_fingerprint(chain, leaf_service, frame, &new_fingerprint);
 
     // Build the chain if needed.
     if (!chain || new_fingerprint != chain->fingerprint) {
-        mlt_log_debug(leaf_service,
-                      "=== CREATING NEW CHAIN (old chain=%p, leaf=%p, fingerprint=%s) ===\n",
-                      chain,
-                      leaf_service,
-                      new_fingerprint.c_str());
+        mlt_log_info(leaf_service,
+                     "=== CREATING NEW CHAIN (old chain=%p, leaf=%p, fingerprint=%s) ===\n",
+                     chain,
+                     leaf_service,
+                     new_fingerprint.c_str());
         mlt_profile profile = mlt_service_profile(leaf_service);
         chain = new GlslChain;
         chain->effect_chain = new EffectChain(profile->display_aspect_num,

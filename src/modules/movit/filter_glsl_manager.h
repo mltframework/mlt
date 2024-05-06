@@ -1,6 +1,6 @@
 /*
  * filter_glsl_manager.h
- * Copyright (C) 2013-2023 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,8 +141,6 @@ private:
 
     static void onInit(mlt_properties owner, GlslManager *filter, mlt_event_data);
     static void onClose(mlt_properties owner, GlslManager *filter, mlt_event_data);
-    static void onServiceChanged(mlt_properties owner, mlt_service service);
-    static void onPropertyChanged(mlt_properties owner, mlt_service service, const char *property);
     movit::ResourcePool *resource_pool;
     Mlt::Deque texture_list;
     Mlt::Deque syncs_to_delete;
