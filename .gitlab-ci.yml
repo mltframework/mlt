@@ -1,7 +1,7 @@
 ubuntu-24.04:
     image: ubuntu:24.04
     script:
-        - sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
+        - "sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources"
         - DEBIAN_FRONTEND=noninteractive apt-get -qq update
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
         - DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
