@@ -326,7 +326,6 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties filter_properties = get_filter_properties(filter, frame);
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
     mlt_position position = mlt_filter_get_position(filter, frame);
-    mlt_log_info(MLT_FILTER_SERVICE(filter), "get_image %p %d\n", filter, position);
     mlt_position length = mlt_filter_get_length2(filter, frame);
     bool isRichText = qstrlen(mlt_properties_get(filter_properties, "html")) > 0
                       || qstrlen(mlt_properties_get(filter_properties, "resource")) > 0;
