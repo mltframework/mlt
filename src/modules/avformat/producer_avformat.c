@@ -2663,6 +2663,13 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
         if (thread_count >= 0)
             codec_context->thread_count = thread_count;
 
+		// fix lowres if set too high
+		int lowres = mlt_properties_get_int(properties, "lowres");
+		if (lowres > codec_context->codec->max_lowres) {
+			mlt_log_debug( MLT_PRODUCER_SERVICE( self->parent ), "clamping lowres=%i to max_lowres=%i\n", lowres, codec_context->codec->max_lowres );
+			mlt_properties_set_int(properties, "lowres", codec_context->codec->max_lowres);
+		}
+
 #if USE_HWACCEL
         if (self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE
             || self->hwaccel.pix_fmt == AV_PIX_FMT_NONE) {
