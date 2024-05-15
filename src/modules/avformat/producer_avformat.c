@@ -1309,10 +1309,23 @@ static void find_first_pts(producer_avformat self, int video_index)
         }
         av_packet_unref(&pkt);
     }
-    if (vfr_counter >= VFR_THRESHOLD)
+
+    // Determine if this is variable frame rate video
+    int vfr = vfr_counter >= VFR_THRESHOLD;
+    if (!vfr) {
+        AVStream *stream = self->video_format ? self->video_format->streams[video_index] : NULL;
+        if (stream) {
+            int d = stream->avg_frame_rate.den;
+            vfr = d != 0 && d != 1 && d != 2 && d != 125 && d != 1001;
+        }
+    }
+    if (vfr) {
         mlt_properties_set_int(MLT_PRODUCER_PROPERTIES(self->parent),
                                "meta.media.variable_frame_rate",
                                1);
+    }
+
+    // Reset context position
     av_seek_frame(context, -1, 0, AVSEEK_FLAG_BACKWARD);
 }
 
@@ -2734,12 +2747,12 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
         get_aspect_ratio(properties, stream, codec_params);
 
         // Start with the muxer frame rate.
-        AVRational frame_rate = stream->avg_frame_rate;
+        AVRational frame_rate = stream->r_frame_rate;
         double fps = av_q2d(frame_rate);
 
         // Verify and sanitize the muxer frame rate.
         if (isnan(fps) || isinf(fps) || fps == 0) {
-            frame_rate = stream->r_frame_rate;
+            frame_rate = stream->avg_frame_rate;
             fps = av_q2d(frame_rate);
         }
         // With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
