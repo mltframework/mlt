@@ -1105,7 +1105,7 @@ static int producer_open(
                     self->hwaccel.pix_fmt = AV_PIX_FMT_VAAPI;
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_VAAPI;
                     device = "/dev/dri/renderD128";
-                } else if (!strcmp(hwaccel->value, "cuda")) {
+                } else if (!strcmp(hwaccel->value, "cuda") || !strcmp(hwaccel->value, "nvdec")) {
                     self->hwaccel.pix_fmt = AV_PIX_FMT_CUDA;
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_CUDA;
                     device = "0";
