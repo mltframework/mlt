@@ -448,10 +448,10 @@ static mlt_properties find_default_streams(producer_avformat self)
             }
             mlt_properties_set(meta_media, key, "video");
             snprintf(key, sizeof(key), "meta.media.%u.stream.frame_rate", i);
-            double avg_frame_rate = av_q2d(context->streams[i]->avg_frame_rate);
-            double ffmpeg_fps = isfinite(avg_frame_rate)
-                                    ? avg_frame_rate
-                                    : av_q2d(context->streams[i]->r_frame_rate);
+            double r_frame_rate = av_q2d(context->streams[i]->r_frame_rate);
+            double ffmpeg_fps = isfinite(r_frame_rate)
+                                    ? r_frame_rate
+                                    : av_q2d(context->streams[i]->avg_frame_rate);
             mlt_properties_set_double(meta_media, key, ffmpeg_fps);
 
             const char *projection = get_projection(context->streams[i]);
@@ -888,8 +888,8 @@ static int setup_video_filters(producer_avformat self)
              stream->time_base.den,
              mlt_properties_get_int(properties, "meta.media.sample_aspect_num"),
              FFMAX(mlt_properties_get_int(properties, "meta.media.sample_aspect_den"), 1),
-             stream->avg_frame_rate.num,
-             FFMAX(stream->avg_frame_rate.den, 1));
+             stream->r_frame_rate.num,
+             FFMAX(stream->r_frame_rate.den, 1));
 
     int result = avfilter_graph_create_filter(&self->vfilter_in,
                                               avfilter_get_by_name("buffer"),
