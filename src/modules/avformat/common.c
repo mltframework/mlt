@@ -162,12 +162,13 @@ mlt_channel_layout av_channel_layout_to_mlt(AVChannelLayout *layout)
     if (layout->order != AV_CHANNEL_ORDER_NATIVE && layout->order != AV_CHANNEL_ORDER_AMBISONIC) {
         return mlt_channel_independent;
     }
-    switch (layout->u.mask) {
+    unsigned long layout_id = layout->u.mask;
 #else
 mlt_channel_layout av_channel_layout_to_mlt(int64_t layout)
 {
-    switch (layout) {
+    unsigned long layout_id = layout;
 #endif
+    switch (layout_id) {
     case 0:
         return mlt_channel_independent;
     case AV_CH_LAYOUT_MONO:
@@ -223,7 +224,7 @@ mlt_channel_layout av_channel_layout_to_mlt(int64_t layout)
     case AV_CH_LAYOUT_7POINT1_WIDE_BACK:
         return mlt_channel_7p1_wide_back;
     }
-    mlt_log_error(NULL, "[avformat] Unknown channel layout: %lu\n", (unsigned long) layout->u.mask);
+    mlt_log_error(NULL, "[avformat] Unknown channel layout: %lu\n", layout_id);
     return mlt_channel_independent;
 }
 
