@@ -223,7 +223,7 @@ mlt_channel_layout av_channel_layout_to_mlt(int64_t layout)
     case AV_CH_LAYOUT_7POINT1_WIDE_BACK:
         return mlt_channel_7p1_wide_back;
     }
-    mlt_log_error(NULL, "[avformat] Unknown channel layout: %lu\n", (unsigned long) layout);
+    mlt_log_error(NULL, "[avformat] Unknown channel layout: %lu\n", (unsigned long) layout->u.mask);
     return mlt_channel_independent;
 }
 
