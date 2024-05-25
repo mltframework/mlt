@@ -12,14 +12,4 @@ tags:
 description: Process audio using LV2 plugins.
 notes: >
   Automatically adapts to the number of channels and sampling rate of the consumer.
-bugs:
-  - Some effects have a temporal side-effect that may not work well.
 
-parameters:
-  - identifier: resource
-    argument: yes
-    title: JACK Rack XML file
-    type: string
-    description: >
-      Runs a JACK Rack project to process audio through a stack of
-      LV2 filters without using JACK.
