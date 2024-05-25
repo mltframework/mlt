@@ -25,43 +25,41 @@
 #ifndef __LV2_URID_HELPER_H__
 #define __LV2_URID_HELPER_H__
 
-typedef struct {
-  char** uris;
-  size_t n_uris;
+typedef struct
+{
+    char **uris;
+    size_t n_uris;
 } URITable;
 
-static void
-uri_table_init(URITable* table)
+static void uri_table_init(URITable *table)
 {
-  table->uris   = NULL;
-  table->n_uris = 0;
+    table->uris = NULL;
+    table->n_uris = 0;
 }
 
-static LV2_URID
-uri_table_map(LV2_URID_Map_Handle handle, const char* uri)
+static LV2_URID uri_table_map(LV2_URID_Map_Handle handle, const char *uri)
 {
-  URITable* table = (URITable*)handle;
-  for (size_t i = 0; i < table->n_uris; ++i) {
-    if (!strcmp(table->uris[i], uri)) {
-      return i + 1;
+    URITable *table = (URITable *) handle;
+    for (size_t i = 0; i < table->n_uris; ++i) {
+        if (!strcmp(table->uris[i], uri)) {
+            return i + 1;
+        }
     }
-  }
 
-  const size_t len = strlen(uri);
-  table->uris = (char**)realloc(table->uris, ++table->n_uris * sizeof(char*));
-  table->uris[table->n_uris - 1] = (char*)malloc(len + 1);
-  memcpy(table->uris[table->n_uris - 1], uri, len + 1);
-  return table->n_uris;
+    const size_t len = strlen(uri);
+    table->uris = (char **) realloc(table->uris, ++table->n_uris * sizeof(char *));
+    table->uris[table->n_uris - 1] = (char *) malloc(len + 1);
+    memcpy(table->uris[table->n_uris - 1], uri, len + 1);
+    return table->n_uris;
 }
 
-static const char*
-uri_table_unmap(LV2_URID_Map_Handle handle, LV2_URID urid)
+static const char *uri_table_unmap(LV2_URID_Map_Handle handle, LV2_URID urid)
 {
-  URITable* table = (URITable*)handle;
-  if (urid > 0 && urid <= table->n_uris) {
-    return table->uris[urid - 1];
-  }
-  return NULL;
+    URITable *table = (URITable *) handle;
+    if (urid > 0 && urid <= table->n_uris) {
+        return table->uris[urid - 1];
+    }
+    return NULL;
 }
 
 #endif /* __LV2_URID_HELPER_H__ */

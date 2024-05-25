@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004-2021 Meltytech, LLC
+ * Copyright (C) 2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,26 +37,26 @@ typedef struct _lv2_process_info lv2_process_info_t;
 
 /** this is what gets passed to the process() callback and contains all
     the data the process callback will need */
-struct _lv2_process_info {
+struct _lv2_process_info
+{
+    /** the plugin instance chain */
+    struct _lv2_plugin *chain;
+    struct _lv2_plugin *chain_end;
 
-  /** the plugin instance chain */
-  struct _lv2_plugin * chain;
-  struct _lv2_plugin * chain_end;
-  
 #ifdef WITH_JACK
-  jack_client_t * jack_client;
-  unsigned long port_count;
-  jack_port_t ** jack_input_ports;
-  jack_port_t ** jack_output_ports;
+    jack_client_t *jack_client;
+    unsigned long port_count;
+    jack_port_t **jack_input_ports;
+    jack_port_t **jack_output_ports;
 #endif
 
-  unsigned long channels;
-  LADSPA_Data ** jack_input_buffers;
-  LADSPA_Data ** jack_output_buffers;
-  LADSPA_Data *  silent_buffer;
-  
-  char * jack_client_name;
-  int quit;
+    unsigned long channels;
+    LADSPA_Data **jack_input_buffers;
+    LADSPA_Data **jack_output_buffers;
+    LADSPA_Data *silent_buffer;
+
+    char *jack_client_name;
+    int quit;
 };
 
 #ifndef WITH_JACK
@@ -65,20 +65,26 @@ typedef guint32 jack_nframes_t;
 extern jack_nframes_t lv2_sample_rate;
 extern jack_nframes_t lv2_buffer_size;
 
-lv2_process_info_t * lv2_process_info_new (const char * client_name,
-	unsigned long rack_channels, gboolean connect_inputs, gboolean connect_outputs);
-void lv2_process_info_destroy (lv2_process_info_t * procinfo);
+lv2_process_info_t *lv2_process_info_new(const char *client_name,
+                                         unsigned long rack_channels,
+                                         gboolean connect_inputs,
+                                         gboolean connect_outputs);
+void lv2_process_info_destroy(lv2_process_info_t *procinfo);
 
-void lv2_process_info_set_channels (lv2_process_info_t * procinfo,
-	unsigned long channels, gboolean connect_inputs, gboolean connect_outputs);
+void lv2_process_info_set_channels(lv2_process_info_t *procinfo,
+                                   unsigned long channels,
+                                   gboolean connect_inputs,
+                                   gboolean connect_outputs);
 
-int process_lv2 (lv2_process_info_t * procinfo, jack_nframes_t frames,
-                    LADSPA_Data ** inputs, LADSPA_Data ** outputs);
+int process_lv2(lv2_process_info_t *procinfo,
+                jack_nframes_t frames,
+                LADSPA_Data **inputs,
+                LADSPA_Data **outputs);
 
 /* #ifdef WITH_JACK
    int process_jack (jack_nframes_t frames, void * data);
    #endif */
 
-void lv2_process_quit (lv2_process_info_t * procinfo);
+void lv2_process_quit(lv2_process_info_t *procinfo);
 
 #endif /* __JLH_PROCESS_H__ */

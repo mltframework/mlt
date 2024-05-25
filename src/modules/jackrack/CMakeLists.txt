@@ -48,7 +48,7 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
 
   if(USE_LV2 AND TARGET PkgConfig::lilv)
     target_link_libraries(mltjackrack PRIVATE PkgConfig::lilv)
-    target_sources(mltjackrack PRIVATE filter_lv2.c producer_lv2.c lv2_rack.c lv2_plugin.c lv2_process.c lv2_plugin_settings.c)
+    target_sources(mltjackrack PRIVATE filter_lv2.c producer_lv2.c lv2_context.c lv2_plugin.c lv2_process.c lv2_plugin_settings.c)
     install(FILES filter_lv2.yml producer_lv2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
   endif()
 

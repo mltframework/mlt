@@ -1,6 +1,6 @@
 /*
- * filter_ladspa.c -- filter audio through LADSPA plugins
- * Copyright (C) 2004-2018 Meltytech, LLC
+ * filter_lv2.c -- filter audio through LV2 plugins
+ * Copyright (C) 2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <framework/mlt_factory.h>
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
-#include <framework/mlt_factory.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,94 +30,89 @@
 #include <pthread.h>
 #include <string.h>
 
-#include "lv2_rack.h"
+#include "lv2_context.h"
 
 #define BUFFER_LEN (10000)
 #define MAX_SAMPLE_COUNT (4096)
 
-static lv2_rack_t *initialise_lv2_rack(mlt_properties properties, int channels)
+static lv2_context_t *initialise_lv2_context(mlt_properties properties, int channels)
 {
-    lv2_rack_t *lv2rack = NULL;
+    lv2_context_t *lv2context = NULL;
     char *resource = mlt_properties_get(properties, "resource");
     if (!resource && mlt_properties_get(properties, "src"))
         resource = mlt_properties_get(properties, "src");
 
     char *plugin_id = NULL;
-    plugin_id = mlt_properties_get (properties, "_pluginid");
+    plugin_id = mlt_properties_get(properties, "_pluginid");
 
-    // Start LV2Rack
+    // Start Lv2context
     if (resource || plugin_id) {
-
-        // Create LV2Rack without Jack client name so that it only uses LV2
-      lv2rack = lv2_rack_new(NULL, channels);
+        // Create Lv2context without Jack client name so that it only uses LV2
+        lv2context = lv2_context_new(NULL, channels);
         mlt_properties_set_data(properties,
-                                "lv2rack",
-                                lv2rack,
+                                "lv2context",
+                                lv2context,
                                 0,
-                                (mlt_destructor) lv2_rack_destroy,
+                                (mlt_destructor) lv2_context_destroy,
                                 NULL);
 
-        if (resource)
-	  // Load LV2 Rack XML file
-	  lv2_rack_open_file(lv2rack, resource);
-	else if (plugin_id) {
+        if (plugin_id) {
             // Load one LV2 plugin by its URI
 
-	  char *id = plugin_id;
-	  lv2_plugin_desc_t *desc = lv2_mgr_get_any_desc(lv2rack->plugin_mgr, id);
+            char *id = plugin_id;
+            lv2_plugin_desc_t *desc = lv2_mgr_get_any_desc(lv2context->plugin_mgr, id);
 
-	  lv2_plugin_t *plugin;
-	  if (desc && (plugin = lv2_rack_instantiate_plugin(lv2rack, desc))) {
+            lv2_plugin_t *plugin;
+            if (desc && (plugin = lv2_context_instantiate_plugin(lv2context, desc))) {
+                plugin->enabled = TRUE;
+                lv2_process_add_plugin(lv2context->procinfo, plugin);
+                mlt_properties_set_int(properties, "instances", plugin->copies);
+            } else {
+                //mlt_log_error(properties, "failed to load plugin %lu\n", id);
+                mlt_log_error(properties, "failed to load plugin `%s`\n", id);
+                return lv2context;
+            }
 
-	    plugin->enabled = TRUE;
-	    lv2_process_add_plugin(lv2rack->procinfo, plugin);
-	    mlt_properties_set_int(properties, "instances", plugin->copies);
-	  } else {
-	    //mlt_log_error(properties, "failed to load plugin %lu\n", id);
-	    mlt_log_error(properties, "failed to load plugin `%s`\n", id);
-	    return lv2rack;
-	  }
-	       
-	  if (plugin && plugin->desc && plugin->copies == 0) {
-	    // Calculate the number of channels that will work with this plugin
-	    int request_channels = plugin->desc->channels;
-	    while (request_channels < channels)
-	      request_channels += plugin->desc->channels;
-	       
-	    if (request_channels != channels) {
-	      // Try to load again with a compatible number of channels.
-	      mlt_log_warning(
-			      properties,
-			      "Not compatible with %d channels. Requesting %d channels instead.\n",
-			      channels,
-			      request_channels);
-	      lv2rack = initialise_lv2_rack(properties, request_channels);
-	    } else {
-	      mlt_log_error(properties, "Invalid plugin configuration: `%s`\n", id);
-	      return lv2rack;
-	    }
-	  }
-	       
-	  if (plugin && plugin->desc && plugin->copies)
-	    mlt_log_debug(properties,
-			  "Plugin Initialized. Channels: %lu\tCopies: %d\tTotal: %lu\n",
-			  plugin->desc->channels,
-			  plugin->copies,
-			  lv2rack->channels);
+            if (plugin && plugin->desc && plugin->copies == 0) {
+                // Calculate the number of channels that will work with this plugin
+                int request_channels = plugin->desc->channels;
+                while (request_channels < channels)
+                    request_channels += plugin->desc->channels;
+
+                if (request_channels != channels) {
+                    // Try to load again with a compatible number of channels.
+                    mlt_log_warning(
+                        properties,
+                        "Not compatible with %d channels. Requesting %d channels instead.\n",
+                        channels,
+                        request_channels);
+                    lv2context = initialise_lv2_context(properties, request_channels);
+                } else {
+                    mlt_log_error(properties, "Invalid plugin configuration: `%s`\n", id);
+                    return lv2context;
+                }
+            }
+
+            if (plugin && plugin->desc && plugin->copies)
+                mlt_log_debug(properties,
+                              "Plugin Initialized. Channels: %lu\tCopies: %d\tTotal: %lu\n",
+                              plugin->desc->channels,
+                              plugin->copies,
+                              lv2context->channels);
         }
     }
-    return lv2rack;
+    return lv2context;
 }
 
 /** Get the audio.
 */
 
 static int lv2_get_audio(mlt_frame frame,
-                            void **buffer,
-                            mlt_audio_format *format,
-                            int *frequency,
-                            int *channels,
-                            int *samples)
+                         void **buffer,
+                         mlt_audio_format *format,
+                         int *frequency,
+                         int *channels,
+                         int *samples)
 {
     int error = 0;
 
@@ -136,7 +131,7 @@ static int lv2_get_audio(mlt_frame frame,
                          prev_channels,
                          *channels);
             mlt_properties_set_data(filter_properties,
-                                    "lv2rack",
+                                    "lv2context",
                                     NULL,
                                     0,
                                     (mlt_destructor) NULL,
@@ -146,20 +141,18 @@ static int lv2_get_audio(mlt_frame frame,
     }
 
     // Initialise LV2 if needed
-    lv2_rack_t *lv2rack = mlt_properties_get_data(filter_properties, "lv2rack", NULL);
-    if (lv2rack == NULL) {
-        lv2_sample_rate = *frequency; // global inside lv2_rack
+    lv2_context_t *lv2context = mlt_properties_get_data(filter_properties, "lv2context", NULL);
+    if (lv2context == NULL) {
+        lv2_sample_rate = *frequency; // global inside lv2_context
 
-        lv2rack = initialise_lv2_rack(filter_properties, *channels);
+        lv2context = initialise_lv2_context(filter_properties, *channels);
     }
 
     char *plugin_id = NULL;
-    plugin_id = mlt_properties_get (filter_properties, "_pluginid");
+    plugin_id = mlt_properties_get(filter_properties, "_pluginid");
 
-    if (lv2rack && lv2rack->procinfo && lv2rack->procinfo->chain && plugin_id) {
-
-
-        lv2_plugin_t *plugin = lv2rack->procinfo->chain;
+    if (lv2context && lv2context->procinfo && lv2context->procinfo->chain && plugin_id) {
+        lv2_plugin_t *plugin = lv2context->procinfo->chain;
         LADSPA_Data value;
         int i, c;
         mlt_position position = mlt_filter_get_position(filter, frame);
@@ -170,11 +163,11 @@ static int lv2_get_audio(mlt_frame frame,
         mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
 
         // Resize the buffer if necessary.
-        if (*channels < lv2rack->channels) {
+        if (*channels < lv2context->channels) {
             // Add extra channels to satisfy the plugin.
             // Extra channels in the buffer will be ignored by downstream services.
             int old_size = mlt_audio_format_size(*format, *samples, *channels);
-            int new_size = mlt_audio_format_size(*format, *samples, lv2rack->channels);
+            int new_size = mlt_audio_format_size(*format, *samples, lv2context->channels);
             uint8_t *new_buffer = mlt_pool_alloc(new_size);
             memcpy(new_buffer, *buffer, old_size);
             // Put silence in extra channels.
@@ -186,27 +179,26 @@ static int lv2_get_audio(mlt_frame frame,
         for (i = 0; i < plugin->desc->control_port_count; i++) {
             // Apply the control port values
             char key[20];
-	    value = plugin->desc->def_values[plugin->desc->control_port_indicies[i]];
-	    snprintf(key, sizeof(key), "%d", (int) plugin->desc->control_port_indicies[i]);
+            value = plugin->desc->def_values[plugin->desc->control_port_indicies[i]];
+            snprintf(key, sizeof(key), "%d", (int) plugin->desc->control_port_indicies[i]);
 
             if (mlt_properties_get(filter_properties, key))
                 value = mlt_properties_anim_get_double(filter_properties, key, position, length);
-            for (c = 0; c < plugin->copies; c++)
-	      {
-		plugin->holders[c].control_memory[i] = value;
-	      }
+            for (c = 0; c < plugin->copies; c++) {
+                plugin->holders[c].control_memory[i] = value;
+            }
         }
 
         plugin->wet_dry_enabled = mlt_properties_get(filter_properties, "wetness") != NULL;
         if (plugin->wet_dry_enabled) {
             value = mlt_properties_anim_get_double(filter_properties, "wetness", position, length);
-            for (c = 0; c < lv2rack->channels; c++)
+            for (c = 0; c < lv2context->channels; c++)
                 plugin->wet_dry_values[c] = value;
         }
 
         // Configure the buffers
-        LADSPA_Data **input_buffers = mlt_pool_alloc(sizeof(LADSPA_Data *) * lv2rack->channels);
-        LADSPA_Data **output_buffers = mlt_pool_alloc(sizeof(LADSPA_Data *) * lv2rack->channels);
+        LADSPA_Data **input_buffers = mlt_pool_alloc(sizeof(LADSPA_Data *) * lv2context->channels);
+        LADSPA_Data **output_buffers = mlt_pool_alloc(sizeof(LADSPA_Data *) * lv2context->channels);
 
         // Some plugins crash with too many frames (samples).
         // So, feed the plugin with N samples per loop iteration.
@@ -214,12 +206,12 @@ static int lv2_get_audio(mlt_frame frame,
         int sample_count = MIN(*samples, MAX_SAMPLE_COUNT);
         for (i = 0; samples_offset < *samples; i++) {
             int j = 0;
-            for (; j < lv2rack->channels; j++)
+            for (; j < lv2context->channels; j++)
                 output_buffers[j] = input_buffers[j] = (LADSPA_Data *) *buffer + j * (*samples)
                                                        + samples_offset;
             sample_count = MIN(*samples - samples_offset, MAX_SAMPLE_COUNT);
             // Do LV2 processing
-            error = process_lv2(lv2rack->procinfo, sample_count, input_buffers, output_buffers);
+            error = process_lv2(lv2context->procinfo, sample_count, input_buffers, output_buffers);
 
             samples_offset += MAX_SAMPLE_COUNT;
         }
@@ -262,17 +254,16 @@ static mlt_frame filter_process(mlt_filter this, mlt_frame frame)
 */
 mlt_filter filter_lv2_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg)
 {
-  mlt_filter this = mlt_filter_new();
-  /* mlt_filter this = mlt_factory_filter(profile, id, arga); */
+    mlt_filter this = mlt_filter_new();
+    /* mlt_filter this = mlt_factory_filter(profile, id, arga); */
 
     if (this != NULL) {
         mlt_properties properties = MLT_FILTER_PROPERTIES(this);
         this->process = filter_process;
         mlt_properties_set(properties, "resource", arg);
-        if (!strncmp(id, "lv2.", 4))
-	  {
-	    mlt_properties_set(properties, "_pluginid", id + 4);
-	  }
+        if (!strncmp(id, "lv2.", 4)) {
+            mlt_properties_set(properties, "_pluginid", id + 4);
+        }
     }
 
     return this;

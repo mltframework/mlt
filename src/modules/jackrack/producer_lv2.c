@@ -1,6 +1,6 @@
 /*
- * producer_ladspa.c -- LADSPA plugin producer
- * Copyright (C) 2013-2014 Meltytech, LLC
+ * producer_lv2.c -- LV2 plugin producer
+ * Copyright (C) 2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,46 +28,46 @@
 
 #include <string.h>
 
-#include "lv2_rack.h"
+#include "lv2_context.h"
 
 #define BUFFER_LEN 10000
 
 /** One-time initialization of lv2 rack.
 */
 
-static lv2_rack_t *initialise_lv2_rack(mlt_properties properties, int channels)
+static lv2_context_t *initialise_lv2_context(mlt_properties properties, int channels)
 {
-    lv2_rack_t *lv2rack = NULL;
+    lv2_context_t *lv2context = NULL;
     //unsigned long plugin_id = mlt_properties_get_int64(properties, "_pluginid");
     char *plugin_id = NULL;
     plugin_id = mlt_properties_get(properties, "_pluginid");
 
-    // Start LV2Rack
+    // Start Lv2context
     if (plugin_id) {
-        // Create LV2Rack without Jack client name so that it only uses LV2
-        lv2rack = lv2_rack_new(NULL, channels);
+        // Create Lv2context without Jack client name so that it only uses LV2
+        lv2context = lv2_context_new(NULL, channels);
         mlt_properties_set_data(properties,
-                                "_lv2rack",
-                                lv2rack,
+                                "_lv2context",
+                                lv2context,
                                 0,
-                                (mlt_destructor) lv2_rack_destroy,
+                                (mlt_destructor) lv2_context_destroy,
                                 NULL);
 
         // Load one LV2 plugin by its URI
-        lv2_plugin_desc_t *desc = lv2_mgr_get_any_desc(lv2rack->plugin_mgr, plugin_id);
+        lv2_plugin_desc_t *desc = lv2_mgr_get_any_desc(lv2context->plugin_mgr, plugin_id);
         lv2_plugin_t *plugin;
 
-        if (desc && (plugin = lv2_rack_instantiate_plugin(lv2rack, desc))) {
+        if (desc && (plugin = lv2_context_instantiate_plugin(lv2context, desc))) {
             plugin->enabled = TRUE;
             plugin->wet_dry_enabled = FALSE;
-            lv2_process_add_plugin(lv2rack->procinfo, plugin);
+            lv2_process_add_plugin(lv2context->procinfo, plugin);
             mlt_properties_set_int(properties, "instances", plugin->copies);
         } else {
             mlt_log_error(properties, "failed to load plugin %s\n", plugin_id);
         }
     }
 
-    return lv2rack;
+    return lv2context;
 }
 
 static int producer_get_audio(mlt_frame frame,
@@ -87,21 +87,21 @@ static int producer_get_audio(mlt_frame frame,
     int i = 0;
 
     // Initialize LV2 if needed
-    lv2_rack_t *lv2rack = mlt_properties_get_data(producer_properties, "_lv2rack", NULL);
-    if (!lv2rack) {
-        lv2_sample_rate = *frequency; // global inside lv2_rack
-        lv2rack = initialise_lv2_rack(producer_properties, *channels);
+    lv2_context_t *lv2context = mlt_properties_get_data(producer_properties, "_lv2context", NULL);
+    if (!lv2context) {
+        lv2_sample_rate = *frequency; // global inside lv2_context
+        lv2context = initialise_lv2_context(producer_properties, *channels);
     }
 
-    if (lv2rack) {
+    if (lv2context) {
         // Correct the returns if necessary
         *samples = *samples <= 0 ? 1920 : *samples;
         *channels = *channels <= 0 ? 2 : *channels;
         *frequency = *frequency <= 0 ? 48000 : *frequency;
         *format = mlt_audio_float;
 
-        if (lv2rack->procinfo && lv2rack->procinfo->chain) {
-            lv2_plugin_t *plugin = lv2rack->procinfo->chain;
+        if (lv2context->procinfo && lv2context->procinfo->chain) {
+            lv2_plugin_t *plugin = lv2context->procinfo->chain;
             LADSPA_Data value;
             int index, c;
             mlt_position position = mlt_frame_get_position(frame);
@@ -110,8 +110,8 @@ static int producer_get_audio(mlt_frame frame,
             for (index = 0; index < plugin->desc->control_port_count; index++) {
                 // Apply the control port values
                 char key[20];
-		value = plugin->desc->def_values[plugin->desc->control_port_indicies[index]];
-		snprintf(key, sizeof(key), "%d", (int) plugin->desc->control_port_indicies[index]);
+                value = plugin->desc->def_values[plugin->desc->control_port_indicies[index]];
+                snprintf(key, sizeof(key), "%d", (int) plugin->desc->control_port_indicies[index]);
 
                 if (mlt_properties_get(producer_properties, key))
                     value = mlt_properties_anim_get_double(producer_properties,
@@ -136,18 +136,17 @@ static int producer_get_audio(mlt_frame frame,
         }
 
         // Do LV2 processing
-        process_lv2(lv2rack->procinfo, *samples, NULL, output_buffers);
+        process_lv2(lv2context->procinfo, *samples, NULL, output_buffers);
         mlt_pool_release(output_buffers);
 
         // Set the buffer for destruction
         mlt_frame_set_audio(frame, *buffer, *format, size, mlt_pool_release);
 
-	char *plugin_id = NULL;
-	plugin_id = mlt_properties_get (producer_properties, "_pluginid");
+        char *plugin_id = NULL;
+        plugin_id = mlt_properties_get(producer_properties, "_pluginid");
 
-	if (lv2rack && lv2rack->procinfo && lv2rack->procinfo->chain
-            && plugin_id) {
-            lv2_plugin_t *plugin = lv2rack->procinfo->chain;
+        if (lv2context && lv2context->procinfo && lv2context->procinfo->chain && plugin_id) {
+            lv2_plugin_t *plugin = lv2context->procinfo->chain;
             LADSPA_Data value;
             int i, c;
             for (i = 0; i < plugin->desc->status_port_count; i++) {
@@ -205,10 +204,7 @@ static void producer_close(mlt_producer producer)
 /** Constructor for the producer.
 */
 
-mlt_producer producer_lv2_init(mlt_profile profile,
-                                  mlt_service_type type,
-                                  const char *id,
-                                  char *arg)
+mlt_producer producer_lv2_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg)
 {
     // Create a new producer object
     mlt_producer producer = mlt_producer_new(profile);
@@ -223,7 +219,6 @@ mlt_producer producer_lv2_init(mlt_profile profile,
         if (!strncmp(id, "lv2.", 4)) {
             mlt_properties_set(properties, "_pluginid", id + 4);
         }
-
     }
     return producer;
 }
