@@ -16,3 +16,4 @@ strict=experimental
 meta.preset.name=AV1 WebM
 meta.preset.extension=webm
 meta.preset.note=AV1 video with Opus audio in Matroska container: Just say no to patents
+meta.preset.hidden=1

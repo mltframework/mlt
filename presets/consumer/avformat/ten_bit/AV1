@@ -17,3 +17,4 @@ pix_fmt=yuv420p10le
 meta.preset.name=ten_bit/10-bit AV1 WebM
 meta.preset.extension=webm
 meta.preset.note=10-bit AV1 video with Opus audio in Matroska container: Just say no to patents
+meta.preset.hidden=1

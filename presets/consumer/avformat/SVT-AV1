@@ -1,0 +1,16 @@
+f=webm
+
+acodec=libopus
+ar=48000
+ab=192k
+vbr=off
+
+vcodec=libsvtav1
+crf=32
+bf=1
+svtav1-params=preset=5:tile-columns=1:fast-decode=0:tune=0:film-grain=0:film-grain-denoise=0:enable-overlays=1:enable-variance-boost=1:variance-boost-strength=1:variance-octile=7:enable-qm=1:qm-min=0
+progressive=1
+
+meta.preset.name=AV1 WebM
+meta.preset.extension=webm
+meta.preset.note=AV1 video with Opus audio in WebM container: Just say no to patents
