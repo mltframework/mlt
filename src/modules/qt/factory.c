@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2023 Meltytech, LLC
+ * Copyright (C) 2008-2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ extern mlt_filter filter_audiowaveform_init(mlt_profile profile,
                                             mlt_service_type type,
                                             const char *id,
                                             char *arg);
+extern mlt_filter filter_dropshadow_init(mlt_profile profile,
+                                         mlt_service_type type,
+                                         const char *id,
+                                         char *arg);
 extern mlt_filter filter_gpsgraphic_init(mlt_profile profile,
                                          mlt_service_type type,
                                          const char *id,
@@ -109,6 +113,7 @@ MLT_REPOSITORY
 #endif
     MLT_REGISTER(mlt_service_filter_type, "audiolevelgraph", filter_audiolevelgraph_init);
     MLT_REGISTER(mlt_service_filter_type, "audiowaveform", filter_audiowaveform_init);
+    MLT_REGISTER(mlt_service_filter_type, "dropshadow", filter_dropshadow_init);
     MLT_REGISTER(mlt_service_filter_type, "gpsgraphic", filter_gpsgraphic_init);
     MLT_REGISTER(mlt_service_filter_type, "gpstext", filter_gpstext_init);
     MLT_REGISTER(mlt_service_filter_type, "qtext", filter_qtext_init);
@@ -138,6 +143,7 @@ MLT_REPOSITORY
                           "audiowaveform",
                           metadata,
                           "filter_audiowaveform.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "dropshadow", metadata, "filter_dropshadow.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "gpsgraphic", metadata, "filter_gpsgraphic.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "gpstext", metadata, "filter_gpstext.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "qtext", metadata, "filter_qtext.yml");

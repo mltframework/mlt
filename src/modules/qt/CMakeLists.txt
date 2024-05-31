@@ -21,6 +21,7 @@ function(mlt_add_qt_module ARG_TARGET)
       factory.c
       filter_audiolevelgraph.cpp
       filter_audiowaveform.cpp
+      filter_dropshadow.cpp
       filter_gpsgraphic.cpp filter_gpsgraphic.h
       filter_gpstext.cpp
       filter_qtext.cpp
@@ -100,6 +101,7 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_audiolevelgraph.yml
       filter_audiospectrum.yml
       filter_audiowaveform.yml
+      filter_dropshadow.yml
       filter_gpsgraphic.yml
       filter_gpstext.yml
       filter_qtblend.yml
