@@ -2324,6 +2324,8 @@ static int producer_get_image(mlt_frame frame,
             // We only deal with video from the selected video_index
             if (self->pkt.stream_index == self->video_index) {
                 int64_t pts = best_pts(self, self->pkt.pts, self->pkt.dts);
+                // default to decoding all intra-only frames from req_position to the future
+                int should_decode = int_position >= req_position;
                 if (pts != AV_NOPTS_VALUE) {
                     if (!self->video_seekable && self->first_pts == AV_NOPTS_VALUE)
                         self->first_pts = pts;
@@ -2338,6 +2340,39 @@ static int producer_get_image(mlt_frame frame,
                     );
                     if (int_position == self->last_position)
                         int_position = self->last_position + 1;
+
+                    if (self->pkt.duration != AV_NOPTS_VALUE) {
+                        // compute the interval this intra-only packet covers
+                        // [int_position, int_end)
+                        int64_t int_end = av_rescale_q(
+                                av_add_stable(self->video_time_base, pts + self->pkt.duration, AV_TIME_BASE_Q, delay64),
+                                source_fps,
+                                av_inv_q(self->video_time_base)
+                        );
+
+                        /* req_position2 is a "future" req_position computed in a clever way.
+                         * If the input fps is 50 and the output fps is 25, then
+                         * req_position2 relates to int_position and int_end like this:
+                         *
+                         *  int_position req_position2 int_end  decode?
+                         *   0            0             1        yes
+                         *   1            2             2        no
+                         *   2            2             3        yes
+                         *   3            4             4        no
+                         *   4            4             5        yes
+                         *
+                         * and so on. In other words, for intra-only, only frames where
+                         * int_position <= req_position2 < int_end are worthwhile decoding.
+                         */
+                        int64_t req_position2 = av_rescale_q(
+                            av_rescale_q_rnd(int_position, profile_fps, source_fps, AV_ROUND_UP),
+                            source_fps,
+                            profile_fps
+                        );
+
+                        // only decode intra-only frames that are worthwhile to decode
+                        should_decode = int_position >= req_position2 && req_position2 < int_end;
+                    }
                 }
                 mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
                               "V pkt.pts %" PRId64 " pkt.dts %" PRId64 " req_pos %" PRId64
@@ -2367,7 +2402,7 @@ static int producer_get_image(mlt_frame frame,
                 self->last_position = int_position;
 
                 // Decode the image
-                if (must_decode || int_position >= req_position || !self->pkt.data) {
+                if (must_decode || should_decode || !self->pkt.data) {
 #if LIBAVCODEC_VERSION_MAJOR < 61
                     self->video_codec->reordered_opaque = int_position;
 #endif
