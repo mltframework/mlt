@@ -23,8 +23,9 @@
 #include <rubberband/RubberBandStretcher.h>
 
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <cstring>
-#include <math.h>
 
 using namespace RubberBand;
 
