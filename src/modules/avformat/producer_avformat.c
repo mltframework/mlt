@@ -1348,8 +1348,10 @@ static int seek_video(producer_avformat self,
         AVFormatContext *context = self->video_format;
 
         // We may want to use the source fps if available
-        double source_fps = mlt_properties_get_double(properties, "meta.media.frame_rate_num")
-                            / mlt_properties_get_double(properties, "meta.media.frame_rate_den");
+        AVRational source_fps = av_make_q(
+            mlt_properties_get_double(properties, "meta.media.frame_rate_num"),
+            mlt_properties_get_double(properties, "meta.media.frame_rate_den")
+        );
 
         if (self->first_pts == AV_NOPTS_VALUE && self->last_position == POSITION_INITIAL)
             find_first_pts(self, self->video_index);
@@ -1361,15 +1363,20 @@ static int seek_video(producer_avformat self,
                    || position - self->video_expected >= seek_threshold
                    || self->last_position < 0) {
             // Calculate the timestamp for the requested frame
-            int64_t timestamp = req_position / (av_q2d(self->video_time_base) * source_fps);
+            int64_t timestamp = av_rescale_q_rnd(
+                req_position,
+                av_inv_q(self->video_time_base),
+                source_fps,
+                AV_ROUND_ZERO
+            );
             if (req_position <= 0)
                 timestamp = 0;
             else if (self->first_pts != AV_NOPTS_VALUE)
                 timestamp += self->first_pts;
             else if (context->start_time != AV_NOPTS_VALUE)
                 timestamp += context->start_time;
-            if (preseek && av_q2d(self->video_time_base) != 0)
-                timestamp -= 2 / av_q2d(self->video_time_base);
+            if (preseek && self->video_time_base.num != 0)
+                timestamp = av_add_stable(self->video_time_base, timestamp, AV_TIME_BASE_Q, -2 * AV_TIME_BASE);
             if (timestamp < 0)
                 timestamp = 0;
             mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
@@ -2182,17 +2189,21 @@ static int producer_get_image(mlt_frame frame,
     // Cache miss
 
     // We may want to use the source fps if available
-    double source_fps = mlt_properties_get_double(properties, "meta.media.frame_rate_num")
-                        / mlt_properties_get_double(properties, "meta.media.frame_rate_den");
+    int source_fps_num = mlt_properties_get_int(properties, "meta.media.frame_rate_num");
+    int source_fps_den = mlt_properties_get_int(properties, "meta.media.frame_rate_den");
+    mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
+    AVRational source_fps = av_make_q(source_fps_num, source_fps_den);
+    AVRational profile_fps = av_make_q(profile->frame_rate_num, profile->frame_rate_den);
 
     // This is the physical frame position in the source
-    int64_t req_position = (int64_t) (position / mlt_producer_get_fps(producer) * source_fps + 0.5);
+    int64_t req_position = av_rescale_q(position, source_fps, profile_fps);
 
     // Determines if we have to decode all frames in a sequence - when there temporal compression is used.
     const AVCodecDescriptor *descriptor = avcodec_descriptor_get(codec_params->codec_id);
     int must_decode = descriptor && !(descriptor->props & AV_CODEC_PROP_INTRA_ONLY);
 
     double delay = mlt_properties_get_double(properties, "video_delay");
+    int64_t delay64 = (int64_t)(delay * AV_TIME_BASE);
 
     // Seek if necessary
     double speed = mlt_producer_get_speed(producer);
@@ -2320,9 +2331,11 @@ static int producer_get_image(mlt_frame frame,
                         pts -= self->first_pts;
                     else if (context->start_time != AV_NOPTS_VALUE)
                         pts -= context->start_time;
-                    int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
-                                                  * source_fps
-                                              + 0.5);
+                    int_position = av_rescale_q(
+                            av_add_stable(self->video_time_base, pts, AV_TIME_BASE_Q, delay64),
+                            source_fps,
+                            av_inv_q(self->video_time_base)
+                    );
                     if (int_position == self->last_position)
                         int_position = self->last_position + 1;
                 }
@@ -2426,9 +2439,11 @@ static int producer_get_image(mlt_frame frame,
                             pts -= self->first_pts;
                         else if (context->start_time != AV_NOPTS_VALUE)
                             pts -= context->start_time;
-                        int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
-                                                      * source_fps
-                                                  + 0.5);
+                        int_position = av_rescale_q(
+                            av_add_stable(self->video_time_base, pts, AV_TIME_BASE_Q, delay64),
+                            source_fps,
+                            av_inv_q(self->video_time_base)
+                        );
                     }
 
                     if (int_position < req_position)
