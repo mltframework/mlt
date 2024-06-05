@@ -117,7 +117,7 @@ Service *Service::consumer()
 
 Profile *Service::profile()
 {
-    return new Profile(mlt_service_profile(get_service()));
+    return new Profile(mlt_profile_clone(mlt_service_profile(get_service())));
 }
 
 mlt_profile Service::get_profile()
