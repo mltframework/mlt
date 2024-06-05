@@ -709,8 +709,11 @@ void loadFromXml(producer_ktitle self,
     // Check if node exists, if it has an x attribute, it is an old version title, don't use viewport
     if (!n.isNull() && !n.toElement().hasAttribute("x")) {
         QString rect = n.attributes().namedItem("rect").nodeValue();
-        if (startRect != rect)
+        if (startRect != rect) {
             mlt_properties_set(producer_props, "_endrect", rect.toUtf8().data());
+        } else {
+            mlt_properties_clear(producer_props, "_endrect");
+        }
     }
     if (!startRect.isEmpty()) {
         mlt_properties_set(producer_props, "_startrect", startRect.toUtf8().data());
