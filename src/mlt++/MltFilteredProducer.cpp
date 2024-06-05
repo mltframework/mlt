@@ -1,6 +1,6 @@
 /**
  * MltFilteredProducer.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
+ * Copyright (C) 2004-2024 Meltytech, LLC
  * Author: Charles Yates <charles.yates@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -66,8 +66,7 @@ int FilteredProducer::detach(Filter &filter)
             Service *consumer = it->consumer();
             if (consumer->is_valid())
                 consumer->connect_producer(*producer);
-            Profile p(get_profile());
-            Producer dummy(p, "colour");
+            Producer dummy(get_profile(), "colour");
             dummy.connect_producer(*it);
             if (last->get_service() == it->get_service()) {
                 delete last;
