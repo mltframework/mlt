@@ -1,0 +1,49 @@
+schema_version: 7.0
+type: filter
+identifier: subtitle_feed
+title: Subtitle
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: Attach subtitle data to MLT frames
+notes: >
+  This filter does not modify image or audio data. It only attaches subtitle
+  data to each frame to be used by downstream services.
+
+parameters:
+  - identifier: resource
+    argument: yes
+    title: Resource
+    type: string
+    description: The path to a text file that contains SRT subtitles
+    required: no
+    readonly: no
+
+  - identifier: text
+    title: Text
+    type: string
+    description: >
+        A string that containes a complete SRT document.
+        This parameter is ignored if resource is set.
+    required: no
+    readonly: no
+
+  - identifier: feed
+    title: Text
+    type: string
+    description: >
+        A string that identifies the feed to be output in the MLT Frame.
+    required: no
+    default: 0
+    readonly: no
+
+  - identifier: lang
+    title: Language
+    type: string
+    description: The three character language identifier for the subtitles.
+    required: no
+    default: eng
+    readonly: no
