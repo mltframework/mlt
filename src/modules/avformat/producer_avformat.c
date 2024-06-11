@@ -3672,8 +3672,24 @@ static int pick_audio_stream(producer_avformat self)
 {
     AVFormatContext *context = self->audio_format;
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
-    int absolute_index;
+    int absolute_index = -1;
 
+    // Handle all audio tracks
+    if (self->audio_index > -1) {
+        if (mlt_properties_get(properties, "audio_index")
+            && !strcmp(mlt_properties_get(properties, "audio_index"), "all")) {
+            absolute_index = INT_MAX;
+            mlt_properties_set(properties, "astream", "all");
+        }
+        if (mlt_properties_get(properties, "astream")
+            && !strcmp(mlt_properties_get(properties, "astream"), "all")) {
+            absolute_index = INT_MAX;
+            mlt_properties_set(properties, "audio_index", "all");
+        }
+    }
+
+    // Are both audio_index != all and astream != all?
+    if (absolute_index == -1) {
     if (context && mlt_properties_get(properties, "astream")) {
         // Get the relative stream index
         absolute_index = absolute_stream_index(context,
@@ -3696,19 +3712,6 @@ static int pick_audio_stream(producer_avformat self)
         mlt_properties_set_int(properties, "audio_index", absolute_index);
         self->audio_index = absolute_index;
     }
-
-    // Handle all audio tracks
-    if (self->audio_index > -1) {
-        if (mlt_properties_get(properties, "audio_index")
-            && !strcmp(mlt_properties_get(properties, "audio_index"), "all")) {
-            absolute_index = INT_MAX;
-            mlt_properties_set(properties, "astream", "all");
-        }
-        if (mlt_properties_get(properties, "astream")
-            && !strcmp(mlt_properties_get(properties, "astream"), "all")) {
-            absolute_index = INT_MAX;
-            mlt_properties_set(properties, "audio_index", "all");
-        }
     }
 
     // Exception handling for audio_index
