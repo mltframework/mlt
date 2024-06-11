@@ -3690,28 +3690,28 @@ static int pick_audio_stream(producer_avformat self)
 
     // Are both audio_index != all and astream != all?
     if (absolute_index == -1) {
-    if (context && mlt_properties_get(properties, "astream")) {
-        // Get the relative stream index
-        absolute_index = absolute_stream_index(context,
-                                               AVMEDIA_TYPE_AUDIO,
-                                               mlt_properties_get_int(properties, "astream"));
-    } else {
-        // Failover to the absolute index
-        absolute_index = mlt_properties_get_int(properties, "audio_index");
-        if (context) {
-            // Compute the relative stream index
-            mlt_properties_set_int(properties,
-                                   "astream",
-                                   relative_stream_index(context,
-                                                         AVMEDIA_TYPE_AUDIO,
-                                                         absolute_index));
+        if (context && mlt_properties_get(properties, "astream")) {
+            // Get the relative stream index
+            absolute_index = absolute_stream_index(context,
+                                                   AVMEDIA_TYPE_AUDIO,
+                                                   mlt_properties_get_int(properties, "astream"));
+        } else {
+            // Failover to the absolute index
+            absolute_index = mlt_properties_get_int(properties, "audio_index");
+            if (context) {
+                // Compute the relative stream index
+                mlt_properties_set_int(properties,
+                                       "astream",
+                                       relative_stream_index(context,
+                                                             AVMEDIA_TYPE_AUDIO,
+                                                             absolute_index));
+            }
         }
-    }
-    if (mlt_properties_get_int(properties, "audio_index") != absolute_index) {
-        // Update the absolute index
-        mlt_properties_set_int(properties, "audio_index", absolute_index);
-        self->audio_index = absolute_index;
-    }
+        if (mlt_properties_get_int(properties, "audio_index") != absolute_index) {
+            // Update the absolute index
+            mlt_properties_set_int(properties, "audio_index", absolute_index);
+            self->audio_index = absolute_index;
+        }
     }
 
     // Exception handling for audio_index
