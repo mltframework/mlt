@@ -92,11 +92,23 @@ static LV2_Feature map_feature = {LV2_URID_MAP_URI, &map};
 static LV2_URID_Unmap unmap = {&uri_table, uri_table_unmap};
 static LV2_Feature unmap_feature = {LV2_URID_UNMAP_URI, &unmap};
 static LV2_Feature boundedBlockLength_feature = {LV2_BUF_SIZE__boundedBlockLength, NULL};
+static LV2_Feature fixedBlockLength_feature = {LV2_BUF_SIZE__fixedBlockLength, NULL};
+static LV2_Feature powerOf2BlockLength_feature = {LV2_BUF_SIZE__powerOf2BlockLength, NULL};
+static LV2_Feature loadDefaultState_feature = {LV2_STATE__loadDefaultState, NULL};
 static LV2_Options_Option lv2_options_features[7];
 static LV2_Feature options_feature = {LV2_OPTIONS__options, (void *) lv2_options_features};
 
-const LV2_Feature *features[]
-    = {&map_feature, &unmap_feature, &options_feature, &boundedBlockLength_feature, NULL};
+const LV2_Feature *features[] =
+  {
+    &map_feature,
+    &unmap_feature,
+    &options_feature,
+    &boundedBlockLength_feature,
+    &fixedBlockLength_feature,
+    &powerOf2BlockLength_feature,
+    &loadDefaultState_feature,
+    NULL
+  };
 
 #endif
 
