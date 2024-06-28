@@ -57,6 +57,7 @@
 #include <lv2/resize-port/resize-port.h>
 #include <lv2/ui/ui.h>
 #include <lv2/worker/worker.h>
+#include <lv2/state/state.h>
 
 #include "lv2_urid_helper.h"
 

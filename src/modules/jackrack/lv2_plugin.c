@@ -38,6 +38,8 @@
 
 #define CONTROL_FIFO_SIZE 128
 
+extern char *mlt_environment(const char *name);
+
 extern const LV2_Feature *features[];
 
 #ifdef WITH_JACK
@@ -272,8 +274,19 @@ static int lv2_plugin_instantiate(const LilvPlugin *plugin,
                                   gint copies,
                                   LilvInstance **instances)
 {
-    gint i;
+  char *lv2context_can_ui = mlt_environment ("lv2context_can_ui");
+  if (lv2context_can_ui != NULL)
+    {
+      /* Video editors and other hosts that support custom GUI should use mlt_environment_set ("lv2context_can_ui", "1")
+	 to inform mlt lv2 plugin manager and set UI features and extensions if not set.
+       */
+      if (lv2context_can_ui[0] == '1')
+	{
+	  //WIP: if support UI
+	}
+    }
 
+    gint i;
     for (i = 0; i < copies; i++) {
         instances[i] = lilv_plugin_instantiate(plugin, lv2_sample_rate, features);
 
