@@ -21,7 +21,7 @@ target_link_libraries(mltplusgpl PRIVATE mlt m Threads::Threads)
 
 if(WIN32)
   target_link_libraries(mltplusgpl PRIVATE ws2_32)
-elseif(UNIX AND NOT APPLE AND NOT ANDROID)
+elseif(UNIX AND NOT APPLE AND NOT ANDROID AND NOT ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
   target_link_libraries(mltplusgpl PRIVATE rt)
 endif()
 
