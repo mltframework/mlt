@@ -759,7 +759,7 @@ int mlt_properties_set(mlt_properties self, const char *name, const char *value)
 
             // Determine the value
             if (isdigit(id[0])) {
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L
+#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L && !defined(__OpenBSD__)
                 property_list *list = self->local;
                 if (list->locale)
                     current = strtod_l(id, NULL, list->locale);
