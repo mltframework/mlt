@@ -266,17 +266,17 @@ static void lv2_add_port_to_metadata(mlt_properties p, lv2_plugin_desc_t *desc, 
     if (LADSPA_IS_HINT_ENUMERATION(hint_descriptor)) {
       mlt_properties_set(p, "type", "string");
 
-      char *str_ptr = strchr(desc->uri, '<');
+      char *str_ptr = strchr(desc->uri, '^');
       while (str_ptr != NULL) {
         *str_ptr++ = ':';
-        str_ptr = strchr(str_ptr, '<');
+        str_ptr = strchr(str_ptr, '^');
       }
 
       LilvNode* puri_temp = lilv_new_uri(g_lv2_plugin_mgr->lv2_world, desc->uri);
 
       str_ptr = strchr(desc->uri, ':');
       while (str_ptr != NULL) {
-        *str_ptr++ = '<';
+        *str_ptr++ = '^';
         str_ptr = strchr(str_ptr, ':');
       }
 
@@ -480,7 +480,7 @@ MLT_REPOSITORY
 
         char *str_ptr = strchr(s, ':');
         while (str_ptr != NULL) {
-            *str_ptr++ = '<';
+            *str_ptr++ = '^';
             str_ptr = strchr(str_ptr, ':');
         }
 

@@ -274,16 +274,14 @@ static int lv2_plugin_instantiate(const LilvPlugin *plugin,
                                   gint copies,
                                   LilvInstance **instances)
 {
-  char *lv2context_can_ui = mlt_environment ("lv2context_can_ui");
-  if (lv2context_can_ui != NULL)
-    {
-      /* Video editors and other hosts that support custom GUI should use mlt_environment_set ("lv2context_can_ui", "1")
+    char *lv2context_can_ui = mlt_environment("lv2context_can_ui");
+    if (lv2context_can_ui != NULL) {
+        /* Video editors and other hosts that support custom GUI should use mlt_environment_set ("lv2context_can_ui", "1")
 	 to inform mlt lv2 plugin manager and set UI features and extensions if not set.
        */
-      if (lv2context_can_ui[0] == '1')
-	{
-	  //WIP: if support UI
-	}
+        if (lv2context_can_ui[0] == '1') {
+            //WIP: if support UI
+        }
     }
 
     gint i;
@@ -436,10 +434,10 @@ lv2_plugin_t *lv2_plugin_new(lv2_plugin_desc_t *desc, lv2_context_t *lv2_context
     /* open the plugin */
     plugin = g_malloc(sizeof(lv2_plugin_t));
 
-    char *str_ptr = strchr(desc->uri, '<');
+    char *str_ptr = strchr(desc->uri, '^');
     while (str_ptr != NULL) {
         *str_ptr++ = ':';
-        str_ptr = strchr(str_ptr, '<');
+        str_ptr = strchr(str_ptr, '^');
     }
 
     plugin->lv2_plugin_uri = lilv_new_uri(lv2_context->plugin_mgr->lv2_world, desc->uri);
@@ -448,7 +446,7 @@ lv2_plugin_t *lv2_plugin_new(lv2_plugin_desc_t *desc, lv2_context_t *lv2_context
 
     str_ptr = strchr(desc->uri, ':');
     while (str_ptr != NULL) {
-        *str_ptr++ = '<';
+        *str_ptr++ = '^';
         str_ptr = strchr(str_ptr, ':');
     }
 

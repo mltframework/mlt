@@ -639,16 +639,16 @@ lv2_plugin_desc_t *lv2_plugin_desc_new_with_descriptor(const char *uri,
 
     char *str_ptr = strchr(uri, ':');
     while (str_ptr != NULL) {
-        *str_ptr++ = '<';
+        *str_ptr++ = '^';
         str_ptr = strchr(str_ptr, ':');
     }
 
     lv2_plugin_desc_set_uri(pd, uri);
 
-    str_ptr = strchr(uri, '<');
+    str_ptr = strchr(uri, '^');
     while (str_ptr != NULL) {
         *str_ptr++ = ':';
-        str_ptr = strchr(str_ptr, '<');
+        str_ptr = strchr(str_ptr, '^');
     }
 
     lv2_plugin_desc_set_index(pd, index);
