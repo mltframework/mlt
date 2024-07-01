@@ -1,0 +1,15 @@
+schema_version: 7.0
+type: filter
+identifier: lv2
+title: LV2
+version: 1
+license: GPLv2
+language: en
+url: http://www.lv2.org/
+creator: mr.fantastic <mrfantastic@firemail.cc>
+tags:
+  - Audio
+description: Process audio using LV2 plugins.
+notes: >
+  Automatically adapts to the number of channels and sampling rate of the consumer.
+

@@ -16,6 +16,11 @@ if(TARGET JACK::JACK)
   install(FILES consumer_jack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
 endif()
 
+if(USE_LV2)
+  target_compile_definitions(mltjackrack PRIVATE WITH_LV2)
+  install(FILES filter_lv2.yml producer_lv2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+endif()
+
 if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
   target_sources(mltjackrack PRIVATE
     jack_rack.c jack_rack.h
@@ -40,6 +45,19 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
     target_sources(mltjackrack PRIVATE filter_jackrack.c)
     install(FILES filter_jackrack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
   endif()
+
+  if(USE_LV2 AND TARGET PkgConfig::lilv)
+    target_link_libraries(mltjackrack PRIVATE PkgConfig::lilv)
+    target_sources(mltjackrack PRIVATE
+      filter_lv2.c producer_lv2.c
+      lv2_context.c lv2_context.h
+      lv2_plugin.c lv2_plugin.h
+      lv2_process.c lv2_process.h
+      lv2_plugin_settings.c lv2_plugin_settings.h
+      lv2_urid_helper.h)
+    install(FILES filter_lv2.yml producer_lv2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+  endif()
+
 endif()
 
 set_target_properties(mltjackrack PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
