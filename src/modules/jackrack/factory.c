@@ -264,62 +264,63 @@ static void lv2_add_port_to_metadata(mlt_properties p, lv2_plugin_desc_t *desc, 
     }
 
     if (LADSPA_IS_HINT_ENUMERATION(hint_descriptor)) {
-      mlt_properties_set(p, "type", "string");
+        mlt_properties_set(p, "type", "string");
 
-      char *str_ptr = strchr(desc->uri, '^');
-      while (str_ptr != NULL) {
-        *str_ptr++ = ':';
-        str_ptr = strchr(str_ptr, '^');
-      }
+        char *str_ptr = strchr(desc->uri, '^');
+        while (str_ptr != NULL) {
+            *str_ptr++ = ':';
+            str_ptr = strchr(str_ptr, '^');
+        }
 
-      LilvNode* puri_temp = lilv_new_uri(g_lv2_plugin_mgr->lv2_world, desc->uri);
+        LilvNode *puri_temp = lilv_new_uri(g_lv2_plugin_mgr->lv2_world, desc->uri);
 
-      str_ptr = strchr(desc->uri, ':');
-      while (str_ptr != NULL) {
-        *str_ptr++ = '^';
-        str_ptr = strchr(str_ptr, ':');
-      }
+        str_ptr = strchr(desc->uri, ':');
+        while (str_ptr != NULL) {
+            *str_ptr++ = '^';
+            str_ptr = strchr(str_ptr, ':');
+        }
 
-      const LilvPlugin* p_temp = lilv_plugins_get_by_uri(g_lv2_plugin_mgr->plugin_list, puri_temp);
-      const LilvPort *port_temp = lilv_plugin_get_port_by_index(p_temp, j);
+        const LilvPlugin *p_temp = lilv_plugins_get_by_uri(g_lv2_plugin_mgr->plugin_list, puri_temp);
+        const LilvPort *port_temp = lilv_plugin_get_port_by_index(p_temp, j);
 
-      lilv_node_free(puri_temp);
+        lilv_node_free(puri_temp);
 
-      mlt_properties values_temp = mlt_properties_new();
-      mlt_properties_set_data(p,
-			      "values",
-			      values_temp,
-			      0,
-			      (mlt_destructor) mlt_properties_close,
-			      NULL);
+        mlt_properties values_temp = mlt_properties_new();
+        mlt_properties_set_data(p,
+                                "values",
+                                values_temp,
+                                0,
+                                (mlt_destructor) mlt_properties_close,
+                                NULL);
 
-      // Fill scalePoints Map
-      LilvScalePoints* sp = lilv_port_get_scale_points(p_temp, port_temp);
-      if (sp) {
-	LILV_FOREACH (scale_points, s, sp) {
-	  const LilvScalePoint* p   = lilv_scale_points_get(sp, s);
-	  const LilvNode*       val = lilv_scale_point_get_value(p);
-	  if (!lilv_node_is_float(val) && !lilv_node_is_int(val)) {
-	    continue;
-	  }
+        // Fill scalePoints Map
+        LilvScalePoints *sp = lilv_port_get_scale_points(p_temp, port_temp);
+        if (sp) {
+            LILV_FOREACH(scale_points, s, sp)
+            {
+                const LilvScalePoint *p = lilv_scale_points_get(sp, s);
+                const LilvNode *val = lilv_scale_point_get_value(p);
+                if (!lilv_node_is_float(val) && !lilv_node_is_int(val)) {
+                    continue;
+                }
 
-	  const float f = lilv_node_as_float(val);
+                const float f = lilv_node_as_float(val);
 
+                char key_temp[20];
 
-	  char key_temp[20];
+                if (lilv_node_is_float(val)) {
+                    snprintf(key_temp, 20, "%f", f);
+                } else if (lilv_node_is_int(val)) {
+                    snprintf(key_temp, 20, "%d", (int) f);
+                }
 
-	  if (lilv_node_is_float(val)) {
-	    snprintf(key_temp, 20, "%f", f);
-	  } else if (lilv_node_is_int(val)) {
-	    snprintf(key_temp, 20, "%d", (int) f);
-	  }
+                mlt_properties_set(values_temp,
+                                   key_temp,
+                                   lilv_node_as_string(lilv_scale_point_get_label(p)));
+            }
 
-	  mlt_properties_set(values_temp, key_temp, lilv_node_as_string(lilv_scale_point_get_label(p)));
-
-	}
-
-	lilv_scale_points_free(sp);
-      }
+            lilv_scale_points_free(sp);
+        }
     }
 
     if (LADSPA_IS_HINT_LOGARITHMIC(hint_descriptor))
@@ -468,8 +469,8 @@ MLT_REPOSITORY
     g_lv2_plugin_mgr = lv2_mgr_new();
 
     char global_lv2_world[20];
-    snprintf (global_lv2_world, 20, "%p", g_lv2_plugin_mgr->lv2_world);
-    mlt_environment_set ("global_lv2_world", global_lv2_world);
+    snprintf(global_lv2_world, 20, "%p", g_lv2_plugin_mgr->lv2_world);
+    mlt_environment_set("global_lv2_world", global_lv2_world);
 
     for (list = g_lv2_plugin_mgr->all_plugins; list; list = g_slist_next(list)) {
         lv2_plugin_desc_t *desc = (lv2_plugin_desc_t *) list->data;
