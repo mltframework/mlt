@@ -1,4 +1,5 @@
 add_library(mltplus MODULE
+  subtitles/subtitles.cpp
   consumer_blipflash.c
   factory.c
   filter_affine.c
@@ -17,6 +18,8 @@ add_library(mltplus MODULE
   filter_shape.c
   filter_spot_remover.c
   filter_strobe.c
+  filter_subtitle_feed.cpp
+  filter_subtitle.cpp
   filter_text.c
   filter_threshold.c
   filter_timer.c
@@ -24,6 +27,7 @@ add_library(mltplus MODULE
   producer_blipflash.c
   producer_count.c
   producer_pgm.c
+  producer_subtitle.c
   transition_affine.c
 )
 
@@ -73,6 +77,8 @@ install(FILES
   filter_shape.yml
   filter_spot_remover.yml
   filter_strobe.yml
+  filter_subtitle_feed.yml
+  filter_subtitle.yml
   filter_text.yml
   filter_threshold.yml
   filter_timer.yml
