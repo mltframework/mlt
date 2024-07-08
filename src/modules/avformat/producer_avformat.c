@@ -1348,10 +1348,9 @@ static int seek_video(producer_avformat self,
         AVFormatContext *context = self->video_format;
 
         // We may want to use the source fps if available
-        AVRational source_fps = av_make_q(
-            mlt_properties_get_double(properties, "meta.media.frame_rate_num"),
-            mlt_properties_get_double(properties, "meta.media.frame_rate_den")
-        );
+        AVRational source_fps
+            = av_make_q(mlt_properties_get_double(properties, "meta.media.frame_rate_num"),
+                        mlt_properties_get_double(properties, "meta.media.frame_rate_den"));
 
         if (self->first_pts == AV_NOPTS_VALUE && self->last_position == POSITION_INITIAL)
             find_first_pts(self, self->video_index);
@@ -1363,12 +1362,10 @@ static int seek_video(producer_avformat self,
                    || position - self->video_expected >= seek_threshold
                    || self->last_position < 0) {
             // Calculate the timestamp for the requested frame
-            int64_t timestamp = av_rescale_q_rnd(
-                req_position,
-                av_inv_q(self->video_time_base),
-                source_fps,
-                AV_ROUND_ZERO
-            );
+            int64_t timestamp = av_rescale_q_rnd(req_position,
+                                                 av_inv_q(self->video_time_base),
+                                                 source_fps,
+                                                 AV_ROUND_ZERO);
             if (req_position <= 0)
                 timestamp = 0;
             else if (self->first_pts != AV_NOPTS_VALUE)
@@ -1376,7 +1373,10 @@ static int seek_video(producer_avformat self,
             else if (context->start_time != AV_NOPTS_VALUE)
                 timestamp += context->start_time;
             if (preseek && self->video_time_base.num != 0)
-                timestamp = av_add_stable(self->video_time_base, timestamp, AV_TIME_BASE_Q, -2 * AV_TIME_BASE);
+                timestamp = av_add_stable(self->video_time_base,
+                                          timestamp,
+                                          AV_TIME_BASE_Q,
+                                          -2 * AV_TIME_BASE);
             if (timestamp < 0)
                 timestamp = 0;
             mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
@@ -2203,7 +2203,7 @@ static int producer_get_image(mlt_frame frame,
     int must_decode = descriptor && !(descriptor->props & AV_CODEC_PROP_INTRA_ONLY);
 
     double delay = mlt_properties_get_double(properties, "video_delay");
-    int64_t delay64 = (int64_t)(delay * AV_TIME_BASE);
+    int64_t delay64 = (int64_t) (delay * AV_TIME_BASE);
 
     // Seek if necessary
     double speed = mlt_producer_get_speed(producer);
@@ -2333,22 +2333,24 @@ static int producer_get_image(mlt_frame frame,
                         pts -= self->first_pts;
                     else if (context->start_time != AV_NOPTS_VALUE)
                         pts -= context->start_time;
-                    int_position = av_rescale_q(
-                            av_add_stable(self->video_time_base, pts, AV_TIME_BASE_Q, delay64),
-                            source_fps,
-                            av_inv_q(self->video_time_base)
-                    );
+                    int_position = av_rescale_q(av_add_stable(self->video_time_base,
+                                                              pts,
+                                                              AV_TIME_BASE_Q,
+                                                              delay64),
+                                                source_fps,
+                                                av_inv_q(self->video_time_base));
                     if (int_position == self->last_position)
                         int_position = self->last_position + 1;
 
                     if (self->pkt.duration != AV_NOPTS_VALUE) {
                         // compute the interval this intra-only packet covers
                         // [int_position, int_end)
-                        int64_t int_end = av_rescale_q(
-                                av_add_stable(self->video_time_base, pts + self->pkt.duration, AV_TIME_BASE_Q, delay64),
-                                source_fps,
-                                av_inv_q(self->video_time_base)
-                        );
+                        int64_t int_end = av_rescale_q(av_add_stable(self->video_time_base,
+                                                                     pts + self->pkt.duration,
+                                                                     AV_TIME_BASE_Q,
+                                                                     delay64),
+                                                       source_fps,
+                                                       av_inv_q(self->video_time_base));
 
                         /* req_position2 is a "future" req_position computed in a clever way.
                          * If the input fps is 50 and the output fps is 25, then
@@ -2364,11 +2366,12 @@ static int producer_get_image(mlt_frame frame,
                          * and so on. In other words, for intra-only, only frames where
                          * int_position <= req_position2 < int_end are worthwhile decoding.
                          */
-                        int64_t req_position2 = av_rescale_q(
-                            av_rescale_q_rnd(int_position, profile_fps, source_fps, AV_ROUND_UP),
-                            source_fps,
-                            profile_fps
-                        );
+                        int64_t req_position2 = av_rescale_q(av_rescale_q_rnd(int_position,
+                                                                              profile_fps,
+                                                                              source_fps,
+                                                                              AV_ROUND_UP),
+                                                             source_fps,
+                                                             profile_fps);
 
                         // only decode intra-only frames that are worthwhile to decode
                         should_decode = int_position >= req_position2 && req_position2 < int_end;
@@ -2474,11 +2477,12 @@ static int producer_get_image(mlt_frame frame,
                             pts -= self->first_pts;
                         else if (context->start_time != AV_NOPTS_VALUE)
                             pts -= context->start_time;
-                        int_position = av_rescale_q(
-                            av_add_stable(self->video_time_base, pts, AV_TIME_BASE_Q, delay64),
-                            source_fps,
-                            av_inv_q(self->video_time_base)
-                        );
+                        int_position = av_rescale_q(av_add_stable(self->video_time_base,
+                                                                  pts,
+                                                                  AV_TIME_BASE_Q,
+                                                                  delay64),
+                                                    source_fps,
+                                                    av_inv_q(self->video_time_base));
                     }
 
                     if (int_position < req_position)
