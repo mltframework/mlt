@@ -1316,7 +1316,8 @@ static void find_first_pts(producer_avformat self, int video_index)
         AVStream *stream = self->video_format ? self->video_format->streams[video_index] : NULL;
         if (stream) {
             int d = stream->avg_frame_rate.den;
-            vfr = d != 0 && d != 1 && d != 2 && d != 125 && d != 1001;
+            vfr = d != 0 && d != 1 && d != 2 && d != 125 && d != 1001
+                  && av_cmp_q(stream->avg_frame_rate, stream->r_frame_rate);
         }
     }
     if (vfr) {
