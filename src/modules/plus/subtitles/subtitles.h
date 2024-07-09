@@ -18,6 +18,7 @@
 #ifndef SUBTITLES_H
 #define SUBTITLES_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
