@@ -335,13 +335,13 @@ static mlt_properties lv2_metadata(mlt_service_type type, const char *id, char *
     if (type == mlt_service_filter_type) {
         snprintf(file,
                  PATH_MAX,
-                 "%s/lv2/%s",
+                 "%s/jackrack/%s",
                  mlt_environment("MLT_DATA"),
                  strncmp(id, "lv2.", 4) ? data : "filter_lv2.yml");
     } else {
         snprintf(file,
                  PATH_MAX,
-                 "%s/lv2/%s",
+                 "%s/jackrack/%s",
                  mlt_environment("MLT_DATA"),
                  strncmp(id, "lv2.", 4) ? data : "producer_lv2.yml");
     }
