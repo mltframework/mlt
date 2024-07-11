@@ -104,7 +104,6 @@ MLT_0.8.8 {
     mlt_filter_set_in_and_out;
     mlt_frame_clone;
     mlt_frame_close;
-    mlt_frame_get_alpha_mask;
     mlt_frame_get_aspect_ratio;
     mlt_frame_get_audio;
     mlt_frame_get_image;
@@ -135,21 +134,6 @@ MLT_0.8.8 {
     mlt_frame_set_position;
     mlt_frame_unique_properties;
     mlt_frame_write_ppm;
-    mlt_geometry_close;
-    mlt_geometry_fetch;
-    mlt_geometry_get_length;
-    mlt_geometry_init;
-    mlt_geometry_insert;
-    mlt_geometry_interpolate;
-    mlt_geometry_next_key;
-    mlt_geometry_parse;
-    mlt_geometry_parse_item;
-    mlt_geometry_prev_key;
-    mlt_geometry_refresh;
-    mlt_geometry_remove;
-    mlt_geometry_serialise;
-    mlt_geometry_serialise_cut;
-    mlt_geometry_set_length;
     mlt_global_properties;
     mlt_image_format_name;
     mlt_image_format_size;
@@ -200,7 +184,6 @@ MLT_0.8.8 {
     mlt_playlist_mix;
     mlt_playlist_mix_add;
     mlt_playlist_move;
-    mlt_playlist_move_region;
     mlt_playlist_new;
     mlt_playlist_pad_blanks;
     mlt_playlist_producer;
@@ -333,8 +316,6 @@ MLT_0.8.8 {
     mlt_repository_register;
     mlt_repository_register_metadata;
     mlt_repository_transitions;
-    mlt_sample_calculator;
-    mlt_sample_calculator_to_now;
     mlt_sdl_mutex;
     mlt_service_apply_filters;
     mlt_service_attach;
@@ -479,15 +460,7 @@ MLT_0.9.8 {
 MLT_0.9.10 {
   global:
     mlt_factory_repository;
-    mlt_properties_to_utf8;
 } MLT_0.9.8;
-
-MLT_6.4.0 {
-  global:
-    mlt_slices_init;
-    mlt_slices_close;
-    mlt_slices_run;
-} MLT_0.9.10;
 
 MLT_6.6.0 {
   global:
@@ -501,14 +474,10 @@ MLT_6.6.0 {
     mlt_slices_run_fifo;
     mlt_log_timings_now;
     mlt_service_disconnect_all_producers;
-} MLT_6.4.0;
+} MLT_0.9.10;
 
 MLT_6.8.0 {
   global:
-    mlt_channel_layout_name;
-    mlt_channel_layout_id;
-    mlt_channel_layout_channels;
-    mlt_channel_layout_default;
     mlt_animation_key_set_type;
     mlt_animation_key_set_frame;
 } MLT_6.6.0;

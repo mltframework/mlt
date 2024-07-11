@@ -111,21 +111,6 @@ MLTPP_0.8.8 {
       "Mlt::Frame::get_waveform(int, int)";
       "Mlt::Frame::set_alpha(unsigned char*, int, void (*)(void*))";
       "Mlt::Frame::set_image(unsigned char*, int, void (*)(void*))";
-      "Mlt::Geometry::fetch(Mlt::GeometryItem*, float)";
-      "Mlt::Geometry::fetch(Mlt::GeometryItem&, float)";
-      "Mlt::Geometry::~Geometry()";
-      "Mlt::Geometry::Geometry(char*, int, int, int)";
-      "Mlt::Geometry::insert(Mlt::GeometryItem*)";
-      "Mlt::Geometry::insert(Mlt::GeometryItem&)";
-      "Mlt::Geometry::interpolate()";
-      "Mlt::Geometry::next_key(Mlt::GeometryItem*, int)";
-      "Mlt::Geometry::next_key(Mlt::GeometryItem&, int)";
-      "Mlt::Geometry::parse(char*, int, int, int)";
-      "Mlt::Geometry::prev_key(Mlt::GeometryItem*, int)";
-      "Mlt::Geometry::prev_key(Mlt::GeometryItem&, int)";
-      "Mlt::Geometry::remove(int)";
-      "Mlt::Geometry::serialise()";
-      "Mlt::Geometry::serialise(int, int)";
       "typeinfo for Mlt::Multitrack";
       "typeinfo name for Mlt::Multitrack";
       "vtable for Mlt::Multitrack";
@@ -196,7 +181,6 @@ MLTPP_0.8.8 {
       "Mlt::Playlist::mix_add(int, Mlt::Transition*)";
       "Mlt::Playlist::mix(int, int, Mlt::Transition*)";
       "Mlt::Playlist::move(int, int)";
-      "Mlt::Playlist::move_region(int, int, int)";
       "Mlt::Playlist::pad_blanks(int, int, int)";
       "Mlt::Playlist::~Playlist()";
       "Mlt::Playlist::Playlist()";
@@ -303,7 +287,6 @@ MLTPP_0.8.8 {
       "Mlt::Properties::inherit(Mlt::Properties&)";
       "Mlt::Properties::is_sequence()";
       "Mlt::Properties::is_valid()";
-      "Mlt::Properties::listen(char const*, void*, void (*)(void*, ...))";
       "Mlt::Properties::load(char const*)";
       "Mlt::Properties::lock()";
       "Mlt::Properties::mirror(Mlt::Properties&)";
@@ -328,7 +311,6 @@ MLTPP_0.8.8 {
       "Mlt::Properties::set(char const*, double)";
       "Mlt::Properties::set(char const*, int)";
       "Mlt::Properties::set(char const*, long)";
-      "Mlt::Properties::set(char const*, long long)";
       "Mlt::Properties::set(char const*, void*, int, void (*)(void*), char* (*)(void*, int))";
       "Mlt::Properties::set_lcnumeric(char const*)";
       "Mlt::Properties::setup_wait_for(char const*)";
@@ -559,7 +541,6 @@ MLTPP_6.14.0 {
       "Mlt::Playlist::reorder(int const*)";
       "Mlt::Transition::connect(Mlt::Service&, int, int)";
       "Mlt::Producer::set_creation_time(long)";
-      "Mlt::Producer::set_creation_time(long long)";
       "Mlt::Producer::get_creation_time()";
   };
 } MLTPP_6.10.0;
@@ -638,7 +619,7 @@ MLTPP_7.0.0 {
       "Mlt::Chain::Chain()";
       "Mlt::Chain::Chain(Mlt::Profile&, char const*, char const*)";
       "Mlt::Chain::Chain(Mlt::Profile&)";
-      "Mlt::Chain::Chain(mlt_chain)";
+      "Mlt::Chain::Chain(mlt_chain_s*)";
       "Mlt::Chain::Chain(Mlt::Chain&)";
       "Mlt::Chain::Chain(Mlt::Chain*)";
       "Mlt::Chain::Chain(Mlt::Service&)";
@@ -672,8 +653,6 @@ MLTPP_7.0.0 {
       "Mlt::Image::plane(int)";
       "Mlt::Image::stride(int)";
       "Mlt::Properties::listen(char const*, void*, void (*)(mlt_properties_s*, void*, mlt_event_data))";
-      "typeinfo name for Mlt::EventData";
-      "vtable for Mlt::EventData";
       "Mlt::EventData::EventData(mlt_event_data)";
       "Mlt::EventData::EventData(Mlt::EventData&)";
       "Mlt::EventData::EventData(Mlt::EventData const&)";
