@@ -816,6 +816,8 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
                                                max_gps_diff_ms);
     crt_point.atemp
         = weighted_middle_double(p1->atemp, p1->time, p2->atemp, p2->time, new_t, max_gps_diff_ms);
+    crt_point.power
+        = weighted_middle_double(p1->power, p1->time, p2->power, p2->time, new_t, max_gps_diff_ms);
     return crt_point;
 }
 
@@ -856,8 +858,8 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
     }
 
     int max_gps_diff_ms = get_max_gps_diff_ms(gdata);
-    int i, j, nr_hr = 0, nr_ele = 0, nr_cad = 0, nr_atemp = 0;
-    double hr = GPS_UNINIT, ele = GPS_UNINIT, cad = GPS_UNINIT, atemp = GPS_UNINIT;
+    int i, j, nr_hr = 0, nr_ele = 0, nr_cad = 0, nr_atemp = 0, nr_power = 0;
+    double hr = GPS_UNINIT, ele = GPS_UNINIT, cad = GPS_UNINIT, atemp = GPS_UNINIT, power = GPS_UNINIT;
 
     //linear interpolation for heart rate, elevation, cadence and temperature, one time per file, ignores start offset
     if (*gdata.interpolated == 0) {
@@ -874,6 +876,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             gp_p[i].ele = gp_r[i].ele;
             gp_p[i].cad = gp_r[i].cad;
             gp_p[i].atemp = gp_r[i].atemp;
+            gp_p[i].power = gp_r[i].power;
 
             //heart rate
             if (gp_r[i].hr != GPS_UNINIT) { //found valid hr
@@ -935,6 +938,22 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
                 nr_atemp = 0;
             } else {
                 nr_atemp++;
+            }
+
+            //power
+            if (gp_r[i].power != GPS_UNINIT) {
+                if (power != GPS_UNINIT && nr_power > 0 && nr_power <= nr_one_minute * 60) {
+                    nr_power++;
+                    for (j = i; j > i - nr_power; j--) {
+                        gp_p[j].power = power
+                                        + 1.0 * (gp_r[i].power - power)
+                                              * (1.0 * (j - (i - nr_power)) / nr_power);
+                    }
+                }
+                power = gp_r[i].power;
+                nr_power = 0;
+            } else {
+                nr_power++;
             }
 
             //these are not interpolated but as long as we're iterating we can copy them now
@@ -1061,17 +1080,23 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                 else if (reader.name() == QString("course"))
                     crt_point.bearing = reader.readElementText().toDouble();
                 else if (reader.name() == QString("extensions")) {
-                    reader.readNextStartElement();
-                    if (reader.name() == QString("TrackPointExtension")) {
-                        while (reader.readNext()
-                               && !(reader.name() == QString("TrackPointExtension")
-                                    && reader.tokenType() == QXmlStreamReader::EndElement)) {
-                            if (reader.name() == QString("hr"))
-                                crt_point.hr = reader.readElementText().toDouble();
-                            else if (reader.name() == QString("cad"))
-                                crt_point.cad = reader.readElementText().toDouble();
-                            else if (reader.name() == QString("atemp"))
-                                crt_point.atemp = reader.readElementText().toDouble();
+                    while (reader.readNext()
+                            && !(reader.name() == QString("extensions")
+                                && reader.tokenType() == QXmlStreamReader::EndElement))
+                    {
+                        if (reader.name() == QString("power"))
+                            crt_point.power = reader.readElementText().toDouble();
+                        else if (reader.name() == QString("TrackPointExtension")) {
+                            while (reader.readNext()
+                                && !(reader.name() == QString("TrackPointExtension")
+                                        && reader.tokenType() == QXmlStreamReader::EndElement)) {
+                                if (reader.name() == QString("hr"))
+                                    crt_point.hr = reader.readElementText().toDouble();
+                                else if (reader.name() == QString("cad"))
+                                    crt_point.cad = reader.readElementText().toDouble();
+                                else if (reader.name() == QString("atemp"))
+                                    crt_point.atemp = reader.readElementText().toDouble();
+                            }
                         }
                     }
                 }
@@ -1200,6 +1225,8 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                     crt_point.cad = reader.readElementText().toDouble();
                 } else if (reader.name() == QString("Temperature")) {
                     crt_point.atemp = reader.readElementText().toDouble();
+                } else if (reader.name() == QString("Power")) { // guessing
+                    crt_point.power = reader.readElementText().toDouble();
                 }
             }
             //now add the point to linked list (but only if increasing time)
