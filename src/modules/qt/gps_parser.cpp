@@ -1042,6 +1042,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
         <speed>0.0</speed>
         <course>337.1557</course>
         <extensions>
+            <power>0</power>
             <gpxtpx:TrackPointExtension>          //official garmin extension
                 <gpxtpx:hr>132</gpxtpx:hr>            //heart rate in beats per minute
                 <gpxtpx:cad>75</gpxtpx:cad>           //cadence in revolutions per minute
