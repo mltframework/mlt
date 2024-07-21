@@ -473,8 +473,12 @@ static void *video_thread(void *arg)
         }
         pthread_mutex_unlock(&self->video_mutex);
 
-        if (!self->running || next == NULL)
+        if (!self->running || next == NULL) {
+            if (self->running) {
+                mlt_log_warning(MLT_CONSUMER_SERVICE(&self->parent), "video thread got a null frame even though the consumer is still running!\n");
+            }
             break;
+        }
 
         // Get the properties
         properties = MLT_FRAME_PROPERTIES(next);
@@ -593,8 +597,10 @@ static void *consumer_thread(void *arg)
             // Play audio
             init_audio = consumer_play_audio(self, frame, init_audio, &duration);
 
-            // Determine the start time now
-            if (self->playing && init_video) {
+            // Start the video thread unconditionally. We cannot check for self->playing,
+            // because the variable may be initialized with a delay by a backdround SDL
+            // thread and cause race condition
+            if (init_video) {
                 // Create the video thread
                 pthread_create(&thread, NULL, video_thread, self);
 
