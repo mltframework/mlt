@@ -238,6 +238,86 @@ parameters:
     maximum: 16
     default: 0
 
+  - identifier: subtitle.0.feed
+    title: Feed for subtitle stream 0
+    type: string
+    description: Specify the name of the feed for subtitle stream 0.
+
+  - identifier: subtitle.0.lang
+    title: Language for subtitle stream 0
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 0.
+
+  - identifier: subtitle.1.feed
+    title: Feed for subtitle stream 1
+    type: string
+    description: Specify the name of the feed for subtitle stream 1.
+
+  - identifier: subtitle.1.lang
+    title: Language for subtitle stream 1
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 1.
+
+  - identifier: subtitle.2.feed
+    title: Feed for subtitle stream 2
+    type: string
+    description: Specify the name of the feed for subtitle stream 2.
+
+  - identifier: subtitle.2.lang
+    title: Language for subtitle stream 2
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 2.
+
+  - identifier: subtitle.3.feed
+    title: Feed for subtitle stream 3
+    type: string
+    description: Specify the name of the feed for subtitle stream 3.
+
+  - identifier: subtitle.3.lang
+    title: Language for subtitle stream 3
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 3.
+
+  - identifier: subtitle.4.feed
+    title: Feed for subtitle stream 4
+    type: string
+    description: Specify the name of the feed for subtitle stream 4.
+
+  - identifier: subtitle.4.lang
+    title: Language for subtitle stream 4
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 4.
+
+  - identifier: subtitle.5.feed
+    title: Feed for subtitle stream 5
+    type: string
+    description: Specify the name of the feed for subtitle stream 5.
+
+  - identifier: subtitle.5.lang
+    title: Language for subtitle stream 5
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 5.
+
+  - identifier: subtitle.6.feed
+    title: Feed for subtitle stream 6
+    type: string
+    description: Specify the name of the feed for subtitle stream 6.
+
+  - identifier: subtitle.6.lang
+    title: Language for subtitle stream 6
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 6.
+
+  - identifier: subtitle.7.feed
+    title: Feed for subtitle stream 7
+    type: string
+    description: Specify the name of the feed for subtitle stream 7.
+
+  - identifier: subtitle.7.lang
+    title: Language for subtitle stream 7
+    type: string
+    description: Specify the 3 digit language code for subtitle stream 7.
+
 # These are common to all consumers and affect runtime behavior
   - identifier: terminate_on_pause
     title: File output

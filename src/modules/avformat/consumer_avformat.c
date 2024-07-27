@@ -55,6 +55,7 @@
 #endif
 
 #define MAX_AUDIO_STREAMS (8)
+#define MAX_SUBTITLE_STREAMS (8)
 #define AUDIO_ENCODE_BUFFER_SIZE (48000 * 2 * MAX_AUDIO_STREAMS)
 #define AUDIO_BUFFER_SIZE (1024 * 42)
 #define VIDEO_BUFFER_SIZE (8192 * 8192)
@@ -1258,6 +1259,11 @@ typedef struct encode_ctx_desc
     mlt_properties frame_meta_properties;
 
     AVFrame *audio_avframe;
+
+    mlt_position subtitle_prev_start[MAX_SUBTITLE_STREAMS];
+    AVStream *subtitle_st[MAX_SUBTITLE_STREAMS];
+    AVCodecContext *sdec_ctx[MAX_AUDIO_STREAMS];
+    AVCodecContext *senc_ctx[MAX_AUDIO_STREAMS];
 } encode_ctx_t;
 
 static int encode_audio(encode_ctx_t *ctx)
@@ -1451,6 +1457,213 @@ static int encode_audio(encode_ctx_t *ctx)
     }
 
     return 0;
+}
+
+static void open_subtitles(encode_ctx_t *ctx)
+{
+    mlt_properties properties = MLT_CONSUMER_PROPERTIES(ctx->consumer);
+    memset(ctx->subtitle_st, 0, sizeof(ctx->subtitle_st));
+    memset(ctx->sdec_ctx, 0, sizeof(ctx->sdec_ctx));
+    memset(ctx->senc_ctx, 0, sizeof(ctx->senc_ctx));
+    for (int p = 0; p < MAX_SUBTITLE_STREAMS; p++) {
+        ctx->subtitle_prev_start[p] = -1;
+    }
+
+    if (!mlt_properties_get(properties, "subtitle.0.feed")) {
+        // No subtitles requested
+        return;
+    }
+
+    enum AVCodecID codec_id = AV_CODEC_ID_SUBRIP;
+    if (avformat_query_codec(ctx->oc->oformat, codec_id, FF_COMPLIANCE_UNOFFICIAL) != 1) {
+        codec_id = AV_CODEC_ID_ASS;
+        if (avformat_query_codec(ctx->oc->oformat, codec_id, FF_COMPLIANCE_UNOFFICIAL) != 1) {
+            codec_id = AV_CODEC_ID_MOV_TEXT;
+            if (avformat_query_codec(ctx->oc->oformat, codec_id, FF_COMPLIANCE_UNOFFICIAL) != 1) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "Container not compatible with subtitles.\n");
+                return;
+            }
+        }
+    }
+
+    for (int i = 0; i < MAX_SUBTITLE_STREAMS; i++) {
+        char key[20];
+        snprintf(key, sizeof(key), "subtitle.%d.feed", i);
+        char *feed = mlt_properties_get(properties, key);
+        if (!feed) {
+            break;
+        }
+        // Set up the stream
+        ctx->subtitle_st[i] = avformat_new_stream(ctx->oc, NULL);
+        if (!ctx->subtitle_st[i]) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                          "Failed to allocate the subtitle stream %d\n",
+                          i);
+            break;
+        }
+        ctx->subtitle_st[i]->time_base = (AVRational){1, 1000};
+        ctx->subtitle_st[i]->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
+        ctx->subtitle_st[i]->codecpar->codec_id = codec_id;
+        snprintf(key, sizeof(key), "subtitle.%d.lang", i);
+        if (mlt_properties_get(properties, key) != NULL)
+            av_dict_set(&ctx->subtitle_st[i]->metadata,
+                        "language",
+                        mlt_properties_get(properties, key),
+                        0);
+
+        // Set up transcoding for non-subrip subtitle types
+        if (codec_id != AV_CODEC_ID_SUBRIP) {
+            // Set up the SRT decoder
+            const AVCodec *sdec = avcodec_find_decoder(AV_CODEC_ID_SUBRIP);
+            if (!sdec) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "Unable to find subrip decoder\n");
+                break;
+            }
+            ctx->sdec_ctx[i] = avcodec_alloc_context3(sdec);
+            if (!ctx->sdec_ctx[i]) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "Unable to create subrip decoder\n");
+                ctx->subtitle_st[i] = NULL;
+                break;
+            }
+            if (avcodec_open2(ctx->sdec_ctx[i], sdec, NULL) < 0) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "Unable to open subrip decoder\n");
+                ctx->subtitle_st[i] = NULL;
+                break;
+            }
+            // Set up the subtitle encoder
+            const AVCodec *senc = avcodec_find_encoder(codec_id);
+            if (!senc) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "Unable to find subtitle encoder\n");
+                ctx->subtitle_st[i] = NULL;
+                break;
+            }
+            ctx->senc_ctx[i] = avcodec_alloc_context3(senc);
+            if (!ctx->senc_ctx[i]) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "Unable to create subtitle encoder\n");
+                ctx->subtitle_st[i] = NULL;
+                break;
+            }
+            ctx->senc_ctx[i]->time_base = ctx->subtitle_st[i]->time_base;
+            const char *subtitle_header
+                = "[Script Info]\n"
+                  "ScriptType: v4.00+\n"
+                  "\n"
+                  "[V4+ Styles]\n"
+                  "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+                  "OutlineColour, "
+                  "BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, "
+                  "Angle, "
+                  "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, "
+                  "Encoding\n"
+                  "Style: Default,Cataneo BT,16,16777215,16777215,16777215,"
+                  "12632256,1,0,0,0,100,100,0,0,"
+                  "1,1,0,2,10,10,10,1\n"
+                  "\n"
+                  "[Events]\n"
+                  "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, "
+                  "Text\n";
+            ctx->senc_ctx[i]->subtitle_header = (uint8_t *) av_strdup(subtitle_header);
+            ctx->senc_ctx[i]->subtitle_header_size = strlen(subtitle_header);
+            if (avcodec_open2(ctx->senc_ctx[i], senc, NULL) < 0) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "Unable to open subtitle encoder\n");
+                ctx->subtitle_st[i] = NULL;
+                break;
+            }
+        }
+    }
+}
+
+static void encode_subtitles(encode_ctx_t *ctx, mlt_frame frame)
+{
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_properties subtitle_properties = mlt_properties_get_properties(frame_properties,
+                                                                       "subtitles");
+    if (!subtitle_properties) {
+        return;
+    }
+
+    for (int i = 0; i < MAX_SUBTITLE_STREAMS; i++) {
+        if (!ctx->subtitle_st[i]) {
+            break;
+        }
+        // Get the subtitles from the feed
+        char key[20];
+        snprintf(key, sizeof(key), "subtitle.%d.feed", i);
+        char *feed = mlt_properties_get(MLT_CONSUMER_PROPERTIES(ctx->consumer), key);
+        mlt_properties feed_properties = mlt_properties_get_properties(subtitle_properties, feed);
+        if (!feed_properties) {
+            break;
+        }
+        mlt_position start_frame = mlt_properties_get_position(feed_properties, "start");
+        if (ctx->subtitle_prev_start[i] >= start_frame) {
+            // Skip duplicates. This is normal since subtitles are repeated on each frame for their duration.
+            continue;
+        }
+        ctx->subtitle_prev_start[i] = start_frame;
+        mlt_position end_frame = mlt_properties_get_position(feed_properties, "end");
+        char *text = mlt_properties_get(feed_properties, "text");
+        if (!text || !text[0]) {
+            // Skip empty text.
+            continue;
+        }
+        // Pack the SRT subtitles in a packet
+        mlt_profile profile = mlt_service_profile(MLT_CONSUMER_SERVICE(ctx->consumer));
+        AVPacket pkt;
+        if (av_new_packet(&pkt, strlen(text))) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer), "failed to allocate packet 1\n");
+            return;
+        }
+        strncpy((char *) pkt.data, text, pkt.size);
+
+        // Transcode to another format if necessary
+        if (ctx->subtitle_st[i]->codecpar->codec_id != AV_CODEC_ID_SUBRIP) {
+            AVSubtitle avsubtitle;
+            int got_sub;
+            int ret = avcodec_decode_subtitle2(ctx->sdec_ctx[i], &avsubtitle, &got_sub, &pkt);
+            av_packet_unref(&pkt);
+            if (ret < 0) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer), "failed to decode subtitles\n");
+                continue;
+            }
+            if (!got_sub) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "No subtitle received from decoder\n");
+                continue;
+            }
+            const int MAX_SUBTITLE_PACKET_SIZE = 1024 * 1024;
+            if (av_new_packet(&pkt, MAX_SUBTITLE_PACKET_SIZE)) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer), "failed to allocate packet 2\n");
+                return;
+            }
+            int subtitle_out_size
+                = avcodec_encode_subtitle(ctx->senc_ctx[i], pkt.data, pkt.size, &avsubtitle);
+            avsubtitle_free(&avsubtitle);
+            if (subtitle_out_size < 0) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer), "Subtitle encoding failed\n");
+                av_packet_unref(&pkt);
+                continue;
+            }
+            av_shrink_packet(&pkt, subtitle_out_size);
+        }
+        pkt.pts = (int64_t) start_frame * 1000 * profile->frame_rate_den / profile->frame_rate_num;
+        pkt.dts = AV_NOPTS_VALUE;
+        pkt.duration = (int64_t) (end_frame - start_frame) * 1000 * profile->frame_rate_den
+                       / profile->frame_rate_num;
+        pkt.stream_index = ctx->subtitle_st[i]->index;
+        // Send the packet to the output
+        if (av_interleaved_write_frame(ctx->oc, &pkt)) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(ctx->consumer), "error writing subtitle frame\n");
+            av_packet_unref(&pkt);
+            break;
+        }
+    }
 }
 
 /** The main thread - the argument is simply the consumer.
@@ -1771,6 +1984,8 @@ static void *consumer_thread(void *arg)
             }
         }
 
+        open_subtitles(enc_ctx);
+
         // Setup custom I/O if redirecting
         if (mlt_properties_get_int(properties, "redirect")) {
             int buffer_size = 32768;
@@ -1892,6 +2107,11 @@ static void *consumer_thread(void *arg)
             // Check for the terminated condition
             enc_ctx->terminated = enc_ctx->terminate_on_pause
                                   && mlt_properties_get_double(frame_properties, "_speed") == 0.0;
+
+            // Encode subtitles
+            if (!enc_ctx->terminated && enc_ctx->subtitle_st[0]) {
+                encode_subtitles(enc_ctx, frame);
+            }
 
             // Get audio and append to the fifo
             if (!enc_ctx->terminated && enc_ctx->audio_st[0]) {
@@ -2363,6 +2583,12 @@ on_fatal_error:
 #endif
     av_free(video_outbuf);
     av_free(enc_ctx->audio_avframe);
+
+    // Close subtitle transcoding codecs
+    for (i = 0; i < MAX_SUBTITLE_STREAMS; i++) {
+        avcodec_free_context(&enc_ctx->sdec_ctx[i]);
+        avcodec_free_context(&enc_ctx->senc_ctx[i]);
+    }
 
     // close each codec
     avcodec_free_context(&enc_ctx->vcodec_ctx);

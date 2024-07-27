@@ -528,6 +528,15 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
                 mlt_properties_copy(frame_properties, temp_properties, "meta.");
                 mlt_properties_unlock(temp_properties);
 
+                // Pass subtitles if present
+                mlt_properties subtitle_properties = mlt_properties_get_properties(temp_properties,
+                                                                                   "subtitles");
+                if (subtitle_properties) {
+                    mlt_properties_set_properties(frame_properties,
+                                                  "subtitles",
+                                                  subtitle_properties);
+                }
+
                 // Copy the format conversion virtual functions
                 if (!(*frame)->convert_image && temp->convert_image)
                     (*frame)->convert_image = temp->convert_image;
