@@ -525,9 +525,7 @@ static mlt_properties find_default_streams(producer_avformat self)
             mlt_channel_layout mlt_layout = mlt_channel_independent;
 #if HAVE_FFMPEG_CH_LAYOUT
             mlt_properties_set_int(meta_media, key, codec_params->ch_layout.nb_channels);
-            if (codec_params->ch_layout.nb_channels == 1)
-                mlt_layout = mlt_channel_mono;
-            else if (av_channel_layout_check(&codec_params->ch_layout)) {
+            if (av_channel_layout_check(&codec_params->ch_layout)) {
                 mlt_layout = av_channel_layout_to_mlt(&codec_params->ch_layout);
             } else {
                 AVChannelLayout ch_layout;
@@ -537,9 +535,7 @@ static mlt_properties find_default_streams(producer_avformat self)
             }
 #else
             mlt_properties_set_int(meta_media, key, codec_params->channels);
-            if (codec_params->channels == 1)
-                mlt_layout = mlt_channel_mono;
-            else if (codec_params->channel_layout == 0)
+            if (codec_params->channel_layout == 0)
                 mlt_layout = av_channel_layout_to_mlt(
                     av_get_default_channel_layout(codec_params->channels));
             else
@@ -3541,9 +3537,7 @@ static int producer_get_audio(mlt_frame frame,
             sizeof_sample = sample_bytes(codec_ctx);
 #if HAVE_FFMPEG_CH_LAYOUT
             *channels = codec_ctx->ch_layout.nb_channels;
-            if (*channels == 1)
-                mlt_layout = mlt_channel_mono;
-            else if (av_channel_layout_check(&codec_ctx->ch_layout)) {
+            if (av_channel_layout_check(&codec_ctx->ch_layout)) {
                 mlt_layout = av_channel_layout_to_mlt(&codec_ctx->ch_layout);
             } else {
                 AVChannelLayout ch_layout;
@@ -3553,9 +3547,7 @@ static int producer_get_audio(mlt_frame frame,
             }
 #else
             *channels = codec_ctx->channels;
-            if (*channels == 1)
-                mlt_layout = mlt_channel_mono;
-            else if (codec_ctx->channel_layout == 0)
+            if (codec_ctx->channel_layout == 0)
                 mlt_layout = av_channel_layout_to_mlt(
                     av_get_default_channel_layout(codec_ctx->channels));
             else
