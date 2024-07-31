@@ -160,7 +160,7 @@ int64_t mlt_to_av_channel_layout(mlt_channel_layout layout)
 mlt_channel_layout av_channel_layout_to_mlt(AVChannelLayout *layout)
 {
     if (layout->order != AV_CHANNEL_ORDER_NATIVE && layout->order != AV_CHANNEL_ORDER_AMBISONIC) {
-        return mlt_channel_independent;
+        return (layout->nb_channels == 1) ? mlt_channel_mono : mlt_channel_independent;
     }
     unsigned long layout_id = layout->u.mask;
 #else
