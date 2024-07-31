@@ -55,7 +55,6 @@ struct consumer_sdl_s
     pthread_mutex_t video_mutex;
     pthread_cond_t video_cond;
     int out_channels;
-    atomic_int playing;
 
     pthread_cond_t refresh_cond;
     pthread_mutex_t refresh_mutex;
@@ -295,9 +294,6 @@ static void sdl_fill_audio(void *udata, uint8_t *stream, int len)
     // Remove the samples
     memmove(self->audio_buffer, self->audio_buffer + bytes, self->audio_avail);
 
-    // We're definitely playing now
-    self->playing = 1;
-
     pthread_cond_broadcast(&self->audio_cond);
     pthread_mutex_unlock(&self->audio_mutex);
 }
@@ -324,7 +320,6 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
     pcm += mlt_properties_get_int(properties, "audio_offset");
 
     if (mlt_properties_get_int(properties, "audio_off")) {
-        self->playing = 1;
         init_audio = 1;
         return init_audio;
     }
@@ -337,7 +332,6 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
 
         // specify audio format
         memset(&request, 0, sizeof(SDL_AudioSpec));
-        self->playing = 0;
         request.freq = frequency;
         request.format = AUDIO_S16SYS;
         request.channels = mlt_properties_get_int(properties, "channels");
@@ -425,8 +419,6 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
             pthread_cond_broadcast(&self->audio_cond);
         }
         pthread_mutex_unlock(&self->audio_mutex);
-    } else {
-        self->playing = 1;
     }
 
     return init_audio;
@@ -597,9 +589,6 @@ static void *consumer_thread(void *arg)
             // Play audio
             init_audio = consumer_play_audio(self, frame, init_audio, &duration);
 
-            // Start the video thread unconditionally. We cannot check for self->playing,
-            // because the variable may be initialized with a delay by a backdround SDL
-            // thread and cause race condition
             if (init_video) {
                 // Create the video thread
                 pthread_create(&thread, NULL, video_thread, self);
