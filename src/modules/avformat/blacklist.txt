@@ -3,6 +3,7 @@ acrossfade
 afifo
 aformat
 amerge
+ametadata
 amix
 amultiply
 anull
@@ -40,6 +41,7 @@ maskedclamp
 maskedmerge
 mergeplanes
 mestimate
+metadata
 midequalizer
 minterpolate
 mix
