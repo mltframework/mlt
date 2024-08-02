@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017-2023 Meltytech, LLC
+ * Copyright (C) 2017-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -702,7 +702,9 @@ static void *video_thread(void *arg)
 
         if (!self->running || next == NULL) {
             if (self->running) {
-                mlt_log_warning(MLT_CONSUMER_SERVICE(&self->parent), "video thread got a null frame even though the consumer is still running!\n");
+                mlt_log_warning(
+                    MLT_CONSUMER_SERVICE(&self->parent),
+                    "video thread got a null frame even though the consumer is still running!\n");
             }
             break;
         }
