@@ -548,3 +548,10 @@ parameters:
     minimum: 0
     maximum: 1
     widget: checkbox
+
+  - identifier: sn
+    title: Disable subtitles
+    type: integer
+    minimum: 0
+    maximum: 1
+    widget: checkbox

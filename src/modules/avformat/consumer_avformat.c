@@ -1469,7 +1469,8 @@ static void open_subtitles(encode_ctx_t *ctx)
         ctx->subtitle_prev_start[p] = -1;
     }
 
-    if (!mlt_properties_get(properties, "subtitle.0.feed")) {
+    if (!mlt_properties_get(properties, "subtitle.0.feed")
+        || mlt_properties_get_int(properties, "sn")) {
         // No subtitles requested
         return;
     }
