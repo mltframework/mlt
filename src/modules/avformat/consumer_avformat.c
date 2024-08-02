@@ -799,8 +799,10 @@ static AVStream *add_audio_stream(mlt_consumer consumer,
         c->channels = channels;
 #endif
 
-        if (mlt_properties_get(properties, "alang") != NULL)
+        if (mlt_properties_get(properties, "alang") != NULL) {
             av_dict_set(&oc->metadata, "language", mlt_properties_get(properties, "alang"), 0);
+            av_dict_set(&st->metadata, "language", mlt_properties_get(properties, "alang"), 0);
+        }
     } else {
         mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "Could not allocate a stream for audio\n");
     }
