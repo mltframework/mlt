@@ -40,6 +40,7 @@ parameters:
         * #gps_dist_flat#     - total distance travelled on flat area so far
         * #gps_cadence#       - (bike) cadence, in revolutions per minute
         * #gps_temperature#   - ambient temperature (<atemp> in .gpx)
+        * #gps_power#         - power in watts
         * #gps_grade_percentage# - gradient of GPS track (computed from GPS and elev)
         * #gps_grade_degrees# - same as above but converted to degrees
       An extra word "RAW" (uppercase!) can be added to the keyword to display the 
