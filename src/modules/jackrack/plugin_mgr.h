@@ -61,6 +61,19 @@ struct _lv2_mgr
 };
 #endif
 
+#ifdef WITH_VST2
+typedef struct _vst2_mgr vst2_mgr_t;
+
+struct _vst2_mgr
+{
+    GSList *all_plugins;
+
+    GSList *plugins;
+    unsigned long plugin_count;
+    mlt_properties blacklist;
+};
+#endif
+
 struct _ui;
 
 plugin_mgr_t *plugin_mgr_new();
@@ -79,6 +92,16 @@ void lv2_mgr_set_plugins(lv2_mgr_t *plugin_mgr, unsigned long rack_channels);
 
 lv2_plugin_desc_t *lv2_mgr_get_desc(lv2_mgr_t *plugin_mgr, char *id);
 lv2_plugin_desc_t *lv2_mgr_get_any_desc(lv2_mgr_t *plugin_mgr, char *id);
+#endif
+
+#ifdef WITH_VST2
+vst2_mgr_t *vst2_mgr_new();
+void vst2_mgr_destroy(vst2_mgr_t *plugin_mgr);
+
+void vst2_mgr_set_plugins(vst2_mgr_t *plugin_mgr, unsigned long rack_channels);
+
+vst2_plugin_desc_t *vst2_mgr_get_desc(vst2_mgr_t *vst2_mgr, unsigned long id);
+vst2_plugin_desc_t *vst2_mgr_get_any_desc(vst2_mgr_t *vst2_mgr, unsigned long id);;
 #endif
 
 #endif /* __JR_PLUGIN_MANAGER_H__ */

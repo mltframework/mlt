@@ -1,0 +1,15 @@
+schema_version: 7.0
+type: filter
+identifier: vst2
+title: VST2
+version: 1
+license: GPLv2
+language: en
+url: https://www.steinberg.net/en/company/technologies.html
+creator: mr.fantastic <mrfantastic@firemail.cc>
+tags:
+  - Audio
+description: Process audio using VST2 plugins.
+notes: >
+  Automatically adapts to the number of channels and sampling rate of the consumer.
+

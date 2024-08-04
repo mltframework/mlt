@@ -50,6 +50,12 @@
 #include <lilv/lilv.h>
 #endif
 
+#ifdef WITH_VST2
+
+#include "vestige.h"
+
+#endif
+
 typedef struct _plugin_desc plugin_desc_t;
 
 struct _plugin_desc
@@ -166,6 +172,72 @@ LADSPA_Data lv2_plugin_desc_change_control_value(
     lv2_plugin_desc_t *, unsigned long, LADSPA_Data, guint32, guint32);
 
 gint lv2_plugin_desc_get_copies(lv2_plugin_desc_t *pd, unsigned long rack_channels);
+#endif
+
+#ifdef WITH_VST2
+
+typedef struct _vst2_plugin_desc vst2_plugin_desc_t;
+
+struct _vst2_plugin_desc
+{
+    char *object_file;
+    unsigned long index;
+    unsigned long id;
+    char *name;
+    char *maker;
+    LADSPA_Properties properties;
+    AEffect *effect;
+    gboolean rt;
+
+    unsigned long channels;
+
+    gboolean aux_are_input;
+    unsigned long aux_channels;
+
+    unsigned long port_count;
+    LADSPA_PortDescriptor *port_descriptors;
+    LADSPA_PortRangeHint *port_range_hints;
+    char **port_names;
+
+    unsigned long *audio_input_port_indicies;
+    unsigned long *audio_output_port_indicies;
+
+    unsigned long *audio_aux_port_indicies;
+
+    unsigned long control_port_count;
+    unsigned long *control_port_indicies;
+
+    unsigned long status_port_count;
+    unsigned long *status_port_indicies;
+
+    float *def_values;
+
+    gboolean has_input;
+};
+
+vst2_plugin_desc_t *vst2_plugin_desc_new();
+vst2_plugin_desc_t *vst2_plugin_desc_new_with_descriptor(const char *object_file,
+                                               unsigned long index,
+                                               const AEffect *descriptor);
+void vst2_plugin_desc_destroy(vst2_plugin_desc_t *pd);
+
+void vst2_plugin_desc_set_object_file(vst2_plugin_desc_t *pd, const char *object_file);
+void vst2_plugin_desc_set_index(vst2_plugin_desc_t *pd, unsigned long index);
+void vst2_plugin_desc_set_id(vst2_plugin_desc_t *pd, unsigned long id);
+void vst2_plugin_desc_set_name(vst2_plugin_desc_t *pd, const char *name);
+void vst2_plugin_desc_set_maker(vst2_plugin_desc_t *pd, const char *maker);
+void vst2_plugin_desc_set_properties(vst2_plugin_desc_t *pd, LADSPA_Properties properties);
+
+struct _vst2 *vst2_plugin_desc_instantiate(vst2_plugin_desc_t *pd);
+
+LADSPA_Data vst2_plugin_desc_get_default_control_value(vst2_plugin_desc_t *pd,
+                                                  unsigned long port_index,
+                                                  guint32 sample_rate);
+LADSPA_Data vst2_plugin_desc_change_control_value(
+    vst2_plugin_desc_t *, unsigned long, LADSPA_Data, guint32, guint32);
+
+gint vst2_plugin_desc_get_copies(vst2_plugin_desc_t *pd, unsigned long rack_channels);
+
 #endif
 
 #endif /* __JR_PLUGIN_DESC_H__ */

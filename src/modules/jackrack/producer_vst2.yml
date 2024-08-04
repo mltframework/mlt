@@ -1,0 +1,13 @@
+schema_version: 7.0
+type: producer
+identifier: vst2
+title: VST2
+version: 1
+license: GPLv2
+language: en
+tags:
+  - Audio
+description: Generate audio using VST2 plugins.
+notes: >
+  Automatically adapts to the number of channels and sampling rate of the consumer.
+
