@@ -657,3 +657,9 @@ MLT_7.22.0 {
     mlt_property_is_numeric;
     mlt_property_is_rect;
 } MLT_7.18.0;
+
+MLT_7.226.0 {
+  global:
+    mlt_producer_set_timecode;
+    mlt_producer_get_timecode;
+} MLT_7.22.0;

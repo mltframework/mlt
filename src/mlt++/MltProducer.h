@@ -77,6 +77,8 @@ public:
     int clear();
     int64_t get_creation_time();
     void set_creation_time(int64_t creation_time);
+    int64_t get_timecode();
+    void set_timecode(int64_t timecode);
     bool probe();
 };
 } // namespace Mlt
