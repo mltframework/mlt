@@ -710,5 +710,15 @@ MLT_7.14.0 {
     extern "C++" {
       "Mlt::Producer::probe()";
       "Mlt::Chain::attach_normalizers()";
+      "Mlt::Producer::get_timecode()";
+      "Mlt::Producer::set_timecode(int64_t)";
     };
 } MLT_7.12.0;
+
+MLT_7.26.0 {
+  global:
+    extern "C++" {
+      "Mlt::Producer::get_timecode()";
+      "Mlt::Producer::set_timecode(int64_t)";
+    };
+} MLT_7.14.0;

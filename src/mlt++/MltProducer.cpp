@@ -262,6 +262,17 @@ void Producer::set_creation_time(int64_t creation_time)
     mlt_producer_set_creation_time(get_producer(), creation_time);
 }
 
+int64_t Producer::get_timecode()
+{
+    int64_t tc = mlt_producer_get_timecode(get_producer());
+    return tc;
+}
+
+void Producer::set_timecode(int64_t timecode)
+{
+    mlt_producer_set_timecode(get_producer(), timecode);
+}
+
 bool Producer::probe()
 {
     return mlt_producer_probe(get_producer());

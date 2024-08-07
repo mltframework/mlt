@@ -1284,6 +1284,81 @@ void mlt_producer_set_creation_time(mlt_producer self, int64_t creation_time)
     free(datestr);
 }
 
+/**  Get the timecode associated with the producer.
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \return The timecode for the given producer, in milliseconds.
+ */
+int64_t mlt_producer_get_timecode(mlt_producer self)
+{
+    mlt_producer producer = mlt_producer_cut_parent(self);
+
+    char *str = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "timecode");
+    if (str) {
+        int64_t ms;
+        char dummy;
+        int ret = sscanf(str, "%" SCNd64 "%c", &ms, &dummy);
+        if (ret != 1)
+            return -1;
+        return ms;
+    }
+
+    // Check for a "time_reference" in the metadata, which is the timecode
+    // counted in samples.  Convert that to milliseconds.  This is an audio
+    // file, so just assume it's the first source.
+    str = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer),
+                             "meta.attr.time_reference.markup");
+    if (str) {
+        int64_t samples;
+        char dummy;
+        int ret = sscanf(str, "%" SCNd64 "%c", &samples, &dummy);
+        if (ret != 1)
+            return -1;
+
+        str = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer),
+                                 "meta.media.0.codec.sample_rate");
+        if (!str)
+            return -1;
+        int64_t sample_rate;
+        ret = sscanf(str, "%" SCNd64 "%c", &sample_rate, &dummy);
+        if (ret != 1)
+            return -1;
+
+        return (samples * 1000) / sample_rate;
+    }
+
+    // Check for a "timecode" in GoPro format, which is HH:MM:SS;FRAME.
+    str = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer),
+                             "meta.attr.0.stream.timecode.markup");
+    if (str) {
+        int hh, mm, ss, frame;
+        int ret = sscanf(str, "%02d:%02d:%02d;%02d", &hh, &mm, &ss, &frame);
+        if (ret != 4)
+            return -1;
+        return (frame * 1000 / mlt_producer_get_fps(producer)) + (ss + mm * 60 + hh * 3600) * 1000;
+    }
+
+    return -1;
+}
+
+/** Set the timecode for the producer
+ *
+ * This allows callers to override the timecode deceted by MLT for a producer.
+ *
+ * \public \memberof mlt_producer_s
+ * \praam self a producer
+ * \param timecode The timecode, in milliseconds, to set
+ */
+
+void mlt_producer_set_timecode(mlt_producer self, int64_t timecode)
+{
+    char buf[32];
+    mlt_producer parent = mlt_producer_cut_parent(self);
+    snprintf(buf, sizeof(buf), "%" PRId64, timecode);
+    mlt_properties_set(MLT_PRODUCER_PROPERTIES(parent), "timecode", buf);
+}
+
 /** Probe the producer to publish metadata properties.
  *
  * After this call the producer will publish meta.media properties
