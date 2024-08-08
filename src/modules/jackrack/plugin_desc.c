@@ -774,35 +774,33 @@ static void vst2_plugin_desc_init(vst2_plugin_desc_t *pd)
 
 static void vst2_plugin_desc_free_ports(vst2_plugin_desc_t *pd)
 {
-  /* if (pd->port_count) {
-       g_free(pd->port_descriptors);
-       g_free(pd->port_range_hints);
-       g_free(pd->audio_input_port_indicies);
-       g_free(pd->audio_output_port_indicies);
-       g_free(pd->port_names);
-       g_free(pd->control_port_indicies);
-       g_free(pd->status_port_indicies);
-       g_free(pd->audio_aux_port_indicies);
-       pd->port_descriptors = NULL;
-       pd->port_range_hints = NULL;
-       pd->audio_input_port_indicies = NULL;
-       pd->audio_output_port_indicies = NULL;
-       pd->port_names = NULL;
-       pd->control_port_indicies = NULL;
-       pd->status_port_indicies = NULL;
-       pd->audio_aux_port_indicies = NULL;
+  if (pd->port_count) {
+    g_free(pd->port_descriptors);
+    g_free(pd->port_range_hints);
+    g_free(pd->audio_input_port_indicies);
+    g_free(pd->audio_output_port_indicies);
+    g_free(pd->port_names);
+    g_free(pd->control_port_indicies);
+    g_free(pd->status_port_indicies);
+    g_free(pd->audio_aux_port_indicies);
+    pd->port_descriptors = NULL;
+    pd->port_range_hints = NULL;
+    pd->audio_input_port_indicies = NULL;
+    pd->audio_output_port_indicies = NULL;
+    pd->port_names = NULL;
+    pd->control_port_indicies = NULL;
+    pd->status_port_indicies = NULL;
+    pd->audio_aux_port_indicies = NULL;
           
-       pd->port_count = 0;
-     } */
+    pd->port_count = 0;
+  }
 }
 
 static void vst2_plugin_desc_free(vst2_plugin_desc_t *pd)
 {
-    /* free (pd->name);
-       free (pd->maker); */
-    /* vst2_plugin_desc_set_object_file(pd, NULL); */
-    /* vst2_plugin_desc_set_name(pd, NULL); */
-    /* vst2_plugin_desc_set_maker(pd, NULL); */
+    vst2_plugin_desc_set_object_file(pd, NULL);
+    vst2_plugin_desc_set_name(pd, NULL);
+    vst2_plugin_desc_set_maker(pd, NULL);
     vst2_plugin_desc_free_ports(pd);
 }
 
@@ -827,13 +825,12 @@ vst2_plugin_desc_t *vst2_plugin_desc_new_with_descriptor(const char *object_file
 
     static char strBuf[1024];
     effect->dispatcher (effect, effGetEffectName, 0, 0, strBuf, 0);
-    vst2_plugin_desc_set_name(pd, strdup (strBuf));
+    vst2_plugin_desc_set_name(pd, strBuf);
 
     effect->dispatcher (effect, effGetVendorString, 0, 0, strBuf, 0);
-    vst2_plugin_desc_set_maker(pd, strdup (strBuf));
+    vst2_plugin_desc_set_maker(pd, strBuf);
 
     int PortCount = effect->numInputs + effect->numOutputs + effect->numParams;
-    //int PortCount = effect->numParams;
     char **PortNames = calloc(PortCount, sizeof(char *));
     LADSPA_PortDescriptor *port_descriptors = calloc(PortCount, sizeof(LADSPA_PortDescriptor));
     LADSPA_PortRangeHint *PortRangeHints = calloc(PortCount, sizeof(LADSPA_PortRangeHint));
@@ -880,7 +877,6 @@ vst2_plugin_desc_t *vst2_plugin_desc_new_with_descriptor(const char *object_file
 			       PortRangeHints,
 			       (const char *const *) PortNames);
        
-    //pd->rt = LADSPA_IS_HARD_RT_CAPABLE(pd->properties) ? TRUE : FALSE;
     pd->effect = effect;
     pd->rt = TRUE;
 
@@ -1046,88 +1042,6 @@ LADSPA_Data vst2_plugin_desc_get_default_control_value(vst2_plugin_desc_t *pd,
                                                   guint32 sample_rate)
 {
   return pd->effect->getParameter(pd->effect, port_index);
-    /* LADSPA_Data upper, lower;
-       LADSPA_PortRangeHintDescriptor hint_descriptor;
-       
-       hint_descriptor = pd->port_range_hints[port_index].HintDescriptor;
-       
-       /\* set upper and lower, possibly adjusted to the sample rate *\/
-       if (LADSPA_IS_HINT_SAMPLE_RATE(hint_descriptor)) {
-           upper = pd->port_range_hints[port_index].UpperBound * (LADSPA_Data) sample_rate;
-           lower = pd->port_range_hints[port_index].LowerBound * (LADSPA_Data) sample_rate;
-       } else {
-           upper = pd->port_range_hints[port_index].UpperBound;
-           lower = pd->port_range_hints[port_index].LowerBound;
-       }
-       
-       if (LADSPA_IS_HINT_LOGARITHMIC(hint_descriptor)) {
-           if (lower < FLT_EPSILON)
-               lower = FLT_EPSILON;
-       }
-       
-       if (LADSPA_IS_HINT_HAS_DEFAULT(hint_descriptor)) {
-           if (LADSPA_IS_HINT_DEFAULT_MINIMUM(hint_descriptor)) {
-               return lower;
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_LOW(hint_descriptor)) {
-               if (LADSPA_IS_HINT_LOGARITHMIC(hint_descriptor)) {
-                   return exp(log(lower) * 0.75 + log(upper) * 0.25);
-               } else {
-                   return lower * 0.75 + upper * 0.25;
-               }
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_MIDDLE(hint_descriptor)) {
-               if (LADSPA_IS_HINT_LOGARITHMIC(hint_descriptor)) {
-                   return exp(log(lower) * 0.5 + log(upper) * 0.5);
-               } else {
-                   return lower * 0.5 + upper * 0.5;
-               }
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_HIGH(hint_descriptor)) {
-               if (LADSPA_IS_HINT_LOGARITHMIC(hint_descriptor)) {
-                   return exp(log(lower) * 0.25 + log(upper) * 0.75);
-               } else {
-                   return lower * 0.25 + upper * 0.75;
-               }
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_MAXIMUM(hint_descriptor)) {
-               return upper;
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_0(hint_descriptor)) {
-               return 0.0;
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_1(hint_descriptor)) {
-               if (LADSPA_IS_HINT_SAMPLE_RATE(hint_descriptor)) {
-                   return (LADSPA_Data) sample_rate;
-               } else {
-                   return 1.0;
-               }
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_100(hint_descriptor)) {
-               if (LADSPA_IS_HINT_SAMPLE_RATE(hint_descriptor)) {
-                   return 100.0 * (LADSPA_Data) sample_rate;
-               } else {
-                   return 100.0;
-               }
-       
-           } else if (LADSPA_IS_HINT_DEFAULT_440(hint_descriptor)) {
-               if (LADSPA_IS_HINT_SAMPLE_RATE(hint_descriptor)) {
-                   return 440.0 * (LADSPA_Data) sample_rate;
-               } else {
-                   return 440.0;
-               }
-           }
-       
-       } else { /\* try and find a reasonable default *\/
-       
-           if (LADSPA_IS_HINT_BOUNDED_BELOW(hint_descriptor)) {
-               return lower;
-           } else if (LADSPA_IS_HINT_BOUNDED_ABOVE(hint_descriptor)) {
-               return upper;
-           }
-       } */
-
-    return 0.0;
 }
 
 LADSPA_Data vst2_plugin_desc_change_control_value(vst2_plugin_desc_t *pd,

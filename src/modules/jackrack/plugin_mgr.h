@@ -98,7 +98,7 @@ lv2_plugin_desc_t *lv2_mgr_get_any_desc(lv2_mgr_t *plugin_mgr, char *id);
 vst2_mgr_t *vst2_mgr_new();
 void vst2_mgr_destroy(vst2_mgr_t *plugin_mgr);
 
-void vst2_mgr_set_plugins(vst2_mgr_t *plugin_mgr, unsigned long rack_channels);
+void vst2_mgr_set_plugins(vst2_mgr_t *vst2_mgr, unsigned long rack_channels);
 
 vst2_plugin_desc_t *vst2_mgr_get_desc(vst2_mgr_t *vst2_mgr, unsigned long id);
 vst2_plugin_desc_t *vst2_mgr_get_any_desc(vst2_mgr_t *vst2_mgr, unsigned long id);;

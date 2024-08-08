@@ -82,7 +82,6 @@ vst2_context_destroy (vst2_context_t * vst2_context)
 
 
   vst2_process_quit (vst2_context->procinfo);
-  vst2_mgr_destroy (vst2_context->plugin_mgr);
   vst2_process_info_destroy (vst2_context->procinfo);
   g_slist_free (vst2_context->saved_plugins);
   g_free (vst2_context);

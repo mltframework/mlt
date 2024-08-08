@@ -136,7 +136,7 @@ static int vst2_get_audio(mlt_frame frame,
         mlt_properties_set_int(filter_properties, "_prev_channels", *channels);
     }
 
-    // Initialise LADSPA if needed
+    // Initialise VST2 if needed
     vst2_context_t *vst2context = mlt_properties_get_data(filter_properties, "vst2context", NULL);
     if (vst2context == NULL) {
         vst2_sample_rate = *frequency; // global inside jack_rack
@@ -212,7 +212,7 @@ static int vst2_get_audio(mlt_frame frame,
                 output_buffers[j] = input_buffers[j] = (LADSPA_Data *) *buffer + j * (*samples)
                                                        + samples_offset;
             sample_count = MIN(*samples - samples_offset, MAX_SAMPLE_COUNT);
-            // Do LADSPA processing
+            // Do VST2 processing
             error = process_vst2(vst2context->procinfo, sample_count, input_buffers, output_buffers);
             samples_offset += MAX_SAMPLE_COUNT;
         }

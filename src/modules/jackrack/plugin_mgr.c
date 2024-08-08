@@ -885,23 +885,23 @@ static void vst2_mgr_get_object_file_plugins(vst2_mgr_t *vst2_mgr, const char *f
     }
 
     /* WIP temporarily disabled */
-    //err = dlclose(dl_handle);
+    /* err = dlclose(dl_handle); */
     /* if (err) {
-           mlt_log_warning(NULL,
-                           "%s: error closing object file '%s': %s\n",
-                           __FUNCTION__,
-                           filename,
-                           dlerror());
-       } */
+              mlt_log_warning(NULL,
+                              "%s: error closing object file '%s': %s\n",
+                              __FUNCTION__,
+                              filename,
+                              dlerror());
+          } */
 }
 
 
 static gint vst2_mgr_sort(gconstpointer a, gconstpointer b)
 {
-    const plugin_desc_t *da;
-    const plugin_desc_t *db;
-    da = (const plugin_desc_t *) a;
-    db = (const plugin_desc_t *) b;
+    const vst2_plugin_desc_t *da;
+    const vst2_plugin_desc_t *db;
+    da = (const vst2_plugin_desc_t *) a;
+    db = (const vst2_plugin_desc_t *) b;
 
     return strcasecmp(da->name, db->name);
 }
@@ -1028,15 +1028,15 @@ vst2_mgr_t *vst2_mgr_new()
 
 void vst2_mgr_destroy(vst2_mgr_t *vst2_mgr)
 {
-    /* GSList *list; */
+    GSList *list;
 
-    /* for (list = vst2_mgr->all_plugins; list; list = g_slist_next(list))
-           vst2_plugin_desc_destroy((vst2_plugin_desc_t *) list->data); */
+    for (list = vst2_mgr->all_plugins; list; list = g_slist_next(list))
+              vst2_plugin_desc_destroy((vst2_plugin_desc_t *) list->data);
 
-    /* g_slist_free(vst2_mgr->plugins); */
-    /* g_slist_free(vst2_mgr->all_plugins); */
-    /* mlt_properties_close(vst2_mgr->blacklist); */
-    /* free(vst2_mgr); */
+    g_slist_free(vst2_mgr->plugins);
+    g_slist_free(vst2_mgr->all_plugins);
+    mlt_properties_close(vst2_mgr->blacklist);
+    free(vst2_mgr);
 }
 
 void vst2_mgr_set_plugins(vst2_mgr_t *vst2_mgr, unsigned long rack_channels)
