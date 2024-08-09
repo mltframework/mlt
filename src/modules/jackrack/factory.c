@@ -472,17 +472,17 @@ static void vst2_add_port_to_metadata(mlt_properties p, vst2_plugin_desc_t *desc
     mlt_properties_set(p, "type", "integer");
     mlt_properties_set_int(p,
    			   "default",
-   			   vst2_plugin_desc_get_default_control_value(desc, j, sample_rate));
+   			   vst2_plugin_desc_get_default_control_value(desc, j-(desc->effect->numInputs+desc->effect->numOutputs), sample_rate));
   } else if (LADSPA_IS_HINT_TOGGLED(hint_descriptor)) {
     mlt_properties_set(p, "type", "boolean");
     mlt_properties_set_int(p,
    			   "default",
-   			   vst2_plugin_desc_get_default_control_value(desc, j, sample_rate));
+   			   vst2_plugin_desc_get_default_control_value(desc, j-(desc->effect->numInputs+desc->effect->numOutputs), sample_rate));
   } else {
     mlt_properties_set(p, "type", "float");
     mlt_properties_set_double(p,
    			      "default",
-   			      vst2_plugin_desc_get_default_control_value(desc, j, sample_rate));
+   			      vst2_plugin_desc_get_default_control_value(desc, j-(desc->effect->numInputs+desc->effect->numOutputs), sample_rate));
   }
   /* set upper and lower, possibly adjusted to the sample rate */
   if (LADSPA_IS_HINT_BOUNDED_BELOW(hint_descriptor)) {
@@ -549,6 +549,7 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
 			      NULL);
       for (i = 0; i < desc->control_port_count; i++) {
 	int j = desc->control_port_indicies[i];
+
 	p = mlt_properties_new();
 	snprintf(key, sizeof(key), "%d", mlt_properties_count(params));
 	mlt_properties_set_data(params,
@@ -559,7 +560,7 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
 				NULL);
 	snprintf(key, sizeof(key), "%d", j-(desc->effect->numInputs+desc->effect->numOutputs));
 	mlt_properties_set(p, "identifier", key);
-	vst2_add_port_to_metadata(p, desc, j-(desc->effect->numInputs+desc->effect->numOutputs));
+	vst2_add_port_to_metadata(p, desc, j);
 	mlt_properties_set(p, "mutable", "yes");
       }
       /* for (i = 0; i < desc->status_port_count; i++) {
