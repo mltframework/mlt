@@ -751,7 +751,7 @@ int main(int argc, char **argv)
     int is_abort = 0;
     int is_getc = 0;
     int error = 0;
-    mlt_profile backup_profile;
+    mlt_profile backup_profile = NULL;
     mlt_repository repo = NULL;
     const char *repo_path = NULL;
     int is_consumer_explicit = 0;
@@ -922,8 +922,6 @@ int main(int argc, char **argv)
             || profile->frame_rate_num != backup_profile->frame_rate_num
             || profile->colorspace != backup_profile->colorspace))
         profile->is_explicit = 1;
-    mlt_profile_close(backup_profile);
-    backup_profile = NULL;
 
     // Get melt producer
     if (argc > 1)
@@ -931,7 +929,7 @@ int main(int argc, char **argv)
 
     if (melt) {
         // Generate an automatic profile if needed.
-        if (!profile->is_explicit) {
+        if (backup_profile && !backup_profile->is_explicit) {
             mlt_producer first_producer = mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(melt),
                                                                   "first_producer",
                                                                   NULL);
@@ -946,6 +944,7 @@ int main(int argc, char **argv)
 
         double scale = mlt_properties_get_double(MLT_CONSUMER_PROPERTIES(consumer), "scale");
         if (scale > 0.0) {
+            mlt_profile_close(backup_profile);
             set_preview_scale(&profile, &backup_profile, scale);
         }
 
