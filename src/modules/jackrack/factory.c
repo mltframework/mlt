@@ -483,6 +483,8 @@ static void vst2_add_port_to_metadata(mlt_properties p, vst2_plugin_desc_t *desc
     mlt_properties_set_double(p,
    			      "default",
    			      vst2_plugin_desc_get_default_control_value(desc, j-(desc->effect->numInputs+desc->effect->numOutputs), sample_rate));
+    mlt_properties_set_double(p, "minimum", 0.0);
+    mlt_properties_set_double(p, "maximum", 1.0);
   }
   /* set upper and lower, possibly adjusted to the sample rate */
   if (LADSPA_IS_HINT_BOUNDED_BELOW(hint_descriptor)) {
