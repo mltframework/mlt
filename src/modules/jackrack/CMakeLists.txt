@@ -21,6 +21,11 @@ if(USE_LV2)
   install(FILES filter_lv2.yml producer_lv2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
 endif()
 
+if(USE_VST2)
+  target_compile_definitions(mltjackrack PRIVATE WITH_VST2)
+  install(FILES filter_vst2.yml producer_vst2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+endif()
+
 if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
   target_sources(mltjackrack PRIVATE
     jack_rack.c jack_rack.h
@@ -56,6 +61,17 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
       lv2_plugin_settings.c lv2_plugin_settings.h
       lv2_urid_helper.h)
     install(FILES filter_lv2.yml producer_lv2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+  endif()
+
+  if(USE_VST2)
+    target_sources(mltjackrack PRIVATE
+      filter_vst2.c producer_vst2.c
+      vst2_context.c vst2_context.h
+      vst2_plugin.c vst2_plugin.h
+      vst2_process.c vst2_process.h
+      vst2_plugin_settings.c vst2_plugin_settings.h
+      vestige.h)
+    install(FILES filter_vst2.yml producer_vst2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
   endif()
 
 endif()
