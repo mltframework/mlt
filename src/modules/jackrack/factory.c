@@ -527,7 +527,6 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
   }
   mlt_properties result = mlt_properties_parse_yaml(file);
    
-#ifdef GPL
   if (!strncmp(id, "vst2.", 5)) {
     // Annotate the yaml properties with ladspa control port info.
     vst2_plugin_desc_t *desc = vst2_mgr_get_any_desc(g_vst2_plugin_mgr,
@@ -618,7 +617,6 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
       }
     }
   }
-#endif
    
   return result;
 }

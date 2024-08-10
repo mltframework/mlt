@@ -1,6 +1,6 @@
 /*
- * producer_ladspa.c -- LADSPA plugin producer
- * Copyright (C) 2013-2014 Meltytech, LLC
+ * producer_vst2.c -- VST2 plugin producer
+ * Copyright (C) 2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
 /** One-time initialization of jack rack.
 */
 
-static vst2_context_t *initialise_jack_rack(mlt_properties properties, int channels)
+static vst2_context_t *initialise_vst2_context(mlt_properties properties, int channels)
 {
     vst2_context_t *vst2context = NULL;
     unsigned long plugin_id = mlt_properties_get_int64(properties, "_pluginid");
@@ -88,7 +88,7 @@ static int producer_get_audio(mlt_frame frame,
     vst2_context_t *vst2context = mlt_properties_get_data(producer_properties, "_vst2context", NULL);
     if (!vst2context) {
         vst2_sample_rate = *frequency; // global inside jack_rack
-        vst2context = initialise_jack_rack(producer_properties, *channels);
+        vst2context = initialise_vst2_context(producer_properties, *channels);
     }
 
     if (vst2context) {
@@ -116,7 +116,18 @@ static int producer_get_audio(mlt_frame frame,
                                                            position,
                                                            length);
                 for (c = 0; c < plugin->copies; c++)
-                    plugin->holders[c].control_memory[index] = value;
+		  {
+		    if (plugin->holders[c].control_memory[index] != value)
+		      {
+			plugin->holders[c].control_memory[index] = value;
+			plugin->holders[c].effect
+			  ->setParameter (plugin->holders[c].effect,
+					  plugin->desc->control_port_indicies[index]
+					  -
+					  (plugin->holders[c].effect->numInputs+plugin->holders[c].effect->numOutputs),
+					  plugin->holders[c].control_memory[index]);
+		      }
+		  }
             }
         }
 
