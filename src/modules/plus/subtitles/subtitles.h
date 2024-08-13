@@ -37,7 +37,7 @@ SubtitleVector readFromSrtFile(const std::string &path);
 bool writeToSrtFile(const std::string &path, const SubtitleVector &items);
 SubtitleVector readFromSrtString(const std::string &text);
 bool writeToSrtString(std::string &text, const SubtitleVector &items);
-int indexForTime(const SubtitleVector &items, int64_t msTime, int searchStart);
+int indexForTime(const SubtitleVector &items, int64_t msTime, int searchStart, int msMargin);
 } // namespace Subtitles
 
 #endif // SUBTITLES_H

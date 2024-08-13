@@ -121,7 +121,8 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
         int64_t frameMs = (int64_t) mlt_frame_get_position(frame) * 1000 * profile->frame_rate_den
                           / profile->frame_rate_num;
         int prevIndex = mlt_properties_get_int(properties, "_prevIndex");
-        int index = Subtitles::indexForTime(subtitles, frameMs, prevIndex);
+        int marginMs = 999 * profile->frame_rate_den / profile->frame_rate_num;
+        int index = Subtitles::indexForTime(subtitles, frameMs, prevIndex, marginMs);
         if (index > -1) {
             text = subtitles[index].text.c_str();
             mlt_properties_set_int(properties, "_prevIndex", index);

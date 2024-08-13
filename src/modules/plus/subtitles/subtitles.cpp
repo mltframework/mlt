@@ -153,33 +153,38 @@ bool Subtitles::writeToSrtString(std::string &text, const Subtitles::SubtitleVec
     return writeToSrtStream(textStream, items);
 }
 
-int Subtitles::indexForTime(const Subtitles::SubtitleVector &items, int64_t msTime, int searchStart)
+int Subtitles::indexForTime(const Subtitles::SubtitleVector &items,
+                            int64_t msTime,
+                            int searchStart,
+                            int msMargin)
 {
     // Return -1 if there is no subtitle for the time.
     int index = -1;
     int count = (int) items.size();
     if (count == 0) {
         // Nothing to search
-    } else if (count > 0 && items[0].start > msTime) {
+    } else if (count > 0 && (items[0].start - msMargin) > msTime) {
         // No text if before the first item;
     } else if (count > 1 && items[count - 1].end < msTime) {
         // No text if after the last item;
-    } else if (searchStart > -1 && searchStart < count && items[searchStart].start <= msTime
+    } else if (searchStart > -1 && searchStart < count
+               && (items[searchStart].start - msMargin) <= msTime
                && items[searchStart].end >= msTime) {
         // First see if this is the same as the last subtitle
         index = searchStart;
     } else if (searchStart > -1 && (searchStart + 1) < count && items[searchStart].end < msTime
-               && items[searchStart + 1].start > msTime) {
+               && (items[searchStart + 1].start - msMargin) > msTime) {
         // No text if between the previous and next subtitle
     } else if (searchStart > -1 && (searchStart + 1) < count
-               && items[searchStart + 1].start <= msTime && items[searchStart + 1].end >= msTime) {
+               && (items[searchStart + 1].start - msMargin) <= msTime
+               && items[searchStart + 1].end >= msTime) {
         // See if this is the next subtitle
         index = searchStart + 1;
     } else {
         // Perform a full search from the beginning
         int i = 0;
         for (i = 0; i < count; i++) {
-            if (items[i].start <= msTime && items[i].end >= msTime) {
+            if ((items[i].start - msMargin) <= msTime && items[i].end >= msTime) {
                 index = i;
                 break;
             } else if (items[i].end > msTime) {
