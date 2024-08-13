@@ -2,7 +2,7 @@ schema_version: 0.3
 type: consumer
 identifier: avformat
 title: FFmpeg Output
-version: 3
+version: 4
 copyright: Copyright (C) 2003-2019 Meltytech, LLC
 license: LGPL
 language: en
