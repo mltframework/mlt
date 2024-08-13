@@ -291,7 +291,7 @@ static void gps_point_to_output(mlt_filter filter,
             atemp = atemp + 273.15;
         snprintf(gps_text, 10, "%.*f", decimals_needed_maxone(atemp), atemp);
     } else if (!strncmp(keyword, "gps_power", strlen("gps_power"))
-                && crt_point.power != GPS_UNINIT) {
+               && crt_point.power != GPS_UNINIT) {
         if (strstr(keyword, "RAW")) {
             if (raw.power == GPS_UNINIT)
                 return;

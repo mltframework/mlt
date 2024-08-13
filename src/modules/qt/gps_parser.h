@@ -40,7 +40,8 @@ typedef struct gps_point_raw_list
 
 typedef struct
 {
-    double lat, lon, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing, cad, atemp, power;
+    double lat, lon, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing, cad, atemp,
+        power;
     int64_t time;
     double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat, grade_p;
 } gps_point_proc;

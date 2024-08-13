@@ -859,7 +859,8 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 
     int max_gps_diff_ms = get_max_gps_diff_ms(gdata);
     int i, j, nr_hr = 0, nr_ele = 0, nr_cad = 0, nr_atemp = 0, nr_power = 0;
-    double hr = GPS_UNINIT, ele = GPS_UNINIT, cad = GPS_UNINIT, atemp = GPS_UNINIT, power = GPS_UNINIT;
+    double hr = GPS_UNINIT, ele = GPS_UNINIT, cad = GPS_UNINIT, atemp = GPS_UNINIT,
+           power = GPS_UNINIT;
 
     //linear interpolation for heart rate, elevation, cadence and temperature, one time per file, ignores start offset
     if (*gdata.interpolated == 0) {
@@ -1082,14 +1083,13 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                     crt_point.bearing = reader.readElementText().toDouble();
                 else if (reader.name() == QString("extensions")) {
                     while (reader.readNext()
-                            && !(reader.name() == QString("extensions")
-                                && reader.tokenType() == QXmlStreamReader::EndElement))
-                    {
+                           && !(reader.name() == QString("extensions")
+                                && reader.tokenType() == QXmlStreamReader::EndElement)) {
                         if (reader.name() == QString("power"))
                             crt_point.power = reader.readElementText().toDouble();
                         else if (reader.name() == QString("TrackPointExtension")) {
                             while (reader.readNext()
-                                && !(reader.name() == QString("TrackPointExtension")
+                                   && !(reader.name() == QString("TrackPointExtension")
                                         && reader.tokenType() == QXmlStreamReader::EndElement)) {
                                 if (reader.name() == QString("hr"))
                                     crt_point.hr = reader.readElementText().toDouble();
