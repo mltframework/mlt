@@ -180,6 +180,7 @@ static void gps_point_to_output(mlt_filter filter,
         crt_point.hr = raw.hr;
         crt_point.cad = raw.cad;
         crt_point.atemp = raw.atemp;
+        crt_point.power = raw.power;
     } else {
         if (pdata->gps_points_p == NULL)
             return;
@@ -289,6 +290,15 @@ static void gps_point_to_output(mlt_filter filter,
         else if (strstr(keyword, "K"))
             atemp = atemp + 273.15;
         snprintf(gps_text, 10, "%.*f", decimals_needed_maxone(atemp), atemp);
+    } else if (!strncmp(keyword, "gps_power", strlen("gps_power"))
+                && crt_point.power != GPS_UNINIT) {
+        if (strstr(keyword, "RAW")) {
+            if (raw.power == GPS_UNINIT)
+                return;
+            snprintf(gps_text, 10, "%.0f", raw.power);
+        } else {
+            snprintf(gps_text, 10, "%.0f", crt_point.power);
+        }
     } else if (!strncmp(keyword, "gps_vdist_up", strlen("gps_vdist_up"))
                && crt_point.elev_up != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_vdist_up"))
