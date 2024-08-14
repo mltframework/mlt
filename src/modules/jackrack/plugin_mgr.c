@@ -391,7 +391,7 @@ static void plugin_mgr_get_path_plugins(plugin_mgr_t *plugin_mgr)
     }
 #else
     if (!ladspa_path)
-        ladspa_path = g_strdup("/usr/local/lib/vst:/usr/lib/vst:/usr/lib64/vst");
+        ladspa_path = g_strdup("/usr/local/lib/ladspa:/usr/lib/ladspa:/usr/lib64/ladspa");
 #endif
 
     for (dir = strtok(ladspa_path, MLT_DIRLIST_DELIMITER); dir;
@@ -714,9 +714,9 @@ static gboolean vst2_is_valid(const AEffect *effect)
     return TRUE;
 }
 
-static intptr_t my_vst_hostCanDo(const char* const feature)
+static intptr_t mlt_vst_hostCanDo(const char* const feature)
 {
-  fprintf(stderr, "carla_vst_hostCanDo(\"%s\")", feature);
+  mlt_log_info(NULL, "mlt_vst_hostCanDo(\"%s\")", feature);
       
   if (strcmp(feature, "supplyIdle") == 0)
     return 1;
@@ -756,12 +756,12 @@ static intptr_t my_vst_hostCanDo(const char* const feature)
     return -1;
       
   // unimplemented
-  fprintf(stderr, "carla_vst_hostCanDo(\"%s\") - unknown feature", feature);
+  mlt_log_error(NULL, "mlt_vst_hostCanDo(\"%s\") - unknown feature", feature);
   return 0;
 }
       
 static intptr_t VSTCALLBACK
-my_audioMasterCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
+mlt_vst_audioMasterCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
 {
   switch (opcode) 
     {
@@ -786,7 +786,7 @@ my_audioMasterCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t 
       return 0x01;
       
     case audioMasterCanDo:
-      return my_vst_hostCanDo((const char*)ptr);
+      return mlt_vst_hostCanDo((const char*)ptr);
       
     case audioMasterGetLanguage:
       return kVstLangEnglish;
@@ -830,7 +830,7 @@ static void vst2_mgr_get_object_file_plugins(vst2_mgr_t *vst2_mgr, const char *f
     if (vstFn == NULL)
       return;
 
-    effect = vstFn(my_audioMasterCallback);
+    effect = vstFn(mlt_vst_audioMasterCallback);
 
     dlerr = dlerror();
     if (dlerr) {
@@ -949,8 +949,8 @@ static void vst2_mgr_get_dir_plugins(vst2_mgr_t *vst2_mgr, const char *dir)
         else {
             char *ext = strrchr(file_name, '.');
             if (ext
-                && (strcmp(ext, ".so") == 0 || strcmp(ext, ".dll") == 0
-                    || strcmp(ext, ".dylib") == 0)) {
+                && (strcmp(ext, ".so") == 0 || strcasecmp(ext, ".dll") == 0
+                    || strcmp(ext, ".dylib") == 0 || strcasecmp(ext, ".vst") == 0)) {
                 vst2_mgr_get_object_file_plugins(vst2_mgr, file_name);
             }
         }
