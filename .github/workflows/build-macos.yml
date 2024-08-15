@@ -20,7 +20,7 @@ jobs:
           s3cmd --access_key=${{ secrets.AWS_ACCESS_KEY }} --secret_key=${{ secrets.AWS_SECRET_KEY }} --stop-on-error get s3://builds.us.meltytech/melt/melt-macos-$VERSION.tar.bz2
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: unsigned-tarball
           path: |
