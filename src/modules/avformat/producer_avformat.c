@@ -3297,7 +3297,7 @@ static int decode_audio(producer_avformat self,
                                 context->streams[index]->time_base);
         int64_t int_position = llrint(timebase * pts * fps);
         int64_t req_position = llrint(timecode * fps);
-        int64_t req_pts = llrint(timecode / timebase);
+        int64_t req_pts = floor(timecode / timebase);
 
         mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
                       "A pkt.pts %" PRId64 " pkt->dts %" PRId64 " req_pos %" PRId64
