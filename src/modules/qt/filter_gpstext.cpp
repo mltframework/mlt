@@ -231,6 +231,7 @@ static void gps_point_to_output(mlt_filter filter,
         if (strstr(keyword, "RAW")) {
             if (raw.speed == GPS_UNINIT)
                 return;
+            val = raw.speed;
         } else {
             val = crt_point.speed;
             if (strstr(keyword, "vertical"))

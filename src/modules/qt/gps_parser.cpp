@@ -943,7 +943,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
 
             //power
             if (gp_r[i].power != GPS_UNINIT) {
-                if (power != GPS_UNINIT && nr_power > 0 && nr_power <= nr_one_minute * 60) {
+                if (power != GPS_UNINIT && nr_power > 0 && nr_power <= nr_one_minute) {
                     nr_power++;
                     for (j = i; j > i - nr_power; j--) {
                         gp_p[j].power = power
@@ -1043,7 +1043,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
         <speed>0.0</speed>
         <course>337.1557</course>
         <extensions>
-            <power>0</power>
+            <power>0</power>                      //strava ...
             <gpxtpx:TrackPointExtension>          //official garmin extension
                 <gpxtpx:hr>132</gpxtpx:hr>            //heart rate in beats per minute
                 <gpxtpx:cad>75</gpxtpx:cad>           //cadence in revolutions per minute
@@ -1187,6 +1187,12 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
         </HeartRateBpm>
         <Cadence>78</Cadence>                   //unofficial, but some popular converters use it
         <Temperature>25</Temperature>           //unofficial/not widely used
+        <Extensions>                            //garmin's extension for power
+            <ns3:TPX>
+                <ns3:Speed>0.3449999988079071</ns3:Speed>
+                <ns3:Watts>0</ns3:Watts>
+            </ns3:TPX>
+        </Extensions>
     </Trackpoint>
     */
     while (!reader.atEnd() && !reader.hasError()) {
@@ -1226,8 +1232,15 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                     crt_point.cad = reader.readElementText().toDouble();
                 } else if (reader.name() == QString("Temperature")) {
                     crt_point.atemp = reader.readElementText().toDouble();
-                } else if (reader.name() == QString("Power")) { // guessing
-                    crt_point.power = reader.readElementText().toDouble();
+                } else if (reader.isStartElement() && reader.name() == QString("Extensions")) {
+                    while (reader.readNext()
+                           && !(reader.name() == QString("TPX")
+                                && reader.tokenType() == QXmlStreamReader::EndElement)) {
+                        if (reader.name() == QString("Speed"))
+                            crt_point.speed = reader.readElementText().toDouble();
+                        else if (reader.name() == QString("Watts"))
+                            crt_point.power = reader.readElementText().toDouble();
+                    }
                 }
             }
             //now add the point to linked list (but only if increasing time)
@@ -1402,19 +1415,21 @@ int qxml_parse_file(gps_private_data gdata)
     // for (int i = 0; i < *gdata.gps_points_size; i += 100) {
     //     gps_point_raw *crt_point = &gps_array[i];
     //     mlt_log_info(NULL,
-    //                  "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, ele:%f, "
-    //                  "distance:%f, hr:%f, bearing:%f, cadence:%f, temp:%f\n",
+    //                  "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, speed:%f, "
+    //                  "distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
     //                  i,
     //                  crt_point->time / 1000,
     //                  crt_point->lat,
     //                  crt_point->lon,
-    //                  crt_point->ele,
+    //                  crt_point->speed,
     //                  crt_point->total_dist,
+    //                  crt_point->ele,
     //                  crt_point->hr,
     //                  crt_point->bearing,
     //                  crt_point->cad,
-    //                  crt_point->atemp);
-    // }
+    //                  crt_point->atemp,
+    //                  crt_point->power);
+    //}
 
-    return 1;
+return 1;
 }
