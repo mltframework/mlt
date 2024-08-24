@@ -487,58 +487,61 @@ static void transport(mlt_producer producer, mlt_consumer consumer)
 
 static void show_usage(char *program_name)
 {
-    fprintf(stdout,
-            "Usage: %s [options] [producer [name=value]* ]+\n"
-            "Options:\n"
-            "  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
-            "  -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut\n"
-            "  -attach-track filter[:arg] [name=value]* Attach a filter to a track\n"
-            "  -attach-clip filter[:arg] [name=value]*  Attach a filter to a producer\n"
-            "  -audio-track | -hide-video               Add an audio-only track\n"
-            "  -blank frames                            Add blank silence to a track\n"
-            "  -chain id[:arg] [name=value]*            Add a producer as a chain\n"
-            "  -consumer id[:arg] [name=value]*         Set the consumer (sink)\n"
-            "  -debug                                   Set the logging level to debug\n"
-            "  -filter filter[:arg] [name=value]*       Add a filter to the current track\n"
-            "  -getc                                    Get keyboard input using getc\n"
-            "  -group [name=value]*                     Apply properties repeatedly\n"
-            "  -help                                    Show this message\n"
-            "  -jack                                    Enable JACK transport synchronization\n"
-            "  -join clips                              Join multiple clips into one cut\n"
-            "  -link id[:arg] [name=value]*             Add a link to a chain\n"
-            "  -mix length                              Add a mix between the last two cuts\n"
-            "  -mixer transition                        Add a transition to the mix\n"
-            "  -null-track | -hide-track                Add a hidden track\n"
-            "  -profile name                            Set the processing settings\n"
-            "  -progress                                Display progress along with position\n"
-            "  -query                                   List all of the registered services\n"
-            "  -query \"consumers\" | \"consumer\"=id       List consumers or show info about one\n"
-            "  -query \"filters\" | \"filter\"=id           List filters or show info about one\n"
-            "  -query \"links\" | \"link\"=id               List links or show info about one\n"
-            "  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
-            "  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
-            "  -query \"profiles\" | \"profile\"=id         List profiles, show info about one\n"
-            "  -query \"presets\" | \"preset\"=id           List presets, show info about one\n"
-            "  -query \"formats\"                         List audio/video formats\n"
-            "  -query \"audio_codecs\"                    List audio codecs\n"
-            "  -query \"video_codecs\"                    List video codecs\n"
-            "  -quiet                                   Set the logging level to quiet\n"
-            "  -remove                                  Remove the most recent cut\n"
-            "  -repeat times                            Repeat the last cut\n"
-            "  -repository path                         Set the directory of MLT modules\n"
-            "  -serialise [filename]                    Write the commands to a text file\n"
-            "  -setlocale                               Make numeric strings locale-sensitive\n"
-            "  -silent                                  Do not display position/transport\n"
-            "  -split relative-frame                    Split the last cut into two cuts\n"
-            "  -swap                                    Rearrange the last two cuts\n"
-            "  -track                                   Add a track\n"
-            "  -transition id[:arg] [name=value]*       Add a transition\n"
-            "  -verbose                                 Set the logging level to verbose\n"
-            "  -timings                                 Set the logging level to timings\n"
-            "  -version                                 Show the version and copyright\n"
-            "  -video-track | -hide-audio               Add a video-only track\n"
-            "For more help: <https://www.mltframework.org/>\n",
-            basename(program_name));
+    fprintf(
+        stdout,
+        "Usage: %s [options] [producer [name=value]* ]+\n"
+        "Options:\n"
+        "  -attach filter[:arg] [name=value]*       Attach a filter to the output\n"
+        "  -attach-cut filter[:arg] [name=value]*   Attach a filter to a cut\n"
+        "  -attach-track filter[:arg] [name=value]* Attach a filter to a track\n"
+        "  -attach-clip filter[:arg] [name=value]*  Attach a filter to a producer\n"
+        "  -audio-track | -hide-video               Add an audio-only track\n"
+        "  -blank frames                            Add blank silence to a track\n"
+        "  -chain id[:arg] [name=value]*            Add a producer as a chain\n"
+        "  -consumer id[:arg] [name=value]*         Set the consumer (sink)\n"
+        "  -debug                                   Set the logging level to debug\n"
+        "  -filter filter[:arg] [name=value]*       Add a filter to the current track\n"
+        "  -getc                                    Get keyboard input using getc\n"
+        "  -group [name=value]*                     Apply properties repeatedly\n"
+        "  -help                                    Show this message\n"
+        "  -jack                                    Enable JACK transport synchronization\n"
+        "  -join clips                              Join multiple clips into one cut\n"
+        "  -link id[:arg] [name=value]*             Add a link to a chain\n"
+        "  -loglevel \"quiet\" | \"panic\" | \"fatal\" |  Set the logging level (least to most)\n"
+        "            \"error\" | \"warning\" | \"info\" | \"verbose\" | \"debug\" | \"timings\"\n"
+        "  -mix length                              Add a mix between the last two cuts\n"
+        "  -mixer transition                        Add a transition to the mix\n"
+        "  -null-track | -hide-track                Add a hidden track\n"
+        "  -profile name                            Set the processing settings\n"
+        "  -progress                                Display progress along with position\n"
+        "  -query                                   List all of the registered services\n"
+        "  -query \"consumers\" | \"consumer\"=id       List consumers or show info about one\n"
+        "  -query \"filters\" | \"filter\"=id           List filters or show info about one\n"
+        "  -query \"links\" | \"link\"=id               List links or show info about one\n"
+        "  -query \"producers\" | \"producer\"=id       List producers or show info about one\n"
+        "  -query \"transitions\" | \"transition\"=id   List transitions, show info about one\n"
+        "  -query \"profiles\" | \"profile\"=id         List profiles, show info about one\n"
+        "  -query \"presets\" | \"preset\"=id           List presets, show info about one\n"
+        "  -query \"formats\"                         List audio/video formats\n"
+        "  -query \"audio_codecs\"                    List audio codecs\n"
+        "  -query \"video_codecs\"                    List video codecs\n"
+        "  -quiet                                   Set the logging level to quiet\n"
+        "  -remove                                  Remove the most recent cut\n"
+        "  -repeat times                            Repeat the last cut\n"
+        "  -repository path                         Set the directory of MLT modules\n"
+        "  -serialise [filename]                    Write the commands to a text file\n"
+        "  -setlocale                               Make numeric strings locale-sensitive\n"
+        "  -silent                                  Do not display position/transport\n"
+        "  -split relative-frame                    Split the last cut into two cuts\n"
+        "  -swap                                    Rearrange the last two cuts\n"
+        "  -track                                   Add a track\n"
+        "  -transition id[:arg] [name=value]*       Add a transition\n"
+        "  -verbose                                 Set the logging level to verbose\n"
+        "  -timings                                 Set the logging level to timings\n"
+        "  -version                                 Show the version and copyright\n"
+        "  -video-track | -hide-audio               Add a video-only track\n"
+        "For more help: <https://www.mltframework.org/>\n",
+        basename(program_name));
 }
 
 static void query_metadata(mlt_repository repo, mlt_service_type type, const char *typestr, char *id)
@@ -882,6 +885,38 @@ int main(int argc, char **argv)
             goto exit_factory;
         } else if (!strcmp(argv[i], "-debug")) {
             mlt_log_set_level(MLT_LOG_DEBUG);
+        } else if (!strcmp(argv[i], "-loglevel") && argv[i + 1]) {
+            switch (argv[++i][0]) {
+            case 'q':
+                mlt_log_set_level(MLT_LOG_QUIET);
+                break;
+            case 'p':
+                mlt_log_set_level(MLT_LOG_PANIC);
+                break;
+            case 'f':
+                mlt_log_set_level(MLT_LOG_FATAL);
+                break;
+            case 'e':
+                mlt_log_set_level(MLT_LOG_ERROR);
+                break;
+            case 'w':
+                mlt_log_set_level(MLT_LOG_WARNING);
+                break;
+            case 'i':
+                mlt_log_set_level(MLT_LOG_INFO);
+                break;
+            case 'v':
+                mlt_log_set_level(MLT_LOG_VERBOSE);
+                break;
+            case 'd':
+                mlt_log_set_level(MLT_LOG_DEBUG);
+                break;
+            case 't':
+                mlt_log_set_level(MLT_LOG_TIMINGS);
+                break;
+            default:
+                break;
+            }
         } else if (!strcmp(argv[i], "-abort")) {
             is_abort = 1;
         } else if (!strcmp(argv[i], "-getc")) {
