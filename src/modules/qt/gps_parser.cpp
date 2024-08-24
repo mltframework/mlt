@@ -1431,5 +1431,5 @@ int qxml_parse_file(gps_private_data gdata)
     //                  crt_point->power);
     //}
 
-return 1;
+    return 1;
 }

@@ -426,8 +426,8 @@ plugin_mgr_t *plugin_mgr_new()
     plugin_mgr_get_path_plugins(pm);
 
     if (!pm->all_plugins)
-        mlt_log_warning(
-            NULL, "No LADSPA plugins were found!\n\nCheck your LADSPA_PATH environment variable.\n");
+        mlt_log_info(
+            NULL, "No LADSPA plugins were found! Check your LADSPA_PATH environment variable.\n");
     else
         pm->all_plugins = g_slist_sort(pm->all_plugins, plugin_mgr_sort);
 
@@ -619,8 +619,8 @@ lv2_mgr_t *lv2_mgr_new()
     lv2_mgr_get_path_plugins(pm);
 
     if (!pm->all_plugins)
-        mlt_log_warning(
-            NULL, "No LV2 plugins were found!\n\nCheck your LV2_PATH environment variable.\n");
+        mlt_log_info(
+            NULL, "No LV2 plugins were found! Check your LV2_PATH environment variable.\n");
     else
         pm->all_plugins = g_slist_sort(pm->all_plugins, lv2_mgr_sort);
 
