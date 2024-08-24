@@ -1018,8 +1018,8 @@ vst2_mgr_t *vst2_mgr_new()
     vst2_mgr_get_path_plugins(pm);
 
     if (!pm->all_plugins)
-        mlt_log_warning(
-            NULL, "No VST2 plugins were found!\n\nCheck your VST_PATH environment variable.\n");
+        mlt_log_info(
+            NULL, "No VST2 plugins were found! Check your VST_PATH environment variable.\n");
     else
         pm->all_plugins = g_slist_sort(pm->all_plugins, vst2_mgr_sort);
 
