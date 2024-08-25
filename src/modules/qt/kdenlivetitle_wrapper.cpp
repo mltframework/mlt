@@ -145,7 +145,8 @@ public:
                   QColor outlineColor,
                   double outline,
                   int align,
-                  int lineSpacing)
+                  int lineSpacing,
+                  int tabWidth)
         : m_metrics(QFontMetrics(font))
     {
         m_boundingRect = QRectF(0, 0, width, height);
@@ -157,6 +158,7 @@ public:
         m_lineSpacing = lineSpacing + m_metrics.lineSpacing();
         m_align = align;
         m_width = width;
+        m_tabWidth = tabWidth;
         updateText(text);
     }
 
@@ -172,7 +174,26 @@ public:
         double linePos = m_metrics.ascent();
         foreach (const QString &line, lines) {
             QPainterPath linePath;
-            linePath.addText(0, linePos, m_font, line);
+            const QStringList tabLines = line.split(QLatin1Char('\t'));
+            if (m_tabWidth > 0 && tabLines.count() > 1) {
+                qreal pos = 0;
+                qreal currentPos = 0;
+                for (const QString &tline : tabLines) {
+                    QPainterPath tabPath;
+                    if (!tline.isEmpty()) {
+                        tabPath.addText(pos, linePos, m_font, tline);
+                        linePath.addPath(tabPath);
+                        currentPos = pos + tabPath.boundingRect().width();
+                    } else {
+                        // Several chained tabs
+                        currentPos = pos + m_tabWidth / 2;
+                    }
+                    int tabsCount = ceil(currentPos / m_tabWidth);
+                    pos = tabsCount * m_tabWidth;
+                }
+            } else {
+                linePath.addText(0, linePos, m_font, line);
+            }
             linePos += m_lineSpacing;
             if (m_align == Qt::AlignHCenter) {
 #if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
@@ -259,6 +280,7 @@ private:
     int m_lineSpacing;
     int m_align;
     double m_width;
+    int m_tabWidth;
     QFontMetrics m_metrics;
     double m_outline;
     QStringList m_params;
@@ -405,6 +427,10 @@ void loadFromXml(producer_ktitle self,
                 if (txtProperties.namedItem("alignment").isNull() == false) {
                     align = txtProperties.namedItem("alignment").nodeValue().toInt();
                 }
+                int tabWidth = 0;
+                if (txtProperties.namedItem("tab-width").isNull() == false) {
+                    tabWidth = txtProperties.namedItem("tab-width").nodeValue().toInt();
+                }
 
                 double boxWidth = 0;
                 double boxHeight = 0;
@@ -462,7 +488,8 @@ void loadFromXml(producer_ktitle self,
                         outlineColor,
                         txtProperties.namedItem("font-outline").nodeValue().toDouble(),
                         align,
-                        txtProperties.namedItem("line-spacing").nodeValue().toInt());
+                        txtProperties.namedItem("line-spacing").nodeValue().toInt(),
+                        tabWidth);
                     if (txtProperties.namedItem("shadow").isNull() == false) {
                         QStringList values = txtProperties.namedItem("shadow").nodeValue().split(
                             ";");
