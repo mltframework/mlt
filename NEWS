@@ -1,6 +1,40 @@
 MLT Release Notes
 -----------------
 
+Version 7.26.0
+
+Framework
+  * Fixed a double-free crash in `Mlt::Service::profile()`.
+
+Modules
+  * Fixes and improvements to the `avformat` producer:
+    - Changed to prefer `r_frame_rate` over `avg_frame_rate`.
+    - Fixed `lowres` if set too high.
+    - Fixed `audio_index=all`.
+    - Fixed `variable_frame_rate` incorrectly set true on 59.94 fps in Matroska.
+    - Improved performance with intra-only video and reducing the frame rate.
+    - Fixed mono audio handling regression on FFmpeg 7.
+    - Fixed audio samples may be dropped unexpectly esp. with uncompressed.
+  * Fixed `movit` transitions with a non-movit filter on one of its inputs.
+  * Fixed duration in the `glaxnimate` producer off by one frame.
+  * Added `dropshadow` filter to the `qt` module.
+  * Fixed resetting animation in `kdenlivetitle` producer.
+  * Added support for LV2 and VST2 plugins in the `jackrack` module.
+  * Fixed crash using `av.declick` audio filter on FFmpeg 7.
+  * Added `subtitle` filter and producer and `subtitle_feed` filter to the `plus` module.
+  * Added subtitle encoding to the `avformat` consumer (new properties beginning with "subtitle.").
+  * Fixed `alang` in the the `avformat` consumer.
+  * Added `#gps_power` keyword to the `gpstext` filter.
+  * Fixed tab handling in the `kdenlivetitle` producer.
+
+Other
+  * Added 8- and 10-bit encode presets for SVT-AV1.
+  * Fixed building on OpenBSD.
+  * Fixed building on musl libc.
+  * Fixed consumer properties not updating the automatic profile on the `melt` command line.
+  * Added `-loglevel` command line option to `melt`.
+
+
 Version 7.24.0
 
 Framework

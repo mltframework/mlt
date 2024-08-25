@@ -134,7 +134,7 @@ def output(mlt_type, services, type_title)
       end
     else
       puts "No metadata for #{name} #{type_title}"
-    end
+    end unless name.start_with?('lv2.', 'vst2.')
   end 
   index.close
 end
