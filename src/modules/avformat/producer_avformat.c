@@ -1271,6 +1271,25 @@ static void find_first_pts(producer_avformat self, int video_index)
     int64_t prev_pkt_duration = AV_NOPTS_VALUE;
 
     av_init_packet(&pkt);
+
+    if (video_index == -1 && self->audio_index >= 0) {
+        // Special case for audio only files.
+        while (ret >= 0 && pkt_countdown-- > 0 && (self->first_pts == AV_NOPTS_VALUE)) {
+            ret = av_read_frame(context, &pkt);
+            if (ret >= 0 && pkt.stream_index == self->audio_index) {
+                mlt_log_verbose(MLT_PRODUCER_SERVICE(self->parent),
+                                "first_pts %" PRId64 " dts %" PRId64 " pts_dts_delta %d\n",
+                                pkt.pts,
+                                pkt.dts,
+                                (int) (pkt.pts - pkt.dts));
+                self->first_pts = best_pts(self, pkt.pts, pkt.dts);
+            }
+            av_packet_unref(&pkt);
+        }
+        av_seek_frame(context, -1, 0, AVSEEK_FLAG_BACKWARD);
+        return;
+    }
+
     while (ret >= 0 && pkt_countdown-- > 0
            && (self->first_pts == AV_NOPTS_VALUE
                || (vfr_counter < VFR_THRESHOLD && vfr_countdown > 0))) {
@@ -3121,7 +3140,7 @@ static int seek_audio(producer_avformat self, mlt_position position, double time
             int video_index = self->video_index;
             if (video_index == -1)
                 video_index = first_video_index(self);
-            if (self->first_pts == AV_NOPTS_VALUE && video_index >= 0)
+            if (self->first_pts == AV_NOPTS_VALUE)
                 find_first_pts(self, video_index);
         }
 
