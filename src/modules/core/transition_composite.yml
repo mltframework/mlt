@@ -1,7 +1,7 @@
 schema_version: 7.0
 type: transition
 identifier: composite
-title: Composite
+title: Composite (*DEPRECATED*)
 version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
@@ -103,7 +103,7 @@ parameters:
   - identifier: luma
     title: Luma map
     description: >
-      The luma map file name. If not supplied, a dissolve.
+      The luma map file name.
     type: string
     mutable: yes
     widget: fileopen
