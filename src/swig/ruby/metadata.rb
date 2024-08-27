@@ -70,9 +70,9 @@ contributor: <%= x %>
 %     if param['description']
 description:
 %       if param['description'].include? "\n"
-<pre>
+```
 <%= param['description'] %>
-</pre>
+```
 %       else
 <%= "#{ERB::Util.h(param['description'])}  \n" %>
 %       end
