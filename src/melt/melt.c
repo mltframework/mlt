@@ -287,7 +287,7 @@ static int load_consumer(mlt_consumer *consumer, mlt_profile profile, int argc, 
     for (i = 1; i < argc; i++) {
         // See if we need multi consumer.
         multi += !strcmp(argv[i], "-consumer");
-        // Seee if we need the qglsl variant of multi consumer.
+        // See if we need the qglsl variant of multi consumer.
         if (!strncmp(argv[i], "glsl.", 5) || !strncmp(argv[i], "movit.", 6))
             qglsl = 1;
 #if SDL_MAJOR_VERSION == 2
@@ -964,7 +964,8 @@ int main(int argc, char **argv)
 
     if (melt) {
         // Generate an automatic profile if needed.
-        if (backup_profile && !backup_profile->is_explicit) {
+        if ((consumer && backup_profile && !backup_profile->is_explicit)
+            || (!consumer && !profile->is_explicit)) {
             mlt_producer first_producer = mlt_properties_get_data(MLT_PRODUCER_PROPERTIES(melt),
                                                                   "first_producer",
                                                                   NULL);
