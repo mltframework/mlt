@@ -2868,6 +2868,10 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             }
         }
 
+        fps = mlt_properties_get_double(properties, "meta.attr.com.android.capture.fps.markup");
+        if (fps > 0.0 && isfinite(fps))
+            frame_rate = av_d2q(fps, 1024);
+
         self->video_time_base = stream->time_base;
         if (mlt_properties_get(properties, "force_fps")) {
             AVRational force_fps = av_d2q(mlt_properties_get_double(properties, "force_fps"), 1024);
