@@ -1277,7 +1277,7 @@ static void find_first_pts(producer_avformat self, int video_index)
         while (ret >= 0 && pkt_countdown-- > 0 && (self->first_pts == AV_NOPTS_VALUE)) {
             ret = av_read_frame(context, &pkt);
             if (ret >= 0 && pkt.stream_index == self->audio_index) {
-                mlt_log_verbose(MLT_PRODUCER_SERVICE(self->parent),
+                mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
                                 "first_pts %" PRId64 " dts %" PRId64 " pts_dts_delta %d\n",
                                 pkt.pts,
                                 pkt.dts,
