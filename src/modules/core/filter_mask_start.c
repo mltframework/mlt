@@ -1,6 +1,6 @@
 /*
  * filter_mask_start.c -- clone a frame before invoking a filter
- * Copyright (C) 2018-2022 Meltytech, LLC
+ * Copyright (C) 2018-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,7 +53,7 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
     mlt_filter instance = mlt_properties_get_data(properties, "instance", NULL);
     const char *name = mlt_properties_get(properties, "filter");
 
-    if (!name || !strcmp("", name))
+    if (!name || !strcmp("", name) || !strcmp("0", name))
         return frame;
 
     // Create the filter if needed.
