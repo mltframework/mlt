@@ -1,3 +1,4 @@
+color_range=pc
 progressive=1
 f=image2
 vcodec=mjpeg
@@ -6,5 +7,7 @@ an=1
 audio_off=1
 g=1
 bf=0
+pix_fmt=yuvj422p
+colorspace=srgb
 
 meta.preset.extension=jpg
