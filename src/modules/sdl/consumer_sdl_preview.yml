@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: consumer
 identifier: sdl
-title: SDL
+title: SDL (*DEPRECATED*)
 version: 1
 copyright: Meltytech, LLC
 creator: Charles Yates

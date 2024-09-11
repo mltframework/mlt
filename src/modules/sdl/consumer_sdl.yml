@@ -1,7 +1,7 @@
 schema_version: 7.0
 type: consumer
 identifier: sdl
-title: SDL Fast YUV
+title: SDL Fast YUV (*DEPRECATED*)
 version: 1
 copyright: Meltytech, LLC
 creator: Dan Dennedy
@@ -11,6 +11,7 @@ tags:
   - Audio
   - Video
 description: >
+  Deprecated: use "sdl2" instead.
   Simple DirectMedia Layer audio and video output module.
 parameters:
   - identifier: resolution

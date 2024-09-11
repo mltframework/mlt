@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: consumer
 identifier: sdl_still
-title: SDL RGB
+title: SDL RGB (*DEPRECATED*)
 version: 1
 copyright: Meltytech, LLC
 creator: Charles Yates

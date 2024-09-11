@@ -1,7 +1,7 @@
 schema_version: 0.1
 type: consumer
 identifier: sdl_audio
-title: SDL Audio Only
+title: SDL Audio Only (*DEPRECATED*)
 version: 1
 copyright: Meltytech, LLC
 creator: Dan Dennedy
@@ -10,6 +10,7 @@ language: en
 tags:
   - Audio
 description: >
+  Deprecate: use "sdl2_audio" instead.
   Simple DirectMedia Layer audio only output module.
 
 parameters:

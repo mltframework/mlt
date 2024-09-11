@@ -12,6 +12,7 @@ tags:
 description: >
   A key-framable alpha-channel compositor for two frames.
 notes: >
+  Deprecated: use "affine" or "qtblend" instead.
   Performs dissolves and luma wipes in addition to alpha compositing.
   
   By default, the aspect ratio of the B frame is respected and the size 
