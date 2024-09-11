@@ -1368,9 +1368,8 @@ static int seek_video(producer_avformat self,
         AVFormatContext *context = self->video_format;
 
         // We may want to use the source fps if available
-        AVRational source_fps
-            = av_make_q(mlt_properties_get_double(properties, "meta.media.frame_rate_num"),
-                        mlt_properties_get_double(properties, "meta.media.frame_rate_den"));
+        double source_fps = mlt_properties_get_double(properties, "meta.media.frame_rate_num")
+                            / mlt_properties_get_double(properties, "meta.media.frame_rate_den");
 
         if (self->first_pts == AV_NOPTS_VALUE && self->last_position == POSITION_INITIAL)
             find_first_pts(self, self->video_index);
@@ -1382,21 +1381,15 @@ static int seek_video(producer_avformat self,
                    || position - self->video_expected >= seek_threshold
                    || self->last_position < 0) {
             // Calculate the timestamp for the requested frame
-            int64_t timestamp = av_rescale_q_rnd(req_position,
-                                                 av_inv_q(self->video_time_base),
-                                                 source_fps,
-                                                 AV_ROUND_ZERO);
+            int64_t timestamp = req_position / (av_q2d(self->video_time_base) * source_fps);
             if (req_position <= 0)
                 timestamp = 0;
             else if (self->first_pts != AV_NOPTS_VALUE)
                 timestamp += self->first_pts;
             else if (context->start_time != AV_NOPTS_VALUE)
                 timestamp += context->start_time;
-            if (preseek && self->video_time_base.num != 0)
-                timestamp = av_add_stable(self->video_time_base,
-                                          timestamp,
-                                          AV_TIME_BASE_Q,
-                                          -2 * AV_TIME_BASE);
+            if (preseek && av_q2d(self->video_time_base) != 0)
+                timestamp -= 2 / av_q2d(self->video_time_base);
             if (timestamp < 0)
                 timestamp = 0;
             mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
@@ -2209,21 +2202,17 @@ static int producer_get_image(mlt_frame frame,
     // Cache miss
 
     // We may want to use the source fps if available
-    int source_fps_num = mlt_properties_get_int(properties, "meta.media.frame_rate_num");
-    int source_fps_den = mlt_properties_get_int(properties, "meta.media.frame_rate_den");
-    mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
-    AVRational source_fps = av_make_q(source_fps_num, source_fps_den);
-    AVRational profile_fps = av_make_q(profile->frame_rate_num, profile->frame_rate_den);
+    double source_fps = mlt_properties_get_double(properties, "meta.media.frame_rate_num")
+                        / mlt_properties_get_double(properties, "meta.media.frame_rate_den");
 
     // This is the physical frame position in the source
-    int64_t req_position = av_rescale_q(position, source_fps, profile_fps);
+    int64_t req_position = (int64_t) (position / mlt_producer_get_fps(producer) * source_fps + 0.5);
 
     // Determines if we have to decode all frames in a sequence - when there temporal compression is used.
     const AVCodecDescriptor *descriptor = avcodec_descriptor_get(codec_params->codec_id);
     int must_decode = descriptor && !(descriptor->props & AV_CODEC_PROP_INTRA_ONLY);
 
     double delay = mlt_properties_get_double(properties, "video_delay");
-    int64_t delay64 = (int64_t) (delay * AV_TIME_BASE);
 
     // Seek if necessary
     double speed = mlt_producer_get_speed(producer);
@@ -2344,8 +2333,6 @@ static int producer_get_image(mlt_frame frame,
             // We only deal with video from the selected video_index
             if (self->pkt.stream_index == self->video_index) {
                 int64_t pts = best_pts(self, self->pkt.pts, self->pkt.dts);
-                // default to decoding all intra-only frames from req_position to the future
-                int should_decode = int_position >= req_position;
                 if (pts != AV_NOPTS_VALUE) {
                     if (!self->video_seekable && self->first_pts == AV_NOPTS_VALUE)
                         self->first_pts = pts;
@@ -2353,49 +2340,11 @@ static int producer_get_image(mlt_frame frame,
                         pts -= self->first_pts;
                     else if (context->start_time != AV_NOPTS_VALUE)
                         pts -= context->start_time;
-                    int_position = av_rescale_q(av_add_stable(self->video_time_base,
-                                                              pts,
-                                                              AV_TIME_BASE_Q,
-                                                              delay64),
-                                                source_fps,
-                                                av_inv_q(self->video_time_base));
+                    int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
+                                                  * source_fps
+                                              + 0.5);
                     if (int_position == self->last_position)
                         int_position = self->last_position + 1;
-
-                    if (self->pkt.duration != AV_NOPTS_VALUE) {
-                        // compute the interval this intra-only packet covers
-                        // [int_position, int_end)
-                        int64_t int_end = av_rescale_q(av_add_stable(self->video_time_base,
-                                                                     pts + self->pkt.duration,
-                                                                     AV_TIME_BASE_Q,
-                                                                     delay64),
-                                                       source_fps,
-                                                       av_inv_q(self->video_time_base));
-
-                        /* req_position2 is a "future" req_position computed in a clever way.
-                         * If the input fps is 50 and the output fps is 25, then
-                         * req_position2 relates to int_position and int_end like this:
-                         *
-                         *  int_position req_position2 int_end  decode?
-                         *   0            0             1        yes
-                         *   1            2             2        no
-                         *   2            2             3        yes
-                         *   3            4             4        no
-                         *   4            4             5        yes
-                         *
-                         * and so on. In other words, for intra-only, only frames where
-                         * int_position <= req_position2 < int_end are worthwhile decoding.
-                         */
-                        int64_t req_position2 = av_rescale_q(av_rescale_q_rnd(int_position,
-                                                                              profile_fps,
-                                                                              source_fps,
-                                                                              AV_ROUND_UP),
-                                                             source_fps,
-                                                             profile_fps);
-
-                        // only decode intra-only frames that are worthwhile to decode
-                        should_decode = int_position >= req_position2 && req_position2 < int_end;
-                    }
                 }
                 mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
                               "V pkt.pts %" PRId64 " pkt.dts %" PRId64 " req_pos %" PRId64
@@ -2425,7 +2374,7 @@ static int producer_get_image(mlt_frame frame,
                 self->last_position = int_position;
 
                 // Decode the image
-                if (must_decode || should_decode || !self->pkt.data) {
+                if (must_decode || int_position >= req_position || !self->pkt.data) {
 #if LIBAVCODEC_VERSION_MAJOR < 61
                     self->video_codec->reordered_opaque = int_position;
 #endif
@@ -2497,12 +2446,9 @@ static int producer_get_image(mlt_frame frame,
                             pts -= self->first_pts;
                         else if (context->start_time != AV_NOPTS_VALUE)
                             pts -= context->start_time;
-                        int_position = av_rescale_q(av_add_stable(self->video_time_base,
-                                                                  pts,
-                                                                  AV_TIME_BASE_Q,
-                                                                  delay64),
-                                                    source_fps,
-                                                    av_inv_q(self->video_time_base));
+                        int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
+                                                      * source_fps
+                                                  + 0.5);
                     }
 
                     if (int_position < req_position)
