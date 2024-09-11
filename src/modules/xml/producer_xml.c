@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -227,12 +227,13 @@ static inline int is_known_prefix(const char *resource)
     char *prefix = strchr(resource, ':');
     if (prefix) {
         const char *whitelist[]
-            = {"alsa",  "avfoundation", "dshow",  "fbdev",        "gdigrab",    "jack",    "lavfi",
-               "oss",   "pulse",        "sndio",  "video4linux2", "v4l2",       "x11grab", "async",
-               "cache", "concat",       "crypto", "data",         "ffrtmphttp", "file",    "ftp",
-               "fs",    "gopher",       "hls",    "http",         "httpproxy",  "mmsh",    "mmst",
-               "pipe",  "rtmp",         "rtmpt",  "rtp",          "srtp",       "subfile", "tcp",
-               "udp",   "udplite",      "unix",   "color",        "colour",     "consumer"};
+            = {"alsa",       "avfoundation", "dshow", "fbdev",  "gdigrab",      "jack",
+               "lavfi",      "oss",          "pulse", "sndio",  "video4linux2", "v4l2",
+               "x11grab",    "async",        "cache", "concat", "crypto",       "data",
+               "ffrtmphttp", "file",         "ftp",   "fs",     "gopher",       "hls",
+               "http",       "httpproxy",    "https", "mmsh",   "mmst",         "pipe",
+               "rtmp",       "rtmpt",        "rtp",   "srtp",   "subfile",      "tcp",
+               "udp",        "udplite",      "unix",  "color",  "colour",       "consumer"};
         size_t i, n = prefix - resource;
         for (i = 0; i < sizeof(whitelist) / sizeof(whitelist[0]); ++i) {
             if (!strncmp(whitelist[i], resource, n))
