@@ -3,7 +3,7 @@
  * \brief provides a map between service and shared objects
  * \see mlt_repository_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -466,14 +466,19 @@ mlt_properties mlt_repository_metadata(mlt_repository self,
                 metadata = callback(type, service, data);
 
                 // Cache the metadata
-                if (metadata)
+                if (metadata) {
+                    // Most links wrap a filter and references the filter's metadata
+                    mlt_destructor dtor = (type == mlt_service_link_type)
+                                              ? NULL
+                                              : (mlt_destructor) mlt_properties_close;
                     // Include dellocation and serialisation
                     mlt_properties_set_data(properties,
                                             "metadata",
                                             metadata,
                                             0,
-                                            (mlt_destructor) mlt_properties_close,
+                                            dtor,
                                             (mlt_serialiser) mlt_properties_serialise_yaml);
+                }
             }
         }
     }
