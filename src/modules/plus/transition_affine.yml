@@ -2,7 +2,7 @@ schema_version: 7.0
 type: transition
 identifier: affine
 title: Transform
-version: 6
+version: 7
 copyright: Meltytech, LLC
 creator: Charles Yates
 contributor:
@@ -298,6 +298,7 @@ parameters:
     default: 0
 
   - identifier: rect
+    argument: yes
     title: Rectangle
     description: >
       This specifies the size and position of the image. The format of this is
