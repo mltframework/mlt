@@ -1,6 +1,24 @@
 MLT Release Notes
 -----------------
 
+Version 7.28.0
+
+This fixes a couple of major regressions in the previous version 7.26.0:
+  * Fixed seeking and frozen video due by reverting "Improved performance with
+    intra-only video and reducing the frame rate."
+  * Fixed using `melt` to render MLT XML with OpenGL effects from `movit`.
+
+Other fixes and changes:
+  * Deprecated the `composite` transition and the `sdl` and `ndi` modules.
+  * Fixed Android camera video has the wrong frame rate (broken in v7.26.0).
+  * Fixed audio not playing for audio-only DTS WMA.
+  * Fixed using "https:" URLs in the `xml` producer.
+  * Fixed crash on exit when running `melt -query` or `melt -query links`.
+  * Added a `transition` property to the `watermark` filter. Now, it defaults
+    to using `affine`.
+  * Changed `affine` transition argument to set `rect` property if supplied.
+
+
 Version 7.26.0
 
 Framework

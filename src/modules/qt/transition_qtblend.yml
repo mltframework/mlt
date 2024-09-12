@@ -1,4 +1,4 @@
-schema_version: 7
+schema_version: 7.0
 type: transition
 identifier: qtblend
 title: Composite and transform

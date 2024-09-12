@@ -9,6 +9,10 @@ config.log
 .depend
 *~
 *.cxx
+demo/*.dv
+demo/*.mpeg
+demo/*.ogg
+demo/photos
 docs/html/*
 releases/*
 patches/*
