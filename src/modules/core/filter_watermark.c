@@ -1,6 +1,6 @@
 /*
  * filter_watermark.c -- watermark filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,15 +56,14 @@ static int filter_get_image(mlt_frame frame,
 
     // Get the resource to use
     char *resource = mlt_properties_get(properties, "resource");
-
-    // Get the old resource
     char *old_resource = mlt_properties_get(properties, "_old_resource");
+    const char *transition = mlt_properties_get(properties, "transition");
 
     // Create a composite if we don't have one
     if (composite == NULL) {
         // Create composite via the factory
         mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-        composite = mlt_factory_transition(profile, "composite", NULL);
+        composite = mlt_factory_transition(profile, transition, NULL);
 
         // Register the composite for reuse/destruction
         if (composite != NULL)
@@ -82,6 +81,7 @@ static int filter_get_image(mlt_frame frame,
         mlt_properties composite_properties = MLT_TRANSITION_PROPERTIES(composite);
 
         // Pass all the composite. properties on the filter down
+        mlt_properties_set_int(composite_properties, "fill", 0);
         mlt_properties_pass(composite_properties, properties, "composite.");
 
         if (mlt_properties_get(properties, "composite.out") == NULL)
@@ -131,7 +131,10 @@ static int filter_get_image(mlt_frame frame,
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
     // Process all remaining filters first
-    *format = mlt_image_yuv422;
+    mlt_image_format img_format = mlt_image_rgba;
+    if (transition && !strcmp("composite", transition))
+        img_format = mlt_image_yuv422;
+    *format = img_format;
     error = mlt_frame_get_image(frame, image, format, width, height, 0);
 
     // Only continue if we have both producer and composite
@@ -180,7 +183,7 @@ static int filter_get_image(mlt_frame frame,
                 mlt_properties_set_int(b_props, "distort", 1);
             }
 
-            *format = mlt_image_yuv422;
+            *format = img_format;
             if (mlt_properties_get_int(properties, "reverse") == 0) {
                 // Apply all filters that are attached to this filter to the b frame
                 mlt_service_apply_filters(MLT_FILTER_SERVICE(filter), b_frame, 0);
@@ -269,6 +272,7 @@ mlt_filter filter_watermark_init(mlt_profile profile,
         mlt_properties_set(properties, "factory", mlt_environment("MLT_PRODUCER"));
         if (arg != NULL)
             mlt_properties_set(properties, "resource", arg);
+        mlt_properties_set(properties, "transition", "affine");
         // Ensure that attached filters are handled privately
         mlt_properties_set_int(properties, "_filter_private", 1);
     }

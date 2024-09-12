@@ -2,7 +2,7 @@ schema_version: 7.0
 type: filter
 identifier: watermark
 title: Overlay
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
@@ -11,7 +11,7 @@ tags:
   - Video
 description: Overlay text or images onto the video
 notes: >
-  The watermark filter combines a frame producer and a composite transition to 
+  The watermark filter combines a frame producer and a transition to
   overlay the specified text or image onto the video.
 
   Supplying a filename with extension ".txt" causes the loader to load a pango 
@@ -38,6 +38,14 @@ parameters:
     readonly: no
     widget: fileopen
     
+  - identifier: transition
+    title: Composite Service
+    type: string
+    description: The name of the MLT transition service to use for compositing.
+    default: affine
+    required: yes
+    readonly: no
+
   - identifier: distort
     title: Allow distorted scaling
     type: integer
@@ -55,9 +63,9 @@ parameters:
     readonly: no
 
   - identifier: composite.*
-    title: Composite
+    title: Composite Service Property
     description: |
-      Properties may be set on the encapsulated composite.
+      Properties may be set on the encapsulated transition.
       e.g.: composite.valign=c
       See "composite" transition for details.
     readonly: no
