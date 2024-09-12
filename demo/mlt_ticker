@@ -6,11 +6,9 @@ colour:0 out=299 \
 "+The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog..txt" \
 out=299 \
 -transition \
-composite a_track=0 b_track=1 out=299 distort=1 \
-geometry=0/70%:100%x11%:100% \
-sliced_composite=1 \
+affine a_track=0 b_track=1 out=299 distort=1 \
+rect=0/70%:100%x11%:100% \
 -transition \
-composite a_track=0 b_track=2 out=299 titles=1 \
-geometry="0=100%/70%:999%x20%; -1=-299%/70%:999%x20%" \
-sliced_composite=1 \
+affine a_track=0 b_track=2 out=299 fill=0 \
+rect="0=100%/70%:999%x20%; -1=-299%/70%:999%x20%" \
 $*

@@ -2,6 +2,6 @@ melt \
 clip1.dv out=74 \
 -track \
 -blank 49 clip2.mpeg \
--transition composite:"0=57%/10%:33%x33%; -1=0%/0%:100%x100%" progressive=1 distort=true in=50 out=74 a_track=0 b_track=1 sliced_composite=1 \
+-transition affine:"0=57%/10%:33%x33%; -1=0%/0%:100%x100%" progressive=1 fill=0 distort=1 in=50 out=74 a_track=0 b_track=1 \
 -transition mix:-1 in=50 out=74 a_track=0 b_track=1 \
 $*

@@ -1,10 +1,10 @@
 melt \
 "+hello~world.txt" align=1 out=1000 \
--track "+hello~world.txt" align=1 out=1000 fgcolour=0x000000ff \
+-track "+hello~world.txt" align=1 out=1000 fgcolour=#000000 \
 -track watermark1.png out=1000 \
 -track clip3.dv \
 -filter greyscale track=2 \
--transition composite:"0=21%/11%:100%x100%:50; -1=61%/41%:100%x100%" out=99 a_track=3 b_track=1 sliced_composite=1 \
--transition composite:"0=20%/10%:100%x100%; -1=60%/40%:100%x100%" out=99 a_track=3 b_track=0 sliced_composite=1 \
--transition composite:85%/80%:10%x10%:30 out=1000 a_track=3 b_track=2 sliced_composite=1 \
+-transition affine:"0=21%/11%:100%x100%:50; -1=61%/41%:100%x100%" fill=0 out=99 a_track=3 b_track=1 \
+-transition affine:"0=20%/10%:100%x100%; -1=60%/40%:100%x100%" fill=0 out=99 a_track=3 b_track=0 \
+-transition affine:85%/80%:10%x10%:30 fill=0 out=1000 a_track=3 b_track=2 \
 $*

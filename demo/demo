@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export MLT_PROFILE=dv_pal
+export MLT_PROFILE=dv_ntsc
 export LC_NUMERIC=C
 
 function show_consumers( )

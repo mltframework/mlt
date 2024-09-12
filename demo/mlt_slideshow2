@@ -1,7 +1,7 @@
 melt \
 photos/.all.jpg ttl=75 \
 -attach crop center=1 \
--attach affine transition.cycle=225 transition.geometry="0=0/0:100%x100%;74=-100/-100:120%x120%;75=-60/-60:110%x110%;149=0/0:110%x110%;150=0/-60:110%x110%;224=-60/0:110%x110%" \
+-attach affine transition.cycle=225 transition.rect="0=0/0:100%x100%;74=-20%/-20%:120%x120%;75=-10%/-10%:110%x110%;149=0/0:110%x110%;150=0/-10%:110%x110%;224=-10%/0:110%x110%" \
 -filter luma cycle=75 duration=25 \
 -track music1.ogg \
 -transition mix \

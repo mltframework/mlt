@@ -3,8 +3,8 @@ melt \
 		family="Sans" \
 		size="72" \
 		weight="700" \
-		fgcolour=0x00000000 \
-		bgcolour=0xff9933aa \
+                fgcolour=#000000 \
+                bgcolour=#aaff9933 \
 		pad=10 \
 -track music1.ogg \
 -track clip1.dv out=149 clip2.mpeg \
@@ -29,11 +29,10 @@ melt \
 	a_track=2 \
 	b_track=1 \
 -transition \
-	composite:0%/80%:100%x20% \
+        affine:0%/80%:100%x20% \
 	distort=1 \
 	in=100 \
 	out=299 \
 	a_track=2 \
 	b_track=0 \
-	sliced_composite=1 \
 $*

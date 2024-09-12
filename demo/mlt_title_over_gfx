@@ -5,20 +5,18 @@ melt \
 -track \
 	clip1.dv \
 -transition \
-    composite:30%/20%:40%x60% \
+    affine:30%/20%:40%x60% \
 		in=50 \
 		out=199 \
 		a_track=0 \
 		b_track=1 \
 		distort=1 \
-		sliced_composite=1 \
 -transition \
-    composite:"0=0%/75%:100%x20%:0; 24=0%/75%:100%x20%:100%; -25=0%/75%:100%x20%:100%; -1=0%/75%:100%x20%:0" \
+    affine:"0=0%/75%:100%x20%:0; 24=0%/75%:100%x20%:100%; -25=0%/75%:100%x20%:100%; -1=0%/75%:100%x20%:0" \
 		in=50 \
 		out=199 \
 		a_track=2 \
 		b_track=0 \
 		luma=luma1.pgm \
 		distort=1 \
-		sliced_composite=1 \
 $*

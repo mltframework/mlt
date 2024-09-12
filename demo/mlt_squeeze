@@ -3,7 +3,7 @@ clip1.dv out=124 clip2.dv out=149 clip3.dv in=75 out=224 clip1.dv \
 -track \
 -blank 99 colour:black out=49 -blank 99 colour:black out=49 -blank 99 colour:black out=49 \
 -group progressive=1 distort=1 \
--transition composite geometry="0%/0%:100%x100%;25=50%/0%:5%x100%;-1=0%/0%:100%x100%" a_track=1 b_track=0 in=100 out=149 sliced_composite=1 \
--transition composite geometry="0%/0%:100%x100%;25=0%/50%:100%x5%;-1=0%/0%:100%x100%" a_track=1 b_track=0 in=250 out=299 sliced_composite=1 \
--transition composite geometry="0%/0%:100%x100%;25=100%/0%:5%x100%;-1=0%/0%:100%x100%" a_track=1 b_track=0 in=400 out=449 sliced_composite=1 \
+-transition affine rect="0%/0%:100%x100%;25=50%/0%:5%x100%;-1=0%/0%:100%x100%" a_track=1 b_track=0 in=100 out=149 \
+-transition affine rect="0%/0%:100%x100%;25=0%/50%:100%x5%;-1=0%/0%:100%x100%" a_track=1 b_track=0 in=250 out=299 \
+-transition affine rect="0%/0%:100%x100%;25=100%/0%:5%x100%;-1=0%/0%:100%x100%" a_track=1 b_track=0 in=400 out=449 \
 $*

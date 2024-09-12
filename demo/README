@@ -43,7 +43,7 @@ Watermark
 
 My name is...
 
-	Titles are very easy to composite in realtime. The titler uses Pango
+        Titles are very easy to overlay in realtime. The titler uses Pango
 	with the FreeType2 rendering backend. This means it supports high
 	quality scalable font rendering with anti-aliasing, unicode (UTF-8),
 	and Pango markup capabilities. The compsiting here respects the aspect
@@ -53,10 +53,10 @@ My name is...
 	is doing field-based rendering. So, when displayed non-progressively
 	with SDL, you can see motion artifacts during animation. 
 	
-A composite transition
+An overlay transition
 
-	The compositor also handles video over video as demonstrated in this
-	usage of the compositor to create a special transition. This demonstration
+        The affine transition also handles video over video as demonstrated in this
+        usage of affine to create a special transition. This demonstration
 	also crossfades the audio during the transition! Progressive rendering
 	is explicitly enabled on the compositor due to the poor results that
 	would otherwise occur due to scaling an interleaved video frame and moving
@@ -214,6 +214,6 @@ Pango Keyframed Markup
 	separate lines. For .mpl the key is a frame number and the value is
 	Pango Markup Language. A tilde is interpreted as a new line. This
 	example also demonstrates using the watermark and the alignment
-	properties of its encapsulated composite transition where halign
+        properties of its encapsulated transition where halign
 	is the horizontal, valign is the vertical, c is for center, and m
 	is for middle.
