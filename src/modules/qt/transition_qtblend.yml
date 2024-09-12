@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7
 type: transition
 identifier: qtblend
 title: Composite and transform
@@ -19,6 +19,7 @@ parameters:
     description: >
       Keyframable rectangle specification.
     mutable: yes
+    argument: yes
 
   - identifier: distort
     title: Ignore aspect ratio

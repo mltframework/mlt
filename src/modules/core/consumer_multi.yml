@@ -15,7 +15,7 @@ notes: |
   There are a few ways of defining each of the outputs and their properties.
   One form is a flat set of properties on this consumer that follows the pattern:
   <N>=<service> [<N>.<property>=<value>]*
-  For example, 0=sdl 0.rescale=bilinear 1=avformat 1.target=foo.dv ...
+  For example, 0=sdl2 0.rescale=bilinear 1=avformat 1.target=foo.dv ...
   To change the profile for a particular output set the property "mlt_profile."
   You can put these into a MLT properties file and supply that to this consumer.
 
