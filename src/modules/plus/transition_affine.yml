@@ -23,11 +23,12 @@ parameters:
     widget: checkbox
 
   - identifier: fill
-    title: Upscale to fill
+    title: Fill rectangle
     description: >
-      Determines whether the image will be scaled up to fill the rectangle
-      or whether the size will be constrained to 100% of the profile
-      resolution.
+      Determines whether the image will be scaled up to fill the rectangle.
+      Otherwise, if the B frame image fits within the rectangle, it will not
+      be scaled. If 0, and the B frame image exceeds the rectangle, then it is
+      scaled down to fit within the rectangle.
     type: boolean
     default: 1
     mutable: yes
@@ -261,18 +262,6 @@ parameters:
     type: boolean
     default: 0
     mutable: yes
-
-  - identifier: fill
-    title: Fill rectangle
-    description: >
-      Determines whether the image will be scaled up to fill the rectangle.
-      Otherwise, if the B frame image fits within the rectangle, it will not
-      be scaled. If 0, and the B frame image exceeds the rectangle, then it is
-      scaled down to fit within the rectangle.
-    type: boolean
-    default: 1
-    mutable: yes
-    widget: checkbox
 
   - identifier: halign
     title: Horizontal alignment
