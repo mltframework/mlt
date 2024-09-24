@@ -288,15 +288,6 @@ static void init_audio_filtergraph(mlt_filter filter,
         mlt_log_error(filter, "Cannot set sink sample rates\n");
         goto fail;
     }
-    ret = av_opt_set_int_list(pdata->avbuffsink_ctx,
-                              "channel_counts",
-                              channel_counts,
-                              -1,
-                              AV_OPT_SEARCH_CHILDREN);
-    if (ret < 0) {
-        mlt_log_error(filter, "Cannot set sink channel counts\n");
-        goto fail;
-    }
 #if HAVE_FFMPEG_CH_LAYOUT
     ret = av_opt_set(pdata->avbuffsink_ctx,
                      "ch_layouts",
@@ -307,6 +298,15 @@ static void init_audio_filtergraph(mlt_filter filter,
         goto fail;
     }
 #else
+    ret = av_opt_set_int_list(pdata->avbuffsink_ctx,
+                              "channel_counts",
+                              channel_counts,
+                              -1,
+                              AV_OPT_SEARCH_CHILDREN);
+    if (ret < 0) {
+        mlt_log_error(filter, "Cannot set sink channel counts\n");
+        goto fail;
+    }
     ret = av_opt_set_int_list(pdata->avbuffsink_ctx,
                               "channel_layouts",
                               channel_layouts,
