@@ -310,7 +310,6 @@ MLTPP_0.8.8 {
       "Mlt::Properties::set(char const*, char const*)";
       "Mlt::Properties::set(char const*, double)";
       "Mlt::Properties::set(char const*, int)";
-      "Mlt::Properties::set(char const*, long)";
       "Mlt::Properties::set(char const*, void*, int, void (*)(void*), char* (*)(void*, int))";
       "Mlt::Properties::set_lcnumeric(char const*)";
       "Mlt::Properties::setup_wait_for(char const*)";
@@ -414,6 +413,8 @@ MLTPP_0.8.8 {
       "Mlt::Transition::Transition(Mlt::Transition&)";
       "Mlt::Transition::Transition(mlt_transition_s*)";
     };
+# "Mlt::Properties::set(char const*, int64_t)";
+  _ZN3Mlt10Properties3setEPKc[lx];
 
   local: *;
 };
@@ -542,7 +543,7 @@ MLTPP_6.14.0 {
       "Mlt::Transition::connect(Mlt::Service&, int, int)";
       "Mlt::Producer::get_creation_time()";
   };
-# "Mlt::Producer::set_creation_time(long)";
+# "Mlt::Producer::set_creation_time(int64_t)";
   _ZN3Mlt8Producer17set_creation_timeE[lx];
 } MLTPP_6.10.0;
 
