@@ -540,10 +540,10 @@ MLTPP_6.14.0 {
       "Mlt::Service::set_profile(mlt_profile_s*)";
       "Mlt::Playlist::reorder(int const*)";
       "Mlt::Transition::connect(Mlt::Service&, int, int)";
-#      "Mlt::Producer::set_creation_time(long)";
-      _ZN3Mlt8Producer17set_creation_timeE[lx];
       "Mlt::Producer::get_creation_time()";
   };
+# "Mlt::Producer::set_creation_time(long)";
+  _ZN3Mlt8Producer17set_creation_timeE[lx];
 } MLTPP_6.10.0;
 
 MLTPP_6.18.0 {
