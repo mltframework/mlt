@@ -1,0 +1,12 @@
+schema_version: 7.0
+type: filter
+identifier: openfx
+title: OPENFX
+version: 1
+license: GPLv2
+language: en
+url: https://openeffects.org/
+creator: mr.fantastic <mrfantastic@firemail.cc>
+tags:
+  - Video
+description: Process videos using OpenFX plugins.
