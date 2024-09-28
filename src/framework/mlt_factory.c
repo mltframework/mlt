@@ -153,7 +153,10 @@ mlt_repository mlt_factory_init(const char *directory)
 #ifdef __APPLE__
         _NSGetExecutablePath(path, &size);
 #else
-        readlink("/proc/self/exe", path, size);
+        ssize_t len = readlink("/proc/self/exe", path, size - 1);
+        if (len != -1) {
+            path[len] = '\0';
+        }
 #endif
         char *appdir = mlt_dirname(mlt_dirname(strdup(path)));
         mlt_properties_set(global_properties, "MLT_APPDIR", appdir);
