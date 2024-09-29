@@ -405,6 +405,71 @@ static char *filter_restricted(const char *in)
     return out;
 }
 
+static AVRational guess_frame_rate(producer_avformat self, AVStream *stream)
+{
+    AVRational frame_rate = av_guess_frame_rate(self->video_format, stream, NULL);
+    double fps = av_q2d(frame_rate);
+
+    // Verify and sanitize the frame rate.
+    if (isnan(fps) || isinf(fps) || fps == 0) {
+        frame_rate = stream->avg_frame_rate;
+        fps = av_q2d(frame_rate);
+    }
+    // With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
+    // avg_frame_rate gives some approximate value that does not well match the media.
+    // Also, on my sample where r_frame_rate = 1000, using avg_frame_rate directly
+    // results in some very choppy output, but some value slightly different works
+    // great.
+    if (av_q2d(stream->r_frame_rate) >= 1000 && av_q2d(stream->avg_frame_rate) > 0) {
+        frame_rate = av_d2q(av_q2d(stream->avg_frame_rate), 1024);
+        fps = av_q2d(frame_rate);
+    }
+    // XXX frame rates less than 1 fps are not considered sane
+    if (isnan(fps) || isinf(fps) || fps < 1.0) {
+        // Get the frame rate from the codec.
+        frame_rate.num = self->video_codec->time_base.den;
+        frame_rate.den = self->video_codec->time_base.num * self->video_codec->ticks_per_frame;
+        fps = av_q2d(frame_rate);
+    }
+    if (isnan(fps) || isinf(fps) || fps < 1.0) {
+        // Use the profile frame rate if all else fails.
+        mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
+        frame_rate.num = profile->frame_rate_num;
+        frame_rate.den = profile->frame_rate_den;
+    }
+
+    // Normalize broadcast frame rates for Matroska
+    if (self->video_format->iformat->name && strstr(self->video_format->iformat->name, "matroska")) {
+        switch (lrint(100000.0 * frame_rate.num / frame_rate.den)) {
+        case 2997003:
+            frame_rate.num = 30000;
+            frame_rate.den = 1001;
+            break;
+        case 5994006:
+            frame_rate.num = 60000;
+            frame_rate.den = 1001;
+            break;
+        case 2397602:
+            frame_rate.num = 24000;
+            frame_rate.den = 1001;
+            break;
+        case 4795204:
+            frame_rate.num = 48000;
+            frame_rate.den = 1001;
+            break;
+        default:
+            break;
+        }
+    }
+
+    fps = mlt_properties_get_double(MLT_PRODUCER_PROPERTIES(self->parent),
+                                    "meta.attr.com.android.capture.fps.markup");
+    if (fps > 0.0 && isfinite(fps))
+        frame_rate = av_d2q(fps, 1024);
+
+    return frame_rate;
+}
+
 /** Find the default streams.
 */
 
@@ -448,11 +513,8 @@ static mlt_properties find_default_streams(producer_avformat self)
             }
             mlt_properties_set(meta_media, key, "video");
             snprintf(key, sizeof(key), "meta.media.%u.stream.frame_rate", i);
-            double r_frame_rate = av_q2d(context->streams[i]->r_frame_rate);
-            double ffmpeg_fps = isfinite(r_frame_rate)
-                                    ? r_frame_rate
-                                    : av_q2d(context->streams[i]->avg_frame_rate);
-            mlt_properties_set_double(meta_media, key, ffmpeg_fps);
+            AVRational frame_rate = guess_frame_rate(self, context->streams[i]);
+            mlt_properties_set_double(meta_media, key, av_q2d(frame_rate));
 
             const char *projection = get_projection(context->streams[i]);
             if (projection) {
@@ -878,6 +940,7 @@ static int setup_video_filters(producer_avformat self)
 
     // From ffplay.c:configure_video_filters().
     char buffersrc_args[256];
+    AVRational frame_rate = guess_frame_rate(self, stream);
     snprintf(buffersrc_args,
              sizeof(buffersrc_args),
              "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d:frame_rate=%d/%d",
@@ -888,8 +951,8 @@ static int setup_video_filters(producer_avformat self)
              stream->time_base.den,
              mlt_properties_get_int(properties, "meta.media.sample_aspect_num"),
              FFMAX(mlt_properties_get_int(properties, "meta.media.sample_aspect_den"), 1),
-             stream->r_frame_rate.num,
-             FFMAX(stream->r_frame_rate.den, 1));
+             frame_rate.num,
+             FFMAX(frame_rate.den, 1));
 
     int result = avfilter_graph_create_filter(&self->vfilter_in,
                                               avfilter_get_by_name("buffer"),
@@ -2776,67 +2839,7 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
         mlt_properties_set_int(properties, "height", codec_params->height);
         get_aspect_ratio(properties, stream, codec_params);
 
-        // Start with the muxer frame rate.
-        AVRational frame_rate = stream->r_frame_rate;
-        double fps = av_q2d(frame_rate);
-
-        // Verify and sanitize the muxer frame rate.
-        if (isnan(fps) || isinf(fps) || fps == 0) {
-            frame_rate = stream->avg_frame_rate;
-            fps = av_q2d(frame_rate);
-        }
-        // With my samples when r_frame_rate != 1000 but avg_frame_rate is valid,
-        // avg_frame_rate gives some approximate value that does not well match the media.
-        // Also, on my sample where r_frame_rate = 1000, using avg_frame_rate directly
-        // results in some very choppy output, but some value slightly different works
-        // great.
-        if (av_q2d(stream->r_frame_rate) >= 1000 && av_q2d(stream->avg_frame_rate) > 0) {
-            frame_rate = av_d2q(av_q2d(stream->avg_frame_rate), 1024);
-            fps = av_q2d(frame_rate);
-        }
-        // XXX frame rates less than 1 fps are not considered sane
-        if (isnan(fps) || isinf(fps) || fps < 1.0) {
-            // Get the frame rate from the codec.
-            frame_rate.num = self->video_codec->time_base.den;
-            frame_rate.den = self->video_codec->time_base.num * self->video_codec->ticks_per_frame;
-            fps = av_q2d(frame_rate);
-        }
-        if (isnan(fps) || isinf(fps) || fps < 1.0) {
-            // Use the profile frame rate if all else fails.
-            mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
-            frame_rate.num = profile->frame_rate_num;
-            frame_rate.den = profile->frame_rate_den;
-        }
-
-        // Normalize broadcast frame rates for Matroska
-        if (self->video_format->iformat->name
-            && strstr(self->video_format->iformat->name, "matroska")) {
-            switch (lrint(100000.0 * frame_rate.num / frame_rate.den)) {
-            case 2997003:
-                frame_rate.num = 30000;
-                frame_rate.den = 1001;
-                break;
-            case 5994006:
-                frame_rate.num = 60000;
-                frame_rate.den = 1001;
-                break;
-            case 2397602:
-                frame_rate.num = 24000;
-                frame_rate.den = 1001;
-                break;
-            case 4795204:
-                frame_rate.num = 48000;
-                frame_rate.den = 1001;
-                break;
-            default:
-                break;
-            }
-        }
-
-        fps = mlt_properties_get_double(properties, "meta.attr.com.android.capture.fps.markup");
-        if (fps > 0.0 && isfinite(fps))
-            frame_rate = av_d2q(fps, 1024);
-
+        AVRational frame_rate = guess_frame_rate(self, stream);
         self->video_time_base = stream->time_base;
         if (mlt_properties_get(properties, "force_fps")) {
             AVRational force_fps = av_d2q(mlt_properties_get_double(properties, "force_fps"), 1024);
