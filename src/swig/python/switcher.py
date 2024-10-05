@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Import required modules
-import mlt
+import mlt7 as mlt
 import time
 import sys
 import tornado.ioloop

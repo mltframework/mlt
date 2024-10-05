@@ -27,7 +27,7 @@ if (!producer.is_valid()) {
 
 console.log('get_fps', producer.get_fps())
 
-let consumer = new Consumer(profile, 'sdl')
+let consumer = new Consumer(profile, 'sdl2')
 
 consumer.connect(producer)
 consumer.start()

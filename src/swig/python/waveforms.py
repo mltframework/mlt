@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import mlt
+import mlt7 as mlt
 from PIL import Image
 
 mlt.Factory.init()

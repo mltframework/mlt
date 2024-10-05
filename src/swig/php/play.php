@@ -5,7 +5,7 @@ mlt_factory_init(NULL);
 $profile = new_profile("dv_ntsc");
 $p = new_producer( $profile, $filename );
 if ( $p ) {
-	$c = new_consumer( $profile, "sdl" );
+	$c = new_consumer( $profile, "sdl2" );
 	consumer_connect( $c, $p );
 	$e = properties_setup_wait_for( $c, "consumer-stopped" );
 	consumer_start( $c );

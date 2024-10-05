@@ -9,8 +9,7 @@ public class Play {
 		Profile profile = new Profile("");
 		Producer p = new Producer(profile, args[0], null);
 		if (p.is_valid()) {
-			Consumer c = new Consumer(profile, "sdl", null);
-			c.set("rescale", "none");
+			Consumer c = new Consumer(profile, "sdl2", null);
 			c.connect(p);
 			c.start();
 			while (!c.is_stopped())

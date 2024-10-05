@@ -18,10 +18,7 @@ if ( $p->is_valid( ) )
 	$p->set( "eof", "loop" );
 
 	# Create the consumer
-	$c = new mlt::FilteredConsumer( $profile, "sdl" );
-
-	# Turn of the default rescaling
-	$c->set( "rescale", "none" );
+	$c = new mlt::FilteredConsumer( $profile, "sdl2" );
 
 	# Connect the producer to the consumer
 	$c->connect( $p );

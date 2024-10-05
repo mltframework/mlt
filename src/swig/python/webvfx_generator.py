@@ -19,7 +19,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # Import required modules
-import mlt
+import mlt7 as mlt
 import time
 import sys
 import tornado.ioloop

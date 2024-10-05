@@ -22,11 +22,8 @@ public class Play {
 			p.set ("eof", "loop");
 	  
 			// Create the consumer
-			Consumer c = new Consumer( profile, "sdl", null);
+			Consumer c = new Consumer( profile, "sdl2", null);
 
-			// Turn off the default rescaling
-			c.set("rescale", "none");
-	
 			// Connect the producer to the consumer
 			c.connect(p);
 	
