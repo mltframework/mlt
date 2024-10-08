@@ -174,7 +174,6 @@ int consumer_start(mlt_consumer parent)
         mlt_properties properties = MLT_CONSUMER_PROPERTIES(parent);
         int audio_off = mlt_properties_get_int(properties, "audio_off");
         char *output_display = mlt_properties_get(properties, "output_display");
-        char *window_id = mlt_properties_get(properties, "window_id");
         char *audio_driver = mlt_properties_get(properties, "audio_driver");
         char *video_driver = mlt_properties_get(properties, "video_driver");
         char *audio_device = mlt_properties_get(properties, "audio_device");
@@ -186,9 +185,6 @@ int consumer_start(mlt_consumer parent)
 
         if (output_display != NULL)
             setenv("DISPLAY", output_display, 1);
-
-        if (window_id != NULL)
-            setenv("SDL_WINDOWID", window_id, 1);
 
         if (video_driver != NULL)
             setenv("SDL_VIDEODRIVER", video_driver, 1);
@@ -480,6 +476,8 @@ static int setup_sdl_video(consumer_sdl self)
     // Skip this if video is disabled.
     int video_off = mlt_properties_get_int(self->properties, "video_off");
     int preview_off = mlt_properties_get_int(self->properties, "preview_off");
+    uintptr_t window_id = mlt_properties_get_int(self->properties, "window_id");
+
     if (video_off || preview_off)
         return error;
 
@@ -516,12 +514,20 @@ static int setup_sdl_video(consumer_sdl self)
     }
 
     pthread_mutex_lock(&mlt_sdl_mutex);
-    self->sdl_window = SDL_CreateWindow("MLT",
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        self->window_width,
-                                        self->window_height,
-                                        sdl_flags);
+
+    if (window_id) {
+        self->sdl_window = SDL_CreateWindowFrom((void *)window_id);
+    } else {
+        self->sdl_window = SDL_CreateWindow(
+            "MLT",
+            SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_UNDEFINED,
+            self->window_width,
+            self->window_height,
+            sdl_flags
+        );
+    }
+    
     self->sdl_renderer = SDL_CreateRenderer(self->sdl_window, -1, SDL_RENDERER_ACCELERATED);
     if (self->sdl_renderer) {
         // Get texture width and height from the profile.
