@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import mlt7 as mlt
 import sys
 
@@ -8,7 +11,7 @@ VIDEO = 'video.mp4'
 
 
 class VideoPlayer(QWidget):
-    def __init__(self):
+    def __init__(self, filename):
         super().__init__()
         self.setWindowTitle("MLT Video Player")
 
@@ -19,11 +22,14 @@ class VideoPlayer(QWidget):
             def __init__(self):
                 super().__init__()
                 self.setMinimumSize(380, 260)
+                self.blockResize = False
             
             def resizeEvent(self, event):
-                self.window().consumer.set('window_width', self.width())
-                self.window().consumer.set('window_height', self.height())
-                event.accept()
+                if not self.blockResize:
+                    self.window().consumer.set('window_width', self.width())
+                    self.window().consumer.set('window_height', self.height())
+                    event.accept()
+                self.blockResize = not self.blockResize
 
         self.video_viewer = video_viewer()
         layout.addWidget(self.video_viewer, 1)
@@ -69,13 +75,13 @@ class VideoPlayer(QWidget):
         self.profile = mlt.Profile()
 
         # Create the producer
-        self.producer = mlt.Producer(self.profile, VIDEO)
+        self.producer = mlt.Producer(self.profile, filename)
 
         if self.producer.is_valid():
             # Derive a profile based on the producer
             self.profile.from_producer(self.producer)
             # Reload the producer using the derived profile
-            self.producer = mlt.Producer(self.profile, VIDEO)
+            self.producer = mlt.Producer(self.profile, filename)
 
         # Create the consumer
         self.consumer = mlt.Consumer(self.profile, "sdl2")
@@ -137,7 +143,7 @@ class VideoPlayer(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    player = VideoPlayer()
+    player = VideoPlayer(sys.argv[1] if len(sys.argv) > 1 else VIDEO)
     player.show()
     
     sys.exit(app.exec())

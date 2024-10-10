@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import gi
 import sys
 import mlt7 as mlt
@@ -8,7 +11,7 @@ from gi.repository import Gtk, Gdk, GObject, GLib
 VIDEO = 'video.mp4'
 
 class VideoPlayer(Gtk.Window):
-    def __init__(self):
+    def __init__(self, filename):
         super().__init__(title="MLT Video Player")
         self.set_default_size(800, 600)
         self.connect("destroy", self.on_destroy)
@@ -20,10 +23,10 @@ class VideoPlayer(Gtk.Window):
         self.profile = mlt.Profile()
 
         # Create a producer for the video
-        self.producer = mlt.Producer(self.profile, VIDEO)
+        self.producer = mlt.Producer(self.profile, filename)
         if self.producer.is_valid():
             self.profile.from_producer(self.producer)
-            self.producer = mlt.Producer(self.profile, VIDEO)
+            self.producer = mlt.Producer(self.profile, filename)
 
         # Create the consumer for rendering using SDL2
         self.consumer = mlt.Consumer(self.profile, "sdl2")
@@ -137,6 +140,6 @@ if __name__ == "__main__":
     Gtk.init(sys.argv)
 
     # Create and run the video player
-    player = VideoPlayer()
+    player = VideoPlayer(sys.argv[1] if len(sys.argv) > 1 else VIDEO)
     player.show_all()
     Gtk.main()
