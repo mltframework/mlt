@@ -589,8 +589,8 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
             // Determine window's new display aspect ratio, and resize if it's an existing window
             int w = mlt_properties_get_int(properties, "window_width");
             int h = mlt_properties_get_int(properties, "window_height");
-            bool width_changed = (w && w != self->window_width);
-            bool height_changed = (h && h != self->window_height);
+            int width_changed = (w && w != self->window_width);
+            int height_changed = (h && h != self->window_height);
 
             if (width_changed || height_changed) {
                 if (width_changed) {
