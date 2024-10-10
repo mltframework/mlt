@@ -573,6 +573,7 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
     int video_off = mlt_properties_get_int(properties, "video_off");
     int preview_off = mlt_properties_get_int(properties, "preview_off");
     int display_off = video_off | preview_off;
+    uintptr_t window_id = mlt_properties_get_int(self->properties, "window_id");
 
     if (self->running && !display_off) {
         if (!self->sdl_window) {
@@ -585,13 +586,24 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
         mlt_frame_get_image(frame, &image, &vfmt, &width, &height, 0);
 
         if (self->running) {
-            // Determine window's new display aspect ratio
-            int x = mlt_properties_get_int(properties, "window_width");
-            if (x && x != self->window_width)
-                self->window_width = x;
-            x = mlt_properties_get_int(properties, "window_height");
-            if (x && x != self->window_height)
-                self->window_height = x;
+            // Determine window's new display aspect ratio, and resize if it's an existing window
+            int w = mlt_properties_get_int(properties, "window_width");
+            int h = mlt_properties_get_int(properties, "window_height");
+            bool width_changed = (w && w != self->window_width);
+            bool height_changed = (h && h != self->window_height);
+
+            if (width_changed || height_changed) {
+                if (width_changed) {
+                    self->window_width = w;
+                }
+                if (height_changed) {
+                    self->window_height = h;
+                }
+                if (window_id) {
+                    SDL_SetWindowSize(self->sdl_window, self->window_width, self->window_height);
+                }
+            }
+
             double this_aspect = (double) self->window_width / self->window_height;
 
             // Get the display aspect ratio
