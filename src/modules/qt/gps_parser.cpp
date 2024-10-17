@@ -30,7 +30,8 @@
 //shifts all (longitude) values from near 180 to 0
 double get_180_swapped(double lon)
 {
-    // mlt_log_info(NULL, "get_180_swapped(%f) -> %f\n", lon, lon + ( lon>0 ? -180 : 180));
+    if (lon == GPS_UNINIT)
+        return lon;
     return lon + (lon > 0 ? -180 : 180);
 }
 
@@ -332,22 +333,16 @@ int binary_search_gps(gps_private_data gdata, int64_t video_time, bool force_res
 
 /** Returns a nicer number of decimal values for floats
  *  [ 1.23m | 12.3m | 123m ]
+ *  - argument use_decimals defaults to -1 (in .h)
 */
-int decimals_needed(double x)
+int decimals_needed(double x, int use_decimals)
 {
+    if (use_decimals != -1)
+        return use_decimals;
+
     if (fabs(x) < 10)
         return 2;
     if (fabs(x) < 100)
-        return 1;
-    return 0;
-}
-
-/** Returns a nicer number of decimal values for floats, max 1 digit after .
- *  [ 1.2% | 12% ]
-*/
-int decimals_needed_maxone(double x)
-{
-    if (fabs(x) < 10)
         return 1;
     return 0;
 }
@@ -356,7 +351,7 @@ int decimals_needed_maxone(double x)
 */
 double convert_distance_to_format(double x, const char *format)
 {
-    if (format == NULL)
+    if (format == NULL || x == GPS_UNINIT)
         return x;
 
     if (strstr(format, "km") || strstr(format, "kilometer"))
@@ -374,7 +369,9 @@ double convert_distance_to_format(double x, const char *format)
 */
 double convert_speed_to_format(double x, const char *format)
 {
-    //order is important as short keywords will match anywhere (ms in kms and mi in min[utes])
+    if (x == GPS_UNINIT)
+        return x;
+    //order is important as short keywords will match anywhere (ms in kms and mi in mi[nutes])
     if (format == NULL || strstr(format, "kms") || strstr(format, "km/s")
         || strstr(format, "kilometer"))
         return x * 3.6; //default km/h
@@ -399,6 +396,9 @@ double convert_speed_to_format(double x, const char *format)
  */
 const char *bearing_to_compass(double x)
 {
+    if (x == GPS_UNINIT)
+        return "--";
+
     if (x <= 22.5 || x >= 360 - 22.5)
         return "N";
     else if (x < 45 + 22.5)
