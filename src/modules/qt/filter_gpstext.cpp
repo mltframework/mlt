@@ -562,8 +562,6 @@ static void process_file(mlt_filter filter, mlt_frame frame)
     if (filename == NULL)
         filename = mlt_properties_get(properties,
                                       "gps.file"); /* for backwards compatibility with v1 */
-    bool guess_offset = (mlt_properties_get_int(properties, "time_offset") == 0)
-                        && (strlen(pdata->last_filename) == 0);
 
     //if there's no file selected just return
     if (!filename || !strcmp(filename, ""))
@@ -578,13 +576,6 @@ static void process_file(mlt_filter filter, mlt_frame frame)
         if (qxml_parse_file(filter_to_gps_data(filter)) == 1) {
             get_first_gps_time(filter_to_gps_data(filter));
             get_last_gps_time(filter_to_gps_data(filter));
-
-            //when loading the first file, sync gps start with video start
-            int64_t original_video_time = get_original_video_file_time_mseconds(frame);
-            if (guess_offset) {
-                pdata->gps_offset = pdata->first_gps_time - original_video_time;
-                mlt_properties_set_int(properties, "time_offset", pdata->gps_offset / 1000);
-            }
 
             //assume smooth is 5 (default) so we can guarantee *gps_points_p and save some time
             pdata->last_smooth_lvl = 5;
