@@ -194,7 +194,7 @@ static void gps_point_to_output(mlt_filter filter,
     //check for the generic "decimals" extra-keyword and if present read a single digit after it (+whitespace)
     char *ptr = NULL;
     int use_decimals = -1;
-    if (ptr = strstr(keyword, "decimals")) {
+    if ((ptr = strstr(keyword, "decimals"))) {
         ptr += strlen("decimals");
         while (ptr && isspace(*ptr))
             ptr++;
