@@ -177,9 +177,9 @@ static int get_image(mlt_frame a_frame,
                                ssim[1],
                                ssim[2]);
     painter.setPen(Qt::black);
-    painter.drawText(52, *height * 8 / 10 + 2, s);
+    painter.drawText(52, *height * 8 / 10 + 2, *width, *height, 0, s);
     painter.setPen(Qt::white);
-    painter.drawText(50, *height * 8 / 10, s);
+    painter.drawText(50, *height * 8 / 10, *width, *height, 0, s);
 
     // finish Qt drawing
     painter.end();
