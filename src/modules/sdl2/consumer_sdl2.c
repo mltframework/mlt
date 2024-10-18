@@ -516,18 +516,16 @@ static int setup_sdl_video(consumer_sdl self)
     pthread_mutex_lock(&mlt_sdl_mutex);
 
     if (window_id) {
-        self->sdl_window = SDL_CreateWindowFrom((void *)window_id);
+        self->sdl_window = SDL_CreateWindowFrom((void *) window_id);
     } else {
-        self->sdl_window = SDL_CreateWindow(
-            "MLT",
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
-            self->window_width,
-            self->window_height,
-            sdl_flags
-        );
+        self->sdl_window = SDL_CreateWindow("MLT",
+                                            SDL_WINDOWPOS_UNDEFINED,
+                                            SDL_WINDOWPOS_UNDEFINED,
+                                            self->window_width,
+                                            self->window_height,
+                                            sdl_flags);
     }
-    
+
     self->sdl_renderer = SDL_CreateRenderer(self->sdl_window, -1, SDL_RENDERER_ACCELERATED);
     if (self->sdl_renderer) {
         // Get texture width and height from the profile.
