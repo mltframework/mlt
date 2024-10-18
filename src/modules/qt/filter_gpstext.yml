@@ -46,6 +46,8 @@ parameters:
       An extra word "RAW" (uppercase!) can be added to the keyword to display the 
       unchanged value from the file. If a keyword can't produce valid data it will 
       print "--".
+      Keywords returning numeric values can use the extra word "decimals" to forcefully
+      set a specific number of decimals (0-9). Example: #gps_speed decimals 3#.
       Time-based keywords can include a strftime format string to customize the
       output and a number (representing seconds) preceeded by '+' or '-' which will 
       offset the actual time. For example,  "#gps_datetime_now %I:%M:%S %p +3600#" shows 

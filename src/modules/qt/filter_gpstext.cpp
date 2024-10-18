@@ -191,168 +191,142 @@ static void gps_point_to_output(mlt_filter filter,
             crt_point = pdata->gps_points_p[i_now];
     }
 
+    //check for the generic "decimals" extra-keyword and if present read a single digit after it (+whitespace)
+    char *ptr = NULL;
+    int use_decimals = -1;
+    if ((ptr = strstr(keyword, "decimals"))) {
+        ptr += strlen("decimals");
+        while (ptr && isspace(*ptr))
+            ptr++;
+        if (ptr && isdigit(*ptr))
+            use_decimals = *ptr - '0';
+    }
+    //check for generic "RAW" extra keyword
+    bool use_raw = 0;
+    if (strstr(keyword, "RAW"))
+        use_raw = 1;
+
     /* for every keyword: we first check if the "RAW" keyword is used and if so, we print the value read from file (or --)
        then we check if there's a format keyword and apply the necessary conversion/format.
        The format must appear after the main keyword, RAW and format order is not important (strstr is used)
     */
     if (!strncmp(keyword, "gps_lat", strlen("gps_lat")) && crt_point.lat != GPS_UNINIT) {
-        if (strstr(keyword, "RAW")) {
-            if (raw.lat == GPS_UNINIT)
-                return;
-            snprintf(gps_text, 10, "%3.6f", raw.lat);
-        } else {
-            snprintf(gps_text, 10, "%3.6f", crt_point.lat);
-        }
+        double val = use_raw ? raw.lat : crt_point.lat;
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%3.*f", (use_decimals == -1 ? 6 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_lon", strlen("gps_lon")) && crt_point.lon != GPS_UNINIT) {
-        if (strstr(keyword, "RAW")) {
-            if (raw.lon == GPS_UNINIT)
-                return;
-            snprintf(gps_text, 10, "%3.6f", swap_180_if_needed(raw.lon));
-        } else {
-            snprintf(gps_text, 10, "%3.6f", swap_180_if_needed(crt_point.lon));
-        }
+        double val = swap_180_if_needed(use_raw ? raw.lon : crt_point.lon);
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%3.*f", (use_decimals == -1 ? 6 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_elev", strlen("gps_elev")) && crt_point.ele != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_elev"))
             format = keyword + strlen("gps_elev");
-        double val;
-        if (strstr(keyword, "RAW")) {
-            if (raw.ele == GPS_UNINIT)
-                return;
-            val = convert_distance_to_format(raw.ele, format);
-        } else {
-            val = convert_distance_to_format(crt_point.ele, format);
-        }
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        double val = convert_distance_to_format((use_raw ? raw.ele : crt_point.ele), format);
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     } else if (!strncmp(keyword, "gps_speed", strlen("gps_speed"))
                && crt_point.speed != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_speed"))
             format = keyword + strlen("gps_speed");
-        double val = 0;
-        if (strstr(keyword, "RAW")) {
-            if (raw.speed == GPS_UNINIT)
-                return;
-            val = raw.speed;
-        } else {
-            val = crt_point.speed;
-            if (strstr(keyword, "vertical"))
-                val = crt_point.speed_vertical;
-            else if (strstr(keyword, "3d"))
-                val = crt_point.speed_3d;
-        }
+        double val = use_raw ? raw.speed : crt_point.speed;
+        if (!use_raw && strstr(keyword, "vertical"))
+            val = crt_point.speed_vertical;
+        else if (!use_raw && strstr(keyword, "3d"))
+            val = crt_point.speed_3d;
+        if (val == GPS_UNINIT)
+            return;
         val = convert_speed_to_format(val, format);
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     } else if (!strncmp(keyword, "gps_hr", strlen("gps_hr")) && crt_point.hr != GPS_UNINIT) {
-        if (strstr(keyword, "RAW")) {
-            if (raw.hr == GPS_UNINIT)
-                return;
-            snprintf(gps_text, 10, "%.0f", raw.hr);
-        } else {
-            snprintf(gps_text, 10, "%.0f", crt_point.hr);
-        }
+        double val = use_raw ? raw.hr : crt_point.hr;
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_bearing", strlen("gps_bearing"))
                && crt_point.bearing != GPS_UNINIT) {
-        if (strstr(keyword, "RAW")) {
-            if (raw.bearing == GPS_UNINIT)
-                return;
-            snprintf(gps_text, 10, "%.0f", raw.bearing);
-        } else {
-            snprintf(gps_text, 10, "%.0f", crt_point.bearing);
-        }
+        double val = use_raw ? raw.bearing : crt_point.bearing;
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_compass", strlen("gps_compass"))
                && crt_point.bearing != GPS_UNINIT) {
-        if (strstr(keyword, "RAW")) {
-            if (raw.bearing == GPS_UNINIT)
-                return;
-            snprintf(gps_text, 4, "%s", bearing_to_compass(raw.bearing));
-        } else {
-            snprintf(gps_text, 4, "%s", bearing_to_compass(crt_point.bearing));
-        }
+        const char *val = (const char *) (bearing_to_compass(use_raw ? raw.bearing
+                                                                     : crt_point.bearing));
+        snprintf(gps_text, 4, "%s", val);
     } else if (!strncmp(keyword, "gps_cadence", strlen("gps_cadence"))
                && crt_point.cad != GPS_UNINIT) {
-        if (strstr(keyword, "RAW")) {
-            if (raw.cad == GPS_UNINIT)
-                return;
-            snprintf(gps_text, 10, "%.0f", raw.cad);
-        } else {
-            snprintf(gps_text, 10, "%.0f", crt_point.cad);
-        }
+        double val = use_raw ? raw.cad : crt_point.cad;
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), crt_point.cad);
     } else if (!strncmp(keyword, "gps_temperature", strlen("gps_temperature"))
                && crt_point.atemp != GPS_UNINIT) {
-        double atemp;
-        if (strstr(keyword, "RAW")) {
-            if (raw.atemp == GPS_UNINIT)
-                return;
-            atemp = raw.atemp;
-        } else {
-            atemp = crt_point.atemp;
-        }
+        double val = use_raw ? raw.atemp : crt_point.atemp;
+        if (val == GPS_UNINIT)
+            return;
         if (strstr(keyword, "F"))
-            atemp = atemp * 1.8 + 32;
+            val = val * 1.8 + 32;
         else if (strstr(keyword, "K"))
-            atemp = atemp + 273.15;
-        snprintf(gps_text, 10, "%.*f", decimals_needed_maxone(atemp), atemp);
+            val = val + 273.15;
+        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_power", strlen("gps_power"))
                && crt_point.power != GPS_UNINIT) {
-        if (strstr(keyword, "RAW")) {
-            if (raw.power == GPS_UNINIT)
-                return;
-            snprintf(gps_text, 10, "%.0f", raw.power);
-        } else {
-            snprintf(gps_text, 10, "%.0f", crt_point.power);
-        }
+        double val = use_raw ? raw.power : crt_point.power;
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_vdist_up", strlen("gps_vdist_up"))
                && crt_point.elev_up != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_vdist_up"))
             format = keyword + strlen("gps_vdist_up");
         double val = convert_distance_to_format(fabs(crt_point.elev_up), format);
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     } else if (!strncmp(keyword, "gps_vdist_down", strlen("gps_vdist_down"))
                && crt_point.elev_down != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_vdist_down"))
             format = keyword + strlen("gps_vdist_down");
         double val = convert_distance_to_format(fabs(crt_point.elev_down), format);
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     } else if (!strncmp(keyword, "gps_dist_uphill", strlen("gps_dist_uphill"))
                && crt_point.dist_up != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_dist_uphill"))
             format = keyword + strlen("gps_dist_uphill");
         double val = convert_distance_to_format(crt_point.dist_up, format);
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     } else if (!strncmp(keyword, "gps_dist_downhill", strlen("gps_dist_downhill"))
                && crt_point.dist_down != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_dist_downhill"))
             format = keyword + strlen("gps_dist_downhill");
         double val = convert_distance_to_format(crt_point.dist_down, format);
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     } else if (!strncmp(keyword, "gps_dist_flat", strlen("gps_dist_flat"))
                && crt_point.dist_flat != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_dist_flat"))
             format = keyword + strlen("gps_dist_flat");
         double val = convert_distance_to_format(crt_point.dist_flat, format);
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     }
     //NOTE: gps_dist must be below gps_dist_up/down/flat or it'll match them
     else if (!strncmp(keyword, "gps_dist", strlen("gps_dist"))
              && crt_point.total_dist != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_dist"))
             format = keyword + strlen("gps_dist");
-        double val;
-        if (strstr(keyword, "RAW")) {
-            if (raw.total_dist == GPS_UNINIT)
-                return;
-            val = convert_distance_to_format(raw.total_dist, format);
-        } else {
-            val = convert_distance_to_format(crt_point.total_dist, format);
-        }
-        snprintf(gps_text, 10, "%.*f", decimals_needed(val), val);
+        double val = convert_distance_to_format((use_raw ? raw.total_dist : crt_point.total_dist),
+                                                format);
+        if (val == GPS_UNINIT)
+            return;
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
     } else if (!strncmp(keyword, "gps_grade_percentage", strlen("gps_grade_percentage"))
                && crt_point.grade_p != GPS_UNINIT) {
         double val = crt_point.grade_p;
-        snprintf(gps_text, 10, "%+.*f", decimals_needed_maxone(val), val);
+        snprintf(gps_text, 15, "%+.*f", (use_decimals == -1 ? 0 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_grade_degrees", strlen("gps_grade_degrees"))
                && crt_point.grade_p != GPS_UNINIT) {
         double val = to_deg(atan(crt_point.grade_p / 100.0));
-        snprintf(gps_text, 10, "%+.*f", decimals_needed_maxone(val), val);
+        snprintf(gps_text, 15, "%+.*f", (use_decimals == -1 ? 0 : use_decimals), val);
     } else if (!strncmp(keyword, "gps_datetime_now", strlen("gps_datetime_now"))
                && raw.time != GPS_UNINIT) {
         int64_t val = 0;
