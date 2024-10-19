@@ -23,6 +23,23 @@
 #include <sstream>
 #include <string>
 
+#ifdef _WIN32
+#include <windows.h>
+
+static wchar_t *utf8ToWide(const char *strUtf8)
+{
+    wchar_t *strWide = nullptr;
+    int n = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, strUtf8, -1, NULL, 0);
+    if (n > 0) {
+        strWide = (wchar_t *) calloc(n, sizeof(wchar_t));
+        if (strWide) {
+            MultiByteToWideChar(CP_UTF8, 0, strUtf8, -1, strWide, n);
+        }
+    }
+    return strWide;
+}
+#endif /* ifdef _WIN32 */
+
 static Subtitles::SubtitleVector readFromSrtStream(std::istream &stream)
 {
     enum {
@@ -128,13 +145,25 @@ static bool writeToSrtStream(std::ostream &stream, const Subtitles::SubtitleVect
 
 Subtitles::SubtitleVector Subtitles::readFromSrtFile(const std::string &path)
 {
+#ifdef _WIN32
+    wchar_t *wpath = utf8ToWide(path.c_str());
+    std::ifstream fileStream(wpath);
+    free(wpath);
+#else
     std::ifstream fileStream(path);
+#endif
     return readFromSrtStream(fileStream);
 }
 
 bool Subtitles::writeToSrtFile(const std::string &path, const SubtitleVector &items)
 {
+#ifdef _WIN32
+    wchar_t *wpath = utf8ToWide(path.c_str());
+    std::ofstream fileStream(wpath, std::ios::out | std::ios::trunc);
+    free(wpath);
+#else
     std::ofstream fileStream(path.c_str(), std::ios::out | std::ios::trunc);
+#endif
     if (!fileStream.is_open()) {
         return false;
     }
