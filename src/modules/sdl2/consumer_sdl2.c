@@ -134,7 +134,7 @@ mlt_consumer consumer_sdl2_init(mlt_profile profile,
 
         // Default scrub audio
         mlt_properties_set_int(self->properties, "scrub_audio", 1);
-
+       
         // Ensure we don't join on a non-running object
         self->joined = 1;
 
@@ -517,6 +517,7 @@ static int setup_sdl_video(consumer_sdl self)
 
     if (window_id) {
         self->sdl_window = SDL_CreateWindowFrom((void *) window_id);
+        SDL_SetWindowResizable(self->sdl_window, SDL_TRUE);
     } else {
         self->sdl_window = SDL_CreateWindow("MLT",
                                             SDL_WINDOWPOS_UNDEFINED,
