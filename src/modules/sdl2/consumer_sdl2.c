@@ -134,7 +134,7 @@ mlt_consumer consumer_sdl2_init(mlt_profile profile,
 
         // Default scrub audio
         mlt_properties_set_int(self->properties, "scrub_audio", 1);
-       
+
         // Ensure we don't join on a non-running object
         self->joined = 1;
 
