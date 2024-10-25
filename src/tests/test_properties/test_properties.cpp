@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2018 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -244,7 +244,7 @@ private Q_SLOTS:
         Profile profile("atsc_720p_2398");
         Properties p;
         p.set("_profile", profile.get_profile(), 0);
-        const char *timeString = "11:22:33:04";
+        const char *timeString = "11:22:33;04";
         // 11 * 3600 + 22 * 60 + 33 = 40953 s
         // floor(23.98 fps * 40953 s) = 981890 f
         // 981890 f + 4 f = 981894 f
@@ -264,7 +264,7 @@ private Q_SLOTS:
         // Case that is known to have floating point error
         frames = 2877;
         p.set("key", frames);
-        QCOMPARE(p.get_time("key", mlt_time_smpte_df), "00:02:00:00");
+        QCOMPARE(p.get_time("key", mlt_time_smpte_df), "00:02:00;00");
         QCOMPARE(p.get_time("key", mlt_time_clock), "00:02:00.000");
 
         if (kRunLongTests)
