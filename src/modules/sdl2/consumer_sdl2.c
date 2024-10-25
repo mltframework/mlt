@@ -517,6 +517,7 @@ static int setup_sdl_video(consumer_sdl self)
 
     if (window_id) {
         self->sdl_window = SDL_CreateWindowFrom((void *) window_id);
+        SDL_SetWindowResizable(self->sdl_window, SDL_TRUE);
     } else {
         self->sdl_window = SDL_CreateWindow("MLT",
                                             SDL_WINDOWPOS_UNDEFINED,
