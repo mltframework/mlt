@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -968,6 +968,10 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
             }
             frame_sep = ';';
         }
+    } else if (!drop) {
+        fps = lrint(fps);
+    } else if (fps != lrint(fps)) {
+        frame_sep = ';';
     }
     hours = frames / (fps * 3600);
     frames -= floor(hours * 3600 * fps);
