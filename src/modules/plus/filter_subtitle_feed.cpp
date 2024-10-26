@@ -21,6 +21,7 @@
 
 #include "subtitles/subtitles.h"
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>  // for stat()
@@ -117,15 +118,25 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     }
     const Subtitles::SubtitleVector &subtitles = *psubtitles;
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-    int64_t frameMs = (int64_t) mlt_frame_get_position(frame) * 1000 * profile->frame_rate_den
-                      / profile->frame_rate_num;
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_position position = mlt_frame_get_position(frame);
+    int64_t frameMs = (int64_t) position * 1000 * profile->frame_rate_den / profile->frame_rate_num;
+    int in = mlt_properties_get_int(frame_properties, "in");
+    if (in < 0) {
+        in = 0;
+    }
+    int64_t minMs = (int64_t) in * 1000 * profile->frame_rate_den / profile->frame_rate_num;
+    int out = mlt_properties_get_int(frame_properties, "out");
+    int64_t maxMs = INT64_MAX;
+    if (out > 0) {
+        maxMs = (int64_t) out * 1000 * profile->frame_rate_den / profile->frame_rate_num;
+    }
     int prevIndex = mlt_properties_get_int(properties, "_prevIndex");
     int marginMs = 999 * profile->frame_rate_den / profile->frame_rate_num;
     int index = Subtitles::indexForTime(subtitles, frameMs, prevIndex, marginMs);
     if (index > -1) {
         mlt_properties_set_int(properties, "_prevIndex", index);
     }
-    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_properties subtitle_properties = mlt_properties_get_properties(frame_properties,
                                                                        "subtitles");
     if (!subtitle_properties) {
@@ -134,12 +145,14 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     }
     mlt_properties feed_properties = mlt_properties_new();
     mlt_properties_set(feed_properties, "lang", mlt_properties_get(properties, "lang"));
-    if (index > -1) {
+    if (index > -1 && subtitles[index].start >= minMs && subtitles[index].end <= maxMs) {
         mlt_position start = subtitles[index].start * profile->frame_rate_num
                              / profile->frame_rate_den / 1000;
+        start -= in;
         mlt_properties_set_position(feed_properties, "start", start);
         mlt_position end = subtitles[index].end * profile->frame_rate_num / profile->frame_rate_den
                            / 1000;
+        end -= in;
         mlt_properties_set_position(feed_properties, "end", end);
         mlt_properties_set(feed_properties, "text", subtitles[index].text.c_str());
     } else {
