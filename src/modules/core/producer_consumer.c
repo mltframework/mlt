@@ -288,6 +288,22 @@ mlt_producer producer_consumer_init(mlt_profile profile,
         mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
         mlt_properties_set(properties, "resource", arg);
         mlt_properties_pass_list(properties, MLT_PRODUCER_PROPERTIES(real_producer), "out, length");
+        mlt_properties_set_int(properties, "meta.media.width", temp_profile->width);
+        mlt_properties_set_int(properties, "meta.media.height", temp_profile->height);
+        mlt_properties_set_int(properties, "meta.media.progressive", temp_profile->progressive);
+        mlt_properties_set_int(properties,
+                               "meta.media.frame_rate_num",
+                               temp_profile->frame_rate_num);
+        mlt_properties_set_int(properties,
+                               "meta.media.frame_rate_den",
+                               temp_profile->frame_rate_den);
+        mlt_properties_set_int(properties,
+                               "meta.media.sample_aspect_num",
+                               temp_profile->sample_aspect_num);
+        mlt_properties_set_int(properties,
+                               "meta.media.sample_aspect_den",
+                               temp_profile->sample_aspect_den);
+        mlt_properties_set_int(properties, "meta.media.colorspace", temp_profile->colorspace);
 
         // Done with the producer - will re-open later when we have the profile property
         mlt_producer_close(real_producer);
