@@ -525,7 +525,7 @@ void loadFromXml(producer_ktitle self,
                                 default:
                                     break;
                                 }
-                                pattern = QString(":%1{%2}").arg(c).arg(text);
+                                pattern = QStringLiteral(":%1{%2}").arg(c).arg(text);
                             } else {
                                 pattern = text;
                             }

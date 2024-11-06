@@ -526,7 +526,7 @@ int load_folder(producer_qimage self, const char *filename)
         mlt_properties filename_property = self->filenames;
         QFileInfo info(filename);
         QDir dir = info.absoluteDir();
-        QStringList filters = {QString("*.%1").arg(info.suffix())};
+        QStringList filters = {QStringLiteral("*.%1").arg(info.suffix())};
         QStringList files = dir.entryList(filters, QDir::Files, QDir::Name);
         int key;
         for (auto &f : files) {

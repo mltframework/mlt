@@ -27,7 +27,7 @@ QVector<QColor> get_graph_colors(mlt_properties filter_properties, int position,
 
     // Find user specified colors for the gradient
     while (true) {
-        QString prop_name = QString("color.") + QString::number(colors.size() + 1);
+        QString prop_name = QStringLiteral("color.") + QString::number(colors.size() + 1);
         if (mlt_properties_exists(filter_properties, prop_name.toUtf8().constData())) {
             mlt_color mcolor = mlt_properties_anim_get_color(filter_properties,
                                                              prop_name.toUtf8().constData(),

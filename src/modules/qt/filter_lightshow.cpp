@@ -129,7 +129,7 @@ static void setup_pen(QPainter &p, QRect &rect, mlt_properties filter_properties
 
     // Find user specified colors for the gradient
     while (color_found) {
-        QString prop_name = QString("color.") + QString::number(colors.size() + 1);
+        QString prop_name = QStringLiteral("color.") + QString::number(colors.size() + 1);
         if (mlt_properties_exists(filter_properties, prop_name.toUtf8().constData())) {
             mlt_color mcolor = mlt_properties_get_color(filter_properties,
                                                         prop_name.toUtf8().constData());
