@@ -83,7 +83,7 @@ private Q_SLOTS:
         Properties p;
         p.set("key", "value");
         QVERIFY(p.get("key"));
-        QVERIFY(QString(p.get("key")) != QString(""));
+        QVERIFY(QString(p.get("key")) != QStringLiteral(""));
         QCOMPARE(p.get("key"), "value");
     }
 

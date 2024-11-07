@@ -1055,7 +1055,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
     while (!reader.atEnd() && !reader.hasError()) {
         reader.readNext();
         // mlt_log_info(NULL, " readNext tag: %s type = %d\n", _qxml_getthestring(reader.name()), reader.tokenType());
-        if (reader.isStartElement() && reader.name() == QString("trkpt")) {
+        if (reader.isStartElement() && reader.name() == QStringLiteral("trkpt")) {
             gps_point_raw crt_point = uninit_gps_raw_point;
 
             QXmlStreamAttributes attributes = reader.attributes();
@@ -1065,37 +1065,37 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                 crt_point.lon = attributes.value("lon").toDouble();
 
             while (reader.readNext()
-                   && !(reader.name() == QString("trkpt")
+                   && !(reader.name() == QStringLiteral("trkpt")
                         && reader.tokenType() == QXmlStreamReader::EndElement)) //until closing trkpt
             {
                 // mlt_log_info(NULL, "[trkpt->1] readNext tag: %s, type=%d \n", _qxml_getthestring(reader.name()), reader.tokenType());
                 if (!reader.isStartElement())
                     continue;
 
-                if (reader.name() == QString("ele"))
+                if (reader.name() == QStringLiteral("ele"))
                     crt_point.ele = reader.readElementText().toDouble();
-                else if (reader.name() == QString("time"))
+                else if (reader.name() == QStringLiteral("time"))
                     crt_point.time = datetimeXMLstring_to_mseconds(
                         qUtf8Printable(reader.readElementText()));
-                else if (reader.name() == QString("speed"))
+                else if (reader.name() == QStringLiteral("speed"))
                     crt_point.speed = reader.readElementText().toDouble();
-                else if (reader.name() == QString("course"))
+                else if (reader.name() == QStringLiteral("course"))
                     crt_point.bearing = reader.readElementText().toDouble();
-                else if (reader.name() == QString("extensions")) {
+                else if (reader.name() == QStringLiteral("extensions")) {
                     while (reader.readNext()
-                           && !(reader.name() == QString("extensions")
+                           && !(reader.name() == QStringLiteral("extensions")
                                 && reader.tokenType() == QXmlStreamReader::EndElement)) {
-                        if (reader.name() == QString("power"))
+                        if (reader.name() == QStringLiteral("power"))
                             crt_point.power = reader.readElementText().toDouble();
-                        else if (reader.name() == QString("TrackPointExtension")) {
+                        else if (reader.name() == QStringLiteral("TrackPointExtension")) {
                             while (reader.readNext()
-                                   && !(reader.name() == QString("TrackPointExtension")
+                                   && !(reader.name() == QStringLiteral("TrackPointExtension")
                                         && reader.tokenType() == QXmlStreamReader::EndElement)) {
-                                if (reader.name() == QString("hr"))
+                                if (reader.name() == QStringLiteral("hr"))
                                     crt_point.hr = reader.readElementText().toDouble();
-                                else if (reader.name() == QString("cad"))
+                                else if (reader.name() == QStringLiteral("cad"))
                                     crt_point.cad = reader.readElementText().toDouble();
-                                else if (reader.name() == QString("atemp"))
+                                else if (reader.name() == QStringLiteral("atemp"))
                                     crt_point.atemp = reader.readElementText().toDouble();
                             }
                         }
@@ -1198,11 +1198,11 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
     while (!reader.atEnd() && !reader.hasError()) {
         reader.readNext();
         // mlt_log_info(NULL, " readNextStartElement tag: %s \n", _qxml_getthestring(reader.name()));
-        if (reader.isStartElement() && reader.name() == QString("Trackpoint")) {
+        if (reader.isStartElement() && reader.name() == QStringLiteral("Trackpoint")) {
             gps_point_raw crt_point = uninit_gps_raw_point;
             while (
                 reader.readNext()
-                && !(reader.name() == QString("Trackpoint")
+                && !(reader.name() == QStringLiteral("Trackpoint")
                      && reader.tokenType()
                             == QXmlStreamReader::EndElement)) //loop until we hit the closing </Trackpoint>
             {
@@ -1210,35 +1210,36 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                 if (!reader.isStartElement())
                     continue;
 
-                if (reader.name() == QString("Time"))
+                if (reader.name() == QStringLiteral("Time"))
                     crt_point.time = datetimeXMLstring_to_mseconds(
                         qUtf8Printable(reader.readElementText()));
-                else if (reader.name() == QString("Position")) {
+                else if (reader.name() == QStringLiteral("Position")) {
                     reader.readNextStartElement();
-                    if (reader.name() == QString("LatitudeDegrees"))
+                    if (reader.name() == QStringLiteral("LatitudeDegrees"))
                         crt_point.lat = reader.readElementText().toDouble();
                     reader.readNextStartElement();
-                    if (reader.name() == QString("LongitudeDegrees"))
+                    if (reader.name() == QStringLiteral("LongitudeDegrees"))
                         crt_point.lon = reader.readElementText().toDouble();
-                } else if (reader.name() == QString("AltitudeMeters")) {
+                } else if (reader.name() == QStringLiteral("AltitudeMeters")) {
                     crt_point.ele = reader.readElementText().toDouble();
-                } else if (reader.name() == QString("DistanceMeters")) {
+                } else if (reader.name() == QStringLiteral("DistanceMeters")) {
                     crt_point.total_dist = reader.readElementText().toDouble();
-                } else if (reader.name() == QString("HeartRateBpm")) {
+                } else if (reader.name() == QStringLiteral("HeartRateBpm")) {
                     reader.readNextStartElement();
-                    if (reader.name() == QString("Value"))
+                    if (reader.name() == QStringLiteral("Value"))
                         crt_point.hr = reader.readElementText().toDouble();
-                } else if (reader.name() == QString("Cadence")) {
+                } else if (reader.name() == QStringLiteral("Cadence")) {
                     crt_point.cad = reader.readElementText().toDouble();
-                } else if (reader.name() == QString("Temperature")) {
+                } else if (reader.name() == QStringLiteral("Temperature")) {
                     crt_point.atemp = reader.readElementText().toDouble();
-                } else if (reader.isStartElement() && reader.name() == QString("Extensions")) {
+                } else if (reader.isStartElement()
+                           && reader.name() == QStringLiteral("Extensions")) {
                     while (reader.readNext()
-                           && !(reader.name() == QString("TPX")
+                           && !(reader.name() == QStringLiteral("TPX")
                                 && reader.tokenType() == QXmlStreamReader::EndElement)) {
-                        if (reader.name() == QString("Speed"))
+                        if (reader.name() == QStringLiteral("Speed"))
                             crt_point.speed = reader.readElementText().toDouble();
-                        else if (reader.name() == QString("Watts"))
+                        else if (reader.name() == QStringLiteral("Watts"))
                             crt_point.power = reader.readElementText().toDouble();
                     }
                 }
@@ -1336,9 +1337,9 @@ int qxml_parse_file(gps_private_data gdata)
             continue;
         }
         // mlt_log_info(NULL, " readNext element tag: %s, type=%d \n", qUtf8Printable(qxml_reader.name().toString()), qxml_reader.tokenType());
-        if (qxml_reader.name() == QString("TrainingCenterDatabase")) {
+        if (qxml_reader.name() == QStringLiteral("TrainingCenterDatabase")) {
             qxml_parse_tcx(qxml_reader, &gps_list_head, &count_pts);
-        } else if (qxml_reader.name() == QString("gpx")) {
+        } else if (qxml_reader.name() == QStringLiteral("gpx")) {
             qxml_parse_gpx(qxml_reader, &gps_list_head, &count_pts);
         } else {
             mlt_log_warning(
