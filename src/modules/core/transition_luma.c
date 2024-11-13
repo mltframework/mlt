@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -60,7 +60,7 @@ static void composite_line_yuv_float(
         mix_a = calculate_mix(1.0f - weight, alpha_a ? *alpha_a : 255);
         mix_b = calculate_mix(weight, alpha_b ? *alpha_b : 255);
         if (alpha_a) {
-            float mix2 = mix_b + mix_a - mix_b * mix_a;
+            float mix2 = mix_b + mix_a;
             *alpha_a = 255 * mix2;
             if (mix2 != 0.f)
                 mix_b /= mix2;
