@@ -309,12 +309,12 @@ static void luma_composite(mlt_frame a_frame,
                     mix_a = calculate_mix(1.0f - value, alpha_dest ? *alpha_dest : 255);
                     mix_b = calculate_mix(value, alpha_src ? *alpha_src : 255);
                     if (invert && alpha_src) {
-                        float mix2 = mix_b + mix_a - mix_b * mix_a;
+                        float mix2 = mix_b + mix_a;
                         *alpha_src = 255 * mix2;
                         if (mix2 != 0.f)
                             mix_b /= mix2;
                     } else if (!invert && alpha_dest) {
-                        float mix2 = mix_b + mix_a - mix_b * mix_a;
+                        float mix2 = mix_b + mix_a;
                         *alpha_dest = 255 * mix2;
                         if (mix2 != 0.f)
                             mix_b /= mix2;
