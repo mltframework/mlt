@@ -64,7 +64,8 @@ static int filter_get_audio(mlt_frame frame,
     }
 
     if (in.samples == 0) {
-        // Noting to convert.
+        // Nothing to convert.
+        *samples = 0;
         return error;
     }
 
