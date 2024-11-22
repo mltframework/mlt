@@ -35,7 +35,7 @@ static int filter_get_image(mlt_frame frame,
                             int writable)
 {
     // Get the image
-    mlt_filter filter = mlt_frame_pop_service(frame);
+    mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);
 
@@ -66,12 +66,14 @@ static int filter_get_image(mlt_frame frame,
             mlt_producer_seek(producer, pos);
 
             // Get the frame
-            mlt_service_get_frame(mlt_producer_service(producer), &freeze_frame, 0);
+            mlt_service_get_frame(MLT_PRODUCER_SERVICE(producer), &freeze_frame, 0);
 
             mlt_properties freeze_properties = MLT_FRAME_PROPERTIES(freeze_frame);
+            mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+
             mlt_properties_set(freeze_properties,
                                "consumer.rescale",
-                               mlt_properties_get(props, "consumer.rescale"));
+                               mlt_properties_get(frame_properties, "consumer.rescale"));
             mlt_properties_set_double(freeze_properties,
                                       "aspect_ratio",
                                       mlt_frame_get_aspect_ratio(frame));
@@ -80,8 +82,7 @@ static int filter_get_image(mlt_frame frame,
                                    mlt_properties_get_int(props, "progressive"));
             mlt_properties_set_int(freeze_properties,
                                    "consumer.progressive",
-                                   mlt_properties_get_int(props, "consumer.progressive")
-                                       || mlt_properties_get_int(properties, "deinterlace"));
+                                   mlt_properties_get_int(frame_properties, "consumer.progressive"));
             mlt_properties_set_data(properties,
                                     "freeze_frame",
                                     freeze_frame,
@@ -90,11 +91,11 @@ static int filter_get_image(mlt_frame frame,
                                     NULL);
             mlt_properties_set_position(properties, "_frame", pos);
         }
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
         // Get frozen image
         uint8_t *buffer = NULL;
         int error = mlt_frame_get_image(freeze_frame, &buffer, format, width, height, 1);
-        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
         // Copy it to current frame
         int size = mlt_image_format_size(*format, *width, *height, NULL);
@@ -104,6 +105,7 @@ static int filter_get_image(mlt_frame frame,
         mlt_frame_set_image(frame, *image, size, mlt_pool_release);
 
         uint8_t *alpha_buffer = mlt_frame_get_alpha(freeze_frame);
+
         if (alpha_buffer) {
             int alphasize = *width * *height;
             uint8_t *alpha_copy = mlt_pool_alloc(alphasize);
