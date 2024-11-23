@@ -1,0 +1,205 @@
+schema_version: 7.0
+type: filter
+identifier: hslprimaries
+title: HSL Primaries
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Adjust Hue, Saturation and Lightness for each of the 6 primary/secondary 
+  colors.
+
+parameters:
+  - identifier: h_shift_red
+    title: Hue Shift Red
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 0.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: s_scale_red
+    title: Saturation Scale Red
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: l_scale_red
+    title: Lightness Scale Red
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: h_shift_yellow
+    title: Hue Shift Yellow
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 0.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: s_scale_yellow
+    title: Saturation Scale Yellow
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: l_scale_yellow
+    title: Lightness Scale Yellow
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: h_shift_green
+    title: Hue Shift Green
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 0.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: s_scale_green
+    title: Saturation Scale Green
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: l_scale_green
+    title: Lightness Scale Green
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: h_shift_cyan
+    title: Hue Shift Cyan
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 0.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: s_scale_cyan
+    title: Saturation Scale Cyan
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: l_scale_cyan
+    title: Lightness Scale Cyan
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: h_shift_blue
+    title: Hue Shift Blue
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 0.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: s_scale_blue
+    title: Saturation Scale Blue
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: l_scale_blue
+    title: Lightness Scale Blue
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: h_shift_magenta
+    title: Hue Shift Magenta
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 0.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: s_scale_magenta
+    title: Saturation Scale Magenta
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: l_scale_magenta
+    title: Lightness Scale Magenta
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: overlap
+    title: Overlap
+    description: The amount of overlap or blending between primaries
+    type: float
+    minimum: 0.0
+    maximum: 100.0
+    default: 0.0
+    unit: percent
+    mutable: yes
+    animation: yes

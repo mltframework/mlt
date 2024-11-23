@@ -1,0 +1,80 @@
+schema_version: 7.0
+type: filter
+identifier: hslrange
+title: HSL Range
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Adjust Hue, Saturation and Lightness for a range of hue values. 
+  The user can specify the range of the hue values to be adjusted.
+
+parameters:
+  - identifier: hue_center
+    title: Hue Center
+    description: The center value for the hue range
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 180.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: hue_range
+    title: Hue Range
+    description: The width of the hue range
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: blend
+    title: Blend
+    description: The amount to blend the edges of the hue range
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: h_shift
+    title: Hue Shift
+    description: The amount to shift the hue in the hue range
+    type: float
+    minimum: 0.0
+    maximum: 360.0
+    default: 0.0
+    unit: degrees
+    mutable: yes
+    animation: yes
+
+  - identifier: s_scale
+    title: Saturation Scale
+    description: The amount to scale the saturation in the hue range
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes
+
+  - identifier: l_scale
+    title: Lightness Scale
+    description: The amount to scale the lightness in the hue range
+    type: float
+    minimum: 0.0
+    maximum: 500.0
+    default: 100.0
+    unit: percent
+    mutable: yes
+    animation: yes

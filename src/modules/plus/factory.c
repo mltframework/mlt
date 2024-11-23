@@ -49,6 +49,14 @@ extern mlt_filter filter_dynamic_loudness_init(mlt_profile profile,
                                                mlt_service_type type,
                                                const char *id,
                                                char *arg);
+extern mlt_filter filter_hslprimaries_init(mlt_profile profile,
+                                           mlt_service_type type,
+                                           const char *id,
+                                           char *arg);
+extern mlt_filter filter_hslrange_init(mlt_profile profile,
+                                       mlt_service_type type,
+                                       const char *id,
+                                       char *arg);
 extern mlt_filter filter_invert_init(mlt_profile profile,
                                      mlt_service_type type,
                                      const char *id,
@@ -157,6 +165,8 @@ MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "chroma_hold", filter_chroma_hold_init);
     MLT_REGISTER(mlt_service_filter_type, "dynamictext", filter_dynamictext_init);
     MLT_REGISTER(mlt_service_filter_type, "dynamic_loudness", filter_dynamic_loudness_init);
+    MLT_REGISTER(mlt_service_filter_type, "hslprimaries", filter_hslprimaries_init);
+    MLT_REGISTER(mlt_service_filter_type, "hslrange", filter_hslrange_init);
     MLT_REGISTER(mlt_service_filter_type, "invert", filter_invert_init);
     MLT_REGISTER(mlt_service_filter_type, "lift_gamma_gain", filter_lift_gamma_gain_init);
     MLT_REGISTER(mlt_service_filter_type, "loudness", filter_loudness_init);
@@ -201,6 +211,14 @@ MLT_REPOSITORY
                           "dynamic_loudness",
                           metadata,
                           "filter_dynamic_loudness.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "hslprimaries",
+                          metadata,
+                          "filter_hslprimaries.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "hslrange",
+                          metadata,
+                          "filter_hslrange.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "invert", metadata, "filter_invert.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "lift_gamma_gain",
