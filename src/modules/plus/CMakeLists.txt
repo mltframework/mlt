@@ -8,6 +8,7 @@ add_library(mltplus MODULE
   filter_chroma.c
   filter_dynamictext.c
   filter_dynamic_loudness.c
+  filter_gradientmap.cpp
   filter_hslprimaries.c
   filter_hslrange.c
   filter_invert.c
@@ -69,6 +70,7 @@ install(FILES
   filter_chroma.yml
   filter_dynamic_loudness.yml
   filter_dynamictext.yml
+  filter_gradientmap.yml
   filter_hslprimaries.yml
   filter_hslrange.yml
   filter_invert.yml
