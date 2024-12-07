@@ -277,5 +277,4 @@ mlt_filter filter_gradientmap_init(mlt_profile profile,
     }
     return filter;
 }
-
 }

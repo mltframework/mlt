@@ -224,10 +224,7 @@ MLT_REPOSITORY
                           "hslprimaries",
                           metadata,
                           "filter_hslprimaries.yml");
-    MLT_REGISTER_METADATA(mlt_service_filter_type,
-                          "hslrange",
-                          metadata,
-                          "filter_hslrange.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "hslrange", metadata, "filter_hslrange.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "invert", metadata, "filter_invert.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "lift_gamma_gain",
