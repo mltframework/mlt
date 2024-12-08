@@ -433,7 +433,24 @@ mlt_producer producer_melt_init(mlt_profile profile,
                 if (title == NULL && strstr(argv[i], "<?xml") != argv[i])
                     title = argv[i];
 
-                producer = create_producer(profile, field, argv[i]);
+                if (chain != NULL) {
+                    // Clone the profile so that it can be changed as needed by the chain without changing the main profile
+                    mlt_profile native_profile = mlt_profile_clone(profile);
+                    native_profile->is_explicit = 0;
+                    producer = create_producer(native_profile, field, argv[i]);
+                    if (producer) {
+                        mlt_properties_set_data(MLT_PRODUCER_PROPERTIES(producer),
+                                                "_native_profile",
+                                                native_profile,
+                                                0,
+                                                (mlt_destructor) mlt_profile_close,
+                                                NULL);
+                    } else {
+                        mlt_profile_close(native_profile);
+                    }
+                } else {
+                    producer = create_producer(profile, field, argv[i]);
+                }
                 if (!first_producer) {
                     first_producer = producer;
                 }

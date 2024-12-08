@@ -19,6 +19,8 @@
 
 #include "MltChain.h"
 
+#include <cstring>
+
 using namespace Mlt;
 
 Chain::Chain()
@@ -34,6 +36,12 @@ Chain::Chain(Profile &profile, const char *id, const char *service)
     }
 
     mlt_producer source = mlt_factory_producer(profile.get_profile(), id, service);
+    if (source
+        && !strcmp("xml", mlt_properties_get(MLT_PRODUCER_PROPERTIES(source), "mlt_service"))) {
+        mlt_producer_close(source);
+        // Always use a producer-consumer for xml so that the profile can be changed
+        source = mlt_factory_producer(profile.get_profile(), "consumer", service);
+    }
     if (source) {
         instance = mlt_chain_init(profile.get_profile());
         mlt_chain_set_source(instance, source);
