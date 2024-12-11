@@ -240,7 +240,17 @@ void mlt_field_close(mlt_field self)
 
 void mlt_field_disconnect_service(mlt_field self, mlt_service service)
 {
-    mlt_service p = mlt_service_producer(service);
+    mlt_service p = NULL;
+    if(mlt_service_filter_type == mlt_service_identify(service))
+    {
+        mlt_filter filter = MLT_FILTER(service);
+        int track = mlt_filter_get_track(filter);
+        p = mlt_service_peek_producer(service, track);
+    }
+    else
+    {
+        p = mlt_service_producer(service);
+    }
     mlt_service c = mlt_service_consumer(service);
     int i;
     switch (mlt_service_identify(c)) {
