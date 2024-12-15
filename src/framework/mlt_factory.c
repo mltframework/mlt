@@ -2,7 +2,7 @@
  * \file mlt_factory.c
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -310,7 +310,7 @@ static void set_common_properties(mlt_properties properties,
     mlt_properties_set(properties, "mlt_type", type);
     if (mlt_properties_get_int(properties, "_mlt_service_hidden") == 0)
         mlt_properties_set(properties, "mlt_service", service);
-    if (profile != NULL)
+    if (profile != NULL && mlt_properties_get_data(properties, "_profile", NULL) == NULL)
         mlt_properties_set_data(properties, "_profile", profile, 0, NULL, NULL);
 }
 
