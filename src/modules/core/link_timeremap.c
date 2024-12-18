@@ -1,6 +1,6 @@
 /*
  * link_timeremap.c
- * Copyright (C) 2020-2023 Meltytech, LLC
+ * Copyright (C) 2020-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -127,6 +127,7 @@ static int link_get_audio(mlt_frame frame,
     // Validate the request
     *channels = *channels <= 0 ? 2 : *channels;
     *frequency = *frequency <= 0 ? 48000 : *frequency;
+    *format = *format == mlt_audio_none ? mlt_audio_float : *format;
 
     if (source_speed < 0.1 || source_speed > 10) {
         // Return silent samples for speeds less than 0.1 or > 10
@@ -221,6 +222,12 @@ static int link_get_audio(mlt_frame frame,
                                         &in.samples);
         if (error) {
             mlt_log_error(MLT_LINK_SERVICE(self), "No audio: %d\n", in_frame_pos);
+            break;
+        }
+
+        if (in.format == mlt_audio_none) {
+            mlt_log_error(MLT_LINK_SERVICE(self), "Audio none: %d\n", in_frame_pos);
+            error = 1;
             break;
         }
 

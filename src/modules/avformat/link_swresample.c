@@ -1,6 +1,6 @@
 /*
  * link_swresample.c
- * Copyright (C) 2022 Meltytech, LLC
+ * Copyright (C) 2022-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -87,6 +87,9 @@ static int link_get_audio(mlt_frame frame,
     // Get the producer's audio
     int error
         = mlt_frame_get_audio(frame, &in.data, &in.format, &in.frequency, &in.channels, &in.samples);
+    if (out.format == mlt_audio_none) {
+        out.format = in.format;
+    }
     if (error || in.format == mlt_audio_none || out.format == mlt_audio_none || in.frequency <= 0
         || out.frequency <= 0 || in.channels <= 0 || out.channels <= 0) {
         // Error situation. Do not attempt to convert.

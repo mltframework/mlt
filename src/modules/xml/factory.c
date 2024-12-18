@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,10 @@ extern mlt_producer producer_xml_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
                                       char *arg);
+extern mlt_producer producer_xmlclip_init(mlt_profile profile,
+                                          mlt_service_type type,
+                                          const char *id,
+                                          char *arg);
 
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
@@ -43,6 +47,7 @@ MLT_REPOSITORY
     MLT_REGISTER(mlt_service_producer_type, "xml", producer_xml_init);
     MLT_REGISTER(mlt_service_producer_type, "xml-string", producer_xml_init);
     MLT_REGISTER(mlt_service_producer_type, "xml-nogl", producer_xml_init);
+    MLT_REGISTER(mlt_service_producer_type, "xml-clip", producer_xmlclip_init);
 
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "xml", metadata, "consumer_xml.yml");
     MLT_REGISTER_METADATA(mlt_service_producer_type, "xml", metadata, "producer_xml.yml");
@@ -51,4 +56,5 @@ MLT_REPOSITORY
                           metadata,
                           "producer_xml-string.yml");
     MLT_REGISTER_METADATA(mlt_service_producer_type, "xml-nogl", metadata, "producer_xml-nogl.yml");
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "xml-clip", metadata, "producer_xml-clip.yml");
 }

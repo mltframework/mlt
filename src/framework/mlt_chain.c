@@ -3,7 +3,7 @@
  * \brief link service class
  * \see mlt_chain_s
  *
- * Copyright (C) 2020-2023 Meltytech, LLC
+ * Copyright (C) 2020-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@
 #include "mlt_log.h"
 #include "mlt_tokeniser.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,7 @@ typedef struct
     mlt_profile source_profile;
     mlt_properties source_parameters;
     mlt_producer begin;
+    mlt_link frc;
     int relink_required;
 } mlt_chain_base;
 
@@ -398,6 +400,7 @@ void mlt_chain_close(mlt_chain self)
         mlt_producer_close(base->source);
         mlt_properties_close(base->source_parameters);
         mlt_profile_close(base->source_profile);
+        mlt_link_close(base->frc);
         free(base);
         self->parent.close = NULL;
         mlt_producer_close(&self->parent);
@@ -515,21 +518,36 @@ static void relink_chain(mlt_chain self)
     mlt_chain_base *base = self->local;
     mlt_profile profile = mlt_service_profile(MLT_CHAIN_SERVICE(self));
     int i = 0;
-    int frc = 0;
+    int frc_link = 0;
 
     if (!base->source) {
         return;
     }
 
+    mlt_link_close(base->frc);
+    base->frc = NULL;
+
     for (i = 0; i < base->link_count; i++) {
         if (mlt_properties_get_int(MLT_LINK_PROPERTIES(base->links[i]), "_frc")) {
             // A link will perform frame rate conversion.
-            frc = 1;
+            frc_link = 1;
             break;
         }
     }
 
-    if (frc) {
+    if (mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(base->source), "static_profile")) {
+        // The producer does not support changing profile
+        if (!frc_link) {
+            // There are no links that can convert frame rate
+            double chain_fps = mlt_producer_get_fps(MLT_CHAIN_PRODUCER(self));
+            double source_fps = mlt_producer_get_fps(base->source);
+            if (fabs(chain_fps - source_fps) > 0.001) {
+                // The link frame rate does not match the chain frame rate
+                // A time remap link with no parameters can perform frame rate conversion
+                base->frc = mlt_factory_link("timeremap", NULL);
+            }
+        }
+    } else if (frc_link && base->source_profile) {
         // Set the producer to be in native frame rate
         mlt_service_set_profile(MLT_PRODUCER_SERVICE(base->source), base->source_profile);
     } else {
@@ -537,14 +555,14 @@ static void relink_chain(mlt_chain self)
         mlt_service_set_profile(MLT_PRODUCER_SERVICE(base->source), profile);
     }
 
-    if (base->link_count == 0) {
-        base->begin = base->source;
-    } else {
-        base->begin = MLT_LINK_PRODUCER(base->links[base->link_count - 1]);
-        mlt_link_connect_next(base->links[0], base->source, profile);
-        for (i = 1; i < base->link_count; i++) {
-            mlt_link_connect_next(base->links[i], MLT_LINK_PRODUCER(base->links[i - 1]), profile);
-        }
+    base->begin = base->source;
+    if (base->frc) {
+        mlt_link_connect_next(base->frc, base->begin, profile);
+        base->begin = MLT_LINK_PRODUCER(base->frc);
+    }
+    for (i = 0; i < base->link_count; i++) {
+        mlt_link_connect_next(base->links[i], base->begin, profile);
+        base->begin = MLT_LINK_PRODUCER(base->links[i]);
     }
 }
 

@@ -1,6 +1,6 @@
 /*
  * link_avdeinterlace.c
- * Copyright (C) 2023 Meltytech, LLC
+ * Copyright (C) 2023-2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -376,7 +376,11 @@ static int link_get_image(mlt_frame frame,
     // Operate on the native image format/size;
     srcimg.width = mlt_properties_get_int(unique_properties, "width");
     srcimg.height = mlt_properties_get_int(unique_properties, "height");
-    srcimg.format = mlt_properties_get_int(unique_properties, "format");
+    if (mlt_properties_exists(unique_properties, "format")) {
+        srcimg.format = mlt_properties_get_int(unique_properties, "format");
+    } else {
+        srcimg.format = *format;
+    }
 
     // Sanitize the input
     if (srcimg.width <= 1 || srcimg.height <= 1) {
@@ -522,10 +526,34 @@ static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
         return error;
     }
 
+    // Pass original producer dimensions with the frame
     mlt_properties unique_properties = mlt_frame_unique_properties(*frame, MLT_LINK_SERVICE(self));
-    mlt_properties_pass_list(unique_properties,
-                             MLT_PRODUCER_PROPERTIES(original_producer),
-                             "width height format");
+    mlt_properties original_producer_properties = MLT_PRODUCER_PROPERTIES(original_producer);
+    if (mlt_properties_exists(original_producer_properties, "width")) {
+        mlt_properties_set_int(unique_properties,
+                               "width",
+                               mlt_properties_get_int(original_producer_properties, "width"));
+    } else if (mlt_properties_exists(original_producer_properties, "meta.media.width")) {
+        mlt_properties_set_int(unique_properties,
+                               "width",
+                               mlt_properties_get_int(original_producer_properties,
+                                                      "meta.media.width"));
+    }
+    if (mlt_properties_exists(original_producer_properties, "height")) {
+        mlt_properties_set_int(unique_properties,
+                               "height",
+                               mlt_properties_get_int(original_producer_properties, "height"));
+    } else if (mlt_properties_exists(original_producer_properties, "meta.media.height")) {
+        mlt_properties_set_int(unique_properties,
+                               "height",
+                               mlt_properties_get_int(original_producer_properties,
+                                                      "meta.media.height"));
+    }
+    if (mlt_properties_exists(original_producer_properties, "format")) {
+        mlt_properties_set_int(unique_properties,
+                               "format",
+                               mlt_properties_get_int(original_producer_properties, "format"));
+    }
 
     // Pass future frames
     int i = 0;

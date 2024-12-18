@@ -3,6 +3,7 @@ add_library(mltxml MODULE
   consumer_xml.c
   factory.c
   producer_xml.c
+  producer_xml-clip.c
 )
 
 file(GLOB YML "*.yml")
@@ -24,6 +25,7 @@ install(FILES
   producer_xml-nogl.yml
   producer_xml-string.yml
   producer_xml.yml
+  producer_xml-clip.yml
   mlt-xml.dtd
   DESTINATION ${MLT_INSTALL_DATA_DIR}/xml
 )
