@@ -1,5 +1,5 @@
 /*
- * producer_xml-native.c -- A wrapper for mlt XML in native profile
+ * producer_xml-clip.c -- A wrapper for mlt XML in native profile
  * Copyright (C) 2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
@@ -39,9 +39,8 @@ static int producer_get_audio(mlt_frame frame,
         return 1;
     }
     mlt_properties xml_frame_properties = MLT_FRAME_PROPERTIES(xml_frame);
-    mlt_properties_set(xml_frame_properties,
-                       "consumer.channel_layout",
-                       mlt_properties_get(frame_properties, "consumer.channel_layout"));
+    mlt_properties_copy(xml_frame_properties, frame_properties, "consumer.");
+
     int error = mlt_frame_get_audio(xml_frame, audio, format, frequency, channels, samples);
     if (error) {
         mlt_log_error(MLT_PRODUCER_SERVICE(self), "No audio\n");
@@ -78,22 +77,7 @@ static int producer_get_image(mlt_frame frame,
         return 1;
     }
     mlt_properties xml_frame_properties = MLT_FRAME_PROPERTIES(xml_frame);
-    mlt_properties_set(xml_frame_properties,
-                       "consumer.rescale",
-                       mlt_properties_get(frame_properties, "consumer.rescale"));
-    mlt_properties_set_int(xml_frame_properties, "consumer.progressive", profile->progressive);
-    mlt_properties_set(xml_frame_properties,
-                       "consumer.deinterlacer",
-                       mlt_properties_get(frame_properties, "consumer.rescale"));
-    mlt_properties_set_int(xml_frame_properties,
-                           "consumer.top_field_first",
-                           mlt_properties_get_int(frame_properties, "consumer.top_field_first"));
-    mlt_properties_set(xml_frame_properties,
-                       "consumer.color_trc",
-                       mlt_properties_get(frame_properties, "consumer.color_trc"));
-    mlt_properties_set(xml_frame_properties,
-                       "consumer.color_range",
-                       mlt_properties_get(frame_properties, "consumer.color_range"));
+    mlt_properties_copy(xml_frame_properties, frame_properties, "consumer.");
 
     // Force the dimension request to match the profile
     *width = profile->width;
@@ -108,9 +92,9 @@ static int producer_get_image(mlt_frame frame,
     mlt_properties_set_int(frame_properties, "format", *format);
     mlt_properties_set_int(frame_properties, "width", *width);
     mlt_properties_set_int(frame_properties, "height", *height);
-    mlt_properties_pass(frame_properties,
-                        xml_frame_properties,
-                        "colorspace aspect_ratio progressive");
+    mlt_properties_pass_list(frame_properties,
+                             xml_frame_properties,
+                             "colorspace aspect_ratio progressive");
 
     return error;
 }

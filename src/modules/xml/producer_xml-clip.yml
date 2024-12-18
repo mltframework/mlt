@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.0
 type: producer
 identifier: xml-clip
 title: An XML clip producer
@@ -16,3 +16,14 @@ description: >
   and will use a profile generated from the XML.
   This producer is only suitible in a project that has an exact match for the
   XML profile, or encapsulated in a chain where the frame rate can be adapted.
+
+parameters:
+  - identifier: resource
+    argument: yes
+    title: File
+    type: string
+    description: An XML text file containing MLT XML.
+    readonly: no
+    required: yes
+    mutable: no
+    widget: fileopen
