@@ -661,14 +661,20 @@ static void serialise_link(serialise_context context, mlt_service service, xmlNo
         xmlNewProp(child, _x("id"), _x(id));
         if (mlt_properties_get(properties, "title"))
             xmlNewProp(child, _x("title"), _x(mlt_properties_get(properties, "title")));
-        if (mlt_properties_get_position(properties, "in"))
+        if (mlt_properties_get_position(properties, "in")) {
             xmlNewProp(child,
                        _x("in"),
                        _x(mlt_properties_get_time(properties, "in", context->time_format)));
-        if (mlt_properties_get_position(properties, "out"))
+        } else if (mlt_properties_get(properties, "in")) {
+            xmlNewProp(child, _x("in"), _x(mlt_properties_get(properties, "in")));
+        }
+        if (mlt_properties_get_position(properties, "out")) {
             xmlNewProp(child,
                        _x("out"),
                        _x(mlt_properties_get_time(properties, "out", context->time_format)));
+        } else if (mlt_properties_get(properties, "out")) {
+            xmlNewProp(child, _x("out"), _x(mlt_properties_get(properties, "out")));
+        }
 
         serialise_properties(context, properties, child);
         serialise_service_filters(context, service, child);
