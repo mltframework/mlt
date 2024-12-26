@@ -103,10 +103,10 @@ static int filter_get_image(mlt_frame frame,
                    || rect.h != *height;
 
         if (mlt_properties_get_int(properties, "distort") == 0) {
-            b_height = qMax(1, qMin((int) rect.h, b_height));
-            b_width = qMax(1, int(b_height * b_dar / b_ar / consumer_ar));
+            b_height = qMax(1, qMin(qRound(rect.h), b_height));
+            b_width = qMax(1, qRound(b_height * b_dar / b_ar / consumer_ar));
         } else {
-            b_width = qMax(1, int(b_width * b_ar / consumer_ar));
+            b_width = qMax(1, qRound(b_width * b_ar / consumer_ar));
         }
         if (!hasAlpha && (b_width < *width || b_height < *height)) {
             hasAlpha = true;

@@ -112,8 +112,8 @@ static int get_image(mlt_frame a_frame,
         transform.translate(rect.x, rect.y);
         opacity = rect.o;
         if (!distort) {
-            b_width = qMin((int) rect.w, b_width);
-            b_height = qMin((int) rect.h, b_height);
+            b_width = qMin(qRound(rect.w), b_width);
+            b_height = qMin(qRound(rect.h), b_height);
             transform.translate((rect.w - b_width) / 2.0, (rect.h - b_height) / 2.0);
         }
         if (opacity < 1 || rect.x != 0 || rect.y != 0 || (rect.x + rect.w != *width)
