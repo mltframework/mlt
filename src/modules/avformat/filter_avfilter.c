@@ -777,7 +777,8 @@ static int filter_get_image(mlt_frame frame,
 
     mlt_log_debug(MLT_FILTER_SERVICE(filter), "position %" PRId64 "\n", pos);
     if (mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_yuv_only")) {
-        *format = mlt_image_yuv422;
+        if (*format == mlt_image_rgb || *format == mlt_image_rgba)
+            *format = mlt_image_yuv422;
     } else {
         *format = mlt_get_supported_image_format(*format);
     }
@@ -836,18 +837,24 @@ static int filter_get_image(mlt_frame frame,
         }
 
         // Set up the input frame
-        if (*format == mlt_image_yuv420p) {
+        if (*format == mlt_image_yuv420p || *format == mlt_image_yuv420p10
+            || *format == mlt_image_yuv444p10 || *format == mlt_image_yuv422p16) {
             int i = 0;
             int p = 0;
-            int widths[3] = {*width, *width / 2, *width / 2};
-            int heights[3] = {*height, *height / 2, *height / 2};
-            uint8_t *src = *image;
+            int strides[4];
+            uint8_t *planes[4];
+            int heights[3] = {*height, *height, *height};
+            if (*format == mlt_image_yuv420p || *format == mlt_image_yuv420p10) {
+                heights[1] >>= 1;
+                heights[2] >>= 1;
+            }
+            mlt_image_format_planes(*format, *width, *height, *image, planes, strides);
             for (p = 0; p < 3; p++) {
-                uint8_t *dst = pdata->avinframe->data[p];
+                uint8_t *const dst = pdata->avinframe->data[p];
                 for (i = 0; i < heights[p]; i++) {
-                    memcpy(dst, src, widths[p]);
-                    src += widths[p];
-                    dst += pdata->avinframe->linesize[p];
+                    memcpy(&dst[i * pdata->avinframe->linesize[p]],
+                           &planes[p][i * strides[p]],
+                           strides[p]);
                 }
             }
         } else {
@@ -880,18 +887,24 @@ static int filter_get_image(mlt_frame frame,
         }
 
         // Copy the filter output into the original buffer
-        if (*format == mlt_image_yuv420p) {
+        if (*format == mlt_image_yuv420p || *format == mlt_image_yuv420p10
+            || *format == mlt_image_yuv444p10 || *format == mlt_image_yuv422p16) {
             int i = 0;
             int p = 0;
-            int widths[3] = {*width, *width / 2, *width / 2};
-            int heights[3] = {*height, *height / 2, *height / 2};
-            uint8_t *dst = *image;
+            int strides[4];
+            uint8_t *planes[4];
+            int heights[3] = {*height, *height, *height};
+            if (*format == mlt_image_yuv420p || *format == mlt_image_yuv420p10) {
+                heights[1] >>= 1;
+                heights[2] >>= 1;
+            }
+            mlt_image_format_planes(*format, *width, *height, *image, planes, strides);
             for (p = 0; p < 3; p++) {
                 uint8_t *src = pdata->avoutframe->data[p];
                 for (i = 0; i < heights[p]; i++) {
-                    memcpy(dst, src, widths[p]);
-                    dst += widths[p];
-                    src += pdata->avoutframe->linesize[p];
+                    memcpy(&planes[p][i * strides[p]],
+                           &src[i * pdata->avoutframe->linesize[p]],
+                           strides[p]);
                 }
             }
         } else {

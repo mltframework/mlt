@@ -1,6 +1,6 @@
 /*
  * filter_rescale.c -- scale the producer video frame size to match the consumer
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -240,7 +240,8 @@ static int filter_get_image(mlt_frame frame,
 
             // If valid colorspace
             if (*format == mlt_image_yuv422 || *format == mlt_image_rgb || *format == mlt_image_rgba
-                || *format == mlt_image_yuv420p) {
+                || *format == mlt_image_yuv420p || *format == mlt_image_yuv420p10
+                || *format == mlt_image_yuv444p10) {
                 // Call the virtual function
                 scaler_method(frame, image, format, iwidth, iheight, owidth, oheight);
                 *width = owidth;

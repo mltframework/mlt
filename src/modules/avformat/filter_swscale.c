@@ -1,6 +1,6 @@
 /*
  * filter_swscale.c -- image scaling filter
- * Copyright (C) 2008-2022 Meltytech, LLC
+ * Copyright (C) 2008-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,6 +51,15 @@ static inline int convert_mlt_to_av_cs(mlt_image_format format)
         break;
     case mlt_image_yuv420p:
         value = AV_PIX_FMT_YUV420P;
+        break;
+    case mlt_image_yuv420p10:
+        value = AV_PIX_FMT_YUV420P10LE;
+        break;
+    case mlt_image_yuv444p10:
+        value = AV_PIX_FMT_YUV444P10LE;
+        break;
+    case mlt_image_yuv422p16:
+        value = AV_PIX_FMT_YUV422P16LE;
         break;
     default:
         mlt_log_error(NULL, "[filter swscale] Invalid format %s\n", mlt_image_format_name(format));
@@ -192,18 +201,24 @@ static int filter_scale(mlt_frame frame,
         }
 
         // Copy the filter output into the output buffer
-        if (*format == mlt_image_yuv420p) {
+        if (*format == mlt_image_yuv420p || *format == mlt_image_yuv420p10
+            || *format == mlt_image_yuv444p10 || *format == mlt_image_yuv422p16) {
             int i = 0;
             int p = 0;
-            int widths[3] = {owidth, owidth / 2, owidth / 2};
-            int heights[3] = {oheight, oheight / 2, oheight / 2};
-            uint8_t *dst = outbuf;
+            int strides[4];
+            uint8_t *planes[4];
+            int heights[3] = {oheight, oheight, oheight};
+            if (*format == mlt_image_yuv420p || *format == mlt_image_yuv420p10) {
+                heights[1] >>= 1;
+                heights[2] >>= 1;
+            }
+            mlt_image_format_planes(*format, owidth, oheight, outbuf, planes, strides);
             for (p = 0; p < 3; p++) {
                 uint8_t *src = avoutframe->data[p];
                 for (i = 0; i < heights[p]; i++) {
-                    memcpy(dst, src, widths[p]);
-                    dst += widths[p];
-                    src += avoutframe->linesize[p];
+                    memcpy(&planes[p][i * strides[p]],
+                           &src[i * avoutframe->linesize[p]],
+                           strides[p]);
                 }
             }
         } else {
