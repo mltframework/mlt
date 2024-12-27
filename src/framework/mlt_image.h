@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_image_s
  *
- * Copyright (C) 2022 Meltytech, LLC
+ * Copyright (C) 2022-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,6 +62,7 @@ extern void mlt_image_fill_opaque(mlt_image self);
 extern const char *mlt_image_format_name(mlt_image_format format);
 extern mlt_image_format mlt_image_format_id(const char *name);
 extern int mlt_image_rgba_opaque(uint8_t *image, int width, int height);
+extern int mlt_image_full_range(const char *color_range);
 
 // Deprecated functions
 extern int mlt_image_format_size(mlt_image_format format, int width, int height, int *bpp);

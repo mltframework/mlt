@@ -657,3 +657,8 @@ MLT_7.22.0 {
     mlt_property_is_numeric;
     mlt_property_is_rect;
 } MLT_7.18.0;
+
+MLT_7.30.0 {
+  global:
+    mlt_image_full_range;
+} MLT_7.22.0;

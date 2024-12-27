@@ -1,6 +1,6 @@
 /*
  * producer_image.c -- a Qt/QImage based producer for MLT
- * Copyright (C) 2006-2023 Meltytech, LLC
+ * Copyright (C) 2006-2024 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include <framework/mlt_producer.h>
 
 #include <ctype.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -230,9 +229,7 @@ static int producer_get_image(mlt_frame frame,
         self->current_alpha = mlt_cache_item_data(self->alpha_cache, &self->alpha_size);
 
         const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
-        int dst_full_range = dst_color_range
-                             && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
-        if (dst_full_range)
+        if (mlt_image_full_range(dst_color_range))
             mlt_properties_set_int(properties, "full_range", 1);
     }
     refresh_image(self, frame, *format, *width, *height, enable_caching);

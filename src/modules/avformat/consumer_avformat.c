@@ -27,7 +27,6 @@
 #include <framework/mlt_profile.h>
 
 // System header files
-#include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1755,8 +1754,7 @@ static void *consumer_thread(void *arg)
     int header_written = 0;
     int dst_colorspace = mlt_properties_get_int(properties, "colorspace");
     const char *color_range = mlt_properties_get(properties, "color_range");
-    int dst_full_range = color_range
-                         && (!strcmp("pc", color_range) || !strcmp("jpeg", color_range));
+    int dst_full_range = mlt_image_full_range(color_range);
 
     // Check for user selected format first
     if (format != NULL)

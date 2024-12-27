@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -459,9 +459,7 @@ static int generate_test_image(mlt_properties properties,
 
         if (mlt_properties_get_int(properties, "test_audio")) {
             const char *color_range = mlt_properties_get(properties, "consumer.color_range");
-            int full_range = color_range
-                             && (!strcmp("pc", color_range) || !strcmp("jpeg", color_range));
-            mlt_image_fill_white(&img, full_range);
+            mlt_image_fill_white(&img, mlt_image_full_range(color_range));
         } else {
             mlt_image_fill_checkerboard(&img, mlt_properties_get_double(properties, "aspect_ratio"));
         }

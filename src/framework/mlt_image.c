@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_mlt_image_s
  *
- * Copyright (C) 2020-2023 Meltytech, LLC
+ * Copyright (C) 2020-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,8 +21,6 @@
  */
 
 #include "mlt_image.h"
-
-#include "mlt_log.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -667,6 +665,7 @@ void mlt_image_format_planes(
  * \param image the image buffer
  * \param width width of the image in pixels
  * \param height height of the image in pixels
+ * \return true (1) or false (0) if the image is opaque
  */
 int mlt_image_rgba_opaque(uint8_t *image, int width, int height)
 {
@@ -675,4 +674,17 @@ int mlt_image_rgba_opaque(uint8_t *image, int width, int height)
             return 0;
     }
     return 1;
+}
+
+/** Check if the string indicates full range
+ *
+ * \public \memberof mlt_image_s
+ * \param color_range the string whose values to test
+ * \return true (1) or false (0) if the color range is full
+ */
+int mlt_image_full_range(const char *color_range)
+{
+    return color_range
+           && (!strcmp("pc", color_range) || !strcmp("full", color_range)
+               || !strcmp("jpeg", color_range));
 }

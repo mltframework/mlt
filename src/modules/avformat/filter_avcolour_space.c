@@ -1,6 +1,6 @@
 /*
  * filter_avcolour_space.c -- Colour space filter
- * Copyright (C) 2004-2023 Meltytech, LLC
+ * Copyright (C) 2004-2024 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -158,8 +158,7 @@ static int convert_image(mlt_frame frame,
         int height = mlt_properties_get_int(properties, "height");
         int src_full_range = mlt_properties_get_int(properties, "full_range");
         const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
-        int dst_full_range = dst_color_range
-                             && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
+        int dst_full_range = mlt_image_full_range(dst_color_range);
 
         if (out_width <= 0)
             out_width = width;
