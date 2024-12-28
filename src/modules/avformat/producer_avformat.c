@@ -603,7 +603,7 @@ static mlt_properties find_default_streams(producer_avformat self)
             else
                 mlt_layout = av_channel_layout_to_mlt(codec_params->channel_layout);
 #endif
-            char *layout = mlt_audio_channel_layout_name(mlt_layout);
+            const char *layout = mlt_audio_channel_layout_name(mlt_layout);
             snprintf(key, sizeof(key), "meta.media.%u.codec.layout", i);
             mlt_properties_set(meta_media, key, layout);
             break;
@@ -783,7 +783,6 @@ static enum AVPixelFormat pick_pix_fmt(enum AVPixelFormat pix_fmt)
 }
 
 static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
-                                          int full_range,
                                           mlt_image_format current_format)
 {
     if (current_format == mlt_image_none || current_format == mlt_image_movit
@@ -819,7 +818,7 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
             current_format = mlt_image_yuv422;
         }
     }
-    if (pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE || (pix_fmt == AV_PIX_FMT_YUV420P10LE && full_range)) {
+    if (pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE) {
         return mlt_image_rgb;
     } else if (pix_fmt == AV_PIX_FMT_YUVA444P10LE || pix_fmt == AV_PIX_FMT_GBRAP10LE
                || pix_fmt == AV_PIX_FMT_GBRAP12LE) {
@@ -915,9 +914,7 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
                                                         NULL);
             if (context) {
                 sws_freeContext(context);
-                mlt_image_format format = pick_image_format(pix_fmt,
-                                                            self->full_range,
-                                                            mlt_image_yuv422);
+                mlt_image_format format = pick_image_format(pix_fmt, mlt_image_yuv422);
                 mlt_properties_set_int(properties, "format", format);
             } else
                 error = 1;
@@ -2192,8 +2189,12 @@ static int producer_get_image(mlt_frame frame,
     int got_picture = 0;
     int image_size = 0;
     const char *dst_color_range = mlt_properties_get(frame_properties, "consumer.color_range");
-    int dst_full_range = dst_color_range
-                         && (!strcmp("pc", dst_color_range) || !strcmp("jpeg", dst_color_range));
+    int dst_full_range = mlt_image_full_range(dst_color_range);
+
+    // if depth > 8 libswscale only changes range when scaling, not simple pix_fmt conversion
+    const struct AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(self->video_codec->pix_fmt);
+    if (pix_desc && pix_desc->nb_components > 0 && pix_desc->comp[0].depth > 8)
+        dst_full_range = self->full_range;
 
     mlt_service_lock(MLT_PRODUCER_SERVICE(producer));
     pthread_mutex_lock(&self->video_mutex);
@@ -2291,10 +2292,9 @@ static int producer_get_image(mlt_frame frame,
 #ifdef AVFILTER
     *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
                                                   : codec_params->format,
-                                self->full_range,
                                 *format);
 #else
-    *format = pick_image_format(codec_params->format, self->full_range, *format);
+    *format = pick_image_format(codec_params->format, *format);
 #endif
 
     // Duplicate the last image if necessary

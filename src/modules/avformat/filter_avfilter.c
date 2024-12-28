@@ -809,9 +809,11 @@ static int filter_get_image(mlt_frame frame,
         pdata->avinframe->color_primaries = mlt_properties_get_int(frame_properties,
                                                                    "color_primaries");
         pdata->avinframe->color_trc = mlt_properties_get_int(frame_properties, "color_trc");
-        pdata->avinframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
-                                            ? AVCOL_RANGE_JPEG
-                                            : AVCOL_RANGE_MPEG;
+        // Setting full_range here causes full range input to always be down-converted to limited
+        // range when operating in YUV, regardless of the consumer.color_range -- for each avfilter!
+        // pdata->avinframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
+        //                                     ? AVCOL_RANGE_JPEG
+        //                                     : AVCOL_RANGE_MPEG;
 
         switch (mlt_properties_get_int(frame_properties, "colorspace")) {
         case 240:

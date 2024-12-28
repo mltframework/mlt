@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "common.h"
 #include <framework/mlt_factory.h>
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
@@ -142,6 +143,28 @@ static int filter_scale(mlt_frame frame,
             goto exit;
         }
 
+        mlt_profile profile = mlt_service_profile(
+            MLT_PRODUCER_SERVICE(mlt_frame_get_original_producer(frame)));
+        int dst_colorspace = profile ? profile->colorspace : 601;
+        int src_colorspace = mlt_properties_get_int(properties, "colorspace");
+        int src_full_range = mlt_properties_get_int(properties, "full_range");
+        const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
+        int dst_full_range = mlt_image_full_range(dst_color_range);
+
+        result = mlt_set_luma_transfer(context,
+                                       src_colorspace,
+                                       dst_colorspace,
+                                       src_full_range,
+                                       dst_full_range);
+        if (result < 0) {
+            mlt_log_error(NULL,
+                          "[filter swscale] Setting swscale color options failed with %d (%s)\n",
+                          result,
+                          av_err2str(result));
+            result = 1;
+            goto exit;
+        }
+
         // Setup the input image
         avinframe->width = iwidth;
         avinframe->height = iheight;
@@ -235,6 +258,7 @@ static int filter_scale(mlt_frame frame,
 
         // Now update the MLT frame
         mlt_frame_set_image(frame, outbuf, out_size, mlt_pool_release);
+        mlt_properties_set_int(properties, "full_range", dst_full_range);
 
         // Return the output image
         *image = outbuf;
