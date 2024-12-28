@@ -253,6 +253,14 @@ int mlt_set_luma_transfer(struct SwsContext *context,
     int src_range = src_full_range ? 1 : 0;
     int dst_range = dst_full_range ? 1 : 0;
 
+    sws_getColorspaceDetails(context,
+                             (int **) &src_coefficients,
+                             &src_range,
+                             (int **) &dst_coefficients,
+                             &dst_range,
+                             &brightness,
+                             &contrast,
+                             &saturation);
     switch (src_colorspace) {
     case 170:
     case 470:

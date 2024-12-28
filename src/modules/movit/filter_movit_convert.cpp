@@ -97,6 +97,11 @@ enum AVColorTransferCharacteristic {
     AVCOL_TRC_IEC61966_2_1 = 13, ///< IEC 61966-2-1 (sRGB or sYCC)
     AVCOL_TRC_BT2020_10 = 14,    ///< ITU-R BT2020 for 10 bit system
     AVCOL_TRC_BT2020_12 = 15,    ///< ITU-R BT2020 for 12 bit system
+    AVCOL_TRC_SMPTE2084 = 16,    ///< SMPTE ST 2084 for 10-, 12-, 14- and 16-bit systems
+    AVCOL_TRC_SMPTEST2084 = AVCOL_TRC_SMPTE2084,
+    AVCOL_TRC_SMPTE428 = 17, ///< SMPTE ST 428-1
+    AVCOL_TRC_SMPTEST428_1 = AVCOL_TRC_SMPTE428,
+    AVCOL_TRC_ARIB_STD_B67 = 18, ///< ARIB STD-B67, known as "Hybrid log-gamma"
     AVCOL_TRC_NB,                ///< Not part of ABI
 };
 
@@ -151,10 +156,10 @@ static GammaCurve getGammaCurve(mlt_properties properties)
             } else if (!strcmp(color_trc, "linear")) {
                 mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_LINEAR);
                 return GAMMA_LINEAR;
-            } else if (!strcmp(color_trc, "bt2020_10bit")) {
+            } else if (!strcmp(color_trc, "bt2020-10")) {
                 mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_10);
                 return GAMMA_REC_2020_10_BIT;
-            } else if (!strcmp(color_trc, "bt2020_12bit")) {
+            } else if (!strcmp(color_trc, "bt2020-12")) {
                 mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_12);
                 return GAMMA_REC_2020_12_BIT;
             }
@@ -172,6 +177,8 @@ static void get_format_from_properties(mlt_properties properties,
     case 601:
         ycbcr_format->luma_coefficients = YCBCR_REC_601;
         break;
+    case 2020:
+        ycbcr_format->luma_coefficients = YCBCR_REC_2020;
     case 709:
     default:
         ycbcr_format->luma_coefficients = YCBCR_REC_709;
@@ -185,6 +192,9 @@ static void get_format_from_properties(mlt_properties properties,
             break;
         case 601525:
             image_format->color_space = COLORSPACE_REC_601_525;
+            break;
+        case 2020:
+            image_format->color_space = COLORSPACE_REC_2020;
             break;
         case 709:
         default:

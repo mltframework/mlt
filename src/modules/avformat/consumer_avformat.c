@@ -348,6 +348,9 @@ static void color_trc_from_colorspace(mlt_properties properties)
     case 170:
         mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_SMPTE170M);
         break;
+    case 2020:
+        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_10);
+        break;
     default:
         break;
     }
@@ -376,6 +379,39 @@ static void color_primaries_from_colorspace(mlt_properties properties)
         break;
     case 170:
         mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_SMPTE170M);
+        break;
+    case 2020:
+        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_BT2020);
+        break;
+    default:
+        break;
+    }
+}
+
+static void av_colorspace_from_colorspace(mlt_properties properties, int colorspace)
+{
+    // Default color_space from colorspace.
+    switch (colorspace) {
+    case 0: // sRGB
+        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_RGB);
+        break;
+    case 601:
+        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT470BG);
+        break;
+    case 709:
+        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT709);
+        break;
+    case 240:
+        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_SMPTE240M);
+        break;
+    case 170:
+        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_SMPTE170M);
+        break;
+    case 2020:
+        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT2020_NCL);
+        break;
+    case 2021:
+        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT2020_CL);
         break;
     default:
         break;
@@ -928,6 +964,7 @@ static AVStream *add_video_stream(mlt_consumer consumer,
         }
         int colorspace = mlt_properties_get_int(properties, "colorspace");
         mlt_properties_set(properties, "colorspace", NULL);
+        av_colorspace_from_colorspace(properties, colorspace);
         apply_properties(c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM);
         mlt_properties_set_int(properties, "colorspace", colorspace);
 
@@ -1858,6 +1895,12 @@ static void *consumer_thread(void *arg)
                 } else if (strstr(pix_fmt_name, "rgb") || strstr(pix_fmt_name, "bgr")) {
                     mlt_properties_set(properties, "mlt_image_format", "rgb");
                     img_fmt = mlt_image_rgb;
+                } else if (strstr(pix_fmt_name, "yuv420p10le")) {
+                    mlt_properties_set(properties, "mlt_image_format", "yuv420p10");
+                    img_fmt = mlt_image_yuv420p10;
+                } else if (strstr(pix_fmt_name, "yuv444p10le")) {
+                    mlt_properties_set(properties, "mlt_image_format", "yuv444p10");
+                    img_fmt = mlt_image_yuv444p10;
                 }
             }
         }
