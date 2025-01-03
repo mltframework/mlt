@@ -815,22 +815,26 @@ static int filter_get_image(mlt_frame frame,
         //                                     ? AVCOL_RANGE_JPEG
         //                                     : AVCOL_RANGE_MPEG;
 
-        switch (mlt_properties_get_int(frame_properties, "colorspace")) {
-        case 240:
-            pdata->avinframe->colorspace = AVCOL_SPC_SMPTE240M;
-            break;
-        case 601:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT470BG;
-            break;
-        case 709:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT709;
-            break;
-        case 2020:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT2020_NCL;
-            break;
-        case 2021:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT2020_CL;
-            break;
+        if (*format == mlt_image_rgb || *format == mlt_image_rgba) {
+            pdata->avinframe->colorspace = AVCOL_SPC_RGB;
+        } else {
+            switch (mlt_properties_get_int(frame_properties, "colorspace")) {
+            case 240:
+                pdata->avinframe->colorspace = AVCOL_SPC_SMPTE240M;
+                break;
+            case 601:
+                pdata->avinframe->colorspace = AVCOL_SPC_BT470BG;
+                break;
+            case 709:
+                pdata->avinframe->colorspace = AVCOL_SPC_BT709;
+                break;
+            case 2020:
+                pdata->avinframe->colorspace = AVCOL_SPC_BT2020_NCL;
+                break;
+            case 2021:
+                pdata->avinframe->colorspace = AVCOL_SPC_BT2020_CL;
+                break;
+            }
         }
 
         ret = av_frame_get_buffer(pdata->avinframe, 1);
