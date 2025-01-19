@@ -3,7 +3,7 @@
  * \brief video output definition
  * \see mlt_profile_s
  *
- * Copyright (C) 2007-2018 Meltytech, LLC
+ * Copyright (C) 2007-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@ struct mlt_profile_s
     int sample_aspect_den;  /**< the denominator of the pixel aspect ratio */
     int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
     int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
-    int colorspace; /**< the Y'CbCr colorspace standard: =601 for ITU-R 601, =709 for ITU-R 709, or =240 for SMPTE240M */
+    int colorspace; /**< the Y'CbCr colorspace standard: `601` for ITU-R 601, `709` for ITU-R 709, `240` for SMPTE240M, `2020` for ITU-R BT.2020 non-constant luminance, `2021` for ITU-R BT.2020 constant luminance */
     int is_explicit; /**< used internally to indicate if the profile was requested explicitly or computed or defaulted */
 };
 

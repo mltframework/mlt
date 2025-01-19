@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -330,7 +330,7 @@ static void recompute_aspect_ratio(mlt_properties properties)
 
 static void color_trc_from_colorspace(mlt_properties properties)
 {
-    // Default color transfer characteristic from colorspace.
+    // Default color transfer characteristic from MLT colorspace.
     switch (mlt_properties_get_int(properties, "colorspace")) {
     case 709:
         mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT709);
@@ -358,7 +358,7 @@ static void color_trc_from_colorspace(mlt_properties properties)
 
 static void color_primaries_from_colorspace(mlt_properties properties)
 {
-    // Default color transfer characteristic from colorspace.
+    // Default color_primaries from MLT colorspace.
     switch (mlt_properties_get_int(properties, "colorspace")) {
     case 0: // sRGB
     case 709:
@@ -390,7 +390,7 @@ static void color_primaries_from_colorspace(mlt_properties properties)
 
 static void av_colorspace_from_colorspace(mlt_properties properties, int colorspace)
 {
-    // Default color_space from colorspace.
+    // Convert MLT colorspace to FFmpeg colorspace.
     switch (colorspace) {
     case 0: // sRGB
         mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_RGB);
@@ -1014,6 +1014,12 @@ static AVStream *add_video_stream(mlt_consumer consumer,
             break;
         case 709:
             c->colorspace = AVCOL_SPC_BT709;
+            break;
+        case 2020:
+            c->colorspace = AVCOL_SPC_BT2020_NCL;
+            break;
+        case 2021:
+            c->colorspace = AVCOL_SPC_BT2020_CL;
             break;
         }
 
