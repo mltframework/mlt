@@ -1,6 +1,63 @@
 MLT Release Notes
 -----------------
 
+Version 7.30.0
+
+Framework
+  * Fixed `Mlt::Producer::set_creation_time()` not exported on i686.
+  * Fixed `Mlt::Properties::set(int64_t)` symbol version.
+  * Fixed `mlt_factory_init()` on Linux/BSD may fail to initialize when
+    compiled with `-DRELOCATABLE`.
+  * Added generic non-drop-frame timecode in `mlt_property.c`.
+    Previously, it was only done for 30000/1001 and 60000/1001 frame rates,
+    but 24000/1001 is especially important as well.
+  * Added support for MLT XML embedded in chains.
+    This, along with `xml-clip` producer handles mismatching frame rate
+    between parent and child producers and facilites time-affecting links on
+    the child.
+  * Added `mlt_image_full_range(const char *color_range)` where any of the
+    following strings return true (1): `full`, `jpeg`, `pc`.
+
+Modules
+  * Added `xml-clip` producer.
+  * Fixed link `in` and `out` properties arenot serialized in the `xml` consumer.
+  * Added `hslprimaries` and `hslrange` filters to the `plus` module.
+  * Added a `gradientmap` filter to the `plus` module.
+  * Fixed `avfilter` audio filters with FFmpeg 7.
+  * Fixed incorrect frame rate for AVCHD (and possibly others) in `avformat`.
+  * Fixed `window_id` property in consumer `sdl2` by using
+    `SDL_CreateWindowFrom()`, especially important for embedding in GTK+ or Qt.
+  * Fixed text not rendering in transition `vqm` since Qt 6.
+  * Added `decimals` keyword to `gpstext` filter and move `RAW` keyword check.
+  * Fixed `time_offset` property handling in `gpstext` filter.
+  * Fixed reading and writing SRT files with unicode in the path.
+  * Fixed `subtitle_feed` filter on producers with an in point > 0.
+  * Fixed opaque alpha channels become translucent in `luma` transition.
+  * Fixed a crash in the `mix` transition with `consumer` producer.
+  * Fixed `freeze` filter freezing too much.
+  * Fixed `avfilter.fillborders` with preview scaling.
+  * Fixed non-proportional scaling in `qtblend` transition and filter.
+  * Fixed `avfilter` color distortion with `mlt_image_rgb` and `mlt_image_rgba`.
+  * Extended support for `colorspace=2020` consumer propeerty and the BT.2020
+    colorspace in the `avformat` producer and consumer.
+    This does not imply HDR, which is signaled through a `color_trc` property.
+  * Added support for `mlt_image_yuv420p10`, `mlt_image_yuv444p10`, and
+    `mlt_image_yuv422p16` in `avfilter`, `swscale`, and `rescale` filters.
+    This facilitates using these pixel formats end-to-end when using only
+    FFmpeg producers, certain avfilters, and `avformat` consumer.
+    This means it is possible to do 10-bit end-to-end on the CPU when being
+    careful to select compatible components and options to avoid conversions.
+    One can pass-through HDR; however, you must set the `color_trc` and
+    `pix_fmt` properties on the `avformat` consumer (see `ffmpeg -h full` for
+    these values). The `avformat` consumer automatically converts MLT
+    `colorspace` (integer value) to FFmpeg's `colorspace` and `color_primaries`
+    (unless explicit) options.
+
+Other
+  * Cleaned up the examples in `src/swig`.
+  * Changed the `x264-medium` preset to a higher quality.
+
+
 Version 7.28.0
 
 This fixes a couple of major regressions in the previous version 7.26.0:
