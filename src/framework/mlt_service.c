@@ -421,6 +421,27 @@ mlt_service mlt_service_producer(mlt_service self)
         return self;
 }
 
+/** Get the N-th connected producer.
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param index which of potentially multiple producers to this service (0 based)
+ * \return the N-th producer
+ */
+
+mlt_service mlt_service_peek_producer(mlt_service self, int index)
+{
+    mlt_service producer = NULL;
+
+    // Get the service base
+    mlt_service_base *base = self->local;
+
+    if (base->in != NULL && index < base->count)
+        producer = base->in[index];
+
+    return producer;
+}
+
 /** Associate a service to a consumer.
  *
  * Overwrites connection to any existing consumer.
