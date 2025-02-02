@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "framework/mlt_image.h"
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
 #include <framework/mlt_pool.h>
@@ -124,64 +125,73 @@ static int producer_get_image(mlt_frame frame,
 
         mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
 
-        switch (*format) {
-        case mlt_image_yuv420p: {
-            int plane_size = *width * *height;
-            uint8_t y, u, v;
+        if (!strcmp(now, "checkerboard")) {
+            struct mlt_image_s img;
+            mlt_image_set_values(&img, NULL, *format, *width, *height);
+            mlt_image_alloc_data(&img);
+            mlt_image_fill_checkerboard(&img, 1.0);
 
-            RGB2YUV_601_SCALED(color.r, color.g, color.b, y, u, v);
-            memset(p + 0, y, plane_size);
-            memset(p + plane_size, u, plane_size / 4);
-            memset(p + plane_size + plane_size / 4, v, plane_size / 4);
-            mlt_properties_set_int(properties, "colorspace", 601);
-            break;
-        }
-        case mlt_image_yuv422: {
-            int uneven = *width % 2;
-            int count = (*width - uneven) / 2 + 1;
-            uint8_t y, u, v;
+            memcpy(image, img.data, size);
+        } else {
+            switch (*format) {
+            case mlt_image_yuv420p: {
+                int plane_size = *width * *height;
+                uint8_t y, u, v;
 
-            RGB2YUV_601_SCALED(color.r, color.g, color.b, y, u, v);
-            i = *height + 1;
-            while (--i) {
-                int j = count;
-                while (--j) {
-                    *p++ = y;
-                    *p++ = u;
-                    *p++ = y;
-                    *p++ = v;
+                RGB2YUV_601_SCALED(color.r, color.g, color.b, y, u, v);
+                memset(p + 0, y, plane_size);
+                memset(p + plane_size, u, plane_size / 4);
+                memset(p + plane_size + plane_size / 4, v, plane_size / 4);
+                mlt_properties_set_int(properties, "colorspace", 601);
+                break;
+            }
+            case mlt_image_yuv422: {
+                int uneven = *width % 2;
+                int count = (*width - uneven) / 2 + 1;
+                uint8_t y, u, v;
+
+                RGB2YUV_601_SCALED(color.r, color.g, color.b, y, u, v);
+                i = *height + 1;
+                while (--i) {
+                    int j = count;
+                    while (--j) {
+                        *p++ = y;
+                        *p++ = u;
+                        *p++ = y;
+                        *p++ = v;
+                    }
+                    if (uneven) {
+                        *p++ = y;
+                        *p++ = u;
+                    }
                 }
-                if (uneven) {
-                    *p++ = y;
-                    *p++ = u;
+                mlt_properties_set_int(properties, "colorspace", 601);
+                break;
+            }
+            case mlt_image_rgb:
+                while (--i) {
+                    *p++ = color.r;
+                    *p++ = color.g;
+                    *p++ = color.b;
                 }
+                break;
+            case mlt_image_movit:
+            case mlt_image_opengl_texture:
+                memset(p, 0, size);
+                break;
+            case mlt_image_rgba:
+                while (--i) {
+                    *p++ = color.r;
+                    *p++ = color.g;
+                    *p++ = color.b;
+                    *p++ = color.a;
+                }
+                break;
+            default:
+                mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                              "invalid image format %s\n",
+                              mlt_image_format_name(*format));
             }
-            mlt_properties_set_int(properties, "colorspace", 601);
-            break;
-        }
-        case mlt_image_rgb:
-            while (--i) {
-                *p++ = color.r;
-                *p++ = color.g;
-                *p++ = color.b;
-            }
-            break;
-        case mlt_image_movit:
-        case mlt_image_opengl_texture:
-            memset(p, 0, size);
-            break;
-        case mlt_image_rgba:
-            while (--i) {
-                *p++ = color.r;
-                *p++ = color.g;
-                *p++ = color.b;
-                *p++ = color.a;
-            }
-            break;
-        default:
-            mlt_log_error(MLT_PRODUCER_SERVICE(producer),
-                          "invalid image format %s\n",
-                          mlt_image_format_name(*format));
         }
     } else {
         mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
