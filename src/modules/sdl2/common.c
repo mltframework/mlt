@@ -20,6 +20,7 @@
 #include "common.h"
 
 #include <framework/mlt_log.h>
+#include <string.h>
 
 SDL_AudioDeviceID sdl2_open_audio(const SDL_AudioSpec *desired, SDL_AudioSpec *obtained)
 {
