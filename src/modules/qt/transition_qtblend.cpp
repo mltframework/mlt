@@ -1,6 +1,6 @@
 /*
  * transition_qtblend.cpp -- Qt composite transition
- * Copyright (c) 2016 Jean-Baptiste Mardelle <jb@kdenlive.org>
+ * Copyright (c) 2016-2025 Jean-Baptiste Mardelle <jb@kdenlive.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,8 +42,6 @@ static int get_image(mlt_frame a_frame,
     uint8_t *b_image = NULL;
     // hasAlpha indicates whether the source material has an alpha channel
     bool hasAlpha = *format == mlt_image_rgba;
-    // forceAlpha is true if some operation makes it mandatory to perform the alpha compositing, like padding or scaling
-    bool forceAlpha = false;
     double opacity = 1.0;
     QTransform transform;
     // reference rect
@@ -75,10 +73,13 @@ static int get_image(mlt_frame a_frame,
     }
     double b_ar = mlt_frame_get_aspect_ratio(b_frame);
     double b_dar = b_ar * b_width / b_height;
+    double geometry_dar = consumer_ar * *width / *height;
     rect.w = -1;
     rect.h = -1;
     double transformScale = 1.;
-    double geometry_dar = *width * consumer_ar / *height;
+    // forceAlpha is true if some operation makes it mandatory to perform the alpha compositing, like padding or scaling
+    bool forceAlpha = b_dar != geometry_dar;
+
     if (!distort && (b_height < *height || b_width < *width)) {
         // Source image is smaller than profile, request full frame
         if (b_dar > geometry_dar) {
@@ -92,9 +93,11 @@ static int get_image(mlt_frame a_frame,
 
     double scalex = mlt_profile_scale_width(profile, *width);
     double scaley = mlt_profile_scale_height(profile, *height);
+
     if (scalex != 1.) {
+        // We are using consumer scaling, fetch a lower resolution image too
         b_height *= scalex;
-        b_width *= scalex;
+        b_width *= scaley;
     }
     int request_width = *width;
     int request_height = *height;
@@ -128,8 +131,9 @@ static int get_image(mlt_frame a_frame,
 
         transform.translate(rect.x, rect.y);
         opacity = rect.o;
-        if (opacity < 1 || rect.x != 0 || rect.y != 0 || (rect.x + rect.w != *width)
-            || (rect.y + rect.h != *height)) {
+        if (!forceAlpha
+            && (opacity < 1 || rect.x != 0 || rect.y != 0 || (rect.x + rect.w != *width)
+                || (rect.y + rect.h != *height))) {
             // we will process operations on top frame, so also process b_frame
             forceAlpha = true;
         }
@@ -141,9 +145,8 @@ static int get_image(mlt_frame a_frame,
         b_width = *width;
     }
 
-    double output_ar = mlt_profile_sar(profile);
     if (mlt_frame_get_aspect_ratio(b_frame) == 0) {
-        mlt_frame_set_aspect_ratio(b_frame, output_ar);
+        mlt_frame_set_aspect_ratio(b_frame, consumer_ar);
     }
 
     if (mlt_properties_get(transition_properties, "rotation")) {
@@ -201,8 +204,7 @@ static int get_image(mlt_frame a_frame,
                                      "progressive,distort,colorspace,full_range,force_full_luma,"
                                      "top_field_first,color_trc");
             // Prepare output image
-            if (b_frame->convert_image
-                && (b_width != request_width || b_height != request_height)) {
+            if (b_frame->convert_image && (b_width != request_width || b_height != request_height)) {
                 mlt_properties_set_int(b_properties, "convert_image_width", request_width);
                 mlt_properties_set_int(b_properties, "convert_image_height", request_height);
                 b_frame->convert_image(b_frame, &b_image, format, *format);
@@ -217,19 +219,13 @@ static int get_image(mlt_frame a_frame,
             return 0;
         }
     }
-
     if (!imageFetched) {
         *format = mlt_image_rgba;
         error = mlt_frame_get_image(b_frame, &b_image, format, &b_width, &b_height, 0);
     }
-    b_dar = b_ar * b_width / b_height;
     if (b_frame->convert_image
-        && (*format != mlt_image_rgba || b_width != request_width || b_height != request_height)) {
-        mlt_properties_set_int(b_properties, "convert_image_width", request_width);
-        mlt_properties_set_int(b_properties, "convert_image_height", request_height);
+        && (*format != mlt_image_rgba)) {
         b_frame->convert_image(b_frame, &b_image, format, mlt_image_rgba);
-        b_width = request_width;
-        b_height = request_height;
     }
     *format = mlt_image_rgba;
     if (distort) {

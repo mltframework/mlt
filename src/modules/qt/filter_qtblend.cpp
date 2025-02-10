@@ -1,6 +1,6 @@
 /*
  * filter_qtblend.cpp -- Qt composite filter
- * Copyright (C) 2015 Meltytech, LLC
+ * Copyright (C) 2015-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -81,7 +81,7 @@ static int filter_get_image(mlt_frame frame,
     double opacity = 1.0;
 
     // If the _qtblend_scaled property is defined, a qtblend filter was already applied
-    int qtblendRescaled = mlt_properties_get_int(frame_properties, "_qtblend_scaled");
+    int qtblendRescaled = mlt_properties_get_int(frame_properties, "qtblend_scaled");
     if (mlt_properties_get(properties, "rect")) {
         rect = mlt_properties_anim_get_rect(properties, "rect", position, length);
         if (::strchr(mlt_properties_get(properties, "rect"), '%')) {
@@ -95,7 +95,8 @@ static int filter_get_image(mlt_frame frame,
             // In this case, the *width and *height are set to the source resolution to ensure we don't lose too much details on multiple scaling operations
             // We requested a image with full media resolution, adjust rect to profile
             // Check if we have consumer scaling enabled since we cannot use *width and *height
-            double consumerScale = mlt_properties_get_double(frame_properties, "_qtblend_scalex");
+            double consumerScale = mlt_properties_get_double(frame_properties,
+                                                             "qtblend_preview_scaling");
             if (consumerScale > 0.) {
                 b_width *= consumerScale;
                 b_height *= consumerScale;
@@ -137,8 +138,8 @@ static int filter_get_image(mlt_frame frame,
             // First instance of a qtblend filter
             double scale = mlt_profile_scale_width(profile, *width);
             // Store consumer scaling for further uses
-            mlt_properties_set_int(frame_properties, "_qtblend_scaled", 1);
-            mlt_properties_set_double(frame_properties, "_qtblend_scalex", scale);
+            mlt_properties_set_int(frame_properties, "qtblend_scaled", 1);
+            mlt_properties_set_double(frame_properties, "qtblend_preview_scaling", scale);
             // Apply scaling
             if (scale != 1.0) {
                 rect.x *= scale;
