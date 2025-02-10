@@ -21,7 +21,6 @@
 
 #include <framework/mlt.h>
 
-#define MLT_QTBLEND_MAX_DIMENSION (16000)
 
 class QImage;
 
