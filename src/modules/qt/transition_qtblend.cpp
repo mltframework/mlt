@@ -1,6 +1,6 @@
 /*
  * transition_qtblend.cpp -- Qt composite transition
- * Copyright (c) 2016 Jean-Baptiste Mardelle <jb@kdenlive.org>
+ * Copyright (c) 2016-2025 Jean-Baptiste Mardelle <jb@kdenlive.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,8 +42,6 @@ static int get_image(mlt_frame a_frame,
     uint8_t *b_image = NULL;
     // hasAlpha indicates whether the source material has an alpha channel
     bool hasAlpha = *format == mlt_image_rgba;
-    // forceAlpha is true if some operation makes it mandatory to perform the alpha compositing, like padding or scaling
-    bool forceAlpha = false;
     double opacity = 1.0;
     QTransform transform;
     // reference rect
@@ -58,7 +56,9 @@ static int get_image(mlt_frame a_frame,
     mlt_profile profile = mlt_service_profile(MLT_TRANSITION_SERVICE(transition));
     int b_width = mlt_properties_get_int(b_properties, "meta.media.width");
     int b_height = mlt_properties_get_int(b_properties, "meta.media.height");
+
     bool distort = mlt_properties_get_int(transition_properties, "distort");
+    double consumer_ar = mlt_profile_sar(profile);
 
     // Check the producer's native format before fetching image
     int sourceFormat = mlt_properties_get_int(b_properties, "format");
@@ -73,12 +73,34 @@ static int get_image(mlt_frame a_frame,
     }
     double b_ar = mlt_frame_get_aspect_ratio(b_frame);
     double b_dar = b_ar * b_width / b_height;
+    double geometry_dar = consumer_ar * *width / *height;
     rect.w = -1;
     rect.h = -1;
+    double transformScale = 1.;
+    // forceAlpha is true if some operation makes it mandatory to perform the alpha compositing, like padding or scaling
+    bool forceAlpha = b_dar != geometry_dar;
+
     if (!distort && (b_height < *height || b_width < *width)) {
+        // Source image is smaller than profile, request full frame
+        if (b_dar > geometry_dar) {
+            transformScale = b_dar / geometry_dar;
+        } else {
+            transformScale = geometry_dar / b_dar;
+        }
         b_width = *width;
         b_height = *height;
     }
+
+    double scalex = mlt_profile_scale_width(profile, *width);
+    double scaley = mlt_profile_scale_height(profile, *height);
+
+    if (scalex != 1.) {
+        // We are using consumer scaling, fetch a lower resolution image too
+        b_height *= scalex;
+        b_width *= scaley;
+    }
+    int request_width = *width;
+    int request_height = *height;
 
     // Check transform
     if (mlt_properties_get(transition_properties, "rect")) {
@@ -91,33 +113,27 @@ static int get_image(mlt_frame a_frame,
             rect.h *= *height;
         } else {
             // Adjust to preview scaling
-            double scale = mlt_profile_scale_width(profile, *width);
-            if (scale != 1.0) {
-                rect.x *= scale;
-                rect.w *= scale;
+            if (scalex != 1.0) {
+                rect.x *= scalex;
+                rect.w *= scalex;
                 if (distort) {
-                    b_width *= scale;
+                    b_width *= scalex;
                 }
             }
-            scale = mlt_profile_scale_height(profile, *height);
-            if (scale != 1.0) {
-                rect.y *= scale;
-                rect.h *= scale;
+            if (scaley != 1.0) {
+                rect.y *= scaley;
+                rect.h *= scaley;
                 if (distort) {
-                    b_height *= scale;
+                    b_height *= scaley;
                 }
             }
         }
 
         transform.translate(rect.x, rect.y);
         opacity = rect.o;
-        if (!distort) {
-            b_width = qMin(qRound(rect.w), b_width);
-            b_height = qMin(qRound(rect.h), b_height);
-            transform.translate((rect.w - b_width) / 2.0, (rect.h - b_height) / 2.0);
-        }
-        if (opacity < 1 || rect.x != 0 || rect.y != 0 || (rect.x + rect.w != *width)
-            || (rect.y + rect.h != *height)) {
+        if (!forceAlpha
+            && (opacity < 1 || rect.x != 0 || rect.y != 0 || (rect.x + rect.w != *width)
+                || (rect.y + rect.h != *height))) {
             // we will process operations on top frame, so also process b_frame
             forceAlpha = true;
         }
@@ -129,9 +145,8 @@ static int get_image(mlt_frame a_frame,
         b_width = *width;
     }
 
-    double output_ar = mlt_profile_sar(profile);
     if (mlt_frame_get_aspect_ratio(b_frame) == 0) {
-        mlt_frame_set_aspect_ratio(b_frame, output_ar);
+        mlt_frame_set_aspect_ratio(b_frame, consumer_ar);
     }
 
     if (mlt_properties_get(transition_properties, "rotation")) {
@@ -157,12 +172,6 @@ static int get_image(mlt_frame a_frame,
     if (interps)
         interps = strdup(interps);
 
-    if (error) {
-        return error;
-    }
-    if (distort && b_width != 0 && b_height != 0) {
-        transform.scale(rect.w / b_width, rect.h / b_height);
-    }
     // Check profile dar vs image dar image
     if (!forceAlpha && rect.w == -1 && b_dar != mlt_profile_dar(profile)) {
         // Activate transparency if the clips don't have the same aspect ratio
@@ -175,8 +184,6 @@ static int get_image(mlt_frame a_frame,
     }
 
     // Check if we have transparency
-    int request_width = b_width;
-    int request_height = b_height;
     bool imageFetched = false;
     if (!forceAlpha) {
         if (!hasAlpha || *format == mlt_image_rgba) {
@@ -212,20 +219,36 @@ static int get_image(mlt_frame a_frame,
             return 0;
         }
     }
-
     if (!imageFetched) {
         *format = mlt_image_rgba;
         error = mlt_frame_get_image(b_frame, &b_image, format, &b_width, &b_height, 0);
     }
     if (b_frame->convert_image
-        && (*format != mlt_image_rgba || b_width != request_width || b_height != request_height)) {
-        mlt_properties_set_int(b_properties, "convert_image_width", request_width);
-        mlt_properties_set_int(b_properties, "convert_image_height", request_height);
+        && (*format != mlt_image_rgba)) {
         b_frame->convert_image(b_frame, &b_image, format, mlt_image_rgba);
-        b_width = request_width;
-        b_height = request_height;
     }
     *format = mlt_image_rgba;
+    if (distort) {
+        if (b_width != 0 && b_height != 0) {
+            transform.scale(rect.w / b_width, rect.h / b_height);
+        }
+    } else if (rect.w > 0 && rect.h > 0) {
+        double resize_dar = rect.w * consumer_ar / rect.h;
+        double scale;
+        if (b_dar > resize_dar) {
+            scale = rect.w / b_width;
+            if (b_dar < geometry_dar) {
+                scale *= transformScale;
+            }
+        } else {
+            scale = rect.h / b_height;
+            if (b_dar > geometry_dar) {
+                scale *= transformScale;
+            }
+        }
+        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
+        transform.scale(scale, scale);
+    }
 
     // Get bottom frame
     uint8_t *a_image = NULL;
@@ -241,12 +264,9 @@ static int get_image(mlt_frame a_frame,
     // Copy bottom frame in output
     memcpy(*image, a_image, image_size);
 
-    bool hqPainting = false;
-    if (interps) {
-        if (strcmp(interps, "bilinear") == 0 || strcmp(interps, "bicubic") == 0) {
-            hqPainting = true;
-        }
-    }
+    // We don't do subpixel smoothing for nearest neighbour interpolation
+    // so people can use that to upscale pixel art and keep the hard edges.
+    bool hqPainting = interps && strcmp(interps, "nearest") != 0;
 
     // convert bottom mlt image to qimage
     QImage bottomImg;

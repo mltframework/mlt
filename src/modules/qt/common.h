@@ -21,6 +21,7 @@
 
 #include <framework/mlt.h>
 
+
 class QImage;
 
 bool createQApplicationIfNeeded(mlt_service service);
