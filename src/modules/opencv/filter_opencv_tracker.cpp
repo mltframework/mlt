@@ -423,7 +423,7 @@ static int filter_get_image(mlt_frame frame,
     if (!data->initialized) {
         mlt_properties_anim_get_int(filter_properties, "results", 0, -1);
         mlt_animation anim = mlt_properties_get_animation(filter_properties, "results");
-        if (anim && mlt_animation_key_count(anim) > 0) {
+        if (anim && mlt_animation_key_count(anim) > 1) {
             data->initialized = true;
             data->playback = true;
         }
