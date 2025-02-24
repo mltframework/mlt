@@ -142,7 +142,7 @@ static bool createQApplicationIfNeeded(mlt_service service)
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
         if (getenv("DISPLAY") == 0 && getenv("WAYLAND_DISPLAY") == 0) {
             const char *qt_qpa = getenv("QT_QPA_PLATFORM");
-            if (qt_qpa == 0 || strcmp(qt_qpa, "offscreen") != 0) {
+            if (!qt_qpa || strcmp(qt_qpa, "offscreen")) {
                 mlt_log_error(service,
                           "The MLT Glaxnimate module requires a X11 or Wayland environment.\n"
                           "Please either run melt from a session with a display server or use a "
