@@ -490,6 +490,7 @@ static mlt_properties find_default_streams(producer_avformat self)
     // Allow for multiple audio and video streams in the file and select first of each (if available)
     for (i = 0; i < context->nb_streams; i++) {
         // Get the codec context
+        AVFormatContext *vpxContext = NULL;
         AVStream *stream = context->streams[i];
         if (!stream)
             continue;
@@ -497,6 +498,36 @@ static mlt_properties find_default_streams(producer_avformat self)
         const AVCodec *codec = avcodec_find_decoder(codec_params->codec_id);
         if (!codec)
             continue;
+        int switchToVpxCodec = 0;
+        if (codec_params->codec_id == AV_CODEC_ID_VP9) {
+            if (!(codec = avcodec_find_decoder_by_name("libvpx-vp9"))) {
+                codec = avcodec_find_decoder(codec_params->codec_id);
+            } else {
+                switchToVpxCodec = 1;
+            }
+        } else if (codec_params->codec_id == AV_CODEC_ID_VP8) {
+            if (!(codec = avcodec_find_decoder_by_name("libvpx"))) {
+                codec = avcodec_find_decoder(codec_params->codec_id);
+            } else {
+                switchToVpxCodec = 1;
+            }
+        }
+        if (switchToVpxCodec) {
+            // Use a temporary format context to get the real pixel format with the libvpx decoder,
+            // since the native decoder incorreclty detects yuva420p as yuv420p
+            int error = avformat_open_input(&vpxContext,
+                                            mlt_properties_get(meta_media, "resource"),
+                                            NULL,
+                                            NULL);
+            if (!error) {
+                vpxContext->video_codec = codec;
+                avformat_find_stream_info(vpxContext, NULL);
+                AVStream *vpxStream = vpxContext->streams[i];
+                if (vpxStream) {
+                    codec_params = vpxStream->codecpar;
+                }
+            }
+        }
 
         snprintf(key, sizeof(key), "meta.media.%u.stream.type", i);
 
@@ -633,6 +664,10 @@ static mlt_properties find_default_streams(producer_avformat self)
                 mlt_properties_set(meta_media, key, value);
                 free(value);
             }
+        }
+        if (vpxContext) {
+            avformat_close_input(&vpxContext);
+            vpxContext = NULL;
         }
     }
 
