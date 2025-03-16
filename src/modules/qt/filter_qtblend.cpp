@@ -28,7 +28,6 @@
 
 #define MLT_QTBLEND_MAX_DIMENSION (16000)
 
-
 /** Get the image.
 */
 static int filter_get_image(mlt_frame frame,

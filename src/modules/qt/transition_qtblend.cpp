@@ -223,8 +223,7 @@ static int get_image(mlt_frame a_frame,
         *format = mlt_image_rgba;
         error = mlt_frame_get_image(b_frame, &b_image, format, &b_width, &b_height, 0);
     }
-    if (b_frame->convert_image
-        && (*format != mlt_image_rgba)) {
+    if (b_frame->convert_image && (*format != mlt_image_rgba)) {
         b_frame->convert_image(b_frame, &b_image, format, mlt_image_rgba);
     }
     *format = mlt_image_rgba;
