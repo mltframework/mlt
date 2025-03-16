@@ -383,6 +383,26 @@ static void mlt_service_disconnect(mlt_service self)
     }
 }
 
+/** Set the consumer this service is connected to.
+ *
+ * Set the value that is returned by mlt_service_consumer()
+ *
+ * \public \memberof mlt_service_s
+ * \param self a service
+ * \param consumer the consumer to set
+ */
+
+void mlt_service_set_consumer(mlt_service self, mlt_service consumer)
+{
+    if (self) {
+        // Get the service base
+        mlt_service_base *base = self->local;
+
+        // Return the connected consumer
+        base->out = consumer;
+    }
+}
+
 /** Obtain the consumer a service is connected to.
  *
  * \public \memberof mlt_service_s
