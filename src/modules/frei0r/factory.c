@@ -1,7 +1,7 @@
 /*
  * factory.c -- the factory method interfaces
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2023 Meltytech, LLC
+ * Copyright (C) 2009-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -118,12 +118,14 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
         strcpy(servicetype, "");
     }
 
-    snprintf(file,
-             PATH_MAX,
-             "%s/frei0r/%s_%s.yml",
-             mlt_environment("MLT_DATA"),
-             servicetype,
-             service_name);
+    int n = snprintf(file,
+                     PATH_MAX,
+                     "%s/frei0r/%s_%s.yml",
+                     mlt_environment("MLT_DATA"),
+                     servicetype,
+                     service_name);
+    if (n < 0 || n >= sizeof(file))
+        return NULL;
     memset(&stat_buff, 0, sizeof(stat_buff));
     mlt_stat(file, &stat_buff);
 

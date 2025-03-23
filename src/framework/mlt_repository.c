@@ -3,7 +3,7 @@
  * \brief provides a map between service and shared objects
  * \see mlt_repository_s
  *
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -572,21 +572,28 @@ static void list_presets(mlt_properties properties, const char *path, const char
             if (de->d_name[0] != '.' && de->d_name[strlen(de->d_name) - 1] != '~') {
                 struct stat info;
 
-                snprintf(fullname, sizeof(fullname), "%s/%s", dirname, de->d_name);
+                int n = snprintf(fullname, sizeof(fullname), "%s/%s", dirname, de->d_name);
+                if (n < 0 || n >= sizeof(fullname))
+                    continue;
                 mlt_stat(fullname, &info);
                 if (S_ISDIR(info.st_mode)) {
                     // recurse into subdirectories
                     char sub[PATH_MAX];
-                    if (path)
-                        snprintf(sub, sizeof(sub), "%s/%s", path, de->d_name);
-                    else
+                    if (path) {
+                        n = snprintf(sub, sizeof(sub), "%s/%s", path, de->d_name);
+                        if (n < 0 || n >= sizeof(sub))
+                            continue;
+                    } else {
                         strncpy(sub, de->d_name, sizeof(sub));
+                    }
                     list_presets(properties, sub, fullname);
                 } else {
                     // load the preset
                     mlt_properties preset = mlt_properties_load(fullname);
                     if (preset && mlt_properties_count(preset)) {
-                        snprintf(fullname, sizeof(fullname), "%s/%s", path, de->d_name);
+                        n = snprintf(fullname, sizeof(fullname), "%s/%s", path, de->d_name);
+                        if (n < 0 || n >= sizeof(fullname))
+                            continue;
                         mlt_properties_set_data(properties,
                                                 fullname,
                                                 preset,
