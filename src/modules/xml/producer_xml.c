@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1792,7 +1792,7 @@ static xmlEntityPtr on_get_entity(void *ctx, const xmlChar *name)
 
 static void on_error(void *ctx, const char *msg, ...)
 {
-    struct _xmlError *err_ptr = xmlCtxtGetLastError(ctx);
+    const struct _xmlError *err_ptr = xmlCtxtGetLastError(ctx);
 
     switch (err_ptr->level) {
     case XML_ERR_WARNING:

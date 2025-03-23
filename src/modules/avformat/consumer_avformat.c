@@ -939,7 +939,7 @@ static AVStream *add_video_stream(mlt_consumer consumer,
             mlt_properties p = mlt_properties_load(vpre);
 #ifdef AVDATADIR
             if (mlt_properties_count(p) < 1) {
-                AVCodec *codec = avcodec_find_encoder(c->codec_id);
+                const AVCodec *codec = avcodec_find_encoder(c->codec_id);
                 if (codec) {
                     char *path = malloc(strlen(AVDATADIR) + strlen(codec->name) + strlen(vpre)
                                         + strlen(".ffpreset") + 2);
@@ -1260,7 +1260,7 @@ static int mlt_write(void *h, uint8_t *buf, int size)
 #endif
 {
     mlt_properties properties = (mlt_properties) h;
-    buffer_t buffer = {buf, size};
+    buffer_t buffer = {(uint8_t *) buf, size};
     mlt_events_fire(properties, "avformat-write", mlt_event_data_from_object(&buffer));
     return 0;
 }
