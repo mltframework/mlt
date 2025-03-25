@@ -99,11 +99,7 @@ static int filter_get_image(mlt_frame frame,
             // Check if we have consumer scaling enabled since we cannot use *width and *height
             double consumerScale = mlt_properties_get_double(frame_properties,
                                                              "qtblend_preview_scaling");
-            if (consumerScale > 0.) {
-                b_width *= consumerScale;
-                b_height *= consumerScale;
-            }
-
+            // Consumer scaling was already applied to b_width/b_height
             // Always request an image that follows the consumer aspect ratio
             double consumer_dar = normalized_width * consumer_ar / normalized_height;
             int tmpWidth = b_width;
@@ -146,21 +142,18 @@ static int filter_get_image(mlt_frame frame,
             if (scale != 1.0) {
                 rect.x *= scale;
                 rect.w *= scale;
-                if (distort) {
-                    b_width *= scale;
-                } else {
-                    // Apply consumer scaling to the source image request
-                    b_width *= scale;
-                    b_height *= scale;
+                if (b_width < normalized_width) {
+                    // Adjust scale so that we don't request too small images
+                    scale = qBound(scale, normalized_width * scale / b_width, 1.);
                 }
+                // Apply consumer scaling to the source image
+                b_width *= scale;
+                b_height *= scale;
             }
             scale = mlt_profile_scale_height(profile, *height);
             if (scale != 1.0) {
                 rect.y *= scale;
                 rect.h *= scale;
-                if (distort) {
-                    b_height *= scale;
-                }
             }
         }
         transform.translate(rect.x, rect.y);
