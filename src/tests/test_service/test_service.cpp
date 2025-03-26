@@ -65,6 +65,39 @@ private Q_SLOTS:
         QCOMPARE(mlt_service_identify(MLT_CONSUMER_SERVICE(consumer)), mlt_service_consumer_type);
     }
 
+    void GetSetConsumer()
+    {
+        Service *service;
+        Profile profile;
+        Producer producer(profile, "color");
+
+        // Test a default consumer (should be null or invalid)
+        service = producer.consumer();
+        QVERIFY(!service->is_valid());
+        delete service;
+
+        // Test a service connected to a consumer
+        Consumer c(profile, "xml", "string");
+        c.connect(producer);
+        c.start();
+        service = producer.consumer();
+        QCOMPARE(c.get_service(), service->get_service());
+        delete service;
+
+        // Replace the consumer service
+        Service invalidService;
+        producer.set_consumer(invalidService);
+        service = producer.consumer();
+        QCOMPARE(invalidService.get_service(), service->get_service());
+        delete service;
+
+        // Restore the consumer service
+        producer.set_consumer(c);
+        service = producer.consumer();
+        QCOMPARE(c.get_service(), service->get_service());
+        delete service;
+    }
+
 private:
     Repository *repo;
 };
