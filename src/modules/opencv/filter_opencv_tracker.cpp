@@ -442,14 +442,18 @@ static int filter_get_image(mlt_frame frame,
     }
     // ensure bounding box is within the frame boundaries or OpenCV will crash
     if (data->boundingBox.x > *width) {
-        data->boundingBox.x = *width - 10;
-    } else {
-        data->boundingBox.x = MAX(0., data->boundingBox.x);
+        data->boundingBox.x = *width;
+        data->boundingBox.width = 0;
+    } else if (data->boundingBox.x < 0) {
+        data->boundingBox.width = MAX(0, data->boundingBox.width + data->boundingBox.x);
+        data->boundingBox.x = 0;
     }
     if (data->boundingBox.y > *height) {
-        data->boundingBox.y = *height - 10;
-    } else {
-        data->boundingBox.y = MAX(0., data->boundingBox.y);
+        data->boundingBox.y = *height;
+        data->boundingBox.height = 0;
+    } else if (data->boundingBox.y < 0) {
+        data->boundingBox.height = MAX(0, data->boundingBox.height + data->boundingBox.y);
+        data->boundingBox.y = 0;
     }
     if (data->boundingBox.x + data->boundingBox.width > *width) {
         data->boundingBox.width = *width - data->boundingBox.x;
@@ -458,7 +462,7 @@ static int filter_get_image(mlt_frame frame,
         data->boundingBox.height = *height - data->boundingBox.y;
     }
 
-    if (blur > 0) {
+    if (blur > 0 && data->boundingBox.width > 1 && data->boundingBox.height > 1) {
         switch (mlt_properties_get_int(filter_properties, "blur_type")) {
         case 1:
             // Gaussian Blur
@@ -469,7 +473,7 @@ static int filter_get_image(mlt_frame frame,
             break;
         case 2:
             // Pixelate
-            if (data->boundingBox.width > 0 && data->boundingBox.height > 0) {
+            {
                 cv::Mat roi = cvFrame(data->boundingBox);
                 cv::Mat res;
                 cv::resize(roi,
@@ -506,7 +510,7 @@ static int filter_get_image(mlt_frame frame,
     }
 
     // Paint overlay shape
-    if (shape_width != 0) {
+    if (shape_width != 0 && data->boundingBox.width > 0 && data->boundingBox.height > 0) {
         // Get the OpenCV image
         mlt_color shape_color = mlt_properties_get_color(filter_properties, "shape_color");
         switch (mlt_properties_get_int(filter_properties, "shape")) {
