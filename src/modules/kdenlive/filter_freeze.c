@@ -23,9 +23,12 @@
 #include <framework/mlt_producer.h>
 #include <framework/mlt_property.h>
 #include <framework/mlt_service.h>
+#include <framework/mlt_tokeniser.h>
 
 #include <stdio.h>
 #include <string.h>
+
+static mlt_properties normalizers = NULL;
 
 static int filter_get_image(mlt_frame frame,
                             uint8_t **image,
@@ -66,7 +69,8 @@ static int filter_get_image(mlt_frame frame,
             mlt_producer_seek(producer, pos);
 
             // Get the frame
-            mlt_service_get_frame(MLT_PRODUCER_SERVICE(producer), &freeze_frame, 0);
+            mlt_service service = MLT_PRODUCER_SERVICE(producer);
+            mlt_service_get_frame(service, &freeze_frame, 0);
 
             mlt_properties freeze_properties = MLT_FRAME_PROPERTIES(freeze_frame);
             mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
@@ -90,6 +94,43 @@ static int filter_get_image(mlt_frame frame,
                                     (mlt_destructor) mlt_frame_close,
                                     NULL);
             mlt_properties_set_position(properties, "_frame", pos);
+            // Check if we have normalizers
+            int hasNormalizers = 0;
+            for (int i = 0; i < mlt_service_filter_count(service); i++) {
+                mlt_filter filter = mlt_service_filter(service, i);
+                if (filter && mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_loader") == 1) {
+                    hasNormalizers = 1;
+                    break;
+                }
+            }
+            if (hasNormalizers == 0) {
+                // Tokeniser
+                mlt_tokeniser tokeniser = mlt_tokeniser_init();
+
+                // We only need to load the normalizing properties once
+                if (normalizers == NULL) {
+                    char temp[PATH_MAX];
+                    snprintf(temp, sizeof(temp), "%s/core/loader.ini", mlt_environment("MLT_DATA"));
+                    normalizers = mlt_properties_load(temp);
+                    mlt_factory_register_for_clean_up(normalizers, (mlt_destructor) mlt_properties_close);
+                }
+
+                // Apply normalizers
+                for (int i = 0; i < mlt_properties_count(normalizers); i++) {
+                    int j = 0;
+                    int created = 0;
+                    char *value = mlt_properties_get_value(normalizers, i);
+                    mlt_tokeniser_parse_new(tokeniser, value, ",");
+                    for (j = 0; !created && j < mlt_tokeniser_count(tokeniser); j++) {
+                        const char *filter_name = mlt_tokeniser_get_string(tokeniser, j);
+                        mlt_filter norm_filter = mlt_factory_filter(mlt_service_profile(MLT_FILTER_SERVICE(filter)), filter_name, NULL);
+                        mlt_filter_process(norm_filter, freeze_frame);
+                    }
+                }
+
+                // Close the tokeniser
+                mlt_tokeniser_close(tokeniser);
+            }
         }
         mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
