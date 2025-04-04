@@ -54,6 +54,7 @@ public:
     int insert_producer(Service &producer, int index = 0);
     int disconnect_producer(int index = 0);
     int disconnect_all_producers();
+    void set_consumer(Service &service);
     Service *consumer();
     Service *producer();
     Profile *profile();
