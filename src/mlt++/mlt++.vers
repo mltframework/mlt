@@ -714,3 +714,10 @@ MLT_7.14.0 {
       "Mlt::Chain::attach_normalizers()";
     };
 } MLT_7.12.0;
+
+MLT_7.32.0 {
+  global:
+    extern "C++" {
+      "Mlt::Service::set_consumer(Mlt::Service&)";
+    };
+} MLT_7.14.0;

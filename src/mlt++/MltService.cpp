@@ -110,6 +110,11 @@ Service *Service::producer()
     return new Service(mlt_service_producer(get_service()));
 }
 
+void Service::set_consumer(Service &service)
+{
+    mlt_service_set_consumer(get_service(), service.get_service());
+}
+
 Service *Service::consumer()
 {
     return new Service(mlt_service_consumer(get_service()));
