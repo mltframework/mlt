@@ -25,6 +25,8 @@
 #include <QPainter>
 #include <QTransform>
 
+#define MLT_QTBLEND_MAX_DIMENSION (16000)
+
 static int get_image(mlt_frame a_frame,
                      uint8_t **image,
                      mlt_image_format *format,
@@ -44,8 +46,6 @@ static int get_image(mlt_frame a_frame,
     bool hasAlpha = *format == mlt_image_rgba;
     double opacity = 1.0;
     QTransform transform;
-    // reference rect
-    mlt_rect rect;
 
     // Determine length
     mlt_position length = mlt_transition_get_length(transition);
@@ -56,6 +56,15 @@ static int get_image(mlt_frame a_frame,
     mlt_profile profile = mlt_service_profile(MLT_TRANSITION_SERVICE(transition));
     int b_width = mlt_properties_get_int(b_properties, "meta.media.width");
     int b_height = mlt_properties_get_int(b_properties, "meta.media.height");
+    int normalized_width = profile->width;
+    int normalized_height = profile->height;
+
+    // reference rect
+    mlt_rect rect = {0,
+        0,
+        normalized_width,
+        normalized_height,
+        1.0};
 
     bool distort = mlt_properties_get_int(transition_properties, "distort");
     double consumer_ar = mlt_profile_sar(profile);
@@ -73,12 +82,14 @@ static int get_image(mlt_frame a_frame,
     }
     double b_ar = mlt_frame_get_aspect_ratio(b_frame);
     double b_dar = b_ar * b_width / b_height;
-    double geometry_dar = consumer_ar * *width / *height;
-    rect.w = -1;
-    rect.h = -1;
+    double geometry_dar = consumer_ar * normalized_width / normalized_height;
     double transformScale = 1.;
     // forceAlpha is true if some operation makes it mandatory to perform the alpha compositing, like padding or scaling
     bool forceAlpha = b_dar != geometry_dar;
+    if (forceAlpha) {
+        // Ensure we ask for an image with same dar as consumer
+        b_width = geometry_dar * b_height;
+    }
 
     if (!distort && (b_height < *height || b_width < *width)) {
         // Source image is smaller than profile, request full frame
@@ -91,59 +102,58 @@ static int get_image(mlt_frame a_frame,
         b_height = *height;
     }
 
-    double scalex = mlt_profile_scale_width(profile, *width);
-    double scaley = mlt_profile_scale_height(profile, *height);
-
-    if (scalex != 1.) {
-        // We are using consumer scaling, fetch a lower resolution image too
-        b_height *= scalex;
-        b_width *= scaley;
-    }
-    int request_width = *width;
-    int request_height = *height;
-
-    // Check transform
     if (mlt_properties_get(transition_properties, "rect")) {
         rect = mlt_properties_anim_get_rect(transition_properties, "rect", position, length);
         if (::strchr(mlt_properties_get(transition_properties, "rect"), '%')) {
             // We have percentage values, scale to frame size
-            rect.x *= *width;
-            rect.y *= *height;
-            rect.w *= *width;
-            rect.h *= *height;
-        } else {
-            // Adjust to preview scaling
-            if (scalex != 1.0) {
-                rect.x *= scalex;
-                rect.w *= scalex;
-                if (distort) {
-                    b_width *= scalex;
-                }
-            }
-            if (scaley != 1.0) {
-                rect.y *= scaley;
-                rect.h *= scaley;
-                if (distort) {
-                    b_height *= scaley;
-                }
-            }
+            rect.x *= normalized_width;
+            rect.y *= normalized_height;
+            rect.w *= normalized_width;
+            rect.h *= normalized_height;
         }
-
-        transform.translate(rect.x, rect.y);
-        opacity = rect.o;
-        if (!forceAlpha
-            && (opacity < 1 || rect.x != 0 || rect.y != 0 || (rect.x + rect.w != *width)
-                || (rect.y + rect.h != *height))) {
-            // we will process operations on top frame, so also process b_frame
-            forceAlpha = true;
-        }
-        // Ensure we don't request an image with a 0 width or height
-        b_width = qMax(1, b_width);
-        b_height = qMax(1, b_height);
     } else {
+        // Optimization, request profile sized image
+        b_width = normalized_width;
+        b_height = normalized_height;
+    }
+    int request_width = *width;
+    int request_height = *height;
+
+    double scalex = mlt_profile_scale_width(profile, *width);
+    double scaley = mlt_profile_scale_height(profile, *height);
+
+    // Adjust to preview scaling
+    if (scalex != 1.0) {
+        // We are using consumer scaling, fetch a lower resolution image too
+        rect.x *= scalex;
+        rect.w *= scalex;
+        if (scalex < 1.) {
+            b_width *= scalex;
+        }
+    }
+    if (scaley != 1.0) {
+        rect.y *= scaley;
+        rect.h *= scaley;
+        if (scaley < 1.) {
+            b_height *= scaley;
+        }
+    }
+
+    transform.translate(rect.x, rect.y);
+    opacity = rect.o;
+    if (!forceAlpha
+        && (opacity < 1 || rect.x != 0 || rect.y != 0 || (rect.x + rect.w != *width)
+            || (rect.y + rect.h != *height))) {
+        // we will process operations on top frame, so also process b_frame
+        forceAlpha = true;
+    }
+    // Ensure we don't request an image with a 0 width or height
+    b_width = qMax(1, b_width);
+    b_height = qMax(1, b_height);
+    /*} else {
         b_height = *height;
         b_width = *width;
-    }
+    }*/
 
     if (mlt_frame_get_aspect_ratio(b_frame) == 0) {
         mlt_frame_set_aspect_ratio(b_frame, consumer_ar);
@@ -223,6 +233,7 @@ static int get_image(mlt_frame a_frame,
         *format = mlt_image_rgba;
         error = mlt_frame_get_image(b_frame, &b_image, format, &b_width, &b_height, 0);
     }
+
     if (b_frame->convert_image && (*format != mlt_image_rgba)) {
         b_frame->convert_image(b_frame, &b_image, format, mlt_image_rgba);
     }
