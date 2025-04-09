@@ -61,11 +61,7 @@ static int filter_get_image(mlt_frame frame,
     double consumer_ar = mlt_profile_sar(profile);
 
     // Destination rect
-    mlt_rect rect = {0,
-                     0,
-                     normalized_width * mlt_profile_scale_width(profile, *width),
-                     normalized_height * mlt_profile_scale_height(profile, *height),
-                     1.0};
+    mlt_rect rect = {0, 0, (double)normalized_width, (double)normalized_height, 1.0};
     int b_width = mlt_properties_get_int(frame_properties, "meta.media.width");
     int b_height = mlt_properties_get_int(frame_properties, "meta.media.height");
     bool distort = mlt_properties_get_int(properties, "distort");
@@ -83,7 +79,7 @@ static int filter_get_image(mlt_frame frame,
     double opacity = 1.0;
 
     // If the _qtblend_scaled property is defined, a qtblend filter was already applied
-    int qtblendRescaled = mlt_properties_get_int(frame_properties, "qtblend_scaled");
+    double qtblendScaleX = qMin(1., mlt_properties_get_double(frame_properties, "qtblend_scalingx"));
     if (mlt_properties_get(properties, "rect")) {
         rect = mlt_properties_anim_get_rect(properties, "rect", position, length);
         if (::strchr(mlt_properties_get(properties, "rect"), '%')) {
@@ -92,82 +88,80 @@ static int filter_get_image(mlt_frame frame,
             rect.w *= normalized_width;
             rect.h *= normalized_height;
         }
-        if (qtblendRescaled) {
-            // Another qtblend filter was already applied
-            // In this case, the *width and *height are set to the source resolution to ensure we don't lose too much details on multiple scaling operations
-            // We requested a image with full media resolution, adjust rect to profile
-            // Check if we have consumer scaling enabled since we cannot use *width and *height
-            double consumerScale = mlt_properties_get_double(frame_properties,
-                                                             "qtblend_preview_scaling");
-            // Consumer scaling was already applied to b_width/b_height
-            // Always request an image that follows the consumer aspect ratio
-            double consumer_dar = normalized_width * consumer_ar / normalized_height;
-            int tmpWidth = b_width;
-            int tmpHeight = b_height;
-            double scaleFactor = qMax(*width / rect.w, *height / rect.h);
-            if (scaleFactor > 1.) {
-                // Use the highest necessary resolution image
-                tmpWidth *= scaleFactor;
-                tmpHeight *= scaleFactor;
-            }
-            if (consumer_dar > b_dar) {
-                *width = qBound(qRound(normalized_width * consumerScale),
-                                tmpWidth,
-                                MLT_QTBLEND_MAX_DIMENSION);
-                *height = qRound(*width * consumer_ar * normalized_height / normalized_width);
-            } else {
-                *height = qBound(qRound(normalized_height * consumerScale),
-                                 tmpHeight,
-                                 MLT_QTBLEND_MAX_DIMENSION);
-                *width = qRound(*height * normalized_width / normalized_height / consumer_ar);
-            }
-            // Adjust rect to new scaling
-            double scale = (double) *width / normalized_width;
-            if (scale != 1.0) {
-                rect.x *= scale;
-                rect.w *= scale;
-            }
-            scale = (double) *height / normalized_height;
-            if (scale != 1.0) {
-                rect.y *= scale;
-                rect.h *= scale;
-            }
+    }
+    if (qtblendScaleX > 0.) {
+        // Another qtblend filter was already applied
+        // In this case, the *width and *height are set to the source resolution to ensure we don't lose too much details on multiple scaling operations
+        // We requested a image with full media resolution, adjust rect to profile
+        // Check if we have consumer scaling enabled since we cannot use *width and *height
+        double qtblendScaleY = qMin(1., mlt_properties_get_double(frame_properties,
+                                                         "qtblend_scalingy"));
+        // Consumer scaling was already applied to b_width/b_height
+        // Always request an image that follows the consumer aspect ratio
+        double consumer_dar = normalized_width * consumer_ar / normalized_height;
+        int tmpWidth = b_width;
+        int tmpHeight = b_height;
+        double scaleFactor = qMax(*width / rect.w, *height / rect.h);
+        if (scaleFactor > 1.) {
+            // Use the highest necessary resolution image
+            tmpWidth *= scaleFactor;
+            tmpHeight *= scaleFactor;
+        }
+        if (consumer_dar > b_dar) {
+            *width = qBound(qRound(normalized_width * qtblendScaleX),
+                            tmpWidth,
+                            MLT_QTBLEND_MAX_DIMENSION);
+            *height = qRound(*width * consumer_ar * normalized_height / normalized_width);
         } else {
-            // First instance of a qtblend filter
-            double scale = mlt_profile_scale_width(profile, *width);
-            // Store consumer scaling for further uses
-            mlt_properties_set_int(frame_properties, "qtblend_scaled", 1);
-            mlt_properties_set_double(frame_properties, "qtblend_preview_scaling", scale);
-            // Apply scaling
-            if (scale != 1.0) {
-                rect.x *= scale;
-                rect.w *= scale;
-                if (b_width < normalized_width) {
-                    // Adjust scale so that we don't request too small images
-                    scale = qBound(scale, normalized_width * scale / b_width, 1.);
-                }
-                // Apply consumer scaling to the source image
-                b_width *= scale;
-                b_height *= scale;
+            *height = qBound(qRound(normalized_height * qtblendScaleY),
+                                tmpHeight,
+                                 MLT_QTBLEND_MAX_DIMENSION);
+            *width = qRound(*height * normalized_width / normalized_height / consumer_ar);
+        }
+        // Adjust rect to new scaling
+        double scale = (double) *width / normalized_width;
+        if (scale != 1.0) {
+            rect.x *= scale;
+            rect.w *= scale;
+        }
+        scale = (double) *height / normalized_height;
+        if (scale != 1.0) {
+            rect.y *= scale;
+            rect.h *= scale;
+        }
+    } else {
+        // First instance of a qtblend filter
+        // Check if requested frame size is scaled
+        double scalex = mlt_profile_scale_width(profile, *width);
+        double scaley = mlt_profile_scale_height(profile, *height);
+
+        // Store consumer scaling for further uses
+        mlt_properties_set_double(frame_properties, "qtblend_scalingx", scalex);
+        mlt_properties_set_double(frame_properties, "qtblend_scalingy", scaley);
+        // Apply scaling
+        if (scalex != 1.0) {
+            rect.x *= scalex;
+            rect.w *= scalex;
+            if (b_width < normalized_width) {
+                // Adjust scale so that we don't request too small images
+                scalex = qBound(scalex, normalized_width * scalex / b_width, 1.);
             }
-            scale = mlt_profile_scale_height(profile, *height);
-            if (scale != 1.0) {
-                rect.y *= scale;
-                rect.h *= scale;
+            // Apply consumer scaling to the source image
+            if (scalex < 1.) {
+                b_width *= scalex;
+                b_height *= scalex;
             }
         }
-        transform.translate(rect.x, rect.y);
-        opacity = rect.o;
-        hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height
-                   || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width < *width
-                   || b_height < *height;
-    } else {
-        b_width = *width;
-        b_height = *height;
-        if (b_width < normalized_width || b_height < normalized_height) {
-            hasAlpha = true;
+        if (scaley != 1.0) {
+            rect.y *= scaley;
+            rect.h *= scaley;
         }
     }
+    transform.translate(rect.x, rect.y);
+    opacity = rect.o;
+    hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height
+                   || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width < *width
+                   || b_height < *height;
 
     if (mlt_properties_get(properties, "rotation")) {
         double angle = mlt_properties_anim_get_double(properties, "rotation", position, length);
