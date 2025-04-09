@@ -1,6 +1,6 @@
 set(CMAKE_AUTOMOC ON)
 
-foreach(QT_TEST_NAME animation audio events filter frame image playlist producer properties repository service tractor xml)
+foreach(QT_TEST_NAME animation audio events filter frame image multitrack playlist producer properties repository service tractor xml)
   add_executable(test_${QT_TEST_NAME} test_${QT_TEST_NAME}/test_${QT_TEST_NAME}.cpp)
   target_compile_options(test_${QT_TEST_NAME} PRIVATE ${MLT_COMPILE_OPTIONS})
   target_link_libraries(test_${QT_TEST_NAME} PRIVATE Qt${QT_MAJOR_VERSION}::Core Qt${QT_MAJOR_VERSION}::Test mlt++)

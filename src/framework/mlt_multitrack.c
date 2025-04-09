@@ -3,7 +3,7 @@
  * \brief multitrack service class
  * \see mlt_multitrack_s
  *
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -583,11 +583,15 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int inde
         // Get the speed
         double speed = mlt_properties_get_double(producer_properties, "_speed");
 
-        // Make sure we're at the same point
-        mlt_producer_seek(producer, position);
+        if (hide == 3) {
+            *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(producer));
+        } else {
+            // Make sure we're at the same point
+            mlt_producer_seek(producer, position);
 
-        // Get the frame from the producer
-        mlt_service_get_frame(MLT_PRODUCER_SERVICE(producer), frame, 0);
+            // Get the frame from the producer
+            mlt_service_get_frame(MLT_PRODUCER_SERVICE(producer), frame, 0);
+        }
 
         // Indicate speed of this producer
         mlt_properties properties = MLT_FRAME_PROPERTIES(*frame);
