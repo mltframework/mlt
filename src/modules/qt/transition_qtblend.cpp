@@ -25,8 +25,6 @@
 #include <QPainter>
 #include <QTransform>
 
-#define MLT_QTBLEND_MAX_DIMENSION (16000)
-
 static int get_image(mlt_frame a_frame,
                      uint8_t **image,
                      mlt_image_format *format,
