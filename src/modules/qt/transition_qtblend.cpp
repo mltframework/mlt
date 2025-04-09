@@ -58,11 +58,7 @@ static int get_image(mlt_frame a_frame,
     int normalized_height = profile->height;
 
     // reference rect
-    mlt_rect rect = {0,
-        0,
-        normalized_width,
-        normalized_height,
-        1.0};
+    mlt_rect rect = {0, 0, (double)normalized_width, (double)normalized_height, 1.0};
 
     bool distort = mlt_properties_get_int(transition_properties, "distort");
     double consumer_ar = mlt_profile_sar(profile);

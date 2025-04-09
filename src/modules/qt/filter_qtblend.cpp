@@ -61,11 +61,7 @@ static int filter_get_image(mlt_frame frame,
     double consumer_ar = mlt_profile_sar(profile);
 
     // Destination rect
-    mlt_rect rect = {0,
-                     0,
-                     normalized_width,
-                     normalized_height,
-                     1.0};
+    mlt_rect rect = {0, 0, (double)normalized_width, (double)normalized_height, 1.0};
     int b_width = mlt_properties_get_int(frame_properties, "meta.media.width");
     int b_height = mlt_properties_get_int(frame_properties, "meta.media.height");
     bool distort = mlt_properties_get_int(properties, "distort");
