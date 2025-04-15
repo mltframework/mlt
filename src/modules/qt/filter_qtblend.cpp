@@ -61,7 +61,7 @@ static int filter_get_image(mlt_frame frame,
     double consumer_ar = mlt_profile_sar(profile);
 
     // Destination rect
-    mlt_rect rect = {0, 0, (double)normalized_width, (double)normalized_height, 1.0};
+    mlt_rect rect = {0, 0, (double) normalized_width, (double) normalized_height, 1.0};
     int b_width = mlt_properties_get_int(frame_properties, "meta.media.width");
     int b_height = mlt_properties_get_int(frame_properties, "meta.media.height");
     bool distort = mlt_properties_get_int(properties, "distort");
@@ -94,8 +94,8 @@ static int filter_get_image(mlt_frame frame,
         // In this case, the *width and *height are set to the source resolution to ensure we don't lose too much details on multiple scaling operations
         // We requested a image with full media resolution, adjust rect to profile
         // Check if we have consumer scaling enabled since we cannot use *width and *height
-        double qtblendScaleY = qMin(1., mlt_properties_get_double(frame_properties,
-                                                         "qtblend_scalingy"));
+        double qtblendScaleY = qMin(1.,
+                                    mlt_properties_get_double(frame_properties, "qtblend_scalingy"));
         // Consumer scaling was already applied to b_width/b_height
         // Always request an image that follows the consumer aspect ratio
         double consumer_dar = normalized_width * consumer_ar / normalized_height;
@@ -114,8 +114,8 @@ static int filter_get_image(mlt_frame frame,
             *height = qRound(*width * consumer_ar * normalized_height / normalized_width);
         } else {
             *height = qBound(qRound(normalized_height * qtblendScaleY),
-                                tmpHeight,
-                                 MLT_QTBLEND_MAX_DIMENSION);
+                             tmpHeight,
+                             MLT_QTBLEND_MAX_DIMENSION);
             *width = qRound(*height * normalized_width / normalized_height / consumer_ar);
         }
         // Adjust rect to new scaling
@@ -160,8 +160,8 @@ static int filter_get_image(mlt_frame frame,
     transform.translate(rect.x, rect.y);
     opacity = rect.o;
     hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height
-                   || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width < *width
-                   || b_height < *height;
+               || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width < *width
+               || b_height < *height;
 
     if (mlt_properties_get(properties, "rotation")) {
         double angle = mlt_properties_anim_get_double(properties, "rotation", position, length);
