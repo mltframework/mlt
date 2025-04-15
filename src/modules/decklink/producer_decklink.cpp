@@ -1,6 +1,6 @@
 /*
  * producer_decklink.c -- input from Blackmagic Design DeckLink
- * Copyright (C) 2011-2022 Meltytech, LLC
+ * Copyright (C) 2011-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -126,7 +126,7 @@ private:
     {
         IDeckLinkDisplayModeIterator *iter = NULL;
         IDeckLinkDisplayMode *mode = NULL;
-        BMDDisplayMode result = (BMDDisplayMode) bmdDisplayModeNotSupported;
+        BMDDisplayMode result = (BMDDisplayMode) bmdModeUnknown;
 
         if (m_decklinkInput->GetDisplayModeIterator(&iter) == S_OK) {
             while (!result && iter->Next(&mode) == S_OK) {
@@ -261,7 +261,7 @@ public:
 
             // Get the display mode
             BMDDisplayMode displayMode = getDisplayMode(profile, m_vancLines);
-            if (displayMode == (BMDDisplayMode) bmdDisplayModeNotSupported) {
+            if (displayMode == (BMDDisplayMode) bmdModeUnknown) {
                 mlt_log_info(getProducer(),
                              "profile = %dx%d %f fps %s\n",
                              profile->width,
@@ -277,8 +277,9 @@ public:
 #else
             bool doesDetectFormat = false;
 #endif
-            IDeckLinkAttributes *decklinkAttributes = 0;
-            if (m_decklink->QueryInterface(IID_IDeckLinkAttributes, (void **) &decklinkAttributes)
+            IDeckLinkProfileAttributes *decklinkAttributes = 0;
+            if (m_decklink->QueryInterface(IID_IDeckLinkProfileAttributes,
+                                           (void **) &decklinkAttributes)
                 == S_OK) {
                 if (decklinkAttributes->GetFlag(BMDDeckLinkSupportsInputFormatDetection,
                                                 &doesDetectFormat)
@@ -511,7 +512,7 @@ public:
                 int vitc_in = mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(getProducer()),
                                                      "vitc_in");
                 if (vitc_in
-                    && (S_OK == video->GetTimecode(bmdTimecodeRP188, &timecode)
+                    && (S_OK == video->GetTimecode(bmdTimecodeRP188Any, &timecode)
                         || S_OK == video->GetTimecode(bmdTimecodeVITC, &timecode))
                     && timecode) {
                     int vitc = timecode->GetBCD();
@@ -577,7 +578,16 @@ public:
                 }
 
                 // Capture image
-                video->GetBytes(&buffer);
+                IDeckLinkVideoBuffer *videoBuffer = NULL;
+                if (video->QueryInterface(IID_IDeckLinkVideoBuffer, (void **) &videoBuffer)
+                    == S_OK) {
+                    if (videoBuffer->StartAccess(bmdBufferAccessRead) == S_OK) {
+                        videoBuffer->GetBytes(&buffer);
+                        videoBuffer->EndAccess(bmdBufferAccessRead);
+                    }
+                    videoBuffer->Release();
+                    videoBuffer = NULL;
+                }
                 if (image && buffer) {
                     unsigned char *out[4] = {image_buffers[0] + m_vancLines * image_strides[0],
                                              image_buffers[1] + m_vancLines * image_strides[1],
@@ -604,7 +614,7 @@ public:
             }
 
             // Get timecode
-            if ((S_OK == video->GetTimecode(bmdTimecodeRP188, &timecode)
+            if ((S_OK == video->GetTimecode(bmdTimecodeRP188Any, &timecode)
                  || S_OK == video->GetTimecode(bmdTimecodeVITC, &timecode))
                 && timecode) {
                 DLString timecodeString = 0;
