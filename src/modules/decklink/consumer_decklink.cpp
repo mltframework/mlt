@@ -813,7 +813,7 @@ protected:
                                                             samples,
                                                             streamTime,
                                                             frequency,
-                                                            (unsigned long *) &written);
+                                                            (unsigned int *) &written);
 #else
                 hr = m_deckLinkOutput->ScheduleAudioSamples(pcm,
                                                             samples,
