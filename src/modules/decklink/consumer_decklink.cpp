@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2023 Meltytech, LLC
+ * Copyright (C) 2010-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,6 +49,7 @@ static int swab_sliced(int id, int idx, int jobs, void *cookie)
 static const unsigned PREROLL_MINIMUM = 3;
 
 enum { OP_NONE = 0, OP_OPEN, OP_START, OP_STOP, OP_EXIT };
+enum { SDR = 0, HDR = 1, PQ = 2, HLG = 3 };
 
 class DeckLinkConsumer : public IDeckLinkVideoOutputCallback, public IDeckLinkAudioOutputCallback
 {
@@ -311,8 +312,8 @@ protected:
         }
 
         // Get the keyer interface
-        IDeckLinkAttributes *deckLinkAttributes = 0;
-        if (m_deckLink->QueryInterface(IID_IDeckLinkAttributes, (void **) &deckLinkAttributes)
+        IDeckLinkProfileAttributes *deckLinkAttributes = 0;
+        if (m_deckLink->QueryInterface(IID_IDeckLinkProfileAttributes, (void **) &deckLinkAttributes)
             == S_OK) {
 #ifdef _WIN32
             BOOL flag = FALSE;
@@ -524,8 +525,18 @@ protected:
         m_sliced_swab = mlt_properties_get_int(consumer_properties, "sliced_swab");
 
         if (rendered && !mlt_frame_get_image(frame, &image, &format, &m_width, &height, 0)) {
-            if (decklinkFrame)
-                decklinkFrame->GetBytes((void **) &m_buffer);
+            if (decklinkFrame) {
+                IDeckLinkVideoBuffer *videoBuffer = NULL;
+                if (decklinkFrame->QueryInterface(IID_IDeckLinkVideoBuffer, (void **) &videoBuffer)
+                    == S_OK) {
+                    if (videoBuffer->StartAccess(bmdBufferAccessWrite) == S_OK) {
+                        videoBuffer->GetBytes((void **) &m_buffer);
+                        videoBuffer->EndAccess(bmdBufferAccessWrite);
+                    }
+                    videoBuffer->Release();
+                    videoBuffer = NULL;
+                }
+            }
 
             if (m_buffer) {
                 // NTSC SDI is always 486 lines
@@ -572,9 +583,18 @@ protected:
             }
         } else if (decklinkFrame) {
             uint8_t *buffer = NULL;
-            decklinkFrame->GetBytes((void **) &buffer);
-            if (buffer)
-                memcpy(buffer, m_buffer, stride * height);
+            IDeckLinkVideoBuffer *videoBuffer = NULL;
+            if (decklinkFrame->QueryInterface(IID_IDeckLinkVideoBuffer, (void **) &videoBuffer)
+                == S_OK) {
+                if (videoBuffer->StartAccess(bmdBufferAccessWrite) == S_OK) {
+                    videoBuffer->GetBytes((void **) &buffer);
+                    if (buffer)
+                        memcpy(buffer, m_buffer, stride * height);
+                    videoBuffer->EndAccess(bmdBufferAccessWrite);
+                }
+                videoBuffer->Release();
+                videoBuffer = NULL;
+            }
         }
         if (decklinkFrame) {
             char *vitc;
@@ -599,6 +619,23 @@ protected:
                     ->SetTimecodeUserBits(bmdTimecodeVITC,
                                           mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame),
                                                                  "meta.attr.vitc.userbits"));
+
+            if (2020 == mlt_properties_get_int(consumer_properties, "colorspace")
+                && mlt_properties_exists(consumer_properties, "color_trc")
+                && (18 == mlt_properties_get_int(consumer_properties, "color_trc")
+                    || !strcmp("arib-std-b67",
+                               mlt_properties_get(consumer_properties, "color_trc")))) {
+                // Set color space and transfer function
+                IDeckLinkVideoFrameMutableMetadataExtensions *frameMeta = nullptr;
+                if (decklinkFrame->QueryInterface(IID_IDeckLinkVideoFrameMutableMetadataExtensions,
+                                                  (void **) &frameMeta)
+                    == S_OK) {
+                    frameMeta->SetInt(bmdDeckLinkFrameMetadataColorspace, bmdColorspaceRec2020);
+                    frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc, HLG);
+                    decklinkFrame->SetFlags(decklinkFrame->GetFlags()
+                                            & ~bmdFrameContainsHDRMetadata);
+                }
+            }
 
             hr = m_deckLinkOutput->ScheduleVideoFrame(decklinkFrame,
                                                       m_count * m_duration,
@@ -776,7 +813,7 @@ protected:
                                                             samples,
                                                             streamTime,
                                                             frequency,
-                                                            (unsigned long *) &written);
+                                                            (unsigned int *) &written);
 #else
                 hr = m_deckLinkOutput->ScheduleAudioSamples(pcm,
                                                             samples,
