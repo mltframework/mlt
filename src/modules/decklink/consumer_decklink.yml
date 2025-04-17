@@ -2,8 +2,8 @@ schema_version: 7.0
 type: consumer
 identifier: decklink
 title: Blackmagic Design DeckLink Output
-version: 2
-copyright: Copyright (C) 2010-2018 Meltytech, LLC
+version: 3
+copyright: Copyright (C) 2010-2025 Meltytech, LLC
 license: LGPL
 language: en
 creator: Dan Dennedy
