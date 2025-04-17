@@ -374,7 +374,7 @@ protected:
         if (!mlt_properties_get_int(properties, "running"))
             return 0;
 
-        mlt_log_verbose(getConsumer(), "preroll %u frames\n", m_preroll);
+        mlt_log_debug(getConsumer(), "preroll %u frames\n", m_preroll);
 
         // preroll frames
         for (unsigned i = 0; i < m_preroll; i++)
@@ -965,12 +965,10 @@ protected:
 
         // step forward frames counter if underrun
         if (bmdOutputFrameDisplayedLate == completed) {
-            mlt_log_verbose(getConsumer(),
-                            "ScheduledFrameCompleted: bmdOutputFrameDisplayedLate == completed\n");
+            mlt_log_debug(getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDisplayedLate\n");
         }
         if (bmdOutputFrameDropped == completed) {
-            mlt_log_verbose(getConsumer(),
-                            "ScheduledFrameCompleted: bmdOutputFrameDropped == completed\n");
+            mlt_log_debug(getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDropped\n");
             m_count++;
             ScheduleNextFrame(false);
         }
