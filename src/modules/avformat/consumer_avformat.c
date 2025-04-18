@@ -2022,8 +2022,6 @@ static void *consumer_thread(void *arg)
     // Get width and height
     int width = mlt_properties_get_int(properties, "width");
     int height = mlt_properties_get_int(properties, "height");
-    int img_width = width;
-    int img_height = height;
 
     // Get default audio properties
     enc_ctx->total_channels = enc_ctx->channels = mlt_properties_get_int(properties, "channels");
