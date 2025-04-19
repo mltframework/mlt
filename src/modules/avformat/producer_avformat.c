@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,17 +43,13 @@
 #include <libavformat/avformat.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/dict.h>
+#include <libavutil/hwcontext.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
 #include <libavutil/samplefmt.h>
 #include <libavutil/version.h>
 #include <libswscale/swscale.h>
-
-#define USE_HWACCEL 1
-#if USE_HWACCEL
-#include <libavutil/hwcontext.h>
-#endif
 
 #ifdef AVFILTER
 #include <libavfilter/avfilter.h>
@@ -143,7 +139,6 @@ struct producer_avformat_s
     int is_audio_synchronizing;
     int video_send_result;
     int reset_image_cache;
-#if USE_HWACCEL
     struct
     {
         int pix_fmt;
@@ -151,7 +146,6 @@ struct producer_avformat_s
         char device[128];
         AVBufferRef *device_ctx;
     } hwaccel;
-#endif
 };
 typedef struct producer_avformat_s *producer_avformat;
 
@@ -804,14 +798,12 @@ static enum AVPixelFormat pick_pix_fmt(enum AVPixelFormat pix_fmt)
         return AV_PIX_FMT_RGBA;
     case AV_PIX_FMT_BAYER_RGGB16LE:
         return AV_PIX_FMT_RGB24;
-#if USE_HWACCEL
     case AV_PIX_FMT_VAAPI:
     case AV_PIX_FMT_CUDA:
     case AV_PIX_FMT_VIDEOTOOLBOX:
     case AV_PIX_FMT_DXVA2_VLD:
     case AV_PIX_FMT_D3D11:
         return AV_PIX_FMT_YUV420P;
-#endif
     default:
         return AV_PIX_FMT_YUV422P;
     }
@@ -1189,7 +1181,6 @@ static int producer_open(
             self->first_pts = AV_NOPTS_VALUE;
             self->last_position = POSITION_INITIAL;
 
-#if USE_HWACCEL
             AVDictionaryEntry *hwaccel = av_dict_get(params, "hwaccel", NULL, 0);
             AVDictionaryEntry *hwaccel_device = av_dict_get(params, "hwaccel_device", NULL, 0);
 
@@ -1225,7 +1216,6 @@ static int producer_open(
                     memcpy(self->hwaccel.device, device, strlen(device));
                 }
             }
-#endif
 
             if (!self->audio_format) {
                 // We're going to cheat here - for seekable A/V files, we will have separate contexts
@@ -1306,10 +1296,8 @@ static void prepare_reopen(producer_avformat self)
     }
     avcodec_free_context(&self->video_codec);
     av_frame_unref(self->video_frame);
-#if USE_HWACCEL
     av_buffer_unref(&self->hwaccel.device_ctx);
     self->hwaccel.device_ctx = NULL;
-#endif
     if (self->seekable && self->audio_format)
         avformat_close_input(&self->audio_format);
     if (self->video_format)
@@ -2340,7 +2328,6 @@ static int producer_get_image(mlt_frame frame,
         set_image_size(self, width, height);
         if ((image_size = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
             int yuv_colorspace;
-#if USE_HWACCEL
             yuv_colorspace = convert_image(self,
                                            self->video_frame,
                                            *buffer,
@@ -2350,17 +2337,6 @@ static int producer_get_image(mlt_frame frame,
                                            *height,
                                            &alpha,
                                            dst_full_range);
-#else
-            yuv_colorspace = convert_image(self,
-                                           self->video_frame,
-                                           *buffer,
-                                           codec_params->format,
-                                           format,
-                                           *width,
-                                           *height,
-                                           &alpha,
-                                           dst_full_range);
-#endif
             mlt_properties_set_int(frame_properties, "colorspace", yuv_colorspace);
             mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
             got_picture = 1;
@@ -2498,7 +2474,6 @@ static int producer_get_image(mlt_frame frame,
                                 self->last_good_position = POSITION_INVALID;
                             }
                         } else {
-#if USE_HWACCEL
                             if (self->hwaccel.device_ctx
                                 && self->video_frame->format == self->hwaccel.pix_fmt) {
                                 AVFrame *sw_video_frame = av_frame_alloc();
@@ -2519,7 +2494,6 @@ static int producer_get_image(mlt_frame frame,
                                 av_frame_move_ref(self->video_frame, sw_video_frame);
                                 av_frame_free(&sw_video_frame);
                             }
-#endif
                             got_picture = 1;
                             decode_errors = 0;
                         }
@@ -2608,8 +2582,6 @@ static int producer_get_image(mlt_frame frame,
                 if ((image_size
                      = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
                     int yuv_colorspace;
-#if USE_HWACCEL
-                    // not sure why this is really needed, but doesn't seem to work otherwise
                     yuv_colorspace = convert_image(self,
                                                    self->video_frame,
                                                    *buffer,
@@ -2619,17 +2591,6 @@ static int producer_get_image(mlt_frame frame,
                                                    *height,
                                                    &alpha,
                                                    dst_full_range);
-#else
-                    yuv_colorspace = convert_image(self,
-                                                   self->video_frame,
-                                                   *buffer,
-                                                   codec_params->format,
-                                                   format,
-                                                   *width,
-                                                   *height,
-                                                   &alpha,
-                                                   dst_full_range);
-#endif
                     mlt_properties_set_int(frame_properties, "colorspace", yuv_colorspace);
                     mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
                     self->current_position = int_position;
@@ -2791,7 +2752,6 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             mlt_properties_set_int(properties, "lowres", codec_context->codec->max_lowres);
         }
 
-#if USE_HWACCEL
         if (self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE
             || self->hwaccel.pix_fmt == AV_PIX_FMT_NONE) {
             mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
@@ -2835,7 +2795,6 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
         }
 
     skip_hwaccel:
-#endif
         // If we don't have a codec and we can't initialise it, we can't do much more...
         pthread_mutex_lock(&self->open_mutex);
         if (codec && avcodec_open2(codec_context, codec, NULL) >= 0) {
@@ -4029,10 +3988,7 @@ static void producer_avformat_close(producer_avformat self)
     av_packet_unref(&self->pkt);
     av_frame_free(&self->video_frame);
     av_frame_free(&self->audio_frame);
-
-#if USE_HWACCEL
     av_buffer_unref(&self->hwaccel.device_ctx);
-#endif
 
     if (self->is_mutex_init)
         pthread_mutex_lock(&self->open_mutex);
