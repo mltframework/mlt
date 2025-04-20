@@ -91,6 +91,7 @@ private:
     uint64_t m_count;
     int m_outChannels;
     int m_inChannels;
+    bool m_fix5p1{false};
     bool m_isAudio;
     int m_isKeyer;
     IDeckLinkKeyer *m_deckLinkKeyer;
@@ -407,6 +408,10 @@ protected:
         } else {
             m_outChannels = 16;
         }
+        auto channelLayout = mlt_audio_channel_layout_id(
+            mlt_properties_get(properties, "channel_layout"));
+        m_fix5p1 = (channelLayout == mlt_channel_auto && m_inChannels == 6)
+                   || channelLayout == mlt_channel_5p1 || channelLayout == mlt_channel_5p1_back;
         m_isAudio = !mlt_properties_get_int(properties, "audio_off");
         m_terminate_on_pause = mlt_properties_get_int(properties, "terminate_on_pause");
 
@@ -865,8 +870,11 @@ protected:
                     int16_t *dst = outBuff = (int16_t *) mlt_pool_alloc(size);
                     for (int s = 0; s < samples; s++) {
                         for (int c = 0; c < m_outChannels; c++) {
+                            int cOut = m_fix5p1 ? c == 2 ? 3 : c == 3 ? 2 : c : c;
                             // Fill silence if there are more out channels than in channels.
-                            dst[s * m_outChannels + c] = (c < m_inChannels) ? src[s * m_inChannels + c] : 0;
+                            dst[s * m_outChannels + cOut] = (c < m_inChannels)
+                                                                ? src[s * m_inChannels + c]
+                                                                : 0;
                         }
                     }
                     pcm = outBuff;
