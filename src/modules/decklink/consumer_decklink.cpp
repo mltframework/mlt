@@ -860,25 +860,13 @@ protected:
                               frequency);
 
                 if (m_inChannels != m_outChannels) {
-                    int s = 0;
-                    int c = 0;
                     int size = mlt_audio_format_size(format, samples, m_outChannels);
                     int16_t *src = pcm;
-                    int16_t *dst = (int16_t *) mlt_pool_alloc(size);
-                    outBuff = dst;
-                    for (s = 0; s < samples; s++) {
-                        for (c = 0; c < m_outChannels; c++) {
-                            if (c < m_inChannels) {
-                                *dst = *src;
-                                src++;
-                            } else {
-                                // Fill silence if there are more out channels than in channels.
-                                *dst = 0;
-                            }
-                        }
-                        for (c = 0; c < m_inChannels - m_outChannels; c++) {
-                            // Drop samples if there are more in channels than out channels.
-                            src++;
+                    int16_t *dst = outBuff = (int16_t *) mlt_pool_alloc(size);
+                    for (int s = 0; s < samples; s++) {
+                        for (int c = 0; c < m_outChannels; c++) {
+                            // Fill silence if there are more out channels than in channels.
+                            dst[s * m_outChannels + c] = (c < m_inChannels) ? src[s * m_inChannels + c] : 0;
                         }
                     }
                     pcm = outBuff;
