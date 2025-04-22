@@ -1,6 +1,6 @@
 /*
  * filter_movit_convert.cpp
- * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2025 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ enum AVColorTransferCharacteristic {
 };
 
 // Get the gamma from the frame "color_trc" property as set by producer or this filter.
-static GammaCurve getGammaCurve(int color_trc)
+static GammaCurve getFrameGamma(int color_trc)
 {
     switch (color_trc) {
     case AVCOL_TRC_LINEAR:
@@ -125,7 +125,7 @@ static GammaCurve getGammaCurve(int color_trc)
 
 // Get the gamma from the consumer's "color_trc" property.
 // Also, update the frame's color_trc property with the selection.
-static GammaCurve getGammaCurve(mlt_properties properties)
+static GammaCurve getOutputGamma(mlt_properties properties)
 {
     const char *color_trc = mlt_properties_get(properties, "consumer.color_trc");
     if (color_trc) {
@@ -166,7 +166,7 @@ static GammaCurve getGammaCurve(mlt_properties properties)
             break;
         }
     }
-    return GAMMA_sRGB;
+    return GAMMA_INVALID;
 }
 
 static void get_format_from_properties(mlt_properties properties,
@@ -201,7 +201,7 @@ static void get_format_from_properties(mlt_properties properties,
             image_format->color_space = COLORSPACE_REC_709;
             break;
         }
-        image_format->gamma_curve = getGammaCurve(mlt_properties_get_int(properties, "color_trc"));
+        image_format->gamma_curve = getFrameGamma(mlt_properties_get_int(properties, "color_trc"));
     }
 
     if (mlt_properties_get_int(properties, "force_full_luma")) {
@@ -359,20 +359,22 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
         chain->effect_chain->add_effect(new Mlt::VerticalFlip);
 
         ImageFormat output_format;
-        output_format.color_space = COLORSPACE_sRGB;
-        output_format.gamma_curve = getGammaCurve(MLT_FRAME_PROPERTIES(frame));
         if (format == mlt_image_yuv444p10 || format == mlt_image_yuv420p10) {
             YCbCrFormat ycbcr_format = {};
-            get_format_from_properties(MLT_FRAME_PROPERTIES(frame), nullptr, &ycbcr_format);
+            get_format_from_properties(MLT_FRAME_PROPERTIES(frame), &output_format, &ycbcr_format);
+            output_format.gamma_curve = std::max(GAMMA_REC_709,
+                                                 getOutputGamma(MLT_FRAME_PROPERTIES(frame)));
             ycbcr_format.num_levels = 1024;
             ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 1;
             chain->effect_chain->add_ycbcr_output(output_format,
                                                   OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED,
                                                   ycbcr_format,
-                                                  movit::YCBCR_OUTPUT_INTERLEAVED,
+                                                  YCBCR_OUTPUT_INTERLEAVED,
                                                   GL_UNSIGNED_SHORT);
             chain->effect_chain->set_dither_bits(16);
         } else {
+            output_format.color_space = COLORSPACE_sRGB;
+            output_format.gamma_curve = GAMMA_sRGB;
             chain->effect_chain->add_output(output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
             chain->effect_chain->set_dither_bits(8);
         }
@@ -732,7 +734,7 @@ static int convert_image(mlt_frame frame,
                 chain->add_effect(new Mlt::VerticalFlip());
                 ImageFormat movit_output_format;
                 movit_output_format.color_space = COLORSPACE_sRGB;
-                movit_output_format.gamma_curve = getGammaCurve(properties);
+                movit_output_format.gamma_curve = GAMMA_sRGB;
                 chain->add_output(movit_output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
                 chain->set_dither_bits(8);
                 chain->finalize();
