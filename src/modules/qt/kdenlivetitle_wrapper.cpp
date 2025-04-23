@@ -154,6 +154,7 @@ public:
         m_outline = outline;
         m_pen = QPen(outlineColor);
         m_pen.setWidthF(outline);
+        m_pen.setJoinStyle(Qt::RoundJoin);
         m_font = font;
         m_lineSpacing = lineSpacing + m_metrics.lineSpacing();
         m_align = align;
