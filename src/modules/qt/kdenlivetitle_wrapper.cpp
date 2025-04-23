@@ -262,6 +262,7 @@ public:
         if (m_outline > 0) {
             QPainterPathStroker strokePath;
             strokePath.setWidth(m_outline);
+            strokePath.setJoinStyle(Qt::RoundJoin);
             QPainterPath stroke = strokePath.createStroke(shadowPath);
             shadowPath.addPath(stroke);
         }
