@@ -21,14 +21,15 @@
 #include <framework/mlt.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string>
 
 #include "filter_glsl_manager.h"
 #include "mlt_flip_effect.h"
 #include "mlt_movit_input.h"
+
 #include <effect_chain.h>
 #include <mlt++/MltProducer.h>
 #include <util.h>
+#include <version.h>
 
 using namespace movit;
 
@@ -118,6 +119,10 @@ static GammaCurve getFrameGamma(int color_trc)
         return GAMMA_REC_2020_10_BIT;
     case AVCOL_TRC_BT2020_12:
         return GAMMA_REC_2020_12_BIT;
+#if MOVIT_VERSION >= 1037
+    case AVCOL_TRC_ARIB_STD_B67:
+        return GAMMA_HLG;
+#endif
     default:
         return GAMMA_REC_709;
     }
@@ -145,6 +150,11 @@ static GammaCurve getOutputGamma(mlt_properties properties)
         case AVCOL_TRC_BT2020_12:
             mlt_properties_set_int(properties, "color_trc", n);
             return GAMMA_REC_2020_12_BIT;
+#if MOVIT_VERSION >= 1037
+        case AVCOL_TRC_ARIB_STD_B67:
+            mlt_properties_set_int(properties, "color_trc", n);
+            return GAMMA_HLG;
+#endif
         default:
             // If specified by string.
             if (!strcmp(color_trc, "bt709")) {
@@ -162,6 +172,11 @@ static GammaCurve getOutputGamma(mlt_properties properties)
             } else if (!strcmp(color_trc, "bt2020-12")) {
                 mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_12);
                 return GAMMA_REC_2020_12_BIT;
+#if MOVIT_VERSION >= 1037
+            } else if (!strcmp(color_trc, "arib-std-b67")) {
+                mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_ARIB_STD_B67);
+                return GAMMA_HLG;
+#endif
             }
             break;
         }
@@ -364,6 +379,9 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
             get_format_from_properties(MLT_FRAME_PROPERTIES(frame), &output_format, &ycbcr_format);
             output_format.gamma_curve = std::max(GAMMA_REC_709,
                                                  getOutputGamma(MLT_FRAME_PROPERTIES(frame)));
+            mlt_log_debug(nullptr,
+                          "[filter movit.convert] output gamma %d\n",
+                          output_format.gamma_curve);
             ycbcr_format.num_levels = 1024;
             ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 1;
             chain->effect_chain->add_ycbcr_output(output_format,
