@@ -101,6 +101,24 @@ static void link_configure(mlt_link self, mlt_profile chain_profile)
     mlt_service_set_profile(MLT_LINK_SERVICE(self), chain_profile);
 }
 
+static void change_movit_format(mlt_frame frame, mlt_frame src_frame, mlt_image_format *format)
+{
+    if (*format == mlt_image_movit) {
+        const mlt_image_format src_format = mlt_properties_get_int(MLT_FRAME_PROPERTIES(src_frame),
+                                                                   "format");
+        // First priority, preserve the alpha channel in the source
+        if (src_format == mlt_image_rgba) {
+            // Producers typically set frame property "format" to rgba in their get_frame callback
+            *format = mlt_image_rgba;
+        } else {
+            // Use a 10-bit output if the end consumer wants it.
+            // TODO add a "consumer.format" property to find other criteria for 10-bit
+            const char *trc = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "consumer.color_trc");
+            *format = (trc && !strcmp("arib-std-b67", trc)) ? mlt_image_yuv444p10 : mlt_image_rgba;
+        }
+    }
+}
+
 static int link_get_audio(mlt_frame frame,
                           void **audio,
                           mlt_audio_format *format,
@@ -343,11 +361,6 @@ static int link_get_image_blend(mlt_frame frame,
     double source_time = mlt_properties_get_double(unique_properties, "source_time");
     double source_fps = mlt_properties_get_double(unique_properties, "source_fps");
 
-    if (*format == mlt_image_movit) {
-        // TODO This is not ideal for 10-bit output and breaks HLG gamma.
-        *format = mlt_image_rgba;
-    }
-
     // Get pointers to all the images for this frame
     uint8_t *images[MAX_BLEND_IMAGES];
     int image_count = 0;
@@ -355,13 +368,20 @@ static int link_get_image_blend(mlt_frame frame,
     char key[19];
     sprintf(key, "%d", in_frame_pos);
     mlt_frame src_frame = mlt_properties_get_data(unique_properties, key, NULL);
-    mlt_properties_pass_list(MLT_FRAME_PROPERTIES(src_frame),
-                             MLT_FRAME_PROPERTIES(frame),
-                             "crop.left crop.right crop.top crop.bottom crop.original_width "
-                             "crop.original_height meta.media.width meta.media.height");
-    mlt_properties_copy(MLT_FRAME_PROPERTIES(src_frame), MLT_FRAME_PROPERTIES(frame), "consumer.");
+
     while (src_frame && image_count < MAX_BLEND_IMAGES) {
         mlt_service_lock(MLT_LINK_SERVICE(self));
+
+        mlt_properties_pass_list(MLT_FRAME_PROPERTIES(src_frame),
+                                 MLT_FRAME_PROPERTIES(frame),
+                                 "crop.left crop.right crop.top crop.bottom crop.original_width "
+                                 "crop.original_height meta.media.width meta.media.height");
+        mlt_properties_copy(MLT_FRAME_PROPERTIES(src_frame),
+                            MLT_FRAME_PROPERTIES(frame),
+                            "consumer.");
+
+        change_movit_format(frame, src_frame, format);
+
         int error = mlt_frame_get_image(src_frame,
                                         &images[image_count],
                                         format,
@@ -450,10 +470,7 @@ static int link_get_image_nearest(mlt_frame frame,
                             MLT_FRAME_PROPERTIES(frame),
                             "consumer.");
 
-        if (*format == mlt_image_movit) {
-            // TODO this is not ideal for 10-bit output and breaks HLG gamma
-            *format = mlt_image_rgba;
-        }
+        change_movit_format(frame, src_frame, format);
 
         int error = mlt_frame_get_image(src_frame, &in_image, format, width, height, 0);
         mlt_service_unlock(MLT_LINK_SERVICE(self));
