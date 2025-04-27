@@ -1932,8 +1932,9 @@ static int convert_image(producer_avformat self,
                   self->yuv_colorspace,
                   profile->colorspace);
 
-    // extract alpha from planar formats
-    if ((pix_fmt == AV_PIX_FMT_YUVA420P || pix_fmt == AV_PIX_FMT_YUVA444P)
+    // extract alpha from planar formats - only supports 8-bit
+    if ((pix_fmt == AV_PIX_FMT_YUVA420P || pix_fmt == AV_PIX_FMT_YUVA422P
+         || pix_fmt == AV_PIX_FMT_YUVA444P)
         && *format != mlt_image_rgba && frame->data[3] && frame->linesize[3]) {
         int i;
         uint8_t *src, *dst;
