@@ -1,6 +1,6 @@
 /*
  * link_timeremap.c
- * Copyright (C) 2020-2024 Meltytech, LLC
+ * Copyright (C) 2020-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -344,6 +344,7 @@ static int link_get_image_blend(mlt_frame frame,
     double source_fps = mlt_properties_get_double(unique_properties, "source_fps");
 
     if (*format == mlt_image_movit) {
+        // TODO This is not ideal for 10-bit output and breaks HLG gamma.
         *format = mlt_image_rgba;
     }
 
@@ -351,15 +352,15 @@ static int link_get_image_blend(mlt_frame frame,
     uint8_t *images[MAX_BLEND_IMAGES];
     int image_count = 0;
     mlt_position in_frame_pos = floor(source_time * source_fps);
-    int colorspace = 0;
-    while (image_count < MAX_BLEND_IMAGES) {
-        char key[19];
-        sprintf(key, "%d", in_frame_pos);
-        mlt_frame src_frame = (mlt_frame) mlt_properties_get_data(unique_properties, key, NULL);
-        if (!src_frame) {
-            break;
-        }
-
+    char key[19];
+    sprintf(key, "%d", in_frame_pos);
+    mlt_frame src_frame = mlt_properties_get_data(unique_properties, key, NULL);
+    mlt_properties_pass_list(MLT_FRAME_PROPERTIES(src_frame),
+                             MLT_FRAME_PROPERTIES(frame),
+                             "crop.left crop.right crop.top crop.bottom crop.original_width "
+                             "crop.original_height meta.media.width meta.media.height");
+    mlt_properties_copy(MLT_FRAME_PROPERTIES(src_frame), MLT_FRAME_PROPERTIES(frame), "consumer.");
+    while (src_frame && image_count < MAX_BLEND_IMAGES) {
         mlt_service_lock(MLT_LINK_SERVICE(self));
         int error = mlt_frame_get_image(src_frame,
                                         &images[image_count],
@@ -382,7 +383,6 @@ static int link_get_image_blend(mlt_frame frame,
                           *height);
             break;
         }
-        colorspace = mlt_properties_get_int(MLT_FRAME_PROPERTIES(src_frame), "colorspace");
         in_frame_pos++;
         image_count++;
     }
@@ -411,7 +411,9 @@ static int link_get_image_blend(mlt_frame frame,
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "format", *format);
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "width", *width);
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "height", *height);
-    mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "colorspace", colorspace);
+    mlt_properties_pass_list(MLT_FRAME_PROPERTIES(frame),
+                             MLT_FRAME_PROPERTIES(src_frame),
+                             "colorspace color_primaries color_trc full_range");
 
     return 0;
 }
@@ -444,8 +446,12 @@ static int link_get_image_nearest(mlt_frame frame,
                                  MLT_FRAME_PROPERTIES(frame),
                                  "crop.left crop.right crop.top crop.bottom crop.original_width "
                                  "crop.original_height meta.media.width meta.media.height");
+        mlt_properties_copy(MLT_FRAME_PROPERTIES(src_frame),
+                            MLT_FRAME_PROPERTIES(frame),
+                            "consumer.");
 
         if (*format == mlt_image_movit) {
+            // TODO this is not ideal for 10-bit output and breaks HLG gamma
             *format = mlt_image_rgba;
         }
 
@@ -459,11 +465,9 @@ static int link_get_image_nearest(mlt_frame frame,
             mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "format", *format);
             mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "width", *width);
             mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "height", *height);
-            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame),
-                                   "colorspace",
-                                   mlt_properties_get_int(MLT_FRAME_PROPERTIES(src_frame),
-                                                          "colorspace"));
-
+            mlt_properties_pass_list(MLT_FRAME_PROPERTIES(frame),
+                                     MLT_FRAME_PROPERTIES(src_frame),
+                                     "colorspace color_primaries color_trc full_range");
             uint8_t *in_alpha = mlt_frame_get_alpha(src_frame);
             if (in_alpha) {
                 size = *width * *height;
