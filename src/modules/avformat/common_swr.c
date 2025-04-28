@@ -1,6 +1,6 @@
 /*
  * common_swr.c
- * Copyright (C) 2022-2024 Meltytech, LLC
+ * Copyright (C) 2022-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,16 +28,16 @@ int mlt_configure_swr_context(mlt_service service, mlt_swr_private_data *pdata)
 {
     int error = 0;
 
-    mlt_log_info(service,
-                 "%d(%s) %s %dHz -> %d(%s) %s %dHz\n",
-                 pdata->in_channels,
-                 mlt_audio_channel_layout_name(pdata->in_layout),
-                 mlt_audio_format_name(pdata->in_format),
-                 pdata->in_frequency,
-                 pdata->out_channels,
-                 mlt_audio_channel_layout_name(pdata->out_layout),
-                 mlt_audio_format_name(pdata->out_format),
-                 pdata->out_frequency);
+    mlt_log_verbose(service,
+                    "%d(%s) %s %dHz -> %d(%s) %s %dHz\n",
+                    pdata->in_channels,
+                    mlt_audio_channel_layout_name(pdata->in_layout),
+                    mlt_audio_format_name(pdata->in_format),
+                    pdata->in_frequency,
+                    pdata->out_channels,
+                    mlt_audio_channel_layout_name(pdata->out_layout),
+                    mlt_audio_format_name(pdata->out_format),
+                    pdata->out_frequency);
 
     mlt_free_swr_context(pdata);
 
