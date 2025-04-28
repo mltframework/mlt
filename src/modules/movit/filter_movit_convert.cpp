@@ -188,12 +188,6 @@ static void get_format_from_properties(mlt_properties properties,
                                        ImageFormat *image_format,
                                        YCbCrFormat *ycbcr_format)
 {
-    mlt_log_verbose(nullptr,
-                    "movit.convert colospace %d color_trc %d consumer.color_trc %s full_range %d\n",
-                    mlt_properties_get_int(properties, "colorspace"),
-                    mlt_properties_get_int(properties, "color_trc"),
-                    mlt_properties_get(properties, "consumer.color_trc"),
-                    mlt_properties_get_int(properties, "full_range"));
     switch (mlt_properties_get_int(properties, "colorspace")) {
     case 601:
         ycbcr_format->luma_coefficients = YCBCR_REC_601;
@@ -528,9 +522,6 @@ static int movit_render(EffectChain *chain,
 
     GlslManager *glsl = GlslManager::get_instance();
     int error;
-    mlt_log_verbose(nullptr,
-                    "movit.convert render format %s\n",
-                    mlt_image_format_name(output_format));
     if (output_format == mlt_image_opengl_texture) {
         error = glsl->render_frame_texture(chain, frame, width, height, image);
     } else if (output_format == mlt_image_yuv444p10 || output_format == mlt_image_yuv420p10) {
@@ -633,11 +624,11 @@ static int convert_image(mlt_frame frame,
 
     mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
 
-    mlt_log_verbose(NULL,
-                    "filter_movit_convert: %s -> %s (%d)\n",
-                    mlt_image_format_name(*format),
-                    mlt_image_format_name(output_format),
-                    mlt_frame_get_position(frame));
+    mlt_log_debug(NULL,
+                  "filter_movit_convert: %s -> %s (%d)\n",
+                  mlt_image_format_name(*format),
+                  mlt_image_format_name(output_format),
+                  mlt_frame_get_position(frame));
 
     // Use CPU if glsl not initialized or not supported.
     GlslManager *glsl = GlslManager::get_instance();
@@ -728,7 +719,6 @@ static int convert_image(mlt_frame frame,
     // If we've been asked to render some frame directly to a texture (without any
     // effects in-between), we create a new mini-chain to do so.
     if (*format != mlt_image_movit && output_format == mlt_image_opengl_texture) {
-        mlt_log_verbose(nullptr, "movit.convert No Render\n");
         // We might already have a texture from a previous conversion from mlt_image_movit.
         glsl_texture texture = (glsl_texture) mlt_properties_get_data(properties,
                                                                       "movit.convert.texture",
