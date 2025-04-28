@@ -1183,29 +1183,41 @@ static int producer_open(
 
             AVDictionaryEntry *hwaccel = av_dict_get(params, "hwaccel", NULL, 0);
             AVDictionaryEntry *hwaccel_device = av_dict_get(params, "hwaccel_device", NULL, 0);
+            const char *hwaccel_env = getenv("MLT_AVFORMAT_HWACCEL");
 
-            if (hwaccel && hwaccel->value) {
+            if ((hwaccel && hwaccel->value) || hwaccel_env) {
                 // Leaving `device=NULL` will cause query string parameter `hwaccel_device` to be ignored
-                char *device = NULL;
-                if (!strcmp(hwaccel->value, "vaapi")) {
+                char *device = getenv("MLT_AVFORMAT_HWACCEL_DEVICE");
+                if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "vaapi"))
+                    || (hwaccel_env && !strcmp(hwaccel_env, "vaapi"))) {
                     self->hwaccel.pix_fmt = AV_PIX_FMT_VAAPI;
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_VAAPI;
-                    device = "/dev/dri/renderD128";
-                } else if (!strcmp(hwaccel->value, "cuda") || !strcmp(hwaccel->value, "nvdec")) {
+                    if (!device)
+                        device = "/dev/dri/renderD128";
+                } else if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "cuda"))
+                           || (hwaccel && hwaccel->value && !strcmp(hwaccel->value, "nvdec"))
+                           || (hwaccel_env && !strcmp(hwaccel_env, "cuda"))
+                           || (hwaccel_env && !strcmp(hwaccel_env, "nvdec"))) {
                     self->hwaccel.pix_fmt = AV_PIX_FMT_CUDA;
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_CUDA;
-                    device = "0";
-                } else if (!strcmp(hwaccel->value, "videotoolbox")) {
+                    if (!device)
+                        device = "0";
+                } else if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "videotoolbox"))
+                           || (hwaccel_env && !strcmp(hwaccel_env, "videotoolbox"))) {
                     self->hwaccel.pix_fmt = AV_PIX_FMT_VIDEOTOOLBOX;
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
-                } else if (!strcmp(hwaccel->value, "d3d11va")) {
+                } else if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "d3d11va"))
+                           || (hwaccel_env && !strcmp(hwaccel_env, "d3d11va"))) {
                     self->hwaccel.pix_fmt = AV_PIX_FMT_D3D11;
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_D3D11VA;
-                    device = "0";
-                } else if (!strcmp(hwaccel->value, "dxva2")) {
+                    if (!device)
+                        device = "0";
+                } else if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "dxva2"))
+                           || (hwaccel_env && !strcmp(hwaccel_env, "dxva2"))) {
                     self->hwaccel.pix_fmt = AV_PIX_FMT_DXVA2_VLD;
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_DXVA2;
-                    device = "0";
+                    if (!device)
+                        device = "0";
                 } else {
                     // TODO: init other hardware types
                 }
