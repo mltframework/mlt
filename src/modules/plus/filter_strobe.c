@@ -38,11 +38,6 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = mlt_frame_pop_service(frame);
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
 
-    int error = mlt_frame_get_image(frame, image, format, width, height, 1);
-    if (error) {
-        return error;
-    }
-
     mlt_position position = mlt_filter_get_position(filter, frame);
     mlt_position length = mlt_filter_get_length2(filter, frame);
 
@@ -55,8 +50,14 @@ static int filter_get_image(mlt_frame frame,
         do_strobe = !do_strobe;
     }
 
-    if (do_strobe != 1) {
-        return 0;
+    if (!do_strobe) {
+        return mlt_frame_get_image(frame, image, format, width, height, 0);
+    }
+
+    *format = mlt_image_rgba;
+    int error = mlt_frame_get_image(frame, image, format, width, height, 1);
+    if (error) {
+        return error;
     }
 
     assert(*width >= 0);
@@ -70,10 +71,6 @@ static int filter_get_image(mlt_frame frame,
         }
         // Clear any alpha buffer that may be attached to the frame
         mlt_frame_set_alpha(frame, NULL, 0, NULL);
-    } else {
-        uint8_t *alpha = mlt_pool_alloc(pixelCount);
-        memset(alpha, 0, pixelCount);
-        mlt_frame_set_alpha(frame, alpha, pixelCount, mlt_pool_release);
     }
 
     return 0;
