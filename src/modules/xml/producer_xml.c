@@ -1389,18 +1389,16 @@ static void on_end_consumer(deserialise_context context, const xmlChar *name)
                     mlt_properties_pass_list(consumer_properties, properties, "in, out");
 
                     // Pass along quality and performance properties to the multi consumer and its render thread(s).
-                    if (!context->qglsl) {
-                        mlt_properties_pass_list(
-                            consumer_properties,
-                            properties,
-                            "real_time, deinterlacer, deinterlace_method, rescale, progressive, "
-                            "top_field_first, channels, channel_layout");
+                    mlt_properties_pass_list(
+                        consumer_properties,
+                        properties,
+                        "real_time, deinterlacer, deinterlace_method, rescale, progressive, "
+                        "top_field_first, channels, channel_layout");
 
-                        // We only really know how to optimize real_time for the avformat consumer.
-                        const char *service_name = mlt_properties_get(properties, "mlt_service");
-                        if (service_name && !strcmp("avformat", service_name))
-                            mlt_properties_set_int(properties, "real_time", -1);
-                    }
+                    // We only really know how to optimize real_time for the avformat consumer.
+                    const char *service_name = mlt_properties_get(properties, "mlt_service");
+                    if (service_name && !strcmp("avformat", service_name))
+                        mlt_properties_set_int(properties, "real_time", -1);
                 }
             } else {
                 double scale = mlt_properties_get_double(properties, "scale");
