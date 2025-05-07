@@ -1,6 +1,39 @@
 MLT Release Notes
 -----------------
 
+Version 7.32.0
+
+Framework
+  * Added `mlt_service_set_consumer()` and `Mlt::Service::set_consumer().
+  * Optimized `mlt_multitrack` to not request a frame from a producer that is
+    both hidden and muted.
+
+Modules
+  * Fixed pixel format for VP8/VP9 streams in `avformat` producer.
+  * Fixed `yuva422p` pixel format in `avformat` producer.
+  * Added `MLT_AVFORMAT_HWACCEL` & `MLT_AVFORMAT_HWACCEL_DEVICE` environment
+    variables to `avformat` producer.
+  * Updated `decklink` module for recent hardware and drivers.
+  * Added `colorspace` and `color_trc` (including HDR) properties to the
+    `decklink` consumer.
+  * Fixed silencing extra audio channel (e.g. 6 => 8) in `decklink` consumer.
+  * Fixed 5.1 C/LFE channels swapped over HDMI in `decklink` consumer.
+  * Fixed text outline had sharp angles in `kdenlivetitle` producer.
+  * Fixed default gamma to be Rec. 709 for 10-bit Y'CbCr from `movit` module.
+  * Added support for HLG gamma to `movit` module (requires ddennedy/movit fork).
+  * Fixed `opencv_tracker` filter should require multiple keyframes to be ready.
+  * Fixed OpenCV crash on `rect` <= 1 pixel in `opencv_tracker` filter.
+  * Fixed aspect ratio in `qtblend` filter and transition.
+  * Fixed `QT_QPA_PLATFORM=offscreen` not working in qt and glaxnimate modules.
+  * Improved preview scaling in `qtblend` filter.
+  * Fixed requesting huge images on multiple `qtblend` filters or transitions.
+  * Fixed `sdl2` consumer on macOS.
+  * Fixed the `strobe` filter not working with `movit`.
+  * Fixed color and gamma using `timeremap` link with `movit`.
+  * Fixed consumer properties (e.g. `channels`) missing on `qglsl` consumer
+    injected by the `xml` producer.
+
+
 Version 7.30.0
 
 Framework
