@@ -55,6 +55,8 @@ option(SWIG_PYTHON "Enable SWIG Python bindings" OFF)
 option(SWIG_RUBY "Enable SWIG Ruby bindings" OFF)
 option(SWIG_TCL "Enable SWIG Tcl bindings" OFF)
 
+set(MAX_CHANNELS 64)
+
 if(WIN32)
   option(WINDOWS_DEPLOY "Install exes/libs directly to prefix (no subdir /bin)" ON)
 else()
@@ -496,6 +498,9 @@ endif()
 if(SWIG_TCL)
   find_package(TCL REQUIRED)
 endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMAX_CHANNELS=${MAX_CHANNELS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMAX_CHANNELS=${MAX_CHANNELS}")
 
 if(BUILD_DOCS)
   find_package(Doxygen REQUIRED)
