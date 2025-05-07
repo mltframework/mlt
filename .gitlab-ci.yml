@@ -47,9 +47,8 @@ debian-stable:
 fedora-42:
     image: fedora:42
     script:
-        - yum --assumeyes groupinstall "Development Tools"
-        - yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
-            # unclear why `gcc-c++` isn't in `Development Tools`
+        - dnf --assumeyes group install development-tools
+        - dnf --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
         - cmake -DCMAKE_BUILD_TYPE=Debug . && make -j -f Makefile install
 
 fedora-38:
