@@ -64,7 +64,7 @@ parameters:
     title: Split
     description: >
       The animated position of the audio relative to its neighbor channel. For example,
-      when channel is set to 0 for left, then start 0 is full left, 0.5 is
+      when channel is set to 0 for left, then 0 is full left, 0.5 is
       center, and 1.0 is full right.
        
       If this value is set, values for properties "start" and "end" are discarded.

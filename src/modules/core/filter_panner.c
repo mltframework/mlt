@@ -97,15 +97,15 @@ static int filter_get_audio(mlt_frame frame,
         case -2: // Rear L/R balance
         {
             // Gang front/rear balance if requested
-            int g, active = active_channel;
-            for (g = 0; g < gang; g++, active--) {
-                int left = active == -1 ? 0 : 2;
+            int active = active_channel;
+            for (int g = 0; g < gang; g++, active--) {
+                int left = active == -1 ? 0 : (*channels == 6 ? 4 : 2);
                 int right = left + 1;
                 if (weight < 0.0) {
                     factors[left][left] = 1.0;
-                    factors[right][right] = weight + 1.0 < 0.0 ? 0.0 : weight + 1.0;
+                    factors[right][right] = MAX(weight + 1.0, 0.0);
                 } else {
-                    factors[left][left] = 1.0 - weight < 0.0 ? 0.0 : 1.0 - weight;
+                    factors[left][left] = MAX(1.0 - weight, 0.0);
                     factors[right][right] = 1.0;
                 }
             }
@@ -115,15 +115,15 @@ static int filter_get_audio(mlt_frame frame,
         case -4: // right fade
         {
             // Gang left/right fade if requested
-            int g, active = active_channel;
-            for (g = 0; g < gang; g++, active--) {
+            int active = active_channel;
+            for (int g = 0; g < gang; g++, active--) {
                 int front = active == -3 ? 0 : 1;
-                int rear = front + 2;
+                int rear = front + (*channels == 6 ? 4 : 2);
                 if (weight < 0.0) {
                     factors[front][front] = 1.0;
-                    factors[rear][rear] = weight + 1.0 < 0.0 ? 0.0 : weight + 1.0;
+                    factors[rear][rear] = MAX(weight + 1.0, 0.0);
                 } else {
-                    factors[front][front] = 1.0 - weight < 0.0 ? 0.0 : 1.0 - weight;
+                    factors[front][front] = MAX(1.0 - weight, 0.0);
                     factors[rear][rear] = 1.0;
                 }
             }
