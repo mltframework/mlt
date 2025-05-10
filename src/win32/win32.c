@@ -46,16 +46,17 @@ int usleep(unsigned int useconds)
 	return 0;
 }
 
-
-int nanosleep( const struct timespec * rqtp, struct timespec * rmtp )
+#ifndef WIN_PTHREADS_TIME_H
+int nanosleep(const struct timespec * rqtp, struct timespec * rmtp)
 {
 	if (rqtp->tv_nsec > 999999999) {
 		/* The time interval specified 1,000,000 or more microseconds. */
 		errno = EINVAL;
 		return -1;
 	}
-	return usleep( rqtp->tv_sec * 1000000 + rqtp->tv_nsec / 1000 );
-} 
+    return usleep(rqtp->tv_sec * 1000000 + rqtp->tv_nsec / 1000);
+}
+#endif
 
 int setenv(const char *name, const char *value, int overwrite)
 {

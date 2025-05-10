@@ -96,6 +96,7 @@ set_target_properties(mlt PROPERTIES
 
 if(WIN32)
   if(MINGW)
+    target_link_libraries(mlt PRIVATE ${MLT_PTHREAD_LIBS})
     target_link_options(mlt PRIVATE -Wl,--output-def,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.def)
     install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.def" DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()

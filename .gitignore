@@ -67,4 +67,5 @@ src/modules/glaxnimate/mltglaxnimate-qt6_autogen/
 out
 src/swig/ruby/markdown/
 CMakeLists.txt.user
+.cache/
 
