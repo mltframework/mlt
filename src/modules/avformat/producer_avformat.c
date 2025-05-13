@@ -1937,12 +1937,14 @@ static int convert_image(producer_avformat self,
     mlt_log_timings_begin();
 
     mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
-                  "%s @ %dx%d space %d->%d\n",
+                  "%s @ %dx%d colorspace %d->%d range %d->%d\n",
                   mlt_image_format_name(*format),
                   width,
                   height,
                   self->yuv_colorspace,
-                  profile->colorspace);
+                  profile->colorspace,
+                  self->full_range,
+                  dst_full_range);
 
     // extract alpha from planar formats - only supports 8-bit
     if ((pix_fmt == AV_PIX_FMT_YUVA420P || pix_fmt == AV_PIX_FMT_YUVA422P
@@ -2227,10 +2229,17 @@ static int producer_get_image(mlt_frame frame,
     const char *dst_color_range = mlt_properties_get(frame_properties, "consumer.color_range");
     int dst_full_range = mlt_image_full_range(dst_color_range);
 
-    // if depth > 8 libswscale only changes range when scaling, not simple pix_fmt conversion
+    // if 10-bit libswscale only changes range when scaling, not simple pix_fmt conversion
     const struct AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(self->video_codec->pix_fmt);
-    if (pix_desc && pix_desc->nb_components > 0 && pix_desc->comp[0].depth > 8)
-        dst_full_range = self->full_range;
+    if (dst_full_range != self->full_range && pix_desc && pix_desc->nb_components > 0
+        && pix_desc->comp[0].depth == 10) {
+        if (*format == mlt_image_yuv420p10 || *format == mlt_image_yuv444p10)
+            // When the consumer requests 10-bit do not convert
+            dst_full_range = self->full_range;
+        else
+            // Otherwise, convert via RGB
+            *format = mlt_image_rgb;
+    }
 
     mlt_service_lock(MLT_PRODUCER_SERVICE(producer));
     pthread_mutex_lock(&self->video_mutex);

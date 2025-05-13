@@ -375,13 +375,17 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
 
         ImageFormat output_format;
         if (format == mlt_image_yuv444p10 || format == mlt_image_yuv420p10) {
+            auto properties = MLT_FRAME_PROPERTIES(frame);
             YCbCrFormat ycbcr_format = {};
-            get_format_from_properties(MLT_FRAME_PROPERTIES(frame), &output_format, &ycbcr_format);
-            output_format.gamma_curve = std::max(GAMMA_REC_709,
-                                                 getOutputGamma(MLT_FRAME_PROPERTIES(frame)));
+            get_format_from_properties(properties, &output_format, &ycbcr_format);
+            output_format.gamma_curve = std::max(GAMMA_REC_709, getOutputGamma(properties));
+            ycbcr_format.full_range = mlt_image_full_range(
+                mlt_properties_get(properties, "consumer.color_range"));
             mlt_log_debug(nullptr,
-                          "[filter movit.convert] output gamma %d\n",
-                          output_format.gamma_curve);
+                            "[filter movit.convert] output gamma %d full-range %d\n",
+                            output_format.gamma_curve,
+                            ycbcr_format.full_range);
+            mlt_properties_set_int(properties, "full_range", ycbcr_format.full_range);
             ycbcr_format.num_levels = 1024;
             ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 1;
             chain->effect_chain->add_ycbcr_output(output_format,
@@ -404,6 +408,13 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
     } else {
         // Delete all the created Effect instances to avoid memory leaks.
         dispose_movit_effects(leaf_service, frame);
+
+        auto properties = MLT_FRAME_PROPERTIES(frame);
+        getOutputGamma(properties);
+        mlt_properties_set_int(properties,
+                               "full_range",
+                               mlt_image_full_range(
+                                   mlt_properties_get(properties, "consumer.color_range")));
     }
 }
 
