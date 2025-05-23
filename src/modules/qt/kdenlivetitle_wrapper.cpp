@@ -214,6 +214,14 @@ public:
             m_path.addPath(linePath);
         }
         m_path.setFillRule(Qt::WindingFill);
+        int minWidth = m_path.boundingRect().width();
+        int minHeight = m_lineSpacing * lines.size();
+        if (m_boundingRect.width() < minWidth) {
+            m_boundingRect.setWidth(minWidth);
+        }
+        if (m_boundingRect.height() < minHeight) {
+            m_boundingRect.setHeight(minHeight);
+        }
     }
 
     virtual QRectF boundingRect() const
@@ -249,15 +257,15 @@ public:
         int blurRadius = m_params.at(2).toInt();
         int offsetX = m_params.at(3).toInt();
         int offsetY = m_params.at(4).toInt();
-        m_shadow = QImage(m_boundingRect.width() + abs(offsetX) + 4 * blurRadius,
-                          m_boundingRect.height() + abs(offsetY) + 4 * blurRadius,
+        m_shadow = QImage(m_boundingRect.width() + abs(offsetX) + 4 * blurRadius + 2 * m_outline,
+                          m_boundingRect.height() + abs(offsetY) + 4 * blurRadius + 2 * m_outline,
                           QImage::Format_ARGB32_Premultiplied);
         m_shadow.fill(Qt::transparent);
         QPainterPath shadowPath = m_path;
-        offsetX -= 2 * blurRadius;
-        offsetY -= 2 * blurRadius;
+        offsetX -= (2 * blurRadius + m_outline + 1);
+        offsetY -= (2 * blurRadius + m_outline + 1);
         m_shadowOffset = QPoint(offsetX, offsetY);
-        shadowPath.translate(2 * blurRadius, 2 * blurRadius);
+        shadowPath.translate(2 * blurRadius + m_outline + 1, 2 * blurRadius + m_outline + 1);
         QPainter shadowPainter(&m_shadow);
         if (m_outline > 0) {
             QPainterPathStroker strokePath;
