@@ -382,9 +382,9 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
             ycbcr_format.full_range = mlt_image_full_range(
                 mlt_properties_get(properties, "consumer.color_range"));
             mlt_log_debug(nullptr,
-                            "[filter movit.convert] output gamma %d full-range %d\n",
-                            output_format.gamma_curve,
-                            ycbcr_format.full_range);
+                          "[filter movit.convert] output gamma %d full-range %d\n",
+                          output_format.gamma_curve,
+                          ycbcr_format.full_range);
             mlt_properties_set_int(properties, "full_range", ycbcr_format.full_range);
             ycbcr_format.num_levels = 1024;
             ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 1;

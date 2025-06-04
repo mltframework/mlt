@@ -1,6 +1,6 @@
 /*
  * filter_mask_start.c -- clone a frame before invoking a filter
- * Copyright (C) 2018-2024 Meltytech, LLC
+ * Copyright (C) 2018-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,7 +33,7 @@ static int get_image(mlt_frame frame,
 {
     mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
     int error = mlt_frame_get_image(frame, image, format, width, height, writable);
-    if (!error) {
+    if (!error && !mlt_properties_exists(properties, "mask frame")) {
         mlt_frame clone = mlt_frame_clone(frame, 1);
         clone->convert_audio = frame->convert_audio;
         clone->convert_image = frame->convert_image;

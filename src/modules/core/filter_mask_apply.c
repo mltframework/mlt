@@ -1,6 +1,6 @@
 /*
  * filter_mask_apply.c -- composite atop a cloned frame made by mask_start
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -63,6 +63,7 @@ static int get_image(mlt_frame frame,
                 int size = mlt_image_format_size(*format, *width, *height, NULL);
                 mlt_frame_set_image(frame, *image, size, NULL);
             }
+            mlt_properties_clear(properties, "mask frame");
         }
     }
     return error;
