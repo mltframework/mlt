@@ -13,7 +13,10 @@ add_custom_target(Other_kdenlive_Files SOURCES
 
 target_compile_options(mltkdenlive PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltkdenlive PRIVATE mlt m)
+target_link_libraries(mltkdenlive PRIVATE mlt)
+if(NOT MSVC)
+  target_link_libraries(mltkdenlive PRIVATE m)
+endif()
 
 set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

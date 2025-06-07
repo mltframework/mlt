@@ -16,7 +16,10 @@ add_custom_target(Other_oldfilm_Files SOURCES
 
 target_compile_options(mltoldfilm PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltoldfilm PRIVATE mlt m)
+target_link_libraries(mltoldfilm PRIVATE mlt)
+if(NOT MSVC)
+  target_link_libraries(mltoldfilm PRIVATE m)
+endif()
 
 set_target_properties(mltoldfilm PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

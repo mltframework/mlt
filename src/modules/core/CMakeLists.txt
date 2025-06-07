@@ -55,7 +55,11 @@ add_custom_target(Other_core_Files SOURCES
 
 target_compile_options(mltcore PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltcore PRIVATE m mlt Threads::Threads)
+target_link_libraries(mltcore PRIVATE mlt Threads::Threads)
+
+if(NOT MSVC)
+  target_link_libraries(mltcore PRIVATE m)
+endif()
 
 if(WIN32)
   target_sources(mltcore PRIVATE ../../win32/fnmatch.c)

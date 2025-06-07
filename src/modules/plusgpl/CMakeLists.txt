@@ -17,7 +17,10 @@ add_custom_target(Other_plsugpl_Files SOURCES
 
 target_compile_options(mltplusgpl PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltplusgpl PRIVATE mlt m Threads::Threads)
+target_link_libraries(mltplusgpl PRIVATE mlt Threads::Threads)
+if(NOT MSVC)
+  target_link_libraries(mltplusgpl PRIVATE m)
+endif()
 
 if(WIN32)
   target_link_libraries(mltplusgpl PRIVATE ws2_32)

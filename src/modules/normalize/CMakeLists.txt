@@ -11,7 +11,10 @@ add_custom_target(Other_normalize_Files SOURCES
 
 target_compile_options(mltnormalize PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltnormalize PRIVATE mlt m)
+target_link_libraries(mltnormalize PRIVATE mlt)
+if(NOT MSVC)
+  target_link_libraries(mltnormalize PRIVATE m)
+endif()
 
 set_target_properties(mltnormalize PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

@@ -14,7 +14,10 @@ add_custom_target(Other_xml_Files SOURCES
 
 target_compile_options(mltxml PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltxml PRIVATE mlt m Threads::Threads PkgConfig::xml)
+target_link_libraries(mltxml PRIVATE mlt Threads::Threads PkgConfig::xml)
+if(NOT MSVC)
+  target_link_libraries(mltxml PRIVATE m)
+endif()
 
 set_target_properties(mltxml PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

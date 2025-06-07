@@ -34,7 +34,10 @@ if(RELOCATABLE)
   target_compile_definitions(mltmovit PRIVATE RELOCATABLE)
 endif()
 
-target_link_libraries(mltmovit PRIVATE m Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
+target_link_libraries(mltmovit PRIVATE Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
+if(NOT MSVC)
+  target_link_libraries(mltmovit PRIVATE m)
+endif()
 
 if(UNIX AND NOT APPLE)
   target_sources(mltmovit PRIVATE consumer_xgl.c)

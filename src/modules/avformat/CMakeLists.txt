@@ -17,12 +17,15 @@ target_compile_options(mltavformat PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltavformat PRIVATE
   mlt
-  m
   Threads::Threads
   PkgConfig::libavformat
   PkgConfig::libswscale
   PkgConfig::libavutil
 )
+
+if(NOT MSVC)
+  target_link_libraries(mltavformat PRIVATE m)
+endif()
 
 target_compile_definitions(mltavformat PRIVATE FILTERS)
 

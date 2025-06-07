@@ -41,7 +41,10 @@ add_custom_target(Other_plus_Files SOURCES
 
 target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltplus PRIVATE mlt m Threads::Threads)
+target_link_libraries(mltplus PRIVATE mlt Threads::Threads)
+if(NOT MSVC)
+  target_link_libraries(mltplus PRIVATE m)
+endif()
 
 if(TARGET PkgConfig::FFTW)
   target_sources(mltplus PRIVATE filter_dance.c filter_fft.c)
