@@ -7,7 +7,10 @@ add_custom_target(Other_sox_Files SOURCES
 
 target_compile_options(mltsox PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltsox PRIVATE mlt m PkgConfig::sox)
+target_link_libraries(mltsox PRIVATE mlt PkgConfig::sox)
+if(NOT MSVC)
+  target_link_libraries(mltsox PRIVATE m)
+endif()
 
 if(${sox_VERSION} GREATER 13)
     target_compile_definitions(mltsox PRIVATE SOX14)

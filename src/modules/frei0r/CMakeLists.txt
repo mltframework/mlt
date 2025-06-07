@@ -22,7 +22,11 @@ if(RELOCATABLE)
   target_compile_definitions(mltfrei0r PRIVATE RELOCATABLE)
 endif()
 
-target_link_libraries(mltfrei0r PRIVATE mlt m ${CMAKE_DL_LIBS})
+target_link_libraries(mltfrei0r PRIVATE mlt ${CMAKE_DL_LIBS})
+
+if(NOT MSVC)
+  target_link_libraries(mltfrei0r PRIVATE m)
+endif()
 
 set_target_properties(mltfrei0r PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

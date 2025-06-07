@@ -12,7 +12,10 @@ add_custom_target(Other_vidstab_Files SOURCES
 
 target_compile_options(mltvidstab PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltvidstab PRIVATE mlt m mlt++ PkgConfig::vidstab)
+target_link_libraries(mltvidstab PRIVATE mlt mlt++ PkgConfig::vidstab)
+if(NOT MSVC)
+  target_link_libraries(mltvidstab PRIVATE m)
+endif()
 
 set_target_properties(mltvidstab PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

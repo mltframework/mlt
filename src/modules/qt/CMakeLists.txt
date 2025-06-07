@@ -50,12 +50,15 @@ function(mlt_add_qt_module ARG_TARGET)
     target_link_libraries(${ARG_TARGET} PRIVATE
       mlt++
       mlt
-      m
       Threads::Threads
       Qt${ARG_QT_VERSION}::Core
       Qt${ARG_QT_VERSION}::Gui
       Qt${ARG_QT_VERSION}::Xml
     )
+
+    if(NOT MSVC)
+      target_link_libraries(${ARG_TARGET} PRIVATE m)
+    endif()
 
     if(ARG_QT_VERSION EQUAL 6)
       target_link_libraries(${ARG_TARGET} PRIVATE

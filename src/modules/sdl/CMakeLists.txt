@@ -13,7 +13,10 @@ add_custom_target(Other_sdl_Files SOURCES
 
 target_compile_options(mltsdl PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltsdl PRIVATE mlt m Threads::Threads PkgConfig::sdl)
+target_link_libraries(mltsdl PRIVATE mlt Threads::Threads PkgConfig::sdl)
+if(NOT MSVC)
+  target_link_libraries(mltsdl PRIVATE m)
+endif()
 
 if(APPLE)
   target_link_libraries(mltsdl PRIVATE objc "-framework Foundation")

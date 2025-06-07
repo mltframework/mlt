@@ -80,7 +80,11 @@ target_sources(mlt PRIVATE ${MLT_PUBLIC_HEADERS})
 
 target_compile_options(mlt PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mlt PRIVATE m Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(mlt PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+
+if(NOT MSVC)
+  target_link_libraries(mlt PRIVATE m)
+endif()
 
 target_include_directories(mlt PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
