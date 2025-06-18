@@ -1108,7 +1108,6 @@ int main(int argc, char **argv)
 
     // Disconnect producer from consumer to prevent ref cycles from closing services
     if (consumer && !error) {
-
         error = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(consumer), "melt_error");
         mlt_consumer_connect(consumer, NULL);
         if (!is_abort)

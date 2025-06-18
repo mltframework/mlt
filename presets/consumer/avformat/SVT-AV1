@@ -3,7 +3,6 @@ f=webm
 acodec=libopus
 ar=48000
 ab=192k
-vbr=off
 
 vcodec=libsvtav1
 crf=32
