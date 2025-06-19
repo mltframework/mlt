@@ -763,9 +763,15 @@ int initTitleProducer(mlt_producer producer)
     if (!createQApplicationIfNeeded(MLT_PRODUCER_SERVICE(producer))) {
         return false;
     }
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     if (!QMetaType::type("QTextCursor")) {
         qRegisterMetaType<QTextCursor>("QTextCursor");
     }
+#else
+    if (!QMetaType::fromType<QTextCursor>().isRegistered()) {
+        qRegisterMetaType<QTextCursor>();
+    }
+#endif
     return true;
 }
 
