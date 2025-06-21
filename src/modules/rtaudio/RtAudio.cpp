@@ -937,7 +937,9 @@ unsigned int RtApi :: getStreamSampleRate( void )
 
 #if defined(__MACOSX_CORE__)
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 // The OS X CoreAudio API is designed to use a separate callback
 // procedure for each of its audio devices.  A single RtAudio duplex
@@ -2516,7 +2518,9 @@ const char* RtApiCore :: getErrorCode( OSStatus code )
 // devices are available (i.e., the JACK server is not running), a
 // stream cannot be opened.
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <cstdio>
 
 // A structure to hold various information related to the Jack API
@@ -7856,7 +7860,9 @@ static const char* getErrorString( int code )
 #if defined(__LINUX_ALSA__)
 
 #include <alsa/asoundlib.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
   // A structure to hold various information related to the ALSA API
   // implementation.
@@ -9877,9 +9883,13 @@ RtAudioErrorType RtApiPulse::abortStream( void )
 
 #if defined(__LINUX_OSS__)
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <sys/ioctl.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 #include <math.h>

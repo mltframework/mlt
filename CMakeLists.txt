@@ -6,7 +6,24 @@ project(MLT
   HOMEPAGE_URL "https://www.mltframework.org"
   LANGUAGES C CXX
 )
+# ====================================================================
+# 全局输出目录设置 (强制统一所有目标的输出路径)
+# ====================================================================
+# 设置所有 Release 类型的库文件的输出目录
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin")
 
+# 设置所有 Debug 类型的库文件的输出目录
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/debug/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/debug/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/debug/bin")
+
+# 对于不区分配置的生成器（如 Ninja），直接设置通用变量
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/bin") # 改为 bin
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/bin") # 改为 bin
+# ====================================================================
 option(GPL "Enable GPLv2 components" ON)
 option(GPL3 "Enable GPLv3 components" ON)
 option(BUILD_TESTING "Enable tests" OFF)
@@ -74,7 +91,9 @@ include(GNUInstallDirs)
 if(WINDOWS_DEPLOY)
   set(CMAKE_INSTALL_BINDIR .)
 endif()
-
+if (MSVC)
+  find_package(PThreads4W REQUIRED)
+endif ()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/${CMAKE_INSTALL_BINDIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/out/lib")
@@ -123,10 +142,17 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
+if (MSVC)
+  # 将 /Zc:C11Atomics 标志附加到所有 C 语言编译器的标志后面
+  # 换成你的编译器版本可能认识的实验性标志
+  add_compile_options("$<$<COMPILE_LANGUAGE:C>:/experimental:c11atomics>")
+#  add_compile_options("/FI${CMAKE_SOURCE_DIR}/src/framework/msvc_posix_compat.h")
+  # 为项目中所有的 target 添加 _USE_MATH_DEFINES 定义
+  add_compile_definitions(_USE_MATH_DEFINES)
+endif()
 list(APPEND MLT_COMPILE_OPTIONS "")
 
 # MSVC cl doesn't support GNU inline assembly (but MSVC-compatible clang-cl does)

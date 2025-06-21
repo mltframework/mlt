@@ -50,6 +50,15 @@ __RCSID("$NetBSD: strptime.c,v 1.36 2012/03/13 21:13:48 christos Exp $");
 __weak_alias(strptime,_strptime)
 #endif
 */
+
+#ifdef _MSC_VER
+	#include <string.h>
+
+	// 为 MSVC 提供 POSIX 函数的别名
+	#define strncasecmp _strnicmp
+	#define strcasecmp  _stricmp  // 如果将来需要 strcasecmp，也一并加上
+	#define tzname      _tzname
+#endif
 typedef unsigned char u_char;
 typedef unsigned int uint;
 typedef unsigned __int64 uint64_t;

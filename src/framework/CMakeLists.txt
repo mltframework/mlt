@@ -66,7 +66,7 @@ add_library(mlt SHARED
   mlt_types.c
   mlt_version.c
 )
-
+target_compile_definitions(mlt PRIVATE MLT_EXPORTS)
 add_custom_target("Other_mlt_Files" SOURCES
   chain_normalizers.ini
   metaschema.yaml
@@ -79,9 +79,21 @@ add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
 target_sources(mlt PRIVATE ${MLT_PUBLIC_HEADERS})
 
 target_compile_options(mlt PRIVATE ${MLT_COMPILE_OPTIONS})
+if (NOT MSVC)
+  target_link_libraries(mlt PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+else ()
+  # 手动寻找 gettimeofday.lib
+  find_library(GETTIMEOFDAY_LIBRARY
+          NAMES gettimeofday
+          # vcpkg 会自动把正确的搜索路径加进来
+  )
 
-target_link_libraries(mlt PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
-
+  if (NOT GETTIMEOFDAY_LIBRARY)
+    message(FATAL_ERROR "Could not find gettimeofday.lib")
+  endif()
+  target_link_libraries(mlt PUBLIC  PThreads4W::PThreads4W ${CMAKE_DL_LIBS})
+  target_link_libraries(mlt PUBLIC  ${GETTIMEOFDAY_LIBRARY})
+endif ()
 if(NOT MSVC)
   target_link_libraries(mlt PRIVATE m)
 endif()

@@ -41,10 +41,37 @@ add_custom_target(Other_plus_Files SOURCES
 
 target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltplus PRIVATE mlt Threads::Threads)
+
 if(NOT MSVC)
+  target_link_libraries(mltplus PRIVATE mlt Threads::Threads)
   target_link_libraries(mltplus PRIVATE m)
+else ()
+  target_link_libraries(mltplus PRIVATE mlt PThreads4W::PThreads4W)
 endif()
+
+# =================== MSVC 链接修复程序 (for mltplus) ===================
+if(MSVC)
+  # --- 修复 PkgConfig::FFTW 传递的 -lm 依赖 ---
+  if(TARGET PkgConfig::FFTW)
+    # 获取它传递的链接库
+    get_target_property(FFTW_LIBS PkgConfig::FFTW INTERFACE_LINK_LIBRARIES)
+    # 从列表中移除 'm'
+    list(REMOVE_ITEM FFTW_LIBS "m")
+    # 将修改后的、干净的列表设置回去
+    set_target_properties(PkgConfig::FFTW PROPERTIES INTERFACE_LINK_LIBRARIES "${FFTW_LIBS}")
+  endif()
+
+  # --- 修复 PkgConfig::libebur128 传递的 -lm 依赖 ---
+  if(TARGET PkgConfig::libebur128)
+    # 获取它传递的链接库
+    get_target_property(EBUR128_LIBS PkgConfig::libebur128 INTERFACE_LINK_LIBRARIES)
+    # 从列表中移除 'm'
+    list(REMOVE_ITEM EBUR128_LIBS "m")
+    # 将修改后的、干净的列表设置回去
+    set_target_properties(PkgConfig::libebur128 PROPERTIES INTERFACE_LINK_LIBRARIES "${EBUR128_LIBS}")
+  endif()
+endif()
+
 
 if(TARGET PkgConfig::FFTW)
   target_sources(mltplus PRIVATE filter_dance.c filter_fft.c)

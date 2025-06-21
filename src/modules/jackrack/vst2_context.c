@@ -25,7 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#ifndef _MSC_VER
+    #include <strings.h>
+#endif
 
 #include <ladspa.h>
 #include <libxml/parser.h>

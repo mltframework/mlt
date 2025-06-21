@@ -47,14 +47,26 @@ function(mlt_add_qt_module ARG_TARGET)
 
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
 
-    target_link_libraries(${ARG_TARGET} PRIVATE
-      mlt++
-      mlt
-      Threads::Threads
-      Qt${ARG_QT_VERSION}::Core
-      Qt${ARG_QT_VERSION}::Gui
-      Qt${ARG_QT_VERSION}::Xml
-    )
+    if (NOT MSVC)
+        target_link_libraries(${ARG_TARGET} PRIVATE
+                mlt++
+                mlt
+                Threads::Threads
+                Qt${ARG_QT_VERSION}::Core
+                Qt${ARG_QT_VERSION}::Gui
+                Qt${ARG_QT_VERSION}::Xml
+        )
+    else ()
+        target_link_libraries(${ARG_TARGET} PRIVATE
+                mlt++
+                mlt
+                PThreads4W::PThreads4W
+                Qt${ARG_QT_VERSION}::Core
+                Qt${ARG_QT_VERSION}::Gui
+                Qt${ARG_QT_VERSION}::Xml
+        )
+    endif ()
+
 
     if(NOT MSVC)
       target_link_libraries(${ARG_TARGET} PRIVATE m)
@@ -84,6 +96,28 @@ function(mlt_add_qt_module ARG_TARGET)
       install(FILES transition_vqm.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/${ARG_DATADIR})
     endif()
 
+    # =================== MSVC 链接修复程序 (for Qt6 module) ===================
+    if(MSVC)
+        # --- 修复 PkgConfig::FFTW 传递的 -lm 依赖 ---
+        if(TARGET PkgConfig::FFTW)
+            get_target_property(FFTW_LIBS PkgConfig::FFTW INTERFACE_LINK_LIBRARIES)
+            list(REMOVE_ITEM FFTW_LIBS "m")
+            set_target_properties(PkgConfig::FFTW PROPERTIES INTERFACE_LINK_LIBRARIES "${FFTW_LIBS}")
+        endif()
+
+        # --- 修复 PkgConfig::libexif 传递的 -lm 依赖 ---
+        if(TARGET PkgConfig::libexif)
+            get_target_property(EXIF_LIBS PkgConfig::libexif INTERFACE_LINK_LIBRARIES)
+            list(REMOVE_ITEM EXIF_LIBS "m")
+            set_target_properties(PkgConfig::libexif PROPERTIES INTERFACE_LINK_LIBRARIES "${EXIF_LIBS}")
+        endif()
+    endif()
+
+    if (MSVC)
+        target_sources(${ARG_TARGET} PRIVATE
+                ${CMAKE_SOURCE_DIR}/src/win32/strptime.c
+        )
+    endif ()
     if(TARGET PkgConfig::FFTW)
       target_sources(${ARG_TARGET} PRIVATE filter_audiospectrum.cpp filter_lightshow.cpp)
       target_link_libraries(${ARG_TARGET} PRIVATE PkgConfig::FFTW)

@@ -31,10 +31,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#ifndef _MSC_VER
+    #include <strings.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include "framework/mlt_factory.h"
 #include "framework/mlt_log.h"

@@ -95,11 +95,28 @@ typedef struct mlt_pool_s
  * optimized libraries (sse/altivec).
  */
 
+#if defined(__GNUC__) || defined(__clang__)
+// GCC 和 Clang 的语法
 typedef struct __attribute__((aligned(16))) mlt_release_s
 {
     mlt_pool pool;
     int references;
 } * mlt_release;
+#elif defined(_MSC_VER)
+// MSVC 的语法
+typedef __declspec(align(16)) struct mlt_release_s
+{
+    mlt_pool pool;
+    int references;
+} * mlt_release;
+#else
+// 其他未知编译器的备用方案（无对齐）
+typedef struct mlt_release_s
+{
+    mlt_pool pool;
+    int references;
+} * mlt_release;
+#endif
 
 /** Create a pool.
  *

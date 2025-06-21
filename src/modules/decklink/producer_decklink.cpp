@@ -17,14 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "framework/msvc_posix_compat.h"
 #include "common.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#ifdef _MSC_VER
+extern "C"{
+    #include <gettimeofday.h>
+    }
+#else
+    #include <sys/time.h>
+#endif
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include <framework/mlt_slices.h>
 

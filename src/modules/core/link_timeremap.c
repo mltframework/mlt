@@ -362,7 +362,15 @@ static int link_get_image_blend(mlt_frame frame,
     double source_fps = mlt_properties_get_double(unique_properties, "source_fps");
 
     // Get pointers to all the images for this frame
-    uint8_t *images[MAX_BLEND_IMAGES];
+    uint8_t **images = (uint8_t **)malloc(MAX_BLEND_IMAGES * sizeof(uint8_t *));
+
+    // 重要：检查 malloc 是否成功
+    if (images == NULL) {
+        // 处理内存分配失败的情况，例如返回错误码或打印日志
+        return 1;
+        // return MLT_LC_FAIL; (或者类似的操作)
+    }
+
     int image_count = 0;
     mlt_position in_frame_pos = floor(source_time * source_fps);
     char key[19];
@@ -435,6 +443,9 @@ static int link_get_image_blend(mlt_frame frame,
                              MLT_FRAME_PROPERTIES(src_frame),
                              "colorspace color_primaries color_trc full_range");
 
+
+    free(images);
+    images = NULL; // 好习惯：防止野指针
     return 0;
 }
 

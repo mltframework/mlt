@@ -50,11 +50,11 @@ static int blur_h_proc_rgba(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (y = slice_line_start; y < slice_line_end; y++) {
-        uint8_t *first = desc->src->data + (y * linesize);
+        uint8_t *first = (uint8_t *)((char *)(desc->src->data) + (y * linesize));
         uint8_t *last = first + linesize - step;
         uint8_t *s1 = first;
         uint8_t *s2 = first;
-        uint8_t *d = desc->dst->data + (y * linesize);
+        uint8_t *d = (uint8_t *)((char *)(desc->dst->data) + (y * linesize));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);
@@ -128,11 +128,11 @@ static int blur_v_proc_rgba(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (x = slice_row_start; x < slice_row_end; x++) {
-        uint8_t *first = desc->src->data + (x * step);
+        uint8_t *first = (uint8_t *)((char *)(desc->src->data) + (x * step));
         uint8_t *last = first + (linesize * (desc->src->height - 1));
         uint8_t *s1 = first;
         uint8_t *s2 = first;
-        uint8_t *d = desc->dst->data + (x * step);
+        uint8_t *d = (uint8_t *)((char *)(desc->dst->data) + (x * step));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);
@@ -206,11 +206,11 @@ static int blur_h_proc_rgbx(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (y = slice_line_start; y < slice_line_end; y++) {
-        uint8_t *first = desc->src->data + (y * linesize);
+        uint8_t *first = (uint8_t *)((char *)(desc->src->data) + (y * linesize));
         uint8_t *last = first + linesize - step;
         uint8_t *s1 = first;
         uint8_t *s2 = first;
-        uint8_t *d = desc->dst->data + (y * linesize);
+        uint8_t *d = (uint8_t *)((char *)(desc->dst->data) + (y * linesize));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);
@@ -276,11 +276,11 @@ static int blur_v_proc_rgbx(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (x = slice_row_start; x < slice_row_end; x++) {
-        uint8_t *first = desc->src->data + (x * step);
+        uint8_t *first = (uint8_t *)((char *)(desc->src->data) + (x * step));
         uint8_t *last = first + (linesize * (desc->src->height - 1));
         uint8_t *s1 = first;
         uint8_t *s2 = first;
-        uint8_t *d = desc->dst->data + (x * step);
+        uint8_t *d = (uint8_t *)((char *)(desc->dst->data) + (x * step));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);

@@ -32,11 +32,22 @@
 // MinGW defines struct timespec in pthread.h
 #include <pthread.h>
 // for nanosleep()
+#ifdef _MSC_VER
+    // 在 Windows 上，确保 winsock2.h 在 windows.h 之前被包含
+    // 以防止 sockaddr 重定义错误
+    #include <winsock2.h>
+#endif
 #include <framework/mlt_types.h>
 #include <windows.h>
 #endif
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 /* Application header files */
 #include "io.h"

@@ -19,14 +19,49 @@
 
 #include <framework/mlt.h>
 
-#include <libgen.h> // for basename()
+#ifdef _MSC_VER
+    #include <string.h> // for strrchr
+
+    // 为 MSVC 提供一个简单的 basename 实现
+    // 注意：这个实现返回一个指向原始字符串内部的指针
+    static inline char *basename(char *path) {
+        if (path == NULL || *path == '\0') {
+            // 如果路径为空或空字符串，返回"."
+            return ".";
+        }
+
+        // 查找最后一个路径分隔符（'/' 或 '\'）
+        char *last_slash = strrchr(path, '/');
+        char *last_bslash = strrchr(path, '\\');
+
+        if (last_slash && last_bslash) {
+            // 如果两者都存在，取后面的那一个
+            last_slash = (last_slash > last_bslash) ? last_slash : last_bslash;
+        } else if (last_bslash) {
+            // 如果只有反斜杠
+            last_slash = last_bslash;
+        }
+
+        if (last_slash != NULL) {
+            // 如果找到了分隔符，返回它后面的字符
+            return last_slash + 1;
+        } else {
+            // 如果没有找到分隔符，整个字符串就是文件名
+            return path;
+        }
+    }
+#else
+    #include <libgen.h>
+#endif // for basename()
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>  // for stat()
 #include <sys/types.h> // for stat()
 #include <time.h>      // for strftime() and gtime()
-#include <unistd.h>    // for stat()
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif    // for stat()
 
 #define MAX_TEXT_LEN 512
 

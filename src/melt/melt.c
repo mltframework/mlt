@@ -16,11 +16,49 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+#if defined(_MSC_VER)
+#define SDL_MAIN_HANDLED
+#endif
+
+#define SDL_MAIN_HANDLED
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include <libgen.h>
+#ifdef _MSC_VER
+    #include <string.h> // for strrchr
+
+    // 为 MSVC 提供一个简单的 basename 实现
+    // 注意：这个实现返回一个指向原始字符串内部的指针
+    static inline char *basename(char *path) {
+        if (path == NULL || *path == '\0') {
+            // 如果路径为空或空字符串，返回"."
+            return ".";
+        }
+
+        // 查找最后一个路径分隔符（'/' 或 '\'）
+        char *last_slash = strrchr(path, '/');
+        char *last_bslash = strrchr(path, '\\');
+
+        if (last_slash && last_bslash) {
+            // 如果两者都存在，取后面的那一个
+            last_slash = (last_slash > last_bslash) ? last_slash : last_bslash;
+        } else if (last_bslash) {
+            // 如果只有反斜杠
+            last_slash = last_bslash;
+        }
+
+        if (last_slash != NULL) {
+            // 如果找到了分隔符，返回它后面的字符
+            return last_slash + 1;
+        } else {
+            // 如果没有找到分隔符，整个字符串就是文件名
+            return path;
+        }
+    }
+#else
+    #include <libgen.h>
+#endif
 #include <limits.h>
 #include <locale.h>
 #include <sched.h>
@@ -28,8 +66,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
+#ifdef _MSC_VER
+#include <io.h>  // _isatty 在这里
+#include <stdio.h> // _fileno 和 stdin 在这里
+
+// 为 MSVC 提供 POSIX 标识符的别名
+#define STDIN_FILENO _fileno(stdin)
+#define isatty       _isatty
+#endif
 #include <framework/mlt.h>
 
 #if (defined(__APPLE__) || defined(_WIN32) || defined(HAVE_SDL2)) && !defined(MELT_NOSDL)

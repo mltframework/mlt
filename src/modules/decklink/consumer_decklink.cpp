@@ -18,14 +18,21 @@
  */
 
 #define __STDC_FORMAT_MACROS /* see inttypes.h */
+#include <framework/msvc_posix_compat.h>
 #include "common.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #define SWAB_SLICED_ALIGN_POW 5
 static int swab_sliced(int id, int idx, int jobs, void *cookie)

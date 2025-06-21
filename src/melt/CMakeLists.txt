@@ -1,5 +1,13 @@
-add_executable(melt melt.c io.c io.h)
-
+add_executable(melt
+        ${CMAKE_CURRENT_SOURCE_DIR}/melt.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/io.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/io.h
+)
+set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/melt.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/io.c
+        PROPERTIES LANGUAGE C
+)
 target_compile_options(melt PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(melt PRIVATE mlt Threads::Threads)

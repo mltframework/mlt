@@ -34,7 +34,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "mlt_api.h"
 #include "mlt_animation.h"
 #include "mlt_audio.h"
 #include "mlt_cache.h"

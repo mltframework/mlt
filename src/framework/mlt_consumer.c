@@ -31,7 +31,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
 
 /** Define this if you want an automatic deinterlace (if necessary) when the
  * consumer's producer is not running at normal speed.
@@ -40,11 +44,11 @@
 
 /** This is not the ideal place for this, but it is needed by VDPAU as well.
  */
-pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
+MLT_API  pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /** mlt_frame_s::is_processing can not be made atomic, so protect it with a mutex.
  */
-pthread_mutex_t mlt_frame_processing_mutex = PTHREAD_MUTEX_INITIALIZER;
+MLT_API  pthread_mutex_t mlt_frame_processing_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /** \brief private members of mlt_consumer */
 

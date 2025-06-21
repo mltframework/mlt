@@ -819,26 +819,25 @@ static int link_get_audio(mlt_frame frame,
             break;
         }
 
+        int out_channels;
         // Sanity check the output frame
 #if HAVE_FFMPEG_CH_LAYOUT
+        out_channels = pdata->avoutframe->ch_layout.nb_channels;
         if (*channels != pdata->avoutframe->ch_layout.nb_channels
 #else
+        out_channels = pdata->avoutframe->channels;
         if (*channels != pdata->avoutframe->channels
 #endif
             || *samples != pdata->avoutframe->nb_samples
             || *frequency != pdata->avoutframe->sample_rate) {
             mlt_log_error(self,
-                          "Unexpected return format c %d->%d\tf %d->%d\tf %d->%d\n",
-                          *channels,
-#if HAVE_FFMPEG_CH_LAYOUT
-                          pdata->avoutframe->ch_layout.nb_channels,
-#else
-                          pdata->avoutframe->channels,
-#endif
-                          *samples,
-                          pdata->avoutframe->nb_samples,
-                          *frequency,
-                          pdata->avoutframe->sample_rate);
+              "Unexpected return format c %d->%d\tf %d->%d\tf %d->%d\n",
+              *channels,
+              out_channels, // <-- 使用临时变量
+              *samples,
+              pdata->avoutframe->nb_samples,
+              *frequency,
+              pdata->avoutframe->sample_rate);
             error = 1;
             break;
         }

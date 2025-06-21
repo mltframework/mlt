@@ -37,7 +37,31 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
+#ifdef _MSC_VER
+    #include <io.h>      // For _close, _write
+    #include <stdio.h>
+    #include <BaseTsd.h> // For SSIZE_T
+
+    // Define ssize_t for MSVC
+    typedef SSIZE_T ssize_t;
+
+// --- 使用函数包装器来避免与结构体成员冲突 ---
+
+// close 的包装器
+static inline int close(int fd)
+{
+    return _close(fd);
+}
+
+// write 的包装器
+static inline int write(int fd, const void *buffer, unsigned int count)
+{
+    return _write(fd, buffer, count);
+}
+#endif
 
 // this protects concurrent access to gdk_pixbuf
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;

@@ -27,8 +27,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include "factory.h"
 

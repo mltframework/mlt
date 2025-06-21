@@ -24,7 +24,7 @@
 
 #include <stdarg.h>
 #include <stdint.h>
-
+#include "mlt_api.h"
 #define MLT_LOG_QUIET -8
 
 /**
@@ -77,25 +77,42 @@
 void mlt_log(void *service, int level, const char *fmt, ...)
     __attribute__((__format__(__printf__, 3, 4)));
 #else
-void mlt_log(void *service, int level, const char *fmt, ...);
+MLT_API void mlt_log(void *service, int level, const char *fmt, ...);
 #endif
 
-#define mlt_log_panic(service, format, args...) mlt_log((service), MLT_LOG_PANIC, (format), ##args)
-#define mlt_log_fatal(service, format, args...) mlt_log((service), MLT_LOG_FATAL, (format), ##args)
-#define mlt_log_error(service, format, args...) mlt_log((service), MLT_LOG_ERROR, (format), ##args)
-#define mlt_log_warning(service, format, args...) \
-    mlt_log((service), MLT_LOG_WARNING, (format), ##args)
-#define mlt_log_info(service, format, args...) mlt_log((service), MLT_LOG_INFO, (format), ##args)
-#define mlt_log_verbose(service, format, args...) \
-    mlt_log((service), MLT_LOG_VERBOSE, (format), ##args)
-#define mlt_log_timings(service, format, args...) \
-    mlt_log((service), MLT_LOG_TIMINGS, (format), ##args)
-#define mlt_log_debug(service, format, args...) mlt_log((service), MLT_LOG_DEBUG, (format), ##args)
+#ifdef _MSC_VER
 
-void mlt_vlog(void *service, int level, const char *fmt, va_list);
-int mlt_log_get_level(void);
-void mlt_log_set_level(int);
-void mlt_log_set_callback(void (*)(void *, int, const char *, va_list));
+// 可变参数宏安全展开：允许没有 __VA_ARGS__ 的情况
+#define MLT_LOG_EXPAND_ARGS(...) , ##__VA_ARGS__
+
+#define mlt_log_panic(service, format, ...)   mlt_log((service), MLT_LOG_PANIC,   format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_fatal(service, format, ...)   mlt_log((service), MLT_LOG_FATAL,   format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_error(service, format, ...)   mlt_log((service), MLT_LOG_ERROR,   format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_warning(service, format, ...) mlt_log((service), MLT_LOG_WARNING, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_info(service, format, ...)    mlt_log((service), MLT_LOG_INFO,    format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_verbose(service, format, ...) mlt_log((service), MLT_LOG_VERBOSE, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_timings(service, format, ...) mlt_log((service), MLT_LOG_TIMINGS, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_debug(service, format, ...)   mlt_log((service), MLT_LOG_DEBUG,   format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+
+#else
+
+// GCC / Clang 使用 ##args 规避空参数逗号问题
+#define mlt_log_panic(service, format, args...)   mlt_log((service), MLT_LOG_PANIC,   format, ##args)
+#define mlt_log_fatal(service, format, args...)   mlt_log((service), MLT_LOG_FATAL,   format, ##args)
+#define mlt_log_error(service, format, args...)   mlt_log((service), MLT_LOG_ERROR,   format, ##args)
+#define mlt_log_warning(service, format, args...) mlt_log((service), MLT_LOG_WARNING, format, ##args)
+#define mlt_log_info(service, format, args...)    mlt_log((service), MLT_LOG_INFO,    format, ##args)
+#define mlt_log_verbose(service, format, args...) mlt_log((service), MLT_LOG_VERBOSE, format, ##args)
+#define mlt_log_timings(service, format, args...) mlt_log((service), MLT_LOG_TIMINGS, format, ##args)
+#define mlt_log_debug(service, format, args...)   mlt_log((service), MLT_LOG_DEBUG,   format, ##args)
+
+#endif
+
+
+MLT_API void mlt_vlog(void *service, int level, const char *fmt, va_list);
+MLT_API int mlt_log_get_level(void);
+MLT_API void mlt_log_set_level(int);
+MLT_API void mlt_log_set_callback(void (*)(void *, int, const char *, va_list));
 
 #define mlt_log_timings_begin() \
     { \
@@ -111,6 +128,6 @@ void mlt_log_set_callback(void (*)(void *, int, const char *, va_list));
                     _mlt_log_timings_end - _mlt_log_timings_begin); \
     }
 
-int64_t mlt_log_timings_now(void);
+MLT_API int64_t mlt_log_timings_now(void);
 
 #endif /* MLT_LOG_H */

@@ -22,13 +22,14 @@
 
 #ifndef MLT_POOL_H
 #define MLT_POOL_H
+#include "mlt_api.h"
 
-extern void mlt_pool_init();
-extern void *mlt_pool_alloc(int size);
-extern void *mlt_pool_realloc(void *ptr, int size);
-extern void mlt_pool_release(void *release);
-extern void mlt_pool_purge();
-extern void mlt_pool_close();
-extern void mlt_pool_stat();
+MLT_API extern void mlt_pool_init();
+MLT_API extern void *mlt_pool_alloc(int size);
+MLT_API extern void *mlt_pool_realloc(void *ptr, int size);
+MLT_API extern void mlt_pool_release(void *release);
+MLT_API extern void mlt_pool_purge();
+MLT_API extern void mlt_pool_close();
+MLT_API extern void mlt_pool_stat();
 
 #endif

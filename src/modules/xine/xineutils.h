@@ -25,7 +25,9 @@
 extern "C" {
 #endif
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -34,7 +36,12 @@ extern "C" {
 #if HAVE_LIBGEN_H
 #  include <libgen.h>
 #endif
-
+#ifdef _MSC_VER
+#include <malloc.h>
+#define alloca _alloca // 为 MSVC 定义一个别名
+#else
+#include <alloca.h>
+#endif
 //#ifdef XINE_COMPILE
 #  include "attributes.h"
 //#  include "compat.h"
@@ -717,7 +724,7 @@ static inline char *_private_strsep(char **stringp, const char *delim) {
 #else
 static inline void _private_setenv(const char *name, const char *val, int _xx) {
   int  len  = strlen(name) + strlen(val) + 2;
-  char env[len];
+  char *env = (char *)alloca(len);;
 
   sprintf(env, "%s%c%s", name, '=', val);
   putenv(env);

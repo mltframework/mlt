@@ -737,7 +737,11 @@ class S24 {
 #pragma pack(pop)
 
 #if defined( HAVE_GETTIMEOFDAY )
-  #include <sys/time.h>
+  #ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
 #endif
 
 #include <sstream>

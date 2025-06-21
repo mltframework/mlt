@@ -3614,10 +3614,15 @@ static int producer_get_audio(mlt_frame frame,
                 size = self->audio_used[index] < *samples ? self->audio_used[index] : *samples;
                 memcpy(*buffer, src, size * *channels * sizeof_sample);
                 // supply the remaining requested samples as silence
-                if (*samples > self->audio_used[index])
-                    memset(*buffer + size * *channels * sizeof_sample,
+                if (*samples > self->audio_used[index]) {
+                    // 先将 void* 转换为 char*，以便进行字节级别的指针运算
+                    char *dest_ptr = (char *)(*buffer) + (size * *channels * sizeof_sample);
+
+                    // 然后将计算好的、类型正确的指针传递给 memset
+                    memset(dest_ptr,
                            silence,
                            (*samples - self->audio_used[index]) * *channels * sizeof_sample);
+                }
                 // reposition the samples within audio_buffer
                 self->audio_used[index] -= size;
                 memmove(src,

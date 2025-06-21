@@ -33,11 +33,11 @@
     ((LIBMLT_VERSION_MAJOR << 16) + (LIBMLT_VERSION_MINOR << 8) + LIBMLT_VERSION_REVISION)
 #define LIBMLT_VERSION \
     MLT_STRINGIZE(LIBMLT_VERSION_MAJOR.LIBMLT_VERSION_MINOR.LIBMLT_VERSION_REVISION)
-
-extern int mlt_version_get_int();
-extern int mlt_version_get_major();
-extern int mlt_version_get_minor();
-extern int mlt_version_get_revision();
-extern char *mlt_version_get_string();
+#include "mlt_api.h"
+MLT_API extern int mlt_version_get_int();
+MLT_API extern int mlt_version_get_major();
+MLT_API extern int mlt_version_get_minor();
+MLT_API extern int mlt_version_get_revision();
+MLT_API extern char *mlt_version_get_string();
 
 #endif
