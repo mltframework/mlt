@@ -1,6 +1,6 @@
 /*
  * filter_panner.c --pan/balance audio channels
- * Copyright (C) 2010-2017 Meltytech, LLC
+ * Copyright (C) 2010-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,6 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -88,7 +87,7 @@ static int filter_get_audio(mlt_frame frame,
     // Initialize the mix factors
     for (i = 0; i < 6; i++)
         for (out = 0; out < 6; out++)
-            factors[i][out] = 0.0;
+            factors[i][out] = (out == i) ? 1.0 : 0.0;
 
     for (i = 0; i < *samples; i++) {
         // Recompute the mix factors
@@ -102,11 +101,9 @@ static int filter_get_audio(mlt_frame frame,
                 int left = active == -1 ? 0 : (*channels == 6 ? 4 : 2);
                 int right = left + 1;
                 if (weight < 0.0) {
-                    factors[left][left] = 1.0;
                     factors[right][right] = MAX(weight + 1.0, 0.0);
                 } else {
                     factors[left][left] = MAX(1.0 - weight, 0.0);
-                    factors[right][right] = 1.0;
                 }
             }
             break;
@@ -120,11 +117,9 @@ static int filter_get_audio(mlt_frame frame,
                 int front = active == -3 ? 0 : 1;
                 int rear = front + (*channels == 6 ? 4 : 2);
                 if (weight < 0.0) {
-                    factors[front][front] = 1.0;
                     factors[rear][rear] = MAX(weight + 1.0, 0.0);
                 } else {
                     factors[front][front] = MAX(1.0 - weight, 0.0);
-                    factors[rear][rear] = 1.0;
                 }
             }
             break;
@@ -165,7 +160,7 @@ static int filter_get_audio(mlt_frame frame,
 
         // Do the mixing
         for (out = 0; out < *channels && out < 6; out++) {
-            v = 0;
+            v = 0.0;
             for (in = 0; in < *channels && in < 6; in++)
                 v += factors[in][out] * src[i * *channels + in];
             dest[i * *channels + out] = v;
