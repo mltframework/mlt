@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004-2021 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -282,18 +282,23 @@ process_chain (process_info_t * procinfo, jack_nframes_t frames)
           
           if (plugin->wet_dry_enabled)
             for (channel = 0; channel < procinfo->channels; channel++)
-              for (i = 0; i < frames; i++)
-                {
-                  plugin->audio_output_memory[channel][i] *= plugin->wet_dry_values[channel];
-                  plugin->audio_output_memory[channel][i] += plugin->audio_input_memory[channel][i] * (1.0 - plugin->wet_dry_values[channel]);
-                }
-          
+              {
+                if (procinfo->channel_mask & (1 << channel))
+                  for (i = 0; i < frames; i++)
+                    {
+                      plugin->audio_output_memory[channel][i] *= plugin->wet_dry_values[channel];
+                      plugin->audio_output_memory[channel][i] += plugin->audio_input_memory[channel][i] * (1.0 - plugin->wet_dry_values[channel]);
+                    }
+                else
+                  memcpy (plugin->audio_output_memory[channel],
+                          plugin->audio_input_memory[channel],
+                          sizeof(LADSPA_Data) * frames);
+              }
           if (plugin == last_enabled)
             break;
         }
       else
         {
-    
           /* copy the data through */
           for (i = 0; i < procinfo->channels; i++)
             memcpy (plugin->audio_output_memory[i],
@@ -556,6 +561,7 @@ process_info_new (const char * client_name, unsigned long rack_channels,
   procinfo->jack_output_ports = NULL;
 #endif
   procinfo->channels = rack_channels;
+  procinfo->channel_mask = 0xFFFFFFFFFFFFFFFF;
   procinfo->quit = FALSE;
 	
   if ( client_name == NULL )

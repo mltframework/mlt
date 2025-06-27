@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2024-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ struct _vst2_process_info
 #endif
 
     unsigned long channels;
+    unsigned long channel_mask;
     LADSPA_Data **jack_input_buffers;
     LADSPA_Data **jack_output_buffers;
     LADSPA_Data *silent_buffer;

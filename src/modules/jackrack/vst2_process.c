@@ -283,14 +283,20 @@ void vst2_process_chain(vst2_process_info_t *procinfo, jack_nframes_t frames)
             }
 
             if (plugin->wet_dry_enabled)
-                for (channel = 0; channel < procinfo->channels; channel++)
-                    for (i = 0; i < frames; i++) {
-                        plugin->audio_output_memory[channel][i] *= plugin->wet_dry_values[channel];
-                        plugin->audio_output_memory[channel][i]
-                            += plugin->audio_input_memory[channel][i]
-                               * (1.0 - plugin->wet_dry_values[channel]);
-                    }
-
+                for (channel = 0; channel < procinfo->channels; channel++) {
+                    if (procinfo->channel_mask & (1 << channel))
+                        for (i = 0; i < frames; i++) {
+                            plugin->audio_output_memory[channel][i]
+                                *= plugin->wet_dry_values[channel];
+                            plugin->audio_output_memory[channel][i]
+                                += plugin->audio_input_memory[channel][i]
+                                   * (1.0 - plugin->wet_dry_values[channel]);
+                        }
+                    else
+                        memcpy(plugin->audio_output_memory[channel],
+                               plugin->audio_input_memory[channel],
+                               sizeof(LADSPA_Data) * frames);
+                }
             if (plugin == last_enabled)
                 break;
         } else {
@@ -563,6 +569,7 @@ vst2_process_info_t *vst2_process_info_new(const char *client_name,
     procinfo->jack_output_ports = NULL;
 #endif
     procinfo->channels = rack_channels;
+    procinfo->channel_mask = 0xFFFFFFFFFFFFFFFF;
     procinfo->quit = FALSE;
 
     if (client_name == NULL) {

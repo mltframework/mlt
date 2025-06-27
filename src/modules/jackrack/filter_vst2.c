@@ -1,6 +1,6 @@
 /*
  * filter_vst2.c -- filter audio through VST2 plugins
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2024-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -150,6 +150,9 @@ static int vst2_get_audio(mlt_frame frame,
         mlt_position position = mlt_filter_get_position(filter, frame);
         mlt_position length = mlt_filter_get_length2(filter, frame);
 
+        vst2context->procinfo->channel_mask
+            = (unsigned long) mlt_properties_get_int64(filter_properties, "channel_mask");
+
         // Get the producer's audio
         *format = mlt_audio_float;
         mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
@@ -260,6 +263,7 @@ mlt_filter filter_vst2_init(mlt_profile profile, mlt_service_type type, const ch
         mlt_properties_set(properties, "resource", arg);
         if (!strncmp(id, "vst2.", 5))
             mlt_properties_set(properties, "_pluginid", id + 5);
+        mlt_properties_set_int(properties, "channel_mask", -1);
     }
     return this;
 }
