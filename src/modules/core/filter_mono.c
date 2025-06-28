@@ -188,7 +188,7 @@ mlt_filter filter_mono_init(mlt_profile profile, mlt_service_type type, const ch
             mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "channels", atoi(arg));
         else
             mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "channels", -1);
-        mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "input_chmask", 3);
+        mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "input_chmask", 7);
         mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "output_chmask", -1);
     }
     return filter;

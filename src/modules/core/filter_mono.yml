@@ -27,10 +27,10 @@ parameters:
     type: integer
     description: >
       Which input channels to mix together as a bitmask. The default is for
-      the front left and right only.
+      the front left and right and center channel, if any.
     required: no
     minimum: 0
-    default: 3
+    default: 7
 
   - identifier: output_chmask
     title: Output Channel Mask
