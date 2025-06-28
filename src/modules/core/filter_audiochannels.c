@@ -136,15 +136,15 @@ static int filter_get_audio(mlt_frame frame,
                 in += 6;
             }
         } else if (*format == mlt_audio_s32) {
-            char *buffer_start = (char*)(*buffer);
+            char *buffer_start = (char *) (*buffer);
 
-            int32_t *flin = (int32_t*)(buffer_start);
-            int32_t *frin = (int32_t*)(buffer_start + (*samples * sizeof(float)));
-            int32_t *cin = (int32_t*)(buffer_start + (2 * *samples * sizeof(float)));
-            int32_t *slin = (int32_t*)(buffer_start + (4 * *samples * sizeof(float)));
-            int32_t *srin = (int32_t*)(buffer_start + (5 * *samples * sizeof(float)));
-            int32_t *lout = (int32_t*)(buffer_start);
-            int32_t *rout = (int32_t*)(buffer_start + (*samples * sizeof(float)));
+            int32_t *flin = (int32_t *) (buffer_start);
+            int32_t *frin = (int32_t *) (buffer_start + (*samples * sizeof(float)));
+            int32_t *cin = (int32_t *) (buffer_start + (2 * *samples * sizeof(float)));
+            int32_t *slin = (int32_t *) (buffer_start + (4 * *samples * sizeof(float)));
+            int32_t *srin = (int32_t *) (buffer_start + (5 * *samples * sizeof(float)));
+            int32_t *lout = (int32_t *) (buffer_start);
+            int32_t *rout = (int32_t *) (buffer_start + (*samples * sizeof(float)));
             int i;
             for (i = 0; i < *samples; i++) {
                 double fl = *flin++;
@@ -156,15 +156,15 @@ static int filter_get_audio(mlt_frame frame,
                 *rout++ = CLAMP(MIX(fr, c, sr), INT32_MIN, INT32_MAX);
             }
         } else if (*format == mlt_audio_float) {
-            char *buffer_start = (char*)(*buffer);
+            char *buffer_start = (char *) (*buffer);
 
-            float *flin = (float*)(buffer_start);
-            float *frin = (float*)(buffer_start + (*samples * sizeof(float)));
-            float *cin = (float*)(buffer_start + (2 * *samples * sizeof(float)));
-            float *slin = (float*)(buffer_start + (4 * *samples * sizeof(float)));
-            float *srin = (float*)(buffer_start + (5 * *samples * sizeof(float)));
-            float *lout = (float*)(buffer_start);
-            float *rout = (float*)(buffer_start + (*samples * sizeof(float)));
+            float *flin = (float *) (buffer_start);
+            float *frin = (float *) (buffer_start + (*samples * sizeof(float)));
+            float *cin = (float *) (buffer_start + (2 * *samples * sizeof(float)));
+            float *slin = (float *) (buffer_start + (4 * *samples * sizeof(float)));
+            float *srin = (float *) (buffer_start + (5 * *samples * sizeof(float)));
+            float *lout = (float *) (buffer_start);
+            float *rout = (float *) (buffer_start + (*samples * sizeof(float)));
             int i;
             for (i = 0; i < *samples; i++) {
                 float fl = *flin++;

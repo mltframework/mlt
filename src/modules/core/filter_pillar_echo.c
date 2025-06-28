@@ -71,7 +71,7 @@ static int scale_sliced_proc(int id, int index, int jobs, void *data)
     int slice_line_end = slice_line_start + slice_height;
     double srcScale = rect.h / (double) src->height;
     int linesize = src->width * 4;
-    uint8_t *d = (uint8_t*)((char*)dst->data + (slice_line_start * linesize));
+    uint8_t *d = (uint8_t *) ((char *) dst->data + (slice_line_start * linesize));
     for (int y = slice_line_start; y < slice_line_end; y++) {
         double srcY = rect.y + (double) y * srcScale;
         int srcYindex = floor(srcY);
@@ -88,7 +88,7 @@ static int scale_sliced_proc(int id, int index, int jobs, void *data)
             double valueSum[] = {0.0, 0.0, 0.0, 0.0};
             double factorSum[] = {0.0, 0.0, 0.0, 0.0};
 
-            uint8_t *s = (uint8_t*)((char*)src->data + (srcYindex * linesize) + (srcXindex * 4));
+            uint8_t *s = (uint8_t *) ((char *) src->data + (srcYindex * linesize) + (srcXindex * 4));
 
             // Top Left
             double ftl = ftop * fleft;
@@ -194,8 +194,8 @@ static void blit_rect(mlt_image src, mlt_image dst, mlt_rect rect)
     int blitHeight = rect.h;
     int blitWidth = rect.w * 4;
     int linesize = src->width * 4;
-    uint8_t *s = (uint8_t*)((char*)src->data + (int) rect.y * linesize + (int) rect.x * 4);
-    uint8_t *d = (uint8_t*)((char*)dst->data + (int) rect.y * linesize + (int) rect.x * 4);
+    uint8_t *s = (uint8_t *) ((char *) src->data + (int) rect.y * linesize + (int) rect.x * 4);
+    uint8_t *d = (uint8_t *) ((char *) dst->data + (int) rect.y * linesize + (int) rect.x * 4);
     while (blitHeight--) {
         memcpy(d, s, blitWidth);
         s += linesize;
