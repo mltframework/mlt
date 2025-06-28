@@ -1,6 +1,6 @@
 /*
  * filter_volume.c -- adjust audio volume
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -237,7 +237,7 @@ static int filter_get_audio(mlt_frame frame,
     // Save the current gain for the next iteration
     mlt_properties_set_double(filter_props, "_previous_gain", gain);
     mlt_properties_set_position(filter_props, "_last_position", current_position);
-
+    int channel_mask = mlt_properties_get_int(filter_props, "channel_mask");
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
     // Ramp from the previous gain to the current
@@ -250,23 +250,25 @@ static int filter_get_audio(mlt_frame frame,
         int bytes_per_samp = (samp_width - 1) / 8 + 1;
         int samplemax = (1 << (bytes_per_samp * 8 - 1)) - 1;
 
-        for (i = 0; i < *samples; i++, gain += gain_step) {
-            for (j = 0; j < *channels; j++) {
-                sample = *p * gain;
-                *p = ROUND(sample);
-                if (gain > 1.0 && normalize) {
-                    /* use limiter function instead of clipping */
-                    *p = ROUND(samplemax * limiter(sample / (double) samplemax, limiter_level));
+        for (j = 0; j < *channels; j++) {
+            if (channel_mask & (1 << j))
+                for (i = 0; i < *samples; i++, gain += gain_step) {
+                    sample = *p * gain;
+                    *p = ROUND(sample);
+                    if (gain > 1.0 && normalize) {
+                        /* use limiter function instead of clipping */
+                        p[*channels * i + j] = ROUND(
+                            samplemax * limiter(sample / (double) samplemax, limiter_level));
+                    }
                 }
-                p++;
-            }
         }
     } else {
         float *p = *buffer;
-        for (i = 0; i < *samples; i++, gain += gain_step) {
-            for (j = 0; j < *channels; j++, p++) {
-                p[0] *= gain;
-            }
+        for (j = 0; j < *channels; j++) {
+            if (channel_mask & (1 << j))
+                for (i = 0; i < *samples; i++, gain += gain_step) {
+                    p[*channels * i + j] *= gain;
+                }
         }
     }
     return 0;
@@ -435,8 +437,8 @@ mlt_filter filter_volume_init(mlt_profile profile, mlt_service_type type, const 
 
         mlt_properties_set_int(properties, "window", 75);
         mlt_properties_set(properties, "max_gain", "20dB");
-
         mlt_properties_set(properties, "level", NULL);
+        mlt_properties_set_int(properties, "channel_mask", -1);
     }
     return filter;
 }

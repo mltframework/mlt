@@ -35,3 +35,4 @@ parameters:
     required: no
     minimum: 0
     default: 0xFFFFFFFFFFFFFFFF
+    mutable: yes

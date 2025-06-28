@@ -31,6 +31,7 @@ parameters:
     required: no
     minimum: 0
     default: 7
+    mutable: yes
 
   - identifier: output_chmask
     title: Output Channel Mask
@@ -41,3 +42,4 @@ parameters:
     required: no
     minimum: 0
     default: 0xFFFFFFFF
+    mutable: yes
