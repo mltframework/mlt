@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -252,6 +252,25 @@ static mlt_properties metadata(mlt_service_type type, const char *id, char *data
                 mlt_properties_set_double(p, "maximum", 1);
                 mlt_properties_set(p, "mutable", "yes");
                 mlt_properties_set(p, "animation", "yes");
+
+                p = mlt_properties_new();
+                snprintf(key, sizeof(key), "%d", mlt_properties_count(params));
+                mlt_properties_set_data(params,
+                                        key,
+                                        p,
+                                        0,
+                                        (mlt_destructor) mlt_properties_close,
+                                        NULL);
+                mlt_properties_set(p, "identifier", "channel_mask");
+                mlt_properties_set(p, "title", "Channel Mask");
+                mlt_properties_set(p,
+                                   "description",
+                                   "A bitmask inidicating which channels to affect.");
+                mlt_properties_set(p, "type", "integer");
+                mlt_properties_set(p, "default", "0xFFFFFFFFFFFFFFFF");
+                mlt_properties_set_int(p, "minimum", 0);
+                mlt_properties_set(p, "mutable", "yes");
+                mlt_properties_set(p, "animation", "no");
             }
         }
     }
@@ -451,6 +470,25 @@ static mlt_properties lv2_metadata(mlt_service_type type, const char *id, char *
                 mlt_properties_set_double(p, "maximum", 1);
                 mlt_properties_set(p, "mutable", "yes");
                 mlt_properties_set(p, "animation", "yes");
+
+                p = mlt_properties_new();
+                snprintf(key, sizeof(key), "%d", mlt_properties_count(params));
+                mlt_properties_set_data(params,
+                                        key,
+                                        p,
+                                        0,
+                                        (mlt_destructor) mlt_properties_close,
+                                        NULL);
+                mlt_properties_set(p, "identifier", "channel_mask");
+                mlt_properties_set(p, "title", "Channel Mask");
+                mlt_properties_set(p,
+                                   "description",
+                                   "A bitmask inidicating which channels to affect.");
+                mlt_properties_set(p, "type", "integer");
+                mlt_properties_set(p, "default", "0xFFFFFFFFFFFFFFFF");
+                mlt_properties_set_int(p, "minimum", 0);
+                mlt_properties_set(p, "mutable", "yes");
+                mlt_properties_set(p, "animation", "no");
             }
         }
     }
@@ -626,6 +664,25 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
                 mlt_properties_set_double(p, "maximum", 1);
                 mlt_properties_set(p, "mutable", "yes");
                 mlt_properties_set(p, "animation", "yes");
+
+                p = mlt_properties_new();
+                snprintf(key, sizeof(key), "%d", mlt_properties_count(params));
+                mlt_properties_set_data(params,
+                                        key,
+                                        p,
+                                        0,
+                                        (mlt_destructor) mlt_properties_close,
+                                        NULL);
+                mlt_properties_set(p, "identifier", "channel_mask");
+                mlt_properties_set(p, "title", "Channel Mask");
+                mlt_properties_set(p,
+                                   "description",
+                                   "A bitmask inidicating which channels to affect.");
+                mlt_properties_set(p, "type", "integer");
+                mlt_properties_set(p, "default", "0xFFFFFFFFFFFFFFFF");
+                mlt_properties_set_int(p, "minimum", 0);
+                mlt_properties_set(p, "mutable", "yes");
+                mlt_properties_set(p, "animation", "no");
             }
         }
     }
