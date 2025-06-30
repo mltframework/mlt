@@ -551,7 +551,7 @@ lv2_process_info_t *lv2_process_info_new(const char *client_name,
     procinfo->jack_output_ports = NULL;
 #endif
     procinfo->channels = rack_channels;
-    procinfo->channel_mask = 0xFFFFFFFFFFFFFFFF;
+    procinfo->channel_mask = 0xFFFFFFFF;
     procinfo->quit = FALSE;
 
     if (client_name == NULL) {

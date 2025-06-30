@@ -267,7 +267,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, char *data
                                    "description",
                                    "A bitmask inidicating which channels to affect.");
                 mlt_properties_set(p, "type", "integer");
-                mlt_properties_set(p, "default", "0xFFFFFFFFFFFFFFFF");
+                mlt_properties_set(p, "default", "0xFFFFFFFF");
                 mlt_properties_set_int(p, "minimum", 0);
                 mlt_properties_set(p, "mutable", "yes");
                 mlt_properties_set(p, "animation", "no");
@@ -485,7 +485,7 @@ static mlt_properties lv2_metadata(mlt_service_type type, const char *id, char *
                                    "description",
                                    "A bitmask inidicating which channels to affect.");
                 mlt_properties_set(p, "type", "integer");
-                mlt_properties_set(p, "default", "0xFFFFFFFFFFFFFFFF");
+                mlt_properties_set(p, "default", "0xFFFFFFFF");
                 mlt_properties_set_int(p, "minimum", 0);
                 mlt_properties_set(p, "mutable", "yes");
                 mlt_properties_set(p, "animation", "no");
@@ -679,7 +679,7 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
                                    "description",
                                    "A bitmask inidicating which channels to affect.");
                 mlt_properties_set(p, "type", "integer");
-                mlt_properties_set(p, "default", "0xFFFFFFFFFFFFFFFF");
+                mlt_properties_set(p, "default", "0xFFFFFFFF");
                 mlt_properties_set_int(p, "minimum", 0);
                 mlt_properties_set(p, "mutable", "yes");
                 mlt_properties_set(p, "animation", "no");

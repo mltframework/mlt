@@ -24,4 +24,4 @@ parameters:
       The default is to overwrite all of the channels.
     required: no
     minimum: 0
-    default: 0xFFFFFFFFFFFFFFFF
+    default: 0xFFFFFFFF
