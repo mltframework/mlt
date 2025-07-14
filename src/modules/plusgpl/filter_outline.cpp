@@ -35,8 +35,7 @@ struct slice_desc
 
     float alphaF(const float currentAlphaF, const int x, const int y)
     {
-        const auto stride = image.strides[0];
-        return std::max(currentAlphaF, float(original[y * stride + 4 * x + 3] / 255.f));
+        return std::max(currentAlphaF, float(original[y * image.strides[0] + 4 * x + 3] / 255.f));
     };
 };
 
@@ -93,6 +92,7 @@ static int filter_get_image(mlt_frame frame,
 
         mlt_image_set_values(&desc.image, nullptr, *format, *width, *height);
         mlt_image_alloc_data(&desc.image);
+        ::memcpy(desc.image.data, *image, mlt_image_calculate_size(&desc.image));
         *image = static_cast<uint8_t *>(desc.image.data);
         mlt_frame_set_image(frame,
                             *image,
