@@ -1,7 +1,7 @@
 /*
  * filter_outline.cpp
  * Copyright (C) 2025 Meltytech, LLC
- * Based on Kino DV Titler originally written by Alejandro Aguilar Sierra <asierra@servidor.unam.mx>
+ * Inspired by Kino DV Titler originally written by Alejandro Aguilar Sierra <asierra@servidor.unam.mx>
  * https://sourceforge.net/p/kino/code/HEAD/tree/trunk/kino/src/dvtitler/dvtitler.cc
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,6 @@
 
 #include "mlt++/MltFilter.h"
 
-#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -32,11 +31,6 @@ struct slice_desc
     int thickness;
     mlt_image_s image;
     uint8_t *original;
-
-    float alphaF(const float currentAlphaF, const int x, const int y)
-    {
-        return std::max(currentAlphaF, float(original[y * image.strides[0] + 4 * x + 3] / 255.f));
-    };
 };
 
 static int sliced_proc(int id, int index, int jobs, void *data)
@@ -50,32 +44,58 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     auto maxX = desc->image.width - 1;
     auto maxY = desc->image.height - 1;
 
+    // Pre-calculate values outside loops for better performance
+    auto radius = desc->thickness;
+    auto radiusSquared = radius * radius;
+    auto width = desc->image.width;
+    auto colorR = desc->color.r;
+    auto colorG = desc->color.g;
+    auto colorB = desc->color.b;
+    auto colorA = desc->color.a;
+
     for (auto y = start; y < end; y++) {
-        for (auto x = 0; x < desc->image.width; x++) {
+        auto srcRow = &desc->original[y * stride];
+        auto dstRow = &desc->image.planes[0][y * stride];
+
+        for (auto x = 0; x < width; x++) {
             auto oa = 0.f;
 
             // Sample in a true circular pattern to avoid artifacts on angles
-            auto radius = desc->thickness;
-            auto radiusSquared = radius * radius;
             for (auto dy = -radius; dy <= radius; dy++) {
+                auto sampleY = y + dy;
+                // Early bounds check for Y
+                if (sampleY < 0 || sampleY > maxY)
+                    continue;
+
+                auto sampleRow = &desc->original[sampleY * stride];
+                auto dySquared = dy * dy; // Pre-calculate dy squared
+
                 for (auto dx = -radius; dx <= radius; dx++) {
                     // Skip the center pixel and only sample within the circular radius
-                    auto distanceSquared = dx * dx + dy * dy;
+                    auto distanceSquared = dx * dx + dySquared;
                     if (distanceSquared > 0 && distanceSquared <= radiusSquared) {
-                        auto sampleX = std::max(0, std::min(x + dx, maxX));
-                        auto sampleY = std::max(0, std::min(y + dy, maxY));
-                        oa = desc->alphaF(oa, sampleX, sampleY);
+                        auto sampleX = x + dx;
+                        // Clamp sample coordinates
+                        if (sampleX < 0)
+                            sampleX = 0;
+                        else if (sampleX > maxX)
+                            sampleX = maxX;
+
+                        auto alpha = sampleRow[sampleX * 4 + 3] * (1.f / 255.f);
+                        if (alpha > oa)
+                            oa = alpha;
                     }
                 }
             }
 
-            auto src = &desc->original[y * stride + 4 * x];
-            auto dst = &desc->image.planes[0][y * stride + 4 * x];
-            auto a = src[3] / 255.f;
-            dst[0] = a * src[0] + (1.f - a) * (oa * desc->color.r);
-            dst[1] = a * src[1] + (1.f - a) * (oa * desc->color.g);
-            dst[2] = a * src[2] + (1.f - a) * (oa * desc->color.b);
-            dst[3] = a * src[3] + (1.f - a) * (oa * desc->color.a);
+            auto srcPixel = &srcRow[x * 4];
+            auto dstPixel = &dstRow[x * 4];
+            auto a = srcPixel[3] * (1.f / 255.f);
+            auto oneMinusA = 1.f - a;
+            dstPixel[0] = a * srcPixel[0] + oneMinusA * (oa * colorR);
+            dstPixel[1] = a * srcPixel[1] + oneMinusA * (oa * colorG);
+            dstPixel[2] = a * srcPixel[2] + oneMinusA * (oa * colorB);
+            dstPixel[3] = a * srcPixel[3] + oneMinusA * (oa * colorA);
         }
     }
     return 0;
