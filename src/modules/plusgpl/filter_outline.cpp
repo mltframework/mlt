@@ -21,6 +21,7 @@
 
 #include "mlt++/MltFilter.h"
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -28,7 +29,7 @@
 struct slice_desc
 {
     mlt_color color;
-    int thickness;
+    double thickness;
     mlt_image_s image;
     uint8_t *original;
 };
@@ -47,6 +48,7 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     // Pre-calculate values outside loops for better performance
     auto radius = desc->thickness;
     auto radiusSquared = radius * radius;
+    auto radiusInt = static_cast<int>(std::ceil(radius)); // Integer radius for loop bounds
     auto width = desc->image.width;
     auto colorR = desc->color.r;
     auto colorG = desc->color.g;
@@ -61,7 +63,7 @@ static int sliced_proc(int id, int index, int jobs, void *data)
             auto oa = 0.f;
 
             // Sample in a true circular pattern to avoid artifacts on angles
-            for (auto dy = -radius; dy <= radius; dy++) {
+            for (auto dy = -radiusInt; dy <= radiusInt; dy++) {
                 auto sampleY = y + dy;
                 // Early bounds check for Y
                 if (sampleY < 0 || sampleY > maxY)
@@ -70,7 +72,7 @@ static int sliced_proc(int id, int index, int jobs, void *data)
                 auto sampleRow = &desc->original[sampleY * stride];
                 auto dySquared = dy * dy; // Pre-calculate dy squared
 
-                for (auto dx = -radius; dx <= radius; dx++) {
+                for (auto dx = -radiusInt; dx <= radiusInt; dx++) {
                     // Skip the center pixel and only sample within the circular radius
                     auto distanceSquared = dx * dx + dySquared;
                     if (distanceSquared > 0 && distanceSquared <= radiusSquared) {
@@ -118,7 +120,7 @@ static int filter_get_image(mlt_frame frame,
         auto position = filter.get_position(fr);
         auto length = filter.get_length2(fr);
         slice_desc desc{.color = filter.anim_get_color("color", position, length),
-                        .thickness = filter.anim_get_int("thickness", position, length),
+                        .thickness = filter.anim_get_double("thickness", position, length),
                         .original = *image};
 
         mlt_image_set_values(&desc.image, nullptr, *format, *width, *height);
@@ -159,7 +161,7 @@ mlt_filter filter_outline_init(mlt_profile profile, mlt_service_type type, const
         filter->process = filter_process;
         filter->close = filter_close;
         mlt_properties_set_color(MLT_FILTER_PROPERTIES(filter), "color", {255, 255, 255, 255});
-        mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "thickness", 4);
+        mlt_properties_set_double(MLT_FILTER_PROPERTIES(filter), "thickness", 4.0);
     }
     return filter;
 }
