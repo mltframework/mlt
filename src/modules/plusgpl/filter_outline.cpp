@@ -53,18 +53,29 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     for (auto y = start; y < end; y++) {
         for (auto x = 0; x < desc->image.width; x++) {
             auto oa = 0.f;
-            for (auto o = 0; o < desc->thickness; o++) {
-                oa = desc->alphaF(oa, MAX(x - o, 0), y);
-                oa = desc->alphaF(oa, MIN(x + o, maxX), y);
-                oa = desc->alphaF(oa, x, MAX(y - o, 0));
-                oa = desc->alphaF(oa, x, MIN(y + o, maxY));
+
+            // Sample in a true circular pattern to avoid artifacts on angles
+            auto radius = desc->thickness;
+            auto radiusSquared = radius * radius;
+            for (auto dy = -radius; dy <= radius; dy++) {
+                for (auto dx = -radius; dx <= radius; dx++) {
+                    // Skip the center pixel and only sample within the circular radius
+                    auto distanceSquared = dx * dx + dy * dy;
+                    if (distanceSquared > 0 && distanceSquared <= radiusSquared) {
+                        auto sampleX = std::max(0, std::min(x + dx, maxX));
+                        auto sampleY = std::max(0, std::min(y + dy, maxY));
+                        oa = desc->alphaF(oa, sampleX, sampleY);
+                    }
+                }
             }
-            auto p = &desc->image.planes[0][y * stride + 4 * x];
-            auto a = p[3] / 255.f;
-            p[0] = a * p[0] + (1.f - a) * (oa * desc->color.r);
-            p[1] = a * p[1] + (1.f - a) * (oa * desc->color.g);
-            p[2] = a * p[2] + (1.f - a) * (oa * desc->color.b);
-            p[3] = a * p[3] + (1.f - a) * (oa * desc->color.a);
+
+            auto src = &desc->original[y * stride + 4 * x];
+            auto dst = &desc->image.planes[0][y * stride + 4 * x];
+            auto a = src[3] / 255.f;
+            dst[0] = a * src[0] + (1.f - a) * (oa * desc->color.r);
+            dst[1] = a * src[1] + (1.f - a) * (oa * desc->color.g);
+            dst[2] = a * src[2] + (1.f - a) * (oa * desc->color.b);
+            dst[3] = a * src[3] + (1.f - a) * (oa * desc->color.a);
         }
     }
     return 0;
@@ -82,7 +93,7 @@ static int filter_get_image(mlt_frame frame,
     *format = mlt_image_rgba;
     auto error = mlt_frame_get_image(frame, image, format, width, height, 0);
 
-    if (error == 0) {
+    if (!error) {
         Mlt::Frame fr(frame);
         auto position = filter.get_position(fr);
         auto length = filter.get_length2(fr);
@@ -92,13 +103,13 @@ static int filter_get_image(mlt_frame frame,
 
         mlt_image_set_values(&desc.image, nullptr, *format, *width, *height);
         mlt_image_alloc_data(&desc.image);
-        ::memcpy(desc.image.data, *image, mlt_image_calculate_size(&desc.image));
-        *image = static_cast<uint8_t *>(desc.image.data);
-        mlt_frame_set_image(frame,
-                            *image,
-                            mlt_image_calculate_size(&desc.image),
-                            (mlt_destructor) mlt_pool_release);
+
+        filter.lock(); // Block frame-threading since the slice threads are heavy
         mlt_slices_run_normal(0, sliced_proc, &desc);
+        filter.unlock();
+
+        *image = static_cast<uint8_t *>(desc.image.data);
+        fr.set_image(*image, mlt_image_calculate_size(&desc.image), mlt_pool_release);
     }
 
     return error;
