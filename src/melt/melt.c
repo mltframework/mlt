@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2024 Meltytech, LLC
+ * Copyright (C) 2002-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #define _GNU_SOURCE
 #endif
 #include <libgen.h>
-#include <limits.h>
 #include <locale.h>
 #include <sched.h>
 #include <signal.h>
@@ -339,7 +338,7 @@ static int load_consumer(mlt_consumer *consumer, mlt_profile profile, int argc, 
                     mlt_properties_parse(new_props, argv[++i]);
             }
         }
-    } else
+    } else {
         for (i = 1; i < argc; i++) {
             if (!strcmp(argv[i], "-consumer")) {
                 if (*consumer)
@@ -352,6 +351,7 @@ static int load_consumer(mlt_consumer *consumer, mlt_profile profile, int argc, 
                 }
             }
         }
+    }
     return EXIT_SUCCESS;
 }
 
@@ -945,6 +945,10 @@ int main(int argc, char **argv)
 
     // Look for the consumer option to load profile settings from consumer properties
     backup_profile = mlt_profile_clone(profile);
+
+    // Try to initialize QApplication on the main thread to prevent crash
+    mlt_filter_close(mlt_factory_filter(profile, "qtcrop", NULL));
+
     if (load_consumer(&consumer, profile, argc, argv) != EXIT_SUCCESS)
         goto exit_factory;
 
