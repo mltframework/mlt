@@ -483,10 +483,10 @@ int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const
 #if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
         for (int gap = 0; gap < 100;) {
             QString full = QString::asprintf(filename, i++);
+            if (full == filename) {
+                break;
+            }
             if (QFile::exists(full)) {
-                if (full == filename) {
-                    break;
-                }
                 QString key = QString::asprintf("%d", keyvalue++);
                 mlt_properties_set(self->filenames,
                                    key.toLatin1().constData(),
