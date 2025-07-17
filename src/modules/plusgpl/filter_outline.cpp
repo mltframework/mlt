@@ -20,6 +20,7 @@
  */
 
 #include "mlt++/MltFilter.h"
+#include "mlt++/MltProfile.h"
 
 #include <cmath>
 #include <cstdio>
@@ -60,7 +61,7 @@ static int sliced_proc(int id, int index, int jobs, void *data)
         auto dstRow = &desc->image.planes[0][y * stride];
 
         for (auto x = 0; x < width; x++) {
-            auto oa = 0.f;
+            auto oa = 0;
 
             // Sample in a true circular pattern to avoid artifacts on angles
             for (auto dy = -radiusInt; dy <= radiusInt; dy++) {
@@ -76,14 +77,8 @@ static int sliced_proc(int id, int index, int jobs, void *data)
                     // Skip the center pixel and only sample within the circular radius
                     auto distanceSquared = dx * dx + dySquared;
                     if (distanceSquared > 0 && distanceSquared <= radiusSquared) {
-                        auto sampleX = x + dx;
-                        // Clamp sample coordinates
-                        if (sampleX < 0)
-                            sampleX = 0;
-                        else if (sampleX > maxX)
-                            sampleX = maxX;
-
-                        auto alpha = sampleRow[sampleX * 4 + 3] * (1.f / 255.f);
+                        auto sampleX = CLAMP(x + dx, 0, maxX);
+                        auto alpha = sampleRow[sampleX * 4 + 3];
                         if (alpha > oa)
                             oa = alpha;
                     }
@@ -92,12 +87,13 @@ static int sliced_proc(int id, int index, int jobs, void *data)
 
             auto srcPixel = &srcRow[x * 4];
             auto dstPixel = &dstRow[x * 4];
-            auto a = srcPixel[3] * (1.f / 255.f);
+            auto a = srcPixel[3] / 255.f;
+            auto oaf = oa / 255.f;
             auto oneMinusA = 1.f - a;
-            dstPixel[0] = a * srcPixel[0] + oneMinusA * (oa * colorR);
-            dstPixel[1] = a * srcPixel[1] + oneMinusA * (oa * colorG);
-            dstPixel[2] = a * srcPixel[2] + oneMinusA * (oa * colorB);
-            dstPixel[3] = a * srcPixel[3] + oneMinusA * (oa * colorA);
+            dstPixel[0] = a * srcPixel[0] + oneMinusA * (oaf * colorR);
+            dstPixel[1] = a * srcPixel[1] + oneMinusA * (oaf * colorG);
+            dstPixel[2] = a * srcPixel[2] + oneMinusA * (oaf * colorB);
+            dstPixel[3] = a * srcPixel[3] + oneMinusA * (oaf * colorA);
         }
     }
     return 0;
@@ -123,6 +119,7 @@ static int filter_get_image(mlt_frame frame,
                         .thickness = filter.anim_get_double("thickness", position, length),
                         .original = *image};
 
+        desc.thickness *= filter.profile()->scale_width(*width);
         mlt_image_set_values(&desc.image, nullptr, *format, *width, *height);
         mlt_image_alloc_data(&desc.image);
 
