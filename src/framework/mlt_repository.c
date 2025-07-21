@@ -165,6 +165,12 @@ mlt_repository mlt_repository_init(const char *directory)
                                         NULL);
                 ++plugin_count;
             } else {
+                mlt_log_warning(NULL,
+                                "%s: failed to register %s\n  (%s)\n",
+                                __FUNCTION__,
+                                object_name,
+                                dlerror());
+                
                 dlclose(object);
             }
         } else if (strstr(object_name, "libmlt")) {
