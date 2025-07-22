@@ -936,7 +936,7 @@ void drawKdenliveTitle(producer_ktitle self,
         p1.end();
         self->format = mlt_image_rgba;
 
-        convert_qimage_to_mlt_rgba(&img, self->rgba_image, width, height);
+        convert_qimage_to_mlt(&img, self->rgba_image, width, height);
         self->current_image = (uint8_t *) mlt_pool_alloc(image_size);
         memcpy(self->current_image, self->rgba_image, image_size);
         mlt_properties_set_data(producer_props,

@@ -270,15 +270,15 @@ static int filter_get_image(mlt_frame frame,
 
     if (mlt_properties_get_data(frame_properties, pdata->fft_prop_name, NULL)) {
         // Get the current image
-        *format = mlt_image_rgba;
+        *format = choose_image_format(*format);
         error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
         // Draw the spectrum
         if (!error) {
             QImage qimg(*width, *height, QImage::Format_ARGB32);
-            convert_mlt_to_qimage_rgba(*image, &qimg, *width, *height);
+            convert_mlt_to_qimage(*image, &qimg, *width, *height, *format);
             draw_spectrum(filter, frame, &qimg, *width, *height);
-            convert_qimage_to_mlt_rgba(&qimg, *image, *width, *height);
+            convert_qimage_to_mlt(&qimg, *image, *width, *height);
         }
     } else {
         if (pdata->preprocess_warned++ == 2) {

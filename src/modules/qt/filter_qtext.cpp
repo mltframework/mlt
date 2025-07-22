@@ -346,7 +346,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_rect rect = mlt_properties_anim_get_rect(filter_properties, "geometry", position, length);
 
     // Get the current image
-    *image_format = mlt_image_rgba;
+    *image_format = choose_image_format(*image_format);
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "resize_alpha", 255);
     mlt_service_lock(MLT_FILTER_SERVICE(filter));
     error = mlt_frame_get_image(frame, image, image_format, width, height, writable);
@@ -367,7 +367,7 @@ static int filter_get_image(mlt_frame frame,
         }
 
         QImage qimg;
-        convert_mlt_to_qimage_rgba(*image, &qimg, *width, *height);
+        convert_mlt_to_qimage(*image, &qimg, *width, *height, *image_format);
 
         QPainterPath text_path;
 #ifdef Q_OS_WIN
@@ -408,7 +408,7 @@ static int filter_get_image(mlt_frame frame,
         }
         painter.end();
 
-        convert_qimage_to_mlt_rgba(&qimg, *image, *width, *height);
+        convert_qimage_to_mlt(&qimg, *image, *width, *height);
     }
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
     free(argument);

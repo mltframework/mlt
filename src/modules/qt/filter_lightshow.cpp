@@ -213,7 +213,7 @@ static int filter_get_image(mlt_frame frame,
         mlt_rect rect = mlt_properties_anim_get_rect(filter_properties, "rect", position, length);
 
         // Get the current image
-        *format = mlt_image_rgba;
+        *format = choose_image_format(*format);
         error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
         if (strchr(mlt_properties_get(filter_properties, "rect"), '%')) {
@@ -234,9 +234,9 @@ static int filter_get_image(mlt_frame frame,
         // Draw the light
         if (!error) {
             QImage qimg(*width, *height, QImage::Format_ARGB32);
-            convert_mlt_to_qimage_rgba(*image, &qimg, *width, *height);
+            convert_mlt_to_qimage(*image, &qimg, *width, *height, *format);
             draw_light(filter_properties, &qimg, &rect, mag);
-            convert_qimage_to_mlt_rgba(&qimg, *image, *width, *height);
+            convert_qimage_to_mlt(&qimg, *image, *width, *height);
         }
     } else {
         if (pdata->preprocess_warned++ == 2) {

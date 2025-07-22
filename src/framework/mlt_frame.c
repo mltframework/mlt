@@ -442,6 +442,7 @@ static int generate_test_image(mlt_properties properties,
         case mlt_image_yuv422p16:
         case mlt_image_yuv420p10:
         case mlt_image_yuv444p10:
+        case mlt_image_rgba64:
             break;
         case mlt_image_none:
         case mlt_image_movit:
@@ -539,7 +540,7 @@ int mlt_frame_get_image(mlt_frame self,
 
 /** Get the alpha channel associated to the frame (without creating if it has not).
  *
- * This returns NULL if the frame's image format is \p mlt_image_rgba.
+ * This returns NULL if the frame's image format is \p mlt_image_rgba or mlt_image_rgba64.
  * \public \memberof mlt_frame_s
  * \param self a frame
  * \return the alpha channel or NULL
@@ -552,7 +553,7 @@ uint8_t *mlt_frame_get_alpha(mlt_frame self)
         alpha = mlt_properties_get_data(&self->parent, "alpha", NULL);
         if (alpha) {
             mlt_image_format format = mlt_properties_get_int(&self->parent, "format");
-            if (mlt_image_rgba == format) {
+            if (mlt_image_rgba == format || mlt_image_rgba64) {
                 alpha = NULL;
             }
         }
@@ -563,7 +564,7 @@ uint8_t *mlt_frame_get_alpha(mlt_frame self)
 /** Get the alpha channel associated to the frame and its size.
  *
  * This returns NULL and sets \p size to 0 if the frame's image format is
- * \p mlt_image_rgba.
+ * \p mlt_image_rgba or mlt_image_rgba64.
  *
  * \public \memberof mlt_frame_s
  * \param self a frame
@@ -577,7 +578,7 @@ uint8_t *mlt_frame_get_alpha_size(mlt_frame self, int *size)
         alpha = mlt_properties_get_data(&self->parent, "alpha", size);
         if (alpha) {
             mlt_image_format format = mlt_properties_get_int(&self->parent, "format");
-            if (mlt_image_rgba == format) {
+            if (mlt_image_rgba == format || mlt_image_rgba64 == format) {
                 alpha = NULL;
                 if (size) {
                     size = 0;

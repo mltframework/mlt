@@ -102,7 +102,8 @@ static int producer_get_image(mlt_frame frame,
 
     // Choose default image format if specific request is unsupported
     if (*format != mlt_image_yuv420p && *format != mlt_image_yuv422 && *format != mlt_image_rgb
-        && *format != mlt_image_movit && *format != mlt_image_opengl_texture)
+        && *format != mlt_image_movit && *format != mlt_image_opengl_texture
+        && *format != mlt_image_rgba64)
         *format = mlt_image_rgba;
 
     // See if we need to regenerate
@@ -187,6 +188,17 @@ static int producer_get_image(mlt_frame frame,
                     *p++ = color.a;
                 }
                 break;
+            case mlt_image_rgba64: {
+                uint16_t *p16 = (uint16_t *) p;
+                const int pixel_count = *width * *height;
+                for (int j = 0; j < pixel_count; j++) {
+                    *p16++ = color.r << 8;
+                    *p16++ = color.g << 8;
+                    *p16++ = color.b << 8;
+                    *p16++ = color.a << 8;
+                }
+                break;
+            }
             default:
                 mlt_log_error(MLT_PRODUCER_SERVICE(producer),
                               "invalid image format %s\n",

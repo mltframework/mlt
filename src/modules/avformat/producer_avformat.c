@@ -841,6 +841,8 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
             return mlt_image_yuv444p10;
         case AV_PIX_FMT_YUV422P16LE:
             return mlt_image_yuv422p16;
+        case AV_PIX_FMT_RGBA64LE:
+            return mlt_image_rgba64;
         default:
             current_format = mlt_image_yuv422;
         }
@@ -1949,7 +1951,8 @@ static int convert_image(producer_avformat self,
     // extract alpha from planar formats - only supports 8-bit
     if ((pix_fmt == AV_PIX_FMT_YUVA420P || pix_fmt == AV_PIX_FMT_YUVA422P
          || pix_fmt == AV_PIX_FMT_YUVA444P)
-        && *format != mlt_image_rgba && frame->data[3] && frame->linesize[3]) {
+        && *format != mlt_image_rgba && *format != mlt_image_rgba64 && frame->data[3]
+        && frame->linesize[3]) {
         int i;
         uint8_t *src, *dst;
 
@@ -1983,6 +1986,9 @@ static int convert_image(producer_avformat self,
     case mlt_image_rgba:
         dst_pix_fmt = AV_PIX_FMT_RGBA;
         break;
+    case mlt_image_rgba64:
+        dst_pix_fmt = AV_PIX_FMT_RGBA64LE;
+        break;
     case mlt_image_none:
     case mlt_image_yuv422:
     case mlt_image_movit:
@@ -1992,7 +1998,7 @@ static int convert_image(producer_avformat self,
     }
 
     // Convert
-    if (mlt_image_rgb == *format || mlt_image_rgba == *format) {
+    if (mlt_image_rgb == *format || mlt_image_rgba == *format || mlt_image_rgba64 == *format) {
         convert_image_rgb(self,
                           profile,
                           frame,

@@ -184,7 +184,7 @@ static int filter_get_image(mlt_frame frame,
     if (!hasAlpha) {
         uint8_t *src_image = NULL;
         error = mlt_frame_get_image(frame, &src_image, format, &b_width, &b_height, 0);
-        if (*format == mlt_image_rgba || mlt_frame_get_alpha(frame)) {
+        if (*format == mlt_image_rgba || *format == mlt_image_rgba64 || mlt_frame_get_alpha(frame)) {
             hasAlpha = true;
         } else {
             // Prepare output image
@@ -196,13 +196,13 @@ static int filter_get_image(mlt_frame frame,
     }
 
     // fetch image
-    *format = mlt_image_rgba;
+    *format = choose_image_format(*format);
     uint8_t *src_image = NULL;
     error = mlt_frame_get_image(frame, &src_image, format, &b_width, &b_height, 0);
 
     // Put source buffer into QImage
     QImage sourceImage;
-    convert_mlt_to_qimage_rgba(src_image, &sourceImage, b_width, b_height);
+    convert_mlt_to_qimage(src_image, &sourceImage, b_width, b_height, *format);
 
     int image_size = mlt_image_format_size(*format, *width, *height, NULL);
 
@@ -226,7 +226,7 @@ static int filter_get_image(mlt_frame frame,
     dest_image = (uint8_t *) mlt_pool_alloc(image_size);
 
     QImage destImage;
-    convert_mlt_to_qimage_rgba(dest_image, &destImage, *width, *height);
+    convert_mlt_to_qimage(dest_image, &destImage, *width, *height, *format);
     destImage.fill(mlt_properties_get_int(properties, "background_color"));
 
     QPainter painter(&destImage);
@@ -239,7 +239,7 @@ static int filter_get_image(mlt_frame frame,
     painter.drawImage(0, 0, sourceImage);
     // finish Qt drawing
     painter.end();
-    convert_qimage_to_mlt_rgba(&destImage, dest_image, *width, *height);
+    convert_qimage_to_mlt(&destImage, dest_image, *width, *height);
     *image = dest_image;
     mlt_frame_set_image(frame, *image, *width * *height * 4, mlt_pool_release);
     return error;
