@@ -13,7 +13,9 @@ add_custom_target(Other_sdl2_Files SOURCES
 target_compile_options(mltsdl2 PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltsdl2 PRIVATE mlt Threads::Threads PkgConfig::sdl2)
-if(NOT MSVC)
+if(MSVC)
+  target_link_libraries(mltsdl2 PRIVATE PThreads4W::PThreads4W)
+else()
   target_link_libraries(mltsdl2 PRIVATE m)
 endif()
 
