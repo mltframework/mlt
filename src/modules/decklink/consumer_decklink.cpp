@@ -240,7 +240,6 @@ public:
             return;
 
         pthread_mutex_lock(&m_aqueue_lock);
-        mlt_frame frame = MLT_FRAME(mlt_deque_peek_back(m_aqueue));
         // When playing rewind or fast forward then we need to keep one
         // frame in the queue to prevent playback stalling.
         int n = (m_currentSpeed == 0 || m_currentSpeed == 1) ? 0 : 1;
@@ -386,8 +385,6 @@ protected:
 
     int preroll()
     {
-        mlt_properties properties = MLT_CONSUMER_PROPERTIES(getConsumer());
-
         mlt_log_debug(getConsumer(), "%s: starting\n", __FUNCTION__);
 
         if (!m_running)
@@ -768,7 +765,6 @@ protected:
         HRESULT result = S_OK;
 
         // Get the audio
-        auto properties = MLT_FRAME_PROPERTIES(frame);
         auto scrub = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(getConsumer()), "scrub_audio");
 
         if (m_isAudio && (m_currentSpeed == 1 || (scrub && m_currentSpeed == 0)))
@@ -1105,10 +1101,7 @@ static int stop(mlt_consumer consumer)
 
 static int is_stopped(mlt_consumer consumer)
 {
-    // Get the properties
-    mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
     auto *decklink = (DeckLinkConsumer *) consumer->child;
-
     return !decklink->isRunning();
 }
 
