@@ -1,0 +1,33 @@
+schema_version: 7.0
+type: filter
+identifier: outline
+title: Outline
+version: 1
+copyright: Meltytech, LLC
+license: GPLv2
+language: en
+tags:
+  - Video
+description: >
+  Simulate a stroke along edges within an alpha channel.
+  It is not very smart or sophisticate, which is why you should limit the
+  thickness and avoid hard angles.
+
+parameters:
+  - identifier: color
+    title: Color
+    type: color
+    default: '#ffffffff'
+    mutable: yes
+    animation: yes
+
+  - identifier: thickness
+    title: Thickness
+    type: float
+    minimum: 0
+    maximum: 20
+    default: 4
+    description: >
+      The thickness of the outline stroke.
+    mutable: yes
+    animation: yes

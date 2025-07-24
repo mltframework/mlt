@@ -174,6 +174,9 @@ if(NOT GPL)
   set(MOD_XINE OFF)
 endif()
 
+if (MSVC)
+  find_package(PThreads4W REQUIRED)
+endif ()
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 

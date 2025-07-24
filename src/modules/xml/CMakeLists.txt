@@ -15,7 +15,9 @@ add_custom_target(Other_xml_Files SOURCES
 target_compile_options(mltxml PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltxml PRIVATE mlt Threads::Threads PkgConfig::xml)
-if(NOT MSVC)
+if(MSVC)
+  target_link_libraries(mltxml PRIVATE PThreads4W::PThreads4W)
+else()
   target_link_libraries(mltxml PRIVATE m)
 endif()
 

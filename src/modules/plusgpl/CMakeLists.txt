@@ -4,6 +4,7 @@ add_library(mltplusgpl MODULE
   factory.c
   filter_burn.c
   filter_lumaliftgaingamma.c
+  filter_outline.cpp
   filter_rotoscoping.c
   filter_telecide.c
   image.c
@@ -17,7 +18,7 @@ add_custom_target(Other_plsugpl_Files SOURCES
 
 target_compile_options(mltplusgpl PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltplusgpl PRIVATE mlt Threads::Threads)
+target_link_libraries(mltplusgpl PRIVATE mlt mlt++ Threads::Threads)
 if(NOT MSVC)
   target_link_libraries(mltplusgpl PRIVATE m)
 endif()
@@ -36,6 +37,7 @@ install(FILES
   consumer_cbrts.yml
   filter_burningtv.yml
   filter_lumaliftgaingamma.yml
+  filter_outline.yml
   filter_rotoscoping.yml
   DESTINATION ${MLT_INSTALL_DATA_DIR}/plusgpl
 )

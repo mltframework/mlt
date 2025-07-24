@@ -71,6 +71,10 @@ target_compile_options(mlt++ PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mlt++ PUBLIC mlt)
 
+if(MSVC)
+  target_link_libraries(mlt++ PRIVATE PThreads4W::PThreads4W)
+endif()
+
 target_include_directories(mlt++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/mlt-${MLT_VERSION_MAJOR}/mlt++>

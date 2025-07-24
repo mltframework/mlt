@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2008-2022 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2008-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,6 @@
  */
 
 #include <framework/mlt.h>
-#include <limits.h>
-#include <string.h>
 
 extern mlt_consumer consumer_cbrts_init(mlt_profile profile,
                                         mlt_service_type type,
@@ -33,6 +31,10 @@ extern mlt_filter filter_lumaliftgaingamma_init(mlt_profile profile,
                                                 mlt_service_type type,
                                                 const char *id,
                                                 char *arg);
+extern mlt_filter filter_outline_init(mlt_profile profile,
+                                      mlt_service_type type,
+                                      const char *id,
+                                      char *arg);
 extern mlt_filter filter_rotoscoping_init(mlt_profile profile,
                                           mlt_service_type type,
                                           const char *id,
@@ -55,6 +57,7 @@ MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "BurningTV", filter_burn_init);
     MLT_REGISTER(mlt_service_filter_type, "burningtv", filter_burn_init);
     MLT_REGISTER(mlt_service_filter_type, "lumaliftgaingamma", filter_lumaliftgaingamma_init);
+    MLT_REGISTER(mlt_service_filter_type, "outline", filter_outline_init);
     MLT_REGISTER(mlt_service_filter_type, "rotoscoping", filter_rotoscoping_init);
     MLT_REGISTER(mlt_service_filter_type, "telecide", filter_telecide_init);
 
