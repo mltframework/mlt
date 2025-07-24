@@ -159,6 +159,8 @@ endif ()
 
 if(MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /experimental:c11atomics")
+  # Enable math defines for M_PI and M_PI_2
+  add_compile_definitions(_USE_MATH_DEFINES)
 endif()
 
 if(MSVC)
