@@ -158,6 +158,12 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 if(MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /experimental:c11atomics")
+  # Enable math defines for M_PI and M_PI_2
+  add_compile_definitions(_USE_MATH_DEFINES)
+endif()
+
+if(MSVC)
   list(APPEND MLT_COMPILE_OPTIONS "$<$<CONFIG:Release>:/fp:fast>")
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   list(APPEND MLT_COMPILE_OPTIONS "$<$<CONFIG:Release>:-ffast-math>")
