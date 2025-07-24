@@ -87,12 +87,19 @@ private:
     pthread_t m_op_thread;
     bool m_sliced_swab;
     uint8_t *m_buffer;
+    bool m_running{false};
+    pthread_cond_t m_refresh_cond;
+    pthread_mutex_t m_refresh_mutex;
+    int m_refresh{0};
+    bool m_purge{false};
+    int m_previousSpeed{0};
+    int m_currentSpeed{0};
 
     IDeckLinkDisplayMode *getDisplayMode()
     {
         mlt_profile profile = mlt_service_profile(MLT_CONSUMER_SERVICE(getConsumer()));
-        IDeckLinkDisplayModeIterator *iter = NULL;
-        IDeckLinkDisplayMode *mode = NULL;
+        IDeckLinkDisplayModeIterator *iter = nullptr;
+        IDeckLinkDisplayMode *mode = nullptr;
         IDeckLinkDisplayMode *result = 0;
 
         if (m_deckLinkOutput->GetDisplayModeIterator(&iter) == S_OK) {
@@ -124,18 +131,19 @@ private:
 
 public:
     mlt_consumer getConsumer() { return &m_consumer; }
+    bool isRunning() const { return m_running; }
 
     DeckLinkConsumer()
     {
         pthread_mutexattr_t mta;
 
-        m_displayMode = NULL;
-        m_deckLinkKeyer = NULL;
-        m_deckLinkOutput = NULL;
-        m_deckLink = NULL;
+        m_displayMode = nullptr;
+        m_deckLinkKeyer = nullptr;
+        m_deckLinkOutput = nullptr;
+        m_deckLink = nullptr;
         m_aqueue = mlt_deque_init();
         m_frames = mlt_deque_init();
-        m_buffer = NULL;
+        m_buffer = nullptr;
 
         // operation locks
         m_op_id = OP_NONE;
@@ -146,8 +154,10 @@ public:
         pthread_mutex_init(&m_op_arg_mutex, &mta);
         pthread_mutex_init(&m_aqueue_lock, &mta);
         pthread_mutexattr_destroy(&mta);
-        pthread_cond_init(&m_op_arg_cond, NULL);
-        pthread_create(&m_op_thread, NULL, op_main, this);
+        pthread_cond_init(&m_op_arg_cond, nullptr);
+        pthread_create(&m_op_thread, nullptr, op_main, this);
+        pthread_cond_init(&m_refresh_cond, nullptr);
+        pthread_mutex_init(&m_refresh_mutex, nullptr);
     }
 
     virtual ~DeckLinkConsumer()
@@ -164,13 +174,21 @@ public:
 
         op(OP_EXIT, 0);
         mlt_log_debug(getConsumer(), "%s: waiting for op thread\n", __FUNCTION__);
-        pthread_join(m_op_thread, NULL);
+        pthread_join(m_op_thread, nullptr);
         mlt_log_debug(getConsumer(), "%s: finished op thread\n", __FUNCTION__);
 
         pthread_mutex_destroy(&m_aqueue_lock);
         pthread_mutex_destroy(&m_op_lock);
         pthread_mutex_destroy(&m_op_arg_mutex);
         pthread_cond_destroy(&m_op_arg_cond);
+
+        pthread_mutex_lock(&m_refresh_mutex);
+        if (m_refresh < 2)
+            m_refresh = m_refresh <= 0 ? 1 : m_refresh + 1;
+        pthread_cond_broadcast(&m_refresh_cond);
+        pthread_mutex_unlock(&m_refresh_mutex);
+        pthread_mutex_destroy(&m_refresh_mutex);
+        pthread_cond_destroy(&m_refresh_cond);
 
         mlt_log_debug(getConsumer(), "%s: exiting\n", __FUNCTION__);
     }
@@ -206,6 +224,31 @@ public:
         pthread_mutex_unlock(&m_op_lock);
 
         return r;
+    }
+
+    void refresh()
+    {
+        pthread_mutex_lock(&m_refresh_mutex);
+        m_refresh = CLAMP(m_refresh + 1, 0, 2);
+        pthread_cond_broadcast(&m_refresh_cond);
+        pthread_mutex_unlock(&m_refresh_mutex);
+    }
+
+    void purge()
+    {
+        if (!m_running)
+            return;
+
+        pthread_mutex_lock(&m_aqueue_lock);
+        mlt_frame frame = MLT_FRAME(mlt_deque_peek_back(m_aqueue));
+        // When playing rewind or fast forward then we need to keep one
+        // frame in the queue to prevent playback stalling.
+        int n = (m_currentSpeed == 0 || m_currentSpeed == 1) ? 0 : 1;
+        while (mlt_deque_count(m_aqueue) > n)
+            mlt_frame_close(mlt_frame(mlt_deque_pop_back(m_aqueue)));
+        m_purge = true;
+        m_deckLinkOutput->FlushBufferedAudioSamples();
+        pthread_mutex_unlock(&m_aqueue_lock);
     }
 
 protected:
@@ -257,25 +300,25 @@ protected:
 
             if (OP_EXIT == o) {
                 mlt_log_debug(d->getConsumer(), "%s: exiting\n", __FUNCTION__);
-                return NULL;
+                return nullptr;
             }
         };
 
-        return NULL;
+        return nullptr;
     }
 
     bool open(unsigned card = 0)
     {
         unsigned i = 0;
 #ifdef _WIN32
-        IDeckLinkIterator *deckLinkIterator = NULL;
-        HRESULT result = CoInitialize(NULL);
+        IDeckLinkIterator *deckLinkIterator = nullptr;
+        HRESULT result = CoInitialize(nullptr);
         if (FAILED(result)) {
             mlt_log_error(getConsumer(), "COM initialization failed\n");
             return false;
         }
         result = CoCreateInstance(CLSID_CDeckLinkIterator,
-                                  NULL,
+                                  nullptr,
                                   CLSCTX_ALL,
                                   IID_IDeckLinkIterator,
                                   (void **) &deckLinkIterator);
@@ -347,7 +390,7 @@ protected:
 
         mlt_log_debug(getConsumer(), "%s: starting\n", __FUNCTION__);
 
-        if (!mlt_properties_get_int(properties, "running"))
+        if (!m_running)
             return 0;
 
         mlt_log_debug(getConsumer(), "preroll %u frames\n", m_preroll);
@@ -373,7 +416,7 @@ protected:
 
         // Initialize members
         m_count = 0;
-        m_buffer = NULL;
+        m_buffer = nullptr;
         preroll = preroll < PREROLL_MINIMUM ? PREROLL_MINIMUM : preroll;
         m_inChannels = mlt_properties_get_int(properties, "channels");
         if (m_inChannels <= 2) {
@@ -429,7 +472,7 @@ protected:
                    != m_deckLinkOutput->EnableAudioOutput(bmdAudioSampleRate48kHz,
                                                           bmdAudioSampleType16bitInteger,
                                                           m_outChannels,
-                                                          bmdAudioOutputStreamTimestamped)) {
+                                                          bmdAudioOutputStreamContinuous)) {
             mlt_log_error(getConsumer(), "Failed to enable audio output\n");
             stop();
             return false;
@@ -457,15 +500,26 @@ protected:
             mlt_deque_push_back(m_frames, frame);
         }
 
+        pthread_mutex_lock(&m_refresh_mutex);
+        m_refresh = 0;
+        pthread_mutex_unlock(&m_refresh_mutex);
+
         // Set the running state
-        mlt_properties_set_int(properties, "running", 1);
+        m_running = true;
 
         return true;
     }
 
     bool stop()
     {
-        mlt_properties properties = MLT_CONSUMER_PROPERTIES(getConsumer());
+        if (!m_running)
+            return false;
+        m_running = false;
+
+        // Unlatch the consumer thread
+        pthread_mutex_lock(&m_refresh_mutex);
+        pthread_cond_broadcast(&m_refresh_cond);
+        pthread_mutex_unlock(&m_refresh_mutex);
 
         mlt_log_debug(getConsumer(), "%s: starting\n", __FUNCTION__);
 
@@ -481,13 +535,10 @@ protected:
             mlt_frame_close(frame);
         pthread_mutex_unlock(&m_aqueue_lock);
 
-        m_buffer = NULL;
+        m_buffer = nullptr;
         while (IDeckLinkMutableVideoFrame *frame
                = (IDeckLinkMutableVideoFrame *) mlt_deque_pop_back(m_frames))
             SAFE_RELEASE(frame);
-
-        // set running state is 0
-        mlt_properties_set_int(properties, "running", 0);
 
         mlt_consumer_stopped(getConsumer());
 
@@ -531,7 +582,7 @@ protected:
 
         if (rendered && !mlt_frame_get_image(frame, &image, &format, &m_width, &height, 0)) {
             if (decklinkFrame) {
-                IDeckLinkVideoBuffer *videoBuffer = NULL;
+                IDeckLinkVideoBuffer *videoBuffer = nullptr;
                 if (decklinkFrame->QueryInterface(IID_IDeckLinkVideoBuffer, (void **) &videoBuffer)
                     == S_OK) {
                     if (videoBuffer->StartAccess(bmdBufferAccessWrite) == S_OK) {
@@ -539,7 +590,7 @@ protected:
                         videoBuffer->EndAccess(bmdBufferAccessWrite);
                     }
                     videoBuffer->Release();
-                    videoBuffer = NULL;
+                    videoBuffer = nullptr;
                 }
             }
 
@@ -587,8 +638,8 @@ protected:
                 }
             }
         } else if (decklinkFrame) {
-            uint8_t *buffer = NULL;
-            IDeckLinkVideoBuffer *videoBuffer = NULL;
+            uint8_t *buffer = nullptr;
+            IDeckLinkVideoBuffer *videoBuffer = nullptr;
             if (decklinkFrame->QueryInterface(IID_IDeckLinkVideoBuffer, (void **) &videoBuffer)
                 == S_OK) {
                 if (videoBuffer->StartAccess(bmdBufferAccessWrite) == S_OK) {
@@ -598,7 +649,7 @@ protected:
                     videoBuffer->EndAccess(bmdBufferAccessWrite);
                 }
                 videoBuffer->Release();
-                videoBuffer = NULL;
+                videoBuffer = nullptr;
             }
         }
         if (decklinkFrame) {
@@ -717,9 +768,10 @@ protected:
         HRESULT result = S_OK;
 
         // Get the audio
-        double speed = mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame), "_speed");
+        auto properties = MLT_FRAME_PROPERTIES(frame);
+        auto scrub = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(getConsumer()), "scrub_audio");
 
-        if (m_isAudio && speed == 1.0)
+        if (m_isAudio && (m_currentSpeed == 1 || (scrub && m_currentSpeed == 0)))
             renderAudio(frame);
 
         // Get the video
@@ -826,7 +878,7 @@ protected:
                                      &m_inChannels,
                                      &samples)) {
                 HRESULT hr;
-                int16_t *outBuff = NULL;
+                int16_t *outBuff = nullptr;
                 mlt_log_debug(getConsumer(),
                               "%s:%d, samples=%d, channels=%d, freq=%d\n",
                               __FUNCTION__,
@@ -957,30 +1009,63 @@ protected:
         mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
 
         // Frame and size
-        mlt_frame frame = NULL;
+        mlt_frame frame = nullptr;
 
         mlt_log_debug(getConsumer(), "%s:%d: preroll=%d\n", __FUNCTION__, __LINE__, preroll);
 
-        while (!frame && (mlt_properties_get_int(properties, "running") || preroll)) {
+        while (!frame && (m_running || preroll)) {
             mlt_log_timings_begin();
             frame = mlt_consumer_rt_frame(consumer);
-            mlt_log_timings_end(NULL, "mlt_consumer_rt_frame");
+            mlt_log_timings_end(nullptr, "mlt_consumer_rt_frame");
             if (frame) {
-                mlt_log_timings_begin();
-                render(frame);
-                mlt_log_timings_end(NULL, "render");
+                m_currentSpeed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
 
-                mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
+                if (m_running) {
+                    if (m_purge && m_currentSpeed == 1.0) {
+                        mlt_frame_close(frame);
+                        frame = nullptr;
+                        m_purge = false;
+                        continue;
+                    } else {
+                        mlt_log_timings_begin();
+
+                        render(frame);
+
+                        mlt_log_timings_end(nullptr, "render");
+                        mlt_events_fire(properties,
+                                        "consumer-frame-show",
+                                        mlt_event_data_from_frame(frame));
+                    }
+                    if (m_currentSpeed || preroll) {
+                        if (!preroll && m_previousSpeed != 1 && m_currentSpeed == 1) {
+                            // Resume
+                            mlt_log_verbose(getConsumer(), "Resuming foward 1x playback\n");
+                            m_deckLinkOutput->StopScheduledPlayback(0, nullptr, 0);
+                            m_count = 0;
+                            if (m_isAudio)
+                                m_deckLinkOutput->BeginAudioPreroll();
+                            else
+                                m_deckLinkOutput->StartScheduledPlayback(0, m_timescale, 1.0);
+                        }
+                    } else {
+                        pthread_mutex_lock(&m_refresh_mutex);
+                        if (--m_refresh <= 0)
+                            pthread_cond_wait(&m_refresh_cond, &m_refresh_mutex);
+                        pthread_mutex_unlock(&m_refresh_mutex);
+
+                        mlt_consumer_purge(consumer);
+                    }
+                }
 
                 // terminate on pause
-                if (m_terminate_on_pause
-                    && mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame), "_speed") == 0.0)
+                if (m_terminate_on_pause && !m_currentSpeed)
                     stop();
 
                 mlt_frame_close(frame);
+                m_previousSpeed = m_currentSpeed;
             } else
                 mlt_log_warning(getConsumer(),
-                                "%s: mlt_consumer_rt_frame return NULL\n",
+                                "%s: mlt_consumer_rt_frame return nullptr\n",
                                 __FUNCTION__);
         }
     }
@@ -1022,7 +1107,9 @@ static int is_stopped(mlt_consumer consumer)
 {
     // Get the properties
     mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
-    return !mlt_properties_get_int(properties, "running");
+    auto *decklink = (DeckLinkConsumer *) consumer->child;
+
+    return !decklink->isRunning();
 }
 
 /** Close the consumer.
@@ -1036,7 +1123,7 @@ static void close(mlt_consumer consumer)
     mlt_consumer_stop(consumer);
 
     // Close the parent
-    consumer->close = NULL;
+    consumer->close = nullptr;
     mlt_consumer_close(consumer);
 
     // Free the memory
@@ -1048,24 +1135,33 @@ static void close(mlt_consumer consumer)
 extern "C" {
 
 // Listen for the list_devices property to be set
-static void on_property_changed(void *, mlt_properties properties, mlt_event_data event_data)
+static void on_property_changed(void *, mlt_consumer consumer, mlt_event_data event_data)
 {
     const char *name = mlt_event_data_to_string(event_data);
-    IDeckLinkIterator *decklinkIterator = NULL;
-    IDeckLink *decklink = NULL;
-    IDeckLinkInput *decklinkOutput = NULL;
+    auto properties = MLT_CONSUMER_PROPERTIES(consumer);
+    IDeckLinkIterator *decklinkIterator = nullptr;
+    IDeckLink *decklink = nullptr;
+    IDeckLinkInput *decklinkOutput = nullptr;
     int i = 0;
 
-    if (name && !strcmp(name, "list_devices"))
-        mlt_event_block((mlt_event) mlt_properties_get_data(properties, "list-devices-event", NULL));
-    else
-        return;
+    if (name) {
+        if (!strcmp(name, "list_devices")) {
+            mlt_event_block(
+                (mlt_event) mlt_properties_get_data(properties, "list-devices-event", nullptr));
+        } else if (!strcmp(name, "refresh")) {
+            auto *decklink = (DeckLinkConsumer *) consumer->child;
+            decklink->refresh();
+            return;
+        } else {
+            return;
+        }
+    }
 
 #ifdef _WIN32
-    if (FAILED(CoInitialize(NULL)))
+    if (FAILED(CoInitialize(nullptr)))
         return;
     if (FAILED(CoCreateInstance(CLSID_CDeckLinkIterator,
-                                NULL,
+                                nullptr,
                                 CLSCTX_ALL,
                                 IID_IDeckLinkIterator,
                                 (void **) &decklinkIterator)))
@@ -1076,7 +1172,7 @@ static void on_property_changed(void *, mlt_properties properties, mlt_event_dat
 #endif
     for (; decklinkIterator->Next(&decklink) == S_OK; i++) {
         if (decklink->QueryInterface(IID_IDeckLinkOutput, (void **) &decklinkOutput) == S_OK) {
-            DLString name = NULL;
+            DLString name = nullptr;
             if (decklink->GetModelName(&name) == S_OK) {
                 char *name_cstr = getCString(name);
                 const char *format = "device.%d";
@@ -1096,6 +1192,11 @@ static void on_property_changed(void *, mlt_properties properties, mlt_event_dat
     mlt_properties_set_int(properties, "devices", i);
 }
 
+void purge(mlt_consumer consumer)
+{
+    DeckLinkConsumer *decklink = (DeckLinkConsumer *) consumer->child;
+    decklink->purge();
+}
 /** Initialise the consumer.
  */
 
@@ -1106,7 +1207,7 @@ mlt_consumer consumer_decklink_init(mlt_profile profile,
 {
     // Allocate the consumer
     DeckLinkConsumer *decklink = new DeckLinkConsumer();
-    mlt_consumer consumer = NULL;
+    mlt_consumer consumer = nullptr;
 
     // If allocated
     if (!mlt_consumer_init(decklink->getConsumer(), decklink, profile)) {
@@ -1120,13 +1221,14 @@ mlt_consumer consumer_decklink_init(mlt_profile profile,
             consumer->start = start;
             consumer->stop = stop;
             consumer->is_stopped = is_stopped;
+            consumer->purge = purge;
             mlt_properties_set(properties, "consumer.deinterlacer", "onefield");
 
             mlt_event event = mlt_events_listen(properties,
-                                                properties,
+                                                consumer,
                                                 "property-changed",
                                                 (mlt_listener) on_property_changed);
-            mlt_properties_set_data(properties, "list-devices-event", event, 0, NULL, NULL);
+            mlt_properties_set_data(properties, "list-devices-event", event, 0, nullptr, nullptr);
         }
     }
 
@@ -1142,7 +1244,7 @@ extern mlt_producer producer_decklink_init(mlt_profile profile,
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
     char file[PATH_MAX];
-    const char *service_type = NULL;
+    const char *service_type = nullptr;
     switch (type) {
     case mlt_service_consumer_type:
         service_type = "consumer";
@@ -1151,7 +1253,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
         service_type = "producer";
         break;
     default:
-        return NULL;
+        return nullptr;
     }
     snprintf(file, PATH_MAX, "%s/decklink/%s_%s.yml", mlt_environment("MLT_DATA"), service_type, id);
     return mlt_properties_parse_yaml(file);
@@ -1161,8 +1263,8 @@ MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "decklink", consumer_decklink_init);
     MLT_REGISTER(mlt_service_producer_type, "decklink", producer_decklink_init);
-    MLT_REGISTER_METADATA(mlt_service_consumer_type, "decklink", metadata, NULL);
-    MLT_REGISTER_METADATA(mlt_service_producer_type, "decklink", metadata, NULL);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type, "decklink", metadata, nullptr);
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "decklink", metadata, nullptr);
 }
 
 } // extern C
