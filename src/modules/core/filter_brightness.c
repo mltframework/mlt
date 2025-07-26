@@ -72,6 +72,15 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
                     p += 4;
                 }
             }
+        } else if (ctx->image->format == mlt_image_rgba64) {
+            for (int line = 0; line < slice_height; line++) {
+                uint16_t *p = (uint16_t *) ctx->image->planes[0]
+                              + ((slice_line_start + line) * ctx->image->strides[0]) + 3;
+                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
+                    *p = (*p * m) >> 16;
+                    p += 4;
+                }
+            }
         } else {
             for (int line = 0; line < slice_height; line++) {
                 uint8_t *p = ctx->image->planes[3]
@@ -142,7 +151,8 @@ static int filter_get_image(mlt_frame frame,
         struct sliced_desc desc;
         struct mlt_image_s proc_image;
         mlt_image_set_values(&proc_image, *image, *format, *width, *height);
-        if (alpha_level != 1.0 && proc_image.format != mlt_image_rgba) {
+        if (alpha_level != 1.0 && proc_image.format != mlt_image_rgba
+            && proc_image.format != mlt_image_rgba64) {
             proc_image.planes[3] = mlt_frame_get_alpha(frame);
             proc_image.strides[3] = proc_image.width;
             if (!proc_image.planes[3]) {

@@ -62,6 +62,9 @@ static inline int convert_mlt_to_av_cs(mlt_image_format format)
     case mlt_image_yuv422p16:
         value = AV_PIX_FMT_YUV422P16LE;
         break;
+    case mlt_image_rgba64:
+        value = AV_PIX_FMT_RGBA64LE;
+        break;
     default:
         mlt_log_error(NULL, "[filter swscale] Invalid format %s\n", mlt_image_format_name(format));
         break;

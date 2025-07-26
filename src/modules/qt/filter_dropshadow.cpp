@@ -35,12 +35,12 @@ static int get_image(mlt_frame frame,
     auto error = 0;
     auto filter = Mlt::Filter(mlt_filter(mlt_frame_pop_service(frame)));
 
-    *image_format = mlt_image_rgba;
+    *image_format = choose_image_format(*image_format);
     error = mlt_frame_get_image(frame, image, image_format, width, height, writable);
 
     if (!error) {
         QImage qimg;
-        convert_mlt_to_qimage_rgba(*image, &qimg, *width, *height);
+        convert_mlt_to_qimage(*image, &qimg, *width, *height, *image_format);
 
         auto shadow = new QGraphicsDropShadowEffect;
         auto f = Mlt::Frame(frame);
@@ -62,7 +62,7 @@ static int get_image(mlt_frame frame,
         QPainter painter(&qimg);
         scene.render(&painter);
         painter.end();
-        convert_qimage_to_mlt_rgba(&qimg, *image, *width, *height);
+        convert_qimage_to_mlt(&qimg, *image, *width, *height);
     }
 
     return error;

@@ -71,6 +71,9 @@ static int convert_mlt_to_av_cs(mlt_image_format format)
     case mlt_image_yuv444p10:
         value = AV_PIX_FMT_YUV444P10LE;
         break;
+    case mlt_image_rgba64:
+        value = AV_PIX_FMT_RGBA64LE;
+        break;
     default:
         mlt_log_error(NULL,
                       "[filter avcolor_space] Invalid format %s\n",
@@ -187,7 +190,7 @@ static int convert_image(mlt_frame frame,
         uint8_t *output = mlt_pool_alloc(size);
 
         if (out_width == width && out_height == height) {
-            if (*format == mlt_image_rgba) {
+            if (*format == mlt_image_rgba && output_format != mlt_image_rgba64) {
                 register int len = width * height;
                 uint8_t *alpha = mlt_pool_alloc(len);
 
@@ -227,6 +230,20 @@ static int convert_image(mlt_frame frame,
                     }
                     mlt_frame_set_alpha(frame, alpha, len, mlt_pool_release);
                 }
+            } else if (*format == mlt_image_rgba64 && output_format != mlt_image_rgba) {
+                // Extract the alpha mask from the RGBA image
+                int len = width * height;
+                uint8_t *alpha = mlt_pool_alloc(len);
+                if (alpha) {
+                    const uint16_t *s = ((uint16_t *) *image) + 3; // start on the alpha component
+                    uint8_t *d = alpha;
+                    for (int i = 0; i < len; i++) {
+                        *d = lrint((float) *s / 256.0);
+                        d++;
+                        s += 4;
+                    }
+                    mlt_frame_set_alpha(frame, alpha, len, mlt_pool_release);
+                }
             }
         } else {
             // Scaling
@@ -253,12 +270,10 @@ static int convert_image(mlt_frame frame,
                 mlt_properties_set_int(properties, "colorspace", profile_colorspace);
             mlt_properties_set_int(properties, "full_range", dst_full_range);
         }
-        *image = output;
-        *format = output_format;
         mlt_frame_set_image(frame, output, size, mlt_pool_release);
 
-        if (out_width == width && out_height == height)
-            if (output_format == mlt_image_rgba) {
+        if (out_width == width && out_height == height) {
+            if (output_format == mlt_image_rgba && *format != mlt_image_rgba64) {
                 register int len = width * height;
                 int alpha_size = 0;
                 uint8_t *alpha = mlt_frame_get_alpha_size(frame, &alpha_size);
@@ -298,8 +313,24 @@ static int convert_image(mlt_frame frame,
                         } while (--n > 0);
                     }
                 }
+            } else if (output_format == mlt_image_rgba64 && *format != mlt_image_rgba) {
+                int len = width * height;
+                int alpha_size = 0;
+                uint8_t *alpha = mlt_frame_get_alpha_size(frame, &alpha_size);
+                if (alpha && alpha_size >= len) {
+                    const uint8_t *s = alpha;
+                    uint16_t *d = ((uint16_t *) *image) + 3; // start on the alpha component
+                    for (int i = 0; i < len; i++) {
+                        *d = *s << 8;
+                        d += 4;
+                        s++;
+                    }
+                }
             }
+        }
 
+        *image = output;
+        *format = output_format;
         mlt_properties_set_int(properties, "format", output_format);
         mlt_properties_set_int(properties, "width", out_width);
         mlt_properties_set_int(properties, "height", out_height);

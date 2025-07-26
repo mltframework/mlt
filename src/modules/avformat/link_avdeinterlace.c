@@ -74,6 +74,7 @@ static mlt_image_format validate_format(mlt_image_format format)
     case mlt_image_yuv422p16:
     case mlt_image_yuv420p10:
     case mlt_image_yuv444p10:
+    case mlt_image_rgba64:
         ret_format = format;
         break;
     case mlt_image_none:
