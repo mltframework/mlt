@@ -63,7 +63,6 @@ static int get_image(mlt_frame frame,
                 int size = mlt_image_format_size(*format, *width, *height, NULL);
                 mlt_frame_set_image(frame, *image, size, NULL);
             }
-            mlt_properties_clear(properties, "mask frame");
         }
     }
     return error;
