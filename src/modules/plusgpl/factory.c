@@ -68,6 +68,7 @@ MLT_REPOSITORY
                           "lumaliftgaingamma",
                           metadata,
                           "filter_lumaliftgaingamma.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "outline", metadata, "filter_outline.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "rotoscoping",
                           metadata,
