@@ -6,5 +6,3 @@ colorhalftone:
   0: 1.0
 IIRblur:
   0: 1.7
-sharpness:
-  1: 2.0
