@@ -1,3 +1,4 @@
 fspp
 smartblur
 vaguedenoiser
+unsharp
