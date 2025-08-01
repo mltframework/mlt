@@ -99,7 +99,9 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
 
     // Get the current image
-    *format = mlt_image_rgba;
+    if (*format != mlt_image_rgba64) {
+        *format = mlt_image_rgba;
+    }
     error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
     if (error)
@@ -132,14 +134,25 @@ static int filter_get_image(mlt_frame frame,
         float g_value = color.g * color_factor;
         float b_value = color.b * color_factor;
         float a_value = color.a * color_factor;
-        uint8_t *p = *image;
         int pixels = *width * *height;
-        for (int i = 0; i < pixels; i++) {
-            p[0] = ((float) p[0] * image_factor) + r_value;
-            p[1] = ((float) p[1] * image_factor) + g_value;
-            p[2] = ((float) p[2] * image_factor) + b_value;
-            p[3] = ((float) p[3] * image_factor) + a_value;
-            p += 4;
+        if (*format == mlt_image_rgba64) {
+            uint16_t *p = (uint16_t *) *image;
+            for (int i = 0; i < pixels; i++) {
+                p[0] = ((float) p[0] * image_factor) + r_value;
+                p[1] = ((float) p[1] * image_factor) + g_value;
+                p[2] = ((float) p[2] * image_factor) + b_value;
+                p[3] = ((float) p[3] * image_factor) + a_value;
+                p += 4;
+            }
+        } else { // mlt_image_rgba
+            uint8_t *p = *image;
+            for (int i = 0; i < pixels; i++) {
+                p[0] = ((float) p[0] * image_factor) + r_value;
+                p[1] = ((float) p[1] * image_factor) + g_value;
+                p[2] = ((float) p[2] * image_factor) + b_value;
+                p[3] = ((float) p[3] * image_factor) + a_value;
+                p += 4;
+            }
         }
     }
 

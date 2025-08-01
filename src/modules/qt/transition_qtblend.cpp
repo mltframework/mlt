@@ -274,11 +274,11 @@ static int get_image(mlt_frame a_frame,
 
     // convert bottom mlt image to qimage
     QImage bottomImg;
-    convert_mlt_to_qimage_rgba(*image, &bottomImg, *width, *height);
+    convert_mlt_to_qimage(*image, &bottomImg, *width, *height, *format);
 
     // convert top mlt image to qimage
     QImage topImg;
-    convert_mlt_to_qimage_rgba(b_image, &topImg, b_width, b_height);
+    convert_mlt_to_qimage(b_image, &topImg, b_width, b_height, *format);
 
     // setup Qt drawing
     QPainter painter(&bottomImg);
@@ -293,7 +293,7 @@ static int get_image(mlt_frame a_frame,
 
     // finish Qt drawing
     painter.end();
-    convert_qimage_to_mlt_rgba(&bottomImg, *image, *width, *height);
+    convert_qimage_to_mlt(&bottomImg, *image, *width, *height);
     mlt_frame_set_image(a_frame, *image, image_size, mlt_pool_release);
     // Remove potentially large image on the B frame.
     mlt_frame_set_image(b_frame, NULL, 0, NULL);

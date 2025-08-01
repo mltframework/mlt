@@ -99,6 +99,16 @@ static void resize_image(uint8_t *output,
                 p += 4;
             }
         }
+    } else if (format == mlt_image_rgba64) {
+        uint16_t *p16 = (uint16_t *) p;
+        uint16_t alpha_value_16 = alpha_value << 8;
+        memset(p16, 0, size * bpp);
+        if (alpha_value != 0) {
+            while (size--) {
+                p16[3] = alpha_value_16;
+                p16 += 4;
+            }
+        }
     } else if (bpp == 2) {
         memset(p, 16, size * bpp);
         while (size--) {

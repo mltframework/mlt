@@ -48,6 +48,7 @@ typedef enum {
     mlt_image_yuv422p16, /**< planar YUV 4:2:2, 32bpp, (1 Cr & Cb sample per 2x1 Y samples), little-endian */
     mlt_image_yuv420p10, /**< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian */
     mlt_image_yuv444p10, /**< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian */
+    mlt_image_rgba64, /**< 16-bit RGB with alpha channel */
     mlt_image_invalid
 } mlt_image_format;
 

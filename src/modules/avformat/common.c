@@ -314,6 +314,8 @@ int mlt_to_av_image_format(mlt_image_format format)
         return AV_PIX_FMT_YUV444P10LE;
     case mlt_image_yuv422p16:
         return AV_PIX_FMT_YUV422P16LE;
+    case mlt_image_rgba64:
+        return AV_PIX_FMT_RGBA64LE;
     case mlt_image_movit:
     case mlt_image_opengl_texture:
     case mlt_image_invalid:
@@ -347,6 +349,8 @@ mlt_image_format mlt_get_supported_image_format(mlt_image_format format)
         return mlt_image_yuv444p10;
     case mlt_image_yuv422p16:
         return mlt_image_yuv422p16;
+    case mlt_image_rgba64:
+        return mlt_image_rgba64;
     }
     mlt_log_error(NULL, "[filter_avfilter] Unknown image format requested: %d\n", format);
     return mlt_image_rgba;

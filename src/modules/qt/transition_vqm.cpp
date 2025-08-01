@@ -149,7 +149,7 @@ static int get_image(mlt_frame a_frame,
 
     // convert mlt image to qimage
     QImage img;
-    convert_mlt_to_qimage_rgba(*image, &img, *width, *height);
+    convert_mlt_to_qimage(*image, &img, *width, *height, *format);
 
     // setup Qt drawing
     QPainter painter(&img);
@@ -183,7 +183,7 @@ static int get_image(mlt_frame a_frame,
 
     // finish Qt drawing
     painter.end();
-    convert_qimage_to_mlt_rgba(&img, *image, *width, *height);
+    convert_qimage_to_mlt(&img, *image, *width, *height);
 
     return 0;
 }

@@ -64,6 +64,14 @@ static int animatable_avoption(const AVOption *opt)
 }
 #endif
 
+int is_rgb(int format)
+{
+    if (format == mlt_image_rgb || format == mlt_image_rgba || format == mlt_image_rgba64) {
+        return 1;
+    }
+    return 0;
+}
+
 static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_data event_data)
 {
     const char *name = mlt_event_data_to_string(event_data);
@@ -777,7 +785,7 @@ static int filter_get_image(mlt_frame frame,
 
     mlt_log_debug(MLT_FILTER_SERVICE(filter), "position %" PRId64 "\n", pos);
     if (mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_yuv_only")) {
-        if (*format == mlt_image_rgb || *format == mlt_image_rgba)
+        if (is_rgb(*format))
             *format = mlt_image_yuv422;
     } else {
         *format = mlt_get_supported_image_format(*format);
@@ -815,7 +823,7 @@ static int filter_get_image(mlt_frame frame,
         //                                     ? AVCOL_RANGE_JPEG
         //                                     : AVCOL_RANGE_MPEG;
 
-        if (*format == mlt_image_rgb || *format == mlt_image_rgba) {
+        if (is_rgb(*format)) {
             pdata->avinframe->colorspace = AVCOL_SPC_RGB;
         } else {
             switch (mlt_properties_get_int(frame_properties, "colorspace")) {
