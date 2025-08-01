@@ -1,7 +1,6 @@
 /**
  * MltField.cpp - Field wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,14 +25,14 @@ using namespace Mlt;
 Field::Field(mlt_field field)
     : instance(field)
 {
-    inc_ref();
+    mlt_properties_inc_ref(mlt_field_properties(instance));
 }
 
 Field::Field(Field &field)
     : Mlt::Service(field)
     , instance(field.get_field())
 {
-    inc_ref();
+    mlt_properties_inc_ref(mlt_field_properties(instance));
 }
 
 Field::~Field()

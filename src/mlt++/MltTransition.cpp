@@ -1,6 +1,6 @@
 /**
  * MltTransition.cpp - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,7 +56,7 @@ Transition::Transition(Service &transition)
 {
     if (transition.type() == mlt_service_transition_type) {
         instance = (mlt_transition) transition.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_TRANSITION_PROPERTIES(instance));
     }
 }
 
@@ -64,7 +64,7 @@ Transition::Transition(Transition &transition)
     : Mlt::Service(transition)
     , instance(transition.get_transition())
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_TRANSITION_PROPERTIES(instance));
 }
 
 Transition::Transition(const Transition &transition)
@@ -74,7 +74,7 @@ Transition::Transition(const Transition &transition)
 Transition::Transition(mlt_transition transition)
     : instance(transition)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_TRANSITION_PROPERTIES(instance));
 }
 
 Transition::~Transition()
@@ -87,7 +87,7 @@ Transition &Transition::operator=(const Transition &transition)
     if (this != &transition) {
         mlt_transition_close(instance);
         instance = transition.instance;
-        inc_ref();
+        mlt_properties_inc_ref(MLT_TRANSITION_PROPERTIES(instance));
     }
     return *this;
 }

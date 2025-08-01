@@ -1,6 +1,6 @@
 /**
  * MltChain.cpp - Chain wrapper
- * Copyright (C) 2020-2022 Meltytech, LLC
+ * Copyright (C) 2020-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,14 +50,14 @@ Chain::Chain(Profile &profile)
 Chain::Chain(mlt_chain chain)
     : instance(chain)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_CHAIN_PROPERTIES(instance));
 }
 
 Chain::Chain(Chain &chain)
     : Mlt::Producer(chain)
     , instance(chain.get_chain())
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_CHAIN_PROPERTIES(instance));
 }
 
 Chain::Chain(Chain *chain)
@@ -65,7 +65,7 @@ Chain::Chain(Chain *chain)
     , instance(chain != NULL ? chain->get_chain() : NULL)
 {
     if (is_valid())
-        inc_ref();
+        mlt_properties_inc_ref(MLT_CHAIN_PROPERTIES(instance));
 }
 
 Chain::Chain(Service &chain)
@@ -73,7 +73,7 @@ Chain::Chain(Service &chain)
 {
     if (chain.type() == mlt_service_chain_type) {
         instance = (mlt_chain) chain.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_CHAIN_PROPERTIES(instance));
     }
 }
 

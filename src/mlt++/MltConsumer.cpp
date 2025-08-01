@@ -1,6 +1,6 @@
 /**
  * MltConsumer.cpp - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -63,7 +63,7 @@ Consumer::Consumer(Service &consumer)
 {
     if (consumer.type() == mlt_service_consumer_type) {
         instance = (mlt_consumer) consumer.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_CONSUMER_PROPERTIES(instance));
     }
 }
 
@@ -71,13 +71,13 @@ Consumer::Consumer(Consumer &consumer)
     : Mlt::Service(consumer)
     , instance(consumer.get_consumer())
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_CONSUMER_PROPERTIES(instance));
 }
 
 Consumer::Consumer(mlt_consumer consumer)
     : instance(consumer)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_CONSUMER_PROPERTIES(instance));
 }
 
 Consumer::~Consumer()

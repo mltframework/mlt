@@ -1,6 +1,6 @@
 /**
  * MltFilter.cpp - MLT Wrapper
- * Copyright (C) 2004-2021 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,7 +55,7 @@ Filter::Filter(Service &filter)
 {
     if (filter.type() == mlt_service_filter_type) {
         instance = (mlt_filter) filter.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(mlt_filter_properties(instance));
     }
 }
 
@@ -63,7 +63,7 @@ Filter::Filter(Filter &filter)
     : Mlt::Service(filter)
     , instance(filter.get_filter())
 {
-    inc_ref();
+    mlt_properties_inc_ref(mlt_filter_properties(instance));
 }
 
 Filter::Filter(const Filter &filter)
@@ -73,7 +73,7 @@ Filter::Filter(const Filter &filter)
 Filter::Filter(mlt_filter filter)
     : instance(filter)
 {
-    inc_ref();
+    mlt_properties_inc_ref(mlt_filter_properties(instance));
 }
 
 Filter::Filter(Filter *filter)
@@ -90,7 +90,7 @@ Filter &Filter::operator=(const Filter &filter)
     if (this != &filter) {
         mlt_filter_close(instance);
         instance = filter.instance;
-        inc_ref();
+        mlt_properties_inc_ref(mlt_filter_properties(instance));
     }
     return *this;
 }

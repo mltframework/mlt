@@ -1,7 +1,6 @@
 /**
  * MltMultitrack.h - Multitrack wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,7 +24,7 @@ using namespace Mlt;
 Multitrack::Multitrack(mlt_multitrack multitrack)
     : instance(multitrack)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_MULTITRACK_PROPERTIES(instance));
 }
 
 Multitrack::Multitrack(Service &multitrack)
@@ -33,7 +32,7 @@ Multitrack::Multitrack(Service &multitrack)
 {
     if (multitrack.type() == mlt_service_multitrack_type) {
         instance = (mlt_multitrack) multitrack.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_MULTITRACK_PROPERTIES(instance));
     }
 }
 
@@ -41,7 +40,7 @@ Multitrack::Multitrack(Multitrack &multitrack)
     : Mlt::Producer(multitrack)
     , instance(multitrack.get_multitrack())
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_MULTITRACK_PROPERTIES(instance));
 }
 
 Multitrack::~Multitrack()

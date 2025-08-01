@@ -1,6 +1,6 @@
 /**
  * MltService.cpp - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@ Service::Service(Service &service)
     : Properties(false)
     , instance(service.get_service())
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_SERVICE_PROPERTIES(instance));
 }
 
 Service::Service(const Service &service)
@@ -43,7 +43,7 @@ Service::Service(mlt_service service)
     : Properties(false)
     , instance(service)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_SERVICE_PROPERTIES(instance));
 }
 
 Service::Service(Service *service)
@@ -60,7 +60,7 @@ Service &Service::operator=(const Service &service)
     if (this != &service) {
         mlt_service_close(instance);
         instance = service.instance;
-        inc_ref();
+        mlt_properties_inc_ref(MLT_SERVICE_PROPERTIES(instance));
     }
     return *this;
 }

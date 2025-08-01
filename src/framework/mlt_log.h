@@ -84,14 +84,22 @@ void mlt_log(void *service, int level, const char *fmt, ...);
 
 #define MLT_LOG_EXPAND_ARGS(...) , ##__VA_ARGS__
 
-#define mlt_log_panic(service, format, ...)   mlt_log((service), MLT_LOG_PANIC, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
-#define mlt_log_fatal(service, format, ...)   mlt_log((service), MLT_LOG_FATAL, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
-#define mlt_log_error(service, format, ...)   mlt_log((service), MLT_LOG_ERROR, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
-#define mlt_log_warning(service, format, ...) mlt_log((service), MLT_LOG_WARNING, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
-#define mlt_log_info(service, format, ...)    mlt_log((service), MLT_LOG_INFO, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
-#define mlt_log_verbose(service, format, ...) mlt_log((service), MLT_LOG_VERBOSE, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
-#define mlt_log_timings(service, format, ...) mlt_log((service), MLT_LOG_TIMINGS, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
-#define mlt_log_debug(service, format, ...)   mlt_log((service), MLT_LOG_DEBUG, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_panic(service, format, ...) \
+    mlt_log((service), MLT_LOG_PANIC, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_fatal(service, format, ...) \
+    mlt_log((service), MLT_LOG_FATAL, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_error(service, format, ...) \
+    mlt_log((service), MLT_LOG_ERROR, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_warning(service, format, ...) \
+    mlt_log((service), MLT_LOG_WARNING, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_info(service, format, ...) \
+    mlt_log((service), MLT_LOG_INFO, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_verbose(service, format, ...) \
+    mlt_log((service), MLT_LOG_VERBOSE, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_timings(service, format, ...) \
+    mlt_log((service), MLT_LOG_TIMINGS, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
+#define mlt_log_debug(service, format, ...) \
+    mlt_log((service), MLT_LOG_DEBUG, format MLT_LOG_EXPAND_ARGS(__VA_ARGS__))
 
 #else
 

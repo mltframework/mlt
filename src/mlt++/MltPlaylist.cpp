@@ -1,7 +1,6 @@
 /**
  * MltPlaylist.cpp - MLT Wrapper
- * Copyright (C) 2004-2015 Meltytech, LLC
- * Author: Charles Yates <charles.yates@gmail.com>
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -95,7 +94,7 @@ Playlist::Playlist(Service &producer)
 {
     if (producer.type() == mlt_service_playlist_type) {
         instance = (mlt_playlist) producer.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_PLAYLIST_PROPERTIES(instance));
     }
 }
 
@@ -103,13 +102,13 @@ Playlist::Playlist(Playlist &playlist)
     : Mlt::Producer(playlist)
     , instance(playlist.get_playlist())
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_PLAYLIST_PROPERTIES(instance));
 }
 
 Playlist::Playlist(mlt_playlist playlist)
     : instance(playlist)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_PLAYLIST_PROPERTIES(instance));
 }
 
 Playlist::~Playlist()

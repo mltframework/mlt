@@ -1,6 +1,6 @@
 /**
  * MltTractor.cpp - Tractor wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,21 +41,21 @@ Tractor::Tractor(Service &tractor)
 {
     if (tractor.type() == mlt_service_tractor_type) {
         instance = (mlt_tractor) tractor.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_TRACTOR_PROPERTIES(instance));
     }
 }
 
 Tractor::Tractor(mlt_tractor tractor)
     : instance(tractor)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_TRACTOR_PROPERTIES(instance));
 }
 
 Tractor::Tractor(Tractor &tractor)
     : Mlt::Producer(tractor)
     , instance(tractor.get_tractor())
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_TRACTOR_PROPERTIES(instance));
 }
 
 Tractor::Tractor(Profile &profile, char *id, char *resource)
@@ -68,7 +68,7 @@ Tractor::Tractor(mlt_profile profile, char *id, char *resource)
     Producer producer(profile, id, resource);
     if (producer.is_valid() && producer.type() == mlt_service_tractor_type) {
         instance = (mlt_tractor) producer.get_producer();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_TRACTOR_PROPERTIES(instance));
     } else if (producer.is_valid()) {
         instance = mlt_tractor_new();
         set_profile(profile);

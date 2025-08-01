@@ -1,6 +1,6 @@
 /**
  * MltProducer.cpp - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,7 +53,7 @@ Producer::Producer(Service &producer)
         || type == mlt_service_transition_type || type == mlt_service_chain_type
         || type == mlt_service_link_type) {
         instance = (mlt_producer) producer.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_PRODUCER_PROPERTIES(instance));
     }
 }
 
@@ -61,7 +61,7 @@ Producer::Producer(mlt_producer producer)
     : instance(producer)
     , parent_(NULL)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_PRODUCER_PROPERTIES(instance));
 }
 
 Producer::Producer(Producer &producer)
@@ -69,7 +69,7 @@ Producer::Producer(Producer &producer)
     , instance(producer.get_producer())
     , parent_(NULL)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_PRODUCER_PROPERTIES(instance));
 }
 
 Producer::Producer(const Producer &producer)
@@ -80,8 +80,7 @@ Producer::Producer(Producer *producer)
     : instance(producer != NULL ? producer->get_producer() : NULL)
     , parent_(NULL)
 {
-    if (is_valid())
-        inc_ref();
+    mlt_properties_inc_ref(MLT_PRODUCER_PROPERTIES(instance));
 }
 
 Producer::~Producer()
@@ -98,7 +97,7 @@ Producer &Producer::operator=(const Producer &producer)
         parent_ = nullptr;
         mlt_producer_close(instance);
         instance = producer.instance;
-        inc_ref();
+        mlt_properties_inc_ref(MLT_PRODUCER_PROPERTIES(instance));
     }
     return *this;
 }

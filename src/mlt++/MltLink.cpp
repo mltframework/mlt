@@ -1,6 +1,6 @@
 /**
  * MltLink.cpp - MLT Wrapper
- * Copyright (C) 2020-2021 Meltytech, LLC
+ * Copyright (C) 2020-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@ Link::Link()
 Link::Link(mlt_link link)
     : instance(link)
 {
-    inc_ref();
+    mlt_properties_inc_ref(MLT_LINK_PROPERTIES(instance));
 }
 
 Link::Link(const char *id, const char *arg)
@@ -62,7 +62,7 @@ Link::Link(Service &link)
 {
     if (link.type() == mlt_service_link_type) {
         instance = (mlt_link) link.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_LINK_PROPERTIES(instance));
     }
 }
 
@@ -70,7 +70,7 @@ Link::Link(Link &link)
 {
     if (link.type() == mlt_service_link_type) {
         instance = (mlt_link) link.get_service();
-        inc_ref();
+        mlt_properties_inc_ref(MLT_LINK_PROPERTIES(instance));
     }
 }
 
@@ -83,7 +83,7 @@ Link &Link::operator=(const Link &link)
     if (this != &link) {
         mlt_link_close(instance);
         instance = link.instance;
-        inc_ref();
+        mlt_properties_inc_ref(MLT_LINK_PROPERTIES(instance));
     }
     return *this;
 }
