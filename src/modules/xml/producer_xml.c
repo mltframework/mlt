@@ -2065,6 +2065,8 @@ mlt_producer producer_xml_init(mlt_profile profile,
 
     // Setup libxml2 SAX parsing
     xmlInitParser();
+    // Do not remove the below deprecated function until libxml2 version 2.9.13
+    // is at least 6 years old because in that version XML_PARSE_NOENT does not work.
     xmlSubstituteEntitiesDefault(1);
     // This is used to facilitate entity substitution in the SAX parser
     context->entity_doc = xmlNewDoc(_x("1.0"));
@@ -2079,6 +2081,7 @@ mlt_producer producer_xml_init(mlt_profile profile,
         free(sax);
         return NULL;
     }
+    xmlCtxtUseOptions(xmlcontext, XML_PARSE_NOENT);
 
     // Parse
     sax_orig = xmlcontext->sax;
