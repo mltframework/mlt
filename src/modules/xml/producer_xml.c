@@ -2065,7 +2065,6 @@ mlt_producer producer_xml_init(mlt_profile profile,
 
     // Setup libxml2 SAX parsing
     xmlInitParser();
-    xmlSubstituteEntitiesDefault(1);
     // This is used to facilitate entity substitution in the SAX parser
     context->entity_doc = xmlNewDoc(_x("1.0"));
     if (is_filename)
@@ -2114,6 +2113,8 @@ mlt_producer producer_xml_init(mlt_profile profile,
         free(sax);
         return NULL;
     }
+
+    xmlcontext->replaceEntities = 1;
 
     // Reset the stack.
     mlt_deque_close(context->stack_service);
