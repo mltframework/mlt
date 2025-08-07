@@ -266,6 +266,9 @@ int mlt_set_luma_transfer(struct SwsContext *context,
     case 709:
         src_coefficients = sws_getCoefficients(SWS_CS_ITU709);
         break;
+    case 2020:
+    case 2021:
+        src_coefficients = sws_getCoefficients(SWS_CS_BT2020);
     default:
         break;
     }
@@ -282,6 +285,9 @@ int mlt_set_luma_transfer(struct SwsContext *context,
     case 709:
         dst_coefficients = sws_getCoefficients(SWS_CS_ITU709);
         break;
+    case 2020:
+    case 2021:
+        dst_coefficients = sws_getCoefficients(SWS_CS_BT2020);
     default:
         break;
     }

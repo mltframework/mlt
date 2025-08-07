@@ -1921,18 +1921,19 @@ static void convert_image_rgb(producer_avformat self,
 }
 
 // returns resulting YUV colorspace
-static int convert_image(producer_avformat self,
-                         AVFrame *frame,
-                         uint8_t *buffer,
-                         int pix_fmt,
-                         mlt_image_format *format,
-                         int width,
-                         int height,
-                         uint8_t **alpha,
-                         int dst_full_range)
+static void convert_image(producer_avformat self,
+                          mlt_properties frame_properties,
+                          AVFrame *frame,
+                          uint8_t *buffer,
+                          int pix_fmt,
+                          mlt_image_format *format,
+                          int width,
+                          int height,
+                          uint8_t **alpha,
+                          int dst_full_range)
 {
     mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
-    int result = self->yuv_colorspace;
+    int colorspace = self->yuv_colorspace;
 
     mlt_log_timings_begin();
 
@@ -2004,16 +2005,16 @@ static int convert_image(producer_avformat self,
                           dst_pix_fmt,
                           dst_full_range);
     } else if (dst_pix_fmt != AV_PIX_FMT_NONE) {
-        result = convert_image_yuvp(self,
-                                    profile,
-                                    frame,
-                                    buffer,
-                                    *format,
-                                    width,
-                                    height,
-                                    src_pix_fmt,
-                                    dst_pix_fmt,
-                                    dst_full_range);
+        colorspace = convert_image_yuvp(self,
+                                        profile,
+                                        frame,
+                                        buffer,
+                                        *format,
+                                        width,
+                                        height,
+                                        src_pix_fmt,
+                                        dst_pix_fmt,
+                                        dst_full_range);
     } else {
         int i, c;
         struct sliced_pix_fmt_conv_t ctx = {
@@ -2063,11 +2064,27 @@ static int convert_image(producer_avformat self,
                 sliced_h_pix_fmt_conv_proc(i, i, c, &ctx);
         }
 
-        result = profile->colorspace;
+        colorspace = profile->colorspace;
     }
     mlt_log_timings_end(NULL, __FUNCTION__);
 
-    return result;
+    switch (colorspace) {
+    case 170:
+    case 240:
+        mlt_properties_set_int(frame_properties, "color_primaries", 601525);
+        break;
+    case 601:
+        mlt_properties_set_int(frame_properties, "color_primaries", 601625);
+        break;
+    case 2020:
+        mlt_properties_set_int(frame_properties, "color_primaries", 2020);
+        break;
+    default:
+        mlt_properties_set_int(frame_properties, "color_primaries", 709);
+        break;
+    }
+    mlt_properties_set_int(frame_properties, "colorspace", colorspace);
+    mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
 }
 
 static void set_image_size(producer_avformat self, int *width, int *height)
@@ -2300,7 +2317,7 @@ static int producer_get_image(mlt_frame frame,
                                     NULL);
             *format = mlt_properties_get_int(orig_props, "format");
             set_image_size(self, width, height);
-            mlt_properties_pass_property(frame_properties, orig_props, "colorspace");
+            mlt_properties_pass_list(frame_properties, orig_props, "colorspace color_primaries");
             mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
             got_picture = 1;
             goto exit_get_image;
@@ -2349,18 +2366,16 @@ static int producer_get_image(mlt_frame frame,
         // Duplicate it
         set_image_size(self, width, height);
         if ((image_size = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
-            int yuv_colorspace;
-            yuv_colorspace = convert_image(self,
-                                           self->video_frame,
-                                           *buffer,
-                                           self->video_frame->format,
-                                           format,
-                                           *width,
-                                           *height,
-                                           &alpha,
-                                           dst_full_range);
-            mlt_properties_set_int(frame_properties, "colorspace", yuv_colorspace);
-            mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
+            convert_image(self,
+                          frame_properties,
+                          self->video_frame,
+                          *buffer,
+                          self->video_frame->format,
+                          format,
+                          *width,
+                          *height,
+                          &alpha,
+                          dst_full_range);
             got_picture = 1;
         }
     } else {
@@ -2603,18 +2618,16 @@ static int producer_get_image(mlt_frame frame,
                 set_image_size(self, width, height);
                 if ((image_size
                      = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
-                    int yuv_colorspace;
-                    yuv_colorspace = convert_image(self,
-                                                   self->video_frame,
-                                                   *buffer,
-                                                   self->video_frame->format,
-                                                   format,
-                                                   *width,
-                                                   *height,
-                                                   &alpha,
-                                                   dst_full_range);
-                    mlt_properties_set_int(frame_properties, "colorspace", yuv_colorspace);
-                    mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
+                    convert_image(self,
+                                  frame_properties,
+                                  self->video_frame,
+                                  *buffer,
+                                  self->video_frame->format,
+                                  format,
+                                  *width,
+                                  *height,
+                                  &alpha,
+                                  dst_full_range);
                     self->current_position = int_position;
                 } else {
                     got_picture = 0;
