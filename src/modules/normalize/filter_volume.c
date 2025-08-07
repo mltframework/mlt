@@ -249,13 +249,15 @@ static int filter_get_audio(mlt_frame frame,
         // Determine numeric limits
         int bytes_per_samp = (samp_width - 1) / 8 + 1;
         int samplemax = (1 << (bytes_per_samp * 8 - 1)) - 1;
+        double g;
 
         for (j = 0; j < *channels; j++) {
             if (channel_mask & (1 << j))
-                for (i = 0; i < *samples; i++, gain += gain_step) {
-                    sample = *p * gain;
-                    *p = ROUND(sample);
-                    if (gain > 1.0 && normalize) {
+                for (i = 0; i < *samples; i++) {
+                    g = gain + i * gain_step;
+                    sample = p[0] * g;
+                    p[0] = ROUND(sample);
+                    if (g > 1.0 && normalize) {
                         /* use limiter function instead of clipping */
                         p[*channels * i + j] = ROUND(
                             samplemax * limiter(sample / (double) samplemax, limiter_level));
@@ -266,8 +268,8 @@ static int filter_get_audio(mlt_frame frame,
         float *p = *buffer;
         for (j = 0; j < *channels; j++) {
             if (channel_mask & (1 << j))
-                for (i = 0; i < *samples; i++, gain += gain_step) {
-                    p[*channels * i + j] *= gain;
+                for (i = 0; i < *samples; i++) {
+                    p[*channels * i + j] *= gain + i * gain_step;
                 }
         }
     }
