@@ -4,9 +4,8 @@ add_library(mltopenfx MODULE
   filter_openfx.c
 )
 
-file(GLOB YML "*.yml")
 add_custom_target(Other_openfx_Files SOURCES
-  ${YML}
+  filter_openfx.yml
 )
 
 target_compile_options(mltopenfx PRIVATE ${MLT_COMPILE_OPTIONS})
