@@ -6,7 +6,6 @@
 // Copyright OpenFX and contributors to the OpenFX project.
 // SPDX-License-Identifier: BSD-3-Clause
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,7 +15,6 @@ Contains the API for ofx plugin defined GUIs and interaction.
 */
 
 #define kOfxInteractSuite "OfxInteractSuite"
-
 
 /** @brief Blind declaration of an OFX interactive gui 
 */
@@ -54,8 +52,6 @@ The interact can be slaved to multiple parameters (setting index 0, then index 1
 
  */
 #define kOfxInteractPropPixelScale "OfxInteractPropPixelScale"
-
-
 
 /** @brief The background colour of the application behind an interact instance
 
@@ -167,7 +163,6 @@ These are the list of actions passed to an interact's entry point function. For 
      -  \ref kOfxStatErrFatal
  */
 #define kOfxActionDescribeInteract kOfxActionDescribe
-
 
 /** @brief
 
@@ -335,7 +330,7 @@ These are the list of actions passed to an interact's entry point function. For 
      -  \ref kOfxStatOK, the action was trapped and the host should not pass the event to other objects it may own
      -  \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionPenDown   "OfxInteractActionPenDown"
+#define kOfxInteractActionPenDown "OfxInteractActionPenDown"
 
 /**@brief
 
@@ -371,7 +366,7 @@ These are the list of actions passed to an interact's entry point function. For 
      -  \ref kOfxStatOK, the action was trapped and the host should not pass the event to other objects it may own
      -  \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionPenUp     "OfxInteractActionPenUp"
+#define kOfxInteractActionPenUp "OfxInteractActionPenUp"
 
 /**@brief
 
@@ -405,7 +400,7 @@ These are the list of actions passed to an interact's entry point function. For 
      - \ref kOfxStatOK , the action was trapped and the host should not pass the event to other objects it may own
      - \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionKeyDown   "OfxInteractActionKeyDown"
+#define kOfxInteractActionKeyDown "OfxInteractActionKeyDown"
 
 /**@brief
  This action is issued when a key on the keyboard is released.
@@ -438,7 +433,7 @@ These are the list of actions passed to an interact's entry point function. For 
      - \ref kOfxStatOK , the action was trapped and the host should not pass the event to other objects it may own
      - \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionKeyUp     "OfxInteractActionKeyUp"
+#define kOfxInteractActionKeyUp "OfxInteractActionKeyUp"
 
 /**@brief
  This action is issued when a key on the keyboard is repeated.
@@ -471,7 +466,7 @@ These are the list of actions passed to an interact's entry point function. For 
      - \ref kOfxStatOK , the action was trapped and the host should not pass the event to other objects it may own
      - \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionKeyRepeat     "OfxInteractActionKeyRepeat"
+#define kOfxInteractActionKeyRepeat "OfxInteractActionKeyRepeat"
 
 /**@brief
  This action is issued when an interact gains input focus.
@@ -529,16 +524,17 @@ These are the list of actions passed to an interact's entry point function. For 
 /** @brief OFX suite that allows an effect to interact with an openGL window so as to provide custom interfaces.
 
 */
-typedef struct OfxInteractSuiteV1 {	
-  /** @brief Requests an openGL buffer swap on the interact instance */
-  OfxStatus (*interactSwapBuffers)(OfxInteractHandle interactInstance);
+typedef struct OfxInteractSuiteV1
+{
+    /** @brief Requests an openGL buffer swap on the interact instance */
+    OfxStatus (*interactSwapBuffers)(OfxInteractHandle interactInstance);
 
-  /** @brief Requests a redraw of the interact instance */
-  OfxStatus (*interactRedraw)(OfxInteractHandle interactInstance);
+    /** @brief Requests a redraw of the interact instance */
+    OfxStatus (*interactRedraw)(OfxInteractHandle interactInstance);
 
-  /** @brief Gets the property set handle for this interact handle */
-  OfxStatus (*interactGetPropertySet)(OfxInteractHandle interactInstance,
-				      OfxPropertySetHandle *property);
+    /** @brief Gets the property set handle for this interact handle */
+    OfxStatus (*interactGetPropertySet)(OfxInteractHandle interactInstance,
+                                        OfxPropertySetHandle *property);
 } OfxInteractSuiteV1;
 
 #ifdef __cplusplus

@@ -4,7 +4,6 @@
 // Copyright OpenFX and contributors to the OpenFX project.
 // SPDX-License-Identifier: BSD-3-Clause
 
-
 #include "stddef.h" // for size_t
 #include <limits.h> // for INT_MIN & INT_MAX
 
@@ -16,16 +15,15 @@ extern "C" {
 Contains the core OFX architectural struct and function definitions. For more details on the basic OFX architecture, see \ref Architecture.
 */
 
-
 /** @brief Platform independent export macro.
  *
  * This macro is to be used before any symbol that is to be
  * exported from a plug-in. This is OS/compiler dependent.
  */
 #if defined(WIN32) || defined(WIN64)
-	#define OfxExport extern __declspec(dllexport)
+#define OfxExport extern __declspec(dllexport)
 #else
-	#define OfxExport extern
+#define OfxExport extern
 #endif
 
 /** @brief Blind data structure to manipulate sets of properties through */
@@ -39,13 +37,14 @@ typedef int OfxStatus;
     This structure contains what is needed by a plug-in to bootstrap its connection
     to the host.
 */
-typedef struct OfxHost {
-  /** @brief Global handle to the host. Extract relevant host properties from this.
+typedef struct OfxHost
+{
+    /** @brief Global handle to the host. Extract relevant host properties from this.
       This pointer will be valid while the binary containing the plug-in is loaded.
    */
-  OfxPropertySetHandle host;
+    OfxPropertySetHandle host;
 
-  /** @brief The function which the plug-in uses to fetch suites from the host.
+    /** @brief The function which the plug-in uses to fetch suites from the host.
 
       \arg \c host          the host the suite is being fetched from this \em must be the \e host member of the OfxHost struct containing fetchSuite.
       \arg \c suiteName     ASCII string labelling the host supplied API
@@ -62,9 +61,8 @@ typedef struct OfxHost {
          - NULL if the API is unknown (either the api or the version requested),
 	 - pointer to the relevant API if it was found
   */
-  const void *(*fetchSuite)(OfxPropertySetHandle host, const char *suiteName, int suiteVersion);
+    const void *(*fetchSuite)(OfxPropertySetHandle host, const char *suiteName, int suiteVersion);
 } OfxHost;
-
 
 /** @brief Entry point for plug-ins
 
@@ -79,7 +77,10 @@ typedef struct OfxHost {
   The exact set of actions is determined by the plug-in API that is being implemented, however all plug-ins
   can perform several actions. For the list of actions consult \ref ActionsAll.
  */
-typedef  OfxStatus (OfxPluginEntryPoint)(const char *action, const void *handle, OfxPropertySetHandle inArgs, OfxPropertySetHandle outArgs);
+typedef OfxStatus(OfxPluginEntryPoint)(const char *action,
+                                       const void *handle,
+                                       OfxPropertySetHandle inArgs,
+                                       OfxPropertySetHandle outArgs);
 
 /** @brief The structure that defines a plug-in to a host.
  *
@@ -91,32 +92,33 @@ typedef  OfxStatus (OfxPluginEntryPoint)(const char *action, const void *handle,
  * For details see \ref Architecture.
  *
  */
-typedef struct OfxPlugin {
-  /** Defines the type of the plug-in, this will tell the host what the plug-in does. e.g.: an image
+typedef struct OfxPlugin
+{
+    /** Defines the type of the plug-in, this will tell the host what the plug-in does. e.g.: an image
       effects plug-in would be a "OfxImageEffectPlugin"
    */
-  const char		*pluginApi;
+    const char *pluginApi;
 
-  /** Defines the version of the pluginApi that this plug-in implements */
-  int            apiVersion;
+    /** Defines the version of the pluginApi that this plug-in implements */
+    int apiVersion;
 
-  /** String that uniquely labels the plug-in among all plug-ins that implement an API.
+    /** String that uniquely labels the plug-in among all plug-ins that implement an API.
       It need not necessarily be human sensible, however the preference is to use reverse
       internet domain name of the developer, followed by a '.' then by a name that represents
       the plug-in.. It must be a legal ASCII string and have no whitespace in the
       name and no non printing chars.
       For example "uk.co.somesoftwarehouse.myPlugin"
   */
-  const char 		*pluginIdentifier;
+    const char *pluginIdentifier;
 
-  /** Major version of this plug-in, this gets incremented when backwards compatibility is broken. */
-  unsigned int 	 pluginVersionMajor;
+    /** Major version of this plug-in, this gets incremented when backwards compatibility is broken. */
+    unsigned int pluginVersionMajor;
 
-  /**  Major version of this plug-in, this gets incremented when software is changed,
+    /**  Major version of this plug-in, this gets incremented when software is changed,
        but does not break backwards compatibility. */
-  unsigned int   pluginVersionMinor;
+    unsigned int pluginVersionMinor;
 
-  /** @brief Function the host uses to connect the plug-in to the host's api fetcher
+    /** @brief Function the host uses to connect the plug-in to the host's api fetcher
 
       \arg \c fetchApi pointer to host's API fetcher
 
@@ -133,9 +135,9 @@ typedef struct OfxPlugin {
       It is recommended that hosts should return the same host and suite pointers to all plugins
       in the same shared lib or bundle.
   */
-  void     (*setHost)(OfxHost *host);
+    void (*setHost)(OfxHost *host);
 
-  /** @brief Main entry point for plug-ins
+    /** @brief Main entry point for plug-ins
 
   Mandatory function.
 
@@ -145,7 +147,7 @@ typedef struct OfxPlugin {
    Preconditions
       - setHost has been called
    */
-  OfxPluginEntryPoint *mainEntry;
+    OfxPluginEntryPoint *mainEntry;
 } OfxPlugin;
 
 /**
@@ -182,7 +184,7 @@ These are the actions passed to a plug-in's 'main' function
  Plug-in also has the option to return 0 for OfxGetNumberOfPlugins or kOfxStatFailed if host supports OfxSetHost in which case kOfxActionLoad will never be called.
  -  \ref kOfxStatErrFatal, fatal error in the plug-in.
  */
-#define  kOfxActionLoad "OfxActionLoad"
+#define kOfxActionLoad "OfxActionLoad"
 
 /** @brief
 
@@ -291,7 +293,7 @@ These are the actions passed to a plug-in's 'main' function
      -  \ref kOfxStatFailed, something went wrong, but no error code appropriate,
      the plugin should to post a message
  */
-#define kOfxActionPurgeCaches                 "OfxActionPurgeCaches"
+#define kOfxActionPurgeCaches "OfxActionPurgeCaches"
 
 /** @brief
 
@@ -317,7 +319,7 @@ These are the actions passed to a plug-in's 'main' function
      -  \ref kOfxStatFailed, something went wrong, but no error code appropriate,
      the plugin should to post a message
  */
-#define kOfxActionSyncPrivateData                 "OfxActionSyncPrivateData"
+#define kOfxActionSyncPrivateData "OfxActionSyncPrivateData"
 
 /** @brief
 
@@ -352,7 +354,7 @@ These are the actions passed to a plug-in's 'main' function
      the plugin should to post a message if possible and the host should
      destroy the instanace handle and not attempt to proceed further
  */
-#define kOfxActionCreateInstance        "OfxActionCreateInstance"
+#define kOfxActionCreateInstance "OfxActionCreateInstance"
 
 /** @brief
 
@@ -388,7 +390,7 @@ These are the actions passed to a plug-in's 'main' function
      the plugin should to post a message.
 
  */
-#define kOfxActionDestroyInstance       "OfxActionDestroyInstance"
+#define kOfxActionDestroyInstance "OfxActionDestroyInstance"
 
 /** @brief
 
@@ -574,7 +576,7 @@ OfxExport int OfxGetNumberOfPlugins(void);
 * Plug-in can return kOfxStatFailed to indicate it has nothing to do here, it's not for this Host and it should be skipped silently.
 */
 
-OfxExport  OfxStatus OfxSetHost(const OfxHost *host);
+OfxExport OfxStatus OfxSetHost(const OfxHost *host);
 
 /**
    \defgroup PropertiesAll Ofx Properties
@@ -799,23 +801,27 @@ Some plug-in vendor want raw OS specific handles back from the host so they can 
 typedef double OfxTime;
 
 /** @brief Defines one dimensional integer bounds */
-typedef struct OfxRangeI {
-  int min, max;
+typedef struct OfxRangeI
+{
+    int min, max;
 } OfxRangeI;
 
 /** @brief Defines one dimensional double bounds */
-typedef struct OfxRangeD {
-  double min, max;
+typedef struct OfxRangeD
+{
+    double min, max;
 } OfxRangeD;
 
 /** @brief Defines two dimensional integer point */
-typedef struct OfxPointI {
-  int x, y;
+typedef struct OfxPointI
+{
+    int x, y;
 } OfxPointI;
 
 /** @brief Defines two dimensional double point */
-typedef struct OfxPointD {
-  double x, y;
+typedef struct OfxPointD
+{
+    double x, y;
 } OfxPointD;
 
 /** @brief Used to flag infinite rects. Set minimums to this to indicate infinite
@@ -841,8 +847,9 @@ Infinite regions are flagged by setting
 - y2 = \ref kOfxFlagInfiniteMax
 
  */
-typedef struct OfxRectI {
-  int x1, y1, x2, y2;
+typedef struct OfxRectI
+{
+    int x1, y1, x2, y2;
 } OfxRectI;
 
 /** @brief Defines two dimensional double region
@@ -856,8 +863,9 @@ Infinite regions are flagged by setting
 - y2 = \ref kOfxFlagInfiniteMax
 
  */
-typedef struct OfxRectD {
-  double x1, y1, x2, y2;
+typedef struct OfxRectD
+{
+    double x1, y1, x2, y2;
 } OfxRectD;
 
 /** @brief String used to label unset bitdepths */
@@ -898,16 +906,16 @@ General status codes start at 1 and continue until 999
 #define kOfxStatOK 0
 
 /** @brief Status error code for a failed operation. */
-#define kOfxStatFailed  ((int)1)
+#define kOfxStatFailed ((int) 1)
 
 /** @brief Status error code for a fatal error
 
   Only returned in the case where the plug-in or host cannot continue to function and needs to be restarted.
  */
-#define kOfxStatErrFatal ((int)2)
+#define kOfxStatErrFatal ((int) 2)
 
 /** @brief Status error code for an operation on or request for an unknown object */
-#define kOfxStatErrUnknown ((int)3)
+#define kOfxStatErrUnknown ((int) 3)
 
 /** @brief Status error code returned by plug-ins when they are missing host functionality, either an API or some optional functionality (eg: custom params).
 
@@ -919,19 +927,19 @@ General status codes start at 1 and continue until 999
 #define kOfxStatErrUnsupported ((int) 5)
 
 /** @brief Status error code for an operation attempting to create something that exists */
-#define kOfxStatErrExists  ((int) 6)
+#define kOfxStatErrExists ((int) 6)
 
 /** @brief Status error code for an incorrect format */
 #define kOfxStatErrFormat ((int) 7)
 
 /** @brief Status error code indicating that something failed due to memory shortage */
-#define kOfxStatErrMemory  ((int) 8)
+#define kOfxStatErrMemory ((int) 8)
 
 /** @brief Status error code for an operation on a bad handle */
 #define kOfxStatErrBadHandle ((int) 9)
 
 /** @brief Status error code indicating that a given index was invalid or unavailable */
-#define kOfxStatErrBadIndex ((int)10)
+#define kOfxStatErrBadIndex ((int) 10)
 
 /** @brief Status error code indicating that something failed due an illegal value */
 #define kOfxStatErrValue ((int) 11)

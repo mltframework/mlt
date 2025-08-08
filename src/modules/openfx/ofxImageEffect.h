@@ -6,13 +6,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "ofxCore.h"
-#include "ofxParam.h"
 #include "ofxInteract.h"
-#include "ofxMessage.h"
 #include "ofxMemory.h"
+#include "ofxMessage.h"
 #include "ofxMultiThread.h"
-#include "ofxInteract.h"
-
+#include "ofxParam.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,7 +143,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      -  \ref kOfxStatErrFatal
 
  */
-#define kOfxImageEffectActionGetRegionOfDefinition        "OfxImageEffectActionGetRegionOfDefinition"
+#define kOfxImageEffectActionGetRegionOfDefinition "OfxImageEffectActionGetRegionOfDefinition"
 
 /** @brief
 
@@ -184,7 +182,7 @@ These are the list of actions passed to an image effect plugin's main function. 
 
 
  */
-#define kOfxImageEffectActionGetRegionsOfInterest         "OfxImageEffectActionGetRegionsOfInterest"
+#define kOfxImageEffectActionGetRegionsOfInterest "OfxImageEffectActionGetRegionsOfInterest"
 
 /** @brief
  This action allows a host to ask an effect what range of frames it can
@@ -217,7 +215,7 @@ These are the list of actions passed to an image effect plugin's main function. 
 
 
  */
-#define kOfxImageEffectActionGetTimeDomain                "OfxImageEffectActionGetTimeDomain"
+#define kOfxImageEffectActionGetTimeDomain "OfxImageEffectActionGetTimeDomain"
 
 /** @brief
 
@@ -278,7 +276,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      -  \ref kOfxStatFailed, something wrong, but no error code appropriate, plugin to post message
      -  \ref kOfxStatErrFatal
  */
-#define kOfxImageEffectActionGetFramesNeeded              "OfxImageEffectActionGetFramesNeeded"
+#define kOfxImageEffectActionGetFramesNeeded "OfxImageEffectActionGetFramesNeeded"
 
 /** @brief
 
@@ -332,7 +330,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      plugin to post message
      -  \ref kOfxStatErrFatal
  */
-#define kOfxImageEffectActionGetClipPreferences       "OfxImageEffectActionGetClipPreferences"
+#define kOfxImageEffectActionGetClipPreferences "OfxImageEffectActionGetClipPreferences"
 
 /** @brief
 
@@ -381,7 +379,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      -  \ref kOfxStatErrFatal
 
  */
-#define kOfxImageEffectActionIsIdentity            "OfxImageEffectActionIsIdentity"
+#define kOfxImageEffectActionIsIdentity "OfxImageEffectActionIsIdentity"
 
 /** @brief
 
@@ -422,7 +420,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      -  \ref kOfxStatErrFatal
 
  */
-#define kOfxImageEffectActionRender                "OfxImageEffectActionRender"
+#define kOfxImageEffectActionRender "OfxImageEffectActionRender"
 
 /** @brief
 
@@ -461,7 +459,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      plugin to post message,
      -  \ref kOfxStatErrFatal
  */
-#define kOfxImageEffectActionBeginSequenceRender   "OfxImageEffectActionBeginSequenceRender"
+#define kOfxImageEffectActionBeginSequenceRender "OfxImageEffectActionBeginSequenceRender"
 
 /** @brief
 
@@ -503,7 +501,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      -  \ref kOfxStatErrFatal
 
  */
-#define kOfxImageEffectActionEndSequenceRender      "OfxImageEffectActionEndSequenceRender"
+#define kOfxImageEffectActionEndSequenceRender "OfxImageEffectActionEndSequenceRender"
 
 /** @brief
 
@@ -543,7 +541,7 @@ These are the list of actions passed to an image effect plugin's main function. 
      -  \ref kOfxStatErrFatal
 
  */
-#define kOfxImageEffectActionDescribeInContext     "OfxImageEffectActionDescribeInContext"
+#define kOfxImageEffectActionDescribeInContext "OfxImageEffectActionDescribeInContext"
 
 /*@}*/
 /*@}*/
@@ -663,7 +661,6 @@ the output clip's aspect ratio in the ::kOfxImageEffectActionGetClipPreferences 
 */
 #define kOfxImageEffectPropSupportsMultipleClipPARs "OfxImageEffectPropSupportsMultipleClipPARs"
 
-
 /** @brief Indicates the set of parameters on which a value change will trigger a change to clip preferences
 
    - Type - string X N
@@ -738,9 +735,9 @@ This property is set to indicate whether the effect is currently being rendered 
 */
 #define kOfxImageEffectPropSequentialRenderStatus "OfxImageEffectPropSequentialRenderStatus"
 
-#define kOfxHostNativeOriginBottomLeft   "kOfxImageEffectHostPropNativeOriginBottomLeft"  
-#define kOfxHostNativeOriginTopLeft      "kOfxImageEffectHostPropNativeOriginTopLeft"  
-#define kOfxHostNativeOriginCenter       "kOfxImageEffectHostPropNativeOriginCenter"  
+#define kOfxHostNativeOriginBottomLeft "kOfxImageEffectHostPropNativeOriginBottomLeft"
+#define kOfxHostNativeOriginTopLeft "kOfxImageEffectHostPropNativeOriginTopLeft"
+#define kOfxHostNativeOriginCenter "kOfxImageEffectHostPropNativeOriginCenter"
 /** @brief Property that indicates the host native UI space - this is only a UI hint, has no impact on pixel processing
 
    - Type - UTF8 string X 1
@@ -753,8 +750,7 @@ This property is set to indicate whether the effect is currently being rendered 
 This property is set to kOfxHostNativeOriginBottomLeft pre V1.4 and was to be discovered by plug-ins. This is useful for drawing overlay for points... so everything matches the rest of the app (for example expression linking to other tools, or simply match the reported location of the host viewer).
 
 */
-#define kOfxImageEffectHostPropNativeOrigin  "OfxImageEffectHostPropNativeOrigin"
-
+#define kOfxImageEffectHostPropNativeOrigin "OfxImageEffectHostPropNativeOrigin"
 
 /** @brief Property that indicates if a plugin is being rendered in response to user interaction.
 
@@ -844,7 +840,6 @@ If a clip or plugin does not support tiled images, then the host should supply f
 V1.4:  It is now possible (defined) to change OfxImageEffectPropSupportsTiles in Instance Changed 
 */
 #define kOfxImageEffectPropSupportsTiles "OfxImageEffectPropSupportsTiles"
-
 
 /** @brief Indicates support for random temporal access to images in a clip.
 
@@ -972,14 +967,13 @@ See the documentation on clip preferences for more details on how this is used w
 #define kOfxImageEffectPropPreMultiplication "OfxImageEffectPropPreMultiplication"
 
 /** Used to flag the alpha of an image as opaque */
-#define kOfxImageOpaque  "OfxImageOpaque"
+#define kOfxImageOpaque "OfxImageOpaque"
 
 /** Used to flag an image as premultiplied */
 #define kOfxImagePreMultiplied "OfxImageAlphaPremultiplied"
 
 /** Used to flag an image as unpremultiplied */
 #define kOfxImageUnPreMultiplied "OfxImageAlphaUnPremultiplied"
-
 
 /** @brief Indicates the bit depths support by a plug-in or host
     
@@ -1036,7 +1030,6 @@ This property acts as a hint to hosts indicating that they could feed the effect
 */
 #define kOfxImageClipPropIsMask "OfxImageClipPropIsMask"
 
-
 /** @brief The pixel aspect ratio of a clip or image.
 
    - Type - double X 1
@@ -1089,7 +1082,6 @@ Dimension 0 is the first frame for which the clip can produce valid data.
 Dimension 1 is the last frame for which the clip can produce valid data.
 */
 #define kOfxImageEffectPropFrameRange "OfxImageEffectPropFrameRange"
-
 
 /** @brief The unmaped frame range over which an output clip has images.
 
@@ -1299,7 +1291,6 @@ Row bytes is not supported for OpenCL Images.
  */
 #define kOfxImagePropRowBytes "OfxImagePropRowBytes"
 
-
 /** @brief Which fields are present in the image
 
     - Type - string X 1
@@ -1322,7 +1313,8 @@ Row bytes is not supported for OpenCL Images.
        - 0 - the plugin is to have its render function called twice, only if there is animation in any of its parameters
        - 1 - the plugin is to have its render function called twice always
 */
-#define kOfxImageEffectPluginPropFieldRenderTwiceAlways "OfxImageEffectPluginPropFieldRenderTwiceAlways"
+#define kOfxImageEffectPluginPropFieldRenderTwiceAlways \
+    "OfxImageEffectPluginPropFieldRenderTwiceAlways"
 
 /** @brief Controls how a plugin fetched fielded imagery from a clip.
 
@@ -1424,9 +1416,6 @@ This will be in \ref PixelCoordinates
 /** @brief the name of the mandated 'SourceTime' param for the retime context */
 #define kOfxImageEffectRetimerParamName "SourceTime"
 
-
-
-
 /** @brief the string that names image effect suites, passed to OfxHost::fetchSuite */
 #define kOfxImageEffectSuite "OfxImageEffectSuite"
 
@@ -1434,8 +1423,9 @@ This will be in \ref PixelCoordinates
 
 This suite provides the functions needed by a plugin to defined and use an image effect plugin.
  */
-typedef struct OfxImageEffectSuiteV1 {  
-  /** @brief Retrieves the property set for the given image effect
+typedef struct OfxImageEffectSuiteV1
+{
+    /** @brief Retrieves the property set for the given image effect
 
   \arg \c imageEffect   image effect to get the property set for
   \arg \c propHandle    pointer to a the property set pointer, value is returned here
@@ -1447,10 +1437,9 @@ typedef struct OfxImageEffectSuiteV1 {
   - ::kOfxStatErrBadHandle  - if the paramter handle was invalid
   - ::kOfxStatErrUnknown    - if the type is unknown
   */
-  OfxStatus (*getPropertySet)(OfxImageEffectHandle imageEffect,
-			      OfxPropertySetHandle *propHandle);
+    OfxStatus (*getPropertySet)(OfxImageEffectHandle imageEffect, OfxPropertySetHandle *propHandle);
 
-  /** @brief Retrieves the parameter set for the given image effect
+    /** @brief Retrieves the parameter set for the given image effect
 
   \arg \c imageEffect   image effect to get the property set for
   \arg \c paramSet     pointer to a the parameter set, value is returned here
@@ -1462,11 +1451,9 @@ typedef struct OfxImageEffectSuiteV1 {
   - ::kOfxStatErrBadHandle  - if the paramter handle was invalid
   - ::kOfxStatErrUnknown    - if the type is unknown
   */
-  OfxStatus (*getParamSet)(OfxImageEffectHandle imageEffect,
-			   OfxParamSetHandle *paramSet);
+    OfxStatus (*getParamSet)(OfxImageEffectHandle imageEffect, OfxParamSetHandle *paramSet);
 
-
-  /** @brief Define a clip to the effect. 
+    /** @brief Define a clip to the effect. 
       
    \arg \c pluginHandle handle passed into 'describeInContext' action
    \arg \c name unique name of the clip to define
@@ -1480,11 +1467,11 @@ typedef struct OfxImageEffectSuiteV1 {
 
   @returns
   */
-  OfxStatus (*clipDefine)(OfxImageEffectHandle imageEffect,
-			  const char *name,	 
-			  OfxPropertySetHandle *propertySet);
+    OfxStatus (*clipDefine)(OfxImageEffectHandle imageEffect,
+                            const char *name,
+                            OfxPropertySetHandle *propertySet);
 
-  /** @brief Get the propery handle of the named input clip in the given instance 
+    /** @brief Get the propery handle of the named input clip in the given instance 
    
    \arg \c imageEffect an instance handle to the plugin
    \arg \c name        name of the clip, previously used in a clip define call
@@ -1508,12 +1495,12 @@ typedef struct OfxImageEffectSuiteV1 {
  - handle will be valid for the life time of the instance.
 
   */
-  OfxStatus (*clipGetHandle)(OfxImageEffectHandle imageEffect,
-			     const char *name,
-			     OfxImageClipHandle *clip,
-			     OfxPropertySetHandle *propertySet);
+    OfxStatus (*clipGetHandle)(OfxImageEffectHandle imageEffect,
+                               const char *name,
+                               OfxImageClipHandle *clip,
+                               OfxPropertySetHandle *propertySet);
 
-  /** @brief Retrieves the property set for a given clip
+    /** @brief Retrieves the property set for a given clip
 
   \arg \c clip         clip effect to get the property set for
   \arg \c propHandle   pointer to a the property set handle, value is returedn her
@@ -1525,10 +1512,9 @@ typedef struct OfxImageEffectSuiteV1 {
   - ::kOfxStatErrBadHandle  - if the paramter handle was invalid
   - ::kOfxStatErrUnknown    - if the type is unknown
   */
-  OfxStatus (*clipGetPropertySet)(OfxImageClipHandle clip,
-				  OfxPropertySetHandle *propHandle);
+    OfxStatus (*clipGetPropertySet)(OfxImageClipHandle clip, OfxPropertySetHandle *propHandle);
 
-  /** @brief Get a handle for an image in a clip at the indicated time and indicated region
+    /** @brief Get a handle for an image in a clip at the indicated time and indicated region
 
       \arg \c clip  clip to extract the image from
       \arg \c time        time to fetch the image at
@@ -1557,12 +1543,12 @@ If clipGetImage is called twice with the same parameters, then two separate imag
 - ::kOfxStatErrMemory - the host had not enough memory to complete the operation, plugin should abort whatever it was doing.
 
   */
-  OfxStatus (*clipGetImage)(OfxImageClipHandle clip,
-			    OfxTime       time,
-			    const OfxRectD     *region,
-			    OfxPropertySetHandle   *imageHandle);
-  
-  /** @brief Releases the image handle previously returned by clipGetImage
+    OfxStatus (*clipGetImage)(OfxImageClipHandle clip,
+                              OfxTime time,
+                              const OfxRectD *region,
+                              OfxPropertySetHandle *imageHandle);
+
+    /** @brief Releases the image handle previously returned by clipGetImage
 
 
 \pre
@@ -1575,10 +1561,9 @@ If clipGetImage is called twice with the same parameters, then two separate imag
 - ::kOfxStatOK - the image was successfully fetched and returned in the handle,
 - ::kOfxStatErrBadHandle - the image handle was invalid,
  */
-  OfxStatus (*clipReleaseImage)(OfxPropertySetHandle imageHandle);
-  
+    OfxStatus (*clipReleaseImage)(OfxPropertySetHandle imageHandle);
 
-  /** @brief Returns the spatial region of definition of the clip at the given time
+    /** @brief Returns the spatial region of definition of the clip at the given time
 
       \arg \c clipHandle  clip to extract the image from
       \arg \c time        time to fetch the image at
@@ -1605,11 +1590,9 @@ If clipGetImage is called twice with the same parameters, then two separate imag
 
 
   */
-  OfxStatus (*clipGetRegionOfDefinition)(OfxImageClipHandle clip,
-					 OfxTime time,
-					 OfxRectD *bounds);
+    OfxStatus (*clipGetRegionOfDefinition)(OfxImageClipHandle clip, OfxTime time, OfxRectD *bounds);
 
-  /** @brief Returns whether to abort processing or not.
+    /** @brief Returns whether to abort processing or not.
 
       \arg \c imageEffect  instance of the image effect
 
@@ -1622,9 +1605,9 @@ If clipGetImage is called twice with the same parameters, then two separate imag
      - 0 if the effect should continue whatever processing it is doing
      - 1 if the effect should abort whatever processing it is doing  
  */
-  int (*abort)(OfxImageEffectHandle imageEffect);
+    int (*abort)(OfxImageEffectHandle imageEffect);
 
-  /** @brief Allocate memory from the host's image memory pool
+    /** @brief Allocate memory from the host's image memory pool
       
   \arg \c instanceHandle  effect instance to associate with this memory allocation, may be NULL.
   \arg \c nBytes          number of bytes to allocate
@@ -1639,12 +1622,12 @@ If clipGetImage is called twice with the same parameters, then two separate imag
   - kOfxStatOK if all went well, a valid memory handle is placed in \e memoryHandle
   - kOfxStatErrBadHandle if instanceHandle is not valid, memoryHandle is set to NULL
   - kOfxStatErrMemory if there was not enough memory to satisfy the call, memoryHandle is set to NULL
-  */   
-  OfxStatus (*imageMemoryAlloc)(OfxImageEffectHandle instanceHandle, 
-				size_t nBytes,
-				OfxImageMemoryHandle *memoryHandle);
-	
-  /** @brief Frees a memory handle and associated memory.
+  */
+    OfxStatus (*imageMemoryAlloc)(OfxImageEffectHandle instanceHandle,
+                                  size_t nBytes,
+                                  OfxImageMemoryHandle *memoryHandle);
+
+    /** @brief Frees a memory handle and associated memory.
       
   \arg \c memoryHandle memory handle returned by imageMemoryAlloc
 
@@ -1657,10 +1640,10 @@ If clipGetImage is called twice with the same parameters, then two separate imag
   @returns
   - kOfxStatOK if the memory was cleanly deleted
   - kOfxStatErrBadHandle if the value of \e memoryHandle was not a valid pointer returned by OfxImageEffectSuiteV1::imageMemoryAlloc
-  */   
-  OfxStatus (*imageMemoryFree)(OfxImageMemoryHandle memoryHandle);
+  */
+    OfxStatus (*imageMemoryFree)(OfxImageMemoryHandle memoryHandle);
 
-  /** @brief Lock the memory associated with a memory handle and make it available for use.
+    /** @brief Lock the memory associated with a memory handle and make it available for use.
 
   \arg \c memoryHandle memory handle returned by imageMemoryAlloc
   \arg \c returnedPtr where to the pointer to the locked memory
@@ -1680,10 +1663,9 @@ If clipGetImage is called twice with the same parameters, then two separate imag
   - kOfxStatErrBadHandle if the value of \e memoryHandle was not a valid pointer returned by OfxImageEffectSuiteV1::imageMemoryAlloc, null is placed in \e *returnedPtr
   - kOfxStatErrMemory if there was not enough memory to satisfy the call, \e *returnedPtr is set to NULL
   */
-  OfxStatus (*imageMemoryLock)(OfxImageMemoryHandle memoryHandle,
-			       void **returnedPtr);
+    OfxStatus (*imageMemoryLock)(OfxImageMemoryHandle memoryHandle, void **returnedPtr);
 
-  /** @brief Unlock allocated image data
+    /** @brief Unlock allocated image data
 
   \arg \c allocatedData pointer to memory previously returned by OfxImageEffectSuiteV1::imageAlloc
 
@@ -1701,11 +1683,9 @@ If clipGetImage is called twice with the same parameters, then two separate imag
   - kOfxStatOK if the memory was unlocked cleanly,
   - kOfxStatErrBadHandle if the value of \e memoryHandle was not a valid pointer returned by OfxImageEffectSuiteV1::imageMemoryAlloc, null is placed in \e *returnedPtr
   */
-  OfxStatus (*imageMemoryUnlock)(OfxImageMemoryHandle memoryHandle);
+    OfxStatus (*imageMemoryUnlock)(OfxImageMemoryHandle memoryHandle);
 
 } OfxImageEffectSuiteV1;
-
-
 
 /**
    \addtogroup StatusCodes
@@ -1722,7 +1702,6 @@ They range from 1000 until 1999
 /** @brief Error code for incorrect image formats */
 #define kOfxStatErrImageFormat ((int) 1000)
 
-
 /*@}*/
 /*@}*/
 
@@ -1730,6 +1709,4 @@ They range from 1000 until 1999
 }
 #endif
 
-
 #endif
-

@@ -37,9 +37,9 @@
     and if no success pass (OfxProgressSuiteV1*)
       fetchSuite(mHost->mHost->host, kOfxProgressSuite,1);
 */
-typedef struct OfxProgressSuiteV1 {
-
-  /** @brief Initiate a progress bar display.
+typedef struct OfxProgressSuiteV1
+{
+    /** @brief Initiate a progress bar display.
 
       Call this to initiate the display of a progress bar.
 
@@ -55,10 +55,9 @@ typedef struct OfxProgressSuiteV1 {
       - ::kOfxStatFailed - the progress object failed for some reason
       - ::kOfxStatErrBadHandle - effectInstance was invalid
    */
-  OfxStatus (*progressStart)(void *effectInstance,
-                             const char *label);
+    OfxStatus (*progressStart)(void *effectInstance, const char *label);
 
-  /** @brief Indicate how much of the processing task has been completed and reports on any abort status.
+    /** @brief Indicate how much of the processing task has been completed and reports on any abort status.
 
       \arg \c effectInstance the instance of the plugin this progress bar is
                                 associated with. It cannot be NULL.
@@ -69,9 +68,9 @@ typedef struct OfxProgressSuiteV1 {
       - ::kOfxStatReplyNo - the progress object was successfully updated and the task should abort
       - ::kOfxStatErrBadHandle - the progress handle was invalid,
   */
-  OfxStatus (*progressUpdate)(void *effectInstance, double progress);
+    OfxStatus (*progressUpdate)(void *effectInstance, double progress);
 
-  /** @brief Signal that we are finished with the progress meter.
+    /** @brief Signal that we are finished with the progress meter.
 
       Call this when you are done with the progress meter and no
       longer need it displayed.
@@ -85,15 +84,13 @@ typedef struct OfxProgressSuiteV1 {
       - ::kOfxStatOK - the progress object was successfully closed
       - ::kOfxStatErrBadHandle - the progress handle was invalid,
    */
-  OfxStatus (*progressEnd)(void *effectInstance);
+    OfxStatus (*progressEnd)(void *effectInstance);
 
-} OfxProgressSuiteV1 ;
+} OfxProgressSuiteV1;
 
-
-
-typedef struct OfxProgressSuiteV2 {
-
- /** @brief Initiate a progress bar display.
+typedef struct OfxProgressSuiteV2
+{
+    /** @brief Initiate a progress bar display.
 
       Call this to initiate the display of a progress bar.
 
@@ -114,10 +111,8 @@ typedef struct OfxProgressSuiteV2 {
       - ::kOfxStatFailed - the progress object failed for some reason
       - ::kOfxStatErrBadHandle - effectInstance was invalid
  */
-OfxStatus (*progressStart)(void *effectInstance,
-    const char *message,
-    const char *messageid);
-  /** @brief Indicate how much of the processing task has been completed and reports on any abort status.
+    OfxStatus (*progressStart)(void *effectInstance, const char *message, const char *messageid);
+    /** @brief Indicate how much of the processing task has been completed and reports on any abort status.
 
       \arg \c effectInstance the instance of the plugin this progress bar is
                                 associated with. It cannot be NULL.
@@ -128,9 +123,9 @@ OfxStatus (*progressStart)(void *effectInstance,
       - ::kOfxStatReplyNo - the progress object was successfully updated and the task should abort
       - ::kOfxStatErrBadHandle - the progress handle was invalid,
   */
-OfxStatus (*progressUpdate)(void *effectInstance, double progress);
+    OfxStatus (*progressUpdate)(void *effectInstance, double progress);
 
-  /** @brief Signal that we are finished with the progress meter.
+    /** @brief Signal that we are finished with the progress meter.
 
       Call this when you are done with the progress meter and no
       longer need it displayed.
@@ -144,8 +139,8 @@ OfxStatus (*progressUpdate)(void *effectInstance, double progress);
       - ::kOfxStatOK - the progress object was successfully closed
       - ::kOfxStatErrBadHandle - the progress handle was invalid,
    */
-OfxStatus (*progressEnd)(void *effectInstance);
+    OfxStatus (*progressEnd)(void *effectInstance);
 
-} OfxProgressSuiteV2 ;
+} OfxProgressSuiteV2;
 
 #endif
