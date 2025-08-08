@@ -4,7 +4,6 @@
 // Copyright OpenFX and contributors to the OpenFX project.
 // SPDX-License-Identifier: BSD-3-Clause
 
-
 #include "ofxCore.h"
 
 #ifdef __cplusplus
@@ -30,14 +29,13 @@ typedef struct OfxMutex *OfxMutexHandle;
 
 A function of this type is passed to OfxMultiThreadSuiteV1::multiThread to be launched in multiple threads.
  */
-typedef void (OfxThreadFunctionV1)(unsigned int threadIndex,
-				   unsigned int threadMax,
-				   void *customArg);
+typedef void(OfxThreadFunctionV1)(unsigned int threadIndex, unsigned int threadMax, void *customArg);
 
 /** @brief OFX suite that provides simple SMP style multi-processing
  */
-typedef struct OfxMultiThreadSuiteV1 {
-  /**@brief Function to spawn SMP threads
+typedef struct OfxMultiThreadSuiteV1
+{
+    /**@brief Function to spawn SMP threads
 
   \arg \c func function to call in each thread.
   \arg \c nThreads number of threads to launch
@@ -61,11 +59,9 @@ typedef struct OfxMultiThreadSuiteV1 {
   - ::kOfxStatErrExists, failed in an attempt to call multiThread recursively,
 
   */
-  OfxStatus (*multiThread)(OfxThreadFunctionV1 func,
-			   unsigned int nThreads,
-			   void *customArg);
-			  
-  /**@brief Function which indicates the number of CPUs available for SMP processing
+    OfxStatus (*multiThread)(OfxThreadFunctionV1 func, unsigned int nThreads, void *customArg);
+
+    /**@brief Function which indicates the number of CPUs available for SMP processing
 
   \arg \c nCPUs pointer to an integer where the result is returned
      
@@ -75,9 +71,9 @@ typedef struct OfxMultiThreadSuiteV1 {
   - ::kOfxStatOK, all was OK and the maximum number of threads is in nThreads.
   - ::kOfxStatFailed, the function failed to get the number of CPUs 
   */
-  OfxStatus (*multiThreadNumCPUs)(unsigned int *nCPUs);
+    OfxStatus (*multiThreadNumCPUs)(unsigned int *nCPUs);
 
-  /**@brief Function which indicates the index of the current thread
+    /**@brief Function which indicates the index of the current thread
 
   \arg \c threadIndex  pointer to an integer where the result is returned
 
@@ -89,17 +85,17 @@ typedef struct OfxMultiThreadSuiteV1 {
   - ::kOfxStatOK, all was OK and the maximum number of threads is in nThreads.
   - ::kOfxStatFailed, the function failed to return an index
   */
-  OfxStatus (*multiThreadIndex)(unsigned int *threadIndex);
+    OfxStatus (*multiThreadIndex)(unsigned int *threadIndex);
 
-  /**@brief Function to enquire if the calling thread was spawned by multiThread
+    /**@brief Function to enquire if the calling thread was spawned by multiThread
 
   @returns
   - 0 if the thread is not one spawned by multiThread
   - 1 if the thread was spawned by multiThread
   */
-  int (*multiThreadIsSpawnedThread)(void);
+    int (*multiThreadIsSpawnedThread)(void);
 
-  /** @brief Create a mutex
+    /** @brief Create a mutex
 
   \arg \c mutex where the new handle is returned
   \arg \c count initial lock count on the mutex. This can be negative.
@@ -109,9 +105,9 @@ typedef struct OfxMultiThreadSuiteV1 {
   @returns
   - kOfxStatOK - mutex is now valid and ready to go
   */
-  OfxStatus (*mutexCreate)(OfxMutexHandle *mutex, int lockCount);
+    OfxStatus (*mutexCreate)(OfxMutexHandle *mutex, int lockCount);
 
-  /** @brief Destroy a mutex
+    /** @brief Destroy a mutex
       
   Destroys a mutex intially created by mutexCreate.
   
@@ -119,9 +115,9 @@ typedef struct OfxMultiThreadSuiteV1 {
   - kOfxStatOK - if it destroyed the mutex
   - kOfxStatErrBadHandle - if the handle was bad
   */
-  OfxStatus (*mutexDestroy)(const OfxMutexHandle mutex);
+    OfxStatus (*mutexDestroy)(const OfxMutexHandle mutex);
 
-  /** @brief Blocking lock on the mutex
+    /** @brief Blocking lock on the mutex
 
   This trys to lock a mutex and blocks the thread it is in until the lock suceeds. 
 
@@ -131,9 +127,9 @@ typedef struct OfxMultiThreadSuiteV1 {
   - kOfxStatOK - if it got the lock
   - kOfxStatErrBadHandle - if the handle was bad
   */
-  OfxStatus (*mutexLock)(const OfxMutexHandle mutex);
+    OfxStatus (*mutexLock)(const OfxMutexHandle mutex);
 
-  /** @brief Unlock the mutex
+    /** @brief Unlock the mutex
 
   This  unlocks a mutex. Unlocking a mutex decreases its lock count by one.
   
@@ -141,9 +137,9 @@ typedef struct OfxMultiThreadSuiteV1 {
   - kOfxStatOK if it released the lock
   - kOfxStatErrBadHandle if the handle was bad
   */
-  OfxStatus (*mutexUnLock)(const OfxMutexHandle mutex);
+    OfxStatus (*mutexUnLock)(const OfxMutexHandle mutex);
 
-  /** @brief Non blocking attempt to lock the mutex
+    /** @brief Non blocking attempt to lock the mutex
 
   This attempts to lock a mutex, if it cannot, it returns and says so, rather than blocking.
 
@@ -154,13 +150,12 @@ typedef struct OfxMultiThreadSuiteV1 {
   - kOfxStatFailed - if it did not get the lock
   - kOfxStatErrBadHandle - if the handle was bad
   */
-  OfxStatus (*mutexTryLock)(const OfxMutexHandle mutex);
+    OfxStatus (*mutexTryLock)(const OfxMutexHandle mutex);
 
- } OfxMultiThreadSuiteV1;
+} OfxMultiThreadSuiteV1;
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif
