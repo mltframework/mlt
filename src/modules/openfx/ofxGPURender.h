@@ -28,14 +28,13 @@ extern "C" {
 /** @brief The name of the OpenGL render suite, used to fetch from a host
 via OfxHost::fetchSuite
 */
-#define kOfxOpenGLRenderSuite			"OfxImageEffectOpenGLRenderSuite"
+#define kOfxOpenGLRenderSuite "OfxImageEffectOpenGLRenderSuite"
 //#define kOfxOpenGLRenderSuite_ext		"OfxImageEffectOpenGLRenderSuite_ext"
-
 
 #ifndef kOfxBitDepthHalf
 /** @brief String used to label the OpenGL half float (16 bit floating
 point) sample format */
-  #define kOfxBitDepthHalf "OfxBitDepthHalf"
+#define kOfxBitDepthHalf "OfxBitDepthHalf"
 #endif
 
 /** @brief Indicates whether a host or plug-in can support OpenGL accelerated
@@ -58,7 +57,6 @@ V1.4: It is now expected from host reporting v1.4 that the plug-in can during in
 
 */
 #define kOfxImageEffectPropOpenGLRenderSupported "OfxImageEffectPropOpenGLRenderSupported"
-
 
 /** @brief Indicates the bit depths supported by a plug-in during OpenGL renders.
 
@@ -85,7 +83,6 @@ V1.4: It is now expected from host reporting v1.4 that the plug-in can during in
        - ::kOfxBitDepthFloat
 */
 #define kOfxOpenGLPropPixelDepth "OfxOpenGLPropPixelDepth"
-
 
 /** @brief Indicates that a plug-in SHOULD use OpenGL acceleration in
 the current action
@@ -114,7 +111,6 @@ v1.4:  kOfxImageEffectPropOpenGLEnabled should probably be checked in Instance C
 */
 #define kOfxImageEffectPropOpenGLEnabled "OfxImageEffectPropOpenGLEnabled"
 
-
 /** @brief Indicates the texture index of an image turned into an OpenGL
 texture by the host
 
@@ -132,7 +128,6 @@ texture by the host
 */
 #define kOfxImageEffectPropOpenGLTextureIndex "OfxImageEffectPropOpenGLTextureIndex"
 
-
 /** @brief Indicates the texture target enumerator of an image turned into
     an OpenGL texture by the host
 
@@ -149,7 +144,6 @@ texture by the host
 */
 #define kOfxImageEffectPropOpenGLTextureTarget "OfxImageEffectPropOpenGLTextureTarget"
 
-
 /** @name StatusReturnValues
 OfxStatus returns indicating that a OpenGL render error has occurred:
 
@@ -164,9 +158,9 @@ OfxStatus returns indicating that a OpenGL render error has occurred:
  * @{
  */
 /** @brief GPU render ran out of memory */
-#define kOfxStatGPUOutOfMemory  ((int) 1001)
+#define kOfxStatGPUOutOfMemory ((int) 1001)
 /** @brief OpenGL render ran out of memory (same as ``kOfxStatGPUOutOfMemory``) */
-#define kOfxStatGLOutOfMemory  ((int) 1001)
+#define kOfxStatGLOutOfMemory ((int) 1001)
 /** @brief GPU render failed in a non-memory-related way */
 #define kOfxStatGPURenderFailed ((int) 1002)
 /** @brief OpenGL render failed in a non-memory-related way (same as ``kOfxStatGPURenderFailed``) */
@@ -178,7 +172,7 @@ OfxStatus returns indicating that a OpenGL render error has occurred:
  */
 typedef struct OfxImageEffectOpenGLRenderSuiteV1
 {
-  /** @brief loads an image from an OFX clip as a texture into OpenGL
+    /** @brief loads an image from an OFX clip as a texture into OpenGL
 
       \arg \c clip   clip to load the image from
       \arg \c time   effect time to load the image from
@@ -257,13 +251,13 @@ returns
 
 */
 
-  OfxStatus (*clipLoadTexture)(OfxImageClipHandle clip,
-                               OfxTime       time,
-                               const char   *format,
-                               const OfxRectD     *region,
-                               OfxPropertySetHandle   *textureHandle);
+    OfxStatus (*clipLoadTexture)(OfxImageClipHandle clip,
+                                 OfxTime time,
+                                 const char *format,
+                                 const OfxRectD *region,
+                                 OfxPropertySetHandle *textureHandle);
 
-  /** @brief Releases the texture handle previously returned by
+    /** @brief Releases the texture handle previously returned by
 clipLoadTexture
 
   For input clips, this also deletes the texture from OpenGL.
@@ -284,10 +278,9 @@ clipLoadTexture
     - ::kOfxStatFailed - general failure for some reason,
     - ::kOfxStatErrBadHandle - the image handle was invalid,
 */
-  OfxStatus (*clipFreeTexture)(OfxPropertySetHandle   textureHandle);
+    OfxStatus (*clipFreeTexture)(OfxPropertySetHandle textureHandle);
 
-
-  /** @brief Request the host to minimize its GPU resource load
+    /** @brief Request the host to minimize its GPU resource load
 
   When a plug-in fails to allocate GPU resources, it can call this function to
   request the host to flush its GPU resources if it holds any.
@@ -303,10 +296,9 @@ clipLoadTexture
 resources,
     - ::kOfxStatReplyDefault - nothing the host could do..
  */
-  OfxStatus (*flushResources)( );
+    OfxStatus (*flushResources)();
 
 } OfxImageEffectOpenGLRenderSuiteV1;
-
 
 /** @brief Action called when an effect has just been attached to an OpenGL
 context.
@@ -367,7 +359,6 @@ A plug-in can return...
     attempt to run the plug-in in OpenGL render mode.
 */
 #define kOfxActionOpenGLContextDetached "kOfxActionOpenGLContextDetached"
-
 
 /** @page ofxOpenGLRender OpenGL Acceleration of Rendering
 
@@ -674,7 +665,7 @@ complete before returning from the render action.
  */
 #define kOfxImageEffectPropOpenCLRenderSupported "OfxImageEffectPropOpenCLRenderSupported"
 
- /** @brief Indicates whether a host or plug-in can support OpenCL Images render
+/** @brief Indicates whether a host or plug-in can support OpenCL Images render
 
     - Type - string X 1
     - Property Set - plug-in descriptor (read/write), host descriptor (read only)
@@ -683,9 +674,9 @@ complete before returning from the render action.
       - "false"  - in which case the host or plug-in does not support OpenCL Images render
       - "true"   - which means a host or plug-in can support OpenCL Images render
  */
-#define kOfxImageEffectPropOpenCLSupported				"OfxImageEffectPropOpenCLSupported"
+#define kOfxImageEffectPropOpenCLSupported "OfxImageEffectPropOpenCLSupported"
 
- /** @brief Indicates that a plug-in SHOULD use OpenCL render in
+/** @brief Indicates that a plug-in SHOULD use OpenCL render in
 the current action
 
    If a plug-in and host have both set
@@ -745,8 +736,7 @@ to determine whether Images or Buffers should be used if a plug-in supports both
 Note: the kOfxImagePropRowBytes property is not required to be set by the host, since
 OpenCL Images do not have the concept of row bytes.
 */
-#define kOfxImageEffectPropOpenCLImage					"OfxImageEffectPropOpenCLImage"
-
+#define kOfxImageEffectPropOpenCLImage "OfxImageEffectPropOpenCLImage"
 
 #define kOfxOpenCLProgramSuite "OfxOpenCLProgramSuite"
 
@@ -758,13 +748,13 @@ doing this: The host can add flags (such as -cl-denorms-are-zero) to the build c
 cache program binaries for performance (however, if the source of the program or the OpenCL
 environment changes, the host must recompile so some mechanism such as hashing must be used).
 */
-typedef struct OfxOpenCLProgramSuiteV1 {
+typedef struct OfxOpenCLProgramSuiteV1
+{
     /** @brief Compiles the OpenCL program */
-    OfxStatus(*compileProgram)(const char   *pszProgramSource,
-        int           fOptional,          // if non-zero, host may skip compiling on this call
-        void         *pResult);           // cast to cl_program*
+    OfxStatus (*compileProgram)(const char *pszProgramSource,
+                                int fOptional,  // if non-zero, host may skip compiling on this call
+                                void *pResult); // cast to cl_program*
 } OfxOpenCLProgramSuiteV1;
-
 
 /** @page ofxOpenCLRender OpenCL Acceleration of Rendering
 
@@ -831,7 +821,6 @@ Failure to do this will cause crashes or incorrect results when the host switche
 */
 
 /** @}*/ // end OpenCLRender doc group
-
 
 #ifdef __cplusplus
 }
