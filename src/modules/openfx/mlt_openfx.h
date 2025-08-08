@@ -21,58 +21,50 @@
 #ifndef MLT_OPENFX_H
 #define MLT_OPENFX_H
 
+#include "ofxCore.h"
+#include <dlfcn.h>
 #include <framework/mlt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <sys/types.h>
-#include <dlfcn.h>
-#include "ofxCore.h"
 
 typedef enum {
-  mltofx_prop_none    = 0,
-  mltofx_prop_int     = 1,
-  mltofx_prop_string  = 2,
-  mltofx_prop_double  = 8,
-  mltofx_prop_pointer = 16,
+    mltofx_prop_none = 0,
+    mltofx_prop_int = 1,
+    mltofx_prop_string = 2,
+    mltofx_prop_double = 8,
+    mltofx_prop_pointer = 16,
 } mltofx_property_type;
 
-void *
-mltofx_fetch_params (OfxPlugin      *plugin,
-		     mlt_properties  params);
+void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params);
 
-void
-mltofx_create_instance (OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect);
 
-void
-mltofx_begin_sequence_render (OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
 
-void
-mltofx_end_sequence_render (OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
 
-void
-mltofx_get_regions_of_interest (OfxPlugin *plugin, mlt_properties image_effect, double width, double height);
+void mltofx_get_regions_of_interest(OfxPlugin *plugin,
+                                    mlt_properties image_effect,
+                                    double width,
+                                    double height);
 
-void
-mltofx_get_clip_preferences (OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect);
 
-void
-mltofx_set_source_clip_data (OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
+void mltofx_set_source_clip_data(
+    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
 
-void
-mltofx_set_output_clip_data (OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
+void mltofx_set_output_clip_data(
+    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
 
-void
-mltofx_action_render (OfxPlugin *plugin, mlt_properties image_effect, int width, int height);
+void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height);
 
-void
-mltofx_destroy_instance (OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect);
 
-void
-mltofx_init_host_properties (OfxPropertySetHandle host_properties);
+void mltofx_init_host_properties(OfxPropertySetHandle host_properties);
 
-void
-mltofx_param_set_value (mlt_properties params, char *key, mltofx_property_type type, ...);
+void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_type type, ...);
 
 #endif
