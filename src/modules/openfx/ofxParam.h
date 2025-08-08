@@ -30,7 +30,6 @@ typedef struct OfxParamStruct *OfxParamHandle;
  */
 typedef struct OfxParamSetStruct *OfxParamSetHandle;
 
-
 /**
    \defgroup ParamTypeDefines Parameter Type definitions 
 
@@ -293,7 +292,7 @@ operation on the instance.
    modify the property).
 */
 #define kOfxPropParamSetNeedsSyncing "OfxPropParamSetNeedsSyncing"
- 
+
 /** @brief Flags whether a parameter is currently animating.
 
     - Type - int x 1
@@ -384,13 +383,13 @@ rendered output. Think of the what happens when you add a new key frame.
 */
 #define kOfxParamPropCacheInvalidation "OfxParamPropCacheInvalidation"
 
- /** @brief Used as a value for the ::kOfxParamPropCacheInvalidation property */
+/** @brief Used as a value for the ::kOfxParamPropCacheInvalidation property */
 #define kOfxParamInvalidateValueChange "OfxParamInvalidateValueChange"
 
- /** @brief Used as a value for the ::kOfxParamPropCacheInvalidation property */
+/** @brief Used as a value for the ::kOfxParamPropCacheInvalidation property */
 #define kOfxParamInvalidateValueChangeToEnd "OfxParamInvalidateValueChangeToEnd"
 
- /** @brief Used as a value for the ::kOfxParamPropCacheInvalidation property */
+/** @brief Used as a value for the ::kOfxParamPropCacheInvalidation property */
 #define kOfxParamInvalidateAll "OfxParamInvalidateAll"
 
 /** @brief A hint to the user as to how the parameter is to be used.
@@ -467,24 +466,23 @@ as to the interface of the parameter.
 /** @brief value for the ::kOfxParamDoubleTypeAngle property, indicating the parameter is to be interpreted as an absolute time from the start of the effect. See \ref ::kOfxParamPropDoubleType. */
 #define kOfxParamDoubleTypeAbsoluteTime "OfxParamDoubleTypeAbsoluteTime"
 
-
 /** @brief value for the ::kOfxParamPropDoubleType property, indicating a size in canonical coords in the X dimension. See \ref ::kOfxParamPropDoubleType. */
-#define kOfxParamDoubleTypeX  "OfxParamDoubleTypeX"
+#define kOfxParamDoubleTypeX "OfxParamDoubleTypeX"
 
 /** @brief value for the ::kOfxParamPropDoubleType property, indicating a size in canonical coords in the Y dimension. See \ref ::kOfxParamPropDoubleType. */
-#define kOfxParamDoubleTypeY  "OfxParamDoubleTypeY"
+#define kOfxParamDoubleTypeY "OfxParamDoubleTypeY"
 
 /** @brief value for the ::kOfxParamPropDoubleType property, indicating an absolute position in canonical coords in the X dimension. See \ref ::kOfxParamPropDoubleType. */
-#define kOfxParamDoubleTypeXAbsolute  "OfxParamDoubleTypeXAbsolute"
+#define kOfxParamDoubleTypeXAbsolute "OfxParamDoubleTypeXAbsolute"
 
 /** @brief value for the ::kOfxParamPropDoubleType property, indicating an absolute position in canonical coords in the Y dimension. See \ref ::kOfxParamPropDoubleType. */
-#define kOfxParamDoubleTypeYAbsolute  "OfxParamDoubleTypeYAbsolute"
+#define kOfxParamDoubleTypeYAbsolute "OfxParamDoubleTypeYAbsolute"
 
 /** @brief value for the ::kOfxParamPropDoubleType property, indicating a 2D size in canonical coords. See \ref ::kOfxParamPropDoubleType. */
-#define kOfxParamDoubleTypeXY  "OfxParamDoubleTypeXY"
+#define kOfxParamDoubleTypeXY "OfxParamDoubleTypeXY"
 
 /** @brief value for the ::kOfxParamPropDoubleType property, indicating a 2D position in canonical coords. See \ref ::kOfxParamPropDoubleType. */
-#define kOfxParamDoubleTypeXYAbsolute  "OfxParamDoubleTypeXYAbsolute"
+#define kOfxParamDoubleTypeXYAbsolute "OfxParamDoubleTypeXYAbsolute"
 
 /** @brief Describes in which coordinate system a spatial double parameter's default value is specified.
 
@@ -531,7 +529,6 @@ If set to 1, then the host is flagging that there is some sort of native user ov
 If set to 1, then a plugin is flaging to the host that the host should use a native UI overlay handle for the given parameter. A plugin can use this to keep a native look and feel for parameter handles. A plugin can use ::kOfxParamPropHasHostOverlayHandle to see if handles are available on the given parameter.
 */
 #define kOfxParamPropUseHostOverlayHandle "kOfxParamPropUseHostOverlayHandle"
-
 
 /** @brief Enables the display of a time marker on the host's time line to indicate the value of the absolute time param.
 
@@ -664,7 +661,6 @@ value occurs twice in the list; plugins should not do that.
 \since Version 1.5
 */
 #define kOfxParamPropChoiceOrder "OfxParamPropChoiceOrder"
-
 
 /** @brief Set a enumeration string in a StrChoice (string-valued choice) parameter.
 
@@ -820,19 +816,19 @@ It is an error not to set this property in a custom parameter during a plugin's 
 
 If set to 0, it implies the user can specify a new file name, not just a pre-existing one.
  */
-#define kOfxParamPropStringFilePathExists    "OfxParamPropStringFilePathExists"
+#define kOfxParamPropStringFilePathExists "OfxParamPropStringFilePathExists"
 
 /** @brief Used to set a string parameter to be single line, 
     value to be passed to a ::kOfxParamPropStringMode property */
-#define kOfxParamStringIsSingleLine    "OfxParamStringIsSingleLine"
+#define kOfxParamStringIsSingleLine "OfxParamStringIsSingleLine"
 
 /** @brief Used to set a string parameter to be multiple line, 
     value to be passed to a ::kOfxParamPropStringMode property */
-#define kOfxParamStringIsMultiLine     "OfxParamStringIsMultiLine"
+#define kOfxParamStringIsMultiLine "OfxParamStringIsMultiLine"
 
 /** @brief Used to set a string parameter to be a file path,
     value to be passed to a ::kOfxParamPropStringMode property */
-#define kOfxParamStringIsFilePath      "OfxParamStringIsFilePath"
+#define kOfxParamStringIsFilePath "OfxParamStringIsFilePath"
 
 /** @brief Used to set a string parameter to be a directory path,
     value to be passed to a ::kOfxParamPropStringMode property */
@@ -840,9 +836,9 @@ If set to 0, it implies the user can specify a new file name, not just a pre-exi
 
 /** @brief Use to set a string parameter to be a simple label, 
     value to be passed to a ::kOfxParamPropStringMode property  */
-#define kOfxParamStringIsLabel         "OfxParamStringIsLabel"
+#define kOfxParamStringIsLabel "OfxParamStringIsLabel"
 
-  /** @brief String value on the ::kOfxParamPropStringMode property of a
+/** @brief String value on the ::kOfxParamPropStringMode property of a
     string parameter (added in 1.3) */
 #define kOfxParamStringIsRichTextFormat "OfxParamStringIsRichTextFormat"
 
@@ -897,15 +893,15 @@ the ::kOfxParamPropCustomValue property with this on the outArgs handle.
 
 The interp value is a linear interpolation amount, however his may be derived from a cubic (or other) curve.
 */
-typedef OfxStatus (OfxCustomParamInterpFuncV1)(OfxParamSetHandle instance,
-					       OfxPropertySetHandle inArgs,
-					       OfxPropertySetHandle outArgs);
-
+typedef OfxStatus(OfxCustomParamInterpFuncV1)(OfxParamSetHandle instance,
+                                              OfxPropertySetHandle inArgs,
+                                              OfxPropertySetHandle outArgs);
 
 /** @brief The OFX suite used to define and manipulate user visible parameters 
  */
-typedef struct OfxParameterSuiteV1 {
-  /** @brief Defines a new parameter of the given type in a describe action
+typedef struct OfxParameterSuiteV1
+{
+    /** @brief Defines a new parameter of the given type in a describe action
 
   \arg \c paramSet    handle to the parameter set descriptor that will hold this parameter
   \arg \c paramType   type of the parameter to create, one of the kOfxParamType* #defines
@@ -926,12 +922,12 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatErrUnknown     - if the type is unknown
   - ::kOfxStatErrUnsupported - if the type is known but unsupported
   */
-  OfxStatus (*paramDefine)(OfxParamSetHandle paramSet,
-			   const char *paramType,
-			   const char *name,
-			   OfxPropertySetHandle *propertySet);
+    OfxStatus (*paramDefine)(OfxParamSetHandle paramSet,
+                             const char *paramType,
+                             const char *name,
+                             OfxPropertySetHandle *propertySet);
 
-  /** @brief Retrieves the handle for a parameter in a given parameter set
+    /** @brief Retrieves the handle for a parameter in a given parameter set
 
   \arg \c paramSet    instance of the plug-in to fetch the property handle from
   \arg \c name        parameter to ask about
@@ -945,12 +941,12 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatErrBadHandle  - if the plugin handle was invalid
   - ::kOfxStatErrUnknown    - if the type is unknown
   */
-  OfxStatus (*paramGetHandle)(OfxParamSetHandle paramSet,
-			      const char *name,
-			      OfxParamHandle *param,
-			      OfxPropertySetHandle *propertySet);
+    OfxStatus (*paramGetHandle)(OfxParamSetHandle paramSet,
+                                const char *name,
+                                OfxParamHandle *param,
+                                OfxPropertySetHandle *propertySet);
 
-  /** @brief Retrieves the property set handle for the given parameter set
+    /** @brief Retrieves the property set handle for the given parameter set
 
   \arg \c paramSet    parameter set to get the property set for
   \arg \c propHandle  pointer to a the property set handle, value is returedn her
@@ -962,10 +958,10 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatErrBadHandle  - if the paramter handle was invalid
   - ::kOfxStatErrUnknown    - if the type is unknown
   */
-  OfxStatus (*paramSetGetPropertySet)(OfxParamSetHandle paramSet,
-				      OfxPropertySetHandle *propHandle);
+    OfxStatus (*paramSetGetPropertySet)(OfxParamSetHandle paramSet,
+                                        OfxPropertySetHandle *propHandle);
 
-  /** @brief Retrieves the property set handle for the given parameter
+    /** @brief Retrieves the property set handle for the given parameter
 
   \arg \c param       parameter to get the property set for
   \arg \c propHandle  pointer to a the property set handle, value is returedn her
@@ -977,10 +973,9 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatErrBadHandle  - if the paramter handle was invalid
   - ::kOfxStatErrUnknown    - if the type is unknown
   */
-  OfxStatus (*paramGetPropertySet)(OfxParamHandle param,
-				   OfxPropertySetHandle *propHandle);
+    OfxStatus (*paramGetPropertySet)(OfxParamHandle param, OfxPropertySetHandle *propHandle);
 
-  /** @brief Gets the current value of a parameter,
+    /** @brief Gets the current value of a parameter,
 
   \arg \c paramHandle parameter handle to fetch value from
   \arg \c ...         one or more pointers to variables of the relevant type to hold the parameter's value
@@ -1005,11 +1000,9 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramGetValue)(OfxParamHandle  paramHandle,
-			     ...);
+    OfxStatus (*paramGetValue)(OfxParamHandle paramHandle, ...);
 
-
-  /** @brief Gets the value of a parameter at a specific time.
+    /** @brief Gets the value of a parameter at a specific time.
 
   \arg \c paramHandle parameter handle to fetch value from
   \arg \c time        at what point in time to look up the parameter
@@ -1023,11 +1016,9 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramGetValueAtTime)(OfxParamHandle  paramHandle,
-				   OfxTime time,
-				   ...);
+    OfxStatus (*paramGetValueAtTime)(OfxParamHandle paramHandle, OfxTime time, ...);
 
-  /** @brief Gets the derivative of a parameter at a specific time.
+    /** @brief Gets the derivative of a parameter at a specific time.
 
   \arg \c paramHandle parameter handle to fetch value from
   \arg \c time        at what point in time to look up the parameter
@@ -1045,11 +1036,9 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramGetDerivative)(OfxParamHandle  paramHandle,
-				  OfxTime time,
-				  ...);
+    OfxStatus (*paramGetDerivative)(OfxParamHandle paramHandle, OfxTime time, ...);
 
-  /** @brief Gets the integral of a parameter over a specific time range,
+    /** @brief Gets the integral of a parameter over a specific time range,
 
   \arg \c paramHandle parameter handle to fetch integral from
   \arg \c time1       where to start evaluating the integral
@@ -1068,11 +1057,9 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramGetIntegral)(OfxParamHandle  paramHandle,
-				OfxTime time1, OfxTime time2,
-				...);
+    OfxStatus (*paramGetIntegral)(OfxParamHandle paramHandle, OfxTime time1, OfxTime time2, ...);
 
-  /** @brief Sets the current value of a parameter
+    /** @brief Sets the current value of a parameter
 
   \arg \c paramHandle parameter handle to set value in
   \arg \c ...         one or more variables of the relevant type to hold the parameter's value
@@ -1091,10 +1078,9 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramSetValue)(OfxParamHandle  paramHandle,
-			     ...);
+    OfxStatus (*paramSetValue)(OfxParamHandle paramHandle, ...);
 
-  /** @brief Keyframes the value of a parameter at a specific time.
+    /** @brief Keyframes the value of a parameter at a specific time.
 
   \arg \c paramHandle parameter handle to set value in
   \arg \c time        at what point in time to set the keyframe
@@ -1112,12 +1098,11 @@ typedef struct OfxParameterSuiteV1 {
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramSetValueAtTime)(OfxParamHandle  paramHandle,
-				   OfxTime time,  // time in frames
-				   ...);
+    OfxStatus (*paramSetValueAtTime)(OfxParamHandle paramHandle,
+                                     OfxTime time, // time in frames
+                                     ...);
 
-
-/** @name Keyframe Handling
+    /** @name Keyframe Handling
 
 These functions allow the plug-in to delete and get information about keyframes.
 
@@ -1129,9 +1114,9 @@ Keyframe indices will change whenever keyframes are added, deleted, or moved in 
 whether by the host or by the plug-in.  They may vary between actions if the user
 changes a keyframe.  The keyframe indices will not change within a single action.
  */
-/** @{ */
+    /** @{ */
 
-  /** @brief Returns the number of keyframes in the parameter
+    /** @brief Returns the number of keyframes in the parameter
 
   \arg \c paramHandle parameter handle to interrogate
   \arg \c numberOfKeys pointer to integer where the return value is placed
@@ -1145,10 +1130,9 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramGetNumKeys)(OfxParamHandle  paramHandle,
-			       unsigned int  *numberOfKeys);
+    OfxStatus (*paramGetNumKeys)(OfxParamHandle paramHandle, unsigned int *numberOfKeys);
 
-  /** @brief Returns the time of the nth key
+    /** @brief Returns the time of the nth key
 
   \arg \c paramHandle parameter handle to interrogate
   \arg \c nthKey      which key to ask about (0 to paramGetNumKeys -1), ordered by time
@@ -1159,12 +1143,9 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   - ::kOfxStatErrBadIndex   - the nthKey does not exist
   */
-  OfxStatus (*paramGetKeyTime)(OfxParamHandle  paramHandle,
-			       unsigned int nthKey,
-			       OfxTime *time);
+    OfxStatus (*paramGetKeyTime)(OfxParamHandle paramHandle, unsigned int nthKey, OfxTime *time);
 
-
-  /** @brief Finds the index of a keyframe at/before/after a specified time.
+    /** @brief Finds the index of a keyframe at/before/after a specified time.
 
   \arg \c paramHandle parameter handle to search
   \arg \c time        what time to search from
@@ -1179,12 +1160,12 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatFailed        - if the search failed to find a key
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramGetKeyIndex)(OfxParamHandle  paramHandle,
-				OfxTime time,
-				int     direction,
-				int    *index);
+    OfxStatus (*paramGetKeyIndex)(OfxParamHandle paramHandle,
+                                  OfxTime time,
+                                  int direction,
+                                  int *index);
 
-  /** @brief Deletes a keyframe if one exists at the given time.
+    /** @brief Deletes a keyframe if one exists at the given time.
 
   \arg \c paramHandle parameter handle to delete the key from
   \arg \c time        time at which a keyframe is
@@ -1194,10 +1175,9 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   - ::kOfxStatErrBadIndex   - no key at the given time
   */
-  OfxStatus (*paramDeleteKey)(OfxParamHandle  paramHandle,
-			      OfxTime time);
+    OfxStatus (*paramDeleteKey)(OfxParamHandle paramHandle, OfxTime time);
 
-  /** @brief Deletes all keyframes from a parameter.
+    /** @brief Deletes all keyframes from a parameter.
 
   \arg \c paramHandle parameter handle to delete the keys from
   \arg \c name        parameter to delete the keyframes frome is
@@ -1209,11 +1189,11 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramDeleteAllKeys)(OfxParamHandle  paramHandle);
+    OfxStatus (*paramDeleteAllKeys)(OfxParamHandle paramHandle);
 
-/** @} */
+    /** @} */
 
-  /** @brief Copies one parameter to another, including any animation etc...
+    /** @brief Copies one parameter to another, including any animation etc...
 
   \arg \c paramTo     parameter to set
   \arg \c paramFrom   parameter to copy from
@@ -1234,10 +1214,12 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatOK       - all was OK
   - ::kOfxStatErrBadHandle  - if the parameter handle was invalid
   */
-  OfxStatus (*paramCopy)(OfxParamHandle  paramTo, OfxParamHandle  paramFrom, OfxTime dstOffset, const OfxRangeD *frameRange);
+    OfxStatus (*paramCopy)(OfxParamHandle paramTo,
+                           OfxParamHandle paramFrom,
+                           OfxTime dstOffset,
+                           const OfxRangeD *frameRange);
 
-
-  /** @brief Used to group any parameter changes for undo/redo purposes
+    /** @brief Used to group any parameter changes for undo/redo purposes
 
   \arg \c paramSet    the parameter set in which this is happening
   \arg \c name        label to attach to any undo/redo string UTF8
@@ -1255,9 +1237,9 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatErrBadHandle  - if the instance handle was invalid
 
   */
-  OfxStatus (*paramEditBegin)(OfxParamSetHandle paramSet, const char *name); 
+    OfxStatus (*paramEditBegin)(OfxParamSetHandle paramSet, const char *name);
 
-  /** @brief Used to group any parameter changes for undo/redo purposes
+    /** @brief Used to group any parameter changes for undo/redo purposes
 
   \arg \c paramSet    parameter set in which this is happening
 
@@ -1274,13 +1256,12 @@ changes a keyframe.  The keyframe indices will not change within a single action
   - ::kOfxStatErrBadHandle  - if the instance handle was invalid
 
   */
-  OfxStatus (*paramEditEnd)(OfxParamSetHandle paramSet);
- } OfxParameterSuiteV1;
+    OfxStatus (*paramEditEnd)(OfxParamSetHandle paramSet);
+} OfxParameterSuiteV1;
 
 #ifdef __cplusplus
 }
 #endif
-
 
 /** @file ofxParam.h
  
@@ -1288,6 +1269,5 @@ changes a keyframe.  The keyframe indices will not change within a single action
 
   For more details go see @ref ParametersPage
 */
-
 
 #endif

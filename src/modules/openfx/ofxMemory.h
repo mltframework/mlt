@@ -4,7 +4,6 @@
 // Copyright OpenFX and contributors to the OpenFX project.
 // SPDX-License-Identifier: BSD-3-Clause
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,8 +18,9 @@ For images, you should use the memory allocation functions in the image effect s
 
 \note C++ plugin developers will need to redefine new and delete as skins ontop of this suite.
  */
-typedef struct OfxMemorySuiteV1 {
-  /** @brief Allocate memory.
+typedef struct OfxMemorySuiteV1
+{
+    /** @brief Allocate memory.
       
   \arg \c handle	- effect instance to assosciate with this memory allocation, or NULL.
   \arg \c nBytes        number of bytes to allocate
@@ -33,12 +33,10 @@ typedef struct OfxMemorySuiteV1 {
   - ::kOfxStatOK the memory was sucessfully allocated
   - ::kOfxStatErrMemory the request could not be met and no memory was allocated
 
-  */   
-  OfxStatus (*memoryAlloc)(void *handle, 
-			   size_t nBytes,
-			   void **allocatedData);
-	
-  /** @brief Frees memory.
+  */
+    OfxStatus (*memoryAlloc)(void *handle, size_t nBytes, void **allocatedData);
+
+    /** @brief Frees memory.
       
   \arg \c allocatedData pointer to memory previously returned by OfxMemorySuiteV1::memoryAlloc
 
@@ -48,16 +46,13 @@ typedef struct OfxMemorySuiteV1 {
   - ::kOfxStatOK the memory was sucessfully freed
   - ::kOfxStatErrBadHandle \e allocatedData was not a valid pointer returned by OfxMemorySuiteV1::memoryAlloc
 
-  */   
-  OfxStatus (*memoryFree)(void *allocatedData);
- } OfxMemorySuiteV1;
-
+  */
+    OfxStatus (*memoryFree)(void *allocatedData);
+} OfxMemorySuiteV1;
 
 /** @file ofxMemory.h
     This file contains the API for general purpose memory allocation from a host.
 */
-
-
 
 #ifdef __cplusplus
 }
