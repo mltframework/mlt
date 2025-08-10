@@ -45,6 +45,8 @@ public:
     // in case we change our mind later and want to convert on the CPU instead.
     mlt_image_format get_format() const { return m_format; }
 
+    void set_texture_num(GLuint texture_num);
+
 private:
     mlt_image_format m_format;
     unsigned m_width, m_height;

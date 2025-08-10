@@ -68,4 +68,5 @@ out
 src/swig/ruby/markdown/
 CMakeLists.txt.user
 .cache/
-
+.DS_Store
+MLT.*

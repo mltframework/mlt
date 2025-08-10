@@ -375,8 +375,21 @@ static void set_movit_parameters(GlslChain *chain, mlt_service service, mlt_fram
     if (service == (mlt_service) -1) {
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
         MltInput *input = chain->inputs[producer];
-        if (input)
-            input->set_pixel_data(GlslManager::get_input_pixel_pointer(producer, frame));
+        if (input) {
+            uint8_t *pixel_data = GlslManager::get_input_pixel_pointer(producer, frame);
+            if (input->get_format() == mlt_image_opengl_texture) {
+                // For OpenGL texture format, pixel_data contains the texture ID
+                if (pixel_data) {
+                    GLuint texture_id = *((GLuint*)pixel_data);
+                    input->set_texture_num(texture_id);
+                    mlt_log_debug(NULL, "Setting OpenGL texture ID: %u\n", texture_id);
+                } else {
+                    mlt_log_error(NULL, "OpenGL texture format but no pixel data available\n");
+                }
+            } else {
+                input->set_pixel_data(pixel_data);
+            }
+        }
         return;
     }
 
@@ -552,6 +565,11 @@ static MltInput *create_input(mlt_properties properties,
         ycbcr_format.chroma_subsampling_y = 1;
         ycbcr_format.num_levels = 1024;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
+    } else if (format == mlt_image_opengl_texture) {
+        // Handle OpenGL texture input - VideoToolbox textures are converted to GL_RGB8
+        // in the producer, so we use FlatInput for packed RGB data
+        input->useFlatInput(FORMAT_RGB, width, height);
+        // The texture ID will be set via set_texture_num() when pixel data is provided
     }
     return input;
 }
@@ -566,10 +584,18 @@ static uint8_t *make_input_copy(mlt_image_format format, uint8_t *image, int wid
         return NULL;
     }
 
-    int img_size = mlt_image_format_size(format, width, height, NULL);
+    int img_size;
+    if (format == mlt_image_opengl_texture) {
+        img_size = sizeof(GLuint);  // Only need space for texture ID
+    } else {
+        img_size = mlt_image_format_size(format, width, height, NULL);
+    }
     uint8_t *img_copy = (uint8_t *) mlt_pool_alloc(img_size);
     if (format == mlt_image_yuv422) {
         yuv422_to_yuv422p(image, img_copy, width, height);
+    } else if (format == mlt_image_opengl_texture) {
+        // For OpenGL texture, copy the texture ID (stored as GLuint)
+        memcpy(img_copy, image, sizeof(GLuint));
     } else {
         memcpy(img_copy, image, img_size);
     }
@@ -599,8 +625,8 @@ static int convert_image(mlt_frame frame,
         return convert_on_cpu(frame, image, format, output_format);
 
     // Do non-GL image conversions on a CPU-based image converter.
-    if (*format != mlt_image_movit && output_format != mlt_image_movit
-        && output_format != mlt_image_opengl_texture)
+    if (*format != mlt_image_movit && *format != mlt_image_opengl_texture 
+        && output_format != mlt_image_movit && output_format != mlt_image_opengl_texture)
         return convert_on_cpu(frame, image, format, output_format);
 
     int error = 0;
@@ -738,6 +764,17 @@ static int convert_image(mlt_frame frame,
                 input->set_pixel_data(planar);
                 error = movit_render(chain, frame, format, output_format, width, height, image);
                 mlt_pool_release(planar);
+            } else if (*format == mlt_image_opengl_texture) {
+                // For OpenGL texture, extract texture ID and set it directly
+                if (*image) {
+                    GLuint texture_id = *((GLuint*)*image);
+                    input->set_texture_num(texture_id);
+                    mlt_log_debug(NULL, "Setting OpenGL texture ID for direct conversion: %u\n", texture_id);
+                    error = movit_render(chain, frame, format, output_format, width, height, image);
+                } else {
+                    mlt_log_error(NULL, "OpenGL texture format but no image data available\n");
+                    error = 1;
+                }
             } else {
                 input->set_pixel_data(*image);
                 error = movit_render(chain, frame, format, output_format, width, height, image);
