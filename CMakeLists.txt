@@ -197,7 +197,7 @@ if(WIN32)
   endif()
 endif()
 
-pkg_check_modules(sdl2 IMPORTED_TARGET sdl2)
+find_package(SDL2)
 
 if(MOD_QT OR MOD_QT6 OR MOD_PLUS)
   pkg_check_modules(FFTW IMPORTED_TARGET fftw3)
@@ -411,7 +411,7 @@ if(MOD_SDL1)
 endif()
 
 if(MOD_SDL2)
-  if(TARGET PkgConfig::sdl2)
+  if(SDL2_FOUND)
     list(APPEND MLT_SUPPORTED_COMPONENTS sdl2)
   else()
     set(MOD_SDL2 OFF)
