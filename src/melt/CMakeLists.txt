@@ -15,6 +15,10 @@ if(SDL2_FOUND AND NOT ANDROID)
     endif()
 endif()
 
+if(MSVC)
+  target_link_libraries(melt PRIVATE msvccompat)
+endif()
+
 if(MINGW)
   target_link_options(melt PRIVATE -mconsole)
 endif()

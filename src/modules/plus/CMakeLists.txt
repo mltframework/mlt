@@ -42,7 +42,9 @@ add_custom_target(Other_plus_Files SOURCES
 target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltplus PRIVATE mlt Threads::Threads)
-if(NOT MSVC)
+if(MSVC)
+  target_link_libraries(mltplus PRIVATE msvccompat)
+else()
   target_link_libraries(mltplus PRIVATE m)
 endif()
 
