@@ -130,3 +130,18 @@ void MltInput::invalidate_pixel_data()
         ycbcr->invalidate_pixel_data();
     }
 }
+
+void MltInput::set_texture_num(GLuint texture_num)
+{
+    if (!input) {
+        mlt_log_error(NULL, "MltInput::set_texture_num called without input\n");
+        return;
+    }
+
+    if (isRGB) {
+        FlatInput *flat = (FlatInput *) input;
+        flat->set_texture_num(texture_num);
+    } else {
+        mlt_log_error(NULL, "MltInput::set_texture_num called without RGB FlatInput\n");
+    }
+}
