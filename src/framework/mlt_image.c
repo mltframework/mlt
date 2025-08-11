@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_mlt_image_s
  *
- * Copyright (C) 2020-2024 Meltytech, LLC
+ * Copyright (C) 2020-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

@@ -1,6 +1,6 @@
 /*
  * filter_qtext.cpp -- text overlay filter
- * Copyright (c) 2018-2021 Meltytech, LLC
+ * Copyright (c) 2018-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

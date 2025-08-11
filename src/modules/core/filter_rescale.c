@@ -1,6 +1,6 @@
 /*
  * filter_rescale.c -- scale the producer video frame size to match the consumer
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

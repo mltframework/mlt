@@ -170,7 +170,7 @@ mlt_repository mlt_repository_init(const char *directory)
                                 __FUNCTION__,
                                 object_name,
                                 dlerror());
-                
+
                 dlclose(object);
             }
         } else if (strstr(object_name, "libmlt")) {

@@ -1,6 +1,6 @@
 /*
  * filter_pillar_echo.c -- filter to interpolate pixels outside an area of interest
- * Copyright (c) 2020-2023 Meltytech, LLC
+ * Copyright (c) 2020-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,7 +59,7 @@ typedef struct
     mlt_rect rect;
 } scale_sliced_desc;
 
-static int scale_sliced_proc_rgb32(int id, int index, int jobs, void *data)
+static int scale_sliced_proc_rgba32(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
     scale_sliced_desc *desc = ((scale_sliced_desc *) data);
@@ -152,7 +152,7 @@ static int scale_sliced_proc_rgb32(int id, int index, int jobs, void *data)
     return 0;
 }
 
-static int scale_sliced_proc_rgb64(int id, int index, int jobs, void *data)
+static int scale_sliced_proc_rgba64(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
     scale_sliced_desc *desc = ((scale_sliced_desc *) data);
@@ -272,9 +272,9 @@ static void bilinear_scale_rgba(mlt_image src, mlt_image dst, mlt_rect rect)
         desc.rect.y = rect.y + (rect.h - desc.rect.h) / 2.0;
     }
     if (src->format == mlt_image_rgb) {
-        mlt_slices_run_normal(0, scale_sliced_proc_rgb32, &desc);
+        mlt_slices_run_normal(0, scale_sliced_proc_rgba32, &desc);
     } else {
-        mlt_slices_run_normal(0, scale_sliced_proc_rgb64, &desc);
+        mlt_slices_run_normal(0, scale_sliced_proc_rgba64, &desc);
     }
 }
 

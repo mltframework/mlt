@@ -1,6 +1,6 @@
 /*
  * filter_gpsgraphic.cpp -- draws gps related graphics
- * Copyright (c) 2015-2022 Meltytech, LLC
+ * Copyright (c) 2015-2025 Meltytech, LLC
  * Original author: Daniel F
  *
  * This library is free software; you can redistribute it and/or

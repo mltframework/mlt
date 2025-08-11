@@ -1,6 +1,6 @@
 /*
  * producer_colour.c
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -190,12 +190,12 @@ static int producer_get_image(mlt_frame frame,
                 break;
             case mlt_image_rgba64: {
                 uint16_t *p16 = (uint16_t *) p;
-                const int pixel_count = *width * *height;
-                for (int j = 0; j < pixel_count; j++) {
-                    *p16++ = color.r << 8;
-                    *p16++ = color.g << 8;
-                    *p16++ = color.b << 8;
-                    *p16++ = color.a << 8;
+                const int component_count = *width * *height * 4;
+                for (int j = 0; j < component_count; j += 4) {
+                    p16[j] = color.r << 8;
+                    p16[j + 1] = color.g << 8;
+                    p16[j + 2] = color.b << 8;
+                    p16[j + 3] = color.a << 8;
                 }
                 break;
             }

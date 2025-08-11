@@ -1,6 +1,6 @@
 /*
  * filter_lightshow.cpp -- animate color to the audio
- * Copyright (C) 2015-2020 Meltytech, LLC
+ * Copyright (C) 2015-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

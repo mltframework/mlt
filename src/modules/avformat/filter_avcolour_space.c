@@ -1,6 +1,6 @@
 /*
  * filter_avcolour_space.c -- Colour space filter
- * Copyright (C) 2004-2024 Meltytech, LLC
+ * Copyright (C) 2004-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

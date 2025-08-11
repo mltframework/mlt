@@ -1,6 +1,6 @@
 /*
  * filter_audiospectrum.cpp -- audio spectrum visualization filter
- * Copyright (c) 2015-2022 Meltytech, LLC
+ * Copyright (c) 2015-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

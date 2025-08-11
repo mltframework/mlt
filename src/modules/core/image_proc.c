@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Meltytech, LLC
+ * Copyright (c) 2022-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

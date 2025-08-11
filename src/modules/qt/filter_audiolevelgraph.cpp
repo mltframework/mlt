@@ -1,6 +1,6 @@
 /*
  * filter_audiolevel.cpp -- audio level visualization filter
- * Copyright (c) 2021-2022 Meltytech, LLC
+ * Copyright (c) 2021-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

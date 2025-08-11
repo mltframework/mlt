@@ -1,6 +1,6 @@
 /*
  * filter_resize.c -- resizing filter
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
