@@ -83,7 +83,7 @@ target_compile_options(mlt PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mlt PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 
 if(MSVC)
-  target_link_libraries(mlt PRIVATE PThreads4W::PThreads4W)
+  target_link_libraries(mlt PRIVATE msvccompat PThreads4W::PThreads4W)
 else()
   target_link_libraries(mlt PRIVATE m)
 endif()
