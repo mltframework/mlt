@@ -220,13 +220,18 @@ endif()
 
 if(MOD_AVFORMAT)
   pkg_check_modules(libavformat IMPORTED_TARGET libavformat)
-  pkg_check_modules(libswscale IMPORTED_TARGET libswscale)
-  pkg_check_modules(libavutil IMPORTED_TARGET libavutil)
-  if(TARGET PkgConfig::libavformat AND TARGET PkgConfig::libswscale AND TARGET PkgConfig::libavutil)
-    pkg_check_modules(libavcodec IMPORTED_TARGET libavcodec)
-    pkg_check_modules(libavfilter IMPORTED_TARGET libavfilter)
-    pkg_check_modules(libavdevice IMPORTED_TARGET libavdevice)
-    pkg_check_modules(libswresample IMPORTED_TARGET libswresample)
+  find_package(FFmpeg COMPONENTS
+    AVFORMAT
+    SWSCALE
+    AVUTIL
+  )
+  if(AVFORMAT_FOUND AND SWSCALE_FOUND AND AVUTIL_FOUND)
+    find_package(FFmpeg COMPONENTS
+      AVCODEC
+      AVFILTER
+      AVDEVICE
+      SWRESAMPLE
+    )
     list(APPEND MLT_SUPPORTED_COMPONENTS avformat)
   else()
     set(MOD_AVFORMAT OFF)
