@@ -85,65 +85,6 @@ int init_qimage(mlt_producer producer, const char *filename)
     return 1;
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
-static QImage *reorient_with_exif(producer_qimage self, int image_idx, QImage *qimage)
-{
-#ifdef USE_EXIF
-    mlt_properties producer_props = MLT_PRODUCER_PROPERTIES(&self->parent);
-    ExifData *d = exif_data_new_from_file(mlt_properties_get_value(self->filenames, image_idx));
-    ExifEntry *entry;
-    int exif_orientation = 0;
-    /* get orientation and rotate image accordingly if necessary */
-    if (d) {
-        if ((entry = exif_content_get_entry(d->ifd[EXIF_IFD_0], EXIF_TAG_ORIENTATION)))
-            exif_orientation = exif_get_short(entry->data, exif_data_get_byte_order(d));
-
-        /* Free the EXIF data */
-        exif_data_unref(d);
-    }
-
-    // Remember EXIF value, might be useful for someone
-    mlt_properties_set_int(producer_props, "_exif_orientation", exif_orientation);
-
-    if (exif_orientation > 1) {
-        // Rotate image according to exif data
-        QImage processed;
-        QTransform matrix;
-
-        switch (exif_orientation) {
-        case 2:
-            matrix.scale(-1, 1);
-            break;
-        case 3:
-            matrix.rotate(180);
-            break;
-        case 4:
-            matrix.scale(1, -1);
-            break;
-        case 5:
-            matrix.rotate(270);
-            matrix.scale(-1, 1);
-            break;
-        case 6:
-            matrix.rotate(90);
-            break;
-        case 7:
-            matrix.rotate(90);
-            matrix.scale(-1, 1);
-            break;
-        case 8:
-            matrix.rotate(270);
-            break;
-        }
-        processed = qimage->transformed(matrix);
-        delete qimage;
-        qimage = new QImage(processed);
-    }
-#endif
-    return qimage;
-}
-#endif
-
 int refresh_qimage(producer_qimage self, mlt_frame frame, int enable_caching)
 {
     // Obtain properties of frame and producer
@@ -175,11 +116,8 @@ int refresh_qimage(producer_qimage self, mlt_frame frame, int enable_caching)
         self->current_image = NULL;
         QImageReader reader;
         QImage *qimage;
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
         // Use Qt's orientation detection
         reader.setAutoTransform(!disable_exif);
-#endif
         QString filename = QString::fromUtf8(mlt_properties_get_value(self->filenames, image_idx));
         if (filename.isEmpty()) {
             filename = QString::fromUtf8(mlt_properties_get(producer_props, "resource"));
@@ -217,13 +155,6 @@ int refresh_qimage(producer_qimage self, mlt_frame frame, int enable_caching)
         self->qimage = qimage;
 
         if (!qimage->isNull()) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
-            // Read the exif value for this file
-            if (!disable_exif) {
-                qimage = reorient_with_exif(self, image_idx, qimage);
-                self->qimage = qimage;
-            }
-#endif
             if (enable_caching) {
                 // Register qimage for destruction and reuse
                 mlt_cache_item_close(self->qimage_cache);
@@ -331,7 +262,6 @@ void refresh_image(producer_qimage self,
 
         // Copy the image
         int image_size;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
         if (has_alpha) {
             self->format = mlt_image_rgba;
             scaled = scaled.convertToFormat(QImage::Format_RGBA8888);
@@ -348,39 +278,6 @@ void refresh_image(producer_qimage self,
                 memcpy(&self->current_image[3 * y * width], values, 3 * width);
             }
         }
-#else
-        self->format = has_alpha ? mlt_image_rgba : mlt_image_rgb;
-        image_size
-            = mlt_image_format_size(self->format, self->current_width, self->current_height, NULL);
-        self->current_image = (uint8_t *) mlt_pool_alloc(image_size);
-        int y = self->current_height + 1;
-        uint8_t *dst = self->current_image;
-        if (has_alpha) {
-            while (--y) {
-                QRgb *src = (QRgb *) scaled.scanLine(self->current_height - y);
-                int x = self->current_width + 1;
-                while (--x) {
-                    *dst++ = qRed(*src);
-                    *dst++ = qGreen(*src);
-                    *dst++ = qBlue(*src);
-                    *dst++ = qAlpha(*src);
-                    ++src;
-                }
-            }
-        } else {
-            while (--y) {
-                QRgb *src = (QRgb *) scaled.scanLine(self->current_height - y);
-                int x = self->current_width + 1;
-                while (--x) {
-                    *dst++ = qRed(*src);
-                    *dst++ = qGreen(*src);
-                    *dst++ = qBlue(*src);
-                    ++src;
-                }
-            }
-        }
-#endif
-
         // Convert image to requested format
         if (format != mlt_image_none && format != mlt_image_movit && format != self->format
             && enable_caching) {
@@ -479,8 +376,6 @@ int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const
         // handle picture sequences
         int i = mlt_properties_get_int(properties, "begin");
         int keyvalue = 0;
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
         for (int gap = 0; gap < 100;) {
             QString full = QString::asprintf(filename, i++);
             if (full == filename) {
@@ -496,22 +391,6 @@ int load_sequence_sprintf(producer_qimage self, mlt_properties properties, const
                 gap++;
             }
         }
-#else
-        char full[1024];
-        char key[50];
-
-        for (int gap = 0; gap < 100;) {
-            struct stat buf;
-            snprintf(full, 1023, filename, i++);
-            if (mlt_stat(full, &buf) == 0) {
-                sprintf(key, "%d", keyvalue++);
-                mlt_properties_set(self->filenames, key, full);
-                gap = 0;
-            } else {
-                gap++;
-            }
-        }
-#endif
         if (mlt_properties_count(self->filenames) > 0) {
             mlt_properties_set_int(properties, "ttl", 1);
             result = 1;
