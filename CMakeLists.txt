@@ -575,6 +575,7 @@ if(CLANG_FORMAT)
     list(FILTER FORMAT_FILES EXCLUDE REGEX "/.*/xine/xineutils.h")
     list(FILTER FORMAT_FILES EXCLUDE REGEX "/.*/xine/yadif.*")
     list(FILTER FORMAT_FILES EXCLUDE REGEX "/.*/win32")
+    list(FILTER FORMAT_FILES EXCLUDE REGEX "/.*/msvc/libgen")
     add_custom_target(clang-format COMMAND
       ${CLANGFORMAT_EXECUTABLE} -style=file -i ${FORMAT_FILES}
     )
