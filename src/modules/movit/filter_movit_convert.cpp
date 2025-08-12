@@ -380,7 +380,7 @@ static void set_movit_parameters(GlslChain *chain, mlt_service service, mlt_fram
             if (input->get_format() == mlt_image_opengl_texture) {
                 // For OpenGL texture format, pixel_data contains the texture ID
                 if (pixel_data) {
-                    GLuint texture_id = *((GLuint*)pixel_data);
+                    GLuint texture_id = *((GLuint *) pixel_data);
                     input->set_texture_num(texture_id);
                     mlt_log_debug(NULL, "Setting OpenGL texture ID: %u\n", texture_id);
                 } else {
@@ -586,7 +586,7 @@ static uint8_t *make_input_copy(mlt_image_format format, uint8_t *image, int wid
 
     int img_size;
     if (format == mlt_image_opengl_texture) {
-        img_size = sizeof(GLuint);  // Only need space for texture ID
+        img_size = sizeof(GLuint); // Only need space for texture ID
     } else {
         img_size = mlt_image_format_size(format, width, height, NULL);
     }
@@ -625,7 +625,7 @@ static int convert_image(mlt_frame frame,
         return convert_on_cpu(frame, image, format, output_format);
 
     // Do non-GL image conversions on a CPU-based image converter.
-    if (*format != mlt_image_movit && *format != mlt_image_opengl_texture 
+    if (*format != mlt_image_movit && *format != mlt_image_opengl_texture
         && output_format != mlt_image_movit && output_format != mlt_image_opengl_texture)
         return convert_on_cpu(frame, image, format, output_format);
 
@@ -767,9 +767,11 @@ static int convert_image(mlt_frame frame,
             } else if (*format == mlt_image_opengl_texture) {
                 // For OpenGL texture, extract texture ID and set it directly
                 if (*image) {
-                    GLuint texture_id = *((GLuint*)*image);
+                    GLuint texture_id = *((GLuint *) *image);
                     input->set_texture_num(texture_id);
-                    mlt_log_debug(NULL, "Setting OpenGL texture ID for direct conversion: %u\n", texture_id);
+                    mlt_log_debug(NULL,
+                                  "Setting OpenGL texture ID for direct conversion: %u\n",
+                                  texture_id);
                     error = movit_render(chain, frame, format, output_format, width, height, image);
                 } else {
                     mlt_log_error(NULL, "OpenGL texture format but no image data available\n");

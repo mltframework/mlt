@@ -61,6 +61,17 @@
 #endif
 #include <epoxy/gl.h>
 
+// Linux VAAPI headers
+#ifdef __linux__
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <drm/drm_fourcc.h>
+#include <libavutil/hwcontext_vaapi.h>
+#include <unistd.h>
+#include <va/va.h>
+#include <va/va_drmcommon.h>
+#endif
+
 // System header files
 #include <limits.h>
 #include <math.h>
@@ -79,46 +90,56 @@
 #define VFR_THRESHOLD \
     (3) // The minimum number of video frames with differing durations to be considered VFR.
 
-
 #ifdef NDEBUG
 #define check_gl_error()
 #else
-#define check_gl_error() { GLenum err = glGetError(); if (err != GL_NO_ERROR) { abort_gl_error(err, __FILE__, __LINE__); } }
+#define check_gl_error() \
+    { \
+        GLenum err = glGetError(); \
+        if (err != GL_NO_ERROR) { \
+            abort_gl_error(err, __FILE__, __LINE__); \
+        } \
+    }
 #endif
 
 static void abort_gl_error(GLenum err, const char *filename, int line)
 {
-	const char *err_text = "unknown";
+    const char *err_text = "unknown";
 
-	// All errors listed in the glGetError(3G) man page.
-	switch (err) {
-	case GL_NO_ERROR:
-		err_text = "GL_NO_ERROR";  // Should not happen.
-		break;
-	case GL_INVALID_ENUM:
-		err_text = "GL_INVALID_ENUM";
-		break;
-	case GL_INVALID_VALUE:
-		err_text = "GL_INVALID_VALUE";
-		break;
-	case GL_INVALID_OPERATION:
-		err_text = "GL_INVALID_OPERATION";
-		break;
-	case GL_INVALID_FRAMEBUFFER_OPERATION:
-		err_text = "GL_INVALID_FRAMEBUFFER_OPERATION";
-		break;
-	case GL_OUT_OF_MEMORY:
-		err_text = "GL_OUT_OF_MEMORY";
-		break;
-	case GL_STACK_UNDERFLOW:
-		err_text = "GL_STACK_UNDERFLOW";
-		break;
-	case GL_STACK_OVERFLOW:
-		err_text = "GL_STACK_OVERFLOW";
-		break;
-	}
-	mlt_log_fatal(NULL, "[producer avformat] GL error 0x%x (%s) at %s:%d\n", err, err_text, filename, line);
-	abort();
+    // All errors listed in the glGetError(3G) man page.
+    switch (err) {
+    case GL_NO_ERROR:
+        err_text = "GL_NO_ERROR"; // Should not happen.
+        break;
+    case GL_INVALID_ENUM:
+        err_text = "GL_INVALID_ENUM";
+        break;
+    case GL_INVALID_VALUE:
+        err_text = "GL_INVALID_VALUE";
+        break;
+    case GL_INVALID_OPERATION:
+        err_text = "GL_INVALID_OPERATION";
+        break;
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        err_text = "GL_INVALID_FRAMEBUFFER_OPERATION";
+        break;
+    case GL_OUT_OF_MEMORY:
+        err_text = "GL_OUT_OF_MEMORY";
+        break;
+    case GL_STACK_UNDERFLOW:
+        err_text = "GL_STACK_UNDERFLOW";
+        break;
+    case GL_STACK_OVERFLOW:
+        err_text = "GL_STACK_OVERFLOW";
+        break;
+    }
+    mlt_log_fatal(NULL,
+                  "[producer avformat] GL error 0x%x (%s) at %s:%d\n",
+                  err,
+                  err_text,
+                  filename,
+                  line);
+    abort();
 }
 
 struct producer_avformat_s
@@ -885,6 +906,10 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
             return mlt_image_rgba64;
 #ifdef __APPLE__
         case AV_PIX_FMT_VIDEOTOOLBOX:
+            return mlt_image_opengl_texture;
+#endif
+#ifdef __linux__
+        case AV_PIX_FMT_VAAPI:
             return mlt_image_opengl_texture;
 #endif
         default:
@@ -1984,83 +2009,82 @@ static void convert_image_rgb(producer_avformat self,
     }
 }
 
-#ifdef __APPLE__
-// GPU-based YUV to RGB conversion shader
-static const char* yuv_to_rgb_vertex_shader = 
-    "#version 330 core\n"
-    "layout(location = 0) in vec2 position;\n"
-    "layout(location = 1) in vec2 texCoord;\n"
-    "out vec2 TexCoord;\n"
-    "void main() {\n"
-    "    gl_Position = vec4(position, 0.0, 1.0);\n"
-    "    TexCoord = texCoord;\n"
-    "}\n";
+#if defined(__APPLE__) || defined(__linux__)
+// GPU-based YUV to RGB conversion shader (shared between platforms)
+static const char *yuv_to_rgb_vertex_shader = "#version 330 core\n"
+                                              "layout(location = 0) in vec2 position;\n"
+                                              "layout(location = 1) in vec2 texCoord;\n"
+                                              "out vec2 TexCoord;\n"
+                                              "void main() {\n"
+                                              "    gl_Position = vec4(position, 0.0, 1.0);\n"
+                                              "    TexCoord = texCoord;\n"
+                                              "}\n";
 
-static const char* nv12_to_rgb_fragment_shader = 
-    "#version 330 core\n"
-    "in vec2 TexCoord;\n"
-    "out vec3 FragColor;\n"
-    "uniform sampler2D yTexture;\n"
-    "uniform sampler2D uvTexture;\n"
-    "uniform vec4 coeffs;\n"  // cr_v, cb_u, cg_u, cg_v
-    "void main() {\n"
-    "    float y = texture(yTexture, TexCoord).r;\n"
-    "    vec2 uv = texture(uvTexture, TexCoord).rg - 0.5;\n"
-    "    float u = uv.r;\n"
-    "    float v = uv.g;\n"
-    "    // YUV to RGB conversion using libswscale coefficients\n"
-    "    float r = y + coeffs.x * v;\n"          // y + cr_v * v
-    "    float g = y + coeffs.z * u + coeffs.w * v;\n"  // y + cg_u * u + cg_v * v  
-    "    float b = y + coeffs.y * u;\n"          // y + cb_u * u
-    "    FragColor = vec3(r, g, b);\n"
-    "}\n";
+static const char *nv12_to_rgb_fragment_shader
+    = "#version 330 core\n"
+      "in vec2 TexCoord;\n"
+      "out vec3 FragColor;\n"
+      "uniform sampler2D yTexture;\n"
+      "uniform sampler2D uvTexture;\n"
+      "uniform vec4 coeffs;\n" // cr_v, cb_u, cg_u, cg_v
+      "void main() {\n"
+      "    float y = texture(yTexture, TexCoord).r;\n"
+      "    vec2 uv = texture(uvTexture, TexCoord).rg - 0.5;\n"
+      "    float u = uv.r;\n"
+      "    float v = uv.g;\n"
+      "    // YUV to RGB conversion using libswscale coefficients\n"
+      "    float r = y + coeffs.x * v;\n"                // y + cr_v * v
+      "    float g = y + coeffs.z * u + coeffs.w * v;\n" // y + cg_u * u + cg_v * v
+      "    float b = y + coeffs.y * u;\n"                // y + cb_u * u
+      "    FragColor = vec3(r, g, b);\n"
+      "}\n";
+#endif
+
+#ifdef __APPLE__
 
 // Function to convert CVPixelBuffer to GL_RGB8 texture using GPU conversion
-static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
-                                                   CVPixelBufferRef cvpixelbuffer, 
-                                                   uint8_t **buffer,
-                                                   int width, 
-                                                   int height)
+static int convert_cvpixelbuffer_to_opengl_texture(
+    producer_avformat self, CVPixelBufferRef cvpixelbuffer, uint8_t **buffer, int width, int height)
 {
     if (!cvpixelbuffer) {
         return -1;
     }
-    
+
     CVOpenGLTextureCacheRef textureCache = NULL;
     CVOpenGLTextureRef yTexture = NULL, uvTexture = NULL;
     GLuint yTextureID = 0, uvTextureID = 0;
     GLuint rgbTextureID = 0, framebuffer = 0;
     GLuint shaderProgram = 0, vertexShader = 0, fragmentShader = 0;
     GLuint VAO = 0, VBO = 0;
-    
+
     // Create texture cache
-    CVReturn result = CVOpenGLTextureCacheCreate(kCFAllocatorDefault, 
-                                               NULL,
-                                               CGLGetCurrentContext(), 
-                                               CGLGetPixelFormat(CGLGetCurrentContext()), 
-                                               NULL, 
-                                               &textureCache);
-    
+    CVReturn result = CVOpenGLTextureCacheCreate(kCFAllocatorDefault,
+                                                 NULL,
+                                                 CGLGetCurrentContext(),
+                                                 CGLGetPixelFormat(CGLGetCurrentContext()),
+                                                 NULL,
+                                                 &textureCache);
+
     if (result != kCVReturnSuccess || !textureCache) {
         mlt_log_error(NULL, "Failed to create CVOpenGLTextureCache: %d\n", result);
         return -1;
     }
-    
+
     // Check pixel format
     OSType pixelFormat = CVPixelBufferGetPixelFormatType(cvpixelbuffer);
-    
+
     if (pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange) { // NV12
         // Create Y texture (plane 0)
         result = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
-                                                           textureCache,
-                                                           cvpixelbuffer,
-                                                           NULL,
-                                                           &yTexture);
+                                                            textureCache,
+                                                            cvpixelbuffer,
+                                                            NULL,
+                                                            &yTexture);
         if (result == kCVReturnSuccess && yTexture) {
             yTextureID = CVOpenGLTextureGetName(yTexture);
         }
-        
-        // Create UV texture (plane 1) 
+
+        // Create UV texture (plane 1)
         // CFDictionaryRef uvTexAttribs = CFDictionaryCreate(kCFAllocatorDefault,
         //                                                  (const void*[]){kCVOpenGLTexturePlaneNumber},
         //                                                  (const void*[]){CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &(int){1})},
@@ -2068,37 +2092,44 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
         //                                                  &kCFTypeDictionaryKeyCallBacks,
         //                                                  &kCFTypeDictionaryValueCallBacks);
         result = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
-                                                           textureCache,
-                                                           cvpixelbuffer,
-                                                           NULL,
-                                                           &uvTexture);
+                                                            textureCache,
+                                                            cvpixelbuffer,
+                                                            NULL,
+                                                            &uvTexture);
         // CFRelease(uvTexAttribs);
-        
+
         if (result == kCVReturnSuccess && uvTexture) {
             uvTextureID = CVOpenGLTextureGetName(uvTexture);
         }
-        
+
         if (yTextureID && uvTextureID) {
             // Get YUV to RGB conversion coefficients from libswscale
             const int *inv_table, *table;
             int srcRange, dstRange, brightness, contrast, saturation;
-            sws_getColorspaceDetails(NULL, &inv_table, &srcRange, &table, &dstRange, 
-                                   &brightness, &contrast, &saturation);
-            
+            sws_getColorspaceDetails(NULL,
+                                     &inv_table,
+                                     &srcRange,
+                                     &table,
+                                     &dstRange,
+                                     &brightness,
+                                     &contrast,
+                                     &saturation);
+
             // Get the appropriate coefficients for the colorspace
             // Use self->yuv_colorspace to determine which coefficients to use
-            const int *coeffs = sws_getCoefficients(self->yuv_colorspace == 709 ? SWS_CS_ITU709 : 
-                                                  self->yuv_colorspace == 601 ? SWS_CS_ITU601 : 
-                                                  self->yuv_colorspace == 2020 ? SWS_CS_BT2020 :
-                                                  SWS_CS_DEFAULT);
-            
+            const int *coeffs = sws_getCoefficients(self->yuv_colorspace == 709   ? SWS_CS_ITU709
+                                                    : self->yuv_colorspace == 601 ? SWS_CS_ITU601
+                                                    : self->yuv_colorspace == 2020
+                                                        ? SWS_CS_BT2020
+                                                        : SWS_CS_DEFAULT);
+
             // Convert libswscale coefficients to shader uniforms
             // libswscale uses different scaling, so we need to convert
-            float cr_v = coeffs[0] / 65536.0f;      // Kr coefficient for V to R
-            float cb_u = coeffs[1] / 65536.0f;      // Kb coefficient for U to B
-            float cg_u = coeffs[2] / 65536.0f;      // Kg coefficient for U to G  
-            float cg_v = coeffs[3] / 65536.0f;      // Kg coefficient for V to G
-            
+            float cr_v = coeffs[0] / 65536.0f; // Kr coefficient for V to R
+            float cb_u = coeffs[1] / 65536.0f; // Kb coefficient for U to B
+            float cg_u = coeffs[2] / 65536.0f; // Kg coefficient for U to G
+            float cg_v = coeffs[3] / 65536.0f; // Kg coefficient for V to G
+
             // Create RGB output texture
             glGenTextures(1, &rgbTextureID);
             check_gl_error();
@@ -2120,9 +2151,13 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
             check_gl_error();
             glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
             check_gl_error();
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rgbTextureID, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                   GL_COLOR_ATTACHMENT0,
+                                   GL_TEXTURE_2D,
+                                   rgbTextureID,
+                                   0);
             check_gl_error();
-            
+
             // Create and compile shaders
             vertexShader = glCreateShader(GL_VERTEX_SHADER);
             check_gl_error();
@@ -2130,14 +2165,14 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
             check_gl_error();
             glCompileShader(vertexShader);
             check_gl_error();
-            
+
             fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
             check_gl_error();
             glShaderSource(fragmentShader, 1, &nv12_to_rgb_fragment_shader, NULL);
             check_gl_error();
             glCompileShader(fragmentShader);
             check_gl_error();
-            
+
             shaderProgram = glCreateProgram();
             check_gl_error();
             glAttachShader(shaderProgram, vertexShader);
@@ -2146,16 +2181,28 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
             check_gl_error();
             glLinkProgram(shaderProgram);
             check_gl_error();
-            
+
             // Set up quad geometry
             float vertices[] = {
-                -1.0f, -1.0f, 0.0f, 0.0f,  // bottom left
-                 1.0f, -1.0f, 1.0f, 0.0f,  // bottom right
-                 1.0f,  1.0f, 1.0f, 1.0f,  // top right
-                -1.0f,  1.0f, 0.0f, 1.0f   // top left
+                -1.0f,
+                -1.0f,
+                0.0f,
+                0.0f, // bottom left
+                1.0f,
+                -1.0f,
+                1.0f,
+                0.0f, // bottom right
+                1.0f,
+                1.0f,
+                1.0f,
+                1.0f, // top right
+                -1.0f,
+                1.0f,
+                0.0f,
+                1.0f // top left
             };
             unsigned int indices[] = {0, 1, 2, 2, 3, 0};
-            
+
             glGenVertexArrays(1, &VAO);
             check_gl_error();
             glGenBuffers(1, &VBO);
@@ -2163,7 +2210,7 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
             GLuint EBO;
             glGenBuffers(1, &EBO);
             check_gl_error();
-            
+
             glBindVertexArray(VAO);
             check_gl_error();
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -2174,22 +2221,27 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
             check_gl_error();
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
             check_gl_error();
-            
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
             check_gl_error();
             glEnableVertexAttribArray(0);
             check_gl_error();
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+            glVertexAttribPointer(1,
+                                  2,
+                                  GL_FLOAT,
+                                  GL_FALSE,
+                                  4 * sizeof(float),
+                                  (void *) (2 * sizeof(float)));
             check_gl_error();
             glEnableVertexAttribArray(1);
             check_gl_error();
-            
+
             // Render YUV to RGB
             glViewport(0, 0, width, height);
             check_gl_error();
             glUseProgram(shaderProgram);
             check_gl_error();
-            
+
             // Set texture uniforms
             glActiveTexture(GL_TEXTURE0);
             check_gl_error();
@@ -2197,23 +2249,23 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
             check_gl_error();
             glUniform1i(glGetUniformLocation(shaderProgram, "yTexture"), 0);
             check_gl_error();
-            
+
             glActiveTexture(GL_TEXTURE1);
             check_gl_error();
             glBindTexture(GL_TEXTURE_2D, uvTextureID);
             check_gl_error();
             glUniform1i(glGetUniformLocation(shaderProgram, "uvTexture"), 1);
             check_gl_error();
-            
+
             // Set coefficient uniforms
             glUniform4f(glGetUniformLocation(shaderProgram, "coeffs"), cr_v, cb_u, cg_u, cg_v);
             check_gl_error();
-            
+
             glBindVertexArray(VAO);
             check_gl_error();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             check_gl_error();
-            
+
             // Clean up OpenGL objects
             glDeleteVertexArrays(1, &VAO);
             check_gl_error();
@@ -2224,46 +2276,355 @@ static int convert_cvpixelbuffer_to_opengl_texture(producer_avformat self,
             glDeleteProgram(shaderProgram);
             glDeleteFramebuffers(1, &framebuffer);
             check_gl_error();
-            
+
             // Restore default framebuffer
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            
-            mlt_log_debug(NULL, "Successfully converted NV12 CVPixelBuffer to GL_RGB8 texture using %s coefficients: %u\n", 
-                         self->yuv_colorspace == 709 ? "BT.709" : 
-                         self->yuv_colorspace == 601 ? "BT.601" : 
-                         self->yuv_colorspace == 2020 ? "BT.2020" :
-                         "default", 
-                         rgbTextureID);
+
+            mlt_log_debug(NULL,
+                          "Successfully converted NV12 CVPixelBuffer to GL_RGB8 texture using %s "
+                          "coefficients: %u\n",
+                          self->yuv_colorspace == 709    ? "BT.709"
+                          : self->yuv_colorspace == 601  ? "BT.601"
+                          : self->yuv_colorspace == 2020 ? "BT.2020"
+                                                         : "default",
+                          rgbTextureID);
         }
     } else {
         // For non-NV12 formats, fall back to direct texture creation
         // This handles BGRA and other RGB formats that don't need conversion
         result = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
-                                                           textureCache,
-                                                           cvpixelbuffer,
-                                                           NULL,
-                                                           &yTexture);
+                                                            textureCache,
+                                                            cvpixelbuffer,
+                                                            NULL,
+                                                            &yTexture);
         if (result == kCVReturnSuccess && yTexture) {
             rgbTextureID = CVOpenGLTextureGetName(yTexture);
-            mlt_log_debug(NULL, "Using direct VideoToolbox texture (format: %c%c%c%c): %u\n",
-                          (pixelFormat >> 24) & 0xFF, (pixelFormat >> 16) & 0xFF, 
-                          (pixelFormat >> 8) & 0xFF, pixelFormat & 0xFF, rgbTextureID);
+            mlt_log_debug(NULL,
+                          "Using direct VideoToolbox texture (format: %c%c%c%c): %u\n",
+                          (pixelFormat >> 24) & 0xFF,
+                          (pixelFormat >> 16) & 0xFF,
+                          (pixelFormat >> 8) & 0xFF,
+                          pixelFormat & 0xFF,
+                          rgbTextureID);
         }
     }
-    
+
     // Store the RGB texture ID in the buffer
     if (rgbTextureID) {
-        *buffer = (uint8_t*)malloc(sizeof(GLuint));
+        *buffer = (uint8_t *) malloc(sizeof(GLuint));
         if (*buffer) {
-            *((GLuint*)*buffer) = rgbTextureID;
+            *((GLuint *) *buffer) = rgbTextureID;
         }
     }
-    
+
     // Clean up VideoToolbox objects
-    if (yTexture) CVOpenGLTextureRelease(yTexture);
-    if (uvTexture) CVOpenGLTextureRelease(uvTexture);
+    if (yTexture)
+        CVOpenGLTextureRelease(yTexture);
+    if (uvTexture)
+        CVOpenGLTextureRelease(uvTexture);
     CVOpenGLTextureCacheRelease(textureCache);
-    
+
+    return rgbTextureID > 0 ? 0 : -1;
+}
+#endif
+
+#ifdef __linux__
+// Function to convert VAAPI VASurfaceID to OpenGL texture
+static int convert_vasurface_to_opengl_texture(producer_avformat self,
+                                               VASurfaceID va_surface,
+                                               AVBufferRef *hw_frames_ctx,
+                                               uint8_t **buffer,
+                                               int width,
+                                               int height)
+{
+    if (!va_surface || !hw_frames_ctx) {
+        return -1;
+    }
+
+    AVHWFramesContext *hwframe_ctx = (AVHWFramesContext *) hw_frames_ctx->data;
+    // AVVAAPIFramesContext *vaapi_ctx = hwframe_ctx->hwctx;
+
+    // Get VADisplay from the device context
+    AVHWDeviceContext *device_ctx = hwframe_ctx->device_ctx;
+    AVVAAPIDeviceContext *vaapi_device_ctx = device_ctx->hwctx;
+    VADisplay va_display = vaapi_device_ctx->display;
+    GLuint rgbTextureID = 0;
+
+    if (!va_display) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent), "Invalid VAAPI display\n");
+        return -1;
+    }
+
+    VAStatus va_status = vaSyncSurface(va_display, va_surface);
+
+    if (va_status != VA_STATUS_SUCCESS) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to sync VAAPI surface: %d\n",
+                      va_status);
+        return -1;
+    }
+
+    // Get DRM file descriptor from VASurface
+    VADRMPRIMESurfaceDescriptor prime_desc;
+    va_status = vaExportSurfaceHandle(va_display,
+                                      va_surface,
+                                      VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
+                                      VA_EXPORT_SURFACE_READ_ONLY
+                                          | VA_EXPORT_SURFACE_SEPARATE_LAYERS,
+                                      &prime_desc);
+
+    if (va_status != VA_STATUS_SUCCESS) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to export VAAPI surface to DRM PRIME: %d\n",
+                      va_status);
+        return -1;
+    }
+
+    // Create EGL image from DRM file descriptor
+    // Most VAAPI surfaces are NV12 format with 2 planes (Y and UV)
+    EGLDisplay egl_display = eglGetCurrentDisplay();
+    if (egl_display == EGL_NO_DISPLAY) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent), "No current EGL display\n");
+        goto cleanup;
+    }
+
+    // Create EGL images for Y and UV planes
+    EGLImage egl_images[2] = {EGL_NO_IMAGE, EGL_NO_IMAGE};
+    GLuint plane_textures[2] = {0, 0};
+
+    // Y plane (plane 0)
+    if (prime_desc.num_objects > 0 && prime_desc.num_layers > 0) {
+        EGLAttrib y_attrs[] = {EGL_LINUX_DRM_FOURCC_EXT,
+                               DRM_FORMAT_R8,
+                               EGL_WIDTH,
+                               width,
+                               EGL_HEIGHT,
+                               height,
+                               EGL_DMA_BUF_PLANE0_FD_EXT,
+                               prime_desc.objects[prime_desc.layers[0].object_index[0]].fd,
+                               EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                               prime_desc.layers[0].offset[0],
+                               EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                               prime_desc.layers[0].pitch[0],
+                               EGL_NONE};
+
+        egl_images[0]
+            = eglCreateImage(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, y_attrs);
+
+        if (egl_images[0] != EGL_NO_IMAGE) {
+            glGenTextures(1, &plane_textures[0]);
+            glBindTexture(GL_TEXTURE_2D, plane_textures[0]);
+            glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, egl_images[0]);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            check_gl_error();
+        }
+    }
+
+    // UV plane (plane 1) - for NV12 format
+    if (prime_desc.num_layers > 1
+        || (prime_desc.num_layers == 1 && prime_desc.layers[0].num_planes > 1)) {
+        int uv_width = width / 2;
+        int uv_height = height / 2;
+        // int uv_plane_idx = (prime_desc.num_layers > 1) ? 1 : 0;
+        int uv_object_idx = (prime_desc.num_layers > 1) ? prime_desc.layers[1].object_index[0]
+                                                        : prime_desc.layers[0].object_index[1];
+        int uv_offset = (prime_desc.num_layers > 1) ? prime_desc.layers[1].offset[0]
+                                                    : prime_desc.layers[0].offset[1];
+        int uv_pitch = (prime_desc.num_layers > 1) ? prime_desc.layers[1].pitch[0]
+                                                   : prime_desc.layers[0].pitch[1];
+
+        EGLAttrib uv_attrs[] = {EGL_LINUX_DRM_FOURCC_EXT,
+                                DRM_FORMAT_GR88,
+                                EGL_WIDTH,
+                                uv_width,
+                                EGL_HEIGHT,
+                                uv_height,
+                                EGL_DMA_BUF_PLANE0_FD_EXT,
+                                prime_desc.objects[uv_object_idx].fd,
+                                EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                                uv_offset,
+                                EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                                uv_pitch,
+                                EGL_NONE};
+
+        egl_images[1]
+            = eglCreateImage(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, uv_attrs);
+
+        if (egl_images[1] != EGL_NO_IMAGE) {
+            glGenTextures(1, &plane_textures[1]);
+            glBindTexture(GL_TEXTURE_2D, plane_textures[1]);
+            glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, egl_images[1]);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            check_gl_error();
+        }
+    }
+
+    // Create RGB output texture and framebuffer for YUV to RGB conversion
+    if (plane_textures[0] && plane_textures[1]) {
+        GLuint framebuffer = 0;
+        GLuint shaderProgram = 0, vertexShader = 0, fragmentShader = 0;
+        GLuint VAO = 0, VBO = 0, EBO = 0;
+
+        // Create RGB output texture
+        glGenTextures(1, &rgbTextureID);
+        glBindTexture(GL_TEXTURE_2D, rgbTextureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        check_gl_error();
+
+        // Create framebuffer
+        glGenFramebuffers(1, &framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rgbTextureID, 0);
+        check_gl_error();
+
+        // Create and compile shaders (reuse from VideoToolbox)
+        vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, 1, &yuv_to_rgb_vertex_shader, NULL);
+        glCompileShader(vertexShader);
+        check_gl_error();
+
+        fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, 1, &nv12_to_rgb_fragment_shader, NULL);
+        glCompileShader(fragmentShader);
+        check_gl_error();
+
+        shaderProgram = glCreateProgram();
+        glAttachShader(shaderProgram, vertexShader);
+        glAttachShader(shaderProgram, fragmentShader);
+        glLinkProgram(shaderProgram);
+        check_gl_error();
+
+        // Set up geometry
+        float vertices[] = {
+            -1.0f,
+            -1.0f,
+            0.0f,
+            0.0f, // bottom left
+            1.0f,
+            -1.0f,
+            1.0f,
+            0.0f, // bottom right
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f, // top right
+            -1.0f,
+            1.0f,
+            0.0f,
+            1.0f // top left
+        };
+        unsigned int indices[] = {0, 1, 2, 2, 3, 0};
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+        check_gl_error();
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        check_gl_error();
+
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1,
+                              2,
+                              GL_FLOAT,
+                              GL_FALSE,
+                              4 * sizeof(float),
+                              (void *) (2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        check_gl_error();
+
+        // Render YUV to RGB
+        glViewport(0, 0, width, height);
+        glUseProgram(shaderProgram);
+
+        // Set texture uniforms
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, plane_textures[0]);
+        glUniform1i(glGetUniformLocation(shaderProgram, "yTexture"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, plane_textures[1]);
+        glUniform1i(glGetUniformLocation(shaderProgram, "uvTexture"), 1);
+
+        // Set YUV to RGB conversion coefficients
+        const int *coeffs = sws_getCoefficients(self->yuv_colorspace == 709    ? SWS_CS_ITU709
+                                                : self->yuv_colorspace == 601  ? SWS_CS_ITU601
+                                                : self->yuv_colorspace == 2020 ? SWS_CS_BT2020
+                                                                               : SWS_CS_DEFAULT);
+        float cr_v = coeffs[0] / 65536.0f;
+        float cb_u = coeffs[1] / 65536.0f;
+        float cg_u = coeffs[2] / 65536.0f;
+        float cg_v = coeffs[3] / 65536.0f;
+
+        glUniform4f(glGetUniformLocation(shaderProgram, "coeffs"), cr_v, cb_u, cg_u, cg_v);
+        check_gl_error();
+
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        check_gl_error();
+
+        // Cleanup OpenGL objects
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteProgram(shaderProgram);
+        glDeleteFramebuffers(1, &framebuffer);
+        glDeleteTextures(1, &plane_textures[0]);
+        glDeleteTextures(1, &plane_textures[1]);
+        check_gl_error();
+
+        // Restore default framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        mlt_log_debug(
+            MLT_PRODUCER_SERVICE(self->parent),
+            "Successfully converted VAAPI surface to GL_RGB8 texture using %s coefficients: %u\n",
+            self->yuv_colorspace == 709    ? "BT.709"
+            : self->yuv_colorspace == 601  ? "BT.601"
+            : self->yuv_colorspace == 2020 ? "BT.2020"
+                                           : "default",
+            rgbTextureID);
+    }
+
+    // Cleanup EGL images
+    if (egl_images[0] != EGL_NO_IMAGE) {
+        eglDestroyImage(egl_display, egl_images[0]);
+    }
+    if (egl_images[1] != EGL_NO_IMAGE) {
+        eglDestroyImage(egl_display, egl_images[1]);
+    }
+
+cleanup:
+    // Close DRM file descriptors
+    for (uint32_t i = 0; i < prime_desc.num_objects; ++i) {
+        close(prime_desc.objects[i].fd);
+    }
+
+    // Store the RGB texture ID in the buffer
+    if (rgbTextureID) {
+        *buffer = (uint8_t *) malloc(sizeof(GLuint));
+        if (*buffer) {
+            *((GLuint *) *buffer) = rgbTextureID;
+        }
+    }
+
     return rgbTextureID > 0 ? 0 : -1;
 }
 #endif
@@ -2359,15 +2720,18 @@ static void convert_image(producer_avformat self,
 #ifdef __APPLE__
     } else if (pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX) {
         // Handle VideoToolbox CVPixelBuffer to OpenGL texture conversion
-        CVPixelBufferRef cvpixelbuffer = (CVPixelBufferRef)frame->data[3];
-        if (cvpixelbuffer && convert_cvpixelbuffer_to_opengl_texture(self, cvpixelbuffer, buffer, width, height) == 0) {
+        CVPixelBufferRef cvpixelbuffer = (CVPixelBufferRef) frame->data[3];
+        if (cvpixelbuffer
+            && convert_cvpixelbuffer_to_opengl_texture(self, cvpixelbuffer, buffer, width, height)
+                   == 0) {
             // Successfully created OpenGL texture
-            mlt_log_info(MLT_PRODUCER_SERVICE(self->parent), 
+            mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
                          "Successfully converted CVPixelBuffer to OpenGL texture\n");
         } else {
             // Fallback to software conversion
-            mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), 
-                           "Failed to convert CVPixelBuffer to OpenGL texture, falling back to software decode\n");
+            mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
+                            "Failed to convert CVPixelBuffer to OpenGL texture, falling back to "
+                            "software decode\n");
             *format = mlt_image_yuv420p;
             result = convert_image_yuvp(self,
                                         profile,
@@ -2379,6 +2743,46 @@ static void convert_image(producer_avformat self,
                                         AV_PIX_FMT_YUV420P,
                                         AV_PIX_FMT_YUV420P,
                                         dst_full_range);
+        }
+#endif
+#ifdef __linux__
+    } else if (pix_fmt == AV_PIX_FMT_VAAPI) {
+        // Handle VAAPI VASurfaceID to OpenGL texture conversion
+        VASurfaceID va_surface = (VASurfaceID) (uintptr_t) frame->data[3];
+        AVBufferRef *hw_frames_ctx = self->hwaccel.device_ctx
+                                         ? av_buffer_ref(self->hwaccel.device_ctx)
+                                     : frame->hw_frames_ctx ? av_buffer_ref(frame->hw_frames_ctx)
+                                                            : NULL;
+        if (va_surface && hw_frames_ctx
+            && convert_vasurface_to_opengl_texture(self,
+                                                   va_surface,
+                                                   hw_frames_ctx,
+                                                   &buffer,
+                                                   width,
+                                                   height)
+                   == 0) {
+            // Successfully created OpenGL texture
+            mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
+                         "Successfully converted VAAPI surface to OpenGL texture\n");
+        } else {
+            // Fallback to software conversion
+            mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
+                            "Failed to convert VAAPI surface to OpenGL texture, falling back to "
+                            "software decode\n");
+            *format = mlt_image_yuv420p;
+            colorspace = convert_image_yuvp(self,
+                                            profile,
+                                            frame,
+                                            buffer,
+                                            *format,
+                                            width,
+                                            height,
+                                            AV_PIX_FMT_YUV420P,
+                                            AV_PIX_FMT_YUV420P,
+                                            dst_full_range);
+        }
+        if (hw_frames_ctx) {
+            av_buffer_unref(&hw_frames_ctx);
         }
 #endif
     } else if (dst_pix_fmt != AV_PIX_FMT_NONE) {
@@ -2886,11 +3290,29 @@ static int producer_get_image(mlt_frame frame,
                                 // Check if we want OpenGL texture format for VideoToolbox
                                 if (self->hwaccel.pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX) {
                                     // Keep the hardware frame for direct OpenGL texture conversion
-                                    CVPixelBufferRef cvpixelbuffer = (CVPixelBufferRef)self->video_frame->data[3];
+                                    CVPixelBufferRef cvpixelbuffer
+                                        = (CVPixelBufferRef) self->video_frame->data[3];
                                     if (cvpixelbuffer) {
                                         mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
-                                                     "Keeping VideoToolbox frame for OpenGL texture conversion\n");
+                                                      "Keeping VideoToolbox frame for OpenGL "
+                                                      "texture conversion\n");
                                         // The CVPixelBuffer will be converted to OpenGL texture in convert_image
+                                        got_picture = 1;
+                                        decode_errors = 0;
+                                    }
+                                }
+#endif
+#ifdef __linux__
+                                // Check if we want OpenGL texture format for VAAPI
+                                if (self->hwaccel.pix_fmt == AV_PIX_FMT_VAAPI) {
+                                    // Keep the hardware frame for direct OpenGL texture conversion
+                                    VASurfaceID va_surface
+                                        = (VASurfaceID) (uintptr_t) self->video_frame->data[3];
+                                    if (va_surface) {
+                                        mlt_log_verbose(
+                                            MLT_PRODUCER_SERVICE(producer),
+                                            "Keeping VAAPI frame for OpenGL texture conversion\n");
+                                        // The VASurfaceID will be converted to OpenGL texture in convert_image
                                         got_picture = 1;
                                         decode_errors = 0;
                                     }
@@ -2899,11 +3321,13 @@ static int producer_get_image(mlt_frame frame,
                                 if (!got_picture) {
                                     AVFrame *sw_video_frame = av_frame_alloc();
                                     int transfer_data_result
-                                        = av_hwframe_transfer_data(sw_video_frame, self->video_frame, 0);
+                                        = av_hwframe_transfer_data(sw_video_frame,
+                                                                   self->video_frame,
+                                                                   0);
                                     if (transfer_data_result < 0) {
                                         mlt_log_error(MLT_PRODUCER_SERVICE(producer),
-                                                        "av_hwframe_transfer_data() failed %d\n",
-                                                        transfer_data_result);
+                                                      "av_hwframe_transfer_data() failed %d\n",
+                                                      transfer_data_result);
                                         av_frame_free(&sw_video_frame);
                                         goto exit_get_image;
                                     }

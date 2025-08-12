@@ -36,6 +36,8 @@ target_link_libraries(mltavformat PRIVATE
   Threads::Threads
   ${FFMPEG_LIBRARIES}
   OpenGL::GL
+  PkgConfig::egl
+  PkgConfig::epoxy
 )
 
 if(MSVC)
@@ -45,7 +47,7 @@ else()
 endif()
 
 if(APPLE)
-    target_link_libraries(mltavformat PRIVATE PkgConfig::epoxy "-framework CoreVideo" "-framework CoreFoundation")
+    target_link_libraries(mltavformat PRIVATE "-framework CoreVideo" "-framework CoreFoundation")
 endif()
 
 if(WIN32)
