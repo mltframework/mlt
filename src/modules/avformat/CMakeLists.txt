@@ -37,8 +37,6 @@ if(NOT MSVC)
   target_link_libraries(mltavformat PRIVATE m)
 endif()
 
-target_compile_definitions(mltavformat PRIVATE FILTERS CODECS AVFILTER AVDEVICE SWRESAMPLE)
-
 if(WIN32)
   target_compile_definitions(mltavformat PRIVATE AVDATADIR="share/ffmpeg/")
   if(MINGW)

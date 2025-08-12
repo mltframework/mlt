@@ -51,11 +51,9 @@
 #include <libavutil/version.h>
 #include <libswscale/swscale.h>
 
-#ifdef AVFILTER
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
-#endif
 
 // System header files
 #include <limits.h>
@@ -129,11 +127,9 @@ struct producer_avformat_s
     AVRational video_time_base;
     mlt_frame last_good_frame; // for video error concealment
     int last_good_position;    // for video error concealment
-#ifdef AVFILTER
     AVFilterGraph *vfilter_graph;
     AVFilterContext *vfilter_in;
     AVFilterContext *vfilter_out;
-#endif
     int autorotate;
     double rotation;
     int is_audio_synchronizing;
@@ -920,12 +916,9 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
         mlt_properties_set_int(properties, "height", codec_params->height);
         get_aspect_ratio(properties, format->streams[self->video_index], codec_params);
 
-#ifdef AVFILTER
         int pix_fmt = self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
                                         : codec_params->format;
-#else
-        int pix_fmt = codec_params->format;
-#endif
+
         pick_av_pixel_format(&pix_fmt, self->full_range);
         if (pix_fmt != AV_PIX_FMT_NONE) {
             // Verify that we can convert this to one of our image formats.
@@ -952,7 +945,6 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
     return error;
 }
 
-#ifdef AVFILTER
 static int setup_video_filters(producer_avformat self)
 {
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
@@ -1093,7 +1085,6 @@ static int setup_filters(producer_avformat self)
     }
     return error;
 }
-#endif
 
 static void set_up_discard(producer_avformat self, int audio_index, int video_index)
 {
@@ -1258,13 +1249,11 @@ static int producer_open(
                 if (self->audio_format && !self->audio_streams)
                     get_audio_streams_info(self);
 
-#ifdef AVFILTER
                 if (!test_open) {
                     self->autorotate = !mlt_properties_get(properties, "autorotate")
                                        || mlt_properties_get_int(properties, "autorotate");
                     error = setup_filters(self);
                 }
-#endif
             }
         }
     }
@@ -1316,9 +1305,7 @@ static void prepare_reopen(producer_avformat self)
         avformat_close_input(&self->video_format);
     self->audio_format = NULL;
     self->video_format = NULL;
-#ifdef AVFILTER
     avfilter_graph_free(&self->vfilter_graph);
-#endif
     pthread_mutex_unlock(&self->open_mutex);
 
     // Cleanup the packet queues
@@ -2089,12 +2076,10 @@ static void convert_image(producer_avformat self,
 
 static void set_image_size(producer_avformat self, int *width, int *height)
 {
-#ifdef AVFILTER
     if (self->vfilter_out) {
         *width = av_buffersink_get_w(self->vfilter_out);
         *height = av_buffersink_get_h(self->vfilter_out);
     } else {
-#endif
         double dar = mlt_profile_dar(mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent)));
         *width = self->video_codec->width;
         // Workaround 1088 encodings missing cropping info.
@@ -2102,9 +2087,7 @@ static void set_image_size(producer_avformat self, int *width, int *height)
             *height = 1080;
         else
             *height = self->video_codec->height;
-#ifdef AVFILTER
     }
-#endif
 }
 
 /** Allocate the image buffer and set it on the frame.
@@ -2262,14 +2245,12 @@ static int producer_get_image(mlt_frame frame,
     pthread_mutex_lock(&self->video_mutex);
     mlt_log_timings_begin();
 
-#ifdef AVFILTER
     if (self->autorotate && self->video_index != -1
         && get_rotation(properties, self->video_format->streams[self->video_index])
                != self->rotation) {
         // Rotation has changed. Clear any cached frames.
         self->reset_image_cache = 1;
     }
-#endif
 
     if (self->reset_image_cache) {
         self->reset_image_cache = 0;
@@ -2351,13 +2332,9 @@ static int producer_get_image(mlt_frame frame,
     codec_params = stream->codecpar;
 
     // Only change the requested image format for special cases
-#ifdef AVFILTER
     *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
                                                   : codec_params->format,
                                 *format);
-#else
-    *format = pick_image_format(codec_params->format, *format);
-#endif
 
     // Duplicate the last image if necessary
     if (self->video_frame && self->video_frame->linesize[0]
@@ -2598,7 +2575,6 @@ static int producer_get_image(mlt_frame frame,
                                             || codec_params->field_order == AV_FIELD_TB;
                 }
                 self->video_frame->top_field_first = self->top_field_first;
-#ifdef AVFILTER
                 if ((self->autorotate || mlt_properties_get(properties, "filtergraph"))
                     && !setup_filters(self) && self->vfilter_graph) {
                     int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
@@ -2614,7 +2590,7 @@ static int producer_get_image(mlt_frame frame,
                         }
                     }
                 }
-#endif
+
                 set_image_size(self, width, height);
                 if ((image_size
                      = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
@@ -4051,9 +4027,7 @@ static void producer_avformat_close(producer_avformat self)
         avformat_close_input(&self->video_format);
     if (self->is_mutex_init)
         pthread_mutex_unlock(&self->open_mutex);
-#ifdef AVFILTER
     avfilter_graph_free(&self->vfilter_graph);
-#endif
 
     // Cleanup caches.
     mlt_cache_close(self->image_cache);
