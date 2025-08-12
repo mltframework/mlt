@@ -38,12 +38,8 @@ extern mlt_link link_swresample_init(mlt_profile profile, mlt_service_type, cons
 // ffmpeg Header files
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#ifdef AVDEVICE
 #include <libavdevice/avdevice.h>
-#endif
-#ifdef AVFILTER
 #include <libavfilter/avfilter.h>
-#endif
 #include <libavutil/opt.h>
 
 // A static flag used to determine if avformat has been initialised
@@ -54,9 +50,7 @@ static void avformat_init()
     // Initialise avformat if necessary
     if (avformat_initialised == 0) {
         avformat_initialised = 1;
-#ifdef AVDEVICE
         avdevice_register_all();
-#endif
         avformat_network_init();
         av_log_set_level(mlt_log_get_level());
         if (getenv("MLT_AVFORMAT_PRODUCER_CACHE")) {
@@ -77,7 +71,6 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
             return consumer_avformat_init(profile, arg);
     }
 #endif
-#ifdef FILTERS
     if (!strcmp(id, "avcolor_space"))
         return filter_avcolour_space_init(arg);
     if (!strcmp(id, "avcolour_space"))
@@ -90,15 +83,12 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
     }
     if (!strcmp(id, "swscale"))
         return filter_swscale_init(profile, arg);
-#endif
-#ifdef SWRESAMPLE
     if (!strcmp(id, "swresample")) {
         if (type == mlt_service_filter_type)
             return filter_swresample_init(profile, arg);
         else if (type == mlt_service_link_type)
             return link_swresample_init(profile, type, id, arg);
     }
-#endif
     return NULL;
 }
 
@@ -326,7 +316,6 @@ static mlt_properties avformat_metadata(mlt_service_type type, const char *id, v
     return result;
 }
 
-#ifdef AVFILTER
 static mlt_properties avfilter_metadata(mlt_service_type type, const char *id, void *name)
 {
     AVFilter *f = (AVFilter *) avfilter_get_by_name(name);
@@ -419,7 +408,6 @@ static mlt_properties avfilter_metadata(mlt_service_type type, const char *id, v
 
     return metadata;
 }
-#endif
 
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
@@ -430,7 +418,6 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
 
 MLT_REPOSITORY
 {
-#ifdef CODECS
     MLT_REGISTER(mlt_service_consumer_type, "avformat", create_service);
     MLT_REGISTER(mlt_service_producer_type, "avformat", create_service);
     MLT_REGISTER(mlt_service_producer_type, "avformat-novalidate", create_service);
@@ -440,8 +427,6 @@ MLT_REPOSITORY
                           "avformat-novalidate",
                           metadata,
                           "producer_avformat-novalidate.yml");
-#endif
-#ifdef FILTERS
     MLT_REGISTER(mlt_service_filter_type, "avcolour_space", create_service);
     MLT_REGISTER(mlt_service_filter_type, "avcolor_space", create_service);
     MLT_REGISTER(mlt_service_filter_type, "avdeinterlace", create_service);
@@ -471,7 +456,6 @@ MLT_REPOSITORY
                           "link_avdeinterlace.yml");
     MLT_REGISTER_METADATA(mlt_service_link_type, "swscale", mlt_link_filter_metadata, NULL);
 
-#ifdef AVFILTER
     char dirname[PATH_MAX];
     snprintf(dirname, PATH_MAX, "%s/avformat/blacklist.txt", mlt_environment("MLT_DATA"));
     mlt_properties blacklist = mlt_properties_load(dirname);
@@ -519,12 +503,8 @@ MLT_REPOSITORY
         }
     }
     mlt_properties_close(blacklist);
-#endif // AVFILTER
-#endif
-#ifdef SWRESAMPLE
     MLT_REGISTER(mlt_service_filter_type, "swresample", create_service);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "swresample", metadata, "filter_swresample.yml");
     MLT_REGISTER(mlt_service_link_type, "swresample", create_service);
     MLT_REGISTER_METADATA(mlt_service_link_type, "swresample", metadata, "link_swresample.yml");
-#endif
 }

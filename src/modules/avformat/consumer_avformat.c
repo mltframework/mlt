@@ -47,11 +47,9 @@
 #include <libavutil/samplefmt.h>
 #include <libavutil/version.h>
 #include <libswscale/swscale.h>
-#ifdef AVFILTER
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
-#endif
 
 #define MAX_AUDIO_STREAMS (8)
 #define MAX_SUBTITLE_STREAMS (8)
