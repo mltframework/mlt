@@ -4,6 +4,18 @@ add_library(mltavformat MODULE
   filter_avcolour_space.c
   filter_avdeinterlace.c
   filter_swscale.c
+  # avformat
+  producer_avformat.c
+  consumer_avformat.c
+  # avfilter
+  filter_avfilter.c
+  link_avdeinterlace.c
+  link_avfilter.c
+  # swresample
+  common_swr.c
+  common_swr.h
+  filter_swresample.c
+  link_swresample.c
 )
 
 file(GLOB YML "*.yml")
@@ -18,45 +30,20 @@ target_compile_options(mltavformat PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltavformat PRIVATE
   mlt
   Threads::Threads
-  ${AVFORMAT_LIBRARIES}
-  ${SWSCALE_LIBRARIES}
-  ${AVUTIL_LIBRARIES}
+  ${FFMPEG_LIBRARIES}
 )
 
 if(NOT MSVC)
   target_link_libraries(mltavformat PRIVATE m)
 endif()
 
-target_compile_definitions(mltavformat PRIVATE FILTERS)
+target_compile_definitions(mltavformat PRIVATE FILTERS CODECS AVFILTER AVDEVICE SWRESAMPLE)
 
 if(WIN32)
   target_compile_definitions(mltavformat PRIVATE AVDATADIR="share/ffmpeg/")
   if(MINGW)
     target_link_libraries(mltavformat PRIVATE ${MLT_PTHREAD_LIBS})
   endif()
-endif()
-
-if(AVCODEC_FOUND)
-  target_sources(mltavformat PRIVATE producer_avformat.c consumer_avformat.c)
-  target_link_libraries(mltavformat PRIVATE ${AVCODEC_LIBRARIES})
-  target_compile_definitions(mltavformat PRIVATE CODECS)
-endif()
-
-if(AVFILTER_FOUND)
-  target_sources(mltavformat PRIVATE filter_avfilter.c link_avdeinterlace.c link_avfilter.c)
-  target_link_libraries(mltavformat PRIVATE ${AVFILTER_LIBRARIES})
-  target_compile_definitions(mltavformat PRIVATE AVFILTER)
-endif()
-
-if(AVDEVICE_FOUND)
-  target_link_libraries(mltavformat PRIVATE ${AVDEVICE_LIBRARIES})
-  target_compile_definitions(mltavformat PRIVATE AVDEVICE)
-endif()
-
-if(SWRESAMPLE_FOUND)
-  target_sources(mltavformat PRIVATE common_swr.c common_swr.h filter_swresample.c link_swresample.c)
-  target_link_libraries(mltavformat PRIVATE ${SWRESAMPLE_LIBRARIES})
-  target_compile_definitions(mltavformat PRIVATE SWRESAMPLE)
 endif()
 
 if(CPU_MMX)

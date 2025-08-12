@@ -219,10 +219,6 @@ if(MOD_AVFORMAT)
     AVFORMAT
     SWSCALE
     AVUTIL
-  )
-
-  # Optional deps
-  find_package(FFmpeg COMPONENTS
     AVCODEC
     AVFILTER
     AVDEVICE
