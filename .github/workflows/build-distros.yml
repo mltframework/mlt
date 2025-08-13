@@ -17,7 +17,6 @@ on:
           - debian-stable
           - fedora-42
           - fedora-38
-          - fedora-32
 
 jobs:
   build:
@@ -32,51 +31,62 @@ jobs:
               sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
           - name: ubuntu-22.04
             image: ubuntu:22.04
             setup_script: |
               sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
           - name: debian-unstable
             image: debian:unstable
             setup_script: |
               echo 'deb-src http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake
+              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
           - name: debian-testing
             image: debian:testing
             setup_script: |
               echo 'deb-src http://deb.debian.org/debian testing main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake
+              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
           - name: debian-stable
             image: debian:stable
             setup_script: |
-              echo -e 'deb-src http://deb.debian.org/debian stable main\ndeb-src http://deb.debian.org/debian stable-updates main' >> /etc/apt/sources.list
+              echo 'deb-src http://deb.debian.org/debian stable main\ndeb-src http://deb.debian.org/debian stable-updates main' >> /etc/apt/sources.list
               echo 'deb http://deb.debian.org/debian bookworm-backports main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake
+              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
           - name: fedora-42
             image: fedora:42
             setup_script: |
               dnf --assumeyes group install development-tools
-              dnf --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
+              dnf --assumeyes install \
+                yasm gavl-devel libsamplerate-devel libxml2-devel \
+                ladspa-devel jack-audio-connection-kit-devel sox-devel \
+                SDL2-devel fftw-devel frei0r-devel gtk2-devel libexif-devel \
+                qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel \
+                libtheora-devel libvorbis-devel libvdpau-devel \
+                libsoup-devel liboil-devel python-devel alsa-lib \
+                pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
+                movit-devel rubberband-devel vid.stab-devel
           - name: fedora-38
             image: fedora:38
             setup_script: |
               yum --assumeyes groupinstall "Development Tools"
-              yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
-          - name: fedora-32
-            image: fedora:32
-            setup_script: |
-              yum --assumeyes groupinstall "Development Tools"
-              yum --assumeyes install yasm gavl-devel libsamplerate-devel libxml2-devel ladspa-devel jack-audio-connection-kit-devel sox-devel SDL-devel gtk2-devel qt-devel libexif-devel libtheora-devel libvorbis-devel libvdpau-devel libsoup-devel liboil-devel python-devel alsa-lib pulseaudio-libs-devel gcc-c++ cmake
+              yum --assumeyes install \
+                yasm gavl-devel libsamplerate-devel libxml2-devel \
+                ladspa-devel jack-audio-connection-kit-devel sox-devel \
+                SDL2-devel fftw-devel frei0r-devel gtk2-devel libexif-devel \
+                qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel \
+                libtheora-devel libvorbis-devel libvdpau-devel \
+                libsoup-devel liboil-devel python-devel alsa-lib \
+                pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
+                movit-devel rubberband-devel vid.stab-devel
 
     container:
       image: ${{ matrix.image }}
@@ -87,7 +97,7 @@ jobs:
       - name: Check if job should run
         id: should_run
         run: |
-          if [[ "${{ github.event.inputs.target }}" == "all" || "${{ github.event.inputs.target }}" == "${{ matrix.name }}" ]]; then
+          if [ "${{ github.event.inputs.target }}" = "all" ] || [ "${{ github.event.inputs.target }}" = "${{ matrix.name }}" ]; then
             echo "run=true" >> $GITHUB_OUTPUT
           else
             echo "run=false" >> $GITHUB_OUTPUT
