@@ -27,6 +27,8 @@ add_custom_target(Other_avformat_Files SOURCES
 
 target_compile_options(mltavformat PRIVATE ${MLT_COMPILE_OPTIONS})
 
+target_include_directories(mltavformat SYSTEM PRIVATE ${FFMPEG_INCLUDE_DIRS})
+
 target_link_libraries(mltavformat PRIVATE
   mlt
   Threads::Threads
