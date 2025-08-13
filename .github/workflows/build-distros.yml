@@ -1,6 +1,9 @@
 name: Test Building on Distros
 
 on:
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       target:
