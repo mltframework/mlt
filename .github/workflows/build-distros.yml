@@ -100,7 +100,11 @@ jobs:
       - name: Check if job should run
         id: should_run
         run: |
-          if [ "${{ github.event.inputs.target }}" = "all" ] || [ "${{ github.event.inputs.target }}" = "${{ matrix.name }}" ]; then
+          # For pull requests, always run all jobs
+          # For workflow_dispatch, check the input parameter
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "run=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.target }}" = "all" ] || [ "${{ github.event.inputs.target }}" = "${{ matrix.name }}" ]; then
             echo "run=true" >> $GITHUB_OUTPUT
           else
             echo "run=false" >> $GITHUB_OUTPUT
