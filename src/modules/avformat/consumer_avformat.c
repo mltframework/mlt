@@ -117,7 +117,6 @@ void sample_fifo_close(sample_fifo fifo)
     free(fifo);
 }
 
-#if defined(AVFILTER)
 static AVFilterGraph *vfilter_graph;
 
 static int setup_hwupload_filter(mlt_properties properties,
@@ -229,8 +228,6 @@ static int init_vaapi(mlt_properties properties, AVCodecContext *codec_context)
     av_dict_free(&opts);
     return err;
 }
-
-#endif
 
 // Forward references.
 static void property_changed(mlt_properties owner, mlt_consumer self, mlt_event_data);
@@ -980,7 +977,6 @@ static AVStream *add_video_stream(mlt_consumer consumer,
                      : codec ? (codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV422P)
                              : AV_PIX_FMT_YUV420P;
 
-#if defined(AVFILTER)
         if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
             int result = init_vaapi(properties, c);
             if (result >= 0) {
@@ -995,7 +991,6 @@ static AVStream *add_video_stream(mlt_consumer consumer,
                               result);
             }
         }
-#endif
 
         switch (colorspace) {
         case 170:
@@ -1857,7 +1852,6 @@ static int encode_video(encode_ctx_t *enc_ctx,
                     }
                 }
             }
-#if defined(AVFILTER)
         if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
             AVFilterContext *vfilter_in = mlt_properties_get_data(properties, "vfilter_in", NULL);
             AVFilterContext *vfilter_out = mlt_properties_get_data(properties, "vfilter_out", NULL);
@@ -1879,9 +1873,6 @@ static int encode_video(encode_ctx_t *enc_ctx,
         } else {
             avframe = converted_avframe;
         }
-#else
-        avframe = converted_avframe;
-#endif
     }
 
 #ifdef AVFMT_RAWPICTURE
@@ -1981,10 +1972,8 @@ static int encode_video(encode_ctx_t *enc_ctx,
         mlt_events_fire(properties, "consumer-fatal-error", mlt_event_data_none());
         return -1;
     }
-#if defined(AVFILTER)
     if (AV_PIX_FMT_VAAPI == c->pix_fmt)
         av_frame_free(&avframe);
-#endif
     return 0;
 }
 
@@ -2345,12 +2334,8 @@ static void *consumer_thread(void *arg)
     // Allocate picture
     enum AVPixelFormat pix_fmt = AV_PIX_FMT_YUV420P;
     if (enc_ctx->video_st) {
-#if defined(AVFILTER)
         pix_fmt = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI ? AV_PIX_FMT_NV12
                                                                    : enc_ctx->vcodec_ctx->pix_fmt;
-#else
-        pix_fmt = enc_ctx->vcodec_ctx->pix_fmt;
-#endif
         converted_avframe = alloc_picture(pix_fmt, width, height);
         if (!converted_avframe) {
             mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "failed to allocate video AVFrame\n");
