@@ -37,6 +37,9 @@
 
 // avformat header files
 #include <libavcodec/avcodec.h>
+#include <libavfilter/avfilter.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 #include <libavformat/avformat.h>
 #include <libavformat/avio.h>
 #include <libavutil/channel_layout.h>
@@ -47,9 +50,6 @@
 #include <libavutil/samplefmt.h>
 #include <libavutil/version.h>
 #include <libswscale/swscale.h>
-#include <libavfilter/avfilter.h>
-#include <libavfilter/buffersink.h>
-#include <libavfilter/buffersrc.h>
 
 #define MAX_AUDIO_STREAMS (8)
 #define MAX_SUBTITLE_STREAMS (8)
