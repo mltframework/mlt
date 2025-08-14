@@ -18,7 +18,7 @@ bugs:
 parameters:
   - identifier: resource
     argument: yes
-    title: JACK Rack XML file
+    title: JACK Rack XML file (*DEPRECATED*)
     type: string
     description: >
       Runs a JACK Rack project to process audio through a stack of

@@ -1,7 +1,7 @@
 schema_version: 0.3
 type: filter
 identifier: jackrack
-title: JACK
+title: JACK Rack XML (*DEPRECATED*)
 version: 1
 copyright: Copyright (C) 2004-2018 Meltytech, LLC
 license: GPLv2
