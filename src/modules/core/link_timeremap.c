@@ -342,6 +342,8 @@ static int link_get_audio(mlt_frame frame,
     return error;
 }
 
+#define MAX_BLEND_IMAGES 10
+
 static int link_get_image_blend(mlt_frame frame,
                                 uint8_t **image,
                                 mlt_image_format *format,
@@ -349,7 +351,6 @@ static int link_get_image_blend(mlt_frame frame,
                                 int *height,
                                 int writable)
 {
-    static const int MAX_BLEND_IMAGES = 10;
     mlt_link self = (mlt_link) mlt_frame_pop_get_image(frame);
     mlt_properties unique_properties = mlt_frame_get_unique_properties(frame,
                                                                        MLT_LINK_SERVICE(self));
