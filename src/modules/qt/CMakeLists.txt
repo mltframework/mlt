@@ -56,8 +56,10 @@ function(mlt_add_qt_module ARG_TARGET)
       Qt${ARG_QT_VERSION}::Xml
     )
 
-    if(NOT MSVC)
-      target_link_libraries(${ARG_TARGET} PRIVATE m)
+    if(MSVC)
+      target_link_libraries(${ARG_TARGET} PRIVATE PThreads4W::PThreads4W)
+    else()
+        target_link_libraries(${ARG_TARGET} PRIVATE m)
     endif()
 
     if(ARG_QT_VERSION EQUAL 6)
