@@ -1,6 +1,6 @@
 /*
  * filter_resize.c -- resizing filter
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -97,6 +97,16 @@ static void resize_image(uint8_t *output,
             while (size--) {
                 p[3] = alpha_value;
                 p += 4;
+            }
+        }
+    } else if (format == mlt_image_rgba64) {
+        uint16_t *p16 = (uint16_t *) p;
+        uint16_t alpha_value_16 = alpha_value << 8;
+        memset(p16, 0, size * bpp);
+        if (alpha_value != 0) {
+            while (size--) {
+                p16[3] = alpha_value_16;
+                p16 += 4;
             }
         }
     } else if (bpp == 2) {

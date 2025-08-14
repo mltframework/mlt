@@ -2,6 +2,7 @@
  * kdenlivetitle_wrapper.cpp -- kdenlivetitle wrapper
  * Copyright (c) 2009 Marco Gittler <g.marco@freenet.de>
  * Copyright (c) 2009 Jean-Baptiste Mardelle <jb@kdenlive.org>
+ * Copyright (c) 2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -165,11 +166,7 @@ public:
 
     void updateText(QString text)
     {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
         m_path.clear();
-#else
-        m_path = QPainterPath();
-#endif
         // Calculate line width
         QStringList lines = text.split('\n');
         double linePos = m_metrics.ascent();
@@ -197,18 +194,10 @@ public:
             }
             linePos += m_lineSpacing;
             if (m_align == Qt::AlignHCenter) {
-#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
                 double offset = (m_width - m_metrics.horizontalAdvance(line)) / 2;
-#else
-                double offset = (m_width - m_metrics.width(line)) / 2;
-#endif
                 linePath.translate(offset, 0);
             } else if (m_align == Qt::AlignRight) {
-#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
                 double offset = (m_width - m_metrics.horizontalAdvance(line));
-#else
-                double offset = (m_width - m_metrics.width(line));
-#endif
                 linePath.translate(offset, 0);
             }
             m_path.addPath(linePath);
@@ -224,10 +213,7 @@ public:
         }
     }
 
-    virtual QRectF boundingRect() const
-    {
-        return m_boundingRect;
-    }
+    virtual QRectF boundingRect() const { return m_boundingRect; }
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *w)
     {
@@ -873,13 +859,8 @@ void drawKdenliveTitle(producer_ktitle self,
 
         //must be extracted from kdenlive title
         self->rgba_image = (uint8_t *) mlt_pool_alloc(image_size);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-        // QImage::Format_RGBA8888 was added in Qt5.2
         // Initialize the QImage with the MLT image because the data formats match.
         QImage img(self->rgba_image, width, height, QImage::Format_RGBA8888);
-#else
-        QImage img(width, height, QImage::Format_ARGB32);
-#endif
         img.fill(0);
         QPainter p1;
         p1.begin(&img);
@@ -936,7 +917,7 @@ void drawKdenliveTitle(producer_ktitle self,
         p1.end();
         self->format = mlt_image_rgba;
 
-        convert_qimage_to_mlt_rgba(&img, self->rgba_image, width, height);
+        convert_qimage_to_mlt(&img, self->rgba_image, width, height);
         self->current_image = (uint8_t *) mlt_pool_alloc(image_size);
         memcpy(self->current_image, self->rgba_image, image_size);
         mlt_properties_set_data(producer_props,

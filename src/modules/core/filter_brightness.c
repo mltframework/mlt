@@ -1,6 +1,6 @@
 /*
  * filter_brightness.c -- brightness, fade, and opacity filter
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -70,6 +70,15 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
                 for (int pixel = 0; pixel < ctx->image->width; pixel++) {
                     *p = (*p * m) >> 16;
                     p += 4;
+                }
+            }
+        } else if (ctx->image->format == mlt_image_rgba64) {
+            for (int row = 0; row < slice_height; row++) {
+                uint16_t *p = (uint16_t *) ctx->image->planes[0]
+                              + ((slice_line_start + row) * ctx->image->strides[0]) + 3;
+                int components_in_row = ctx->image->width * 4;
+                for (int col = 0; col < components_in_row; col += 4) {
+                    p[col] = (p[col] * m) >> 16;
                 }
             }
         } else {
@@ -142,7 +151,8 @@ static int filter_get_image(mlt_frame frame,
         struct sliced_desc desc;
         struct mlt_image_s proc_image;
         mlt_image_set_values(&proc_image, *image, *format, *width, *height);
-        if (alpha_level != 1.0 && proc_image.format != mlt_image_rgba) {
+        if (alpha_level != 1.0 && proc_image.format != mlt_image_rgba
+            && proc_image.format != mlt_image_rgba64) {
             proc_image.planes[3] = mlt_frame_get_alpha(frame);
             proc_image.strides[3] = proc_image.width;
             if (!proc_image.planes[3]) {

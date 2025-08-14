@@ -1,6 +1,6 @@
 /*
  * producer_colour.c
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -102,7 +102,8 @@ static int producer_get_image(mlt_frame frame,
 
     // Choose default image format if specific request is unsupported
     if (*format != mlt_image_yuv420p && *format != mlt_image_yuv422 && *format != mlt_image_rgb
-        && *format != mlt_image_movit && *format != mlt_image_opengl_texture)
+        && *format != mlt_image_movit && *format != mlt_image_opengl_texture
+        && *format != mlt_image_rgba64)
         *format = mlt_image_rgba;
 
     // See if we need to regenerate
@@ -187,6 +188,17 @@ static int producer_get_image(mlt_frame frame,
                     *p++ = color.a;
                 }
                 break;
+            case mlt_image_rgba64: {
+                uint16_t *p16 = (uint16_t *) p;
+                const int component_count = *width * *height * 4;
+                for (int j = 0; j < component_count; j += 4) {
+                    p16[j] = color.r << 8;
+                    p16[j + 1] = color.g << 8;
+                    p16[j + 2] = color.b << 8;
+                    p16[j + 3] = color.a << 8;
+                }
+                break;
+            }
             default:
                 mlt_log_error(MLT_PRODUCER_SERVICE(producer),
                               "invalid image format %s\n",

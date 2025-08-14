@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2023 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2014-2025 Dan Dennedy <dan@dennedy.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -63,48 +63,32 @@ bool createQApplicationIfNeeded(mlt_service service)
     return true;
 }
 
-void convert_qimage_to_mlt_rgba(QImage *qImg, uint8_t *mImg, int width, int height)
+mlt_image_format choose_image_format(mlt_image_format format)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-    // QImage::Format_RGBA8888 was added in Qt5.2
-    // Nothing to do in this case  because the image was modified directly.
-    // Destination pointer must be the same pointer that was provided to
-    // convert_mlt_to_qimage_rgba()
-    Q_ASSERT(mImg == qImg->constBits());
-#else
-    int y = height + 1;
-    while (--y) {
-        QRgb *src = (QRgb *) qImg->scanLine(height - y);
-        int x = width + 1;
-        while (--x) {
-            *mImg++ = qRed(*src);
-            *mImg++ = qGreen(*src);
-            *mImg++ = qBlue(*src);
-            *mImg++ = qAlpha(*src);
-            src++;
-        }
+    if (format == mlt_image_rgba64) {
+        return mlt_image_rgba64;
     }
-#endif
+    return mlt_image_rgba;
 }
 
-void convert_mlt_to_qimage_rgba(uint8_t *mImg, QImage *qImg, int width, int height)
+void convert_qimage_to_mlt(QImage *qImg, uint8_t *mImg, int width, int height)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-    // QImage::Format_RGBA8888 was added in Qt5.2
-    // Initialize the QImage with the MLT image because the data formats match.
-    *qImg = QImage(mImg, width, height, QImage::Format_RGBA8888);
-#else
-    *qImg = QImage(width, height, QImage::Format_ARGB32);
-    int y = height + 1;
-    while (--y) {
-        QRgb *dst = (QRgb *) qImg->scanLine(height - y);
-        int x = width + 1;
-        while (--x) {
-            *dst++ = qRgba(mImg[0], mImg[1], mImg[2], mImg[3]);
-            mImg += 4;
-        }
+    // Destination pointer must be the same pointer that was provided to
+    // convert_mlt_to_qimage()
+    Q_ASSERT(mImg == qImg->constBits());
+}
+
+void convert_mlt_to_qimage(
+    uint8_t *mImg, QImage *qImg, int width, int height, mlt_image_format format)
+{
+    if (format == mlt_image_rgba64) {
+        *qImg = QImage(mImg, width, height, QImage::Format_RGBA64);
+        return;
     }
-#endif
+
+    Q_ASSERT(format == mlt_image_rgba);
+
+    *qImg = QImage(mImg, width, height, QImage::Format_RGBA8888);
 }
 
 int create_image(mlt_frame frame,

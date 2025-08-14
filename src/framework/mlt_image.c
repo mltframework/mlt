@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_mlt_image_s
  *
- * Copyright (C) 2020-2024 Meltytech, LLC
+ * Copyright (C) 2020-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -195,6 +195,8 @@ int mlt_image_calculate_size(mlt_image self)
         return self->width * self->height * 3;
     case mlt_image_yuv444p10:
         return self->width * self->height * 6;
+    case mlt_image_rgba64:
+        return self->width * self->height * 4 * 2;
     case mlt_image_none:
     case mlt_image_invalid:
         return 0;
@@ -232,6 +234,8 @@ const char *mlt_image_format_name(mlt_image_format format)
         return "yuv420p10";
     case mlt_image_yuv444p10:
         return "yuv444p10";
+    case mlt_image_rgba64:
+        return "rgba64";
     case mlt_image_invalid:
         return "invalid";
     }
@@ -276,7 +280,8 @@ void mlt_image_fill_black(mlt_image self)
     case mlt_image_opengl_texture:
         return;
     case mlt_image_rgb:
-    case mlt_image_rgba: {
+    case mlt_image_rgba:
+    case mlt_image_rgba64: {
         int size = mlt_image_calculate_size(self);
         memset(self->planes[0], 0, size);
         break;
@@ -432,6 +437,20 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
         memset(self->planes[1], 128, self->height * self->strides[1] / 2);
         memset(self->planes[2], 128, self->height * self->strides[2] / 2);
     } break;
+    case mlt_image_rgba64: {
+        uint16_t *p = (uint16_t *) self->planes[0];
+        for (int i = 0; i < self->height; i++) {
+            for (int j = 0; j < self->width; j++) {
+                uint16_t color = ((((i + oy) / h) % 2) ^ (((j + ox) / w) % 2)) ? gray1 : gray2;
+                color *= 256;
+                p[0] = color;
+                p[1] = color;
+                p[2] = color;
+                p[3] = 0xffff;
+                p += 4;
+            }
+        }
+    } break;
     }
 }
 
@@ -454,7 +473,8 @@ void mlt_image_fill_white(mlt_image self, int full_range)
     case mlt_image_opengl_texture:
         return;
     case mlt_image_rgb:
-    case mlt_image_rgba: {
+    case mlt_image_rgba:
+    case mlt_image_rgba64: {
         int size = mlt_image_calculate_size(self);
         memset(self->planes[0], 255, size);
         break;
@@ -526,6 +546,14 @@ void mlt_image_fill_opaque(mlt_image self)
                 *pLine += 4;
             }
         }
+    } else if (self->format == mlt_image_rgba64 && self->planes[0] != NULL) {
+        for (int line = 0; line < self->height; line++) {
+            uint16_t *pLine = (uint16_t *) self->planes[0] + (self->strides[0] * line) + 3;
+            for (int pixel = 0; pixel < self->width; pixel++) {
+                *pLine = 0xffff;
+                *pLine += 4;
+            }
+        }
     } else if (self->planes[3] != NULL) {
         memset(self->planes[3], 255, self->height * self->strides[3]);
     }
@@ -576,6 +604,10 @@ int mlt_image_format_size(mlt_image_format format, int width, int height, int *b
         if (bpp)
             *bpp = 6;
         return 6 * height * width;
+    case mlt_image_rgba64:
+        if (bpp)
+            *bpp = 8;
+        return 8 * height * width;
     default:
         if (bpp)
             *bpp = 0;

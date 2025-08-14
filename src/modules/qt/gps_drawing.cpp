@@ -70,7 +70,6 @@ static bool rect_intersects_line(QRectF rect, point_2d pt1, point_2d pt2)
     if (rect.contains(pt1.x, pt1.y) || rect.contains(pt2.x, pt2.y))
         return true;
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
     //check if each side of the rect intersects (bounded) with the line
     QLineF line = QLineF(pt1.x, pt1.y, pt2.x, pt2.y);
     if (line.intersects(QLineF(rect.topLeft(), rect.topRight()), NULL)
@@ -85,9 +84,6 @@ static bool rect_intersects_line(QRectF rect, point_2d pt1, point_2d pt2)
     if (line.intersects(QLineF(rect.topRight(), rect.bottomRight()), NULL)
         == QLineF::BoundedIntersection)
         return true;
-#else
-    return true; //this is ok because rect clipping is enabled, it just skips the optimisation
-#endif
 
     return false;
 }

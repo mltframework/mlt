@@ -1,6 +1,6 @@
 /*
  * filter_gpsgraphic.cpp -- draws gps related graphics
- * Copyright (c) 2015-2022 Meltytech, LLC
+ * Copyright (c) 2015-2025 Meltytech, LLC
  * Original author: Daniel F
  *
  * This library is free software; you can redistribute it and/or
@@ -401,16 +401,16 @@ static int filter_get_image(mlt_frame frame,
     s_base_crops used_crops = {0, 100, 0, 100};
 
     // Get the current image
-    *format = mlt_image_rgba;
+    *format = choose_image_format(*format);
     error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
     // Draw the graph
     if (!error) {
         process_frame_properties(filter, frame, used_crops);
         QImage qimg(*width, *height, QImage::Format_ARGB32);
-        convert_mlt_to_qimage_rgba(*image, &qimg, *width, *height);
+        convert_mlt_to_qimage(*image, &qimg, *width, *height, *format);
         draw_graphics(filter, frame, &qimg, *width, *height, used_crops);
-        convert_qimage_to_mlt_rgba(&qimg, *image, *width, *height);
+        convert_qimage_to_mlt(&qimg, *image, *width, *height);
     } else
         mlt_log_warning(MLT_FILTER_SERVICE(filter),
                         "mlt_frame_get_image error=%d, can't draw at all\n",

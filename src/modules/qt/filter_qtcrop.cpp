@@ -1,6 +1,6 @@
 /*
  * filter_qtcrop.cpp -- cropping filter
- * Copyright (c) 2020 Meltytech, LLC
+ * Copyright (c) 2020-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,13 +42,13 @@ static int get_image(mlt_frame frame,
     mlt_rect rect = mlt_properties_anim_get_rect(properties, "rect", position, length);
 
     // Get the current image
-    *format = mlt_image_rgba;
+    *format = choose_image_format(*format);
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "resize_alpha", 255);
     error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
-    if (!error && *format == mlt_image_rgba) {
+    if (!error && (*format == mlt_image_rgba || *format == mlt_image_rgba64)) {
         QImage bgImage;
-        convert_mlt_to_qimage_rgba(*image, &bgImage, *width, *height);
+        convert_mlt_to_qimage(*image, &bgImage, *width, *height, *format);
 
         QImage fgImage = bgImage.copy();
         QPainter painter(&bgImage);
@@ -89,7 +89,7 @@ static int get_image(mlt_frame frame,
         painter.drawImage(QPointF(0, 0), fgImage);
         painter.end();
 
-        convert_qimage_to_mlt_rgba(&bgImage, *image, *width, *height);
+        convert_qimage_to_mlt(&bgImage, *image, *width, *height);
     }
     return error;
 }

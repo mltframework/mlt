@@ -3,6 +3,7 @@
  * Copyright (c) 2012-2024 Dan Dennedy <dan@dennedy.org>
  * Core psnr and ssim routines based on code from
  *   qsnr (C) 2010 E. Oriani, ema <AT> fastwebnet <DOT> it
+ * Copyright (c) 2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,7 +150,7 @@ static int get_image(mlt_frame a_frame,
 
     // convert mlt image to qimage
     QImage img;
-    convert_mlt_to_qimage_rgba(*image, &img, *width, *height);
+    convert_mlt_to_qimage(*image, &img, *width, *height, *format);
 
     // setup Qt drawing
     QPainter painter(&img);
@@ -183,7 +184,7 @@ static int get_image(mlt_frame a_frame,
 
     // finish Qt drawing
     painter.end();
-    convert_qimage_to_mlt_rgba(&img, *image, *width, *height);
+    convert_qimage_to_mlt(&img, *image, *width, *height);
 
     return 0;
 }

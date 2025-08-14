@@ -1,6 +1,6 @@
 /*
  * filter_box_blur.c
- * Copyright (C) 2011-2023 Meltytech, LLC
+ * Copyright (C) 2011-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,7 +52,9 @@ static int filter_get_image(mlt_frame frame,
         error = mlt_frame_get_image(frame, image, format, width, height, writable);
     } else {
         // Get the image
-        *format = mlt_image_rgba;
+        if (*format != mlt_image_rgba64) {
+            *format = mlt_image_rgba;
+        }
         error = mlt_frame_get_image(frame, image, format, width, height, 1);
         if (error == 0) {
             struct mlt_image_s img;

@@ -1,6 +1,6 @@
 /*
  * link_avdeinterlace.c
- * Copyright (C) 2023-2024 Meltytech, LLC
+ * Copyright (C) 2023-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@ static mlt_image_format validate_format(mlt_image_format format)
     case mlt_image_yuv422p16:
     case mlt_image_yuv420p10:
     case mlt_image_yuv444p10:
+    case mlt_image_rgba64:
         ret_format = format;
         break;
     case mlt_image_none:

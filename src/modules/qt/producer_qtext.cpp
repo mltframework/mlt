@@ -186,11 +186,7 @@ static void generate_qpath(mlt_properties producer_properties)
     height = fm.lineSpacing() * lines.size();
     for (int i = 0; i < lines.size(); ++i) {
         const QString line = lines[i];
-#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
         int line_width = fm.horizontalAdvance(line);
-#else
-        int line_width = fm.width(line);
-#endif
         int bearing = (line.size() > 0) ? fm.leftBearing(line.at(0)) : 0;
         if (bearing < 0)
             line_width -= bearing;
@@ -207,11 +203,7 @@ static void generate_qpath(mlt_properties producer_properties)
     for (int i = 0; i < lines.size(); ++i) {
         QString line = lines.at(i);
         x = offset;
-#if (QT_VERSION > QT_VERSION_CHECK(5, 11, 0))
         int line_width = fm.horizontalAdvance(line);
-#else
-        int line_width = fm.width(line);
-#endif
         int bearing = (line.size() > 0) ? fm.leftBearing(line.at(0)) : 0;
 
         if (bearing < 0) {

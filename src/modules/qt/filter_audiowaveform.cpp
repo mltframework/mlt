@@ -1,6 +1,6 @@
 /*
  * filter_audiowaveform.cpp -- audio waveform visualization filter
- * Copyright (c) 2015-2021 Meltytech, LLC
+ * Copyright (c) 2015-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -358,13 +358,13 @@ static int filter_get_image(mlt_frame frame,
 
     if (audio) {
         // Get the current image
-        *image_format = mlt_image_rgba;
+        *image_format = choose_image_format(*image_format);
         error = mlt_frame_get_image(frame, image, image_format, width, height, writable);
 
         // Draw the waveforms
         if (!error) {
             QImage qimg(*width, *height, QImage::Format_ARGB32);
-            convert_mlt_to_qimage_rgba(*image, &qimg, *width, *height);
+            convert_mlt_to_qimage(*image, &qimg, *width, *height, *image_format);
             draw_waveforms(filter,
                            frame,
                            &qimg,
@@ -373,7 +373,7 @@ static int filter_get_image(mlt_frame frame,
                            audio->samples,
                            *width,
                            *height);
-            convert_qimage_to_mlt_rgba(&qimg, *image, *width, *height);
+            convert_qimage_to_mlt(&qimg, *image, *width, *height);
         }
     } else {
         // This filter depends on the consumer processing the audio before

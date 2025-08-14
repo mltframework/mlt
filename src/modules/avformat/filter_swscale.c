@@ -1,6 +1,6 @@
 /*
  * filter_swscale.c -- image scaling filter
- * Copyright (C) 2008-2024 Meltytech, LLC
+ * Copyright (C) 2008-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,6 +61,9 @@ static inline int convert_mlt_to_av_cs(mlt_image_format format)
         break;
     case mlt_image_yuv422p16:
         value = AV_PIX_FMT_YUV422P16LE;
+        break;
+    case mlt_image_rgba64:
+        value = AV_PIX_FMT_RGBA64LE;
         break;
     default:
         mlt_log_error(NULL, "[filter swscale] Invalid format %s\n", mlt_image_format_name(format));

@@ -647,6 +647,8 @@ static enum AVPixelFormat pick_pix_fmt(mlt_image_format img_fmt)
         return AV_PIX_FMT_YUV420P10LE;
     case mlt_image_yuv444p10:
         return AV_PIX_FMT_YUV444P10LE;
+    case mlt_image_rgba64:
+        return AV_PIX_FMT_RGBA64LE;
     default:
         return AV_PIX_FMT_YUYV422;
     }
@@ -2163,6 +2165,9 @@ static void *consumer_thread(void *arg)
                 } else if (strstr(pix_fmt_name, "yuv444p10le")) {
                     mlt_properties_set(properties, "mlt_image_format", "yuv444p10");
                     img_fmt = mlt_image_yuv444p10;
+                } else if (strstr(pix_fmt_name, "rgba64le")) {
+                    mlt_properties_set(properties, "mlt_image_format", "rgba64");
+                    img_fmt = mlt_image_rgba64;
                 }
             }
         }
