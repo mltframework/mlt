@@ -63,14 +63,12 @@ static void avformat_init()
 static void *create_service(mlt_profile profile, mlt_service_type type, const char *id, void *arg)
 {
     avformat_init();
-#ifdef CODECS
     if (!strncmp(id, "avformat", 8)) {
         if (type == mlt_service_producer_type)
             return producer_avformat_init(profile, id, arg);
         else if (type == mlt_service_consumer_type)
             return consumer_avformat_init(profile, arg);
     }
-#endif
     if (!strcmp(id, "avcolor_space"))
         return filter_avcolour_space_init(arg);
     if (!strcmp(id, "avcolour_space"))
