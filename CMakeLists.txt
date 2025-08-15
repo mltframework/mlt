@@ -200,10 +200,7 @@ endif()
 find_package(SDL2)
 
 if(MOD_QT OR MOD_QT6 OR MOD_PLUS)
-  pkg_check_modules(FFTW IMPORTED_TARGET fftw3)
-  if(NOT FFTW_FOUND)
-    pkg_check_modules(FFTW IMPORTED_TARGET fftw)
-  endif()
+  find_package(FFTW3)
 endif()
 
 if(MOD_QT OR MOD_QT6 OR MOD_GDK)
