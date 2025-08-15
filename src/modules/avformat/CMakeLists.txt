@@ -35,8 +35,10 @@ target_link_libraries(mltavformat PRIVATE
   ${FFMPEG_LIBRARIES}
 )
 
-if(NOT MSVC)
-  target_link_libraries(mltavformat PRIVATE m)
+if(MSVC)
+  target_link_libraries(mltavformat PRIVATE PThreads4W::PThreads4W)
+else()
+   target_link_libraries(mltavformat PRIVATE m)
 endif()
 
 if(WIN32)
