@@ -1416,8 +1416,8 @@ static int encode_audio(encode_ctx_t *ctx)
                 if (source_offset < ctx->channels) {
                     // Interleave the audio buffer with the # channels for this stream/mapping.
                     for (k = 0; k < map_channels; k++, j++, source_offset++, dest_offset++) {
-                        void *src = ctx->audio_buf_1 + source_offset * ctx->sample_bytes;
-                        void *dest = ctx->audio_buf_2 + dest_offset * ctx->sample_bytes;
+                        uint8_t *src = ctx->audio_buf_1 + source_offset * ctx->sample_bytes;
+                        uint8_t *dest = ctx->audio_buf_2 + dest_offset * ctx->sample_bytes;
                         int s = samples + 1;
 
                         while (--s) {
