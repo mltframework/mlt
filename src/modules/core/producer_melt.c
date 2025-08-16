@@ -1,6 +1,6 @@
 /*
  * producer_melt.c -- load from melt command line syntax
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -450,7 +450,7 @@ mlt_producer producer_melt_init(mlt_profile profile,
             } else {
                 int backtrack = 0;
                 if (!strcmp(argv[i], "-serialise") || !strcmp(argv[i], "-consumer")
-                    || !strcmp(argv[i], "-profile") || !strcmp(argv[i], "-loglevel")) {
+                    || !strcmp(argv[i], "-profile") || !strcmp(argv[i], "-loglevel") || !strcmp(argv[i], "-repository")) {
                     i += 2;
                     backtrack = 1;
                 }
