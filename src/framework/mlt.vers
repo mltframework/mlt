@@ -667,3 +667,8 @@ MLT_7.32.0 {
   global:
     mlt_service_set_consumer;
 } MLT_7.30.0;
+
+MLT_7.34.0 {
+  global:
+    mlt_image_is_opaque;
+} MLT_7.32.0;
