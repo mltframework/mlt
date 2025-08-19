@@ -30,7 +30,12 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
+#ifdef _MSC_VER
+#include <io.h> 
 
+#define STDIN_FILENO _fileno(stdin)
+#define isatty       _isatty
+#endif
 #include <framework/mlt.h>
 
 #if (defined(__APPLE__) || defined(_WIN32) || defined(HAVE_SDL2)) && !defined(MELT_NOSDL)
