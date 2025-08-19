@@ -33,7 +33,9 @@
 #include <sys/stat.h>  // for stat()
 #include <sys/types.h> // for stat()
 #include <time.h>      // for strftime() and gtime()
-#include <unistd.h>    // for stat()
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif  
 
 /* Forward references. */
 

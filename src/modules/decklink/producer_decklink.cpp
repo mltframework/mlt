@@ -28,7 +28,9 @@
 #else
     #include <sys/time.h>
 #endif
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include <framework/mlt_slices.h>
 

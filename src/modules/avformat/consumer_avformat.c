@@ -37,7 +37,9 @@
     #include <sys/time.h>
 #endif
 #include <time.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 // avformat header files
 #include <libavcodec/avcodec.h>

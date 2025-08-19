@@ -29,7 +29,9 @@
 #else
     #include <sys/time.h>
 #endif
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #define SWAB_SLICED_ALIGN_POW 5
 static int swab_sliced(int id, int idx, int jobs, void *cookie)

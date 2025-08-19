@@ -57,7 +57,9 @@
 /** the default subdirectory of the install prefix for holding module (plugin) data */
 #define PREFIX_DATA "/Resources/mlt"
 #else
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #define PREFIX_LIB "/lib/mlt-7"
 /** the default subdirectory of the install prefix for holding module (plugin) data */
 #define PREFIX_DATA "/share/mlt-7"

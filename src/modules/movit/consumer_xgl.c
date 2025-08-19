@@ -38,7 +38,9 @@
     #include <sys/time.h>
 #endif
 #include <time.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 #include <framework/mlt.h>
 

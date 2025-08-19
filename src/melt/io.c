@@ -40,7 +40,9 @@
 #else
     #include <sys/time.h>
 #endif
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 /* Application header files */
 #include "io.h"
