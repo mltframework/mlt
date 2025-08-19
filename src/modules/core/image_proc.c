@@ -346,11 +346,11 @@ static int blur_h_proc_rgba64(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (y = slice_line_start; y < slice_line_end; y++) {
-        uint16_t *first = (uint16_t *) desc->src->data + (y * linesize);
+        uint16_t *first = (uint16_t *)((uint8_t *)desc->src->data + (y * linesize));
         uint16_t *last = first + linesize - step;
         uint16_t *s1 = first;
         uint16_t *s2 = first;
-        uint16_t *d = (uint16_t *) desc->dst->data + (y * linesize);
+        uint16_t *d = (uint16_t *)((uint8_t *)desc->dst->data + (y * linesize));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);
@@ -424,11 +424,11 @@ static int blur_v_proc_rgba64(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (x = slice_row_start; x < slice_row_end; x++) {
-        uint16_t *first = (uint16_t *) desc->src->data + (x * step);
+        uint16_t *first = (uint16_t *)((uint8_t *)desc->src->data + (x * step));
         uint16_t *last = first + (linesize * (desc->src->height - 1));
         uint16_t *s1 = first;
         uint16_t *s2 = first;
-        uint16_t *d = (uint16_t *) desc->dst->data + (x * step);
+        uint16_t *d = (uint16_t *)((uint8_t *)desc->dst->data + (x * step));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);
@@ -502,11 +502,11 @@ static int blur_h_proc_rgbx64(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (y = slice_line_start; y < slice_line_end; y++) {
-        uint16_t *first = (uint16_t *) desc->src->data + (y * linesize);
+        uint16_t *first = (uint16_t *)((uint8_t *)desc->src->data + (y * linesize));
         uint16_t *last = first + linesize - step;
         uint16_t *s1 = first;
         uint16_t *s2 = first;
-        uint16_t *d = (uint16_t *) desc->dst->data + (y * linesize);
+        uint16_t *d = (uint16_t *)((uint8_t *)desc->dst->data + (y * linesize));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);
@@ -572,11 +572,11 @@ static int blur_v_proc_rgbx64(int id, int index, int jobs, void *data)
     double diameter = (radius * 2) + 1;
 
     for (x = slice_row_start; x < slice_row_end; x++) {
-        uint16_t *first = desc->src->data + (x * step);
+        uint16_t *first = (uint16_t *)((uint8_t *)desc->src->data + (x * step));
         uint16_t *last = first + (linesize * (desc->src->height - 1));
         uint16_t *s1 = first;
         uint16_t *s2 = first;
-        uint16_t *d = desc->dst->data + (x * step);
+        uint16_t *d = (uint16_t *)((uint8_t *)desc->dst->data + (x * step));
         accumulator[0] = first[0] * (radius + 1);
         accumulator[1] = first[1] * (radius + 1);
         accumulator[2] = first[2] * (radius + 1);
