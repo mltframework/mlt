@@ -94,13 +94,20 @@ typedef struct mlt_pool_s
  * Aligned to 16 byte in case we toss buffers to external assembly
  * optimized libraries (sse/altivec).
  */
-
+#if defined(__GNUC__) || defined(__clang__)
 typedef struct __attribute__((aligned(16))) mlt_release_s
 {
     mlt_pool pool;
     int references;
 } * mlt_release;
+#elif defined(_MSC_VER)
+typedef __declspec(align(16)) struct mlt_release_s
+{
+    mlt_pool pool;
+    int references;
+} * mlt_release;
 
+#endif
 /** Create a pool.
  *
  * \private \memberof mlt_pool_s
