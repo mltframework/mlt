@@ -36,9 +36,35 @@
 #include <sys/types.h>
 #ifndef _MSC_VER
 #include <unistd.h>
-#endif
-
 #include <strings.h>
+#include <alloca.h>
+#endif
+#ifdef _MSC_VER
+    #include <io.h>      // For _close, _write
+    #include <BaseTsd.h> // For SSIZE_T
+
+    #define STDIN_FILENO  _fileno(stdin)
+    #define STDOUT_FILENO _fileno(stdout)
+    #define STDERR_FILENO _fileno(stderr)
+    #define strcasecmp  _stricmp
+    #define strncasecmp _strnicmp
+    // Define ssize_t for MSVC
+    typedef SSIZE_T ssize_t;
+    #include <malloc.h>
+    #define alloca _alloca // 为 MSVC 定义一个别名
+
+
+static inline int close(int fd)
+{
+    return _close(fd);
+}
+
+// write 的包装器
+static inline int write(int fd, const void *buffer, unsigned int count)
+{
+    return _write(fd, buffer, count);
+}
+#endif
 // includes for socket IO
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)
 #if !(defined(__FreeBSD_kernel__) && defined(__GLIBC__))
@@ -269,7 +295,7 @@ static void load_sections(consumer_cbrts self, mlt_properties properties)
 #ifdef si_pid
 #undef si_pid
 #endif
-            char si_pid[len + 1];
+            char *si_pid = (char *)alloca(len + 1);
 
             si_name[len - 3 - 5] = 0;
             strcpy(si_pid, "si.");
@@ -283,7 +309,7 @@ static void load_sections(consumer_cbrts self, mlt_properties properties)
                 ts_section *section = load_section(filename);
                 if (section) {
                     // Determine the periodicity of the section, if supplied
-                    char si_time[len + 1];
+                    char *si_time = (char *)alloca(len + 1);
 
                     strcpy(si_time, "si.");
                     strcat(si_time, si_name);
@@ -439,7 +465,7 @@ static int writen(consumer_cbrts self, const void *buf, size_t count)
     int result = 0;
     int written = 0;
     while (written < count) {
-        if ((result = write(self->fd, buf + written, count - written)) < 0) {
+        if ((result = write(self->fd, (const char *)buf + written, count - written)) < 0) {
             mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent),
                           "Failed to write: %s\n",
                           strerror(errno));

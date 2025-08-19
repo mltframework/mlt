@@ -54,7 +54,12 @@ extern "C" {
 //#ifdef HAVE_CONFIG_H
 //#include "config.h"
 //#endif
-
+#ifdef _MSC_VER
+#include <malloc.h>
+#define alloca _alloca
+#else
+#include <alloca.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -719,7 +724,7 @@ static inline char *_private_strsep(char **stringp, const char *delim) {
 #else
 static inline void _private_setenv(const char *name, const char *val, int _xx) {
   int  len  = strlen(name) + strlen(val) + 2;
-  char env[len];
+  char *env = (char *)alloca(len);
 
   sprintf(env, "%s%c%s", name, '=', val);
   putenv(env);
