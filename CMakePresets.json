@@ -22,8 +22,7 @@
       "hidden": true,
       "displayName": "Windows Base",
       "description": "Windows下使用MSVC编译器和vcpkg",
-      "generator": "Visual Studio 17 2022",
-      "architecture": "x64",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "toolchainFile": "D:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
@@ -47,6 +46,8 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "/Zi /Od /MDd /W3 /EHsc",
+        "CMAKE_C_FLAGS": "/Zi /Od /MDd /W3",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
       }
     },
@@ -64,6 +65,8 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "/O2 /MD /W3 /EHsc /DNDEBUG",
+        "CMAKE_C_FLAGS": "/O2 /MD /W3 /DNDEBUG",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
       }
     },
@@ -81,6 +84,8 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_CXX_FLAGS": "/Zi /O2 /MD /W3 /EHsc /DNDEBUG",
+        "CMAKE_C_FLAGS": "/Zi /O2 /MD /W3 /DNDEBUG",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
       }
     },
