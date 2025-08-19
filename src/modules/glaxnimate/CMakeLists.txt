@@ -173,6 +173,12 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
 
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
     add_definitions(-DWITHOUT_POTRACE -DWITHOUT_QT_COLOR_WIDGETS)
+    
+    # Fix for MSVC missing std::runtime_error include
+    if(MSVC)
+        target_compile_definitions(${ARG_TARGET} PRIVATE _HAS_EXCEPTIONS=1)
+        target_compile_options(${ARG_TARGET} PRIVATE /EHsc /FIstdexcept)
+    endif()
 
     find_package(LibArchive REQUIRED)
     find_package(ZLIB REQUIRED)
@@ -182,7 +188,6 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
     target_link_libraries(${ARG_TARGET} PRIVATE
       mlt++
       mlt
-      m
       Threads::Threads
       Qt${ARG_QT_VERSION}::Core
       Qt${ARG_QT_VERSION}::Gui
@@ -192,6 +197,11 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
       ${LibArchive_LIBRARIES}
       ZLIB::ZLIB
     )
+    
+    # Link math library on non-MSVC platforms
+    if(NOT MSVC)
+      target_link_libraries(${ARG_TARGET} PRIVATE m)
+    endif()
 
     if(NOT WINDOWS_DEPLOY)
       target_compile_definitions(${ARG_TARGET} PRIVATE NODEPLOY)

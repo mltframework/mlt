@@ -57,7 +57,7 @@ function(mlt_add_qt_module ARG_TARGET)
     )
 
     if(MSVC)
-      target_link_libraries(${ARG_TARGET} PRIVATE PThreads4W::PThreads4W)
+      target_link_libraries(${ARG_TARGET} PRIVATE msvccompat PThreads4W::PThreads4W)
     else()
         target_link_libraries(${ARG_TARGET} PRIVATE m)
     endif()

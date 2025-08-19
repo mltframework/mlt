@@ -16,6 +16,12 @@ if(NOT MSVC)
   target_link_libraries(mltnormalize PRIVATE m)
 endif()
 
+# Add pthread support for MSVC
+if(MSVC)
+  target_link_libraries(mltnormalize PRIVATE PThreads4W::PThreads4W)
+  target_include_directories(mltnormalize PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+endif()
+
 set_target_properties(mltnormalize PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltnormalize LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})

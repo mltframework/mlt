@@ -11,14 +11,19 @@ add_custom_target(Other_decklink_Files SOURCES
 
 target_compile_options(mltdecklink PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltdecklink PRIVATE mlt msvccompat Threads::Threads)
+target_link_libraries(mltdecklink PRIVATE mlt Threads::Threads)
 
 if(MSVC)
-  target_link_libraries(mltdecklink PRIVATE PThreads4W::PThreads4W)
+  # Link msvccompat first to resolve gettimeofday
+  target_link_libraries(mltdecklink PRIVATE msvccompat PThreads4W::PThreads4W)
+  # Include msvc compatibility headers
+  target_include_directories(mltdecklink PRIVATE "${CMAKE_SOURCE_DIR}/src")
   # Explicitly include vcpkg pthread headers for MSVC
   if(DEFINED VCPKG_TARGET_TRIPLET)
     target_include_directories(mltdecklink PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
   endif()
+else()
+  target_link_libraries(mltdecklink PRIVATE m)
 endif()
 
 if(WIN32)
