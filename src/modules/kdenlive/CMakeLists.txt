@@ -17,7 +17,11 @@ target_link_libraries(mltkdenlive PRIVATE mlt)
 if(NOT MSVC)
   target_link_libraries(mltkdenlive PRIVATE m)
 else()
-  target_link_libraries(mltkdenlive PRIVATE msvccompat)
+  target_link_libraries(mltkdenlive PRIVATE msvccompat PThreads4W::PThreads4W)
+  # Explicitly include vcpkg pthread headers for MSVC
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    target_include_directories(mltkdenlive PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  endif()
 endif()
 
 set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

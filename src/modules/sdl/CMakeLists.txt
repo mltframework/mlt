@@ -14,10 +14,14 @@ add_custom_target(Other_sdl_Files SOURCES
 target_compile_options(mltsdl PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltsdl PRIVATE mlt Threads::Threads PkgConfig::sdl)
-if(NOT MSVC)
-  target_link_libraries(mltsdl PRIVATE m)
+if(MSVC)
+  target_link_libraries(mltsdl PRIVATE msvccompat PThreads4W::PThreads4W)
+  # Explicitly include vcpkg pthread headers for MSVC
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    target_include_directories(mltsdl PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  endif()
 else()
-  target_link_libraries(mltsdl PRIVATE msvccompat)
+  target_link_libraries(mltsdl PRIVATE m)
 endif()
 
 if(APPLE)

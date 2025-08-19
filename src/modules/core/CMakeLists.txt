@@ -59,6 +59,10 @@ target_link_libraries(mltcore PRIVATE mlt Threads::Threads)
 
 if(MSVC)
   target_link_libraries(mltcore PRIVATE msvccompat PThreads4W::PThreads4W)
+  # Explicitly include vcpkg pthread headers for MSVC
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    target_include_directories(mltcore PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  endif()
 else()
   target_link_libraries(mltcore PRIVATE m)
 endif()

@@ -19,10 +19,14 @@ add_custom_target(Other_plsugpl_Files SOURCES
 target_compile_options(mltplusgpl PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltplusgpl PRIVATE mlt mlt++ Threads::Threads)
-if(NOT MSVC)
-  target_link_libraries(mltplusgpl PRIVATE m)
+if(MSVC)
+  target_link_libraries(mltplusgpl PRIVATE msvccompat PThreads4W::PThreads4W)
+  # Explicitly include vcpkg pthread headers for MSVC
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    target_include_directories(mltplusgpl PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  endif()
 else()
-  target_link_libraries(mltplusgpl PRIVATE msvccompat)
+  target_link_libraries(mltplusgpl PRIVATE m)
 endif()
 
 if(WIN32)

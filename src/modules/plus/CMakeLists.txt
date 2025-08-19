@@ -43,7 +43,11 @@ target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltplus PRIVATE mlt Threads::Threads)
 if(MSVC)
-  target_link_libraries(mltplus PRIVATE msvccompat)
+  target_link_libraries(mltplus PRIVATE msvccompat PThreads4W::PThreads4W)
+  # Explicitly include vcpkg pthread headers for MSVC
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    target_include_directories(mltplus PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  endif()
 else()
   target_link_libraries(mltplus PRIVATE m)
 endif()

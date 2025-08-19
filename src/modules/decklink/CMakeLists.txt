@@ -13,6 +13,14 @@ target_compile_options(mltdecklink PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltdecklink PRIVATE mlt msvccompat Threads::Threads)
 
+if(MSVC)
+  target_link_libraries(mltdecklink PRIVATE PThreads4W::PThreads4W)
+  # Explicitly include vcpkg pthread headers for MSVC
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    target_include_directories(mltdecklink PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  endif()
+endif()
+
 if(WIN32)
   target_sources(mltdecklink PRIVATE win/DeckLinkAPI_i.cpp)
   target_include_directories(mltdecklink PRIVATE win)
