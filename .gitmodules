@@ -2,3 +2,8 @@
 	path = src/modules/glaxnimate/glaxnimate
 	url = https://gitlab.com/mattbas/glaxnimate.git
 	ignore = dirty
+
+[submodule "external/vid.stab"]
+	path = external/vid.stab
+	url = https://github.com/georgmartius/vid.stab.git
+	branch = master

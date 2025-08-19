@@ -1,0 +1,419 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ccache-launcher",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER_LAUNCHER": "sccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "sccache"
+      },
+      "environment": {
+        "SCCACHE_IGNORE_SERVER_IO_ERROR": "1"
+      }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "displayName": "Windows Base",
+      "description": "Windows下使用MSVC编译器和vcpkg",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build",
+      "toolchainFile": "D:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
+        "CMAKE_CXX_STANDARD": "20",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "displayName": "Windows Debug",
+      "inherits": [
+        "windows-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Windows Release",
+      "inherits": [
+        "windows-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "windows-relwithdebinfo",
+      "displayName": "Windows RelWithDebInfo",
+      "inherits": [
+        "windows-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "displayName": "Linux Base",
+      "description": "Linux下使用clang和ninja，vcpkg toolchain",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+        "CMAKE_CXX_STANDARD": "20"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
+      "inherits": [
+        "linux-base",
+        "ccache-launcher"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-g -O0 -Wall -Wextra -fPIC",
+        "CMAKE_C_FLAGS": "-g -O0 -Wall -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "linux-release",
+      "displayName": "Linux Release",
+      "inherits": [
+        "linux-base",
+        "ccache-launcher"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_C_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "linux-relwithdebinfo",
+      "displayName": "Linux RelWithDebInfo",
+      "inherits": [
+        "linux-base",
+        "ccache-launcher"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_CXX_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_C_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "mac-base",
+      "hidden": true,
+      "displayName": "macOS Base",
+      "description": "macOS下使用clang和ninja，vcpkg toolchain",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_CXX_STANDARD": "20"
+      }
+    },
+    {
+      "name": "mac-debug",
+      "displayName": "macOS Debug",
+      "inherits": [
+        "mac-base",
+        "ccache-launcher"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-g -O0 -Wall -Wextra -fPIC",
+        "CMAKE_C_FLAGS": "-g -O0 -Wall -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "mac-release",
+      "displayName": "macOS Release",
+      "inherits": [
+        "mac-base",
+        "ccache-launcher"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_C_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "mac-relwithdebinfo",
+      "displayName": "macOS RelWithDebInfo",
+      "inherits": [
+        "mac-base",
+        "ccache-launcher"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_CXX_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_C_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-windows-debug",
+      "configurePreset": "windows-debug",
+      "jobs": 8,
+      "displayName": "构建主项目 (Windows Debug)"
+    },
+    {
+      "name": "build-windows-release",
+      "configurePreset": "windows-release",
+      "jobs": 8,
+      "displayName": "构建主项目 (Windows Release)"
+    },
+    {
+      "name": "build-windows-relwithdebinfo",
+      "configurePreset": "windows-relwithdebinfo",
+      "jobs": 8,
+      "displayName": "构建主项目 (Windows RelWithDebInfo)"
+    },
+    {
+      "name": "build-linux-debug",
+      "configurePreset": "linux-debug",
+      "jobs": 8,
+      "displayName": "构建主项目 (Linux Debug)"
+    },
+    {
+      "name": "build-linux-release",
+      "configurePreset": "linux-release",
+      "jobs": 8,
+      "displayName": "构建主项目 (Linux Release)"
+    },
+    {
+      "name": "build-linux-relwithdebinfo",
+      "configurePreset": "linux-relwithdebinfo",
+      "jobs": 8,
+      "displayName": "构建主项目 (Linux RelWithDebInfo)"
+    },
+    {
+      "name": "build-mac-debug",
+      "configurePreset": "mac-debug",
+      "jobs": 8,
+      "displayName": "构建主项目 (macOS Debug)"
+    },
+    {
+      "name": "build-mac-release",
+      "configurePreset": "mac-release",
+      "jobs": 8,
+      "displayName": "构建主项目 (macOS Release)"
+    },
+    {
+      "name": "build-mac-relwithdebinfo",
+      "configurePreset": "mac-relwithdebinfo",
+      "jobs": 8,
+      "displayName": "构建主项目 (macOS RelWithDebInfo)"
+    }
+  ],
+  "testPresets": [],
+  "workflowPresets": [
+    {
+      "name": "windows-debug-workflow-flow",
+      "displayName": "工作流: Flow (Windows Debug)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "windows-debug"
+        },
+        {
+          "type": "build",
+          "name": "build-windows-debug"
+        }
+      ]
+    },
+    {
+      "name": "windows-release-workflow-flow",
+      "displayName": "工作流: Flow (Windows Release)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "windows-release"
+        },
+        {
+          "type": "build",
+          "name": "build-windows-release"
+        }
+      ]
+    },
+    {
+      "name": "windows-relwithdebinfo-workflow-flow",
+      "displayName": "工作流: Flow (Windows RelWithDebInfo)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "windows-relwithdebinfo"
+        },
+        {
+          "type": "build",
+          "name": "build-windows-relwithdebinfo"
+        }
+      ]
+    },
+    {
+      "name": "linux-debug-workflow-flow",
+      "displayName": "工作流: Flow (Linux Debug)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "linux-debug"
+        },
+        {
+          "type": "build",
+          "name": "build-linux-debug"
+        }
+      ]
+    },
+    {
+      "name": "linux-release-workflow-flow",
+      "displayName": "工作流: Flow (Linux Release)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "linux-release"
+        },
+        {
+          "type": "build",
+          "name": "build-linux-release"
+        }
+      ]
+    },
+    {
+      "name": "linux-relwithdebinfo-workflow-flow",
+      "displayName": "工作流: Flow (Linux RelWithDebInfo)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "linux-relwithdebinfo"
+        },
+        {
+          "type": "build",
+          "name": "build-linux-relwithdebinfo"
+        }
+      ]
+    },
+    {
+      "name": "mac-debug-workflow-flow",
+      "displayName": "工作流: Flow (macOS Debug)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "mac-debug"
+        },
+        {
+          "type": "build",
+          "name": "build-mac-debug"
+        }
+      ]
+    },
+    {
+      "name": "mac-release-workflow-flow",
+      "displayName": "工作流: Flow (macOS Release)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "mac-release"
+        },
+        {
+          "type": "build",
+          "name": "build-mac-release"
+        }
+      ]
+    },
+    {
+      "name": "mac-relwithdebinfo-workflow-flow",
+      "displayName": "工作流: Flow (macOS RelWithDebInfo)",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "mac-relwithdebinfo"
+        },
+        {
+          "type": "build",
+          "name": "build-mac-relwithdebinfo"
+        }
+      ]
+    }
+  ]
+}
