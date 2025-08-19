@@ -48,7 +48,11 @@
 #include <sys/types.h>
 #endif
 #endif
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
 #include <time.h>
 
 #define TSP_BYTES (188)

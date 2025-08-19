@@ -12,6 +12,9 @@ add_custom_target(Other_ndi_Files SOURCES
 target_compile_options(mltndi PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltndi PRIVATE mlt NDI::NDI)
+if(MSVC)
+  target_link_libraries(mltndi PRIVATE msvccompat)
+endif()
 
 if(CPU_SSE)
   target_compile_definitions(mltndi PRIVATE USE_SSE)

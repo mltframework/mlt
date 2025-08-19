@@ -21,6 +21,8 @@ target_compile_options(mltplusgpl PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltplusgpl PRIVATE mlt mlt++ Threads::Threads)
 if(NOT MSVC)
   target_link_libraries(mltplusgpl PRIVATE m)
+else()
+  target_link_libraries(mltplusgpl PRIVATE msvccompat)
 endif()
 
 if(WIN32)

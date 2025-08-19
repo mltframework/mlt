@@ -16,6 +16,8 @@ target_compile_options(mltkdenlive PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltkdenlive PRIVATE mlt)
 if(NOT MSVC)
   target_link_libraries(mltkdenlive PRIVATE m)
+else()
+  target_link_libraries(mltkdenlive PRIVATE msvccompat)
 endif()
 
 set_target_properties(mltkdenlive PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

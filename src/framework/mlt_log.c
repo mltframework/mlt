@@ -24,7 +24,11 @@
 
 #include <string.h>
 #ifndef NDEBUG
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
 #include <time.h>
 #endif
 

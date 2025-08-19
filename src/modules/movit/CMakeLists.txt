@@ -37,6 +37,8 @@ endif()
 target_link_libraries(mltmovit PRIVATE Threads::Threads mlt mlt++ OpenGL::GL PkgConfig::movit)
 if(NOT MSVC)
   target_link_libraries(mltmovit PRIVATE m)
+else()
+  target_link_libraries(mltmovit PRIVATE msvccompat)
 endif()
 
 if(UNIX AND NOT APPLE)

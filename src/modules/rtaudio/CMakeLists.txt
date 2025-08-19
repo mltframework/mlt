@@ -12,7 +12,7 @@ target_compile_options(mltrtaudio PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltrtaudio PRIVATE mlt Threads::Threads)
 
 if(MSVC)
-  target_link_libraries(mltrtaudio PRIVATE PThreads4W::PThreads4W)
+  target_link_libraries(mltrtaudio PRIVATE msvccompat PThreads4W::PThreads4W)
 endif()
 
 if(TARGET PkgConfig::rtaudio)

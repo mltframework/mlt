@@ -36,7 +36,7 @@ target_link_libraries(mltavformat PRIVATE
 )
 
 if(MSVC)
-  target_link_libraries(mltavformat PRIVATE PThreads4W::PThreads4W)
+  target_link_libraries(mltavformat PRIVATE msvccompat PThreads4W::PThreads4W)
 else()
    target_link_libraries(mltavformat PRIVATE m)
 endif()

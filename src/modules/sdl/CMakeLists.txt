@@ -16,6 +16,8 @@ target_compile_options(mltsdl PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltsdl PRIVATE mlt Threads::Threads PkgConfig::sdl)
 if(NOT MSVC)
   target_link_libraries(mltsdl PRIVATE m)
+else()
+  target_link_libraries(mltsdl PRIVATE msvccompat)
 endif()
 
 if(APPLE)

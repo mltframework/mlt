@@ -69,3 +69,4 @@ src/swig/ruby/markdown/
 CMakeLists.txt.user
 .cache/
 external
+.vscode/

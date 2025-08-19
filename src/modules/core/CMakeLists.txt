@@ -58,7 +58,7 @@ target_compile_options(mltcore PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltcore PRIVATE mlt Threads::Threads)
 
 if(MSVC)
-  target_link_libraries(mltcore PRIVATE PThreads4W::PThreads4W)
+  target_link_libraries(mltcore PRIVATE msvccompat PThreads4W::PThreads4W)
 else()
   target_link_libraries(mltcore PRIVATE m)
 endif()

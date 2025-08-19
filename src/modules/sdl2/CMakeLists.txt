@@ -14,7 +14,7 @@ target_compile_options(mltsdl2 PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltsdl2 PRIVATE mlt Threads::Threads SDL2::SDL2)
 if(MSVC)
-  target_link_libraries(mltsdl2 PRIVATE PThreads4W::PThreads4W)
+  target_link_libraries(mltsdl2 PRIVATE msvccompat PThreads4W::PThreads4W)
 else()
   target_link_libraries(mltsdl2 PRIVATE m)
 endif()
