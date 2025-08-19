@@ -1,6 +1,7 @@
 set(MLT_PUBLIC_HEADERS
   mlt.h
   mlt_animation.h
+  mlt_api.h
   mlt_audio.h
   mlt_cache.h
   mlt_chain.h
@@ -84,6 +85,7 @@ target_link_libraries(mlt PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 
 if(MSVC)
   target_link_libraries(mlt PRIVATE msvccompat PThreads4W::PThreads4W)
+  target_compile_definitions(mlt PRIVATE MLT_EXPORTS)
   # Explicitly include vcpkg pthread headers for MSVC
   if(DEFINED VCPKG_TARGET_TRIPLET)
     target_include_directories(mlt PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")

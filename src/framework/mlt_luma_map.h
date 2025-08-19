@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "mlt_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,11 +52,11 @@ struct mlt_luma_map_s
 
 typedef struct mlt_luma_map_s *mlt_luma_map;
 
-extern void mlt_luma_map_init(mlt_luma_map self);
-extern mlt_luma_map mlt_luma_map_new(const char *path);
-extern uint16_t *mlt_luma_map_render(mlt_luma_map self);
-extern int mlt_luma_map_from_pgm(const char *filename, uint16_t **map, int *width, int *height);
-extern void mlt_luma_map_from_yuv422(uint8_t *image, uint16_t **map, int width, int height);
+MLT_API void mlt_luma_map_init(mlt_luma_map self);
+MLT_API mlt_luma_map mlt_luma_map_new(const char *path);
+MLT_API uint16_t *mlt_luma_map_render(mlt_luma_map self);
+MLT_API int mlt_luma_map_from_pgm(const char *filename, uint16_t **map, int *width, int *height);
+MLT_API void mlt_luma_map_from_yuv422(uint8_t *image, uint16_t **map, int width, int height);
 
 #ifdef __cplusplus
 }

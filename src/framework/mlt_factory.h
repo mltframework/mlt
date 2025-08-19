@@ -25,6 +25,7 @@
 #include "mlt_profile.h"
 #include "mlt_repository.h"
 #include "mlt_types.h"
+#include "mlt_api.h"
 
 /**
  * \envvar \em MLT_PRODUCER the name of a default producer often used by other services, defaults to "loader"
@@ -59,26 +60,26 @@
  *   the event data is a pointer to mlt_factory_event_data
  */
 
-extern mlt_repository mlt_factory_init(const char *directory);
-extern mlt_repository mlt_factory_repository();
-extern const char *mlt_factory_directory();
-extern char *mlt_environment(const char *name);
-extern int mlt_environment_set(const char *name, const char *value);
-extern mlt_properties mlt_factory_event_object();
-extern mlt_producer mlt_factory_producer(mlt_profile profile,
+MLT_API mlt_repository mlt_factory_init(const char *directory);
+MLT_API mlt_repository mlt_factory_repository();
+MLT_API const char *mlt_factory_directory();
+MLT_API char *mlt_environment(const char *name);
+MLT_API int mlt_environment_set(const char *name, const char *value);
+MLT_API mlt_properties mlt_factory_event_object();
+MLT_API mlt_producer mlt_factory_producer(mlt_profile profile,
                                          const char *service,
                                          const void *resource);
-extern mlt_filter mlt_factory_filter(mlt_profile profile, const char *service, const void *input);
-extern mlt_link mlt_factory_link(const char *service, const void *input);
-extern mlt_transition mlt_factory_transition(mlt_profile profile,
+MLT_API mlt_filter mlt_factory_filter(mlt_profile profile, const char *service, const void *input);
+MLT_API mlt_link mlt_factory_link(const char *service, const void *input);
+MLT_API mlt_transition mlt_factory_transition(mlt_profile profile,
                                              const char *service,
                                              const void *input);
-extern mlt_consumer mlt_factory_consumer(mlt_profile profile,
+MLT_API mlt_consumer mlt_factory_consumer(mlt_profile profile,
                                          const char *service,
                                          const void *input);
-extern void mlt_factory_register_for_clean_up(void *ptr, mlt_destructor destructor);
-extern void mlt_factory_close();
-extern mlt_properties mlt_global_properties();
+MLT_API void mlt_factory_register_for_clean_up(void *ptr, mlt_destructor destructor);
+MLT_API void mlt_factory_close();
+MLT_API mlt_properties mlt_global_properties();
 
 /** The event data for all factory-related events */
 

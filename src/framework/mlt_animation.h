@@ -25,6 +25,7 @@
 
 #include "mlt_property.h"
 #include "mlt_types.h"
+#include "mlt_api.h"
 
 /** \brief Animation class
  *
@@ -48,29 +49,29 @@ struct mlt_animation_item_s
 };
 typedef struct mlt_animation_item_s *mlt_animation_item; /**< pointer to an animation item */
 
-extern mlt_animation mlt_animation_new();
-extern int mlt_animation_parse(
+MLT_API mlt_animation mlt_animation_new();
+MLT_API int mlt_animation_parse(
     mlt_animation self, const char *data, int length, double fps, mlt_locale_t locale);
-extern int mlt_animation_refresh(mlt_animation self, const char *data, int length);
-extern int mlt_animation_get_length(mlt_animation self);
-extern void mlt_animation_set_length(mlt_animation self, int length);
-extern int mlt_animation_parse_item(mlt_animation self, mlt_animation_item item, const char *data);
-extern int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int position);
-extern int mlt_animation_insert(mlt_animation self, mlt_animation_item item);
-extern int mlt_animation_remove(mlt_animation self, int position);
-extern void mlt_animation_interpolate(mlt_animation self);
-extern int mlt_animation_next_key(mlt_animation self, mlt_animation_item item, int position);
-extern int mlt_animation_prev_key(mlt_animation self, mlt_animation_item item, int position);
-extern char *mlt_animation_serialize_cut_tf(mlt_animation self, int in, int out, mlt_time_format);
-extern char *mlt_animation_serialize_cut(mlt_animation self, int in, int out);
-extern char *mlt_animation_serialize_tf(mlt_animation self, mlt_time_format);
-extern char *mlt_animation_serialize(mlt_animation self);
-extern int mlt_animation_key_count(mlt_animation self);
-extern int mlt_animation_key_get(mlt_animation self, mlt_animation_item item, int index);
-extern void mlt_animation_close(mlt_animation self);
-extern int mlt_animation_key_set_type(mlt_animation self, int index, mlt_keyframe_type type);
-extern int mlt_animation_key_set_frame(mlt_animation self, int index, int frame);
-extern void mlt_animation_shift_frames(mlt_animation self, int shift);
-extern const char *mlt_animation_get_string(mlt_animation self);
+MLT_API int mlt_animation_refresh(mlt_animation self, const char *data, int length);
+MLT_API int mlt_animation_get_length(mlt_animation self);
+MLT_API void mlt_animation_set_length(mlt_animation self, int length);
+MLT_API int mlt_animation_parse_item(mlt_animation self, mlt_animation_item item, const char *data);
+MLT_API int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int position);
+MLT_API int mlt_animation_insert(mlt_animation self, mlt_animation_item item);
+MLT_API int mlt_animation_remove(mlt_animation self, int position);
+MLT_API void mlt_animation_interpolate(mlt_animation self);
+MLT_API int mlt_animation_next_key(mlt_animation self, mlt_animation_item item, int position);
+MLT_API int mlt_animation_prev_key(mlt_animation self, mlt_animation_item item, int position);
+MLT_API char *mlt_animation_serialize_cut_tf(mlt_animation self, int in, int out, mlt_time_format);
+MLT_API char *mlt_animation_serialize_cut(mlt_animation self, int in, int out);
+MLT_API char *mlt_animation_serialize_tf(mlt_animation self, mlt_time_format);
+MLT_API char *mlt_animation_serialize(mlt_animation self);
+MLT_API int mlt_animation_key_count(mlt_animation self);
+MLT_API int mlt_animation_key_get(mlt_animation self, mlt_animation_item item, int index);
+MLT_API void mlt_animation_close(mlt_animation self);
+MLT_API int mlt_animation_key_set_type(mlt_animation self, int index, mlt_keyframe_type type);
+MLT_API int mlt_animation_key_set_frame(mlt_animation self, int index, int frame);
+MLT_API void mlt_animation_shift_frames(mlt_animation self, int shift);
+MLT_API const char *mlt_animation_get_string(mlt_animation self);
 
 #endif

@@ -25,7 +25,7 @@
 
 #include "mlt_profile.h"
 #include "mlt_types.h"
-
+#include "mlt_api.h"
 /** This callback is the main entry point into a module, which must be exported
  *  with the symbol "mlt_register".
  *
@@ -64,31 +64,31 @@ typedef mlt_properties (*mlt_metadata_callback)(mlt_service_type,
                                       (mlt_metadata_callback) (callback), \
                                       (data)))
 
-extern mlt_repository mlt_repository_init(const char *directory);
-extern void mlt_repository_register(mlt_repository self,
+MLT_API mlt_repository mlt_repository_init(const char *directory);
+MLT_API void mlt_repository_register(mlt_repository self,
                                     mlt_service_type service_type,
                                     const char *service,
                                     mlt_register_callback);
-extern void *mlt_repository_create(mlt_repository self,
+MLT_API void *mlt_repository_create(mlt_repository self,
                                    mlt_profile profile,
                                    mlt_service_type type,
                                    const char *service,
                                    const void *arg);
-extern void mlt_repository_close(mlt_repository self);
-extern mlt_properties mlt_repository_consumers(mlt_repository self);
-extern mlt_properties mlt_repository_filters(mlt_repository self);
-extern mlt_properties mlt_repository_links(mlt_repository self);
-extern mlt_properties mlt_repository_producers(mlt_repository self);
-extern mlt_properties mlt_repository_transitions(mlt_repository self);
-extern void mlt_repository_register_metadata(mlt_repository self,
+MLT_API void mlt_repository_close(mlt_repository self);
+MLT_API mlt_properties mlt_repository_consumers(mlt_repository self);
+MLT_API mlt_properties mlt_repository_filters(mlt_repository self);
+MLT_API mlt_properties mlt_repository_links(mlt_repository self);
+MLT_API mlt_properties mlt_repository_producers(mlt_repository self);
+MLT_API mlt_properties mlt_repository_transitions(mlt_repository self);
+MLT_API void mlt_repository_register_metadata(mlt_repository self,
                                              mlt_service_type type,
                                              const char *service,
                                              mlt_metadata_callback,
                                              void *callback_data);
-extern mlt_properties mlt_repository_metadata(mlt_repository self,
+MLT_API mlt_properties mlt_repository_metadata(mlt_repository self,
                                               mlt_service_type type,
                                               const char *service);
-extern mlt_properties mlt_repository_languages(mlt_repository self);
-extern mlt_properties mlt_repository_presets();
+MLT_API mlt_properties mlt_repository_languages(mlt_repository self);
+MLT_API mlt_properties mlt_repository_presets();
 
 #endif

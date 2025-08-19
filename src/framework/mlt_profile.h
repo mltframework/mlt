@@ -24,6 +24,7 @@
 #define MLT_PROFILE_H
 
 #include "mlt_types.h"
+#include "mlt_api.h"
 
 /** \brief Profile class
  *
@@ -47,18 +48,18 @@ struct mlt_profile_s
     int is_explicit; /**< used internally to indicate if the profile was requested explicitly or computed or defaulted */
 };
 
-extern mlt_profile mlt_profile_init(const char *name);
-extern mlt_profile mlt_profile_load_file(const char *file);
-extern mlt_profile mlt_profile_load_properties(mlt_properties properties);
-extern mlt_profile mlt_profile_load_string(const char *string);
-extern double mlt_profile_fps(mlt_profile profile);
-extern double mlt_profile_sar(mlt_profile profile);
-extern double mlt_profile_dar(mlt_profile profile);
-extern void mlt_profile_close(mlt_profile profile);
-extern mlt_profile mlt_profile_clone(mlt_profile profile);
-extern mlt_properties mlt_profile_list();
-extern void mlt_profile_from_producer(mlt_profile profile, mlt_producer producer);
-extern char *mlt_profile_lumas_dir(mlt_profile profile);
-extern double mlt_profile_scale_width(mlt_profile profile, int width);
-extern double mlt_profile_scale_height(mlt_profile profile, int height);
+MLT_API mlt_profile mlt_profile_init(const char *name);
+MLT_API mlt_profile mlt_profile_load_file(const char *file);
+MLT_API mlt_profile mlt_profile_load_properties(mlt_properties properties);
+MLT_API mlt_profile mlt_profile_load_string(const char *string);
+MLT_API double mlt_profile_fps(mlt_profile profile);
+MLT_API double mlt_profile_sar(mlt_profile profile);
+MLT_API double mlt_profile_dar(mlt_profile profile);
+MLT_API void mlt_profile_close(mlt_profile profile);
+MLT_API mlt_profile mlt_profile_clone(mlt_profile profile);
+MLT_API mlt_properties mlt_profile_list();
+MLT_API void mlt_profile_from_producer(mlt_profile profile, mlt_producer producer);
+MLT_API char *mlt_profile_lumas_dir(mlt_profile profile);
+MLT_API double mlt_profile_scale_width(mlt_profile profile, int width);
+MLT_API double mlt_profile_scale_height(mlt_profile profile, int height);
 #endif

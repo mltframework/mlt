@@ -24,6 +24,7 @@
 #define MLT_LINK_H
 
 #include "mlt_producer.h"
+#include "mlt_api.h"
 
 /** \brief Link class
  *
@@ -69,15 +70,15 @@ struct mlt_link_s
 #define MLT_LINK_SERVICE(link) MLT_PRODUCER_SERVICE(MLT_LINK_PRODUCER(link))
 #define MLT_LINK_PROPERTIES(link) MLT_SERVICE_PROPERTIES(MLT_LINK_SERVICE(link))
 
-extern mlt_link mlt_link_init();
-extern int mlt_link_connect_next(mlt_link self, mlt_producer next, mlt_profile chain_profile);
-extern void mlt_link_close(mlt_link self);
+MLT_API mlt_link mlt_link_init();
+MLT_API int mlt_link_connect_next(mlt_link self, mlt_producer next, mlt_profile chain_profile);
+MLT_API void mlt_link_close(mlt_link self);
 
 // Link filter wrapper functions
-extern mlt_link mlt_link_filter_init(mlt_profile profile,
-                                     mlt_service_type type,
-                                     const char *id,
-                                     char *arg);
-extern mlt_properties mlt_link_filter_metadata(mlt_service_type type, const char *id, void *data);
+MLT_API mlt_link mlt_link_filter_init(mlt_profile profile,
+                                       mlt_service_type type,
+                                       const char *id,
+                                       char *arg);
+MLT_API mlt_properties mlt_link_filter_metadata(mlt_service_type type, const char *id, void *data);
 
 #endif

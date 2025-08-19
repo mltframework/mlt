@@ -21,7 +21,7 @@
 
 #ifndef MLT_VERSION_H
 #define MLT_VERSION_H
-
+#include "mlt_api.h"
 // Add quotes around any #define variables
 #define MLT_STRINGIZE2(s) #s
 #define MLT_STRINGIZE(s) MLT_STRINGIZE2(s)
@@ -34,10 +34,10 @@
 #define LIBMLT_VERSION \
     MLT_STRINGIZE(LIBMLT_VERSION_MAJOR.LIBMLT_VERSION_MINOR.LIBMLT_VERSION_REVISION)
 
-extern int mlt_version_get_int();
-extern int mlt_version_get_major();
-extern int mlt_version_get_minor();
-extern int mlt_version_get_revision();
-extern char *mlt_version_get_string();
+MLT_API int mlt_version_get_int();
+MLT_API int mlt_version_get_major();
+MLT_API int mlt_version_get_minor();
+MLT_API int mlt_version_get_revision();
+MLT_API char *mlt_version_get_string();
 
 #endif
