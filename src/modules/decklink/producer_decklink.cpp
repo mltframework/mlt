@@ -29,7 +29,9 @@
 #include <string.h>
 #ifdef _MSC_VER
     #define _WINSOCKAPI_   // stops windows.h including winsock.h
+    extern "C"{
     #include <gettimeofday.h>
+}
 #else
     #include <sys/time.h>
 #endif

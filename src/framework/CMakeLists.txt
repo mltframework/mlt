@@ -85,6 +85,7 @@ target_link_libraries(mlt PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 
 if(MSVC)
   target_link_libraries(mlt PRIVATE msvccompat PThreads4W::PThreads4W)
+  target_link_libraries(mlt PUBLIC  ${GETTIMEOFDAY_LIBRARY})
   target_compile_definitions(mlt PRIVATE MLT_EXPORTS)
   # Explicitly include vcpkg pthread headers for MSVC
   if(DEFINED VCPKG_TARGET_TRIPLET)

@@ -28,7 +28,9 @@
 #include <stdlib.h>
 #include <string.h>
 #ifdef _MSC_VER
+    extern "C"{
     #include <gettimeofday.h>
+}
 #else
     #include <sys/time.h>
 #endif

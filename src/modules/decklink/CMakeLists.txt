@@ -15,7 +15,7 @@ target_link_libraries(mltdecklink PRIVATE mlt Threads::Threads)
 
 if(MSVC)
   # Link msvccompat first to resolve gettimeofday
-  target_link_libraries(mltdecklink PRIVATE msvccompat PThreads4W::PThreads4W)
+  target_link_libraries(mltdecklink PRIVATE msvccompat ${GETTIMEOFDAY_LIBRARY} PThreads4W::PThreads4W)
   # Include msvc compatibility headers
   target_include_directories(mltdecklink PRIVATE "${CMAKE_SOURCE_DIR}/src")
   # Explicitly include vcpkg pthread headers for MSVC
