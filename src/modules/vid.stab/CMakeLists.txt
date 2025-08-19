@@ -15,6 +15,8 @@ target_compile_options(mltvidstab PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltvidstab PRIVATE mlt mlt++ PkgConfig::vidstab)
 if(MSVC)
   target_link_libraries(mltvidstab PRIVATE msvccompat PThreads4W::PThreads4W)
+  # Add vid.stab headers from external directory for MSVC
+  target_include_directories(mltvidstab PRIVATE ${CMAKE_SOURCE_DIR}/external/vid.stab/src)
   # Explicitly include vcpkg pthread headers for MSVC
   if(DEFINED VCPKG_TARGET_TRIPLET)
     target_include_directories(mltvidstab PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")

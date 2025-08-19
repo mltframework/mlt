@@ -23,7 +23,11 @@ extern "C" {
 #include "common.h"
 #include <framework/mlt.h>
 #include <framework/mlt_animation.h>
+#ifdef _MSC_VER
+#include <libvidstab.h>
+#else
 #include <vid.stab/libvidstab.h>
+#endif
 }
 
 #include <assert.h>

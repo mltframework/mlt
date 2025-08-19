@@ -21,7 +21,11 @@
 
 extern "C" {
 #include "common.h"
+#ifdef _MSC_VER
+#include <libvidstab.h>
+#else
 #include <vid.stab/libvidstab.h>
+#endif
 }
 
 #include <assert.h>
