@@ -152,4 +152,5 @@ MLT_API void mlt_consumer_stopped(mlt_consumer self);
 MLT_API void mlt_consumer_close(mlt_consumer);
 MLT_API mlt_position mlt_consumer_position(mlt_consumer);
 
+extern MLT_API pthread_mutex_t mlt_sdl_mutex;
 #endif

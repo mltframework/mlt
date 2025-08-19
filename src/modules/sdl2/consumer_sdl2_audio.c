@@ -37,7 +37,7 @@
     #include <sys/time.h>
 #endif
 
-extern pthread_mutex_t mlt_sdl_mutex;
+extern MLT_API pthread_mutex_t mlt_sdl_mutex;
 
 /** This classes definition.
 */
