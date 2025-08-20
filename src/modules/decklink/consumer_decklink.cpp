@@ -37,12 +37,7 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
-#ifdef _MSC_VER
-    #include <BaseTsd.h> // For SSIZE_T
-
-    // Define ssize_t for MSVC
-    typedef SSIZE_T ssize_t;
-#endif
+#include <framework/msvc_posix_compat.h>
 #define SWAB_SLICED_ALIGN_POW 5
 static int swab_sliced(int id, int idx, int jobs, void *cookie)
 {

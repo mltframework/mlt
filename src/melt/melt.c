@@ -31,10 +31,7 @@
 #include <unistd.h>
 #endif
 #ifdef _MSC_VER
-#include <io.h> 
-
-#define STDIN_FILENO _fileno(stdin)
-#define isatty       _isatty
+#include <framework/msvc_posix_compat.h>
 #endif
 #include <framework/mlt.h>
 

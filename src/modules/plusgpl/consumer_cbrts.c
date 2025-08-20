@@ -40,30 +40,7 @@
 #include <alloca.h>
 #endif
 #ifdef _MSC_VER
-    #include <io.h>      // For _close, _write
-    #include <BaseTsd.h> // For SSIZE_T
-
-    #define STDIN_FILENO  _fileno(stdin)
-    #define STDOUT_FILENO _fileno(stdout)
-    #define STDERR_FILENO _fileno(stderr)
-    #define strcasecmp  _stricmp
-    #define strncasecmp _strnicmp
-    // Define ssize_t for MSVC
-    typedef SSIZE_T ssize_t;
-    #include <malloc.h>
-    #define alloca _alloca // 为 MSVC 定义一个别名
-
-
-static inline int close(int fd)
-{
-    return _close(fd);
-}
-
-// write 的包装器
-static inline int write(int fd, const void *buffer, unsigned int count)
-{
-    return _write(fd, buffer, count);
-}
+#include <framework/msvc_posix_compat.h>
 #endif
 // includes for socket IO
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)

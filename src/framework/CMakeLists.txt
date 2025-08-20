@@ -32,6 +32,7 @@ set(MLT_PUBLIC_HEADERS
   mlt_transition.h
   mlt_types.h
   mlt_version.h
+  msvc_posix_compat.h
 )
 
 add_library(mlt SHARED

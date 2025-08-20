@@ -55,8 +55,7 @@ extern "C" {
 //#include "config.h"
 //#endif
 #ifdef _MSC_VER
-#include <malloc.h>
-#define alloca _alloca
+#include <framework/msvc_posix_compat.h>
 #else
 #include <alloca.h>
 #endif

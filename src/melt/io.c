@@ -34,7 +34,6 @@
 // for nanosleep()
 #include <framework/mlt_types.h>
 #define WIN32_LEAN_AND_MEAN
-#define _WINSOCKAPI_   // stops windows.h including winsock.h
 #include <windows.h>
 #endif
 #ifdef _MSC_VER
