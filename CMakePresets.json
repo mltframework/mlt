@@ -21,7 +21,8 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "MOD_GLAXNIMATE_QT6": "ON",
         "MOD_OPENCV": "ON",
-        "MOD_MOVIT": "OFF"
+        "MOD_MOVIT": "OFF",
+        "MOD_SOX": "OFF"
       }
     },
     {
