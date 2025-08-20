@@ -20,6 +20,7 @@
 #define __STDC_FORMAT_MACROS /* see inttypes.h */
 #ifdef _MSC_VER
 #define _WINSOCKAPI_   // stops windows.h including winsock.h
+#include <framework/msvc_posix_compat.h>
 #endif
 #include "common.h"
 #include <framework/mlt.h>
@@ -37,7 +38,6 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
-#include <framework/msvc_posix_compat.h>
 #define SWAB_SLICED_ALIGN_POW 5
 static int swab_sliced(int id, int idx, int jobs, void *cookie)
 {
