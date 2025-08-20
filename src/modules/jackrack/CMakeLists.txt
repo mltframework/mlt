@@ -12,7 +12,7 @@ target_link_libraries(mltjackrack PRIVATE mlt Threads::Threads)
 # Add pthread support for MSVC
 if(MSVC)
   target_link_libraries(mltjackrack PRIVATE PThreads4W::PThreads4W)
-  target_include_directories(mltjackrack PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  mlt_add_vcpkg_include_dirs(mltjackrack)
 endif()
 
 if(TARGET JACK::JACK)
@@ -65,7 +65,7 @@ target_link_libraries(mltladspa PRIVATE mlt Threads::Threads)
 if(MSVC)
   find_package(PThreads4W REQUIRED)
   target_link_libraries(mltladspa PRIVATE PThreads4W::PThreads4W)
-  target_include_directories(mltladspa PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  mlt_add_vcpkg_include_dirs(mltladspa)
 endif()
 
 if(USE_LV2 AND GPL)

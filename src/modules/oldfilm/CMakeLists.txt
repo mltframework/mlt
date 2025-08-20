@@ -24,7 +24,7 @@ endif()
 # Add pthread support for MSVC
 if(MSVC)
   target_link_libraries(mltoldfilm PRIVATE PThreads4W::PThreads4W)
-  target_include_directories(mltoldfilm PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  mlt_add_vcpkg_include_dirs(mltoldfilm)
 endif()
 
 set_target_properties(mltoldfilm PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

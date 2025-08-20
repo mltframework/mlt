@@ -18,10 +18,7 @@ if(MSVC)
   target_link_libraries(mltdecklink PRIVATE msvccompat ${GETTIMEOFDAY_LIBRARY} PThreads4W::PThreads4W)
   # Include msvc compatibility headers
   target_include_directories(mltdecklink PRIVATE "${CMAKE_SOURCE_DIR}/src")
-  # Explicitly include vcpkg pthread headers for MSVC
-  if(DEFINED VCPKG_TARGET_TRIPLET)
-    target_include_directories(mltdecklink PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
-  endif()
+  mlt_add_vcpkg_include_dirs(mltdecklink)
 else()
   target_link_libraries(mltdecklink PRIVATE m)
 endif()

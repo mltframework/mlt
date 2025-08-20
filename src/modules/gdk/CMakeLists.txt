@@ -18,7 +18,7 @@ if(NOT MSVC)
 else()
   # Add pthread support for MSVC
   target_link_libraries(mltgdk PRIVATE PThreads4W::PThreads4W)
-  target_include_directories(mltgdk PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+  mlt_add_vcpkg_include_dirs(mltgdk)
 endif()
 
 target_compile_definitions(mltgdk PRIVATE USE_PIXBUF)

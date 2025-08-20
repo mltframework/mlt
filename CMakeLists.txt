@@ -118,6 +118,17 @@ endif()
 set(MLT_INSTALL_MODULE_DIR ${CMAKE_INSTALL_LIBDIR}/${MLT_SUBDIR})
 set(MLT_INSTALL_DATA_DIR ${CMAKE_INSTALL_DATADIR}/${MLT_SUBDIR})
 
+# Shared function to add vcpkg include directories for MSVC
+function(mlt_add_vcpkg_include_dirs target_name)
+  if(MSVC AND DEFINED VCPKG_TARGET_TRIPLET)
+    if(NOT DEFINED _VCPKG_INSTALLED_DIR AND DEFINED VCPKG_INSTALLED_DIR)
+      set(_VCPKG_INSTALLED_DIR "${VCPKG_INSTALLED_DIR}")
+    endif()
+    if(DEFINED _VCPKG_INSTALLED_DIR)
+      target_include_directories(${target_name} PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+    endif()
+  endif()
+endfunction()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)

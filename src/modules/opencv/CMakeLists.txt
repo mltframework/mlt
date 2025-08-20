@@ -11,10 +11,7 @@ target_link_libraries(mltopencv PRIVATE mlt ${OpenCV_LIBS})
 
 if(MSVC)
   target_link_libraries(mltopencv PRIVATE PThreads4W::PThreads4W)
-  # Explicitly include vcpkg pthread headers for MSVC
-  if(DEFINED VCPKG_TARGET_TRIPLET)
-    target_include_directories(mltopencv PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
-  endif()
+  mlt_add_vcpkg_include_dirs(mltopencv)
 endif()
 
 set_target_properties(mltopencv PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

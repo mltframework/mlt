@@ -292,8 +292,8 @@ static void blit_rect(mlt_image src, mlt_image dst, mlt_rect rect)
     int blitWidth = rect.w * 4;
     int linesize = src->width * 4;
     if (src->format == mlt_image_rgba) {
-        uint8_t *s = (uint8_t *)((uint8_t *)src->data + (int) rect.y * linesize + (int) rect.x * 4);
-        uint8_t *d = (uint8_t *)((uint8_t *)dst->data + (int) rect.y * linesize + (int) rect.x * 4);
+        uint8_t *s = (uint8_t *)src->data + (int) rect.y * linesize + (int) rect.x * 4;
+        uint8_t *d = (uint8_t *)dst->data + (int) rect.y * linesize + (int) rect.x * 4;
         while (blitHeight--) {
             memcpy(d, s, blitWidth);
             s += linesize;

@@ -441,8 +441,9 @@ static int writen(consumer_cbrts self, const void *buf, size_t count)
 {
     int result = 0;
     int written = 0;
+    const char *buffer = (const char *)buf;
     while (written < count) {
-        if ((result = write(self->fd, (const char *)buf + written, count - written)) < 0) {
+        if ((result = write(self->fd, buffer + written, count - written)) < 0) {
             mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent),
                           "Failed to write: %s\n",
                           strerror(errno));

@@ -14,10 +14,7 @@ target_compile_options(mltndi PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltndi PRIVATE mlt NDI::NDI)
 if(MSVC)
   target_link_libraries(mltndi PRIVATE msvccompat PThreads4W::PThreads4W)
-  # Explicitly include vcpkg pthread headers for MSVC
-  if(DEFINED VCPKG_TARGET_TRIPLET)
-    target_include_directories(mltndi PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
-  endif()
+  mlt_add_vcpkg_include_dirs(mltndi)
 endif()
 
 if(CPU_SSE)
