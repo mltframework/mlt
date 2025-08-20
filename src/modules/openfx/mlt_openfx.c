@@ -115,6 +115,7 @@ static OfxStatus clipReleaseImage(OfxPropertySetHandle imageHandle)
     return kOfxStatOK;
 }
 
+/* TODO: allow user to pass a RoD via properties */
 static OfxStatus clipGetRegionOfDefinition(OfxImageClipHandle clip, OfxTime time, OfxRectD *bounds)
 {
     return kOfxStatOK;
@@ -151,11 +152,13 @@ static OfxStatus imageMemoryFree(OfxImageMemoryHandle memoryHandle)
     return kOfxStatOK;
 }
 
+/* TODO implement image memory locking */
 static OfxStatus imageMemoryLock(OfxImageMemoryHandle memoryHandle, void **returnedPtr)
 {
     return kOfxStatOK;
 }
 
+/* TODO implement image memory unlocking */
 static OfxStatus imageMemoryUnlock(OfxImageMemoryHandle memoryHandle)
 {
     return kOfxStatOK;
@@ -596,6 +599,7 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
     return kOfxStatOK;
 }
 
+/* TODO: add missing types */
 static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
 {
     if (paramHandle == NULL)
@@ -608,7 +612,7 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     char *param_type = mlt_properties_get(param, "t");
     mlt_properties param_props = mlt_properties_get_data(param, "p", NULL);
 
-    /* WIP make this use mlt_properties_anim_get_* functions maybe */
+    /* TODO make this use mlt_properties_anim_get_* functions */
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
         || strcmp(param_type, kOfxParamTypeBoolean) == 0
@@ -670,11 +674,13 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     return kOfxStatOK;
 }
 
+/* TODO: implement derivative parameter retrieval */
 static OfxStatus paramGetDerivative(OfxParamHandle paramHandle, OfxTime time, ...)
 {
     return kOfxStatOK;
 }
 
+/* TODO: implement Integral parameter retrieval */
 static OfxStatus paramGetIntegral(OfxParamHandle paramHandle, OfxTime time1, OfxTime time2, ...)
 {
     return kOfxStatOK;
