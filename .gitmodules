@@ -7,3 +7,7 @@
 	path = external/vid.stab
 	url = https://github.com/georgmartius/vid.stab.git
 	branch = master
+[submodule "external/frei0r"]
+	path = external/frei0r
+	url = https://github.com/dyne/frei0r.git
+    branch = master

@@ -237,11 +237,46 @@ if(MOD_DECKLINK)
 endif()
 
 if(MOD_FREI0R)
+  if(MSVC)
+      # On MSVC, some frei0r CMakeLists reference .def paths using CMAKE_SOURCE_DIR,
+      # which resolves to this superproject and breaks when added as a subdir.
+      # Provide correct absolute paths before add_subdirectory to avoid editing the submodule.
+      set(FREI0R_MSVC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/frei0r/msvc")
+      # Also mirror the expected files into the superproject's ${CMAKE_SOURCE_DIR}/msvc
+      # so that subproject's hardcoded paths remain valid without editing it.
+      set(FREI0R_TOP_MSVC_DIR "${CMAKE_SOURCE_DIR}/msvc")
+      file(MAKE_DIRECTORY "${FREI0R_TOP_MSVC_DIR}")
+      if(EXISTS "${FREI0R_MSVC_DIR}/frei0r_1_0.def" AND
+         NOT EXISTS "${FREI0R_TOP_MSVC_DIR}/frei0r_1_0.def")
+        file(COPY "${FREI0R_MSVC_DIR}/frei0r_1_0.def" DESTINATION "${FREI0R_TOP_MSVC_DIR}")
+      endif()
+      if(EXISTS "${FREI0R_MSVC_DIR}/frei0r_1_1.def" AND
+         NOT EXISTS "${FREI0R_TOP_MSVC_DIR}/frei0r_1_1.def")
+        file(COPY "${FREI0R_MSVC_DIR}/frei0r_1_1.def" DESTINATION "${FREI0R_TOP_MSVC_DIR}")
+      endif()
+      if(EXISTS "${FREI0R_MSVC_DIR}/frei0r_1_0.def")
+        set(FREI0R_DEF "${FREI0R_MSVC_DIR}/frei0r_1_0.def" CACHE FILEPATH "Path to frei0r 1.0 .def override")
+      endif()
+      if(EXISTS "${FREI0R_MSVC_DIR}/frei0r_1_1.def")
+        set(FREI0R_1_1_DEF "${FREI0R_MSVC_DIR}/frei0r_1_1.def" CACHE FILEPATH "Path to frei0r 1.1 .def override")
+      endif()
+
+  # Ensure frei0r's own CMake find modules (e.g., FindCairo.cmake) are discoverable
+  set(FREI0R_OLD_MODULE_PATH ${CMAKE_MODULE_PATH})
+  list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/frei0r/cmake/modules")
+
   add_subdirectory(external/frei0r)
-  set(FREI0R_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/frei0r/include)
-  set(FREI0R_LIBRARIES frei0r)
-  set(FREI0R_FOUND TRUE)
-  list(APPEND MLT_SUPPORTED_COMPONENTS frei0r)
+
+  # Restore CMAKE_MODULE_PATH
+  set(CMAKE_MODULE_PATH ${FREI0R_OLD_MODULE_PATH})
+      set(FREI0R_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/frei0r/include)
+      set(FREI0R_LIBRARIES frei0r)
+      set(FREI0R_FOUND TRUE)
+      list(APPEND MLT_SUPPORTED_COMPONENTS frei0r)
+  else()
+      pkg_check_modules(FREI0R REQUIRED frei0r)
+      list(APPEND MLT_SUPPORTED_COMPONENTS frei0r)
+  endif()
 endif()
 
 if(MOD_GDK)
@@ -389,29 +424,44 @@ endif()
 
 if(MOD_VIDSTAB)
   pkg_check_modules(vidstab IMPORTED_TARGET vidstab)
-  if(NOT TARGET PkgConfig::vidstab)
-    message(STATUS "pkg-config failed for vidstab, trying to build from submodule...")
+  if(MSVC)
+    if(NOT TARGET PkgConfig::vidstab)
+      message(
+        STATUS
+        "pkg-config failed for vidstab, trying to build from submodule..."
+      )
 
-    if(NOT IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/vid.stab)
-      message(FATAL_ERROR "VidStab module is enabled, but the directory 'external/vid.stab' does not exist. Please add it as a git submodule from https://github.com/georgmartius/vid.stab.git")
-    endif()
+      if(NOT IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/vid.stab)
+        message(
+          FATAL_ERROR
+          "VidStab module is enabled, but the directory 'external/vid.stab' does not exist. "
+          "Please add it as a git submodule from https://github.com/georgmartius/vid.stab.git"
+        )
+      endif()
 
-    # Save the current CMAKE_MODULE_PATH and add vid.stab's module path
-    set(VIDSTAB_OLD_MODULE_PATH ${CMAKE_MODULE_PATH})
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/vid.stab/CMakeModules")
-    
-    add_subdirectory(external/vid.stab)
-    
-    # Restore the original CMAKE_MODULE_PATH
-    set(CMAKE_MODULE_PATH ${VIDSTAB_OLD_MODULE_PATH})
-    
-    if(TARGET vidstab)
-      add_library(PkgConfig::vidstab INTERFACE IMPORTED)
-      target_link_libraries(PkgConfig::vidstab INTERFACE vidstab)
+      # Save the current CMAKE_MODULE_PATH and add vid.stab's module path
+      set(VIDSTAB_OLD_MODULE_PATH ${CMAKE_MODULE_PATH})
+      list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/vid.stab/CMakeModules")
 
-      message(STATUS "Bridged 'vidstab' target to 'PkgConfig::vidstab' for MLT compatibility.")
-    else()
-      message(WARNING "Could not find the 'vidstab' target after add_subdirectory. The module might fail to link.")
+      add_subdirectory(external/vid.stab)
+
+      # Restore the original CMAKE_MODULE_PATH
+      set(CMAKE_MODULE_PATH ${VIDSTAB_OLD_MODULE_PATH})
+
+      if(TARGET vidstab)
+        add_library(PkgConfig::vidstab INTERFACE IMPORTED)
+        target_link_libraries(PkgConfig::vidstab INTERFACE vidstab)
+
+        message(
+          STATUS
+          "Bridged 'vidstab' target to 'PkgConfig::vidstab' for MLT compatibility."
+        )
+      else()
+        message(
+          WARNING
+          "Could not find the 'vidstab' target after add_subdirectory. The module might fail to link."
+        )
+      endif()
     endif()
   endif()
   if(TARGET PkgConfig::vidstab)
