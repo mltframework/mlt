@@ -559,6 +559,42 @@ void mlt_image_fill_opaque(mlt_image self)
     }
 }
 
+/** Check if the alpha channel of an image is opaque
+ *
+ * \public \memberof mlt_image_s
+ * \param self a mlt_image
+ * \return true (1) or false (0) if the image is opaque
+ */
+extern int mlt_image_is_opaque(mlt_image self)
+{
+    if (!self->data)
+        return 0;
+
+    int pixels = self->width * self->height;
+
+    if (self->format == mlt_image_rgba && self->planes[0] != NULL) {
+        int samples = pixels * 4;
+        uint8_t *img = self->planes[0];
+        for (int i = 0; i < samples; i += 4) {
+            if (img[i + 3] != 0xff)
+                return 0;
+        }
+    } else if (self->format == mlt_image_rgba64 && self->planes[0] != NULL) {
+        int samples = pixels * 4;
+        uint16_t *img = (uint16_t *) self->planes[0];
+        for (int i = 0; i < samples; i += 4) {
+            if (img[i + 3] != 0xffff)
+                return 0;
+        }
+    } else if (self->planes[3] != NULL) {
+        for (int i = 0; i < pixels; i++) {
+            if (self->planes[3][i] != 0xff)
+                return 0;
+        }
+    }
+    return 1;
+}
+
 /** Get the number of bytes needed for an image.
   *
   * \public \memberof mlt_image_s
