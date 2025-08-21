@@ -834,10 +834,13 @@ int mlt_image_format_size(mlt_image_format format, int width, int height, int *b
             *bpp = 3 / 2;
         return width * height * 3 / 2;
     case mlt_image_movit:
-    case mlt_image_opengl_texture:
         if (bpp)
             *bpp = 0;
-        return 4;
+        return sizeof(uintptr_t);
+    case mlt_image_opengl_texture:
+        if (bpp)
+            *bpp = sizeof(unsigned int); // GLuint for texture ID
+        return sizeof(unsigned int);
     case mlt_image_yuv422p16:
         if (bpp)
             *bpp = 4;

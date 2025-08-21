@@ -232,6 +232,13 @@ static void get_audio_streams_info(producer_avformat self);
 static mlt_audio_format pick_audio_format(int sample_fmt);
 static int pick_av_pixel_format(int *pix_fmt, int full_range);
 static void property_changed(mlt_service owner, producer_avformat self, char *name);
+static void set_image_size(producer_avformat self, int *width, int *height);
+static int allocate_buffer(mlt_frame frame,
+                           AVCodecParameters *codec_params,
+                           uint8_t **buffer,
+                           mlt_image_format format,
+                           int width,
+                           int height);
 
 static int absolute_stream_index(AVFormatContext *context, enum AVMediaType media_type, int relative)
 {
@@ -1766,6 +1773,24 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
     }
 }
 
+static int hwaccel_download(AVFrame *av_frame)
+{
+    AVFrame *sw_video_frame = av_frame_alloc();
+    int result = av_hwframe_transfer_data(sw_video_frame, av_frame, 0);
+    if (result < 0) {
+        av_frame_free(&sw_video_frame);
+        return result;
+    }
+    av_frame_copy_props(sw_video_frame, av_frame);
+    sw_video_frame->width = av_frame->width;
+    sw_video_frame->height = av_frame->height;
+
+    av_frame_unref(av_frame);
+    av_frame_move_ref(av_frame, sw_video_frame);
+    av_frame_free(&sw_video_frame);
+    return 0;
+}
+
 struct sliced_pix_fmt_conv_t
 {
     int width, height, slice_w;
@@ -1928,15 +1953,15 @@ static mlt_colorspace convert_image_yuvp(producer_avformat self,
 }
 
 static void convert_image_rgb(producer_avformat self,
-                              mlt_profile profile,
-                              AVFrame *frame,
-                              uint8_t *buffer,
-                              mlt_image_format format,
-                              int width,
-                              int height,
-                              int src_pix_fmt,
-                              int dst_pix_fmt,
-                              int dst_full_range)
+                             mlt_profile profile,
+                             AVFrame *frame,
+                             uint8_t *buffer,
+                             mlt_image_format format,
+                             int width,
+                             int height,
+                             int src_pix_fmt,
+                             int dst_pix_fmt,
+                             int dst_full_range)
 {
     int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
     uint8_t *out_data[4];
@@ -2310,11 +2335,8 @@ static int convert_cvpixelbuffer_to_opengl_texture(
     }
 
     // Store the RGB texture ID in the buffer
-    if (rgbTextureID) {
-        *buffer = (uint8_t *) malloc(sizeof(GLuint));
-        if (*buffer) {
-            *((GLuint *) *buffer) = rgbTextureID;
-        }
+    if (rgbTextureID && *buffer) {
+        *((GLuint *) *buffer) = rgbTextureID;
     }
 
     // Clean up VideoToolbox objects
@@ -2330,22 +2352,15 @@ static int convert_cvpixelbuffer_to_opengl_texture(
 
 #ifdef __linux__
 // Function to convert VAAPI VASurfaceID to OpenGL texture
-static int convert_vasurface_to_opengl_texture(producer_avformat self,
-                                               VASurfaceID va_surface,
-                                               AVBufferRef *hw_frames_ctx,
-                                               uint8_t **buffer,
-                                               int width,
-                                               int height)
+static int convert_vasurface_to_opengl_texture(
+    producer_avformat self, VASurfaceID va_surface, uint8_t **buffer, int width, int height)
 {
-    if (!va_surface || !hw_frames_ctx) {
+    if (!va_surface) {
         return -1;
     }
 
-    AVHWFramesContext *hwframe_ctx = (AVHWFramesContext *) hw_frames_ctx->data;
-    // AVVAAPIFramesContext *vaapi_ctx = hwframe_ctx->hwctx;
-
     // Get VADisplay from the device context
-    AVHWDeviceContext *device_ctx = hwframe_ctx->device_ctx;
+    AVHWDeviceContext *device_ctx = (AVHWDeviceContext *) self->hwaccel.device_ctx->data;
     AVVAAPIDeviceContext *vaapi_device_ctx = device_ctx->hwctx;
     VADisplay va_display = vaapi_device_ctx->display;
     GLuint rgbTextureID = 0;
@@ -2618,11 +2633,8 @@ cleanup:
     }
 
     // Store the RGB texture ID in the buffer
-    if (rgbTextureID) {
-        *buffer = (uint8_t *) malloc(sizeof(GLuint));
-        if (*buffer) {
-            *((GLuint *) *buffer) = rgbTextureID;
-        }
+    if (rgbTextureID && *buffer) {
+        *((GLuint *) *buffer) = rgbTextureID;
     }
 
     return rgbTextureID > 0 ? 0 : -1;
@@ -2630,16 +2642,16 @@ cleanup:
 #endif
 
 // returns resulting YUV colorspace
-static void convert_image(producer_avformat self,
-                          mlt_properties frame_properties,
-                          AVFrame *frame,
-                          uint8_t *buffer,
-                          int pix_fmt,
-                          mlt_image_format *format,
-                          int width,
-                          int height,
-                          uint8_t **alpha,
-                          int dst_full_range)
+static int convert_image(producer_avformat self,
+                         mlt_properties frame_properties,
+                         AVFrame *frame,
+                         uint8_t **buffer,
+                         int pix_fmt,
+                         mlt_image_format *format,
+                         int width,
+                         int height,
+                         uint8_t **alpha,
+                         int dst_full_range)
 {
     mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
     mlt_colorspace colorspace = self->yuv_colorspace;
@@ -2710,7 +2722,7 @@ static void convert_image(producer_avformat self,
         convert_image_rgb(self,
                           profile,
                           frame,
-                          buffer,
+                          *buffer,
                           *format,
                           width,
                           height,
@@ -2718,7 +2730,7 @@ static void convert_image(producer_avformat self,
                           dst_pix_fmt,
                           dst_full_range);
 #ifdef __APPLE__
-    } else if (pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX) {
+    } else if (*format == mlt_image_opengl_texture && pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX) {
         // Handle VideoToolbox CVPixelBuffer to OpenGL texture conversion
         CVPixelBufferRef cvpixelbuffer = (CVPixelBufferRef) frame->data[3];
         if (cvpixelbuffer
@@ -2728,36 +2740,15 @@ static void convert_image(producer_avformat self,
             mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
                          "Successfully converted CVPixelBuffer to OpenGL texture\n");
         } else {
-            // Fallback to software conversion
-            mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
-                            "Failed to convert CVPixelBuffer to OpenGL texture, falling back to "
-                            "software decode\n");
-            *format = mlt_image_yuv420p;
-            result = convert_image_yuvp(self,
-                                        profile,
-                                        frame,
-                                        buffer,
-                                        *format,
-                                        width,
-                                        height,
-                                        AV_PIX_FMT_YUV420P,
-                                        AV_PIX_FMT_YUV420P,
-                                        dst_full_range);
+            colorspace = mlt_colorspace_invalid;
         }
-#endif
-#ifdef __linux__
-    } else if (pix_fmt == AV_PIX_FMT_VAAPI) {
+#elif __linux__
+    } else if (*format == mlt_image_opengl_texture && pix_fmt == AV_PIX_FMT_VAAPI) {
         // Handle VAAPI VASurfaceID to OpenGL texture conversion
-        VASurfaceID va_surface = (VASurfaceID) (uintptr_t) frame->data[3];
-        AVBufferRef *hw_frames_ctx = self->hwaccel.device_ctx
-                                         ? av_buffer_ref(self->hwaccel.device_ctx)
-                                     : frame->hw_frames_ctx ? av_buffer_ref(frame->hw_frames_ctx)
-                                                            : NULL;
-        if (va_surface && hw_frames_ctx
+        if (frame->data[3]
             && convert_vasurface_to_opengl_texture(self,
-                                                   va_surface,
-                                                   hw_frames_ctx,
-                                                   &buffer,
+                                                   (uintptr_t) frame->data[3],
+                                                   buffer,
                                                    width,
                                                    height)
                    == 0) {
@@ -2765,31 +2756,14 @@ static void convert_image(producer_avformat self,
             mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
                          "Successfully converted VAAPI surface to OpenGL texture\n");
         } else {
-            // Fallback to software conversion
-            mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
-                            "Failed to convert VAAPI surface to OpenGL texture, falling back to "
-                            "software decode\n");
-            *format = mlt_image_yuv420p;
-            colorspace = convert_image_yuvp(self,
-                                            profile,
-                                            frame,
-                                            buffer,
-                                            *format,
-                                            width,
-                                            height,
-                                            AV_PIX_FMT_YUV420P,
-                                            AV_PIX_FMT_YUV420P,
-                                            dst_full_range);
-        }
-        if (hw_frames_ctx) {
-            av_buffer_unref(&hw_frames_ctx);
+            colorspace = mlt_colorspace_invalid;
         }
 #endif
     } else if (dst_pix_fmt != AV_PIX_FMT_NONE) {
         colorspace = convert_image_yuvp(self,
                                         profile,
                                         frame,
-                                        buffer,
+                                        *buffer,
                                         *format,
                                         width,
                                         height,
@@ -2817,7 +2791,7 @@ static void convert_image(producer_avformat self,
 
         av_image_fill_arrays(ctx.out_data,
                              ctx.out_stride,
-                             buffer,
+                             *buffer,
                              ctx.dst_format,
                              width,
                              height,
@@ -2868,6 +2842,8 @@ static void convert_image(producer_avformat self,
     mlt_properties_set_int(frame_properties, "color_primaries", primaries);
     mlt_properties_set_int(frame_properties, "colorspace", colorspace);
     mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
+
+    return colorspace;
 }
 
 static void set_image_size(producer_avformat self, int *width, int *height)
@@ -2898,15 +2874,17 @@ static int allocate_buffer(mlt_frame frame,
 {
     int size = 0;
 
-    if (codec_params->width == 0 || codec_params->height == 0)
+    if (codec_params && (codec_params->width == 0 || codec_params->height == 0))
         return size;
 
     size = mlt_image_format_size(format, width, height, NULL);
     *buffer = mlt_pool_alloc(size);
-    if (*buffer)
-        mlt_frame_set_image(frame, *buffer, size, mlt_pool_release);
-    else
+    if (*buffer) {
+        if (frame)
+            mlt_frame_set_image(frame, *buffer, size, mlt_pool_release);
+    } else {
         size = 0;
+    }
 
     return size;
 }
@@ -3025,17 +3003,22 @@ static int producer_get_image(mlt_frame frame,
     const char *dst_color_range = mlt_properties_get(frame_properties, "consumer.color_range");
     int dst_full_range = mlt_image_full_range(dst_color_range);
 
-    // if 10-bit libswscale only changes range when scaling, not simple pix_fmt conversion
-    const struct AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(self->video_codec->pix_fmt);
-    if (dst_full_range != self->full_range && pix_desc && pix_desc->nb_components > 0
-        && pix_desc->comp[0].depth == 10) {
-        if (*format == mlt_image_yuv420p10 || *format == mlt_image_yuv444p10)
-            // When the consumer requests 10-bit do not convert
-            dst_full_range = self->full_range;
-        else
-            // Otherwise, convert via RGB
-            *format = mlt_image_rgb;
+    if (*format != mlt_image_opengl_texture) {
+        // if 10-bit libswscale only changes range when scaling, not simple pix_fmt conversion
+        const struct AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(self->video_codec->pix_fmt);
+        if (dst_full_range != self->full_range && pix_desc && pix_desc->nb_components > 0
+            && pix_desc->comp[0].depth == 10) {
+            if (*format == mlt_image_yuv420p10 || *format == mlt_image_yuv444p10)
+                // When the consumer requests 10-bit do not convert
+                dst_full_range = self->full_range;
+            else
+                // Otherwise, convert via RGB
+                *format = mlt_image_rgb;
+        }
     }
+    mlt_log_verbose(MLT_PRODUCER_SERVICE(producer),
+                    "request format %s\n",
+                    mlt_image_format_name(*format));
 
     mlt_service_lock(MLT_PRODUCER_SERVICE(producer));
     pthread_mutex_lock(&self->video_mutex);
@@ -3128,12 +3111,14 @@ static int producer_get_image(mlt_frame frame,
     codec_params = stream->codecpar;
 
     // Only change the requested image format for special cases
-    *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
-                                                  : codec_params->format,
-                                *format);
+    if (*format != mlt_image_opengl_texture) {
+        *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
+                                                      : codec_params->format,
+                                    *format);
+    }
 
     // Duplicate the last image if necessary
-    if (self->video_frame && self->video_frame->linesize[0]
+    if (*format != mlt_image_opengl_texture && self->video_frame && self->video_frame->linesize[0]
         && (self->pkt.stream_index == self->video_index)
         && (paused || self->current_position >= req_position)) {
         // Duplicate it
@@ -3142,7 +3127,7 @@ static int producer_get_image(mlt_frame frame,
             convert_image(self,
                           frame_properties,
                           self->video_frame,
-                          *buffer,
+                          buffer,
                           self->video_frame->format,
                           format,
                           *width,
@@ -3288,7 +3273,8 @@ static int producer_get_image(mlt_frame frame,
                                 && self->video_frame->format == self->hwaccel.pix_fmt) {
 #ifdef __APPLE__
                                 // Check if we want OpenGL texture format for VideoToolbox
-                                if (self->hwaccel.pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX) {
+                                if (*format == mlt_image_opengl_texture
+                                    && self->hwaccel.pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX) {
                                     // Keep the hardware frame for direct OpenGL texture conversion
                                     CVPixelBufferRef cvpixelbuffer
                                         = (CVPixelBufferRef) self->video_frame->data[3];
@@ -3301,10 +3287,10 @@ static int producer_get_image(mlt_frame frame,
                                         decode_errors = 0;
                                     }
                                 }
-#endif
-#ifdef __linux__
+#elif __linux__
                                 // Check if we want OpenGL texture format for VAAPI
-                                if (self->hwaccel.pix_fmt == AV_PIX_FMT_VAAPI) {
+                                if (*format == mlt_image_opengl_texture
+                                    && self->hwaccel.pix_fmt == AV_PIX_FMT_VAAPI) {
                                     // Keep the hardware frame for direct OpenGL texture conversion
                                     VASurfaceID va_surface
                                         = (VASurfaceID) (uintptr_t) self->video_frame->data[3];
@@ -3319,25 +3305,13 @@ static int producer_get_image(mlt_frame frame,
                                 }
 #endif
                                 if (!got_picture) {
-                                    AVFrame *sw_video_frame = av_frame_alloc();
-                                    int transfer_data_result
-                                        = av_hwframe_transfer_data(sw_video_frame,
-                                                                   self->video_frame,
-                                                                   0);
-                                    if (transfer_data_result < 0) {
+                                    if ((error = hwaccel_download(self->video_frame))) {
                                         mlt_log_error(MLT_PRODUCER_SERVICE(producer),
                                                       "av_hwframe_transfer_data() failed %d\n",
-                                                      transfer_data_result);
-                                        av_frame_free(&sw_video_frame);
+                                                      error);
                                         goto exit_get_image;
                                     }
-                                    av_frame_copy_props(sw_video_frame, self->video_frame);
-                                    sw_video_frame->width = self->video_frame->width;
-                                    sw_video_frame->height = self->video_frame->height;
-
-                                    av_frame_unref(self->video_frame);
-                                    av_frame_move_ref(self->video_frame, sw_video_frame);
-                                    av_frame_free(&sw_video_frame);
+                                    *format = mlt_image_yuv420p;
                                 }
                             }
                             got_picture = 1;
@@ -3434,7 +3408,8 @@ static int producer_get_image(mlt_frame frame,
 #else
                 self->video_frame->top_field_first = self->top_field_first;
 #endif
-                if ((self->autorotate || mlt_properties_get(properties, "filtergraph"))
+                if (*format != mlt_image_opengl_texture
+                    && (self->autorotate || mlt_properties_get(properties, "filtergraph"))
                     && !setup_filters(self) && self->vfilter_graph) {
                     int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
                     if (ret < 0) {
@@ -3453,16 +3428,68 @@ static int producer_get_image(mlt_frame frame,
                 set_image_size(self, width, height);
                 if ((image_size
                      = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
-                    convert_image(self,
-                                  frame_properties,
-                                  self->video_frame,
-                                  *buffer,
-                                  self->video_frame->format,
-                                  format,
-                                  *width,
-                                  *height,
-                                  &alpha,
-                                  dst_full_range);
+                    int colorspace = convert_image(self,
+                                                   frame_properties,
+                                                   self->video_frame,
+                                                   buffer,
+                                                   self->video_frame->format,
+                                                   format,
+                                                   *width,
+                                                   *height,
+                                                   &alpha,
+                                                   dst_full_range);
+
+                    if (colorspace == mlt_colorspace_invalid && self->hwaccel.device_ctx
+                        && *format == mlt_image_opengl_texture) {
+                        // Fallback to software conversion
+                        mlt_log_warning(
+                            MLT_PRODUCER_SERVICE(self->parent),
+                            "Failed to convert VAAPI surface to OpenGL texture, falling back to "
+                            "software decode\n");
+                        set_image_size(self, width, height);
+                        *format = mlt_image_yuv420p;
+                        int image_size
+                            = allocate_buffer(NULL, NULL, buffer, *format, *width, *height);
+                        if (image_size > 0) {
+                            int error = error = hwaccel_download(self->video_frame);
+                            if (error) {
+                                mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                                              "av_hwframe_transfer_data() failed %d\n",
+                                              error);
+                                goto exit_get_image;
+                            }
+                            colorspace = convert_image_yuvp(self,
+                                                            mlt_service_profile(
+                                                                MLT_PRODUCER_SERVICE(self->parent)),
+                                                            self->video_frame,
+                                                            *buffer,
+                                                            *format,
+                                                            *width,
+                                                            *height,
+                                                            self->video_frame->format,
+                                                            AV_PIX_FMT_YUV420P,
+                                                            dst_full_range);
+                        }
+                    }
+                    if (colorspace >= mlt_colorspace_rgb) {
+                        switch (colorspace) {
+                        case 170:
+                        case 240:
+                            mlt_properties_set_int(frame_properties, "color_primaries", 601525);
+                            break;
+                        case 601:
+                            mlt_properties_set_int(frame_properties, "color_primaries", 601625);
+                            break;
+                        case 2020:
+                            mlt_properties_set_int(frame_properties, "color_primaries", 2020);
+                            break;
+                        default:
+                            mlt_properties_set_int(frame_properties, "color_primaries", 709);
+                            break;
+                        }
+                        mlt_properties_set_int(frame_properties, "colorspace", colorspace);
+                        mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
+                    }
                     self->current_position = int_position;
                 } else {
                     got_picture = 0;
@@ -3653,8 +3680,8 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             if (ret >= 0) {
                 codec_context->hw_device_ctx = av_buffer_ref(self->hwaccel.device_ctx);
                 mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
-                             "av_hwdevice_ctx_create() success %d\n",
-                             codec_context->pix_fmt);
+                             "av_hwdevice_ctx_create() success %s\n",
+                             av_get_pix_fmt_name(codec_context->pix_fmt));
             } else {
                 mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
                                 "av_hwdevice_ctx_create() failed %d\n",

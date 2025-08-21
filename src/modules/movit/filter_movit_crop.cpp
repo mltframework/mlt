@@ -69,7 +69,7 @@ static int get_image(mlt_frame frame,
     // This is needed to prevent conversion to mlt_image_movit after producer,
     // deinterlace, or fieldorder, The latter two can force output of
     // an image after it had already been converted to glsl.
-    *format = mlt_image_none;
+    *format = mlt_image_opengl_texture;
 
     error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
