@@ -74,7 +74,7 @@ void swab2(const void *from, void *to, int n)
     to = (unsigned char *) to + n - (n % SWAB_STEP);
     n = (n % SWAB_STEP);
 #endif
-    swab((char *) from, (char *) to, n);
+    swab2((char *) from, (char *) to, n);
 };
 
 #define SWAB_SLICED_ALIGN_POW 5
