@@ -1,0 +1,283 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "displayName": "Windows Base",
+      "description": "Use the MSVC compiler and vcpkg on Windows",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
+        "CMAKE_CXX_STANDARD": "20",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "MOD_MOVIT": "OFF",
+        "MOD_SOX": "OFF",
+        "MOD_FREI0R": "OFF",
+        "MOD_VIDSTAB": "OFF"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "displayName": "Windows Debug",
+      "inherits": [
+        "windows-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "/Zi /Od /MDd /W3 /EHsc",
+        "CMAKE_C_FLAGS": "/Zi /Od /MDd /W3",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Windows Release",
+      "inherits": [
+        "windows-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "/O2 /MD /W3 /EHsc /DNDEBUG",
+        "CMAKE_C_FLAGS": "/O2 /MD /W3 /DNDEBUG",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "windows-relwithdebinfo",
+      "displayName": "Windows RelWithDebInfo",
+      "inherits": [
+        "windows-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_CXX_FLAGS": "/Zi /O2 /MD /W3 /EHsc /DNDEBUG",
+        "CMAKE_C_FLAGS": "/Zi /O2 /MD /W3 /DNDEBUG",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "displayName": "Linux Base",
+      "description": "Use GCC and ninja on Linux",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_CXX_STANDARD": "20"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
+      "inherits": [
+        "linux-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-g -O0 -Wall -Wextra -fPIC",
+        "CMAKE_C_FLAGS": "-g -O0 -Wall -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "linux-release",
+      "displayName": "Linux Release",
+      "inherits": [
+        "linux-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_C_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "linux-relwithdebinfo",
+      "displayName": "Linux RelWithDebInfo",
+      "inherits": [
+        "linux-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_CXX_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_C_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "mac-base",
+      "hidden": true,
+      "displayName": "macOS Base",
+      "description": "Use clang and ninja on macOS",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_CXX_STANDARD": "20"
+      }
+    },
+    {
+      "name": "mac-debug",
+      "displayName": "macOS Debug",
+      "inherits": [
+        "mac-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-g -O0 -Wall -Wextra -fPIC",
+        "CMAKE_C_FLAGS": "-g -O0 -Wall -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "mac-release",
+      "displayName": "macOS Release",
+      "inherits": [
+        "mac-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_C_FLAGS": "-O2 -DNDEBUG -fPIC",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    },
+    {
+      "name": "mac-relwithdebinfo",
+      "displayName": "macOS RelWithDebInfo",
+      "inherits": [
+        "mac-base"
+      ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_CXX_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_C_FLAGS": "-O2 -g -DNDEBUG",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/bin"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-windows-debug",
+      "configurePreset": "windows-debug",
+      "jobs": 8,
+      "displayName": " (Windows Debug)"
+    },
+    {
+      "name": "build-windows-release",
+      "configurePreset": "windows-release",
+      "jobs": 8,
+      "displayName": "(Windows Release)"
+    },
+    {
+      "name": "build-windows-relwithdebinfo",
+      "configurePreset": "windows-relwithdebinfo",
+      "jobs": 8,
+      "displayName": " (Windows RelWithDebInfo)"
+    },
+    {
+      "name": "build-linux-debug",
+      "configurePreset": "linux-debug",
+      "jobs": 8,
+      "displayName": " (Linux Debug)"
+    },
+    {
+      "name": "build-linux-release",
+      "configurePreset": "linux-release",
+      "jobs": 8,
+      "displayName": " (Linux Release)"
+    },
+    {
+      "name": "build-linux-relwithdebinfo",
+      "configurePreset": "linux-relwithdebinfo",
+      "jobs": 8,
+      "displayName": " (Linux RelWithDebInfo)"
+    },
+    {
+      "name": "build-mac-debug",
+      "configurePreset": "mac-debug",
+      "jobs": 8,
+      "displayName": " (macOS Debug)"
+    },
+    {
+      "name": "build-mac-release",
+      "configurePreset": "mac-release",
+      "jobs": 8,
+      "displayName": " (macOS Release)"
+    },
+    {
+      "name": "build-mac-relwithdebinfo",
+      "configurePreset": "mac-relwithdebinfo",
+      "jobs": 8,
+      "displayName": " (macOS RelWithDebInfo)"
+    }
+  ]
+  
+}

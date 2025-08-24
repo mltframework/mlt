@@ -8,6 +8,9 @@ add_custom_target(Other_resample_Files SOURCES
 target_compile_options(mltresample PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltresample PRIVATE mlt PkgConfig::samplerate)
+if(MSVC)
+  target_compile_definitions(mltresample PRIVATE mlt_EXPORTS)
+endif()
 
 set_target_properties(mltresample PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

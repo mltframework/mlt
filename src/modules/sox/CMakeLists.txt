@@ -10,6 +10,8 @@ target_compile_options(mltsox PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltsox PRIVATE mlt PkgConfig::sox)
 if(NOT MSVC)
   target_link_libraries(mltsox PRIVATE m)
+else()
+  target_compile_definitions(mltsox PRIVATE mlt_EXPORTS)
 endif()
 
 if(${sox_VERSION} GREATER 13)

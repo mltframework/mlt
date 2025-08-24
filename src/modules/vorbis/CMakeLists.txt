@@ -6,7 +6,9 @@ add_custom_target(Other_vorbis_Files SOURCES
 )
 
 target_compile_options(mltvorbis PRIVATE ${MLT_COMPILE_OPTIONS})
-
+if(MSVC)
+  target_compile_definitions(mltvorbis PRIVATE mlt_EXPORTS)
+endif()
 target_link_libraries(mltvorbis PRIVATE mlt PkgConfig::vorbis PkgConfig::vorbisfile)
 
 set_target_properties(mltvorbis PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

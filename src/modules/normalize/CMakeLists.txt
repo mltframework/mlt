@@ -14,6 +14,11 @@ target_compile_options(mltnormalize PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltnormalize PRIVATE mlt)
 if(NOT MSVC)
   target_link_libraries(mltnormalize PRIVATE m)
+else()
+  # MSVC-specific configurations
+  target_compile_definitions(mltnormalize PRIVATE mlt_EXPORTS)
+  target_link_libraries(mltnormalize PRIVATE PThreads4W::PThreads4W)
+  mlt_add_vcpkg_include_dirs(mltnormalize)
 endif()
 
 set_target_properties(mltnormalize PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

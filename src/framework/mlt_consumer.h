@@ -25,6 +25,7 @@
 
 #include "mlt_events.h"
 #include "mlt_service.h"
+#include "mlt_export.h"
 #include <pthread.h>
 
 /** \brief Consumer abstract service class
@@ -135,20 +136,20 @@ struct mlt_consumer_s
 #define MLT_CONSUMER_SERVICE(consumer) (&(consumer)->parent)
 #define MLT_CONSUMER_PROPERTIES(consumer) MLT_SERVICE_PROPERTIES(MLT_CONSUMER_SERVICE(consumer))
 
-extern int mlt_consumer_init(mlt_consumer self, void *child, mlt_profile profile);
-extern mlt_consumer mlt_consumer_new(mlt_profile profile);
-extern mlt_service mlt_consumer_service(mlt_consumer self);
-extern mlt_properties mlt_consumer_properties(mlt_consumer self);
-extern int mlt_consumer_connect(mlt_consumer self, mlt_service producer);
-extern int mlt_consumer_start(mlt_consumer self);
-extern void mlt_consumer_purge(mlt_consumer self);
-extern int mlt_consumer_put_frame(mlt_consumer self, mlt_frame frame);
-extern mlt_frame mlt_consumer_get_frame(mlt_consumer self);
-extern mlt_frame mlt_consumer_rt_frame(mlt_consumer self);
-extern int mlt_consumer_stop(mlt_consumer self);
-extern int mlt_consumer_is_stopped(mlt_consumer self);
-extern void mlt_consumer_stopped(mlt_consumer self);
-extern void mlt_consumer_close(mlt_consumer);
-extern mlt_position mlt_consumer_position(mlt_consumer);
+MLT_API int mlt_consumer_init(mlt_consumer self, void *child, mlt_profile profile);
+MLT_API mlt_consumer mlt_consumer_new(mlt_profile profile);
+MLT_API mlt_service mlt_consumer_service(mlt_consumer self);
+MLT_API mlt_properties mlt_consumer_properties(mlt_consumer self);
+MLT_API int mlt_consumer_connect(mlt_consumer self, mlt_service producer);
+MLT_API int mlt_consumer_start(mlt_consumer self);
+MLT_API void mlt_consumer_purge(mlt_consumer self);
+MLT_API int mlt_consumer_put_frame(mlt_consumer self, mlt_frame frame);
+MLT_API mlt_frame mlt_consumer_get_frame(mlt_consumer self);
+MLT_API mlt_frame mlt_consumer_rt_frame(mlt_consumer self);
+MLT_API int mlt_consumer_stop(mlt_consumer self);
+MLT_API int mlt_consumer_is_stopped(mlt_consumer self);
+MLT_API void mlt_consumer_stopped(mlt_consumer self);
+MLT_API void mlt_consumer_close(mlt_consumer);
+MLT_API mlt_position mlt_consumer_position(mlt_consumer);
 
 #endif

@@ -12,7 +12,9 @@ target_compile_options(mltrtaudio PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltrtaudio PRIVATE mlt Threads::Threads)
 
 if(MSVC)
-  target_link_libraries(mltrtaudio PRIVATE PThreads4W::PThreads4W)
+  target_link_libraries(mltrtaudio PRIVATE msvccompat ${GETTIMEOFDAY_LIBRARY} PThreads4W::PThreads4W)
+  mlt_add_vcpkg_include_dirs(mltrtaudio)
+  target_compile_definitions(mltrtaudio PRIVATE mlt_EXPORTS)
 endif()
 
 if(TARGET PkgConfig::rtaudio)

@@ -42,6 +42,10 @@ __RCSID("$NetBSD: strptime.c,v 1.36 2012/03/13 21:13:48 christos Exp $");
 #include <string.h>
 #include <time.h>
 #include <stdint.h>
+#include "../framework/mlt_export.h"
+#ifdef _MSC_VER
+#include "../framework/msvc_posix_compat.h"
+#endif
 /*
 #include <tzfile.h>
 #include "private.h"
@@ -95,7 +99,7 @@ static const u_char *find_string(const u_char *, int *, const char * const *,
 	const char * const *, int);
 
 
-char *
+MLT_API char *
 strptime(const char *buf, const char *fmt, struct tm *tm)
 {
 	unsigned char c;

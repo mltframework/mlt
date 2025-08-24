@@ -1,4 +1,4 @@
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -173,6 +173,22 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
 
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
     add_definitions(-DWITHOUT_POTRACE -DWITHOUT_QT_COLOR_WIDGETS)
+    
+    # Fix for MSVC missing std::runtime_error include
+    if(MSVC)
+        target_compile_definitions(${ARG_TARGET} PRIVATE 
+            mlt_EXPORTS
+            _HAS_EXCEPTIONS=1
+            _ENABLE_EXTENDED_ALIGNED_STORAGE
+        )
+        target_compile_options(${ARG_TARGET} PRIVATE 
+            /EHsc 
+            /FIstdexcept
+            /Zc:__cplusplus
+            /utf-8
+            /bigobj
+        )
+    endif()
 
     find_package(LibArchive REQUIRED)
     find_package(ZLIB REQUIRED)
@@ -182,7 +198,6 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
     target_link_libraries(${ARG_TARGET} PRIVATE
       mlt++
       mlt
-      m
       Threads::Threads
       Qt${ARG_QT_VERSION}::Core
       Qt${ARG_QT_VERSION}::Gui
@@ -192,6 +207,11 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
       ${LibArchive_LIBRARIES}
       ZLIB::ZLIB
     )
+    
+    # Link math library on non-MSVC platforms
+    if(NOT MSVC)
+      target_link_libraries(${ARG_TARGET} PRIVATE m)
+    endif()
 
     if(NOT WINDOWS_DEPLOY)
       target_compile_definitions(${ARG_TARGET} PRIVATE NODEPLOY)
