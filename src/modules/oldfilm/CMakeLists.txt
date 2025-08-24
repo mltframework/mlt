@@ -19,6 +19,11 @@ target_compile_options(mltoldfilm PRIVATE ${MLT_COMPILE_OPTIONS})
 target_link_libraries(mltoldfilm PRIVATE mlt)
 if(NOT MSVC)
   target_link_libraries(mltoldfilm PRIVATE m)
+else()
+  # MSVC-specific configurations
+  target_compile_definitions(mltoldfilm PRIVATE mlt_EXPORTS)
+  target_link_libraries(mltoldfilm PRIVATE PThreads4W::PThreads4W)
+  mlt_add_vcpkg_include_dirs(mltoldfilm)
 endif()
 
 set_target_properties(mltoldfilm PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

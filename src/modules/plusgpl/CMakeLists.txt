@@ -19,7 +19,11 @@ add_custom_target(Other_plsugpl_Files SOURCES
 target_compile_options(mltplusgpl PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltplusgpl PRIVATE mlt mlt++ Threads::Threads)
-if(NOT MSVC)
+if(MSVC)
+  target_link_libraries(mltplusgpl PRIVATE msvccompat PThreads4W::PThreads4W)
+  mlt_add_vcpkg_include_dirs(mltplusgpl)
+  target_compile_definitions(mltplusgpl PRIVATE mlt_EXPORTS)
+else()
   target_link_libraries(mltplusgpl PRIVATE m)
 endif()
 

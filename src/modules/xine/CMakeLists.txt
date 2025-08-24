@@ -13,6 +13,9 @@ add_custom_target(Other_xine_Files SOURCES
 )
 
 target_compile_options(mltxine PRIVATE ${MLT_COMPILE_OPTIONS})
+if(MSVC)
+  target_compile_definitions(mltxine PRIVATE mlt_EXPORTS)
+endif()
 
 target_link_libraries(mltxine PRIVATE mlt ${CMAKE_DL_LIBS})
 

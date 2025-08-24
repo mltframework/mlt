@@ -118,6 +118,17 @@ endif()
 set(MLT_INSTALL_MODULE_DIR ${CMAKE_INSTALL_LIBDIR}/${MLT_SUBDIR})
 set(MLT_INSTALL_DATA_DIR ${CMAKE_INSTALL_DATADIR}/${MLT_SUBDIR})
 
+# Shared function to add vcpkg include directories for MSVC
+function(mlt_add_vcpkg_include_dirs target_name)
+  if(MSVC AND DEFINED VCPKG_TARGET_TRIPLET)
+    if(NOT DEFINED _VCPKG_INSTALLED_DIR AND DEFINED VCPKG_INSTALLED_DIR)
+      set(_VCPKG_INSTALLED_DIR "${VCPKG_INSTALLED_DIR}")
+    endif()
+    if(DEFINED _VCPKG_INSTALLED_DIR)
+      target_include_directories(${target_name} PRIVATE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
+    endif()
+  endif()
+endfunction()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -182,6 +193,13 @@ endif()
 
 if (MSVC)
   find_package(PThreads4W REQUIRED)
+  #find library from vcpkg gettimeofday
+    find_library(GETTIMEOFDAY_LIBRARY
+          NAMES gettimeofday
+  )
+    if (NOT GETTIMEOFDAY_LIBRARY)
+      message(FATAL_ERROR "Could not find gettimeofday.lib")
+    endif()
 endif ()
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -230,8 +248,27 @@ if(MOD_DECKLINK)
 endif()
 
 if(MOD_FREI0R)
-  pkg_check_modules(FREI0R REQUIRED frei0r)
-  list(APPEND MLT_SUPPORTED_COMPONENTS frei0r)
+  if(MSVC)
+      # NOTE: FetchContent cannot be used here. vcpkg builds in a sandboxed
+      # environment that blocks network access during configure/build.
+      # Dependencies must be declared in vcpkg.json and found via find_package().
+    set(FREI0R_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/frei0r")
+    if(NOT EXISTS "${FREI0R_DIR}/CMakeLists.txt")
+      message(FATAL_ERROR  "Please consider using vcpkg with the MLT port or git clone by yourself")
+    endif()
+  set(FREI0R_OLD_MODULE_PATH ${CMAKE_MODULE_PATH})
+  list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/frei0r/cmake/modules")
+  add_subdirectory(external/frei0r)
+  # Restore CMAKE_MODULE_PATH
+  set(CMAKE_MODULE_PATH ${FREI0R_OLD_MODULE_PATH})
+      set(FREI0R_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/frei0r/include)
+      set(FREI0R_LIBRARIES frei0r)
+      set(FREI0R_FOUND TRUE)
+      list(APPEND MLT_SUPPORTED_COMPONENTS frei0r)
+  else()
+      pkg_check_modules(FREI0R REQUIRED frei0r)
+      list(APPEND MLT_SUPPORTED_COMPONENTS frei0r)
+  endif()
 endif()
 
 if(MOD_GDK)
@@ -378,8 +415,40 @@ if(MOD_SPATIALAUDIO)
 endif()
 
 if(MOD_VIDSTAB)
-  pkg_check_modules(vidstab REQUIRED IMPORTED_TARGET vidstab)
-  list(APPEND MLT_SUPPORTED_COMPONENTS vidstab)
+  pkg_check_modules(vidstab IMPORTED_TARGET vidstab)
+  if(MSVC)
+      # NOTE: FetchContent cannot be used here. vcpkg builds in a sandboxed
+      # environment that blocks network access during configure/build.
+      # Dependencies must be declared in vcpkg.json and found via find_package().
+      if(NOT IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/vid.stab)
+        message(
+          FATAL_ERROR
+          "The directory 'external/vid.stab' does not exist. "
+          "Please use the vcpkg mlt port to install it or git clone by yourself"
+        )
+      endif()
+      add_subdirectory(external/vid.stab)
+      if(TARGET vidstab)
+        add_library(PkgConfig::vidstab INTERFACE IMPORTED)
+        target_link_libraries(PkgConfig::vidstab INTERFACE vidstab)
+
+        message(
+          STATUS
+          "Bridged 'vidstab' target to 'PkgConfig::vidstab' for MLT compatibility."
+        )
+      else()
+        message(
+          WARNING
+          "Could not find the 'vidstab' target after add_subdirectory. The module might fail to link."
+        )
+      endif()
+  endif()
+  if(TARGET PkgConfig::vidstab)
+    list(APPEND MLT_SUPPORTED_COMPONENTS vidstab)
+  else()
+    message(STATUS "Could not find vidstab. Disabling vidstab module.")
+    set(MOD_VIDSTAB OFF)
+  endif()
 endif()
 
 if(MOD_VORBIS)
