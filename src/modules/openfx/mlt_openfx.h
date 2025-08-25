@@ -38,20 +38,11 @@ typedef enum {
     mltofx_prop_pointer = 16,
 } mltofx_property_type;
 
-void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params);
+void mltofx_init_host_properties(OfxPropertySetHandle host_properties);
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect);
 
-void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
-
-void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
-
-void mltofx_get_regions_of_interest(OfxPlugin *plugin,
-                                    mlt_properties image_effect,
-                                    double width,
-                                    double height);
-
-void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect);
 
 void mltofx_set_source_clip_data(
     OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
@@ -59,12 +50,21 @@ void mltofx_set_source_clip_data(
 void mltofx_set_output_clip_data(
     OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
 
-void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height);
-
-void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect);
-
-void mltofx_init_host_properties(OfxPropertySetHandle host_properties);
+void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params);
 
 void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_type type, ...);
+
+void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect);
+
+void mltofx_get_regions_of_interest(OfxPlugin *plugin,
+                                    mlt_properties image_effect,
+                                    double width,
+                                    double height);
+
+void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
+
+void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
+
+void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height);
 
 #endif
