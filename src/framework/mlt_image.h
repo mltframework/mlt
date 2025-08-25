@@ -67,8 +67,8 @@ MLT_API int mlt_image_rgba_opaque(uint8_t *image, int width, int height);
 MLT_API int mlt_image_full_range(const char *color_range);
 
 // Deprecated functions
-MLT_API int mlt_image_format_size(mlt_image_format format, int width, int height, int *bpp);
-MLT_API void mlt_image_format_planes(
+MLT_DEPRECATED_EXPORT  int mlt_image_format_size(mlt_image_format format, int width, int height, int *bpp);
+MLT_DEPRECATED_EXPORT  void mlt_image_format_planes(
     mlt_image_format format, int width, int height, void *data, uint8_t *planes[4], int strides[4]);
 
 #endif

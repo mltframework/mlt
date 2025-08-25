@@ -79,12 +79,7 @@ add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
 # Generate export header for cross-platform symbol visibility
 include(GenerateExportHeader)
 generate_export_header(mlt
-  BASE_NAME mlt
   EXPORT_MACRO_NAME MLT_API
-  EXPORT_FILE_NAME mlt_export.h
-  DEPRECATED_MACRO_NAME MLT_DEPRECATED
-  NO_EXPORT_MACRO_NAME MLT_NO_EXPORT
-  STATIC_DEFINE MLT_STATIC_DEFINE
 )
 
 target_sources(mlt PRIVATE ${MLT_PUBLIC_HEADERS})
