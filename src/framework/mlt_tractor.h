@@ -24,7 +24,7 @@
 #define MLT_TRACTOR_H
 
 #include "mlt_producer.h"
-
+#include "mlt_export.h"
 /** \brief Tractor class
  *
  * The tractor is a convenience class that works with the field class
@@ -46,19 +46,19 @@ struct mlt_tractor_s
 #define MLT_TRACTOR_SERVICE(tractor) MLT_PRODUCER_SERVICE(MLT_TRACTOR_PRODUCER(tractor))
 #define MLT_TRACTOR_PROPERTIES(tractor) MLT_SERVICE_PROPERTIES(MLT_TRACTOR_SERVICE(tractor))
 
-extern mlt_tractor mlt_tractor_init();
-extern mlt_tractor mlt_tractor_new();
-extern mlt_service mlt_tractor_service(mlt_tractor self);
-extern mlt_producer mlt_tractor_producer(mlt_tractor self);
-extern mlt_properties mlt_tractor_properties(mlt_tractor self);
-extern mlt_field mlt_tractor_field(mlt_tractor self);
-extern mlt_multitrack mlt_tractor_multitrack(mlt_tractor self);
-extern int mlt_tractor_connect(mlt_tractor self, mlt_service service);
-extern void mlt_tractor_refresh(mlt_tractor self);
-extern int mlt_tractor_set_track(mlt_tractor self, mlt_producer producer, int index);
-extern int mlt_tractor_insert_track(mlt_tractor self, mlt_producer producer, int index);
-extern int mlt_tractor_remove_track(mlt_tractor self, int index);
-extern mlt_producer mlt_tractor_get_track(mlt_tractor self, int index);
-extern void mlt_tractor_close(mlt_tractor self);
+MLT_API mlt_tractor mlt_tractor_init();
+MLT_API mlt_tractor mlt_tractor_new();
+MLT_API mlt_service mlt_tractor_service(mlt_tractor self);
+MLT_API mlt_producer mlt_tractor_producer(mlt_tractor self);
+MLT_API mlt_properties mlt_tractor_properties(mlt_tractor self);
+MLT_API mlt_field mlt_tractor_field(mlt_tractor self);
+MLT_API mlt_multitrack mlt_tractor_multitrack(mlt_tractor self);
+MLT_API int mlt_tractor_connect(mlt_tractor self, mlt_service service);
+MLT_API void mlt_tractor_refresh(mlt_tractor self);
+MLT_API int mlt_tractor_set_track(mlt_tractor self, mlt_producer producer, int index);
+MLT_API int mlt_tractor_insert_track(mlt_tractor self, mlt_producer producer, int index);
+MLT_API int mlt_tractor_remove_track(mlt_tractor self, int index);
+MLT_API mlt_producer mlt_tractor_get_track(mlt_tractor self, int index);
+MLT_API void mlt_tractor_close(mlt_tractor self);
 
 #endif

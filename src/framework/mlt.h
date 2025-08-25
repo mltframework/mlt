@@ -35,6 +35,7 @@
 extern "C" {
 #endif
 
+#include "mlt_export.h"
 #include "mlt_animation.h"
 #include "mlt_audio.h"
 #include "mlt_cache.h"
