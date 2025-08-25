@@ -1,6 +1,6 @@
 /*
  * transition_affine.c -- affine transformations
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -327,8 +327,8 @@ static inline void get_affine(affine_t *affine,
 
 struct sliced_desc
 {
-    uint8_t *a_image, *b_image;
-    interpp interp;
+    void *a_image, *b_image;
+    interp_type type;
     affine_t affine;
     int a_width, a_height, b_width, b_height;
     double lower_x, lower_y;
@@ -336,6 +336,7 @@ struct sliced_desc
     double x_offset, y_offset;
     int b_alpha;
     double minima, xmax, ymax;
+    mlt_image_format format;
 };
 
 static int sliced_proc(int id, int index, int jobs, void *cookie)
@@ -347,24 +348,62 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
     double dx, dy;
     int i, j;
 
-    ctx.a_image += starty * (ctx.a_width * 4);
-    for (i = 0, y = ctx.lower_y; i < ctx.a_height; i++, y++) {
-        if (i >= starty && i < (starty + height_slice)) {
-            for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {
-                dx = MapX(ctx.affine.matrix, x, y) / ctx.dz + ctx.x_offset;
-                dy = MapY(ctx.affine.matrix, x, y) / ctx.dz + ctx.y_offset;
-                if (dx >= ctx.minima && dx <= ctx.xmax && dy >= ctx.minima && dy <= ctx.ymax)
-                    ctx.interp(ctx.b_image,
+    if (ctx.format == mlt_image_rgba) {
+        uint8_t *a_image = (uint8_t *) ctx.a_image + starty * (ctx.a_width * 4);
+        uint8_t *b_image = (uint8_t *) ctx.b_image;
+        interpp32 interp = interpNN_b32;
+        if (ctx.type == interp_bl) {
+            interp = interpBL_b32;
+        } else if (ctx.type == interp_bc) {
+            interp = interpBC_b32;
+        }
+        for (i = 0, y = ctx.lower_y; i < ctx.a_height; i++, y++) {
+            if (i >= starty && i < (starty + height_slice)) {
+                for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {
+                    dx = MapX(ctx.affine.matrix, x, y) / ctx.dz + ctx.x_offset;
+                    dy = MapY(ctx.affine.matrix, x, y) / ctx.dz + ctx.y_offset;
+                    if (dx >= ctx.minima && dx <= ctx.xmax && dy >= ctx.minima && dy <= ctx.ymax)
+                        interp(b_image,
                                ctx.b_width,
                                ctx.b_height,
                                dx,
                                dy,
                                ctx.mix,
-                               ctx.a_image,
+                               a_image,
                                ctx.b_alpha);
-                ctx.a_image += 4;
+                    a_image += 4;
+                }
             }
         }
+    } else if (ctx.format == mlt_image_rgba64) {
+        uint16_t *a_image = (uint16_t *) ctx.a_image + starty * (ctx.a_width * 4);
+        uint16_t *b_image = (uint16_t *) ctx.b_image;
+        interpp64 interp = interpNN_b64;
+        if (ctx.type == interp_bl) {
+            interp = interpBL_b64;
+        } else if (ctx.type == interp_bc) {
+            interp = interpBC_b64;
+        }
+        for (i = 0, y = ctx.lower_y; i < ctx.a_height; i++, y++) {
+            if (i >= starty && i < (starty + height_slice)) {
+                for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {
+                    dx = MapX(ctx.affine.matrix, x, y) / ctx.dz + ctx.x_offset;
+                    dy = MapY(ctx.affine.matrix, x, y) / ctx.dz + ctx.y_offset;
+                    if (dx >= ctx.minima && dx <= ctx.xmax && dy >= ctx.minima && dy <= ctx.ymax)
+                        interp(b_image,
+                               ctx.b_width,
+                               ctx.b_height,
+                               dx,
+                               dy,
+                               ctx.mix,
+                               a_image,
+                               ctx.b_alpha);
+                    a_image += 4;
+                }
+            }
+        }
+    } else {
+        mlt_log_error(NULL, "[transition affine] Invalid image format\n");
     }
     return 0;
 }
@@ -394,9 +433,12 @@ static int transition_get_image(mlt_frame a_frame,
     // Get the properties of the b frame
     mlt_properties b_props = MLT_FRAME_PROPERTIES(b_frame);
 
+    if (*format != mlt_image_rgba64)
+        *format = mlt_image_rgba;
+
     // Image, format, width, height and image for the b frame
     uint8_t *b_image = NULL;
-    mlt_image_format b_format = mlt_image_rgba;
+    mlt_image_format b_format = *format;
     int b_width = mlt_properties_get_int(b_props, "meta.media.width");
     int b_height = mlt_properties_get_int(b_props, "meta.media.height");
     double b_ar = mlt_frame_get_aspect_ratio(b_frame);
@@ -433,7 +475,6 @@ static int transition_get_image(mlt_frame a_frame,
     }
 
     // Fetch the a frame image
-    *format = mlt_image_rgba;
     int error = mlt_frame_get_image(a_frame, image, format, width, height, 1);
     if (error || !image)
         return error;
@@ -565,7 +606,8 @@ static int transition_get_image(mlt_frame a_frame,
     }
 
     // Check that both images are of the correct format and process
-    if (*format == mlt_image_rgba && b_format == mlt_image_rgba) {
+    if ((*format == mlt_image_rgba || *format == mlt_image_rgba64)
+        && (b_format == mlt_image_rgba || b_format == mlt_image_rgba64)) {
         double sw, sh;
         // Get values from the transition
         double scale_x = mlt_properties_anim_get_double(properties, "scale_x", position, length);
@@ -575,7 +617,7 @@ static int transition_get_image(mlt_frame a_frame,
         double geom_scale_y = (double) b_height / result.h;
         struct sliced_desc desc = {.a_image = *image,
                                    .b_image = b_image,
-                                   .interp = interpBL_b32,
+                                   .type = interp_bl,
                                    .a_width = *width,
                                    .a_height = *height,
                                    .b_width = b_width,
@@ -589,7 +631,8 @@ static int transition_get_image(mlt_frame a_frame,
                                    // Affine boundaries
                                    .minima = 0,
                                    .xmax = b_width - 1,
-                                   .ymax = b_height - 1};
+                                   .ymax = b_height - 1,
+                                   .format = *format};
 
         // Recalculate vars if alignment supplied.
         if (mlt_properties_get(properties, "halign") || mlt_properties_get(properties, "valign")) {
@@ -652,20 +695,20 @@ static int transition_get_image(mlt_frame a_frame,
         // Set the interpolation function
         if (interps == NULL || strcmp(interps, "nearest") == 0 || strcmp(interps, "neighbor") == 0
             || strcmp(interps, "tiles") == 0 || strcmp(interps, "fast_bilinear") == 0) {
-            desc.interp = interpNN_b32;
+            desc.type = interp_nn;
             // uses lrintf. Values should be >= -0.5 and < max + 0.5
             desc.minima -= 0.5;
             desc.xmax += 0.49;
             desc.ymax += 0.49;
         } else if (strcmp(interps, "bilinear") == 0) {
-            desc.interp = interpBL_b32;
+            desc.type = interp_bl;
             // uses floorf.
         } else if (strcmp(interps, "bicubic") == 0 || strcmp(interps, "hyper") == 0
                    || strcmp(interps, "sinc") == 0 || strcmp(interps, "lanczos") == 0
                    || strcmp(interps, "spline") == 0) {
             // TODO: lanczos 8x8
             // TODO: spline 4x4 or 6x6
-            desc.interp = interpBC_b32;
+            desc.type = interp_bc;
             // uses ceilf. Values should be > -1 and <= max.
             desc.minima -= 1;
         }
