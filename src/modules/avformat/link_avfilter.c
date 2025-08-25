@@ -826,10 +826,8 @@ static int link_get_audio(mlt_frame frame,
 #endif
 
         // Sanity check the output frame
-        if (*channels != expected_channels
-            || *samples != pdata->avoutframe->nb_samples
+        if (*channels != expected_channels || *samples != pdata->avoutframe->nb_samples
             || *frequency != pdata->avoutframe->sample_rate) {
-
             mlt_log_error(self,
                           "Unexpected return format c %d->%d\tf %d->%d\tf %d->%d\n",
                           *channels,
