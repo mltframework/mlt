@@ -30,6 +30,10 @@
 #include <string.h>
 #include <sys/types.h>
 
+typedef OfxStatus (*OfxSetHostFn)(const OfxHost *host);
+typedef OfxPlugin *(*OfxGetPluginFn)(int nth);
+typedef int (*OfxGetNumberOfPluginsFn)(void);
+
 typedef enum {
     mltofx_prop_none = 0,
     mltofx_prop_int = 1,
