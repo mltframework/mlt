@@ -180,7 +180,7 @@ MLT_REPOSITORY
                 char *name = de->d_name;
 
                 char *bni = NULL;
-                if ((bni = strstr(name, ".ofx.bundle")) != NULL) {
+                if ((bni = strstr(name, ".ofx.bundle")) != NULL && bni[11] == '\0') {
                     char *barename = strndup(name, (int) (bni - name) + 4);
                     size_t name_len = (size_t) (bni - name) + 4 + 7;
                     /* 12b sizeof `Contents` word, 1 sizeof null byte */
