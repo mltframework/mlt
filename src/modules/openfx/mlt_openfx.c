@@ -1154,55 +1154,6 @@ static OfxParametricParameterSuiteV1 MltOfxParametricParameterSuiteV1
        parametricParamDeleteControlPoint,
        parametricParamDeleteAllControlPoints};
 
-const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
-{
-    if (strcmp(suiteName, kOfxImageEffectSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxImageEffectSuiteV1;
-    } else if (strcmp(suiteName, kOfxParameterSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxParameterSuiteV1;
-    } else if (strcmp(suiteName, kOfxPropertySuite) == 0 && suiteVersion == 1) {
-        return &MltOfxPropertySuiteV1;
-    } else if (strcmp(suiteName, kOfxMemorySuite) == 0 && suiteVersion == 1) {
-        return &MltOfxMemorySuiteV1;
-    } else if (strcmp(suiteName, kOfxMultiThreadSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxMultiThreadSuiteV1;
-    } else if (strcmp(suiteName, kOfxMessageSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxMessageSuiteV1;
-    } else if (strcmp(suiteName, kOfxMessageSuite) == 0 && suiteVersion == 2) {
-        return &MltOfxMessageSuiteV2;
-    } else if (strcmp(suiteName, kOfxInteractSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxInteractSuiteV1;
-    } else if (strcmp(suiteName, kOfxDrawSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxDrawSuiteV1;
-    } else if (strcmp(suiteName, kOfxProgressSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxProgressSuiteV1;
-    } else if (strcmp(suiteName, kOfxProgressSuite) == 0 && suiteVersion == 2) {
-        return &MltOfxProgressSuiteV2;
-    } else if (strcmp(suiteName, kOfxTimeLineSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxTimeLineSuiteV1;
-    } else if (strcmp(suiteName, kOfxParametricParameterSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxParametricParameterSuiteV1;
-    }
-
-    mlt_log_debug(NULL, "%s v%d is not supported\n", suiteName, suiteVersion);
-    return NULL;
-}
-
-void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
-{
-    propSetString(host_properties, kOfxPropName, 0, "MLT");
-    propSetString(host_properties, kOfxImageEffectPropContext, 0, kOfxImageEffectContextGeneral);
-    propSetString(host_properties,
-                  kOfxImageEffectPropSupportedPixelDepths,
-                  0,
-                  kOfxBitDepthByte); /* kOfxBitDepthByte is hardcoded */
-    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 1, kOfxBitDepthShort);
-    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 2, kOfxBitDepthHalf);
-    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 3, kOfxBitDepthFloat);
-}
-
-OfxHost MltOfxHost = {NULL, MltOfxfetchSuite};
-
 static void mltofx_log_status_code(OfxStatus code, char *msg)
 {
     mlt_log_debug(NULL, "output of `%s` is ", msg);
@@ -1273,100 +1224,71 @@ static void mltofx_log_status_code(OfxStatus code, char *msg)
     mlt_log_debug(NULL, "\n");
 }
 
-void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height)
+const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
 {
-    mlt_properties render_in_args = mlt_properties_get_data(image_effect, "render_in_args", NULL);
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxPropTime, 0, 0.0);
+    if (strcmp(suiteName, kOfxImageEffectSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxImageEffectSuiteV1;
+    } else if (strcmp(suiteName, kOfxParameterSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxParameterSuiteV1;
+    } else if (strcmp(suiteName, kOfxPropertySuite) == 0 && suiteVersion == 1) {
+        return &MltOfxPropertySuiteV1;
+    } else if (strcmp(suiteName, kOfxMemorySuite) == 0 && suiteVersion == 1) {
+        return &MltOfxMemorySuiteV1;
+    } else if (strcmp(suiteName, kOfxMultiThreadSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxMultiThreadSuiteV1;
+    } else if (strcmp(suiteName, kOfxMessageSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxMessageSuiteV1;
+    } else if (strcmp(suiteName, kOfxMessageSuite) == 0 && suiteVersion == 2) {
+        return &MltOfxMessageSuiteV2;
+    } else if (strcmp(suiteName, kOfxInteractSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxInteractSuiteV1;
+    } else if (strcmp(suiteName, kOfxDrawSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxDrawSuiteV1;
+    } else if (strcmp(suiteName, kOfxProgressSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxProgressSuiteV1;
+    } else if (strcmp(suiteName, kOfxProgressSuite) == 0 && suiteVersion == 2) {
+        return &MltOfxProgressSuiteV2;
+    } else if (strcmp(suiteName, kOfxTimeLineSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxTimeLineSuiteV1;
+    } else if (strcmp(suiteName, kOfxParametricParameterSuite) == 0 && suiteVersion == 1) {
+        return &MltOfxParametricParameterSuiteV1;
+    }
 
-    propSetString((OfxPropertySetHandle) render_in_args,
-                  kOfxImageEffectPropFieldToRender,
-                  0,
-                  kOfxImageFieldBoth);
-
-    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 0, 0);
-    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 1, 0);
-    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 2, width);
-    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 3, height);
-
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
-
-    propSetInt((OfxPropertySetHandle) render_in_args,
-               kOfxImageEffectPropSequentialRenderStatus,
-               0,
-               1);
-
-    propSetInt((OfxPropertySetHandle) render_in_args,
-               kOfxImageEffectPropInteractiveRenderStatus,
-               0,
-               0);
-
-    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderQualityDraft, 0, 0);
-
-    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionRender,
-                                              (OfxImageEffectHandle) image_effect,
-                                              (OfxPropertySetHandle) render_in_args,
-                                              NULL);
-
-    mltofx_log_status_code(status_code, kOfxImageEffectActionRender);
+    mlt_log_debug(NULL, "%s v%d is not supported\n", suiteName, suiteVersion);
+    return NULL;
 }
 
-void mltofx_set_output_clip_data(
-    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height)
+OfxHost MltOfxHost = {NULL, MltOfxfetchSuite };
+
+void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
 {
-    mlt_properties clip;
-    mlt_properties clip_prop;
-
-    clipGetHandle((OfxImageEffectHandle) image_effect,
-                  "Output",
-                  (OfxImageClipHandle *) &clip,
-                  (OfxPropertySetHandle *) &clip_prop);
-
-    propSetInt((OfxPropertySetHandle) clip_prop,
-               kOfxImagePropRowBytes,
-               0,
-               width * 4); /* WIP change this 4 hardcoded depth size */
-    propSetString((OfxPropertySetHandle) clip_prop,
-                  "OfxImageEffectPropPixelDepth",
+    propSetString(host_properties, kOfxPropName, 0, "MLT");
+    propSetString(host_properties, kOfxImageEffectPropContext, 0, kOfxImageEffectContextGeneral);
+    propSetString(host_properties,
+                  kOfxImageEffectPropSupportedPixelDepths,
                   0,
-                  kOfxBitDepthByte);
-    propSetString((OfxPropertySetHandle) clip_prop,
-                  "OfxImageEffectPropComponents",
-                  0,
-                  kOfxImageComponentRGBA);
+                  kOfxBitDepthByte); /* kOfxBitDepthByte is hardcoded */
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 1, kOfxBitDepthShort);
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 2, kOfxBitDepthHalf);
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 3, kOfxBitDepthFloat);
+}
 
-    propSetPointer((OfxPropertySetHandle) clip_prop, "OfxImagePropData", 0, (void *) image);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 0, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 1, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 2, width);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 3, height);
+void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect)
+{
+    OfxStatus status_code = plugin->mainEntry(kOfxActionCreateInstance,
+                                              (OfxImageEffectHandle) image_effect,
+                                              NULL,
+                                              NULL);
+    mltofx_log_status_code(status_code, kOfxActionCreateInstance);
+}
 
-    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 0, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, width);
-    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, height);
-
-    propSetString((OfxPropertySetHandle) clip_prop,
-                  kOfxImageEffectPropPreMultiplication,
-                  0,
-                  kOfxImageUnPreMultiplied);
-    propSetString((OfxPropertySetHandle) clip_prop,
-                  kOfxImagePropField,
-                  0,
-                  kOfxImageFieldNone); /* I'm not sure about this */
-
-    char *tstr = calloc(1, strlen("Output") + 11);
-    sprintf(tstr, "%s%04d%04d", "Output", rand() % 9999, rand() % 9999); /* WIP: do something better */
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
-    free(tstr);
-
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 1, 1.0);
-
-    propSetDouble((OfxPropertySetHandle) clip_prop,
-                  kOfxImagePropPixelAspectRatio,
-                  0,
-                  (double) width / (double) height);
+void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect)
+{
+    OfxStatus status_code = plugin->mainEntry(kOfxActionDestroyInstance,
+                                              (OfxImageEffectHandle) image_effect,
+                                              NULL,
+                                              NULL);
+    mltofx_log_status_code(status_code, kOfxActionDestroyInstance);
 }
 
 void mltofx_set_source_clip_data(
@@ -1428,181 +1350,62 @@ void mltofx_set_source_clip_data(
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImageClipPropConnected, 0, 1);
 }
 
-void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
+void mltofx_set_output_clip_data(
+    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height)
 {
-    mlt_properties get_clippref_args = mlt_properties_get_data(image_effect,
-                                                               "get_clippref_args",
-                                                               NULL);
-    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetClipPreferences,
-                                              (OfxImageEffectHandle) image_effect,
-                                              NULL,
-                                              (OfxPropertySetHandle) get_clippref_args);
-    mltofx_log_status_code(status_code, kOfxImageEffectActionGetClipPreferences);
-}
+    mlt_properties clip;
+    mlt_properties clip_prop;
 
-void mltofx_get_regions_of_interest(OfxPlugin *plugin,
-                                    mlt_properties image_effect,
-                                    double width,
-                                    double height)
-{
-    mlt_properties get_roi_in_args = mlt_properties_get_data(image_effect, "get_roi_in_args", NULL);
-    mlt_properties get_roi_out_args = mlt_properties_get_data(image_effect,
-                                                              "get_roi_out_args",
-                                                              NULL);
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Output",
+                  (OfxImageClipHandle *) &clip,
+                  (OfxPropertySetHandle *) &clip_prop);
 
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 0, 0.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 1, 0.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
-
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
-                  kOfxImageEffectPropRegionOfInterest,
+    propSetInt((OfxPropertySetHandle) clip_prop,
+               kOfxImagePropRowBytes,
+               0,
+               width * 4); /* WIP change this 4 hardcoded depth size */
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  "OfxImageEffectPropPixelDepth",
                   0,
-                  0.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
-                  kOfxImageEffectPropRegionOfInterest,
-                  1,
-                  0.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
-                  kOfxImageEffectPropRegionOfInterest,
-                  2,
-                  width);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
-                  kOfxImageEffectPropRegionOfInterest,
-                  3,
-                  height);
-
-    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetRegionsOfInterest,
-                                              (OfxImageEffectHandle) image_effect,
-                                              (OfxPropertySetHandle) get_roi_in_args,
-                                              (OfxPropertySetHandle) get_roi_out_args);
-    mltofx_log_status_code(status_code, kOfxImageEffectActionGetRegionsOfInterest);
-}
-
-void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
-{
-    mlt_properties end_sequence_props = mlt_properties_get_data(image_effect,
-                                                                "end_sequence_props",
-                                                                NULL);
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 0, 0.0);
-
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 1, 0.0);
-
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameStep, 0, 1.0);
-
-    propSetInt((OfxPropertySetHandle) end_sequence_props, kOfxPropIsInteractive, 0, 0);
-
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 1, 1.0);
-
-    propSetInt((OfxPropertySetHandle) end_sequence_props,
-               kOfxImageEffectPropSequentialRenderStatus,
-               0,
-               1);
-
-    propSetInt((OfxPropertySetHandle) end_sequence_props,
-               kOfxImageEffectPropInteractiveRenderStatus,
-               0,
-               0);
-
-    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionEndSequenceRender,
-                                              (OfxImageEffectHandle) image_effect,
-                                              (OfxPropertySetHandle) end_sequence_props,
-                                              NULL);
-    mltofx_log_status_code(status_code, kOfxImageEffectActionEndSequenceRender);
-}
-
-void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
-{
-    mlt_properties begin_sequence_props = mlt_properties_get_data(image_effect,
-                                                                  "begin_sequence_props",
-                                                                  NULL);
-    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
-                  kOfxImageEffectPropFrameRange,
+                  kOfxBitDepthByte);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  "OfxImageEffectPropComponents",
                   0,
-                  0.0);
-    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
-                  kOfxImageEffectPropFrameRange,
-                  1,
-                  0.0);
-    propSetDouble((OfxPropertySetHandle) begin_sequence_props, kOfxImageEffectPropFrameStep, 0, 1.0);
+                  kOfxImageComponentRGBA);
 
-    propSetInt((OfxPropertySetHandle) begin_sequence_props, kOfxPropIsInteractive, 0, 0);
+    propSetPointer((OfxPropertySetHandle) clip_prop, "OfxImagePropData", 0, (void *) image);
+    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 0, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 1, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 2, width);
+    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 3, height);
 
-    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
-                  kOfxImageEffectPropRenderScale,
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 0, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, width);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, height);
+
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropPreMultiplication,
                   0,
-                  1.0);
-    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
-                  kOfxImageEffectPropRenderScale,
-                  1,
-                  1.0);
+                  kOfxImageUnPreMultiplied);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImagePropField,
+                  0,
+                  kOfxImageFieldNone); /* I'm not sure about this */
 
-    propSetInt((OfxPropertySetHandle) begin_sequence_props,
-               kOfxImageEffectPropSequentialRenderStatus,
-               0,
-               1);
+    char *tstr = calloc(1, strlen("Output") + 11);
+    sprintf(tstr, "%s%04d%04d", "Output", rand() % 9999, rand() % 9999); /* WIP: do something better */
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
+    free(tstr);
 
-    propSetInt((OfxPropertySetHandle) begin_sequence_props,
-               kOfxImageEffectPropInteractiveRenderStatus,
-               0,
-               0);
-    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionBeginSequenceRender,
-                                              (OfxImageEffectHandle) image_effect,
-                                              (OfxPropertySetHandle) begin_sequence_props,
-                                              NULL);
-    mltofx_log_status_code(status_code, kOfxImageEffectActionBeginSequenceRender);
-}
+    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 0, 1.0);
+    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 1, 1.0);
 
-void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect)
-{
-    OfxStatus status_code = plugin->mainEntry(kOfxActionCreateInstance,
-                                              (OfxImageEffectHandle) image_effect,
-                                              NULL,
-                                              NULL);
-    mltofx_log_status_code(status_code, kOfxActionCreateInstance);
-}
-
-void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect)
-{
-    OfxStatus status_code = plugin->mainEntry(kOfxActionDestroyInstance,
-                                              (OfxImageEffectHandle) image_effect,
-                                              NULL,
-                                              NULL);
-    mltofx_log_status_code(status_code, kOfxActionDestroyInstance);
-}
-
-void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_type type, ...)
-{
-    mlt_properties param = NULL;
-    paramGetHandle((OfxParamSetHandle) params, key, (OfxParamHandle *) &param, NULL);
-
-    /* WIP: maybe it will be better idea to use paramSetValueAtTime */
-
-    va_list ap;
-    va_start(ap, type);
-
-    switch (type) {
-    case mltofx_prop_int: {
-        int value = va_arg(ap, int);
-        paramSetValue((OfxParamHandle) param, value);
-    } break;
-
-    case mltofx_prop_double: {
-        double value = va_arg(ap, double);
-        paramSetValue((OfxParamHandle) param, value);
-    } break;
-
-    case mltofx_prop_string: {
-        char *value = va_arg(ap, char *);
-        paramSetValue((OfxParamHandle) param, value);
-    } break;
-
-    default:
-        break;
-    }
-
-    va_end(ap);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImagePropPixelAspectRatio,
+                  0,
+                  (double) width / (double) height);
 }
 
 void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
@@ -1804,4 +1607,201 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
     }
 
     return image_effect;
+}
+
+void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_type type, ...)
+{
+    mlt_properties param = NULL;
+    paramGetHandle((OfxParamSetHandle) params, key, (OfxParamHandle *) &param, NULL);
+
+    /* WIP: maybe it will be better idea to use paramSetValueAtTime */
+
+    va_list ap;
+    va_start(ap, type);
+
+    switch (type) {
+    case mltofx_prop_int: {
+        int value = va_arg(ap, int);
+        paramSetValue((OfxParamHandle) param, value);
+    } break;
+
+    case mltofx_prop_double: {
+        double value = va_arg(ap, double);
+        paramSetValue((OfxParamHandle) param, value);
+    } break;
+
+    case mltofx_prop_string: {
+        char *value = va_arg(ap, char *);
+        paramSetValue((OfxParamHandle) param, value);
+    } break;
+
+    default:
+        break;
+    }
+
+    va_end(ap);
+}
+
+void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
+{
+    mlt_properties get_clippref_args = mlt_properties_get_data(image_effect,
+                                                               "get_clippref_args",
+                                                               NULL);
+    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetClipPreferences,
+                                              (OfxImageEffectHandle) image_effect,
+                                              NULL,
+                                              (OfxPropertySetHandle) get_clippref_args);
+    mltofx_log_status_code(status_code, kOfxImageEffectActionGetClipPreferences);
+}
+
+void mltofx_get_regions_of_interest(OfxPlugin *plugin,
+                                    mlt_properties image_effect,
+                                    double width,
+                                    double height)
+{
+    mlt_properties get_roi_in_args = mlt_properties_get_data(image_effect, "get_roi_in_args", NULL);
+    mlt_properties get_roi_out_args = mlt_properties_get_data(image_effect,
+                                                              "get_roi_out_args",
+                                                              NULL);
+
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 0, 0.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 1, 0.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRegionOfInterest,
+                  0,
+                  0.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRegionOfInterest,
+                  1,
+                  0.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRegionOfInterest,
+                  2,
+                  width);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRegionOfInterest,
+                  3,
+                  height);
+
+    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetRegionsOfInterest,
+                                              (OfxImageEffectHandle) image_effect,
+                                              (OfxPropertySetHandle) get_roi_in_args,
+                                              (OfxPropertySetHandle) get_roi_out_args);
+    mltofx_log_status_code(status_code, kOfxImageEffectActionGetRegionsOfInterest);
+}
+
+void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
+{
+    mlt_properties begin_sequence_props = mlt_properties_get_data(image_effect,
+                                                                  "begin_sequence_props",
+                                                                  NULL);
+    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
+                  kOfxImageEffectPropFrameRange,
+                  0,
+                  0.0);
+    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
+                  kOfxImageEffectPropFrameRange,
+                  1,
+                  0.0);
+    propSetDouble((OfxPropertySetHandle) begin_sequence_props, kOfxImageEffectPropFrameStep, 0, 1.0);
+
+    propSetInt((OfxPropertySetHandle) begin_sequence_props, kOfxPropIsInteractive, 0, 0);
+
+    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  1.0);
+    propSetDouble((OfxPropertySetHandle) begin_sequence_props,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  1.0);
+
+    propSetInt((OfxPropertySetHandle) begin_sequence_props,
+               kOfxImageEffectPropSequentialRenderStatus,
+               0,
+               1);
+
+    propSetInt((OfxPropertySetHandle) begin_sequence_props,
+               kOfxImageEffectPropInteractiveRenderStatus,
+               0,
+               0);
+    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionBeginSequenceRender,
+                                              (OfxImageEffectHandle) image_effect,
+                                              (OfxPropertySetHandle) begin_sequence_props,
+                                              NULL);
+    mltofx_log_status_code(status_code, kOfxImageEffectActionBeginSequenceRender);
+}
+
+void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
+{
+    mlt_properties end_sequence_props = mlt_properties_get_data(image_effect,
+                                                                "end_sequence_props",
+                                                                NULL);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 0, 0.0);
+
+    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 1, 0.0);
+
+    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameStep, 0, 1.0);
+
+    propSetInt((OfxPropertySetHandle) end_sequence_props, kOfxPropIsInteractive, 0, 0);
+
+    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 0, 1.0);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 1, 1.0);
+
+    propSetInt((OfxPropertySetHandle) end_sequence_props,
+               kOfxImageEffectPropSequentialRenderStatus,
+               0,
+               1);
+
+    propSetInt((OfxPropertySetHandle) end_sequence_props,
+               kOfxImageEffectPropInteractiveRenderStatus,
+               0,
+               0);
+
+    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionEndSequenceRender,
+                                              (OfxImageEffectHandle) image_effect,
+                                              (OfxPropertySetHandle) end_sequence_props,
+                                              NULL);
+    mltofx_log_status_code(status_code, kOfxImageEffectActionEndSequenceRender);
+}
+
+void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height)
+{
+    mlt_properties render_in_args = mlt_properties_get_data(image_effect, "render_in_args", NULL);
+    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxPropTime, 0, 0.0);
+
+    propSetString((OfxPropertySetHandle) render_in_args,
+                  kOfxImageEffectPropFieldToRender,
+                  0,
+                  kOfxImageFieldBoth);
+
+    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 0, 0);
+    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 1, 0);
+    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 2, width);
+    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 3, height);
+
+    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
+    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+
+    propSetInt((OfxPropertySetHandle) render_in_args,
+               kOfxImageEffectPropSequentialRenderStatus,
+               0,
+               1);
+
+    propSetInt((OfxPropertySetHandle) render_in_args,
+               kOfxImageEffectPropInteractiveRenderStatus,
+               0,
+               0);
+
+    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderQualityDraft, 0, 0);
+
+    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionRender,
+                                              (OfxImageEffectHandle) image_effect,
+                                              (OfxPropertySetHandle) render_in_args,
+                                              NULL);
+
+    mltofx_log_status_code(status_code, kOfxImageEffectActionRender);
 }
