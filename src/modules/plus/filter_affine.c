@@ -45,7 +45,8 @@ static int filter_get_image(mlt_frame frame,
 
     // Get the image
     int error = 0;
-    *format = mlt_image_rgba;
+    if (*format != mlt_image_rgba64)
+        *format = mlt_image_rgba;
 
     mlt_service_lock(MLT_FILTER_SERVICE(filter));
     mlt_producer producer = mlt_properties_get_data(properties, "producer", NULL);
