@@ -1,5 +1,5 @@
 set(CMAKE_AUTOMOC ON)
-
+include(GenerateExportHeader)
 function(mlt_add_qt_module ARG_TARGET)
     cmake_parse_arguments(PARSE_ARGV 1 ARG "" "QT_VERSION;DATADIR" "")
 
@@ -45,6 +45,14 @@ function(mlt_add_qt_module ARG_TARGET)
       ${YML}
     )
 
+    # Note: We explicitly define a common macro and file name here because this
+    # function creates two separate targets (mltqt and mltqt6) that share the
+    # same source code. This ensures a single, consistent export macro can be
+    # used throughout the C++ files.
+    generate_export_header(${ARG_TARGET}
+        EXPORT_MACRO_NAME MLTQT_EXPORT
+        EXPORT_FILE_NAME  mltqt_export.h
+    )
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
 
     target_link_libraries(${ARG_TARGET} PRIVATE
@@ -55,7 +63,7 @@ function(mlt_add_qt_module ARG_TARGET)
       Qt${ARG_QT_VERSION}::Gui
       Qt${ARG_QT_VERSION}::Xml
     )
-
+    target_include_directories(${ARG_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     if(MSVC)
       target_link_libraries(${ARG_TARGET} PRIVATE PThreads4W::PThreads4W)
     else()

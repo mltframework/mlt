@@ -11,9 +11,10 @@ add_custom_target(Other_xml_Files SOURCES
   ${YML}
   mlt-xml.dtd
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltxml)
 target_compile_options(mltxml PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltxml PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltxml PRIVATE mlt Threads::Threads PkgConfig::xml)
 if(MSVC)
   target_link_libraries(mltxml PRIVATE PThreads4W::PThreads4W)

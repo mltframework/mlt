@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "mltfrei0r_export.h"
 
 #ifdef _WIN32
 #define LIBSUF ".dll"
@@ -481,7 +482,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTFREI0R_EXPORT MLT_REPOSITORY
 {
     mlt_tokeniser tokeniser = mlt_tokeniser_init();
     char *frei0r_path = get_frei0r_path();

@@ -20,7 +20,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-
+#include "mltrubberband_export.h"
 extern mlt_filter filter_rbpitch_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
@@ -33,7 +33,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTRUBBERBAND_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "rbpitch", filter_rbpitch_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "rbpitch", metadata, "filter_rbpitch.yml");

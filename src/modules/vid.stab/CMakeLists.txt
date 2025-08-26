@@ -4,14 +4,15 @@ add_library(mltvidstab MODULE
   filter_deshake.cpp
   filter_vidstab.cpp
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltvidstab)
 file(GLOB YML "*.yml")
 add_custom_target(Other_vidstab_Files SOURCES
   ${YML}
 )
 
 target_compile_options(mltvidstab PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltvidstab PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltvidstab PRIVATE mlt mlt++ PkgConfig::vidstab)
 if(NOT MSVC)
   target_link_libraries(mltvidstab PRIVATE m)

@@ -10,9 +10,10 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_kdenlive_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltkdenlive)
 target_compile_options(mltkdenlive PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltkdenlive PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltkdenlive PRIVATE mlt)
 if(NOT MSVC)
   target_link_libraries(mltkdenlive PRIVATE m)

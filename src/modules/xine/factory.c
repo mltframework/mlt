@@ -19,7 +19,7 @@
 
 #include <framework/mlt.h>
 #include <string.h>
-
+#include "mltxine_export.h"
 extern mlt_filter filter_deinterlace_init(mlt_profile profile,
                                           mlt_service_type type,
                                           const char *id,
@@ -36,7 +36,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTXINE_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "deinterlace", filter_deinterlace_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type,

@@ -3,14 +3,15 @@ add_library(mltndi MODULE
   factory.c factory.h
   producer_ndi.c
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltndi)
 file(GLOB YML "*.yml")
 add_custom_target(Other_ndi_Files SOURCES
   ${YML}
 )
 
 target_compile_options(mltndi PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltndi PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltndi PRIVATE mlt NDI::NDI)
 
 if(CPU_SSE)

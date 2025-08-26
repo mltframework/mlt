@@ -8,11 +8,13 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_decklink_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltdecklink)
 target_compile_options(mltdecklink PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltdecklink PRIVATE mlt Threads::Threads)
 
+target_include_directories(mltdecklink PRIVATE  ${CMAKE_CURRENT_BINARY_DIR})
 if(WIN32)
   target_sources(mltdecklink PRIVATE win/DeckLinkAPI_i.cpp)
   target_include_directories(mltdecklink PRIVATE win)

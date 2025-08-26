@@ -52,11 +52,13 @@ add_custom_target(Other_core_Files SOURCES
   loader.dict
   loader.ini
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltcore)
 target_compile_options(mltcore PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltcore PRIVATE mlt Threads::Threads)
 
+target_include_directories(mltcore PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 if(MSVC)
   target_link_libraries(mltcore PRIVATE PThreads4W::PThreads4W)
 else()

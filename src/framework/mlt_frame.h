@@ -28,6 +28,7 @@
 #include "mlt_image.h"
 #include "mlt_properties.h"
 #include "mlt_service.h"
+#include "mlt_export.h"
 
 /** Callback function to get video data.
  *
@@ -125,57 +126,57 @@ struct mlt_frame_s
 #define MLT_FRAME_IMAGE_STACK(frame) ((frame)->stack_image)
 #define MLT_FRAME_AUDIO_STACK(frame) ((frame)->stack_audio)
 
-extern mlt_frame mlt_frame_init(mlt_service service);
-extern mlt_properties mlt_frame_properties(mlt_frame self);
-extern int mlt_frame_is_test_card(mlt_frame self);
-extern int mlt_frame_is_test_audio(mlt_frame self);
-extern double mlt_frame_get_aspect_ratio(mlt_frame self);
-extern int mlt_frame_set_aspect_ratio(mlt_frame self, double value);
-extern mlt_position mlt_frame_get_position(mlt_frame self);
-extern mlt_position mlt_frame_original_position(mlt_frame self);
-extern int mlt_frame_set_position(mlt_frame self, mlt_position value);
-extern int mlt_frame_set_image(mlt_frame self, uint8_t *image, int size, mlt_destructor destroy);
-extern int mlt_frame_set_alpha(mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy);
-extern void mlt_frame_replace_image(
+MLT_EXPORT mlt_frame mlt_frame_init(mlt_service service);
+MLT_EXPORT mlt_properties mlt_frame_properties(mlt_frame self);
+MLT_EXPORT int mlt_frame_is_test_card(mlt_frame self);
+MLT_EXPORT int mlt_frame_is_test_audio(mlt_frame self);
+MLT_EXPORT double mlt_frame_get_aspect_ratio(mlt_frame self);
+MLT_EXPORT int mlt_frame_set_aspect_ratio(mlt_frame self, double value);
+MLT_EXPORT mlt_position mlt_frame_get_position(mlt_frame self);
+MLT_EXPORT mlt_position mlt_frame_original_position(mlt_frame self);
+MLT_EXPORT int mlt_frame_set_position(mlt_frame self, mlt_position value);
+MLT_EXPORT int mlt_frame_set_image(mlt_frame self, uint8_t *image, int size, mlt_destructor destroy);
+MLT_EXPORT int mlt_frame_set_alpha(mlt_frame self, uint8_t *alpha, int size, mlt_destructor destroy);
+MLT_EXPORT void mlt_frame_replace_image(
     mlt_frame self, uint8_t *image, mlt_image_format format, int width, int height);
-extern int mlt_frame_get_image(mlt_frame self,
+MLT_EXPORT int mlt_frame_get_image(mlt_frame self,
                                uint8_t **buffer,
                                mlt_image_format *format,
                                int *width,
                                int *height,
                                int writable);
-extern uint8_t *mlt_frame_get_alpha(mlt_frame self);
-extern uint8_t *mlt_frame_get_alpha_size(mlt_frame self, int *size);
-extern int mlt_frame_get_audio(mlt_frame self,
+MLT_EXPORT uint8_t *mlt_frame_get_alpha(mlt_frame self);
+MLT_EXPORT uint8_t *mlt_frame_get_alpha_size(mlt_frame self, int *size);
+MLT_EXPORT int mlt_frame_get_audio(mlt_frame self,
                                void **buffer,
                                mlt_audio_format *format,
                                int *frequency,
                                int *channels,
                                int *samples);
-extern int mlt_frame_set_audio(
+MLT_EXPORT int mlt_frame_set_audio(
     mlt_frame self, void *buffer, mlt_audio_format, int size, mlt_destructor);
-extern unsigned char *mlt_frame_get_waveform(mlt_frame self, int w, int h);
-extern int mlt_frame_push_get_image(mlt_frame self, mlt_get_image get_image);
-extern mlt_get_image mlt_frame_pop_get_image(mlt_frame self);
-extern int mlt_frame_push_frame(mlt_frame self, mlt_frame that);
-extern mlt_frame mlt_frame_pop_frame(mlt_frame self);
-extern int mlt_frame_push_service(mlt_frame self, void *that);
-extern void *mlt_frame_pop_service(mlt_frame self);
-extern int mlt_frame_push_service_int(mlt_frame self, int that);
-extern int mlt_frame_pop_service_int(mlt_frame self);
-extern int mlt_frame_push_audio(mlt_frame self, void *that);
-extern void *mlt_frame_pop_audio(mlt_frame self);
-extern mlt_deque mlt_frame_service_stack(mlt_frame self);
-extern mlt_producer mlt_frame_get_original_producer(mlt_frame self);
-extern void mlt_frame_close(mlt_frame self);
-extern mlt_properties mlt_frame_unique_properties(mlt_frame self, mlt_service service);
-extern mlt_properties mlt_frame_get_unique_properties(mlt_frame self, mlt_service service);
-extern mlt_frame mlt_frame_clone(mlt_frame self, int is_deep);
-extern mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep);
-extern mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep);
+MLT_EXPORT unsigned char *mlt_frame_get_waveform(mlt_frame self, int w, int h);
+MLT_EXPORT int mlt_frame_push_get_image(mlt_frame self, mlt_get_image get_image);
+MLT_EXPORT mlt_get_image mlt_frame_pop_get_image(mlt_frame self);
+MLT_EXPORT int mlt_frame_push_frame(mlt_frame self, mlt_frame that);
+MLT_EXPORT mlt_frame mlt_frame_pop_frame(mlt_frame self);
+MLT_EXPORT int mlt_frame_push_service(mlt_frame self, void *that);
+MLT_EXPORT void *mlt_frame_pop_service(mlt_frame self);
+MLT_EXPORT int mlt_frame_push_service_int(mlt_frame self, int that);
+MLT_EXPORT int mlt_frame_pop_service_int(mlt_frame self);
+MLT_EXPORT int mlt_frame_push_audio(mlt_frame self, void *that);
+MLT_EXPORT void *mlt_frame_pop_audio(mlt_frame self);
+MLT_EXPORT mlt_deque mlt_frame_service_stack(mlt_frame self);
+MLT_EXPORT mlt_producer mlt_frame_get_original_producer(mlt_frame self);
+MLT_EXPORT void mlt_frame_close(mlt_frame self);
+MLT_EXPORT mlt_properties mlt_frame_unique_properties(mlt_frame self, mlt_service service);
+MLT_EXPORT mlt_properties mlt_frame_get_unique_properties(mlt_frame self, mlt_service service);
+MLT_EXPORT mlt_frame mlt_frame_clone(mlt_frame self, int is_deep);
+MLT_EXPORT mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep);
+MLT_EXPORT mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep);
 
 /* convenience functions */
-extern void mlt_frame_write_ppm(mlt_frame frame);
+MLT_EXPORT void mlt_frame_write_ppm(mlt_frame frame);
 
 /** This macro scales RGB into the YUV gamut - y is scaled by 219/255 and uv by 224/255. */
 #define RGB2YUV_601_SCALED(r, g, b, y, u, v) \

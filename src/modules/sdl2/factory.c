@@ -21,7 +21,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-
+#include "mltsdl2_export.h"
 extern mlt_consumer consumer_sdl2_init(mlt_profile profile,
                                        mlt_service_type type,
                                        const char *id,
@@ -38,7 +38,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTSDL2_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "sdl2", consumer_sdl2_init);
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "sdl2", metadata, "consumer_sdl2.yml");

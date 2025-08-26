@@ -8,9 +8,10 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_spatialaudio_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltspatialaudio)
 target_compile_options(mltspatialaudio PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltspatialaudio PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltspatialaudio PRIVATE mlt PkgConfig::spatialaudio)
 
 set_target_properties(mltspatialaudio PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

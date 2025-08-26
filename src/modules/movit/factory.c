@@ -20,7 +20,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-
+#include "mltmovit_export.h"
 extern mlt_consumer consumer_xgl_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
@@ -113,7 +113,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTMOVIT_EXPORT MLT_REPOSITORY
 {
 #if !defined(__APPLE__) && !defined(_WIN32)
     MLT_REGISTER(mlt_service_consumer_type, "xgl", consumer_xgl_init);
