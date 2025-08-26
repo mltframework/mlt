@@ -24,6 +24,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(mltjackrack_EXPORTS)
+    #include "mltjackrack_export.h"
+    #define JACKRACK_MODULE_EXPORT MLTJACKRACK_EXPORT
+#elif defined(mltladspa_EXPORTS)
+    #include "mltladspa_export.h"
+    #define JACKRACK_MODULE_EXPORT MLTLADSPA_EXPORT
+#else
+    #define JACKRACK_MODULE_EXPORT
+#endif
+
 
 extern mlt_consumer consumer_jack_init(mlt_profile profile,
                                        mlt_service_type type,
@@ -692,7 +702,7 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
 
 #endif
 
-MLT_REPOSITORY
+JACKRACK_MODULE_EXPORT MLT_REPOSITORY
 {
 #ifdef GPL
     GSList *list;

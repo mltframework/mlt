@@ -21,7 +21,7 @@
 
 #include <limits.h>
 #include <string.h>
-
+#include "mltspatialaudio_export.h"
 extern mlt_filter filter_ambisonic_decoder_init(mlt_profile profile,
                                                 mlt_service_type type,
                                                 const char *id,
@@ -43,7 +43,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return result;
 }
 
-MLT_REPOSITORY
+MLTSPATIALAUDIO_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "ambisonic-decoder", filter_ambisonic_decoder_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "ambisonic-decoder", metadata, NULL);

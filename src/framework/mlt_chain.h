@@ -25,6 +25,7 @@
 
 #include "mlt_link.h"
 #include "mlt_producer.h"
+#include "mlt_export.h"
 
 /** \brief Chain class
  *
@@ -43,15 +44,15 @@ struct mlt_chain_s
 #define MLT_CHAIN_SERVICE(chain) MLT_PRODUCER_SERVICE(MLT_CHAIN_PRODUCER(chain))
 #define MLT_CHAIN_PROPERTIES(chain) MLT_SERVICE_PROPERTIES(MLT_CHAIN_SERVICE(chain))
 
-extern mlt_chain mlt_chain_init(mlt_profile);
-extern void mlt_chain_set_source(mlt_chain self, mlt_producer source);
-extern mlt_producer mlt_chain_get_source(mlt_chain self);
-extern int mlt_chain_attach(mlt_chain self, mlt_link link);
-extern int mlt_chain_detach(mlt_chain self, mlt_link link);
-extern int mlt_chain_link_count(mlt_chain self);
-extern int mlt_chain_move_link(mlt_chain self, int from, int to);
-extern mlt_link mlt_chain_link(mlt_chain self, int index);
-extern void mlt_chain_close(mlt_chain self);
-extern void mlt_chain_attach_normalizers(mlt_chain self);
+MLT_EXPORT mlt_chain mlt_chain_init(mlt_profile);
+MLT_EXPORT void mlt_chain_set_source(mlt_chain self, mlt_producer source);
+MLT_EXPORT mlt_producer mlt_chain_get_source(mlt_chain self);
+MLT_EXPORT int mlt_chain_attach(mlt_chain self, mlt_link link);
+MLT_EXPORT int mlt_chain_detach(mlt_chain self, mlt_link link);
+MLT_EXPORT int mlt_chain_link_count(mlt_chain self);
+MLT_EXPORT int mlt_chain_move_link(mlt_chain self, int from, int to);
+MLT_EXPORT mlt_link mlt_chain_link(mlt_chain self, int index);
+MLT_EXPORT void mlt_chain_close(mlt_chain self);
+MLT_EXPORT void mlt_chain_attach_normalizers(mlt_chain self);
 
 #endif

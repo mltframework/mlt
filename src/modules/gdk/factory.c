@@ -21,6 +21,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mltgdk_export.h"
 
 #ifdef USE_PIXBUF
 extern mlt_producer producer_pixbuf_init(char *filename);
@@ -82,7 +83,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTGDK_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "gtkrescale", create_service);
     MLT_REGISTER(mlt_service_link_type, "gtkrescale", mlt_link_filter_init);

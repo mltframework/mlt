@@ -24,6 +24,7 @@
 #define MLT_PARSER_H
 
 #include "mlt_types.h"
+#include "mlt_export.h"
 
 /** \brief Parser class
  *
@@ -55,9 +56,9 @@ struct mlt_parser_s
     int (*on_end_link)(mlt_parser self, mlt_link object);
 };
 
-extern mlt_parser mlt_parser_new();
-extern mlt_properties mlt_parser_properties(mlt_parser self);
-extern int mlt_parser_start(mlt_parser self, mlt_service object);
-extern void mlt_parser_close(mlt_parser self);
+MLT_EXPORT mlt_parser mlt_parser_new();
+MLT_EXPORT mlt_properties mlt_parser_properties(mlt_parser self);
+MLT_EXPORT int mlt_parser_start(mlt_parser self, mlt_service object);
+MLT_EXPORT void mlt_parser_close(mlt_parser self);
 
 #endif

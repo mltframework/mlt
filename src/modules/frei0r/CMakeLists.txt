@@ -16,8 +16,13 @@ add_custom_target(Other_frei0r_Files SOURCES
   param_name_map.yaml
 )
 
+include(GenerateExportHeader)
+generate_export_header(mltfrei0r
+  EXPORT_MACRO_NAME MLTFREI0R_EXPORT
+)
 target_compile_options(mltfrei0r PRIVATE ${MLT_COMPILE_OPTIONS})
-target_include_directories(mltfrei0r PRIVATE ${FREI0R_INCLUDE_DIRS})
+target_include_directories(mltfrei0r PRIVATE ${FREI0R_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
+
 if(RELOCATABLE)
   target_compile_definitions(mltfrei0r PRIVATE RELOCATABLE)
 endif()

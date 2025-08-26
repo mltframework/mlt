@@ -20,7 +20,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-
+#include "mltoldfilm_export.h"
 extern mlt_filter filter_dust_init(mlt_profile profile,
                                    mlt_service_type type,
                                    const char *id,
@@ -53,7 +53,7 @@ static mlt_properties oldfilm_metadata(mlt_service_type type, const char *id, vo
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTOLDFILM_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "oldfilm", filter_oldfilm_init);
     MLT_REGISTER(mlt_service_filter_type, "dust", filter_dust_init);

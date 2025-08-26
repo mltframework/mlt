@@ -9,9 +9,12 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_sdl2_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltsdl2
+  EXPORT_MACRO_NAME MLTSDL2_EXPORT
+)
 target_compile_options(mltsdl2 PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltsdl2 PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltsdl2 PRIVATE mlt Threads::Threads SDL2::SDL2)
 if(MSVC)
   target_link_libraries(mltsdl2 PRIVATE PThreads4W::PThreads4W)

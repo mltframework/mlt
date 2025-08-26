@@ -41,6 +41,7 @@ extern mlt_link link_swresample_init(mlt_profile profile, mlt_service_type, cons
 #include <libavfilter/avfilter.h>
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
+#include "mltavformat_export.h"
 
 // A static flag used to determine if avformat has been initialised
 static int avformat_initialised = 0;
@@ -414,7 +415,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTAVFORMAT_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "avformat", create_service);
     MLT_REGISTER(mlt_service_producer_type, "avformat", create_service);

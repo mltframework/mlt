@@ -20,7 +20,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-
+#include "mltresample_export.h"
 extern mlt_filter filter_resample_init(mlt_profile profile,
                                        mlt_service_type type,
                                        const char *id,
@@ -37,7 +37,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTRESAMPLE_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "resample", filter_resample_init);
     MLT_REGISTER(mlt_service_link_type, "resample", link_resample_init);

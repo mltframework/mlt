@@ -4,9 +4,12 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_resample_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltresample
+  EXPORT_MACRO_NAME MLTRESAMPLE_EXPORT
+)
 target_compile_options(mltresample PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltresample PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltresample PRIVATE mlt PkgConfig::samplerate)
 
 set_target_properties(mltresample PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

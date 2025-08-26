@@ -24,6 +24,7 @@
 #define MLT_IMAGE_H
 
 #include "mlt_types.h"
+#include "mlt_export.h"
 
 /** \brief Image class
  *
@@ -46,28 +47,28 @@ struct mlt_image_s
     mlt_destructor close;
 };
 
-extern mlt_image mlt_image_new();
-extern void mlt_image_close(mlt_image self);
-extern void mlt_image_set_values(
+MLT_EXPORT mlt_image mlt_image_new();
+MLT_EXPORT void mlt_image_close(mlt_image self);
+MLT_EXPORT void mlt_image_set_values(
     mlt_image self, void *data, mlt_image_format format, int width, int height);
-extern void mlt_image_get_values(
+MLT_EXPORT void mlt_image_get_values(
     mlt_image self, void **data, mlt_image_format *format, int *width, int *height);
-extern void mlt_image_alloc_data(mlt_image self);
-extern void mlt_image_alloc_alpha(mlt_image self);
-extern int mlt_image_calculate_size(mlt_image self);
-extern void mlt_image_fill_black(mlt_image self);
-extern void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio);
-extern void mlt_image_fill_white(mlt_image self, int full_range);
-extern void mlt_image_fill_opaque(mlt_image self);
-extern int mlt_image_is_opaque(mlt_image self);
-extern const char *mlt_image_format_name(mlt_image_format format);
-extern mlt_image_format mlt_image_format_id(const char *name);
-extern int mlt_image_rgba_opaque(uint8_t *image, int width, int height);
-extern int mlt_image_full_range(const char *color_range);
+MLT_EXPORT void mlt_image_alloc_data(mlt_image self);
+MLT_EXPORT void mlt_image_alloc_alpha(mlt_image self);
+MLT_EXPORT int mlt_image_calculate_size(mlt_image self);
+MLT_EXPORT void mlt_image_fill_black(mlt_image self);
+MLT_EXPORT void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio);
+MLT_EXPORT void mlt_image_fill_white(mlt_image self, int full_range);
+MLT_EXPORT void mlt_image_fill_opaque(mlt_image self);
+MLT_EXPORT int mlt_image_is_opaque(mlt_image self);
+MLT_EXPORT const char *mlt_image_format_name(mlt_image_format format);
+MLT_EXPORT mlt_image_format mlt_image_format_id(const char *name);
+MLT_EXPORT int mlt_image_rgba_opaque(uint8_t *image, int width, int height);
+MLT_EXPORT int mlt_image_full_range(const char *color_range);
 
 // Deprecated functions
-extern int mlt_image_format_size(mlt_image_format format, int width, int height, int *bpp);
-extern void mlt_image_format_planes(
+MLT_DEPRECATED_EXPORT  int mlt_image_format_size(mlt_image_format format, int width, int height, int *bpp);
+MLT_DEPRECATED_EXPORT  void mlt_image_format_planes(
     mlt_image_format format, int width, int height, void *data, uint8_t *planes[4], int strides[4]);
 
 #endif

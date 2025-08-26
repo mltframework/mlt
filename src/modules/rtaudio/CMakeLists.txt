@@ -6,9 +6,12 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_rtaudio_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltrtaudio
+  EXPORT_MACRO_NAME MLTRTAUDIO_EXPORT
+)
 target_compile_options(mltrtaudio PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltrtaudio PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltrtaudio PRIVATE mlt Threads::Threads)
 
 if(MSVC)

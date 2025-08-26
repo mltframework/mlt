@@ -8,9 +8,12 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_normalize_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltnormalize
+  EXPORT_MACRO_NAME MLTNORMALIZE_EXPORT
+)
 target_compile_options(mltnormalize PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltnormalize PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltnormalize PRIVATE mlt)
 if(NOT MSVC)
   target_link_libraries(mltnormalize PRIVATE m)

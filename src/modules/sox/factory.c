@@ -24,7 +24,7 @@
 #ifdef SOX14
 #include <sox.h>
 #endif
-
+#include "mltsox_export.h"
 extern mlt_filter filter_sox_init(mlt_profile profile,
                                   mlt_service_type type,
                                   const char *id,
@@ -69,7 +69,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return result;
 }
 
-MLT_REPOSITORY
+MLTSOX_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "sox", filter_sox_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "sox", metadata, NULL);

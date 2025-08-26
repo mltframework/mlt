@@ -4,9 +4,12 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_opencv_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltopencv
+  EXPORT_MACRO_NAME MLTOPENCV_EXPORT
+)
 target_compile_options(mltopencv PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltopencv PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltopencv PRIVATE mlt ${OpenCV_LIBS})
 
 set_target_properties(mltopencv PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

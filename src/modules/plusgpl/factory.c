@@ -18,6 +18,7 @@
  */
 
 #include <framework/mlt.h>
+#include "mltplusgpl_export.h"
 
 extern mlt_consumer consumer_cbrts_init(mlt_profile profile,
                                         mlt_service_type type,
@@ -51,7 +52,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTPLUSGPL_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "cbrts", consumer_cbrts_init);
     MLT_REGISTER(mlt_service_filter_type, "BurningTV", filter_burn_init);

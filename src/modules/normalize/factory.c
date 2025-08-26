@@ -20,7 +20,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-
+#include "mltnormalize_export.h"
 extern mlt_filter filter_audiolevel_init(mlt_profile profile,
                                          mlt_service_type type,
                                          const char *id,
@@ -37,7 +37,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTNORMALIZE_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_filter_type, "audiolevel", filter_audiolevel_init);
     MLT_REGISTER(mlt_service_filter_type, "volume", filter_volume_init);
