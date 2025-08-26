@@ -1914,18 +1914,21 @@ static int encode_video(encode_ctx_t *enc_ctx,
         avframe->pts = enc_ctx->frame_count;
 
         // Set frame interlace hints
-        avframe->interlaced_frame = !mlt_properties_get_int(frame_properties, "progressive");
-        avframe->top_field_first = mlt_properties_get_int(frame_properties, "top_field_first");
+        if (!mlt_properties_get_int(frame_properties, "progressive"))
+            avframe->flags |= AV_FRAME_FLAG_INTERLACED;
+        else
+            avframe->flags &= ~AV_FRAME_FLAG_INTERLACED;
+        const int tff = mlt_properties_get_int(frame_properties, "top_field_first");
+        if (tff)
+            avframe->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+        else
+            avframe->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
         if (mlt_properties_get_int(frame_properties, "progressive"))
             c->field_order = AV_FIELD_PROGRESSIVE;
         else if (c->codec_id == AV_CODEC_ID_MJPEG)
-            c->field_order = (mlt_properties_get_int(frame_properties, "top_field_first"))
-                                 ? AV_FIELD_TT
-                                 : AV_FIELD_BB;
+            c->field_order = tff ? AV_FIELD_TT : AV_FIELD_BB;
         else
-            c->field_order = (mlt_properties_get_int(frame_properties, "top_field_first"))
-                                 ? AV_FIELD_TB
-                                 : AV_FIELD_BT;
+            c->field_order = tff ? AV_FIELD_TB : AV_FIELD_BT;
 
         // Encode the image
         ret = avcodec_send_frame(c, avframe);
