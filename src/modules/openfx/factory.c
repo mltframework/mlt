@@ -166,9 +166,12 @@ MLT_REPOSITORY
 
     if (openfx_path) {
         int dli = 0;
+        char *saveptr, *strptr;
 
-        for (dir = strtok(openfx_path, MLT_DIRLIST_DELIMITER); dir;
-             dir = strtok(NULL, MLT_DIRLIST_DELIMITER)) {
+        for (strptr = openfx_path;; strptr = NULL) {
+            dir = strtok_r(strptr, MLT_DIRLIST_DELIMITER, &saveptr);
+            if (dir == NULL)
+                break;
             size_t dir_len = strlen(dir);
 
             DIR *d = opendir(dir);
