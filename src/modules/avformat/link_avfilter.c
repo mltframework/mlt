@@ -1,6 +1,6 @@
 /*
  * link_avfilter.c -- provide various links based on libavfilter
- * Copyright (C) 2023-2024 Meltytech, LLC
+ * Copyright (C) 2023-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -914,10 +914,21 @@ static int link_get_image(mlt_frame frame,
         pdata->avinframe->sample_aspect_ratio = (AVRational){profile->sample_aspect_num,
                                                              profile->sample_aspect_den};
         pdata->avinframe->pts = pos;
+#if LIBAVUTIL_VERSION_INT >= ((58 << 16) + (7 << 8) + 100)
+        if (!mlt_properties_get_int(frame_properties, "progressive"))
+            pdata->avinframe->flags |= AV_FRAME_FLAG_INTERLACED;
+        else
+            pdata->avinframe->flags &= ~AV_FRAME_FLAG_INTERLACED;
+        if (mlt_properties_get_int(frame_properties, "top_field_first"))
+            pdata->avinframe->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+        else
+            pdata->avinframe->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
+#else
         pdata->avinframe->interlaced_frame = !mlt_properties_get_int(frame_properties,
                                                                      "progressive");
         pdata->avinframe->top_field_first = mlt_properties_get_int(frame_properties,
                                                                    "top_field_first");
+#endif
         pdata->avinframe->color_primaries = mlt_properties_get_int(frame_properties,
                                                                    "color_primaries");
         pdata->avinframe->color_trc = mlt_properties_get_int(frame_properties, "color_trc");
