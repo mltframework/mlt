@@ -20,7 +20,15 @@
 #include <limits.h>
 #include <string.h>
 #include <QtGlobal>
-#include "mltqt_export.h"
+#if defined(mltqt6_EXPORTS) 
+    #include "mltqt6_export.h"
+    #define MLT_QT_MODULE_EXPORT MLTQT6_EXPORT
+#elif defined(mltqt_EXPORTS)
+    #include "mltqt_export.h"
+    #define MLT_QT_MODULE_EXPORT MLTQT_EXPORT
+#else
+    #define MLT_QT_MODULE_EXPORT
+#endif
 #ifdef USE_QT_OPENGL
 extern mlt_consumer consumer_qglsl_init(mlt_profile profile,
                                         mlt_service_type type,
@@ -106,7 +114,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLTQT_EXPORT MLT_REPOSITORY
+MLT_QT_MODULE_EXPORT  MLT_REPOSITORY
 {
 #ifdef USE_QT_OPENGL
     MLT_REGISTER(mlt_service_consumer_type, "qglsl", consumer_qglsl_init);

@@ -16,7 +16,10 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
+// SWIG is a parser, not a full C++ compiler, and it fails on compiler-specific
+// keywords like __declspec(dllexport). These %define directives make all of
+// our module-specific export macros invisible *only* to SWIG's parser,
+// resolving syntax errors during wrapper generation.
 %module mlt
 %define MLT_EXPORT
 %enddef
@@ -31,6 +34,8 @@
 %define MLTGDK_EXPORT
 %enddef
 %define MLTGLAXNIMATE_EXPORT
+%enddef
+%define MLTGLAXNIMATE_QT6_EXPORT
 %enddef
 %define MLTJACKRACK_EXPORT
 %enddef
@@ -51,6 +56,8 @@
 %define MLTPLUSGPL_EXPORT
 %enddef
 %define MLTQT_EXPORT
+%enddef
+%define MLTQT6_EXPORT
 %enddef
 %define MLTRESAMPLE_EXPORT
 %enddef

@@ -45,14 +45,8 @@ function(mlt_add_qt_module ARG_TARGET)
       ${YML}
     )
 
-    # Note: We explicitly define a common macro and file name here because this
-    # function creates two separate targets (mltqt and mltqt6) that share the
-    # same source code. This ensures a single, consistent export macro can be
-    # used throughout the C++ files.
-    generate_export_header(${ARG_TARGET}
-        EXPORT_MACRO_NAME MLTQT_EXPORT
-        EXPORT_FILE_NAME  mltqt_export.h
-    )
+
+    generate_export_header(${ARG_TARGET})
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
 
     target_link_libraries(${ARG_TARGET} PRIVATE

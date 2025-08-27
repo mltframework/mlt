@@ -171,7 +171,7 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
       ${GLAX_SOURCES}
     )
 
-    generate_export_header(mltglaxnimate)
+    generate_export_header(${ARG_TARGET})
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
     add_definitions(-DWITHOUT_POTRACE -DWITHOUT_QT_COLOR_WIDGETS)
 
