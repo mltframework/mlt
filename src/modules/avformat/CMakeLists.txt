@@ -25,10 +25,12 @@ add_custom_target(Other_avformat_Files SOURCES
   yuv_only.txt
 )
 
+include(GenerateExportHeader)
+generate_export_header(mltavformat)
 target_compile_options(mltavformat PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_include_directories(mltavformat SYSTEM PRIVATE ${FFMPEG_INCLUDE_DIRS})
-
+target_include_directories(mltavformat PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltavformat PRIVATE
   mlt
   Threads::Threads

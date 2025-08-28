@@ -13,9 +13,10 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_oldfilm_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltoldfilm)
 target_compile_options(mltoldfilm PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltoldfilm PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltoldfilm PRIVATE mlt)
 if(NOT MSVC)
   target_link_libraries(mltoldfilm PRIVATE m)

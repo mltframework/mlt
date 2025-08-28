@@ -20,7 +20,7 @@
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-
+#include "mltplus_export.h"
 extern mlt_consumer consumer_blipflash_init(mlt_profile profile,
                                             mlt_service_type type,
                                             const char *id,
@@ -160,7 +160,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTPLUS_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "blipflash", consumer_blipflash_init);
     MLT_REGISTER(mlt_service_filter_type, "affine", filter_affine_init);

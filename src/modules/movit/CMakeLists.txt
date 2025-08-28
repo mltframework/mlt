@@ -28,7 +28,9 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_movit_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltmovit)
+target_include_directories(mltmovit PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_options(mltmovit PRIVATE ${MLT_COMPILE_OPTIONS})
 if(RELOCATABLE)
   target_compile_definitions(mltmovit PRIVATE RELOCATABLE)

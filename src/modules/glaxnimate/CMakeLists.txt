@@ -140,7 +140,7 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_glaxnimate_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
 function(mlt_add_glaxnimate_module ARG_TARGET)
     cmake_parse_arguments(PARSE_ARGV 1 ARG "" "QT_VERSION;DATADIR" "")
 
@@ -171,6 +171,11 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
       ${GLAX_SOURCES}
     )
 
+    string(REPLACE "-" "_" EXPORT_MACRO_PREFIX ${ARG_TARGET})
+    generate_export_header(${ARG_TARGET}
+        EXPORT_FILE_NAME "${EXPORT_MACRO_PREFIX}_export.h"
+        EXPORT_MACRO_NAME "${EXPORT_MACRO_PREFIX}_EXPORT"
+    )
     target_compile_options(${ARG_TARGET} PRIVATE ${MLT_COMPILE_OPTIONS})
     add_definitions(-DWITHOUT_POTRACE -DWITHOUT_QT_COLOR_WIDGETS)
 
@@ -192,7 +197,7 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
       ${LibArchive_LIBRARIES}
       ZLIB::ZLIB
     )
-
+    target_include_directories(${ARG_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     if(NOT WINDOWS_DEPLOY)
       target_compile_definitions(${ARG_TARGET} PRIVATE NODEPLOY)
     endif()

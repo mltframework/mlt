@@ -27,7 +27,7 @@
 #else
 #include <RtAudio.h>
 #endif
-
+#include "mltrtaudio_export.h"
 #if defined(RTAUDIO_VERSION_MAJOR) && RTAUDIO_VERSION_MAJOR >= 6
 #define RTAUDIO_VERSION_6
 #endif
@@ -923,7 +923,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLTRTAUDIO_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "rtaudio", consumer_rtaudio_init);
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "rtaudio", metadata, nullptr);

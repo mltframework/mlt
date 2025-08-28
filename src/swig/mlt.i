@@ -16,15 +16,77 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
+// SWIG is a parser, not a full C++ compiler, and it fails on compiler-specific
+// keywords like __declspec(dllexport). These %define directives make all of
+// our module-specific export macros invisible *only* to SWIG's parser,
+// resolving syntax errors during wrapper generation.
 %module mlt
+%define MLT_EXPORT
+%enddef
+%define MLTAVFORMAT_EXPORT
+%enddef
+%define MLTCORE_EXPORT
+%enddef
+%define MLTDECKLINK_EXPORT
+%enddef
+%define MLTFREI0R_EXPORT
+%enddef
+%define MLTGDK_EXPORT
+%enddef
+%define MLTGLAXNIMATE_EXPORT
+%enddef
+%define MLTGLAXNIMATE_QT6_EXPORT
+%enddef
+%define MLTJACKRACK_EXPORT
+%enddef
+%define MLTKDENLIVE_EXPORT
+%enddef
+%define MLTMOVIT_EXPORT
+%enddef
+%define MLTNDI_EXPORT
+%enddef
+%define MLTNORMALIZE_EXPORT
+%enddef
+%define MLTOLDFILM_EXPORT
+%enddef
+%define MLTOPENCV_EXPORT
+%enddef
+%define MLTPLUS_EXPORT
+%enddef
+%define MLTPLUSGPL_EXPORT
+%enddef
+%define MLTQT_EXPORT
+%enddef
+%define MLTQT6_EXPORT
+%enddef
+%define MLTRESAMPLE_EXPORT
+%enddef
+%define MLTRTAUDIO_EXPORT
+%enddef
+%define MLTRUBBERBAND_EXPORT
+%enddef
+%define MLTSDL_EXPORT
+%enddef
+%define MLTSDL2_EXPORT
+%enddef
+%define MLTSOX_EXPORT
+%enddef
+%define MLTSPATIALAUDIO_EXPORT
+%enddef
+%define MLTVIDSTAB_EXPORT
+%enddef
+%define MLTVORBIS_EXPORT
+%enddef
+%define MLTXINE_EXPORT
+%enddef
+%define MLTXML_EXPORT
+%enddef
 %include "carrays.i"
 %array_class(unsigned char, UnsignedCharArray);
 
 %{
 #include <mlt++/Mlt.h>
-int mlt_log_get_level( void );
-void mlt_log_set_level( int );
+#include <framework/mlt_log.h>
 %}
 
 /** These methods return objects which should be gc'd.
@@ -84,8 +146,6 @@ namespace Mlt {
 %include <framework/mlt_types.h>
 %include <framework/mlt_factory.h>
 %include <framework/mlt_version.h>
-int mlt_log_get_level( void );
-void mlt_log_set_level( int );
 %include <MltFactory.h>
 %include <MltRepository.h>
 %include <MltEvent.h>

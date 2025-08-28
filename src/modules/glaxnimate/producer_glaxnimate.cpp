@@ -28,6 +28,16 @@
 #include "model/assets/assets.hpp"
 #include "model/assets/composition.hpp"
 #include "model/document.hpp"
+#if defined(mltglaxnimate_qt6_EXPORTS) 
+    #include "mltglaxnimate_qt6_export.h"
+    #define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_QT6_EXPORT
+#elif defined(mltglaxnimate_EXPORTS)
+    #include "mltglaxnimate_export.h"
+    #define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_EXPORT
+#else
+    #define MLT_GLAXNIMATE_MODULE_EXPORT
+#endif
+
 using namespace glaxnimate;
 
 class Glaxnimate
@@ -281,7 +291,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return mlt_properties_parse_yaml(file);
 }
 
-MLT_REPOSITORY
+MLT_GLAXNIMATE_MODULE_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_producer_type, "glaxnimate", producer_glaxnimate_init);
     MLT_REGISTER_METADATA(mlt_service_producer_type, "glaxnimate", metadata, NULL);

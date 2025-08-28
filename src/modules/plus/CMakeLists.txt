@@ -38,9 +38,10 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_plus_Files SOURCES
   ${YML}
 )
-
+include(GenerateExportHeader)
+generate_export_header(mltplus)
 target_compile_options(mltplus PRIVATE ${MLT_COMPILE_OPTIONS})
-
+target_include_directories(mltplus PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltplus PRIVATE mlt Threads::Threads)
 if(MSVC)
   target_link_libraries(mltplus PRIVATE msvccompat)
