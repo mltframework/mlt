@@ -271,6 +271,7 @@ static int convert_image(mlt_frame frame,
             mlt_properties_set_int(properties, "full_range", dst_full_range);
         }
         mlt_frame_set_image(frame, output, size, mlt_pool_release);
+        *image = output;
 
         if (out_width == width && out_height == height) {
             if (output_format == mlt_image_rgba && *format != mlt_image_rgba64) {
@@ -329,7 +330,6 @@ static int convert_image(mlt_frame frame,
             }
         }
 
-        *image = output;
         *format = output_format;
         mlt_properties_set_int(properties, "format", output_format);
         mlt_properties_set_int(properties, "width", out_width);
