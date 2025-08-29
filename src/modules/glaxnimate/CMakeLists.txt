@@ -171,7 +171,7 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
       ${GLAX_SOURCES}
     )
 
-    string(REPLACE "-" "_" EXPORT_MACRO_PREFIX ${ARG_TARGET})
+    string(MAKE_C_IDENTIFIER ${ARG_TARGET} EXPORT_MACRO_PREFIX)
     generate_export_header(${ARG_TARGET}
         EXPORT_FILE_NAME "${EXPORT_MACRO_PREFIX}_export.h"
         EXPORT_MACRO_NAME "${EXPORT_MACRO_PREFIX}_EXPORT"
