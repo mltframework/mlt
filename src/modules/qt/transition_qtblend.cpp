@@ -26,6 +26,11 @@
 #include <QPainter>
 #include <QTransform>
 
+static int format_is_rgba(mlt_image_format format)
+{
+    return format == mlt_image_rgba || format == mlt_image_rgba64;
+}
+
 static int get_image(mlt_frame a_frame,
                      uint8_t **image,
                      mlt_image_format *format,
@@ -42,7 +47,7 @@ static int get_image(mlt_frame a_frame,
 
     uint8_t *b_image = NULL;
     // hasAlpha indicates whether the source material has an alpha channel
-    bool hasAlpha = *format == mlt_image_rgba;
+    bool hasAlpha = format_is_rgba(*format);
     double opacity = 1.0;
     QTransform transform;
 
@@ -65,10 +70,12 @@ static int get_image(mlt_frame a_frame,
     double consumer_ar = mlt_profile_sar(profile);
 
     // Check the producer's native format before fetching image
-    int sourceFormat = mlt_properties_get_int(b_properties, "format");
-    if (sourceFormat == mlt_image_rgba || sourceFormat == mlt_image_rgb) {
-        hasAlpha = sourceFormat == mlt_image_rgba;
-        *format = mlt_image_rgba;
+    mlt_image_format sourceFormat = (mlt_image_format) mlt_properties_get_int(b_properties,
+                                                                              "format");
+    if (format_is_rgba(sourceFormat) || sourceFormat == mlt_image_rgb) {
+        hasAlpha = format_is_rgba(sourceFormat);
+        if (*format != mlt_image_rgba64)
+            *format = mlt_image_rgba;
     }
 
     if (b_height == 0) {
@@ -191,15 +198,17 @@ static int get_image(mlt_frame a_frame,
     // Check if we have transparency
     bool imageFetched = false;
     if (!forceAlpha) {
-        if (!hasAlpha || *format == mlt_image_rgba) {
+        if (!hasAlpha || format_is_rgba(*format)) {
             // fetch image in native format
             error = mlt_frame_get_image(b_frame, &b_image, format, &b_width, &b_height, 0);
             imageFetched = true;
-            if (!hasAlpha && (*format == mlt_image_rgba || mlt_frame_get_alpha(b_frame))) {
+            if (!hasAlpha && (format_is_rgba(*format) || mlt_frame_get_alpha(b_frame))) {
                 hasAlpha = true;
             }
-            if (hasAlpha && *format == mlt_image_rgba) {
-                hasAlpha = !mlt_image_rgba_opaque(b_image, b_width, b_height);
+            if (hasAlpha && format_is_rgba(*format)) {
+                struct mlt_image_s bimg;
+                mlt_image_set_values(&bimg, NULL, *format, b_width, b_height);
+                hasAlpha = !mlt_image_is_opaque(&bimg);
             }
         }
         if (!hasAlpha) {
@@ -225,14 +234,16 @@ static int get_image(mlt_frame a_frame,
         }
     }
     if (!imageFetched) {
-        *format = mlt_image_rgba;
+        if (*format != mlt_image_rgba64)
+            *format = mlt_image_rgba;
         error = mlt_frame_get_image(b_frame, &b_image, format, &b_width, &b_height, 0);
     }
 
-    if (b_frame->convert_image && (*format != mlt_image_rgba)) {
+    if (b_frame->convert_image && !format_is_rgba(*format)) {
         b_frame->convert_image(b_frame, &b_image, format, mlt_image_rgba);
     }
-    *format = mlt_image_rgba;
+    if (*format != mlt_image_rgba64)
+        *format = mlt_image_rgba;
     if (distort) {
         if (b_width != 0 && b_height != 0) {
             transform.scale(rect.w / b_width, rect.h / b_height);
