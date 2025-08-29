@@ -17,14 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef _MSC_VER
+#define _WINSOCKAPI_   // stops windows.h including winsock.h
+    extern "C"{
+    #include <gettimeofday.h>
+}
+#else
+    #include <sys/time.h>
+    #include <unistd.h>
+#endif
+
 #include "common.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <unistd.h>
 
 #include <framework/mlt_slices.h>
 

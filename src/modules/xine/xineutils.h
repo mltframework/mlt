@@ -25,7 +25,9 @@
 extern "C" {
 #endif
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -52,7 +54,9 @@ extern "C" {
 //#ifdef HAVE_CONFIG_H
 //#include "config.h"
 //#endif
-
+#ifdef _MSC_VER
+#include <framework/msvc_posix_compat.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 

@@ -34,9 +34,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <unistd.h>
-
 #include <strings.h>
+#else
+#include <framework/msvc_posix_compat.h>
+#endif
 // includes for socket IO
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)
 #if !(defined(__FreeBSD_kernel__) && defined(__GLIBC__))
@@ -48,7 +51,11 @@
 #include <sys/types.h>
 #endif
 #endif
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
 #include <time.h>
 
 #define TSP_BYTES (188)

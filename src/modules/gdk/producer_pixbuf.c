@@ -37,8 +37,12 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <unistd.h>
-
+#endif
+#ifdef _MSC_VER
+#include <framework/msvc_posix_compat.h>
+#endif
 // this protects concurrent access to gdk_pixbuf
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 

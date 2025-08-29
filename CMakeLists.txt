@@ -182,6 +182,13 @@ endif()
 
 if (MSVC)
   find_package(PThreads4W REQUIRED)
+  #find library from vcpkg gettimeofday
+    find_library(GETTIMEOFDAY_LIBRARY
+          NAMES gettimeofday
+  )
+    if (NOT GETTIMEOFDAY_LIBRARY)
+      message(FATAL_ERROR "Could not find gettimeofday.lib")
+    endif()
 endif ()
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
