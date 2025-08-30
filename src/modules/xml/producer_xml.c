@@ -274,6 +274,13 @@ static inline void qualify_property(deserialise_context context,
             } else {
                 strcpy(full_resource, resource_orig);
             }
+
+            // Workaround the "&amp;"" entity not properly decoded
+            char *amp = strstr(full_resource, "&#38;");
+            while (amp) {
+                memmove(amp + 1, amp + 5, strlen(amp + 5) + 1);
+                amp = strstr(amp + 1, "&#38;");
+            }
             mlt_properties_set_string(properties, name, full_resource);
             free(full_resource);
         }
