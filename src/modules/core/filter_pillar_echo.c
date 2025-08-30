@@ -271,7 +271,7 @@ static void bilinear_scale_rgba(mlt_image src, mlt_image dst, mlt_rect rect)
         desc.rect.h = rect.h * sourceAr / destAr;
         desc.rect.y = rect.y + (rect.h - desc.rect.h) / 2.0;
     }
-    if (src->format == mlt_image_rgb) {
+    if (src->format == mlt_image_rgba) {
         mlt_slices_run_normal(0, scale_sliced_proc_rgba32, &desc);
     } else {
         mlt_slices_run_normal(0, scale_sliced_proc_rgba64, &desc);
