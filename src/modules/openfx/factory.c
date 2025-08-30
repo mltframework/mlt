@@ -275,6 +275,8 @@ MLT_REPOSITORY
 
                 de = readdir(d);
             }
+
+	    closedir(d);
         }
 
         mlt_properties_set_int(mltofx_dl, "N", dli);
