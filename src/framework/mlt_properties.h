@@ -24,8 +24,8 @@
 #define MLT_PROPERTIES_H
 
 #include "mlt_events.h"
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 #include <stdio.h>
 
 /** \brief Properties class
@@ -60,13 +60,15 @@ MLT_EXPORT void mlt_properties_mirror(mlt_properties self, mlt_properties that);
 MLT_EXPORT int mlt_properties_inherit(mlt_properties self, mlt_properties that);
 MLT_EXPORT int mlt_properties_copy(mlt_properties self, mlt_properties that, const char *prefix);
 MLT_EXPORT int mlt_properties_pass(mlt_properties self, mlt_properties that, const char *prefix);
-MLT_EXPORT void mlt_properties_pass_property(mlt_properties self, mlt_properties that, const char *name);
+MLT_EXPORT void mlt_properties_pass_property(mlt_properties self,
+                                             mlt_properties that,
+                                             const char *name);
 MLT_EXPORT int mlt_properties_pass_list(mlt_properties self, mlt_properties that, const char *list);
 MLT_EXPORT int mlt_properties_set(mlt_properties self, const char *name, const char *value);
 MLT_EXPORT int mlt_properties_set_or_default(mlt_properties self,
-                                         const char *name,
-                                         const char *value,
-                                         const char *def);
+                                             const char *name,
+                                             const char *value,
+                                             const char *def);
 MLT_EXPORT int mlt_properties_set_string(mlt_properties self, const char *name, const char *value);
 MLT_EXPORT int mlt_properties_parse(mlt_properties self, const char *namevalue);
 MLT_EXPORT char *mlt_properties_get(mlt_properties self, const char *name);
@@ -81,7 +83,9 @@ MLT_EXPORT int mlt_properties_set_int64(mlt_properties self, const char *name, i
 MLT_EXPORT double mlt_properties_get_double(mlt_properties self, const char *name);
 MLT_EXPORT int mlt_properties_set_double(mlt_properties self, const char *name, double value);
 MLT_EXPORT mlt_position mlt_properties_get_position(mlt_properties self, const char *name);
-MLT_EXPORT int mlt_properties_set_position(mlt_properties self, const char *name, mlt_position value);
+MLT_EXPORT int mlt_properties_set_position(mlt_properties self,
+                                           const char *name,
+                                           mlt_position value);
 MLT_EXPORT int mlt_properties_set_data(
     mlt_properties self, const char *name, void *value, int length, mlt_destructor, mlt_serialiser);
 MLT_EXPORT void *mlt_properties_get_data(mlt_properties self, const char *name, int *length);
@@ -107,68 +111,68 @@ MLT_EXPORT mlt_position mlt_properties_time_to_frames(mlt_properties, const char
 MLT_EXPORT int mlt_properties_set_color(mlt_properties, const char *name, mlt_color value);
 MLT_EXPORT mlt_color mlt_properties_get_color(mlt_properties, const char *name);
 MLT_EXPORT int mlt_properties_anim_set_color(mlt_properties self,
-                                         const char *name,
-                                         mlt_color value,
-                                         int position,
-                                         int length,
-                                         mlt_keyframe_type keyframe_type);
+                                             const char *name,
+                                             mlt_color value,
+                                             int position,
+                                             int length,
+                                             mlt_keyframe_type keyframe_type);
 MLT_EXPORT mlt_color mlt_properties_anim_get_color(mlt_properties self,
-                                               const char *name,
-                                               int position,
-                                               int length);
+                                                   const char *name,
+                                                   int position,
+                                                   int length);
 
 MLT_EXPORT char *mlt_properties_anim_get(mlt_properties self,
-                                     const char *name,
-                                     int position,
-                                     int length);
+                                         const char *name,
+                                         int position,
+                                         int length);
 MLT_EXPORT int mlt_properties_anim_set(
     mlt_properties self, const char *name, const char *value, int position, int length);
 MLT_EXPORT int mlt_properties_anim_get_int(mlt_properties self,
-                                       const char *name,
-                                       int position,
-                                       int length);
+                                           const char *name,
+                                           int position,
+                                           int length);
 MLT_EXPORT int mlt_properties_anim_set_int(mlt_properties self,
-                                       const char *name,
-                                       int value,
-                                       int position,
-                                       int length,
-                                       mlt_keyframe_type keyframe_type);
+                                           const char *name,
+                                           int value,
+                                           int position,
+                                           int length,
+                                           mlt_keyframe_type keyframe_type);
 MLT_EXPORT double mlt_properties_anim_get_double(mlt_properties self,
-                                             const char *name,
-                                             int position,
-                                             int length);
+                                                 const char *name,
+                                                 int position,
+                                                 int length);
 MLT_EXPORT int mlt_properties_anim_set_double(mlt_properties self,
-                                          const char *name,
-                                          double value,
-                                          int position,
-                                          int length,
-                                          mlt_keyframe_type keyframe_type);
+                                              const char *name,
+                                              double value,
+                                              int position,
+                                              int length,
+                                              mlt_keyframe_type keyframe_type);
 MLT_EXPORT mlt_animation mlt_properties_get_animation(mlt_properties self, const char *name);
 MLT_EXPORT int mlt_properties_is_anim(mlt_properties self, const char *name);
 
 MLT_EXPORT int mlt_properties_set_rect(mlt_properties self, const char *name, mlt_rect value);
 MLT_EXPORT mlt_rect mlt_properties_get_rect(mlt_properties self, const char *name);
 MLT_EXPORT int mlt_properties_anim_set_rect(mlt_properties self,
-                                        const char *name,
-                                        mlt_rect value,
-                                        int position,
-                                        int length,
-                                        mlt_keyframe_type keyframe_type);
+                                            const char *name,
+                                            mlt_rect value,
+                                            int position,
+                                            int length,
+                                            mlt_keyframe_type keyframe_type);
 MLT_EXPORT mlt_rect mlt_properties_anim_get_rect(mlt_properties self,
-                                             const char *name,
-                                             int position,
-                                             int length);
+                                                 const char *name,
+                                                 int position,
+                                                 int length);
 
 MLT_EXPORT int mlt_properties_from_utf8(mlt_properties properties,
-                                    const char *name_from,
-                                    const char *name_to);
+                                        const char *name_from,
+                                        const char *name_to);
 MLT_EXPORT int mlt_properties_to_utf8(mlt_properties properties,
-                                  const char *name_from,
-                                  const char *name_to);
+                                      const char *name_from,
+                                      const char *name_to);
 
 MLT_EXPORT int mlt_properties_set_properties(mlt_properties self,
-                                         const char *name,
-                                         mlt_properties properties);
+                                             const char *name,
+                                             mlt_properties properties);
 MLT_EXPORT mlt_properties mlt_properties_get_properties(mlt_properties self, const char *name);
 MLT_EXPORT mlt_properties mlt_properties_get_properties_at(mlt_properties self, int index);
 

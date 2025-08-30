@@ -28,14 +28,14 @@
 #include "model/assets/assets.hpp"
 #include "model/assets/composition.hpp"
 #include "model/document.hpp"
-#if defined(mltglaxnimate_qt6_EXPORTS) 
-    #include "mltglaxnimate_qt6_export.h"
-    #define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_QT6_EXPORT
+#if defined(mltglaxnimate_qt6_EXPORTS)
+#include "mltglaxnimate_qt6_export.h"
+#define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_QT6_EXPORT
 #elif defined(mltglaxnimate_EXPORTS)
-    #include "mltglaxnimate_export.h"
-    #define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_EXPORT
+#include "mltglaxnimate_export.h"
+#define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_EXPORT
 #else
-    #define MLT_GLAXNIMATE_MODULE_EXPORT
+#define MLT_GLAXNIMATE_MODULE_EXPORT
 #endif
 
 using namespace glaxnimate;

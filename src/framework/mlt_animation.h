@@ -23,9 +23,9 @@
 #ifndef MLT_ANIMATION_H
 #define MLT_ANIMATION_H
 
+#include "mlt_export.h"
 #include "mlt_property.h"
 #include "mlt_types.h"
-#include "mlt_export.h"
 
 /** \brief Animation class
  *
@@ -55,14 +55,19 @@ MLT_EXPORT int mlt_animation_parse(
 MLT_EXPORT int mlt_animation_refresh(mlt_animation self, const char *data, int length);
 MLT_EXPORT int mlt_animation_get_length(mlt_animation self);
 MLT_EXPORT void mlt_animation_set_length(mlt_animation self, int length);
-MLT_EXPORT int mlt_animation_parse_item(mlt_animation self, mlt_animation_item item, const char *data);
+MLT_EXPORT int mlt_animation_parse_item(mlt_animation self,
+                                        mlt_animation_item item,
+                                        const char *data);
 MLT_EXPORT int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int position);
 MLT_EXPORT int mlt_animation_insert(mlt_animation self, mlt_animation_item item);
 MLT_EXPORT int mlt_animation_remove(mlt_animation self, int position);
 MLT_EXPORT void mlt_animation_interpolate(mlt_animation self);
 MLT_EXPORT int mlt_animation_next_key(mlt_animation self, mlt_animation_item item, int position);
 MLT_EXPORT int mlt_animation_prev_key(mlt_animation self, mlt_animation_item item, int position);
-MLT_EXPORT char *mlt_animation_serialize_cut_tf(mlt_animation self, int in, int out, mlt_time_format);
+MLT_EXPORT char *mlt_animation_serialize_cut_tf(mlt_animation self,
+                                                int in,
+                                                int out,
+                                                mlt_time_format);
 MLT_EXPORT char *mlt_animation_serialize_cut(mlt_animation self, int in, int out);
 MLT_EXPORT char *mlt_animation_serialize_tf(mlt_animation self, mlt_time_format);
 MLT_EXPORT char *mlt_animation_serialize(mlt_animation self);

@@ -22,9 +22,9 @@
 #ifndef MLT_LUMA_MAP_H
 #define MLT_LUMA_MAP_H
 
+#include "mlt_export.h"
 #include <stdint.h>
 #include <stdio.h>
-#include "mlt_export.h"
 
 #ifdef __cplusplus
 extern "C" {

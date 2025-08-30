@@ -17,9 +17,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include "mltxine_export.h"
 #include <framework/mlt.h>
 #include <string.h>
-#include "mltxine_export.h"
 extern mlt_filter filter_deinterlace_init(mlt_profile profile,
                                           mlt_service_type type,
                                           const char *id,

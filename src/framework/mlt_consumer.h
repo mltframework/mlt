@@ -24,8 +24,8 @@
 #define MLT_CONSUMER_H
 
 #include "mlt_events.h"
-#include "mlt_service.h"
 #include "mlt_export.h"
+#include "mlt_service.h"
 #include <pthread.h>
 
 /** \brief Consumer abstract service class

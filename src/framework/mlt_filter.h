@@ -23,8 +23,8 @@
 #ifndef MLT_FILTER_H
 #define MLT_FILTER_H
 
-#include "mlt_service.h"
 #include "mlt_export.h"
+#include "mlt_service.h"
 
 /** \brief Filter abstract service class
  *

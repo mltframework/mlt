@@ -22,10 +22,10 @@
 #ifndef MLT_FACTORY_H
 #define MLT_FACTORY_H
 
+#include "mlt_export.h"
 #include "mlt_profile.h"
 #include "mlt_repository.h"
 #include "mlt_types.h"
-#include "mlt_export.h"
 
 /**
  * \envvar \em MLT_PRODUCER the name of a default producer often used by other services, defaults to "loader"
@@ -67,16 +67,18 @@ MLT_EXPORT char *mlt_environment(const char *name);
 MLT_EXPORT int mlt_environment_set(const char *name, const char *value);
 MLT_EXPORT mlt_properties mlt_factory_event_object();
 MLT_EXPORT mlt_producer mlt_factory_producer(mlt_profile profile,
-                                         const char *service,
-                                         const void *resource);
-MLT_EXPORT mlt_filter mlt_factory_filter(mlt_profile profile, const char *service, const void *input);
-MLT_EXPORT mlt_link mlt_factory_link(const char *service, const void *input);
-MLT_EXPORT mlt_transition mlt_factory_transition(mlt_profile profile,
                                              const char *service,
-                                             const void *input);
-MLT_EXPORT mlt_consumer mlt_factory_consumer(mlt_profile profile,
+                                             const void *resource);
+MLT_EXPORT mlt_filter mlt_factory_filter(mlt_profile profile,
                                          const char *service,
                                          const void *input);
+MLT_EXPORT mlt_link mlt_factory_link(const char *service, const void *input);
+MLT_EXPORT mlt_transition mlt_factory_transition(mlt_profile profile,
+                                                 const char *service,
+                                                 const void *input);
+MLT_EXPORT mlt_consumer mlt_factory_consumer(mlt_profile profile,
+                                             const char *service,
+                                             const void *input);
 MLT_EXPORT void mlt_factory_register_for_clean_up(void *ptr, mlt_destructor destructor);
 MLT_EXPORT void mlt_factory_close();
 MLT_EXPORT mlt_properties mlt_global_properties();

@@ -23,8 +23,8 @@
 #ifndef MLT_MULITRACK_H
 #define MLT_MULITRACK_H
 
-#include "mlt_producer.h"
 #include "mlt_export.h"
+#include "mlt_producer.h"
 
 /** \brief Track class used by mlt_multitrack_s
  */

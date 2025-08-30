@@ -23,9 +23,9 @@
 #ifndef MLT_CHAIN_H
 #define MLT_CHAIN_H
 
+#include "mlt_export.h"
 #include "mlt_link.h"
 #include "mlt_producer.h"
-#include "mlt_export.h"
 
 /** \brief Chain class
  *

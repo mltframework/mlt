@@ -23,8 +23,8 @@
 #ifndef MLT_PARSER_H
 #define MLT_PARSER_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 
 /** \brief Parser class
  *

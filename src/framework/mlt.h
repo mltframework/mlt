@@ -35,13 +35,13 @@
 extern "C" {
 #endif
 
-#include "mlt_export.h"
 #include "mlt_animation.h"
 #include "mlt_audio.h"
 #include "mlt_cache.h"
 #include "mlt_chain.h"
 #include "mlt_consumer.h"
 #include "mlt_deque.h"
+#include "mlt_export.h"
 #include "mlt_factory.h"
 #include "mlt_field.h"
 #include "mlt_filter.h"

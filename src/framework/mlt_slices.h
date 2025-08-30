@@ -23,8 +23,8 @@
 #ifndef MLT_SLICES_H
 #define MLT_SLICES_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 /**
  * \envvar \em MLT_SLICES_COUNT Set the number of slices to use, which
  * defaults to number of CPUs found.

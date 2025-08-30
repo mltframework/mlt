@@ -23,8 +23,8 @@
 #ifndef MLT_PROPERTY_H
 #define MLT_PROPERTY_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 
 #if defined(__FreeBSD__)
 /* This header has existed since 1994 and defines __FreeBSD_version below. */
@@ -55,10 +55,10 @@ MLT_EXPORT int mlt_property_set_position(mlt_property self, mlt_position value);
 MLT_EXPORT int mlt_property_set_int64(mlt_property self, int64_t value);
 MLT_EXPORT int mlt_property_set_string(mlt_property self, const char *value);
 MLT_EXPORT int mlt_property_set_data(mlt_property self,
-                                 void *value,
-                                 int length,
-                                 mlt_destructor destructor,
-                                 mlt_serialiser serialiser);
+                                     void *value,
+                                     int length,
+                                     mlt_destructor destructor,
+                                     mlt_serialiser serialiser);
 MLT_EXPORT int mlt_property_get_int(mlt_property self, double fps, mlt_locale_t);
 MLT_EXPORT double mlt_property_get_double(mlt_property self, double fps, mlt_locale_t);
 MLT_EXPORT mlt_position mlt_property_get_position(mlt_property self, double fps, mlt_locale_t);
@@ -73,11 +73,11 @@ MLT_EXPORT void mlt_property_pass(mlt_property self, mlt_property that);
 MLT_EXPORT char *mlt_property_get_time(mlt_property self, mlt_time_format, double fps, mlt_locale_t);
 
 MLT_EXPORT int mlt_property_interpolate(mlt_property self,
-                                    mlt_property points[],
-                                    double progress,
-                                    double fps,
-                                    mlt_locale_t locale,
-                                    mlt_keyframe_type interp);
+                                        mlt_property points[],
+                                        double progress,
+                                        double fps,
+                                        mlt_locale_t locale,
+                                        mlt_keyframe_type interp);
 MLT_EXPORT double mlt_property_anim_get_double(
     mlt_property self, double fps, mlt_locale_t locale, int position, int length);
 MLT_EXPORT int mlt_property_anim_get_int(
@@ -85,19 +85,19 @@ MLT_EXPORT int mlt_property_anim_get_int(
 MLT_EXPORT char *mlt_property_anim_get_string(
     mlt_property self, double fps, mlt_locale_t locale, int position, int length);
 MLT_EXPORT int mlt_property_anim_set_double(mlt_property self,
-                                        double value,
-                                        double fps,
-                                        mlt_locale_t locale,
-                                        int position,
-                                        int length,
-                                        mlt_keyframe_type keyframe_type);
+                                            double value,
+                                            double fps,
+                                            mlt_locale_t locale,
+                                            int position,
+                                            int length,
+                                            mlt_keyframe_type keyframe_type);
 MLT_EXPORT int mlt_property_anim_set_int(mlt_property self,
-                                     int value,
-                                     double fps,
-                                     mlt_locale_t locale,
-                                     int position,
-                                     int length,
-                                     mlt_keyframe_type keyframe_type);
+                                         int value,
+                                         double fps,
+                                         mlt_locale_t locale,
+                                         int position,
+                                         int length,
+                                         mlt_keyframe_type keyframe_type);
 MLT_EXPORT int mlt_property_anim_set_string(
     mlt_property self, const char *value, double fps, mlt_locale_t locale, int position, int length);
 MLT_EXPORT mlt_animation mlt_property_get_animation(mlt_property self);
@@ -106,24 +106,24 @@ MLT_EXPORT int mlt_property_is_anim(mlt_property self);
 MLT_EXPORT int mlt_property_set_color(mlt_property self, mlt_color value);
 MLT_EXPORT mlt_color mlt_property_get_color(mlt_property self, double fps, mlt_locale_t locale);
 MLT_EXPORT int mlt_property_anim_set_color(mlt_property self,
-                                       mlt_color value,
-                                       double fps,
-                                       mlt_locale_t locale,
-                                       int position,
-                                       int length,
-                                       mlt_keyframe_type keyframe_type);
+                                           mlt_color value,
+                                           double fps,
+                                           mlt_locale_t locale,
+                                           int position,
+                                           int length,
+                                           mlt_keyframe_type keyframe_type);
 MLT_EXPORT mlt_color mlt_property_anim_get_color(
     mlt_property self, double fps, mlt_locale_t locale, int position, int length);
 
 MLT_EXPORT int mlt_property_set_rect(mlt_property self, mlt_rect value);
 MLT_EXPORT mlt_rect mlt_property_get_rect(mlt_property self, mlt_locale_t locale);
 MLT_EXPORT int mlt_property_anim_set_rect(mlt_property self,
-                                      mlt_rect value,
-                                      double fps,
-                                      mlt_locale_t locale,
-                                      int position,
-                                      int length,
-                                      mlt_keyframe_type keyframe_type);
+                                          mlt_rect value,
+                                          double fps,
+                                          mlt_locale_t locale,
+                                          int position,
+                                          int length,
+                                          mlt_keyframe_type keyframe_type);
 MLT_EXPORT mlt_rect mlt_property_anim_get_rect(
     mlt_property self, double fps, mlt_locale_t locale, int position, int length);
 

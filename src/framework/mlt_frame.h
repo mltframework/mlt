@@ -25,10 +25,10 @@
 
 #include "mlt_audio.h"
 #include "mlt_deque.h"
+#include "mlt_export.h"
 #include "mlt_image.h"
 #include "mlt_properties.h"
 #include "mlt_service.h"
-#include "mlt_export.h"
 
 /** Callback function to get video data.
  *
@@ -140,19 +140,19 @@ MLT_EXPORT int mlt_frame_set_alpha(mlt_frame self, uint8_t *alpha, int size, mlt
 MLT_EXPORT void mlt_frame_replace_image(
     mlt_frame self, uint8_t *image, mlt_image_format format, int width, int height);
 MLT_EXPORT int mlt_frame_get_image(mlt_frame self,
-                               uint8_t **buffer,
-                               mlt_image_format *format,
-                               int *width,
-                               int *height,
-                               int writable);
+                                   uint8_t **buffer,
+                                   mlt_image_format *format,
+                                   int *width,
+                                   int *height,
+                                   int writable);
 MLT_EXPORT uint8_t *mlt_frame_get_alpha(mlt_frame self);
 MLT_EXPORT uint8_t *mlt_frame_get_alpha_size(mlt_frame self, int *size);
 MLT_EXPORT int mlt_frame_get_audio(mlt_frame self,
-                               void **buffer,
-                               mlt_audio_format *format,
-                               int *frequency,
-                               int *channels,
-                               int *samples);
+                                   void **buffer,
+                                   mlt_audio_format *format,
+                                   int *frequency,
+                                   int *channels,
+                                   int *samples);
 MLT_EXPORT int mlt_frame_set_audio(
     mlt_frame self, void *buffer, mlt_audio_format, int size, mlt_destructor);
 MLT_EXPORT unsigned char *mlt_frame_get_waveform(mlt_frame self, int w, int h);

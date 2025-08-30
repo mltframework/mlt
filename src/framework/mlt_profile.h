@@ -23,8 +23,8 @@
 #ifndef MLT_PROFILE_H
 #define MLT_PROFILE_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 
 /** \brief Profile class
  *

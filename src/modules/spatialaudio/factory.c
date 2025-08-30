@@ -19,9 +19,9 @@
 
 #include <framework/mlt.h>
 
+#include "mltspatialaudio_export.h"
 #include <limits.h>
 #include <string.h>
-#include "mltspatialaudio_export.h"
 extern mlt_filter filter_ambisonic_decoder_init(mlt_profile profile,
                                                 mlt_service_type type,
                                                 const char *id,

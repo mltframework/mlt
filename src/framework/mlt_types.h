@@ -26,11 +26,11 @@
 extern "C" {
 #endif
 
+#include "mlt_export.h"
 #include "mlt_pool.h"
 #include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
-#include "mlt_export.h"
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif

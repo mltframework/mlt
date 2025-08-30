@@ -17,8 +17,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <framework/mlt.h>
 #include "mltplusgpl_export.h"
+#include <framework/mlt.h>
 
 extern mlt_consumer consumer_cbrts_init(mlt_profile profile,
                                         mlt_service_type type,
