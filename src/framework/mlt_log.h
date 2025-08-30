@@ -118,10 +118,10 @@ MLT_EXPORT void mlt_log(void *service, int level, const char *fmt, ...);
 
 #endif
 
-void mlt_vlog(void *service, int level, const char *fmt, va_list);
+MLT_EXPORT void mlt_vlog(void *service, int level, const char *fmt, va_list);
 MLT_EXPORT int mlt_log_get_level(void);
 MLT_EXPORT void mlt_log_set_level(int);
-void mlt_log_set_callback(void (*)(void *, int, const char *, va_list));
+MLT_EXPORT void mlt_log_set_callback(void (*)(void *, int, const char *, va_list));
 
 #define mlt_log_timings_begin() \
     { \
