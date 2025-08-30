@@ -38,7 +38,7 @@
 #include <unistd.h>
 #include <strings.h>
 #else
-#include <framework/msvc_posix_compat.h>
+#include "msvc_posix_compat.h"
 #endif
 // includes for socket IO
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)

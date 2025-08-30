@@ -31,7 +31,6 @@ set(MLT_PUBLIC_HEADERS
   mlt_transition.h
   mlt_types.h
   mlt_version.h
-  msvc_posix_compat.h
 )
 
 add_library(mlt SHARED
@@ -89,7 +88,7 @@ target_link_libraries(mlt PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 
 if(MSVC)
   target_link_libraries(mlt PRIVATE msvccompat PThreads4W::PThreads4W)
-  target_link_libraries(mlt PUBLIC  ${GETTIMEOFDAY_LIBRARY})
+  target_link_libraries(mlt PUBLIC ${GETTIMEOFDAY_LIBRARY})
 else()
   target_link_libraries(mlt PRIVATE m)
 endif()

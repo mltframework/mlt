@@ -55,7 +55,7 @@ extern "C" {
 //#include "config.h"
 //#endif
 #ifdef _MSC_VER
-#include <framework/msvc_posix_compat.h>
+#include "msvc_posix_compat.h"
 #endif
 #include <stdio.h>
 #include <string.h>

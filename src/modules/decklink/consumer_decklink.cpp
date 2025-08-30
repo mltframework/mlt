@@ -20,7 +20,7 @@
 #define __STDC_FORMAT_MACROS /* see inttypes.h */
 #ifdef _MSC_VER
 #define _WINSOCKAPI_   // stops windows.h including winsock.h
-#include <framework/msvc_posix_compat.h>
+#include "msvc_posix_compat.h"
     extern "C"{
     #include <gettimeofday.h>
 }
