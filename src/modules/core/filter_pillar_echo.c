@@ -164,7 +164,7 @@ static int scale_sliced_proc_rgba64(int id, int index, int jobs, void *data)
     int slice_line_end = slice_line_start + slice_height;
     double srcScale = rect.h / (double) src->height;
     int linesize = src->width * 4 * 2;
-    uint16_t *d = dst->data + (slice_line_start * linesize);
+    uint16_t *d = (uint16_t *) ((char *) dst->data + (slice_line_start * linesize));
     for (int y = slice_line_start; y < slice_line_end; y++) {
         double srcY = rect.y + (double) y * srcScale;
         int srcYindex = floor(srcY);
@@ -181,7 +181,7 @@ static int scale_sliced_proc_rgba64(int id, int index, int jobs, void *data)
             double valueSum[] = {0.0, 0.0, 0.0, 0.0};
             double factorSum[] = {0.0, 0.0, 0.0, 0.0};
 
-            uint16_t *s = src->data + (srcYindex * linesize) + (srcXindex * 4);
+            uint16_t *s = (uint16_t *) ((char *) src->data + (srcYindex * linesize) + (srcXindex * 4));
 
             // Top Left
             double ftl = ftop * fleft;
