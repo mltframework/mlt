@@ -30,7 +30,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
 #include <time.h>
 #include <ctype.h>
 

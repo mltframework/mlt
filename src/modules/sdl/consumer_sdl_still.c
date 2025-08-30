@@ -30,7 +30,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+#endif
 
 #include "consumer_sdl_osx.h"
 

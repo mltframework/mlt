@@ -22,6 +22,8 @@ target_include_directories(mltplusgpl PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltplusgpl PRIVATE mlt mlt++ Threads::Threads)
 if(NOT MSVC)
   target_link_libraries(mltplusgpl PRIVATE m)
+else()
+  target_link_libraries(mltplusgpl PRIVATE msvccompat)
 endif()
 
 if(WIN32)

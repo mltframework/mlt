@@ -18,6 +18,8 @@ target_include_directories(mltgdk PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mltgdk PRIVATE mlt Threads::Threads PkgConfig::GdkPixbuf)
 if(NOT MSVC)
   target_link_libraries(mltgdk PRIVATE m)
+else()
+  target_link_libraries(mltgdk PRIVATE msvccompat)
 endif()
 
 target_compile_definitions(mltgdk PRIVATE USE_PIXBUF)
