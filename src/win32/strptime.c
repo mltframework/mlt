@@ -43,6 +43,9 @@ __RCSID("$NetBSD: strptime.c,v 1.36 2012/03/13 21:13:48 christos Exp $");
 #include <time.h>
 #include <stdint.h>
 #include "../framework/mlt_export.h"
+#ifdef _MSC_VER
+#include "../msvc/msvc_posix_compat.h"
+#endif
 /*
 #include <tzfile.h>
 #include "private.h"

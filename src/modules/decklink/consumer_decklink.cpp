@@ -18,6 +18,16 @@
  */
 
 #define __STDC_FORMAT_MACROS /* see inttypes.h */
+#ifdef _MSC_VER
+#define _WINSOCKAPI_   // stops windows.h including winsock.h
+#include "msvc_posix_compat.h"
+    extern "C"{
+    #include <gettimeofday.h>
+}
+#else
+    #include <sys/time.h>
+    #include <unistd.h>
+#endif
 #include "common.h"
 #include "mltdecklink_export.h"
 #include <framework/mlt.h>
@@ -25,8 +35,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <unistd.h>
+#include "mltdecklink_export.h"
 #define SWAB_SLICED_ALIGN_POW 5
 static int swab_sliced(int id, int idx, int jobs, void *cookie)
 {

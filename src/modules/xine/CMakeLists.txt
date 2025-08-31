@@ -20,6 +20,10 @@ target_link_libraries(mltxine PRIVATE mlt ${CMAKE_DL_LIBS})
 set_target_properties(mltxine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_compile_definitions(mltxine PRIVATE PIC)
+if(MSVC)
+  target_link_libraries(mltxine PRIVATE msvccompat)
+endif()
+
 
 if(CPU_MMX)
   target_compile_definitions(mltxine PRIVATE USE_MMX)

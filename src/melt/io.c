@@ -35,8 +35,12 @@
 #include <framework/mlt_types.h>
 #include <windows.h>
 #endif
-#include <sys/time.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+    #include <gettimeofday.h>
+#else
+    #include <sys/time.h>
+    #include <unistd.h>
+#endif
 
 /* Application header files */
 #include "io.h"
