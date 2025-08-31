@@ -23,9 +23,9 @@
 #ifndef MLT_SERVICE_H
 #define MLT_SERVICE_H
 
+#include "mlt_export.h"
 #include "mlt_properties.h"
 #include "mlt_types.h"
-#include "mlt_export.h"
 
 /** \brief Service abstract base class
  *

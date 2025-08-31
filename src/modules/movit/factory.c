@@ -17,10 +17,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include "mltmovit_export.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-#include "mltmovit_export.h"
 extern mlt_consumer consumer_xgl_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,

@@ -23,10 +23,10 @@
 #ifndef MLT_PRODUCER_H
 #define MLT_PRODUCER_H
 
+#include "mlt_export.h"
 #include "mlt_filter.h"
 #include "mlt_profile.h"
 #include "mlt_service.h"
-#include "mlt_export.h"
 
 /** \brief Producer abstract service class
  *

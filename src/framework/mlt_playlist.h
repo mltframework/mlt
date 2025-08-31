@@ -23,8 +23,8 @@
 #ifndef MLT_PLAYLIST_H
 #define MLT_PLAYLIST_H
 
-#include "mlt_producer.h"
 #include "mlt_export.h"
+#include "mlt_producer.h"
 
 /** \brief structure for returning clip information from a playlist entry
  */
@@ -92,21 +92,26 @@ MLT_EXPORT int mlt_playlist_count(mlt_playlist self);
 MLT_EXPORT int mlt_playlist_clear(mlt_playlist self);
 MLT_EXPORT int mlt_playlist_append(mlt_playlist self, mlt_producer producer);
 MLT_EXPORT int mlt_playlist_append_io(mlt_playlist self,
-                                    mlt_producer producer,
-                                    mlt_position in,
-                                    mlt_position out);
+                                      mlt_producer producer,
+                                      mlt_position in,
+                                      mlt_position out);
 MLT_EXPORT int mlt_playlist_blank(mlt_playlist self, mlt_position out);
 MLT_EXPORT int mlt_playlist_blank_time(mlt_playlist self, const char *length);
 MLT_EXPORT mlt_position mlt_playlist_clip(mlt_playlist self, mlt_whence whence, int index);
 MLT_EXPORT int mlt_playlist_current_clip(mlt_playlist self);
 MLT_EXPORT mlt_producer mlt_playlist_current(mlt_playlist self);
-MLT_EXPORT int mlt_playlist_get_clip_info(mlt_playlist self, mlt_playlist_clip_info *info, int index);
+MLT_EXPORT int mlt_playlist_get_clip_info(mlt_playlist self,
+                                          mlt_playlist_clip_info *info,
+                                          int index);
 MLT_EXPORT int mlt_playlist_insert(
     mlt_playlist self, mlt_producer producer, int where, mlt_position in, mlt_position out);
 MLT_EXPORT int mlt_playlist_remove(mlt_playlist self, int where);
 MLT_EXPORT int mlt_playlist_move(mlt_playlist self, int from, int to);
 MLT_EXPORT int mlt_playlist_reorder(mlt_playlist self, const int *indices);
-MLT_EXPORT int mlt_playlist_resize_clip(mlt_playlist self, int clip, mlt_position in, mlt_position out);
+MLT_EXPORT int mlt_playlist_resize_clip(mlt_playlist self,
+                                        int clip,
+                                        mlt_position in,
+                                        mlt_position out);
 MLT_EXPORT int mlt_playlist_repeat_clip(mlt_playlist self, int clip, int repeat);
 MLT_EXPORT int mlt_playlist_split(mlt_playlist self, int clip, mlt_position position);
 MLT_EXPORT int mlt_playlist_split_at(mlt_playlist self, mlt_position position, int left);
@@ -123,12 +128,15 @@ MLT_EXPORT void mlt_playlist_consolidate_blanks(mlt_playlist self, int keep_leng
 MLT_EXPORT int mlt_playlist_is_blank(mlt_playlist self, int clip);
 MLT_EXPORT int mlt_playlist_is_blank_at(mlt_playlist self, mlt_position position);
 MLT_EXPORT void mlt_playlist_insert_blank(mlt_playlist self, int clip, int out);
-MLT_EXPORT void mlt_playlist_pad_blanks(mlt_playlist self, mlt_position position, int length, int find);
+MLT_EXPORT void mlt_playlist_pad_blanks(mlt_playlist self,
+                                        mlt_position position,
+                                        int length,
+                                        int find);
 MLT_EXPORT mlt_producer mlt_playlist_replace_with_blank(mlt_playlist self, int clip);
 MLT_EXPORT int mlt_playlist_insert_at(mlt_playlist self,
-                                  mlt_position position,
-                                  mlt_producer producer,
-                                  int mode);
+                                      mlt_position position,
+                                      mlt_producer producer,
+                                      int mode);
 MLT_EXPORT int mlt_playlist_clip_start(mlt_playlist self, int clip);
 MLT_EXPORT int mlt_playlist_clip_length(mlt_playlist self, int clip);
 MLT_EXPORT int mlt_playlist_blanks_from(mlt_playlist self, int clip, int bounded);

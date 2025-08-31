@@ -23,8 +23,8 @@
 #ifndef MLT_FIELD_H
 #define MLT_FIELD_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 
 MLT_EXPORT mlt_field mlt_field_init();
 MLT_EXPORT mlt_field mlt_field_new(mlt_multitrack multitrack, mlt_tractor tractor);
@@ -33,7 +33,10 @@ MLT_EXPORT mlt_tractor mlt_field_tractor(mlt_field self);
 MLT_EXPORT mlt_multitrack mlt_field_multitrack(mlt_field self);
 MLT_EXPORT mlt_properties mlt_field_properties(mlt_field self);
 MLT_EXPORT int mlt_field_plant_filter(mlt_field self, mlt_filter that, int track);
-MLT_EXPORT int mlt_field_plant_transition(mlt_field self, mlt_transition that, int a_track, int b_track);
+MLT_EXPORT int mlt_field_plant_transition(mlt_field self,
+                                          mlt_transition that,
+                                          int a_track,
+                                          int b_track);
 MLT_EXPORT void mlt_field_close(mlt_field self);
 MLT_EXPORT void mlt_field_disconnect_service(mlt_field self, mlt_service service);
 

@@ -29,6 +29,7 @@
     #include <unistd.h>
 #endif
 #include "common.h"
+#include "mltdecklink_export.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <pthread.h>

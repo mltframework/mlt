@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "mltgdk_export.h"
 #include <framework/mlt.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mltgdk_export.h"
 
 #ifdef USE_PIXBUF
 extern mlt_producer producer_pixbuf_init(char *filename);

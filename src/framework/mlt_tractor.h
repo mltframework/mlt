@@ -23,8 +23,8 @@
 #ifndef MLT_TRACTOR_H
 #define MLT_TRACTOR_H
 
-#include "mlt_producer.h"
 #include "mlt_export.h"
+#include "mlt_producer.h"
 /** \brief Tractor class
  *
  * The tractor is a convenience class that works with the field class

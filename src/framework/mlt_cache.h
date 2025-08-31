@@ -23,8 +23,8 @@
 #ifndef MLT_CACHE_H
 #define MLT_CACHE_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 
 MLT_EXPORT void *mlt_cache_item_data(mlt_cache_item item, int *size);
 MLT_EXPORT void mlt_cache_item_close(mlt_cache_item item);

@@ -36,12 +36,12 @@ extern mlt_link link_avfilter_init(mlt_profile, mlt_service_type, const char *, 
 extern mlt_link link_swresample_init(mlt_profile profile, mlt_service_type, const char *, char *);
 
 // ffmpeg Header files
+#include "mltavformat_export.h"
 #include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
 #include <libavfilter/avfilter.h>
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
-#include "mltavformat_export.h"
 
 // A static flag used to determine if avformat has been initialised
 static int avformat_initialised = 0;

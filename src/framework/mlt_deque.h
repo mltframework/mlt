@@ -23,8 +23,8 @@
 #ifndef MLT_DEQUE_H
 #define MLT_DEQUE_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 
 /** The callback function used to compare items for insert sort.
  *

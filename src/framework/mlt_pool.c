@@ -95,7 +95,13 @@ typedef struct mlt_pool_s
  * optimized libraries (sse/altivec).
  */
 
+// In the future with C23 we should be able to use alignas
+// typedef struct alignas(16) mlt_release_s
+#ifdef _MSC_VER
+typedef struct __declspec(align(16)) mlt_release_s
+#else
 typedef struct __attribute__((aligned(16))) mlt_release_s
+#endif
 {
     mlt_pool pool;
     int references;

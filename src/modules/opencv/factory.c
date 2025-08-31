@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "mltopencv_export.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
-#include "mltopencv_export.h"
 extern mlt_filter filter_tracker_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,

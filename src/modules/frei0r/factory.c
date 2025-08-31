@@ -22,6 +22,7 @@
 #include <frei0r.h>
 #include <string.h>
 
+#include "mltfrei0r_export.h"
 #include <dirent.h>
 #include <dlfcn.h>
 #include <limits.h>
@@ -31,7 +32,6 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "mltfrei0r_export.h"
 
 #ifdef _WIN32
 #define LIBSUF ".dll"

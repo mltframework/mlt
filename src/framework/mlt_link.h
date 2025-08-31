@@ -23,8 +23,8 @@
 #ifndef MLT_LINK_H
 #define MLT_LINK_H
 
-#include "mlt_producer.h"
 #include "mlt_export.h"
+#include "mlt_producer.h"
 
 /** \brief Link class
  *
@@ -76,9 +76,11 @@ MLT_EXPORT void mlt_link_close(mlt_link self);
 
 // Link filter wrapper functions
 MLT_EXPORT mlt_link mlt_link_filter_init(mlt_profile profile,
-                                       mlt_service_type type,
-                                       const char *id,
-                                       char *arg);
-MLT_EXPORT mlt_properties mlt_link_filter_metadata(mlt_service_type type, const char *id, void *data);
+                                         mlt_service_type type,
+                                         const char *id,
+                                         char *arg);
+MLT_EXPORT mlt_properties mlt_link_filter_metadata(mlt_service_type type,
+                                                   const char *id,
+                                                   void *data);
 
 #endif

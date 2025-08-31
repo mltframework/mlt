@@ -23,8 +23,8 @@
 #ifndef MLT_EVENTS_H
 #define MLT_EVENTS_H
 
-#include "mlt_types.h"
 #include "mlt_export.h"
+#include "mlt_types.h"
 
 /** A container for data that may be supplied with an event */
 typedef struct
@@ -55,9 +55,9 @@ MLT_EXPORT void mlt_events_init(mlt_properties self);
 MLT_EXPORT int mlt_events_register(mlt_properties self, const char *id);
 MLT_EXPORT int mlt_events_fire(mlt_properties self, const char *id, mlt_event_data);
 MLT_EXPORT mlt_event mlt_events_listen(mlt_properties self,
-                                   void *listener_data,
-                                   const char *id,
-                                   mlt_listener listener);
+                                       void *listener_data,
+                                       const char *id,
+                                       mlt_listener listener);
 MLT_EXPORT void mlt_events_block(mlt_properties self, void *listener_data);
 MLT_EXPORT void mlt_events_unblock(mlt_properties self, void *listener_data);
 MLT_EXPORT void mlt_events_disconnect(mlt_properties self, void *listener_data);
