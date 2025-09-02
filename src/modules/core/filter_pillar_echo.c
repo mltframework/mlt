@@ -71,7 +71,7 @@ static int scale_sliced_proc_rgba32(int id, int index, int jobs, void *data)
     int slice_line_end = slice_line_start + slice_height;
     double srcScale = rect.h / (double) src->height;
     int linesize = src->width * 4;
-    uint8_t *d = (uint8_t *) ((char *) dst->data + (slice_line_start * linesize));
+    uint8_t *d = dst->planes[0] + (slice_line_start * linesize);
     for (int y = slice_line_start; y < slice_line_end; y++) {
         double srcY = rect.y + (double) y * srcScale;
         int srcYindex = floor(srcY);
@@ -88,7 +88,7 @@ static int scale_sliced_proc_rgba32(int id, int index, int jobs, void *data)
             double valueSum[] = {0.0, 0.0, 0.0, 0.0};
             double factorSum[] = {0.0, 0.0, 0.0, 0.0};
 
-            uint8_t *s = (uint8_t *) ((char *) src->data + (srcYindex * linesize) + (srcXindex * 4));
+            uint8_t *s = src->planes[0] + (srcYindex * linesize) + (srcXindex * 4);
 
             // Top Left
             double ftl = ftop * fleft;
@@ -163,8 +163,8 @@ static int scale_sliced_proc_rgba64(int id, int index, int jobs, void *data)
         slice_height = mlt_slices_size_slice(jobs, index, src->height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
     double srcScale = rect.h / (double) src->height;
-    int linesize = src->width * 4 * 2;
-    uint16_t *d = dst->data + (slice_line_start * linesize);
+    int linesize = src->width * 4;
+    uint16_t *d = (uint16_t *) dst->planes[0] + (slice_line_start * linesize);
     for (int y = slice_line_start; y < slice_line_end; y++) {
         double srcY = rect.y + (double) y * srcScale;
         int srcYindex = floor(srcY);
@@ -181,7 +181,7 @@ static int scale_sliced_proc_rgba64(int id, int index, int jobs, void *data)
             double valueSum[] = {0.0, 0.0, 0.0, 0.0};
             double factorSum[] = {0.0, 0.0, 0.0, 0.0};
 
-            uint16_t *s = src->data + (srcYindex * linesize) + (srcXindex * 4);
+            uint16_t *s = (uint16_t *) src->planes[0] + (srcYindex * linesize) + (srcXindex * 4);
 
             // Top Left
             double ftl = ftop * fleft;
@@ -292,16 +292,16 @@ static void blit_rect(mlt_image src, mlt_image dst, mlt_rect rect)
     int blitWidth = rect.w * 4;
     int linesize = src->width * 4;
     if (src->format == mlt_image_rgba) {
-        uint8_t *s = (uint8_t *) src->data + (int) rect.y * linesize + (int) rect.x * 4;
-        uint8_t *d = (uint8_t *) dst->data + (int) rect.y * linesize + (int) rect.x * 4;
+        uint8_t *s = (uint8_t *) src->planes[0] + (int) rect.y * linesize + (int) rect.x * 4;
+        uint8_t *d = (uint8_t *) dst->planes[0] + (int) rect.y * linesize + (int) rect.x * 4;
         while (blitHeight--) {
             memcpy(d, s, blitWidth);
             s += linesize;
             d += linesize;
         }
     } else {
-        uint16_t *s = (uint16_t *) src->data + (int) rect.y * linesize + (int) rect.x * 4;
-        uint16_t *d = (uint16_t *) dst->data + (int) rect.y * linesize + (int) rect.x * 4;
+        uint16_t *s = (uint16_t *) src->planes[0] + (int) rect.y * linesize + (int) rect.x * 4;
+        uint16_t *d = (uint16_t *) dst->planes[0] + (int) rect.y * linesize + (int) rect.x * 4;
         while (blitHeight--) {
             memcpy(d, s, blitWidth * 2);
             s += linesize;
