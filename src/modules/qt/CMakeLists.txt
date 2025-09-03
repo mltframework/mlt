@@ -25,6 +25,7 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_gpsgraphic.cpp filter_gpsgraphic.h
       filter_gpstext.cpp
       filter_qtext.cpp
+      filter_qtblend_mode.c
       filter_qtblend.cpp
       filter_qtcrop.cpp
       filter_typewriter.cpp
@@ -111,6 +112,7 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_dropshadow.yml
       filter_gpsgraphic.yml
       filter_gpstext.yml
+      filter_qtblend_mode.yml
       filter_qtblend.yml
       filter_qtcrop.yml
       filter_qtext.yml

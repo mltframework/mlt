@@ -1,0 +1,21 @@
+schema_version: 0.3
+type: filter
+identifier: qtblend_mode
+title: Set Qt Blend Mode
+version: 1
+copyright: Meltytech, LLC
+creator: Dan Dennedy
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: Change the blend mode used by the qtblend transition.
+parameters:
+  - identifier: mode
+    argument: yes
+    title: Blend mode
+    type: integer
+    description: >
+        This filter can be used to change the blend mode for a single clip
+        when using the qtblend transition to composite tracks.
+    default: 0

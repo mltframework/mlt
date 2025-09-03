@@ -50,6 +50,12 @@ static int get_image(mlt_frame a_frame,
     bool hasAlpha = format_is_rgba(*format);
     double opacity = 1.0;
     QTransform transform;
+    QPainter::CompositionMode mode
+        = (QPainter::CompositionMode) mlt_properties_get_int(transition_properties, "compositing");
+    if (mlt_properties_exists(b_properties, "qtblend.mode")) {
+        // Override from qtblend_mode filter
+        mode = (QPainter::CompositionMode) mlt_properties_get_int(b_properties, "qtblend.mode");
+    }
 
     // Determine length
     mlt_position length = mlt_transition_get_length(transition);
@@ -189,9 +195,7 @@ static int get_image(mlt_frame a_frame,
         // Activate transparency if the clips don't have the same aspect ratio
         forceAlpha = true;
     }
-    if (!forceAlpha
-        && (mlt_properties_get_int(transition_properties, "compositing") != 0 || b_width < *width
-            || b_height < *height)) {
+    if (!forceAlpha && (mode != 0 || b_width < *width || b_height < *height)) {
         forceAlpha = true;
     }
 
@@ -294,8 +298,7 @@ static int get_image(mlt_frame a_frame,
 
     // setup Qt drawing
     QPainter painter(&bottomImg);
-    painter.setCompositionMode(
-        (QPainter::CompositionMode) mlt_properties_get_int(transition_properties, "compositing"));
+    painter.setCompositionMode(mode);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform, hqPainting);
     painter.setTransform(transform);
     painter.setOpacity(opacity);

@@ -79,6 +79,10 @@ extern mlt_transition transition_qtblend_init(mlt_profile profile,
                                               mlt_service_type type,
                                               const char *id,
                                               void *arg);
+extern mlt_filter filter_qtblend_mode_init(mlt_profile profile,
+                                           mlt_service_type type,
+                                           const char *id,
+                                           char *arg);
 extern mlt_filter filter_qtblend_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
@@ -129,6 +133,7 @@ MLT_QT_MODULE_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_producer_type, "qtext", producer_qtext_init);
     MLT_REGISTER(mlt_service_producer_type, "kdenlivetitle", producer_kdenlivetitle_init);
     MLT_REGISTER(mlt_service_transition_type, "qtblend", transition_qtblend_init);
+    MLT_REGISTER(mlt_service_filter_type, "qtblend_mode", filter_qtblend_mode_init);
     MLT_REGISTER(mlt_service_filter_type, "qtblend", filter_qtblend_init);
     MLT_REGISTER(mlt_service_filter_type, "qtcrop", filter_qtcrop_init);
     MLT_REGISTER(mlt_service_filter_type, "typewriter", filter_typewriter_init);
@@ -137,6 +142,10 @@ MLT_QT_MODULE_EXPORT MLT_REPOSITORY
                           "qtblend",
                           metadata,
                           "transition_qtblend.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "qtblend_mode",
+                          metadata,
+                          "filter_qtblend_mode.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "qtblend", metadata, "filter_qtblend.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "qtcrop", metadata, "filter_qtcrop.yml");
 #ifdef USE_FFTW
