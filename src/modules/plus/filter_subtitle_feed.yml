@@ -26,7 +26,7 @@ parameters:
     title: Text
     type: string
     description: >
-        A string that containes a complete SRT document.
+        A string that contains a complete SRT document.
         This parameter is ignored if resource is set.
     required: no
     readonly: no

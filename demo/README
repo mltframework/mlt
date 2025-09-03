@@ -83,7 +83,7 @@ Audio Stuff
 	video clip has a "floating" amplitude normalisation filter applied.
 	Typically, audio normalisation applies a constant gain factor across the
 	entire duration of an audio segment from a single source where the 
-	gain factor is automatically determined by anaylsing the maximum "power"
+	gain factor is automatically determined by analysing the maximum "power"
 	or peak levels. However, in news production, a popular requirement is to
 	to dynamically boost the amplitude in soft areas and reduce the amplitude
 	in louder areas. Thus, the gain analysis is performed using a "sliding

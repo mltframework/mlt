@@ -49,7 +49,7 @@ parameters:
       Keywords returning numeric values can use the extra word "decimals" to forcefully
       set a specific number of decimals (0-9). Example: #gps_speed decimals 3#.
       Time-based keywords can include a strftime format string to customize the
-      output and a number (representing seconds) preceeded by '+' or '-' which will 
+      output and a number (representing seconds) preceded by '+' or '-' which will 
       offset the actual time. For example,  "#gps_datetime_now %I:%M:%S %p +3600#" shows 
       only the time in 12-hour format, offset by 1 hour.
       The speed keyword can have an extra "vertical" or "3D" word as a format to show

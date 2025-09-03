@@ -1347,7 +1347,7 @@ static inline double interpolate_value(double x0,
  * \private \memberof mlt_animation_s
  *
  * \param item an unpopulated animation item to be interpolated.
- *  The frame and keyframe_type fields must already be set. The value for "frame" is the postion
+ *  The frame and keyframe_type fields must already be set. The value for "frame" is the position
  *  at which the value will be interpolated. The value for "keyframe_type" determines which
  *  interpolation will be used.
  * \param p a sequential array of 4 animation items. The frame value for item must lie between the
