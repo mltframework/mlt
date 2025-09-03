@@ -11,7 +11,7 @@ tags:
 description: >
   Automatically fade audio between clips in a playlist.
   This filter will fade the audio out at the end of a clip and fade the
-  audio in at the  begining of a clip.
+  audio in at the beginning of a clip.
   Only to be used as a filter on playlist producers.
   Uses the "meta.playlist.clip_position" and "meta.playlist.clip_length"
   properties that are added by the playlist producer to determine where

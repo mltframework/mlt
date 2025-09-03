@@ -1035,7 +1035,7 @@ protected:
                     if (m_currentSpeed || preroll) {
                         if (!preroll && m_previousSpeed != 1 && m_currentSpeed == 1) {
                             // Resume
-                            mlt_log_verbose(getConsumer(), "Resuming foward 1x playback\n");
+                            mlt_log_verbose(getConsumer(), "Resuming forward 1x playback\n");
                             m_deckLinkOutput->StopScheduledPlayback(0, nullptr, 0);
                             m_count = 0;
                             if (m_isAudio)

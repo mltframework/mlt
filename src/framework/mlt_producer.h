@@ -63,7 +63,7 @@
  * or infinity. Those producers tend to not override the default length and one
  * expect the app or user to set the length. The default value of 15000 was chosen
  * to provide something useful - not too long or short and convenient to simply
- * set an out point without necessarily nedding to extend the length.
+ * set an out point without necessarily needing to extend the length.
  * \todo define the media metadata taxonomy
  */
 

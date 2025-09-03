@@ -517,7 +517,7 @@ static char *getenv_locale()
 /** Return a list of user-preferred language codes taken from environment variables.
  *
  * A module should use this to locate a localized YAML Tiny file from which to build
- * its metadata strucutured properties.
+ * its metadata structured properties.
  *
  * \public \memberof mlt_repository_s
  * \param self a repository
