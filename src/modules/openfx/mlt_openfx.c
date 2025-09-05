@@ -447,7 +447,10 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         || strcmp(kOfxParamTypeInteger3D, paramType) == 0
         || strcmp(kOfxParamTypeString, paramType) == 0
         || strcmp(kOfxParamTypeCustom, paramType) == 0 || strcmp(kOfxParamTypeBytes, paramType) == 0
-        || strcmp(kOfxParamTypeGroup, paramType) == 0) {
+        || strcmp(kOfxParamTypeGroup, paramType) == 0
+	|| strcmp(kOfxParamTypePage, paramType) == 0
+	|| strcmp(kOfxParamTypePushButton, paramType) == 0) { /* Currently page and push buttons are ignored but we need
+								 them so plugins keep feeding use with parameters */
         mlt_properties pt = mlt_properties_new();
         mlt_properties_set_string(pt, "t", paramType);
         mlt_properties param_props = mlt_properties_new();
@@ -457,11 +460,8 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         if (propertySet != NULL) {
             *propertySet = (OfxPropertySetHandle) param_props;
         }
-    } else if (strcmp(kOfxParamTypePage, paramType) == 0
-               || strcmp(kOfxParamTypePushButton, paramType) == 0) {
-        return kOfxStatErrUnsupported;
     } else {
-        return kOfxStatErrUnknown;
+      return kOfxStatErrUnknown;
     }
 
     return kOfxStatOK;
@@ -1271,6 +1271,13 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 1, kOfxBitDepthShort);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 2, kOfxBitDepthHalf);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 3, kOfxBitDepthFloat);
+
+    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 0, kOfxImageComponentNone);
+    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGBA);
+    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 2, kOfxImageComponentRGB);
+    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 3, kOfxImageComponentAlpha);
+
+    propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 1);
 }
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect)
@@ -1324,6 +1331,11 @@ void mltofx_set_source_clip_data(
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, width);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, height);
+
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 0, kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGBA);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 2, kOfxImageComponentRGB);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 3, kOfxImageComponentAlpha);
 
     propSetDouble((OfxPropertySetHandle) clip_prop,
                   kOfxImagePropPixelAspectRatio,
@@ -1384,6 +1396,11 @@ void mltofx_set_output_clip_data(
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, width);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, height);
+
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 0, kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGBA);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 2, kOfxImageComponentRGB);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 3, kOfxImageComponentAlpha);
 
     propSetString((OfxPropertySetHandle) clip_prop,
                   kOfxImageEffectPropPreMultiplication,
@@ -1447,9 +1464,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                             NULL);
 
     propSetString((OfxPropertySetHandle) props,
-                  kOfxImageEffectPropContext,
-                  0,
-                  kOfxImageEffectContextGeneral);
+		  kOfxImageEffectPropContext,
+		  0,
+		  kOfxImageEffectContextGeneral);
 
     plugin->setHost(&MltOfxHost);
 
@@ -1462,9 +1479,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
     mltofx_log_status_code(status_code, "kOfxActionDescribe");
 
     status_code = plugin->mainEntry(kOfxImageEffectActionDescribeInContext,
-                                    (OfxImageEffectHandle) image_effect,
-                                    (OfxPropertySetHandle) MltOfxHost.host,
-                                    NULL);
+				    (OfxImageEffectHandle) image_effect,
+				    (OfxPropertySetHandle) MltOfxHost.host,
+				    NULL);
+
     mltofx_log_status_code(status_code, "kOfxImageEffectActionDescribeInContext");
 
     int iparams_length = mlt_properties_count(iparams);
@@ -1475,7 +1493,6 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
         char *name = mlt_properties_get_name(iparams, ipiter);
         mlt_properties pp = mlt_properties_get_data(iparams, name, NULL);
         char *pt = mlt_properties_get(pp, "t");
-
         mlt_properties ppp = mlt_properties_get_data(pp, "p", NULL);
 
         int is_secret = -1;
@@ -1488,17 +1505,13 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
         mlt_properties_set_data(params, name, p, 0, (mlt_destructor) mlt_properties_close, NULL);
 
         int p_length = mlt_properties_count(ppp);
-
         if (strcmp(pt, kOfxParamTypeInteger) == 0) {
             mlt_properties_set(p, "type", "integer");
         } else if (strcmp(pt, kOfxParamTypeDouble) == 0) {
             mlt_properties_set(p, "type", "double");
         } else if (strcmp(pt, kOfxParamTypeChoice) == 0) {
-            mlt_properties_set(p, "type", "integer");
-        } else if (strcmp(pt, kOfxParamTypeString) == 0)
-        /* else if (strcmp (pt, kOfxParamTypeChoice) == 0 ||
-         	       strcmp (pt, kOfxParamTypeString) == 0) */
-        {
+	    mlt_properties_set(p, "type", "string"); /* setting this to string let kdenlive and other MLT users render this as combobox dropdown list, WIP: do something better */
+        } else if (strcmp(pt, kOfxParamTypeString) == 0) {
             mlt_properties_set(p, "type", "string");
         } else if (strcmp(pt, kOfxParamTypeBoolean) == 0) {
             mlt_properties_set(p, "type", "boolean");
@@ -1507,11 +1520,25 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
             int opened = 0;
             propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropGroupOpen, 0, &opened);
             mlt_properties_set_int(p, "opened", opened);
-        }
+        } else if (strcmp(pt, kOfxParamTypeStrChoice) == 0) { /* WIP */
+	} else if (strcmp(pt, kOfxParamTypeRGBA) == 0) {      /* can be rendered as 4 float input fields or color button and picker inclusively */
+	} else if (strcmp(pt, kOfxParamTypeRGB) == 0) {
+	} else if (strcmp(pt, kOfxParamTypeDouble2D) == 0) { /* can be rendered as 2 double number input fields */
+	} else if (strcmp(pt, kOfxParamTypeInteger2D) == 0) {
+	} else if (strcmp(pt, kOfxParamTypeDouble3D) == 0) {
+	} else if (strcmp(pt, kOfxParamTypeInteger3D) == 0) {
+	} else if (strcmp(pt, kOfxParamTypeCustom) == 0) { /* need special handling */
+	} else if (strcmp(pt, kOfxParamTypeBytes) == 0) {  /* From the documentation: String to identify a param as a Plug-in defined opaque data parameter. */
+	} else if (strcmp(pt, kOfxParamTypePage) == 0) {
+	} else if (strcmp(pt, kOfxParamTypePushButton) == 0) { /* select field if selected shows options based on the selection */
+	}
 
         int animation = 1;
         propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropAnimates, 0, &animation);
         mlt_properties_set(p, "animation", animation ? "yes" : "no");
+
+	int min_set = 0;
+	int max_set = 0;
 
         int jt;
         for (jt = 0; jt < p_length; ++jt) {
@@ -1558,9 +1585,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                         mlt_properties_set(choices, key, choice_str);
                     }
                 }
-            } else if (strcmp(p_name, kOfxParamPropMin) == 0) {
+            } else if ((strcmp(p_name, kOfxParamPropMin) == 0 && min_set == 0) || strcmp(p_name, kOfxParamPropDisplayMin) == 0) {
                 if (strcmp(pt, kOfxParamTypeInteger) == 0 || strcmp(pt, kOfxParamTypeChoice) == 0
                     || strcmp(pt, kOfxParamTypeBoolean) == 0) {
+		    min_set = 1;
                     int minimum_value = 0;
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
                     mlt_properties_set_int(p, "minimum", minimum_value);
@@ -1573,9 +1601,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                     propGetString((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
                     mlt_properties_set(p, "minimum", minimum_value);
                 }
-            } else if (strcmp(p_name, kOfxParamPropMax) == 0) {
+            } else if ((strcmp(p_name, kOfxParamPropMax) == 0 && max_set == 0) || strcmp(p_name, kOfxParamPropDisplayMax) == 0) {
                 if (strcmp(pt, kOfxParamTypeInteger) == 0 || strcmp(pt, kOfxParamTypeChoice) == 0
                     || strcmp(pt, kOfxParamTypeBoolean) == 0) {
+		    max_set = 1;
                     int maximum_value = 0;
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &maximum_value);
                     mlt_properties_set_int(p, "maximum", maximum_value);
@@ -1602,6 +1631,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                 char *str_value = "";
                 propGetString((OfxPropertySetHandle) ppp, p_name, 0, &str_value);
                 mlt_properties_set(p, "title", str_value);
+                mlt_properties_set(p, "identifier", str_value);
             }
         }
     }
