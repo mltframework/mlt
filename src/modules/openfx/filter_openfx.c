@@ -78,12 +78,18 @@ static int filter_get_image(mlt_frame frame,
                                                mltofx_prop_int,
                                                value);
                     } else if (strcmp(type, "string") == 0) {
-                        char *value
-                            = mlt_properties_anim_get(properties, iprop_name, position, length);
-                        mltofx_param_set_value(image_effect_params,
-                                               iprop_name,
-                                               mltofx_prop_string,
-                                               value);
+                        /* char *value
+                               = mlt_properties_anim_get(properties, iprop_name, position, length); */
+                        /* mltofx_param_set_value(image_effect_params,
+                                                     iprop_name,
+                                                     mltofx_prop_string,
+                                                     value); */
+		        int value
+			    = mlt_properties_anim_get_int(properties, iprop_name, position, length);
+			mltofx_param_set_value(image_effect_params,
+					       iprop_name,
+                                               mltofx_prop_int, /* for handling option choice TODO: do something better */
+					       value);
                     } else if (strcmp(type, "boolean") == 0) {
                         int value
                             = mlt_properties_anim_get_int(properties, iprop_name, position, length);
