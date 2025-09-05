@@ -1631,7 +1631,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                 char *str_value = "";
                 propGetString((OfxPropertySetHandle) ppp, p_name, 0, &str_value);
                 mlt_properties_set(p, "title", str_value);
-                mlt_properties_set(p, "identifier", str_value);
+                mlt_properties_set(p, "identifier", name);
             }
         }
     }
