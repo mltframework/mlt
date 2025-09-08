@@ -97,7 +97,15 @@ static int filter_get_image(mlt_frame frame,
                                                iprop_name,
                                                mltofx_prop_int,
                                                value);
-                    }
+                    } else if (strcmp(type, "color") == 0) {
+		        mlt_color value
+			          = mlt_properties_anim_get_color(properties, iprop_name, position, length);
+			//value.a = 127;
+		        mltofx_param_set_value(image_effect_params,
+					       iprop_name,
+					       mltofx_prop_color,
+					       value);
+		    }
                 }
             }
         }
