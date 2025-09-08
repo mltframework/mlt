@@ -1,7 +1,7 @@
 /*
  * filter_glsl_manager.cpp
  * Copyright (C) 2011-2012 Christophe Thommeret <hftom@free.fr>
- * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2025 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,12 @@
 #include "mlt_movit_input.h"
 #include <effect_chain.h>
 #include <init.h>
+#include <math.h>
 #include <mlt++/MltEvent.h>
 #include <mlt++/MltProducer.h>
 #include <resource_pool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <string>
 #include <util.h>
 
@@ -33,14 +35,9 @@ extern "C" {
 #include <framework/mlt_factory.h>
 }
 
-#if defined(__APPLE__)
-#include <OpenGL/OpenGL.h>
-#elif defined(_WIN32)
-#include <windows.h>
-#include <wingdi.h>
-#else
-#include <GL/glx.h>
-#endif
+// Do not include platform-specific GL headers here.
+// Movit includes and config will provide the appropriate GL headers.
+// Minimum OpenGL version is desktop core profile 3 or OpenGL ES 3.
 
 // Texture pool may cause frames to appear out-of-order with NVIDIA
 // threaded optimizations.
@@ -74,6 +71,8 @@ GlslManager::GlslManager()
         initEvent = listen("init glsl", this, (mlt_listener) GlslManager::onInit);
         closeEvent = listen("close glsl", this, (mlt_listener) GlslManager::onClose);
     }
+    // Initialize runtime GL capabilities for readbacks.
+    init_ycbcr_runtime_caps();
 }
 
 GlslManager::~GlslManager()
@@ -149,9 +148,15 @@ glsl_texture GlslManager::get_texture(int width, int height, GLint internal_form
     }
 
     glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    GLenum alloc_type = GL_UNSIGNED_BYTE;
+    if (internal_format == GL_RGBA16F) {
+        alloc_type = GL_HALF_FLOAT;
+    } else if (internal_format == GL_RGBA16) {
+        alloc_type = GL_UNSIGNED_SHORT;
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, alloc_type, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -213,9 +218,10 @@ glsl_pbo GlslManager::get_pbo(int size)
         pbo->size = 0;
     }
     if (size > pbo->size) {
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo->pbo);
-        glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, size, NULL, GL_STREAM_DRAW);
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+        // This PBO is used for readback, so use PACK target consistently.
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo->pbo);
+        glBufferData(GL_PIXEL_PACK_BUFFER, size, NULL, GL_STREAM_READ);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
         pbo->size = size;
     }
     unlock();
@@ -277,6 +283,171 @@ mlt_filter filter_glsl_manager_init(mlt_profile profile,
     else
         g = new GlslManager();
     return g->get_filter();
+}
+static bool has_extension(const char *ext_list, const char *ext)
+{
+    if (!ext_list || !ext)
+        return false;
+    const char *p = ext_list;
+    size_t elen = strlen(ext);
+    while ((p = strstr(p, ext))) {
+        // Ensure whole token match (space or end).
+        const char c = p[elen];
+        if ((p == ext_list || *(p - 1) == ' ') && (c == ' ' || c == '\0'))
+            return true;
+        p += elen;
+    }
+    return false;
+}
+
+void GlslManager::init_ycbcr_runtime_caps()
+{
+    if (ycbcr_caps_initialized)
+        return;
+
+    // Default to desktop-friendly path: 16-bit normalized.
+    ycbcr_internal_format = GL_RGBA16;
+    ycbcr_read_type = GL_UNSIGNED_SHORT;
+    ycbcr_needs_float_to_u16 = false;
+
+    const char *version = (const char *) glGetString(GL_VERSION);
+    const char *extensions = (const char *) glGetString(GL_EXTENSIONS);
+    const char *renderer = (const char *) glGetString(GL_RENDERER);
+    const char *vendor = (const char *) glGetString(GL_VENDOR);
+    (void) renderer;
+    (void) vendor; // Not used currently.
+
+    bool is_gles = false;
+    if (version
+        && (strstr(version, "OpenGL ES") || strstr(version, "OpenGL ES-CM")
+            || strstr(version, "OpenGL ES-CL"))) {
+        is_gles = true;
+    }
+
+    // Log basic GL context facts.
+    mlt_log_verbose(get_service(),
+                    "GLSL caps: version='%s' renderer='%s' vendor='%s' is_gles=%d\n",
+                    version ? version : "",
+                    renderer ? renderer : "",
+                    vendor ? vendor : "",
+                    (int) is_gles);
+
+    if (is_gles) {
+        // On ES, RGBA16 as a color renderable internal format is not guaranteed.
+        // Prefer RGBA16F if color buffer half float is available; read back as float and convert.
+        bool has_half_float_color = false;
+        if (extensions) {
+            has_half_float_color = has_extension(extensions, "GL_EXT_color_buffer_half_float")
+                                   || has_extension(extensions, "GL_OES_texture_half_float")
+                                   || has_extension(extensions, "GL_EXT_color_buffer_float");
+        }
+        if (has_half_float_color) {
+            ycbcr_internal_format = GL_RGBA16F;
+            ycbcr_read_type = GL_FLOAT;
+            ycbcr_needs_float_to_u16 = true;
+        } else {
+            // As a fallback, try RGBA8 and still read back as bytes; later conversion to 10-bit
+            // would be lossy—but we retain functionality. Keep existing defaults for now.
+            ycbcr_internal_format = GL_RGBA8;
+            ycbcr_read_type = GL_UNSIGNED_BYTE;
+            ycbcr_needs_float_to_u16 = false;
+        }
+    }
+
+    // Keep track of our initial choice before probing.
+    GLint initial_internal_format = ycbcr_internal_format;
+    GLenum initial_read_type = ycbcr_read_type;
+
+    // Probe that the chosen internal format is actually color-renderable by creating
+    // a tiny FBO and checking completeness. If it fails, fall back to safer formats.
+    auto fbo_renders = [&](GLint internal_fmt, GLenum *out_read_type) -> bool {
+        GLuint tex = 0, fbo = 0;
+        glGenTextures(1, &tex);
+        if (!tex)
+            return false;
+        glBindTexture(GL_TEXTURE_2D, tex);
+        GLenum alloc_type = GL_UNSIGNED_BYTE;
+        if (internal_fmt == GL_RGBA16F)
+            alloc_type = GL_HALF_FLOAT;
+        else if (internal_fmt == GL_RGBA16)
+            alloc_type = GL_UNSIGNED_SHORT;
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_fmt, 4, 4, 0, GL_RGBA, alloc_type, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glDeleteFramebuffers(1, &fbo);
+        glDeleteTextures(1, &tex);
+
+        if (status != GL_FRAMEBUFFER_COMPLETE)
+            return false;
+        if (out_read_type) {
+            // Prefer readback types that align with the internal format choice.
+            *out_read_type = (internal_fmt == GL_RGBA16F)  ? GL_FLOAT
+                             : (internal_fmt == GL_RGBA16) ? GL_UNSIGNED_SHORT
+                                                           : GL_UNSIGNED_BYTE;
+        }
+        return true;
+    };
+
+    GLenum validated_read_type = ycbcr_read_type;
+    bool used_fallback = false;
+    if (!fbo_renders(ycbcr_internal_format, &validated_read_type)) {
+        // Build an ordered list of fallbacks depending on context.
+        GLint candidates[3];
+        int n = 0;
+        if (is_gles) {
+            // On ES, try half-float (if extension suggests support) then RGBA8.
+            if (has_extension(extensions, "GL_EXT_color_buffer_half_float")
+                || has_extension(extensions, "GL_OES_texture_half_float")
+                || has_extension(extensions, "GL_EXT_color_buffer_float")) {
+                candidates[n++] = GL_RGBA16F;
+            }
+            candidates[n++] = GL_RGBA8;
+        } else {
+            // Desktop GL: prefer 16-bit normalized, then 16F, then 8-bit.
+            candidates[n++] = GL_RGBA16;
+            candidates[n++] = GL_RGBA16F;
+            candidates[n++] = GL_RGBA8;
+        }
+        bool found = false;
+        for (int i = 0; i < n; ++i) {
+            GLenum tmp_type = GL_UNSIGNED_BYTE;
+            if (fbo_renders(candidates[i], &tmp_type)) {
+                ycbcr_internal_format = candidates[i];
+                validated_read_type = tmp_type;
+                found = true;
+                used_fallback = true;
+                break;
+            }
+        }
+        if (!found) {
+            // Last resort: RGBA8 with byte readback.
+            ycbcr_internal_format = GL_RGBA8;
+            validated_read_type = GL_UNSIGNED_BYTE;
+            used_fallback = true;
+        }
+    }
+
+    ycbcr_read_type = validated_read_type;
+    ycbcr_needs_float_to_u16 = (ycbcr_read_type == GL_FLOAT);
+
+    // Log the final choice (and whether we had to fall back from the initial one).
+    mlt_log_debug(get_service(),
+                  "YCbCr readback: internal=0x%x read_type=0x%x float_to_u16=%d%s\n",
+                  (unsigned int) ycbcr_internal_format,
+                  (unsigned int) ycbcr_read_type,
+                  (int) ycbcr_needs_float_to_u16,
+                  used_fallback || (initial_internal_format != ycbcr_internal_format)
+                          || (initial_read_type != ycbcr_read_type)
+                      ? " (fallback)"
+                      : "");
+    ycbcr_caps_initialized = true;
 }
 
 } // extern "C"
@@ -570,24 +741,23 @@ int GlslManager::render_frame_rgba(
     // Read FBO into PBO
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     check_error();
-    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo->pbo);
     check_error();
-    glBufferData(GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ);
+    glBufferData(GL_PIXEL_PACK_BUFFER, img_size, NULL, GL_STREAM_READ);
     check_error();
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, BUFFER_OFFSET(0));
     check_error();
 
     // Copy from PBO
-    uint8_t *buf = (uint8_t *) glMapBuffer(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
-    check_error();
+    uint8_t *buf = (uint8_t *) glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, img_size, GL_MAP_READ_BIT);
     *image = (uint8_t *) mlt_pool_alloc(img_size);
     mlt_frame_set_image(frame, *image, img_size, mlt_pool_release);
     memcpy(*image, buf, img_size);
 
     // Release PBO and FBO
-    glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
     check_error();
-    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     check_error();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     check_error();
@@ -612,7 +782,11 @@ int GlslManager::render_frame_ycbcr(
         return 1;
     }
 
-    glsl_texture texture = get_texture(width, height, GL_RGBA16);
+    // Ensure runtime capabilities are initialized.
+    if (!ycbcr_caps_initialized)
+        init_ycbcr_runtime_caps();
+
+    glsl_texture texture = get_texture(width, height, ycbcr_internal_format);
     if (!texture) {
         return 1;
     }
@@ -642,15 +816,22 @@ int GlslManager::render_frame_ycbcr(
     // Read FBO into PBO
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     check_error();
-    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo->pbo);
     check_error();
-    glBufferData(GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ);
+    // Size depends on chosen readback format below.
+    size_t pbo_size = (size_t) width * height * 4
+                      * ((ycbcr_read_type == GL_FLOAT)            ? sizeof(float)
+                         : (ycbcr_read_type == GL_UNSIGNED_SHORT) ? sizeof(uint16_t)
+                                                                  : sizeof(uint8_t));
+    glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, NULL, GL_STREAM_READ);
     check_error();
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT, BUFFER_OFFSET(0));
+    // Read FBO; choose type based on internal format used above.
+    glReadPixels(0, 0, width, height, GL_RGBA, ycbcr_read_type, BUFFER_OFFSET(0));
     check_error();
 
     // Copy from PBO
-    uint16_t *buf = (uint16_t *) glMapBuffer(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
+    // Map for read (minimum is GL 3.0 / ES 3.0, so glMapBufferRange is available).
+    void *raw = glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, pbo_size, GL_MAP_READ_BIT);
     check_error();
     int mlt_size = mlt_image_format_size(mlt_image_yuv444p10, width, height, nullptr);
     *image = (uint8_t *) mlt_pool_alloc(mlt_size);
@@ -660,15 +841,37 @@ int GlslManager::render_frame_ycbcr(
     mlt_image_format_planes(mlt_image_yuv444p10, width, height, *image, planes, strides);
     uint16_t **p = (uint16_t **) planes;
     for (int i = 0; i < width * height; ++i) {
-        p[0][i] = buf[4 * i + 0];
-        p[1][i] = buf[4 * i + 1];
-        p[2][i] = buf[4 * i + 2];
+        if (ycbcr_read_type == GL_FLOAT) {
+            float *buf = (float *) raw;
+            // Convert float [0,1] to 16-bit [0,65535].
+            // Clamp to avoid potential out-of-range due to FP error.
+            float yf = buf[4 * i + 0];
+            float uf = buf[4 * i + 1];
+            float vf = buf[4 * i + 2];
+            yf = yf < 0.0f ? 0.0f : (yf > 1.0f ? 1.0f : yf);
+            uf = uf < 0.0f ? 0.0f : (uf > 1.0f ? 1.0f : uf);
+            vf = vf < 0.0f ? 0.0f : (vf > 1.0f ? 1.0f : vf);
+            p[0][i] = (uint16_t) lroundf(yf * 65535.0f);
+            p[1][i] = (uint16_t) lroundf(uf * 65535.0f);
+            p[2][i] = (uint16_t) lroundf(vf * 65535.0f);
+        } else if (ycbcr_read_type == GL_UNSIGNED_SHORT) {
+            uint16_t *buf = (uint16_t *) raw;
+            p[0][i] = buf[4 * i + 0];
+            p[1][i] = buf[4 * i + 1];
+            p[2][i] = buf[4 * i + 2];
+        } else { // GL_UNSIGNED_BYTE fallback
+            uint8_t *buf = (uint8_t *) raw;
+            // Scale 8-bit [0,255] to 16-bit [0,65535].
+            p[0][i] = (uint16_t) (buf[4 * i + 0] * 257u);
+            p[1][i] = (uint16_t) (buf[4 * i + 1] * 257u);
+            p[2][i] = (uint16_t) (buf[4 * i + 2] * 257u);
+        }
     }
 
     // Release PBO and FBO
-    glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
     check_error();
-    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     check_error();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     check_error();

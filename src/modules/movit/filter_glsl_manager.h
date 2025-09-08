@@ -1,6 +1,6 @@
 /*
  * filter_glsl_manager.h
- * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2025 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -127,6 +127,8 @@ public:
     static void unlock_service(mlt_frame frame);
 
 private:
+    // Determine and cache the best render/readback formats for YCbCr readout at runtime.
+    void init_ycbcr_runtime_caps();
     static void *get_frame_specific_data(mlt_service service,
                                          mlt_frame frame,
                                          const char *key,
@@ -148,6 +150,12 @@ private:
     Mlt::Event *initEvent;
     Mlt::Event *closeEvent;
     GLsync prev_sync;
+
+    // Runtime-selected capabilities for YCbCr readback.
+    bool ycbcr_caps_initialized = false;
+    GLint ycbcr_internal_format = 0; // e.g., GL_RGBA16 or GL_RGBA16F
+    GLenum ycbcr_read_type = 0;      // GL_UNSIGNED_SHORT or GL_FLOAT
+    bool ycbcr_needs_float_to_u16 = false;
 };
 
 #endif // GLSL_MANAGER_H
