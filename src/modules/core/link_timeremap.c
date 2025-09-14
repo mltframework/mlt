@@ -113,8 +113,10 @@ static void change_movit_format(mlt_frame frame, mlt_frame src_frame, mlt_image_
         } else {
             // Use a 10-bit output if the end consumer wants it.
             // TODO add a "consumer.format" property to find other criteria for 10-bit
-            const char *trc = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "consumer.color_trc");
-            *format = (trc && !strcmp("arib-std-b67", trc)) ? mlt_image_yuv444p10 : mlt_image_rgba;
+            const char *trc_str = mlt_properties_get(MLT_FRAME_PROPERTIES(frame),
+                                                     "consumer.color_trc");
+            mlt_color_trc trc = mlt_image_color_trc_id(trc_str);
+            *format = trc == mlt_color_trc_arib_std_b67 ? mlt_image_yuv444p10 : mlt_image_rgba;
         }
     }
 }

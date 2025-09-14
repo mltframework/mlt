@@ -109,7 +109,8 @@ struct producer_avformat_s
     unsigned int invalid_dts_counter;
     mlt_cache image_cache;
     mlt_cache audio_cache;
-    int yuv_colorspace, color_primaries, color_trc;
+    int yuv_colorspace, color_primaries;
+    mlt_color_trc color_trc;
     int full_range;
     pthread_mutex_t video_mutex;
     pthread_mutex_t audio_mutex;
@@ -596,7 +597,8 @@ static mlt_properties find_default_streams(producer_avformat self)
             }
             if (codec_params->color_trc && codec_params->color_trc != AVCOL_TRC_UNSPECIFIED) {
                 snprintf(key, sizeof(key), "meta.media.%u.codec.color_trc", i);
-                mlt_properties_set_double(meta_media, key, codec_params->color_trc);
+                mlt_color_trc trc = av_to_mlt_color_trc(codec_params->color_trc);
+                mlt_properties_set_int(meta_media, key, trc);
             }
             break;
         case AVMEDIA_TYPE_AUDIO:
@@ -2955,9 +2957,11 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
         mlt_properties_set_int(properties, "meta.media.colorspace", self->yuv_colorspace);
 
         // Get the color transfer characteristic (gamma).
-        self->color_trc = mlt_properties_get_int(properties, "force_color_trc");
+        const char *force_color_trc_str = mlt_properties_get(properties, "force_color_trc");
+        if (force_color_trc_str)
+            self->color_trc = mlt_image_color_trc_id(force_color_trc_str);
         if (!self->color_trc)
-            self->color_trc = self->video_codec->color_trc;
+            self->color_trc = av_to_mlt_color_trc(self->video_codec->color_trc);
         mlt_properties_set_int(properties, "meta.media.color_trc", self->color_trc);
 
         // Get the RGB color primaries.

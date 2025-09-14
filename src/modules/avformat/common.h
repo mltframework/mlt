@@ -44,6 +44,8 @@ int mlt_get_sws_flags(
     int srcwidth, int srcheight, int srcformat, int dstwidth, int dstheight, int dstformat);
 int mlt_to_av_image_format(mlt_image_format format);
 mlt_image_format mlt_get_supported_image_format(mlt_image_format format);
+int mlt_to_av_color_trc(mlt_color_trc trc);
+mlt_color_trc av_to_mlt_color_trc(int trc);
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe);
 void avframe_to_mlt_image(AVFrame *avframe, mlt_image image);
 

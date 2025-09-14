@@ -262,6 +262,83 @@ mlt_image_format mlt_image_format_id(const char *name)
     return mlt_image_invalid;
 }
 
+/** Get the short name for a color transfer characteristics.
+ *
+ * \public \memberof mlt_image_s
+ * \param trc the color transfer characteristics
+ * \return a string
+ */
+
+const char *mlt_image_color_trc_name(mlt_color_trc trc)
+{
+    switch (trc) {
+    case mlt_color_trc_none:
+    case mlt_color_trc_unspecified:
+    case mlt_color_trc_reserved:
+        return "none";
+    case mlt_color_trc_bt709:
+        return "bt709";
+    case mlt_color_trc_gamma22:
+        return "bt470m";
+    case mlt_color_trc_gamma28:
+        return "bt470bg";
+    case mlt_color_trc_smpte170m:
+        return "smpte170m";
+    case mlt_color_trc_smpte240m:
+        return "smpte240m";
+    case mlt_color_trc_linear:
+        return "linear";
+    case mlt_color_trc_log:
+        return "log100";
+    case mlt_color_trc_log_sqrt:
+        return "log316";
+    case mlt_color_trc_iec61966_2_4:
+        return "iec61966-2-4";
+    case mlt_color_trc_bt1361_ecg:
+        return "bt1361e";
+    case mlt_color_trc_iec61966_2_1:
+        return "iec61966-2-1";
+    case mlt_color_trc_bt2020_10:
+        return "bt2020-10";
+    case mlt_color_trc_bt2020_12:
+        return "bt2020-12";
+    case mlt_color_trc_smpte2084:
+        return "smpte2084";
+    case mlt_color_trc_smpte428:
+        return "smpte428";
+    case mlt_color_trc_arib_std_b67:
+        return "arib-std-b67";
+    case mlt_color_trc_invalid:
+        return "invalid";
+    }
+    return "none";
+}
+
+/** Get the id of color transfer characteristics from short name.
+ *
+ * \public \memberof mlt_image_s
+ * \param name the color trc short name
+ * \return a color trc
+ */
+
+mlt_color_trc mlt_image_color_trc_id(const char *name)
+{
+    mlt_color_trc c;
+
+    for (c = mlt_color_trc_none; name && c <= mlt_color_trc_invalid; c++) {
+        const char *s = mlt_image_color_trc_name(c);
+        if (!strcmp(s, name))
+            return c;
+    }
+
+    // Fall back to see if it was specified as a number
+    int value = strtol(name, NULL, 10);
+    if (value && value < mlt_color_trc_invalid)
+        return value;
+
+    return mlt_color_trc_none;
+}
+
 /** Fill an image with black.
   *
   * \bug This does not respect full range YUV if needed.

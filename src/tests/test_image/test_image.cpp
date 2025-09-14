@@ -129,6 +129,16 @@ private Q_SLOTS:
         i.init_alpha();
         QVERIFY(i.plane(3) != nullptr);
     }
+
+    void ColorTrc()
+    {
+        // Test conversion from short name
+        QCOMPARE(mlt_color_trc_bt709, mlt_image_color_trc_id("bt709"));
+        QCOMPARE(mlt_color_trc_linear, mlt_image_color_trc_id("linear"));
+        // Test conversion from number
+        QCOMPARE(mlt_color_trc_bt709, mlt_image_color_trc_id("1"));
+        QCOMPARE(mlt_color_trc_linear, mlt_image_color_trc_id("8"));
+    }
 };
 
 QTEST_APPLESS_MAIN(TestImage)

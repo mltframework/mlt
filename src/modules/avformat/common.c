@@ -362,6 +362,98 @@ mlt_image_format mlt_get_supported_image_format(mlt_image_format format)
     return mlt_image_rgba;
 }
 
+int mlt_to_av_color_trc(mlt_color_trc trc)
+{
+    switch (trc) {
+    case mlt_color_trc_none:
+        return AVCOL_TRC_RESERVED0;
+    case mlt_color_trc_bt709:
+        return AVCOL_TRC_BT709;
+    case mlt_color_trc_unspecified:
+        return AVCOL_TRC_UNSPECIFIED;
+    case mlt_color_trc_reserved:
+        return AVCOL_TRC_RESERVED;
+    case mlt_color_trc_gamma22:
+        return AVCOL_TRC_GAMMA22;
+    case mlt_color_trc_gamma28:
+        return AVCOL_TRC_GAMMA28;
+    case mlt_color_trc_smpte170m:
+        return AVCOL_TRC_SMPTE170M;
+    case mlt_color_trc_smpte240m:
+        return AVCOL_TRC_SMPTE240M;
+    case mlt_color_trc_linear:
+        return AVCOL_TRC_LINEAR;
+    case mlt_color_trc_log:
+        return AVCOL_TRC_LOG;
+    case mlt_color_trc_log_sqrt:
+        return AVCOL_TRC_LOG_SQRT;
+    case mlt_color_trc_iec61966_2_4:
+        return AVCOL_TRC_IEC61966_2_4;
+    case mlt_color_trc_bt1361_ecg:
+        return AVCOL_TRC_BT1361_ECG;
+    case mlt_color_trc_iec61966_2_1:
+        return AVCOL_TRC_IEC61966_2_1;
+    case mlt_color_trc_bt2020_10:
+        return AVCOL_TRC_BT2020_10;
+    case mlt_color_trc_bt2020_12:
+        return AVCOL_TRC_BT2020_12;
+    case mlt_color_trc_smpte2084:
+        return AVCOL_TRC_SMPTE2084;
+    case mlt_color_trc_smpte428:
+        return AVCOL_TRC_SMPTE428;
+    case mlt_color_trc_arib_std_b67:
+        return AVCOL_TRC_ARIB_STD_B67;
+    case mlt_color_trc_invalid:
+        return AVCOL_TRC_UNSPECIFIED;
+    }
+    return AVCOL_TRC_UNSPECIFIED;
+}
+
+mlt_color_trc av_to_mlt_color_trc(int trc)
+{
+    switch (trc) {
+    case AVCOL_TRC_RESERVED0:
+        return mlt_color_trc_none;
+    case AVCOL_TRC_BT709:
+        return mlt_color_trc_bt709;
+    case AVCOL_TRC_UNSPECIFIED:
+        return mlt_color_trc_unspecified;
+    case AVCOL_TRC_RESERVED:
+        return mlt_color_trc_reserved;
+    case AVCOL_TRC_GAMMA22:
+        return mlt_color_trc_gamma22;
+    case AVCOL_TRC_GAMMA28:
+        return mlt_color_trc_gamma28;
+    case AVCOL_TRC_SMPTE170M:
+        return mlt_color_trc_smpte170m;
+    case AVCOL_TRC_SMPTE240M:
+        return mlt_color_trc_smpte240m;
+    case AVCOL_TRC_LINEAR:
+        return mlt_color_trc_linear;
+    case AVCOL_TRC_LOG:
+        return mlt_color_trc_log;
+    case AVCOL_TRC_LOG_SQRT:
+        return mlt_color_trc_log_sqrt;
+    case AVCOL_TRC_IEC61966_2_4:
+        return mlt_color_trc_iec61966_2_4;
+    case AVCOL_TRC_BT1361_ECG:
+        return mlt_color_trc_bt1361_ecg;
+    case AVCOL_TRC_IEC61966_2_1:
+        return mlt_color_trc_iec61966_2_1;
+    case AVCOL_TRC_BT2020_10:
+        return mlt_color_trc_bt2020_10;
+    case AVCOL_TRC_BT2020_12:
+        return mlt_color_trc_bt2020_12;
+    case AVCOL_TRC_SMPTE2084:
+        return mlt_color_trc_smpte2084;
+    case AVCOL_TRC_SMPTE428:
+        return mlt_color_trc_smpte428;
+    case AVCOL_TRC_ARIB_STD_B67:
+        return mlt_color_trc_arib_std_b67;
+    }
+    return mlt_color_trc_unspecified;
+}
+
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mltframe);
@@ -384,7 +476,8 @@ void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
     avframe->top_field_first = mlt_properties_get_int(frame_properties, "top_field_first");
 #endif
     avframe->color_primaries = mlt_properties_get_int(frame_properties, "color_primaries");
-    avframe->color_trc = mlt_properties_get_int(frame_properties, "color_trc");
+    const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
+    avframe->color_trc = mlt_to_av_color_trc(mlt_image_color_trc_id(color_trc_str));
     avframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
                                ? AVCOL_RANGE_JPEG
                                : AVCOL_RANGE_MPEG;

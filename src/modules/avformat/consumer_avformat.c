@@ -328,23 +328,23 @@ static void color_trc_from_colorspace(mlt_properties properties)
     // Default color transfer characteristic from MLT colorspace.
     switch (mlt_properties_get_int(properties, "colorspace")) {
     case 709:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT709);
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_bt709);
         break;
     case 470:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_GAMMA28);
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_gamma28);
         break;
     case 240:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_SMPTE240M);
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_smpte240m);
         break;
     case 0: // sRGB
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_IEC61966_2_1);
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_iec61966_2_1);
         break;
     case 601:
     case 170:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_SMPTE170M);
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_smpte170m);
         break;
     case 2020:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_10);
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_bt2020_10);
         break;
     default:
         break;

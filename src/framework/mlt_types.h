@@ -113,6 +113,30 @@ typedef enum {
 } mlt_colorspace;
 
 typedef enum {
+    mlt_color_trc_none = 0,
+    mlt_color_trc_bt709 = 1, ///< also ITU-R BT1361
+    mlt_color_trc_unspecified = 2,
+    mlt_color_trc_reserved = 3,
+    mlt_color_trc_gamma22 = 4, ///< also ITU-R BT470M / ITU-R BT1700 625 PAL & SECAM
+    mlt_color_trc_gamma28 = 5, ///< also ITU-R BT470BG
+    mlt_color_trc_smpte170m
+    = 6, ///< also ITU-R BT601-6 525 or 625 / ITU-R BT1358 525 or 625 / ITU-R BT1700 NTSC
+    mlt_color_trc_smpte240m = 7,
+    mlt_color_trc_linear = 8,    ///< "Linear transfer characteristics"
+    mlt_color_trc_log = 9,       ///< "Logarithmic transfer characteristic (100:1 range)"
+    mlt_color_trc_log_sqrt = 10, ///< "Logarithmic transfer characteristic (100 * Sqrt(10) : 1 range)"
+    mlt_color_trc_iec61966_2_4 = 11, ///< IEC 61966-2-4
+    mlt_color_trc_bt1361_ecg = 12,   ///< ITU-R BT1361 Extended Colour Gamut
+    mlt_color_trc_iec61966_2_1 = 13, ///< IEC 61966-2-1 (sRGB or sYCC)
+    mlt_color_trc_bt2020_10 = 14,    ///< ITU-R BT2020 for 10-bit system
+    mlt_color_trc_bt2020_12 = 15,    ///< ITU-R BT2020 for 12-bit system
+    mlt_color_trc_smpte2084 = 16,    ///< SMPTE ST 2084 for 10-, 12-, 14- and 16-bit systems
+    mlt_color_trc_smpte428 = 17,     ///< SMPTE ST 428-1
+    mlt_color_trc_arib_std_b67 = 18, ///< ARIB STD-B67, known as "Hybrid log-gamma"
+    mlt_color_trc_invalid
+} mlt_color_trc;
+
+typedef enum {
     mlt_deinterlacer_none,
     mlt_deinterlacer_onefield,
     mlt_deinterlacer_linearblend,
