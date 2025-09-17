@@ -339,6 +339,72 @@ mlt_color_trc mlt_image_color_trc_id(const char *name)
     return mlt_color_trc_none;
 }
 
+const char *mlt_image_colorspace_name(mlt_colorspace colorspace)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb:
+        return "rgb";
+    case mlt_colorspace_bt709:
+        return "bt709";
+    case mlt_colorspace_unspecified:
+        return "unspecified";
+    case mlt_colorspace_reserved:
+        return "reserved";
+    case mlt_colorspace_fcc:
+        return "fcc";
+    case mlt_colorspace_bt470bg:
+        return "bt470bg";
+    case mlt_colorspace_smpte170m:
+        return "smpte170m";
+    case mlt_colorspace_smpte240m:
+        return "smpte240m";
+    case mlt_colorspace_ycgco:
+        return "ycgco";
+    case mlt_colorspace_bt2020_ncl:
+        return "bt2020nc";
+    case mlt_colorspace_bt2020_cl:
+        return "bt2020c";
+    case mlt_colorspace_smpte2085:
+        return "smpte2085";
+    case mlt_colorspace_bt601:
+        return "bt601";
+    case mlt_colorspace_invalid:
+        return "invalid";
+    }
+    return "invalid";
+}
+
+mlt_colorspace mlt_image_colorspace_id(const char *name)
+{
+    const mlt_colorspace colorspaces[] = {mlt_colorspace_rgb,
+                                          mlt_colorspace_bt709,
+                                          mlt_colorspace_unspecified,
+                                          mlt_colorspace_reserved,
+                                          mlt_colorspace_fcc,
+                                          mlt_colorspace_bt470bg,
+                                          mlt_colorspace_smpte170m,
+                                          mlt_colorspace_smpte240m,
+                                          mlt_colorspace_ycgco,
+                                          mlt_colorspace_bt2020_ncl,
+                                          mlt_colorspace_bt2020_cl,
+                                          mlt_colorspace_smpte2085,
+                                          mlt_colorspace_bt601,
+                                          mlt_colorspace_invalid};
+
+    // Fall back to see if it was specified as a number
+    int value = strtol(name, NULL, 10);
+    if (!value && strcmp(name, "0"))
+        value = -1; // strtol returned an error;
+
+    for (int i = 0; name && i < sizeof(colorspaces); i++) {
+        const char *s = mlt_image_colorspace_name(colorspaces[i]);
+        if (value == colorspaces[i] || !strcmp(s, name))
+            return colorspaces[i];
+    }
+
+    return mlt_colorspace_invalid;
+}
+
 /** Fill an image with black.
   *
   * \bug This does not respect full range YUV if needed.

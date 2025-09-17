@@ -136,13 +136,14 @@ static void get_format_from_properties(mlt_properties properties,
                                        ImageFormat *image_format,
                                        YCbCrFormat *ycbcr_format)
 {
-    switch (mlt_properties_get_int(properties, "colorspace")) {
-    case 601:
+    const char *colorspace_str = mlt_properties_get(properties, "colorspace");
+    switch (mlt_image_colorspace_id(colorspace_str)) {
+    case mlt_colorspace_bt601:
         ycbcr_format->luma_coefficients = YCBCR_REC_601;
         break;
-    case 2020:
+    case mlt_colorspace_bt2020_ncl:
         ycbcr_format->luma_coefficients = YCBCR_REC_2020;
-    case 709:
+    case mlt_colorspace_bt709:
     default:
         ycbcr_format->luma_coefficients = YCBCR_REC_709;
         break;

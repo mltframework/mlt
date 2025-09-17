@@ -97,19 +97,21 @@ typedef enum {
 /** Colorspace definitions */
 
 typedef enum {
-    mlt_colorspace_rgb = 0,   ///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
-    mlt_colorspace_bt709 = 1, ///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
+    mlt_colorspace_rgb = 0, ///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
+    mlt_colorspace_bt709 = 709, ///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
     mlt_colorspace_unspecified = 2,
     mlt_colorspace_reserved = 3,
     mlt_colorspace_fcc = 4, ///< FCC Title 47 Code of Federal Regulations 73.682 (a)(20)
     mlt_colorspace_bt470bg
-    = 5, ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
-    mlt_colorspace_smpte170m = 6, ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
-    mlt_colorspace_smpte240m = 7, ///< functionally identical to above
-    mlt_colorspace_ycgco = 8,     ///< Used by Dirac / VC-2 and H.264 FRext, see ITU-T SG16
-    mlt_colorspace_bt2020_ncl = 9, ///< ITU-R BT2020 non-constant luminance system
-    mlt_colorspace_bt2020_cl = 10, ///< ITU-R BT2020 constant luminance system
-    mlt_colorspace_smpte2085 = 11, ///< SMPTE 2085, Y'D'zD'x
+    = 470, ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
+    mlt_colorspace_smpte170m = 170, ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+    mlt_colorspace_smpte240m = 240,   ///< functionally identical to above
+    mlt_colorspace_ycgco = 8,         ///< Used by Dirac / VC-2 and H.264 FRext, see ITU-T SG16
+    mlt_colorspace_bt2020_ncl = 2020, ///< ITU-R BT2020 non-constant luminance system
+    mlt_colorspace_bt2020_cl = 2021,  ///< ITU-R BT2020 constant luminance system
+    mlt_colorspace_smpte2085 = 11,    ///< SMPTE 2085, Y'D'zD'x
+    mlt_colorspace_bt601 = 601,       ///< BT.470 (625/PAL) or SMPTE170M (525/NTSC)
+    mlt_colorspace_invalid
 } mlt_colorspace;
 
 typedef enum {

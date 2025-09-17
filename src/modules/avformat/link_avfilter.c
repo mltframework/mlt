@@ -936,24 +936,9 @@ static int link_get_image(mlt_frame frame,
         pdata->avinframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
                                             ? AVCOL_RANGE_JPEG
                                             : AVCOL_RANGE_MPEG;
-
-        switch (mlt_properties_get_int(frame_properties, "colorspace")) {
-        case 240:
-            pdata->avinframe->colorspace = AVCOL_SPC_SMPTE240M;
-            break;
-        case 601:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT470BG;
-            break;
-        case 709:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT709;
-            break;
-        case 2020:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT2020_NCL;
-            break;
-        case 2021:
-            pdata->avinframe->colorspace = AVCOL_SPC_BT2020_CL;
-            break;
-        }
+        const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+        mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+        pdata->avinframe->colorspace = mlt_to_av_colorspace(colorspace, pdata->avinframe->height);
 
         ret = av_frame_get_buffer(pdata->avinframe, 1);
         if (ret < 0) {

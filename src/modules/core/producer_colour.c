@@ -143,7 +143,7 @@ static int producer_get_image(mlt_frame frame,
                 memset(p + 0, y, plane_size);
                 memset(p + plane_size, u, plane_size / 4);
                 memset(p + plane_size + plane_size / 4, v, plane_size / 4);
-                mlt_properties_set_int(properties, "colorspace", 601);
+                mlt_properties_set_int(properties, "colorspace", mlt_colorspace_bt601);
                 break;
             }
             case mlt_image_yuv422: {
@@ -166,7 +166,7 @@ static int producer_get_image(mlt_frame frame,
                         *p++ = u;
                     }
                 }
-                mlt_properties_set_int(properties, "colorspace", 601);
+                mlt_properties_set_int(properties, "colorspace", mlt_colorspace_bt601);
                 break;
             }
             case mlt_image_rgb:

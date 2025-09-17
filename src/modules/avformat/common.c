@@ -240,8 +240,8 @@ mlt_channel_layout mlt_get_channel_layout_or_default(const char *name, int chann
 }
 
 int mlt_set_luma_transfer(struct SwsContext *context,
-                          int src_colorspace,
-                          int dst_colorspace,
+                          mlt_colorspace src_colorspace,
+                          mlt_colorspace dst_colorspace,
                           int src_full_range,
                           int dst_full_range)
 {
@@ -254,39 +254,37 @@ int mlt_set_luma_transfer(struct SwsContext *context,
     int dst_range = dst_full_range ? 1 : 0;
 
     switch (src_colorspace) {
-    case 170:
-    case 470:
-    case 601:
-    case 624:
+    case mlt_colorspace_smpte170m:
+    case mlt_colorspace_bt470bg:
+    case mlt_colorspace_bt601:
         src_coefficients = sws_getCoefficients(SWS_CS_ITU601);
         break;
-    case 240:
+    case mlt_colorspace_smpte240m:
         src_coefficients = sws_getCoefficients(SWS_CS_SMPTE240M);
         break;
-    case 709:
+    case mlt_colorspace_bt709:
         src_coefficients = sws_getCoefficients(SWS_CS_ITU709);
         break;
-    case 2020:
-    case 2021:
+    case mlt_colorspace_bt2020_ncl:
+    case mlt_colorspace_bt2020_cl:
         src_coefficients = sws_getCoefficients(SWS_CS_BT2020);
     default:
         break;
     }
     switch (dst_colorspace) {
-    case 170:
-    case 470:
-    case 601:
-    case 624:
+    case mlt_colorspace_smpte170m:
+    case mlt_colorspace_bt470bg:
+    case mlt_colorspace_bt601:
         dst_coefficients = sws_getCoefficients(SWS_CS_ITU601);
         break;
-    case 240:
+    case mlt_colorspace_smpte240m:
         dst_coefficients = sws_getCoefficients(SWS_CS_SMPTE240M);
         break;
-    case 709:
+    case mlt_colorspace_bt709:
         dst_coefficients = sws_getCoefficients(SWS_CS_ITU709);
         break;
-    case 2020:
-    case 2021:
+    case mlt_colorspace_bt2020_ncl:
+    case mlt_colorspace_bt2020_cl:
         dst_coefficients = sws_getCoefficients(SWS_CS_BT2020);
     default:
         break;
@@ -454,6 +452,74 @@ mlt_color_trc av_to_mlt_color_trc(int trc)
     return mlt_color_trc_unspecified;
 }
 
+int mlt_to_av_colorspace(mlt_colorspace colorspace, int height)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb:
+        return AVCOL_SPC_RGB;
+    case mlt_colorspace_bt709:
+        return AVCOL_SPC_BT709;
+    case mlt_colorspace_unspecified:
+        return AVCOL_SPC_UNSPECIFIED;
+    case mlt_colorspace_reserved:
+        return AVCOL_SPC_RESERVED;
+    case mlt_colorspace_fcc:
+        return AVCOL_SPC_FCC;
+    case mlt_colorspace_bt470bg:
+        return AVCOL_SPC_BT470BG;
+    case mlt_colorspace_smpte170m:
+        return AVCOL_SPC_SMPTE170M;
+    case mlt_colorspace_smpte240m:
+        return AVCOL_SPC_SMPTE240M;
+    case mlt_colorspace_ycgco:
+        return AVCOL_SPC_YCGCO;
+    case mlt_colorspace_bt2020_ncl:
+        return AVCOL_SPC_BT2020_NCL;
+    case mlt_colorspace_bt2020_cl:
+        return AVCOL_SPC_BT2020_CL;
+    case mlt_colorspace_smpte2085:
+        return AVCOL_SPC_SMPTE2085;
+    case mlt_colorspace_bt601:
+        return 576 % height ? AVCOL_SPC_SMPTE170M : AVCOL_SPC_BT470BG;
+    case mlt_colorspace_invalid:
+        return mlt_colorspace_unspecified;
+    }
+    return mlt_colorspace_unspecified;
+}
+
+mlt_colorspace av_to_mlt_colorspace(int colorspace, int width, int height)
+{
+    switch (colorspace) {
+    case AVCOL_SPC_RGB:
+        return mlt_colorspace_rgb;
+    case AVCOL_SPC_BT709:
+        return mlt_colorspace_bt709;
+    case AVCOL_SPC_UNSPECIFIED:
+    case AVCOL_SPC_RESERVED:
+        break; // use calculation at the end
+    case AVCOL_SPC_FCC:
+        return mlt_colorspace_fcc;
+    case AVCOL_SPC_BT470BG:
+    case AVCOL_SPC_SMPTE170M:
+        return mlt_colorspace_bt601;
+    case AVCOL_SPC_SMPTE240M:
+        return mlt_colorspace_smpte240m;
+    case AVCOL_SPC_YCGCO:
+        return mlt_colorspace_ycgco;
+    case AVCOL_SPC_BT2020_NCL:
+        return mlt_colorspace_bt2020_ncl;
+    case AVCOL_SPC_BT2020_CL:
+        return mlt_colorspace_bt2020_cl;
+    case AVCOL_SPC_SMPTE2085:
+        return mlt_colorspace_smpte2085;
+    }
+    // This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
+    if (width * height > 750000) {
+        return mlt_colorspace_bt709;
+    }
+    return mlt_colorspace_bt601;
+}
+
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mltframe);
@@ -481,24 +547,9 @@ void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
     avframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
                                ? AVCOL_RANGE_JPEG
                                : AVCOL_RANGE_MPEG;
-
-    switch (mlt_properties_get_int(frame_properties, "colorspace")) {
-    case 240:
-        avframe->colorspace = AVCOL_SPC_SMPTE240M;
-        break;
-    case 601:
-        avframe->colorspace = AVCOL_SPC_BT470BG;
-        break;
-    case 709:
-        avframe->colorspace = AVCOL_SPC_BT709;
-        break;
-    case 2020:
-        avframe->colorspace = AVCOL_SPC_BT2020_NCL;
-        break;
-    case 2021:
-        avframe->colorspace = AVCOL_SPC_BT2020_CL;
-        break;
-    }
+    const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+    avframe->colorspace = mlt_to_av_colorspace(mlt_image_colorspace_id(colorspace_str),
+                                               avframe->height);
 
     int ret = av_frame_get_buffer(avframe, 1);
     if (ret < 0) {

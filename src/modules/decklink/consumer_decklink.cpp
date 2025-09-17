@@ -678,13 +678,16 @@ protected:
             if (decklinkFrame->QueryInterface(IID_IDeckLinkVideoFrameMutableMetadataExtensions,
                                               (void **) &frameMeta)
                 == S_OK) {
+                const char *colorspace_str = mlt_properties_get(consumer_properties, "colorspace");
                 auto colorspace = bmdColorspaceRec709;
-                switch (mlt_properties_get_int(consumer_properties, "colorspace")) {
-                case 601:
+                switch (mlt_image_colorspace_id(colorspace_str)) {
+                case mlt_colorspace_bt601:
                     colorspace = bmdColorspaceRec601;
                     break;
-                case 2020:
+                case mlt_colorspace_bt2020_ncl:
                     colorspace = bmdColorspaceRec2020;
+                    break;
+                default:
                     break;
                 }
                 frameMeta->SetInt(bmdDeckLinkFrameMetadataColorspace, colorspace);

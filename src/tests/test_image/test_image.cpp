@@ -139,6 +139,20 @@ private Q_SLOTS:
         QCOMPARE(mlt_color_trc_bt709, mlt_image_color_trc_id("1"));
         QCOMPARE(mlt_color_trc_linear, mlt_image_color_trc_id("8"));
     }
+
+    void Colorspace()
+    {
+        // Test conversion from short name
+        QCOMPARE(mlt_image_colorspace_id("bt709"), mlt_colorspace_bt709);
+        QCOMPARE(mlt_image_colorspace_id("bt470bg"), mlt_colorspace_bt470bg);
+        QCOMPARE(mlt_image_colorspace_id("bt601"), mlt_colorspace_bt601);
+        QCOMPARE(mlt_image_colorspace_id("rgb"), mlt_colorspace_rgb);
+        // Test conversion from number
+        QCOMPARE(mlt_image_colorspace_id("709"), mlt_colorspace_bt709);
+        QCOMPARE(mlt_image_colorspace_id("470"), mlt_colorspace_bt470bg);
+        QCOMPARE(mlt_image_colorspace_id("601"), mlt_colorspace_bt601);
+        QCOMPARE(mlt_image_colorspace_id("0"), mlt_colorspace_rgb);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestImage)

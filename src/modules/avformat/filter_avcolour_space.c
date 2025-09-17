@@ -93,8 +93,8 @@ static int av_convert_image(uint8_t *out,
                             int out_height,
                             int in_width,
                             int in_height,
-                            int src_colorspace,
-                            int dst_colorspace,
+                            mlt_colorspace src_colorspace,
+                            mlt_colorspace dst_colorspace,
                             int src_full_range,
                             int dst_full_range)
 {
@@ -118,7 +118,7 @@ static int av_convert_image(uint8_t *out,
     if (context) {
         // libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
         if (out_fmt == AV_PIX_FMT_RGB24 || out_fmt == AV_PIX_FMT_RGBA)
-            dst_colorspace = 601;
+            dst_colorspace = mlt_colorspace_bt601;
         error = mlt_set_luma_transfer(context,
                                       src_colorspace,
                                       dst_colorspace,
@@ -155,8 +155,9 @@ static int convert_image(mlt_frame frame,
     if (*format != output_format || out_width) {
         mlt_profile profile = mlt_service_profile(
             MLT_PRODUCER_SERVICE(mlt_frame_get_original_producer(frame)));
-        int profile_colorspace = profile ? profile->colorspace : 601;
-        int colorspace = mlt_properties_get_int(properties, "colorspace");
+        mlt_colorspace profile_colorspace = profile ? profile->colorspace : mlt_colorspace_bt601;
+        const char *colorspace_str = mlt_properties_get(properties, "colorspace");
+        mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
         int width = mlt_properties_get_int(properties, "width");
         int height = mlt_properties_get_int(properties, "height");
         int src_full_range = mlt_properties_get_int(properties, "full_range");
