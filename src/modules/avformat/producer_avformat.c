@@ -110,7 +110,7 @@ struct producer_avformat_s
     mlt_cache image_cache;
     mlt_cache audio_cache;
     mlt_colorspace yuv_colorspace;
-    int color_primaries;
+    mlt_color_primaries color_primaries;
     mlt_color_trc color_trc;
     int full_range;
     pthread_mutex_t video_mutex;
@@ -2086,21 +2086,10 @@ static void convert_image(producer_avformat self,
     }
     mlt_log_timings_end(NULL, __FUNCTION__);
 
-    switch (colorspace) {
-    case mlt_colorspace_smpte170m:
-    case mlt_colorspace_smpte240m:
-        mlt_properties_set_int(frame_properties, "color_primaries", 601525);
-        break;
-    case mlt_colorspace_bt601:
-        mlt_properties_set_int(frame_properties, "color_primaries", 601625);
-        break;
-    case mlt_colorspace_bt2020_ncl:
-        mlt_properties_set_int(frame_properties, "color_primaries", 2020);
-        break;
-    default:
-        mlt_properties_set_int(frame_properties, "color_primaries", 709);
-        break;
-    }
+    mlt_color_primaries primaries = mlt_color_primaries_from_colorspace(colorspace, height);
+    if (primaries == mlt_color_pri_none)
+        primaries = mlt_color_pri_bt709;
+    mlt_properties_set_int(frame_properties, "color_primaries", primaries);
     mlt_properties_set_int(frame_properties, "colorspace", colorspace);
     mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
 }
@@ -2935,23 +2924,9 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
         mlt_properties_set_int(properties, "meta.media.color_trc", self->color_trc);
 
         // Get the RGB color primaries.
-        switch (self->video_codec->color_primaries) {
-        case AVCOL_PRI_BT470BG:
-            self->color_primaries = 601625;
-            break;
-        case AVCOL_PRI_SMPTE170M:
-        case AVCOL_PRI_SMPTE240M:
-            self->color_primaries = 601525;
-            break;
-        case AVCOL_PRI_BT2020:
-            self->color_primaries = 2020;
-            break;
-        case AVCOL_PRI_BT709:
-        case AVCOL_PRI_UNSPECIFIED:
-        default:
-            self->color_primaries = 709;
-            break;
-        }
+        self->color_primaries = av_to_mlt_color_primaries(self->video_codec->color_primaries);
+        if (self->color_primaries == mlt_color_pri_none)
+            self->color_primaries = mlt_color_pri_bt709;
 
         mlt_properties_set_int(properties,
                                "meta.media.has_b_frames",

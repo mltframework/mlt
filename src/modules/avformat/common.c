@@ -520,6 +520,96 @@ mlt_colorspace av_to_mlt_colorspace(int colorspace, int width, int height)
     return mlt_colorspace_bt601;
 }
 
+int mlt_to_av_color_primaries(mlt_color_primaries primaries)
+{
+    switch (primaries) {
+    case mlt_color_pri_none:
+        return AVCOL_PRI_UNSPECIFIED;
+    case mlt_color_pri_bt709:
+        return AVCOL_PRI_BT709;
+    case mlt_color_pri_bt470m:
+        return AVCOL_PRI_BT470M;
+    case mlt_color_pri_bt470bg:
+        return AVCOL_PRI_BT470BG;
+    case mlt_color_pri_smpte170m:
+        return AVCOL_PRI_SMPTE170M;
+    case mlt_color_pri_film:
+        return AVCOL_PRI_FILM;
+    case mlt_color_pri_bt2020:
+        return AVCOL_PRI_BT2020;
+    case mlt_color_pri_smpte428:
+        return AVCOL_PRI_SMPTE428;
+    case mlt_color_pri_smpte431:
+        return AVCOL_PRI_SMPTE431;
+    case mlt_color_pri_smpte432:
+        return AVCOL_PRI_SMPTE432;
+    case mlt_color_pri_invalid:
+        return AVCOL_PRI_UNSPECIFIED;
+    }
+    return AVCOL_PRI_UNSPECIFIED;
+}
+
+mlt_color_primaries av_to_mlt_color_primaries(int primaries)
+{
+    switch (primaries) {
+    case AVCOL_PRI_RESERVED0:
+        return mlt_color_pri_none;
+    case AVCOL_PRI_BT709:
+        return mlt_color_pri_bt709;
+    case AVCOL_PRI_UNSPECIFIED:
+        return mlt_color_pri_none;
+    case AVCOL_PRI_RESERVED:
+        return mlt_color_pri_none;
+    case AVCOL_PRI_BT470M:
+        return mlt_color_pri_bt470m;
+    case AVCOL_PRI_BT470BG:
+        return mlt_color_pri_bt470bg;
+    case AVCOL_PRI_SMPTE170M:
+        return mlt_color_pri_smpte170m;
+    case AVCOL_PRI_SMPTE240M:
+        return mlt_color_pri_smpte170m;
+    case AVCOL_PRI_FILM:
+        return mlt_color_pri_film;
+    case AVCOL_PRI_BT2020:
+        return mlt_color_pri_bt2020;
+    case AVCOL_PRI_SMPTE428:
+        return mlt_color_pri_smpte428;
+    case AVCOL_PRI_SMPTE431:
+        return mlt_color_pri_smpte431;
+    case AVCOL_PRI_SMPTE432:
+        return mlt_color_pri_smpte432;
+    }
+    return mlt_color_pri_none;
+}
+
+mlt_color_primaries mlt_color_primaries_from_colorspace(mlt_colorspace colorspace, int height)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb: // sRGB
+    case mlt_colorspace_bt709:
+        return mlt_color_pri_bt709;
+    case mlt_colorspace_bt470bg:
+        return mlt_color_pri_bt470bg;
+    case mlt_colorspace_smpte240m:
+        return mlt_color_pri_smpte170m;
+    case mlt_colorspace_bt601:
+        return height == 576 ? mlt_color_pri_bt470bg : mlt_color_pri_smpte170m;
+    case mlt_colorspace_smpte170m:
+        return mlt_color_pri_smpte170m;
+    case mlt_colorspace_bt2020_ncl:
+        return mlt_color_pri_bt2020;
+    case mlt_colorspace_unspecified:
+    case mlt_colorspace_reserved:
+    case mlt_colorspace_fcc:
+    case mlt_colorspace_ycgco:
+    case mlt_colorspace_bt2020_cl:
+    case mlt_colorspace_smpte2085:
+    case mlt_colorspace_invalid:
+        break;
+    }
+    return mlt_color_pri_none;
+}
+
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mltframe);
@@ -541,7 +631,9 @@ void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
     avframe->interlaced_frame = !mlt_properties_get_int(frame_properties, "progressive");
     avframe->top_field_first = mlt_properties_get_int(frame_properties, "top_field_first");
 #endif
-    avframe->color_primaries = mlt_properties_get_int(frame_properties, "color_primaries");
+    const char *primaries_str = mlt_properties_get(frame_properties, "color_primaries");
+    mlt_color_primaries primaries = mlt_image_color_pri_id(primaries_str);
+    avframe->color_primaries = mlt_to_av_color_primaries(primaries);
     const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
     avframe->color_trc = mlt_to_av_color_trc(mlt_image_color_trc_id(color_trc_str));
     avframe->color_range = mlt_properties_get_int(frame_properties, "full_range")

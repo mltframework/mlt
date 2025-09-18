@@ -358,39 +358,10 @@ static void color_primaries_from_colorspace(mlt_properties properties)
     // Default color_primaries from MLT colorspace.
     const char *colorspace_str = mlt_properties_get(properties, "colorspace");
     mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
-    switch (colorspace) {
-    case mlt_colorspace_rgb: // sRGB
-    case mlt_colorspace_bt709:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_BT709);
-        break;
-    case mlt_colorspace_bt470bg:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_BT470M);
-        break;
-    case mlt_colorspace_smpte240m:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_SMPTE240M);
-        break;
-    case mlt_colorspace_bt601:
-        mlt_properties_set_int(properties,
-                               "color_primaries",
-                               mlt_properties_get_int(properties, "height") == 576
-                                   ? AVCOL_PRI_BT470BG
-                                   : AVCOL_PRI_SMPTE170M);
-        break;
-    case mlt_colorspace_smpte170m:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_SMPTE170M);
-        break;
-    case mlt_colorspace_bt2020_ncl:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_BT2020);
-        break;
-    case mlt_colorspace_unspecified:
-    case mlt_colorspace_reserved:
-    case mlt_colorspace_fcc:
-    case mlt_colorspace_ycgco:
-    case mlt_colorspace_bt2020_cl:
-    case mlt_colorspace_smpte2085:
-    case mlt_colorspace_invalid:
-        break;
-    }
+    int height = mlt_properties_get_int(properties, "height");
+    mlt_color_primaries primaries = mlt_color_primaries_from_colorspace(colorspace, height);
+    if (primaries != mlt_color_pri_none)
+        mlt_properties_set_int(properties, "color_primaries", primaries);
 }
 
 static void property_changed(mlt_properties owner, mlt_consumer self, mlt_event_data event_data)

@@ -150,17 +150,18 @@ static void get_format_from_properties(mlt_properties properties,
     }
 
     if (image_format) {
-        switch (mlt_properties_get_int(properties, "color_primaries")) {
-        case 601625:
+        const char *color_pri_str = mlt_properties_get(properties, "color_primaries");
+        switch (mlt_image_color_pri_id(color_pri_str)) {
+        case mlt_color_pri_bt470bg:
             image_format->color_space = COLORSPACE_REC_601_625;
             break;
-        case 601525:
+        case mlt_color_pri_smpte170m:
             image_format->color_space = COLORSPACE_REC_601_525;
             break;
-        case 2020:
+        case mlt_color_pri_bt2020:
             image_format->color_space = COLORSPACE_REC_2020;
             break;
-        case 709:
+        case mlt_color_pri_bt709:
         default:
             image_format->color_space = COLORSPACE_REC_709;
             break;

@@ -405,6 +405,63 @@ mlt_colorspace mlt_image_colorspace_id(const char *name)
     return mlt_colorspace_invalid;
 }
 
+const char *mlt_image_color_pri_name(mlt_color_primaries primaries)
+{
+    switch (primaries) {
+    case mlt_color_pri_none:
+        return "none";
+    case mlt_color_pri_bt709:
+        return "bt709";
+    case mlt_color_pri_bt470m:
+        return "bt470m";
+    case mlt_color_pri_bt470bg:
+        return "bt470bg";
+    case mlt_color_pri_smpte170m:
+        return "smpte170m";
+    case mlt_color_pri_film:
+        return "film";
+    case mlt_color_pri_bt2020:
+        return "bt2020";
+    case mlt_color_pri_smpte428:
+        return "smpte428";
+    case mlt_color_pri_smpte431:
+        return "smpte431";
+    case mlt_color_pri_smpte432:
+        return "smpte432";
+    case mlt_color_pri_invalid:
+        return "invalid";
+    }
+    return "invalid";
+}
+
+mlt_color_primaries mlt_image_color_pri_id(const char *name)
+{
+    const mlt_color_primaries primaries[] = {mlt_color_pri_none,
+                                             mlt_color_pri_bt709,
+                                             mlt_color_pri_bt470m,
+                                             mlt_color_pri_bt470bg,
+                                             mlt_color_pri_smpte170m,
+                                             mlt_color_pri_film,
+                                             mlt_color_pri_bt2020,
+                                             mlt_color_pri_smpte428,
+                                             mlt_color_pri_smpte431,
+                                             mlt_color_pri_smpte432,
+                                             mlt_color_pri_invalid};
+
+    // Fall back to see if it was specified as a number
+    int value = strtol(name, NULL, 10);
+    if (!value && strcmp(name, "0"))
+        value = -1; // strtol returned an error;
+
+    for (int i = 0; name && i < sizeof(primaries); i++) {
+        const char *s = mlt_image_color_pri_name(primaries[i]);
+        if (value == primaries[i] || !strcmp(s, name))
+            return primaries[i];
+    }
+
+    return mlt_color_pri_none;
+}
+
 /** Fill an image with black.
   *
   * \bug This does not respect full range YUV if needed.

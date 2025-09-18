@@ -48,6 +48,9 @@ int mlt_to_av_color_trc(mlt_color_trc trc);
 mlt_color_trc av_to_mlt_color_trc(int trc);
 int mlt_to_av_colorspace(mlt_colorspace colorspace, int height);
 mlt_colorspace av_to_mlt_colorspace(int colorspace, int width, int height);
+int mlt_to_av_color_primaries(mlt_color_primaries primaries);
+mlt_color_primaries av_to_mlt_color_primaries(int primaries);
+mlt_color_primaries mlt_color_primaries_from_colorspace(mlt_colorspace colorspace, int height);
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe);
 void avframe_to_mlt_image(AVFrame *avframe, mlt_image image);
 
