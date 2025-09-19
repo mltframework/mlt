@@ -162,10 +162,10 @@ private Q_SLOTS:
         QCOMPARE(mlt_image_color_pri_id("smpte170m"), mlt_color_pri_smpte170m);
         QCOMPARE(mlt_image_color_pri_id("bt2020"), mlt_color_pri_bt2020);
         // Test conversion from number
-        QCOMPARE(mlt_image_color_pri_id("709"), mlt_color_pri_bt709);
-        QCOMPARE(mlt_image_color_pri_id("601625"), mlt_color_pri_bt470bg);
-        QCOMPARE(mlt_image_color_pri_id("601525"), mlt_color_pri_smpte170m);
-        QCOMPARE(mlt_image_color_pri_id("2020"), mlt_color_pri_bt2020);
+        QCOMPARE(mlt_image_color_pri_id("1"), mlt_color_pri_bt709);
+        QCOMPARE(mlt_image_color_pri_id("5"), mlt_color_pri_bt470bg);
+        QCOMPARE(mlt_image_color_pri_id("6"), mlt_color_pri_smpte170m);
+        QCOMPARE(mlt_image_color_pri_id("9"), mlt_color_pri_bt2020);
     }
 };
 
