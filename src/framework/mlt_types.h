@@ -140,14 +140,13 @@ typedef enum {
 
 typedef enum {
     mlt_color_pri_none = 0,
-    mlt_color_pri_bt709 = 709,  ///< also ITU-R BT1361 / IEC 61966-2-4 / SMPTE RP177 Annex B
-    mlt_color_pri_bt470m = 470, ///< also FCC Title 47 Code of Federal Regulations 73.682 (a)(20)
+    mlt_color_pri_bt709 = 1,  ///< also ITU-R BT1361 / IEC 61966-2-4 / SMPTE RP177 Annex B
+    mlt_color_pri_bt470m = 4, ///< also FCC Title 47 Code of Federal Regulations 73.682 (a)(20)
     mlt_color_pri_bt470bg
-    = 601625, ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM
-    mlt_color_pri_smpte170m
-    = 601525,                    ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+    = 5, ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM
+    mlt_color_pri_smpte170m = 6, ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
     mlt_color_pri_film = 8,      ///< colour filters using Illuminant C
-    mlt_color_pri_bt2020 = 2020, ///< ITU-R BT2020
+    mlt_color_pri_bt2020 = 9,    ///< ITU-R BT2020
     mlt_color_pri_smpte428 = 10, ///< SMPTE ST 428-1 (CIE 1931 XYZ)
     mlt_color_pri_smpte431 = 11, ///< SMPTE ST 431-2 (2011) / DCI P3
     mlt_color_pri_smpte432 = 12, ///< SMPTE ST 432-1 (2010) / P3 D65 / Display P3
