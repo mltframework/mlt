@@ -44,7 +44,7 @@ struct mlt_profile_s
     int sample_aspect_den;  /**< the denominator of the pixel aspect ratio */
     int display_aspect_num; /**< the numerator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
     int display_aspect_den; /**< the denominator of the image aspect ratio in case it can not be simply derived (e.g. ITU-R 601) */
-    int colorspace; /**< the Y'CbCr colorspace standard: `601` for ITU-R 601, `709` for ITU-R 709, `240` for SMPTE240M, `2020` for ITU-R BT.2020 non-constant luminance, `2021` for ITU-R BT.2020 constant luminance */
+    int colorspace;         /**< the Y'CbCr colorspace standard: see mlt_colorspace */
     int is_explicit; /**< used internally to indicate if the profile was requested explicitly or computed or defaulted */
 };
 

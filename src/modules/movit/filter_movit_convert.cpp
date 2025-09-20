@@ -79,48 +79,21 @@ static void delete_chain(EffectChain *chain)
     delete chain;
 }
 
-// Copied from libavcodec, but we can not add that as a dependency to this module
-// simply for this.
-
-enum AVColorTransferCharacteristic {
-    AVCOL_TRC_BT709 = 1, ///< also ITU-R BT1361
-    AVCOL_TRC_UNSPECIFIED = 2,
-    AVCOL_TRC_GAMMA22 = 4, ///< also ITU-R BT470M / ITU-R BT1700 625 PAL & SECAM
-    AVCOL_TRC_GAMMA28 = 5, ///< also ITU-R BT470BG
-    AVCOL_TRC_SMPTE170M
-    = 6, ///< also ITU-R BT601-6 525 or 625 / ITU-R BT1358 525 or 625 / ITU-R BT1700 NTSC
-    AVCOL_TRC_SMPTE240M = 7,
-    AVCOL_TRC_LINEAR = 8,    ///< "Linear transfer characteristics"
-    AVCOL_TRC_LOG = 9,       ///< "Logarithmic transfer characteristic (100:1 range)"
-    AVCOL_TRC_LOG_SQRT = 10, ///< "Logarithmic transfer characteristic (100 * Sqrt( 10 ) : 1 range)"
-    AVCOL_TRC_IEC61966_2_4 = 11, ///< IEC 61966-2-4
-    AVCOL_TRC_BT1361_ECG = 12,   ///< ITU-R BT1361 Extended Colour Gamut
-    AVCOL_TRC_IEC61966_2_1 = 13, ///< IEC 61966-2-1 (sRGB or sYCC)
-    AVCOL_TRC_BT2020_10 = 14,    ///< ITU-R BT2020 for 10 bit system
-    AVCOL_TRC_BT2020_12 = 15,    ///< ITU-R BT2020 for 12 bit system
-    AVCOL_TRC_SMPTE2084 = 16,    ///< SMPTE ST 2084 for 10-, 12-, 14- and 16-bit systems
-    AVCOL_TRC_SMPTEST2084 = AVCOL_TRC_SMPTE2084,
-    AVCOL_TRC_SMPTE428 = 17, ///< SMPTE ST 428-1
-    AVCOL_TRC_SMPTEST428_1 = AVCOL_TRC_SMPTE428,
-    AVCOL_TRC_ARIB_STD_B67 = 18, ///< ARIB STD-B67, known as "Hybrid log-gamma"
-    AVCOL_TRC_NB,                ///< Not part of ABI
-};
-
 // Get the gamma from the frame "color_trc" property as set by producer or this filter.
-static GammaCurve getFrameGamma(int color_trc)
+static GammaCurve getFrameGamma(mlt_color_trc color_trc)
 {
     switch (color_trc) {
-    case AVCOL_TRC_LINEAR:
+    case mlt_color_trc_linear:
         return GAMMA_LINEAR;
-    case AVCOL_TRC_GAMMA22:
-    case AVCOL_TRC_IEC61966_2_1:
+    case mlt_color_trc_gamma22:
+    case mlt_color_trc_iec61966_2_1:
         return GAMMA_sRGB;
-    case AVCOL_TRC_BT2020_10:
+    case mlt_color_trc_bt2020_10:
         return GAMMA_REC_2020_10_BIT;
-    case AVCOL_TRC_BT2020_12:
+    case mlt_color_trc_bt2020_12:
         return GAMMA_REC_2020_12_BIT;
 #if MOVIT_VERSION >= 1037
-    case AVCOL_TRC_ARIB_STD_B67:
+    case mlt_color_trc_arib_std_b67:
         return GAMMA_HLG;
 #endif
     default:
@@ -132,54 +105,29 @@ static GammaCurve getFrameGamma(int color_trc)
 // Also, update the frame's color_trc property with the selection.
 static GammaCurve getOutputGamma(mlt_properties properties)
 {
-    const char *color_trc = mlt_properties_get(properties, "consumer.color_trc");
-    if (color_trc) {
-        // If specified with enum or int.
-        int n = mlt_properties_get_int(properties, "consumer.color_trc");
-        switch (n) {
-        case AVCOL_TRC_BT709:
-        case AVCOL_TRC_SMPTE170M:
-            mlt_properties_set_int(properties, "color_trc", n);
-            return GAMMA_REC_709;
-        case AVCOL_TRC_LINEAR:
-            mlt_properties_set_int(properties, "color_trc", n);
-            return GAMMA_LINEAR;
-        case AVCOL_TRC_BT2020_10:
-            mlt_properties_set_int(properties, "color_trc", n);
-            return GAMMA_REC_2020_10_BIT;
-        case AVCOL_TRC_BT2020_12:
-            mlt_properties_set_int(properties, "color_trc", n);
-            return GAMMA_REC_2020_12_BIT;
+    const char *color_trc_str = mlt_properties_get(properties, "consumer.color_trc");
+    mlt_color_trc color_trc = mlt_image_color_trc_id(color_trc_str);
+    switch (color_trc) {
+    case mlt_color_trc_bt709:
+    case mlt_color_trc_smpte170m:
+        mlt_properties_set(properties, "color_trc", color_trc_str);
+        return GAMMA_REC_709;
+    case mlt_color_trc_linear:
+        mlt_properties_set(properties, "color_trc", color_trc_str);
+        return GAMMA_LINEAR;
+    case mlt_color_trc_bt2020_10:
+        mlt_properties_set(properties, "color_trc", color_trc_str);
+        return GAMMA_REC_2020_10_BIT;
+    case mlt_color_trc_bt2020_12:
+        mlt_properties_set(properties, "color_trc", color_trc_str);
+        return GAMMA_REC_2020_12_BIT;
 #if MOVIT_VERSION >= 1037
-        case AVCOL_TRC_ARIB_STD_B67:
-            mlt_properties_set_int(properties, "color_trc", n);
-            return GAMMA_HLG;
+    case mlt_color_trc_arib_std_b67:
+        mlt_properties_set(properties, "color_trc", color_trc_str);
+        return GAMMA_HLG;
 #endif
-        default:
-            // If specified by string.
-            if (!strcmp(color_trc, "bt709")) {
-                mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT709);
-                return GAMMA_REC_709;
-            } else if (!strcmp(color_trc, "smpte170m")) {
-                mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_SMPTE170M);
-                return GAMMA_REC_709;
-            } else if (!strcmp(color_trc, "linear")) {
-                mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_LINEAR);
-                return GAMMA_LINEAR;
-            } else if (!strcmp(color_trc, "bt2020-10")) {
-                mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_10);
-                return GAMMA_REC_2020_10_BIT;
-            } else if (!strcmp(color_trc, "bt2020-12")) {
-                mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_12);
-                return GAMMA_REC_2020_12_BIT;
-#if MOVIT_VERSION >= 1037
-            } else if (!strcmp(color_trc, "arib-std-b67")) {
-                mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_ARIB_STD_B67);
-                return GAMMA_HLG;
-#endif
-            }
-            break;
-        }
+    default:
+        break;
     }
     return GAMMA_INVALID;
 }
@@ -188,35 +136,39 @@ static void get_format_from_properties(mlt_properties properties,
                                        ImageFormat *image_format,
                                        YCbCrFormat *ycbcr_format)
 {
-    switch (mlt_properties_get_int(properties, "colorspace")) {
-    case 601:
+    const char *colorspace_str = mlt_properties_get(properties, "colorspace");
+    switch (mlt_image_colorspace_id(colorspace_str)) {
+    case mlt_colorspace_bt601:
         ycbcr_format->luma_coefficients = YCBCR_REC_601;
         break;
-    case 2020:
+    case mlt_colorspace_bt2020_ncl:
         ycbcr_format->luma_coefficients = YCBCR_REC_2020;
-    case 709:
+    case mlt_colorspace_bt709:
     default:
         ycbcr_format->luma_coefficients = YCBCR_REC_709;
         break;
     }
 
     if (image_format) {
-        switch (mlt_properties_get_int(properties, "color_primaries")) {
-        case 601625:
+        const char *color_pri_str = mlt_properties_get(properties, "color_primaries");
+        switch (mlt_image_color_pri_id(color_pri_str)) {
+        case mlt_color_pri_bt470bg:
             image_format->color_space = COLORSPACE_REC_601_625;
             break;
-        case 601525:
+        case mlt_color_pri_smpte170m:
             image_format->color_space = COLORSPACE_REC_601_525;
             break;
-        case 2020:
+        case mlt_color_pri_bt2020:
             image_format->color_space = COLORSPACE_REC_2020;
             break;
-        case 709:
+        case mlt_color_pri_bt709:
         default:
             image_format->color_space = COLORSPACE_REC_709;
             break;
         }
-        image_format->gamma_curve = getFrameGamma(mlt_properties_get_int(properties, "color_trc"));
+        const char *color_trc_str = mlt_properties_get(properties, "color_trc");
+        mlt_color_trc color_trc = mlt_image_color_trc_id(color_trc_str);
+        image_format->gamma_curve = getFrameGamma(color_trc);
     }
 
     if (mlt_properties_get_int(properties, "force_full_luma")) {

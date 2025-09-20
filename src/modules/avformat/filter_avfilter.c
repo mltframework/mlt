@@ -825,9 +825,11 @@ static int filter_get_image(mlt_frame frame,
         pdata->avinframe->top_field_first = mlt_properties_get_int(frame_properties,
                                                                    "top_field_first");
 #endif
-        pdata->avinframe->color_primaries = mlt_properties_get_int(frame_properties,
-                                                                   "color_primaries");
-        pdata->avinframe->color_trc = mlt_properties_get_int(frame_properties, "color_trc");
+        const char *primaries_str = mlt_properties_get(frame_properties, "color_primaries");
+        mlt_color_primaries primaries = mlt_image_color_pri_id(primaries_str);
+        pdata->avinframe->color_primaries = mlt_to_av_color_primaries(primaries);
+        const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
+        pdata->avinframe->color_trc = mlt_to_av_color_trc(mlt_image_color_trc_id(color_trc_str));
         // Setting full_range here causes full range input to always be down-converted to limited
         // range when operating in YUV, regardless of the consumer.color_range -- for each avfilter!
         // pdata->avinframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
@@ -837,23 +839,10 @@ static int filter_get_image(mlt_frame frame,
         if (is_rgb(*format)) {
             pdata->avinframe->colorspace = AVCOL_SPC_RGB;
         } else {
-            switch (mlt_properties_get_int(frame_properties, "colorspace")) {
-            case 240:
-                pdata->avinframe->colorspace = AVCOL_SPC_SMPTE240M;
-                break;
-            case 601:
-                pdata->avinframe->colorspace = AVCOL_SPC_BT470BG;
-                break;
-            case 709:
-                pdata->avinframe->colorspace = AVCOL_SPC_BT709;
-                break;
-            case 2020:
-                pdata->avinframe->colorspace = AVCOL_SPC_BT2020_NCL;
-                break;
-            case 2021:
-                pdata->avinframe->colorspace = AVCOL_SPC_BT2020_CL;
-                break;
-            }
+            const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+            mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+            pdata->avinframe->colorspace = mlt_to_av_colorspace(colorspace,
+                                                                pdata->avinframe->height);
         }
 
         ret = av_frame_get_buffer(pdata->avinframe, 1);

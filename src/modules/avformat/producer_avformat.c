@@ -109,7 +109,9 @@ struct producer_avformat_s
     unsigned int invalid_dts_counter;
     mlt_cache image_cache;
     mlt_cache audio_cache;
-    int yuv_colorspace, color_primaries, color_trc;
+    mlt_colorspace yuv_colorspace;
+    mlt_color_primaries color_primaries;
+    mlt_color_trc color_trc;
     int full_range;
     pthread_mutex_t video_mutex;
     pthread_mutex_t audio_mutex;
@@ -571,32 +573,14 @@ static mlt_properties find_default_streams(producer_avformat self)
             snprintf(key, sizeof(key), "meta.media.%u.codec.sample_aspect_ratio", i);
             mlt_properties_set_double(meta_media, key, av_q2d(codec_params->sample_aspect_ratio));
             snprintf(key, sizeof(key), "meta.media.%u.codec.colorspace", i);
-            switch (codec_params->color_space) {
-            case AVCOL_SPC_SMPTE240M:
-                mlt_properties_set_int(meta_media, key, 240);
-                break;
-            case AVCOL_SPC_BT470BG:
-            case AVCOL_SPC_SMPTE170M:
-                mlt_properties_set_int(meta_media, key, 601);
-                break;
-            case AVCOL_SPC_BT709:
-                mlt_properties_set_int(meta_media, key, 709);
-                break;
-            case AVCOL_SPC_UNSPECIFIED:
-            case AVCOL_SPC_RESERVED:
-                // This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
-                mlt_properties_set_int(meta_media,
-                                       key,
-                                       codec_params->width * codec_params->height > 750000 ? 709
-                                                                                           : 601);
-                break;
-            default:
-                mlt_properties_set_int(meta_media, key, codec_params->color_space);
-                break;
-            }
+            mlt_colorspace colorspace = av_to_mlt_colorspace(codec_params->color_space,
+                                                             codec_params->width,
+                                                             codec_params->height);
+            mlt_properties_set_int(meta_media, key, colorspace);
             if (codec_params->color_trc && codec_params->color_trc != AVCOL_TRC_UNSPECIFIED) {
                 snprintf(key, sizeof(key), "meta.media.%u.codec.color_trc", i);
-                mlt_properties_set_double(meta_media, key, codec_params->color_trc);
+                mlt_color_trc trc = av_to_mlt_color_trc(codec_params->color_trc);
+                mlt_properties_set_int(meta_media, key, trc);
             }
             break;
         case AVMEDIA_TYPE_AUDIO:
@@ -1702,7 +1686,8 @@ struct sliced_pix_fmt_conv_t
     int out_stride[4];
     enum AVPixelFormat src_format, dst_format;
     const AVPixFmtDescriptor *src_desc, *dst_desc;
-    int flags, src_colorspace, dst_colorspace, src_full_range, dst_full_range;
+    int flags, src_full_range, dst_full_range;
+    mlt_colorspace src_colorspace, dst_colorspace;
 };
 
 static int sliced_h_pix_fmt_conv_proc(int id, int idx, int jobs, void *cookie)
@@ -1817,18 +1802,18 @@ static int sliced_h_pix_fmt_conv_proc(int id, int idx, int jobs, void *cookie)
     return 0;
 }
 
-static int convert_image_yuvp(producer_avformat self,
-                              mlt_profile profile,
-                              AVFrame *frame,
-                              uint8_t *buffer,
-                              mlt_image_format format,
-                              int width,
-                              int height,
-                              int src_pix_fmt,
-                              int dst_pix_fmt,
-                              int dst_full_range)
+static mlt_colorspace convert_image_yuvp(producer_avformat self,
+                                         mlt_profile profile,
+                                         AVFrame *frame,
+                                         uint8_t *buffer,
+                                         mlt_image_format format,
+                                         int width,
+                                         int height,
+                                         int src_pix_fmt,
+                                         int dst_pix_fmt,
+                                         int dst_full_range)
 {
-    int result = self->yuv_colorspace;
+    mlt_colorspace result = self->yuv_colorspace;
     int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
     struct SwsContext *context = sws_getContext(
         width, height, src_pix_fmt, width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
@@ -1889,7 +1874,11 @@ static void convert_image_rgb(producer_avformat self,
                                                     NULL,
                                                     NULL);
         // libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-        mlt_set_luma_transfer(context, self->yuv_colorspace, 601, self->full_range, 1);
+        mlt_set_luma_transfer(context,
+                              self->yuv_colorspace,
+                              mlt_colorspace_bt601,
+                              self->full_range,
+                              1);
         av_image_fill_arrays(out_data, out_stride, buffer, dst_pix_fmt, width, height, IMAGE_ALIGN);
         // Copy the input frame arrays
         for (int i = 0; i < 4; i++) {
@@ -1916,7 +1905,11 @@ static void convert_image_rgb(producer_avformat self,
             width, height, src_pix_fmt, width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
         av_image_fill_arrays(out_data, out_stride, buffer, dst_pix_fmt, width, height, IMAGE_ALIGN);
         // libswscale wants the RGB colorspace to be SWS_CS_DEFAULT, which is = SWS_CS_ITU601.
-        mlt_set_luma_transfer(context, self->yuv_colorspace, 601, self->full_range, 1);
+        mlt_set_luma_transfer(context,
+                              self->yuv_colorspace,
+                              mlt_colorspace_bt601,
+                              self->full_range,
+                              1);
         sws_scale(context,
                   (const uint8_t *const *) frame->data,
                   frame->linesize,
@@ -1941,7 +1934,7 @@ static void convert_image(producer_avformat self,
                           int dst_full_range)
 {
     mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
-    int colorspace = self->yuv_colorspace;
+    mlt_colorspace colorspace = self->yuv_colorspace;
 
     mlt_log_timings_begin();
 
@@ -2093,21 +2086,10 @@ static void convert_image(producer_avformat self,
     }
     mlt_log_timings_end(NULL, __FUNCTION__);
 
-    switch (colorspace) {
-    case 170:
-    case 240:
-        mlt_properties_set_int(frame_properties, "color_primaries", 601525);
-        break;
-    case 601:
-        mlt_properties_set_int(frame_properties, "color_primaries", 601625);
-        break;
-    case 2020:
-        mlt_properties_set_int(frame_properties, "color_primaries", 2020);
-        break;
-    default:
-        mlt_properties_set_int(frame_properties, "color_primaries", 709);
-        break;
-    }
+    mlt_color_primaries primaries = mlt_color_primaries_from_colorspace(colorspace, height);
+    if (primaries == mlt_color_pri_none)
+        primaries = mlt_color_pri_bt709;
+    mlt_properties_set_int(frame_properties, "color_primaries", primaries);
     mlt_properties_set_int(frame_properties, "colorspace", colorspace);
     mlt_properties_set_int(frame_properties, "full_range", dst_full_range);
 }
@@ -2924,60 +2906,27 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             self->video_seekable = 0;
 
         // Set the YUV colorspace from override or detect
-        self->yuv_colorspace = mlt_properties_get_int(properties, "force_colorspace");
-        if (!self->yuv_colorspace) {
-            switch (self->video_codec->colorspace) {
-            case AVCOL_SPC_SMPTE240M:
-                self->yuv_colorspace = 240;
-                break;
-            case AVCOL_SPC_BT470BG:
-            case AVCOL_SPC_SMPTE170M:
-                self->yuv_colorspace = 601;
-                break;
-            case AVCOL_SPC_BT709:
-                self->yuv_colorspace = 709;
-                break;
-            case AVCOL_SPC_BT2020_NCL:
-                self->yuv_colorspace = 2020;
-                break;
-            case AVCOL_SPC_BT2020_CL:
-                self->yuv_colorspace = 2021;
-                break;
-            default:
-                // This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
-                self->yuv_colorspace = self->video_codec->width * self->video_codec->height > 750000
-                                           ? 709
-                                           : 601;
-                break;
-            }
-        }
-        // Let apps get chosen colorspace
+        const char *force_colorspace_str = mlt_properties_get(properties, "force_colorspace");
+        if (force_colorspace_str)
+            self->yuv_colorspace = mlt_image_colorspace_id(force_colorspace_str);
+        if (!force_colorspace_str || self->yuv_colorspace == mlt_colorspace_invalid)
+            self->yuv_colorspace = av_to_mlt_colorspace(self->video_codec->colorspace,
+                                                        self->video_codec->width,
+                                                        self->video_codec->height);
         mlt_properties_set_int(properties, "meta.media.colorspace", self->yuv_colorspace);
 
         // Get the color transfer characteristic (gamma).
-        self->color_trc = mlt_properties_get_int(properties, "force_color_trc");
+        const char *force_color_trc_str = mlt_properties_get(properties, "force_color_trc");
+        if (force_color_trc_str)
+            self->color_trc = mlt_image_color_trc_id(force_color_trc_str);
         if (!self->color_trc)
-            self->color_trc = self->video_codec->color_trc;
+            self->color_trc = av_to_mlt_color_trc(self->video_codec->color_trc);
         mlt_properties_set_int(properties, "meta.media.color_trc", self->color_trc);
 
         // Get the RGB color primaries.
-        switch (self->video_codec->color_primaries) {
-        case AVCOL_PRI_BT470BG:
-            self->color_primaries = 601625;
-            break;
-        case AVCOL_PRI_SMPTE170M:
-        case AVCOL_PRI_SMPTE240M:
-            self->color_primaries = 601525;
-            break;
-        case AVCOL_PRI_BT2020:
-            self->color_primaries = 2020;
-            break;
-        case AVCOL_PRI_BT709:
-        case AVCOL_PRI_UNSPECIFIED:
-        default:
-            self->color_primaries = 709;
-            break;
-        }
+        self->color_primaries = av_to_mlt_color_primaries(self->video_codec->color_primaries);
+        if (self->color_primaries == mlt_color_pri_none)
+            self->color_primaries = mlt_color_pri_bt709;
 
         mlt_properties_set_int(properties,
                                "meta.media.has_b_frames",

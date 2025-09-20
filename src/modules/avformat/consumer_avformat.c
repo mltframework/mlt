@@ -326,25 +326,27 @@ static void recompute_aspect_ratio(mlt_properties properties)
 static void color_trc_from_colorspace(mlt_properties properties)
 {
     // Default color transfer characteristic from MLT colorspace.
-    switch (mlt_properties_get_int(properties, "colorspace")) {
-    case 709:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT709);
+    const char *colorspace_str = mlt_properties_get(properties, "colorspace");
+    mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+    switch (colorspace) {
+    case mlt_colorspace_bt709:
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_bt709);
         break;
-    case 470:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_GAMMA28);
+    case mlt_colorspace_bt470bg:
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_gamma28);
         break;
-    case 240:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_SMPTE240M);
+    case mlt_colorspace_smpte240m:
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_smpte240m);
         break;
-    case 0: // sRGB
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_IEC61966_2_1);
+    case mlt_colorspace_rgb: // sRGB
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_iec61966_2_1);
         break;
-    case 601:
-    case 170:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_SMPTE170M);
+    case mlt_colorspace_bt601:
+    case mlt_colorspace_smpte170m:
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_smpte170m);
         break;
-    case 2020:
-        mlt_properties_set_int(properties, "color_trc", AVCOL_TRC_BT2020_10);
+    case mlt_colorspace_bt2020_ncl:
+        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_bt2020_10);
         break;
     default:
         break;
@@ -354,63 +356,12 @@ static void color_trc_from_colorspace(mlt_properties properties)
 static void color_primaries_from_colorspace(mlt_properties properties)
 {
     // Default color_primaries from MLT colorspace.
-    switch (mlt_properties_get_int(properties, "colorspace")) {
-    case 0: // sRGB
-    case 709:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_BT709);
-        break;
-    case 470:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_BT470M);
-        break;
-    case 240:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_SMPTE240M);
-        break;
-    case 601:
-        mlt_properties_set_int(properties,
-                               "color_primaries",
-                               mlt_properties_get_int(properties, "height") == 576
-                                   ? AVCOL_PRI_BT470BG
-                                   : AVCOL_PRI_SMPTE170M);
-        break;
-    case 170:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_SMPTE170M);
-        break;
-    case 2020:
-        mlt_properties_set_int(properties, "color_primaries", AVCOL_PRI_BT2020);
-        break;
-    default:
-        break;
-    }
-}
-
-static void av_colorspace_from_colorspace(mlt_properties properties, int colorspace)
-{
-    // Convert MLT colorspace to FFmpeg colorspace.
-    switch (colorspace) {
-    case 0: // sRGB
-        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_RGB);
-        break;
-    case 601:
-        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT470BG);
-        break;
-    case 709:
-        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT709);
-        break;
-    case 240:
-        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_SMPTE240M);
-        break;
-    case 170:
-        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_SMPTE170M);
-        break;
-    case 2020:
-        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT2020_NCL);
-        break;
-    case 2021:
-        mlt_properties_set_int(properties, "colorspace", AVCOL_SPC_BT2020_CL);
-        break;
-    default:
-        break;
-    }
+    const char *colorspace_str = mlt_properties_get(properties, "colorspace");
+    mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+    int height = mlt_properties_get_int(properties, "height");
+    mlt_color_primaries primaries = mlt_color_primaries_from_colorspace(colorspace, height);
+    if (primaries != mlt_color_pri_none)
+        mlt_properties_set_int(properties, "color_primaries", primaries);
 }
 
 static void property_changed(mlt_properties owner, mlt_consumer self, mlt_event_data event_data)
@@ -959,9 +910,12 @@ static AVStream *add_video_stream(mlt_consumer consumer,
             apply_properties(c, p, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM);
             mlt_properties_close(p);
         }
-        int colorspace = mlt_properties_get_int(properties, "colorspace");
-        mlt_properties_set(properties, "colorspace", NULL);
-        av_colorspace_from_colorspace(properties, colorspace);
+        // Temporarily convert the mlt colorspace to av colorspace before applying the properties
+        const char *colorspace_str = mlt_properties_get(properties, "colorspace");
+        mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+        mlt_properties_clear(properties, "colorspace");
+        int av_colorspace = mlt_to_av_colorspace(colorspace,
+                                                 mlt_properties_get_int(properties, "height"));
         apply_properties(c, properties, AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM);
         mlt_properties_set_int(properties, "colorspace", colorspace);
 
@@ -994,29 +948,7 @@ static AVStream *add_video_stream(mlt_consumer consumer,
             }
         }
 
-        switch (colorspace) {
-        case 170:
-            c->colorspace = AVCOL_SPC_SMPTE170M;
-            break;
-        case 240:
-            c->colorspace = AVCOL_SPC_SMPTE240M;
-            break;
-        case 470:
-            c->colorspace = AVCOL_SPC_BT470BG;
-            break;
-        case 601:
-            c->colorspace = (576 % c->height) ? AVCOL_SPC_SMPTE170M : AVCOL_SPC_BT470BG;
-            break;
-        case 709:
-            c->colorspace = AVCOL_SPC_BT709;
-            break;
-        case 2020:
-            c->colorspace = AVCOL_SPC_BT2020_NCL;
-            break;
-        case 2021:
-            c->colorspace = AVCOL_SPC_BT2020_CL;
-            break;
-        }
+        c->colorspace = av_colorspace;
 
         if (mlt_properties_get(properties, "aspect")) {
             // "-aspect" on ffmpeg command line is display aspect ratio
@@ -1715,7 +1647,8 @@ static int encode_video(encode_ctx_t *enc_ctx,
 {
     int ret = 0;
     mlt_properties properties = enc_ctx->properties;
-    int dst_colorspace = mlt_properties_get_int(properties, "colorspace");
+    const char *dst_colorspace_str = mlt_properties_get(properties, "colorspace");
+    mlt_colorspace dst_colorspace = mlt_image_colorspace_id(dst_colorspace_str);
     const char *color_range = mlt_properties_get(properties, "color_range");
     int dst_full_range = mlt_image_full_range(color_range);
 
@@ -1772,7 +1705,8 @@ static int encode_video(encode_ctx_t *enc_ctx,
                                                     NULL,
                                                     NULL,
                                                     NULL);
-        int src_colorspace = mlt_properties_get_int(frame_properties, "colorspace");
+        const char *src_colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+        mlt_colorspace src_colorspace = mlt_image_colorspace_id(src_colorspace_str);
         int src_full_range = mlt_properties_get_int(frame_properties, "full_range");
         mlt_set_luma_transfer(context,
                               src_colorspace,

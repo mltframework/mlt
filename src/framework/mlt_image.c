@@ -262,6 +262,206 @@ mlt_image_format mlt_image_format_id(const char *name)
     return mlt_image_invalid;
 }
 
+/** Get the short name for a color transfer characteristics.
+ *
+ * \public \memberof mlt_image_s
+ * \param trc the color transfer characteristics
+ * \return a string
+ */
+
+const char *mlt_image_color_trc_name(mlt_color_trc trc)
+{
+    switch (trc) {
+    case mlt_color_trc_none:
+    case mlt_color_trc_unspecified:
+    case mlt_color_trc_reserved:
+        return "none";
+    case mlt_color_trc_bt709:
+        return "bt709";
+    case mlt_color_trc_gamma22:
+        return "bt470m";
+    case mlt_color_trc_gamma28:
+        return "bt470bg";
+    case mlt_color_trc_smpte170m:
+        return "smpte170m";
+    case mlt_color_trc_smpte240m:
+        return "smpte240m";
+    case mlt_color_trc_linear:
+        return "linear";
+    case mlt_color_trc_log:
+        return "log100";
+    case mlt_color_trc_log_sqrt:
+        return "log316";
+    case mlt_color_trc_iec61966_2_4:
+        return "iec61966-2-4";
+    case mlt_color_trc_bt1361_ecg:
+        return "bt1361e";
+    case mlt_color_trc_iec61966_2_1:
+        return "iec61966-2-1";
+    case mlt_color_trc_bt2020_10:
+        return "bt2020-10";
+    case mlt_color_trc_bt2020_12:
+        return "bt2020-12";
+    case mlt_color_trc_smpte2084:
+        return "smpte2084";
+    case mlt_color_trc_smpte428:
+        return "smpte428";
+    case mlt_color_trc_arib_std_b67:
+        return "arib-std-b67";
+    case mlt_color_trc_invalid:
+        return "invalid";
+    }
+    return "none";
+}
+
+/** Get the id of color transfer characteristics from short name.
+ *
+ * \public \memberof mlt_image_s
+ * \param name the color trc short name
+ * \return a color trc
+ */
+
+mlt_color_trc mlt_image_color_trc_id(const char *name)
+{
+    mlt_color_trc c;
+
+    for (c = mlt_color_trc_none; name && c <= mlt_color_trc_invalid; c++) {
+        const char *s = mlt_image_color_trc_name(c);
+        if (!strcmp(s, name))
+            return c;
+    }
+
+    // Fall back to see if it was specified as a number
+    int value = strtol(name, NULL, 10);
+    if (value && value < mlt_color_trc_invalid)
+        return value;
+
+    return mlt_color_trc_none;
+}
+
+const char *mlt_image_colorspace_name(mlt_colorspace colorspace)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb:
+        return "rgb";
+    case mlt_colorspace_bt709:
+        return "bt709";
+    case mlt_colorspace_unspecified:
+        return "unspecified";
+    case mlt_colorspace_reserved:
+        return "reserved";
+    case mlt_colorspace_fcc:
+        return "fcc";
+    case mlt_colorspace_bt470bg:
+        return "bt470bg";
+    case mlt_colorspace_smpte170m:
+        return "smpte170m";
+    case mlt_colorspace_smpte240m:
+        return "smpte240m";
+    case mlt_colorspace_ycgco:
+        return "ycgco";
+    case mlt_colorspace_bt2020_ncl:
+        return "bt2020nc";
+    case mlt_colorspace_bt2020_cl:
+        return "bt2020c";
+    case mlt_colorspace_smpte2085:
+        return "smpte2085";
+    case mlt_colorspace_bt601:
+        return "bt601";
+    case mlt_colorspace_invalid:
+        return "invalid";
+    }
+    return "invalid";
+}
+
+mlt_colorspace mlt_image_colorspace_id(const char *name)
+{
+    const mlt_colorspace colorspaces[] = {mlt_colorspace_rgb,
+                                          mlt_colorspace_bt709,
+                                          mlt_colorspace_unspecified,
+                                          mlt_colorspace_reserved,
+                                          mlt_colorspace_fcc,
+                                          mlt_colorspace_bt470bg,
+                                          mlt_colorspace_smpte170m,
+                                          mlt_colorspace_smpte240m,
+                                          mlt_colorspace_ycgco,
+                                          mlt_colorspace_bt2020_ncl,
+                                          mlt_colorspace_bt2020_cl,
+                                          mlt_colorspace_smpte2085,
+                                          mlt_colorspace_bt601,
+                                          mlt_colorspace_invalid};
+
+    // Fall back to see if it was specified as a number
+    int value = strtol(name, NULL, 10);
+    if (!value && strcmp(name, "0"))
+        value = -1; // strtol returned an error;
+
+    for (int i = 0; name && i < sizeof(colorspaces); i++) {
+        const char *s = mlt_image_colorspace_name(colorspaces[i]);
+        if (value == colorspaces[i] || !strcmp(s, name))
+            return colorspaces[i];
+    }
+
+    return mlt_colorspace_invalid;
+}
+
+const char *mlt_image_color_pri_name(mlt_color_primaries primaries)
+{
+    switch (primaries) {
+    case mlt_color_pri_none:
+        return "none";
+    case mlt_color_pri_bt709:
+        return "bt709";
+    case mlt_color_pri_bt470m:
+        return "bt470m";
+    case mlt_color_pri_bt470bg:
+        return "bt470bg";
+    case mlt_color_pri_smpte170m:
+        return "smpte170m";
+    case mlt_color_pri_film:
+        return "film";
+    case mlt_color_pri_bt2020:
+        return "bt2020";
+    case mlt_color_pri_smpte428:
+        return "smpte428";
+    case mlt_color_pri_smpte431:
+        return "smpte431";
+    case mlt_color_pri_smpte432:
+        return "smpte432";
+    case mlt_color_pri_invalid:
+        return "invalid";
+    }
+    return "invalid";
+}
+
+mlt_color_primaries mlt_image_color_pri_id(const char *name)
+{
+    const mlt_color_primaries primaries[] = {mlt_color_pri_none,
+                                             mlt_color_pri_bt709,
+                                             mlt_color_pri_bt470m,
+                                             mlt_color_pri_bt470bg,
+                                             mlt_color_pri_smpte170m,
+                                             mlt_color_pri_film,
+                                             mlt_color_pri_bt2020,
+                                             mlt_color_pri_smpte428,
+                                             mlt_color_pri_smpte431,
+                                             mlt_color_pri_smpte432,
+                                             mlt_color_pri_invalid};
+
+    // Fall back to see if it was specified as a number
+    int value = strtol(name, NULL, 10);
+    if (!value && strcmp(name, "0"))
+        value = -1; // strtol returned an error;
+
+    for (int i = 0; name && i < sizeof(primaries); i++) {
+        const char *s = mlt_image_color_pri_name(primaries[i]);
+        if (value == primaries[i] || !strcmp(s, name))
+            return primaries[i];
+    }
+
+    return mlt_color_pri_none;
+}
+
 /** Fill an image with black.
   *
   * \bug This does not respect full range YUV if needed.

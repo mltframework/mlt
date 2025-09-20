@@ -678,70 +678,68 @@ protected:
             if (decklinkFrame->QueryInterface(IID_IDeckLinkVideoFrameMutableMetadataExtensions,
                                               (void **) &frameMeta)
                 == S_OK) {
+                const char *colorspace_str = mlt_properties_get(consumer_properties, "colorspace");
                 auto colorspace = bmdColorspaceRec709;
-                switch (mlt_properties_get_int(consumer_properties, "colorspace")) {
-                case 601:
+                switch (mlt_image_colorspace_id(colorspace_str)) {
+                case mlt_colorspace_bt601:
                     colorspace = bmdColorspaceRec601;
                     break;
-                case 2020:
+                case mlt_colorspace_bt2020_ncl:
                     colorspace = bmdColorspaceRec2020;
+                    break;
+                default:
                     break;
                 }
                 frameMeta->SetInt(bmdDeckLinkFrameMetadataColorspace, colorspace);
 
                 // Set HDR a transfer function
-                if (mlt_properties_exists(consumer_properties, "color_trc")) {
-                    if (!strcmp("arib-std-b67",
-                                mlt_properties_get(consumer_properties, "color_trc"))) {
-                        frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
-                                          EOTF_HLG);
-                        decklinkFrame->SetFlags(decklinkFrame->GetFlags()
-                                                & ~bmdFrameContainsHDRMetadata);
-                    } else if (!strcmp("smpte2084",
-                                       mlt_properties_get(consumer_properties, "color_trc"))) {
-                        frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
-                                          EOTF_PQ);
-                        // CEA/SMPTE HDR metadata
-                        // TODO: document and provide defaults for these
-                        decklinkFrame->SetFlags(decklinkFrame->GetFlags()
-                                                | bmdFrameContainsHDRMetadata);
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedX,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_red_x"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedY,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_red_y"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesGreenX,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_green_x"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesGreenY,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr.green_y"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueX,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_blue_x"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueY,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_blue_y"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointX,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_white_x"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointY,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_white_y"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaxDisplayMasteringLuminance,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_max_luminance"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMinDisplayMasteringLuminance,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_min_luminance"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaximumContentLightLevel,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_max_cll"));
-                        frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaximumFrameAverageLightLevel,
-                                            mlt_properties_get_double(consumer_properties,
-                                                                      "hdr_max_fall"));
-                    }
+                const char *trc_str = mlt_properties_get(consumer_properties, "consumer.color_trc");
+                mlt_color_trc trc = mlt_image_color_trc_id(trc_str);
+                if (trc == mlt_color_trc_arib_std_b67) {
+                    frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
+                                      EOTF_HLG);
+                    decklinkFrame->SetFlags(decklinkFrame->GetFlags()
+                                            & ~bmdFrameContainsHDRMetadata);
+                } else if (trc == mlt_color_trc_smpte2084) {
+                    frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
+                                      EOTF_PQ);
+                    // CEA/SMPTE HDR metadata
+                    // TODO: document and provide defaults for these
+                    decklinkFrame->SetFlags(decklinkFrame->GetFlags() | bmdFrameContainsHDRMetadata);
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedX,
+                                        mlt_properties_get_double(consumer_properties, "hdr_red_x"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedY,
+                                        mlt_properties_get_double(consumer_properties, "hdr_red_y"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesGreenX,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_green_x"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesGreenY,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr.green_y"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueX,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_blue_x"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueY,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_blue_y"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointX,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_white_x"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointY,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_white_y"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaxDisplayMasteringLuminance,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_max_luminance"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMinDisplayMasteringLuminance,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_min_luminance"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaximumContentLightLevel,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_max_cll"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaximumFrameAverageLightLevel,
+                                        mlt_properties_get_double(consumer_properties,
+                                                                  "hdr_max_fall"));
                 }
             }
 

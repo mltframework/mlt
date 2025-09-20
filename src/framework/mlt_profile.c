@@ -202,7 +202,8 @@ mlt_profile mlt_profile_load_properties(mlt_properties properties)
         profile->sample_aspect_den = mlt_properties_get_int(properties, "sample_aspect_den");
         profile->display_aspect_num = mlt_properties_get_int(properties, "display_aspect_num");
         profile->display_aspect_den = mlt_properties_get_int(properties, "display_aspect_den");
-        profile->colorspace = mlt_properties_get_int(properties, "colorspace");
+        const char *colorspace_str = mlt_properties_get(properties, "colorspace");
+        profile->colorspace = mlt_image_colorspace_id(colorspace_str);
     }
     return profile;
 }

@@ -240,8 +240,8 @@ mlt_channel_layout mlt_get_channel_layout_or_default(const char *name, int chann
 }
 
 int mlt_set_luma_transfer(struct SwsContext *context,
-                          int src_colorspace,
-                          int dst_colorspace,
+                          mlt_colorspace src_colorspace,
+                          mlt_colorspace dst_colorspace,
                           int src_full_range,
                           int dst_full_range)
 {
@@ -254,39 +254,37 @@ int mlt_set_luma_transfer(struct SwsContext *context,
     int dst_range = dst_full_range ? 1 : 0;
 
     switch (src_colorspace) {
-    case 170:
-    case 470:
-    case 601:
-    case 624:
+    case mlt_colorspace_smpte170m:
+    case mlt_colorspace_bt470bg:
+    case mlt_colorspace_bt601:
         src_coefficients = sws_getCoefficients(SWS_CS_ITU601);
         break;
-    case 240:
+    case mlt_colorspace_smpte240m:
         src_coefficients = sws_getCoefficients(SWS_CS_SMPTE240M);
         break;
-    case 709:
+    case mlt_colorspace_bt709:
         src_coefficients = sws_getCoefficients(SWS_CS_ITU709);
         break;
-    case 2020:
-    case 2021:
+    case mlt_colorspace_bt2020_ncl:
+    case mlt_colorspace_bt2020_cl:
         src_coefficients = sws_getCoefficients(SWS_CS_BT2020);
     default:
         break;
     }
     switch (dst_colorspace) {
-    case 170:
-    case 470:
-    case 601:
-    case 624:
+    case mlt_colorspace_smpte170m:
+    case mlt_colorspace_bt470bg:
+    case mlt_colorspace_bt601:
         dst_coefficients = sws_getCoefficients(SWS_CS_ITU601);
         break;
-    case 240:
+    case mlt_colorspace_smpte240m:
         dst_coefficients = sws_getCoefficients(SWS_CS_SMPTE240M);
         break;
-    case 709:
+    case mlt_colorspace_bt709:
         dst_coefficients = sws_getCoefficients(SWS_CS_ITU709);
         break;
-    case 2020:
-    case 2021:
+    case mlt_colorspace_bt2020_ncl:
+    case mlt_colorspace_bt2020_cl:
         dst_coefficients = sws_getCoefficients(SWS_CS_BT2020);
     default:
         break;
@@ -362,6 +360,256 @@ mlt_image_format mlt_get_supported_image_format(mlt_image_format format)
     return mlt_image_rgba;
 }
 
+int mlt_to_av_color_trc(mlt_color_trc trc)
+{
+    switch (trc) {
+    case mlt_color_trc_none:
+        return AVCOL_TRC_RESERVED0;
+    case mlt_color_trc_bt709:
+        return AVCOL_TRC_BT709;
+    case mlt_color_trc_unspecified:
+        return AVCOL_TRC_UNSPECIFIED;
+    case mlt_color_trc_reserved:
+        return AVCOL_TRC_RESERVED;
+    case mlt_color_trc_gamma22:
+        return AVCOL_TRC_GAMMA22;
+    case mlt_color_trc_gamma28:
+        return AVCOL_TRC_GAMMA28;
+    case mlt_color_trc_smpte170m:
+        return AVCOL_TRC_SMPTE170M;
+    case mlt_color_trc_smpte240m:
+        return AVCOL_TRC_SMPTE240M;
+    case mlt_color_trc_linear:
+        return AVCOL_TRC_LINEAR;
+    case mlt_color_trc_log:
+        return AVCOL_TRC_LOG;
+    case mlt_color_trc_log_sqrt:
+        return AVCOL_TRC_LOG_SQRT;
+    case mlt_color_trc_iec61966_2_4:
+        return AVCOL_TRC_IEC61966_2_4;
+    case mlt_color_trc_bt1361_ecg:
+        return AVCOL_TRC_BT1361_ECG;
+    case mlt_color_trc_iec61966_2_1:
+        return AVCOL_TRC_IEC61966_2_1;
+    case mlt_color_trc_bt2020_10:
+        return AVCOL_TRC_BT2020_10;
+    case mlt_color_trc_bt2020_12:
+        return AVCOL_TRC_BT2020_12;
+    case mlt_color_trc_smpte2084:
+        return AVCOL_TRC_SMPTE2084;
+    case mlt_color_trc_smpte428:
+        return AVCOL_TRC_SMPTE428;
+    case mlt_color_trc_arib_std_b67:
+        return AVCOL_TRC_ARIB_STD_B67;
+    case mlt_color_trc_invalid:
+        return AVCOL_TRC_UNSPECIFIED;
+    }
+    return AVCOL_TRC_UNSPECIFIED;
+}
+
+mlt_color_trc av_to_mlt_color_trc(int trc)
+{
+    switch (trc) {
+    case AVCOL_TRC_RESERVED0:
+        return mlt_color_trc_none;
+    case AVCOL_TRC_BT709:
+        return mlt_color_trc_bt709;
+    case AVCOL_TRC_UNSPECIFIED:
+        return mlt_color_trc_unspecified;
+    case AVCOL_TRC_RESERVED:
+        return mlt_color_trc_reserved;
+    case AVCOL_TRC_GAMMA22:
+        return mlt_color_trc_gamma22;
+    case AVCOL_TRC_GAMMA28:
+        return mlt_color_trc_gamma28;
+    case AVCOL_TRC_SMPTE170M:
+        return mlt_color_trc_smpte170m;
+    case AVCOL_TRC_SMPTE240M:
+        return mlt_color_trc_smpte240m;
+    case AVCOL_TRC_LINEAR:
+        return mlt_color_trc_linear;
+    case AVCOL_TRC_LOG:
+        return mlt_color_trc_log;
+    case AVCOL_TRC_LOG_SQRT:
+        return mlt_color_trc_log_sqrt;
+    case AVCOL_TRC_IEC61966_2_4:
+        return mlt_color_trc_iec61966_2_4;
+    case AVCOL_TRC_BT1361_ECG:
+        return mlt_color_trc_bt1361_ecg;
+    case AVCOL_TRC_IEC61966_2_1:
+        return mlt_color_trc_iec61966_2_1;
+    case AVCOL_TRC_BT2020_10:
+        return mlt_color_trc_bt2020_10;
+    case AVCOL_TRC_BT2020_12:
+        return mlt_color_trc_bt2020_12;
+    case AVCOL_TRC_SMPTE2084:
+        return mlt_color_trc_smpte2084;
+    case AVCOL_TRC_SMPTE428:
+        return mlt_color_trc_smpte428;
+    case AVCOL_TRC_ARIB_STD_B67:
+        return mlt_color_trc_arib_std_b67;
+    }
+    return mlt_color_trc_unspecified;
+}
+
+int mlt_to_av_colorspace(mlt_colorspace colorspace, int height)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb:
+        return AVCOL_SPC_RGB;
+    case mlt_colorspace_bt709:
+        return AVCOL_SPC_BT709;
+    case mlt_colorspace_unspecified:
+        return AVCOL_SPC_UNSPECIFIED;
+    case mlt_colorspace_reserved:
+        return AVCOL_SPC_RESERVED;
+    case mlt_colorspace_fcc:
+        return AVCOL_SPC_FCC;
+    case mlt_colorspace_bt470bg:
+        return AVCOL_SPC_BT470BG;
+    case mlt_colorspace_smpte170m:
+        return AVCOL_SPC_SMPTE170M;
+    case mlt_colorspace_smpte240m:
+        return AVCOL_SPC_SMPTE240M;
+    case mlt_colorspace_ycgco:
+        return AVCOL_SPC_YCGCO;
+    case mlt_colorspace_bt2020_ncl:
+        return AVCOL_SPC_BT2020_NCL;
+    case mlt_colorspace_bt2020_cl:
+        return AVCOL_SPC_BT2020_CL;
+    case mlt_colorspace_smpte2085:
+        return AVCOL_SPC_SMPTE2085;
+    case mlt_colorspace_bt601:
+        return 576 % height ? AVCOL_SPC_SMPTE170M : AVCOL_SPC_BT470BG;
+    case mlt_colorspace_invalid:
+        return mlt_colorspace_unspecified;
+    }
+    return mlt_colorspace_unspecified;
+}
+
+mlt_colorspace av_to_mlt_colorspace(int colorspace, int width, int height)
+{
+    switch (colorspace) {
+    case AVCOL_SPC_RGB:
+        return mlt_colorspace_rgb;
+    case AVCOL_SPC_BT709:
+        return mlt_colorspace_bt709;
+    case AVCOL_SPC_UNSPECIFIED:
+    case AVCOL_SPC_RESERVED:
+        break; // use calculation at the end
+    case AVCOL_SPC_FCC:
+        return mlt_colorspace_fcc;
+    case AVCOL_SPC_BT470BG:
+    case AVCOL_SPC_SMPTE170M:
+        return mlt_colorspace_bt601;
+    case AVCOL_SPC_SMPTE240M:
+        return mlt_colorspace_smpte240m;
+    case AVCOL_SPC_YCGCO:
+        return mlt_colorspace_ycgco;
+    case AVCOL_SPC_BT2020_NCL:
+        return mlt_colorspace_bt2020_ncl;
+    case AVCOL_SPC_BT2020_CL:
+        return mlt_colorspace_bt2020_cl;
+    case AVCOL_SPC_SMPTE2085:
+        return mlt_colorspace_smpte2085;
+    }
+    // This is a heuristic Charles Poynton suggests in "Digital Video and HDTV"
+    if (width * height > 750000) {
+        return mlt_colorspace_bt709;
+    }
+    return mlt_colorspace_bt601;
+}
+
+int mlt_to_av_color_primaries(mlt_color_primaries primaries)
+{
+    switch (primaries) {
+    case mlt_color_pri_none:
+        return AVCOL_PRI_UNSPECIFIED;
+    case mlt_color_pri_bt709:
+        return AVCOL_PRI_BT709;
+    case mlt_color_pri_bt470m:
+        return AVCOL_PRI_BT470M;
+    case mlt_color_pri_bt470bg:
+        return AVCOL_PRI_BT470BG;
+    case mlt_color_pri_smpte170m:
+        return AVCOL_PRI_SMPTE170M;
+    case mlt_color_pri_film:
+        return AVCOL_PRI_FILM;
+    case mlt_color_pri_bt2020:
+        return AVCOL_PRI_BT2020;
+    case mlt_color_pri_smpte428:
+        return AVCOL_PRI_SMPTE428;
+    case mlt_color_pri_smpte431:
+        return AVCOL_PRI_SMPTE431;
+    case mlt_color_pri_smpte432:
+        return AVCOL_PRI_SMPTE432;
+    case mlt_color_pri_invalid:
+        return AVCOL_PRI_UNSPECIFIED;
+    }
+    return AVCOL_PRI_UNSPECIFIED;
+}
+
+mlt_color_primaries av_to_mlt_color_primaries(int primaries)
+{
+    switch (primaries) {
+    case AVCOL_PRI_RESERVED0:
+        return mlt_color_pri_none;
+    case AVCOL_PRI_BT709:
+        return mlt_color_pri_bt709;
+    case AVCOL_PRI_UNSPECIFIED:
+        return mlt_color_pri_none;
+    case AVCOL_PRI_RESERVED:
+        return mlt_color_pri_none;
+    case AVCOL_PRI_BT470M:
+        return mlt_color_pri_bt470m;
+    case AVCOL_PRI_BT470BG:
+        return mlt_color_pri_bt470bg;
+    case AVCOL_PRI_SMPTE170M:
+        return mlt_color_pri_smpte170m;
+    case AVCOL_PRI_SMPTE240M:
+        return mlt_color_pri_smpte170m;
+    case AVCOL_PRI_FILM:
+        return mlt_color_pri_film;
+    case AVCOL_PRI_BT2020:
+        return mlt_color_pri_bt2020;
+    case AVCOL_PRI_SMPTE428:
+        return mlt_color_pri_smpte428;
+    case AVCOL_PRI_SMPTE431:
+        return mlt_color_pri_smpte431;
+    case AVCOL_PRI_SMPTE432:
+        return mlt_color_pri_smpte432;
+    }
+    return mlt_color_pri_none;
+}
+
+mlt_color_primaries mlt_color_primaries_from_colorspace(mlt_colorspace colorspace, int height)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb: // sRGB
+    case mlt_colorspace_bt709:
+        return mlt_color_pri_bt709;
+    case mlt_colorspace_bt470bg:
+        return mlt_color_pri_bt470bg;
+    case mlt_colorspace_smpte240m:
+        return mlt_color_pri_smpte170m;
+    case mlt_colorspace_bt601:
+        return height == 576 ? mlt_color_pri_bt470bg : mlt_color_pri_smpte170m;
+    case mlt_colorspace_smpte170m:
+        return mlt_color_pri_smpte170m;
+    case mlt_colorspace_bt2020_ncl:
+        return mlt_color_pri_bt2020;
+    case mlt_colorspace_unspecified:
+    case mlt_colorspace_reserved:
+    case mlt_colorspace_fcc:
+    case mlt_colorspace_ycgco:
+    case mlt_colorspace_bt2020_cl:
+    case mlt_colorspace_smpte2085:
+    case mlt_colorspace_invalid:
+        break;
+    }
+    return mlt_color_pri_none;
+}
+
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mltframe);
@@ -383,29 +631,17 @@ void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
     avframe->interlaced_frame = !mlt_properties_get_int(frame_properties, "progressive");
     avframe->top_field_first = mlt_properties_get_int(frame_properties, "top_field_first");
 #endif
-    avframe->color_primaries = mlt_properties_get_int(frame_properties, "color_primaries");
-    avframe->color_trc = mlt_properties_get_int(frame_properties, "color_trc");
+    const char *primaries_str = mlt_properties_get(frame_properties, "color_primaries");
+    mlt_color_primaries primaries = mlt_image_color_pri_id(primaries_str);
+    avframe->color_primaries = mlt_to_av_color_primaries(primaries);
+    const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
+    avframe->color_trc = mlt_to_av_color_trc(mlt_image_color_trc_id(color_trc_str));
     avframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
                                ? AVCOL_RANGE_JPEG
                                : AVCOL_RANGE_MPEG;
-
-    switch (mlt_properties_get_int(frame_properties, "colorspace")) {
-    case 240:
-        avframe->colorspace = AVCOL_SPC_SMPTE240M;
-        break;
-    case 601:
-        avframe->colorspace = AVCOL_SPC_BT470BG;
-        break;
-    case 709:
-        avframe->colorspace = AVCOL_SPC_BT709;
-        break;
-    case 2020:
-        avframe->colorspace = AVCOL_SPC_BT2020_NCL;
-        break;
-    case 2021:
-        avframe->colorspace = AVCOL_SPC_BT2020_CL;
-        break;
-    }
+    const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+    avframe->colorspace = mlt_to_av_colorspace(mlt_image_colorspace_id(colorspace_str),
+                                               avframe->height);
 
     int ret = av_frame_get_buffer(avframe, 1);
     if (ret < 0) {

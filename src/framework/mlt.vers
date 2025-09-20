@@ -671,4 +671,10 @@ MLT_7.32.0 {
 MLT_7.34.0 {
   global:
     mlt_image_is_opaque;
+    mlt_image_color_trc_name;
+    mlt_image_color_trc_id;
+    mlt_image_colorspace_name;
+    mlt_image_colorspace_id;
+    mlt_image_color_pri_name;
+    mlt_image_color_pri_id;
 } MLT_7.32.0;

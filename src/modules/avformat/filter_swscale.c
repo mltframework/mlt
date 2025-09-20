@@ -148,8 +148,9 @@ static int filter_scale(mlt_frame frame,
 
         mlt_profile profile = mlt_service_profile(
             MLT_PRODUCER_SERVICE(mlt_frame_get_original_producer(frame)));
-        int dst_colorspace = profile ? profile->colorspace : 601;
-        int src_colorspace = mlt_properties_get_int(properties, "colorspace");
+        mlt_colorspace dst_colorspace = profile ? profile->colorspace : mlt_colorspace_bt601;
+        char *src_colorspace_str = mlt_properties_get(properties, "colorspace");
+        mlt_colorspace src_colorspace = mlt_image_colorspace_id(src_colorspace_str);
         int src_full_range = mlt_properties_get_int(properties, "full_range");
         const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
         int dst_full_range = mlt_image_full_range(dst_color_range);

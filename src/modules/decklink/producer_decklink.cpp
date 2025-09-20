@@ -117,7 +117,7 @@ private:
     bool m_isBuffering;
     int m_topFieldFirst;
     BMDPixelFormat m_pixel_format;
-    int m_colorspace;
+    mlt_colorspace m_colorspace;
     int m_vancLines;
     mlt_cache m_cache;
     bool m_reprio;
@@ -138,7 +138,9 @@ private:
                 double fps = (double) timescale / duration;
                 int p = mode->GetFieldDominance() == bmdProgressiveFrame;
                 m_topFieldFirst = mode->GetFieldDominance() == bmdUpperFieldFirst;
-                m_colorspace = (mode->GetFlags() & bmdDisplayModeColorspaceRec709) ? 709 : 601;
+                m_colorspace = (mode->GetFlags() & bmdDisplayModeColorspaceRec709)
+                                   ? mlt_colorspace_bt709
+                                   : mlt_colorspace_bt601;
                 mlt_log_verbose(getProducer(),
                                 "BMD mode %dx%d %.3f fps prog %d tff %d\n",
                                 width,
@@ -728,8 +730,8 @@ public:
         }
         if (events & bmdVideoInputColorspaceChanged) {
             profile->colorspace = m_colorspace = (mode->GetFlags() & bmdDisplayModeColorspaceRec709)
-                                                     ? 709
-                                                     : 601;
+                                                     ? mlt_colorspace_bt709
+                                                     : mlt_colorspace_bt601;
             mlt_log_verbose(getProducer(), "colorspace changed %d\n", profile->colorspace);
         }
         return S_OK;

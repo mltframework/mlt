@@ -63,6 +63,12 @@ MLT_EXPORT void mlt_image_fill_opaque(mlt_image self);
 MLT_EXPORT int mlt_image_is_opaque(mlt_image self);
 MLT_EXPORT const char *mlt_image_format_name(mlt_image_format format);
 MLT_EXPORT mlt_image_format mlt_image_format_id(const char *name);
+MLT_EXPORT const char *mlt_image_color_trc_name(mlt_color_trc trc);
+MLT_EXPORT mlt_color_trc mlt_image_color_trc_id(const char *name);
+MLT_EXPORT const char *mlt_image_colorspace_name(mlt_colorspace colorspace);
+MLT_EXPORT mlt_colorspace mlt_image_colorspace_id(const char *name);
+MLT_EXPORT const char *mlt_image_color_pri_name(mlt_color_primaries primaries);
+MLT_EXPORT mlt_color_primaries mlt_image_color_pri_id(const char *name);
 MLT_EXPORT int mlt_image_rgba_opaque(uint8_t *image, int width, int height);
 MLT_EXPORT int mlt_image_full_range(const char *color_range);
 
