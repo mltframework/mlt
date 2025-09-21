@@ -324,7 +324,9 @@ const char *mlt_image_color_trc_name(mlt_color_trc trc)
 mlt_color_trc mlt_image_color_trc_id(const char *name)
 {
     mlt_color_trc c;
-
+    if (name == NULL) {
+        return mlt_color_trc_none;
+    }
     for (c = mlt_color_trc_none; name && c <= mlt_color_trc_invalid; c++) {
         const char *s = mlt_image_color_trc_name(c);
         if (!strcmp(s, name))
@@ -449,6 +451,9 @@ mlt_color_primaries mlt_image_color_pri_id(const char *name)
                                              mlt_color_pri_invalid};
 
     // Fall back to see if it was specified as a number
+    if (name == NULL) {
+        return mlt_color_pri_none;
+    }
     int value = strtol(name, NULL, 10);
     if (!value && strcmp(name, "0"))
         value = -1; // strtol returned an error;
