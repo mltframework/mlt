@@ -553,7 +553,7 @@ uint8_t *mlt_frame_get_alpha(mlt_frame self)
         alpha = mlt_properties_get_data(&self->parent, "alpha", NULL);
         if (alpha) {
             mlt_image_format format = mlt_properties_get_int(&self->parent, "format");
-            if (mlt_image_rgba == format || mlt_image_rgba64) {
+            if (mlt_image_rgba == format || format == mlt_image_rgba64) {
                 alpha = NULL;
             }
         }
