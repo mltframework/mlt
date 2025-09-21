@@ -211,7 +211,7 @@ static int get_image(mlt_frame a_frame,
             }
             if (hasAlpha && format_is_rgba(*format)) {
                 struct mlt_image_s bimg;
-                mlt_image_set_values(&bimg, NULL, *format, b_width, b_height);
+                mlt_image_set_values(&bimg, b_image, *format, b_width, b_height);
                 hasAlpha = !mlt_image_is_opaque(&bimg);
             }
         }
