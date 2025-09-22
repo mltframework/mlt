@@ -25,6 +25,8 @@
 #include "ofxProgress.h"
 #include "ofxTimeLine.h"
 #include <stdarg.h>
+#include <math.h>
+#include <float.h>
 
 static OfxStatus getPropertySet(OfxImageEffectHandle imageEffect, OfxPropertySetHandle *propHandle)
 {
@@ -654,6 +656,30 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
       }
 
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+      double *Y = va_arg(ap, double *);
+      double *X = va_arg(ap, double *);
+
+      OfxStatus status
+	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+      status
+	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+
+      if (status != kOfxStatOK) {
+	status = propGetDouble((OfxPropertySetHandle) param_props,
+			       "OfxParamPropDefault",
+			       0,
+			       X);
+	status = propGetDouble((OfxPropertySetHandle) param_props,
+			       "OfxParamPropDefault",
+			       1,
+			       Y);
+
+	if (status != kOfxStatOK) {
+	  va_end(ap);
+	  return kOfxStatErrUnknown;
+	}
+      }
+
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
@@ -798,6 +824,29 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
       }
 
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+      double *Y = va_arg(ap, double *);
+      double *X = va_arg(ap, double *);
+
+      OfxStatus status
+	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+      status
+	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+
+      if (status != kOfxStatOK) {
+	status = propGetDouble((OfxPropertySetHandle) param_props,
+			       "OfxParamPropDefault",
+			       0,
+			       X);
+	status = propGetDouble((OfxPropertySetHandle) param_props,
+			       "OfxParamPropDefault",
+			       1,
+			       Y);
+
+	if (status != kOfxStatOK) {
+	  va_end(ap);
+	  return kOfxStatErrUnknown;
+	}
+      }
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
@@ -868,6 +917,9 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
 	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, green);
 	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, blue);
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+        mlt_rect value = va_arg(ap, mlt_rect);
+	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
+	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
@@ -911,6 +963,9 @@ static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+        mlt_rect value = va_arg(ap, mlt_rect);
+	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
+	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
@@ -1680,9 +1735,34 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
             mlt_properties_set_int(p, "opened", opened);
         } else if (strcmp(pt, kOfxParamTypeStrChoice) == 0) {
 	} else if (strcmp(pt, kOfxParamTypeRGBA) == 0 || strcmp(pt, kOfxParamTypeRGB) == 0) {
-	  mlt_properties_set(p, "type", "color");
-	  mlt_properties_set(p, "widget", "color");
+	    mlt_properties_set(p, "type", "color");
+	    mlt_properties_set(p, "widget", "color");
 	} else if (strcmp(pt, kOfxParamTypeDouble2D) == 0) { /* can be rendered as 2 double number input fields */
+	    mlt_properties_set(p, "type", "double");
+
+	    char *type = kOfxParamDoubleTypeXY;
+	    char *coordinate_system = kOfxParamCoordinatesCanonical;
+	    propGetString((OfxPropertySetHandle) ppp, kOfxParamPropDoubleType, 0, &type);
+	    propGetString((OfxPropertySetHandle) ppp, kOfxParamPropDefaultCoordinateSystem, 0, &coordinate_system);
+
+	    if (strcmp(type, kOfxParamDoubleTypeXYAbsolute) == 0) /* otherwise if double type is kOfxParamDoubleTypeXY then this is size not position according to openfx headers */
+	      {
+		mlt_properties_set(p, "widget", "2dpoint");
+	      }
+	    else if (strcmp(type, kOfxParamDoubleTypeXY) == 0)
+	      {
+		mlt_properties_set(p, "widget", "2dsize"); /* Natron still render it as two number input boxes but with a button to make width = height */
+	      }
+
+	    if (strcmp(coordinate_system, kOfxParamCoordinatesCanonical) == 0)
+	      {
+		mlt_properties_set_int(p, "normalised", 0);
+	      }
+	    else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0)
+	      {
+		mlt_properties_set_int(p, "normalised", 1);
+	      }
+
 	} else if (strcmp(pt, kOfxParamTypeInteger2D) == 0) {
 	} else if (strcmp(pt, kOfxParamTypeDouble3D) == 0) {
 	} else if (strcmp(pt, kOfxParamTypeInteger3D) == 0) {
@@ -1713,7 +1793,21 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                     double default_value = 0.0;
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
                     mlt_properties_set_double(p, "default", default_value);
-                } else if (strcmp(pt, kOfxParamTypeString) == 0) {
+                } else if (strcmp(pt, kOfxParamTypeDouble2D) == 0) {
+		    double default_value1 = 0.0, default_value2 = 0.0;
+
+		    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value1);
+		    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &default_value2);
+
+		    /* for some reason with DBL_MIN DBL_MAX it segfault */
+		    if (!isnormal(default_value1) || default_value1 <= FLT_MIN || default_value1 >= FLT_MAX) default_value1 = 0.0;
+		    if (!isnormal(default_value2) || default_value2 <= FLT_MIN || default_value2 >= FLT_MAX) default_value2 = 0.0;
+
+		    char default_value[20] = "";
+		    sprintf (default_value, "%.4f %.4f", default_value1, default_value2);
+		    mlt_properties_set(p, "default", default_value);
+
+		} else if (strcmp(pt, kOfxParamTypeString) == 0) {
                     char *default_value = "";
                     propGetString((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
                     mlt_properties_set(p, "default", default_value);
@@ -1855,6 +1949,11 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
     case mltofx_prop_color: {
         mlt_color value = va_arg(ap, mlt_color);
         paramSetValue((OfxParamHandle) param, value);
+    } break;
+
+    case mltofx_prop_double2d: {
+        mlt_rect value = va_arg(ap, mlt_rect);
+	paramSetValue((OfxParamHandle) param, value);
     } break;
 
     default:

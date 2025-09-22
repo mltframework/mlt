@@ -59,9 +59,19 @@ static int filter_get_image(mlt_frame frame,
                 mlt_properties param = mlt_properties_get_data_at(params, i, NULL);
 
                 char *type = mlt_properties_get(param, "type");
+		char *widget = mlt_properties_get(param, "widget");
 
                 if (type != NULL) {
-                    if (strcmp(type, "double") == 0) {
+		    if (strcmp(widget, "2dpoint") == 0 && strcmp(type, "double") == 0) {
+		        mlt_rect value = mlt_properties_anim_get_rect(properties,
+								     iprop_name,
+								     position,
+								     length);
+			mltofx_param_set_value(image_effect_params,
+                                               iprop_name,
+                                               mltofx_prop_double2d,
+                                               value);
+		    } else if (strcmp(type, "double") == 0) {
                         double value = mlt_properties_anim_get_double(properties,
                                                                       iprop_name,
                                                                       position,

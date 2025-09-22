@@ -41,6 +41,7 @@ typedef enum {
     mltofx_prop_double = 8,
     mltofx_prop_pointer = 16,
     mltofx_prop_color = 32,
+    mltofx_prop_double2d = 64,
 } mltofx_property_type;
 
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties);
