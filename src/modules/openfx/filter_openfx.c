@@ -62,7 +62,7 @@ static int filter_get_image(mlt_frame frame,
 		char *widget = mlt_properties_get(param, "widget");
 
                 if (type != NULL) {
-		    if (strcmp(widget, "2dpoint") == 0 && strcmp(type, "double") == 0) {
+		    if (widget != NULL && (strcmp(widget, "2dpoint") == 0 || strcmp(widget, "2dsize") == 0) && strcmp(type, "double") == 0) {
 		        mlt_rect value = mlt_properties_anim_get_rect(properties,
 								     iprop_name,
 								     position,
@@ -88,12 +88,6 @@ static int filter_get_image(mlt_frame frame,
                                                mltofx_prop_int,
                                                value);
                     } else if (strcmp(type, "string") == 0) {
-                        /* char *value
-                               = mlt_properties_anim_get(properties, iprop_name, position, length); */
-                        /* mltofx_param_set_value(image_effect_params,
-                                                     iprop_name,
-                                                     mltofx_prop_string,
-                                                     value); */
 		        int value
 			    = mlt_properties_anim_get_int(properties, iprop_name, position, length);
 			mltofx_param_set_value(image_effect_params,
@@ -110,7 +104,6 @@ static int filter_get_image(mlt_frame frame,
                     } else if (strcmp(type, "color") == 0) {
 		        mlt_color value
 			          = mlt_properties_anim_get_color(properties, iprop_name, position, length);
-			//value.a = 127;
 		        mltofx_param_set_value(image_effect_params,
 					       iprop_name,
 					       mltofx_prop_color,
