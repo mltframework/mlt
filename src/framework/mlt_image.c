@@ -323,11 +323,12 @@ const char *mlt_image_color_trc_name(mlt_color_trc trc)
 
 mlt_color_trc mlt_image_color_trc_id(const char *name)
 {
-    mlt_color_trc c;
-    if (name == NULL) {
+    if (!name) {
         return mlt_color_trc_none;
     }
-    for (c = mlt_color_trc_none; name && c <= mlt_color_trc_invalid; c++) {
+
+    mlt_color_trc c;
+    for (c = mlt_color_trc_none; c <= mlt_color_trc_invalid; c++) {
         const char *s = mlt_image_color_trc_name(c);
         if (!strcmp(s, name))
             return c;
@@ -378,6 +379,9 @@ const char *mlt_image_colorspace_name(mlt_colorspace colorspace)
 
 mlt_colorspace mlt_image_colorspace_id(const char *name)
 {
+    if (!name) {
+        return mlt_colorspace_invalid;
+    }
     const mlt_colorspace colorspaces[] = {mlt_colorspace_rgb,
                                           mlt_colorspace_bt709,
                                           mlt_colorspace_unspecified,
@@ -398,7 +402,7 @@ mlt_colorspace mlt_image_colorspace_id(const char *name)
     if (!value && strcmp(name, "0"))
         value = -1; // strtol returned an error;
 
-    for (int i = 0; name && i < sizeof(colorspaces); i++) {
+    for (int i = 0; i < sizeof(colorspaces); i++) {
         const char *s = mlt_image_colorspace_name(colorspaces[i]);
         if (value == colorspaces[i] || !strcmp(s, name))
             return colorspaces[i];
@@ -438,6 +442,10 @@ const char *mlt_image_color_pri_name(mlt_color_primaries primaries)
 
 mlt_color_primaries mlt_image_color_pri_id(const char *name)
 {
+    if (!name) {
+        return mlt_color_pri_none;
+    }
+
     const mlt_color_primaries primaries[] = {mlt_color_pri_none,
                                              mlt_color_pri_bt709,
                                              mlt_color_pri_bt470m,
@@ -451,9 +459,6 @@ mlt_color_primaries mlt_image_color_pri_id(const char *name)
                                              mlt_color_pri_invalid};
 
     // Fall back to see if it was specified as a number
-    if (name == NULL) {
-        return mlt_color_pri_none;
-    }
     int value = strtol(name, NULL, 10);
     if (!value && strcmp(name, "0"))
         value = -1; // strtol returned an error;
