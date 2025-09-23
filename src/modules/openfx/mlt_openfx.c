@@ -117,9 +117,37 @@ static OfxStatus clipReleaseImage(OfxPropertySetHandle imageHandle)
     return kOfxStatOK;
 }
 
+static OfxStatus propGetInt(OfxPropertySetHandle properties,
+			    const char *property,
+                            int index,
+			    int *value);
+
 /* TODO: allow user to pass a RoD via properties */
 static OfxStatus clipGetRegionOfDefinition(OfxImageClipHandle clip, OfxTime time, OfxRectD *bounds)
 {
+    if (!bounds) {
+        return kOfxStatErrBadHandle;
+    }
+
+    mlt_properties clip_prop;
+    clipGetPropertySet(clip, (OfxPropertySetHandle *) &clip_prop);
+
+    int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+    propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 0, &x1);
+    propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, &y1);
+    propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, &x2);
+    propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, &y2);
+
+    bounds->x1 = (double) x1;
+    bounds->y1 = (double) y1;
+    bounds->x2 = (double) x2;
+    bounds->y2 = (double) y2;
+
+    if (bounds->x2 < bounds->x1 || bounds->y2 < bounds->y1) {
+        // the RoD is invalid (empty is OK)
+        return kOfxStatFailed;
+    }
+
     return kOfxStatOK;
 }
 
@@ -1973,6 +2001,37 @@ void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
                                               NULL,
                                               (OfxPropertySetHandle) get_clippref_args);
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetClipPreferences);
+}
+
+void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect)
+{
+    mlt_properties get_rod_in_args = mlt_properties_get_data(image_effect,
+                                                             "get_rod_in_args",
+                                                             NULL);
+
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxPropTime, 0, 0.0);
+
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+
+    mlt_properties get_rod_out_args = mlt_properties_get_data(image_effect,
+                                                              "get_rod_out_args",
+                                                              NULL);
+
+    OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetRegionOfDefinition,
+                                              (OfxImageEffectHandle) image_effect,
+                                              (OfxPropertySetHandle) get_rod_in_args,
+                                              (OfxPropertySetHandle) get_rod_out_args);
+
+    /* double rod_x1 = 0.0, rod_y1 = 0.0, rod_x2 = 0.0, rod_y2 = 0.0;
+
+       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 0, &rod_x1);
+       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 1, &rod_y1);
+       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 2, &rod_x2);
+       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 3, &rod_y2);
+       printf ("get_rod_out_args          %f %f %f %f\n", rod_x1, rod_y1, rod_x2, rod_y2); */
+
+    mltofx_log_status_code(status_code, kOfxImageEffectActionGetRegionOfDefinition);
 }
 
 void mltofx_get_regions_of_interest(OfxPlugin *plugin,

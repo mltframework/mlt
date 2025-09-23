@@ -62,6 +62,8 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
 
 void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect);
 
+void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect);
+
 void mltofx_get_regions_of_interest(OfxPlugin *plugin,
                                     mlt_properties image_effect,
                                     double width,
