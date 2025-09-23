@@ -610,6 +610,11 @@ mlt_color_primaries mlt_color_primaries_from_colorspace(mlt_colorspace colorspac
     return mlt_color_pri_none;
 }
 
+int mlt_to_av_color_range(int full_range)
+{
+    return full_range ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
+}
+
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mltframe);

@@ -54,6 +54,7 @@ typedef struct
     int format;
     int width;
     int height;
+    mlt_colorspace colorspace;
     int channels;
     int frequency;
     int reset;
@@ -388,8 +389,12 @@ fail:
     avfilter_graph_free(&pdata->avfilter_graph);
 }
 
-static void init_image_filtergraph(
-    mlt_link self, mlt_image_format format, int width, int height, double resolution_scale)
+static void init_image_filtergraph(mlt_link self,
+                                   mlt_image_format format,
+                                   int width,
+                                   int height,
+                                   mlt_colorspace colorspace,
+                                   double resolution_scale)
 {
     private_data *pdata = (private_data *) self->child;
     mlt_profile profile = mlt_service_profile(MLT_LINK_SERVICE(self));
@@ -402,11 +407,13 @@ static void init_image_filtergraph(
     AVRational sar = (AVRational){profile->sample_aspect_num, profile->sample_aspect_den};
     AVRational timebase = (AVRational){profile->frame_rate_den, profile->frame_rate_num};
     AVRational framerate = (AVRational){profile->frame_rate_num, profile->frame_rate_den};
+    int avcolorspace = mlt_to_av_colorspace(colorspace, height);
     int ret;
 
     pdata->format = format;
     pdata->width = width;
     pdata->height = height;
+    pdata->colorspace = colorspace;
 
     // Set up formats
     pixel_fmts[0] = mlt_to_av_image_format(format);
@@ -467,6 +474,11 @@ static void init_image_filtergraph(
     ret = av_opt_set_q(pdata->avbuffsrc_ctx, "frame_rate", framerate, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src frame_rate %d/%d\n", framerate.num, framerate.den);
+        goto fail;
+    }
+    ret = av_opt_set_int(pdata->avbuffsrc_ctx, "colorspace", avcolorspace, AV_OPT_SEARCH_CHILDREN);
+    if (ret < 0) {
+        mlt_log_error(self, "Cannot set src colorspace %d\n", avcolorspace);
         goto fail;
     }
     ret = avfilter_init_str(pdata->avbuffsrc_ctx, NULL);
@@ -900,10 +912,12 @@ static int link_get_image(mlt_frame frame,
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
     double scale = mlt_profile_scale_width(profile, *width);
+    const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+    mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
 
     if (pdata->reset || pdata->format != *format || pdata->width != *width
-        || pdata->height != *height) {
-        init_image_filtergraph(self, *format, *width, *height, scale);
+        || pdata->height != *height || pdata->colorspace != colorspace) {
+        init_image_filtergraph(self, *format, *width, *height, colorspace, scale);
         pdata->reset = 0;
     }
 

@@ -42,6 +42,8 @@ typedef struct
     int outformat;
     int width;
     int height;
+    mlt_colorspace incolorspace;
+    int infullrange;
 } private_data;
 
 typedef struct
@@ -98,6 +100,8 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
     enum AVPixelFormat out_pixel_fmts[] = {-1, -1};
     AVRational timebase = (AVRational){profile->frame_rate_den, profile->frame_rate_num};
     AVRational framerate = (AVRational){profile->frame_rate_num, profile->frame_rate_den};
+    int colorspace = mlt_to_av_colorspace(pdata->incolorspace, pdata->height);
+    int color_range = mlt_to_av_color_range(pdata->infullrange);
     AVFilterContext *prev_ctx = NULL;
     AVFilterContext *avfilter_ctx = NULL;
     int ret;
@@ -154,6 +158,16 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
     ret = av_opt_set_q(fdata->avbuffsrc_ctx, "frame_rate", framerate, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src frame_rate %d/%d\n", framerate.num, framerate.den);
+        goto fail;
+    }
+    ret = av_opt_set_int(fdata->avbuffsrc_ctx, "colorspace", colorspace, AV_OPT_SEARCH_CHILDREN);
+    if (ret < 0) {
+        mlt_log_error(self, "Cannot set src colorspace %d\n", colorspace);
+        goto fail;
+    }
+    ret = av_opt_set_int(fdata->avbuffsrc_ctx, "range", color_range, AV_OPT_SEARCH_CHILDREN);
+    if (ret < 0) {
+        mlt_log_error(self, "Cannot set src range %d\n", color_range);
         goto fail;
     }
     ret = avfilter_init_str(fdata->avbuffsrc_ctx, NULL);
@@ -391,12 +405,16 @@ static int link_get_image(mlt_frame frame,
     }
     srcimg.format = validate_format(srcimg.format);
     dstimg.format = validate_format(*format);
+    const char *colorspace_str = mlt_properties_get(unique_properties, "colorspace");
+    mlt_colorspace incolorspace = mlt_image_colorspace_id(colorspace_str);
+    int infullrange = mlt_properties_get_int(unique_properties, "full_range");
 
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
     if (pdata->method != method || pdata->expected_frame != mlt_frame_get_position(frame)
         || pdata->informat != srcimg.format || pdata->width != srcimg.width
-        || pdata->height != srcimg.height || pdata->outformat != dstimg.format) {
+        || pdata->height != srcimg.height || pdata->outformat != dstimg.format
+        || pdata->incolorspace != incolorspace || pdata->infullrange != infullrange) {
         mlt_log_debug(MLT_LINK_SERVICE(self),
                       "Init: %s->%s\t%d->%d\n",
                       mlt_deinterlacer_name(pdata->method),
@@ -410,6 +428,8 @@ static int link_get_image(mlt_frame frame,
         pdata->width = srcimg.width;
         pdata->height = srcimg.height;
         pdata->outformat = dstimg.format;
+        pdata->incolorspace = incolorspace;
+        pdata->infullrange = infullrange;
         init_image_filtergraph(self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024));
     }
 
@@ -554,6 +574,21 @@ static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
         mlt_properties_set_int(unique_properties,
                                "format",
                                mlt_properties_get_int(original_producer_properties, "format"));
+    }
+    if (mlt_properties_exists(original_producer_properties, "meta.media.colorspace")) {
+        mlt_properties_set(unique_properties,
+                           "colorspace",
+                           mlt_properties_get(original_producer_properties,
+                                              "meta.media.colorspace"));
+    } else if (mlt_properties_exists(MLT_FRAME_PROPERTIES(*frame), "colorspace")) {
+        mlt_properties_set(unique_properties,
+                           "colorspace",
+                           mlt_properties_get(MLT_FRAME_PROPERTIES(*frame), "colorspace"));
+    }
+    if (mlt_properties_exists(MLT_FRAME_PROPERTIES(*frame), "full_range")) {
+        mlt_properties_set(unique_properties,
+                           "full_range",
+                           mlt_properties_get(MLT_FRAME_PROPERTIES(*frame), "full_range"));
     }
 
     // Pass future frames
