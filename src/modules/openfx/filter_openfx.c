@@ -115,6 +115,11 @@ static int filter_get_image(mlt_frame frame,
 
         mltofx_begin_sequence_render(plugin, image_effect);
 
+	/* According to OpenFX documentation: Note that hosts that
+	   have constant sized imagery need not call this action, only
+	   hosts that allow image sizes to vary need call this. */
+	/* mltofx_get_region_of_definition(plugin, image_effect); */
+
         mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
         mltofx_get_clip_preferences(plugin, image_effect);
 
@@ -205,6 +210,21 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
                 mlt_properties_set_data(image_effect,
                                         "end_sequence_props",
                                         end_sequence_props,
+                                        0,
+                                        (mlt_destructor) mlt_properties_close,
+                                        NULL);
+
+                mlt_properties get_rod_in_args = mlt_properties_new();
+                mlt_properties get_rod_out_args = mlt_properties_new();
+                mlt_properties_set_data(image_effect,
+                                        "get_rod_in_args",
+                                        get_rod_in_args,
+                                        0,
+                                        (mlt_destructor) mlt_properties_close,
+                                        NULL);
+                mlt_properties_set_data(image_effect,
+                                        "get_rod_out_args",
+                                        get_rod_out_args,
                                         0,
                                         (mlt_destructor) mlt_properties_close,
                                         NULL);
