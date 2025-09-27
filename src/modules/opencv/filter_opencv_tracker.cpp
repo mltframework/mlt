@@ -415,8 +415,11 @@ static int filter_get_image(mlt_frame frame,
                 data->producer_length = mlt_filter_get_length2(filter, frame);
             } else {
                 data->producer_in = mlt_producer_get_in(producer) + mlt_filter_get_in(filter);
-                data->producer_length = mlt_producer_get_playtime(producer)
-                                        - mlt_filter_get_in(filter);
+                data->producer_length = mlt_filter_get_length2(filter, frame);
+                if (data->producer_length <= 0) {
+                    data->producer_length = mlt_producer_get_playtime(producer)
+                                            - mlt_filter_get_in(filter);
+                }
             }
         }
     }
