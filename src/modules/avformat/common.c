@@ -641,9 +641,8 @@ void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
     avframe->color_primaries = mlt_to_av_color_primaries(primaries);
     const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
     avframe->color_trc = mlt_to_av_color_trc(mlt_image_color_trc_id(color_trc_str));
-    avframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
-                               ? AVCOL_RANGE_JPEG
-                               : AVCOL_RANGE_MPEG;
+    avframe->color_range = mlt_to_av_color_range(
+        mlt_properties_get_int(frame_properties, "full_range"));
     const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
     avframe->colorspace = mlt_to_av_colorspace(mlt_image_colorspace_id(colorspace_str),
                                                avframe->height);

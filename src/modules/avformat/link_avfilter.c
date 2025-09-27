@@ -55,6 +55,7 @@ typedef struct
     int width;
     int height;
     mlt_colorspace colorspace;
+    int full_range;
     int channels;
     int frequency;
     int reset;
@@ -394,6 +395,7 @@ static void init_image_filtergraph(mlt_link self,
                                    int width,
                                    int height,
                                    mlt_colorspace colorspace,
+                                   int full_range,
                                    double resolution_scale)
 {
     private_data *pdata = (private_data *) self->child;
@@ -408,12 +410,14 @@ static void init_image_filtergraph(mlt_link self,
     AVRational timebase = (AVRational){profile->frame_rate_den, profile->frame_rate_num};
     AVRational framerate = (AVRational){profile->frame_rate_num, profile->frame_rate_den};
     int avcolorspace = mlt_to_av_colorspace(colorspace, height);
+    int color_range = mlt_to_av_color_range(full_range);
     int ret;
 
     pdata->format = format;
     pdata->width = width;
     pdata->height = height;
     pdata->colorspace = colorspace;
+    pdata->full_range = full_range;
 
     // Set up formats
     pixel_fmts[0] = mlt_to_av_image_format(format);
@@ -479,6 +483,11 @@ static void init_image_filtergraph(mlt_link self,
     ret = av_opt_set_int(pdata->avbuffsrc_ctx, "colorspace", avcolorspace, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src colorspace %d\n", avcolorspace);
+        goto fail;
+    }
+    ret = av_opt_set_int(pdata->avbuffsrc_ctx, "range", color_range, AV_OPT_SEARCH_CHILDREN);
+    if (ret < 0) {
+        mlt_log_error(self, "Cannot set src range %d\n", color_range);
         goto fail;
     }
     ret = avfilter_init_str(pdata->avbuffsrc_ctx, NULL);
@@ -914,10 +923,12 @@ static int link_get_image(mlt_frame frame,
     double scale = mlt_profile_scale_width(profile, *width);
     const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
     mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+    int full_range = mlt_properties_get_int(frame_properties, "full_range");
 
     if (pdata->reset || pdata->format != *format || pdata->width != *width
-        || pdata->height != *height || pdata->colorspace != colorspace) {
-        init_image_filtergraph(self, *format, *width, *height, colorspace, scale);
+        || pdata->height != *height || pdata->colorspace != colorspace
+        || pdata->full_range != full_range) {
+        init_image_filtergraph(self, *format, *width, *height, colorspace, full_range, scale);
         pdata->reset = 0;
     }
 
@@ -948,9 +959,7 @@ static int link_get_image(mlt_frame frame,
         pdata->avinframe->color_primaries = mlt_to_av_color_primaries(primaries);
         const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
         pdata->avinframe->color_trc = mlt_to_av_color_trc(mlt_image_color_trc_id(color_trc_str));
-        pdata->avinframe->color_range = mlt_properties_get_int(frame_properties, "full_range")
-                                            ? AVCOL_RANGE_JPEG
-                                            : AVCOL_RANGE_MPEG;
+        pdata->avinframe->color_range = mlt_to_av_color_range(full_range);
         const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
         mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
         pdata->avinframe->colorspace = mlt_to_av_colorspace(colorspace, pdata->avinframe->height);
