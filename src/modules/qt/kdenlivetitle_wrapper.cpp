@@ -164,11 +164,11 @@ public:
         updateText(text);
     }
 
-    void updateText(QString text)
+    void updateText(const QString text)
     {
         m_path.clear();
         // Calculate line width
-        QStringList lines = text.split('\n');
+        const QStringList lines = text.split('\n');
         double linePos = m_metrics.ascent();
         foreach (const QString &line, lines) {
             QPainterPath linePath;
@@ -203,13 +203,15 @@ public:
             m_path.addPath(linePath);
         }
         m_path.setFillRule(Qt::WindingFill);
-        int minWidth = m_path.boundingRect().width();
-        int minHeight = m_lineSpacing * lines.size();
-        if (m_boundingRect.width() < minWidth) {
-            m_boundingRect.setWidth(minWidth);
-        }
-        if (m_boundingRect.height() < minHeight) {
-            m_boundingRect.setHeight(minHeight);
+        if (!m_path.isEmpty()) {
+            int minWidth = m_path.boundingRect().width();
+            int minHeight = m_lineSpacing * lines.size();
+            if (m_boundingRect.width() < minWidth) {
+                m_boundingRect.setWidth(minWidth);
+            }
+            if (m_boundingRect.height() < minHeight) {
+                m_boundingRect.setHeight(minHeight);
+            }
         }
     }
 
@@ -284,7 +286,7 @@ private:
 
 QRectF stringToRect(const QString &s)
 {
-    QStringList l = s.split(',');
+    const QStringList l = s.split(',');
     if (l.size() < 4)
         return QRectF();
     return QRectF(l.at(0).toDouble(), l.at(1).toDouble(), l.at(2).toDouble(), l.at(3).toDouble())
@@ -293,7 +295,7 @@ QRectF stringToRect(const QString &s)
 
 QColor stringToColor(const QString &s)
 {
-    QStringList l = s.split(',');
+    const QStringList l = s.split(',');
     if (l.size() < 4)
         return QColor();
     return QColor(l.at(0).toInt(), l.at(1).toInt(), l.at(2).toInt(), l.at(3).toInt());
@@ -301,7 +303,7 @@ QColor stringToColor(const QString &s)
 }
 QTransform stringToTransform(const QString &s)
 {
-    QStringList l = s.split(',');
+    const QStringList l = s.split(',');
     if (l.size() < 9)
         return QTransform();
     return QTransform(l.at(0).toDouble(),
@@ -371,6 +373,7 @@ void loadFromXml(producer_ktitle self,
 
     QDomNode node;
     QDomNodeList items = title.elementsByTagName("item");
+    int itemId = 1;
     for (int i = 0; i < items.count(); i++) {
         QGraphicsItem *gitem = NULL;
         node = items.item(i);
@@ -449,11 +452,11 @@ void loadFromXml(producer_ktitle self,
                     QStringList values = gradientData.split(";");
                     if (values.count() < 5) {
                         // invalid gradient, use default
-                        values = QStringList() << "#ff0000"
-                                               << "#2e0046"
-                                               << "0"
-                                               << "100"
-                                               << "90";
+                        values = {QStringLiteral("#ff0000"),
+                                  QStringLiteral("#2e0046"),
+                                  QStringLiteral("0"),
+                                  QStringLiteral("100"),
+                                  QStringLiteral("90")};
                     }
                     QLinearGradient gr;
                     gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
@@ -487,20 +490,20 @@ void loadFromXml(producer_ktitle self,
                         txtProperties.namedItem("line-spacing").nodeValue().toInt(),
                         tabWidth);
                     if (txtProperties.namedItem("shadow").isNull() == false) {
-                        QStringList values = txtProperties.namedItem("shadow").nodeValue().split(
-                            ";");
+                        const QStringList values
+                            = txtProperties.namedItem("shadow").nodeValue().split(";");
                         txt->addShadow(values);
                     }
                     if (!txtProperties.namedItem("typewriter").isNull()) {
                         // typewriter effect
 
-                        QStringList values
+                        const QStringList values
                             = txtProperties.namedItem("typewriter").nodeValue().split(";");
                         int enabled = (static_cast<bool>(values.at(0).toInt()));
 
-                        if (enabled and values.count() >= 5) {
+                        if (enabled && values.count() >= 5) {
                             mlt_properties_set_int(producer_props, "_animated", 1);
-                            std::shared_ptr<TypeWriter> tw(new TypeWriter);
+                            std::shared_ptr<TypeWriter> tw(new TypeWriter());
                             tw->setFrameStep(values.at(1).toInt());
                             int macro = values.at(2).toInt();
                             tw->setStepSigma(values.at(3).toInt());
@@ -529,7 +532,10 @@ void loadFromXml(producer_ktitle self,
                             tw->setPattern(pattern.toStdString());
                             tw->parse();
                             tw->printParseResult();
-                            txt->setData(0, QVariant::fromValue<std::shared_ptr<TypeWriter>>(tw));
+                            scene->setProperty(QString::number(itemId).toLatin1(),
+                                               QVariant::fromValue<std::shared_ptr<TypeWriter>>(tw));
+                            txt->setData(0, itemId);
+                            itemId++;
                         } else {
                             txt->setData(0, QVariant());
                         }
@@ -563,9 +569,10 @@ void loadFromXml(producer_ktitle self,
                     if (!txtProperties.namedItem("typewriter").isNull()) {
                         // typewriter effect
                         mlt_properties_set_int(producer_props, "_animated", 1);
-                        QStringList effetData = QStringList()
-                                                << "typewriter" << text
-                                                << txtProperties.namedItem("typewriter").nodeValue();
+                        const QStringList effetData
+                            = {"typewriter",
+                               text,
+                               txtProperties.namedItem("typewriter").nodeValue()};
                         txt->setData(0, effetData);
                         if (!txtProperties.namedItem("textwidth").isNull())
                             txt->setData(1, txtProperties.namedItem("textwidth").nodeValue());
@@ -602,11 +609,11 @@ void loadFromXml(producer_ktitle self,
                     QStringList values = gradientData.split(";");
                     if (values.count() < 5) {
                         // invalid gradient, use default
-                        values = QStringList() << "#ff0000"
-                                               << "#2e0046"
-                                               << "0"
-                                               << "100"
-                                               << "90";
+                        values = {QStringLiteral("#ff0000"),
+                                  QStringLiteral("#2e0046"),
+                                  QStringLiteral("0"),
+                                  QStringLiteral("100"),
+                                  QStringLiteral("90")};
                     }
                     QLinearGradient gr;
                     gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
@@ -757,6 +764,9 @@ int initTitleProducer(mlt_producer producer)
     if (!QMetaType::fromType<QTextCursor>().isRegistered()) {
         qRegisterMetaType<QTextCursor>();
     }
+    if (!QMetaType::fromType<std::shared_ptr<TypeWriter>>().isRegistered()) {
+        qRegisterMetaType<std::shared_ptr<TypeWriter>>();
+    }
 #endif
     return true;
 }
@@ -850,8 +860,9 @@ void drawKdenliveTitle(producer_ktitle self,
         for (int i = 0; i < items.count(); i++) {
             titem = dynamic_cast<PlainTextItem *>(items.at(i));
             if (titem && !titem->data(0).isNull()) {
-                std::shared_ptr<TypeWriter> ptr
-                    = titem->data(0).value<std::shared_ptr<TypeWriter>>();
+                int itemId = titem->data(0).toInt();
+                std::shared_ptr<TypeWriter> ptr = scene->property(QString::number(itemId).toLatin1())
+                                                      .value<std::shared_ptr<TypeWriter>>();
                 titem->updateText(ptr->render(position).c_str());
                 titem->updateShadows();
             }
