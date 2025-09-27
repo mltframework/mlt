@@ -805,12 +805,13 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
 {
     if (current_format == mlt_image_none || current_format == mlt_image_movit
         || pix_fmt == AV_PIX_FMT_ARGB || pix_fmt == AV_PIX_FMT_RGBA || pix_fmt == AV_PIX_FMT_ABGR
-        || pix_fmt == AV_PIX_FMT_BGRA) {
+        || pix_fmt == AV_PIX_FMT_BGRA || pix_fmt == AV_PIX_FMT_GBRAP) {
         switch (pix_fmt) {
         case AV_PIX_FMT_ARGB:
         case AV_PIX_FMT_RGBA:
         case AV_PIX_FMT_ABGR:
         case AV_PIX_FMT_BGRA:
+        case AV_PIX_FMT_GBRAP:
             return mlt_image_rgba;
         case AV_PIX_FMT_YUV420P:
         case AV_PIX_FMT_YUVJ420P:
