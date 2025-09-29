@@ -968,6 +968,20 @@ static int filter_get_image(mlt_frame frame,
                 src += pdata->avoutframe->linesize[0];
             }
         }
+        mlt_properties_set_int(frame_properties,
+                               "color_trc",
+                               av_to_mlt_color_trc(pdata->avoutframe->color_trc));
+        mlt_properties_set_int(frame_properties,
+                               "colorspace",
+                               av_to_mlt_colorspace(pdata->avoutframe->colorspace,
+                                                    pdata->avoutframe->width,
+                                                    pdata->avoutframe->height));
+        mlt_properties_set_int(frame_properties,
+                               "color_primaries",
+                               av_to_mlt_color_primaries(pdata->avoutframe->color_primaries));
+        mlt_properties_set_int(frame_properties,
+                               "full_range",
+                               av_to_mlt_full_range(pdata->avoutframe->color_range));
     }
 
 exit:

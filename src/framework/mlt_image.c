@@ -472,6 +472,43 @@ mlt_color_primaries mlt_image_color_pri_id(const char *name)
     return mlt_color_pri_none;
 }
 
+/** Get the default color transfer characteristics for a given colorspace.
+ *
+ * \public \memberof mlt_image_s
+ * \param colorspace the colorspace
+ * \return a color trc
+ */
+
+mlt_color_trc mlt_image_default_trc(mlt_colorspace colorspace)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb:
+        return mlt_color_trc_iec61966_2_1;
+    case mlt_colorspace_bt709:
+        return mlt_color_trc_bt709;
+    case mlt_colorspace_bt470bg:
+        return mlt_color_trc_gamma28;
+    case mlt_colorspace_smpte170m:
+        return mlt_color_trc_smpte170m;
+    case mlt_colorspace_smpte240m:
+        return mlt_color_trc_smpte240m;
+    case mlt_colorspace_bt2020_ncl:
+        return mlt_color_trc_bt2020_10;
+    case mlt_colorspace_bt2020_cl:
+        return mlt_color_trc_bt2020_10;
+    case mlt_colorspace_bt601:
+        return mlt_color_trc_smpte170m;
+    case mlt_colorspace_smpte2085:
+    case mlt_colorspace_fcc:
+    case mlt_colorspace_ycgco:
+    case mlt_colorspace_unspecified:
+    case mlt_colorspace_reserved:
+    case mlt_colorspace_invalid:
+        break;
+    }
+    return mlt_color_trc_bt709;
+}
+
 /** Fill an image with black.
   *
   * \bug This does not respect full range YUV if needed.

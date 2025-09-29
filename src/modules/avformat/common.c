@@ -637,6 +637,11 @@ mlt_color_trc mlt_color_trc_from_colorspace(mlt_colorspace colorspace)
     return mlt_color_trc_none;
 }
 
+int av_to_mlt_full_range(int color_range)
+{
+    return color_range == AVCOL_RANGE_JPEG;
+}
+
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mltframe);

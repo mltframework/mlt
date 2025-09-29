@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@
  */
 
 #include "mlt_consumer.h"
+#include "mlt_cache.h"
 #include "mlt_factory.h"
 #include "mlt_frame.h"
 #include "mlt_log.h"
@@ -683,11 +684,42 @@ mlt_frame mlt_consumer_get_frame(mlt_consumer self)
                            "consumer.color_trc",
                            mlt_properties_get(properties, "color_trc"));
         mlt_properties_set(frame_properties,
+                           "consumer.mlt_color_trc",
+                           mlt_properties_get(properties, "mlt_color_trc"));
+        mlt_properties_set(frame_properties,
                            "consumer.channel_layout",
                            mlt_properties_get(properties, "channel_layout"));
         mlt_properties_set(frame_properties,
                            "consumer.color_range",
                            mlt_properties_get(properties, "color_range"));
+
+        if (mlt_properties_get(properties, "mlt_color_trc")) {
+            // Add a normalize filter to convert the mlt_color_trc to color_trc
+            mlt_cache_item cache_item = mlt_service_cache_get(service, "cs_filter");
+            if (!cache_item) {
+                mlt_profile profile = mlt_service_profile(service);
+                mlt_filter cs_filter = mlt_factory_filter(profile, "colorspace", NULL);
+                mlt_properties cs_properties = MLT_FILTER_PROPERTIES(cs_filter);
+                if (cs_filter) {
+                    const char *color_trc_str = mlt_properties_get(properties, "color_trc");
+                    mlt_color_trc trc = mlt_image_color_trc_id(color_trc_str);
+                    if (trc == mlt_color_trc_none)
+                        trc = mlt_image_default_trc(profile->colorspace);
+                    mlt_properties_set_int(cs_properties, "force_trc", trc);
+                    mlt_service_cache_put(service,
+                                          "cs_filter",
+                                          cs_filter,
+                                          0,
+                                          (mlt_destructor) mlt_filter_close);
+                }
+                cache_item = mlt_service_cache_get(service, "cs_filter");
+            }
+            if (cache_item) {
+                mlt_filter cs_filter = mlt_cache_item_data(cache_item, NULL);
+                mlt_filter_process(cs_filter, frame);
+                mlt_cache_item_close(cache_item);
+            }
+        }
     }
 
     // Return the frame
@@ -1716,6 +1748,7 @@ void mlt_consumer_close(mlt_consumer self)
 
             pthread_mutex_destroy(&priv->position_mutex);
 
+            mlt_service_cache_purge(&self->parent);
             mlt_service_close(&self->parent);
             free(priv);
         }
