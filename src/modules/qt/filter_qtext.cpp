@@ -31,20 +31,19 @@
 #include <QtCore5Compat/QTextCodec>
 #endif
 
-#include <QMutexLocker>
 #include "typewriter.h"
 #include <string>
+#include <QMutexLocker>
 
 static QMutex g_mutex;
 
 struct TypewriterFilterData
 {
     TypeWriter typewriter;
-    bool enabled;
     std::string original_text;
-    int last_frame;
-    
-    TypewriterFilterData() : enabled(false), last_frame(-1) {}
+    int macro_type;
+
+    TypewriterFilterData() {}
 };
 
 static void close_typewriter_filter_data(void *data)
@@ -52,88 +51,102 @@ static void close_typewriter_filter_data(void *data)
     delete static_cast<TypewriterFilterData *>(data);
 }
 
-static std::string get_typewriter_text_for_filter(mlt_properties filter_properties, const char *original_text, mlt_position position)
+static std::string get_typewriter_text_for_filter(mlt_properties filter_properties,
+                                                  const char *original_text,
+                                                  mlt_position position)
 {
     if (!mlt_properties_get_int(filter_properties, "typewriter") || !original_text) {
         return original_text ? std::string(original_text) : std::string("");
     }
-    
-    TypewriterFilterData *tw_data = static_cast<TypewriterFilterData *>(
+
+    auto *tw_data = static_cast<TypewriterFilterData *>(
         mlt_properties_get_data(filter_properties, "_typewriter_filter_data", NULL));
-    
+
     if (!tw_data) {
         tw_data = new TypewriterFilterData();
-        mlt_properties_set_data(filter_properties, "_typewriter_filter_data",
-                               static_cast<void *>(tw_data), 0,
-                               close_typewriter_filter_data, NULL);
+        mlt_properties_set_data(filter_properties,
+                                "_typewriter_filter_data",
+                                static_cast<void *>(tw_data),
+                                0,
+                                close_typewriter_filter_data,
+                                NULL);
     }
-    
-    std::string text_str = std::string(original_text);
-    
+
+    auto text_str = std::string(original_text);
+    unsigned int step_length = mlt_properties_get_int(filter_properties, "typewriter.step_length");
+    unsigned int step_sigma = mlt_properties_get_int(filter_properties, "typewriter.step_sigma");
+    unsigned int random_seed = mlt_properties_get_int(filter_properties, "typewriter.random_seed");
+    int macro_type = mlt_properties_get_int(filter_properties, "typewriter.macro_type");
+
     // Check if text or typewriter settings changed
-    if (tw_data->original_text != text_str || tw_data->last_frame != position) {
-        if (tw_data->original_text != text_str) {
-            tw_data->original_text = text_str;
-            tw_data->typewriter.setPattern(text_str);
-            
-            int step_length = mlt_properties_get_int(filter_properties, "typewriter.step_length");
-            int step_sigma = mlt_properties_get_int(filter_properties, "typewriter.step_sigma");
-            int random_seed = mlt_properties_get_int(filter_properties, "typewriter.random_seed");
-            int macro_type = mlt_properties_get_int(filter_properties, "typewriter.macro_type");
-            
-            if (step_length <= 0) step_length = 25;
-            
-            tw_data->typewriter.setFrameStep(step_length);
-            tw_data->typewriter.setStepSigma(step_sigma);
-            tw_data->typewriter.setStepSeed(random_seed);
-            
-            // Apply macro type if specified
-            if (macro_type > 0) {
-                char *buff = new char[text_str.length() + 10];
-                char c = 0;
-                switch (macro_type) {
-                case 1: c = 'c'; break; // character
-                case 2: c = 'w'; break; // word
-                case 3: c = 'l'; break; // line
-                default: break;
-                }
-                if (c != 0) {
-                    sprintf(buff, ":%c{%s}", c, text_str.c_str());
-                    tw_data->typewriter.setPattern(std::string(buff));
-                }
-                delete[] buff;
+    if (tw_data->original_text != text_str || tw_data->typewriter.getFrameStep() != step_length
+        || tw_data->typewriter.getStepSigma() != step_sigma
+        || tw_data->typewriter.getStepSeed() != random_seed || tw_data->macro_type != macro_type) {
+        tw_data->original_text = text_str;
+        tw_data->typewriter.setPattern(text_str);
+
+        if (step_length == 0)
+            step_length = 25;
+
+        tw_data->typewriter.setFrameStep(step_length);
+        tw_data->typewriter.setStepSigma(step_sigma);
+        tw_data->typewriter.setStepSeed(random_seed);
+        tw_data->macro_type = macro_type;
+
+        // Apply macro type if specified
+        if (macro_type > 0) {
+            char *buff = new char[text_str.length() + 10];
+            char c = 0;
+            switch (macro_type) {
+            case 1:
+                c = 'c';
+                break; // character
+            case 2:
+                c = 'w';
+                break; // word
+            case 3:
+                c = 'l';
+                break; // line
+            default:
+                break;
             }
-            
-            tw_data->typewriter.parse();
+            if (c != 0) {
+                sprintf(buff, ":%c{%s}", c, text_str.c_str());
+                tw_data->typewriter.setPattern(std::string(buff));
+            }
+            delete[] buff;
         }
-        tw_data->last_frame = position;
+
+        tw_data->typewriter.parse();
     }
-    
+
     std::string rendered_text = tw_data->typewriter.render(position);
-    
+
     // Add blinking cursor if enabled
-    int cursor_enabled = mlt_properties_get_int(filter_properties, "typewriter.cursor");
+    auto cursor_enabled = mlt_properties_get_int(filter_properties, "typewriter.cursor");
     if (cursor_enabled) {
-        int cursor_blink_rate = mlt_properties_get_int(filter_properties, "typewriter.cursor_blink_rate");
-        if (cursor_blink_rate < 0) cursor_blink_rate = 25; // Default to 25 frames (1 second at 25fps)
-        
+        int cursor_blink_rate = mlt_properties_get_int(filter_properties,
+                                                       "typewriter.cursor_blink_rate");
+        if (cursor_blink_rate < 0)
+            cursor_blink_rate = 25; // Default to 25 frames (1 second at 25fps)
+
         // Check if we should show cursor (blink on/off)
         bool show_cursor = (cursor_blink_rate == 0) || (position / cursor_blink_rate) % 2 == 0;
-        
+
         // Only show cursor if text is still being typed or if we're at the end
         bool still_typing = !tw_data->typewriter.isEnd();
-        
+
         if (still_typing || cursor_enabled == 2) { // 2 = always show cursor
             char *cursor_char = mlt_properties_get(filter_properties, "typewriter.cursor_char");
             if (!show_cursor) {
-                cursor_char = (char*)" ";
+                cursor_char = (char *) " ";
             } else if (!cursor_char || strlen(cursor_char) == 0) {
-                cursor_char = (char*)"|"; // Default cursor character
+                cursor_char = (char *) "|"; // Default cursor character
             }
             rendered_text += cursor_char;
         }
     }
-    
+
     return rendered_text;
 }
 
@@ -585,7 +598,7 @@ mlt_filter filter_qtext_init(mlt_profile profile, mlt_service_type type, const c
     mlt_properties_set_double(filter_properties, "pixel_ratio", 1.0);
     mlt_properties_set_double(filter_properties, "opacity", 1.0);
     mlt_properties_set_int(filter_properties, "_filter_private", 1);
-    
+
     // Initialize typewriter properties
     mlt_properties_set_int(filter_properties, "typewriter", 0);
     mlt_properties_set_int(filter_properties, "typewriter.step_length", 25);
