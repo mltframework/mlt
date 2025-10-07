@@ -32,13 +32,116 @@
 #endif
 
 #include <QMutexLocker>
+#include "typewriter.h"
+#include <string>
 
 static QMutex g_mutex;
+
+struct TypewriterFilterData
+{
+    TypeWriter typewriter;
+    bool enabled;
+    std::string original_text;
+    int last_frame;
+    
+    TypewriterFilterData() : enabled(false), last_frame(-1) {}
+};
+
+static void close_typewriter_filter_data(void *data)
+{
+    delete static_cast<TypewriterFilterData *>(data);
+}
+
+static std::string get_typewriter_text_for_filter(mlt_properties filter_properties, const char *original_text, mlt_position position)
+{
+    if (!mlt_properties_get_int(filter_properties, "typewriter") || !original_text) {
+        return original_text ? std::string(original_text) : std::string("");
+    }
+    
+    TypewriterFilterData *tw_data = static_cast<TypewriterFilterData *>(
+        mlt_properties_get_data(filter_properties, "_typewriter_filter_data", NULL));
+    
+    if (!tw_data) {
+        tw_data = new TypewriterFilterData();
+        mlt_properties_set_data(filter_properties, "_typewriter_filter_data",
+                               static_cast<void *>(tw_data), 0,
+                               close_typewriter_filter_data, NULL);
+    }
+    
+    std::string text_str = std::string(original_text);
+    
+    // Check if text or typewriter settings changed
+    if (tw_data->original_text != text_str || tw_data->last_frame != position) {
+        if (tw_data->original_text != text_str) {
+            tw_data->original_text = text_str;
+            tw_data->typewriter.setPattern(text_str);
+            
+            int step_length = mlt_properties_get_int(filter_properties, "typewriter.step_length");
+            int step_sigma = mlt_properties_get_int(filter_properties, "typewriter.step_sigma");
+            int random_seed = mlt_properties_get_int(filter_properties, "typewriter.random_seed");
+            int macro_type = mlt_properties_get_int(filter_properties, "typewriter.macro_type");
+            
+            if (step_length <= 0) step_length = 25;
+            
+            tw_data->typewriter.setFrameStep(step_length);
+            tw_data->typewriter.setStepSigma(step_sigma);
+            tw_data->typewriter.setStepSeed(random_seed);
+            
+            // Apply macro type if specified
+            if (macro_type > 0) {
+                char *buff = new char[text_str.length() + 10];
+                char c = 0;
+                switch (macro_type) {
+                case 1: c = 'c'; break; // character
+                case 2: c = 'w'; break; // word
+                case 3: c = 'l'; break; // line
+                default: break;
+                }
+                if (c != 0) {
+                    sprintf(buff, ":%c{%s}", c, text_str.c_str());
+                    tw_data->typewriter.setPattern(std::string(buff));
+                }
+                delete[] buff;
+            }
+            
+            tw_data->typewriter.parse();
+        }
+        tw_data->last_frame = position;
+    }
+    
+    std::string rendered_text = tw_data->typewriter.render(position);
+    
+    // Add blinking cursor if enabled
+    int cursor_enabled = mlt_properties_get_int(filter_properties, "typewriter.cursor");
+    if (cursor_enabled) {
+        int cursor_blink_rate = mlt_properties_get_int(filter_properties, "typewriter.cursor_blink_rate");
+        if (cursor_blink_rate < 0) cursor_blink_rate = 25; // Default to 25 frames (1 second at 25fps)
+        
+        // Check if we should show cursor (blink on/off)
+        bool show_cursor = (cursor_blink_rate == 0) || (position / cursor_blink_rate) % 2 == 0;
+        
+        // Only show cursor if text is still being typed or if we're at the end
+        bool still_typing = !tw_data->typewriter.isEnd();
+        
+        if (still_typing || cursor_enabled == 2) { // 2 = always show cursor
+            char *cursor_char = mlt_properties_get(filter_properties, "typewriter.cursor_char");
+            if (!show_cursor) {
+                cursor_char = (char*)" ";
+            } else if (!cursor_char || strlen(cursor_char) == 0) {
+                cursor_char = (char*)"|"; // Default cursor character
+            }
+            rendered_text += cursor_char;
+        }
+    }
+    
+    return rendered_text;
+}
 
 static QRectF get_text_path(QPainterPath *qpath,
                             mlt_properties filter_properties,
                             const char *text,
-                            double scale)
+                            double scale,
+                            mlt_position position = 0)
 {
     int outline = mlt_properties_get_int(filter_properties, "outline") * scale;
     char halign = mlt_properties_get(filter_properties, "halign")[0];
@@ -50,8 +153,9 @@ static QRectF get_text_path(QPainterPath *qpath,
 
     qpath->setFillRule(Qt::WindingFill);
 
-    // Get the strings to display
-    QString s = QString::fromUtf8(text);
+    // Get the strings to display (with typewriter effect if enabled)
+    std::string processed_text = get_typewriter_text_for_filter(filter_properties, text, position);
+    QString s = QString::fromUtf8(processed_text.c_str());
     QStringList lines = s.split("\n");
 
     // Configure the font
@@ -393,7 +497,7 @@ static int filter_get_image(mlt_frame frame,
                 doc->drawContents(&painter, drawRect);
             }
         } else {
-            path_rect = get_text_path(&text_path, filter_properties, argument, scale);
+            path_rect = get_text_path(&text_path, filter_properties, argument, scale, position);
             transform_painter(&painter, rect, path_rect, filter_properties, profile);
             paint_background(&painter, path_rect, filter_properties, position, length);
             paint_text(&painter, &text_path, filter_properties, position, length);
@@ -481,6 +585,16 @@ mlt_filter filter_qtext_init(mlt_profile profile, mlt_service_type type, const c
     mlt_properties_set_double(filter_properties, "pixel_ratio", 1.0);
     mlt_properties_set_double(filter_properties, "opacity", 1.0);
     mlt_properties_set_int(filter_properties, "_filter_private", 1);
+    
+    // Initialize typewriter properties
+    mlt_properties_set_int(filter_properties, "typewriter", 0);
+    mlt_properties_set_int(filter_properties, "typewriter.step_length", 25);
+    mlt_properties_set_int(filter_properties, "typewriter.step_sigma", 0);
+    mlt_properties_set_int(filter_properties, "typewriter.random_seed", 0);
+    mlt_properties_set_int(filter_properties, "typewriter.macro_type", 1);
+    mlt_properties_set_int(filter_properties, "typewriter.cursor", 1);
+    mlt_properties_set_int(filter_properties, "typewriter.cursor_blink_rate", 25);
+    mlt_properties_set_string(filter_properties, "typewriter.cursor_char", "|");
 
     return filter;
 }

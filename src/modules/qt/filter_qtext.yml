@@ -18,7 +18,6 @@ parameters:
       The text to overlay.
     argument: yes
     required: yes
-    readonly: no
     default: text
     widget: text
 
@@ -36,7 +35,6 @@ parameters:
     description: >
       The typeface of the font.
     default: Sans
-    readonly: no
     mutable: yes
     widget: combo
 
@@ -46,7 +44,6 @@ parameters:
     description: >
       The size in pixels of the font. 
     default: 48
-    readonly: no
     mutable: yes
     widget: spinner
     unit: pixels
@@ -60,7 +57,6 @@ parameters:
       - normal
       - italic
     default: normal
-    readonly: no
     mutable: yes
     widget: combo
 
@@ -71,7 +67,6 @@ parameters:
     minimum: 100
     maximum: 1000
     default: 400
-    readonly: no
     mutable: yes
     widget: spinner
 
@@ -83,7 +78,6 @@ parameters:
       as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
       or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
     default: 0x000000ff
-    readonly: no
     mutable: yes
     widget: color
     animation: yes
@@ -96,7 +90,6 @@ parameters:
       as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
       or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
     default: 0x00000020
-    readonly: no
     mutable: yes
     widget: color
     animation: yes
@@ -108,7 +101,6 @@ parameters:
       A color value is a hexadecimal representation of RGB plus alpha channel 
       as 0xrrggbbaa. Colors can also be the words: white, black, red, green,
       or blue. You can also use a HTML-style color values #rrggbb or #aarrggbb.
-    readonly: no
     mutable: yes
     widget: color
     animation: yes
@@ -118,7 +110,6 @@ parameters:
     type: string
     description: >
       The width of the outline in pixels.
-    readonly: no
     default: 0
     minimum: 0
     maximum: 3
@@ -131,7 +122,6 @@ parameters:
     type: integer
     description: >
       The number of pixels to pad the background rectangle beyond edges of text.
-    readonly: no
     default: 0
     mutable: yes
     widget: spinner
@@ -234,9 +224,94 @@ parameters:
     title: Opacity
     type: float
     description: Opacity of all elements - text, outline, and background
-    readonly: no
     default: 1.0
     minimum: 0
     maximum: 1.0
     mutable: yes
     widget: slider
+    
+  - identifier: typewriter
+    title: Typewriter Effect
+    type: integer
+    description: >
+      Enable typewriter effect where text appears progressively over time.
+    default: 0
+    minimum: 0
+    maximum: 1
+    mutable: yes
+    widget: checkbox
+    
+  - identifier: typewriter.step_length
+    title: Typewriter Step Length
+    type: integer
+    description: >
+      Number of frames between each character, word, or line appearance.
+    default: 25
+    minimum: 1
+    mutable: yes
+    widget: spinner
+    
+  - identifier: typewriter.step_sigma
+    title: Typewriter Step Variation
+    type: integer
+    description: >
+      Random variation in timing (standard deviation in frames).
+    default: 0
+    minimum: 0
+    mutable: yes
+    widget: spinner
+    
+  - identifier: typewriter.random_seed
+    title: Typewriter Random Seed
+    type: integer
+    description: >
+      Seed value for random number generation in timing variations.
+    default: 0
+    minimum: 0
+    mutable: yes
+    widget: spinner
+    
+  - identifier: typewriter.macro_type
+    title: Typewriter Animation Mode
+    type: integer
+    description: >
+      Granularity of typewriter animation.
+    values:
+      - 1 # Character by character
+      - 2 # Word by word  
+      - 3 # Line by line
+    default: 1
+    mutable: yes
+    widget: combo
+    
+  - identifier: typewriter.cursor
+    title: Typewriter Cursor
+    type: integer
+    description: >
+      Show blinking cursor during typewriter animation.
+      0 = no cursor, 1 = cursor while typing, 2 = cursor always visible.
+    default: 1
+    minimum: 0
+    maximum: 2
+    mutable: yes
+    widget: combo
+    
+  - identifier: typewriter.cursor_blink_rate
+    title: Cursor Blink Rate
+    type: integer
+    description: >
+      Number of frames for cursor blink cycle (on + off).
+    default: 25
+    minimum: 0
+    mutable: yes
+    widget: spinner
+    unit: frames
+    
+  - identifier: typewriter.cursor_char
+    title: Cursor Character
+    type: string
+    description: >
+      Character to use for the blinking cursor.
+    default: "|"
+    mutable: yes
+    widget: text

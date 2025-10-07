@@ -1,0 +1,20 @@
+melt \
+    noise: out=1000 \
+    -filter qtext:"Welcome to the MLT
+Typewriter Text Effect" \
+    typewriter=1 \
+    typewriter.cursor=2 \
+    typewriter.cursor_blink_rate=30 \
+    typewriter.cursor_char='█' \
+    typewriter.step_length=15 \
+    typewriter.step_sigma=2 \
+    typewriter.macro_type=1 \
+    geometry="10%/20%:80%x60%:100%" \
+    fgcolour=#ffffffff \
+    bgcolour=#00000000 \
+    family="Monospace" \
+    size=36 \
+    halign=center \
+    valign=middle \
+    pad=20 \
+$*
