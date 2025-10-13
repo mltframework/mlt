@@ -8,6 +8,26 @@ delogo:
   w: 1.0
   h: 1.0
 
+drawbox:
+  x: 1.0
+  y: 1.0
+  w: 1.0
+  h: 1.0
+  t: 1.0
+
+drawgrid:
+  x: 1.0
+  y: 1.0
+  w: 1.0
+  h: 1.0
+  t: 1.0
+
+fillborders:
+  left: 1.0
+  right: 1.0
+  top: 1.0
+  bottom: 1.0
+
 floodfill:
   x: 1.0
   y: 1.0
@@ -47,9 +67,3 @@ vignette:
 zoompan:
   x: 1.0
   y: 1.0
-
-fillborders:
-  left: 1.0
-  right: 1.0
-  top: 1.0
-  bottom: 1.0
