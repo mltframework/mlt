@@ -615,6 +615,11 @@ int mlt_to_av_color_range(int full_range)
     return full_range ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
 }
 
+int av_to_mlt_full_range(int color_range)
+{
+    return color_range == AVCOL_RANGE_JPEG;
+}
+
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mltframe);

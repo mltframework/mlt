@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2018-2024 Meltytech, LLC
+ * Copyright (C) 2018-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,6 +52,7 @@ int mlt_to_av_color_primaries(mlt_color_primaries primaries);
 mlt_color_primaries av_to_mlt_color_primaries(int primaries);
 mlt_color_primaries mlt_color_primaries_from_colorspace(mlt_colorspace colorspace, int height);
 int mlt_to_av_color_range(int full_range);
+int av_to_mlt_full_range(int color_range);
 void mlt_image_to_avframe(mlt_image image, mlt_frame mltframe, AVFrame *avframe);
 void avframe_to_mlt_image(AVFrame *avframe, mlt_image image);
 
