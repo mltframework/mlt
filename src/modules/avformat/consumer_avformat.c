@@ -156,47 +156,82 @@ static int setup_hwupload_filter(mlt_properties properties,
                                               buffersrc_args,
                                               NULL,
                                               vfilter_graph);
-
-    if (result >= 0) {
-        result = avfilter_graph_create_filter(&vfilter_out,
-                                              avfilter_get_by_name("buffersink"),
-                                              "mlt_buffersink",
-                                              NULL,
-                                              NULL,
-                                              vfilter_graph);
-
-        if (result >= 0) {
-            enum AVPixelFormat pix_fmts[] = {codec_context->pix_fmt, AV_PIX_FMT_NONE};
-            result = av_opt_set_int_list(vfilter_out,
-                                         "pix_fmts",
-                                         pix_fmts,
-                                         AV_PIX_FMT_NONE,
-                                         AV_OPT_SEARCH_CHILDREN);
-
-            result = avfilter_graph_create_filter(&vfilter_hwupload,
-                                                  avfilter_get_by_name("hwupload"),
-                                                  "mlt_hwupload",
-                                                  "",
-                                                  NULL,
-                                                  vfilter_graph);
-
-            if (result >= 0) {
-                vfilter_hwupload->hw_device_ctx = av_buffer_ref(codec_context->hw_device_ctx);
-                result = avfilter_link(vfilter_in, 0, vfilter_hwupload, 0);
-                if (result >= 0) {
-                    result = avfilter_link(vfilter_hwupload, 0, vfilter_out, 0);
-                    if (result >= 0) {
-                        result = avfilter_graph_config(vfilter_graph, NULL);
-                        if (result >= 0)
-                            codec_context->hw_frames_ctx = av_buffer_ref(
-                                av_buffersink_get_hw_frames_ctx(vfilter_out));
-                    }
-                }
-            }
-            mlt_properties_set_data(properties, "vfilter_in", vfilter_in, 0, NULL, NULL);
-            mlt_properties_set_data(properties, "vfilter_out", vfilter_out, 0, NULL, NULL);
-        }
+    if (result < 0) {
+        mlt_log_error(MLT_CONSUMER(properties),
+                      "avfilter_graph_create_filter(buffer) failed with %d\n",
+                      result);
+        return result;
     }
+
+    vfilter_out = avfilter_graph_alloc_filter(vfilter_graph,
+                                              avfilter_get_by_name("buffersink"),
+                                              "mlt_buffersink");
+    if (!vfilter_out) {
+        mlt_log_error(MLT_CONSUMER(properties), "avfilter_graph_alloc_filter(buffersink) failed\n");
+        return result;
+    }
+
+    enum AVPixelFormat pix_fmts[] = {codec_context->pix_fmt, AV_PIX_FMT_NONE};
+    result = av_opt_set_array(vfilter_out,
+                              "pixel_formats",
+                              AV_OPT_SEARCH_CHILDREN,
+                              0,
+                              1,
+                              AV_OPT_TYPE_PIXEL_FMT,
+                              pix_fmts);
+    if (result < 0) {
+        mlt_log_error(MLT_CONSUMER(properties), "av_opt_set_array() failed with %d\n", result);
+        return result;
+    }
+
+    result = avfilter_init_dict(vfilter_out, NULL);
+    if (result < 0) {
+        mlt_log_error(MLT_CONSUMER(properties), "avfilter_init_dict() failed with %d\n", result);
+        return result;
+    }
+
+    vfilter_hwupload = avfilter_graph_alloc_filter(vfilter_graph,
+                                                   avfilter_get_by_name("hwupload"),
+                                                   "mlt_hwupload");
+    if (!vfilter_hwupload) {
+        mlt_log_error(MLT_CONSUMER(properties), "avfilter_graph_alloc_filter(hwupload) failed\n");
+        return result;
+    }
+
+    vfilter_hwupload->hw_device_ctx = av_buffer_ref(codec_context->hw_device_ctx);
+    result = avfilter_init_dict(vfilter_hwupload, NULL);
+    if (result < 0) {
+        mlt_log_error(MLT_CONSUMER(properties),
+                      "avfilter_graph_create_filter(hwupload) failed with %d\n",
+                      result);
+        return result;
+    }
+
+    result = avfilter_link(vfilter_in, 0, vfilter_hwupload, 0);
+    if (result < 0) {
+        mlt_log_error(MLT_CONSUMER(properties),
+                      "avfilter_link(vfilter_in, vfilter_hwupload) failed with %d\n",
+                      result);
+        return result;
+    }
+
+    result = avfilter_link(vfilter_hwupload, 0, vfilter_out, 0);
+    if (result < 0) {
+        mlt_log_error(MLT_CONSUMER(properties),
+                      "avfilter_link(vfilter_hwupload, vfilter_out) failed with %d\n",
+                      result);
+        return result;
+    }
+
+    result = avfilter_graph_config(vfilter_graph, NULL);
+    if (result < 0) {
+        mlt_log_error(MLT_CONSUMER(properties), "avfilter_graph_config() failed with %d\n", result);
+        return result;
+    }
+
+    codec_context->hw_frames_ctx = av_buffer_ref(av_buffersink_get_hw_frames_ctx(vfilter_out));
+    mlt_properties_set_data(properties, "vfilter_in", vfilter_in, 0, NULL, NULL);
+    mlt_properties_set_data(properties, "vfilter_out", vfilter_out, 0, NULL, NULL);
 
     return result;
 }
