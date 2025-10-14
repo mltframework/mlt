@@ -485,11 +485,21 @@ static void init_image_filtergraph(mlt_filter filter,
         mlt_log_error(filter, "Cannot create image buffer sink\n");
         goto fail;
     }
+#if LIBAVFILTER_VERSION_INT >= ((10 << 16) + (6 << 8) + 100)
+    ret = av_opt_set_array(pdata->avbuffsink_ctx,
+                           "pixel_formats",
+                           AV_OPT_SEARCH_CHILDREN,
+                           0,
+                           1,
+                           AV_OPT_TYPE_PIXEL_FMT,
+                           pixel_fmts);
+#else
     ret = av_opt_set_int_list(pdata->avbuffsink_ctx,
                               "pix_fmts",
                               pixel_fmts,
                               -1,
                               AV_OPT_SEARCH_CHILDREN);
+#endif
     if (ret < 0) {
         mlt_log_error(filter, "Cannot set sink pixel formats\n");
         goto fail;

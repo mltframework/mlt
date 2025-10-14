@@ -172,6 +172,7 @@ static int setup_hwupload_filter(mlt_properties properties,
     }
 
     enum AVPixelFormat pix_fmts[] = {codec_context->pix_fmt, AV_PIX_FMT_NONE};
+#if LIBAVFILTER_VERSION_INT >= ((10 << 16) + (6 << 8) + 100)
     result = av_opt_set_array(vfilter_out,
                               "pixel_formats",
                               AV_OPT_SEARCH_CHILDREN,
@@ -179,6 +180,13 @@ static int setup_hwupload_filter(mlt_properties properties,
                               1,
                               AV_OPT_TYPE_PIXEL_FMT,
                               pix_fmts);
+#else
+    result = av_opt_set_int_list(vfilter_out,
+                                 "pix_fmts",
+                                 pix_fmts,
+                                 AV_PIX_FMT_NONE,
+                                 AV_OPT_SEARCH_CHILDREN);
+#endif
     if (result < 0) {
         mlt_log_error(MLT_CONSUMER(properties), "av_opt_set_array() failed with %d\n", result);
         return result;

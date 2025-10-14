@@ -311,11 +311,21 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
         mlt_log_error(self, "Cannot create image buffer sink\n");
         goto fail;
     }
+#if LIBAVFILTER_VERSION_INT >= ((10 << 16) + (6 << 8) + 100)
+    ret = av_opt_set_array(fdata->avbuffsink_ctx,
+                           "pixel_formats",
+                           AV_OPT_SEARCH_CHILDREN,
+                           0,
+                           1,
+                           AV_OPT_TYPE_PIXEL_FMT,
+                           out_pixel_fmts);
+#else
     ret = av_opt_set_int_list(fdata->avbuffsink_ctx,
                               "pix_fmts",
                               out_pixel_fmts,
                               -1,
                               AV_OPT_SEARCH_CHILDREN);
+#endif
     if (ret < 0) {
         mlt_log_error(self, "Cannot set sink pixel formats %d\n", out_pixel_fmts[0]);
         goto fail;
