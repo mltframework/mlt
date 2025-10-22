@@ -12,7 +12,7 @@ option(GPL3 "Enable GPLv3 components" ON)
 option(BUILD_TESTING "Enable tests" OFF)
 option(BUILD_DOCS "Enable Doxygen documentation" OFF)
 option(CLANG_FORMAT "Enable Clang Format" ON)
-option(BUILD_TESTS_WITH_QT6 "Build test against Qt 6" OFF)
+option(BUILD_TESTS_WITH_QT6 "Build test against Qt 6" ON)
 
 option(MOD_AVFORMAT "Enable avformat module" ON)
 option(MOD_DECKLINK "Enable DeckLink module" ON)
