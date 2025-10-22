@@ -518,9 +518,15 @@ mlt_producer producer_qtext_init(mlt_profile profile,
                 while (fgets(line, 80, f)) {
                     size += strlen(line) + 1;
                     if (tmp) {
-                        tmp = (char *) realloc(tmp, size);
-                        if (tmp)
+                        // Use a temporary pointer to avoid losing the original buffer on realloc failure
+                        char *newtmp = (char *) realloc(tmp, size);
+                        if (newtmp) {
+                            tmp = newtmp;
                             strcat(tmp, line);
+                        } else {
+                            // Allocation failed: keep existing content and stop appending
+                            break;
+                        }
                     } else {
                         tmp = strdup(line);
                     }
