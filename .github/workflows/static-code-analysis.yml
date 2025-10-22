@@ -7,10 +7,19 @@ jobs:
     name: Cppcheck
     runs-on: ubuntu-latest
     env:
-      extra-args: -i src/modules/glaxnimate/glaxnimate/ -i src/modules/plus/ebur128/ --include=src/framework/mlt_log.h --include=src/framework/mlt_types.h --library=cppcheck.cfg
+      extra-args: >-
+        -i src/modules/decklink/darwin
+        -i src/modules/decklink/linux
+        -i src/modules/decklink/win
+        -i src/modules/glaxnimate/glaxnimate/
+        -i src/modules/plus/ebur128/
+        --include=src/framework/mlt_log.h
+        --include=src/framework/mlt_types.h
+        --library=cppcheck.cfg
+        --suppress=ctuOneDefinitionRuleViolation
     steps:
       - uses: actions/checkout@v4
       - name: Install Cppcheck
         run: sudo apt-get -qq -y install cppcheck
       - name: Run Cppcheck
-        run: cppcheck src/ --inline-suppr --library=qt --error-exitcode=1 --template="::{severity} file={file},line={line},col={column}::{message}" ${{ env.extra-args }}
+        run: cppcheck src/ -j $(nproc) --force --inline-suppr --library=qt --error-exitcode=1 --template="::{severity} file={file},line={line},col={column}::{message}" ${{ env.extra-args }}

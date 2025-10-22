@@ -17,9 +17,14 @@ codespell:
 	-S ChangeLog,cJSON.c,cJSON.h,RtAudio.cpp,RtAudio.h,*.rej,mlt_wrap.*
 
 cppcheck:
-	cppcheck src/ --inline-suppr --library=qt --error-exitcode=1 \
+	cppcheck src/ --force --quiet --inline-suppr --library=qt --error-exitcode=1 \
+		-j $(shell nproc) \
+		-i src/modules/decklink/darwin \
+		-i src/modules/decklink/linux \
+		-i src/modules/decklink/win \
 		-i src/modules/glaxnimate/glaxnimate/ \
 		-i src/modules/plus/ebur128/ \
 		--include=src/framework/mlt_log.h \
 		--include=src/framework/mlt_types.h \
-		--library=cppcheck.cfg
+		--library=cppcheck.cfg \
+		--suppress=ctuOneDefinitionRuleViolation
