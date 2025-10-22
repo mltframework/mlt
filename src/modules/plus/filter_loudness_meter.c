@@ -152,7 +152,9 @@ static void analyze_audio(mlt_filter filter, void *buffer, int samples)
                 prev_peak = peak;
             }
         }
+        // cppcheck-suppress invalidFunctionArg
         mlt_properties_set_double(properties, "max_peak", 20 * log10(max_peak));
+        // cppcheck-suppress invalidFunctionArg
         mlt_properties_set_double(properties, "peak", 20 * log10(prev_peak));
     }
 
@@ -171,7 +173,9 @@ static void analyze_audio(mlt_filter filter, void *buffer, int samples)
                 prev_peak = peak;
             }
         }
+        // cppcheck-suppress invalidFunctionArg
         mlt_properties_set_double(properties, "max_true_peak", 20 * log10(max_peak));
+        // cppcheck-suppress invalidFunctionArg
         mlt_properties_set_double(properties, "true_peak", 20 * log10(prev_peak));
     }
 

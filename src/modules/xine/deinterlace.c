@@ -821,6 +821,7 @@ void deinterlace_yuv( uint8_t *pdst, uint8_t *psrc[],
         deinterlace_linearblend_yuv(pdst,psrc,width,height);
       break;
     default:
+      // cppcheck-suppress preprocessorErrorDirective
       lprintf("unknown method %d.\n",method);
       break;
   }

@@ -742,7 +742,14 @@ char *mlt_animation_serialize_cut_tf(mlt_animation self,
             while (used + item_len + 2 > size) // +2 for ';' and NULL
             {
                 size += 1000;
-                ret = realloc(ret, size);
+                char *tmp = realloc(ret, size);
+                if (!tmp) {
+                    free(ret);
+                    mlt_property_close(item.property);
+                    mlt_property_close(time_property);
+                    return NULL;
+                }
+                ret = tmp;
             }
 
             // Append item delimiter (;) if needed.

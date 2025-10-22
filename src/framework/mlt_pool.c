@@ -182,8 +182,10 @@ static void *pool_fetch(mlt_pool self)
                 release->references = 1;
 
                 // Determine the ptr
+                // The memory is not leaked - it's returned via ptr
                 ptr = (char *) release + sizeof(struct mlt_release_s);
             }
+            // cppcheck-suppress memleak
         }
 
         // Unlock the pool

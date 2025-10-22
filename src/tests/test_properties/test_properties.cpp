@@ -1456,7 +1456,7 @@ private Q_SLOTS:
         delete pChild1;
 
         Properties *pChild2 = parent.get_props_at(1);
-        QCOMPARE(pChild1->get("c2D"), "D");
+        QCOMPARE(pChild2->get("c2D"), "D");
         delete pChild2;
     }
 

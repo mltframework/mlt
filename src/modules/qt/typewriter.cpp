@@ -509,9 +509,9 @@ int TypeWriter::parseMacro(const std::string &line, uint &i, uint &frame)
                 if (pos2 != substr.npos)
                     s = substr.substr(pos, pos2 - pos);
                 else
-                    s = substr.substr(pos, -1);
+                    s = substr.substr(pos);
             } else {
-                s = substr.substr(pos, -1);
+                s = substr.substr(pos);
             }
 
             insertString(s, frame);
@@ -578,9 +578,9 @@ int TypeWriter::parseMacro(const std::string &line, uint &i, uint &frame)
                 if (pos2 != substr.npos)
                     s = substr.substr(pos, pos2 - pos);
                 else
-                    s = substr.substr(pos, -1);
+                    s = substr.substr(pos);
             } else {
-                s = substr.substr(pos, -1);
+                s = substr.substr(pos);
             }
 
             insertString(s, frame);

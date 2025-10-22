@@ -298,9 +298,14 @@ mlt_producer producer_pango_init(const char *filename)
                 while (fgets(line, 80, f)) {
                     size += strlen(line) + 1;
                     if (markup) {
-                        markup = realloc(markup, size);
-                        if (markup)
+                        char *new_markup = realloc(markup, size);
+                        if (new_markup) {
+                            markup = new_markup;
                             strcat(markup, line);
+                        } else {
+                            // Allocation failed: keep existing content and stop appending
+                            break;
+                        }
                     } else {
                         markup = strdup(line);
                     }
