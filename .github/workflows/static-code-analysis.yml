@@ -7,10 +7,10 @@ jobs:
     name: Cppcheck
     runs-on: ubuntu-latest
     env:
-      extra-args: -i src/modules/glaxnimate/glaxnimate/ -DMLT_POSITION_FMT -DVERSION
+      extra-args: -i src/modules/glaxnimate/glaxnimate/ -DVERSION=cppcheck --include=src/framework/mlt_log.h --include=src/framework/mlt_types.h
     steps:
       - uses: actions/checkout@v4
       - name: Install Cppcheck
         run: sudo apt-get -qq -y install cppcheck
       - name: Run Cppcheck
-        run: cppcheck src/ --library=qt --error-exitcode=1 --template="::{severity} file={file},line={line},col={column}::{message}" ${{ env.extra-args }}
+        run: cppcheck src/ --inline-suppr --library=qt --error-exitcode=1 --template="::{severity} file={file},line={line},col={column}::{message}" ${{ env.extra-args }}
