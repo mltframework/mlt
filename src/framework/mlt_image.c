@@ -402,7 +402,7 @@ mlt_colorspace mlt_image_colorspace_id(const char *name)
     if (!value && strcmp(name, "0"))
         value = -1; // strtol returned an error;
 
-    for (int i = 0; i < sizeof(colorspaces); i++) {
+    for (int i = 0; i < sizeof(colorspaces) / sizeof(colorspaces[0]); i++) {
         const char *s = mlt_image_colorspace_name(colorspaces[i]);
         if (value == colorspaces[i] || !strcmp(s, name))
             return colorspaces[i];
@@ -463,7 +463,7 @@ mlt_color_primaries mlt_image_color_pri_id(const char *name)
     if (!value && strcmp(name, "0"))
         value = -1; // strtol returned an error;
 
-    for (int i = 0; name && i < sizeof(primaries); i++) {
+    for (int i = 0; name && i < sizeof(primaries) / sizeof(primaries[0]); i++) {
         const char *s = mlt_image_color_pri_name(primaries[i]);
         if (value == primaries[i] || !strcmp(s, name))
             return primaries[i];
