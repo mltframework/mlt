@@ -3,7 +3,7 @@
  * \brief Property class definition
  * \see mlt_property_s
  *
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -513,12 +513,41 @@ int mlt_property_get_int(mlt_property self, double fps, mlt_locale_t locale)
 static double mlt_property_atof(mlt_property self, double fps, mlt_locale_t locale)
 {
     const char *value = self->prop_string;
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L) \
+    && !defined(__OpenBSD__)
+    char *orig_localename = NULL;
+#endif
 
     if (fps > 0 && strchr(value, ':')) {
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L) \
+    && !defined(__OpenBSD__)
+        if (locale) {
+            // Protect damaging the global locale from a temporary locale on another thread.
+            pthread_mutex_lock(&self->mutex);
+
+            // Get the current locale
+            orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
+
+            // Set the new locale
+            setlocale(LC_NUMERIC, locale);
+        }
+#endif
+        double result;
         if (strchr(value, '.') || strchr(value, ','))
-            return time_clock_to_frames(self, value, fps, locale);
+            result = time_clock_to_frames(self, value, fps, locale);
         else
-            return time_code_to_frames(self, value, fps);
+            result = time_code_to_frames(self, value, fps);
+
+#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L) \
+    && !defined(__OpenBSD__)
+        if (locale) {
+            // Restore the current locale
+            setlocale(LC_NUMERIC, orig_localename);
+            free(orig_localename);
+            pthread_mutex_unlock(&self->mutex);
+        }
+#endif
+        return result;
     } else {
         char *end = NULL;
         double result;
@@ -528,7 +557,6 @@ static double mlt_property_atof(mlt_property self, double fps, mlt_locale_t loca
             result = strtod_l(value, &end, locale);
         else
 #elif !defined(_WIN32)
-        char *orig_localename = NULL;
         if (locale) {
             // Protect damaging the global locale from a temporary locale on another thread.
             pthread_mutex_lock(&self->mutex);

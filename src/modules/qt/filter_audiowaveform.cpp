@@ -443,6 +443,7 @@ mlt_filter filter_audiowaveform_init(mlt_profile profile,
     if (filter && pdata) {
         if (!createQApplicationIfNeeded(MLT_FILTER_SERVICE(filter))) {
             mlt_filter_close(filter);
+            free(pdata);
             return NULL;
         }
 
