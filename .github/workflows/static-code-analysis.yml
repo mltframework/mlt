@@ -7,7 +7,7 @@ jobs:
     name: Cppcheck
     runs-on: ubuntu-latest
     env:
-      extra-args: -i src/modules/glaxnimate/glaxnimate/ -DVERSION=cppcheck --include=src/framework/mlt_log.h --include=src/framework/mlt_types.h
+      extra-args: -i src/modules/glaxnimate/glaxnimate/ --include=src/framework/mlt_log.h --include=src/framework/mlt_types.h --library=cppcheck.cfg
     steps:
       - uses: actions/checkout@v4
       - name: Install Cppcheck
