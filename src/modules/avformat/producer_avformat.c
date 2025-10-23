@@ -367,7 +367,7 @@ static double get_rotation(mlt_properties properties, AVStream *st)
     uint8_t *displaymatrix = av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
 #endif
     double theta = mlt_properties_get_double(properties, "rotate");
-    int has_mlt_rotate = !!mlt_properties_get(properties, "rotate");
+    int has_mlt_rotate = mlt_properties_exists(properties, "rotate");
 
     if (has_rotate_metadata && !has_mlt_rotate) {
         char *tail;
@@ -1024,6 +1024,9 @@ static int setup_filters(producer_avformat self)
         }
     }
 
+    if (self->hwaccel.device_type != AV_HWDEVICE_TYPE_NONE)
+        return -1;
+
     if (!self->vfilter_graph && (self->autorotate || filtergraph) && self->video_index != -1) {
         AVFilterContext *last_filter = NULL;
         if (self->autorotate) {
@@ -1174,7 +1177,18 @@ static int producer_open(
             AVDictionaryEntry *hwaccel_device = av_dict_get(params, "hwaccel_device", NULL, 0);
             const char *hwaccel_env = getenv("MLT_AVFORMAT_HWACCEL");
 
-            if ((hwaccel && hwaccel->value) || hwaccel_env) {
+            // Disable hardware decoding if using filters for rotation or "filtergraph"
+            if (!self->audio_format && !test_open) {
+                self->autorotate = !mlt_properties_get(properties, "autorotate")
+                                   || mlt_properties_get_int(properties, "autorotate");
+            }
+            int will_filter = self->autorotate && self->video_index != -1
+                              && fabs(get_rotation(properties,
+                                                   self->video_format->streams[self->video_index]))
+                                     > 0.0;
+            will_filter |= mlt_properties_exists(properties, "filtergraph");
+
+            if (((hwaccel && hwaccel->value) || hwaccel_env) && !test_open && !will_filter) {
                 // Leaving `device=NULL` will cause query string parameter `hwaccel_device` to be ignored
                 char *device = getenv("MLT_AVFORMAT_HWACCEL_DEVICE");
                 if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "vaapi"))
@@ -1248,8 +1262,6 @@ static int producer_open(
                     get_audio_streams_info(self);
 
                 if (!test_open) {
-                    self->autorotate = !mlt_properties_get(properties, "autorotate")
-                                       || mlt_properties_get_int(properties, "autorotate");
                     error = setup_filters(self);
                 }
             }
