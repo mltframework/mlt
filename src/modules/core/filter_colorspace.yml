@@ -1,0 +1,47 @@
+schema_version: 7.0
+type: filter
+identifier: colorspace
+title: Colorspace
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Hidden
+description: >
+  Convert the image colorspace to whatever was requested by the consumer.
+  This filter is designed for use as a normalizer for the loader producer.
+  If the "force_trc" property is set on this filter, the filter will force
+  the output trc to be "force_trc";
+  Otherwise, if a property "consumer.mlt_color_trc" exists on the frame, then colorspace 
+  normalizes the image to the trc requested by the consumer.
+parameters:
+  - identifier: method
+    argument: yes
+    title: Method
+    type: string
+    values:
+      - auto # Choose best available
+      - avfilter.zscale
+      - avfilter.colorspace
+    description: |
+      The underlying conversion method to use. The method is based on the
+      encapsulated filter that is used. 'auto' will choose the best available
+      in this order:
+        * avfilter.zscale
+        * avfilter.colorspace
+    required: yes
+    readonly: no
+    mutable: no
+    default: auto
+  - identifier: force_trc
+    title: Force TRC
+    type: string
+    description: |
+      Force the TRC to be as specified by this parameter instead of consumer.mlt_color_trc
+      This property can be used to "undo" a TRC set by this filter when used as a normalizer
+    required: no
+    readonly: no
+    mutable: no
+    default: unset

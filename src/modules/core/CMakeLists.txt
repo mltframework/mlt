@@ -12,6 +12,7 @@ add_library(mltcore MODULE
   filter_brightness.c
   filter_channelcopy.c
   filter_choppy.c
+  filter_colorspace.c
   filter_crop.c
   filter_fieldorder.c
   filter_gamma.c
