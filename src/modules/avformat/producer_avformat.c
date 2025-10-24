@@ -1024,9 +1024,6 @@ static int setup_filters(producer_avformat self)
         }
     }
 
-    if (self->hwaccel.device_type != AV_HWDEVICE_TYPE_NONE)
-        return -1;
-
     if (!self->vfilter_graph && (self->autorotate || filtergraph) && self->video_index != -1) {
         AVFilterContext *last_filter = NULL;
         if (self->autorotate) {
@@ -1261,7 +1258,7 @@ static int producer_open(
                 if (self->audio_format && !self->audio_streams)
                     get_audio_streams_info(self);
 
-                if (!test_open) {
+                if (!test_open && (self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE)) {
                     error = setup_filters(self);
                 }
             }
