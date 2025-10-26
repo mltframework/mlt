@@ -370,30 +370,9 @@ static void color_trc_from_colorspace(mlt_properties properties)
 {
     // Default color transfer characteristic from MLT colorspace.
     const char *colorspace_str = mlt_properties_get(properties, "colorspace");
-    mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
-    switch (colorspace) {
-    case mlt_colorspace_bt709:
-        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_bt709);
-        break;
-    case mlt_colorspace_bt470bg:
-        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_gamma28);
-        break;
-    case mlt_colorspace_smpte240m:
-        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_smpte240m);
-        break;
-    case mlt_colorspace_rgb: // sRGB
-        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_iec61966_2_1);
-        break;
-    case mlt_colorspace_bt601:
-    case mlt_colorspace_smpte170m:
-        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_smpte170m);
-        break;
-    case mlt_colorspace_bt2020_ncl:
-        mlt_properties_set_int(properties, "color_trc", mlt_color_trc_bt2020_10);
-        break;
-    default:
-        break;
-    }
+    const mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+    const mlt_color_trc trc = mlt_color_trc_from_colorspace(colorspace);
+    mlt_properties_set_int(properties, "color_trc", trc);
 }
 
 static void color_primaries_from_colorspace(mlt_properties properties)
@@ -956,6 +935,7 @@ static AVStream *add_video_stream(mlt_consumer consumer,
         // Temporarily convert the mlt colorspace to av colorspace before applying the properties
         const char *colorspace_str = mlt_properties_get(properties, "colorspace");
         mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+        colorspace = mlt_colorspace_rgb;
         mlt_properties_clear(properties, "colorspace");
         int av_colorspace = mlt_to_av_colorspace(colorspace,
                                                  mlt_properties_get_int(properties, "height"));
