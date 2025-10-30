@@ -935,7 +935,6 @@ static AVStream *add_video_stream(mlt_consumer consumer,
         // Temporarily convert the mlt colorspace to av colorspace before applying the properties
         const char *colorspace_str = mlt_properties_get(properties, "colorspace");
         mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
-        colorspace = mlt_colorspace_rgb;
         mlt_properties_clear(properties, "colorspace");
         int av_colorspace = mlt_to_av_colorspace(colorspace,
                                                  mlt_properties_get_int(properties, "height"));
