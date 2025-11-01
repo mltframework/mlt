@@ -509,6 +509,44 @@ mlt_color_trc mlt_image_default_trc(mlt_colorspace colorspace)
     return mlt_color_trc_bt709;
 }
 
+/** Get the default color primaries for a given colorspace.
+ *
+ * \public \memberof mlt_image_s
+ * \param colorspace the colorspace
+ * \param height the image height. Pass 0 if you do not know.
+ * \return a color primaries
+ */
+
+mlt_color_primaries mlt_image_default_primaries(mlt_colorspace colorspace, int height)
+{
+    switch (colorspace) {
+    case mlt_colorspace_rgb:
+    case mlt_colorspace_bt709:
+        return mlt_color_pri_bt709;
+    case mlt_colorspace_bt470bg:
+        return mlt_color_pri_bt470bg;
+    case mlt_colorspace_smpte170m:
+        return mlt_color_pri_smpte170m;
+    case mlt_colorspace_smpte240m:
+        return mlt_color_pri_smpte170m;
+    case mlt_colorspace_bt2020_ncl:
+        return mlt_color_pri_bt2020;
+    case mlt_colorspace_bt2020_cl:
+        return mlt_color_pri_bt2020;
+    case mlt_colorspace_bt601:
+        return height >= 576 ? mlt_color_pri_bt470bg : mlt_color_pri_smpte170m;
+    case mlt_colorspace_fcc:
+        return mlt_color_pri_bt470m;
+    case mlt_colorspace_smpte2085:
+    case mlt_colorspace_ycgco:
+    case mlt_colorspace_unspecified:
+    case mlt_colorspace_reserved:
+    case mlt_colorspace_invalid:
+        break;
+    }
+    return mlt_color_pri_bt709;
+}
+
 /** Fill an image with black.
   *
   * \bug This does not respect full range YUV if needed.
