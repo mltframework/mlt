@@ -251,14 +251,19 @@ static QRectF get_text_path(QPainterPath *qpath,
 
 static QColor get_qcolor(mlt_properties filter_properties,
                          const char *name,
+                         mlt_properties frame_properties,
                          int position,
                          int length)
 {
     mlt_color color = mlt_properties_anim_get_color(filter_properties, name, position, length);
+    color = mlt_color_convert_trc(color, mlt_properties_get(frame_properties, "color_trc"));
     return QColor(color.r, color.g, color.b, color.a);
 }
 
-static QPen get_qpen(mlt_properties filter_properties, int position, int length)
+static QPen get_qpen(mlt_properties filter_properties,
+                     mlt_properties frame_properties,
+                     int position,
+                     int length)
 {
     QColor color;
     int outline = mlt_properties_get_int(filter_properties, "outline");
@@ -266,18 +271,21 @@ static QPen get_qpen(mlt_properties filter_properties, int position, int length)
 
     pen.setWidth(outline);
     if (outline) {
-        color = get_qcolor(filter_properties, "olcolour", position, length);
+        color = get_qcolor(filter_properties, "olcolour", frame_properties, position, length);
     } else {
-        color = get_qcolor(filter_properties, "bgcolour", position, length);
+        color = get_qcolor(filter_properties, "bgcolour", frame_properties, position, length);
     }
     pen.setColor(color);
 
     return pen;
 }
 
-static QBrush get_qbrush(mlt_properties filter_properties, int position, int length)
+static QBrush get_qbrush(mlt_properties filter_properties,
+                         mlt_properties frame_properties,
+                         int position,
+                         int length)
 {
-    QColor color = get_qcolor(filter_properties, "fgcolour", position, length);
+    QColor color = get_qcolor(filter_properties, "fgcolour", frame_properties, position, length);
     return QBrush(color);
 }
 
@@ -339,22 +347,27 @@ static void transform_painter(QPainter *painter,
     painter->setTransform(transform);
 }
 
-static void paint_background(
-    QPainter *painter, QRectF path_rect, mlt_properties filter_properties, int position, int length)
+static void paint_background(QPainter *painter,
+                             QRectF path_rect,
+                             mlt_properties filter_properties,
+                             mlt_properties frame_properties,
+                             int position,
+                             int length)
 {
-    QColor bg_color = get_qcolor(filter_properties, "bgcolour", position, length);
+    QColor bg_color = get_qcolor(filter_properties, "bgcolour", frame_properties, position, length);
     painter->fillRect(path_rect, bg_color);
 }
 
 static void paint_text(QPainter *painter,
                        QPainterPath *qpath,
                        mlt_properties filter_properties,
+                       mlt_properties frame_properties,
                        int position,
                        int length)
 {
-    QPen pen = get_qpen(filter_properties, position, length);
+    QPen pen = get_qpen(filter_properties, frame_properties, position, length);
     painter->setPen(pen);
-    QBrush brush = get_qbrush(filter_properties, position, length);
+    QBrush brush = get_qbrush(filter_properties, frame_properties, position, length);
     painter->setBrush(brush);
     painter->drawPath(*qpath);
 }
@@ -433,6 +446,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
     char *argument = (char *) mlt_frame_pop_service(frame);
     mlt_properties filter_properties = get_filter_properties(filter, frame);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
     mlt_position position = mlt_filter_get_position(filter, frame);
     mlt_position length = mlt_filter_get_length2(filter, frame);
@@ -456,7 +470,7 @@ static int filter_get_image(mlt_frame frame,
 
     // Get the current image
     *image_format = choose_image_format(*image_format);
-    mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "resize_alpha", 255);
+    mlt_properties_set_int(frame_properties, "resize_alpha", 255);
     mlt_service_lock(MLT_FILTER_SERVICE(filter));
     error = mlt_frame_get_image(frame, image, image_format, width, height, writable);
 
@@ -506,14 +520,24 @@ static int filter_get_image(mlt_frame frame,
                 if (overflowY) {
                     path_rect.setHeight(qMax(path_rect.height(), doc->size().height()));
                 }
-                paint_background(&painter, path_rect, filter_properties, position, length);
+                paint_background(&painter,
+                                 path_rect,
+                                 filter_properties,
+                                 frame_properties,
+                                 position,
+                                 length);
                 doc->drawContents(&painter, drawRect);
             }
         } else {
             path_rect = get_text_path(&text_path, filter_properties, argument, scale, position);
             transform_painter(&painter, rect, path_rect, filter_properties, profile);
-            paint_background(&painter, path_rect, filter_properties, position, length);
-            paint_text(&painter, &text_path, filter_properties, position, length);
+            paint_background(&painter,
+                             path_rect,
+                             filter_properties,
+                             frame_properties,
+                             position,
+                             length);
+            paint_text(&painter, &text_path, filter_properties, frame_properties, position, length);
         }
         painter.end();
 

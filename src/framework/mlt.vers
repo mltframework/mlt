@@ -678,4 +678,6 @@ MLT_7.34.0 {
     mlt_image_color_pri_name;
     mlt_image_color_pri_id;
     mlt_image_default_trc;
+    mlt_image_default_primaries;
+    mlt_color_convert_trc;
 } MLT_7.32.0;

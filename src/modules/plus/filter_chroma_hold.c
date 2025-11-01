@@ -1,6 +1,6 @@
 /*
  * filter_chroma.c -- Maps a chroma key to the alpha channel
- * Copyright (C) 2008-2022 Meltytech, LLC
+ * Copyright (C) 2008-2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -59,6 +59,8 @@ static int filter_get_image(mlt_frame frame,
                                                     length);
     mlt_color key_val
         = mlt_properties_anim_get_color(MLT_FILTER_PROPERTIES(this), "key", position, length);
+    key_val = mlt_color_convert_trc(key_val,
+                                    mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "color_trc"));
     uint8_t r = key_val.r;
     uint8_t g = key_val.g;
     uint8_t b = key_val.b;

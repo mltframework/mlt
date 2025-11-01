@@ -1,6 +1,6 @@
 /*
  * producer_qtext.c -- text generating producer
- * Copyright (C) 2013 Meltytech, LLC
+ * Copyright (C) 2013-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -291,8 +291,11 @@ static void generate_qimage(mlt_properties frame_properties)
     QPainterPath *qPath = static_cast<QPainterPath *>(
         mlt_properties_get_data(frame_properties, "_qpath", NULL));
     mlt_color bg_color = mlt_properties_get_color(frame_properties, "_bgcolour");
+    bg_color = mlt_color_convert_trc(bg_color, mlt_properties_get(frame_properties, "color_trc"));
     mlt_color fg_color = mlt_properties_get_color(frame_properties, "_fgcolour");
+    fg_color = mlt_color_convert_trc(fg_color, mlt_properties_get(frame_properties, "color_trc"));
     mlt_color ol_color = mlt_properties_get_color(frame_properties, "_olcolour");
+    ol_color = mlt_color_convert_trc(ol_color, mlt_properties_get(frame_properties, "color_trc"));
     int outline = mlt_properties_get_int(frame_properties, "_outline");
     qreal sx = 1.0;
     qreal sy = 1.0;

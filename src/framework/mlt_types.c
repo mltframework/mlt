@@ -2,7 +2,7 @@
  * \file mlt_types.c
  * \brief Mlt types helper functions
  *
- * Copyright (C) 2023 Meltytech, LLC
+ * Copyright (C) 2023-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,9 @@
 
 #include "mlt_types.h"
 
+#include "mlt_image.h"
+
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -62,4 +65,37 @@ mlt_deinterlacer mlt_deinterlacer_id(const char *name)
             return m;
     }
     return mlt_deinterlacer_invalid;
+}
+
+uint8_t srgb_to_linear(uint8_t value)
+{
+    // Normalize the 8-bit value to the [0.0, 1.0] range
+    double factor = (double) value / 255.0;
+    if (factor < 0.04045) {
+        factor *= 0.0773993808;
+    } else {
+        factor = pow(factor * 0.9478672986 + 0.0521327014, 2.4);
+    }
+    // Map back to 0-255 range
+    double linear_value = round((double) 255 * factor);
+    return (uint8_t) CLAMP(linear_value, 0.0, 255.0);
+}
+
+/** Convert a standard sRGB color value to the specified colorspace.
+ *
+ * \param color a standard sRGB color value
+ * \param trc_name a string representing the TRC to convert to
+ * \return the converted color
+ */
+
+mlt_color mlt_color_convert_trc(mlt_color color, const char *trc_name)
+{
+    mlt_color_trc trc = mlt_image_color_trc_id(trc_name);
+    // Only linear is supported for now.
+    if (trc == mlt_color_trc_linear) {
+        color.r = srgb_to_linear(color.r);
+        color.g = srgb_to_linear(color.g);
+        color.b = srgb_to_linear(color.b);
+    }
+    return color;
 }

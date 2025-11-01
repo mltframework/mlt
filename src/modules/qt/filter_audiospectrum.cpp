@@ -181,6 +181,7 @@ static void convert_fft_to_spectrum(mlt_filter filter,
 static void draw_spectrum(mlt_filter filter, mlt_frame frame, QImage *qimg, int width, int height)
 {
     mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_position position = mlt_filter_get_position(filter, frame);
     mlt_position length = mlt_filter_get_length2(filter, frame);
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
@@ -206,7 +207,7 @@ static void draw_spectrum(mlt_filter filter, mlt_frame frame, QImage *qimg, int 
                       * scale;
     int segment_width = mlt_properties_anim_get_int(filter_properties, "thickness", position, length)
                         * scale;
-    QVector<QColor> colors = get_graph_colors(filter_properties, position, length);
+    QVector<QColor> colors = get_graph_colors(filter_properties, frame_properties, position, length);
 
     QRectF r(rect.x, rect.y, rect.w, rect.h);
     QPainter p(qimg);
@@ -216,8 +217,8 @@ static void draw_spectrum(mlt_filter filter, mlt_frame frame, QImage *qimg, int 
         r.setHeight(r.height() / 2.0);
     }
 
-    setup_graph_painter(p, r, filter_properties, position, length);
-    setup_graph_pen(p, r, filter_properties, scale, position, length);
+    setup_graph_painter(p, r, filter_properties, frame_properties, position, length);
+    setup_graph_pen(p, r, filter_properties, frame_properties, scale, position, length);
 
     int bands = mlt_properties_anim_get_int(filter_properties, "bands", position, length);
     if (bands == 0) {

@@ -358,6 +358,7 @@ MLT_EXPORT char *strptime(const char *buf, const char *fmt, struct tm *tm);
 
 MLT_EXPORT const char *mlt_deinterlacer_name(mlt_deinterlacer method);
 MLT_EXPORT mlt_deinterlacer mlt_deinterlacer_id(const char *name);
+MLT_EXPORT mlt_color mlt_color_convert_trc(mlt_color color, const char *trc_name);
 
 #ifdef __cplusplus
 }
