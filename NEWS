@@ -1,6 +1,59 @@
 MLT Release Notes
 -----------------
 
+Version 7.34.0
+
+Framework
+  - Added `mlt_image_rgba64` format. This change touched core, avformat, and qt modules as well.
+  - Added `mlt_color_trc`, `mlt_color_primaries`, and more `mlt_colorspace`s along with functions:
+    * `mlt_image_color_trc_name`
+    * `mlt_image_color_trc_id`
+    * `mlt_image_colorspace_name`
+    * `mlt_image_colorspace_id`
+    * `mlt_image_color_pri_name`
+    * `mlt_image_color_pri_id`
+  - Fixed some minor memory leaks with `cppcheck`.
+
+Modules
+  - Added rgba and rgba64 formats to the `luma` transition.
+  - Added rgba64 format to `affine` filter and transition.
+  - Added rgba64 format to the `qtblend` transition.
+  - Added support for FFmpeg 8 to the `avformat` module.
+  - Fixed audio `panner` filter for 5.1 channel layout.
+  - Fixed converting 10-bit full to limited range in `avformat` producer (regression in v7.30.0).
+  - Fixed shadow not working for multi-line template titles in `kdenlivetitle` producer.
+  - Fixed `mask_apply` filter with custom transition.
+  - Added `input_chmask` & `output_chmask` properties to `mono` filter.
+  - Added `channel_mask` property to LADSPA/LV2/VST2 filters.
+  - Added `channel_mask` to the `volume` filter.
+  - Added an `outline` video filter.
+  - Fixed a deadlock on image with a `%` in the name in `qimage` producer.
+  - Added scrubbing to the `decklink` consumer.
+  - Fixed `&amp;` not decoded to `&` in the `xml` producer.
+  - Fixed converting BT.709 to BT.2020 in the `avformat` module.
+  - Fixed building a `ladspa` module without JACK as dependency.
+  - Deprecate a JACK Rack XML file in the `jackrack` and `ladspa` modules.
+  - Added filter `qtblend_mode`.
+  - Fixed incorrect alpha channel breaking optimization of `qtblend`.
+  - Fixed pixel format gbrap (Ut Video with alpha channel) in the `avformat` producer.
+  - Fixed `opencv_tracker` filter on cut playlist clips.
+  - Fixed warning about missing color range for `avfilter`s that use it (e.g. `avfilter.colorspace`).
+  - Added typewriter properties to the `qtext` filter.
+  - Fixed color distortion or a crash if using hwaccel with orientation rotation in `avformat` producer.
+
+Other
+  - Enable Qt 6 and disable Qt 5 modules in CMake by default.
+  - Disable the SDL1 module in CMake by default.
+  - Changed `melt` now exits with 1 if the producer is invalid.
+  - Various changes to work with MSVC compiler.
+  - Changed SVT-AV1 encode presets to VBR for Opus audio.
+  - Fixed initializing Qt on the main thread in `melt`.
+  - Documented the `-progress2` option for `melt`.
+  - Increased the minimum C++ version to C++20.
+  - Converted many modules to use CMake `find_package()`.
+  - Added `libgen.c` and `libgen.h` for MSVC.
+
+
 Version 7.32.0
 
 Framework
