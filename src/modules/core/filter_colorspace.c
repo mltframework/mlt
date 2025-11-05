@@ -145,11 +145,11 @@ static const char *av_color_primaries_str(mlt_color_primaries primaries, int hei
     return "bt709";
 }
 
-static void create_cs_filter(mlt_filter filter, mlt_frame frame, mlt_color_trc out_trc)
+static void create_cs_filter(mlt_filter self, mlt_frame frame, mlt_color_trc out_trc)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
-    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(self));
+    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(self);
     const char *method = mlt_properties_get(filter_properties, "method");
     mlt_filter cs_filter = mlt_factory_filter(profile, method, NULL);
     if (!cs_filter) {
@@ -170,11 +170,61 @@ static void create_cs_filter(mlt_filter filter, mlt_frame frame, mlt_color_trc o
         mlt_properties_set(cs_properties, "av.primaries", av_color_primaries_str(primaries, height));
         mlt_properties_set(cs_properties, "av.trc", av_trc_str(out_trc));
     }
-    mlt_service_cache_put(MLT_FILTER_SERVICE(filter),
+    mlt_service_cache_put(MLT_FILTER_SERVICE(self),
                           "cs_filter",
                           cs_filter,
                           0,
                           (mlt_destructor) mlt_filter_close);
+}
+
+static void ensure_color_properties(mlt_filter self, mlt_frame frame)
+{
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_image_format format = mlt_properties_get_int(frame_properties, "format");
+    int height = mlt_properties_get_int(frame_properties, "height");
+
+    const char *colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+    if (!colorspace_str) {
+        mlt_colorspace colorspace = mlt_image_default_colorspace(format, height);
+        mlt_properties_set_int(frame_properties, "colorspace", colorspace);
+        colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+    }
+    mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+
+    const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
+    if (!color_trc_str) {
+        mlt_color_trc color_trc = mlt_image_default_trc(colorspace);
+        mlt_properties_set_int(frame_properties, "color_trc", color_trc);
+    }
+
+    const char *color_primaries_str = mlt_properties_get(frame_properties, "color_primaries");
+    if (!color_primaries_str) {
+        mlt_color_primaries primaries = mlt_image_default_primaries(colorspace, height);
+        mlt_properties_set_int(frame_properties, "color_primaries", primaries);
+    }
+
+    const char *full_range_str = mlt_properties_get(frame_properties, "full_range");
+    if (!full_range_str) {
+        int full_range = 0;
+        switch (format) {
+        case mlt_image_rgb:
+        case mlt_image_rgba:
+        case mlt_image_rgba64:
+        case mlt_image_movit:
+        case mlt_image_opengl_texture:
+            full_range = 1;
+            break;
+        case mlt_image_yuv422:
+        case mlt_image_yuv420p:
+        case mlt_image_yuv422p16:
+        case mlt_image_yuv420p10:
+        case mlt_image_yuv444p10:
+        case mlt_image_none:
+        case mlt_image_invalid:
+            break;
+        }
+        mlt_properties_set_int(frame_properties, "full_range", full_range);
+    }
 }
 
 static int filter_get_image(mlt_frame frame,
@@ -184,9 +234,9 @@ static int filter_get_image(mlt_frame frame,
                             int *height,
                             int writable)
 {
-    mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
+    mlt_filter self = (mlt_filter) mlt_frame_pop_service(frame);
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
-    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(self);
     mlt_image_format requested_format = *format;
     int ret = mlt_frame_get_image(frame, image, format, width, height, writable);
     if (ret || requested_format == mlt_image_movit)
@@ -198,55 +248,78 @@ static int filter_get_image(mlt_frame frame,
     if (!out_trc_str)
         return 0;
 
+    ensure_color_properties(self, frame);
+
     const char *frame_trc_str = mlt_properties_get(frame_properties, "color_trc");
-    mlt_color_trc out_trc = mlt_image_color_trc_id(out_trc_str);
     mlt_color_trc frame_trc = mlt_image_color_trc_id(frame_trc_str);
+    mlt_color_trc out_trc = mlt_image_color_trc_id(out_trc_str);
+    if (*format == mlt_image_rgb || *format == mlt_image_rgba || *format == mlt_image_rgba64) {
+        // Correct the TRC. For RGB, only support linear or iec61966-2-1.
+        if (out_trc != mlt_color_trc_linear) {
+            out_trc = mlt_color_trc_iec61966_2_1;
+        }
+    }
     if (out_trc == frame_trc) {
         // TRC matches. No conversion required
         return 0;
     }
     if (out_trc == mlt_color_trc_none || frame_trc == mlt_color_trc_none) {
-        mlt_log_info(MLT_FILTER_SERVICE(filter),
+        mlt_log_info(MLT_FILTER_SERVICE(self),
                      "Missing TRC - Frame: %s\tOut: %s\n",
                      mlt_image_color_trc_name(frame_trc),
                      mlt_image_color_trc_name(out_trc));
         return 0;
     }
 
-    mlt_log_verbose(MLT_FILTER_SERVICE(filter),
+    mlt_log_debug(MLT_FILTER_SERVICE(self),
                     "color trc: %s -> %s\n",
                     mlt_image_color_trc_name(frame_trc),
                     mlt_image_color_trc_name(out_trc));
 
-    mlt_cache_item cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(filter), "cs_filter");
+    // Create a temporary frame to process the image
+    mlt_frame clone_frame = mlt_frame_clone_image(frame, 0);
+
+    mlt_service_lock(MLT_FILTER_SERVICE(self));
+
+    // Retrieve the saved filter
+    mlt_cache_item cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(self), "cs_filter");
     if (!cache_item) {
-        create_cs_filter(filter, frame, out_trc);
-        cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(filter), "cs_filter");
+        create_cs_filter(self, clone_frame, out_trc);
+        cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(self), "cs_filter");
     }
     if (!cache_item) {
-        mlt_log_error(MLT_FILTER_SERVICE(filter), "Unable to create colorspace filter\n");
+        mlt_log_error(MLT_FILTER_SERVICE(self), "Unable to create colorspace filter\n");
         return 1;
     }
     mlt_filter cs_filter = mlt_cache_item_data(cache_item, NULL);
-    mlt_filter_process(cs_filter, frame);
+    // Process the cloned frame. The cloned frame references the same image
+    // as the original frame.
+    mlt_filter_process(cs_filter, clone_frame);
+    ret = mlt_frame_get_image(clone_frame, image, format, width, height, writable);
     mlt_cache_item_close(cache_item);
-    return mlt_frame_get_image(frame, image, format, width, height, writable);
+    mlt_service_unlock(MLT_FILTER_SERVICE(self));
+
+    mlt_properties_pass_list(frame_properties,
+                             MLT_FRAME_PROPERTIES(clone_frame),
+                             "colorspace color_trc color_primaries");
+    mlt_frame_close(clone_frame);
+    return ret;
 }
 
-static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
+static mlt_frame filter_process(mlt_filter self, mlt_frame frame)
 {
-    mlt_frame_push_service(frame, filter);
+    mlt_frame_push_service(frame, self);
     mlt_frame_push_get_image(frame, filter_get_image);
     return frame;
 }
 
-static void filter_close(mlt_filter filter)
+static void filter_close(mlt_filter self)
 {
-    mlt_service_cache_purge(MLT_FILTER_SERVICE(filter));
-    filter->child = NULL;
-    filter->close = NULL;
-    filter->parent.close = NULL;
-    mlt_service_close(&filter->parent);
+    mlt_service_cache_purge(MLT_FILTER_SERVICE(self));
+    self->child = NULL;
+    self->close = NULL;
+    self->parent.close = NULL;
+    mlt_service_close(&self->parent);
 }
 
 mlt_filter filter_colorspace_init(mlt_profile profile,
@@ -277,11 +350,11 @@ mlt_filter filter_colorspace_init(mlt_profile profile,
     }
     mlt_filter_close(test_filter);
 
-    mlt_filter filter = mlt_filter_new();
-    if (filter) {
-        filter->process = filter_process;
-        filter->close = filter_close;
-        mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "method", method);
+    mlt_filter self = mlt_filter_new();
+    if (self) {
+        self->process = filter_process;
+        self->close = filter_close;
+        mlt_properties_set(MLT_FILTER_PROPERTIES(self), "method", method);
     }
-    return filter;
+    return self;
 }

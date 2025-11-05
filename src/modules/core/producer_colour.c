@@ -64,6 +64,7 @@ static int producer_get_image(mlt_frame frame,
                               int *height,
                               int writable)
 {
+    mlt_image_format requested_format = *format;
     // Obtain properties of frame
     mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
 
@@ -95,6 +96,11 @@ static int producer_get_image(mlt_frame frame,
     // Choose suitable out values if nothing specific requested
     if (*format == mlt_image_none || *format == mlt_image_movit)
         *format = mlt_image_rgba;
+    // Optimize the format to avoid unnecessary conversion
+    if ((requested_format == mlt_image_rgba && *format == mlt_image_rgba64)
+        || (requested_format == mlt_image_rgba64 && *format == mlt_image_rgba))
+        *format = requested_format;
+
     if (*width <= 0)
         *width = mlt_service_profile(MLT_PRODUCER_SERVICE(producer))->width;
     if (*height <= 0)
@@ -190,10 +196,10 @@ static int producer_get_image(mlt_frame frame,
                 uint16_t *p16 = (uint16_t *) p;
                 const int component_count = *width * *height * 4;
                 for (int j = 0; j < component_count; j += 4) {
-                    p16[j] = color.r << 8;
-                    p16[j + 1] = color.g << 8;
-                    p16[j + 2] = color.b << 8;
-                    p16[j + 3] = color.a << 8;
+                    p16[j] = (color.r << 8) + color.r;
+                    p16[j + 1] = (color.g << 8) + color.g;
+                    p16[j + 2] = (color.b << 8) + color.b;
+                    p16[j + 3] = (color.a << 8) + color.a;
                 }
                 break;
             }

@@ -582,59 +582,9 @@ mlt_color_primaries av_to_mlt_color_primaries(int primaries)
     return mlt_color_pri_none;
 }
 
-mlt_color_primaries mlt_color_primaries_from_colorspace(mlt_colorspace colorspace, int height)
-{
-    switch (colorspace) {
-    case mlt_colorspace_rgb: // sRGB
-    case mlt_colorspace_bt709:
-        return mlt_color_pri_bt709;
-    case mlt_colorspace_bt470bg:
-        return mlt_color_pri_bt470bg;
-    case mlt_colorspace_smpte240m:
-        return mlt_color_pri_smpte170m;
-    case mlt_colorspace_bt601:
-        return height == 576 ? mlt_color_pri_bt470bg : mlt_color_pri_smpte170m;
-    case mlt_colorspace_smpte170m:
-        return mlt_color_pri_smpte170m;
-    case mlt_colorspace_bt2020_ncl:
-        return mlt_color_pri_bt2020;
-    case mlt_colorspace_unspecified:
-    case mlt_colorspace_reserved:
-    case mlt_colorspace_fcc:
-    case mlt_colorspace_ycgco:
-    case mlt_colorspace_bt2020_cl:
-    case mlt_colorspace_smpte2085:
-    case mlt_colorspace_invalid:
-        break;
-    }
-    return mlt_color_pri_none;
-}
-
 int mlt_to_av_color_range(int full_range)
 {
     return full_range ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
-}
-
-mlt_color_trc mlt_color_trc_from_colorspace(mlt_colorspace colorspace)
-{
-    switch (colorspace) {
-    case mlt_colorspace_bt709:
-        return mlt_color_trc_bt709;
-    case mlt_colorspace_bt470bg:
-        return mlt_color_trc_gamma28;
-    case mlt_colorspace_smpte240m:
-        return mlt_color_trc_smpte240m;
-    case mlt_colorspace_rgb: // sRGB
-        return mlt_color_trc_iec61966_2_1;
-    case mlt_colorspace_bt601:
-    case mlt_colorspace_smpte170m:
-        return mlt_color_trc_smpte170m;
-    case mlt_colorspace_bt2020_ncl:
-        return mlt_color_trc_bt2020_10;
-    default:
-        break;
-    }
-    return mlt_color_trc_none;
 }
 
 int av_to_mlt_full_range(int color_range)

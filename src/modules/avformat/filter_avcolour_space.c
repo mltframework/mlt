@@ -155,14 +155,29 @@ static int convert_image(mlt_frame frame,
     if (*format != output_format || out_width) {
         mlt_profile profile = mlt_service_profile(
             MLT_PRODUCER_SERVICE(mlt_frame_get_original_producer(frame)));
-        mlt_colorspace profile_colorspace = profile ? profile->colorspace : mlt_colorspace_bt601;
-        const char *colorspace_str = mlt_properties_get(properties, "colorspace");
-        mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
         int width = mlt_properties_get_int(properties, "width");
         int height = mlt_properties_get_int(properties, "height");
+        mlt_colorspace dst_colorspace = profile ? profile->colorspace : mlt_colorspace_bt601;
+        const char *src_colorspace_str = mlt_properties_get(properties, "colorspace");
+        mlt_colorspace src_colorspace = mlt_image_colorspace_id(src_colorspace_str);
+        if (src_colorspace == mlt_colorspace_unspecified
+            || src_colorspace == mlt_colorspace_reserved
+            || src_colorspace == mlt_colorspace_invalid) {
+            src_colorspace = mlt_image_default_colorspace(*format, height);
+        }
         int src_full_range = mlt_properties_get_int(properties, "full_range");
         const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
         int dst_full_range = mlt_image_full_range(dst_color_range);
+        // Fix some producers that may not be setting properties correctly
+        if (output_format == mlt_image_rgb || output_format == mlt_image_rgba
+            || output_format == mlt_image_rgba64) {
+            dst_full_range = 1;
+            dst_colorspace = mlt_colorspace_rgb;
+        }
+        if (*format == mlt_image_rgb || *format == mlt_image_rgba || *format == mlt_image_rgba64) {
+            src_full_range = 1;
+            src_colorspace = mlt_colorspace_rgb;
+        }
 
         if (out_width <= 0)
             out_width = width;
@@ -178,8 +193,8 @@ static int convert_image(mlt_frame frame,
             mlt_image_format_name(output_format),
             out_width,
             out_height,
-            colorspace,
-            profile_colorspace,
+            src_colorspace,
+            dst_colorspace,
             src_full_range,
             dst_full_range,
             mlt_frame_get_position(frame));
@@ -260,15 +275,11 @@ static int convert_image(mlt_frame frame,
                               out_height,
                               width,
                               height,
-                              colorspace,
-                              profile_colorspace,
+                              src_colorspace,
+                              dst_colorspace,
                               src_full_range,
                               dst_full_range)) {
-            // The new colorspace is only valid if destination is YUV.
-            if (output_format == mlt_image_yuv422 || output_format == mlt_image_yuv420p
-                || output_format == mlt_image_yuv422p16 || output_format == mlt_image_yuv420p10
-                || output_format == mlt_image_yuv444p10)
-                mlt_properties_set_int(properties, "colorspace", profile_colorspace);
+            mlt_properties_set_int(properties, "colorspace", dst_colorspace);
             mlt_properties_set_int(properties, "full_range", dst_full_range);
         }
         mlt_frame_set_image(frame, output, size, mlt_pool_release);
@@ -344,15 +355,6 @@ static int convert_image(mlt_frame frame,
 
 static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-    // Set a default colorspace on the frame if not yet set by the producer.
-    // The producer may still change it during get_image.
-    // This way we do not have to modify each producer to set a valid colorspace.
-    mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
-    if (mlt_properties_get_int(properties, "colorspace") <= 0)
-        mlt_properties_set_int(properties,
-                               "colorspace",
-                               mlt_service_profile(MLT_FILTER_SERVICE(filter))->colorspace);
-
     if (!frame->convert_image)
         frame->convert_image = convert_image;
 

@@ -472,6 +472,48 @@ mlt_color_primaries mlt_image_color_pri_id(const char *name)
     return mlt_color_pri_none;
 }
 
+/** Get the default colorspace for a given image format.
+ *
+ * \public \memberof mlt_image_s
+ * \param format the format
+ * \param height the image height. Pass 0 if you do not know.
+ * \return a colorspace
+ */
+
+mlt_colorspace mlt_image_default_colorspace(mlt_image_format format, int height)
+{
+    mlt_colorspace colorspace = mlt_colorspace_bt709;
+    switch (format) {
+    case mlt_image_rgb:
+    case mlt_image_rgba:
+    case mlt_image_rgba64:
+    case mlt_image_movit:
+    case mlt_image_opengl_texture:
+        colorspace = mlt_colorspace_rgb;
+        break;
+    case mlt_image_yuv422:
+    case mlt_image_yuv420p:
+    case mlt_image_yuv422p16:
+    case mlt_image_yuv420p10:
+    case mlt_image_yuv444p10:
+        if (height < 576) {
+            // Assume NTSC
+            colorspace = mlt_colorspace_smpte170m;
+        } else if (height < 720) {
+            // Assume PAL
+            colorspace = mlt_colorspace_bt470bg;
+        } else {
+            // Assume HDTV
+            colorspace = mlt_colorspace_bt709;
+        }
+        break;
+    case mlt_image_none:
+    case mlt_image_invalid:
+        break;
+    }
+    return colorspace;
+}
+
 /** Get the default color transfer characteristics for a given colorspace.
  *
  * \public \memberof mlt_image_s

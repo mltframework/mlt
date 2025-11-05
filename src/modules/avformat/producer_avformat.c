@@ -2097,7 +2097,7 @@ static void convert_image(producer_avformat self,
     }
     mlt_log_timings_end(NULL, __FUNCTION__);
 
-    mlt_color_primaries primaries = mlt_color_primaries_from_colorspace(colorspace, height);
+    mlt_color_primaries primaries = mlt_image_default_primaries(colorspace, height);
     if (primaries == mlt_color_pri_none)
         primaries = mlt_color_pri_bt709;
     mlt_properties_set_int(frame_properties, "color_primaries", primaries);
