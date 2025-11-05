@@ -1,6 +1,11 @@
 MLT Release Notes
 -----------------
 
+Version 7.34.1
+
+  - Fixed compiling with Qt 5.
+
+
 Version 7.34.0
 
 Framework
