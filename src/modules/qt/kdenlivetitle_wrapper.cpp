@@ -453,10 +453,10 @@ void loadFromXml(producer_ktitle self,
                     if (values.count() < 5) {
                         // invalid gradient, use default
                         values = QStringList({QStringLiteral("#ff0000"),
-                                  QStringLiteral("#2e0046"),
-                                  QStringLiteral("0"),
-                                  QStringLiteral("100"),
-                                  QStringLiteral("90")});
+                                              QStringLiteral("#2e0046"),
+                                              QStringLiteral("0"),
+                                              QStringLiteral("100"),
+                                              QStringLiteral("90")});
                     }
                     QLinearGradient gr;
                     gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
@@ -610,10 +610,10 @@ void loadFromXml(producer_ktitle self,
                     if (values.count() < 5) {
                         // invalid gradient, use default
                         values = QStringList({QStringLiteral("#ff0000"),
-                                  QStringLiteral("#2e0046"),
-                                  QStringLiteral("0"),
-                                  QStringLiteral("100"),
-                                  QStringLiteral("90")});
+                                              QStringLiteral("#2e0046"),
+                                              QStringLiteral("0"),
+                                              QStringLiteral("100"),
+                                              QStringLiteral("90")});
                     }
                     QLinearGradient gr;
                     gr.setColorAt(values.at(2).toDouble() / 100, values.at(0));
