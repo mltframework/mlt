@@ -204,7 +204,7 @@ static int dissolve_slice_rgba32(int id, int index, int count, void *context)
                 mix_b /= mix2;
             dst[0] = sample_mix(dst[0], src[0], mix_b);
             dst[1] = sample_mix(dst[1], src[1], mix_b);
-            dst[2] = sample_mix(dst[2], src[1], mix_b);
+            dst[2] = sample_mix(dst[2], src[2], mix_b);
             dst[3] = 255 * mix2;
             dst += 4;
             src += 4;
@@ -255,7 +255,7 @@ static int dissolve_slice_rgba64(int id, int index, int count, void *context)
                 mix_b /= mix2;
             dst[0] = sample_mix_16(dst[0], src[0], mix_b);
             dst[1] = sample_mix_16(dst[1], src[1], mix_b);
-            dst[2] = sample_mix_16(dst[2], src[1], mix_b);
+            dst[2] = sample_mix_16(dst[2], src[2], mix_b);
             dst[3] = 255 * mix2;
             dst += 4;
             src += 4;
