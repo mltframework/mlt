@@ -239,7 +239,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties filter_properties = MLT_FILTER_PROPERTIES(self);
     mlt_image_format requested_format = *format;
     int ret = mlt_frame_get_image(frame, image, format, width, height, writable);
-    if (ret || requested_format == mlt_image_movit)
+    if (ret || requested_format == mlt_image_movit || requested_format == mlt_image_none)
         return ret;
 
     const char *out_trc_str = mlt_properties_get(filter_properties, "force_trc");
@@ -272,9 +272,9 @@ static int filter_get_image(mlt_frame frame,
     }
 
     mlt_log_debug(MLT_FILTER_SERVICE(self),
-                    "color trc: %s -> %s\n",
-                    mlt_image_color_trc_name(frame_trc),
-                    mlt_image_color_trc_name(out_trc));
+                  "color trc: %s -> %s\n",
+                  mlt_image_color_trc_name(frame_trc),
+                  mlt_image_color_trc_name(out_trc));
 
     // Create a temporary frame to process the image
     mlt_frame clone_frame = mlt_frame_clone_image(frame, 0);
@@ -327,9 +327,7 @@ mlt_filter filter_colorspace_init(mlt_profile profile,
                                   const char *id,
                                   char *arg)
 {
-    const char *method = arg;
-    if (!method)
-        method = "auto";
+    const char *method = arg ? arg : "auto";
 
     // Test if the embedded filter is available.
     mlt_filter test_filter = NULL;

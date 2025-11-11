@@ -1,7 +1,7 @@
 schema_version: 7.0
 type: filter
 identifier: colorspace
-title: Colorspace
+title: Colorspace & Transfer Characteristics
 version: 1
 copyright: Meltytech, LLC
 license: LGPLv2.1
@@ -31,7 +31,7 @@ parameters:
       in this order:
         * avfilter.zscale
         * avfilter.colorspace
-    required: yes
+    required: no
     readonly: no
     mutable: no
     default: auto

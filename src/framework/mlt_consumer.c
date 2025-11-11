@@ -310,6 +310,9 @@ static void mlt_consumer_property_changed(mlt_properties owner,
         mlt_profile profile = mlt_service_profile(MLT_CONSUMER_SERVICE(self));
         if (profile)
             profile->colorspace = mlt_properties_get_int(properties, "colorspace");
+    } else if (!strcmp(name, "mlt_color_trc")) {
+        mlt_properties properties = MLT_CONSUMER_PROPERTIES(self);
+        mlt_properties_clear(properties, "_cs_filter");
     }
 }
 
@@ -695,29 +698,29 @@ mlt_frame mlt_consumer_get_frame(mlt_consumer self)
 
         if (mlt_properties_get(properties, "mlt_color_trc")) {
             // Add a normalize filter to convert the mlt_color_trc to color_trc
-            mlt_cache_item cache_item = mlt_service_cache_get(service, "cs_filter");
-            if (!cache_item) {
+            mlt_filter cs_filter = (mlt_filter) mlt_properties_get_data(properties,
+                                                                        "_cs_filter",
+                                                                        NULL);
+            if (!cs_filter) {
                 mlt_profile profile = mlt_service_profile(service);
-                mlt_filter cs_filter = mlt_factory_filter(profile, "colorspace", NULL);
-                mlt_properties cs_properties = MLT_FILTER_PROPERTIES(cs_filter);
+                cs_filter = mlt_factory_filter(profile, "colorspace", NULL);
                 if (cs_filter) {
+                    mlt_properties cs_properties = MLT_FILTER_PROPERTIES(cs_filter);
                     const char *color_trc_str = mlt_properties_get(properties, "color_trc");
                     mlt_color_trc trc = mlt_image_color_trc_id(color_trc_str);
                     if (trc == mlt_color_trc_none)
                         trc = mlt_image_default_trc(profile->colorspace);
                     mlt_properties_set_int(cs_properties, "force_trc", trc);
-                    mlt_service_cache_put(service,
-                                          "cs_filter",
-                                          cs_filter,
-                                          0,
-                                          (mlt_destructor) mlt_filter_close);
+                    mlt_properties_set_data(properties,
+                                            "_cs_filter",
+                                            cs_filter,
+                                            0,
+                                            (mlt_destructor) mlt_filter_close,
+                                            NULL);
                 }
-                cache_item = mlt_service_cache_get(service, "cs_filter");
             }
-            if (cache_item) {
-                mlt_filter cs_filter = mlt_cache_item_data(cache_item, NULL);
+            if (cs_filter) {
                 mlt_filter_process(cs_filter, frame);
-                mlt_cache_item_close(cache_item);
             }
         }
     }
