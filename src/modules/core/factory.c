@@ -65,10 +65,10 @@ extern mlt_filter filter_choppy_init(mlt_profile profile,
                                      mlt_service_type type,
                                      const char *id,
                                      char *arg);
-extern mlt_filter filter_colorspace_init(mlt_profile profile,
-                                         mlt_service_type type,
-                                         const char *id,
-                                         char *arg);
+extern mlt_filter filter_color_transform_init(mlt_profile profile,
+                                              mlt_service_type type,
+                                              const char *id,
+                                              char *arg);
 extern mlt_filter filter_crop_init(mlt_profile profile,
                                    mlt_service_type type,
                                    const char *id,
@@ -210,7 +210,7 @@ MLTCORE_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_consumer_type, "multi", consumer_multi_init);
     MLT_REGISTER(mlt_service_consumer_type, "null", consumer_null_init);
-    MLT_REGISTER(mlt_service_link_type, "colorspace", mlt_link_filter_init);
+    MLT_REGISTER(mlt_service_link_type, "color_transform", mlt_link_filter_init);
     MLT_REGISTER(mlt_service_filter_type, "audiochannels", filter_audiochannels_init);
     MLT_REGISTER(mlt_service_filter_type, "audioconvert", filter_audioconvert_init);
     MLT_REGISTER(mlt_service_filter_type, "audiomap", filter_audiomap_init);
@@ -222,7 +222,7 @@ MLTCORE_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "channelcopy", filter_channelcopy_init);
     MLT_REGISTER(mlt_service_filter_type, "channelswap", filter_channelcopy_init);
     MLT_REGISTER(mlt_service_filter_type, "choppy", filter_choppy_init);
-    MLT_REGISTER(mlt_service_filter_type, "colorspace", filter_colorspace_init);
+    MLT_REGISTER(mlt_service_filter_type, "color_transform", filter_color_transform_init);
     MLT_REGISTER(mlt_service_filter_type, "crop", filter_crop_init);
     MLT_REGISTER(mlt_service_filter_type, "fieldorder", filter_fieldorder_init);
     MLT_REGISTER(mlt_service_filter_type, "gamma", filter_gamma_init);
@@ -269,7 +269,7 @@ MLTCORE_EXPORT MLT_REPOSITORY
 
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "multi", metadata, "consumer_multi.yml");
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "null", metadata, "consumer_null.yml");
-    MLT_REGISTER_METADATA(mlt_service_link_type, "colorspace", mlt_link_filter_metadata, NULL);
+    MLT_REGISTER_METADATA(mlt_service_link_type, "color_transform", mlt_link_filter_metadata, NULL);
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "audiochannels",
                           metadata,
@@ -293,7 +293,10 @@ MLTCORE_EXPORT MLT_REPOSITORY
                           metadata,
                           "filter_channelcopy.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "choppy", metadata, "filter_choppy.yml");
-    MLT_REGISTER_METADATA(mlt_service_filter_type, "colorspace", metadata, "filter_colorspace.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "color_transform",
+                          metadata,
+                          "filter_color_transform.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "crop", metadata, "filter_crop.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "fieldorder", metadata, "filter_fieldorder.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "gamma", metadata, "filter_gamma.yml");

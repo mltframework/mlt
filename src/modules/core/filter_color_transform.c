@@ -1,5 +1,5 @@
 /*
- * filter_colorspace.c -- colorspace filter
+ * filter_color_transform.c -- color transform filter
  * Copyright (C) 2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
@@ -145,17 +145,17 @@ static const char *av_color_primaries_str(mlt_color_primaries primaries, int hei
     return "bt709";
 }
 
-static void create_cs_filter(mlt_filter self, mlt_frame frame, mlt_color_trc out_trc)
+static void create_t_filter(mlt_filter self, mlt_frame frame, mlt_color_trc out_trc)
 {
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(self));
     mlt_properties filter_properties = MLT_FILTER_PROPERTIES(self);
     const char *method = mlt_properties_get(filter_properties, "method");
-    mlt_filter cs_filter = mlt_factory_filter(profile, method, NULL);
-    if (!cs_filter) {
+    mlt_filter t_filter = mlt_factory_filter(profile, method, NULL);
+    if (!t_filter) {
         return;
     }
-    mlt_properties cs_properties = MLT_FILTER_PROPERTIES(cs_filter);
+    mlt_properties cs_properties = MLT_FILTER_PROPERTIES(t_filter);
     if (!strcmp(method, "avfilter.zscale")) {
         mlt_properties_set(cs_properties, "av.t", av_trc_str(out_trc));
     } else if (!strcmp(method, "avfilter.colorspace")) {
@@ -171,8 +171,8 @@ static void create_cs_filter(mlt_filter self, mlt_frame frame, mlt_color_trc out
         mlt_properties_set(cs_properties, "av.trc", av_trc_str(out_trc));
     }
     mlt_service_cache_put(MLT_FILTER_SERVICE(self),
-                          "cs_filter",
-                          cs_filter,
+                          "t_filter",
+                          t_filter,
                           0,
                           (mlt_destructor) mlt_filter_close);
 }
@@ -282,19 +282,19 @@ static int filter_get_image(mlt_frame frame,
     mlt_service_lock(MLT_FILTER_SERVICE(self));
 
     // Retrieve the saved filter
-    mlt_cache_item cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(self), "cs_filter");
+    mlt_cache_item cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(self), "t_filter");
     if (!cache_item) {
-        create_cs_filter(self, clone_frame, out_trc);
-        cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(self), "cs_filter");
+        create_t_filter(self, clone_frame, out_trc);
+        cache_item = mlt_service_cache_get(MLT_FILTER_SERVICE(self), "t_filter");
     }
     if (!cache_item) {
         mlt_log_error(MLT_FILTER_SERVICE(self), "Unable to create colorspace filter\n");
         return 1;
     }
-    mlt_filter cs_filter = mlt_cache_item_data(cache_item, NULL);
+    mlt_filter t_filter = mlt_cache_item_data(cache_item, NULL);
     // Process the cloned frame. The cloned frame references the same image
     // as the original frame.
-    mlt_filter_process(cs_filter, clone_frame);
+    mlt_filter_process(t_filter, clone_frame);
     ret = mlt_frame_get_image(clone_frame, image, format, width, height, writable);
     mlt_cache_item_close(cache_item);
     mlt_service_unlock(MLT_FILTER_SERVICE(self));
@@ -322,10 +322,10 @@ static void filter_close(mlt_filter self)
     mlt_service_close(&self->parent);
 }
 
-mlt_filter filter_colorspace_init(mlt_profile profile,
-                                  mlt_service_type type,
-                                  const char *id,
-                                  char *arg)
+mlt_filter filter_color_transform_init(mlt_profile profile,
+                                       mlt_service_type type,
+                                       const char *id,
+                                       char *arg)
 {
     const char *method = arg ? arg : "auto";
 
@@ -343,7 +343,7 @@ mlt_filter filter_colorspace_init(mlt_profile profile,
         test_filter = mlt_factory_filter(profile, "avfilter.colorspace", NULL);
     }
     if (!test_filter) {
-        mlt_log_error(NULL, "[filter_colorspace] unable to create filter %s\n", method);
+        mlt_log_error(NULL, "[filter_color_transform] unable to create filter %s\n", method);
         return NULL;
     }
     mlt_filter_close(test_filter);
