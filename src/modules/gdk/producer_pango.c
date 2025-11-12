@@ -187,6 +187,7 @@ static int parse_style(char *style)
 }
 
 static PangoFT2FontMap *fontmap = NULL;
+static int pango_instance_count = 0;
 
 static void on_fontmap_reload();
 mlt_producer producer_pango_init(const char *filename)
@@ -198,6 +199,7 @@ mlt_producer producer_pango_init(const char *filename)
         pthread_mutex_lock(&pango_mutex);
         if (fontmap == NULL)
             fontmap = (PangoFT2FontMap *) pango_ft2_font_map_new();
+	pango_instance_count++;
         pthread_mutex_unlock(&pango_mutex);
 
         producer->get_frame = producer_get_frame;
@@ -807,6 +809,21 @@ static void producer_close(mlt_producer parent)
     free(self->text);
     free(self->font);
     free(self->family);
+
+    // If this is the last instance, shutdown Pango/Fontconfig resources to avoid leaks in short-lived processes
+    pthread_mutex_lock(&pango_mutex);
+    if (pango_instance_count > 0)
+        pango_instance_count--;
+    if (pango_instance_count == 0 && fontmap) {
+        pango_fc_font_map_shutdown(PANGO_FC_FONT_MAP(fontmap));
+        g_object_unref(fontmap);
+        fontmap = NULL;
+        FcFini();
+    }
+    pthread_mutex_unlock(&pango_mutex);
+
+
+
     parent->close = NULL;
     mlt_producer_close(parent);
     free(self);
