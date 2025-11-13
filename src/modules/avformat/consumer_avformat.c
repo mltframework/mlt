@@ -797,7 +797,7 @@ static AVStream *add_audio_stream(mlt_consumer consumer,
 
         // Set parameters controlled by MLT
         c->sample_rate = mlt_properties_get_int(properties, "frequency");
-        st->time_base = (AVRational){1, c->sample_rate};
+        st->time_base = c->time_base = (AVRational){1, c->sample_rate};
 #if HAVE_FFMPEG_CH_LAYOUT
         c->ch_layout.nb_channels = channels;
 #else
@@ -1437,11 +1437,6 @@ static int encode_audio(encode_ctx_t *ctx)
                             ctx->frame_count);
             if (++ctx->error_count > 2)
                 return -1;
-        } else if (!samples) // flushing
-        {
-            pkt.stream_index = stream->index;
-            av_packet_rescale_ts(&pkt, codec->time_base, stream->time_base);
-            av_interleaved_write_frame(ctx->oc, &pkt);
         }
 
         if (i == 0) {
@@ -1449,6 +1444,55 @@ static int encode_audio(encode_ctx_t *ctx)
         }
     }
 
+    return 0;
+}
+
+static int flush_audio_encoders(encode_ctx_t *ctx)
+{
+    for (int i = 0; i < MAX_AUDIO_STREAMS && ctx->audio_st[i]; i++) {
+        AVStream *stream = ctx->audio_st[i];
+        AVCodecContext *codec = ctx->acodec_ctx[i];
+        int ret = avcodec_send_frame(codec, NULL);
+        if (ret < 0 && ret != AVERROR_EOF && ret != AVERROR(EAGAIN)) {
+            mlt_log_warning(MLT_CONSUMER_SERVICE(ctx->consumer),
+                            "audio flush send_frame failed: %d\n",
+                            ret);
+            return -1;
+        }
+        while (1) {
+            AVPacket pkt;
+            av_init_packet(&pkt);
+            pkt.data = NULL;
+            pkt.size = 0;
+            ret = avcodec_receive_packet(codec, &pkt);
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+                mlt_log_debug(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "audio flush complete for stream %d\n",
+                              stream->index);
+                break;
+            } else if (ret < 0) {
+                mlt_log_warning(MLT_CONSUMER_SERVICE(ctx->consumer),
+                                "audio flush receive_packet failed: %d\n",
+                                ret);
+                return -1;
+            }
+            mlt_log_debug(MLT_CONSUMER_SERVICE(ctx->consumer),
+                          "flushed audio stream %d pkt pts %" PRId64 " size %d\n",
+                          stream->index,
+                          pkt.pts,
+                          pkt.size);
+            av_packet_rescale_ts(&pkt, codec->time_base, stream->time_base);
+            pkt.stream_index = stream->index;
+            if (av_interleaved_write_frame(ctx->oc, &pkt)) {
+                av_packet_unref(&pkt);
+                mlt_log_fatal(MLT_CONSUMER_SERVICE(ctx->consumer),
+                              "error writing flushed audio packet\n");
+                mlt_events_fire(ctx->properties, "consumer-fatal-error", mlt_event_data_none());
+                return -1;
+            }
+            av_packet_unref(&pkt);
+        }
+    }
     return 0;
 }
 
@@ -2502,8 +2546,7 @@ static void *consumer_thread(void *arg)
     // Flush the encoder buffers
     if (real_time_output <= 0) {
         // Flush audio fifo
-        // TODO: flush all audio streams
-        if (enc_ctx->fifo && enc_ctx->audio_st[0])
+        if (enc_ctx->fifo && enc_ctx->audio_st[0]) {
             for (;;) {
                 int sz = sample_fifo_used(enc_ctx->fifo);
                 int ret = encode_audio(enc_ctx);
@@ -2517,7 +2560,13 @@ static void *consumer_thread(void *arg)
                     break;
             }
 
-            // Flush video
+            // After FIFO is empty, drain audio encoders to avoid writing untimestamped packets.
+            if (flush_audio_encoders(enc_ctx) < 0) {
+                goto on_fatal_error;
+            }
+        }
+
+        // Flush video
 #ifdef AVFMT_RAWPICTURE
         if (enc_ctx->video_st && !(enc_ctx->oc->oformat->flags & AVFMT_RAWPICTURE))
             for (;;)
