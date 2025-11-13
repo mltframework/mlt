@@ -101,11 +101,13 @@ static GammaCurve getFrameGamma(mlt_color_trc color_trc)
     }
 }
 
-// Get the gamma from the consumer's "color_trc" property.
+// Get the gamma from the consumer's "mlt_color_trc" or "color_trc" property.
 // Also, update the frame's color_trc property with the selection.
 static GammaCurve getOutputGamma(mlt_properties properties)
 {
-    const char *color_trc_str = mlt_properties_get(properties, "consumer.color_trc");
+    char *color_trc_str = mlt_properties_get(properties, "consumer.mlt_color_trc");
+    if (!color_trc_str)
+        color_trc_str = mlt_properties_get(properties, "consumer.color_trc");
     mlt_color_trc color_trc = mlt_image_color_trc_id(color_trc_str);
     switch (color_trc) {
     case mlt_color_trc_bt709:
