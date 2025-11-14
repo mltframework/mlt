@@ -109,29 +109,25 @@ static GammaCurve getOutputGamma(mlt_properties properties)
     if (!color_trc_str)
         color_trc_str = mlt_properties_get(properties, "consumer.color_trc");
     mlt_color_trc color_trc = mlt_image_color_trc_id(color_trc_str);
+    mlt_properties_set_int(properties, "color_trc", color_trc);
     switch (color_trc) {
     case mlt_color_trc_bt709:
     case mlt_color_trc_smpte170m:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_REC_709;
     case mlt_color_trc_linear:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_LINEAR;
     case mlt_color_trc_bt2020_10:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_REC_2020_10_BIT;
     case mlt_color_trc_bt2020_12:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_REC_2020_12_BIT;
 #if MOVIT_VERSION >= 1037
     case mlt_color_trc_arib_std_b67:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_HLG;
 #endif
     default:
         break;
     }
-    return GAMMA_INVALID;
+    return GAMMA_REC_709;
 }
 
 static void get_format_from_properties(mlt_properties properties,
@@ -305,6 +301,7 @@ static void dispose_movit_effects(mlt_service service, mlt_frame frame)
 static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_image_format format)
 {
     GlslChain *chain = GlslManager::get_chain(leaf_service);
+    auto properties = MLT_FRAME_PROPERTIES(frame);
 
     std::string new_fingerprint;
     build_fingerprint(chain, leaf_service, frame, &new_fingerprint);
@@ -329,10 +326,9 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
 
         ImageFormat output_format;
         if (format == mlt_image_yuv444p10 || format == mlt_image_yuv420p10) {
-            auto properties = MLT_FRAME_PROPERTIES(frame);
             YCbCrFormat ycbcr_format = {};
             get_format_from_properties(properties, &output_format, &ycbcr_format);
-            output_format.gamma_curve = std::max(GAMMA_REC_709, getOutputGamma(properties));
+            output_format.gamma_curve = getOutputGamma(properties);
             ycbcr_format.full_range = mlt_image_full_range(
                 mlt_properties_get(properties, "consumer.color_range"));
             mlt_log_debug(nullptr,
@@ -350,8 +346,7 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
             chain->effect_chain->set_dither_bits(16);
         } else {
             output_format.color_space = COLORSPACE_sRGB;
-            output_format.gamma_curve = std::max(GAMMA_REC_709,
-                                                 getOutputGamma(MLT_FRAME_PROPERTIES(frame)));
+            output_format.gamma_curve = getOutputGamma(properties);
             chain->effect_chain->add_output(output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
             chain->effect_chain->set_dither_bits(8);
         }
@@ -363,7 +358,6 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
         // Delete all the created Effect instances to avoid memory leaks.
         dispose_movit_effects(leaf_service, frame);
 
-        auto properties = MLT_FRAME_PROPERTIES(frame);
         getOutputGamma(properties);
         mlt_properties_set_int(properties,
                                "full_range",
