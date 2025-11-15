@@ -344,6 +344,11 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
                                                   YCBCR_OUTPUT_INTERLEAVED,
                                                   GL_UNSIGNED_SHORT);
             chain->effect_chain->set_dither_bits(16);
+        } else if (format == mlt_image_rgba64) {
+            output_format.color_space = COLORSPACE_sRGB;
+            output_format.gamma_curve = getOutputGamma(properties);
+            chain->effect_chain->add_output(output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
+            chain->effect_chain->set_dither_bits(16);
         } else {
             output_format.color_space = COLORSPACE_sRGB;
             output_format.gamma_curve = getOutputGamma(properties);
@@ -480,22 +485,36 @@ static int movit_render(EffectChain *chain,
     }
 
     GlslManager *glsl = GlslManager::get_instance();
-    int error;
-    if (output_format == mlt_image_opengl_texture) {
+    int error = 0;
+
+    switch (output_format) {
+    case mlt_image_opengl_texture:
         error = glsl->render_frame_texture(chain, frame, width, height, image);
-    } else if (output_format == mlt_image_yuv444p10 || output_format == mlt_image_yuv420p10) {
+        break;
+
+    case mlt_image_yuv444p10:
+    case mlt_image_yuv420p10:
         error = glsl->render_frame_ycbcr(chain, frame, width, height, image);
         if (!error && output_format != mlt_image_yuv444p10) {
             *format = mlt_image_yuv444p10;
             error = convert_on_cpu(frame, image, format, output_format);
         }
-    } else {
+        break;
+
+    case mlt_image_rgba64:
+        error = glsl->render_frame_rgba64(chain, frame, width, height, image);
+        break;
+
+    default:
+        // Covers mlt_image_rgba and all other fallbacks.
         error = glsl->render_frame_rgba(chain, frame, width, height, image);
         if (!error && output_format != mlt_image_rgba) {
             *format = mlt_image_rgba;
             error = convert_on_cpu(frame, image, format, output_format);
         }
+        break;
     }
+
     return error;
 }
 
@@ -513,26 +532,37 @@ static MltInput *create_input(mlt_properties properties,
     }
 
     MltInput *input = new MltInput(format);
-    if (format == mlt_image_rgba) {
+
+    switch (format) {
+    case mlt_image_rgba:
+    case mlt_image_rgba64:
         // TODO: Get the color space if available.
         input->useFlatInput(FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height);
-    } else if (format == mlt_image_rgb) {
+        break;
+
+    case mlt_image_rgb:
         // TODO: Get the color space if available.
         input->useFlatInput(FORMAT_RGB, width, height);
-    } else if (format == mlt_image_yuv420p) {
+        break;
+
+    case mlt_image_yuv420p: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
         ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 2;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
-    } else if (format == mlt_image_yuv422) {
+    } break;
+
+    case mlt_image_yuv422: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
         ycbcr_format.chroma_subsampling_x = 2;
         ycbcr_format.chroma_subsampling_y = 1;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
-    } else if (format == mlt_image_yuv420p10) {
+    } break;
+
+    case mlt_image_yuv420p10: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
@@ -540,7 +570,9 @@ static MltInput *create_input(mlt_properties properties,
         ycbcr_format.chroma_subsampling_y = 2;
         ycbcr_format.num_levels = 1024;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
-    } else if (format == mlt_image_yuv444p10) {
+    } break;
+
+    case mlt_image_yuv444p10: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
@@ -548,7 +580,13 @@ static MltInput *create_input(mlt_properties properties,
         ycbcr_format.chroma_subsampling_y = 1;
         ycbcr_format.num_levels = 1024;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
+    } break;
+
+    default:
+        // Leave input configured with its default for unsupported/other formats.
+        break;
     }
+
     return input;
 }
 
@@ -613,7 +651,7 @@ static int convert_image(mlt_frame frame,
     // If we're at the beginning of a series of Movit effects, store the input
     // sent into the chain.
     if (output_format == mlt_image_movit) {
-        if (*format != mlt_image_rgba && mlt_frame_get_alpha(frame)) {
+        if (*format != mlt_image_rgba && *format != mlt_image_rgba64 && mlt_frame_get_alpha(frame)) {
             if (!convert_on_cpu(frame, image, format, mlt_image_rgba)) {
                 *format = mlt_image_rgba;
             }

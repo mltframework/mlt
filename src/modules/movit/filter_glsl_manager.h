@@ -1,6 +1,6 @@
 /*
  * filter_glsl_manager.h
- * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2025 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,6 +122,7 @@ public:
 
     int render_frame_texture(movit::EffectChain *, mlt_frame, int width, int height, uint8_t **image);
     int render_frame_rgba(movit::EffectChain *, mlt_frame, int width, int height, uint8_t **image);
+    int render_frame_rgba64(movit::EffectChain *, mlt_frame, int width, int height, uint8_t **image);
     int render_frame_ycbcr(movit::EffectChain *, mlt_frame, int width, int height, uint8_t **image);
     static void lock_service(mlt_frame frame);
     static void unlock_service(mlt_frame frame);
