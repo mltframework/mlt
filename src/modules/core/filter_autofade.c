@@ -129,6 +129,8 @@ static int filter_get_image(mlt_frame frame,
 
     if (image_factor < 1.0) {
         mlt_color color = mlt_properties_get_color(filter_properties, "fade_color");
+        color = mlt_color_convert_trc(color,
+                                      mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "color_trc"));
         float color_factor = 1.0 - image_factor;
         float r_value = color.r * color_factor;
         float g_value = color.g * color_factor;

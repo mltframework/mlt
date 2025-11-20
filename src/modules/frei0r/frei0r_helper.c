@@ -1,7 +1,7 @@
 /*
  * frei0r_helper.c -- frei0r helper
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2023 Meltytech, LLC
+ * Copyright (C) 2009-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,6 @@
  */
 #include "frei0r_helper.h"
 #include <frei0r.h>
-#include <stdlib.h>
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -93,6 +92,7 @@ int process_frei0r_item(mlt_service service,
 {
     int i = 0;
     mlt_properties prop = MLT_SERVICE_PROPERTIES(service);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     f0r_instance_t (*f0r_construct)(unsigned int, unsigned int)
         = mlt_properties_get_data(prop, "f0r_construct", NULL);
     if (!f0r_construct) {
@@ -191,11 +191,11 @@ int process_frei0r_item(mlt_service service,
 
             // Special cairoblend handling for an override from the cairoblend_mode filter.
             if (is_cairoblend && i == 1) {
-                if (mlt_properties_get(MLT_FRAME_PROPERTIES(frame), CAIROBLEND_MODE_PROPERTY)) {
+                if (mlt_properties_get(frame_properties, CAIROBLEND_MODE_PROPERTY)) {
                     name = CAIROBLEND_MODE_PROPERTY;
-                    prop = MLT_FRAME_PROPERTIES(frame);
+                    prop = frame_properties;
                     val = mlt_properties_get(prop, name);
-                } else if (!val && !mlt_properties_get(MLT_FRAME_PROPERTIES(frame), name)) {
+                } else if (!val && !mlt_properties_get(frame_properties, name)) {
                     // Reset plugin back to its default value.
                     char *default_val = "normal";
                     char *plugin_val = NULL;
@@ -242,6 +242,10 @@ int process_frei0r_item(mlt_service service,
                         = mlt_properties_get(prop, index)
                               ? mlt_properties_anim_get_color(prop, index, position, length)
                               : mlt_properties_anim_get_color(prop, pinfo.name, position, length);
+                    if (type != mlt_service_producer_type) {
+                        const char *trc = mlt_properties_get(frame_properties, "color_trc");
+                        m_color = mlt_color_convert_trc(m_color, trc);
+                    }
                     f_color.r = (float) m_color.r / 255.0f;
                     f_color.g = (float) m_color.g / 255.0f;
                     f_color.b = (float) m_color.b / 255.0f;
