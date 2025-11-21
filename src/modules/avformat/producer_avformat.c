@@ -72,6 +72,14 @@
 #include <va/va_drmcommon.h>
 #endif
 
+// Windows D3D11 headers
+#ifdef _WIN32
+#include <d3d11.h>
+#include <dxgi.h>
+#include <epoxy/wgl.h>
+#include <libavutil/hwcontext_d3d11va.h>
+#endif
+
 // System header files
 #include <limits.h>
 #include <math.h>
@@ -911,14 +919,12 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
             return mlt_image_yuv422p16;
         case AV_PIX_FMT_RGBA64LE:
             return mlt_image_rgba64;
-#ifdef __APPLE__
         case AV_PIX_FMT_VIDEOTOOLBOX:
             return mlt_image_opengl_texture;
-#endif
-#ifdef __linux__
         case AV_PIX_FMT_VAAPI:
             return mlt_image_opengl_texture;
-#endif
+        case AV_PIX_FMT_D3D11:
+            return mlt_image_opengl_texture;
         default:
             current_format = mlt_image_yuv422;
         }
@@ -1953,15 +1959,15 @@ static mlt_colorspace convert_image_yuvp(producer_avformat self,
 }
 
 static void convert_image_rgb(producer_avformat self,
-                             mlt_profile profile,
-                             AVFrame *frame,
-                             uint8_t *buffer,
-                             mlt_image_format format,
-                             int width,
-                             int height,
-                             int src_pix_fmt,
-                             int dst_pix_fmt,
-                             int dst_full_range)
+                              mlt_profile profile,
+                              AVFrame *frame,
+                              uint8_t *buffer,
+                              mlt_image_format format,
+                              int width,
+                              int height,
+                              int src_pix_fmt,
+                              int dst_pix_fmt,
+                              int dst_full_range)
 {
     int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
     uint8_t *out_data[4];
@@ -2034,7 +2040,7 @@ static void convert_image_rgb(producer_avformat self,
     }
 }
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
 // GPU-based YUV to RGB conversion shader (shared between platforms)
 static const char *yuv_to_rgb_vertex_shader = "#version 330 core\n"
                                               "layout(location = 0) in vec2 position;\n"
@@ -2641,9 +2647,384 @@ cleanup:
 }
 #endif
 
+#ifdef _WIN32
+// Destructor for OpenGL textures created from D3D11
+static void d3d11_texture_destructor(void *data)
+{
+    if (data) {
+        GLuint *texture_id = (GLuint *) data;
+        if (*texture_id) {
+            glDeleteTextures(1, texture_id);
+        }
+        mlt_pool_release(data);
+    }
+}
+
+static int convert_d3d11_to_opengl_texture(producer_avformat self,
+                                           ID3D11Texture2D *d3d11_texture,
+                                           intptr_t array_index,
+                                           uint8_t **buffer,
+                                           int width,
+                                           int height,
+                                           mlt_frame frame)
+{
+    if (!d3d11_texture) {
+        return -1;
+    }
+
+    // Get D3D11 device from the hardware context
+    AVHWDeviceContext *device_ctx = (AVHWDeviceContext *) self->hwaccel.device_ctx->data;
+    AVD3D11VADeviceContext *d3d11_device_ctx = device_ctx->hwctx;
+    ID3D11Device *d3d11_device = d3d11_device_ctx->device;
+    ID3D11DeviceContext *d3d11_context = d3d11_device_ctx->device_context;
+
+    if (!d3d11_device || !d3d11_context) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent), "Invalid D3D11 device or context\n");
+        return -1;
+    }
+
+    GLuint rgbTextureID = 0;
+    ID3D11Texture2D *rgb_texture = NULL;
+    ID3D11Texture2D *shared_texture = NULL;
+    ID3D11VideoDevice *video_device = NULL;
+    ID3D11VideoContext *video_context = NULL;
+    ID3D11VideoProcessor *video_processor = NULL;
+    ID3D11VideoProcessorEnumerator *video_enum = NULL;
+    ID3D11VideoProcessorInputView *input_view = NULL;
+    ID3D11VideoProcessorOutputView *output_view = NULL;
+    HANDLE shared_handle = NULL;
+    IDXGIResource *dxgi_resource = NULL;
+
+    // Get D3D11 texture description
+    D3D11_TEXTURE2D_DESC desc;
+    d3d11_texture->lpVtbl->GetDesc(d3d11_texture, &desc);
+
+    // Query for ID3D11VideoDevice
+    HRESULT hr = d3d11_device->lpVtbl->QueryInterface(d3d11_device,
+                                                      &IID_ID3D11VideoDevice,
+                                                      (void **) &video_device);
+    if (FAILED(hr) || !video_device) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to get ID3D11VideoDevice interface\n");
+        return -1;
+    }
+
+    // Query for ID3D11VideoContext
+    hr = d3d11_context->lpVtbl->QueryInterface(d3d11_context,
+                                               &IID_ID3D11VideoContext,
+                                               (void **) &video_context);
+    if (FAILED(hr) || !video_context) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to get ID3D11VideoContext interface\n");
+        video_device->lpVtbl->Release(video_device);
+        return -1;
+    }
+
+    // Create video processor enumerator
+    D3D11_VIDEO_PROCESSOR_CONTENT_DESC content_desc = {0};
+    content_desc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+    content_desc.InputWidth = width;
+    content_desc.InputHeight = height;
+    content_desc.OutputWidth = width;
+    content_desc.OutputHeight = height;
+    content_desc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+
+    hr = video_device->lpVtbl->CreateVideoProcessorEnumerator(video_device,
+                                                              &content_desc,
+                                                              &video_enum);
+    if (FAILED(hr) || !video_enum) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to create video processor enumerator\n");
+        video_context->lpVtbl->Release(video_context);
+        video_device->lpVtbl->Release(video_device);
+        return -1;
+    }
+
+    // Create video processor
+    hr = video_device->lpVtbl->CreateVideoProcessor(video_device, video_enum, 0, &video_processor);
+    if (FAILED(hr) || !video_processor) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent), "Failed to create video processor\n");
+        video_enum->lpVtbl->Release(video_enum);
+        video_context->lpVtbl->Release(video_context);
+        video_device->lpVtbl->Release(video_device);
+        return -1;
+    }
+
+    // Create RGB output texture with shared flag for OpenGL interop
+    D3D11_TEXTURE2D_DESC rgb_desc = {0};
+    rgb_desc.Width = width;
+    rgb_desc.Height = height;
+    rgb_desc.MipLevels = 1;
+    rgb_desc.ArraySize = 1;
+    rgb_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    rgb_desc.SampleDesc.Count = 1;
+    rgb_desc.SampleDesc.Quality = 0;
+    rgb_desc.Usage = D3D11_USAGE_DEFAULT;
+    rgb_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    rgb_desc.CPUAccessFlags = 0;
+    rgb_desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+
+    hr = d3d11_device->lpVtbl->CreateTexture2D(d3d11_device, &rgb_desc, NULL, &rgb_texture);
+    if (FAILED(hr) || !rgb_texture) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent), "Failed to create RGB output texture\n");
+        video_processor->lpVtbl->Release(video_processor);
+        video_enum->lpVtbl->Release(video_enum);
+        video_context->lpVtbl->Release(video_context);
+        video_device->lpVtbl->Release(video_device);
+        return -1;
+    }
+
+    // Create input view for the source NV12 texture
+    D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC input_desc = {0};
+    input_desc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
+    input_desc.Texture2D.MipSlice = 0;
+    input_desc.Texture2D.ArraySlice = (desc.ArraySize > 1 && array_index >= 0) ? (UINT) array_index
+                                                                               : 0;
+
+    hr = video_device->lpVtbl->CreateVideoProcessorInputView(video_device,
+                                                             (ID3D11Resource *) d3d11_texture,
+                                                             video_enum,
+                                                             &input_desc,
+                                                             &input_view);
+    if (FAILED(hr) || !input_view) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to create video processor input view\n");
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        video_processor->lpVtbl->Release(video_processor);
+        video_enum->lpVtbl->Release(video_enum);
+        video_context->lpVtbl->Release(video_context);
+        video_device->lpVtbl->Release(video_device);
+        return -1;
+    }
+
+    // Create output view for RGB texture
+    D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC output_desc = {0};
+    output_desc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+    output_desc.Texture2D.MipSlice = 0;
+
+    hr = video_device->lpVtbl->CreateVideoProcessorOutputView(video_device,
+                                                              (ID3D11Resource *) rgb_texture,
+                                                              video_enum,
+                                                              &output_desc,
+                                                              &output_view);
+    if (FAILED(hr) || !output_view) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to create video processor output view\n");
+        input_view->lpVtbl->Release(input_view);
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        video_processor->lpVtbl->Release(video_processor);
+        video_enum->lpVtbl->Release(video_enum);
+        video_context->lpVtbl->Release(video_context);
+        video_device->lpVtbl->Release(video_device);
+        return -1;
+    }
+
+    // Set up color space for the conversion
+    D3D11_VIDEO_PROCESSOR_COLOR_SPACE color_space = {0};
+    color_space.YCbCr_Matrix = (self->yuv_colorspace == 709)    ? 1  // BT.709
+                               : (self->yuv_colorspace == 601)  ? 0  // BT.601
+                               : (self->yuv_colorspace == 2020) ? 2  // BT.2020
+                                                                : 1; // Default to BT.709
+    color_space.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
+
+    video_context->lpVtbl->VideoProcessorSetStreamColorSpace(video_context,
+                                                             video_processor,
+                                                             0,
+                                                             &color_space);
+
+    D3D11_VIDEO_PROCESSOR_COLOR_SPACE output_color_space = {0};
+    output_color_space.RGB_Range = 0; // Full range RGB
+    output_color_space.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
+    video_context->lpVtbl->VideoProcessorSetOutputColorSpace(video_context,
+                                                             video_processor,
+                                                             &output_color_space);
+
+    // Perform the NV12 to RGB conversion
+    D3D11_VIDEO_PROCESSOR_STREAM stream = {0};
+    stream.Enable = TRUE;
+    stream.pInputSurface = input_view;
+
+    hr = video_context->lpVtbl
+             ->VideoProcessorBlt(video_context, video_processor, output_view, 0, 1, &stream);
+    if (FAILED(hr)) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to perform video processor conversion\n");
+        output_view->lpVtbl->Release(output_view);
+        input_view->lpVtbl->Release(input_view);
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        video_processor->lpVtbl->Release(video_processor);
+        video_enum->lpVtbl->Release(video_enum);
+        video_context->lpVtbl->Release(video_context);
+        video_device->lpVtbl->Release(video_device);
+        return -1;
+    }
+
+    // Flush the D3D11 context to ensure the video processor has completed
+    d3d11_context->lpVtbl->Flush(d3d11_context);
+
+    // Clean up video processor resources
+    output_view->lpVtbl->Release(output_view);
+    input_view->lpVtbl->Release(input_view);
+    video_processor->lpVtbl->Release(video_processor);
+    video_enum->lpVtbl->Release(video_enum);
+    video_context->lpVtbl->Release(video_context);
+    video_device->lpVtbl->Release(video_device);
+
+    // Now we have an RGB texture, get shared handle for OpenGL interop
+    hr = rgb_texture->lpVtbl->QueryInterface(rgb_texture,
+                                             &IID_IDXGIResource,
+                                             (void **) &dxgi_resource);
+    if (FAILED(hr) || !dxgi_resource) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to query IDXGIResource interface\n");
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        return -1;
+    }
+
+    hr = dxgi_resource->lpVtbl->GetSharedHandle(dxgi_resource, &shared_handle);
+    dxgi_resource->lpVtbl->Release(dxgi_resource);
+
+    if (FAILED(hr) || !shared_handle) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to get shared handle from RGB texture\n");
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        return -1;
+    }
+
+    // Get WGL extensions for D3D11 interop
+    PFNWGLDXOPENDEVICENVPROC wglDXOpenDeviceNV = (PFNWGLDXOPENDEVICENVPROC) wglGetProcAddress(
+        "wglDXOpenDeviceNV");
+    PFNWGLDXCLOSEDEVICENVPROC wglDXCloseDeviceNV = (PFNWGLDXCLOSEDEVICENVPROC) wglGetProcAddress(
+        "wglDXCloseDeviceNV");
+    PFNWGLDXREGISTEROBJECTNVPROC wglDXRegisterObjectNV
+        = (PFNWGLDXREGISTEROBJECTNVPROC) wglGetProcAddress("wglDXRegisterObjectNV");
+    PFNWGLDXUNREGISTEROBJECTNVPROC wglDXUnregisterObjectNV
+        = (PFNWGLDXUNREGISTEROBJECTNVPROC) wglGetProcAddress("wglDXUnregisterObjectNV");
+    PFNWGLDXLOCKOBJECTSNVPROC wglDXLockObjectsNV = (PFNWGLDXLOCKOBJECTSNVPROC) wglGetProcAddress(
+        "wglDXLockObjectsNV");
+    PFNWGLDXUNLOCKOBJECTSNVPROC wglDXUnlockObjectsNV
+        = (PFNWGLDXUNLOCKOBJECTSNVPROC) wglGetProcAddress("wglDXUnlockObjectsNV");
+
+    if (!wglDXOpenDeviceNV || !wglDXCloseDeviceNV || !wglDXRegisterObjectNV
+        || !wglDXUnregisterObjectNV || !wglDXLockObjectsNV || !wglDXUnlockObjectsNV) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "WGL_NV_DX_interop extension not available\n");
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        return -1;
+    }
+
+    // Open D3D11 device for interop
+    HANDLE gl_device = wglDXOpenDeviceNV(d3d11_device);
+    if (!gl_device) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to open D3D11 device for GL interop\n");
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        return -1;
+    }
+
+    // Create OpenGL texture
+    glGenTextures(1, &rgbTextureID);
+    glBindTexture(GL_TEXTURE_2D, rgbTextureID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    check_gl_error();
+
+    // Register D3D11 RGB texture with OpenGL
+    HANDLE gl_handle = wglDXRegisterObjectNV(gl_device,
+                                             rgb_texture,
+                                             rgbTextureID,
+                                             GL_TEXTURE_2D,
+                                             WGL_ACCESS_READ_ONLY_NV);
+
+    if (!gl_handle) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to register D3D11 RGB texture with GL\n");
+        glDeleteTextures(1, &rgbTextureID);
+        wglDXCloseDeviceNV(gl_device);
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        return -1;
+    }
+
+    // Lock the texture for GL access
+    if (!wglDXLockObjectsNV(gl_device, 1, &gl_handle)) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "Failed to lock D3D11 RGB texture for GL access\n");
+        wglDXUnregisterObjectNV(gl_device, gl_handle);
+        glDeleteTextures(1, &rgbTextureID);
+        wglDXCloseDeviceNV(gl_device);
+        rgb_texture->lpVtbl->Release(rgb_texture);
+        return -1;
+    }
+
+    // Copy the interop texture to a new OpenGL texture
+    // This is necessary because we can't keep the D3D11 texture locked
+    GLuint final_texture = 0;
+    glGenTextures(1, &final_texture);
+    glBindTexture(GL_TEXTURE_2D, final_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    check_gl_error();
+
+    // Use a framebuffer to copy from the interop texture
+    GLuint fbo = 0;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rgbTextureID, 0);
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, final_texture);
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
+    check_gl_error();
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &fbo);
+
+    // Now we can unlock and cleanup the interop resources
+    wglDXUnlockObjectsNV(gl_device, 1, &gl_handle);
+    wglDXUnregisterObjectNV(gl_device, gl_handle);
+    glDeleteTextures(1, &rgbTextureID);
+    wglDXCloseDeviceNV(gl_device);
+    rgb_texture->lpVtbl->Release(rgb_texture);
+
+    mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
+                  "Successfully converted D3D11 NV12 to RGB using Video Processor: texture %u\n",
+                  final_texture);
+
+    // Store the texture ID in heap memory managed by the frame
+    // The image buffer will point to this memory
+    if (final_texture) {
+        GLuint *texture_ptr = mlt_pool_alloc(sizeof(GLuint));
+        if (texture_ptr) {
+            *texture_ptr = final_texture;
+
+            // Register the texture with the frame so it gets cleaned up when frame is destroyed
+            mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame),
+                                    "d3d11.opengl.texture",
+                                    texture_ptr,
+                                    0,
+                                    d3d11_texture_destructor,
+                                    NULL);
+
+            // Point the image buffer to our texture ID storage
+            // This is the pattern used by movit for OpenGL textures
+            if (*buffer) {
+                *((GLuint **) buffer) = texture_ptr;
+            }
+        }
+    }
+
+    return final_texture > 0 ? 0 : -1;
+}
+#endif
+
 // returns resulting YUV colorspace
 static int convert_image(producer_avformat self,
-                         mlt_properties frame_properties,
+                         mlt_frame mlt_frame_obj,
                          AVFrame *frame,
                          uint8_t **buffer,
                          int pix_fmt,
@@ -2655,6 +3036,7 @@ static int convert_image(producer_avformat self,
 {
     mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
     mlt_colorspace colorspace = self->yuv_colorspace;
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(mlt_frame_obj);
 
     mlt_log_timings_begin();
 
@@ -2755,6 +3137,23 @@ static int convert_image(producer_avformat self,
             // Successfully created OpenGL texture
             mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
                          "Successfully converted VAAPI surface to OpenGL texture\n");
+        } else {
+            colorspace = mlt_colorspace_invalid;
+        }
+#elif _WIN32
+    } else if (*format == mlt_image_opengl_texture && pix_fmt == AV_PIX_FMT_D3D11) {
+        // Handle D3D11 ID3D11Texture2D to OpenGL texture conversion
+        // frame->data[0] contains ID3D11Texture2D pointer
+        // frame->data[1] contains texture array index (intptr_t)
+        ID3D11Texture2D *d3d11_texture = (ID3D11Texture2D *) frame->data[0];
+        intptr_t array_index = (intptr_t) frame->data[1];
+        if (d3d11_texture
+            && convert_d3d11_to_opengl_texture(
+                   self, d3d11_texture, array_index, buffer, width, height, mlt_frame_obj)
+                   == 0) {
+            // Successfully created OpenGL texture
+            mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
+                         "Successfully converted D3D11 texture to OpenGL texture\n");
         } else {
             colorspace = mlt_colorspace_invalid;
         }
@@ -2877,13 +3276,26 @@ static int allocate_buffer(mlt_frame frame,
     if (codec_params && (codec_params->width == 0 || codec_params->height == 0))
         return size;
 
-    size = mlt_image_format_size(format, width, height, NULL);
-    *buffer = mlt_pool_alloc(size);
-    if (*buffer) {
-        if (frame)
-            mlt_frame_set_image(frame, *buffer, size, mlt_pool_release);
+    // For OpenGL texture format, we only need space for a pointer to GLuint
+    // The actual texture will be managed separately
+    if (format == mlt_image_opengl_texture) {
+        size = sizeof(GLuint *);
+        *buffer = mlt_pool_alloc(size);
+        if (*buffer) {
+            if (frame)
+                mlt_frame_set_image(frame, *buffer, 0, NULL);
+        } else {
+            size = 0;
+        }
     } else {
-        size = 0;
+        size = mlt_image_format_size(format, width, height, NULL);
+        *buffer = mlt_pool_alloc(size);
+        if (*buffer) {
+            if (frame)
+                mlt_frame_set_image(frame, *buffer, size, mlt_pool_release);
+        } else {
+            size = 0;
+        }
     }
 
     return size;
@@ -3125,7 +3537,7 @@ static int producer_get_image(mlt_frame frame,
         set_image_size(self, width, height);
         if ((image_size = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
             convert_image(self,
-                          frame_properties,
+                          frame,
                           self->video_frame,
                           buffer,
                           self->video_frame->format,
@@ -3303,6 +3715,22 @@ static int producer_get_image(mlt_frame frame,
                                         decode_errors = 0;
                                     }
                                 }
+#elif _WIN32
+                                // Check if we want OpenGL texture format for D3D11
+                                if (*format == mlt_image_opengl_texture
+                                    && self->hwaccel.pix_fmt == AV_PIX_FMT_D3D11) {
+                                    // Keep the hardware frame for direct OpenGL texture conversion
+                                    ID3D11Texture2D *d3d11_texture
+                                        = (ID3D11Texture2D *) self->video_frame->data[0];
+                                    if (d3d11_texture) {
+                                        mlt_log_verbose(
+                                            MLT_PRODUCER_SERVICE(producer),
+                                            "Keeping D3D11 frame for OpenGL texture conversion\n");
+                                        // The D3D11 texture will be converted to OpenGL texture in convert_image
+                                        got_picture = 1;
+                                        decode_errors = 0;
+                                    }
+                                }
 #endif
                                 if (!got_picture) {
                                     if ((error = hwaccel_download(self->video_frame))) {
@@ -3429,7 +3857,7 @@ static int producer_get_image(mlt_frame frame,
                 if ((image_size
                      = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
                     int colorspace = convert_image(self,
-                                                   frame_properties,
+                                                   frame,
                                                    self->video_frame,
                                                    buffer,
                                                    self->video_frame->format,

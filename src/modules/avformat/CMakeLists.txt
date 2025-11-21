@@ -36,9 +36,12 @@ target_link_libraries(mltavformat PRIVATE
   Threads::Threads
   ${FFMPEG_LIBRARIES}
   OpenGL::GL
-  PkgConfig::egl
   PkgConfig::epoxy
 )
+
+if (UNIX AND NOT APPLE)
+  target_link_libraries(mltavformat PRIVATE PkgConfig::egl)
+endif()
 
 if(MSVC)
   target_link_libraries(mltavformat PRIVATE PThreads4W::PThreads4W)

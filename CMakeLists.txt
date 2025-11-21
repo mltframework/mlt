@@ -212,7 +212,9 @@ if(MOD_GDK OR MOD_GTK)
 endif()
 
 if(MOD_AVFORMAT)
-  pkg_check_modules(egl IMPORTED_TARGET egl)
+  if(UNIX AND NOT APPLE)
+    pkg_check_modules(egl IMPORTED_TARGET egl)
+  endif()
   pkg_check_modules(epoxy IMPORTED_TARGET epoxy)
   find_package(FFmpeg REQUIRED COMPONENTS
     AVFORMAT
