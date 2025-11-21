@@ -95,10 +95,21 @@ static int producer_get_image(mlt_frame frame,
     // Choose suitable out values if nothing specific requested
     if (*format == mlt_image_none || *format == mlt_image_movit)
         *format = mlt_image_rgba;
-    if (*width <= 0)
-        *width = mlt_service_profile(MLT_PRODUCER_SERVICE(producer))->width;
-    if (*height <= 0)
-        *height = mlt_service_profile(MLT_PRODUCER_SERVICE(producer))->height;
+    if (*width <= 0 || *height <= 0) {
+        mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
+        if (profile) {
+            if (*width <= 0)
+                *width = profile->width;
+            if (*height <= 0)
+                *height = profile->height;
+        } else {
+            if (*width <= 0)
+                *width = 16;
+            if (*height <= 0)
+                *height = 16;
+        }
+    }
+
 
     // Choose default image format if specific request is unsupported
     if (*format != mlt_image_yuv420p && *format != mlt_image_yuv422 && *format != mlt_image_rgb
@@ -259,10 +270,16 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         // Set producer-specific frame properties
         mlt_properties_set_int(properties, "progressive", 1);
         mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
-        mlt_properties_set_double(properties, "aspect_ratio", mlt_profile_sar(profile));
-        mlt_properties_set_int(properties, "meta.media.width", profile->width);
-        mlt_properties_set_int(properties, "meta.media.height", profile->height);
+	double sar = profile ? mlt_profile_sar(profile) : 1.0;
+        int pw = profile ? profile->width : 16;
+        int ph = profile ? profile->height : 16;
+        mlt_properties_set_double(properties, "aspect_ratio", sar);
+        mlt_properties_set_int(properties, "meta.media.width", pw);
+        mlt_properties_set_int(properties, "meta.media.height", ph);
 
+
+
+	
         // colour is an alias for resource
         if (mlt_properties_get(producer_props, "colour") != NULL)
             mlt_properties_set(producer_props,

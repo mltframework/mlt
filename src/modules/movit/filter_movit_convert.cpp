@@ -759,11 +759,11 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
     // The producer may still change it during get_image.
     // This way we do not have to modify each producer to set a valid colorspace.
     mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
-    if (mlt_properties_get_int(properties, "colorspace") <= 0)
-        mlt_properties_set_int(properties,
-                               "colorspace",
-                               mlt_service_profile(MLT_FILTER_SERVICE(filter))->colorspace);
-
+    if (mlt_properties_get_int(properties, "colorspace") <= 0) {
+        mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+        int colorspace = profile ? profile->colorspace : mlt_colorspace_bt601;
+        mlt_properties_set_int(properties, "colorspace", colorspace);
+    }
     frame->convert_image = convert_image;
 
     mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data(MLT_FILTER_PROPERTIES(filter),

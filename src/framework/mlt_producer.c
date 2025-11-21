@@ -486,6 +486,10 @@ double mlt_producer_get_fps(mlt_producer self)
 
 int mlt_producer_set_in_and_out(mlt_producer self, mlt_position in, mlt_position out)
 {
+
+    if (self == NULL) {
+        return 1;
+    }
     if (self->set_in_and_out) {
         return self->set_in_and_out(self, in, out);
     }

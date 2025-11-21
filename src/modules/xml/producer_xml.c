@@ -753,9 +753,12 @@ static void on_end_link(deserialise_context context, const xmlChar *name)
         mlt_log_error(NULL, "[producer_xml] Invalid top of stack on link close\n");
     }
 
-    if (service) {
+    if (service && type == mlt_dummy_producer_type) {
         mlt_service_close(service);
         free(service);
+    } else if (service && type != mlt_dummy_producer_type) {
+        // Not our dummy wrapper; restore stack to avoid freeing real services.
+        context_push_service(context, service, type);
     }
 }
 
@@ -780,6 +783,22 @@ static void on_end_producer(deserialise_context context, const xmlChar *name)
     enum service_type type;
     mlt_service service = context_pop_service(context, &type);
     mlt_properties properties = MLT_SERVICE_PROPERTIES(service);
+
+     // If the top of stack is a real producer (due to earlier push), consume it,
+    // then consume and destroy the dummy wrapper underneath.
+    if (service != NULL && type == mlt_producer_type) {
+        enum service_type dummy_type = mlt_invalid_type;
+        mlt_service dummy = context_pop_service(context, &dummy_type);
+        if (dummy && dummy_type == mlt_dummy_producer_type) {
+            mlt_service_close(dummy);
+            free(dummy);
+        } else if (dummy) {
+            // Unexpected non-dummy beneath a producer; restore it.
+            context_push_service(context, dummy, dummy_type);
+        }
+        // Producer end tag consumed; do not push producer back.
+        return;
+    }
 
     if (service != NULL && type == mlt_dummy_producer_type) {
         mlt_service producer = NULL;
