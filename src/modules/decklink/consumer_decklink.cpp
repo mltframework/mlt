@@ -693,7 +693,7 @@ protected:
                 frameMeta->SetInt(bmdDeckLinkFrameMetadataColorspace, colorspace);
 
                 // Set HDR a transfer function
-                const char *trc_str = mlt_properties_get(consumer_properties, "consumer.color_trc");
+                const char *trc_str = mlt_properties_get(consumer_properties, "color_trc");
                 mlt_color_trc trc = mlt_image_color_trc_id(trc_str);
                 if (trc == mlt_color_trc_arib_std_b67) {
                     frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
@@ -741,6 +741,9 @@ protected:
                                         mlt_properties_get_double(consumer_properties,
                                                                   "hdr_max_fall"));
                 }
+            } else {
+                mlt_log_debug(getConsumer(),
+                              "Unable to get IDeckLinkVideoFrameMutableMetadataExtensions\n");
             }
 
             hr = m_deckLinkOutput->ScheduleVideoFrame(decklinkFrame,
