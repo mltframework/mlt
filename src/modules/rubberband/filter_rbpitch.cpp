@@ -38,8 +38,6 @@ typedef struct
     uint64_t out_samples;
 } private_data;
 
-static const size_t MAX_CHANNELS = 10;
-
 static int rbpitch_get_audio(mlt_frame frame,
                              void **buffer,
                              mlt_audio_format *format,
