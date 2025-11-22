@@ -67,7 +67,7 @@ mlt_deinterlacer mlt_deinterlacer_id(const char *name)
     return mlt_deinterlacer_invalid;
 }
 
-uint8_t srgb_to_linear(uint8_t value)
+static uint8_t srgb_to_linear(uint8_t value)
 {
     // Normalize the 8-bit value to the [0.0, 1.0] range
     double factor = (double) value / 255.0;
@@ -81,7 +81,7 @@ uint8_t srgb_to_linear(uint8_t value)
     return (uint8_t) CLAMP(linear_value, 0.0, 255.0);
 }
 
-/** Convert a standard sRGB color value to the specified colorspace.
+/** Convert a standard sRGB color value to the specified TRC (Transfer Characteristics).
  *
  * \param color a standard sRGB color value
  * \param trc_name a string representing the TRC to convert to
