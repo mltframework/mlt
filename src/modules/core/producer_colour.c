@@ -64,6 +64,7 @@ static int producer_get_image(mlt_frame frame,
                               int *height,
                               int writable)
 {
+    mlt_image_format requested_format = *format;
     // Obtain properties of frame
     mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
 
@@ -95,6 +96,11 @@ static int producer_get_image(mlt_frame frame,
     // Choose suitable out values if nothing specific requested
     if (*format == mlt_image_none || *format == mlt_image_movit)
         *format = mlt_image_rgba;
+    // Optimize the format to avoid unnecessary conversion
+    if ((requested_format == mlt_image_rgba && *format == mlt_image_rgba64)
+        || (requested_format == mlt_image_rgba64 && *format == mlt_image_rgba))
+        *format = requested_format;
+
     if (*width <= 0)
         *width = mlt_service_profile(MLT_PRODUCER_SERVICE(producer))->width;
     if (*height <= 0)
@@ -143,7 +149,6 @@ static int producer_get_image(mlt_frame frame,
                 memset(p + 0, y, plane_size);
                 memset(p + plane_size, u, plane_size / 4);
                 memset(p + plane_size + plane_size / 4, v, plane_size / 4);
-                mlt_properties_set_int(properties, "colorspace", mlt_colorspace_bt601);
                 break;
             }
             case mlt_image_yuv422: {
@@ -166,7 +171,6 @@ static int producer_get_image(mlt_frame frame,
                         *p++ = u;
                     }
                 }
-                mlt_properties_set_int(properties, "colorspace", mlt_colorspace_bt601);
                 break;
             }
             case mlt_image_rgb:
@@ -192,10 +196,10 @@ static int producer_get_image(mlt_frame frame,
                 uint16_t *p16 = (uint16_t *) p;
                 const int component_count = *width * *height * 4;
                 for (int j = 0; j < component_count; j += 4) {
-                    p16[j] = color.r << 8;
-                    p16[j + 1] = color.g << 8;
-                    p16[j + 2] = color.b << 8;
-                    p16[j + 3] = color.a << 8;
+                    p16[j] = (color.r << 8) + color.r;
+                    p16[j + 1] = (color.g << 8) + color.g;
+                    p16[j + 2] = (color.b << 8) + color.b;
+                    p16[j + 3] = (color.a << 8) + color.a;
                 }
                 break;
             }
@@ -237,6 +241,33 @@ static int producer_get_image(mlt_frame frame,
                               mlt_properties_get_double(producer_props, "aspect_ratio"));
     mlt_properties_set_int(properties, "meta.media.width", *width);
     mlt_properties_set_int(properties, "meta.media.height", *height);
+
+    mlt_colorspace colorspace = mlt_colorspace_rgb;
+    mlt_color_trc color_trc = mlt_color_trc_iec61966_2_1;
+    mlt_color_primaries primaries = mlt_color_pri_bt709;
+
+    int full_range = 1;
+    switch (*format) {
+    case mlt_image_yuv420p:
+    case mlt_image_yuv422:
+        colorspace = mlt_colorspace_bt601;
+        color_trc = mlt_color_trc_smpte170m;
+        primaries = mlt_color_pri_smpte170m;
+        full_range = 0;
+        break;
+    case mlt_image_rgb:
+    case mlt_image_rgba:
+    case mlt_image_rgba64:
+        break;
+    default:
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                      "invalid image format %s\n",
+                      mlt_image_format_name(*format));
+    }
+    mlt_properties_set_int(properties, "colorspace", colorspace);
+    mlt_properties_set_int(properties, "color_trc", color_trc);
+    mlt_properties_set_int(properties, "color_primaries", primaries);
+    mlt_properties_set_int(properties, "full_range", full_range);
 
     return 0;
 }

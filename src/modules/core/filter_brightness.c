@@ -40,22 +40,56 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
     struct sliced_desc *ctx = ((struct sliced_desc *) cookie);
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, ctx->image->height, &slice_line_start);
-    int min = ctx->full_range ? 0 : 16;
-    int max_luma = ctx->full_range ? 255 : 235;
-    int max_chroma = ctx->full_range ? 255 : 240;
 
     // Only process if level is something other than 1
-    if (ctx->level != 1.0 && ctx->image->format == mlt_image_yuv422) {
+    if (ctx->level != 1.0) {
         int32_t m = ctx->level * (1 << 16);
-        int32_t n = 128 * ((1 << 16) - m);
-        for (int line = 0; line < slice_height; line++) {
-            uint8_t *p = ctx->image->planes[0]
-                         + ((slice_line_start + line) * ctx->image->strides[0]);
-            for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                *p = CLAMP((*p * m) >> 16, min, max_luma);
-                p++;
-                *p = CLAMP((*p * m + n) >> 16, min, max_chroma);
-                p++;
+        if (ctx->image->format == mlt_image_yuv422) {
+            int32_t n = 128 * ((1 << 16) - m);
+            int min = ctx->full_range ? 0 : 16;
+            int max_luma = ctx->full_range ? 255 : 235;
+            int max_chroma = ctx->full_range ? 255 : 240;
+            for (int line = 0; line < slice_height; line++) {
+                uint8_t *p = ctx->image->planes[0]
+                             + ((slice_line_start + line) * ctx->image->strides[0]);
+                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
+                    p[0] = CLAMP((p[0] * m) >> 16, min, max_luma);
+                    p[1] = CLAMP((p[1] * m + n) >> 16, min, max_chroma);
+                    p += 2;
+                }
+            }
+        } else if (ctx->image->format == mlt_image_rgba) {
+            for (int line = 0; line < slice_height; line++) {
+                uint8_t *p = ctx->image->planes[0]
+                             + ((slice_line_start + line) * ctx->image->strides[0]);
+                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
+                    p[0] = CLAMP((p[0] * m) >> 16, 0, 255);
+                    p[1] = CLAMP((p[1] * m) >> 16, 0, 255);
+                    p[2] = CLAMP((p[2] * m) >> 16, 0, 255);
+                    p += 4;
+                }
+            }
+        } else if (ctx->image->format == mlt_image_rgb) {
+            for (int line = 0; line < slice_height; line++) {
+                uint8_t *p = ctx->image->planes[0]
+                             + ((slice_line_start + line) * ctx->image->strides[0]);
+                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
+                    p[0] = CLAMP((p[0] * m) >> 16, 0, 255);
+                    p[1] = CLAMP((p[1] * m) >> 16, 0, 255);
+                    p[2] = CLAMP((p[2] * m) >> 16, 0, 255);
+                    p += 3;
+                }
+            }
+        } else if (ctx->image->format == mlt_image_rgba64) {
+            for (int row = 0; row < slice_height; row++) {
+                uint16_t *p = (uint16_t *) ctx->image->planes[0]
+                              + ((slice_line_start + row) * ctx->image->strides[0] / 2);
+                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
+                    p[0] = CLAMP(round((double) p[0] * ctx->level), 0, 65535);
+                    p[1] = CLAMP(round((double) p[1] * ctx->level), 0, 65535);
+                    p[2] = CLAMP(round((double) p[2] * ctx->level), 0, 65535);
+                    p += 4;
+                }
             }
         }
     }
@@ -68,25 +102,25 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
                 uint8_t *p = ctx->image->planes[0]
                              + ((slice_line_start + line) * ctx->image->strides[0]) + 3;
                 for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    *p = (*p * m) >> 16;
+                    *p = CLAMP((*p * m) >> 16, 0, 255);
                     p += 4;
                 }
             }
         } else if (ctx->image->format == mlt_image_rgba64) {
             for (int row = 0; row < slice_height; row++) {
                 uint16_t *p = (uint16_t *) ctx->image->planes[0]
-                              + ((slice_line_start + row) * ctx->image->strides[0]) + 3;
+                              + ((slice_line_start + row) * ctx->image->strides[0] / 2) + 3;
                 int components_in_row = ctx->image->width * 4;
                 for (int col = 0; col < components_in_row; col += 4) {
-                    p[col] = (p[col] * m) >> 16;
+                    p[col] = CLAMP(round((double) p[col] * ctx->alpha_level), 0, 65535);
                 }
             }
-        } else {
+        } else if (ctx->image->planes[3]) {
             for (int line = 0; line < slice_height; line++) {
                 uint8_t *p = ctx->image->planes[3]
                              + ((slice_line_start + line) * ctx->image->strides[3]);
                 for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    *p = (*p * m) >> 16;
+                    *p = CLAMP((*p * m) >> 16, 0, 255);
                     p++;
                 }
             }
@@ -130,13 +164,35 @@ static int filter_get_image(mlt_frame frame,
     }
 
     // Do not cause an image conversion unless there is real work to do.
-    if (level != 1.0)
-        *format = mlt_image_yuv422;
+    if (level != 1.0) {
+        switch (*format) {
+        case mlt_image_rgb:
+        case mlt_image_rgba:
+        case mlt_image_rgba64:
+        case mlt_image_yuv422:
+            break;
+        case mlt_image_movit:
+        case mlt_image_opengl_texture:
+            *format = mlt_image_rgba;
+            break;
+        case mlt_image_none:
+        case mlt_image_invalid:
+        case mlt_image_yuv420p:
+        case mlt_image_yuv422p16:
+        case mlt_image_yuv420p10:
+        case mlt_image_yuv444p10:
+            *format = mlt_image_yuv422;
+            break;
+        }
+    }
 
     // Get the image
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
-    level = (*format == mlt_image_yuv422) ? level : 1.0;
+    if (*format != mlt_image_rgb && *format != mlt_image_rgba && *format != mlt_image_rgba64
+        && *format != mlt_image_yuv422)
+        level = 1.0;
+
     alpha_level = mlt_properties_get(properties, "alpha")
                       ? MIN(mlt_properties_anim_get_double(properties, "alpha", position, length),
                             1.0)

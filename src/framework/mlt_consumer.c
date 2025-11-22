@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@
  */
 
 #include "mlt_consumer.h"
+#include "mlt_cache.h"
 #include "mlt_factory.h"
 #include "mlt_frame.h"
 #include "mlt_log.h"
@@ -309,6 +310,9 @@ static void mlt_consumer_property_changed(mlt_properties owner,
         mlt_profile profile = mlt_service_profile(MLT_CONSUMER_SERVICE(self));
         if (profile)
             profile->colorspace = mlt_properties_get_int(properties, "colorspace");
+    } else if (!strcmp(name, "mlt_color_trc")) {
+        mlt_properties properties = MLT_CONSUMER_PROPERTIES(self);
+        mlt_properties_clear(properties, "_ct_filter");
     }
 }
 
@@ -683,11 +687,42 @@ mlt_frame mlt_consumer_get_frame(mlt_consumer self)
                            "consumer.color_trc",
                            mlt_properties_get(properties, "color_trc"));
         mlt_properties_set(frame_properties,
+                           "consumer.mlt_color_trc",
+                           mlt_properties_get(properties, "mlt_color_trc"));
+        mlt_properties_set(frame_properties,
                            "consumer.channel_layout",
                            mlt_properties_get(properties, "channel_layout"));
         mlt_properties_set(frame_properties,
                            "consumer.color_range",
                            mlt_properties_get(properties, "color_range"));
+
+        if (mlt_properties_get(properties, "mlt_color_trc")) {
+            // Add a normalize filter to convert the mlt_color_trc to color_trc
+            mlt_filter ct_filter = (mlt_filter) mlt_properties_get_data(properties,
+                                                                        "_ct_filter",
+                                                                        NULL);
+            if (!ct_filter) {
+                mlt_profile profile = mlt_service_profile(service);
+                ct_filter = mlt_factory_filter(profile, "color_transform", NULL);
+                if (ct_filter) {
+                    mlt_properties cs_properties = MLT_FILTER_PROPERTIES(ct_filter);
+                    const char *color_trc_str = mlt_properties_get(properties, "color_trc");
+                    mlt_color_trc trc = mlt_image_color_trc_id(color_trc_str);
+                    if (trc == mlt_color_trc_none)
+                        trc = mlt_image_default_trc(profile->colorspace);
+                    mlt_properties_set_int(cs_properties, "force_trc", trc);
+                    mlt_properties_set_data(properties,
+                                            "_ct_filter",
+                                            ct_filter,
+                                            0,
+                                            (mlt_destructor) mlt_filter_close,
+                                            NULL);
+                }
+            }
+            if (ct_filter) {
+                mlt_filter_process(ct_filter, frame);
+            }
+        }
     }
 
     // Return the frame
@@ -1716,6 +1751,7 @@ void mlt_consumer_close(mlt_consumer self)
 
             pthread_mutex_destroy(&priv->position_mutex);
 
+            mlt_service_cache_purge(&self->parent);
             mlt_service_close(&self->parent);
             free(priv);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2022 Meltytech, LLC
+ * Copyright (c) 2015-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,10 @@
 #include <QPainterPath>
 #include <QVector>
 
-QVector<QColor> get_graph_colors(mlt_properties filter_properties, int position, int length)
+QVector<QColor> get_graph_colors(mlt_properties filter_properties,
+                                 mlt_properties frame_properties,
+                                 int position,
+                                 int length)
 {
     QVector<QColor> colors;
 
@@ -33,6 +36,8 @@ QVector<QColor> get_graph_colors(mlt_properties filter_properties, int position,
                                                              prop_name.toUtf8().constData(),
                                                              position,
                                                              length);
+            mcolor = mlt_color_convert_trc(mcolor,
+                                           mlt_properties_get(frame_properties, "color_trc"));
             colors.append(QColor(mcolor.r, mcolor.g, mcolor.b, mcolor.a));
         } else {
             break;
@@ -50,11 +55,16 @@ QVector<QColor> get_graph_colors(mlt_properties filter_properties, int position,
 /*
  * Apply the "bgcolor" and "angle" parameters to the QPainter
  */
-void setup_graph_painter(
-    QPainter &p, QRectF &r, mlt_properties filter_properties, int position, int length)
+void setup_graph_painter(QPainter &p,
+                         QRectF &r,
+                         mlt_properties filter_properties,
+                         mlt_properties frame_properties,
+                         int position,
+                         int length)
 {
     mlt_color bg_color
         = mlt_properties_anim_get_color(filter_properties, "bgcolor", position, length);
+    bg_color = mlt_color_convert_trc(bg_color, mlt_properties_get(frame_properties, "color_trc"));
     double angle = mlt_properties_anim_get_double(filter_properties, "angle", position, length);
 
     p.setRenderHint(QPainter::Antialiasing);
@@ -76,13 +86,18 @@ void setup_graph_painter(
 /*
  * Apply the "thickness", "gorient" and "color.x" parameters to the QPainter
  */
-void setup_graph_pen(
-    QPainter &p, QRectF &r, mlt_properties filter_properties, double scale, int position, int length)
+void setup_graph_pen(QPainter &p,
+                     QRectF &r,
+                     mlt_properties filter_properties,
+                     mlt_properties frame_properties,
+                     double scale,
+                     int position,
+                     int length)
 {
     int thickness = mlt_properties_anim_get_int(filter_properties, "thickness", position, length)
                     * scale;
     QString gorient = mlt_properties_get(filter_properties, "gorient");
-    QVector<QColor> colors = get_graph_colors(filter_properties, position, length);
+    QVector<QColor> colors = get_graph_colors(filter_properties, frame_properties, position, length);
     QPen pen;
     pen.setWidth(qAbs(thickness));
 

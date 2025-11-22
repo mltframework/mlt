@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2022 Meltytech, LLC
+ * Copyright (c) 2015-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,12 +25,20 @@
 #include <QRectF>
 #include <QVector>
 
-QVector<QColor> get_graph_colors(mlt_properties filter_properties, int position, int length);
-void setup_graph_painter(
-    QPainter &p, QRectF &rect, mlt_properties filter_properties, int position, int length);
+QVector<QColor> get_graph_colors(mlt_properties filter_properties,
+                                 mlt_properties frame_properties,
+                                 int position,
+                                 int length);
+void setup_graph_painter(QPainter &p,
+                         QRectF &r,
+                         mlt_properties filter_properties,
+                         mlt_properties frame_properties,
+                         int position,
+                         int length);
 void setup_graph_pen(QPainter &p,
-                     QRectF &rect,
+                     QRectF &r,
                      mlt_properties filter_properties,
+                     mlt_properties frame_properties,
                      double scale,
                      int position,
                      int length);

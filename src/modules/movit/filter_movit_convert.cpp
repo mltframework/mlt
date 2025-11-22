@@ -101,35 +101,33 @@ static GammaCurve getFrameGamma(mlt_color_trc color_trc)
     }
 }
 
-// Get the gamma from the consumer's "color_trc" property.
+// Get the gamma from the consumer's "mlt_color_trc" or "color_trc" property.
 // Also, update the frame's color_trc property with the selection.
 static GammaCurve getOutputGamma(mlt_properties properties)
 {
-    const char *color_trc_str = mlt_properties_get(properties, "consumer.color_trc");
+    char *color_trc_str = mlt_properties_get(properties, "consumer.mlt_color_trc");
+    if (!color_trc_str)
+        color_trc_str = mlt_properties_get(properties, "consumer.color_trc");
     mlt_color_trc color_trc = mlt_image_color_trc_id(color_trc_str);
+    mlt_properties_set_int(properties, "color_trc", color_trc);
     switch (color_trc) {
     case mlt_color_trc_bt709:
     case mlt_color_trc_smpte170m:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_REC_709;
     case mlt_color_trc_linear:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_LINEAR;
     case mlt_color_trc_bt2020_10:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_REC_2020_10_BIT;
     case mlt_color_trc_bt2020_12:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_REC_2020_12_BIT;
 #if MOVIT_VERSION >= 1037
     case mlt_color_trc_arib_std_b67:
-        mlt_properties_set(properties, "color_trc", color_trc_str);
         return GAMMA_HLG;
 #endif
     default:
         break;
     }
-    return GAMMA_INVALID;
+    return GAMMA_REC_709;
 }
 
 static void get_format_from_properties(mlt_properties properties,
@@ -303,6 +301,7 @@ static void dispose_movit_effects(mlt_service service, mlt_frame frame)
 static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_image_format format)
 {
     GlslChain *chain = GlslManager::get_chain(leaf_service);
+    auto properties = MLT_FRAME_PROPERTIES(frame);
 
     std::string new_fingerprint;
     build_fingerprint(chain, leaf_service, frame, &new_fingerprint);
@@ -327,10 +326,9 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
 
         ImageFormat output_format;
         if (format == mlt_image_yuv444p10 || format == mlt_image_yuv420p10) {
-            auto properties = MLT_FRAME_PROPERTIES(frame);
             YCbCrFormat ycbcr_format = {};
             get_format_from_properties(properties, &output_format, &ycbcr_format);
-            output_format.gamma_curve = std::max(GAMMA_REC_709, getOutputGamma(properties));
+            output_format.gamma_curve = getOutputGamma(properties);
             ycbcr_format.full_range = mlt_image_full_range(
                 mlt_properties_get(properties, "consumer.color_range"));
             mlt_log_debug(nullptr,
@@ -346,10 +344,14 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
                                                   YCBCR_OUTPUT_INTERLEAVED,
                                                   GL_UNSIGNED_SHORT);
             chain->effect_chain->set_dither_bits(16);
+        } else if (format == mlt_image_rgba64) {
+            output_format.color_space = COLORSPACE_sRGB;
+            output_format.gamma_curve = getOutputGamma(properties);
+            chain->effect_chain->add_output(output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
+            chain->effect_chain->set_dither_bits(16);
         } else {
             output_format.color_space = COLORSPACE_sRGB;
-            output_format.gamma_curve = std::max(GAMMA_REC_709,
-                                                 getOutputGamma(MLT_FRAME_PROPERTIES(frame)));
+            output_format.gamma_curve = getOutputGamma(properties);
             chain->effect_chain->add_output(output_format, OUTPUT_ALPHA_FORMAT_POSTMULTIPLIED);
             chain->effect_chain->set_dither_bits(8);
         }
@@ -361,7 +363,6 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
         // Delete all the created Effect instances to avoid memory leaks.
         dispose_movit_effects(leaf_service, frame);
 
-        auto properties = MLT_FRAME_PROPERTIES(frame);
         getOutputGamma(properties);
         mlt_properties_set_int(properties,
                                "full_range",
@@ -484,22 +485,36 @@ static int movit_render(EffectChain *chain,
     }
 
     GlslManager *glsl = GlslManager::get_instance();
-    int error;
-    if (output_format == mlt_image_opengl_texture) {
+    int error = 0;
+
+    switch (output_format) {
+    case mlt_image_opengl_texture:
         error = glsl->render_frame_texture(chain, frame, width, height, image);
-    } else if (output_format == mlt_image_yuv444p10 || output_format == mlt_image_yuv420p10) {
+        break;
+
+    case mlt_image_yuv444p10:
+    case mlt_image_yuv420p10:
         error = glsl->render_frame_ycbcr(chain, frame, width, height, image);
         if (!error && output_format != mlt_image_yuv444p10) {
             *format = mlt_image_yuv444p10;
             error = convert_on_cpu(frame, image, format, output_format);
         }
-    } else {
+        break;
+
+    case mlt_image_rgba64:
+        error = glsl->render_frame_rgba64(chain, frame, width, height, image);
+        break;
+
+    default:
+        // Covers mlt_image_rgba and all other fallbacks.
         error = glsl->render_frame_rgba(chain, frame, width, height, image);
         if (!error && output_format != mlt_image_rgba) {
             *format = mlt_image_rgba;
             error = convert_on_cpu(frame, image, format, output_format);
         }
+        break;
     }
+
     return error;
 }
 
@@ -517,26 +532,37 @@ static MltInput *create_input(mlt_properties properties,
     }
 
     MltInput *input = new MltInput(format);
-    if (format == mlt_image_rgba) {
+
+    switch (format) {
+    case mlt_image_rgba:
+    case mlt_image_rgba64:
         // TODO: Get the color space if available.
         input->useFlatInput(FORMAT_RGBA_POSTMULTIPLIED_ALPHA, width, height);
-    } else if (format == mlt_image_rgb) {
+        break;
+
+    case mlt_image_rgb:
         // TODO: Get the color space if available.
         input->useFlatInput(FORMAT_RGB, width, height);
-    } else if (format == mlt_image_yuv420p) {
+        break;
+
+    case mlt_image_yuv420p: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
         ycbcr_format.chroma_subsampling_x = ycbcr_format.chroma_subsampling_y = 2;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
-    } else if (format == mlt_image_yuv422) {
+    } break;
+
+    case mlt_image_yuv422: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
         ycbcr_format.chroma_subsampling_x = 2;
         ycbcr_format.chroma_subsampling_y = 1;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
-    } else if (format == mlt_image_yuv420p10) {
+    } break;
+
+    case mlt_image_yuv420p10: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
@@ -544,7 +570,9 @@ static MltInput *create_input(mlt_properties properties,
         ycbcr_format.chroma_subsampling_y = 2;
         ycbcr_format.num_levels = 1024;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
-    } else if (format == mlt_image_yuv444p10) {
+    } break;
+
+    case mlt_image_yuv444p10: {
         ImageFormat image_format = {};
         YCbCrFormat ycbcr_format = {};
         get_format_from_properties(properties, &image_format, &ycbcr_format);
@@ -552,7 +580,13 @@ static MltInput *create_input(mlt_properties properties,
         ycbcr_format.chroma_subsampling_y = 1;
         ycbcr_format.num_levels = 1024;
         input->useYCbCrInput(image_format, ycbcr_format, width, height);
+    } break;
+
+    default:
+        // Leave input configured with its default for unsupported/other formats.
+        break;
     }
+
     return input;
 }
 
@@ -617,7 +651,7 @@ static int convert_image(mlt_frame frame,
     // If we're at the beginning of a series of Movit effects, store the input
     // sent into the chain.
     if (output_format == mlt_image_movit) {
-        if (*format != mlt_image_rgba && mlt_frame_get_alpha(frame)) {
+        if (*format != mlt_image_rgba && *format != mlt_image_rgba64 && mlt_frame_get_alpha(frame)) {
             if (!convert_on_cpu(frame, image, format, mlt_image_rgba)) {
                 *format = mlt_image_rgba;
             }

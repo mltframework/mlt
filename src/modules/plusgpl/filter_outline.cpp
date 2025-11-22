@@ -120,7 +120,9 @@ static int filter_get_image(mlt_frame frame,
         Mlt::Frame fr(frame);
         auto position = filter.get_position(fr);
         auto length = filter.get_length2(fr);
-        slice_desc desc{.color = filter.anim_get_color("color", position, length),
+        auto color = filter.anim_get_color("color", position, length);
+        color = ::mlt_color_convert_trc(color, fr.get("color_trc"));
+        slice_desc desc{.color = color,
                         .thickness = filter.anim_get_double("thickness", position, length),
                         .original = *image};
 

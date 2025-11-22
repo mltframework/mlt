@@ -47,6 +47,7 @@ static int get_image(mlt_frame frame,
         mlt_position pos = filter.get_position(f);
         mlt_position len = filter.get_length2(f);
         auto color = filter.anim_get_color("color", pos, len);
+        color = ::mlt_color_convert_trc(color, f.get("color_trc"));
         shadow->setColor(QColor(color.r, color.g, color.b, color.a));
         shadow->setBlurRadius(filter.anim_get_double("radius", pos, len));
         shadow->setXOffset(filter.anim_get_double("x", pos, len));

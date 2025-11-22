@@ -122,7 +122,10 @@ static int filter_get_audio(mlt_frame frame,
     return 0;
 }
 
-static void setup_pen(QPainter &p, QRect &rect, mlt_properties filter_properties)
+static void setup_pen(QPainter &p,
+                      QRect &rect,
+                      mlt_properties filter_properties,
+                      mlt_properties frame_properties)
 {
     QVector<QColor> colors;
     bool color_found = true;
@@ -133,6 +136,8 @@ static void setup_pen(QPainter &p, QRect &rect, mlt_properties filter_properties
         if (mlt_properties_exists(filter_properties, prop_name.toUtf8().constData())) {
             mlt_color mcolor = mlt_properties_get_color(filter_properties,
                                                         prop_name.toUtf8().constData());
+            mcolor = mlt_color_convert_trc(mcolor,
+                                           mlt_properties_get(frame_properties, "color_trc"));
             colors.append(QColor(mcolor.r, mcolor.g, mcolor.b, mcolor.a));
         } else {
             color_found = false;
@@ -177,14 +182,18 @@ static void setup_pen(QPainter &p, QRect &rect, mlt_properties filter_properties
     p.setPen(QColor(0, 0, 0, 0)); // Clear pen
 }
 
-static void draw_light(mlt_properties filter_properties, QImage *qimg, mlt_rect *rect, double mag)
+static void draw_light(mlt_properties filter_properties,
+                       mlt_properties frame_properties,
+                       QImage *qimg,
+                       mlt_rect *rect,
+                       double mag)
 {
     QPainter p(qimg);
     QRect r(rect->x, rect->y, rect->w, rect->h);
     p.setRenderHint(QPainter::Antialiasing);
     // Output transparency = input transparency
     p.setCompositionMode(QPainter::CompositionMode_SourceAtop);
-    setup_pen(p, r, filter_properties);
+    setup_pen(p, r, filter_properties, frame_properties);
     p.setOpacity(mag);
     p.drawRect(r);
     p.end();
@@ -235,7 +244,7 @@ static int filter_get_image(mlt_frame frame,
         if (!error) {
             QImage qimg(*width, *height, QImage::Format_ARGB32);
             convert_mlt_to_qimage(*image, &qimg, *width, *height, *format);
-            draw_light(filter_properties, &qimg, &rect, mag);
+            draw_light(filter_properties, frame_properties, &qimg, &rect, mag);
             convert_qimage_to_mlt(&qimg, *image, *width, *height);
         }
     } else {

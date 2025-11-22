@@ -371,7 +371,7 @@ static void color_trc_from_colorspace(mlt_properties properties)
     // Default color transfer characteristic from MLT colorspace.
     const char *colorspace_str = mlt_properties_get(properties, "colorspace");
     const mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
-    const mlt_color_trc trc = mlt_color_trc_from_colorspace(colorspace);
+    const mlt_color_trc trc = mlt_image_default_trc(colorspace);
     mlt_properties_set_int(properties, "color_trc", trc);
 }
 
@@ -381,7 +381,7 @@ static void color_primaries_from_colorspace(mlt_properties properties)
     const char *colorspace_str = mlt_properties_get(properties, "colorspace");
     mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
     int height = mlt_properties_get_int(properties, "height");
-    mlt_color_primaries primaries = mlt_color_primaries_from_colorspace(colorspace, height);
+    mlt_color_primaries primaries = mlt_image_default_primaries(colorspace, height);
     if (primaries != mlt_color_pri_none)
         mlt_properties_set_int(properties, "color_primaries", primaries);
 }

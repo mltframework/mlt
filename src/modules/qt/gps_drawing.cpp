@@ -1,6 +1,6 @@
 /*
  * filter_drawing.cpp -- draws gps related graphics 
- * Copyright (c) 2015-2022 Meltytech, LLC
+ * Copyright (c) 2015-2025 Meltytech, LLC
  * Original author: Daniel F
  *
  * This library is free software; you can redistribute it and/or
@@ -185,6 +185,8 @@ void draw_now_dot(mlt_filter filter, mlt_frame frame, QPainter &p, s_base_crops 
     int thickness = mlt_properties_get_int(properties, "thickness");
     mlt_color dot_color
         = mlt_properties_anim_get_color(properties, "now_dot_color", position, length);
+    dot_color = mlt_color_convert_trc(dot_color,
+                                      mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "color_trc"));
 
     //disc with internal color = white and outer color=now dot color or last used for graph line
     QPen dot_pen = p.pen();
@@ -242,7 +244,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
     int thickness = qAbs(mlt_properties_get_int(properties, "thickness"));
     int dots_only = mlt_properties_get_int(properties, "draw_individual_dots");
     char *legend_unit = mlt_properties_get(properties, "legend_unit");
-    QVector<QColor> colors = get_graph_colors(properties, position, length);
+    QVector<QColor> colors
+        = get_graph_colors(properties, MLT_FRAME_PROPERTIES(frame), position, length);
     QPen last_graph_pen;
 
     if (colors.size() < 2)
@@ -488,7 +491,8 @@ void draw_main_speedometer(mlt_filter filter, mlt_frame frame, QPainter &p, s_ba
     // int color_style = mlt_properties_get_int( properties, "color_style" ) ;
     // int thickness = qAbs( mlt_properties_get_int( properties, "thickness" ) );
     int show_grid = mlt_properties_get_int(properties, "show_grid");
-    QVector<QColor> colors = get_graph_colors(properties, position, length);
+    QVector<QColor> colors
+        = get_graph_colors(properties, MLT_FRAME_PROPERTIES(frame), position, length);
 
     if (colors.size() == 1)
         colors.append(colors[0]);
@@ -598,6 +602,9 @@ void draw_main_speedometer(mlt_filter filter, mlt_frame frame, QPainter &p, s_ba
     if (mlt_properties_get_int(properties, "show_now_dot")) {
         mlt_color dot_color
             = mlt_properties_anim_get_color(properties, "now_dot_color", position, length);
+        dot_color = mlt_color_convert_trc(dot_color,
+                                          mlt_properties_get(MLT_FRAME_PROPERTIES(frame),
+                                                             "color_trc"));
         if (dot_color.a == 0) // if transparent -> use main color
         {
             p.setBrush(colors[0]);

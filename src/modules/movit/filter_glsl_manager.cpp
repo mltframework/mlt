@@ -1,7 +1,7 @@
 /*
  * filter_glsl_manager.cpp
  * Copyright (C) 2011-2012 Christophe Thommeret <hftom@free.fr>
- * Copyright (C) 2013-2024 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2025 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -575,6 +575,78 @@ int GlslManager::render_frame_rgba(
     glBufferData(GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ);
     check_error();
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, BUFFER_OFFSET(0));
+    check_error();
+
+    // Copy from PBO
+    uint8_t *buf = (uint8_t *) glMapBuffer(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
+    check_error();
+    *image = (uint8_t *) mlt_pool_alloc(img_size);
+    mlt_frame_set_image(frame, *image, img_size, mlt_pool_release);
+    memcpy(*image, buf, img_size);
+
+    // Release PBO and FBO
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
+    check_error();
+    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    check_error();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    check_error();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    check_error();
+    mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame),
+                            "movit.convert.texture",
+                            texture,
+                            0,
+                            (mlt_destructor) GlslManager::release_texture,
+                            NULL);
+    glDeleteFramebuffers(1, &fbo);
+    check_error();
+
+    return 0;
+}
+
+int GlslManager::render_frame_rgba64(
+    EffectChain *chain, mlt_frame frame, int width, int height, uint8_t **image)
+{
+    if (width < 1 || height < 1) {
+        return 1;
+    }
+
+    glsl_texture texture = get_texture(width, height, GL_RGBA16);
+    if (!texture) {
+        return 1;
+    }
+
+    // Use a PBO to hold the data we read back with glReadPixels().
+    // (Intel/DRI goes into a slow path if we don't read to PBO.)
+    int img_size = width * height * 8; // 8 bytes per pixel (4 channels * 2 bytes)
+    glsl_pbo pbo = get_pbo(img_size);
+    if (!pbo) {
+        release_texture(texture);
+        return 1;
+    }
+
+    // Set the FBO
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    check_error();
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    check_error();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->texture, 0);
+    check_error();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    check_error();
+
+    chain->render_to_fbo(fbo, width, height);
+
+    // Read FBO into PBO
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    check_error();
+    glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, pbo->pbo);
+    check_error();
+    glBufferData(GL_PIXEL_PACK_BUFFER_ARB, img_size, NULL, GL_STREAM_READ);
+    check_error();
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_SHORT, BUFFER_OFFSET(0));
     check_error();
 
     // Copy from PBO

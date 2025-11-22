@@ -863,12 +863,12 @@ static int filter_get_image(mlt_frame frame,
         const char *primaries_str = mlt_properties_get(frame_properties, "color_primaries");
         mlt_color_primaries primaries = mlt_image_color_pri_id(primaries_str);
         if (primaries == mlt_color_pri_none)
-            primaries = mlt_color_primaries_from_colorspace(colorspace, *height);
+            primaries = mlt_image_default_primaries(colorspace, *height);
         pdata->avinframe->color_primaries = mlt_to_av_color_primaries(primaries);
         const char *color_trc_str = mlt_properties_get(frame_properties, "color_trc");
         mlt_color_trc trc = mlt_image_color_trc_id(color_trc_str);
         if (trc == mlt_color_trc_none)
-            trc = mlt_color_trc_from_colorspace(colorspace);
+            trc = mlt_image_default_trc(colorspace);
         pdata->avinframe->color_trc = mlt_to_av_color_trc(trc);
         pdata->avinframe->color_range = mlt_to_av_color_range(full_range);
 
@@ -968,6 +968,20 @@ static int filter_get_image(mlt_frame frame,
                 src += pdata->avoutframe->linesize[0];
             }
         }
+        mlt_properties_set_int(frame_properties,
+                               "color_trc",
+                               av_to_mlt_color_trc(pdata->avoutframe->color_trc));
+        mlt_properties_set_int(frame_properties,
+                               "colorspace",
+                               av_to_mlt_colorspace(pdata->avoutframe->colorspace,
+                                                    pdata->avoutframe->width,
+                                                    pdata->avoutframe->height));
+        mlt_properties_set_int(frame_properties,
+                               "color_primaries",
+                               av_to_mlt_color_primaries(pdata->avoutframe->color_primaries));
+        mlt_properties_set_int(frame_properties,
+                               "full_range",
+                               av_to_mlt_full_range(pdata->avoutframe->color_range));
     }
 
 exit:

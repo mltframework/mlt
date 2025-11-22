@@ -516,6 +516,7 @@ static int filter_get_image(mlt_frame frame,
     if (shape_width != 0 && data->boundingBox.width > 0 && data->boundingBox.height > 0) {
         // Get the OpenCV image
         mlt_color shape_color = mlt_properties_get_color(filter_properties, "shape_color");
+        shape_color = mlt_color_convert_trc(shape_color, mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "color_trc"));
         switch (mlt_properties_get_int(filter_properties, "shape")) {
         case 2:
             // Arrow
