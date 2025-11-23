@@ -21,7 +21,6 @@
  */
 
 #include "mlt_consumer.h"
-#include "mlt_cache.h"
 #include "mlt_factory.h"
 #include "mlt_frame.h"
 #include "mlt_log.h"
@@ -1751,7 +1750,6 @@ void mlt_consumer_close(mlt_consumer self)
 
             pthread_mutex_destroy(&priv->position_mutex);
 
-            mlt_service_cache_purge(&self->parent);
             mlt_service_close(&self->parent);
             free(priv);
         }
