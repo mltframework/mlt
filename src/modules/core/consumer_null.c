@@ -1,6 +1,6 @@
 /*
  * consumer_null.c -- a null consumer
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,6 @@
 
 // System header files
 #include <pthread.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,6 +46,10 @@ mlt_consumer consumer_null_init(mlt_profile profile,
 
     // If memory allocated and initialises without error
     if (consumer != NULL) {
+        mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
+        mlt_properties_set_int(properties, "real_time", -1);
+        mlt_properties_set_int(properties, "terminate_on_pause", 1);
+
         // Assign close callback
         consumer->close = consumer_close;
 
