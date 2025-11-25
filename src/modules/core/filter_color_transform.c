@@ -24,8 +24,6 @@
 #include <framework/mlt_log.h>
 #include <framework/mlt_profile.h>
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 static const char *av_trc_str(mlt_color_trc trc)
@@ -72,82 +70,8 @@ static const char *av_trc_str(mlt_color_trc trc)
     return "unknown";
 }
 
-static const char *av_colorspace_str(mlt_colorspace colorspace, int height)
-{
-    switch (colorspace) {
-    case mlt_colorspace_rgb:
-        return "gbr";
-    case mlt_colorspace_bt709:
-        return "bt709";
-    case mlt_colorspace_fcc:
-        return "fcc";
-    case mlt_colorspace_bt470bg:
-        return "bt470bg";
-    case mlt_colorspace_smpte170m:
-        return "smpte170m";
-    case mlt_colorspace_smpte240m:
-        return "smpte240m";
-    case mlt_colorspace_ycgco:
-        return "ycgco";
-    case mlt_colorspace_bt2020_ncl:
-        return "bt2020nc";
-    case mlt_colorspace_bt2020_cl:
-        return "bt2020c";
-    case mlt_colorspace_smpte2085:
-        return "smpte2085";
-    case mlt_colorspace_bt601:
-        return height < 576 ? "smpte170m" : "bt470bg";
-    case mlt_colorspace_invalid:
-    case mlt_colorspace_unspecified:
-    case mlt_colorspace_reserved:
-        break;
-    }
-    // Guess a reasonable default
-    if (height < 576) {
-        return "smpte170m";
-    } else if (height < 720) {
-        return "bt470bg";
-    }
-    return "bt709";
-}
-
-static const char *av_color_primaries_str(mlt_color_primaries primaries, int height)
-{
-    switch (primaries) {
-    case mlt_color_pri_bt709:
-        return "bt709";
-    case mlt_color_pri_bt470m:
-        return "bt470m";
-    case mlt_color_pri_bt470bg:
-        return "bt470bg";
-    case mlt_color_pri_smpte170m:
-        return "smpte170m";
-    case mlt_color_pri_film:
-        return "film";
-    case mlt_color_pri_bt2020:
-        return "bt2020";
-    case mlt_color_pri_smpte428:
-        return "smpte428";
-    case mlt_color_pri_smpte431:
-        return "smpte431";
-    case mlt_color_pri_smpte432:
-        return "smpte432";
-    case mlt_color_pri_none:
-    case mlt_color_pri_invalid:
-        break;
-    }
-    // Guess a reasonable default
-    if (height < 576) {
-        return "smpte170m";
-    } else if (height < 720) {
-        return "bt470bg";
-    }
-    return "bt709";
-}
-
 static void create_t_filter(mlt_filter self, mlt_frame frame, mlt_color_trc out_trc)
 {
-    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(self));
     mlt_properties filter_properties = MLT_FILTER_PROPERTIES(self);
     const char *method = mlt_properties_get(filter_properties, "method");
@@ -158,17 +82,8 @@ static void create_t_filter(mlt_filter self, mlt_frame frame, mlt_color_trc out_
     mlt_properties cs_properties = MLT_FILTER_PROPERTIES(t_filter);
     if (!strcmp(method, "avfilter.zscale")) {
         mlt_properties_set(cs_properties, "av.t", av_trc_str(out_trc));
-    } else if (!strcmp(method, "avfilter.colorspace")) {
-        const char *colorspace_str = mlt_properties_get(frame_properties, "consumer.colorspace");
-        if (!colorspace_str)
-            colorspace_str = mlt_properties_get(frame_properties, "colorspace");
-        mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
-        int height = mlt_properties_get_int(frame_properties, "height");
-        const char *primaries_str = mlt_properties_get(frame_properties, "consumer.color_primaries");
-        mlt_color_primaries primaries = mlt_image_color_pri_id(primaries_str);
-        mlt_properties_set(cs_properties, "av.space", av_colorspace_str(colorspace, height));
-        mlt_properties_set(cs_properties, "av.primaries", av_color_primaries_str(primaries, height));
-        mlt_properties_set(cs_properties, "av.trc", av_trc_str(out_trc));
+    } else if (!strcmp(method, "avfilter.scale")) {
+        mlt_properties_set(cs_properties, "av.out_transfer", av_trc_str(out_trc));
     }
     mlt_service_cache_put(MLT_FILTER_SERVICE(self),
                           "t_filter",
@@ -295,7 +210,7 @@ static int filter_get_image(mlt_frame frame,
     // Process the cloned frame. The cloned frame references the same image
     // as the original frame.
     mlt_filter_process(t_filter, clone_frame);
-    ret = mlt_frame_get_image(clone_frame, image, format, width, height, writable);
+    ret = mlt_frame_get_image(clone_frame, image, format, width, height, 0);
     mlt_cache_item_close(cache_item);
     mlt_service_unlock(MLT_FILTER_SERVICE(self));
 
@@ -334,13 +249,13 @@ mlt_filter filter_color_transform_init(mlt_profile profile,
     if (!strcmp(method, "auto")) {
         if ((test_filter = mlt_factory_filter(profile, "avfilter.zscale", NULL))) {
             method = "avfilter.zscale";
-        } else if ((test_filter = mlt_factory_filter(profile, "avfilter.colorspace", NULL))) {
-            method = "avfilter.colorspace";
+        } else if ((test_filter = mlt_factory_filter(profile, "avfilter.scale", NULL))) {
+            method = "avfilter.scale";
         }
     } else if (!strcmp(method, "avfilter.zscale")) {
         test_filter = mlt_factory_filter(profile, "avfilter.zscale", NULL);
-    } else if (!strcmp(method, "avfilter.colorspace")) {
-        test_filter = mlt_factory_filter(profile, "avfilter.colorspace", NULL);
+    } else if (!strcmp(method, "avfilter.scale")) {
+        test_filter = mlt_factory_filter(profile, "avfilter.scale", NULL);
     }
     if (!test_filter) {
         mlt_log_error(NULL, "[filter_color_transform] unable to create filter %s\n", method);

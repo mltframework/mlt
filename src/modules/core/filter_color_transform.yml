@@ -10,11 +10,11 @@ tags:
   - Video
   - Hidden
 description: >
-  Convert the image colorspace to whatever was requested by the consumer.
+  Convert the image color to whatever was requested by the consumer.
   This filter is designed for use as a normalizer for the loader producer.
   If the "force_trc" property is set on this filter, the filter will force
   the output trc to be "force_trc";
-  Otherwise, if a property "consumer.mlt_color_trc" exists on the frame, then colorspace 
+  Otherwise, if a property "consumer.mlt_color_trc" exists on the frame, then it
   normalizes the image to the trc requested by the consumer.
 parameters:
   - identifier: method
@@ -24,13 +24,13 @@ parameters:
     values:
       - auto # Choose best available
       - avfilter.zscale
-      - avfilter.colorspace
+      - avfilter.scale
     description: |
       The underlying conversion method to use. The method is based on the
       encapsulated filter that is used. 'auto' will choose the best available
       in this order:
         * avfilter.zscale
-        * avfilter.colorspace
+        * avfilter.scale
     required: no
     readonly: no
     mutable: no
