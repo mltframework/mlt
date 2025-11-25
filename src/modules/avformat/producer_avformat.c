@@ -794,6 +794,9 @@ static enum AVPixelFormat pick_pix_fmt(enum AVPixelFormat pix_fmt)
     case AV_PIX_FMT_VIDEOTOOLBOX:
     case AV_PIX_FMT_DXVA2_VLD:
     case AV_PIX_FMT_D3D11:
+#if HAVE_FFMPEG_VULKAN
+    case AV_PIX_FMT_VULKAN:
+#endif
         return AV_PIX_FMT_YUV420P;
     default:
         return AV_PIX_FMT_YUV422P;
@@ -1218,6 +1221,14 @@ static int producer_open(
                     self->hwaccel.device_type = AV_HWDEVICE_TYPE_DXVA2;
                     if (!device)
                         device = "0";
+#if HAVE_FFMPEG_VULKAN
+                } else if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "vulkan"))
+                           || (hwaccel_env && !strcmp(hwaccel_env, "vulkan"))) {
+                    self->hwaccel.pix_fmt = AV_PIX_FMT_VULKAN;
+                    self->hwaccel.device_type = AV_HWDEVICE_TYPE_VULKAN;
+                    if (!device)
+                        device = "0";
+#endif
                 } else {
                     // TODO: init other hardware types
                 }

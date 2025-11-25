@@ -272,6 +272,30 @@ static int init_vaapi(mlt_properties properties, AVCodecContext *codec_context)
     return err;
 }
 
+#if HAVE_FFMPEG_VULKAN
+static int init_vulkan(mlt_properties properties, AVCodecContext *codec_context)
+{
+    int err = 0;
+    const char *vaapi_device = mlt_properties_get(properties, "vulkan_device");
+    AVDictionary *opts = NULL;
+
+    if ((err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VULKAN, vaapi_device, opts, 0))
+        < 0) {
+        mlt_log_warning(NULL, "Failed to create Vulkan device.\n");
+    } else {
+        codec_context->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+        mlt_properties_set_data(properties,
+                                "hw_device_ctx",
+                                &hw_device_ctx,
+                                0,
+                                (mlt_destructor) av_buffer_unref,
+                                NULL);
+    }
+    av_dict_free(&opts);
+    return err;
+}
+#endif
+
 // Forward references.
 static void property_changed(mlt_properties owner, mlt_consumer self, mlt_event_data);
 static int consumer_start(mlt_consumer consumer);
@@ -969,6 +993,22 @@ static AVStream *add_video_stream(mlt_consumer consumer,
                               result);
             }
         }
+#if HAVE_FFMPEG_VULKAN
+        else if (AV_PIX_FMT_VULKAN == c->pix_fmt) {
+            int result = init_vulkan(properties, c);
+            if (result >= 0) {
+                int result = setup_hwupload_filter(properties, st, c);
+                if (result < 0)
+                    mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                                  "Failed to setup hwfilter: %d\n",
+                                  result);
+            } else {
+                mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                              "Failed to initialize Vulkan: %d\n",
+                              result);
+            }
+        }
+#endif
 
         c->colorspace = av_colorspace;
 
@@ -1854,7 +1894,11 @@ static int encode_video(encode_ctx_t *enc_ctx,
                     }
                 }
             }
-        if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
+        if (AV_PIX_FMT_VAAPI == c->pix_fmt
+#if HAVE_FFMPEG_VULKAN
+            || AV_PIX_FMT_VULKAN == c->pix_fmt
+#endif
+        ) {
             AVFilterContext *vfilter_in = mlt_properties_get_data(properties, "vfilter_in", NULL);
             AVFilterContext *vfilter_out = mlt_properties_get_data(properties, "vfilter_out", NULL);
             if (vfilter_in && vfilter_out) {
@@ -1983,7 +2027,10 @@ static int encode_video(encode_ctx_t *enc_ctx,
         mlt_events_fire(properties, "consumer-fatal-error", mlt_event_data_none());
         return -1;
     }
-    if (AV_PIX_FMT_VAAPI == c->pix_fmt)
+    if (AV_PIX_FMT_VAAPI == c->pix_fmt
+#if HAVE_FFMPEG_VULKAN
+        || AV_PIX_FMT_VULKAN == c->pix_fmt)
+#endif
         av_frame_free(&avframe);
     return 0;
 }
@@ -2348,8 +2395,12 @@ static void *consumer_thread(void *arg)
     // Allocate picture
     enum AVPixelFormat pix_fmt = AV_PIX_FMT_YUV420P;
     if (enc_ctx->video_st) {
-        pix_fmt = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI ? AV_PIX_FMT_NV12
-                                                                   : enc_ctx->vcodec_ctx->pix_fmt;
+        const int need_nv12 = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI
+#if HAVE_FFMPEG_VULKAN
+                              || enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VULKAN
+#endif
+            ;
+        pix_fmt = need_nv12 ? AV_PIX_FMT_NV12 : enc_ctx->vcodec_ctx->pix_fmt;
         converted_avframe = alloc_picture(pix_fmt, width, height);
         if (!converted_avframe) {
             mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "failed to allocate video AVFrame\n");

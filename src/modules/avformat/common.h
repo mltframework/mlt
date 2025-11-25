@@ -26,6 +26,7 @@
 
 #define MLT_AVFILTER_SWS_FLAGS "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp"
 #define HAVE_FFMPEG_CH_LAYOUT (LIBAVUTIL_VERSION_MAJOR >= 59)
+#define HAVE_FFMPEG_VULKAN (LIBAVUTIL_VERSION_INT >= ((56 << 16) + (39 << 8) + 100))
 
 int mlt_to_av_sample_format(mlt_audio_format format);
 int64_t mlt_to_av_channel_layout(mlt_channel_layout layout);
