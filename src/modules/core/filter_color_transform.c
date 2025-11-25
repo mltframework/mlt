@@ -103,6 +103,15 @@ static void ensure_color_properties(mlt_filter self, mlt_frame frame)
         mlt_colorspace colorspace = mlt_image_default_colorspace(format, height);
         mlt_properties_set_int(frame_properties, "colorspace", colorspace);
         colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+    } else {
+        mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+        if (format == mlt_image_rgb || format == mlt_image_rgba || format == mlt_image_rgba64) {
+            // Correct the colorspace. For RGB, only support rgb.
+            if (colorspace != mlt_colorspace_rgb) {
+                mlt_properties_set_int(frame_properties, "colorspace", mlt_colorspace_rgb);
+                colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+            }
+        }
     }
     mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
 
@@ -110,6 +119,14 @@ static void ensure_color_properties(mlt_filter self, mlt_frame frame)
     if (!color_trc_str) {
         mlt_color_trc color_trc = mlt_image_default_trc(colorspace);
         mlt_properties_set_int(frame_properties, "color_trc", color_trc);
+    } else {
+        mlt_color_trc color_trc = mlt_image_color_trc_id(color_trc_str);
+        if (format == mlt_image_rgb || format == mlt_image_rgba || format == mlt_image_rgba64) {
+            // Correct the TRC. For RGB, only support linear or iec61966-2-1.
+            if (color_trc != mlt_color_trc_linear && color_trc != mlt_color_trc_iec61966_2_1) {
+                mlt_properties_set_int(frame_properties, "color_trc", mlt_color_trc_iec61966_2_1);
+            }
+        }
     }
 
     const char *color_primaries_str = mlt_properties_get(frame_properties, "color_primaries");
@@ -139,6 +156,14 @@ static void ensure_color_properties(mlt_filter self, mlt_frame frame)
             break;
         }
         mlt_properties_set_int(frame_properties, "full_range", full_range);
+    } else {
+        int full_range = mlt_properties_get_int(frame_properties, "full_range");
+        if (format == mlt_image_rgb || format == mlt_image_rgba || format == mlt_image_rgba64) {
+            // Correct full range if it is set incorrectly for RGB
+            if (!full_range) {
+                mlt_properties_set_int(frame_properties, "full_range", 1);
+            }
+        }
     }
 }
 
