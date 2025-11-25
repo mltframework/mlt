@@ -2029,8 +2029,9 @@ static int encode_video(encode_ctx_t *enc_ctx,
     }
     if (AV_PIX_FMT_VAAPI == c->pix_fmt
 #if HAVE_FFMPEG_VULKAN
-        || AV_PIX_FMT_VULKAN == c->pix_fmt)
+        || AV_PIX_FMT_VULKAN == c->pix_fmt
 #endif
+    )
         av_frame_free(&avframe);
     return 0;
 }
