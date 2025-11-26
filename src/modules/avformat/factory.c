@@ -30,7 +30,7 @@ extern mlt_filter filter_avcolour_space_init(void *arg);
 extern mlt_filter filter_avdeinterlace_init(void *arg);
 extern mlt_filter filter_swresample_init(mlt_profile profile, char *arg);
 extern mlt_filter filter_swscale_init(mlt_profile profile, char *arg);
-#if LIBSWSCALE_VERSION_MAJOR >= 6
+#if LIBSWSCALE_VERSION_MAJOR >= 9
 extern mlt_filter filter_sws_colortransform_init(mlt_profile,
                                                  mlt_service_type,
                                                  const char *,
@@ -89,7 +89,7 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
     }
     if (!strcmp(id, "swscale"))
         return filter_swscale_init(profile, arg);
-#if LIBSWSCALE_VERSION_MAJOR >= 6
+#if LIBSWSCALE_VERSION_MAJOR >= 9
     if (!strcmp(id, "sws_colortransform"))
         return filter_sws_colortransform_init(profile, type, id, arg);
 #endif
@@ -441,7 +441,7 @@ MLTAVFORMAT_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "avcolor_space", create_service);
     MLT_REGISTER(mlt_service_filter_type, "avdeinterlace", create_service);
     MLT_REGISTER(mlt_service_filter_type, "swscale", create_service);
-#if LIBSWSCALE_VERSION_MAJOR >= 6
+#if LIBSWSCALE_VERSION_MAJOR >= 9
     MLT_REGISTER(mlt_service_filter_type, "sws_colortransform", create_service);
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "sws_colortransform",

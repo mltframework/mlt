@@ -19,7 +19,7 @@
 
 #include <libswscale/swscale.h>
 
-#if LIBSWSCALE_VERSION_MAJOR >= 6
+#if LIBSWSCALE_VERSION_MAJOR >= 9
 
 #include "common.h"
 #include <framework/mlt_filter.h>
