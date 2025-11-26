@@ -4,6 +4,7 @@ add_library(mltavformat MODULE
   filter_avcolour_space.c
   filter_avdeinterlace.c
   filter_swscale.c
+  filter_sws_colortransform.c
   # avformat
   producer_avformat.c
   consumer_avformat.c
@@ -64,6 +65,7 @@ install(FILES
   filter_avdeinterlace.yml
   filter_swresample.yml
   filter_swscale.yml
+  filter_sws_colortransform.yml
   link_avdeinterlace.yml
   link_swresample.yml
   producer_avformat.yml

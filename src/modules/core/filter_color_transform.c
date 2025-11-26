@@ -24,6 +24,7 @@
 #include <framework/mlt_log.h>
 #include <framework/mlt_profile.h>
 
+#include <stdlib.h>
 #include <string.h>
 
 static const char *av_trc_str(mlt_color_trc trc)
@@ -82,6 +83,8 @@ static void create_t_filter(mlt_filter self, mlt_frame frame, mlt_color_trc out_
     mlt_properties cs_properties = MLT_FILTER_PROPERTIES(t_filter);
     if (!strcmp(method, "avfilter.zscale")) {
         mlt_properties_set(cs_properties, "av.t", av_trc_str(out_trc));
+    } else if (!strcmp(method, "sws_colortransform")) {
+        mlt_properties_set(cs_properties, "transfer", mlt_image_color_trc_name(out_trc));
     } else if (!strcmp(method, "avfilter.scale")) {
         mlt_properties_set(cs_properties, "av.out_transfer", av_trc_str(out_trc));
     }
@@ -267,18 +270,24 @@ mlt_filter filter_color_transform_init(mlt_profile profile,
                                        const char *id,
                                        char *arg)
 {
-    const char *method = arg ? arg : "auto";
+    const char *method = getenv("MLT_COLOR_TRANSFORM");
+    if (!method)
+        method = arg ? arg : "auto";
 
     // Test if the embedded filter is available.
     mlt_filter test_filter = NULL;
     if (!strcmp(method, "auto")) {
         if ((test_filter = mlt_factory_filter(profile, "avfilter.zscale", NULL))) {
             method = "avfilter.zscale";
+        } else if ((test_filter = mlt_factory_filter(profile, "sws_colortransform", NULL))) {
+            method = "sws_colortransform";
         } else if ((test_filter = mlt_factory_filter(profile, "avfilter.scale", NULL))) {
             method = "avfilter.scale";
         }
     } else if (!strcmp(method, "avfilter.zscale")) {
         test_filter = mlt_factory_filter(profile, "avfilter.zscale", NULL);
+    } else if (!strcmp(method, "sws_colortransform")) {
+        test_filter = mlt_factory_filter(profile, "sws_colortransform", NULL);
     } else if (!strcmp(method, "avfilter.scale")) {
         test_filter = mlt_factory_filter(profile, "avfilter.scale", NULL);
     }

@@ -24,17 +24,21 @@ parameters:
     values:
       - auto # Choose best available
       - avfilter.zscale
+      - sws_colortransform
       - avfilter.scale
     description: |
       The underlying conversion method to use. The method is based on the
       encapsulated filter that is used. 'auto' will choose the best available
       in this order:
         * avfilter.zscale
+        * sws_colortransform
         * avfilter.scale
+        One can set the environment variable MLT_COLOR_TRANSFORM to override this.
     required: no
     readonly: no
     mutable: no
     default: auto
+
   - identifier: force_trc
     title: Force TRC
     type: string

@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,12 +23,19 @@
 #include <string.h>
 
 #include <framework/mlt.h>
+#include <libswscale/swscale.h>
 
 extern mlt_consumer consumer_avformat_init(mlt_profile profile, char *file);
 extern mlt_filter filter_avcolour_space_init(void *arg);
 extern mlt_filter filter_avdeinterlace_init(void *arg);
 extern mlt_filter filter_swresample_init(mlt_profile profile, char *arg);
 extern mlt_filter filter_swscale_init(mlt_profile profile, char *arg);
+#if LIBSWSCALE_VERSION_MAJOR >= 6
+extern mlt_filter filter_sws_colortransform_init(mlt_profile,
+                                                 mlt_service_type,
+                                                 const char *,
+                                                 char *);
+#endif
 extern mlt_producer producer_avformat_init(mlt_profile profile, const char *service, char *file);
 extern mlt_filter filter_avfilter_init(mlt_profile, mlt_service_type, const char *, char *);
 extern mlt_link link_avdeinterlace_init(mlt_profile, mlt_service_type, const char *, char *);
@@ -82,6 +89,10 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
     }
     if (!strcmp(id, "swscale"))
         return filter_swscale_init(profile, arg);
+#if LIBSWSCALE_VERSION_MAJOR >= 6
+    if (!strcmp(id, "sws_colortransform"))
+        return filter_sws_colortransform_init(profile, type, id, arg);
+#endif
     if (!strcmp(id, "swresample")) {
         if (type == mlt_service_filter_type)
             return filter_swresample_init(profile, arg);
@@ -430,6 +441,13 @@ MLTAVFORMAT_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "avcolor_space", create_service);
     MLT_REGISTER(mlt_service_filter_type, "avdeinterlace", create_service);
     MLT_REGISTER(mlt_service_filter_type, "swscale", create_service);
+#if LIBSWSCALE_VERSION_MAJOR >= 6
+    MLT_REGISTER(mlt_service_filter_type, "sws_colortransform", create_service);
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "sws_colortransform",
+                          metadata,
+                          "filter_sws_colortransform.yml");
+#endif
     MLT_REGISTER(mlt_service_link_type, "avcolour_space", mlt_link_filter_init);
     MLT_REGISTER(mlt_service_link_type, "avcolor_space", mlt_link_filter_init);
     MLT_REGISTER(mlt_service_link_type, "avdeinterlace", create_service);
