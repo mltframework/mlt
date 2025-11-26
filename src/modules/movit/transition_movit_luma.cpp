@@ -1,6 +1,6 @@
 /*
  * transition_movit_luma.cpp
- * Copyright (C) 2014-2023 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2014-2025 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,10 @@
 
 #include <framework/mlt.h>
 #include <framework/mlt_luma_map.h>
-#include <limits.h>
 #include <math.h>
 #include <string.h>
 
 #include "filter_glsl_manager.h"
-#include "mlt_movit_input.h"
 #include <effect_chain.h>
 #include <init.h>
 #include <luma_mix_effect.h>
@@ -61,6 +59,13 @@ static int get_image(mlt_frame a_frame,
     double mix = mlt_transition_get_progress(transition, a_frame);
     double inverse = 1.0 - mix;
     double softness = mlt_properties_anim_get_double(properties, "softness", position, length);
+    int invert = mlt_properties_get_int(properties, "invert");
+
+    // Make progress appear linear using a gamma curve similar to sRGB or Rec. 709
+    if (invert)
+        mix = 1.0 - pow(1.0 - mix, 2.0);
+    else
+        mix = pow(mix, 2.0);
 
     if (c_frame) {
         // Set the Movit parameters.
@@ -72,9 +77,7 @@ static int get_image(mlt_frame a_frame,
         mlt_properties_set_double(properties,
                                   "_movit.parms.float.transition_width",
                                   1.0 / (softness + 1.0e-4));
-        mlt_properties_set_int(properties,
-                               "_movit.parms.int.inverse",
-                               !mlt_properties_get_int(properties, "invert"));
+        mlt_properties_set_int(properties, "_movit.parms.int.inverse", !invert);
 
         uint8_t *a_image, *b_image, *c_image;
 

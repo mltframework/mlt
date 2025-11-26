@@ -992,6 +992,16 @@ static int transition_get_image(mlt_frame a_frame,
             mlt_properties_set(&b_frame->parent,
                                "distort",
                                mlt_properties_get(&a_frame->parent, "distort"));
+
+        if (mlt_color_trc_linear
+            == mlt_image_color_trc_id(mlt_properties_get(a_props, "consumer.mlt_color_trc"))) {
+            // Make progress appear linear using a gamma curve similar to sRGB or Rec. 709
+            if (reverse || invert)
+                mix = 1.0 - pow(1.0 - mix, 2.0);
+            else
+                mix = pow(mix, 2.0);
+        }
+
         mix = (reverse || invert) ? 1 - mix : mix;
         invert = 0;
         // Dissolve the frames using the time offset for mix value
