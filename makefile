@@ -13,7 +13,7 @@ validate-yml:
 
 codespell:
 	codespell -w -q 3 \
-	-L shotcut,sav,boundry,percentil,readded,uint,ith,sinc,amin,childs,seeked,writen \
+	-L amin,boun,boundry,childs,hsi,indx,ith,mis,nast,parms,percentil,readded,sav,seeked,shotcut,sinc,slin,uint,writen \
 	-S ChangeLog,cJSON.c,cJSON.h,RtAudio.cpp,RtAudio.h,*.rej,mlt_wrap.*
 
 cppcheck:
