@@ -57,7 +57,9 @@ typedef struct
     mlt_colorspace colorspace;
     int full_range;
     int reset;
+#if HAVE_FFMPEG_CH_LAYOUT
     AVChannelLayout ch_layout;
+#endif
 } private_data;
 
 #if LIBAVUTIL_VERSION_INT >= ((56 << 16) + (35 << 8) + 101)

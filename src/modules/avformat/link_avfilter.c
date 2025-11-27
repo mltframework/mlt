@@ -61,7 +61,9 @@ typedef struct
     int reset;
     mlt_position expected_frame;
     mlt_position continuity_frame;
+#if HAVE_FFMPEG_CH_LAYOUT
     AVChannelLayout ch_layout;
+#endif
 } private_data;
 
 #if LIBAVUTIL_VERSION_INT >= ((56 << 16) + (35 << 8) + 101)
