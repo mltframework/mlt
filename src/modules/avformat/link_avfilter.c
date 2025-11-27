@@ -1169,7 +1169,9 @@ static void link_close(mlt_link self)
             avfilter_graph_free(&pdata->avfilter_graph);
             av_frame_free(&pdata->avinframe);
             av_frame_free(&pdata->avoutframe);
+#if HAVE_FFMPEG_CH_LAYOUT
             av_channel_layout_uninit(&pdata->ch_layout);
+#endif
             free(pdata);
         }
         self->close = NULL;
