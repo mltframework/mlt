@@ -61,6 +61,7 @@ typedef struct
     int reset;
     mlt_position expected_frame;
     mlt_position continuity_frame;
+    AVChannelLayout ch_layout;
 } private_data;
 
 #if LIBAVUTIL_VERSION_INT >= ((56 << 16) + (35 << 8) + 101)
@@ -219,10 +220,8 @@ static void init_audio_filtergraph(mlt_link self,
     sample_rates[0] = frequency;
     channel_counts[0] = channels;
 #if HAVE_FFMPEG_CH_LAYOUT
-    AVChannelLayout ch_layout;
-    av_channel_layout_default(&ch_layout, channels);
-    av_channel_layout_describe(&ch_layout, channel_layout_str, sizeof(channel_layout_str));
-    av_channel_layout_uninit(&ch_layout);
+    av_channel_layout_default(&pdata->ch_layout, channels);
+    av_channel_layout_describe(&pdata->ch_layout, channel_layout_str, sizeof(channel_layout_str));
 #else
     int64_t channel_layouts[] = {-1, -1};
     channel_layouts[0] = av_get_default_channel_layout(channels);
@@ -297,6 +296,44 @@ static void init_audio_filtergraph(mlt_link self,
         mlt_log_error(self, "Cannot create audio buffer sink\n");
         goto fail;
     }
+
+#if LIBAVFILTER_VERSION_INT >= ((10 << 16) + (6 << 8) + 100)
+    ret = av_opt_set_array(pdata->avbuffsink_ctx,
+                           "sample_formats",
+                           AV_OPT_SEARCH_CHILDREN,
+                           0,
+                           1,
+                           AV_OPT_TYPE_SAMPLE_FMT,
+                           sample_fmts);
+    if (ret < 0) {
+        mlt_log_error(self, "Cannot set sink sample formats\n");
+        goto fail;
+    }
+
+    ret = av_opt_set_array(pdata->avbuffsink_ctx,
+                           "samplerates",
+                           AV_OPT_SEARCH_CHILDREN,
+                           0,
+                           1,
+                           AV_OPT_TYPE_INT,
+                           sample_rates);
+    if (ret < 0) {
+        mlt_log_error(self, "Cannot set sink sample rates\n");
+        goto fail;
+    }
+
+    ret = av_opt_set_array(pdata->avbuffsink_ctx,
+                           "channel_layouts",
+                           AV_OPT_SEARCH_CHILDREN,
+                           0,
+                           1,
+                           AV_OPT_TYPE_CHLAYOUT,
+                           &pdata->ch_layout);
+    if (ret < 0) {
+        mlt_log_error(self, "Cannot set sink channel layouts\n");
+        goto fail;
+    }
+#else
     ret = av_opt_set_int_list(pdata->avbuffsink_ctx,
                               "sample_fmts",
                               sample_fmts,
@@ -343,6 +380,7 @@ static void init_audio_filtergraph(mlt_link self,
         mlt_log_error(self, "Cannot set sink channel_layouts\n");
         goto fail;
     }
+#endif
 #endif
     ret = avfilter_init_str(pdata->avbuffsink_ctx, NULL);
     if (ret < 0) {
@@ -1129,6 +1167,7 @@ static void link_close(mlt_link self)
             avfilter_graph_free(&pdata->avfilter_graph);
             av_frame_free(&pdata->avinframe);
             av_frame_free(&pdata->avoutframe);
+            av_channel_layout_uninit(&pdata->ch_layout);
             free(pdata);
         }
         self->close = NULL;
