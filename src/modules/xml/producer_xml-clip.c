@@ -89,12 +89,20 @@ static int producer_get_image(mlt_frame frame,
         return error;
     }
     mlt_frame_set_image(frame, *image, 0, NULL);
+
+    int size;
+    uint8_t *data = mlt_frame_get_alpha_size(xml_frame, &size);
+    if (data) {
+        mlt_frame_set_alpha(frame, data, size, NULL);
+    }
+
     mlt_properties_set_int(frame_properties, "format", *format);
     mlt_properties_set_int(frame_properties, "width", *width);
     mlt_properties_set_int(frame_properties, "height", *height);
-    mlt_properties_pass_list(frame_properties,
-                             xml_frame_properties,
-                             "colorspace aspect_ratio progressive");
+    mlt_properties_pass_list(
+        frame_properties,
+        xml_frame_properties,
+        "colorspace aspect_ratio progressive full_range top_field_first color_trc color_primaries");
 
     return error;
 }
