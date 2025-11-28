@@ -2,7 +2,7 @@ schema_version: 0.3
 type: producer
 identifier: qtext
 title: Qt Titler
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en

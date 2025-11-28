@@ -2,7 +2,7 @@ schema_version: 0.3
 type: producer
 identifier: avformat
 title: FFmpeg Reader
-version: 3
+version: 4
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en

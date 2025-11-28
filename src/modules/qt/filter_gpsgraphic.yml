@@ -2,7 +2,7 @@ schema_version: 7.0
 type: filter
 identifier: gpsgraphic
 title: GPS Graphic
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Daniel F
 license: LGPLv2.1

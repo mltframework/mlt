@@ -2,7 +2,7 @@ schema_version: 0.3
 type: filter
 identifier: audiolevelgraph
 title: Audio Level Visualization Filter
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
