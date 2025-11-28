@@ -1,6 +1,6 @@
 /*
  * filter_lift_gamma_gain.cpp
- * Copyright (C) 2014-2022 Meltytech, LLC
+ * Copyright (C) 2014-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,9 +24,12 @@
 
 typedef struct
 {
-    uint8_t rlut[256];
-    uint8_t glut[256];
-    uint8_t blut[256];
+    uint8_t *rlut;
+    uint8_t *glut;
+    uint8_t *blut;
+    uint16_t *rlut16;
+    uint16_t *glut16;
+    uint16_t *blut16;
     double rlift, glift, blift;
     double rgamma, ggamma, bgamma;
     double rgain, ggain, bgain;
@@ -39,12 +42,15 @@ typedef struct
     mlt_image_format format;
     int width;
     int height;
-    uint8_t rlut[256];
-    uint8_t glut[256];
-    uint8_t blut[256];
+    uint8_t *rlut;
+    uint8_t *glut;
+    uint8_t *blut;
+    uint16_t *rlut16;
+    uint16_t *glut16;
+    uint16_t *blut16;
 } sliced_desc;
 
-static void refresh_lut(mlt_filter filter, mlt_frame frame)
+static int refresh_lut(mlt_filter filter, mlt_frame frame, mlt_image_format format)
 {
     private_data *self = (private_data *) filter->child;
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
@@ -60,12 +66,49 @@ static void refresh_lut(mlt_filter filter, mlt_frame frame)
     double ggain = mlt_properties_anim_get_double(properties, "gain_g", position, length);
     double bgain = mlt_properties_anim_get_double(properties, "gain_b", position, length);
 
-    // Only regenerate the LUT if something changed.
-    if (self->rlift != rlift || self->glift != glift || self->blift != blift
-        || self->rgamma != rgamma || self->ggamma != ggamma || self->bgamma != bgamma
-        || self->rgain != rgain || self->ggain != ggain || self->bgain != bgain) {
-        int i = 0;
-        for (i = 0; i < 256; i++) {
+    int params_changed = (self->rlift != rlift || self->glift != glift || self->blift != blift
+                          || self->rgamma != rgamma || self->ggamma != ggamma
+                          || self->bgamma != bgamma || self->rgain != rgain || self->ggain != ggain
+                          || self->bgain != bgain);
+
+    if (params_changed) {
+        // Free existing LUTs to force regeneration
+        free(self->rlut);
+        free(self->glut);
+        free(self->blut);
+        free(self->rlut16);
+        free(self->glut16);
+        free(self->blut16);
+        self->rlut = NULL;
+        self->glut = NULL;
+        self->blut = NULL;
+        self->rlut16 = NULL;
+        self->glut16 = NULL;
+        self->blut16 = NULL;
+    }
+
+    // Determine which LUT is needed for this format
+    int need_lut8 = (format == mlt_image_rgb || format == mlt_image_rgba);
+    int need_lut16 = (format == mlt_image_rgba64);
+
+    // Allocate and generate 8-bit LUT if needed
+    if (need_lut8 && !self->rlut) {
+        self->rlut = malloc(256 * sizeof(uint8_t));
+        self->glut = malloc(256 * sizeof(uint8_t));
+        self->blut = malloc(256 * sizeof(uint8_t));
+
+        if (!self->rlut || !self->glut || !self->blut) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate 8-bit LUTs\n");
+            free(self->rlut);
+            free(self->glut);
+            free(self->blut);
+            self->rlut = NULL;
+            self->glut = NULL;
+            self->blut = NULL;
+            return 1;
+        }
+
+        for (int i = 0; i < 256; i++) {
             // Convert to gamma 2.2
             double gamma22 = pow((double) i / 255.0, 1.0 / 2.2);
             double r = gamma22;
@@ -97,14 +140,72 @@ static void refresh_lut(mlt_filter filter, mlt_frame frame)
             g = CLAMP(g, 0.0, 1.0);
             b = CLAMP(b, 0.0, 1.0);
 
-            // Update LUT
+            // Update 8-bit LUT
             self->rlut[i] = lrint(r * 255.0);
             self->glut[i] = lrint(g * 255.0);
             self->blut[i] = lrint(b * 255.0);
         }
+    }
 
-        // Store the values that created the LUT so that
-        // changes can be detected.
+    // Allocate and generate 16-bit LUT if needed
+    if (need_lut16 && !self->rlut16) {
+        self->rlut16 = malloc(65536 * sizeof(uint16_t));
+        self->glut16 = malloc(65536 * sizeof(uint16_t));
+        self->blut16 = malloc(65536 * sizeof(uint16_t));
+
+        if (!self->rlut16 || !self->glut16 || !self->blut16) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate 16-bit LUTs\n");
+            free(self->rlut16);
+            free(self->glut16);
+            free(self->blut16);
+            self->rlut16 = NULL;
+            self->glut16 = NULL;
+            self->blut16 = NULL;
+            return 1;
+        }
+
+        for (int i = 0; i < 65536; i++) {
+            // Convert to gamma 2.2
+            double gamma22 = pow((double) i / 65535.0, 1.0 / 2.2);
+            double r = gamma22;
+            double g = gamma22;
+            double b = gamma22;
+
+            // Apply lift
+            r += rlift * (1.0 - r);
+            g += glift * (1.0 - g);
+            b += blift * (1.0 - b);
+
+            // Clamp negative values
+            r = MAX(r, 0.0);
+            g = MAX(g, 0.0);
+            b = MAX(b, 0.0);
+
+            // Apply gamma
+            r = pow(r, 2.2 / rgamma);
+            g = pow(g, 2.2 / ggamma);
+            b = pow(b, 2.2 / bgamma);
+
+            // Apply gain
+            r *= pow(rgain, 1.0 / rgamma);
+            g *= pow(ggain, 1.0 / ggamma);
+            b *= pow(bgain, 1.0 / bgamma);
+
+            // Clamp values
+            r = CLAMP(r, 0.0, 1.0);
+            g = CLAMP(g, 0.0, 1.0);
+            b = CLAMP(b, 0.0, 1.0);
+
+            // Update 16-bit LUT
+            self->rlut16[i] = lrint(r * 65535.0);
+            self->glut16[i] = lrint(g * 65535.0);
+            self->blut16[i] = lrint(b * 65535.0);
+        }
+    }
+
+    // Store the values that created the LUT so that
+    // changes can be detected.
+    if (params_changed) {
         self->rlift = rlift;
         self->glift = glift;
         self->blift = blift;
@@ -115,6 +216,7 @@ static void refresh_lut(mlt_filter filter, mlt_frame frame)
         self->ggain = ggain;
         self->bgain = bgain;
     }
+    return 0;
 }
 
 static int sliced_proc(int id, int index, int jobs, void *data)
@@ -150,6 +252,20 @@ static int sliced_proc(int id, int index, int jobs, void *data)
             sample++; // Skip alpha
         }
         break;
+    case mlt_image_rgba64: {
+        int pixels = desc->width * slice_height;
+        uint16_t *s = (uint16_t *) sample;
+        for (int p = 0; p < pixels; p++) {
+            *s = desc->rlut16[*s];
+            s++;
+            *s = desc->glut16[*s];
+            s++;
+            *s = desc->blut16[*s];
+            s++;
+            s++; // Skip alpha
+        }
+        break;
+    }
     default:
         mlt_log_error(MLT_FILTER_SERVICE(desc->filter),
                       "Invalid image format: %s\n",
@@ -158,30 +274,6 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     }
 
     return 0;
-}
-
-static void apply_lut(
-    mlt_filter filter, uint8_t *image, mlt_image_format format, int width, int height)
-{
-    private_data *self = (private_data *) filter->child;
-    sliced_desc *desc = malloc(sizeof(*desc));
-
-    desc->filter = filter;
-    desc->image = image;
-    desc->format = format;
-    desc->width = width;
-    desc->height = height;
-
-    // Copy the LUT so that we can be frame-thread safe.
-    mlt_service_lock(MLT_FILTER_SERVICE(filter));
-    memcpy(desc->rlut, self->rlut, sizeof(self->rlut));
-    memcpy(desc->glut, self->glut, sizeof(self->glut));
-    memcpy(desc->blut, self->blut, sizeof(self->blut));
-    mlt_service_unlock(MLT_FILTER_SERVICE(filter));
-
-    mlt_slices_run_normal(0, sliced_proc, desc);
-
-    free(desc);
 }
 
 static int filter_get_image(mlt_frame frame,
@@ -194,23 +286,50 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
     int error = 0;
 
-    // Regenerate the LUT if necessary
-    mlt_service_lock(MLT_FILTER_SERVICE(filter));
-    refresh_lut(filter, frame);
-    mlt_service_unlock(MLT_FILTER_SERVICE(filter));
-
-    // Make sure the format is acceptable
-    if (*format != mlt_image_rgb && *format != mlt_image_rgba) {
+    // Change the format if necessary
+    switch (*format) {
+    case mlt_image_yuv420p:
+    case mlt_image_yuv422:
         *format = mlt_image_rgb;
+        break;
+    case mlt_image_yuv422p16:
+    case mlt_image_yuv420p10:
+    case mlt_image_yuv444p10:
+        *format = mlt_image_rgba64;
+        break;
+    default:
+        break;
     }
 
     // Get the image
     writable = 1;
     error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
-    // Apply the LUT
-    if (!error) {
-        apply_lut(filter, *image, *format, *width, *height);
+    if (!error && *image) {
+        // Regenerate the LUT if necessary and copy pointers atomically
+        mlt_service_lock(MLT_FILTER_SERVICE(filter));
+        error = refresh_lut(filter, frame, *format);
+        if (!error) {
+            private_data *self = (private_data *) filter->child;
+            sliced_desc desc;
+            desc.filter = filter;
+            desc.image = *image;
+            desc.format = *format;
+            desc.width = *width;
+            desc.height = *height;
+            desc.rlut = self->rlut;
+            desc.glut = self->glut;
+            desc.blut = self->blut;
+            desc.rlut16 = self->rlut16;
+            desc.glut16 = self->glut16;
+            desc.blut16 = self->blut16;
+            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+
+            // Apply the LUT with copied pointers
+            mlt_slices_run_normal(0, sliced_proc, &desc);
+        } else {
+            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+        }
     }
 
     return error;
@@ -227,7 +346,15 @@ static void filter_close(mlt_filter filter)
 {
     private_data *self = (private_data *) filter->child;
 
-    free(self);
+    if (self) {
+        free(self->rlut);
+        free(self->glut);
+        free(self->blut);
+        free(self->rlut16);
+        free(self->glut16);
+        free(self->blut16);
+        free(self);
+    }
     filter->child = NULL;
     filter->close = NULL;
     filter->parent.close = NULL;
@@ -241,17 +368,10 @@ mlt_filter filter_lift_gamma_gain_init(mlt_profile profile,
 {
     mlt_filter filter = mlt_filter_new();
     private_data *self = (private_data *) calloc(1, sizeof(private_data));
-    int i = 0;
 
     if (filter && self) {
         mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
 
-        // Initialize self data
-        for (i = 0; i < 256; i++) {
-            self->rlut[i] = i;
-            self->glut[i] = i;
-            self->blut[i] = i;
-        }
         self->rlift = self->glift = self->blift = 0.0;
         self->rgamma = self->ggamma = self->bgamma = 1.0;
         self->rgain = self->ggain = self->bgain = 1.0;
