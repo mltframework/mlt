@@ -407,7 +407,7 @@ static int filter_get_image(mlt_frame frame,
     // Draw the graph
     if (!error) {
         process_frame_properties(filter, frame, used_crops);
-        QImage qimg(*width, *height, QImage::Format_ARGB32);
+        QImage qimg;
         convert_mlt_to_qimage(*image, &qimg, *width, *height, *format);
         draw_graphics(filter, frame, &qimg, *width, *height, used_crops);
         convert_qimage_to_mlt(&qimg, *image, *width, *height);

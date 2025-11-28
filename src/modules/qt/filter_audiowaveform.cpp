@@ -364,7 +364,7 @@ static int filter_get_image(mlt_frame frame,
 
         // Draw the waveforms
         if (!error) {
-            QImage qimg(*width, *height, QImage::Format_ARGB32);
+            QImage qimg;
             convert_mlt_to_qimage(*image, &qimg, *width, *height, *image_format);
             draw_waveforms(filter,
                            frame,

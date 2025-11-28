@@ -200,7 +200,7 @@ static int filter_get_image(mlt_frame frame,
 
         // Draw the audio levels
         if (!error) {
-            QImage qimg(*width, *height, QImage::Format_ARGB32);
+            QImage qimg;
             convert_mlt_to_qimage(*image, &qimg, *width, *height, *format);
             draw_levels(filter, frame, &qimg, *width, *height);
             convert_qimage_to_mlt(&qimg, *image, *width, *height);
