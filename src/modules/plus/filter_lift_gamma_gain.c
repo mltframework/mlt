@@ -1,5 +1,5 @@
 /*
- * filter_lift_gamma_gain.cpp
+ * filter_lift_gamma_gain.c
  * Copyright (C) 2014-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
@@ -49,6 +49,53 @@ typedef struct
     uint16_t *glut16;
     uint16_t *blut16;
 } sliced_desc;
+
+// Helper function to calculate lift-gamma-gain to a normalized [0.0, 1.0] value
+static inline void calc_lift_gamma_gain(double normalized,
+                                        double *r,
+                                        double *g,
+                                        double *b,
+                                        double rlift,
+                                        double glift,
+                                        double blift,
+                                        double rgamma,
+                                        double ggamma,
+                                        double bgamma,
+                                        double rgain,
+                                        double ggain,
+                                        double bgain)
+{
+    // Convert to gamma 2.2
+    double gamma22 = pow(normalized, 1.0 / 2.2);
+    *r = gamma22;
+    *g = gamma22;
+    *b = gamma22;
+
+    // Apply lift
+    *r += rlift * (1.0 - *r);
+    *g += glift * (1.0 - *g);
+    *b += blift * (1.0 - *b);
+
+    // Clamp negative values
+    *r = MAX(*r, 0.0);
+    *g = MAX(*g, 0.0);
+    *b = MAX(*b, 0.0);
+
+    // Apply gamma
+    *r = pow(*r, 2.2 / rgamma);
+    *g = pow(*g, 2.2 / ggamma);
+    *b = pow(*b, 2.2 / bgamma);
+
+    // Apply gain
+    *r *= pow(rgain, 1.0 / rgamma);
+    *g *= pow(ggain, 1.0 / ggamma);
+    *b *= pow(bgain, 1.0 / bgamma);
+
+    // Clamp values
+    *r = CLAMP(*r, 0.0, 1.0);
+    *g = CLAMP(*g, 0.0, 1.0);
+    *b = CLAMP(*b, 0.0, 1.0);
+}
 
 static int refresh_lut(mlt_filter filter, mlt_frame frame, mlt_image_format format)
 {
@@ -109,36 +156,20 @@ static int refresh_lut(mlt_filter filter, mlt_frame frame, mlt_image_format form
         }
 
         for (int i = 0; i < 256; i++) {
-            // Convert to gamma 2.2
-            double gamma22 = pow((double) i / 255.0, 1.0 / 2.2);
-            double r = gamma22;
-            double g = gamma22;
-            double b = gamma22;
-
-            // Apply lift
-            r += rlift * (1.0 - r);
-            g += glift * (1.0 - g);
-            b += blift * (1.0 - b);
-
-            // Clamp negative values
-            r = MAX(r, 0.0);
-            g = MAX(g, 0.0);
-            b = MAX(b, 0.0);
-
-            // Apply gamma
-            r = pow(r, 2.2 / rgamma);
-            g = pow(g, 2.2 / ggamma);
-            b = pow(b, 2.2 / bgamma);
-
-            // Apply gain
-            r *= pow(rgain, 1.0 / rgamma);
-            g *= pow(ggain, 1.0 / ggamma);
-            b *= pow(bgain, 1.0 / bgamma);
-
-            // Clamp values
-            r = CLAMP(r, 0.0, 1.0);
-            g = CLAMP(g, 0.0, 1.0);
-            b = CLAMP(b, 0.0, 1.0);
+            double r, g, b;
+            calc_lift_gamma_gain((double) i / 255.0,
+                                 &r,
+                                 &g,
+                                 &b,
+                                 rlift,
+                                 glift,
+                                 blift,
+                                 rgamma,
+                                 ggamma,
+                                 bgamma,
+                                 rgain,
+                                 ggain,
+                                 bgain);
 
             // Update 8-bit LUT
             self->rlut[i] = lrint(r * 255.0);
@@ -165,36 +196,20 @@ static int refresh_lut(mlt_filter filter, mlt_frame frame, mlt_image_format form
         }
 
         for (int i = 0; i < 65536; i++) {
-            // Convert to gamma 2.2
-            double gamma22 = pow((double) i / 65535.0, 1.0 / 2.2);
-            double r = gamma22;
-            double g = gamma22;
-            double b = gamma22;
-
-            // Apply lift
-            r += rlift * (1.0 - r);
-            g += glift * (1.0 - g);
-            b += blift * (1.0 - b);
-
-            // Clamp negative values
-            r = MAX(r, 0.0);
-            g = MAX(g, 0.0);
-            b = MAX(b, 0.0);
-
-            // Apply gamma
-            r = pow(r, 2.2 / rgamma);
-            g = pow(g, 2.2 / ggamma);
-            b = pow(b, 2.2 / bgamma);
-
-            // Apply gain
-            r *= pow(rgain, 1.0 / rgamma);
-            g *= pow(ggain, 1.0 / ggamma);
-            b *= pow(bgain, 1.0 / bgamma);
-
-            // Clamp values
-            r = CLAMP(r, 0.0, 1.0);
-            g = CLAMP(g, 0.0, 1.0);
-            b = CLAMP(b, 0.0, 1.0);
+            double r, g, b;
+            calc_lift_gamma_gain((double) i / 65535.0,
+                                 &r,
+                                 &g,
+                                 &b,
+                                 rlift,
+                                 glift,
+                                 blift,
+                                 rgamma,
+                                 ggamma,
+                                 bgamma,
+                                 rgain,
+                                 ggain,
+                                 bgain);
 
             // Update 16-bit LUT
             self->rlut16[i] = lrint(r * 65535.0);
