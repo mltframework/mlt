@@ -1,6 +1,6 @@
 /*
- * filter_hslrange.cpp
- * Copyright (C) 2024 Meltytech, LLC
+ * filter_hslrange.c
+ * Copyright (C) 2024-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,10 +44,10 @@ typedef struct
     float l_scale;
 } sliced_desc;
 
-static void adjust_pixel(uint8_t *sample, sliced_desc *desc)
+static void adjust_pixel(float *r, float *g, float *b, sliced_desc *desc)
 {
     float h, s, l;
-    rgbToHsl(sample[0] / 255.0, sample[1] / 255.0, sample[2] / 255.0, &h, &s, &l);
+    rgbToHsl(*r, *g, *b, &h, &s, &l);
     if (s == 0) {
         // No color. Do not adjust.
         return;
@@ -94,11 +94,7 @@ static void adjust_pixel(uint8_t *sample, sliced_desc *desc)
     s = s < 0.0 ? 0.0 : s > 1.0 ? 1.0 : s;
     l = l * l_scale;
     l = l < 0.0 ? 0.0 : l > 1.0 ? 1.0 : l;
-    float r, g, b;
-    hslToRgb(h, s, l, &r, &g, &b);
-    sample[0] = lrint(r * 255.0);
-    sample[1] = lrint(g * 255.0);
-    sample[2] = lrint(b * 255.0);
+    hslToRgb(h, s, l, r, g, b);
 }
 
 static int sliced_proc(int id, int index, int jobs, void *data)
@@ -107,24 +103,51 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     sliced_desc *desc = ((sliced_desc *) data);
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-    int total = desc->width * slice_height + 1;
-    uint8_t *sample = desc->image
-                      + slice_line_start
-                            * mlt_image_format_size(desc->format, desc->width, 1, NULL);
+    int total = desc->width * slice_height;
 
     switch (desc->format) {
-    case mlt_image_rgb:
-        while (--total) {
-            adjust_pixel(sample, desc);
+    case mlt_image_rgb: {
+        uint8_t *sample = desc->image + slice_line_start * desc->width * 3;
+        for (int i = 0; i < total; i++) {
+            float r = sample[0] / 255.0;
+            float g = sample[1] / 255.0;
+            float b = sample[2] / 255.0;
+            adjust_pixel(&r, &g, &b, desc);
+            sample[0] = lrint(r * 255.0);
+            sample[1] = lrint(g * 255.0);
+            sample[2] = lrint(b * 255.0);
             sample += 3;
         }
         break;
-    case mlt_image_rgba:
-        while (--total) {
-            adjust_pixel(sample, desc);
+    }
+    case mlt_image_rgba: {
+        uint8_t *sample = desc->image + slice_line_start * desc->width * 4;
+        for (int i = 0; i < total; i++) {
+            float r = sample[0] / 255.0;
+            float g = sample[1] / 255.0;
+            float b = sample[2] / 255.0;
+            adjust_pixel(&r, &g, &b, desc);
+            sample[0] = lrint(r * 255.0);
+            sample[1] = lrint(g * 255.0);
+            sample[2] = lrint(b * 255.0);
             sample += 4;
         }
         break;
+    }
+    case mlt_image_rgba64: {
+        uint16_t *sample = (uint16_t *) desc->image + slice_line_start * desc->width * 4;
+        for (int i = 0; i < total; i++) {
+            float r = sample[0] / 65535.0;
+            float g = sample[1] / 65535.0;
+            float b = sample[2] / 65535.0;
+            adjust_pixel(&r, &g, &b, desc);
+            sample[0] = lrint(r * 65535.0);
+            sample[1] = lrint(g * 65535.0);
+            sample[2] = lrint(b * 65535.0);
+            sample += 4;
+        }
+        break;
+    }
     default:
         mlt_log_error(MLT_FILTER_SERVICE(desc->filter),
                       "Invalid image format: %s\n",
@@ -162,7 +185,7 @@ static int filter_get_image(mlt_frame frame,
     int error = 0;
 
     // Make sure the format is acceptable
-    if (*format != mlt_image_rgb && *format != mlt_image_rgba) {
+    if (*format != mlt_image_rgb && *format != mlt_image_rgba && *format != mlt_image_rgba64) {
         *format = mlt_image_rgb;
     }
 
