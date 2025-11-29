@@ -338,13 +338,11 @@ static int filter_get_image(mlt_frame frame,
             desc.rlut16 = self->rlut16;
             desc.glut16 = self->glut16;
             desc.blut16 = self->blut16;
-            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
             // Apply the LUT with copied pointers
             mlt_slices_run_normal(0, sliced_proc, &desc);
-        } else {
-            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
         }
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
     }
 
     return error;
