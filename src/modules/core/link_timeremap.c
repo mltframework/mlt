@@ -406,8 +406,15 @@ static int link_get_image_blend(mlt_frame frame,
                           *height);
             break;
         }
-        in_frame_pos++;
         image_count++;
+        in_frame_pos++;
+        sprintf(key, "%d", in_frame_pos);
+        mlt_frame next_frame = mlt_properties_get_data(unique_properties, key, NULL);
+        if (next_frame) {
+            src_frame = next_frame;
+        } else {
+            break;
+        }
     }
 
     if (image_count <= 0) {
@@ -419,16 +426,29 @@ static int link_get_image_blend(mlt_frame frame,
     int size = mlt_image_format_size(*format, *width, *height, NULL);
     *image = mlt_pool_alloc(size);
     int s = 0;
-    uint8_t *p = *image;
-    for (s = 0; s < size; s++) {
-        int16_t sum = 0;
-        int i = 0;
-        for (i = 0; i < image_count; i++) {
-            sum += *(images[i]);
-            images[i]++;
+    if (*format == mlt_image_rgba64) {
+        uint16_t *p = (uint16_t *) *image;
+        size /= 2;
+        for (s = 0; s < size; s++) {
+            int32_t sum = 0;
+            for (int i = 0; i < image_count; i++) {
+                uint16_t *image16 = (uint16_t *) images[i];
+                sum += image16[s];
+            }
+            p[s] = sum / image_count;
         }
-        *p = sum / image_count;
-        p++;
+    } else {
+        uint8_t *p = *image;
+        for (s = 0; s < size; s++) {
+            int16_t sum = 0;
+            int i = 0;
+            for (i = 0; i < image_count; i++) {
+                sum += *(images[i]);
+                images[i]++;
+            }
+            *p = sum / image_count;
+            p++;
+        }
     }
     mlt_frame_set_image(frame, *image, size, mlt_pool_release);
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "format", *format);
