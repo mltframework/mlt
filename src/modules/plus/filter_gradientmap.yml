@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter
 identifier: gradientmap
 title: Gradient Map
-version: 1
+version: 2
 copyright: Martin Rodriguez Reboredo
 creator: Martin Rodriguez Reboredo
 license: LGPLv2.1
