@@ -1,6 +1,7 @@
 /*
  * filter_strobe.c -- simple strobing filter
  * Copyright (C) 2020 Martin Sandsmark <martin.sandsmark@kde.org>
+ * Copyright (C) 2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +21,7 @@
 #include <framework/mlt_factory.h>
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_log.h>
 #include <framework/mlt_producer.h>
 #include <framework/mlt_property.h>
 #include <framework/mlt_service.h>
@@ -54,7 +56,8 @@ static int filter_get_image(mlt_frame frame,
         return mlt_frame_get_image(frame, image, format, width, height, 0);
     }
 
-    *format = mlt_image_rgba;
+    if (*format == mlt_image_movit || *format == mlt_image_opengl_texture)
+        *format = mlt_image_rgba;
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
     if (error) {
         return error;
@@ -71,6 +74,26 @@ static int filter_get_image(mlt_frame frame,
         }
         // Clear any alpha buffer that may be attached to the frame
         mlt_frame_set_alpha(frame, NULL, 0, NULL);
+    } else if (*format == mlt_image_rgba64) {
+        uint16_t *p = (uint16_t *) *image;
+        for (size_t i = 0; i < pixelCount; i++) {
+            p[3] = 0;
+            p += 4;
+        }
+        // Clear any alpha buffer that may be attached to the frame
+        mlt_frame_set_alpha(frame, NULL, 0, NULL);
+    } else {
+        int size = 0;
+        uint8_t *a = mlt_frame_get_alpha_size(frame, &size);
+        if (!a || size < pixelCount) {
+            a = mlt_pool_alloc(pixelCount);
+            if (!a) {
+                mlt_log_error(MLT_FILTER_SERVICE(filter), "Unable to allocate alpha\n");
+                return 1;
+            }
+            mlt_frame_set_alpha(frame, a, pixelCount, NULL);
+        }
+        memset(a, 0, pixelCount);
     }
 
     return 0;
