@@ -2,7 +2,7 @@ schema_version: 0.3
 type: filter
 identifier: mask_apply
 title: Apply a filter mask
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -20,7 +20,7 @@ parameters:
     description: The name of a compositing or blending transition
     type: string
     argument: yes
-    default: frei0r.composition
+    default: qtblend
     mutable: yes
 
   - identifier: transition.*

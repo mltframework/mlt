@@ -48,7 +48,11 @@ static int get_image(mlt_frame frame,
                      int writable)
 {
     mlt_transition transition = mlt_frame_pop_service(frame);
-    *format = mlt_frame_pop_service_int(frame);
+    if (*format == mlt_image_rgba64) {
+        mlt_frame_pop_service_int(frame);
+    } else {
+        *format = mlt_frame_pop_service_int(frame);
+    }
     int error = mlt_frame_get_image(frame, image, format, width, height, writable);
     if (!error) {
         mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
@@ -123,9 +127,13 @@ mlt_filter filter_mask_apply_init(mlt_profile profile,
 {
     mlt_filter filter = mlt_filter_new();
     if (filter) {
+        mlt_properties transitions = mlt_repository_transitions(mlt_factory_repository());
+        int qtblend_exists = mlt_properties_exists(transitions, "qtblend");
         mlt_properties_set(MLT_FILTER_PROPERTIES(filter),
                            "transition",
-                           arg ? arg : "frei0r.composition");
+                           arg              ? arg
+                           : qtblend_exists ? "qtblend"
+                                            : "frei0r.cairoblend");
         mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "mlt_image_format", "rgba");
         filter->process = process;
     }
