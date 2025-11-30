@@ -40,6 +40,7 @@ typedef std::map<std::string, gradient_cache> gradientmap_cache;
 struct slice_desc
 {
     mlt_image_s image;
+    mlt_image_format format;
     const std::vector<mlt_color> *colors;
 };
 
@@ -164,10 +165,10 @@ static void compute_colors(const std::vector<stop> &gradient, std::vector<mlt_co
 }
 
 static mlt_color gradient_map(
-    const std::vector<mlt_color> &colors, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+    const std::vector<mlt_color> &colors, float r, float g, float b, float a)
 {
     // This is what Krita does, although other methods could be explored.
-    float intensity = (r * 0.30 + g * 0.59 + b * 0.11) / 255;
+    float intensity = r * 0.30 + g * 0.59 + b * 0.11;
     uint32_t t = intensity * colors.size() + 0.5;
     if (colors.size() > t) {
         mlt_color c = colors[t];
@@ -187,15 +188,37 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->image.height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
-    int line_size = desc->image.strides[0];
-    for (int j = slice_line_start; j < slice_line_end; ++j) {
-        uint8_t *p = desc->image.planes[0] + j * line_size;
-        for (int i = 0; i < line_size; i += 4) {
-            mlt_color c = gradient_map(*desc->colors, p[i], p[i + 1], p[i + 2], p[i + 3]);
-            p[i] = c.r;
-            p[i + 1] = c.g;
-            p[i + 2] = c.b;
-            p[i + 3] = c.a;
+    if (desc->format == mlt_image_rgba) {
+        int line_size = desc->image.strides[0];
+        for (int j = slice_line_start; j < slice_line_end; ++j) {
+            uint8_t *p = desc->image.planes[0] + j * line_size;
+            for (int i = 0; i < line_size; i += 4) {
+                float r = (float) p[i] / 255.0;
+                float g = (float) p[i + 1] / 255.0;
+                float b = (float) p[i + 2] / 255.0;
+                float a = (float) p[i + 3] / 255.0;
+                mlt_color c = gradient_map(*desc->colors, r, g, b, a);
+                p[i] = c.r;
+                p[i + 1] = c.g;
+                p[i + 2] = c.b;
+                p[i + 3] = c.a;
+            }
+        }
+    } else if (desc->format == mlt_image_rgba64) {
+        int line_size = desc->image.strides[0] / 2; // two bytes per word
+        for (int j = slice_line_start; j < slice_line_end; ++j) {
+            uint16_t *p = (uint16_t *) desc->image.planes[0] + j * line_size;
+            for (int i = 0; i < line_size; i += 4) {
+                float r = (float) p[i] / 65535.0;
+                float g = (float) p[i + 1] / 65535.0;
+                float b = (float) p[i + 2] / 65535.0;
+                float a = (float) p[i + 3] / 65535.0;
+                mlt_color c = gradient_map(*desc->colors, r, g, b, a);
+                p[i] = (uint16_t) c.r * 257;
+                p[i + 1] = (uint16_t) c.g * 257;
+                p[i + 2] = (uint16_t) c.b * 257;
+                p[i + 3] = (uint16_t) c.a * 257;
+            }
         }
     }
     return 0;
@@ -211,7 +234,8 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = reinterpret_cast<mlt_filter>(mlt_frame_pop_service(frame));
     gradientmap_cache *cache = reinterpret_cast<gradientmap_cache *>(filter->child);
 
-    *format = mlt_image_rgba;
+    if (*format != mlt_image_rgba64)
+        *format = mlt_image_rgba;
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
     if (error == 0) {
@@ -235,6 +259,7 @@ static int filter_get_image(mlt_frame frame,
 
         slice_desc desc;
         desc.colors = &colors;
+        desc.format = *format;
         mlt_image_set_values(&desc.image, *image, *format, *width, *height);
         mlt_slices_run_normal(0, sliced_proc, &desc);
     }
