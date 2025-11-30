@@ -411,6 +411,11 @@ static void *load_lib(mlt_profile profile, mlt_service_type type, void *handle, 
             param_name_map = mlt_properties_get_data(param_name_map, name, NULL);
             mlt_properties_set_data(properties, "_resolution_scale", param_name_map, 0, NULL, NULL);
         }
+
+        param_name_map = mlt_properties_get_data(mlt_global_properties(), "frei0r.alpha_only", NULL);
+        if (param_name_map && mlt_properties_exists(param_name_map, name)) {
+            mlt_properties_set_int(properties, "_alpha_only", 1);
+        }
         return ret;
     } else {
         mlt_log_error(NULL, "frei0r plugin \"%s\" is missing a function\n", name);
@@ -517,6 +522,15 @@ MLTFREI0R_EXPORT MLT_REPOSITORY
     mlt_properties_set_data(mlt_global_properties(),
                             "frei0r.aliases",
                             reverse_aliases,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
+
+    // Load a list of plugin alias names.
+    snprintf(dirname, PATH_MAX, "%s/frei0r/alpha_only.txt", mlt_environment("MLT_DATA"));
+    mlt_properties_set_data(mlt_global_properties(),
+                            "frei0r.alpha_only",
+                            mlt_properties_load(dirname),
                             0,
                             (mlt_destructor) mlt_properties_close,
                             NULL);

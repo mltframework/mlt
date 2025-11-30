@@ -11,9 +11,12 @@ file(GLOB YML "*.yml")
 add_custom_target(Other_frei0r_Files SOURCES
   ${YML}
   aliases.yaml
+  alpha_only.txt
   blacklist.txt
+  filter_cairoblend_mode.yml
   not_thread_safe.txt
   param_name_map.yaml
+  resolution_scale.yml
 )
 
 include(GenerateExportHeader)
@@ -37,9 +40,11 @@ install(TARGETS mltfrei0r LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   aliases.yaml
+  alpha_only.txt
+  blacklist.txt
   filter_cairoblend_mode.yml
-  resolution_scale.yml
+  not_thread_safe.txt
   param_name_map.yaml
-  blacklist.txt not_thread_safe.txt
+  resolution_scale.yml
   DESTINATION ${MLT_INSTALL_DATA_DIR}/frei0r
 )
