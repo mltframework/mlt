@@ -1,6 +1,6 @@
 /*
  * filter_remover.c -- filter to interpolate pixels to cover an area
- * Copyright (c) 2018-2020 Meltytech, LLC
+ * Copyright (c) 2018-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -73,9 +73,10 @@ static mlt_rect constrain_rect(mlt_rect rect, int max_x, int max_y)
 
 typedef struct
 {
-    uint8_t *chan[4]; // pointer to the first value in the channel
+    void *chan[4];    // pointer to the first value in the channel
     int rowCount[4];  // the number of values in each line (row)
     int step[4];      // the space between values in each line
+    int word[4];      // the number of bits in a word (8 or 16)
     mlt_rect rect[4]; // rect the area to be removed
 } slice_desc;
 
@@ -90,31 +91,52 @@ static int remove_spot_channel_proc(int id, int index, int jobs, void *data)
     (void) id;   // unused
     (void) jobs; // unused
     slice_desc *desc = ((slice_desc *) data);
-    uint8_t *chan = desc->chan[index];
     int rowCount = desc->rowCount[index];
     int step = desc->step[index];
+    int word = desc->word[index];
     mlt_rect rect = desc->rect[index];
     int yStop = rect.y + rect.h;
     int xStop = rect.x + rect.w;
     int rowSize = rowCount * step;
-    int y;
-    for (y = rect.y; y < yStop; y++) {
-        uint8_t *xValueL = chan + (y * rowSize) + (((int) rect.x - 1) * step);
-        uint8_t *xValueR = xValueL + ((int) rect.w * step);
-        uint8_t *p = chan + (y * rowSize) + ((int) rect.x * step);
-        double yRatio = 1.0 - ((y - rect.y) / rect.h);
-        int x;
-        for (x = rect.x; x < xStop; x++) {
-            uint8_t *yValueT = chan + (((int) rect.y - 1) * rowSize) + (x * step);
-            uint8_t *yValueB = yValueT + (int) rect.h * rowSize;
-            double xRatio = 1.0 - ((x - rect.x) / rect.w);
-            unsigned int xValueInterp = (*xValueL * xRatio) + (*xValueR * (1.0 - xRatio));
-            unsigned int yValueInterp = (*yValueT * yRatio) + (*yValueB * (1.0 - yRatio));
-            unsigned int value = (xValueInterp + yValueInterp) / 2;
-            if (value > 255)
-                value = 255;
-            *p = value;
-            p += step;
+    if (word == 8) {
+        uint8_t *chan = desc->chan[index];
+        for (int y = rect.y; y < yStop; y++) {
+            uint8_t *xValueL = chan + (y * rowSize) + (((int) rect.x - 1) * step);
+            uint8_t *xValueR = xValueL + ((int) rect.w * step);
+            uint8_t *p = chan + (y * rowSize) + ((int) rect.x * step);
+            double yRatio = 1.0 - ((y - rect.y) / rect.h);
+            for (int x = rect.x; x < xStop; x++) {
+                uint8_t *yValueT = chan + (((int) rect.y - 1) * rowSize) + (x * step);
+                uint8_t *yValueB = yValueT + (int) rect.h * rowSize;
+                double xRatio = 1.0 - ((x - rect.x) / rect.w);
+                unsigned int xValueInterp = (*xValueL * xRatio) + (*xValueR * (1.0 - xRatio));
+                unsigned int yValueInterp = (*yValueT * yRatio) + (*yValueB * (1.0 - yRatio));
+                unsigned int value = (xValueInterp + yValueInterp) / 2;
+                if (value > 255)
+                    value = 255;
+                *p = value;
+                p += step;
+            }
+        }
+    } else if (word == 16) {
+        uint16_t *chan = desc->chan[index];
+        for (int y = rect.y; y < yStop; y++) {
+            uint16_t *xValueL = chan + (y * rowSize) + (((int) rect.x - 1) * step);
+            uint16_t *xValueR = xValueL + ((int) rect.w * step);
+            uint16_t *p = chan + (y * rowSize) + ((int) rect.x * step);
+            double yRatio = 1.0 - ((y - rect.y) / rect.h);
+            for (int x = rect.x; x < xStop; x++) {
+                uint16_t *yValueT = chan + (((int) rect.y - 1) * rowSize) + (x * step);
+                uint16_t *yValueB = yValueT + (int) rect.h * rowSize;
+                double xRatio = 1.0 - ((x - rect.x) / rect.w);
+                unsigned int xValueInterp = (*xValueL * xRatio) + (*xValueR * (1.0 - xRatio));
+                unsigned int yValueInterp = (*yValueT * yRatio) + (*yValueB * (1.0 - yRatio));
+                unsigned int value = (xValueInterp + yValueInterp) / 2;
+                if (value > 65535)
+                    value = 65535;
+                *p = value;
+                p += step;
+            }
         }
     }
     return 0;
@@ -162,6 +184,7 @@ static int filter_get_image(mlt_frame frame,
     case mlt_image_rgb:
     case mlt_image_yuv422:
     case mlt_image_yuv420p:
+    case mlt_image_rgba64:
         // These formats are all supported
         break;
     default:
@@ -186,6 +209,7 @@ static int filter_get_image(mlt_frame frame,
             desc.chan[i] = img.planes[0] + i;
             desc.rowCount[i] = img.width;
             desc.step[i] = 4;
+            desc.word[i] = 8;
             desc.rect[i] = rect;
         }
         break;
@@ -195,6 +219,7 @@ static int filter_get_image(mlt_frame frame,
             desc.chan[i] = img.planes[0] + i;
             desc.rowCount[i] = img.width;
             desc.step[i] = 4;
+            desc.word[i] = 8;
             desc.rect[i] = rect;
         }
         break;
@@ -204,16 +229,19 @@ static int filter_get_image(mlt_frame frame,
         desc.chan[0] = img.planes[0];
         desc.rowCount[0] = img.width;
         desc.step[0] = 2;
+        desc.word[0] = 8;
         desc.rect[0] = rect;
         // U
         desc.chan[1] = img.planes[0] + 1;
         desc.rowCount[1] = img.width / 2;
         desc.step[1] = 4;
+        desc.word[1] = 8;
         desc.rect[1] = constrain_rect(scale_rect(rect, 2, 1), img.width / 2, img.height);
         // V
         desc.chan[2] = img.planes[0] + 3;
         desc.rowCount[2] = img.width / 2;
         desc.step[2] = 4;
+        desc.word[2] = 8;
         desc.rect[2] = constrain_rect(scale_rect(rect, 2, 1), img.width / 2, img.height);
         break;
     case mlt_image_yuv420p:
@@ -222,28 +250,42 @@ static int filter_get_image(mlt_frame frame,
         desc.chan[0] = img.planes[0];
         desc.rowCount[0] = img.width;
         desc.step[0] = 1;
+        desc.word[0] = 8;
         desc.rect[0] = rect;
         // U
         desc.chan[1] = img.planes[1];
         desc.rowCount[1] = img.width / 2;
         desc.step[1] = 1;
+        desc.word[1] = 8;
         desc.rect[1] = constrain_rect(scale_rect(rect, 2, 2), img.width / 2, img.height / 2);
         // V
         desc.chan[2] = img.planes[2];
         desc.rowCount[2] = img.width / 2;
         desc.step[2] = 1;
+        desc.word[2] = 8;
         desc.rect[2] = constrain_rect(scale_rect(rect, 2, 2), img.width / 2, img.height / 2);
+        break;
+    case mlt_image_rgba64:
+        jobs = 4;
+        for (i = 0; i < 4; i++) {
+            desc.chan[i] = ((uint16_t *) img.planes[0]) + i;
+            desc.rowCount[i] = img.width;
+            desc.step[i] = 4;
+            desc.word[i] = 16;
+            desc.rect[i] = rect;
+        }
         break;
     default:
         return 1;
     }
 
     uint8_t *alpha = mlt_frame_get_alpha(frame);
-    if (alpha && *format != mlt_image_rgba) {
+    if (alpha && *format != mlt_image_rgba && *format != mlt_image_rgba64) {
         jobs++;
         desc.chan[3] = alpha;
         desc.rowCount[3] = img.width;
         desc.step[3] = 1;
+        desc.word[3] = 8;
         desc.rect[3] = rect;
     }
 
