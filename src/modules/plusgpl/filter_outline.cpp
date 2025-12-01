@@ -42,7 +42,6 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     auto start = 0;
     auto height = mlt_slices_size_slice(jobs, index, desc->image.height, &start);
     auto end = start + height;
-    auto stride = desc->image.strides[0];
     auto maxX = desc->image.width - 1;
     auto maxY = desc->image.height - 1;
 
@@ -51,55 +50,114 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     auto radiusSquared = static_cast<int>(radius * radius + 0.5);
     auto radiusInt = static_cast<int>(radius + 0.5); // Fast rounding instead of ceil
     auto width = desc->image.width;
-    auto colorR = desc->color.r;
-    auto colorG = desc->color.g;
-    auto colorB = desc->color.b;
-    auto colorA = desc->color.a;
-    auto inv255f = 1.f / 255.f; // Pre-calculate division
 
-    for (auto y = start; y < end; y++) {
-        auto srcRow = &desc->original[y * stride];
-        auto dstRow = &desc->image.planes[0][y * stride];
+    if (desc->image.format == mlt_image_rgba) {
+        auto stride = desc->image.strides[0];
+        auto colorR = desc->color.r;
+        auto colorG = desc->color.g;
+        auto colorB = desc->color.b;
+        auto colorA = desc->color.a;
+        auto inv255f = 1.f / 255.f; // Pre-calculate division
 
-        for (auto x = 0; x < width; x++) {
-            auto oa = 0;
+        for (auto y = start; y < end; y++) {
+            auto srcRow = &desc->original[y * stride];
+            auto dstRow = &desc->image.planes[0][y * stride];
 
-            // Optimized circular sampling - early exit on Y bounds
-            for (auto dy = -radiusInt; dy <= radiusInt; dy++) {
-                auto sampleY = y + dy;
-                if (sampleY < 0 || sampleY > maxY)
-                    continue;
+            for (auto x = 0; x < width; x++) {
+                auto oa = 0;
 
-                auto dySquared = dy * dy;
-                auto maxDxSquared = radiusSquared - dySquared;
-                if (maxDxSquared < 0)
-                    continue; // Skip this row entirely
-
-                auto sampleRow = &desc->original[sampleY * stride];
-
-                for (auto dx = -radiusInt; dx <= radiusInt; dx++) {
-                    auto dxSquared = dx * dx;
-                    // Skip if outside circle or center pixel
-                    if (dxSquared > maxDxSquared || (dxSquared + dySquared) == 0)
+                // Optimized circular sampling - early exit on Y bounds
+                for (auto dy = -radiusInt; dy <= radiusInt; dy++) {
+                    auto sampleY = y + dy;
+                    if (sampleY < 0 || sampleY > maxY)
                         continue;
 
-                    auto sampleX = CLAMP(x + dx, 0, maxX);
-                    auto alpha = sampleRow[sampleX * 4 + 3];
-                    if (alpha > oa)
-                        oa = alpha;
-                }
-            }
+                    auto dySquared = dy * dy;
+                    auto maxDxSquared = radiusSquared - dySquared;
+                    if (maxDxSquared < 0)
+                        continue; // Skip this row entirely
 
-            auto srcPixel = &srcRow[x * 4];
-            auto dstPixel = &dstRow[x * 4];
-            auto a = srcPixel[3] * inv255f;
-            auto oaf = oa * inv255f;
-            auto oneMinusA = 1.f - a;
-            dstPixel[0] = a * srcPixel[0] + oneMinusA * (oaf * colorR);
-            dstPixel[1] = a * srcPixel[1] + oneMinusA * (oaf * colorG);
-            dstPixel[2] = a * srcPixel[2] + oneMinusA * (oaf * colorB);
-            dstPixel[3] = a * srcPixel[3] + oneMinusA * (oaf * colorA);
+                    auto sampleRow = &desc->original[sampleY * stride];
+
+                    for (auto dx = -radiusInt; dx <= radiusInt; dx++) {
+                        auto dxSquared = dx * dx;
+                        // Skip if outside circle or center pixel
+                        if (dxSquared > maxDxSquared || (dxSquared + dySquared) == 0)
+                            continue;
+
+                        auto sampleX = CLAMP(x + dx, 0, maxX);
+                        auto alpha = sampleRow[sampleX * 4 + 3];
+                        if (alpha > oa)
+                            oa = alpha;
+                    }
+                }
+
+                auto srcPixel = &srcRow[x * 4];
+                auto dstPixel = &dstRow[x * 4];
+                auto a = srcPixel[3] * inv255f;
+                auto oaf = oa * inv255f;
+                auto oneMinusA = 1.f - a;
+                dstPixel[0] = a * srcPixel[0] + oneMinusA * (oaf * colorR);
+                dstPixel[1] = a * srcPixel[1] + oneMinusA * (oaf * colorG);
+                dstPixel[2] = a * srcPixel[2] + oneMinusA * (oaf * colorB);
+                dstPixel[3] = a * srcPixel[3] + oneMinusA * (oaf * colorA);
+            }
         }
+    } else if (desc->image.format == mlt_image_rgba64) {
+        int stride = desc->image.strides[0] / 2;
+        uint16_t colorR = desc->color.r * 257;
+        uint16_t colorG = desc->color.g * 257;
+        uint16_t colorB = desc->color.b * 257;
+        uint16_t colorA = desc->color.a * 257;
+        float inv65535f = 1.f / 65535.f; // Pre-calculate division
+        uint16_t *src = (uint16_t *) desc->original;
+        uint16_t *dst = (uint16_t *) desc->image.planes[0];
+
+        for (auto y = start; y < end; y++) {
+            uint16_t *s = src + y * stride;
+            uint16_t *d = dst + y * stride;
+
+            for (auto x = 0; x < width; x++) {
+                float oa = 0;
+                // Optimized circular sampling - early exit on Y bounds
+                for (auto dy = -radiusInt; dy <= radiusInt; dy++) {
+                    auto sampleY = y + dy;
+                    if (sampleY < 0 || sampleY > maxY)
+                        continue;
+
+                    auto dySquared = dy * dy;
+                    auto maxDxSquared = radiusSquared - dySquared;
+                    if (maxDxSquared < 0)
+                        continue; // Skip this row entirely
+
+                    uint16_t *sampleRow = src + sampleY * stride;
+                    for (int dx = -radiusInt; dx <= radiusInt; dx++) {
+                        int dxSquared = dx * dx;
+                        // Skip if outside circle or center pixel
+                        if (dxSquared > maxDxSquared || (dxSquared + dySquared) == 0)
+                            continue;
+
+                        auto sampleX = CLAMP(x + dx, 0, maxX);
+
+                        float alpha = *(sampleRow + sampleX * 4 + 3);
+                        if (alpha > oa)
+                            oa = alpha;
+                    }
+                }
+
+                float a = s[3] * inv65535f;
+                float oaf = oa * inv65535f;
+                float oneMinusA = 1.f - a;
+                d[0] = a * s[0] + oneMinusA * (oaf * colorR);
+                d[1] = a * s[1] + oneMinusA * (oaf * colorG);
+                d[2] = a * s[2] + oneMinusA * (oaf * colorB);
+                d[3] = a * s[3] + oneMinusA * (oaf * colorA);
+                s += 4;
+                d += 4;
+            }
+        }
+    } else {
+        return 1;
     }
     return 0;
 }
@@ -113,7 +171,8 @@ static int filter_get_image(mlt_frame frame,
 {
     Mlt::Filter filter(reinterpret_cast<mlt_filter>(mlt_frame_pop_service(frame)));
 
-    *format = mlt_image_rgba;
+    if (*format != mlt_image_rgba64)
+        *format = mlt_image_rgba;
     auto error = mlt_frame_get_image(frame, image, format, width, height, 0);
 
     if (!error) {
