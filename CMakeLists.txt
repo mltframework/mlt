@@ -151,6 +151,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Treat warnings as errors with some exceptions
   set(GCC_FLAGS "-Wall -Werror -Wno-deprecated-declarations -Werror=pointer-arith")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_FLAGS} -Wno-class-memaccess -Wno-array-compare -Wno-unused-result -Wno-maybe-uninitialized")
+  if(SWIG_RUBY)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-enum-enum-conversion -Wno-volatile")
+  endif()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_FLAGS} -Wno-discarded-qualifiers")
   # The following showed up in GCC 14, which I am using via msys2 on Windows.
   # Remove the following when Glaxnimate is fixed.
