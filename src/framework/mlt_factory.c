@@ -2,7 +2,7 @@
  * \file mlt_factory.c
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2024 Meltytech, LLC
+ * Copyright (C) 2003-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -211,9 +211,6 @@ mlt_repository mlt_factory_init(const char *directory)
 
         // Create the repository of services
         repository = mlt_repository_init(mlt_directory);
-
-        // Force a clean up when app closes
-        atexit(mlt_factory_close);
     }
 
     if (global_properties) {
