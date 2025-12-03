@@ -27,6 +27,13 @@
 #define _s (const char *)
 #define _qxml_getthestring(s) qUtf8Printable((s).toString())
 
+// Maps are usually in ESPG3857 format, not in GPS format EPSG4326 / WG84. We have to project
+// the latitude, otherwise big maps have wrong aspect ratio
+double project_latitude(double lat)
+{
+    return log(tan(((90 + (double)lat) * MATH_PI) / 360)) / (MATH_PI / 180);
+}
+
 //shifts all (longitude) values from near 180 to 0
 double get_180_swapped(double lon)
 {
@@ -740,6 +747,7 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
     gps_point_proc crt_point = uninit_gps_proc_point;
     crt_point.lat
         = weighted_middle_double(p1->lat, p1->time, p2->lat, p2->time, new_t, max_gps_diff_ms);
+    crt_point.lat_projected = project_latitude(crt_point.lat);
     crt_point.lon
         = weighted_middle_double(p1->lon, p1->time, p2->lon, p2->time, new_t, max_gps_diff_ms);
     crt_point.speed
@@ -960,6 +968,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             //these are not interpolated but as long as we're iterating we can copy them now
             gp_p[i].time = gp_r[i].time;
             gp_p[i].lat = gp_r[i].lat;
+            gp_p[i].lat_projected = gp_r[i].lat_projected;
             gp_p[i].lon = gp_r[i].lon;
         }
     }
@@ -972,6 +981,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
         if (req_smooth == 1) {
             //copy raw lat/lon to calc lat/lon and interpolate 1 location if necessary
             gps_points_p[i].lat = gps_points_r[i].lat;
+            gps_points_p[i].lat_projected = gps_points_r[i].lat_projected;
             gps_points_p[i].lon = gps_points_r[i].lon;
 
             //this can happen often if location and altitude are stored at different time intervals (every 3s vs every 10s)
@@ -989,6 +999,7 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
                                                              gps_points_r[i + 1].time,
                                                              gps_points_r[i].time,
                                                              max_gps_diff_ms);
+                gps_points_p[i].lat_projected = project_latitude(gps_points_p[i].lat);
                 gps_points_p[i].lon = weighted_middle_double(gps_points_r[i - 1].lon,
                                                              gps_points_r[i - 1].time,
                                                              gps_points_r[i + 1].lon,
@@ -1013,9 +1024,11 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing)
             }
             if (nr_div != 0) {
                 gps_points_p[i].lat = lat_sum / nr_div;
+                gps_points_p[i].lat_projected = project_latitude(gps_points_p[i].lat);
                 gps_points_p[i].lon = lon_sum / nr_div;
             } else {
                 gps_points_p[i].lat = gps_points_r[i].lat;
+                gps_points_p[i].lat_projected = gps_points_r[i].lat;
                 gps_points_p[i].lon = gps_points_r[i].lon;
             }
             //mlt_log_info(filter, "i=%d, lat_sum=%f, lon_sum=%f, nr_div=%d, time=%d", i, lat_sum, lon_sum, nr_div, gps_points[i].time);
@@ -1060,7 +1073,10 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 
             QXmlStreamAttributes attributes = reader.attributes();
             if (attributes.hasAttribute("lat"))
+            {
                 crt_point.lat = attributes.value("lat").toDouble();
+                crt_point.lat_projected = project_latitude( crt_point.lat);
+            }
             if (attributes.hasAttribute("lon"))
                 crt_point.lon = attributes.value("lon").toDouble();
 
@@ -1215,8 +1231,10 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
                         qUtf8Printable(reader.readElementText()));
                 else if (reader.name() == QStringLiteral("Position")) {
                     reader.readNextStartElement();
-                    if (reader.name() == QStringLiteral("LatitudeDegrees"))
+                    if (reader.name() == QStringLiteral("LatitudeDegrees")) {
                         crt_point.lat = reader.readElementText().toDouble();
+                        crt_point.lat_projected = project_latitude(crt_point.lat);
+                    }
                     reader.readNextStartElement();
                     if (reader.name() == QStringLiteral("LongitudeDegrees"))
                         crt_point.lon = reader.readElementText().toDouble();
