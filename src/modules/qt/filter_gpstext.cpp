@@ -172,6 +172,7 @@ static void gps_point_to_output(mlt_filter filter,
     gps_point_raw raw = pdata->gps_points_r[i_now];
     if (pdata->last_smooth_lvl == 0) {
         crt_point.lat = raw.lat;
+        crt_point.lat_projected = raw.lat_projected;
         crt_point.lon = raw.lon;
         crt_point.speed = raw.speed;
         crt_point.total_dist = raw.total_dist;

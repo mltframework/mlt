@@ -28,7 +28,7 @@
 
 typedef struct
 {
-    double lat, lon, speed, total_dist, ele, hr, bearing, cad, atemp, power;
+    double lat, lon, lat_projected, speed, total_dist, ele, hr, bearing, cad, atemp, power;
     int64_t time; //epoch milliseconds
 } gps_point_raw;
 
@@ -40,7 +40,7 @@ typedef struct gps_point_raw_list
 
 typedef struct
 {
-    double lat, lon, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing, cad, atemp,
+    double lat, lon, lat_projected, lon3857, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing, cad, atemp,
         power;
     int64_t time;
     double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat, grade_p;
@@ -49,6 +49,7 @@ typedef struct
 //0 is a valid value for many fields, use GPS_UNINIT (-9999) to differentiate missing values
 static const gps_point_raw uninit_gps_raw_point = {.lat = GPS_UNINIT,
                                                    .lon = GPS_UNINIT,
+                                                   .lat_projected = GPS_UNINIT,
                                                    .speed = GPS_UNINIT,
                                                    .total_dist = GPS_UNINIT,
                                                    .ele = GPS_UNINIT,
@@ -61,6 +62,7 @@ static const gps_point_raw uninit_gps_raw_point = {.lat = GPS_UNINIT,
 
 static const gps_point_proc uninit_gps_proc_point = {.lat = GPS_UNINIT,
                                                      .lon = GPS_UNINIT,
+                                                     .lat_projected = GPS_UNINIT,
                                                      .speed = GPS_UNINIT,
                                                      .speed_vertical = GPS_UNINIT,
                                                      .speed_3d = GPS_UNINIT,

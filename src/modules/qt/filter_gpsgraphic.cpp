@@ -141,9 +141,9 @@ double get_by_src(mlt_filter filter,
         } else if (get_type == 0) {
             if (subtype == gpsg_latitude_id) {
                 if (gps_p == NULL)
-                    return pdata->gps_points_p[i_gps].lat;
+                    return pdata->gps_points_p[i_gps].lat_projected;
                 else if (gps_p != NULL)
-                    return gps_p->lat;
+                    return gps_p->lat_projected;
             } else if (subtype == gpsg_longitude_id) {
                 if (gps_p == NULL)
                     return pdata->gps_points_p[i_gps].lon;
@@ -472,8 +472,8 @@ static void find_minmax_of_data(mlt_filter filter)
         m = x;
     for (int i = 0; i < pdata->gps_points_size; i++) {
         gps_point_proc *crt = &pdata->gps_points_p[i];
-        assign_if_smaller(crt->lat, pdata->minmax.min_lat);
-        assign_if_bigger(crt->lat, pdata->minmax.max_lat);
+        assign_if_smaller(crt->lat_projected, pdata->minmax.min_lat);
+        assign_if_bigger(crt->lat_projected, pdata->minmax.max_lat);
         assign_if_smaller(crt->lon, pdata->minmax.min_lon);
         assign_if_bigger(crt->lon, pdata->minmax.max_lon);
         assign_if_smaller(crt->ele, pdata->minmax.min_ele);
@@ -488,30 +488,15 @@ static void find_minmax_of_data(mlt_filter filter)
 #undef assign_if_smaller
 #undef assign_if_bigger
 
-    //compute the map aspect ratio using real distances (used to correctly overlay background image over gps track)
-    double map_aspect_ratio = 1;
-    double map_width = distance_haversine_2p(pdata->minmax.min_lat,
-                                             pdata->minmax.min_lon,
-                                             pdata->minmax.min_lat,
-                                             pdata->minmax.max_lon);
-    double map_height = distance_haversine_2p(pdata->minmax.min_lat,
-                                              pdata->minmax.min_lon,
-                                              pdata->minmax.max_lat,
-                                              pdata->minmax.min_lon);
-    if (map_width && map_height)
-        map_aspect_ratio = map_width / map_height;
-    pdata->map_aspect_ratio_from_distance = map_aspect_ratio;
-    mlt_properties_set_double(MLT_FILTER_PROPERTIES(filter),
-                              "map_original_aspect_ratio",
-                              map_aspect_ratio);
-
     // //compute the gps track aspect ratio (from coords) // the other one seems better almost every time
-    // map_aspect_ratio = 1;
-    // map_width = pdata->minmax.max_lon - pdata->minmax.min_lon;
-    // map_height = pdata->minmax.max_lat - pdata->minmax.min_lat;
-    // if (map_width && map_height)
-    // 	map_aspect_ratio = map_width / map_height;
-    // mlt_properties_set_double(MLT_FILTER_PROPERTIES( filter ), "map_original_aspect_ratio", map_aspect_ratio);
+    double map_aspect_ratio = 1;
+    double map_width = pdata->minmax.max_lon - pdata->minmax.min_lon;
+    double map_height = pdata->minmax.max_lat - pdata->minmax.min_lat;
+    if (map_width && map_height) {
+        map_aspect_ratio = map_width / map_height;
+        pdata->map_aspect_ratio_from_distance = map_aspect_ratio;
+    }
+    mlt_properties_set_double(MLT_FILTER_PROPERTIES( filter ), "map_original_aspect_ratio", map_aspect_ratio);
 
     char middle_point[255];
     double middle_lat = (pdata->minmax.min_lat + pdata->minmax.max_lat) / 2;
