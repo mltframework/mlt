@@ -43,7 +43,6 @@ parameters:
       it equals 1.
     type: float
     minimum: -1
-    maximum: 1
     mutable: yes
     animation: yes
 
