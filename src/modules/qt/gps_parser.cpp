@@ -34,6 +34,11 @@ double project_latitude(double lat)
     return log(tan(((90 + (double)lat) * MATH_PI) / 360)) / (MATH_PI / 180);
 }
 
+double unproject_latitude(double lat_projected)
+{
+    return (atan(pow(exp(1), lat_projected * (MATH_PI / 180)))*360) / MATH_PI - 90;
+}
+
 //shifts all (longitude) values from near 180 to 0
 double get_180_swapped(double lon)
 {

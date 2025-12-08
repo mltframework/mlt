@@ -130,12 +130,12 @@ double get_by_src(mlt_filter filter,
     if (pdata->graph_data_source == gspg_location_src) {
         if (get_type == -1) {
             if (subtype == gpsg_latitude_id)
-                return pdata->minmax.min_lat;
+                return pdata->minmax.min_lat_projected;
             else if (subtype == gpsg_longitude_id)
                 return pdata->minmax.min_lon;
         } else if (get_type == 1) {
             if (subtype == gpsg_latitude_id)
-                return pdata->minmax.max_lat;
+                return pdata->minmax.max_lat_projected;
             else if (subtype == gpsg_longitude_id)
                 return pdata->minmax.max_lon;
         } else if (get_type == 0) {
@@ -472,8 +472,8 @@ static void find_minmax_of_data(mlt_filter filter)
         m = x;
     for (int i = 0; i < pdata->gps_points_size; i++) {
         gps_point_proc *crt = &pdata->gps_points_p[i];
-        assign_if_smaller(crt->lat_projected, pdata->minmax.min_lat);
-        assign_if_bigger(crt->lat_projected, pdata->minmax.max_lat);
+        assign_if_smaller(crt->lat, pdata->minmax.min_lat);
+        assign_if_bigger(crt->lat, pdata->minmax.max_lat);
         assign_if_smaller(crt->lon, pdata->minmax.min_lon);
         assign_if_bigger(crt->lon, pdata->minmax.max_lon);
         assign_if_smaller(crt->ele, pdata->minmax.min_ele);
@@ -485,13 +485,15 @@ static void find_minmax_of_data(mlt_filter filter)
         assign_if_smaller(crt->grade_p, pdata->minmax.min_grade_p);
         assign_if_bigger(crt->grade_p, pdata->minmax.max_grade_p);
     }
+    pdata->minmax.min_lat_projected = project_latitude(pdata->minmax.min_lat);
+    pdata->minmax.max_lat_projected = project_latitude(pdata->minmax.max_lat);
 #undef assign_if_smaller
 #undef assign_if_bigger
 
-    // //compute the gps track aspect ratio (from coords) // the other one seems better almost every time
+    //compute the gps track aspect ratio (from coords)
     double map_aspect_ratio = 1;
     double map_width = pdata->minmax.max_lon - pdata->minmax.min_lon;
-    double map_height = pdata->minmax.max_lat - pdata->minmax.min_lat;
+    double map_height = pdata->minmax.max_lat_projected - pdata->minmax.min_lat_projected;
     if (map_width && map_height) {
         map_aspect_ratio = map_width / map_height;
         pdata->map_aspect_ratio_from_distance = map_aspect_ratio;

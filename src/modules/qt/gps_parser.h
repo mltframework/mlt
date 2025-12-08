@@ -40,7 +40,7 @@ typedef struct gps_point_raw_list
 
 typedef struct
 {
-    double lat, lon, lat_projected, lon3857, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing, cad, atemp,
+    double lat, lon, lat_projected, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing, cad, atemp,
         power;
     int64_t time;
     double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat, grade_p;
@@ -125,6 +125,8 @@ double convert_speed_to_format(double x, const char *format);
 const char *bearing_to_compass(double x);
 void recalculate_gps_data(gps_private_data gdata);
 void process_gps_smoothing(gps_private_data gdata, char do_processing);
+double project_latitude(double lat);
+double unproject_latitude(double lat_projected);
 
 double weighted_middle_double(
     double v1, int64_t t1, double v2, int64_t t2, int64_t new_t, int max_gps_diff_ms);

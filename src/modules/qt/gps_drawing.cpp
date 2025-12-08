@@ -145,6 +145,10 @@ void draw_legend_grid(mlt_filter filter, mlt_frame frame, QPainter &p, s_base_cr
                                                            get_max_bysrc(filter),
                                                            used_crops.bot,
                                                            used_crops.top);
+        if (pdata->graph_data_source == gspg_location_src)
+        {
+            crt_val = unproject_latitude(crt_val);
+        }
         crt_val = convert_bysrc_to_format(filter, crt_val);
         p.drawText(path_grid_lines.currentPosition().x() + 3,
                    path_grid_lines.currentPosition().y() - 3,
@@ -456,6 +460,10 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
             p.setFont(font);
             p.setPen(Qt::white);
 
+            if (pdata->graph_data_source == gspg_location_src)
+            {
+                now_val = unproject_latitude(now_val);
+            }
             now_val = convert_bysrc_to_format(filter, now_val);
             QString now_text = QString::number(now_val, 'f', decimals_needed_bysrc(filter, now_val));
             if (pdata->graph_data_source == gspg_location_src) {
