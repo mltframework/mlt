@@ -2774,21 +2774,22 @@ static int producer_get_image(mlt_frame frame,
                                                               "scale_vaapi",
                                                               consumer_scale);
                                         self->hwaccel.filters_initialized = 1;
+                                    } else if (self->hwaccel.pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX
+                                               && !self->hwaccel.filters_initialized
+                                               && !self->vfilter_graph) {
+                                        setup_hwaccel_filters(self,
+                                                              producer,
+                                                              "scale_vt",
+                                                              consumer_scale);
+                                        self->hwaccel.filters_initialized = 1;
                                     }
                                 }
 
                                 // Apply hardware scale filter if initialized successfully
                                 // Only apply if frame is still in hardware format
-#if HAVE_FFMPEG_VULKAN
-                                if (self->hwaccel.pix_fmt == AV_PIX_FMT_VULKAN
-                                    && self->video_frame->format == AV_PIX_FMT_VULKAN
-                                    && self->hwaccel.filters_initialized && self->vfilter_graph
-                                    && self->vfilter_in && self->vfilter_out) {
-                                    apply_hwaccel_filters(self, producer);
-                                }
-#endif
-                                if (self->hwaccel.pix_fmt == AV_PIX_FMT_VAAPI
-                                    && self->video_frame->format == AV_PIX_FMT_VAAPI
+                                if ((self->video_frame->format == AV_PIX_FMT_VAAPI
+                                     || self->video_frame->format == AV_PIX_FMT_VIDEOTOOLBOX
+                                     || self->video_frame->format == AV_PIX_FMT_VULKAN)
                                     && self->hwaccel.filters_initialized && self->vfilter_graph
                                     && self->vfilter_in && self->vfilter_out) {
                                     apply_hwaccel_filters(self, producer);
