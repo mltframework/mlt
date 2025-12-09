@@ -37,7 +37,7 @@ Testing
 To execute the mlt tools without installation, or to test a new version
 on a system with an already installed mlt version, you should run:
 
-    . setenv
+    source setenv
 
 NB: This applies to your current shell only and it assumes a bash or
 regular bourne shell is in use.

@@ -68,4 +68,4 @@ out
 src/swig/ruby/markdown/
 CMakeLists.txt.user
 .cache/
-
+*_export.h 
