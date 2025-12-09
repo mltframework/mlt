@@ -960,10 +960,21 @@ static int setup_hwaccel_filters(producer_avformat self,
 
     int scaled_width = (int) (self->video_frame->width * scale_factor);
     int scaled_height = (int) (self->video_frame->height * scale_factor);
-    char scale_args[32];
+    char scale_args[64];
     scaled_width += scaled_width % 2;
     scaled_height += scaled_height % 2;
-    snprintf(scale_args, sizeof(scale_args), "w=%d:h=%d", scaled_width, scaled_height);
+    if (self->hwaccel.pix_fmt == AV_PIX_FMT_D3D11) {
+        snprintf(scale_args,
+                 sizeof(scale_args),
+                 "width=%d:height=%d:format=%s",
+                 scaled_width,
+                 scaled_height,
+                 av_get_pix_fmt_name(AV_PIX_FMT_NV12));
+        // scale_d3d11 source shows support for AV_PIX_FMT_P010 as well, but that
+        // is generating an error for me: Could not create the texture (80070057)
+    } else {
+        snprintf(scale_args, sizeof(scale_args), "w=%d:h=%d", scaled_width, scaled_height);
+    }
 
     mlt_log_verbose(MLT_PRODUCER_SERVICE(producer),
                     "Attempting to set up %s filter: %dx%d -> %dx%d\n",
@@ -2766,9 +2777,17 @@ static int producer_get_image(mlt_frame frame,
                                         self->hwaccel.filters_initialized = 1;
                                     }
 #endif
-                                    if (self->hwaccel.pix_fmt == AV_PIX_FMT_VAAPI
+                                    if (self->hwaccel.pix_fmt == AV_PIX_FMT_D3D11
                                         && !self->hwaccel.filters_initialized
                                         && !self->vfilter_graph) {
+                                        setup_hwaccel_filters(self,
+                                                              producer,
+                                                              "scale_d3d11",
+                                                              consumer_scale);
+                                        self->hwaccel.filters_initialized = 1;
+                                    } else if (self->hwaccel.pix_fmt == AV_PIX_FMT_VAAPI
+                                               && !self->hwaccel.filters_initialized
+                                               && !self->vfilter_graph) {
                                         setup_hwaccel_filters(self,
                                                               producer,
                                                               "scale_vaapi",
@@ -2787,7 +2806,8 @@ static int producer_get_image(mlt_frame frame,
 
                                 // Apply hardware scale filter if initialized successfully
                                 // Only apply if frame is still in hardware format
-                                if ((self->video_frame->format == AV_PIX_FMT_VAAPI
+                                if ((self->video_frame->format == AV_PIX_FMT_D3D11
+                                     || self->video_frame->format == AV_PIX_FMT_VAAPI
                                      || self->video_frame->format == AV_PIX_FMT_VIDEOTOOLBOX
                                      || self->video_frame->format == AV_PIX_FMT_VULKAN)
                                     && self->hwaccel.filters_initialized && self->vfilter_graph
@@ -3108,8 +3128,8 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             goto skip_hwaccel;
         }
 
-        int found_hw_pix_fmt = 0, i;
-        for (i = 0;; i++) {
+        int found_hw_pix_fmt = 0;
+        for (int i = 0;; i++) {
             const AVCodecHWConfig *config = avcodec_get_hw_config(codec, i);
             if (!config)
                 break;
