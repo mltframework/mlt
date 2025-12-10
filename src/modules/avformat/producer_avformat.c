@@ -2600,9 +2600,8 @@ static int producer_get_image(mlt_frame frame,
     codec_params = stream->codecpar;
 
     // Only change the requested image format for special cases
-    *format = pick_image_format((self->vfilter_out && !self->hwaccel.filters_initialized)
-                                    ? av_buffersink_get_format(self->vfilter_out)
-                                    : codec_params->format,
+    *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
+                                                  : codec_params->format,
                                 *format);
 
     // Duplicate the last image if necessary
@@ -2929,7 +2928,7 @@ static int producer_get_image(mlt_frame frame,
                 self->video_frame->top_field_first = self->top_field_first;
 #endif
                 if ((self->autorotate || mlt_properties_exists(properties, "filtergraph"))
-                    && !self->hwaccel.filters_initialized) {
+                    && !self->hwaccel.device_ctx) {
                     if (!setup_filters(self) && self->vfilter_graph) {
                         int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
                         if (ret < 0) {
