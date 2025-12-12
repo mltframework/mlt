@@ -996,6 +996,7 @@ static int setup_hwaccel_filters(producer_avformat self,
     if (!self->vfilter_in) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to allocate buffer source\n");
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
         return -1;
     }
 
@@ -1030,6 +1031,7 @@ static int setup_hwaccel_filters(producer_avformat self,
                       "Failed to set buffer source options: %d\n",
                       ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
         return ret;
     }
 
@@ -1038,6 +1040,7 @@ static int setup_hwaccel_filters(producer_avformat self,
     if (!params) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to allocate buffer src params\n");
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
         return -1;
     }
 
@@ -1048,6 +1051,7 @@ static int setup_hwaccel_filters(producer_avformat self,
     if (ret < 0) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to set hw_frames_ctx: %d\n", ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
         return ret;
     }
 
@@ -1058,6 +1062,7 @@ static int setup_hwaccel_filters(producer_avformat self,
                       "Failed to initialize buffer source: %d\n",
                       ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
         return ret;
     }
 
@@ -1066,6 +1071,7 @@ static int setup_hwaccel_filters(producer_avformat self,
     if (!scale_filter) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "%s filter not available\n", filter_name);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
         return -1;
     }
 
@@ -1082,6 +1088,7 @@ static int setup_hwaccel_filters(producer_avformat self,
                       filter_name,
                       ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
         return ret;
     }
 
@@ -1098,6 +1105,8 @@ static int setup_hwaccel_filters(producer_avformat self,
                       "Failed to create buffer sink filter: %d\n",
                       ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
+        self->vfilter_out = NULL;
         return ret;
     }
 
@@ -1106,6 +1115,8 @@ static int setup_hwaccel_filters(producer_avformat self,
     if (ret < 0) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to link buffer to scale: %d\n", ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
+        self->vfilter_out = NULL;
         return ret;
     }
 
@@ -1115,6 +1126,8 @@ static int setup_hwaccel_filters(producer_avformat self,
                       "Failed to link scale to buffersink: %d\n",
                       ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
+        self->vfilter_out = NULL;
         return ret;
     }
 
@@ -1123,6 +1136,8 @@ static int setup_hwaccel_filters(producer_avformat self,
     if (ret < 0) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to configure filter graph: %d\n", ret);
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
+        self->vfilter_out = NULL;
         return ret;
     }
 
@@ -1272,6 +1287,7 @@ static int setup_filters(producer_avformat self)
         if (self->vfilter_graph && theta != self->rotation) {
             // The rotation has changed. Force the filter graph to be rebuilt
             avfilter_graph_free(&self->vfilter_graph);
+            self->vfilter_in = NULL;
             self->vfilter_out = NULL;
             self->rotation = theta;
         }
@@ -1333,6 +1349,8 @@ static int setup_filters(producer_avformat self)
     }
     if (error && self->vfilter_graph) {
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
+        self->vfilter_out = NULL;
     }
     return error;
 }
@@ -1938,6 +1956,7 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
             if (self->video_index != -1) {
                 mlt_service_lock(MLT_PRODUCER_SERVICE(self->parent));
                 avfilter_graph_free(&self->vfilter_graph);
+                self->vfilter_in = NULL;
                 self->vfilter_out = NULL;
                 self->rotation = 0.0;
                 setup_filters(self);
