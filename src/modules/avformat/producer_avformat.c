@@ -1469,6 +1469,32 @@ static int producer_open(
             AVDictionaryEntry *hwaccel = av_dict_get(params, "hwaccel", NULL, 0);
             AVDictionaryEntry *hwaccel_device = av_dict_get(params, "hwaccel_device", NULL, 0);
             const char *hwaccel_env = getenv("MLT_AVFORMAT_HWACCEL");
+            const char *pps_env = getenv("MLT_AVFORMAT_HWACCEL_PPS");
+
+            if (pps_env && self->video_index >= 0) {
+                int64_t pps_threshold = strtoll(pps_env, NULL, 10);
+                if (pps_threshold > 0) {
+                    // Calculate PPS while avoiding overflow
+                    AVStream *stream = self->video_format->streams[self->video_index];
+                    int64_t width = stream->codecpar->width;
+                    int64_t height = stream->codecpar->height;
+                    double fps = av_q2d(guess_frame_rate(self, stream));
+
+                    if (width > 0 && height > 0 && fps > 0.0) {
+                        // Calculate pixels per second using double to avoid overflow
+                        double pps = (double) width * (double) height * fps;
+
+                        if (pps > (double) pps_threshold) {
+                            mlt_log_verbose(MLT_PRODUCER_SERVICE(self->parent),
+                                            "Disabling hwaccel: PPS %.0f exceeds threshold %lld\n",
+                                            pps,
+                                            (long long) pps_threshold);
+                            hwaccel = NULL;
+                            hwaccel_env = NULL;
+                        }
+                    }
+                }
+            }
 
             if (((hwaccel && hwaccel->value) || hwaccel_env) && !test_open) {
                 // Leaving `device=NULL` will cause query string parameter `hwaccel_device` to be ignored
