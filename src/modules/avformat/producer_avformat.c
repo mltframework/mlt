@@ -977,7 +977,7 @@ static int setup_hwaccel_filters(producer_avformat self,
     }
 
     mlt_log_verbose(MLT_PRODUCER_SERVICE(producer),
-                    "Attempting to set up %s filter: %dx%d -> %dx%d\n",
+                    "Attempting to set up hwaccel filter %s: %dx%d -> %dx%d\n",
                     filter_name,
                     self->video_frame->width,
                     self->video_frame->height,
@@ -1043,6 +1043,7 @@ static int setup_hwaccel_filters(producer_avformat self,
 
     params->hw_frames_ctx = av_buffer_ref(self->video_frame->hw_frames_ctx);
     ret = av_buffersrc_parameters_set(self->vfilter_in, params);
+    av_buffer_unref(&params->hw_frames_ctx);
     av_free(params);
     if (ret < 0) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to set hw_frames_ctx: %d\n", ret);
@@ -1136,6 +1137,41 @@ static int setup_hwaccel_filters(producer_avformat self,
     return 0;
 }
 
+static void try_setup_hwaccel_filters(producer_avformat self,
+                                      mlt_producer producer,
+                                      double consumer_scale)
+{
+    if (self->hwaccel.filters_initialized || self->vfilter_graph)
+        return;
+
+    const char *filter_name = NULL;
+    switch (self->hwaccel.pix_fmt) {
+#if HAVE_FFMPEG_VULKAN
+    case AV_PIX_FMT_VULKAN:
+        filter_name = "scale_vulkan";
+        break;
+#endif
+#if LIBAVFILTER_VERSION_INT >= ((11 << 16) + (4 << 8) + 100)
+    case AV_PIX_FMT_D3D11:
+        filter_name = "scale_d3d11";
+        break;
+#endif
+    case AV_PIX_FMT_VAAPI:
+        filter_name = "scale_vaapi";
+        break;
+    case AV_PIX_FMT_VIDEOTOOLBOX:
+        filter_name = "scale_vt";
+        break;
+    default:
+        return;
+    }
+
+    if (filter_name) {
+        setup_hwaccel_filters(self, producer, filter_name, consumer_scale);
+        self->hwaccel.filters_initialized = 1;
+    }
+}
+
 static int apply_hwaccel_filters(producer_avformat self, mlt_producer producer)
 {
     int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
@@ -1148,15 +1184,10 @@ static int apply_hwaccel_filters(producer_avformat self, mlt_producer producer)
         return ret;
     }
 
-    AVFrame *filtered_frame = av_frame_alloc();
-    ret = av_buffersink_get_frame(self->vfilter_out, filtered_frame);
-    if (ret >= 0) {
-        av_frame_unref(self->video_frame);
-        av_frame_move_ref(self->video_frame, filtered_frame);
-        av_frame_free(&filtered_frame);
-    } else {
+    av_frame_unref(self->video_frame);
+    ret = av_buffersink_get_frame(self->vfilter_out, self->video_frame);
+    if (ret < 0) {
         mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to get filtered frame: %d\n", ret);
-        av_frame_free(&filtered_frame);
         // Disable filter on error to prevent repeated failures
         avfilter_graph_free(&self->vfilter_graph);
         self->vfilter_in = NULL;
@@ -1543,6 +1574,8 @@ static void prepare_reopen(producer_avformat self)
     self->audio_format = NULL;
     self->video_format = NULL;
     avfilter_graph_free(&self->vfilter_graph);
+    self->vfilter_in = NULL;
+    self->vfilter_out = NULL;
     pthread_mutex_unlock(&self->open_mutex);
 
     // Cleanup the packet queues
@@ -2765,42 +2798,7 @@ static int producer_get_image(mlt_frame frame,
                                 consumer_scale = consumer_scale * profile->height
                                                  / self->video_frame->height;
                                 if (consumer_scale > 0.0 && consumer_scale < 1.0) {
-#if HAVE_FFMPEG_VULKAN
-                                    if (self->hwaccel.pix_fmt == AV_PIX_FMT_VULKAN
-                                        && !self->hwaccel.filters_initialized
-                                        && !self->vfilter_graph) {
-                                        setup_hwaccel_filters(self,
-                                                              producer,
-                                                              "scale_vulkan",
-                                                              consumer_scale);
-                                        self->hwaccel.filters_initialized = 1;
-                                    }
-#endif
-                                    if (self->hwaccel.pix_fmt == AV_PIX_FMT_D3D11
-                                        && !self->hwaccel.filters_initialized
-                                        && !self->vfilter_graph) {
-                                        setup_hwaccel_filters(self,
-                                                              producer,
-                                                              "scale_d3d11",
-                                                              consumer_scale);
-                                        self->hwaccel.filters_initialized = 1;
-                                    } else if (self->hwaccel.pix_fmt == AV_PIX_FMT_VAAPI
-                                               && !self->hwaccel.filters_initialized
-                                               && !self->vfilter_graph) {
-                                        setup_hwaccel_filters(self,
-                                                              producer,
-                                                              "scale_vaapi",
-                                                              consumer_scale);
-                                        self->hwaccel.filters_initialized = 1;
-                                    } else if (self->hwaccel.pix_fmt == AV_PIX_FMT_VIDEOTOOLBOX
-                                               && !self->hwaccel.filters_initialized
-                                               && !self->vfilter_graph) {
-                                        setup_hwaccel_filters(self,
-                                                              producer,
-                                                              "scale_vt",
-                                                              consumer_scale);
-                                        self->hwaccel.filters_initialized = 1;
-                                    }
+                                    try_setup_hwaccel_filters(self, producer, consumer_scale);
                                 }
 
                                 // Apply hardware scale filter if initialized successfully
@@ -2823,6 +2821,7 @@ static int producer_get_image(mlt_frame frame,
                                                   "av_hwframe_transfer_data() failed %d\n",
                                                   transfer_data_result);
                                     av_frame_free(&sw_video_frame);
+                                    av_frame_unref(self->video_frame);
                                     goto exit_get_image;
                                 }
                                 av_frame_copy_props(sw_video_frame, self->video_frame);
@@ -3151,11 +3150,12 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             if (ret >= 0) {
                 codec_context->hw_device_ctx = av_buffer_ref(self->hwaccel.device_ctx);
                 mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
-                             "av_hwdevice_ctx_create() success %d\n",
-                             codec_context->pix_fmt);
+                             "hwaccel %s av_hwdevice_ctx_create() success\n",
+                             av_get_pix_fmt_name(self->hwaccel.pix_fmt));
             } else {
                 mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
-                                "av_hwdevice_ctx_create() failed %d\n",
+                                "hwaccel %s av_hwdevice_ctx_create() failed %d\n",
+                                av_get_pix_fmt_name(self->hwaccel.pix_fmt),
                                 ret);
             }
         } else {
@@ -4356,6 +4356,8 @@ static void producer_avformat_close(producer_avformat self)
     if (self->is_mutex_init)
         pthread_mutex_unlock(&self->open_mutex);
     avfilter_graph_free(&self->vfilter_graph);
+    self->vfilter_in = NULL;
+    self->vfilter_out = NULL;
 
     // Cleanup caches.
     mlt_cache_close(self->image_cache);
