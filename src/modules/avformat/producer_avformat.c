@@ -1234,7 +1234,15 @@ static int setup_video_filters(producer_avformat self)
     AVFormatContext *format = self->video_format;
     AVStream *stream = format->streams[self->video_index];
     AVCodecParameters *codec_params = stream->codecpar;
+    int width = codec_params->width;
+    int height = codec_params->height;
+    int pix_fmt = codec_params->format;
 
+    if (self->video_frame) {
+        width = self->video_frame->width;
+        height = self->video_frame->height;
+        pix_fmt = self->video_frame->format;
+    }
     self->vfilter_graph = avfilter_graph_alloc();
 
     // From ffplay.c:configure_video_filters().
@@ -1243,9 +1251,9 @@ static int setup_video_filters(producer_avformat self)
     snprintf(buffersrc_args,
              sizeof(buffersrc_args),
              "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d:frame_rate=%d/%d",
-             codec_params->width,
-             codec_params->height,
-             codec_params->format,
+             width,
+             height,
+             pix_fmt,
              stream->time_base.num,
              stream->time_base.den,
              mlt_properties_get_int(properties, "meta.media.sample_aspect_num"),
@@ -1462,18 +1470,7 @@ static int producer_open(
             AVDictionaryEntry *hwaccel_device = av_dict_get(params, "hwaccel_device", NULL, 0);
             const char *hwaccel_env = getenv("MLT_AVFORMAT_HWACCEL");
 
-            // Disable hardware decoding if using filters for rotation or "filtergraph"
-            if (!self->audio_format && !test_open) {
-                self->autorotate = !mlt_properties_get(properties, "autorotate")
-                                   || mlt_properties_get_int(properties, "autorotate");
-            }
-            int will_filter = self->autorotate && self->video_index != -1
-                              && fabs(get_rotation(properties,
-                                                   self->video_format->streams[self->video_index]))
-                                     > 0.0;
-            will_filter |= mlt_properties_exists(properties, "filtergraph");
-
-            if (((hwaccel && hwaccel->value) || hwaccel_env) && !test_open && !will_filter) {
+            if (((hwaccel && hwaccel->value) || hwaccel_env) && !test_open) {
                 // Leaving `device=NULL` will cause query string parameter `hwaccel_device` to be ignored
                 char *device = getenv("MLT_AVFORMAT_HWACCEL_DEVICE");
                 if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "vaapi"))
@@ -1554,8 +1551,12 @@ static int producer_open(
                 if (self->audio_format && !self->audio_streams)
                     get_audio_streams_info(self);
 
-                if (!test_open && (self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE)) {
-                    error = setup_filters(self);
+                if (!test_open) {
+                    self->autorotate = !mlt_properties_get(properties, "autorotate")
+                                       || mlt_properties_get_int(properties, "autorotate");
+
+                    if (self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE)
+                        error = setup_filters(self);
                 }
             }
         }
@@ -2972,9 +2973,9 @@ static int producer_get_image(mlt_frame frame,
 #else
                 self->video_frame->top_field_first = self->top_field_first;
 #endif
-                if ((self->autorotate || mlt_properties_exists(properties, "filtergraph"))
-                    && !self->hwaccel.device_ctx) {
-                    if (!setup_filters(self) && self->vfilter_graph) {
+                if (self->autorotate || mlt_properties_exists(properties, "filtergraph")) {
+                    if (!setup_filters(self) && self->vfilter_graph && self->vfilter_in
+                        && self->vfilter_out) {
                         int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
                         if (ret < 0) {
                             got_picture = 0;
