@@ -53,9 +53,7 @@ set_target_properties(mltjackrack PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MOD
 add_library(mltladspa MODULE factory.c)
 
 
-generate_export_header(mltladspa
-  EXPORT_MACRO_NAME MLTLADSPA_EXPORT
-)
+generate_export_header(mltladspa)
 target_compile_options(mltladspa PRIVATE ${MLT_COMPILE_OPTIONS})
 
 target_link_libraries(mltladspa PRIVATE mlt Threads::Threads)
