@@ -22,12 +22,18 @@
 #endif
 #include <libgen.h>
 #include <locale.h>
-#include <sched.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _MSC_VER
+#ifndef STDIN_FILENO
+#define STDIN_FILENO _fileno(stdin)
+#endif
+#else
 #include <unistd.h>
+#endif
 
 #include <framework/mlt.h>
 

@@ -28,10 +28,14 @@
 #include <pthread.h>
 #include <sched.h>
 #include <stdlib.h>
-#include <unistd.h>
+
 #ifdef _WIN32
 #include <windows.h>
+#else
+// For _SC_NPROCESSORS_ONLN
+#include <unistd.h>
 #endif
+
 #define MAX_SLICES 32
 #define ENV_SLICES "MLT_SLICES_COUNT"
 
