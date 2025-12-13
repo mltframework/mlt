@@ -51,6 +51,13 @@ __RCSID("$NetBSD: strptime.c,v 1.36 2012/03/13 21:13:48 christos Exp $");
 __weak_alias(strptime,_strptime)
 #endif
 */
+
+#ifdef _MSC_VER
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
+
 typedef unsigned char u_char;
 typedef unsigned int uint;
 typedef unsigned __int64 uint64_t;

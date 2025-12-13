@@ -51,6 +51,11 @@
 #include <sys/time.h>
 #include <time.h>
 
+#ifdef _MSC_VER
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 #define TSP_BYTES (188)
 #define MAX_PID (8192)
 #define SCR_HZ (27000000ULL)

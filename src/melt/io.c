@@ -28,6 +28,7 @@
 #include <string.h>
 #ifndef _WIN32
 #include <termios.h>
+#include <unistd.h>
 #else
 // MinGW defines struct timespec in pthread.h
 #include <pthread.h>
@@ -35,8 +36,6 @@
 #include <framework/mlt_types.h>
 #include <windows.h>
 #endif
-#include <sys/time.h>
-#include <unistd.h>
 
 /* Application header files */
 #include "io.h"
