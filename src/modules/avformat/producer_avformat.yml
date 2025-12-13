@@ -30,7 +30,8 @@ notes: >
   MLT_AVFORMAT_HWACCEL_DEVICE, and MLT_AVFORMAT_HWACCEL_PPS to affect the usage
   of hwaccel decoding globally. MLT_AVFORMAT_HWACCEL_PPS sets a threshold for
   pixels per second (width * height * fps); hwaccel is only used when the
-  video's PPS is less than or equal to this threshold.
+  video's PPS is less than or equal to this threshold. You should not use
+  MLT_AVFORMAT_HWACCEL_PPS in conjunction with the consumer scale property.
   Hardware decoding gracefully falls back to software decoding.
 
 bugs:
