@@ -33,7 +33,7 @@
 #include <string.h>
 #include <sys/time.h>
 
-extern pthread_mutex_t mlt_sdl_mutex;
+MLT_EXPORT extern pthread_mutex_t mlt_sdl_mutex;
 
 /** This classes definition.
 */
