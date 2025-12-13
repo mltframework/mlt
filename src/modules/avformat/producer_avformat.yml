@@ -2,7 +2,7 @@ schema_version: 0.3
 type: producer
 identifier: avformat
 title: FFmpeg Reader
-version: 4
+version: 5
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -26,8 +26,12 @@ notes: >
   producer cache size. One can set the environment variable
   MLT_AVFORMAT_PRODUCER_CACHE to a number to override and increase the size of
   this cache (or to lower it for limited use cases and seeking to minimize RAM).
-  One can set the environment variables MLT_AVFORMAT_HWACCEL and
-  MLT_AVFORMAT_HWACCEL_DEVICE to affect the usage of hwaccel decoding globally.
+  One can set the environment variables MLT_AVFORMAT_HWACCEL,
+  MLT_AVFORMAT_HWACCEL_DEVICE, and MLT_AVFORMAT_HWACCEL_PPS to affect the usage
+  of hwaccel decoding globally. MLT_AVFORMAT_HWACCEL_PPS sets a threshold for
+  pixels per second (width * height * fps); hwaccel is only used when the
+  video's PPS is less than or equal to this threshold. You should not use
+  MLT_AVFORMAT_HWACCEL_PPS in conjunction with the consumer scale property.
   Hardware decoding gracefully falls back to software decoding.
 
 bugs:
