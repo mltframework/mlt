@@ -823,7 +823,6 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
         case AV_PIX_FMT_YUV420P:
         case AV_PIX_FMT_YUVJ420P:
         case AV_PIX_FMT_YUVA420P:
-        case AV_PIX_FMT_NV12:
             return mlt_image_yuv420p;
         case AV_PIX_FMT_RGB24:
         case AV_PIX_FMT_BGR24:
@@ -835,7 +834,6 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
         case AV_PIX_FMT_BAYER_RGGB16LE:
             return mlt_image_rgb;
         case AV_PIX_FMT_YUV420P10LE:
-        case AV_PIX_FMT_P010LE:
             return mlt_image_yuv420p10;
         case AV_PIX_FMT_YUV422P10LE:
         case AV_PIX_FMT_YUV444P10LE:
@@ -2704,9 +2702,7 @@ static int producer_get_image(mlt_frame frame,
 
     // Only change the requested image format for special cases
     *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
-                                : self->hwaccel.filter_out
-                                    ? av_buffersink_get_format(self->hwaccel.filter_out)
-                                    : codec_params->format,
+                                                  : codec_params->format,
                                 *format);
 
     // Duplicate the last image if necessary
