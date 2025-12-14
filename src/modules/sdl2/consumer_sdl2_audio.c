@@ -31,7 +31,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _MSC_VER
+#include <gettimeofday.h>
+#else
 #include <sys/time.h>
+#endif
 
 MLT_EXPORT extern pthread_mutex_t mlt_sdl_mutex;
 
