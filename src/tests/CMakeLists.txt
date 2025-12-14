@@ -42,6 +42,16 @@ add_qt_test(TEST_NAME service)
 add_qt_test(TEST_NAME tractor)
 add_qt_test(TEST_NAME xml)
 
+if(MOD_QT6)
+  add_qt_test(
+    TEST_NAME mod_qt_gps
+    SOURCE_FILES
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.h"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.cpp"
+  )
+endif()
+
+
 file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")
 foreach(YML_FILE ${YML_FILES})
   get_filename_component(FILE_NAME ${YML_FILE} NAME)
