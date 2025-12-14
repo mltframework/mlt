@@ -23,9 +23,14 @@
 #include "mlt_service.h"
 
 #include <string.h>
+
 #ifndef NDEBUG
+#ifdef _MSC_VER
+#include <gettimeofday.h>
+#else
 #include <sys/time.h>
 #include <time.h>
+#endif
 #endif
 
 static int log_level = MLT_LOG_WARNING;
