@@ -22,6 +22,8 @@
 #define _GNU_SOURCE
 #endif
 #include "gps_parser.h"
+#include <QDateTime>
+#include <QTimeZone>
 
 #define _x (const xmlChar *)
 #define _s (const char *)
@@ -70,36 +72,29 @@ double get_avg_gps_time_ms(gps_private_data gdata)
  */
 int64_t datetimeXMLstring_to_mseconds(const char *text, char *format /* = NULL*/)
 {
-    char def_format[] = "%Y-%m-%dT%H:%M:%S";
     int64_t ret = 0;
-    int ms = 0;
-    struct tm tm_time;
-    //samples: 2020-07-11T09:03:23.000Z or 2021-02-27T12:10:00+00:00
-    tm_time.tm_isdst = -1; //force dst detection
 
-    if (format == NULL)
-        format = def_format;
+    QDateTime datetime;
+    if (format != NULL)
+        datetime = QDateTime::fromString(QString(text), QString(format));
+    else
+        datetime = QDateTime::fromString(QString(text), Qt::ISODateWithMs);
 
-    if (strptime(text, format, &tm_time) == NULL) {
+    if (!datetime.isValid()) {
         mlt_log_warning(
             NULL,
-            "filter_gpsText.c datetimeXMLstring_to_seconds strptime failed on string: %.25s",
+            "filter_gpsText.c datetimeXMLstring_to_seconds conversion failed on string: %.25s",
             text);
         return 0;
     }
 
-    ret = internal_timegm(&tm_time);
+#if QT_VERSION > QT_VERSION_CHECK(6, 5, 0)
+    datetime.setTimeZone(QTimeZone::UTC);
+#else
+    datetime.setTimeZone(QTimeZone(0));
+#endif
 
-    //check if we have miliseconds, 3 digits only
-    const char *ms_part = strchr(text, '.');
-    if (ms_part != NULL) {
-        ms = strtol(ms_part + 1, NULL, 10);
-        while (abs(ms) > 999)
-            ms /= 10;
-    }
-    ret = ret * 1000 + ms;
-
-    // mlt_log_info(NULL, "datetimeXMLstring_to_mseconds: text:%s, ms:%d (/1000)", text, ret/1000);
+    ret = datetime.toMSecsSinceEpoch();
     return ret;
 }
 

@@ -346,7 +346,6 @@ MLT_EXPORT FILE *win32_fopen(const char *filename_utf8, const char *mode_utf8);
 #include <sys/types.h>
 MLT_EXPORT int win32_stat(const char *filename_utf8, struct stat *buffer);
 #include <time.h>
-MLT_EXPORT char *strptime(const char *buf, const char *fmt, struct tm *tm);
 #define mlt_fopen win32_fopen
 #define mlt_stat win32_stat
 #define MLT_DIRLIST_DELIMITER ";"

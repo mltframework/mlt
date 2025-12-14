@@ -425,7 +425,7 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
         if (strlen(read_gps_processing_start_time) != 0
             && strcmp(read_gps_processing_start_time, "yyyy-MM-dd hh:mm:ss"))
             gps_proc_t = datetimeXMLstring_to_mseconds(read_gps_processing_start_time,
-                                                       (char *) "%Y-%m-%d %H:%M:%S");
+                                                       (char *) "yyyy-MM-dd hh:mm:ss");
         if (gps_proc_t != pdata->gps_proc_start_t) {
             pdata->gps_proc_start_t = gps_proc_t;
             do_processing = 1;

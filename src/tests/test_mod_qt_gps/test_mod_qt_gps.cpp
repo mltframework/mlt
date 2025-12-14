@@ -63,7 +63,7 @@ private Q_SLOTS:
 
         // Unknown input, with format string as hint
         const char *text = "12:10:00 27-02-2021";
-        gps_proc_t = datetimeXMLstring_to_mseconds(text, (char *) "%H:%M:%S %d-%m-%Y");
+        gps_proc_t = datetimeXMLstring_to_mseconds(text, (char *) "HH:mm:ss dd-MM-yyyy");
         QCOMPARE(gps_proc_t, 1614427800000);
 
         // Unknown input, without format string
@@ -73,7 +73,7 @@ private Q_SLOTS:
 
         // Valid input, but mismatching format string
         text = "2021-02-27T12:10:00+00:00";
-        gps_proc_t = datetimeXMLstring_to_mseconds(text, (char *) "%H:%M:%S %d-%m-%Y");
+        gps_proc_t = datetimeXMLstring_to_mseconds(text, (char *) "HH:mm:ss dd-MM-yyyy");
         QCOMPARE(gps_proc_t, 0);
     }
 
