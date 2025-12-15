@@ -56,6 +56,8 @@ void mltofx_set_source_clip_data(
 void mltofx_set_output_clip_data(
     OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
 
+OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin);
+
 void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params);
 
 void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_type type, ...);

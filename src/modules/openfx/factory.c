@@ -158,7 +158,15 @@ MLT_REPOSITORY
     MltOfxHost.host = (OfxPropertySetHandle) mlt_properties_new();
     mltofx_init_host_properties(MltOfxHost.host);
 
-    char *dir, *openfx_path = getenv("OFX_PLUGIN_PATH");
+    char *dir, *openfx_path = getenv("OFX_PLUGIN_PATH"),
+      *load_unsupported_plugins = getenv("MLT_OFX_LOAD_UNSUPPORTED_PLUGINS"); /* Load unsupported plugins for debugging purposes */
+
+    bool is_load_unsupported_plugins = false;
+    if (load_unsupported_plugins)
+      {
+	is_load_unsupported_plugins = strcmp(load_unsupported_plugins, "true") == 0 ? true : false;
+      }
+
     size_t archstr_len = strlen(OFX_ARCHSTR);
 
     mltofx_context = mlt_properties_new();
@@ -245,6 +253,17 @@ MLT_REPOSITORY
                         s = malloc(pluginIdentifier_len + 8);
                         sprintf(s, "openfx.%s", plugin_ptr->pluginIdentifier);
 
+			/* if colon `:` exists in plugin identifier
+			   change it to accent sign `^` because `:`
+			   can cause issues with mlt if put in filter
+			   name */
+			char *str_ptr = strchr(s, ':');
+			while (str_ptr != NULL) {
+			  *str_ptr++ = '^';
+			  str_ptr = strchr(str_ptr, ':');
+			}
+
+
                         mlt_properties p;
                         p = mlt_properties_new();
                         mlt_properties_set_data(mltofx_context,
@@ -257,14 +276,20 @@ MLT_REPOSITORY
                         mlt_properties_set(p, "dli", dl_n);
                         mlt_properties_set_int(p, "index", i);
 
+			/* Sometimes error codes other than kOfxStatErrMissingHostFeature
+			   returned from kOfxActionDescribe like kOfxStatErrMemory, kOfxStatFailed, kOfxStatErrFatal */
+			bool plugin_supported = mltofx_is_plugin_supported(plugin_ptr) == kOfxStatOK;
                         /* WIP: this is only creating them as filter I should find a way to see howto detect producers
-			 if they exists in OpenFX plugins
-		      */
-                        MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
-                        MLT_REGISTER_METADATA(mlt_service_filter_type,
-                                              s,
-                                              metadata,
-                                              "filter_openfx.yml");
+			   if they exists in OpenFX plugins
+			*/
+			if (plugin_supported || is_load_unsupported_plugins)
+			  {
+			    MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
+			    MLT_REGISTER_METADATA(mlt_service_filter_type,
+						  s,
+						  metadata,
+						  "filter_openfx.yml");
+			  }
                     }
 
                 parse_error:
