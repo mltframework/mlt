@@ -180,6 +180,9 @@ mlt_service_type mlt_service_identify(mlt_service self)
 
 int mlt_service_connect_producer(mlt_service self, mlt_service producer, int index)
 {
+    if (!self)
+        return -1;
+
     int i = 0;
 
     // Get the service base
