@@ -24,6 +24,8 @@
 #include "ofxParametricParam.h"
 #include "ofxProgress.h"
 #include "ofxTimeLine.h"
+#include "ofxGPURender.h"
+#include "ofxOpenGLRender.h"
 #include <stdarg.h>
 #include <math.h>
 #include <float.h>
@@ -1234,52 +1236,52 @@ static OfxInteractSuiteV1 MltOfxInteractSuiteV1 = {interactSwapBuffers,
                                                    interactRedraw,
                                                    interactGetPropertySet};
 
-static OfxStatus getColour(OfxDrawContextHandle context,
-                           OfxStandardColour std_colour,
-                           OfxRGBAColourF *colour)
-{
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-    return kOfxStatOK;
-}
+/* static OfxStatus getColour(OfxDrawContextHandle context,
+                              OfxStandardColour std_colour,
+                              OfxRGBAColourF *colour)
+   {
+       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+       return kOfxStatOK;
+   }
+   
+   static OfxStatus setColour(OfxDrawContextHandle context, const OfxRGBAColourF *colour)
+   {
+       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+       return kOfxStatOK;
+   }
+   
+   static OfxStatus setLineWidth(OfxDrawContextHandle context, float width)
+   {
+       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+       return kOfxStatOK;
+   }
+   
+   static OfxStatus setLineStipple(OfxDrawContextHandle context, OfxDrawLineStipplePattern pattern)
+   {
+       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+       return kOfxStatOK;
+   }
+   
+   static OfxStatus draw(OfxDrawContextHandle context,
+                         OfxDrawPrimitive primitive,
+                         const OfxPointD *points,
+                         int point_count)
+   {
+       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+       return kOfxStatOK;
+   }
+   
+   static OfxStatus drawText(OfxDrawContextHandle context,
+                             const char *text,
+                             const OfxPointD *pos,
+                             int alignment)
+   {
+       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+       return kOfxStatOK;
+   } */
 
-static OfxStatus setColour(OfxDrawContextHandle context, const OfxRGBAColourF *colour)
-{
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-    return kOfxStatOK;
-}
-
-static OfxStatus setLineWidth(OfxDrawContextHandle context, float width)
-{
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-    return kOfxStatOK;
-}
-
-static OfxStatus setLineStipple(OfxDrawContextHandle context, OfxDrawLineStipplePattern pattern)
-{
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-    return kOfxStatOK;
-}
-
-static OfxStatus draw(OfxDrawContextHandle context,
-                      OfxDrawPrimitive primitive,
-                      const OfxPointD *points,
-                      int point_count)
-{
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-    return kOfxStatOK;
-}
-
-static OfxStatus drawText(OfxDrawContextHandle context,
-                          const char *text,
-                          const OfxPointD *pos,
-                          int alignment)
-{
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-    return kOfxStatOK;
-}
-
-static OfxDrawSuiteV1 MltOfxDrawSuiteV1
-    = {getColour, setColour, setLineWidth, setLineStipple, draw, drawText};
+/* static OfxDrawSuiteV1 MltOfxDrawSuiteV1
+       = {getColour, setColour, setLineWidth, setLineStipple, draw, drawText}; */
 
 static OfxStatus progressStartV1(void *effectInstance, const char *label)
 {
@@ -1395,6 +1397,30 @@ static OfxParametricParameterSuiteV1 MltOfxParametricParameterSuiteV1
        parametricParamDeleteControlPoint,
        parametricParamDeleteAllControlPoints};
 
+/* static OfxStatus clipLoadTexture(OfxImageClipHandle clip,
+   				 OfxTime time,
+   				 const char *format,
+   				 const OfxRectD *region,
+   				 OfxPropertySetHandle *textureHandle)
+   {
+       return kOfxStatOK;
+   }
+   
+   static OfxStatus clipFreeTexture(OfxPropertySetHandle textureHandle)
+   {
+       return kOfxStatOK;
+   }
+   
+   static OfxStatus flushResources()
+   {
+       return kOfxStatOK;
+   }
+   
+   static OfxImageEffectOpenGLRenderSuiteV1 MltOfxOpenGLRenderSuiteV1
+       = {clipLoadTexture,
+          clipFreeTexture,
+          flushResources}; */
+
 static void mltofx_log_status_code(OfxStatus code, char *msg)
 {
     mlt_log_debug(NULL, "output of `%s` is ", msg);
@@ -1484,7 +1510,8 @@ const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, i
     } else if (strcmp(suiteName, kOfxInteractSuite) == 0 && suiteVersion == 1) {
         return &MltOfxInteractSuiteV1;
     } else if (strcmp(suiteName, kOfxDrawSuite) == 0 && suiteVersion == 1) {
-        return &MltOfxDrawSuiteV1;
+        // WIP a dummy struct MltOfxDrawSuiteV1 exists
+        return NULL;
     } else if (strcmp(suiteName, kOfxProgressSuite) == 0 && suiteVersion == 1) {
         return &MltOfxProgressSuiteV1;
     } else if (strcmp(suiteName, kOfxProgressSuite) == 0 && suiteVersion == 2) {
@@ -1493,6 +1520,9 @@ const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, i
         return &MltOfxTimeLineSuiteV1;
     } else if (strcmp(suiteName, kOfxParametricParameterSuite) == 0 && suiteVersion == 1) {
         return &MltOfxParametricParameterSuiteV1;
+    } else if (strcmp(suiteName, kOfxOpenGLRenderSuite) == 0 && suiteVersion == 1) {
+	//WIP a dummy struct &MltOfxOpenGLRenderSuiteV1 exists
+	return NULL;
     }
 
     mlt_log_debug(NULL, "%s v%d is not supported\n", suiteName, suiteVersion);
@@ -1519,6 +1549,12 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 3, kOfxImageComponentAlpha);
 
     propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 1);
+
+    /* TODO: add support for OpenGL plugins */
+    propSetString(host_properties, kOfxImageEffectPropOpenGLRenderSupported, 0, "false");
+
+    /* TODO: add support to draw suite plugins */
+    propSetInt(host_properties, kOfxImageEffectPropSupportsOverlays, 0, 0);
 }
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect)
@@ -1664,6 +1700,82 @@ void mltofx_set_output_clip_data(
                   kOfxImagePropPixelAspectRatio,
                   0,
                   (double) width / (double) height);
+}
+
+OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin)
+{
+    mlt_properties image_effect = mlt_properties_new();
+    mlt_properties clips = mlt_properties_new();
+    mlt_properties props = mlt_properties_new();
+    mlt_properties iparams = mlt_properties_new();
+    mlt_properties params = mlt_properties_new();
+
+    mlt_properties_set_data(image_effect,
+			    "clips",
+			    clips,
+			    0,
+			    (mlt_destructor) mlt_properties_close,
+			    NULL);
+    mlt_properties_set_data(image_effect,
+			    "props",
+			    props,
+			    0,
+			    (mlt_destructor) mlt_properties_close,
+			    NULL);
+    mlt_properties_set_data(image_effect,
+			    "params",
+			    iparams,
+			    0,
+			    (mlt_destructor) mlt_properties_close,
+			    NULL);
+    mlt_properties_set_data(iparams,
+			    "plugin_props",
+			    props,
+			    0,
+			    (mlt_destructor) mlt_properties_close,
+			    NULL);
+    mlt_properties_set_data(image_effect,
+			    "mltofx_params",
+			    params,
+			    0,
+			    (mlt_destructor) mlt_properties_close,
+			    NULL);
+
+    propSetString((OfxPropertySetHandle) props,
+		  kOfxImageEffectPropContext,
+		  0,
+		  kOfxImageEffectContextGeneral);
+
+    plugin->setHost(&MltOfxHost);
+
+    OfxStatus status_code = kOfxStatErrUnknown;
+    status_code = plugin->mainEntry(kOfxActionLoad, NULL, NULL, NULL);
+    mltofx_log_status_code(status_code, "kOfxActionLoad");
+    status_code
+      = plugin->mainEntry(kOfxActionDescribe, (OfxImageEffectHandle) image_effect, NULL, NULL);
+    mltofx_log_status_code(status_code, "kOfxActionDescribe");
+
+    if (status_code != kOfxStatOK)
+      {
+	  plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+	  return status_code;
+      }
+
+    /* test describe in context action because some plugins say they are unsupported at this stage */
+    status_code = plugin->mainEntry(kOfxImageEffectActionDescribeInContext,
+       				    (OfxImageEffectHandle) image_effect,
+       				    (OfxPropertySetHandle) MltOfxHost.host,
+       				    NULL);
+       
+    mltofx_log_status_code(status_code, "kOfxImageEffectActionDescribeInContext");
+    if (status_code != kOfxStatErrMissingHostFeature)
+      {
+	  plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+       	  return kOfxStatOK;
+      }
+
+    plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+    return status_code;
 }
 
 void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
