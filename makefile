@@ -25,7 +25,6 @@ cppcheck:
 		-i src/modules/glaxnimate/glaxnimate/ \
 		-i src/modules/plus/ebur128/ \
 		-i src/modules/xml/common.c \
-		-i src/win32/strptime.c \
 		--include=src/framework/mlt_log.h \
 		--include=src/framework/mlt_types.h \
 		--library=cppcheck.cfg \

@@ -1,14 +1,56 @@
 set(CMAKE_AUTOMOC ON)
 
-foreach(QT_TEST_NAME animation audio events filter frame image multitrack playlist producer properties repository service tractor xml)
-  add_executable(test_${QT_TEST_NAME} test_${QT_TEST_NAME}/test_${QT_TEST_NAME}.cpp)
-  target_compile_options(test_${QT_TEST_NAME} PRIVATE ${MLT_COMPILE_OPTIONS})
-  target_link_libraries(test_${QT_TEST_NAME} PRIVATE Qt${QT_MAJOR_VERSION}::Core Qt${QT_MAJOR_VERSION}::Test mlt++)
-  add_test(NAME "QtTest:${QT_TEST_NAME}" COMMAND test_${QT_TEST_NAME})
+function(add_qt_test)
+  set(options "")
+  set(oneValueArgs TEST_NAME)
+  set(multiValueArgs LINK_LIBRARIES INCLUDE_DIRS SOURCE_FILES)
+  cmake_parse_arguments(arg "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  set(_testname test_${arg_TEST_NAME})
+
+  add_executable(${_testname} ${_testname}/${_testname}.cpp ${arg_SOURCE_FILES})
+
+  target_compile_options(${_testname} PRIVATE ${MLT_COMPILE_OPTIONS})
+
+  target_link_libraries(${_testname} PRIVATE
+    Qt${QT_MAJOR_VERSION}::Core
+    Qt${QT_MAJOR_VERSION}::Test
+    mlt++
+    ${ARG_LINK_LIBRARIES}
+  )
+  target_include_directories(${_testname} PRIVATE ${arg_INCLUDE_DIRS})
+  add_test(NAME "QtTest:${arg_TEST_NAME}" COMMAND ${_testname})
+
   if(NOT WIN32)
-    set_tests_properties("QtTest:${QT_TEST_NAME}" PROPERTIES ENVIRONMENT "LANG=en_US")
+    set_tests_properties("QtTest:${arg_TEST_NAME}" PROPERTIES ENVIRONMENT "LANG=en_US")
   endif()
-endforeach()
+
+endfunction()
+
+add_qt_test(TEST_NAME animation)
+add_qt_test(TEST_NAME audio)
+add_qt_test(TEST_NAME events)
+add_qt_test(TEST_NAME filter)
+add_qt_test(TEST_NAME frame)
+add_qt_test(TEST_NAME image)
+add_qt_test(TEST_NAME multitrack)
+add_qt_test(TEST_NAME playlist)
+add_qt_test(TEST_NAME producer)
+add_qt_test(TEST_NAME properties)
+add_qt_test(TEST_NAME repository)
+add_qt_test(TEST_NAME service)
+add_qt_test(TEST_NAME tractor)
+add_qt_test(TEST_NAME xml)
+
+if(MOD_QT6)
+  add_qt_test(
+    TEST_NAME mod_qt_gps
+    SOURCE_FILES
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.h"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.cpp"
+  )
+endif()
+
 
 file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")
 foreach(YML_FILE ${YML_FILES})
