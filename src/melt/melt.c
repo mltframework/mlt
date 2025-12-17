@@ -883,6 +883,9 @@ int main(int argc, char **argv)
             mlt_log_set_level(MLT_LOG_VERBOSE);
         } else if (!strcmp(argv[i], "-timings")) {
             mlt_log_set_level(MLT_LOG_TIMINGS);
+        } else if (!strncmp(argv[i], "-h", 2) || !strcmp(argv[i], "--help")) {
+            show_usage(argv[0]);
+            goto exit_factory;
         } else if (!strcmp(argv[i], "-version") || !strcmp(argv[i], "--version")) {
             fprintf(stdout,
                     "%s " VERSION "\n"
@@ -1114,8 +1117,9 @@ int main(int argc, char **argv)
             fprintf(stderr, "Project saved as %s.\n", name);
             fclose(store);
         }
-    } else {
+    } else if (argc == 1) {
         show_usage(argv[0]);
+    } else {
         error = EXIT_FAILURE;
     }
 
@@ -1128,6 +1132,9 @@ int main(int argc, char **argv)
                             "consumer-cleanup",
                             mlt_event_data_none());
     }
+
+    // Flush all open writable streams
+    fflush(NULL);
 
     if (is_abort)
         return error;
@@ -1145,11 +1152,7 @@ int main(int argc, char **argv)
     mlt_profile_close(backup_profile);
 
 exit_factory:
-
-// Workaround qmelt on OS X from crashing at exit.
-#if !defined(__MACH__) || !defined(QT_GUI_LIB)
     mlt_factory_close();
-#endif
 
     return error;
 }
