@@ -39,7 +39,6 @@
 
 #include <winsock2.h>
 
-
 /* FILETIME of Jan 1 1970 00:00:00. */
 static const unsigned __int64 epoch = 116444736000000000Ui64;
 
@@ -49,11 +48,10 @@ static const unsigned __int64 epoch = 116444736000000000Ui64;
  * Note: this function is not for Win32 high precision timing purpose. See
  * elapsed_time().
  */
-int
-gettimeofday(struct timeval * tp, struct timezone * tzp)
+int gettimeofday(struct timeval *tp, struct timezone *tzp)
 {
-    FILETIME	file_time;
-    SYSTEMTIME	system_time;
+    FILETIME file_time;
+    SYSTEMTIME system_time;
     ULARGE_INTEGER ularge;
 
     GetSystemTime(&system_time);

@@ -33,12 +33,12 @@
 // the latitude, otherwise big maps have wrong aspect ratio
 double project_latitude(double lat)
 {
-    return log(tan(((90 + (double)lat) * MATH_PI) / 360)) / (MATH_PI / 180);
+    return log(tan(((90 + (double) lat) * MATH_PI) / 360)) / (MATH_PI / 180);
 }
 
 double unproject_latitude(double lat_projected)
 {
-    return (atan(pow(exp(1), lat_projected * (MATH_PI / 180)))*360) / MATH_PI - 90;
+    return (atan(pow(exp(1), lat_projected * (MATH_PI / 180))) * 360) / MATH_PI - 90;
 }
 
 //shifts all (longitude) values from near 180 to 0
@@ -1072,10 +1072,9 @@ void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
             gps_point_raw crt_point = uninit_gps_raw_point;
 
             QXmlStreamAttributes attributes = reader.attributes();
-            if (attributes.hasAttribute("lat"))
-            {
+            if (attributes.hasAttribute("lat")) {
                 crt_point.lat = attributes.value("lat").toDouble();
-                crt_point.lat_projected = project_latitude( crt_point.lat);
+                crt_point.lat_projected = project_latitude(crt_point.lat);
             }
             if (attributes.hasAttribute("lon"))
                 crt_point.lon = attributes.value("lon").toDouble();

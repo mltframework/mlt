@@ -9,10 +9,10 @@
 
 #ifdef _MSC_VER
 
-#include <winsock2.h>
 #include <time.h>
+#include <winsock2.h>
 
-int gettimeofday(struct timeval * tp, struct timezone * tzp);
+int gettimeofday(struct timeval *tp, struct timezone *tzp);
 
 #endif /* _MSC_VER */
 

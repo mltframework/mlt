@@ -23,8 +23,8 @@ struct s_gps_data_bounds
 
     void set_defaults()
     {
-        min_lat = 90, min_lat_projected = project_latitude(90), min_lon = 180,
-        max_lat = -90, max_lat_projected = project_latitude(-90), max_lon = -180;
+        min_lat = 90, min_lat_projected = project_latitude(90), min_lon = 180, max_lat = -90,
+        max_lat_projected = project_latitude(-90), max_lon = -180;
         min_ele = 99999, max_ele = -99999, min_speed = 99999, max_speed = -99999;
         min_hr = 99999, max_hr = 0, min_grade_p = 99999, max_grade_p = -99999;
     }

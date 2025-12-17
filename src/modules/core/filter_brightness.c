@@ -194,7 +194,7 @@ static int filter_get_image(mlt_frame frame,
         level = 1.0;
 
     alpha_level = mlt_properties_exists(properties, "alpha")
-        ? mlt_properties_anim_get_double(properties, "alpha", position, length)
+                      ? mlt_properties_anim_get_double(properties, "alpha", position, length)
                       : 1.0;
     if (alpha_level < 0.0) {
         alpha_level = level;

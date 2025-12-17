@@ -498,7 +498,9 @@ static void find_minmax_of_data(mlt_filter filter)
         map_aspect_ratio = map_width / map_height;
         pdata->map_aspect_ratio_from_distance = map_aspect_ratio;
     }
-    mlt_properties_set_double(MLT_FILTER_PROPERTIES( filter ), "map_original_aspect_ratio", map_aspect_ratio);
+    mlt_properties_set_double(MLT_FILTER_PROPERTIES(filter),
+                              "map_original_aspect_ratio",
+                              map_aspect_ratio);
 
     char middle_point[255];
     double middle_lat = (pdata->minmax.min_lat + pdata->minmax.max_lat) / 2;
