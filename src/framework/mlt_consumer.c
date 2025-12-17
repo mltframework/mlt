@@ -478,6 +478,11 @@ int mlt_consumer_start(mlt_consumer self)
         return error;
 
     consumer_private *priv = self->local;
+    mlt_profile profile = mlt_service_profile(MLT_CONSUMER_SERVICE(self));
+
+    if (!mlt_profile_is_valid(profile)) {
+        return 1;
+    }
 
     // Stop listening to the property-changed event
     mlt_event_block(priv->event_listener);
@@ -498,7 +503,6 @@ int mlt_consumer_start(mlt_consumer self)
     if (test_card != NULL) {
         if (mlt_properties_get_data(properties, "test_card_producer", NULL) == NULL) {
             // Create a test card producer
-            mlt_profile profile = mlt_service_profile(MLT_CONSUMER_SERVICE(self));
             mlt_producer producer = mlt_factory_producer(profile, NULL, test_card);
 
             // Do we have a producer
@@ -523,7 +527,7 @@ int mlt_consumer_start(mlt_consumer self)
     }
 
     // The profile could have changed between a stop and a restart.
-    apply_profile_properties(self, mlt_service_profile(MLT_CONSUMER_SERVICE(self)), properties);
+    apply_profile_properties(self, profile, properties);
 
     // Set the frame duration in microseconds for the frame-dropping heuristic
     int frame_rate_num = mlt_properties_get_int(properties, "frame_rate_num");

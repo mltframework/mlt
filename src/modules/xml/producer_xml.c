@@ -2158,7 +2158,7 @@ mlt_producer producer_xml_init(mlt_profile profile,
     xmlcontext->sax = sax;
     xmlcontext->_private = (void *) context;
     xmlParseDocument(xmlcontext);
-    well_formed = xmlcontext->wellFormed;
+    well_formed = xmlcontext->wellFormed && mlt_profile_is_valid(profile);
 
     // Cleanup after parsing
     xmlFreeDoc(context->entity_doc);
