@@ -486,3 +486,27 @@ double mlt_profile_scale_height(mlt_profile profile, int height)
 {
     return (profile && profile->width) ? (double) height / profile->height : 1.0;
 }
+
+/** Check if the profile values are acceptable.
+ *
+ * This checks that the resolution, aspect ratio, and frame rate are not
+ * negative, zero, or too high.
+ * \public \memberof mlt_profile_s
+ * \param profile the profile to reference
+ * \return true if the profile is valid
+ */
+
+int mlt_profile_is_valid(mlt_profile profile)
+{
+    int valid = profile
+                && (profile->width > 0 && profile->height > 0 && profile->sample_aspect_num > 0
+                    && profile->sample_aspect_den > 0 && profile->frame_rate_num > 0
+                    && profile->frame_rate_den > 0);
+    if (!valid) {
+        mlt_log_error(NULL, "[profile] a value is negative or zero\n");
+    } else if (profile->width * profile->height > 16384 * 16384) {
+        valid = 0;
+        mlt_log_error(NULL, "[profile] resolution exceeds the maximum 16384x16384\n");
+    }
+    return valid;
+}

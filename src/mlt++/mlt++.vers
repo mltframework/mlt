@@ -721,3 +721,10 @@ MLT_7.32.0 {
       "Mlt::Service::set_consumer(Mlt::Service&)";
     };
 } MLT_7.14.0;
+
+MLT_7.36.0 {
+  global:
+    extern "C++" {
+      "Mlt::Profile::is_valid()";
+  };
+} MLT_7.32.0;

@@ -199,3 +199,8 @@ double Profile::scale_height(int height)
 {
     return mlt_profile_scale_height(instance, height);
 }
+
+bool Profile::is_valid()
+{
+    return mlt_profile_is_valid(instance);
+}

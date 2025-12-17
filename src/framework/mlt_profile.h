@@ -62,4 +62,5 @@ MLT_EXPORT void mlt_profile_from_producer(mlt_profile profile, mlt_producer prod
 MLT_EXPORT char *mlt_profile_lumas_dir(mlt_profile profile);
 MLT_EXPORT double mlt_profile_scale_width(mlt_profile profile, int width);
 MLT_EXPORT double mlt_profile_scale_height(mlt_profile profile, int height);
+MLT_EXPORT int mlt_profile_is_valid(mlt_profile profile);
 #endif

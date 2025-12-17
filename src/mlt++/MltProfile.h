@@ -1,6 +1,6 @@
 /**
  * MltProfile.h - MLT Wrapper
- * Copyright (C) 2008-2020 Meltytech, LLC
+ * Copyright (C) 2008-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -73,6 +73,7 @@ public:
     void set_explicit(int boolean);
     double scale_width(int width);
     double scale_height(int height);
+    bool is_valid();
 };
 } // namespace Mlt
 
