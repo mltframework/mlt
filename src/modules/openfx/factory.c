@@ -18,9 +18,8 @@
  */
 
 #include "mlt_openfx.h"
-
+#include <glib.h>
 extern OfxHost MltOfxHost;
-
 static OfxSetHostFn ofx_set_host;
 static OfxGetPluginFn ofx_get_plugin;
 static OfxGetNumberOfPluginsFn ofx_get_number_of_plugins;
@@ -64,14 +63,18 @@ static const char *getArchStr()
 #define OFX_DIRSEP "/"
 #include <dirent.h>
 
-#elif defined(WINDOWS)
+#elif defined(WINDOWS) || defined(WIN32) || defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
 #define OFX_DIRLIST_SEP_CHARS ";"
-#ifdef _WIN64
-#define OFX_ARCHSTR "win64"
+#if defined(_WIN64) || defined(__MINGW64__)
+#define OFX_ARCHSTR "Win64"
 #else
-#define OFX_ARCHSTR "win32"
+#define OFX_ARCHSTR "Win32"
 #endif
 #define OFX_DIRSEP "\\"
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <dirent.h>
+#endif
 
 #include "shlobj.h"
 #include "tchar.h"
@@ -192,7 +195,7 @@ MLT_REPOSITORY
 
                 char *bni = NULL;
                 if ((bni = strstr(name, ".ofx.bundle")) != NULL && bni[11] == '\0') {
-                    char *barename = strndup(name, (int) (bni - name) + 4);
+                    char *barename = g_strndup(name, (int) (bni - name) + 4);
                     size_t name_len = (size_t) (bni - name) + 4 + 7;
                     /* 12b sizeof `Contents` word, 1 sizeof null byte */
                     char *binpath = malloc(dir_len + name_len + 12 + (name_len - 7) + archstr_len

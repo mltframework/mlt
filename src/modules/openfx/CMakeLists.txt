@@ -10,7 +10,7 @@ add_custom_target(Other_openfx_Files SOURCES
 
 target_compile_options(mltopenfx PRIVATE ${MLT_COMPILE_OPTIONS})
 
-target_link_libraries(mltopenfx PRIVATE mlt m)
+target_link_libraries(mltopenfx PRIVATE mlt m PkgConfig::glib ${CMAKE_DL_LIBS})
 
 set_target_properties(mltopenfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
