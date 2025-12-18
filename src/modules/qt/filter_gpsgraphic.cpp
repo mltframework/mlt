@@ -628,7 +628,7 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
                                                     new_bg_height,
                                                     Qt::IgnoreAspectRatio,
                                                     Qt::SmoothTransformation);
-        // mlt_log_info(filter, "scaled image= x,y w,h= %d,%d %d,%d", pdata->bg_img_scaled.rect().x(), pdata->bg_img_scaled.rect().y(), pdata->bg_img_scaled.rect().width(), pdata->bg_img_scaled.rect().height());
+        // mlt_log_info(filter, "scaled image= x,y w,h= %d,%d %d,%d\n", pdata->bg_img_scaled.rect().x(), pdata->bg_img_scaled.rect().y(), pdata->bg_img_scaled.rect().width(), pdata->bg_img_scaled.rect().height());
         // pdata->bg_img_scaled.save("qimage_saved02_scaled_by_mapAR.jpg");
 
         //next steps are in prepare_canvas() as they depend on each frame position (used_crops)
@@ -662,7 +662,7 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 
     //check if the file has been changed, if not, current data is ok, do nothing
     if (strcmp(pdata->last_filename, filename)) {
-        // mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d \n", pdata->last_filename, filename, swap);
+        // mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d\n", pdata->last_filename, filename, swap);
         default_priv_data(pdata);
         strcpy(pdata->last_filename, filename);
 

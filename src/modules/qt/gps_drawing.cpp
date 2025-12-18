@@ -300,7 +300,7 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
         int next_i = get_next_valid_gpspoint_index(filter, i);
         if (i == next_i || get_crtval_bysrc(filter, i) == GPS_UNINIT
             || get_crtval_bysrc(filter, next_i) == GPS_UNINIT) {
-            // mlt_log_info(filter, "incomplete pair (i=%d, %d) GPS_UNINIT, skipping drawing", i, next_i);
+            // mlt_log_info(filter, "incomplete pair (i=%d, %d) GPS_UNINIT, skipping drawing\n", i, next_i);
             continue;
         }
 
@@ -734,7 +734,7 @@ void prepare_canvas(mlt_filter filter,
                                     rescaled_bg_rect.bottomRight().y()
                                         - rescaled_bg_rect.height() * used_crops.bot / 100.0);
         QRectF crop_rect = QRectF(top_left, bot_right);
-        // mlt_log_info(filter, "crop rect: x,y w,h= %f,%f %f,%f", crop_rect.x(), crop_rect.y(), crop_rect.width(), crop_rect.height());
+        // mlt_log_info(filter, "crop rect: x,y w,h= %f,%f %f,%f\n", crop_rect.x(), crop_rect.y(), crop_rect.width(), crop_rect.height());
 
         //step 4) crop the computed rect from the step 1) scaled image
         p.setOpacity(mlt_properties_get_double(properties, "bg_opacity"));

@@ -27,9 +27,9 @@ class TestModQt : public QObject
     Q_OBJECT
 
 public:
-    TestModQt() { }
+    TestModQt() {}
 
-    ~TestModQt() { }
+    ~TestModQt() {}
 
 private Q_SLOTS:
     void DatetimeXMLstring_to_mseconds_ValidConversion()

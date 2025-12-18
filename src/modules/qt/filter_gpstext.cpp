@@ -1,6 +1,6 @@
 /*
  * filter_gpstext.c -- overlays GPS data as text on video
- * Copyright (C) 2011-2022 Meltytech, LLC
+ * Copyright (C) 2011-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -130,7 +130,7 @@ static int get_next_token(char *str, int *pos, char *token, int *is_keyword)
 */
 static int64_t extract_offset_time_ms_keyword(char *keyword)
 {
-    //mlt_log_info(NULL, "extract_offset_time_keyword: in keyword: %s", keyword);
+    //mlt_log_info(NULL, "extract_offset_time_keyword: in keyword: %s\n", keyword);
     char *end = NULL;
     if (keyword == NULL)
         return 0;
@@ -339,7 +339,7 @@ static void gps_point_to_output(mlt_filter filter,
         mseconds_to_timestring(raw.time + val, format, gps_text);
     }
     strncat(result_gps_text, gps_text, MAX_TEXT_LEN - strlen(result_gps_text) - 1);
-    //	mlt_log_info(NULL, "filter_gps.c gps_point_to_output, keyword=%s, result_gps_text=%s", keyword, result_gps_text);
+    //	mlt_log_info(NULL, "filter_gps.c gps_point_to_output, keyword=%s, result_gps_text=%s\n", keyword, result_gps_text);
 }
 
 // Returns the unix time (miliseconds) of "Media Created" metadata, or fallbacks to "Modified Time" from OS
@@ -355,7 +355,7 @@ static int64_t restrict_updates(int64_t fr, double upd_per_sec)
     if (upd_per_sec == 0) // = disabled
         return fr;
     int64_t rez = fr - fr % (int) (1000.0 / upd_per_sec);
-    //mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d", fr%100000, upd_per_sec, rez%100000);
+    //mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d\n", fr%100000, upd_per_sec, rez%100000);
     return rez;
 }
 
@@ -407,7 +407,7 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
     double read_updates_per_second = mlt_properties_get_double(properties, "updates_per_second");
 
     int64_t original_video_time = get_original_video_file_time_mseconds(frame);
-    // mlt_log_info(filter, "process_filter_properties - read values: offset1=%d, smooth=%d, gps_start_time=%s, speed=%f, updates=%f",
+    // mlt_log_info(filter, "process_filter_properties - read values: offset1=%d, smooth=%d, gps_start_time=%s, speed=%f, updates=%f\n",
     //  	read_video_offset1, read_smooth_val, read_gps_processing_start_time, read_speed_multiplier, read_updates_per_second);
 
     //process properties
