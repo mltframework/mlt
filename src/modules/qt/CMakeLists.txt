@@ -125,10 +125,6 @@ function(mlt_add_qt_module ARG_TARGET)
     )
 endfunction()
 
-if (MOD_QT)
-    mlt_add_qt_module(mltqt QT_VERSION 5 DATADIR qt)
-endif()
-
 if (MOD_QT6)
     mlt_add_qt_module(mltqt6 QT_VERSION 6 DATADIR qt6)
 endif()

@@ -213,10 +213,6 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
     )
 endfunction()
 
-if(MOD_GLAXNIMATE)
-    mlt_add_glaxnimate_module(mltglaxnimate QT_VERSION 5 DATADIR glaxnimate)
-endif()
-
 if(MOD_GLAXNIMATE_QT6)
     mlt_add_glaxnimate_module(mltglaxnimate-qt6 QT_VERSION 6 DATADIR glaxnimate-qt6)
 endif()
