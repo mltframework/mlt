@@ -3347,7 +3347,11 @@ static int decode_audio(producer_avformat self,
 
             if (req_pts > pts) {
                 // We are behind, so skip some
-                *ignore = lrint(timebase * (req_pts - pts) * codec_context->sample_rate);
+                int sample_error_margin = ceil(timebase * codec_context->sample_rate);
+                int sample_delta = lrint(timebase * (req_pts - pts) * codec_context->sample_rate);
+                if (sample_delta > sample_error_margin) {
+                    *ignore = sample_delta;
+                }
             } else if (self->audio_index != INT_MAX && int_position > req_position + ahead_threshold
                        && !self->is_audio_synchronizing) {
                 // We are ahead, so seek backwards some more.
