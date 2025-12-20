@@ -1,0 +1,48 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "vcpkg",
+            "displayName": "vcpkg config",
+            "description": "Configure with vcpkg toolchain",
+            "binaryDir": "${sourceDir}/build",
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+            "cacheVariables": {
+                "BUILD_TESTING": "OFF",
+                "SWIG_PYTHON": "OFF",
+                "MOD_AVFORMAT": "OFF",
+                "MOD_DECKLINK": "OFF",
+                "MOD_FREI0R": "OFF",
+                "MOD_GDK": "OFF",
+                "MOD_JACKRACK": "OFF",
+                "USE_LV2": "OFF",
+                "USE_VST2": "OFF",
+                "MOD_KDENLIVE": "OFF",
+                "MOD_NDI": "OFF",
+                "MOD_NORMALIZE": "OFF",
+                "MOD_OLDFILM": "OFF",
+                "MOD_OPENCV": "OFF",
+                "MOD_MOVIT": "OFF",
+                "MOD_PLUS": "OFF",
+                "MOD_PLUSGPL": "OFF",
+                "MOD_QT6": "OFF",
+                "MOD_SOX": "OFF",
+                "MOD_GLAXNIMATE_QT6": "OFF",
+                "MOD_RESAMPLE": "OFF",
+                "MOD_RTAUDIO": "OFF",
+                "MOD_RUBBERBAND": "OFF",
+                "MOD_SDL2": "ON",
+                "MOD_DOX": "OFF",
+                "MOD_VIDSTAB": "OFF",
+                "MOD_VORBIS": "OFF",
+                "MOD_XINE": "OFF",
+                "MOD_XML": "OFF"
+            }
+        },
+        {
+            "name": "vcpkg-ninja",
+            "inherits": "vcpkg",
+            "generator": "Ninja"
+      }
+    ]
+}

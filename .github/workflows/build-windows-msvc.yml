@@ -1,0 +1,29 @@
+name: build-test-windows-msvc-on-push
+
+on: [push, pull_request]
+
+jobs:
+  build-cmake-msvc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore from cache and setup vcpkg executable and data files.
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure C/C++ with CMake
+        run: |
+          cmake --preset vcpkg-ninja
+
+      - name: Build with Ninja
+        run: |
+          cmake --build build
+
+      - name: Install MLT
+        run: |
+          cmake --install build
