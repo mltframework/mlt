@@ -11,7 +11,7 @@ FROM base AS build
 RUN apt-get install -yqq wget git automake autoconf libtool intltool g++ yasm nasm \
   swig libgavl-dev libsamplerate0-dev libxml2-dev ladspa-sdk libjack-dev \
   libsox-dev libsdl2-dev libgtk2.0-dev libsoup2.4-dev \
-  qt6-base-dev qt6-5compat-dev qt6-svg-dev libarchive-dev libmp3lame-dev \
+  qt6-base-dev qt6-svg-dev libarchive-dev libmp3lame-dev \
   libexif-dev libtheora-dev libvorbis-dev python3-dev cmake xutils-dev \
   libegl1-mesa-dev libeigen3-dev libfftw3-dev libvdpau-dev meson ninja-build
 
@@ -29,7 +29,7 @@ FROM base
 RUN apt-get install -yqq dumb-init \
   libsamplerate0 libxml2 libjack0 \
   libsdl2-2.0-0 libgtk2.0-0 libsoup2.4-1 \
-  libqt6core5compat6 libqt6svgwidgets6 libqt6xml6 qt6-image-formats-plugins libarchive13 \
+  libqt6svgwidgets6 libqt6xml6 qt6-image-formats-plugins libarchive13 \
   libtheora0 libvorbis0a python3 \
   libegl1 libfftw3-double3 libvdpau1 \
   # Additional runtime libs \

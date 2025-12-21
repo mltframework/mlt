@@ -32,8 +32,7 @@
 #include <QTextCodec>
 #include <QTextDecoder>
 #else
-#include <QtCore5Compat/QTextCodec>
-#include <QtCore5Compat/QTextDecoder>
+#include <QStringDecoder>
 #endif
 
 static void close_qimg(void *qimg)
@@ -161,12 +160,16 @@ static void generate_qpath(mlt_properties producer_properties)
     // Make the path empty
     *qPath = QPainterPath();
     qPath->setFillRule(Qt::WindingFill);
-
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     // Get the strings to display
     QTextCodec *codec = QTextCodec::codecForName(encoding);
     QTextDecoder *decoder = codec->makeDecoder();
     QString s = decoder->toUnicode(text);
     delete decoder;
+#else
+    auto decoder = QStringDecoder(encoding);
+    QString s = decoder(text);
+#endif
     QStringList lines = s.split("\n");
 
     // Configure the font

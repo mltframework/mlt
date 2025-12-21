@@ -27,8 +27,10 @@
 #include <QTextDocument>
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QTextCodec>
-#else
+#elif QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
 #include <QtCore5Compat/QTextCodec>
+#else
+#include <QStringDecoder>
 #endif
 
 #include "typewriter.h"
@@ -394,10 +396,15 @@ static QTextDocument *get_rich_text(mlt_properties properties, double width, dou
         QFile file(resource);
         if (file.open(QFile::ReadOnly)) {
             QByteArray data = file.readAll();
-            QTextCodec *codec = QTextCodec::codecForHtml(data);
             doc = new QTextDocument;
             doc->setPageSize(QSizeF(width, height));
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
+            QTextCodec *codec = QTextCodec::codecForHtml(data);
             doc->setHtml(codec->toUnicode(data));
+#else
+            QStringDecoder decoder = QStringDecoder::decoderForHtml(data);
+            doc->setHtml(decoder(data));
+#endif
             mlt_properties_set_data(properties,
                                     "QTextDocument",
                                     doc,
