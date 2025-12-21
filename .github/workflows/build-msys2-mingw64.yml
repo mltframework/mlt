@@ -49,7 +49,6 @@ jobs:
             mingw-w64-x86_64-potrace
             mingw-w64-x86_64-python-pip
             mingw-w64-x86_64-qt5-base
-            mingw-w64-x86_64-qt6-5compat
             mingw-w64-x86_64-qt6-base
             mingw-w64-x86_64-qt6-svg
             mingw-w64-x86_64-rubberband

@@ -68,8 +68,12 @@ function(mlt_add_qt_module ARG_TARGET)
     if(ARG_QT_VERSION EQUAL 6)
       target_link_libraries(${ARG_TARGET} PRIVATE
         Qt6::SvgWidgets
-        Qt6::Core5Compat
       )
+      if(Qt6Core5Compat_FOUND)
+        target_link_libraries(${ARG_TARGET} PRIVATE
+          Qt6::Core5Compat
+        )
+      endif()
     else()
       target_link_libraries(${ARG_TARGET} PRIVATE
         Qt${ARG_QT_VERSION}::Svg
