@@ -34,7 +34,7 @@ jobs:
               sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev
           - name: ubuntu-22.04
             image: ubuntu:22.04
             setup_script: |
@@ -54,7 +54,7 @@ jobs:
               echo 'deb-src http://deb.debian.org/debian testing main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev
           - name: debian-stable
             image: debian:stable
             setup_script: |
@@ -62,7 +62,7 @@ jobs:
               echo 'deb http://deb.debian.org/debian bookworm-backports main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev
           - name: fedora-42
             image: fedora:42
             setup_script: |
@@ -71,7 +71,7 @@ jobs:
                 yasm gavl-devel libsamplerate-devel libxml2-devel \
                 ladspa-devel jack-audio-connection-kit-devel sox-devel \
                 SDL2-devel fftw-devel frei0r-devel gtk2-devel libexif-devel \
-                qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel \
+                qt6-qtbase-devel qt6-qtsvg-devel \
                 libtheora-devel libvorbis-devel libvdpau-devel \
                 libsoup-devel liboil-devel python-devel alsa-lib \
                 pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
@@ -84,7 +84,7 @@ jobs:
                 yasm gavl-devel libsamplerate-devel libxml2-devel \
                 ladspa-devel jack-audio-connection-kit-devel sox-devel \
                 SDL2-devel fftw-devel frei0r-devel gtk2-devel libexif-devel \
-                qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel \
+                qt6-qtbase-devel qt6-qtsvg-devel \
                 libtheora-devel libvorbis-devel libvdpau-devel \
                 libsoup-devel liboil-devel python-devel alsa-lib \
                 pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \

@@ -306,7 +306,10 @@ endif()
 # It is necessary to look for Qt6 before Qt5, otherwise there will
 # be a conflict with the targets in case both are enabled
 if(MOD_QT6)
-  find_package(Qt6 REQUIRED COMPONENTS Core Gui Xml SvgWidgets Core5Compat)
+  find_package(Qt6 REQUIRED COMPONENTS Core Gui Xml SvgWidgets)
+  if(Qt6_VERSION VERSION_LESS 6.4.0)
+    find_package(Qt6 REQUIRED COMPONENTS Core5Compat)
+  endif()
   list(APPEND MLT_SUPPORTED_COMPONENTS qt6)
 endif()
 
