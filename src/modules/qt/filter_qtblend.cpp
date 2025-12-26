@@ -166,12 +166,22 @@ static int filter_get_image(mlt_frame frame,
     if (mlt_properties_get(properties, "rotation")) {
         double angle = mlt_properties_anim_get_double(properties, "rotation", position, length);
         if (angle != 0.0) {
-            if (mlt_properties_get_int(properties, "rotate_center")) {
+            if (mlt_properties_get(properties, "rotate_anchor")) {
+                mlt_rect anchor = mlt_properties_anim_get_rect(properties, "rotate_anchor", position, length);
+                // Use custom anchor point (x,y are normalized 0-1 coordinates) where 0, 0 is top left and 1, 1 is bottom right
+                // negative values are allowed so its possible to rotate around a point outside the rectangle
+                double anchor_x = anchor.x * rect.w;
+                double anchor_y = anchor.y * rect.h;
+                transform.translate(anchor_x, anchor_y);
+                transform.rotate(angle);
+                transform.translate(-anchor_x, -anchor_y);
+            } else if (mlt_properties_get_int(properties, "rotate_center")) {
+                // old style rotation (from center) to keep compatibility, equivalent to rotate_anchor = 0.5, 0.5
                 transform.translate(rect.w / 2.0, rect.h / 2.0);
                 transform.rotate(angle);
                 transform.translate(-rect.w / 2.0, -rect.h / 2.0);
             } else {
-                // old style rotation (from top left corner) to keep compatibility
+                // old style rotation (from top left corner) to keep compatibility, equivalent to rotate_anchor = 0, 0
                 transform.rotate(angle);
             }
             hasAlpha = true;
@@ -268,6 +278,10 @@ mlt_filter filter_qtblend_init(mlt_profile profile, mlt_service_type type, const
         filter->process = filter_process;
         mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
         mlt_properties_set_int(properties, "rotate_center", 0);
+        
+        // Initialize rotate_anchor property with center position (0.5, 0.5)
+        mlt_rect default_anchor = {0.5, 0.5, 0.0, 0.0, 0.0};
+        mlt_properties_set_rect(properties, "rotate_anchor", default_anchor);
     } else {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Filter qtblend failed\n");
 
