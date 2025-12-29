@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "mlt",
+  "dependencies": [
+    "dirent",
+    "dlfcn-win32",
+    "libiconv",
+    "pkgconf",
+    "pthreads",
+    "sdl2"
+  ]
+}
