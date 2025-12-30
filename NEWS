@@ -1,6 +1,108 @@
 MLT Release Notes
 -----------------
 
+Version 7.36.0
+
+Framework
+  - Added `mlt_image_default_colorspace()`
+  - Added `mlt_image_default_trc()`
+  - Added `mlt_image_default_primaries()`
+  - Added `mlt_color_convert_trc()`
+  - Added the `mlt_consumer` property `mlt_color_trc` to drive a new
+    `color_transform` normalizer filter. This sets the color transfer
+    function to use for image/video effects. It is beneficial and
+    correct to use linear color for any pixel mixing whether for blending
+    or interpolation.
+  - Removed `atexit(mlt_factory_close)` in `mlt_factory_init()`. Close the
+    factory yourself if you feel the need to (not generally needed when
+    exiting a process).
+  - Prevent possible crash in `mlt_service_connect_producer()`.
+  - Added `mlt_profile_is_valid()` and `Mlt::Profile::is_valid()`.
+  - Fixed crash on invalid profile (CVE-2025-65834) in:
+    * `mlt_consumer_start()`
+    * `mlt_factory_producer()`
+    * `xml` producer
+
+Modules
+  - Drop support for Qt 5.
+  - Fixed bad color in `luma` transition's dissolve (regression in v7.34.0).
+  - Fixed HLG HDR broken in `decklink` consumer (regression in v7.34.0).
+  - Fixed warnings when flushing audio in the `avformat` consumer.
+  - Added support for `hwaccel=vulkan` to the `avformat` producer.
+  - Added a `color_transform` normalizer filter to the core module to convert
+    all image/video producers to and from linear color. It is abstract in the
+    core module and drives the following filters:
+    * `avfilter.zscale`
+    * `sws_colortransform`
+    * `avfilter.scale`
+  - Added filter `sws_colortransform` that is more efficient than `avfilter.swscale`
+    but requires FFmpeg 8.
+  - Changed the default property values of the `null` consumer:
+    * `real_time`:  -1
+    * `terminate_on_pause`: 1
+  - Changed the `luma` and `movit.luma` transitions to progress linearly with
+    linear `color_trc`.
+  - Fixed the alpha channel dropped by the `xml-clip` producer.
+  - Added `mlt_image_rgba64` format to:
+    * `avcolor_space` filter
+    * `avdeinterlace` filter
+    * `affine` filter and transition
+    * `audiolevelgraph` filter
+    * `audiospectrum` filter
+    * `audiowaveform` filter
+    * `autofade` filter
+    * `avformat` producer and consumers
+    * `box_blur` filter
+    * `brightness` filter
+    * `pillar_echo` filter
+    * `color` producer
+    * `dropshadow` filter
+    * `dynamictext` filter (when used with `qtext`)
+    * `frei0r.alpha0ps` filter
+    * `frei0r.alphagrad` filter
+    * `frei0r.alphaspot` filter
+    * `frei0r.bluescreen0r` filter
+    * `frei0r.select0r` filter
+    * `frei0r.transparency` filter
+    * `gpsgraphic` filter
+    * `gpstext` filter
+    * `gradientmap` filter
+    * `hslprimaries` filter
+    * `hslrange` filter
+    * `kdenlivetitle` producer
+    * `lift_gamma_gain` filter
+    * `lightshow` filter
+    * `mask_apply` (when used with `qtblend`)
+    * `movit.convert` filter
+    * `outline` filter
+    * `qtblend` filter and transition
+    * `qtcrop` filter
+    * `qtext` producer
+    * `shape` filter
+    * `spot_remover` filter
+    * `strobe` filter
+    * `subtitle` filter (when used with `qtext`)
+    * `swscale` filter
+    * `text` filter (when used with `qtext`)
+    * `timeremap` link
+    * `timer` filter (when used with `qtext`)
+    * `vqm` transition
+  - Changed the `mask_apply` filter default transition to `qtblend`.
+  - Removed the maximum for the `alpha` property on the `brightness` filter
+    so that you can _increase_ the opacity of an existing alpha channel.
+  - Fixed background image scaling in the `gpsgraphic` filter.
+  - Fix audio artifacts with pcm_s24le in mkv in `avformat` producer.
+
+Other
+  - Removed bitrate and quality limits in the vp9 and webm `avformat` presets.
+  - Fixed melt on Windows not reading file path/name with extended characters
+    (regression in v7.34.0).
+  - Fixed building the ruby bindings with Ruby 3.0.
+  - More fixes for MSVC.
+  - Removed `win32/strptime.c` and replaced with Qt functions.
+  - Stop showing `melt` usage on error exit.
+
+
 Version 7.34.1
 
   - Fixed compiling with Qt 5.
