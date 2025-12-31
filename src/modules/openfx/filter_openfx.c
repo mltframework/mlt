@@ -41,7 +41,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties params = mlt_properties_get_data(image_effect, "mltofx_params", NULL);
     mlt_properties image_effect_params = mlt_properties_get_data(image_effect, "params", NULL);
 
-    format = mlt_image_rgba;
+    *format = mlt_image_rgba;
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
     if (error == 0) {
