@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 #include "mlt_openfx.h"
 #include <glib.h>
+#include <stdbool.h>
 extern OfxHost MltOfxHost;
 static OfxSetHostFn ofx_set_host;
 static OfxGetPluginFn ofx_get_plugin;
@@ -63,7 +64,8 @@ static const char *getArchStr()
 #define OFX_DIRSEP "/"
 #include <dirent.h>
 
-#elif defined(WINDOWS) || defined(WIN32) || defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
+#elif defined(WINDOWS) || defined(WIN32) || defined(_WIN32) || defined(__MINGW32__) \
+    || defined(__MINGW64__)
 #define OFX_DIRLIST_SEP_CHARS ";"
 #if defined(_WIN64) || defined(__MINGW64__)
 #define OFX_ARCHSTR "Win64"
@@ -89,8 +91,7 @@ static void plugin_mgr_destroy(mlt_properties p)
 {
     int cN = mlt_properties_count(mltofx_context);
 
-    int j;
-    for (j = 0; j < cN; ++j) {
+    for (int j = 0; j < cN; ++j) {
         char *id = mlt_properties_get_name(mltofx_context, j);
         mlt_properties pb = (mlt_properties) mlt_properties_get_data(mltofx_context, id, NULL);
 
@@ -110,8 +111,7 @@ static void plugin_mgr_destroy(mlt_properties p)
 
     int N = mlt_properties_get_int(p, "N");
 
-    int i;
-    for (i = 0; i < N; ++i) {
+    for (int i = 0; i < N; ++i) {
         char tstr[12] = {
             '\0',
         };
@@ -161,14 +161,15 @@ MLT_REPOSITORY
     MltOfxHost.host = (OfxPropertySetHandle) mlt_properties_new();
     mltofx_init_host_properties(MltOfxHost.host);
 
-    char *dir, *openfx_path = getenv("OFX_PLUGIN_PATH"),
-      *load_unsupported_plugins = getenv("MLT_OFX_LOAD_UNSUPPORTED_PLUGINS"); /* Load unsupported plugins for debugging purposes */
+    char *dir,
+        *openfx_path = getenv("OFX_PLUGIN_PATH"),
+        *load_unsupported_plugins = getenv(
+            "MLT_OFX_LOAD_UNSUPPORTED_PLUGINS"); /* Load unsupported plugins for debugging purposes */
 
     bool is_load_unsupported_plugins = false;
-    if (load_unsupported_plugins)
-      {
-	is_load_unsupported_plugins = strcmp(load_unsupported_plugins, "true") == 0 ? true : false;
-      }
+    if (load_unsupported_plugins) {
+        is_load_unsupported_plugins = strcmp(load_unsupported_plugins, "true") == 0;
+    }
 
     size_t archstr_len = strlen(OFX_ARCHSTR);
 
@@ -177,9 +178,9 @@ MLT_REPOSITORY
 
     if (openfx_path) {
         int dli = 0;
-        char *saveptr, *strptr;
+        char *saveptr;
 
-        for (strptr = openfx_path;; strptr = NULL) {
+        for (char *strptr = openfx_path;; strptr = NULL) {
             dir = strtok_r(strptr, MLT_DIRLIST_DELIMITER, &saveptr);
             if (dir == NULL)
                 break;
@@ -247,8 +248,7 @@ MLT_REPOSITORY
                     if (ofx_get_plugin == NULL)
                         goto parse_error;
 
-                    int i;
-                    for (i = 0; i < NumberOfPlugins; ++i) {
+                    for (int i = 0; i < NumberOfPlugins; ++i) {
                         OfxPlugin *plugin_ptr = ofx_get_plugin(i);
 
                         char *s = NULL;
@@ -256,16 +256,15 @@ MLT_REPOSITORY
                         s = malloc(pluginIdentifier_len + 8);
                         sprintf(s, "openfx.%s", plugin_ptr->pluginIdentifier);
 
-			/* if colon `:` exists in plugin identifier
+                        /* if colon `:` exists in plugin identifier
 			   change it to accent sign `^` because `:`
 			   can cause issues with mlt if put in filter
 			   name */
-			char *str_ptr = strchr(s, ':');
-			while (str_ptr != NULL) {
-			  *str_ptr++ = '^';
-			  str_ptr = strchr(str_ptr, ':');
-			}
-
+                        char *str_ptr = strchr(s, ':');
+                        while (str_ptr != NULL) {
+                            *str_ptr++ = '^';
+                            str_ptr = strchr(str_ptr, ':');
+                        }
 
                         mlt_properties p;
                         p = mlt_properties_new();
@@ -279,20 +278,20 @@ MLT_REPOSITORY
                         mlt_properties_set(p, "dli", dl_n);
                         mlt_properties_set_int(p, "index", i);
 
-			/* Sometimes error codes other than kOfxStatErrMissingHostFeature
+                        /* Sometimes error codes other than kOfxStatErrMissingHostFeature
 			   returned from kOfxActionDescribe like kOfxStatErrMemory, kOfxStatFailed, kOfxStatErrFatal */
-			bool plugin_supported = mltofx_is_plugin_supported(plugin_ptr) == kOfxStatOK;
+                        bool plugin_supported = mltofx_is_plugin_supported(plugin_ptr)
+                                                == kOfxStatOK;
                         /* WIP: this is only creating them as filter I should find a way to see howto detect producers
 			   if they exists in OpenFX plugins
 			*/
-			if (plugin_supported || is_load_unsupported_plugins)
-			  {
-			    MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
-			    MLT_REGISTER_METADATA(mlt_service_filter_type,
-						  s,
-						  metadata,
-						  "filter_openfx.yml");
-			  }
+                        if (plugin_supported || is_load_unsupported_plugins) {
+                            MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
+                            MLT_REGISTER_METADATA(mlt_service_filter_type,
+                                                  s,
+                                                  metadata,
+                                                  "filter_openfx.yml");
+                        }
                     }
 
                 parse_error:
@@ -304,7 +303,7 @@ MLT_REPOSITORY
                 de = readdir(d);
             }
 
-	    closedir(d);
+            closedir(d);
         }
 
         mlt_properties_set_int(mltofx_dl, "N", dli);
