@@ -1,6 +1,6 @@
 /*
  * filter_openfx.c -- filter Video through OpenFX plugins
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties params = mlt_properties_get_data(image_effect, "mltofx_params", NULL);
     mlt_properties image_effect_params = mlt_properties_get_data(image_effect, "params", NULL);
 
-    *format = mlt_image_rgba;
+    format = mlt_image_rgba;
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
     if (error == 0) {
@@ -49,8 +49,7 @@ static int filter_get_image(mlt_frame frame,
         mlt_position length = mlt_filter_get_length2(filter, frame);
         int params_count = mlt_properties_count(params);
 
-        int i;
-        for (i = 0; i < params_count; ++i) {
+        for (int i = 0; i < params_count; ++i) {
             char *iprop_name = mlt_properties_get_name(params, i);
 
             char *mlt_value = mlt_properties_get(properties, iprop_name);
@@ -59,19 +58,21 @@ static int filter_get_image(mlt_frame frame,
                 mlt_properties param = mlt_properties_get_data_at(params, i, NULL);
 
                 char *type = mlt_properties_get(param, "type");
-		char *widget = mlt_properties_get(param, "widget");
+                char *widget = mlt_properties_get(param, "widget");
 
                 if (type != NULL) {
-		    if (widget != NULL && (strcmp(widget, "2dpoint") == 0 || strcmp(widget, "2dsize") == 0) && strcmp(type, "double") == 0) {
-		        mlt_rect value = mlt_properties_anim_get_rect(properties,
-								     iprop_name,
-								     position,
-								     length);
-			mltofx_param_set_value(image_effect_params,
+                    if (widget != NULL
+                        && (strcmp(widget, "2dpoint") == 0 || strcmp(widget, "2dsize") == 0)
+                        && strcmp(type, "double") == 0) {
+                        mlt_rect value = mlt_properties_anim_get_rect(properties,
+                                                                      iprop_name,
+                                                                      position,
+                                                                      length);
+                        mltofx_param_set_value(image_effect_params,
                                                iprop_name,
                                                mltofx_prop_double2d,
                                                value);
-		    } else if (strcmp(type, "double") == 0) {
+                    } else if (strcmp(type, "double") == 0) {
                         double value = mlt_properties_anim_get_double(properties,
                                                                       iprop_name,
                                                                       position,
@@ -88,12 +89,13 @@ static int filter_get_image(mlt_frame frame,
                                                mltofx_prop_int,
                                                value);
                     } else if (strcmp(type, "string") == 0) {
-		        int value
-			    = mlt_properties_anim_get_int(properties, iprop_name, position, length);
-			mltofx_param_set_value(image_effect_params,
-					       iprop_name,
-                                               mltofx_prop_int, /* for handling option choice TODO: do something better */
-					       value);
+                        int value
+                            = mlt_properties_anim_get_int(properties, iprop_name, position, length);
+                        mltofx_param_set_value(
+                            image_effect_params,
+                            iprop_name,
+                            mltofx_prop_int, /* for handling option choice TODO: do something better */
+                            value);
                     } else if (strcmp(type, "boolean") == 0) {
                         int value
                             = mlt_properties_anim_get_int(properties, iprop_name, position, length);
@@ -102,41 +104,52 @@ static int filter_get_image(mlt_frame frame,
                                                mltofx_prop_int,
                                                value);
                     } else if (strcmp(type, "color") == 0) {
-		        mlt_color value
-			          = mlt_properties_anim_get_color(properties, iprop_name, position, length);
-		        mltofx_param_set_value(image_effect_params,
-					       iprop_name,
-					       mltofx_prop_color,
-					       value);
-		    }
+                        mlt_color value = mlt_properties_anim_get_color(properties,
+                                                                        iprop_name,
+                                                                        position,
+                                                                        length);
+                        mltofx_param_set_value(image_effect_params,
+                                               iprop_name,
+                                               mltofx_prop_color,
+                                               value);
+                    }
                 }
             }
         }
 
         mltofx_begin_sequence_render(plugin, image_effect);
 
-	/* According to OpenFX documentation: Note that hosts that
+        /* According to OpenFX documentation: Note that hosts that
 	   have constant sized imagery need not call this action, only
 	   hosts that allow image sizes to vary need call this. */
-	/* mltofx_get_region_of_definition(plugin, image_effect); */
+        /* mltofx_get_region_of_definition(plugin, image_effect); */
 
         mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
         mltofx_get_clip_preferences(plugin, image_effect);
 
-        uint8_t *src_copy = malloc(*width * *height * 4);
-        if (src_copy == NULL)
-            goto out;
-        memcpy(src_copy, *image, *width * *height * 4);
+        struct mlt_image_s src_img;
+        mlt_image_set_values(&src_img, *image, *format, *width, *height);
+
+        struct mlt_image_s src_img_copy;
+        mlt_image_set_values(&src_img_copy, NULL, *format, *width, *height);
+
+        mlt_image_alloc_data(&src_img_copy);
+
+        uint8_t *src_copy = src_img_copy.data;
+
+        memcpy(src_copy, *image, mlt_image_calculate_size(&src_img));
         mltofx_set_source_clip_data(plugin, image_effect, src_copy, *width, *height);
         mltofx_set_output_clip_data(plugin, image_effect, *image, *width, *height);
 
+        mlt_service_lock(MLT_FILTER_SERVICE(filter));
         mltofx_action_render(plugin, image_effect, *width, *height);
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
-        free(src_copy);
+        mlt_image_close(&src_img_copy);
 
         mltofx_end_sequence_render(plugin, image_effect);
     }
-out:
+
     return error;
 }
 

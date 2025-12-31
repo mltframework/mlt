@@ -1,7 +1,7 @@
 /*
  * MLT OpenFX
  *
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +19,19 @@
  */
 
 #include "mlt_openfx.h"
+#include <float.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdbool.h>
+
+/* OpenFX Header files https://github.com/AcademySoftwareFoundation/openfx/tree/main/include */
 #include "ofxDrawSuite.h"
+#include "ofxGPURender.h"
 #include "ofxImageEffect.h"
+#include "ofxOpenGLRender.h"
 #include "ofxParametricParam.h"
 #include "ofxProgress.h"
 #include "ofxTimeLine.h"
-#include "ofxGPURender.h"
-#include "ofxOpenGLRender.h"
-#include <stdarg.h>
-#include <math.h>
-#include <float.h>
 
 static OfxStatus getPropertySet(OfxImageEffectHandle imageEffect, OfxPropertySetHandle *propHandle)
 {
@@ -120,9 +123,9 @@ static OfxStatus clipReleaseImage(OfxPropertySetHandle imageHandle)
 }
 
 static OfxStatus propGetInt(OfxPropertySetHandle properties,
-			    const char *property,
+                            const char *property,
                             int index,
-			    int *value);
+                            int *value);
 
 /* TODO: allow user to pass a RoD via properties */
 static OfxStatus clipGetRegionOfDefinition(OfxImageClipHandle clip, OfxTime time, OfxRectD *bounds)
@@ -479,9 +482,9 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         || strcmp(kOfxParamTypeInteger3D, paramType) == 0
         || strcmp(kOfxParamTypeString, paramType) == 0
         || strcmp(kOfxParamTypeCustom, paramType) == 0 || strcmp(kOfxParamTypeBytes, paramType) == 0
-        || strcmp(kOfxParamTypeGroup, paramType) == 0
-	|| strcmp(kOfxParamTypePage, paramType) == 0
-	|| strcmp(kOfxParamTypePushButton, paramType) == 0) { /* Currently page and push buttons are ignored but we need
+        || strcmp(kOfxParamTypeGroup, paramType) == 0 || strcmp(kOfxParamTypePage, paramType) == 0
+        || strcmp(kOfxParamTypePushButton, paramType)
+               == 0) { /* Currently page and push buttons are ignored but we need
 								 them so plugins keep feeding use with parameters */
         mlt_properties pt = mlt_properties_new();
         mlt_properties_set_string(pt, "t", paramType);
@@ -493,7 +496,7 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
             *propertySet = (OfxPropertySetHandle) param_props;
         }
     } else {
-      return kOfxStatErrUnknown;
+        return kOfxStatErrUnknown;
     }
 
     return kOfxStatOK;
@@ -615,100 +618,78 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
             }
         }
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
+        double *red = va_arg(ap, double *);
+        double *green = va_arg(ap, double *);
+        double *blue = va_arg(ap, double *);
+        double *alpha = va_arg(ap, double *);
 
-      double *red = va_arg(ap, double *);
-      double *green = va_arg(ap, double *);
-      double *blue = va_arg(ap, double *);
-      double *alpha = va_arg(ap, double *);
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
 
-      OfxStatus status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
-
-      if (status != kOfxStatOK) {
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       0,
-			       red);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       1,
-			       green);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       2,
-			       blue);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       3,
-			       alpha);
-	if (status != kOfxStatOK) {
-	  va_end(ap);
-	  return kOfxStatErrUnknown;
-	}
-      }
+        if (status != kOfxStatOK) {
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
+            status = propGetDouble((OfxPropertySetHandle) param_props,
+                                   "OfxParamPropDefault",
+                                   1,
+                                   green);
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
+            status = propGetDouble((OfxPropertySetHandle) param_props,
+                                   "OfxParamPropDefault",
+                                   3,
+                                   alpha);
+            if (status != kOfxStatOK) {
+                va_end(ap);
+                return kOfxStatErrUnknown;
+            }
+        }
 
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
+        double *red = va_arg(ap, double *);
+        double *green = va_arg(ap, double *);
+        double *blue = va_arg(ap, double *);
 
-      double *red = va_arg(ap, double *);
-      double *green = va_arg(ap, double *);
-      double *blue = va_arg(ap, double *);
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
 
-      OfxStatus status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-
-      if (status != kOfxStatOK) {
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       0,
-			       red);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       1,
-			       green);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       2,
-			       blue);
-	if (status != kOfxStatOK) {
-	  va_end(ap);
-	  return kOfxStatErrUnknown;
-	}
-      }
+        if (status != kOfxStatOK) {
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
+            status = propGetDouble((OfxPropertySetHandle) param_props,
+                                   "OfxParamPropDefault",
+                                   1,
+                                   green);
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
+            if (status != kOfxStatOK) {
+                va_end(ap);
+                return kOfxStatErrUnknown;
+            }
+        }
 
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-      double *Y = va_arg(ap, double *);
-      double *X = va_arg(ap, double *);
+        double *Y = va_arg(ap, double *);
+        double *X = va_arg(ap, double *);
 
-      OfxStatus status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
 
-      if (status != kOfxStatOK) {
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       0,
-			       X);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       1,
-			       Y);
+        if (status != kOfxStatOK) {
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
 
-	if (status != kOfxStatOK) {
-	  va_end(ap);
-	  return kOfxStatErrUnknown;
-	}
-      }
+            if (status != kOfxStatOK) {
+                va_end(ap);
+                return kOfxStatErrUnknown;
+            }
+        }
 
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
@@ -783,100 +764,78 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
             }
         }
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
+        double *red = va_arg(ap, double *);
+        double *green = va_arg(ap, double *);
+        double *blue = va_arg(ap, double *);
+        double *alpha = va_arg(ap, double *);
 
-      double *red = va_arg(ap, double *);
-      double *green = va_arg(ap, double *);
-      double *blue = va_arg(ap, double *);
-      double *alpha = va_arg(ap, double *);
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
 
-      OfxStatus status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
-
-      if (status != kOfxStatOK) {
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       0,
-			       red);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       1,
-			       green);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       2,
-			       blue);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       3,
-			       alpha);
-	if (status != kOfxStatOK) {
-	  va_end(ap);
-	  return kOfxStatErrUnknown;
-	}
-      }
+        if (status != kOfxStatOK) {
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
+            status = propGetDouble((OfxPropertySetHandle) param_props,
+                                   "OfxParamPropDefault",
+                                   1,
+                                   green);
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
+            status = propGetDouble((OfxPropertySetHandle) param_props,
+                                   "OfxParamPropDefault",
+                                   3,
+                                   alpha);
+            if (status != kOfxStatOK) {
+                va_end(ap);
+                return kOfxStatErrUnknown;
+            }
+        }
 
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
+        double *red = va_arg(ap, double *);
+        double *green = va_arg(ap, double *);
+        double *blue = va_arg(ap, double *);
 
-      double *red = va_arg(ap, double *);
-      double *green = va_arg(ap, double *);
-      double *blue = va_arg(ap, double *);
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
 
-      OfxStatus status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-
-      if (status != kOfxStatOK) {
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       0,
-			       red);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       1,
-			       green);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       2,
-			       blue);
-	if (status != kOfxStatOK) {
-	  va_end(ap);
-	  return kOfxStatErrUnknown;
-	}
-      }
+        if (status != kOfxStatOK) {
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
+            status = propGetDouble((OfxPropertySetHandle) param_props,
+                                   "OfxParamPropDefault",
+                                   1,
+                                   green);
+            status
+                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
+            if (status != kOfxStatOK) {
+                va_end(ap);
+                return kOfxStatErrUnknown;
+            }
+        }
 
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-      double *Y = va_arg(ap, double *);
-      double *X = va_arg(ap, double *);
+        double *Y = va_arg(ap, double *);
+        double *X = va_arg(ap, double *);
 
-      OfxStatus status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-      status
-	= propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
 
-      if (status != kOfxStatOK) {
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       0,
-			       X);
-	status = propGetDouble((OfxPropertySetHandle) param_props,
-			       "OfxParamPropDefault",
-			       1,
-			       Y);
+        if (status != kOfxStatOK) {
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
 
-	if (status != kOfxStatOK) {
-	  va_end(ap);
-	  return kOfxStatErrUnknown;
-	}
-      }
+            if (status != kOfxStatOK) {
+                va_end(ap);
+                return kOfxStatErrUnknown;
+            }
+        }
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
@@ -927,29 +886,29 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
         mlt_color value = va_arg(ap, mlt_color);
 
-	double red   = (double) value.r / 255.0;
-	double green = (double) value.g / 255.0;
-	double blue  = (double) value.b / 255.0;
-	double alpha = (double) value.a / 255.0;
+        double red = (double) value.r / 255.0;
+        double green = (double) value.g / 255.0;
+        double blue = (double) value.b / 255.0;
+        double alpha = (double) value.a / 255.0;
 
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
         mlt_color value = va_arg(ap, mlt_color);
 
-	double red   = (double) value.r / 255.0;
-	double green = (double) value.g / 255.0;
-	double blue  = (double) value.b / 255.0;
+        double red = (double) value.r / 255.0;
+        double green = (double) value.g / 255.0;
+        double blue = (double) value.b / 255.0;
 
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, red);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, green);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, blue);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, red);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, green);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, blue);
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
         mlt_rect value = va_arg(ap, mlt_rect);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
@@ -994,8 +953,8 @@ static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
         mlt_rect value = va_arg(ap, mlt_rect);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
-	propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
@@ -1521,15 +1480,15 @@ const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, i
     } else if (strcmp(suiteName, kOfxParametricParameterSuite) == 0 && suiteVersion == 1) {
         return &MltOfxParametricParameterSuiteV1;
     } else if (strcmp(suiteName, kOfxOpenGLRenderSuite) == 0 && suiteVersion == 1) {
-	//WIP a dummy struct &MltOfxOpenGLRenderSuiteV1 exists
-	return NULL;
+        //WIP a dummy struct &MltOfxOpenGLRenderSuiteV1 exists
+        return NULL;
     }
 
     mlt_log_debug(NULL, "%s v%d is not supported\n", suiteName, suiteVersion);
     return NULL;
 }
 
-OfxHost MltOfxHost = {NULL, MltOfxfetchSuite };
+OfxHost MltOfxHost = {NULL, MltOfxfetchSuite};
 
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
 {
@@ -1543,10 +1502,19 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 2, kOfxBitDepthHalf);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 3, kOfxBitDepthFloat);
 
-    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 0, kOfxImageComponentNone);
-    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGBA);
+    propSetString(host_properties,
+                  kOfxImageEffectPropSupportedComponents,
+                  0,
+                  kOfxImageComponentNone);
+    propSetString(host_properties,
+                  kOfxImageEffectPropSupportedComponents,
+                  1,
+                  kOfxImageComponentRGBA);
     propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 2, kOfxImageComponentRGB);
-    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 3, kOfxImageComponentAlpha);
+    propSetString(host_properties,
+                  kOfxImageEffectPropSupportedComponents,
+                  3,
+                  kOfxImageComponentAlpha);
 
     propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 1);
 
@@ -1609,10 +1577,22 @@ void mltofx_set_source_clip_data(
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, width);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, height);
 
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 0, kOfxImageComponentNone);
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGBA);
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 2, kOfxImageComponentRGB);
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 3, kOfxImageComponentAlpha);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  0,
+                  kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  1,
+                  kOfxImageComponentRGBA);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  2,
+                  kOfxImageComponentRGB);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  3,
+                  kOfxImageComponentAlpha);
 
     propSetDouble((OfxPropertySetHandle) clip_prop,
                   kOfxImagePropPixelAspectRatio,
@@ -1674,10 +1654,22 @@ void mltofx_set_output_clip_data(
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, width);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, height);
 
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 0, kOfxImageComponentNone);
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGBA);
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 2, kOfxImageComponentRGB);
-    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropSupportedComponents, 3, kOfxImageComponentAlpha);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  0,
+                  kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  1,
+                  kOfxImageComponentRGBA);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  2,
+                  kOfxImageComponentRGB);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropSupportedComponents,
+                  3,
+                  kOfxImageComponentAlpha);
 
     propSetString((OfxPropertySetHandle) clip_prop,
                   kOfxImageEffectPropPreMultiplication,
@@ -1711,40 +1703,40 @@ OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin)
     mlt_properties params = mlt_properties_new();
 
     mlt_properties_set_data(image_effect,
-			    "clips",
-			    clips,
-			    0,
-			    (mlt_destructor) mlt_properties_close,
-			    NULL);
+                            "clips",
+                            clips,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
     mlt_properties_set_data(image_effect,
-			    "props",
-			    props,
-			    0,
-			    (mlt_destructor) mlt_properties_close,
-			    NULL);
+                            "props",
+                            props,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
     mlt_properties_set_data(image_effect,
-			    "params",
-			    iparams,
-			    0,
-			    (mlt_destructor) mlt_properties_close,
-			    NULL);
+                            "params",
+                            iparams,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
     mlt_properties_set_data(iparams,
-			    "plugin_props",
-			    props,
-			    0,
-			    (mlt_destructor) mlt_properties_close,
-			    NULL);
+                            "plugin_props",
+                            props,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
     mlt_properties_set_data(image_effect,
-			    "mltofx_params",
-			    params,
-			    0,
-			    (mlt_destructor) mlt_properties_close,
-			    NULL);
+                            "mltofx_params",
+                            params,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
 
     propSetString((OfxPropertySetHandle) props,
-		  kOfxImageEffectPropContext,
-		  0,
-		  kOfxImageEffectContextGeneral);
+                  kOfxImageEffectPropContext,
+                  0,
+                  kOfxImageEffectContextGeneral);
 
     plugin->setHost(&MltOfxHost);
 
@@ -1752,27 +1744,25 @@ OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin)
     status_code = plugin->mainEntry(kOfxActionLoad, NULL, NULL, NULL);
     mltofx_log_status_code(status_code, "kOfxActionLoad");
     status_code
-      = plugin->mainEntry(kOfxActionDescribe, (OfxImageEffectHandle) image_effect, NULL, NULL);
+        = plugin->mainEntry(kOfxActionDescribe, (OfxImageEffectHandle) image_effect, NULL, NULL);
     mltofx_log_status_code(status_code, "kOfxActionDescribe");
 
-    if (status_code != kOfxStatOK)
-      {
-	  plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
-	  return status_code;
-      }
+    if (status_code != kOfxStatOK) {
+        plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+        return status_code;
+    }
 
     /* test describe in context action because some plugins say they are unsupported at this stage */
     status_code = plugin->mainEntry(kOfxImageEffectActionDescribeInContext,
-       				    (OfxImageEffectHandle) image_effect,
-       				    (OfxPropertySetHandle) MltOfxHost.host,
-       				    NULL);
-       
+                                    (OfxImageEffectHandle) image_effect,
+                                    (OfxPropertySetHandle) MltOfxHost.host,
+                                    NULL);
+
     mltofx_log_status_code(status_code, "kOfxImageEffectActionDescribeInContext");
-    if (status_code != kOfxStatErrMissingHostFeature)
-      {
-	  plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
-       	  return kOfxStatOK;
-      }
+    if (status_code != kOfxStatErrMissingHostFeature) {
+        plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+        return kOfxStatOK;
+    }
 
     plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
     return status_code;
@@ -1817,9 +1807,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                             NULL);
 
     propSetString((OfxPropertySetHandle) props,
-		  kOfxImageEffectPropContext,
-		  0,
-		  kOfxImageEffectContextGeneral);
+                  kOfxImageEffectPropContext,
+                  0,
+                  kOfxImageEffectContextGeneral);
 
     plugin->setHost(&MltOfxHost);
 
@@ -1832,17 +1822,16 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
     mltofx_log_status_code(status_code, "kOfxActionDescribe");
 
     status_code = plugin->mainEntry(kOfxImageEffectActionDescribeInContext,
-				    (OfxImageEffectHandle) image_effect,
-				    (OfxPropertySetHandle) MltOfxHost.host,
-				    NULL);
+                                    (OfxImageEffectHandle) image_effect,
+                                    (OfxPropertySetHandle) MltOfxHost.host,
+                                    NULL);
 
     mltofx_log_status_code(status_code, "kOfxImageEffectActionDescribeInContext");
 
     int iparams_length = mlt_properties_count(iparams);
-    int ipiter;
 
     /* starting with 1 to skip the plugin_props */
-    for (ipiter = 1; ipiter < iparams_length; ++ipiter) {
+    for (int ipiter = 1; ipiter < iparams_length; ++ipiter) {
         char *name = mlt_properties_get_name(iparams, ipiter);
         mlt_properties pp = mlt_properties_get_data(iparams, name, NULL);
         char *pt = mlt_properties_get(pp, "t");
@@ -1863,7 +1852,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
         } else if (strcmp(pt, kOfxParamTypeDouble) == 0) {
             mlt_properties_set(p, "type", "double");
         } else if (strcmp(pt, kOfxParamTypeChoice) == 0) {
-	    mlt_properties_set(p, "type", "string"); /* setting this to string let kdenlive and other MLT users render this as combobox dropdown list, WIP: do something better */
+            mlt_properties_set(
+                p,
+                "type",
+                "string"); /* setting this to string let kdenlive and other MLT users render this as combobox dropdown list, WIP: do something better */
         } else if (strcmp(pt, kOfxParamTypeString) == 0) {
             mlt_properties_set(p, "type", "string");
         } else if (strcmp(pt, kOfxParamTypeBoolean) == 0) {
@@ -1874,53 +1866,57 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
             propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropGroupOpen, 0, &opened);
             mlt_properties_set_int(p, "opened", opened);
         } else if (strcmp(pt, kOfxParamTypeStrChoice) == 0) {
-	} else if (strcmp(pt, kOfxParamTypeRGBA) == 0 || strcmp(pt, kOfxParamTypeRGB) == 0) {
-	    mlt_properties_set(p, "type", "color");
-	    mlt_properties_set(p, "widget", "color");
-	} else if (strcmp(pt, kOfxParamTypeDouble2D) == 0) { /* can be rendered as 2 double number input fields */
-	    mlt_properties_set(p, "type", "double");
+        } else if (strcmp(pt, kOfxParamTypeRGBA) == 0 || strcmp(pt, kOfxParamTypeRGB) == 0) {
+            mlt_properties_set(p, "type", "color");
+            mlt_properties_set(p, "widget", "color");
+        } else if (strcmp(pt, kOfxParamTypeDouble2D)
+                   == 0) { /* can be rendered as 2 double number input fields */
+            mlt_properties_set(p, "type", "double");
 
-	    char *type = kOfxParamDoubleTypeXY;
-	    char *coordinate_system = kOfxParamCoordinatesCanonical;
-	    propGetString((OfxPropertySetHandle) ppp, kOfxParamPropDoubleType, 0, &type);
-	    propGetString((OfxPropertySetHandle) ppp, kOfxParamPropDefaultCoordinateSystem, 0, &coordinate_system);
+            char *type = kOfxParamDoubleTypeXY;
+            char *coordinate_system = kOfxParamCoordinatesCanonical;
+            propGetString((OfxPropertySetHandle) ppp, kOfxParamPropDoubleType, 0, &type);
+            propGetString((OfxPropertySetHandle) ppp,
+                          kOfxParamPropDefaultCoordinateSystem,
+                          0,
+                          &coordinate_system);
 
-	    if (strcmp(type, kOfxParamDoubleTypeXYAbsolute) == 0) /* otherwise if double type is kOfxParamDoubleTypeXY then this is size not position according to openfx headers */
-	      {
-		mlt_properties_set(p, "widget", "2dpoint");
-	      }
-	    else if (strcmp(type, kOfxParamDoubleTypeXY) == 0)
-	      {
-		mlt_properties_set(p, "widget", "2dsize"); /* Natron still render it as two number input boxes but with a button to make width = height */
-	      }
+            if (strcmp(type, kOfxParamDoubleTypeXYAbsolute)
+                == 0) /* otherwise if double type is kOfxParamDoubleTypeXY then this is size not position according to openfx headers */
+            {
+                mlt_properties_set(p, "widget", "2dpoint");
+            } else if (strcmp(type, kOfxParamDoubleTypeXY) == 0) {
+                mlt_properties_set(
+                    p,
+                    "widget",
+                    "2dsize"); /* Natron still render it as two number input boxes but with a button to make width = height */
+            }
 
-	    if (strcmp(coordinate_system, kOfxParamCoordinatesCanonical) == 0)
-	      {
-		mlt_properties_set_int(p, "normalised", 0);
-	      }
-	    else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0)
-	      {
-		mlt_properties_set_int(p, "normalised", 1);
-	      }
+            if (strcmp(coordinate_system, kOfxParamCoordinatesCanonical) == 0) {
+                mlt_properties_set_int(p, "normalised", 0);
+            } else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0) {
+                mlt_properties_set_int(p, "normalised", 1);
+            }
 
-	} else if (strcmp(pt, kOfxParamTypeInteger2D) == 0) {
-	} else if (strcmp(pt, kOfxParamTypeDouble3D) == 0) {
-	} else if (strcmp(pt, kOfxParamTypeInteger3D) == 0) {
-	} else if (strcmp(pt, kOfxParamTypeCustom) == 0) { /* need special handling */
-	} else if (strcmp(pt, kOfxParamTypeBytes) == 0) {  /* From the documentation: String to identify a param as a Plug-in defined opaque data parameter. */
-	} else if (strcmp(pt, kOfxParamTypePage) == 0) {
-	} else if (strcmp(pt, kOfxParamTypePushButton) == 0) { /* select field if selected shows options based on the selection */
-	}
+        } else if (strcmp(pt, kOfxParamTypeInteger2D) == 0) {
+        } else if (strcmp(pt, kOfxParamTypeDouble3D) == 0) {
+        } else if (strcmp(pt, kOfxParamTypeInteger3D) == 0) {
+        } else if (strcmp(pt, kOfxParamTypeCustom) == 0) { /* need special handling */
+        } else if (strcmp(pt, kOfxParamTypeBytes)
+                   == 0) { /* From the documentation: String to identify a param as a Plug-in defined opaque data parameter. */
+        } else if (strcmp(pt, kOfxParamTypePage) == 0) {
+        } else if (strcmp(pt, kOfxParamTypePushButton)
+                   == 0) { /* select field if selected shows options based on the selection */
+        }
 
         int animation = 1;
         propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropAnimates, 0, &animation);
         mlt_properties_set(p, "animation", animation ? "yes" : "no");
 
-	int min_set = 0;
-	int max_set = 0;
+        int min_set = 0;
+        int max_set = 0;
 
-        int jt;
-        for (jt = 0; jt < p_length; ++jt) {
+        for (int jt = 0; jt < p_length; ++jt) {
             char *p_name = mlt_properties_get_name(ppp, jt);
 
             if (strcmp(p_name, kOfxParamPropDefault) == 0) {
@@ -1934,52 +1930,58 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
                     mlt_properties_set_double(p, "default", default_value);
                 } else if (strcmp(pt, kOfxParamTypeDouble2D) == 0) {
-		    double default_value1 = 0.0, default_value2 = 0.0;
+                    double default_value1 = 0.0, default_value2 = 0.0;
 
-		    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value1);
-		    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &default_value2);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value1);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &default_value2);
 
-		    /* for some reason with DBL_MIN DBL_MAX it segfault */
-		    if (!isnormal(default_value1) || default_value1 <= FLT_MIN || default_value1 >= FLT_MAX) default_value1 = 0.0;
-		    if (!isnormal(default_value2) || default_value2 <= FLT_MIN || default_value2 >= FLT_MAX) default_value2 = 0.0;
+                    /* for some reason with DBL_MIN DBL_MAX it segfault */
+                    if (!isnormal(default_value1) || default_value1 <= FLT_MIN
+                        || default_value1 >= FLT_MAX)
+                        default_value1 = 0.0;
+                    if (!isnormal(default_value2) || default_value2 <= FLT_MIN
+                        || default_value2 >= FLT_MAX)
+                        default_value2 = 0.0;
 
-		    char default_value[20] = "";
-		    sprintf (default_value, "%.4f %.4f", default_value1, default_value2);
-		    mlt_properties_set(p, "default", default_value);
+                    char default_value[20] = "";
+                    sprintf(default_value, "%.4f %.4f", default_value1, default_value2);
+                    mlt_properties_set(p, "default", default_value);
 
-		} else if (strcmp(pt, kOfxParamTypeString) == 0) {
+                } else if (strcmp(pt, kOfxParamTypeString) == 0) {
                     char *default_value = "";
                     propGetString((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
                     mlt_properties_set(p, "default", default_value);
                 } else if (strcmp(pt, kOfxParamTypeRGBA) == 0) {
-		  double r, g, b, a;
-		  propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &r);
-		  propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &b);
-		  propGetDouble((OfxPropertySetHandle) ppp, p_name, 2, &g);
-		  propGetDouble((OfxPropertySetHandle) ppp, p_name, 3, &a);
+                    double r, g, b, a;
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &r);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &b);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 2, &g);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 3, &a);
 
-		  char default_value[10] = "#000000FF";
-		  sprintf (default_value, "#%02X%02X%02X%02X",
-			   (unsigned char) (r * 255.0),
-			   (unsigned char) (g * 255.0),
-			   (unsigned char) (b * 255.0),
-			   (unsigned char) (a * 255.0));
+                    char default_value[10] = "#000000FF";
+                    sprintf(default_value,
+                            "#%02X%02X%02X%02X",
+                            (unsigned char) (r * 255.0),
+                            (unsigned char) (g * 255.0),
+                            (unsigned char) (b * 255.0),
+                            (unsigned char) (a * 255.0));
 
-		  mlt_properties_set(p, "default", default_value);
-		} else if (strcmp(pt, kOfxParamTypeRGB) == 0) {
-		  double r, g, b;
-		  propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &r);
-		  propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &b);
-		  propGetDouble((OfxPropertySetHandle) ppp, p_name, 2, &g);
+                    mlt_properties_set(p, "default", default_value);
+                } else if (strcmp(pt, kOfxParamTypeRGB) == 0) {
+                    double r, g, b;
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &r);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &b);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 2, &g);
 
-		  char default_value[10] = "#000000FF";
-		  sprintf (default_value, "#%02X%02X%02XFF",
-			   (unsigned char) (r * 255.0),
-			   (unsigned char) (g * 255.0),
-			   (unsigned char) (b * 255.0));
+                    char default_value[10] = "#000000FF";
+                    sprintf(default_value,
+                            "#%02X%02X%02XFF",
+                            (unsigned char) (r * 255.0),
+                            (unsigned char) (g * 255.0),
+                            (unsigned char) (b * 255.0));
 
-		  mlt_properties_set(p, "default", default_value);
-		}
+                    mlt_properties_set(p, "default", default_value);
+                }
 
                 if (strcmp(pt, kOfxParamTypeChoice) == 0) {
                     char key[20];
@@ -1994,8 +1996,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
 
                     propGetDimension((OfxPropertySetHandle) ppp, kOfxParamPropChoiceOption, &count);
 
-                    int jtr;
-                    for (jtr = 0; jtr < count; ++jtr) {
+                    for (int jtr = 0; jtr < count; ++jtr) {
                         key[0] = '\0';
                         sprintf(key, "%d", jtr);
                         char *choice_str = NULL;
@@ -2006,10 +2007,11 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                         mlt_properties_set(choices, key, choice_str);
                     }
                 }
-            } else if ((strcmp(p_name, kOfxParamPropMin) == 0 && min_set == 0) || strcmp(p_name, kOfxParamPropDisplayMin) == 0) {
+            } else if ((strcmp(p_name, kOfxParamPropMin) == 0 && min_set == 0)
+                       || strcmp(p_name, kOfxParamPropDisplayMin) == 0) {
                 if (strcmp(pt, kOfxParamTypeInteger) == 0 || strcmp(pt, kOfxParamTypeChoice) == 0
                     || strcmp(pt, kOfxParamTypeBoolean) == 0) {
-		    min_set = 1;
+                    min_set = 1;
                     int minimum_value = 0;
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
                     mlt_properties_set_int(p, "minimum", minimum_value);
@@ -2022,10 +2024,11 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                     propGetString((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
                     mlt_properties_set(p, "minimum", minimum_value);
                 }
-            } else if ((strcmp(p_name, kOfxParamPropMax) == 0 && max_set == 0) || strcmp(p_name, kOfxParamPropDisplayMax) == 0) {
+            } else if ((strcmp(p_name, kOfxParamPropMax) == 0 && max_set == 0)
+                       || strcmp(p_name, kOfxParamPropDisplayMax) == 0) {
                 if (strcmp(pt, kOfxParamTypeInteger) == 0 || strcmp(pt, kOfxParamTypeChoice) == 0
                     || strcmp(pt, kOfxParamTypeBoolean) == 0) {
-		    max_set = 1;
+                    max_set = 1;
                     int maximum_value = 0;
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &maximum_value);
                     mlt_properties_set_int(p, "maximum", maximum_value);
@@ -2093,7 +2096,7 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
 
     case mltofx_prop_double2d: {
         mlt_rect value = va_arg(ap, mlt_rect);
-	paramSetValue((OfxParamHandle) param, value);
+        paramSetValue((OfxParamHandle) param, value);
     } break;
 
     default:
@@ -2117,9 +2120,7 @@ void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
 
 void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect)
 {
-    mlt_properties get_rod_in_args = mlt_properties_get_data(image_effect,
-                                                             "get_rod_in_args",
-                                                             NULL);
+    mlt_properties get_rod_in_args = mlt_properties_get_data(image_effect, "get_rod_in_args", NULL);
 
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxPropTime, 0, 0.0);
 

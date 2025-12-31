@@ -8,9 +8,14 @@ add_custom_target(Other_openfx_Files SOURCES
   filter_openfx.yml
 )
 
+include(GenerateExportHeader)
+generate_export_header(mltopenfx)
 target_compile_options(mltopenfx PRIVATE ${MLT_COMPILE_OPTIONS})
-
-target_link_libraries(mltopenfx PRIVATE mlt m PkgConfig::glib ${CMAKE_DL_LIBS})
+target_include_directories(mltopenfx PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(mltopenfx PRIVATE mlt PkgConfig::glib ${CMAKE_DL_LIBS})
+if(NOT MSVC)
+  target_link_libraries(mltopenfx PRIVATE m)
+endif()
 
 set_target_properties(mltopenfx PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 

@@ -1,7 +1,7 @@
 /*
  * MLT OpenFX
  *
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include "ofxCore.h"
 #include <dlfcn.h>
 #include <framework/mlt.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
