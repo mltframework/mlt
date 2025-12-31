@@ -266,6 +266,10 @@ if(MOD_JACKRACK)
   list(APPEND MLT_SUPPORTED_COMPONENTS jackrack)
 endif()
 
+if(MOD_OPENFX)
+  pkg_check_modules(glib IMPORTED_TARGET glib-2.0)
+endif()
+
 if(USE_LV2)
   pkg_check_modules(lilv IMPORTED_TARGET lilv-0)
   if(NOT lilv_FOUND)
