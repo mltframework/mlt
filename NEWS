@@ -1,6 +1,11 @@
 MLT Release Notes
 -----------------
 
+Version 7.36.1
+  - Fixed construcing a new producer with a null profile.
+  - Fixed constructing a `xml-clip` profile.
+
+
 Version 7.36.0
 
 Framework

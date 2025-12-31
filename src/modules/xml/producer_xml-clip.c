@@ -1,6 +1,6 @@
 /*
  * producer_xml-clip.c -- A wrapper for mlt XML in native profile
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2024-2025 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -173,7 +173,7 @@ mlt_producer producer_xmlclip_init(mlt_profile profile,
                                    const char *id,
                                    char *arg)
 {
-    mlt_profile native_profile = calloc(1, sizeof(struct mlt_profile_s));
+    mlt_profile native_profile = mlt_profile_init(NULL);
     mlt_producer xml_producer = mlt_factory_producer(native_profile, "xml", arg);
     mlt_producer self = mlt_producer_new(native_profile);
 
