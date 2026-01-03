@@ -57,7 +57,6 @@ static int get_image(mlt_frame a_frame,
     mlt_position length = mlt_transition_get_length(transition);
     int reverse = mlt_properties_get_int(properties, "reverse");
     double mix = mlt_transition_get_progress(transition, a_frame);
-    double inverse = 1.0 - mix;
     double softness = mlt_properties_anim_get_double(properties, "softness", position, length);
     int invert = mlt_properties_get_int(properties, "invert");
 
@@ -66,6 +65,7 @@ static int get_image(mlt_frame a_frame,
         mix = 1.0 - pow(1.0 - mix, 2.0);
     else
         mix = pow(mix, 2.0);
+    double inverse = 1.0 - mix;
 
     if (c_frame) {
         // Set the Movit parameters.

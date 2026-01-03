@@ -25,3 +25,18 @@ jobs:
         run: sudo apt-get -qq -y install cppcheck
       - name: Run Cppcheck
         run: cppcheck src/ -j $(nproc) --force --inline-suppr --library=qt --error-exitcode=1 --template="::{severity} file={file},line={line},col={column}::{message}" ${{ env.extra-args }}
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get -yqq install clang-format-14
+      - name: Run CMake
+        run: |
+          cmake -S . -B build -D CLANG_FORMAT=ON -D MOD_SDL2=OFF -D MOD_QT6=OFF -D MOD_AVFORMAT=OFF -D MOD_DECKLINK=OFF -D MOD_FREI0R=OFF -D MOD_GDK=OFF -D MOD_JACKRACK=OFF -D USE_LV2=OFF -D USE_VST2=OFF -D MOD_KDENLIVE=OFF -D MOD_NORMALIZE=OFF -D MOD_OLDFILM=OFF -D MOD_MOVIT=OFF -D MOD_PLUS=OFF -D MOD_PLUSGPL=OFF -D MOD_RESAMPLE=OFF -D MOD_RTAUDIO=OFF -D MOD_RUBBERBAND=OFF -D MOD_SOX=OFF -D MOD_VIDSTAB=OFF -D MOD_VORBIS=OFF -D MOD_XINE=OFF -D MOD_XML=OFF
+      - name: Run clang-format
+        run: |
+          cd build
+          make clang-format-check

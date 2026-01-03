@@ -196,7 +196,7 @@ static int sliced_proc(int id, int index, int jobs, void *data)
                 float r = (float) p[i] / 255.0;
                 float g = (float) p[i + 1] / 255.0;
                 float b = (float) p[i + 2] / 255.0;
-                float a = (float) p[i + 3] / 255.0;
+                float a = (float) p[i + 3];
                 mlt_color c = gradient_map(*desc->colors, r, g, b, a);
                 p[i] = c.r;
                 p[i + 1] = c.g;
@@ -212,7 +212,7 @@ static int sliced_proc(int id, int index, int jobs, void *data)
                 float r = (float) p[i] / 65535.0;
                 float g = (float) p[i + 1] / 65535.0;
                 float b = (float) p[i + 2] / 65535.0;
-                float a = (float) p[i + 3] / 65535.0;
+                float a = (float) p[i + 3] / 257.0;
                 mlt_color c = gradient_map(*desc->colors, r, g, b, a);
                 p[i] = (uint16_t) c.r * 257;
                 p[i + 1] = (uint16_t) c.g * 257;

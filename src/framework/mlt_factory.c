@@ -327,7 +327,7 @@ mlt_producer mlt_factory_producer(mlt_profile profile, const char *service, cons
 {
     mlt_producer obj = NULL;
 
-    if (!mlt_profile_is_valid(profile))
+    if (profile && !mlt_profile_is_valid(profile))
         return obj;
 
     // Pick up the default normalizing producer if necessary

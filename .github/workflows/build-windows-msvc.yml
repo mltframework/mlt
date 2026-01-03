@@ -1,0 +1,52 @@
+name: build-test-windows-msvc-on-push
+
+on: [push, pull_request]
+
+permissions:
+  packages: write
+
+jobs:
+  build-cmake-msvc:
+    runs-on: windows-latest
+    env:
+      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/mltframework/index.json,readwrite"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore from cache and setup vcpkg executable and data files.
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - name: Add NuGet sources
+        shell: pwsh
+        env:
+          USERNAME: mltframework
+          VCPKG_EXE: ${{ env.VCPKG_ROOT }}/vcpkg
+          FEED_URL: https://nuget.pkg.github.com/mltframework/index.json
+        run: |
+            .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            sources add `
+            -Source "${{ env.FEED_URL }}" `
+            -StorePasswordInClearText `
+            -Name GitHubPackages `
+            -UserName "${{ env.USERNAME }}" `
+            -Password "${{ secrets.GITHUB_TOKEN }}"
+            .$(${{ env.VCPKG_EXE }} fetch nuget) `
+            setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            -Source "${{ env.FEED_URL }}"
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure C/C++ with CMake
+        run: |
+          cmake --preset vcpkg-ninja
+
+      - name: Build with Ninja
+        run: |
+          cmake --build build
+
+      - name: Install MLT
+        run: |
+          cmake --install build
