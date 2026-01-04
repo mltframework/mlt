@@ -1469,7 +1469,7 @@ static int producer_open(
             const char *hwaccel_env = getenv("MLT_AVFORMAT_HWACCEL");
             const char *pps_env = getenv("MLT_AVFORMAT_HWACCEL_PPS");
 
-            if (pps_env && self->video_index >= 0) {
+            if (pps_env && self->video_index >= 0 && !test_open) {
                 int64_t pps_threshold = strtoll(pps_env, NULL, 10);
                 if (pps_threshold > 0) {
                     // Calculate PPS while avoiding overflow
