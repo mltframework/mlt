@@ -10,7 +10,7 @@
             "cacheVariables": {
                 "BUILD_TESTING": "OFF",
                 "SWIG_PYTHON": "OFF",
-                "MOD_AVFORMAT": "OFF",
+                "MOD_AVFORMAT": "ON",
                 "MOD_DECKLINK": "OFF",
                 "MOD_FREI0R": "OFF",
                 "MOD_GDK": "OFF",
