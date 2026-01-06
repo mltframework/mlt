@@ -17,7 +17,7 @@
                 "MOD_JACKRACK": "OFF",
                 "USE_LV2": "OFF",
                 "USE_VST2": "OFF",
-                "MOD_KDENLIVE": "OFF",
+                "MOD_KDENLIVE": "ON",
                 "MOD_NDI": "OFF",
                 "MOD_NORMALIZE": "OFF",
                 "MOD_OLDFILM": "OFF",
