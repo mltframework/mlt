@@ -23,7 +23,7 @@
                 "MOD_OLDFILM": "OFF",
                 "MOD_OPENCV": "OFF",
                 "MOD_MOVIT": "OFF",
-                "MOD_PLUS": "OFF",
+                "MOD_PLUS": "ON",
                 "MOD_PLUSGPL": "OFF",
                 "MOD_QT6": "ON",
                 "MOD_SOX": "OFF",

@@ -11,6 +11,7 @@
     "ffmpeg",
     "qtbase",
     "qtsvg",
-    "libxml2"
+    "libxml2",
+    "libebur128"
   ]
 }
