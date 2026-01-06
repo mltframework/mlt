@@ -41,7 +41,21 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties params = mlt_properties_get_data(image_effect, "mltofx_params", NULL);
     mlt_properties image_effect_params = mlt_properties_get_data(image_effect, "params", NULL);
 
-    *format = mlt_image_rgba;
+    mlt_image_format requested_format = *format;
+    mltofx_depths_mask plugin_support_depths = mltofx_plugin_supported_depths(image_effect);
+    mltofx_components_mask plugin_support_components = mltofx_plugin_supported_components(
+        image_effect);
+
+    if ((plugin_support_depths & mltofx_depth_short)
+        && (plugin_support_components & (mltofx_components_rgba | mltofx_components_rgb))
+        && !(*format == mlt_image_rgba || *format == mlt_image_rgb)) {
+        *format = mlt_image_rgba64;
+    } else if ((plugin_support_components & mltofx_components_rgba) && !(*format == mlt_image_rgb)) {
+        *format = mlt_image_rgba;
+    } else {
+        *format = mlt_image_rgb;
+    }
+
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
     if (error == 0) {
@@ -138,8 +152,8 @@ static int filter_get_image(mlt_frame frame,
         uint8_t *src_copy = src_img_copy.data;
 
         memcpy(src_copy, *image, mlt_image_calculate_size(&src_img));
-        mltofx_set_source_clip_data(plugin, image_effect, src_copy, *width, *height);
-        mltofx_set_output_clip_data(plugin, image_effect, *image, *width, *height);
+        mltofx_set_source_clip_data(plugin, image_effect, src_copy, *width, *height, *format);
+        mltofx_set_output_clip_data(plugin, image_effect, *image, *width, *height, *format);
 
         mlt_service_lock(MLT_FILTER_SERVICE(filter));
         mltofx_action_render(plugin, image_effect, *width, *height);
@@ -148,6 +162,17 @@ static int filter_get_image(mlt_frame frame,
         mlt_image_close(&src_img_copy);
 
         mltofx_end_sequence_render(plugin, image_effect);
+    }
+
+    if (*format != requested_format) {
+	int convert_error = frame->convert_image(frame, image, format, requested_format);
+	*format = requested_format;
+
+	/* If conversion fail fallback to rgba which is widely supported */
+	if (convert_error) {
+	    frame->convert_image(frame, image, format, mlt_image_rgba);
+	    *format = mlt_image_rgba;
+	}
     }
 
     return error;

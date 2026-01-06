@@ -1543,8 +1543,12 @@ void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect)
     mltofx_log_status_code(status_code, kOfxActionDestroyInstance);
 }
 
-void mltofx_set_source_clip_data(
-    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height)
+void mltofx_set_source_clip_data(OfxPlugin *plugin,
+                                 mlt_properties image_effect,
+                                 uint8_t *image,
+                                 int width,
+                                 int height,
+                                 mlt_image_format format)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1554,23 +1558,32 @@ void mltofx_set_source_clip_data(
                   (OfxImageClipHandle *) &clip,
                   (OfxPropertySetHandle *) &clip_prop);
 
-    propSetInt((OfxPropertySetHandle) clip_prop,
-               "OfxImagePropRowBytes",
-               0,
-               width * 4); /* WIP change this 4 hardcoded depth size */
+    int depth_byte_size = 4;
+    char *depth_format = kOfxBitDepthByte;
+    char *prop_component = kOfxImageComponentRGBA;
+    if (format == mlt_image_rgba64) {
+        depth_byte_size = 8;
+        depth_format = kOfxBitDepthShort;
+    } else if (format == mlt_image_rgb) {
+        depth_byte_size = 3;
+        prop_component = kOfxImageComponentRGB;
+    }
+
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, width * depth_byte_size);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropPixelDepth, 0, depth_format);
     propSetString((OfxPropertySetHandle) clip_prop,
-                  "OfxImageEffectPropPixelDepth",
+                  kOfxImageClipPropUnmappedPixelDepth,
                   0,
-                  kOfxBitDepthByte);
+                  depth_format);
     propSetString((OfxPropertySetHandle) clip_prop,
-                  "OfxImageEffectPropComponents",
+                  kOfxImageEffectPropComponents,
                   0,
-                  kOfxImageComponentRGBA);
-    propSetPointer((OfxPropertySetHandle) clip_prop, "OfxImagePropData", 0, (void *) image);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 0, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 1, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 2, width);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 3, height);
+                  prop_component);
+    propSetPointer((OfxPropertySetHandle) clip_prop, kOfxImagePropData, 0, (void *) image);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 0, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 1, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 2, width);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 3, height);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 0, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, 0);
@@ -1591,6 +1604,23 @@ void mltofx_set_source_clip_data(
                   kOfxImageComponentRGB);
     propSetString((OfxPropertySetHandle) clip_prop,
                   kOfxImageEffectPropSupportedComponents,
+                  3,
+                  kOfxImageComponentAlpha);
+
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
+                  0,
+                  kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
+                  1,
+                  kOfxImageComponentRGBA);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
+                  2,
+                  kOfxImageComponentRGB);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
                   3,
                   kOfxImageComponentAlpha);
 
@@ -1619,8 +1649,12 @@ void mltofx_set_source_clip_data(
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImageClipPropConnected, 0, 1);
 }
 
-void mltofx_set_output_clip_data(
-    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height)
+void mltofx_set_output_clip_data(OfxPlugin *plugin,
+                                 mlt_properties image_effect,
+                                 uint8_t *image,
+                                 int width,
+                                 int height,
+                                 mlt_image_format format)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1630,24 +1664,32 @@ void mltofx_set_output_clip_data(
                   (OfxImageClipHandle *) &clip,
                   (OfxPropertySetHandle *) &clip_prop);
 
-    propSetInt((OfxPropertySetHandle) clip_prop,
-               kOfxImagePropRowBytes,
-               0,
-               width * 4); /* WIP change this 4 hardcoded depth size */
-    propSetString((OfxPropertySetHandle) clip_prop,
-                  "OfxImageEffectPropPixelDepth",
-                  0,
-                  kOfxBitDepthByte);
-    propSetString((OfxPropertySetHandle) clip_prop,
-                  "OfxImageEffectPropComponents",
-                  0,
-                  kOfxImageComponentRGBA);
+    int depth_byte_size = 4;
+    char *depth_format = kOfxBitDepthByte;
+    char *prop_component = kOfxImageComponentRGBA;
+    if (format == mlt_image_rgba64) {
+        depth_byte_size = 8;
+        depth_format = kOfxBitDepthShort;
+    } else if (format == mlt_image_rgb) {
+        depth_byte_size = 3;
+        prop_component = kOfxImageComponentRGB;
+    }
 
-    propSetPointer((OfxPropertySetHandle) clip_prop, "OfxImagePropData", 0, (void *) image);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 0, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 1, 0);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 2, width);
-    propSetInt((OfxPropertySetHandle) clip_prop, "OfxImagePropBounds", 3, height);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, width * depth_byte_size);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropPixelDepth, 0, depth_format);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedPixelDepth,
+                  0,
+                  depth_format);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropComponents,
+                  0,
+                  prop_component);
+    propSetPointer((OfxPropertySetHandle) clip_prop, kOfxImagePropData, 0, (void *) image);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 0, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 1, 0);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 2, width);
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 3, height);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 0, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, 0);
@@ -1668,6 +1710,23 @@ void mltofx_set_output_clip_data(
                   kOfxImageComponentRGB);
     propSetString((OfxPropertySetHandle) clip_prop,
                   kOfxImageEffectPropSupportedComponents,
+                  3,
+                  kOfxImageComponentAlpha);
+
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
+                  0,
+                  kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
+                  1,
+                  kOfxImageComponentRGBA);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
+                  2,
+                  kOfxImageComponentRGB);
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  kOfxImageClipPropUnmappedComponents,
                   3,
                   kOfxImageComponentAlpha);
 
@@ -2297,4 +2356,69 @@ void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int wi
                                               NULL);
 
     mltofx_log_status_code(status_code, kOfxImageEffectActionRender);
+}
+
+mltofx_depths_mask mltofx_plugin_supported_depths(mlt_properties image_effect)
+{
+    mltofx_depths_mask mask = mltofx_depth_none;
+
+    int count = 0;
+    OfxPropertySetHandle effectProps;
+    getPropertySet((OfxImageEffectHandle) image_effect, &effectProps);
+    propGetDimension((OfxPropertySetHandle) effectProps,
+                     kOfxImageEffectPropSupportedPixelDepths,
+                     &count);
+
+    for (int i = 0; i < count; ++i) {
+        char *str = NULL;
+        propGetString((OfxPropertySetHandle) effectProps,
+                      kOfxImageEffectPropSupportedPixelDepths,
+                      i,
+                      &str);
+        if (strcmp(str, kOfxBitDepthByte) == 0) {
+            mask |= mltofx_depth_byte;
+        } else if (strcmp(str, kOfxBitDepthShort) == 0) {
+            mask |= mltofx_depth_short;
+        }
+    }
+
+    return mask;
+}
+
+mltofx_components_mask mltofx_plugin_supported_components(mlt_properties image_effect)
+{
+    mltofx_components_mask mask = mltofx_components_none;
+
+    mlt_properties set = mlt_properties_get_data(image_effect, "clips", NULL);
+    int clips_count = mlt_properties_count(set);
+
+    for (int i = 0; i < clips_count; ++i) {
+        char *clip_name = mlt_properties_get_name(set, i);
+
+        mlt_properties clip, clip_props;
+        clipGetHandle((OfxImageEffectHandle) image_effect,
+                      clip_name,
+                      (OfxImageClipHandle *) &clip,
+                      (OfxPropertySetHandle *) &clip_props);
+
+        int count = 0;
+        propGetDimension((OfxPropertySetHandle) clip_props,
+                         kOfxImageEffectPropSupportedComponents,
+                         &count);
+
+        for (int i = 0; i < count; ++i) {
+            char *str = NULL;
+            propGetString((OfxPropertySetHandle) clip_props,
+                          kOfxImageEffectPropSupportedComponents,
+                          i,
+                          &str);
+            if (strcmp(str, kOfxImageComponentRGB) == 0) {
+                mask |= mltofx_components_rgb;
+            } else if (strcmp(str, kOfxImageComponentRGBA) == 0) {
+                mask |= mltofx_components_rgba;
+            }
+        }
+    }
+
+    return mask;
 }
