@@ -165,14 +165,14 @@ static int filter_get_image(mlt_frame frame,
     }
 
     if (*format != requested_format) {
-	int convert_error = frame->convert_image(frame, image, format, requested_format);
-	*format = requested_format;
+        int convert_error = frame->convert_image(frame, image, format, requested_format);
+        *format = requested_format;
 
-	/* If conversion fail fallback to rgba which is widely supported */
-	if (convert_error) {
-	    frame->convert_image(frame, image, format, mlt_image_rgba);
-	    *format = mlt_image_rgba;
-	}
+        /* If conversion fail fallback to rgba which is widely supported */
+        if (convert_error) {
+            frame->convert_image(frame, image, format, mlt_image_rgba);
+            *format = mlt_image_rgba;
+        }
     }
 
     return error;
