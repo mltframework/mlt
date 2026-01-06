@@ -8,6 +8,8 @@
     "pkgconf",
     "pthreads",
     "sdl2",
-    "ffmpeg"
+    "ffmpeg",
+    "qtbase",
+    "qtsvg"
   ]
 }

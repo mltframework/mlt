@@ -25,7 +25,7 @@
                 "MOD_MOVIT": "OFF",
                 "MOD_PLUS": "OFF",
                 "MOD_PLUSGPL": "OFF",
-                "MOD_QT6": "OFF",
+                "MOD_QT6": "ON",
                 "MOD_SOX": "OFF",
                 "MOD_GLAXNIMATE_QT6": "OFF",
                 "MOD_RESAMPLE": "OFF",
