@@ -10,6 +10,7 @@
     "sdl2",
     "ffmpeg",
     "qtbase",
-    "qtsvg"
+    "qtsvg",
+    "libxml2"
   ]
 }
