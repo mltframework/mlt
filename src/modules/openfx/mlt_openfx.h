@@ -43,17 +43,37 @@ typedef enum {
     mltofx_prop_double2d = 64,
 } mltofx_property_type;
 
+typedef enum {
+    mltofx_depth_none = 0,
+    mltofx_depth_byte = 1,
+    mltofx_depth_short = 2,
+} mltofx_depths_mask;
+
+typedef enum {
+    mltofx_components_none = 0,
+    mltofx_components_rgb = 1,
+    mltofx_components_rgba = 2,
+} mltofx_components_mask;
+
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties);
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect);
 
 void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect);
 
-void mltofx_set_source_clip_data(
-    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
+void mltofx_set_source_clip_data(OfxPlugin *plugin,
+                                 mlt_properties image_effect,
+                                 uint8_t *image,
+                                 int width,
+                                 int height,
+                                 mlt_image_format format);
 
-void mltofx_set_output_clip_data(
-    OfxPlugin *plugin, mlt_properties image_effect, uint8_t *image, int width, int height);
+void mltofx_set_output_clip_data(OfxPlugin *plugin,
+                                 mlt_properties image_effect,
+                                 uint8_t *image,
+                                 int width,
+                                 int height,
+                                 mlt_image_format format);
 
 OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin);
 
@@ -75,5 +95,9 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
 void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
 
 void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height);
+
+mltofx_depths_mask mltofx_plugin_supported_depths(mlt_properties image_effect);
+
+mltofx_components_mask mltofx_plugin_supported_components(mlt_properties image_effect);
 
 #endif
