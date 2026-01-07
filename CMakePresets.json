@@ -13,7 +13,7 @@
                 "MOD_AVFORMAT": "ON",
                 "MOD_DECKLINK": "OFF",
                 "MOD_FREI0R": "OFF",
-                "MOD_GDK": "OFF",
+                "MOD_GDK": "ON",
                 "MOD_JACKRACK": "OFF",
                 "USE_LV2": "OFF",
                 "USE_VST2": "OFF",

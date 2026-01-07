@@ -12,6 +12,7 @@
     "qtbase",
     "qtsvg",
     "libxml2",
-    "libebur128"
+    "libebur128",
+    "gdk-pixbuf"
   ]
 }
