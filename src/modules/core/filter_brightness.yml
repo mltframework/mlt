@@ -53,3 +53,13 @@ parameters:
       CPUs. Otherwise, set the number of threads to use up to the slice count.
     minimum: 0
     default: 0
+
+  - identifier: rgb_only
+    title: RGB Only
+    description: >
+      When enabled, the filter will only operate on RGB even if YUV is requested.
+      Applying level changes to YUV does not result in the same brightness
+      as applying the same level to RGB. This option ensures consistent brightness
+      in case the image format changes.
+    type: boolean
+    default: 0

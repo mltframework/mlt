@@ -1,6 +1,6 @@
 /*
  * filter_brightness.c -- brightness, fade, and opacity filter
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,8 +43,8 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
 
     // Only process if level is something other than 1
     if (ctx->level != 1.0) {
-        int32_t m = ctx->level * (1 << 16);
         if (ctx->image->format == mlt_image_yuv422) {
+            int32_t m = ctx->level * (1 << 16);
             int32_t n = 128 * ((1 << 16) - m);
             int min = ctx->full_range ? 0 : 16;
             int max_luma = ctx->full_range ? 255 : 235;
@@ -63,9 +63,9 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
                 uint8_t *p = ctx->image->planes[0]
                              + ((slice_line_start + line) * ctx->image->strides[0]);
                 for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    p[0] = CLAMP((p[0] * m) >> 16, 0, 255);
-                    p[1] = CLAMP((p[1] * m) >> 16, 0, 255);
-                    p[2] = CLAMP((p[2] * m) >> 16, 0, 255);
+                    p[0] = CLAMP(round((double) p[0] * ctx->level), 0, 255);
+                    p[1] = CLAMP(round((double) p[1] * ctx->level), 0, 255);
+                    p[2] = CLAMP(round((double) p[2] * ctx->level), 0, 255);
                     p += 4;
                 }
             }
@@ -74,9 +74,9 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
                 uint8_t *p = ctx->image->planes[0]
                              + ((slice_line_start + line) * ctx->image->strides[0]);
                 for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    p[0] = CLAMP((p[0] * m) >> 16, 0, 255);
-                    p[1] = CLAMP((p[1] * m) >> 16, 0, 255);
-                    p[2] = CLAMP((p[2] * m) >> 16, 0, 255);
+                    p[0] = CLAMP(round((double) p[0] * ctx->level), 0, 255);
+                    p[1] = CLAMP(round((double) p[1] * ctx->level), 0, 255);
+                    p[2] = CLAMP(round((double) p[2] * ctx->level), 0, 255);
                     p += 3;
                 }
             }
@@ -96,14 +96,13 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
 
     // Process the alpha channel if requested.
     if (ctx->alpha_level != 1.0) {
-        int32_t m = ctx->alpha_level * (1 << 16);
         if (ctx->image->format == mlt_image_rgba) {
             for (int line = 0; line < slice_height; line++) {
                 uint8_t *p = ctx->image->planes[0]
                              + ((slice_line_start + line) * ctx->image->strides[0]) + 3;
-                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    *p = CLAMP((*p * m) >> 16, 0, 255);
-                    p += 4;
+                int components_in_row = ctx->image->width * 4;
+                for (int col = 0; col < components_in_row; col += 4) {
+                    p[col] = CLAMP(round((double) p[col] * ctx->alpha_level), 0, 255);
                 }
             }
         } else if (ctx->image->format == mlt_image_rgba64) {
@@ -120,8 +119,7 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
                 uint8_t *p = ctx->image->planes[3]
                              + ((slice_line_start + line) * ctx->image->strides[3]);
                 for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    *p = CLAMP((*p * m) >> 16, 0, 255);
-                    p++;
+                    p[pixel] = CLAMP(round((double) p[pixel] * ctx->alpha_level), 0, 255);
                 }
             }
         }
@@ -169,7 +167,11 @@ static int filter_get_image(mlt_frame frame,
         case mlt_image_rgb:
         case mlt_image_rgba:
         case mlt_image_rgba64:
+            break;
         case mlt_image_yuv422:
+            if (mlt_properties_get_int(properties, "rgb_only")) {
+                *format = mlt_image_rgba;
+            }
             break;
         case mlt_image_movit:
         case mlt_image_opengl_texture:
@@ -177,11 +179,19 @@ static int filter_get_image(mlt_frame frame,
             break;
         case mlt_image_none:
         case mlt_image_invalid:
+            *format = mlt_image_rgba;
+            break;
         case mlt_image_yuv420p:
+            if (mlt_properties_get_int(properties, "rgb_only")) {
+                *format = mlt_image_rgba;
+            } else {
+                *format = mlt_image_yuv422;
+            }
+            break;
         case mlt_image_yuv422p16:
         case mlt_image_yuv420p10:
         case mlt_image_yuv444p10:
-            *format = mlt_image_yuv422;
+            *format = mlt_image_rgba64;
             break;
         }
     }
