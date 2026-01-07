@@ -1,6 +1,6 @@
 /*
  * melt.c -- MLT command line utility
- * Copyright (C) 2002-2025 Meltytech, LLC
+ * Copyright (C) 2002-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -760,7 +760,6 @@ int main(int argc, char **argv)
     mlt_profile profile = NULL;
     int is_progress = 0;
     int is_silent = 0;
-    int is_abort = 0;
     int is_getc = 0;
     int error = 0;
     mlt_profile backup_profile = NULL;
@@ -873,7 +872,7 @@ int main(int argc, char **argv)
                         "# -query <type>=<identifier>\n"
                         "# where <type> is one of: consumer, filter, producer, or transition.\n");
             }
-            goto exit_factory;
+            return error;
         } else if (!strcmp(argv[i], "-silent")) {
             is_silent = 1;
         } else if (!strcmp(argv[i], "-quiet")) {
@@ -885,7 +884,7 @@ int main(int argc, char **argv)
             mlt_log_set_level(MLT_LOG_TIMINGS);
         } else if (!strncmp(argv[i], "-h", 2) || !strcmp(argv[i], "--help")) {
             show_usage(argv[0]);
-            goto exit_factory;
+            return error;
         } else if (!strcmp(argv[i], "-version") || !strcmp(argv[i], "--version")) {
             fprintf(stdout,
                     "%s " VERSION "\n"
@@ -894,7 +893,7 @@ int main(int argc, char **argv)
                     "This is free software; see the source for copying conditions.  There is NO\n"
                     "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
                     basename(argv[0]));
-            goto exit_factory;
+            return error;
         } else if (!strcmp(argv[i], "-debug")) {
             mlt_log_set_level(MLT_LOG_DEBUG);
         } else if (!strcmp(argv[i], "-loglevel") && argv[i + 1]) {
@@ -929,8 +928,6 @@ int main(int argc, char **argv)
             default:
                 break;
             }
-        } else if (!strcmp(argv[i], "-abort")) {
-            is_abort = 1;
         } else if (!strcmp(argv[i], "-getc")) {
             is_getc = 1;
         } else if (!repo && !strcmp(argv[i], "-repository")) {
@@ -962,7 +959,7 @@ int main(int argc, char **argv)
     mlt_filter_close(mlt_factory_filter(profile, "qtcrop", NULL));
 
     if (load_consumer(&consumer, profile, argc, argv) != EXIT_SUCCESS)
-        goto exit_factory;
+        return error;
 
     // If the consumer changed the profile, then it is explicit.
     if (backup_profile && !profile->is_explicit
@@ -1127,32 +1124,10 @@ int main(int argc, char **argv)
     if (consumer && !error) {
         error = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(consumer), "melt_error");
         mlt_consumer_connect(consumer, NULL);
-        if (!is_abort)
-            mlt_events_fire(MLT_CONSUMER_PROPERTIES(consumer),
-                            "consumer-cleanup",
-                            mlt_event_data_none());
     }
 
     // Flush all open writable streams
     fflush(NULL);
-
-    if (is_abort)
-        return error;
-
-    // Close the producer
-    if (melt != NULL)
-        mlt_producer_close(melt);
-
-    // Close the consumer
-    if (consumer != NULL)
-        mlt_consumer_close(consumer);
-
-    // Close the factory
-    mlt_profile_close(profile);
-    mlt_profile_close(backup_profile);
-
-exit_factory:
-    mlt_factory_close();
 
     return error;
 }
