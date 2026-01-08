@@ -11,6 +11,7 @@ add_library(mltmovit MODULE
   filter_movit_lift_gamma_gain.cpp
   filter_movit_mirror.cpp
   filter_movit_opacity.cpp
+  filter_movit_overlay_mode.cpp
   filter_movit_rect.cpp
   filter_movit_resample.cpp
   filter_movit_resize.cpp
@@ -64,6 +65,7 @@ install(FILES
   filter_movit_lift_gamma_gain.yml
   filter_movit_mirror.yml
   filter_movit_opacity.yml
+  filter_movit_overlay_mode.yml
   filter_movit_rect.yml
   filter_movit_resample.yml
   filter_movit_resize.yml

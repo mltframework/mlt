@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2022 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2026 Meltytech, LLC
  * factory.c -- the factory method interfaces
  *
  * This program is free software; you can redistribute it and/or modify
@@ -19,8 +19,8 @@
 
 #include "mltmovit_export.h"
 #include <framework/mlt.h>
-#include <limits.h>
 #include <string.h>
+
 extern mlt_consumer consumer_xgl_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
@@ -69,6 +69,10 @@ extern mlt_filter filter_movit_opacity_init(mlt_profile profile,
                                             mlt_service_type type,
                                             const char *id,
                                             char *arg);
+extern mlt_filter filter_movit_overlay_mode_init(mlt_profile profile,
+                                                 mlt_service_type type,
+                                                 const char *id,
+                                                 char *arg);
 extern mlt_filter filter_movit_rect_init(mlt_profile profile,
                                          mlt_service_type type,
                                          const char *id,
@@ -129,6 +133,7 @@ MLTMOVIT_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "movit.lift_gamma_gain", filter_lift_gamma_gain_init);
     MLT_REGISTER(mlt_service_filter_type, "movit.mirror", filter_movit_mirror_init);
     MLT_REGISTER(mlt_service_filter_type, "movit.opacity", filter_movit_opacity_init);
+    MLT_REGISTER(mlt_service_filter_type, "movit.overlay_mode", filter_movit_overlay_mode_init);
     MLT_REGISTER(mlt_service_filter_type, "movit.rect", filter_movit_rect_init);
     MLT_REGISTER(mlt_service_filter_type, "movit.resample", filter_movit_resample_init);
     MLT_REGISTER(mlt_service_filter_type, "movit.resize", filter_movit_resize_init);
@@ -172,6 +177,10 @@ MLTMOVIT_EXPORT MLT_REPOSITORY
                           "movit.opacity",
                           metadata,
                           "filter_movit_opacity.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "movit.overlay_mode",
+                          metadata,
+                          "filter_movit_overlay_mode.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "movit.rect", metadata, "filter_movit_rect.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "movit.resample",
