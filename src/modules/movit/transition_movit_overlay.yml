@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.0
 type: transition
 identifier: movit.overlay
 title: Overlay (GLSL)
-version: 1
+version: 2
 copyright: Dan Dennedy
 creator: Steinar H. Gunderson
 license: GPLv2
