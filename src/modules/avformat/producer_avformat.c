@@ -1,6 +1,6 @@
 /*
  * producer_avformat.c -- avformat producer
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -143,6 +143,10 @@ struct producer_avformat_s
         int device_type;
         char device[128];
         AVBufferRef *device_ctx;
+        int filters_initialized;
+        AVFilterGraph *filter_graph;
+        AVFilterContext *filter_in;
+        AVFilterContext *filter_out;
     } hwaccel;
 };
 typedef struct producer_avformat_s *producer_avformat;
@@ -918,7 +922,9 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
         get_aspect_ratio(properties, format->streams[self->video_index], codec_params);
 
         int pix_fmt = self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
-                                        : codec_params->format;
+                      : self->hwaccel.filter_out
+                          ? av_buffersink_get_format(self->hwaccel.filter_out)
+                          : codec_params->format;
 
         pick_av_pixel_format(&pix_fmt, self->full_range);
         if (pix_fmt != AV_PIX_FMT_NONE) {
@@ -946,13 +952,295 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
     return error;
 }
 
+static int setup_hwaccel_filters(producer_avformat self,
+                                 mlt_producer producer,
+                                 const char *filter_name,
+                                 double scale_factor)
+{
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
+    AVStream *stream = self->video_format->streams[self->video_index];
+    AVRational frame_rate = guess_frame_rate(self, stream);
+
+    int scaled_width = (int) (self->video_frame->width * scale_factor);
+    int scaled_height = (int) (self->video_frame->height * scale_factor);
+    char scale_args[64];
+    scaled_width += scaled_width % 2;
+    scaled_height += scaled_height % 2;
+    if (self->hwaccel.pix_fmt == AV_PIX_FMT_D3D11) {
+        snprintf(scale_args,
+                 sizeof(scale_args),
+                 "width=%d:height=%d:format=%s",
+                 scaled_width,
+                 scaled_height,
+                 av_get_pix_fmt_name(AV_PIX_FMT_NV12));
+        // scale_d3d11 source shows support for AV_PIX_FMT_P010 as well, but that
+        // is generating an error for me: Could not create the texture (80070057)
+    } else {
+        snprintf(scale_args, sizeof(scale_args), "w=%d:h=%d", scaled_width, scaled_height);
+    }
+
+    mlt_log_verbose(MLT_PRODUCER_SERVICE(producer),
+                    "Attempting to set up hwaccel filter %s: %dx%d -> %dx%d\n",
+                    filter_name,
+                    self->video_frame->width,
+                    self->video_frame->height,
+                    scaled_width,
+                    scaled_height);
+
+    self->hwaccel.filter_graph = avfilter_graph_alloc();
+    if (!self->hwaccel.filter_graph) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to allocate filter graph\n");
+        return -1;
+    }
+
+    // Create buffer source with hardware frames context
+    const AVFilter *buffersrc = avfilter_get_by_name("buffer");
+    self->hwaccel.filter_in = avfilter_graph_alloc_filter(self->hwaccel.filter_graph,
+                                                          buffersrc,
+                                                          "hw_buffer");
+    if (!self->hwaccel.filter_in) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to allocate buffer source\n");
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        return -1;
+    }
+
+    // Set options on the filter context
+    int ret = av_opt_set_int(self->hwaccel.filter_in,
+                             "width",
+                             self->video_frame->width,
+                             AV_OPT_SEARCH_CHILDREN);
+    if (ret >= 0)
+        ret = av_opt_set_int(self->hwaccel.filter_in,
+                             "height",
+                             self->video_frame->height,
+                             AV_OPT_SEARCH_CHILDREN);
+    if (ret >= 0)
+        ret = av_opt_set_pixel_fmt(self->hwaccel.filter_in,
+                                   "pix_fmt",
+                                   self->video_frame->format,
+                                   AV_OPT_SEARCH_CHILDREN);
+    if (ret >= 0)
+        ret = av_opt_set_q(self->hwaccel.filter_in,
+                           "time_base",
+                           stream->time_base,
+                           AV_OPT_SEARCH_CHILDREN);
+    if (ret >= 0)
+        ret = av_opt_set_q(self->hwaccel.filter_in,
+                           "frame_rate",
+                           frame_rate,
+                           AV_OPT_SEARCH_CHILDREN);
+
+    AVRational sar;
+    sar.num = mlt_properties_get_int(properties, "meta.media.sample_aspect_num");
+    sar.den = FFMAX(mlt_properties_get_int(properties, "meta.media.sample_aspect_den"), 1);
+    if (ret >= 0)
+        ret = av_opt_set_q(self->hwaccel.filter_in, "sar", sar, AV_OPT_SEARCH_CHILDREN);
+
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                      "Failed to set buffer source options: %d\n",
+                      ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        return ret;
+    }
+
+    // Set hw_frames_ctx before initializing
+    AVBufferSrcParameters *params = av_buffersrc_parameters_alloc();
+    if (!params) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to allocate buffer src params\n");
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        return -1;
+    }
+
+    params->hw_frames_ctx = av_buffer_ref(self->video_frame->hw_frames_ctx);
+    ret = av_buffersrc_parameters_set(self->hwaccel.filter_in, params);
+    av_buffer_unref(&params->hw_frames_ctx);
+    av_free(params);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to set hw_frames_ctx: %d\n", ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        return ret;
+    }
+
+    // Initialize the filter
+    ret = avfilter_init_str(self->hwaccel.filter_in, NULL);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                      "Failed to initialize buffer source: %d\n",
+                      ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        return ret;
+    }
+
+    // Create scale filter
+    const AVFilter *scale_filter = avfilter_get_by_name(filter_name);
+    if (!scale_filter) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "%s filter not available\n", filter_name);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        return -1;
+    }
+
+    AVFilterContext *scale_ctx = NULL;
+    ret = avfilter_graph_create_filter(&scale_ctx,
+                                       scale_filter,
+                                       filter_name,
+                                       scale_args,
+                                       NULL,
+                                       self->hwaccel.filter_graph);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                      "Failed to create %s filter: %d\n",
+                      filter_name,
+                      ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        return ret;
+    }
+
+    // Create buffer sink
+    const AVFilter *buffersink = avfilter_get_by_name("buffersink");
+    ret = avfilter_graph_create_filter(&self->hwaccel.filter_out,
+                                       buffersink,
+                                       "hw_buffersink",
+                                       NULL,
+                                       NULL,
+                                       self->hwaccel.filter_graph);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                      "Failed to create buffer sink filter: %d\n",
+                      ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        self->hwaccel.filter_out = NULL;
+        return ret;
+    }
+
+    // Link filters: buffer -> scale -> buffersink
+    ret = avfilter_link(self->hwaccel.filter_in, 0, scale_ctx, 0);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to link buffer to scale: %d\n", ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        self->hwaccel.filter_out = NULL;
+        return ret;
+    }
+
+    ret = avfilter_link(scale_ctx, 0, self->hwaccel.filter_out, 0);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer),
+                      "Failed to link scale to buffersink: %d\n",
+                      ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        self->hwaccel.filter_out = NULL;
+        return ret;
+    }
+
+    // Configure the filter graph
+    ret = avfilter_graph_config(self->hwaccel.filter_graph, NULL);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to configure filter graph: %d\n", ret);
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        self->hwaccel.filter_out = NULL;
+        return ret;
+    }
+
+    mlt_log_info(MLT_PRODUCER_SERVICE(producer),
+                 "%s filter initialized: %dx%d -> %dx%d\n",
+                 filter_name,
+                 self->video_frame->width,
+                 self->video_frame->height,
+                 scaled_width,
+                 scaled_height);
+
+    return 0;
+}
+
+static void try_setup_hwaccel_filters(producer_avformat self,
+                                      mlt_producer producer,
+                                      double consumer_scale)
+{
+    if (self->hwaccel.filters_initialized || self->hwaccel.filter_graph)
+        return;
+
+    const char *filter_name = NULL;
+    switch (self->hwaccel.pix_fmt) {
+#if HAVE_FFMPEG_VULKAN
+    case AV_PIX_FMT_VULKAN:
+        filter_name = "scale_vulkan";
+        break;
+#endif
+#if LIBAVFILTER_VERSION_INT >= ((11 << 16) + (4 << 8) + 100)
+    case AV_PIX_FMT_D3D11:
+        filter_name = "scale_d3d11";
+        break;
+#endif
+    case AV_PIX_FMT_VAAPI:
+        filter_name = "scale_vaapi";
+        break;
+    case AV_PIX_FMT_VIDEOTOOLBOX:
+        filter_name = "scale_vt";
+        break;
+    default:
+        return;
+    }
+
+    if (filter_name) {
+        setup_hwaccel_filters(self, producer, filter_name, consumer_scale);
+        self->hwaccel.filters_initialized = 1;
+    }
+}
+
+static int apply_hwaccel_filters(producer_avformat self, mlt_producer producer)
+{
+    if (!self->hwaccel.filter_in || !self->hwaccel.filter_out) {
+        return -1;
+    }
+
+    int ret = av_buffersrc_add_frame(self->hwaccel.filter_in, self->video_frame);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to add frame to filter: %d\n", ret);
+        // Disable filter on error to prevent repeated failures
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        self->hwaccel.filter_out = NULL;
+        return ret;
+    }
+
+    av_frame_unref(self->video_frame);
+    ret = av_buffersink_get_frame(self->hwaccel.filter_out, self->video_frame);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(producer), "Failed to get filtered frame: %d\n", ret);
+        // Disable filter on error to prevent repeated failures
+        avfilter_graph_free(&self->hwaccel.filter_graph);
+        self->hwaccel.filter_in = NULL;
+        self->hwaccel.filter_out = NULL;
+    }
+    return ret;
+}
+
 static int setup_video_filters(producer_avformat self)
 {
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
     AVFormatContext *format = self->video_format;
     AVStream *stream = format->streams[self->video_index];
     AVCodecParameters *codec_params = stream->codecpar;
+    int width = codec_params->width;
+    int height = codec_params->height;
+    int pix_fmt = codec_params->format;
 
+    if (self->video_frame) {
+        width = self->video_frame->width;
+        height = self->video_frame->height;
+        pix_fmt = self->video_frame->format;
+    }
     self->vfilter_graph = avfilter_graph_alloc();
 
     // From ffplay.c:configure_video_filters().
@@ -961,9 +1249,9 @@ static int setup_video_filters(producer_avformat self)
     snprintf(buffersrc_args,
              sizeof(buffersrc_args),
              "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d:frame_rate=%d/%d",
-             codec_params->width,
-             codec_params->height,
-             codec_params->format,
+             width,
+             height,
+             pix_fmt,
              stream->time_base.num,
              stream->time_base.den,
              mlt_properties_get_int(properties, "meta.media.sample_aspect_num"),
@@ -1022,6 +1310,7 @@ static int setup_filters(producer_avformat self)
         if (self->vfilter_graph && theta != self->rotation) {
             // The rotation has changed. Force the filter graph to be rebuilt
             avfilter_graph_free(&self->vfilter_graph);
+            self->vfilter_in = NULL;
             self->vfilter_out = NULL;
             self->rotation = theta;
         }
@@ -1083,6 +1372,8 @@ static int setup_filters(producer_avformat self)
     }
     if (error && self->vfilter_graph) {
         avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
+        self->vfilter_out = NULL;
     }
     return error;
 }
@@ -1176,19 +1467,34 @@ static int producer_open(
             AVDictionaryEntry *hwaccel = av_dict_get(params, "hwaccel", NULL, 0);
             AVDictionaryEntry *hwaccel_device = av_dict_get(params, "hwaccel_device", NULL, 0);
             const char *hwaccel_env = getenv("MLT_AVFORMAT_HWACCEL");
+            const char *pps_env = getenv("MLT_AVFORMAT_HWACCEL_PPS");
 
-            // Disable hardware decoding if using filters for rotation or "filtergraph"
-            if (!self->audio_format && !test_open) {
-                self->autorotate = !mlt_properties_get(properties, "autorotate")
-                                   || mlt_properties_get_int(properties, "autorotate");
+            if (pps_env && self->video_index >= 0 && !test_open) {
+                int64_t pps_threshold = strtoll(pps_env, NULL, 10);
+                if (pps_threshold > 0) {
+                    // Calculate PPS while avoiding overflow
+                    AVStream *stream = self->video_format->streams[self->video_index];
+                    int64_t width = stream->codecpar->width;
+                    int64_t height = stream->codecpar->height;
+                    double fps = av_q2d(guess_frame_rate(self, stream));
+
+                    if (width > 0 && height > 0 && fps > 0.0) {
+                        // Calculate pixels per second using double to avoid overflow
+                        double pps = (double) width * (double) height * fps;
+
+                        if (pps > (double) pps_threshold) {
+                            mlt_log_verbose(MLT_PRODUCER_SERVICE(self->parent),
+                                            "Disabling hwaccel: PPS %.0f exceeds threshold %lld\n",
+                                            pps,
+                                            (long long) pps_threshold);
+                            hwaccel = NULL;
+                            hwaccel_env = NULL;
+                        }
+                    }
+                }
             }
-            int will_filter = self->autorotate && self->video_index != -1
-                              && fabs(get_rotation(properties,
-                                                   self->video_format->streams[self->video_index]))
-                                     > 0.0;
-            will_filter |= mlt_properties_exists(properties, "filtergraph");
 
-            if (((hwaccel && hwaccel->value) || hwaccel_env) && !test_open && !will_filter) {
+            if (((hwaccel && hwaccel->value) || hwaccel_env) && !test_open) {
                 // Leaving `device=NULL` will cause query string parameter `hwaccel_device` to be ignored
                 char *device = getenv("MLT_AVFORMAT_HWACCEL_DEVICE");
                 if ((hwaccel && hwaccel->value && !strcmp(hwaccel->value, "vaapi"))
@@ -1269,8 +1575,12 @@ static int producer_open(
                 if (self->audio_format && !self->audio_streams)
                     get_audio_streams_info(self);
 
-                if (!test_open && (self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE)) {
-                    error = setup_filters(self);
+                if (!test_open) {
+                    self->autorotate = !mlt_properties_get(properties, "autorotate")
+                                       || mlt_properties_get_int(properties, "autorotate");
+
+                    if (self->hwaccel.device_type == AV_HWDEVICE_TYPE_NONE)
+                        error = setup_filters(self);
                 }
             }
         }
@@ -1324,6 +1634,12 @@ static void prepare_reopen(producer_avformat self)
     self->audio_format = NULL;
     self->video_format = NULL;
     avfilter_graph_free(&self->vfilter_graph);
+    self->vfilter_in = NULL;
+    self->vfilter_out = NULL;
+    avfilter_graph_free(&self->hwaccel.filter_graph);
+    self->hwaccel.filter_in = NULL;
+    self->hwaccel.filter_out = NULL;
+    self->hwaccel.filters_initialized = 0;
     pthread_mutex_unlock(&self->open_mutex);
 
     // Cleanup the packet queues
@@ -1686,6 +2002,7 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
             if (self->video_index != -1) {
                 mlt_service_lock(MLT_PRODUCER_SERVICE(self->parent));
                 avfilter_graph_free(&self->vfilter_graph);
+                self->vfilter_in = NULL;
                 self->vfilter_out = NULL;
                 self->rotation = 0.0;
                 setup_filters(self);
@@ -1963,7 +2280,8 @@ static void convert_image(producer_avformat self,
     mlt_log_timings_begin();
 
     mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
-                  "%s @ %dx%d colorspace %d->%d range %d->%d\n",
+                  "%s->%s @ %dx%d colorspace %d->%d range %d->%d\n",
+                  av_get_pix_fmt_name(pix_fmt),
                   mlt_image_format_name(*format),
                   width,
                   height,
@@ -2124,6 +2442,9 @@ static void set_image_size(producer_avformat self, int *width, int *height)
     if (self->vfilter_out) {
         *width = av_buffersink_get_w(self->vfilter_out);
         *height = av_buffersink_get_h(self->vfilter_out);
+    } else if (self->hwaccel.filter_out) {
+        *width = av_buffersink_get_w(self->hwaccel.filter_out);
+        *height = av_buffersink_get_h(self->hwaccel.filter_out);
     } else {
         double dar = mlt_profile_dar(mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent)));
         *width = self->video_codec->width;
@@ -2539,6 +2860,28 @@ static int producer_get_image(mlt_frame frame,
                         } else {
                             if (self->hwaccel.device_ctx
                                 && self->video_frame->format == self->hwaccel.pix_fmt) {
+                                // Check if we need to set up hardware scaling filter (only once)
+                                double consumer_scale = mlt_properties_get_double(frame_properties,
+                                                                                  "consumer.scale");
+                                consumer_scale = consumer_scale * profile->height
+                                                 / self->video_frame->height;
+                                if (consumer_scale > 0.0 && consumer_scale < 1.0) {
+                                    try_setup_hwaccel_filters(self, producer, consumer_scale);
+                                }
+
+                                // Apply hardware scale filter if initialized successfully
+                                // Only apply if frame is still in hardware format
+                                if ((self->video_frame->format == AV_PIX_FMT_D3D11
+                                     || self->video_frame->format == AV_PIX_FMT_VAAPI
+                                     || self->video_frame->format == AV_PIX_FMT_VIDEOTOOLBOX
+                                     || self->video_frame->format == AV_PIX_FMT_VULKAN)
+                                    && self->hwaccel.filters_initialized
+                                    && self->hwaccel.filter_graph && self->hwaccel.filter_in
+                                    && self->hwaccel.filter_out) {
+                                    apply_hwaccel_filters(self, producer);
+                                }
+
+                                // Transfer from hardware to software frame
                                 AVFrame *sw_video_frame = av_frame_alloc();
                                 int transfer_data_result
                                     = av_hwframe_transfer_data(sw_video_frame, self->video_frame, 0);
@@ -2547,6 +2890,7 @@ static int producer_get_image(mlt_frame frame,
                                                   "av_hwframe_transfer_data() failed %d\n",
                                                   transfer_data_result);
                                     av_frame_free(&sw_video_frame);
+                                    av_frame_unref(self->video_frame);
                                     goto exit_get_image;
                                 }
                                 av_frame_copy_props(sw_video_frame, self->video_frame);
@@ -2651,18 +2995,22 @@ static int producer_get_image(mlt_frame frame,
 #else
                 self->video_frame->top_field_first = self->top_field_first;
 #endif
-                if ((self->autorotate || mlt_properties_get(properties, "filtergraph"))
-                    && !setup_filters(self) && self->vfilter_graph) {
-                    int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
-                    if (ret < 0) {
-                        got_picture = 0;
-                        break;
-                    }
-                    while (ret >= 0) {
-                        ret = av_buffersink_get_frame_flags(self->vfilter_out, self->video_frame, 0);
+                if (self->autorotate || mlt_properties_exists(properties, "filtergraph")) {
+                    if (!setup_filters(self) && self->vfilter_graph && self->vfilter_in
+                        && self->vfilter_out) {
+                        int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
                         if (ret < 0) {
-                            ret = 0;
+                            got_picture = 0;
                             break;
+                        }
+                        while (ret >= 0) {
+                            ret = av_buffersink_get_frame_flags(self->vfilter_out,
+                                                                self->video_frame,
+                                                                0);
+                            if (ret < 0) {
+                                ret = 0;
+                                break;
+                            }
                         }
                     }
                 }
@@ -2847,8 +3195,8 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             goto skip_hwaccel;
         }
 
-        int found_hw_pix_fmt = 0, i;
-        for (i = 0;; i++) {
+        int found_hw_pix_fmt = 0;
+        for (int i = 0;; i++) {
             const AVCodecHWConfig *config = avcodec_get_hw_config(codec, i);
             if (!config)
                 break;
@@ -2871,11 +3219,12 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             if (ret >= 0) {
                 codec_context->hw_device_ctx = av_buffer_ref(self->hwaccel.device_ctx);
                 mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
-                             "av_hwdevice_ctx_create() success %d\n",
-                             codec_context->pix_fmt);
+                             "hwaccel %s av_hwdevice_ctx_create() success\n",
+                             av_get_pix_fmt_name(self->hwaccel.pix_fmt));
             } else {
                 mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
-                                "av_hwdevice_ctx_create() failed %d\n",
+                                "hwaccel %s av_hwdevice_ctx_create() failed %d\n",
+                                av_get_pix_fmt_name(self->hwaccel.pix_fmt),
                                 ret);
             }
         } else {
@@ -4076,6 +4425,12 @@ static void producer_avformat_close(producer_avformat self)
     if (self->is_mutex_init)
         pthread_mutex_unlock(&self->open_mutex);
     avfilter_graph_free(&self->vfilter_graph);
+    self->vfilter_in = NULL;
+    self->vfilter_out = NULL;
+    avfilter_graph_free(&self->hwaccel.filter_graph);
+    self->hwaccel.filter_in = NULL;
+    self->hwaccel.filter_out = NULL;
+    self->hwaccel.filters_initialized = 0;
 
     // Cleanup caches.
     mlt_cache_close(self->image_cache);

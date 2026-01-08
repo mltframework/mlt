@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -703,6 +703,9 @@ mlt_frame mlt_consumer_get_frame(mlt_consumer self)
         mlt_properties_set(frame_properties,
                            "consumer.color_range",
                            mlt_properties_get(properties, "color_range"));
+        mlt_properties_set(frame_properties,
+                           "consumer.scale",
+                           mlt_properties_get(properties, "scale"));
 
         if (mlt_properties_get(properties, "mlt_color_trc")) {
             // Add a normalize filter to convert the mlt_color_trc to color_trc
