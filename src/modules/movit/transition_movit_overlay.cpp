@@ -46,11 +46,20 @@ static int get_image(mlt_frame a_frame,
     mlt_service service = MLT_TRANSITION_SERVICE(transition);
     mlt_service_lock(service);
 
+    // Set the Movit parameters.
+    mlt_properties properties = MLT_TRANSITION_PROPERTIES(transition);
+    int compositing = mlt_properties_get_int(properties, "compositing");
+    if (mlt_properties_exists(MLT_FRAME_PROPERTIES(b_frame), "movit.overlay.compositing")) {
+        compositing = mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame),
+                                             "movit.overlay.compositing");
+    }
+    mlt_properties_set_int(properties, "_movit.parms.int.blend_mode", compositing);
+
     uint8_t *a_image, *b_image;
 
     // Get the two images.
     *format = mlt_image_movit;
-    error = mlt_frame_get_image(a_frame, &a_image, format, width, height, writable);
+    mlt_frame_get_image(a_frame, &a_image, format, width, height, writable);
     error = mlt_frame_get_image(b_frame, &b_image, format, width, height, writable);
 
     if (*width < 1 || *height < 1) {
