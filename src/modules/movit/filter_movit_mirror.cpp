@@ -1,6 +1,6 @@
 /*
  * filter_movit_mirror.cpp
- * Copyright (C) 2013 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2013-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

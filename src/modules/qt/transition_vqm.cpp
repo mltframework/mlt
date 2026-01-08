@@ -1,9 +1,8 @@
 /*
  * transition_vqm.c -- video quality measurement
- * Copyright (c) 2012-2024 Dan Dennedy <dan@dennedy.org>
+ * Copyright (c) 2012-2026 Meltytech, LLC
  * Core psnr and ssim routines based on code from
  *   qsnr (C) 2010 E. Oriani, ema <AT> fastwebnet <DOT> it
- * Copyright (c) 2025 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
