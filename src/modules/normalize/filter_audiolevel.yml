@@ -3,7 +3,7 @@ type: filter
 identifier: audiolevel
 title: Audio Levels
 version: 2
-copyright: Dan Dennedy, Marco Gittler, and Steve Harris
+copyright: Meltytech, LLC, Marco Gittler, and Steve Harris
 creator: Dan Dennedy
 contributor:
   - Marco Gittler

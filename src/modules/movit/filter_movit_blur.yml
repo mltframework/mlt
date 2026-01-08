@@ -3,7 +3,7 @@ type: filter
 identifier: movit.blur
 title: Blur (GLSL)
 version: 1
-copyright: Dan Dennedy
+copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
 language: en

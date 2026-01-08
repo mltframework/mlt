@@ -3,7 +3,7 @@ type: transition
 identifier: movit.luma_mix
 title: Wipe (GLSL)
 version: 1
-copyright: Dan Dennedy
+copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
 language: en

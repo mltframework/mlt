@@ -3,7 +3,7 @@ type: filter
 identifier: glsl.manager
 title: GLSL Manager
 version: 1
-copyright: Dan Dennedy
+copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
 language: en

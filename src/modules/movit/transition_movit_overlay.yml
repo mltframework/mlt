@@ -3,7 +3,7 @@ type: transition
 identifier: movit.overlay
 title: Overlay (GLSL)
 version: 2
-copyright: Dan Dennedy
+copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
 language: en

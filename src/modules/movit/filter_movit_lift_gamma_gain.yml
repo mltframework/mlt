@@ -3,7 +3,7 @@ type: filter
 identifier: movit.lift_gamma_gain
 title: Lift, Gamma, and Gain (GLSL)
 version: 1
-copyright: Dan Dennedy
+copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
 language: en

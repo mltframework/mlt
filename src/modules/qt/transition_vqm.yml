@@ -3,7 +3,7 @@ type: transition
 identifier: vqm
 title: Video Quality Measurement
 version: 2
-copyright: Dan Dennedy
+copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: GPLv3
 language: en
