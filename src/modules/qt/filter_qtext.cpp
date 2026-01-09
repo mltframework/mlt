@@ -367,8 +367,19 @@ static void paint_text(QPainter *painter,
                        int position,
                        int length)
 {
-    QPen pen = get_qpen(filter_properties, frame_properties, position, length);
-    painter->setPen(pen);
+    // Draw the outline first, and then draw the fill on top of it.
+    // This avoids the outline encroaching on the text fill.
+
+    // Draw the outline if requested
+    if (mlt_properties_get_int(filter_properties, "outline")) {
+        QPen pen = get_qpen(filter_properties, frame_properties, position, length);
+        painter->setPen(pen);
+        painter->setBrush(Qt::NoBrush); // No brush needed for outline
+        painter->drawPath(*qpath);
+    }
+
+    // Fill the text area
+    painter->setPen(Qt::NoPen); // No pen needed for fill
     QBrush brush = get_qbrush(filter_properties, frame_properties, position, length);
     painter->setBrush(brush);
     painter->drawPath(*qpath);
