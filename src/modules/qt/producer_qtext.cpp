@@ -323,16 +323,23 @@ static void generate_qimage(mlt_properties frame_properties)
 #endif
     );
 
-    QPen pen;
-    pen.setWidth(outline);
+    // Draw the outline first, and then draw the fill on top of it.
+    // This avoids the outline encroaching on the text fill.
+
+    // Draw the outline if requested
     if (outline) {
+        QPen pen;
+        pen.setWidth(outline);
         pen.setColor(QColor(ol_color.r, ol_color.g, ol_color.b, ol_color.a));
-    } else {
-        pen.setColor(QColor(bg_color.r, bg_color.g, bg_color.b, bg_color.a));
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush); // No brush needed for outline
+        painter.drawPath(*qPath);
     }
-    painter.setPen(pen);
+
+    // Fill the text area
     QBrush brush(QColor(fg_color.r, fg_color.g, fg_color.b, fg_color.a));
     painter.setBrush(brush);
+    painter.setPen(Qt::NoPen); // No pen needed for fill
     painter.drawPath(*qPath);
 }
 
