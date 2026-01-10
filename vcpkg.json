@@ -13,6 +13,7 @@
     "qtsvg",
     "libxml2",
     "libebur128",
-    "gdk-pixbuf"
+    "gdk-pixbuf",
+    "rubberband"
   ]
 }

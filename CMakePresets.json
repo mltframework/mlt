@@ -30,7 +30,7 @@
                 "MOD_GLAXNIMATE_QT6": "OFF",
                 "MOD_RESAMPLE": "OFF",
                 "MOD_RTAUDIO": "OFF",
-                "MOD_RUBBERBAND": "OFF",
+                "MOD_RUBBERBAND": "ON",
                 "MOD_SDL2": "ON",
                 "MOD_DOX": "OFF",
                 "MOD_VIDSTAB": "OFF",
