@@ -16,7 +16,9 @@ target_compile_options(mltgdk PRIVATE ${MLT_COMPILE_OPTIONS})
 target_include_directories(mltgdk PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(mltgdk PRIVATE mlt Threads::Threads PkgConfig::GdkPixbuf)
-if(NOT MSVC)
+if(MSVC)
+  target_link_libraries(mltgdk PRIVATE PThreads4W::PThreads4W)
+else()
   target_link_libraries(mltgdk PRIVATE m)
 endif()
 

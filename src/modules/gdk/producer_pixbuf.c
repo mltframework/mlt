@@ -37,7 +37,19 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
+
+#ifndef ssize_t
+#ifdef _WIN32
+#include <BaseTsd.h>
+#define ssize_t SSIZE_T
+#else
+#define ssize_t ptrdiff_t
+#endif
+#endif
 
 // this protects concurrent access to gdk_pixbuf
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;

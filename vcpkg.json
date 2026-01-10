@@ -7,6 +7,14 @@
     "libiconv",
     "pkgconf",
     "pthreads",
-    "sdl2"
+    "sdl2",
+    "ffmpeg",
+    "qtbase",
+    "qtsvg",
+    "libxml2",
+    "libebur128",
+    "gdk-pixbuf",
+    "rubberband",
+    "libvorbis"
   ]
 }
