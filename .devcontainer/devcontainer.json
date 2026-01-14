@@ -1,0 +1,38 @@
+{
+    "name": "MLT Framework Dev 2026",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USERNAME": "vscode"
+        }
+    },
+    "runArgs": [
+        "--device=/dev/dri:/dev/dri",
+        "--group-add=video",
+        "--group-add=render"
+        // For audio and full hardware permissions, uncomment:
+        // "--ipc=host",
+        // "--privileged"
+    ],
+    "remoteUser": "vscode",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "cmake.configureOnOpen": true,
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "editor.formatOnSave": true,
+                "cmake.buildDirectory": "${workspaceFolder}/build",
+                "C_Cpp.clang_format_fallbackStyle": "Google"
+            },
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "twxs.cmake",
+                "xaver.clang-format",
+                "ms-vscode.cpptools-extension-pack"
+            ]
+        }
+    },
+    "postCreateCommand": "sudo chmod 666 /dev/dri/render* || true"
+}
