@@ -8,6 +8,7 @@ ENV LC_ALL=C.UTF-8
 RUN apt-get update -qq && apt-get install -yqq \
     apt-utils git wget sudo curl build-essential cmake ninja-build \
     pkg-config gdb clang-format swig meson yasm nasm \
+    valgrind kcachegrind \
     automake autoconf libtool intltool xutils-dev mold \
     python3-dev python3-pip python3-setuptools \
     # 2. Multimedia Core (AV1, HDR, SRT, RIST)
