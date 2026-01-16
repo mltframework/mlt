@@ -262,35 +262,6 @@ static QColor get_qcolor(mlt_properties filter_properties,
     return QColor(color.r, color.g, color.b, color.a);
 }
 
-static QPen get_qpen(mlt_properties filter_properties,
-                     mlt_properties frame_properties,
-                     int position,
-                     int length)
-{
-    QColor color;
-    int outline = mlt_properties_get_int(filter_properties, "outline");
-    QPen pen;
-
-    pen.setWidth(outline);
-    if (outline) {
-        color = get_qcolor(filter_properties, "olcolour", frame_properties, position, length);
-    } else {
-        color = get_qcolor(filter_properties, "bgcolour", frame_properties, position, length);
-    }
-    pen.setColor(color);
-
-    return pen;
-}
-
-static QBrush get_qbrush(mlt_properties filter_properties,
-                         mlt_properties frame_properties,
-                         int position,
-                         int length)
-{
-    QColor color = get_qcolor(filter_properties, "fgcolour", frame_properties, position, length);
-    return QBrush(color);
-}
-
 static void transform_painter(QPainter *painter,
                               mlt_rect frame_rect,
                               QRectF path_rect,
@@ -367,10 +338,26 @@ static void paint_text(QPainter *painter,
                        int position,
                        int length)
 {
-    QPen pen = get_qpen(filter_properties, frame_properties, position, length);
-    painter->setPen(pen);
-    QBrush brush = get_qbrush(filter_properties, frame_properties, position, length);
+    // Draw the outline first, and then draw the fill on top of it.
+    // This avoids the outline encroaching on the text fill.
+
+    // Draw the outline if requested
+    int outline = mlt_properties_get_int(filter_properties, "outline");
+    if (outline) {
+        QPen pen;
+        pen.setWidth(outline);
+        QColor color = get_qcolor(filter_properties, "olcolour", frame_properties, position, length);
+        pen.setColor(color);
+        painter->setPen(pen);
+        painter->setBrush(Qt::NoBrush); // No brush needed for outline
+        painter->drawPath(*qpath);
+    }
+
+    // Fill the text area
+    QColor color = get_qcolor(filter_properties, "fgcolour", frame_properties, position, length);
+    QBrush brush(color);
     painter->setBrush(brush);
+    painter->setPen(Qt::NoPen); // No pen needed for fill
     painter->drawPath(*qpath);
 }
 
