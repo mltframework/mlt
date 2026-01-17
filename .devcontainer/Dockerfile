@@ -89,6 +89,8 @@ RUN if getent group $USER_GID; then \
 # Environment setup
 ENV PATH="/usr/lib/qt6/bin:${PATH}"
 ENV MLT_REPOSITORY=/usr/local/lib/mlt-7
+ENV CPATH=/usr/local/include/mlt-7:$CPATH
+ENV LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 # Force mold linker for CMake builds
 ENV LDFLAGS="-fuse-ld=mold"
@@ -99,5 +101,5 @@ ENV SDL_AUDIODRIVER=dummy
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV CPATH="$JAVA_HOME/include:$JAVA_HOME/include/linux:$CPATH"
 
-USER USERNAME
+USER $USERNAME
 WORKDIR /workspaces
