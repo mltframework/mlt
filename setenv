@@ -3,8 +3,8 @@
 
 export MLT_REPOSITORY="`pwd`/out/lib/mlt"
 export MLT_DATA="`pwd`/src/modules"
-export MLT_PROFILES_PATH="`pwd`/profiles"
-export MLT_PRESETS_PATH="`pwd`/presets"
+export MLT_PROFILES_PATH="`pwd`/out/share/mlt/profiles"
+export MLT_PRESETS_PATH="`pwd`/out/share/mlt/presets"
 
 
 if [ "$(uname -s)" = "Darwin" ]; then

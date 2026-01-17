@@ -7,6 +7,11 @@ project(MLT
   LANGUAGES C CXX
 )
 
+# Enable compile_commands.json generation only for Debug builds to support LSP tools
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
 option(GPL "Enable GPLv2 components" ON)
 option(GPL3 "Enable GPLv3 components" ON)
 option(BUILD_TESTING "Enable tests" OFF)

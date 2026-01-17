@@ -78,7 +78,7 @@ if( WIN32 )
 
     if( csharp_mono_valid )
       # Extract version number (eg. 2.10.2)
-      string(REGEX MATCH "([0-9]*)([.])([0-9]*)([.]*)([0-9]*)" csharp_mono_version_temp ${csharp_mono_bin_dir})
+      string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" csharp_mono_version_temp ${csharp_mono_bin_dir})
       set( CSHARP_MONO_VERSION ${csharp_mono_version_temp} CACHE STRING "C# Mono compiler version" )
       mark_as_advanced( CSHARP_MONO_VERSION )
 
@@ -116,15 +116,14 @@ else( UNIX )
     "/opt/novell/mono/bin"
   )
   find_program(
-    csharp_mono_compiler # variable is added to the cache, we removed it below
+    csharp_mono_compiler
     NAMES ${chsarp_mono_names}
     PATHS ${csharp_mono_paths}
   )
 
   if( EXISTS ${csharp_mono_compiler} )
-    # Determine version
     find_program(
-      csharp_mono_interpreter # variable is added to the cache, we removed it below
+      csharp_mono_interpreter
       NAMES mono
       PATHS ${csharp_mono_paths}
     )
@@ -133,32 +132,39 @@ else( UNIX )
         COMMAND ${csharp_mono_interpreter} -V
         OUTPUT_VARIABLE csharp_mono_version_string
       )
-      string( REGEX MATCH "([0-9]*)([.])([0-9]*)([.]*)([0-9]*)" csharp_mono_version_temp ${csharp_mono_version_string} )
-      set( CSHARP_MONO_INTERPRETER_${CSHARP_MONO_VERSION} ${csharp_mono_interpreter} CACHE STRING "C# Mono interpreter ${csharp_mono_version_temp}" FORCE )
+      
+      # REGEX FIX FOR UBUNTU 24.04
+      string( REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" csharp_mono_version_temp "${csharp_mono_version_string}" )
+      
+      # IMMEDIATE VERSION DEFINITION
+      set( CSHARP_MONO_VERSION ${csharp_mono_version_temp} CACHE STRING "C# Mono compiler version" FORCE )
+      
+      set( CSHARP_MONO_INTERPRETER_${CSHARP_MONO_VERSION} ${csharp_mono_interpreter} CACHE STRING "C# Mono interpreter ${CSHARP_MONO_VERSION}" FORCE )
       mark_as_advanced( CSHARP_MONO_INTERPRETER_${CSHARP_MONO_VERSION} )
     endif ( EXISTS ${csharp_mono_interpreter} )
     unset( csharp_mono_interpreter CACHE )
 
-    # We found Mono compiler
-    set( CSHARP_MONO_VERSION ${csharp_mono_version_temp} CACHE STRING "C# Mono compiler version" )
+    # COMPILER VARIABLES ASSIGNMENT
     mark_as_advanced( CSHARP_MONO_VERSION )
     set( CSHARP_MONO_COMPILER_${CSHARP_MONO_VERSION} ${csharp_mono_compiler} CACHE STRING "C# Mono compiler ${CSHARP_MONO_VERSION}" FORCE )
     mark_as_advanced( CSHARP_MONO_COMPILER_${CSHARP_MONO_VERSION} )
     set( CSHARP_MONO_VERSIONS ${CSHARP_MONO_VERSION} CACHE STRING "Available C# Mono compiler versions" FORCE )
     mark_as_advanced( CSHARP_MONO_VERSIONS )
+    
+    # --- CRUCIAL CHANGE FOR FEATURE_SUMMARY ---
     set( CSHARP_MONO_FOUND 1 CACHE INTERNAL "Boolean indicating if C# Mono was found" )
+    set( Mono_FOUND 1 CACHE INTERNAL "Required by FeatureSummary" )
+    # -----------------------------------------------
+    
   endif( EXISTS ${csharp_mono_compiler} )
 
-  # Remove temp variable from cache
   unset( csharp_mono_compiler CACHE )
 
 endif( WIN32 )
 
 if( CSHARP_MONO_FOUND )
-  # Report the found versions
   message( STATUS "Found the following C# Mono versions: ${CSHARP_MONO_VERSIONS}" )
 endif( CSHARP_MONO_FOUND )
 
-# Set USE_FILE
 get_filename_component( current_list_path ${CMAKE_CURRENT_LIST_FILE} PATH )
 set( Mono_USE_FILE ${current_list_path}/UseMono.cmake )

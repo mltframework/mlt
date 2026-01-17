@@ -102,6 +102,7 @@ To execute the MLT tools without installation, or to test a new version on a sys
 
 ```bash
 source ../setenv
+ctest --output-on-failure # -j $(($(nproc) - 1))
 ```
 
 NB:
@@ -137,6 +138,7 @@ cd build
 cmake ..
 cmake --build .
 source ../setenv
+ctest --output-on-failure
 sudo cmake --install .
 ```
 
