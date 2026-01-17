@@ -2865,7 +2865,19 @@ static int producer_get_image(mlt_frame frame,
                                                                                   "consumer.scale");
                                 consumer_scale = consumer_scale * profile->height
                                                  / self->video_frame->height;
-                                if (consumer_scale > 0.0 && consumer_scale < 1.0) {
+
+                                // Do not add hardware filters for interlaced video
+#if LIBAVUTIL_VERSION_INT >= ((58 << 16) + (7 << 8) + 100)
+                                int is_interlaced = !!(self->video_frame->flags
+                                                       & AV_FRAME_FLAG_INTERLACED);
+#else
+                                int is_interlaced = self->video_frame->interlaced_frame;
+#endif
+                                if (mlt_properties_get(properties, "force_progressive")) {
+                                    is_interlaced = !mlt_properties_get_int(properties,
+                                                                            "force_progressive");
+                                }
+                                if (!is_interlaced && consumer_scale > 0.0 && consumer_scale < 1.0) {
                                     try_setup_hwaccel_filters(self, producer, consumer_scale);
                                 }
 
