@@ -133,10 +133,10 @@ else( UNIX )
         OUTPUT_VARIABLE csharp_mono_version_string
       )
       
-      # CORREÇÃO DO REGEX PARA UBUNTU 24.04
+      # REGEX FIX FOR UBUNTU 24.04
       string( REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" csharp_mono_version_temp "${csharp_mono_version_string}" )
       
-      # DEFINIÇÃO IMEDIATA DA VERSÃO
+      # IMMEDIATE VERSION DEFINITION
       set( CSHARP_MONO_VERSION ${csharp_mono_version_temp} CACHE STRING "C# Mono compiler version" FORCE )
       
       set( CSHARP_MONO_INTERPRETER_${CSHARP_MONO_VERSION} ${csharp_mono_interpreter} CACHE STRING "C# Mono interpreter ${CSHARP_MONO_VERSION}" FORCE )
@@ -144,14 +144,14 @@ else( UNIX )
     endif ( EXISTS ${csharp_mono_interpreter} )
     unset( csharp_mono_interpreter CACHE )
 
-    # ATRIBUIÇÃO DAS VARIÁVEIS DE COMPILADOR
+    # COMPILER VARIABLES ASSIGNMENT
     mark_as_advanced( CSHARP_MONO_VERSION )
     set( CSHARP_MONO_COMPILER_${CSHARP_MONO_VERSION} ${csharp_mono_compiler} CACHE STRING "C# Mono compiler ${CSHARP_MONO_VERSION}" FORCE )
     mark_as_advanced( CSHARP_MONO_COMPILER_${CSHARP_MONO_VERSION} )
     set( CSHARP_MONO_VERSIONS ${CSHARP_MONO_VERSION} CACHE STRING "Available C# Mono compiler versions" FORCE )
     mark_as_advanced( CSHARP_MONO_VERSIONS )
     
-    # --- MUDANÇA CRUCIAL PARA O FEATURE_SUMMARY ---
+    # --- CRUCIAL CHANGE FOR FEATURE_SUMMARY ---
     set( CSHARP_MONO_FOUND 1 CACHE INTERNAL "Boolean indicating if C# Mono was found" )
     set( Mono_FOUND 1 CACHE INTERNAL "Required by FeatureSummary" )
     # -----------------------------------------------

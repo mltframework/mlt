@@ -99,5 +99,5 @@ ENV SDL_AUDIODRIVER=dummy
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV CPATH="$JAVA_HOME/include:$JAVA_HOME/include/linux:$CPATH"
 
-USER vscode
+USER USERNAME
 WORKDIR /workspaces
