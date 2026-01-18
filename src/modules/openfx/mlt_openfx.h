@@ -77,7 +77,7 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
 
 OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin);
 
-void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params);
+void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properties mlt_metadata);
 
 void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_type type, ...);
 
