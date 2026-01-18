@@ -152,7 +152,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
                             (mlt_destructor) mlt_properties_close,
                             NULL);
 
-    mltofx_fetch_params(pt, params);
+    mltofx_fetch_params(pt, params, result);
     return result;
 }
 

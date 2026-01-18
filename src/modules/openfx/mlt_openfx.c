@@ -1827,7 +1827,7 @@ OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin)
     return status_code;
 }
 
-void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
+void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properties mlt_metadata)
 {
     mlt_properties image_effect = mlt_properties_new();
     mlt_properties clips = mlt_properties_new();
@@ -1886,6 +1886,15 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params)
                                     NULL);
 
     mltofx_log_status_code(status_code, "kOfxImageEffectActionDescribeInContext");
+
+    if (mlt_metadata != NULL)
+    {
+	char *str_value = "";
+	propGetString((OfxPropertySetHandle) props, kOfxPropPluginDescription, 0, &str_value);
+	if (str_value[0] != '\0') {
+	    mlt_properties_set(mlt_metadata, "description", str_value);
+	}
+    }
 
     int iparams_length = mlt_properties_count(iparams);
 

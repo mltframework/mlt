@@ -233,7 +233,7 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
                     return NULL;
 
                 mlt_properties params = mlt_properties_new();
-                mlt_properties image_effect = mltofx_fetch_params(pt, params);
+                mlt_properties image_effect = mltofx_fetch_params(pt, params, NULL);
 
                 mltofx_create_instance(pt, image_effect);
 
