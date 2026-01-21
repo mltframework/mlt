@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2024 Meltytech, LLC
+ * Copyright (C) 2011-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,6 @@
  */
 
 #include <framework/mlt.h>
-#include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,12 +122,15 @@ static void attach_normalizers(mlt_profile profile, mlt_service service)
 
     // Apply normalizers
     for (i = 0; i < mlt_properties_count(normalizers); i++) {
-        int j = 0;
-        int created = 0;
         char *value = mlt_properties_get_value(normalizers, i);
         mlt_tokeniser_parse_new(tokeniser, value, ",");
-        for (j = 0; !created && j < mlt_tokeniser_count(tokeniser); j++)
-            create_filter(profile, service, mlt_tokeniser_get_string(tokeniser, j), &created);
+        int created = 0;
+        for (int j = 0; !created && j < mlt_tokeniser_count(tokeniser); j++) {
+            char *name = mlt_tokeniser_get_string(tokeniser, j);
+            if (name && strcmp(name, "color_transform")) {
+                create_filter(profile, service, name, &created);
+            }
+        }
     }
 
     // Close the tokeniser
@@ -347,7 +349,7 @@ static void foreach_consumer_update(mlt_consumer consumer)
             mlt_properties_pass_list(
                 properties,
                 MLT_CONSUMER_PROPERTIES(nested),
-                "color_trc color_range progressive deinterlacer mlt_image_format");
+                "color_trc color_range progressive deinterlacer mlt_image_format mlt_color_trc");
         }
     } while (nested);
 }
