@@ -336,7 +336,10 @@ endif()
 
 if(BUILD_TESTING)
   find_package(Qt${QT_MAJOR_VERSION} REQUIRED COMPONENTS Core Test)
-  find_package(Kwalify REQUIRED)
+  if(NOT MSVC)
+    # Kwalify is not available for MSVC easily (eg. via vcpkg)
+    find_package(Kwalify REQUIRED)
+  endif()
   enable_testing()
 endif()
 
