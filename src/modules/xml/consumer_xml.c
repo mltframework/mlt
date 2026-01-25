@@ -29,6 +29,8 @@
 
 #ifndef _MSC_VER
 #include <unistd.h>
+#else
+#include <direct.h>
 #endif
 
 #define ID_SIZE 128
