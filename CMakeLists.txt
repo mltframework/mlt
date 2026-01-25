@@ -190,6 +190,7 @@ endif()
 
 if (MSVC)
   find_package(PThreads4W REQUIRED)
+  find_package(Dirent 1.26 REQUIRED)
 endif ()
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
