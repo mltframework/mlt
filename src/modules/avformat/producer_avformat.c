@@ -848,8 +848,8 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
     }
     if (pix_fmt == AV_PIX_FMT_BAYER_RGGB16LE) {
         return mlt_image_rgb;
-    } else if (pix_fmt == AV_PIX_FMT_YUVA444P10LE || pix_fmt == AV_PIX_FMT_GBRAP10LE
-               || pix_fmt == AV_PIX_FMT_GBRAP12LE) {
+    } else if (pix_fmt == AV_PIX_FMT_YUVA444P10LE || pix_fmt == AV_PIX_FMT_YUVA444P12LE
+               || pix_fmt == AV_PIX_FMT_GBRAP10LE || pix_fmt == AV_PIX_FMT_GBRAP12LE) {
         return mlt_image_rgba;
     }
     return current_format;
