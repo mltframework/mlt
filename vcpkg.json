@@ -15,6 +15,7 @@
     "libebur128",
     "gdk-pixbuf",
     "rubberband",
-    "libvorbis"
+    "libvorbis",
+    "fftw3"
   ]
 }
