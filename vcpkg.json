@@ -16,6 +16,7 @@
     "gdk-pixbuf",
     "rubberband",
     "libvorbis",
-    "fftw3"
+    "fftw3",
+    "libexif"
   ]
 }
