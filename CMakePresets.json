@@ -32,7 +32,7 @@
                 "MOD_RTAUDIO": "OFF",
                 "MOD_RUBBERBAND": "ON",
                 "MOD_SDL2": "ON",
-                "MOD_DOX": "OFF",
+                "MOD_SPATIALAUDIO": "OFF",
                 "MOD_VIDSTAB": "OFF",
                 "MOD_VORBIS": "ON",
                 "MOD_XINE": "OFF",
