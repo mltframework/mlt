@@ -1902,7 +1902,7 @@ mlt_properties mlt_properties_parse_yaml(const char *filename)
             free(context->block_name);
             free(context);
         } else {
-+           mlt_log_warning(NULL, "Failed to open file %s for yaml parsing!\n", filename);
+            mlt_log_warning(NULL, "Failed to open file %s for yaml parsing!\n", filename);
         }
     }
 
