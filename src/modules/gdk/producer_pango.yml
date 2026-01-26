@@ -2,7 +2,7 @@ schema_version: 0.3
 type: producer
 identifier: pango
 title: Pango
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -111,6 +111,24 @@ parameters:
     mutable: yes
     widget: spinner
     unit: pixels
+
+  - identifier: underline
+    title: Underline
+    type: boolean
+    description: Apply underline decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+
+  - identifier: strikethrough
+    title: Strikethrough
+    type: boolean
+    description: Apply strikethrough decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
     
   - identifier: align
     title: Paragraph alignment

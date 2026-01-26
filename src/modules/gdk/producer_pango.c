@@ -1,6 +1,6 @@
 /*
  * producer_pango.c -- a pango-based titler
- * Copyright (C) 2003-2021 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -70,6 +70,8 @@ struct producer_pango_s
     int align;
     int pad;
     int outline;
+    int underline;
+    int strikethrough;
     char *markup;
     char *text;
     char *font;
@@ -122,7 +124,9 @@ static GdkPixbuf *pango_get_pixbuf(const char *markup,
                                    int wrap_type,
                                    int wrap_width,
                                    int line_spacing,
-                                   double aspect_ratio);
+                                   double aspect_ratio,
+                                   int underline,
+                                   int strikethrough);
 static void fill_pixbuf(GdkPixbuf *pixbuf,
                         FT_Bitmap *bitmap,
                         int w,
@@ -216,6 +220,8 @@ mlt_producer producer_pango_init(const char *filename)
         mlt_properties_set_int(properties, "align", pango_align_left);
         mlt_properties_set_int(properties, "pad", 0);
         mlt_properties_set_int(properties, "outline", 0);
+        mlt_properties_set_int(properties, "underline", 0);
+        mlt_properties_set_int(properties, "strikethrough", 0);
         mlt_properties_set_string(properties, "text", "");
         mlt_properties_set_string(properties, "font", NULL);
         mlt_properties_set_string(properties, "family", "Sans");
@@ -440,6 +446,8 @@ static void refresh_image(producer_pango self, mlt_frame frame, int width, int h
     int wrap_width = mlt_properties_get_int(producer_props, "wrap_width");
     int line_spacing = mlt_properties_get_int(properties, "line_spacing");
     double aspect_ratio = mlt_properties_get_double(properties, "aspect_ratio");
+    int underline = mlt_properties_get_int(producer_props, "underline");
+    int strikethrough = mlt_properties_get_int(producer_props, "strikethrough");
     int property_changed = 0;
 
     if (pixbuf == NULL) {
@@ -465,6 +473,8 @@ static void refresh_image(producer_pango self, mlt_frame frame, int width, int h
                            || (self->olcolor == NULL || (ol && strcmp(ol, self->olcolor)));
         property_changed = property_changed || (pad != self->pad);
         property_changed = property_changed || (outline != self->outline);
+        property_changed = property_changed || (underline != self->underline);
+        property_changed = property_changed || (strikethrough != self->strikethrough);
         property_changed = property_changed
                            || (markup && self->markup && strcmp(markup, self->markup));
         property_changed = property_changed || (text && self->text && strcmp(text, self->text));
@@ -487,6 +497,8 @@ static void refresh_image(producer_pango self, mlt_frame frame, int width, int h
         self->align = align;
         self->pad = pad;
         self->outline = outline;
+        self->underline = underline;
+        self->strikethrough = strikethrough;
         set_string(&self->fgcolor, fg, "0xffffffff");
         set_string(&self->bgcolor, bg, "0x00000000");
         set_string(&self->olcolor, ol, "0x00000000");
@@ -554,7 +566,9 @@ static void refresh_image(producer_pango self, mlt_frame frame, int width, int h
                                   wrap_type,
                                   wrap_width,
                                   line_spacing,
-                                  aspect_ratio);
+                                  aspect_ratio,
+                                  underline,
+                                  strikethrough);
 
         if (pixbuf != NULL) {
             // Register self pixbuf for destruction and reuse
@@ -849,7 +863,9 @@ static GdkPixbuf *pango_get_pixbuf(const char *markup,
                                    int wrap_type,
                                    int wrap_width,
                                    int line_spacing,
-                                   double aspect_ratio)
+                                   double aspect_ratio,
+                                   int underline,
+                                   int strikethrough)
 {
     PangoContext *context = pango_ft2_font_map_create_context(fontmap);
     PangoLayout *layout = pango_layout_new(context);
@@ -889,6 +905,17 @@ static GdkPixbuf *pango_get_pixbuf(const char *markup,
     } else {
         // Pango doesn't like empty strings
         pango_layout_set_text(layout, "  ", 2);
+    }
+
+    // Apply text decoration attributes (underline and strikethrough)
+    if (underline || strikethrough) {
+        PangoAttrList *attrs = pango_attr_list_new();
+        if (underline)
+            pango_attr_list_insert(attrs, pango_attr_underline_new(PANGO_UNDERLINE_SINGLE));
+        if (strikethrough)
+            pango_attr_list_insert(attrs, pango_attr_strikethrough_new(TRUE));
+        pango_layout_set_attributes(layout, attrs);
+        pango_attr_list_unref(attrs);
     }
 
     if (rotate) {

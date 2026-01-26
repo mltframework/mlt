@@ -2,7 +2,7 @@ schema_version: 0.1
 type: filter
 identifier: timer
 title: Timer
-version: 3
+version: 4
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -196,6 +196,24 @@ parameters:
     maximum: 3
     mutable: yes
     widget: spinner
+
+    - identifier: underline
+      title: Underline
+      type: boolean
+      description: Apply underline decoration to the text.
+      default: 0
+      readonly: no
+      mutable: yes
+      widget: checkbox
+
+    - identifier: strikethrough
+      title: Strikethrough
+      type: boolean
+      description: Apply strikethrough decoration to the text.
+      default: 0
+      readonly: no
+      mutable: yes
+      widget: checkbox
 
   - identifier: pad
     title: Padding

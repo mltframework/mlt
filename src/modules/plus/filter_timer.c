@@ -1,6 +1,6 @@
 /*
  * filter_timer.c -- timer text overlay filter
- * Copyright (C) 2018-2019 Meltytech, LLC
+ * Copyright (C) 2018-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -113,7 +113,7 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     mlt_properties_pass_list(text_filter_properties,
                              properties,
                              "geometry family size weight style fgcolour bgcolour olcolour pad "
-                             "halign valign outline opacity");
+                             "halign valign outline underline strikethrough opacity");
     mlt_filter_set_in_and_out(text_filter, mlt_filter_get_in(filter), mlt_filter_get_out(filter));
     return mlt_filter_process(text_filter, frame);
 }
@@ -161,6 +161,8 @@ mlt_filter filter_timer_init(mlt_profile profile, mlt_service_type type, const c
         mlt_properties_set(my_properties, "halign", "left");
         mlt_properties_set(my_properties, "valign", "top");
         mlt_properties_set(my_properties, "outline", "0");
+        mlt_properties_set(my_properties, "underline", "0");
+        mlt_properties_set(my_properties, "strikethrough", "0");
         mlt_properties_set_string(my_properties, "opacity", "1.0");
         mlt_properties_set_int(my_properties, "_filter_private", 1);
 

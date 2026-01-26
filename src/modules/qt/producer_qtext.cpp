@@ -1,6 +1,6 @@
 /*
  * producer_qtext.c -- text generating producer
- * Copyright (C) 2013-2025 Meltytech, LLC
+ * Copyright (C) 2013-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -116,12 +116,14 @@ static bool check_qpath(mlt_properties producer_properties)
     // Generate a signature that represents the current properties
     snprintf(new_path_sig,
              MAX_SIG,
-             "%s%s%s%s%s%s%s%s%s%s%s%s",
+             "%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
              mlt_properties_get(producer_properties, "text"),
              mlt_properties_get(producer_properties, "fgcolour"),
              mlt_properties_get(producer_properties, "bgcolour"),
              mlt_properties_get(producer_properties, "olcolour"),
              mlt_properties_get(producer_properties, "outline"),
+             mlt_properties_get(producer_properties, "underline"),
+             mlt_properties_get(producer_properties, "strikethrough"),
              mlt_properties_get(producer_properties, "align"),
              mlt_properties_get(producer_properties, "pad"),
              mlt_properties_get(producer_properties, "family"),
@@ -183,6 +185,9 @@ static void generate_qpath(mlt_properties producer_properties)
         font.setStyle(QFont::StyleItalic);
         break;
     }
+    // Apply text decoration properties
+    font.setUnderline(mlt_properties_get_int(producer_properties, "underline"));
+    font.setStrikeOut(mlt_properties_get_int(producer_properties, "strikethrough"));
     QFontMetrics fm(font);
 
     // Determine the text rectangle size
@@ -496,6 +501,8 @@ mlt_producer producer_qtext_init(mlt_profile profile,
         mlt_properties_set(producer_properties, "bgcolour", "0x00000000");
         mlt_properties_set(producer_properties, "olcolour", "0x00000000");
         mlt_properties_set(producer_properties, "outline", "0");
+        mlt_properties_set(producer_properties, "underline", "0");
+        mlt_properties_set(producer_properties, "strikethrough", "0");
         mlt_properties_set(producer_properties, "align", "left");
         mlt_properties_set(producer_properties, "pad", "0");
         mlt_properties_set(producer_properties, "family", "Sans");

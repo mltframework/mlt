@@ -1,6 +1,6 @@
 /*
  * filter_subtitle.cpp -- subtitle overlay filter
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2024-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -164,7 +164,7 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     mlt_properties_pass_list(text_filter_properties,
                              properties,
                              "geometry family size weight style fgcolour bgcolour olcolour pad "
-                             "halign valign outline opacity");
+                             "halign valign outline underline strikethrough opacity");
     mlt_filter_set_in_and_out(text_filter, mlt_filter_get_in(filter), mlt_filter_get_out(filter));
     return mlt_filter_process(text_filter, frame);
 }
@@ -205,6 +205,8 @@ mlt_filter filter_subtitle_init(mlt_profile profile,
         mlt_properties_set_string(properties, "halign", "left");
         mlt_properties_set_string(properties, "valign", "top");
         mlt_properties_set_string(properties, "outline", "0");
+        mlt_properties_set_string(properties, "underline", "0");
+        mlt_properties_set_string(properties, "strikethrough", "0");
         mlt_properties_set_string(properties, "opacity", "1.0");
         mlt_properties_set_int(properties, "_filter_private", 1);
 

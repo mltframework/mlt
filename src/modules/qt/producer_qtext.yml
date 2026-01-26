@@ -2,7 +2,7 @@ schema_version: 0.3
 type: producer
 identifier: qtext
 title: Qt Titler
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -87,6 +87,24 @@ parameters:
     maximum: 3
     mutable: yes
     widget: spinner
+
+  - identifier: underline
+    title: Underline
+    type: boolean
+    description: Apply underline decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+
+  - identifier: strikethrough
+    title: Strikethrough
+    type: boolean
+    description: Apply strikethrough decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
     
   - identifier: align
     title: Paragraph alignment

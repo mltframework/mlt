@@ -1,6 +1,6 @@
 /*
  * filter_text.c -- text overlay filter
- * Copyright (C) 2018-2021 Meltytech, LLC
+ * Copyright (C) 2018-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,8 @@ static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_dat
     if (!strcmp("geometry", name) || !strcmp("family", name) || !strcmp("size", name)
         || !strcmp("weight", name) || !strcmp("style", name) || !strcmp("fgcolour", name)
         || !strcmp("bgcolour", name) || !strcmp("olcolour", name) || !strcmp("pad", name)
-        || !strcmp("halign", name) || !strcmp("valign", name) || !strcmp("outline", name)) {
+        || !strcmp("halign", name) || !strcmp("valign", name) || !strcmp("outline", name)
+        || !strcmp("underline", name) || !strcmp("strikethrough", name)) {
         mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_reset", 1);
     }
 }
@@ -64,6 +65,12 @@ static void setup_producer(mlt_producer producer, mlt_properties my_properties)
     mlt_properties_set_string(producer_properties,
                               "outline",
                               mlt_properties_get(my_properties, "outline"));
+    mlt_properties_set_string(producer_properties,
+                              "underline",
+                              mlt_properties_get(my_properties, "underline"));
+    mlt_properties_set_string(producer_properties,
+                              "strikethrough",
+                              mlt_properties_get(my_properties, "strikethrough"));
     mlt_properties_set_string(producer_properties,
                               "align",
                               mlt_properties_get(my_properties, "halign"));
@@ -256,6 +263,8 @@ mlt_filter filter_text_init(mlt_profile profile, mlt_service_type type, const ch
         mlt_properties_set_string(my_properties, "halign", "left");
         mlt_properties_set_string(my_properties, "valign", "top");
         mlt_properties_set_string(my_properties, "outline", "0");
+        mlt_properties_set_string(my_properties, "underline", "0");
+        mlt_properties_set_string(my_properties, "strikethrough", "0");
         mlt_properties_set_int(my_properties, "_reset", 1);
         mlt_properties_set_int(my_properties, "_filter_private", 1);
 

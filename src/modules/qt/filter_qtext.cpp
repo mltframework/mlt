@@ -1,6 +1,6 @@
 /*
  * filter_qtext.cpp -- text overlay filter
- * Copyright (c) 2018-2025 Meltytech, LLC
+ * Copyright (c) 2018-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -188,6 +188,9 @@ static QRectF get_text_path(QPainterPath *qpath,
         font.setStyle(QFont::StyleItalic);
         break;
     }
+    // Apply text decoration properties
+    font.setUnderline(mlt_properties_get_int(filter_properties, "underline"));
+    font.setStrikeOut(mlt_properties_get_int(filter_properties, "strikethrough"));
     QFontMetrics fm(font);
 
     // Determine the text rectangle size
@@ -613,6 +616,8 @@ mlt_filter filter_qtext_init(mlt_profile profile, mlt_service_type type, const c
     mlt_properties_set_string(filter_properties, "halign", "left");
     mlt_properties_set_string(filter_properties, "valign", "top");
     mlt_properties_set_string(filter_properties, "outline", "0");
+    mlt_properties_set_string(filter_properties, "underline", "0");
+    mlt_properties_set_string(filter_properties, "strikethrough", "0");
     mlt_properties_set_double(filter_properties, "pixel_ratio", 1.0);
     mlt_properties_set_double(filter_properties, "opacity", 1.0);
     mlt_properties_set_int(filter_properties, "_filter_private", 1);

@@ -1,6 +1,6 @@
 /*
  * producer_subtitle.c
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2024-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,10 +46,11 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
                                     (mlt_destructor) mlt_filter_close,
                                     NULL);
         }
-        mlt_properties_pass_list(MLT_FILTER_PROPERTIES(sub_filter),
-                                 producer_properties,
-                                 "resource geometry family size weight style fgcolour bgcolour "
-                                 "olcolour pad halign valign outline opacity");
+        mlt_properties_pass_list(
+            MLT_FILTER_PROPERTIES(sub_filter),
+            producer_properties,
+            "resource geometry family size weight style fgcolour bgcolour "
+            "olcolour pad halign valign outline underline strikethrough opacity");
         mlt_filter_process(sub_filter, *frame);
     }
 
@@ -93,6 +94,8 @@ mlt_producer producer_subtitle_init(mlt_profile profile,
         mlt_properties_set_string(producer_properties, "halign", "left");
         mlt_properties_set_string(producer_properties, "valign", "top");
         mlt_properties_set_string(producer_properties, "outline", "0");
+        mlt_properties_set_string(producer_properties, "underline", "0");
+        mlt_properties_set_string(producer_properties, "strikethrough", "0");
         mlt_properties_set_string(producer_properties, "opacity", "1.0");
 
         // Register the color producer for reuse/destruction
