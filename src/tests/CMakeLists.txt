@@ -18,6 +18,10 @@ function(add_qt_test)
     mlt++
     ${ARG_LINK_LIBRARIES}
   )
+  if(MSVC)
+    target_link_libraries(${_testname} PRIVATE PThreads4W::PThreads4W)
+  endif()
+
   target_include_directories(${_testname} PRIVATE ${arg_INCLUDE_DIRS})
   add_test(NAME "QtTest:${arg_TEST_NAME}" COMMAND ${_testname})
 
@@ -51,12 +55,13 @@ if(MOD_QT6)
   )
 endif()
 
-
-file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")
-foreach(YML_FILE ${YML_FILES})
-  get_filename_component(FILE_NAME ${YML_FILE} NAME)
-  file(RELATIVE_PATH KWALIFY_TEST_NAME "${CMAKE_SOURCE_DIR}/src/modules" ${YML_FILE})
-  if(NOT FILE_NAME MATCHES "resolution_scale.yml")
-    add_test(NAME "kwalify:${KWALIFY_TEST_NAME}" COMMAND ${Kwalify_EXECUTABLE} -f "${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml" ${YML_FILE})
-  endif()
-endforeach()
+if(Kwalify_FOUND)
+  file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")
+  foreach(YML_FILE ${YML_FILES})
+    get_filename_component(FILE_NAME ${YML_FILE} NAME)
+    file(RELATIVE_PATH KWALIFY_TEST_NAME "${CMAKE_SOURCE_DIR}/src/modules" ${YML_FILE})
+    if(NOT FILE_NAME MATCHES "resolution_scale.yml")
+      add_test(NAME "kwalify:${KWALIFY_TEST_NAME}" COMMAND ${Kwalify_EXECUTABLE} -f "${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml" ${YML_FILE})
+    endif()
+  endforeach()
+endif()
