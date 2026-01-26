@@ -18,6 +18,10 @@ function(add_qt_test)
     mlt++
     ${ARG_LINK_LIBRARIES}
   )
+  if(MSVC)
+    target_link_libraries(${_testname} PRIVATE PThreads4W::PThreads4W)
+  endif()
+
   target_include_directories(${_testname} PRIVATE ${arg_INCLUDE_DIRS})
   add_test(NAME "QtTest:${arg_TEST_NAME}" COMMAND ${_testname})
 

@@ -8,7 +8,7 @@
             "binaryDir": "${sourceDir}/build",
             "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
-                "BUILD_TESTING": "OFF",
+                "BUILD_TESTING": "ON",
                 "SWIG_PYTHON": "OFF",
                 "MOD_AVFORMAT": "ON",
                 "MOD_DECKLINK": "OFF",

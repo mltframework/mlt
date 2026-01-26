@@ -50,3 +50,7 @@ jobs:
       - name: Install MLT
         run: |
           cmake --install build
+
+      - name: Run tests
+        run: |
+          ctest --test-dir build -C Debug
