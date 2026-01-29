@@ -2154,6 +2154,64 @@ static mlt_colorspace convert_image_yuvp(producer_avformat self,
                                          int dst_full_range)
 {
     mlt_colorspace result = self->yuv_colorspace;
+
+    // Check if we need special handling for NV12 range conversion
+    // NV12 and similar formats don't have YUVJ variants and sws_setColorspaceDetails
+    // may not work reliably for range conversion with these formats
+    AVFrame *intermediate_frame = NULL;
+    if (self->full_range != dst_full_range && dst_pix_fmt == AV_PIX_FMT_YUV420P
+        && (src_pix_fmt == AV_PIX_FMT_NV12 || src_pix_fmt == AV_PIX_FMT_NV21)) {
+        mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
+                      "Using intermediate conversion for %s range %d -> %d\n",
+                      av_get_pix_fmt_name(src_pix_fmt),
+                      self->full_range,
+                      dst_full_range);
+
+        // Convert to YUVJ420P if full range, YUV420P if limited range
+        // This encodes the range in the pixel format itself as a workaround
+        int intermediate_pix_fmt = self->full_range ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P;
+
+        intermediate_frame = av_frame_alloc();
+        intermediate_frame->width = width;
+        intermediate_frame->height = height;
+        intermediate_frame->format = intermediate_pix_fmt;
+        av_frame_get_buffer(intermediate_frame, 1);
+
+        int flags
+            = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, intermediate_pix_fmt);
+        struct SwsContext *context1 = sws_getContext(width,
+                                                     height,
+                                                     src_pix_fmt,
+                                                     width,
+                                                     height,
+                                                     intermediate_pix_fmt,
+                                                     flags,
+                                                     NULL,
+                                                     NULL,
+                                                     NULL);
+
+        // Keep the intermediate in the source range
+        mlt_set_luma_transfer(context1,
+                              self->yuv_colorspace,
+                              self->yuv_colorspace,
+                              self->full_range,
+                              self->full_range);
+
+        sws_scale(context1,
+                  (const uint8_t *const *) frame->data,
+                  frame->linesize,
+                  0,
+                  height,
+                  intermediate_frame->data,
+                  intermediate_frame->linesize);
+        sws_freeContext(context1);
+
+        // Now use the intermediate frame
+        frame = intermediate_frame;
+        src_pix_fmt = intermediate_pix_fmt;
+    }
+
+    // Main conversion
     int flags = mlt_get_sws_flags(width, height, src_pix_fmt, width, height, dst_pix_fmt);
     struct SwsContext *context = sws_getContext(
         width, height, src_pix_fmt, width, height, dst_pix_fmt, flags, NULL, NULL, NULL);
@@ -2161,10 +2219,18 @@ static mlt_colorspace convert_image_yuvp(producer_avformat self,
     int out_stride[4];
 
     mlt_image_format_planes(format, width, height, buffer, out_data, out_stride);
+
+    // For YUVJ formats, the range is encoded in the format
+    int effective_src_range = (src_pix_fmt == AV_PIX_FMT_YUVJ420P
+                               || src_pix_fmt == AV_PIX_FMT_YUVJ422P
+                               || src_pix_fmt == AV_PIX_FMT_YUVJ444P)
+                                  ? 1
+                                  : self->full_range;
+
     if (!mlt_set_luma_transfer(context,
                                self->yuv_colorspace,
                                dst_colorspace,
-                               self->full_range,
+                               effective_src_range,
                                dst_full_range))
         result = dst_colorspace;
     sws_scale(context,
@@ -2175,6 +2241,8 @@ static mlt_colorspace convert_image_yuvp(producer_avformat self,
               out_data,
               out_stride);
     sws_freeContext(context);
+
+    av_frame_free(&intermediate_frame);
 
     return result;
 }
