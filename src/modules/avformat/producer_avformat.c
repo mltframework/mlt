@@ -2155,21 +2155,44 @@ static mlt_colorspace convert_image_yuvp(producer_avformat self,
 {
     mlt_colorspace result = self->yuv_colorspace;
 
-    // Check if we need special handling for NV12 range conversion
-    // NV12 and similar formats don't have YUVJ variants and sws_setColorspaceDetails
-    // may not work reliably for range conversion with these formats
+    // Check if we need special handling for range conversion
+    // Some formats don't have YUVJ variants or libswscale doesn't handle range
+    // conversion reliably without an intermediate conversion step
     AVFrame *intermediate_frame = NULL;
-    if (self->full_range != dst_full_range && dst_pix_fmt == AV_PIX_FMT_YUV420P
-        && (src_pix_fmt == AV_PIX_FMT_NV12 || src_pix_fmt == AV_PIX_FMT_NV21)) {
+    int intermediate_pix_fmt = AV_PIX_FMT_NONE;
+
+    if (self->full_range != dst_full_range) {
+        const AVPixFmtDescriptor *src_desc = av_pix_fmt_desc_get(src_pix_fmt);
+
+        // For 8-bit NV12/NV21 -> YUV420P
+        if (dst_pix_fmt == AV_PIX_FMT_YUV420P
+            && (src_pix_fmt == AV_PIX_FMT_NV12 || src_pix_fmt == AV_PIX_FMT_NV21)) {
+            // Use YUVJ420P to encode full range in the pixel format itself
+            intermediate_pix_fmt = self->full_range ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P;
+        }
+        // For 10-bit source
+        else if (self->full_range && src_desc && src_desc->nb_components > 0
+                 && src_desc->comp[0].depth == 10) {
+            // For 8-bit output encode full range in pixel format
+            if (dst_pix_fmt == AV_PIX_FMT_YUV420P) {
+                intermediate_pix_fmt = AV_PIX_FMT_YUVJ420P;
+            } else if (src_pix_fmt != AV_PIX_FMT_YUV422P10LE) {
+                // For 10-bit output, use YUV 4:2:2 if source has sub-sampled chroma, otherwise 64-bit RGB
+                if (src_desc->log2_chroma_w > 0 || src_desc->log2_chroma_h > 0) {
+                    intermediate_pix_fmt = AV_PIX_FMT_YUV422P10LE;
+                } else {
+                    intermediate_pix_fmt = AV_PIX_FMT_RGBA64LE;
+                }
+            }
+        }
+    }
+
+    if (intermediate_pix_fmt != AV_PIX_FMT_NONE) {
         mlt_log_debug(MLT_PRODUCER_SERVICE(self->parent),
                       "Using intermediate conversion for %s range %d -> %d\n",
                       av_get_pix_fmt_name(src_pix_fmt),
                       self->full_range,
                       dst_full_range);
-
-        // Convert to YUVJ420P if full range, YUV420P if limited range
-        // This encodes the range in the pixel format itself as a workaround
-        int intermediate_pix_fmt = self->full_range ? AV_PIX_FMT_YUVJ420P : AV_PIX_FMT_YUV420P;
 
         intermediate_frame = av_frame_alloc();
         intermediate_frame->width = width;
@@ -2665,18 +2688,6 @@ static int producer_get_image(mlt_frame frame,
     const char *dst_color_range = mlt_properties_get(frame_properties, "consumer.color_range");
     int dst_full_range = (*format == mlt_image_none) ? self->full_range
                                                      : mlt_image_full_range(dst_color_range);
-
-    // if 10-bit libswscale only changes range when scaling, not simple pix_fmt conversion
-    const struct AVPixFmtDescriptor *pix_desc = av_pix_fmt_desc_get(self->video_codec->pix_fmt);
-    if (dst_full_range != self->full_range && pix_desc && pix_desc->nb_components > 0
-        && pix_desc->comp[0].depth == 10) {
-        if (*format == mlt_image_yuv420p10 || *format == mlt_image_yuv444p10)
-            // When the consumer requests 10-bit do not convert
-            dst_full_range = self->full_range;
-        else
-            // Otherwise, convert via RGB
-            *format = mlt_image_rgb;
-    }
 
     mlt_service_lock(MLT_PRODUCER_SERVICE(producer));
     pthread_mutex_lock(&self->video_mutex);
