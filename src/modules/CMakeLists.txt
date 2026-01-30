@@ -92,6 +92,10 @@ if(MOD_VIDSTAB)
   add_subdirectory(vid.stab)
 endif()
 
+if(MOD_OPENFX)
+  add_subdirectory(openfx)
+endif()
+
 if(MOD_VORBIS)
   add_subdirectory(vorbis)
 endif()
