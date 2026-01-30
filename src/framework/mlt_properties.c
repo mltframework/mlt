@@ -50,7 +50,11 @@
 
 typedef struct
 {
-    int hash[199];
+    int *buckets;
+    unsigned int capacity;
+    unsigned int mask;
+    unsigned int used;
+
     char **name;
     mlt_property *value;
     int count;
@@ -98,10 +102,14 @@ int mlt_properties_init(mlt_properties self, void *child)
         // Allocate the local structure
         self->local = calloc(1, sizeof(property_list));
 
+        ((property_list *) self->local)->buckets = NULL;
+        ((property_list *) self->local)->capacity = 0;
+        ((property_list *) self->local)->mask = 0;
+        ((property_list *) self->local)->used = 0;
+
         // Increment the ref count
         ((property_list *) self->local)->ref_count = 1;
         pthread_mutex_init(&((property_list *) self->local)->mutex, NULL);
-        ;
     }
 
     // Check that initialisation was successful
@@ -318,15 +326,86 @@ int mlt_properties_preset(mlt_properties self, const char *name)
  *
  * \private \memberof mlt_properties_s
  * \param name a string
- * \return an integer
+ * \return an unsigned integer
  */
 
-static inline int generate_hash(const char *name)
+static inline unsigned int generate_hash(const char *name)
 {
+    // Initial magic constant 5381. This has been proven to result in fewer collisions.
     unsigned int hash = 5381;
-    while (*name)
-        hash = hash * 33 + (unsigned int) (*name++);
-    return hash % 199;
+    int c;
+
+    while ((c = (unsigned char) *name++)) {
+        hash = ((hash << 5) + hash) + (unsigned int) c;
+    }
+
+    return hash;
+}
+
+/** Insert an index into the hash bucket array using linear probing.
+ *
+ * This internal helper handles collisions by searching for the next 
+ * available slot in the bucket array.
+ * \private \memberof mlt_properties_s
+ * \param buckets pointer to the array of hash buckets
+ * \param mask bitmask for fast modulo operation (capacity - 1)
+ * \param name the string key to hash
+ * \param index the index value to store in the bucket
+ */
+static void hash_insert(int *buckets, unsigned int mask, const char *name, int index)
+{
+    unsigned int hash = generate_hash(name);
+    unsigned int i = hash & mask;
+
+    while (buckets[i] != -1) {
+        i = (i + 1) & mask;
+    }
+    buckets[i] = index;
+}
+
+/** Check and trigger a rehash of the properties bucket list.
+ *
+ * Maintains a load factor below 0.75 to ensure O(1) performance. 
+ * If memory allocation fails during expansion, the hash table is 
+ * gracefully disabled, falling back to safe linear searches.
+ * \private \memberof mlt_properties_s
+ * \param list the property_list object to be resized or initialized
+ */
+static void check_rehash(property_list *list)
+{
+    //(used * 4 >= capacity * 3) avoids slow floating-point division.
+    if (list->buckets == NULL || (list->used * 4 >= list->capacity * 3)) {
+        // Start with 64 to reduce early reallocations for medium-sized objects
+        unsigned int new_capacity = list->capacity == 0 ? 64 : list->capacity * 2;
+
+        unsigned int new_mask = new_capacity - 1;
+        int *new_buckets = malloc(new_capacity * sizeof(int));
+
+        if (new_buckets) {
+            // Initialize buckets to -1 (empty)
+            for (unsigned int i = 0; i < new_capacity; i++)
+                new_buckets[i] = -1;
+
+            if (list->buckets) {
+                // Rehash existing items into the new bucket array
+                for (int i = 0; i < list->count; i++) {
+                    if (list->name[i])
+                        hash_insert(new_buckets, new_mask, list->name[i], i);
+                }
+                free(list->buckets);
+            }
+            list->buckets = new_buckets;
+            list->capacity = new_capacity;
+            list->mask = new_mask;
+        } else if (list->buckets) {
+            // Memory failure: invalidate hash table and fallback to linear search
+            free(list->buckets);
+            list->buckets = NULL;
+            list->capacity = 0;
+            list->mask = 0;
+            list->used = 0;
+        }
+    }
 }
 
 /** Copy a serializable property to a properties list that is mirroring this one.
@@ -535,25 +614,42 @@ static inline mlt_property mlt_properties_find(mlt_properties self, const char *
 {
     if (!self || !name)
         return NULL;
+
     property_list *list = self->local;
     mlt_property value = NULL;
-    int key = generate_hash(name);
 
     mlt_properties_lock(self);
 
-    int i = list->hash[key] - 1;
-    if (i >= 0) {
-        // Check if we're hashed
-        if (list->count > 0 && list->name[i] && !strcmp(list->name[i], name))
-            value = list->value[i];
+    // If the hash table is active, it is the authoritative source for O(1) lookups.
+    if (list->buckets) {
+        unsigned int hash = generate_hash(name);
+        unsigned int i = hash & list->mask;
 
-        // Locate the item
-        for (i = list->count - 1; value == NULL && i >= 0; i--)
-            if (list->name[i] && !strcmp(list->name[i], name))
-                value = list->value[i];
+        // Linear probing: traverse the bucket array until an empty slot (-1) is found
+        while (list->buckets[i] != -1) {
+            int index = list->buckets[i];
+            if (list->name[index] && !strcmp(list->name[index], name)) {
+                value = list->value[index];
+                mlt_properties_unlock(self);
+                return value;
+            }
+            i = (i + 1) & list->mask;
+        }
+
+        // If we reached an empty slot (-1) in the hash table, the property definitely does not exist.
+        mlt_properties_unlock(self);
+        return NULL;
     }
-    mlt_properties_unlock(self);
 
+    // Fallback Linear Search
+    for (int i = list->count - 1; i >= 0; i--) {
+        if (list->name[i] && !strcmp(list->name[i], name)) {
+            value = list->value[i];
+            break;
+        }
+    }
+
+    mlt_properties_unlock(self);
     return value;
 }
 
@@ -562,37 +658,57 @@ static inline mlt_property mlt_properties_find(mlt_properties self, const char *
  * \private \memberof mlt_properties_s
  * \param self a properties list
  * \param name the name of the new property
- * \return the new property
+ * \return the new property or NULL for failure
  */
 
 static mlt_property mlt_properties_add(mlt_properties self, const char *name)
 {
+    if (!self || !name)
+        return NULL;
+
     property_list *list = self->local;
-    int key = generate_hash(name);
     mlt_property result;
 
     mlt_properties_lock(self);
 
-    // Check that we have space and resize if necessary
+    // Doubling capacity instead of fixed increments reduces realloc overhead.
     if (list->count == list->size) {
-        list->size += 50;
-        list->name = realloc(list->name, list->size * sizeof(const char *));
-        list->value = realloc(list->value, list->size * sizeof(mlt_property));
+        int new_size = list->size == 0 ? 16 : list->size * 2;
+
+        // Use temporary pointers to prevent memory leaks on realloc failure
+        char **new_names = realloc(list->name, new_size * sizeof(const char *));
+        mlt_property *new_values = realloc(list->value, new_size * sizeof(mlt_property));
+
+        if (new_names && new_values) {
+            list->name = new_names;
+            list->value = new_values;
+            list->size = new_size;
+        } else {
+            // Memory allocation failed; rollback or handle error
+            if (new_names)
+                list->name = new_names;
+            if (new_values)
+                list->value = new_values;
+            mlt_properties_unlock(self);
+            return NULL;
+        }
     }
 
-    // Assign name/value pair
+    // Initialize new property entry
     list->name[list->count] = strdup(name);
     list->value[list->count] = mlt_property_init();
 
-    // Assign to hash table
-    if (list->hash[key] == 0)
-        list->hash[key] = list->count + 1;
+    // Update internal hash table for O(1) lookups
+    check_rehash(list);
 
-    // Return and increment count accordingly
+    if (list->buckets) {
+        hash_insert(list->buckets, list->mask, name, list->count);
+        list->used++;
+    }
+
     result = list->value[list->count++];
 
     mlt_properties_unlock(self);
-
     return result;
 }
 
@@ -1278,21 +1394,32 @@ int mlt_properties_rename(mlt_properties self, const char *source, const char *d
 
     if (value == NULL) {
         property_list *list = self->local;
-        int i = 0;
-
-        // Locate the item
+        int found = 0;
         mlt_properties_lock(self);
-        for (i = 0; i < list->count; i++) {
+
+        for (int i = 0; i < list->count; i++) {
+            // Check if the property name matches the source.
             if (list->name[i] && !strcmp(list->name[i], source)) {
                 free(list->name[i]);
                 list->name[i] = strdup(dest);
-                list->hash[generate_hash(dest)] = i + 1;
+                found = 1;
                 break;
+            }
+        }
+
+        // Rebuild the hash table if a property was renamed.
+        if (found && list->buckets) {
+            for (unsigned int j = 0; j < list->capacity; j++)
+                list->buckets[j] = -1;
+
+            for (int j = 0; j < list->count; j++) {
+                if (list->name[j]) {
+                    hash_insert(list->buckets, list->mask, list->name[j], j);
+                }
             }
         }
         mlt_properties_unlock(self);
     }
-
     return value != NULL;
 }
 
@@ -1522,6 +1649,12 @@ void mlt_properties_close(mlt_properties self)
             pthread_mutex_destroy(&list->mutex);
             free(list->name);
             free(list->value);
+
+            if (list->buckets) {
+                free(list->buckets);
+                list->buckets = NULL;
+            }
+
             free(list);
 
             // Free self now if self has no child
