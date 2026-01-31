@@ -161,6 +161,13 @@ MLT_REPOSITORY
     MltOfxHost.host = (OfxPropertySetHandle) mlt_properties_new();
     mltofx_init_host_properties(MltOfxHost.host);
 
+    // Quiet warnings from plugins that use OCIO
+    char *ocio = getenv("OCIO");
+    if (!ocio || !strcmp(ocio, "")) {
+        // If the OCIO environment variable is not set, set it to a built-in default config
+        setenv("OCIO", "ocio://ocio://default", 1);
+    }
+
     char *dir,
         *openfx_path = getenv("OFX_PLUGIN_PATH"),
         *load_unsupported_plugins = getenv(
