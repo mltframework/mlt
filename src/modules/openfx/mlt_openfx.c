@@ -104,6 +104,11 @@ static OfxStatus clipGetPropertySet(OfxImageClipHandle clip, OfxPropertySetHandl
     return kOfxStatOK;
 }
 
+static OfxStatus propGetIntN(OfxPropertySetHandle properties,
+                             const char *property,
+                             int count,
+                             int *value);
+
 static OfxStatus clipGetImage(OfxImageClipHandle clip,
                               OfxTime time,
                               const OfxRectD *region,
@@ -112,7 +117,16 @@ static OfxStatus clipGetImage(OfxImageClipHandle clip,
     mlt_properties clip_temp = (mlt_properties) clip;
     *imageHandle = (OfxPropertySetHandle) mlt_properties_get_data(clip_temp, "props", NULL);
 
-    /* WIP give him the default region if *region is not NULL */
+    if (region != NULL) {
+        const OfxRectI rect = {0, 0, 0, 0};
+        propGetIntN((OfxPropertySetHandle) *imageHandle, kOfxImagePropBounds, 4, &rect.x1);
+
+        OfxRectD *region2 = (OfxRectD *) region;
+        region2->x1 = (double) rect.x1;
+        region2->x2 = (double) rect.x2;
+        region2->y1 = (double) rect.y1;
+        region2->y2 = (double) rect.y2;
+    }
 
     return kOfxStatOK;
 }
@@ -488,9 +502,12 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
 								 them so plugins keep feeding use with parameters */
         mlt_properties pt = mlt_properties_new();
         mlt_properties_set_string(pt, "t", paramType);
+
         mlt_properties param_props = mlt_properties_new();
         mlt_properties_set_data(pt, "p", param_props, 0, (mlt_destructor) mlt_properties_close, NULL);
         mlt_properties_set_data(params, name, pt, 0, (mlt_destructor) mlt_properties_close, NULL);
+
+        propSetString((OfxPropertySetHandle) param_props, kOfxParamPropType, 0, paramType);
 
         if (propertySet != NULL) {
             *propertySet = (OfxPropertySetHandle) param_props;
@@ -1633,10 +1650,17 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                   kOfxImageEffectPropPreMultiplication,
                   0,
                   kOfxImageUnPreMultiplied);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropField, 0, kOfxImageFieldBoth);
+
     propSetString((OfxPropertySetHandle) clip_prop,
-                  kOfxImagePropField,
+                  kOfxImageClipPropFieldOrder,
                   0,
-                  kOfxImageFieldNone); /* I'm not sure about this */
+                  kOfxImageFieldBoth);
+
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  "OfxImageEffectPropRenderQuality",
+                  0,
+                  "OfxImageEffectPropRenderQualityBest");
 
     char *tstr = calloc(1, strlen("Source") + 11);
     sprintf(tstr, "%s%04d%04d", "Source", rand() % 9999, rand() % 9999); /* WIP: do something better */
@@ -1734,10 +1758,16 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   kOfxImageEffectPropPreMultiplication,
                   0,
                   kOfxImageUnPreMultiplied);
+    propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropField, 0, kOfxImageFieldBoth);
     propSetString((OfxPropertySetHandle) clip_prop,
-                  kOfxImagePropField,
+                  kOfxImageClipPropFieldOrder,
                   0,
-                  kOfxImageFieldNone); /* I'm not sure about this */
+                  kOfxImageFieldBoth);
+
+    propSetString((OfxPropertySetHandle) clip_prop,
+                  "OfxImageEffectPropRenderQuality",
+                  0,
+                  "OfxImageEffectPropRenderQualityBest");
 
     char *tstr = calloc(1, strlen("Output") + 11);
     sprintf(tstr, "%s%04d%04d", "Output", rand() % 9999, rand() % 9999); /* WIP: do something better */
@@ -1871,11 +1901,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                   kOfxImageEffectContextGeneral);
 
     plugin->setHost(&MltOfxHost);
-
     OfxStatus status_code = kOfxStatErrUnknown;
     status_code = plugin->mainEntry(kOfxActionLoad, NULL, NULL, NULL);
     mltofx_log_status_code(status_code, "kOfxActionLoad");
-
     status_code
         = plugin->mainEntry(kOfxActionDescribe, (OfxImageEffectHandle) image_effect, NULL, NULL);
     mltofx_log_status_code(status_code, "kOfxActionDescribe");
@@ -1884,6 +1912,47 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                                     (OfxImageEffectHandle) image_effect,
                                     (OfxPropertySetHandle) MltOfxHost.host,
                                     NULL);
+
+    /* some plugins need to set some attributes at Source and Output before any other operation happen */
+    mlt_properties clip = NULL, clip_props = NULL;
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Source",
+                  (OfxImageClipHandle *) &clip,
+                  (OfxPropertySetHandle *) &clip_props);
+
+    if (clip_props != NULL) {
+        propSetString((OfxPropertySetHandle) clip_props,
+                      kOfxImageClipPropFieldOrder,
+                      0,
+                      kOfxImageFieldNone);
+
+        propSetString((OfxPropertySetHandle) clip_props,
+                      "OfxImageEffectPropRenderQuality",
+                      0,
+                      "OfxImageEffectPropRenderQualityBest");
+
+        propSetString((OfxPropertySetHandle) clip_props, kOfxImagePropField, 0, kOfxImageFieldNone);
+    }
+
+    clip = NULL, clip_props = NULL;
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Source",
+                  (OfxImageClipHandle *) &clip,
+                  (OfxPropertySetHandle *) &clip_props);
+
+    if (clip_props != NULL) {
+        propSetString((OfxPropertySetHandle) clip_props,
+                      kOfxImageClipPropFieldOrder,
+                      0,
+                      kOfxImageFieldNone);
+
+        propSetString((OfxPropertySetHandle) clip_props,
+                      "OfxImageEffectPropRenderQuality",
+                      0,
+                      "OfxImageEffectPropRenderQualityBest");
+
+        propSetString((OfxPropertySetHandle) clip_props, kOfxImagePropField, 0, kOfxImageFieldNone);
+    }
 
     mltofx_log_status_code(status_code, "kOfxImageEffectActionDescribeInContext");
 
@@ -2357,6 +2426,11 @@ void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int wi
                0);
 
     propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderQualityDraft, 0, 0);
+
+    propSetString((OfxPropertySetHandle) render_in_args,
+                  "OfxImageEffectPropRenderQuality",
+                  0,
+                  "OfxImageEffectPropRenderQualityBest");
 
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionRender,
                                               (OfxImageEffectHandle) image_effect,

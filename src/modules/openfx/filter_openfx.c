@@ -165,14 +165,14 @@ static int filter_get_image(mlt_frame frame,
     }
 
     if (*format != requested_format) {
-        int convert_error = frame->convert_image(frame, image, format, requested_format);
-        *format = requested_format;
+        /* int convert_error = frame->convert_image(frame, image, format, requested_format);
+           *format = requested_format;
 
-        /* If conversion fail fallback to rgba which is widely supported */
-        if (convert_error) {
-            frame->convert_image(frame, image, format, mlt_image_rgba);
-            *format = mlt_image_rgba;
-        }
+           /\* If conversion fail fallback to rgba which is widely supported *\/
+           if (convert_error) { */
+        frame->convert_image(frame, image, format, mlt_image_rgba);
+        *format = mlt_image_rgba;
+        /* } */
     }
 
     return error;
@@ -231,7 +231,6 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
                 OfxPlugin *pt = GetPluginFn(index);
                 if (pt == NULL)
                     return NULL;
-
                 mlt_properties params = mlt_properties_new();
                 mlt_properties image_effect = mltofx_fetch_params(pt, params, NULL);
 
