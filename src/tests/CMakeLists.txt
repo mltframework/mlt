@@ -46,6 +46,10 @@ add_qt_test(TEST_NAME service)
 add_qt_test(TEST_NAME tractor)
 add_qt_test(TEST_NAME xml)
 
+if(MOD_AVFORMAT)
+  add_qt_test(TEST_NAME mod_avformat)
+endif()
+
 if(MOD_QT6)
   add_qt_test(
     TEST_NAME mod_qt_gps
