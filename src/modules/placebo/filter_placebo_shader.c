@@ -27,6 +27,7 @@
 #include <libplacebo/renderer.h>
 #include <libplacebo/shaders/custom.h>
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -183,8 +184,8 @@ static int ensure_shader(mlt_filter filter, shader_private *priv, pl_gpu gpu)
             priv->num_hooks = 1;
             priv->loaded_text = strdup(shader_text);
             mlt_log_info(MLT_FILTER_SERVICE(filter),
-                         "Loaded inline shader (%zu bytes)\n",
-                         strlen(shader_text));
+                         "Loaded inline shader (%" PRIu64 " bytes)\n",
+                         (uint64_t) strlen(shader_text));
         }
         return priv->num_hooks > 0;
     }

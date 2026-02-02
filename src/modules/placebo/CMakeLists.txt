@@ -1,5 +1,5 @@
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(libplacebo IMPORTED_TARGET libplacebo)
+pkg_check_modules(libplacebo IMPORTED_TARGET libplacebo>=5.229)
 if(NOT libplacebo_FOUND)
   return()
 endif()

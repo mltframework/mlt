@@ -39,6 +39,7 @@
 
 #include <framework/mlt_log.h>
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -139,8 +140,8 @@ static void load_cache(void)
             if ((long) fread(data, 1, size, f) == size) {
                 pl_cache_load(s_cache, data, size);
                 mlt_log_info(NULL,
-                             "[placebo] Loaded shader cache (%ld bytes) from %s\n",
-                             size,
+                             "[placebo] Loaded shader cache (%" PRId64 " bytes) from %s\n",
+                             (int64_t) size,
                              path);
             }
             free(data);
@@ -195,7 +196,7 @@ static void save_cache(void)
     if (f) {
         fwrite(data, 1, size, f);
         fclose(f);
-        mlt_log_info(NULL, "[placebo] Saved shader cache (%zu bytes) to %s\n", size, path);
+        mlt_log_info(NULL, "[placebo] Saved shader cache (%" PRIu64 " bytes) to %s\n", (uint64_t) size, path);
     }
     free(data);
 }
