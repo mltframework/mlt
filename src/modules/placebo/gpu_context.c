@@ -196,7 +196,10 @@ static void save_cache(void)
     if (f) {
         fwrite(data, 1, size, f);
         fclose(f);
-        mlt_log_info(NULL, "[placebo] Saved shader cache (%" PRIu64 " bytes) to %s\n", (uint64_t) size, path);
+        mlt_log_info(NULL,
+                     "[placebo] Saved shader cache (%" PRIu64 " bytes) to %s\n",
+                     (uint64_t) size,
+                     path);
     }
     free(data);
 }
