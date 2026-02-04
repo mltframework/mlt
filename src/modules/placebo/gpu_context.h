@@ -25,6 +25,8 @@
 #include <libplacebo/log.h>
 #include <libplacebo/renderer.h>
 
+#include <framework/mlt_frame.h>
+
 /* Return the singleton pl_gpu, lazily initialized on first call.
    Returns NULL on failure. Thread-safe. */
 pl_gpu placebo_gpu_get(void);
@@ -43,5 +45,17 @@ void placebo_render_unlock(void);
 
 /* Tear down all GPU resources. Registered via atexit on first init. */
 void placebo_gpu_release(void);
+
+/* Retrieve a GPU texture left on the frame by a preceding placebo filter.
+   Returns NULL if none exists, or if the image buffer pointer differs from
+   current_image (indicating an intervening CPU filter reallocated it).
+   On success, ownership transfers to the caller who must destroy it. */
+pl_tex placebo_frame_take_tex(mlt_frame frame, const uint8_t *current_image);
+
+/* Attach a rendered GPU texture to the frame so the next placebo filter
+   in the chain can skip the RAM-to-GPU upload. image_ptr records the
+   current buffer address for staleness detection (see take_tex above).
+   The texture is destroyed automatically if no filter claims it. */
+void placebo_frame_put_tex(mlt_frame frame, pl_tex tex, const uint8_t *image_ptr);
 
 #endif /* GPU_CONTEXT_H */

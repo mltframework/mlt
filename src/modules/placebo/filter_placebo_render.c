@@ -99,7 +99,7 @@ static int filter_get_image(mlt_frame frame,
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
 
-    /* W2 fix: verify RGBA8 format is supported */
+    /* Not all GPU backends guarantee rgba8 support (e.g. some OpenGL ES) */
     pl_fmt rgba_fmt = pl_find_named_fmt(gpu, "rgba8");
     if (!rgba_fmt) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "GPU does not support rgba8 format\n");
@@ -116,38 +116,48 @@ static int filter_get_image(mlt_frame frame,
     int h = *height;
     size_t stride = w * 4;
 
-    /* W4 fix: hold render lock for all GPU operations */
+    /* pl_renderer is not thread-safe; hold the lock for the entire
+     * upload → render → download sequence */
     placebo_render_lock();
 
-    /* Create source texture and upload */
-    pl_tex src_tex = pl_tex_create(gpu,
-                                   pl_tex_params(.w = w,
-                                                 .h = h,
-                                                 .format = rgba_fmt,
-                                                 .sampleable = true,
-                                                 .host_writable = true, ));
-    if (!src_tex) {
-        mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create source texture\n");
-        placebo_render_unlock();
-        return 0; /* pass through original frame data */
+    /* Try to reuse a GPU texture left by a preceding placebo filter on
+     * this frame. Returns NULL if there is none, or if the RAM buffer was
+     * reallocated by an intervening CPU filter (stale texture). */
+    pl_tex reused_src = placebo_frame_take_tex(frame, *image);
+    pl_tex src_tex;
+    if (reused_src) {
+        src_tex = reused_src;
+    } else {
+        src_tex = pl_tex_create(gpu,
+                                pl_tex_params(.w = w,
+                                              .h = h,
+                                              .format = rgba_fmt,
+                                              .sampleable = true,
+                                              .host_writable = true, ));
+        if (!src_tex) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create source texture\n");
+            placebo_render_unlock();
+            return 0;
+        }
+
+        if (!pl_tex_upload(gpu,
+                           pl_tex_transfer_params(.tex = src_tex,
+                                                  .row_pitch = stride,
+                                                  .ptr = *image, ))) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "GPU texture upload failed\n");
+            pl_tex_destroy(gpu, &src_tex);
+            placebo_render_unlock();
+            return 0;
+        }
     }
 
-    /* C4 fix: check upload return */
-    if (!pl_tex_upload(gpu,
-                       pl_tex_transfer_params(.tex = src_tex,
-                                              .row_pitch = stride,
-                                              .ptr = *image, ))) {
-        mlt_log_error(MLT_FILTER_SERVICE(filter), "GPU texture upload failed\n");
-        pl_tex_destroy(gpu, &src_tex);
-        placebo_render_unlock();
-        return 0;
-    }
-
-    /* Create destination texture */
+    /* sampleable is needed so a subsequent placebo filter can bind this
+     * texture as its source without re-uploading from RAM. */
     pl_tex dst_tex = pl_tex_create(gpu,
                                    pl_tex_params(.w = w,
                                                  .h = h,
                                                  .format = rgba_fmt,
+                                                 .sampleable = true,
                                                  .renderable = true,
                                                  .host_readable = true, ));
     if (!dst_tex) {
@@ -228,7 +238,8 @@ static int filter_get_image(mlt_frame frame,
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
     }
 
-    /* C4 fix: check download return */
+    /* Always download to RAM — MLT expects *image to hold current pixels,
+     * even though the texture may be reused on the GPU side. */
     if (!pl_tex_download(gpu,
                          pl_tex_transfer_params(.tex = dst_tex,
                                                 .row_pitch = stride,
@@ -236,9 +247,11 @@ static int filter_get_image(mlt_frame frame,
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "GPU texture download failed\n");
     }
 
-    /* Cleanup textures */
     pl_tex_destroy(gpu, &src_tex);
-    pl_tex_destroy(gpu, &dst_tex);
+    /* Keep dst_tex alive on the frame for the next placebo filter to
+     * pick up via take_tex(). Unclaimed textures are freed automatically
+     * by the frame destructor (frame_gpu_destroy). */
+    placebo_frame_put_tex(frame, dst_tex, *image);
 
     placebo_render_unlock();
 

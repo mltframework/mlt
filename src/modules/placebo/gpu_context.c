@@ -19,6 +19,7 @@
 
 #include "gpu_context.h"
 
+#include <framework/mlt_frame.h>
 #include <libplacebo/cache.h>
 #include <libplacebo/dispatch.h>
 #include <libplacebo/gpu.h>
@@ -63,7 +64,7 @@ static pl_d3d11 s_d3d11 = NULL;
 
 #ifdef PL_HAVE_VULKAN
 static pl_vulkan s_vulkan = NULL;
-static pl_vk_inst s_vk_inst = NULL; /* stored to avoid leak (W1) */
+static pl_vk_inst s_vk_inst = NULL; /* must outlive pl_vulkan; destroyed in gpu_release */
 #ifdef _WIN32
 static HMODULE s_vulkan_dll = NULL; /* dynamically loaded vulkan-1.dll */
 #endif
@@ -80,7 +81,7 @@ static pl_cache s_cache = NULL;
 
 static int s_initialized = 0;
 
-/* ---------- Mutex (C1 fix: use SRWLOCK on Windows -- statically initializable) ---------- */
+/* ---------- Mutex (SRWLOCK on Windows is statically initializable, unlike CRITICAL_SECTION) ---------- */
 
 #ifdef _WIN32
 static SRWLOCK s_mutex = SRWLOCK_INIT;
@@ -165,7 +166,7 @@ static void ensure_cache_dir(const char *path)
     char *last_sep = strrchr(dir, '/');
     if (last_sep) {
         *last_sep = '\0';
-        mkdir(dir, 0755); /* W5 fix: actually create the directory */
+        mkdir(dir, 0755);
     }
 #endif
 }
@@ -304,7 +305,6 @@ done:
 
     load_cache();
 
-    /* C2 fix: register cleanup at process exit */
     atexit(placebo_gpu_release);
 
     return 1;
@@ -358,7 +358,6 @@ pl_renderer placebo_renderer_get(void)
     return result;
 }
 
-/* W4 fix: render lock for thread safety around pl_renderer/pl_dispatch calls */
 void placebo_render_lock(void)
 {
     RENDER_LOCK();
@@ -368,6 +367,81 @@ void placebo_render_unlock(void)
 {
     RENDER_UNLOCK();
 }
+
+/* ---------- Frame GPU texture reuse ----------
+ *
+ * When multiple placebo filters are chained on one producer, each filter
+ * would normally upload the frame to GPU, render, and download back to RAM.
+ * For N filters that means N uploads and N downloads — the intermediate
+ * RAM roundtrips are pure waste because the next placebo filter will
+ * re-upload the same data immediately.
+ *
+ * To avoid this, each placebo filter attaches its output texture to the
+ * mlt_frame via put_tex(). The next placebo filter in the chain calls
+ * take_tex() to grab it and use it directly as its source, skipping the
+ * upload. The download to RAM still happens every time (MLT expects the
+ * image buffer to be current), but the upload is eliminated for all
+ * filters after the first one.
+ *
+ * Staleness detection: if a non-placebo CPU filter runs between two
+ * placebo filters, it may reallocate the image buffer (e.g. via
+ * mlt_frame_get_image with writable=1, which triggers a copy).
+ * put_tex() records the buffer pointer, and take_tex() compares it
+ * against the current pointer. A mismatch means the texture content
+ * no longer matches RAM, so take_tex() returns NULL and the caller
+ * falls back to a fresh upload. This is safe because MLT's standard
+ * mechanism for a filter to modify frame data is to request a writable
+ * buffer, which always produces a new allocation.
+ */
+
+typedef struct
+{
+    pl_tex tex;
+    const uint8_t *image_ptr; /* RAM buffer address at time of put_tex */
+} placebo_frame_gpu;
+
+/* Called by mlt_properties when the frame is destroyed or the property
+ * is overwritten. Must acquire render_lock because pl_tex_destroy
+ * touches GPU state, and this destructor may fire from any thread. */
+static void frame_gpu_destroy(void *ptr)
+{
+    placebo_frame_gpu *d = ptr;
+    if (d && d->tex) {
+        pl_gpu gpu = placebo_gpu_get();
+        if (gpu) {
+            placebo_render_lock();
+            pl_tex_destroy(gpu, &d->tex);
+            placebo_render_unlock();
+        }
+    }
+    free(d);
+}
+
+pl_tex placebo_frame_take_tex(mlt_frame frame, const uint8_t *current_image)
+{
+    mlt_properties props = MLT_FRAME_PROPERTIES(frame);
+    placebo_frame_gpu *d = mlt_properties_get_data(props, "_placebo_gpu", NULL);
+    if (!d || !d->tex)
+        return NULL;
+    if (d->image_ptr != current_image)
+        return NULL; /* buffer was reallocated — texture is stale */
+    pl_tex tex = d->tex;
+    d->tex = NULL; /* transfer ownership to caller; disarm destructor */
+    return tex;
+}
+
+void placebo_frame_put_tex(mlt_frame frame, pl_tex tex, const uint8_t *image_ptr)
+{
+    placebo_frame_gpu *d = calloc(1, sizeof(placebo_frame_gpu));
+    d->tex = tex;
+    d->image_ptr = image_ptr;
+    /* If a previous texture was attached, set_data replaces it and
+     * frame_gpu_destroy fires for the old one. After take_tex() the
+     * old entry has tex=NULL so the destructor becomes a no-op. */
+    mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame), "_placebo_gpu", d, 0, frame_gpu_destroy, NULL);
+}
+
+/* ---------- GPU teardown ---------- */
 
 void placebo_gpu_release(void)
 {
@@ -405,7 +479,6 @@ void placebo_gpu_release(void)
         pl_vulkan_destroy(&s_vulkan);
         s_vulkan = NULL;
     }
-    /* W1 fix: destroy Vulkan instance */
     if (s_vk_inst) {
         pl_vk_inst_destroy(&s_vk_inst);
         s_vk_inst = NULL;
