@@ -44,6 +44,45 @@
 #define stat_struct stat
 #endif
 
+/* ---- Base64 decoder (RFC 4648) ---- */
+static const unsigned char b64_table[256] = {
+    ['A']=0,['B']=1,['C']=2,['D']=3,['E']=4,['F']=5,['G']=6,['H']=7,
+    ['I']=8,['J']=9,['K']=10,['L']=11,['M']=12,['N']=13,['O']=14,['P']=15,
+    ['Q']=16,['R']=17,['S']=18,['T']=19,['U']=20,['V']=21,['W']=22,['X']=23,
+    ['Y']=24,['Z']=25,['a']=26,['b']=27,['c']=28,['d']=29,['e']=30,['f']=31,
+    ['g']=32,['h']=33,['i']=34,['j']=35,['k']=36,['l']=37,['m']=38,['n']=39,
+    ['o']=40,['p']=41,['q']=42,['r']=43,['s']=44,['t']=45,['u']=46,['v']=47,
+    ['w']=48,['x']=49,['y']=50,['z']=51,['0']=52,['1']=53,['2']=54,['3']=55,
+    ['4']=56,['5']=57,['6']=58,['7']=59,['8']=60,['9']=61,['+']=62,['/']=63,
+};
+
+/* Decode base64 in-place. Returns decoded length, or -1 on error. */
+static long b64_decode(const char *src, size_t src_len, char *dst)
+{
+    size_t i = 0;
+    long out = 0;
+    while (i < src_len) {
+        /* skip whitespace / padding */
+        if (src[i] == '=' || src[i] == '\n' || src[i] == '\r' || src[i] == ' ') {
+            i++;
+            continue;
+        }
+        if (i + 1 >= src_len) break;
+        unsigned int a = b64_table[(unsigned char) src[i]];
+        unsigned int b = b64_table[(unsigned char) src[i + 1]];
+        unsigned int c = (i + 2 < src_len && src[i + 2] != '=') ? b64_table[(unsigned char) src[i + 2]] : 0;
+        unsigned int d = (i + 3 < src_len && src[i + 3] != '=') ? b64_table[(unsigned char) src[i + 3]] : 0;
+        dst[out++] = (char) ((a << 2) | (b >> 4));
+        if (i + 2 < src_len && src[i + 2] != '=')
+            dst[out++] = (char) (((b & 0xF) << 4) | (c >> 2));
+        if (i + 3 < src_len && src[i + 3] != '=')
+            dst[out++] = (char) (((c & 0x3) << 6) | d);
+        i += 4;
+    }
+    dst[out] = '\0';
+    return out;
+}
+
 /* Private data stored on the filter */
 typedef struct
 {
@@ -113,6 +152,64 @@ static time_t file_mtime(const char *path)
     return 0;
 }
 
+/* ---------- Shader parameter override ----------
+ *
+ * libplacebo's pl_hook exposes tunable DYNAMIC parameters (declared via
+ * //!PARAM + //!TYPE DYNAMIC in the shader source).  After parsing, each
+ * parameter lives in hook->parameters[] with a mutable data pointer
+ * (par->data->f / .i / .u) that can be written before every render call.
+ *
+ * The NLE (Kdenlive) stores user values as MLT animated properties with
+ * the prefix "shader_param." — e.g. "shader_param.color_r".  Animated
+ * properties use MLT's keyframe string format ("0=200;50=100"), so we
+ * must resolve them at the current frame position via the anim_get API.
+ * Using plain atof() would parse only the frame number before '=' and
+ * return the wrong value.
+ *
+ * Parameters that the user has not touched are absent from MLT properties;
+ * those keep the defaults baked into the //!PARAM block by libplacebo. */
+static void apply_shader_params(mlt_filter filter,
+                                mlt_frame frame,
+                                mlt_properties props,
+                                const struct pl_hook *hook)
+{
+    if (!hook || hook->num_parameters <= 0)
+        return;
+
+    mlt_position position = mlt_filter_get_position(filter, frame);
+    mlt_position length = mlt_filter_get_length2(filter, frame);
+
+    int n = mlt_properties_count(props);
+    for (int i = 0; i < n; i++) {
+        const char *key = mlt_properties_get_name(props, i);
+        if (!key || strncmp(key, "shader_param.", 13) != 0)
+            continue;
+
+        const char *param_name = key + 13; /* bare name after prefix */
+
+        /* Match against the hook's exported parameters by name */
+        for (int j = 0; j < hook->num_parameters; j++) {
+            const struct pl_hook_par *par = &hook->parameters[j];
+            if (strcmp(par->name, param_name) == 0 && par->data) {
+                /* par->data is explicitly mutable (pl_var_data *) even
+                 * though the hook itself is const — libplacebo documents
+                 * it as "may be updated at any time by the user". */
+                if (par->type == PL_VAR_FLOAT) {
+                    par->data->f = (float) mlt_properties_anim_get_double(
+                        props, key, position, length);
+                } else if (par->type == PL_VAR_SINT) {
+                    par->data->i = mlt_properties_anim_get_int(
+                        props, key, position, length);
+                } else if (par->type == PL_VAR_UINT) {
+                    par->data->u = (unsigned) mlt_properties_anim_get_int(
+                        props, key, position, length);
+                }
+                break;
+            }
+        }
+    }
+}
+
 /* Load/reload shader if needed. Returns 1 if hooks are available. */
 static int ensure_shader(mlt_filter filter, shader_private *priv, pl_gpu gpu)
 {
@@ -176,17 +273,37 @@ static int ensure_shader(mlt_filter filter, shader_private *priv, pl_gpu gpu)
             free(priv->loaded_text);
             priv->loaded_text = NULL;
 
-            priv->hooks[0] = pl_mpv_user_shader_parse(gpu, shader_text, strlen(shader_text));
+            /* Decode base64-encoded shader_text (prefix "base64:") */
+            const char *parse_text = shader_text;
+            size_t parse_len = strlen(shader_text);
+            char *decoded = NULL;
+            if (strncmp(shader_text, "base64:", 7) == 0) {
+                const char *b64 = shader_text + 7;
+                size_t b64_len = strlen(b64);
+                decoded = malloc(b64_len + 1); /* decoded is always <= input */
+                if (decoded) {
+                    long dec_len = b64_decode(b64, b64_len, decoded);
+                    if (dec_len > 0) {
+                        parse_text = decoded;
+                        parse_len = (size_t) dec_len;
+                    }
+                }
+            }
+
+            priv->hooks[0] = pl_mpv_user_shader_parse(gpu, parse_text, parse_len);
             if (!priv->hooks[0]) {
                 mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to parse inline shader_text\n");
+                free(decoded);
                 return 0;
             }
 
             priv->num_hooks = 1;
             priv->loaded_text = strdup(shader_text);
             mlt_log_info(MLT_FILTER_SERVICE(filter),
-                         "Loaded inline shader (%" PRIu64 " bytes)\n",
-                         (uint64_t) strlen(shader_text));
+                         "Loaded inline shader (%" PRIu64 " bytes%s)\n",
+                         (uint64_t) parse_len,
+                         decoded ? ", base64-decoded" : "");
+            free(decoded);
         }
         return priv->num_hooks > 0;
     }
@@ -316,6 +433,13 @@ static int filter_get_image(mlt_frame frame,
         .repr = pl_color_repr_rgb,
         .color = pl_color_space_srgb,
     };
+
+    /* Override DYNAMIC shader parameters with values from MLT properties.
+     * Must happen after textures are set up but before pl_render_image,
+     * because the render call reads par->data to build the shader. */
+    if (priv->num_hooks > 0 && priv->hooks[0]) {
+        apply_shader_params(filter, frame, filter_props, priv->hooks[0]);
+    }
 
     /* Render with shader hooks */
     struct pl_render_params params = pl_render_default_params;
