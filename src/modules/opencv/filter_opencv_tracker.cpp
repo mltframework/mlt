@@ -29,7 +29,9 @@
 #include <opencv2/tracking/tracking_legacy.hpp>
 #include <sys/stat.h>  // for stat()
 #include <sys/types.h> // for stat()
+#ifndef _MSC_VER
 #include <unistd.h>    // for stat()
+#endif
 #endif
 
 typedef struct
