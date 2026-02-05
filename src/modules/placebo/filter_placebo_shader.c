@@ -46,14 +46,14 @@
 
 /* ---- Base64 decoder (RFC 4648) ---- */
 static const unsigned char b64_table[256] = {
-    ['A']=0,['B']=1,['C']=2,['D']=3,['E']=4,['F']=5,['G']=6,['H']=7,
-    ['I']=8,['J']=9,['K']=10,['L']=11,['M']=12,['N']=13,['O']=14,['P']=15,
-    ['Q']=16,['R']=17,['S']=18,['T']=19,['U']=20,['V']=21,['W']=22,['X']=23,
-    ['Y']=24,['Z']=25,['a']=26,['b']=27,['c']=28,['d']=29,['e']=30,['f']=31,
-    ['g']=32,['h']=33,['i']=34,['j']=35,['k']=36,['l']=37,['m']=38,['n']=39,
-    ['o']=40,['p']=41,['q']=42,['r']=43,['s']=44,['t']=45,['u']=46,['v']=47,
-    ['w']=48,['x']=49,['y']=50,['z']=51,['0']=52,['1']=53,['2']=54,['3']=55,
-    ['4']=56,['5']=57,['6']=58,['7']=59,['8']=60,['9']=61,['+']=62,['/']=63,
+    ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,  ['E'] = 4,  ['F'] = 5,  ['G'] = 6,  ['H'] = 7,
+    ['I'] = 8,  ['J'] = 9,  ['K'] = 10, ['L'] = 11, ['M'] = 12, ['N'] = 13, ['O'] = 14, ['P'] = 15,
+    ['Q'] = 16, ['R'] = 17, ['S'] = 18, ['T'] = 19, ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23,
+    ['Y'] = 24, ['Z'] = 25, ['a'] = 26, ['b'] = 27, ['c'] = 28, ['d'] = 29, ['e'] = 30, ['f'] = 31,
+    ['g'] = 32, ['h'] = 33, ['i'] = 34, ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38, ['n'] = 39,
+    ['o'] = 40, ['p'] = 41, ['q'] = 42, ['r'] = 43, ['s'] = 44, ['t'] = 45, ['u'] = 46, ['v'] = 47,
+    ['w'] = 48, ['x'] = 49, ['y'] = 50, ['z'] = 51, ['0'] = 52, ['1'] = 53, ['2'] = 54, ['3'] = 55,
+    ['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59, ['8'] = 60, ['9'] = 61, ['+'] = 62, ['/'] = 63,
 };
 
 /* Decode base64 in-place. Returns decoded length, or -1 on error. */
@@ -67,11 +67,16 @@ static long b64_decode(const char *src, size_t src_len, char *dst)
             i++;
             continue;
         }
-        if (i + 1 >= src_len) break;
+        if (i + 1 >= src_len)
+            break;
         unsigned int a = b64_table[(unsigned char) src[i]];
         unsigned int b = b64_table[(unsigned char) src[i + 1]];
-        unsigned int c = (i + 2 < src_len && src[i + 2] != '=') ? b64_table[(unsigned char) src[i + 2]] : 0;
-        unsigned int d = (i + 3 < src_len && src[i + 3] != '=') ? b64_table[(unsigned char) src[i + 3]] : 0;
+        unsigned int c = (i + 2 < src_len && src[i + 2] != '=')
+                             ? b64_table[(unsigned char) src[i + 2]]
+                             : 0;
+        unsigned int d = (i + 3 < src_len && src[i + 3] != '=')
+                             ? b64_table[(unsigned char) src[i + 3]]
+                             : 0;
         dst[out++] = (char) ((a << 2) | (b >> 4));
         if (i + 2 < src_len && src[i + 2] != '=')
             dst[out++] = (char) (((b & 0xF) << 4) | (c >> 2));
@@ -195,14 +200,13 @@ static void apply_shader_params(mlt_filter filter,
                  * though the hook itself is const — libplacebo documents
                  * it as "may be updated at any time by the user". */
                 if (par->type == PL_VAR_FLOAT) {
-                    par->data->f = (float) mlt_properties_anim_get_double(
-                        props, key, position, length);
+                    par->data->f
+                        = (float) mlt_properties_anim_get_double(props, key, position, length);
                 } else if (par->type == PL_VAR_SINT) {
-                    par->data->i = mlt_properties_anim_get_int(
-                        props, key, position, length);
+                    par->data->i = mlt_properties_anim_get_int(props, key, position, length);
                 } else if (par->type == PL_VAR_UINT) {
-                    par->data->u = (unsigned) mlt_properties_anim_get_int(
-                        props, key, position, length);
+                    par->data->u
+                        = (unsigned) mlt_properties_anim_get_int(props, key, position, length);
                 }
                 break;
             }

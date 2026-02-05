@@ -438,7 +438,12 @@ void placebo_frame_put_tex(mlt_frame frame, pl_tex tex, const uint8_t *image_ptr
     /* If a previous texture was attached, set_data replaces it and
      * frame_gpu_destroy fires for the old one. After take_tex() the
      * old entry has tex=NULL so the destructor becomes a no-op. */
-    mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame), "_placebo_gpu", d, 0, frame_gpu_destroy, NULL);
+    mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame),
+                            "_placebo_gpu",
+                            d,
+                            0,
+                            frame_gpu_destroy,
+                            NULL);
 }
 
 /* ---------- GPU teardown ---------- */
