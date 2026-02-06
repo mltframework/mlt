@@ -197,23 +197,23 @@ parameters:
     mutable: yes
     widget: spinner
 
-    - identifier: underline
-      title: Underline
-      type: boolean
-      description: Apply underline decoration to the text.
-      default: 0
-      readonly: no
-      mutable: yes
-      widget: checkbox
-
-    - identifier: strikethrough
-      title: Strikethrough
-      type: boolean
-      description: Apply strikethrough decoration to the text.
-      default: 0
-      readonly: no
-      mutable: yes
-      widget: checkbox
+  - identifier: underline
+    title: Underline
+    type: boolean
+    description: Apply underline decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+    
+  - identifier: strikethrough
+    title: Strikethrough
+    type: boolean
+    description: Apply strikethrough decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
 
   - identifier: pad
     title: Padding

@@ -70,24 +70,6 @@ parameters:
     widget: spinner
 
   - identifier: style
-
-  - identifier: underline
-    title: Underline
-    type: boolean
-    description: Apply underline decoration to the text.
-    default: 0
-    readonly: no
-    mutable: yes
-    widget: checkbox
-
-  - identifier: strikethrough
-    title: Strikethrough
-    type: boolean
-    description: Apply strikethrough decoration to the text.
-    default: 0
-    readonly: no
-    mutable: yes
-    widget: checkbox
     title: Font style
     type: string
     description: >
@@ -156,6 +138,24 @@ parameters:
     minimum: 0
     mutable: yes
     widget: spinner
+
+  - identifier: underline
+    title: Underline
+    type: boolean
+    description: Apply underline decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
+
+  - identifier: strikethrough
+    title: Strikethrough
+    type: boolean
+    description: Apply strikethrough decoration to the text.
+    default: 0
+    readonly: no
+    mutable: yes
+    widget: checkbox
 
   - identifier: pad
     title: Padding
