@@ -961,11 +961,37 @@ static int setup_hwaccel_filters(producer_avformat self,
     AVStream *stream = self->video_format->streams[self->video_index];
     AVRational frame_rate = guess_frame_rate(self, stream);
 
-    int scaled_width = (int) (self->video_frame->width * scale_factor);
-    int scaled_height = (int) (self->video_frame->height * scale_factor);
+    // Get the actual hardware texture dimensions from hw_frames_ctx
+    // hwaccel may pad these beyond the logical width/height for alignment
+    int hw_width = self->video_frame->width;
+    int hw_height = self->video_frame->height;
+
+    if (self->video_frame->hw_frames_ctx) {
+        AVHWFramesContext *hw_frames_ctx
+            = (AVHWFramesContext *) self->video_frame->hw_frames_ctx->data;
+        hw_width = hw_frames_ctx->width;
+        hw_height = hw_frames_ctx->height;
+    }
+
+    int original_width = self->video_frame->width;
+    int original_height = self->video_frame->height;
+
+    int scaled_width = (int) (original_width * scale_factor);
+    int scaled_height = (int) (original_height * scale_factor);
     char scale_args[64];
     scaled_width += scaled_width % 2;
     scaled_height += scaled_height % 2;
+
+    mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
+                  "hwaccel scale filter setup: input %dx%d (hw: %dx%d), scale %.3f, target %dx%d\n",
+                  original_width,
+                  original_height,
+                  hw_width,
+                  hw_height,
+                  scale_factor,
+                  scaled_width,
+                  scaled_height);
+
     if (self->hwaccel.pix_fmt == AV_PIX_FMT_D3D11) {
         snprintf(scale_args,
                  sizeof(scale_args),
@@ -1006,15 +1032,9 @@ static int setup_hwaccel_filters(producer_avformat self,
     }
 
     // Set options on the filter context
-    int ret = av_opt_set_int(self->hwaccel.filter_in,
-                             "width",
-                             self->video_frame->width,
-                             AV_OPT_SEARCH_CHILDREN);
+    int ret = av_opt_set_int(self->hwaccel.filter_in, "width", hw_width, AV_OPT_SEARCH_CHILDREN);
     if (ret >= 0)
-        ret = av_opt_set_int(self->hwaccel.filter_in,
-                             "height",
-                             self->video_frame->height,
-                             AV_OPT_SEARCH_CHILDREN);
+        ret = av_opt_set_int(self->hwaccel.filter_in, "height", hw_height, AV_OPT_SEARCH_CHILDREN);
     if (ret >= 0)
         ret = av_opt_set_pixel_fmt(self->hwaccel.filter_in,
                                    "pix_fmt",
@@ -1169,6 +1189,25 @@ static void try_setup_hwaccel_filters(producer_avformat self,
 {
     if (self->hwaccel.filters_initialized || self->hwaccel.filter_graph)
         return;
+
+    // Check for D3D11 texture padding with HEVC - this specific combination produces black bars
+    if (self->hwaccel.pix_fmt == AV_PIX_FMT_D3D11 && self->video_codec
+        && self->video_codec->codec_id == AV_CODEC_ID_HEVC && self->video_frame
+        && self->video_frame->hw_frames_ctx) {
+        AVHWFramesContext *hw_frames_ctx
+            = (AVHWFramesContext *) self->video_frame->hw_frames_ctx->data;
+        if (hw_frames_ctx->height > self->video_frame->height) {
+            mlt_log_verbose(MLT_PRODUCER_SERVICE(producer),
+                            "D3D11 texture padding detected with HEVC (%dx%d vs logical %dx%d), "
+                            "skipping hwaccel filter\n",
+                            hw_frames_ctx->width,
+                            hw_frames_ctx->height,
+                            self->video_frame->width,
+                            self->video_frame->height);
+            self->hwaccel.filters_initialized = 1; // Mark as "initialized" to skip future attempts
+            return;
+        }
+    }
 
     const char *filter_name = NULL;
     switch (self->hwaccel.pix_fmt) {
