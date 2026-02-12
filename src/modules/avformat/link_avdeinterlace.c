@@ -1,6 +1,6 @@
 /*
  * link_avdeinterlace.c
- * Copyright (C) 2023-2025 Meltytech, LLC
+ * Copyright (C) 2023-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,12 +38,12 @@ typedef struct
     mlt_position expected_frame;
     mlt_position continuity_frame;
     mlt_deinterlacer method;
-    int informat;
-    int outformat;
+    int format;
     int width;
     int height;
-    mlt_colorspace incolorspace;
-    int infullrange;
+    mlt_colorspace colorspace;
+    int fullrange;
+    int reset;
 } private_data;
 
 typedef struct
@@ -96,22 +96,18 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
     mlt_profile profile = mlt_service_profile(MLT_LINK_SERVICE(self));
     const AVFilter *buffersrc = avfilter_get_by_name("buffer");
     const AVFilter *buffersink = avfilter_get_by_name("buffersink");
-    enum AVPixelFormat in_pixel_fmts[] = {-1, -1};
-    enum AVPixelFormat out_pixel_fmts[] = {-1, -1};
+    enum AVPixelFormat pixel_fmts[] = {-1, -1};
+    pixel_fmts[0] = mlt_to_av_image_format(pdata->format);
     AVRational timebase = (AVRational){profile->frame_rate_den, profile->frame_rate_num};
     AVRational framerate = (AVRational){profile->frame_rate_num, profile->frame_rate_den};
-    int colorspace = mlt_to_av_colorspace(pdata->incolorspace, pdata->height);
-    int color_range = mlt_to_av_color_range(pdata->infullrange);
+    int colorspace = mlt_to_av_colorspace(pdata->colorspace, pdata->height);
+    int color_range = mlt_to_av_color_range(pdata->fullrange);
     AVFilterContext *prev_ctx = NULL;
     AVFilterContext *avfilter_ctx = NULL;
     int ret;
 
     fdata->avinframe = av_frame_alloc();
     fdata->avoutframe = av_frame_alloc();
-
-    // Set up formats
-    in_pixel_fmts[0] = mlt_to_av_image_format(pdata->informat);
-    out_pixel_fmts[0] = mlt_to_av_image_format(pdata->outformat);
 
     // Create the new filter graph
     fdata->avfilter_graph = avfilter_graph_alloc();
@@ -139,10 +135,10 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
     }
     ret = av_opt_set_pixel_fmt(fdata->avbuffsrc_ctx,
                                "pix_fmt",
-                               in_pixel_fmts[0],
+                               pixel_fmts[0],
                                AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
-        mlt_log_error(self, "Cannot set src pixel format %d\n", in_pixel_fmts[0]);
+        mlt_log_error(self, "Cannot set src pixel format %d\n", pixel_fmts[0]);
         goto fail;
     }
     ret = av_opt_set_q(fdata->avbuffsrc_ctx, "sar", sar, AV_OPT_SEARCH_CHILDREN);
@@ -318,16 +314,16 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
                            0,
                            1,
                            AV_OPT_TYPE_PIXEL_FMT,
-                           out_pixel_fmts);
+                           pixel_fmts);
 #else
     ret = av_opt_set_int_list(fdata->avbuffsink_ctx,
                               "pix_fmts",
-                              out_pixel_fmts,
+                              pixel_fmts,
                               -1,
                               AV_OPT_SEARCH_CHILDREN);
 #endif
     if (ret < 0) {
-        mlt_log_error(self, "Cannot set sink pixel formats %d\n", out_pixel_fmts[0]);
+        mlt_log_error(self, "Cannot set sink pixel formats %d\n", pixel_fmts[0]);
         goto fail;
     }
     ret = avfilter_init_str(fdata->avbuffsink_ctx, NULL);
@@ -414,133 +410,148 @@ static int link_get_image(mlt_frame frame,
         srcimg.height = profile->height;
     }
     srcimg.format = validate_format(srcimg.format);
-    dstimg.format = validate_format(*format);
-    const char *colorspace_str = mlt_properties_get(unique_properties, "colorspace");
-    mlt_colorspace incolorspace = mlt_image_colorspace_id(colorspace_str);
-    int infullrange = mlt_properties_get_int(unique_properties, "full_range");
+    dstimg.format = srcimg.format;
 
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
-    if (pdata->method != method || pdata->expected_frame != mlt_frame_get_position(frame)
-        || pdata->informat != srcimg.format || pdata->width != srcimg.width
-        || pdata->height != srcimg.height || pdata->outformat != dstimg.format
-        || pdata->incolorspace != incolorspace || pdata->infullrange != infullrange) {
-        mlt_log_debug(MLT_LINK_SERVICE(self),
-                      "Init: %s->%s\t%d->%d\n",
-                      mlt_deinterlacer_name(pdata->method),
-                      mlt_deinterlacer_name(method),
-                      pdata->expected_frame,
-                      mlt_frame_get_position(frame));
-        pdata->method = method;
+    if (pdata->method != method || pdata->expected_frame != mlt_frame_get_position(frame)) {
+        mlt_log_debug(MLT_LINK_SERVICE(self), "Reset: %s\n", mlt_deinterlacer_name(method));
+        pdata->reset = 1;
         pdata->continuity_frame = mlt_frame_get_position(frame);
         pdata->expected_frame = mlt_frame_get_position(frame);
-        pdata->informat = srcimg.format;
-        pdata->width = srcimg.width;
-        pdata->height = srcimg.height;
-        pdata->outformat = dstimg.format;
-        pdata->incolorspace = incolorspace;
-        pdata->infullrange = infullrange;
-        init_image_filtergraph(self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024));
+        pdata->method = method;
     }
 
     filter_data *fdata = NULL;
-    mlt_cache_item cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_avdeinterlace");
-    if (!cache_item) {
-        mlt_log_error(MLT_LINK_SERVICE(self), "Cache miss\n");
-        init_image_filtergraph(self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024));
-        cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_avdeinterlace");
-    }
-    fdata = mlt_cache_item_data(cache_item, NULL);
+    mlt_cache_item cache_item = NULL;
 
     pdata->expected_frame++;
 
-    if (fdata && fdata->avfilter_graph) {
-        while (1) {
-            mlt_frame src_frame = NULL;
+    while (1) {
+        mlt_frame src_frame = NULL;
 
-            if (pdata->continuity_frame == mlt_frame_get_position(frame)) {
-                src_frame = frame;
-                pdata->continuity_frame++;
-            } else {
-                if (!unique_properties) {
-                    error = 1;
-                    break;
-                }
-                char key[19];
-                int frame_delta = mlt_frame_get_position(frame)
-                                  - mlt_frame_original_position(frame);
-                sprintf(key, "%d", pdata->continuity_frame - frame_delta);
-                src_frame = (mlt_frame) mlt_properties_get_data(unique_properties, key, NULL);
-                if (!src_frame) {
-                    mlt_log_error(MLT_LINK_SERVICE(self), "Frame not found: %s\n", key);
-                    error = 1;
-                    break;
-                }
-                pdata->continuity_frame++;
-            }
-
-            error = mlt_frame_get_image(src_frame,
-                                        (uint8_t **) &srcimg.data,
-                                        &srcimg.format,
-                                        &srcimg.width,
-                                        &srcimg.height,
-                                        0);
-            if (error || srcimg.format != pdata->informat || srcimg.width != pdata->width
-                || srcimg.height != pdata->height) {
-                mlt_log_error(MLT_LINK_SERVICE(self),
-                              "Failed to get image\t%d\t%d=%d\t%d=%d\t%d=%d\n",
-                              error,
-                              srcimg.format,
-                              pdata->informat,
-                              srcimg.width,
-                              pdata->width,
-                              srcimg.height,
-                              pdata->height);
-                break;
-            }
-
-            mlt_image_to_avframe(&srcimg, src_frame, fdata->avinframe);
-
-            // Run the frame through the filter graph
-            ret = av_buffersrc_add_frame(fdata->avbuffsrc_ctx, fdata->avinframe);
-            av_frame_unref(fdata->avinframe);
-            if (ret < 0) {
-                mlt_log_error(self, "Cannot add frame to buffer source\n");
+        if (pdata->continuity_frame == mlt_frame_get_position(frame)) {
+            src_frame = frame;
+            pdata->continuity_frame++;
+        } else {
+            if (!unique_properties) {
                 error = 1;
                 break;
             }
-            ret = av_buffersink_get_frame(fdata->avbuffsink_ctx, fdata->avoutframe);
-            if (ret >= 0)
-                break;
-            else if (ret == AVERROR(EAGAIN))
-                continue;
-            else if (ret < 0) {
-                mlt_log_error(self, "Cannot get frame from buffer sink\n");
+            char key[19];
+            int frame_delta = mlt_frame_get_position(frame) - mlt_frame_original_position(frame);
+            sprintf(key, "%d", pdata->continuity_frame - frame_delta);
+            src_frame = (mlt_frame) mlt_properties_get_data(unique_properties, key, NULL);
+            if (!src_frame) {
+                mlt_log_error(MLT_LINK_SERVICE(self), "Frame not found: %s\n", key);
                 error = 1;
                 break;
             }
-            srcimg.data = NULL;
+            pdata->continuity_frame++;
         }
 
-        if (!error) {
-            // Allocate the output image
-            mlt_image_set_values(&dstimg,
-                                 NULL,
-                                 pdata->outformat,
-                                 fdata->avoutframe->width,
-                                 fdata->avoutframe->height);
-            mlt_image_alloc_data(&dstimg);
-            avframe_to_mlt_image(fdata->avoutframe, &dstimg);
+        error = mlt_frame_get_image(src_frame,
+                                    (uint8_t **) &srcimg.data,
+                                    &srcimg.format,
+                                    &srcimg.width,
+                                    &srcimg.height,
+                                    0);
+
+        if (error) {
+            mlt_log_error(MLT_LINK_SERVICE(self), "Failed to get image\n");
+            error = 1;
+            break;
         }
-        av_frame_unref(fdata->avoutframe);
+
+        if (!fdata) {
+            // Wait to initialize the filter data until after we have a frame so we know the colorspace, etc.
+            const char *colorspace_str = mlt_properties_get(MLT_FRAME_PROPERTIES(src_frame),
+                                                            "colorspace");
+            mlt_colorspace colorspace = mlt_image_colorspace_id(colorspace_str);
+            int fullrange = mlt_properties_get_int(MLT_FRAME_PROPERTIES(src_frame), "full_range");
+
+            if (pdata->reset || pdata->format != srcimg.format || pdata->width != srcimg.width
+                || pdata->height != srcimg.height || pdata->colorspace != colorspace
+                || pdata->fullrange != fullrange) {
+                mlt_log_debug(MLT_LINK_SERVICE(self), "Init: %s\n", mlt_deinterlacer_name(method));
+                pdata->format = srcimg.format;
+                pdata->width = srcimg.width;
+                pdata->height = srcimg.height;
+                pdata->colorspace = colorspace;
+                pdata->fullrange = fullrange;
+                init_image_filtergraph(self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024));
+                pdata->reset = 0;
+            }
+
+            cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_avdeinterlace");
+            if (!cache_item) {
+                mlt_log_debug(MLT_LINK_SERVICE(self), "Cache miss\n");
+                init_image_filtergraph(self, av_d2q(mlt_frame_get_aspect_ratio(frame), 1024));
+                cache_item = mlt_service_cache_get(MLT_LINK_SERVICE(self), "link_avdeinterlace");
+            }
+            fdata = mlt_cache_item_data(cache_item, NULL);
+        }
+        if (!fdata || !fdata->avfilter_graph) {
+            mlt_log_error(MLT_LINK_SERVICE(self), "No Filtergraph\n");
+            error = 1;
+            break;
+        }
+
+        mlt_image_to_avframe(&srcimg, src_frame, fdata->avinframe);
+
+        // Run the frame through the filter graph
+        ret = av_buffersrc_add_frame(fdata->avbuffsrc_ctx, fdata->avinframe);
+        av_frame_unref(fdata->avinframe);
+        if (ret < 0) {
+            mlt_log_error(self, "Cannot add frame to buffer source\n");
+            error = 1;
+            break;
+        }
+        ret = av_buffersink_get_frame(fdata->avbuffsink_ctx, fdata->avoutframe);
+        if (ret >= 0)
+            break;
+        else if (ret == AVERROR(EAGAIN))
+            continue;
+        else if (ret < 0) {
+            mlt_log_error(self, "Cannot get frame from buffer sink\n");
+            error = 1;
+            break;
+        }
+        srcimg.data = NULL;
     }
+
+    if (!error) {
+        // Allocate the output image
+        mlt_image_set_values(&dstimg,
+                             NULL,
+                             pdata->format,
+                             fdata->avoutframe->width,
+                             fdata->avoutframe->height);
+        mlt_image_alloc_data(&dstimg);
+        avframe_to_mlt_image(fdata->avoutframe, &dstimg);
+        mlt_properties_set_int(frame_properties,
+                               "color_trc",
+                               av_to_mlt_color_trc(fdata->avoutframe->color_trc));
+        mlt_properties_set_int(frame_properties,
+                               "colorspace",
+                               av_to_mlt_colorspace(fdata->avoutframe->colorspace,
+                                                    fdata->avoutframe->width,
+                                                    fdata->avoutframe->height));
+        mlt_properties_set_int(frame_properties,
+                               "color_primaries",
+                               av_to_mlt_color_primaries(fdata->avoutframe->color_primaries));
+        mlt_properties_set_int(frame_properties,
+                               "full_range",
+                               av_to_mlt_full_range(fdata->avoutframe->color_range));
+    }
+    av_frame_unref(fdata->avoutframe);
 
     mlt_service_unlock(MLT_LINK_SERVICE(self));
     mlt_image_get_values(&dstimg, (void **) image, format, width, height);
     mlt_frame_set_image(frame, dstimg.data, 0, dstimg.release_data);
     mlt_properties_set_int(frame_properties, "progressive", 1);
     mlt_cache_item_close(cache_item);
-    return 0;
+    return error;
 }
 
 static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
@@ -584,21 +595,6 @@ static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
         mlt_properties_set_int(unique_properties,
                                "format",
                                mlt_properties_get_int(original_producer_properties, "format"));
-    }
-    if (mlt_properties_exists(original_producer_properties, "meta.media.colorspace")) {
-        mlt_properties_set(unique_properties,
-                           "colorspace",
-                           mlt_properties_get(original_producer_properties,
-                                              "meta.media.colorspace"));
-    } else if (mlt_properties_exists(MLT_FRAME_PROPERTIES(*frame), "colorspace")) {
-        mlt_properties_set(unique_properties,
-                           "colorspace",
-                           mlt_properties_get(MLT_FRAME_PROPERTIES(*frame), "colorspace"));
-    }
-    if (mlt_properties_exists(MLT_FRAME_PROPERTIES(*frame), "full_range")) {
-        mlt_properties_set(unique_properties,
-                           "full_range",
-                           mlt_properties_get(MLT_FRAME_PROPERTIES(*frame), "full_range"));
     }
 
     // Pass future frames
@@ -651,6 +647,7 @@ mlt_link link_avdeinterlace_init(mlt_profile profile,
     if (self && pdata) {
         pdata->continuity_frame = -1;
         pdata->expected_frame = -1;
+        pdata->reset = 1;
         pdata->method = mlt_deinterlacer_linearblend;
         self->child = pdata;
 
