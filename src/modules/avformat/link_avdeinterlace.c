@@ -209,24 +209,6 @@ static void init_image_filtergraph(mlt_link self, AVRational sar)
             goto fail;
         }
         prev_ctx = avfilter_ctx;
-    } else if (pdata->method <= mlt_deinterlacer_linearblend) {
-        const AVFilter *deint = (AVFilter *) avfilter_get_by_name("pp");
-        avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
-        if (!avfilter_ctx) {
-            mlt_log_error(self, "Cannot create video filter\n");
-            goto fail;
-        }
-        ret = avfilter_init_str(avfilter_ctx, "subfilters=lb");
-        if (ret < 0) {
-            mlt_log_error(self, "Cannot init filter: %s\n", av_err2str(ret));
-            goto fail;
-        }
-        ret = avfilter_link(prev_ctx, 0, avfilter_ctx, 0);
-        if (ret < 0) {
-            mlt_log_error(self, "Cannot link deinterlace filter\n");
-            goto fail;
-        }
-        prev_ctx = avfilter_ctx;
     } else if (pdata->method <= mlt_deinterlacer_yadif_nospatial) {
         const AVFilter *deint = (AVFilter *) avfilter_get_by_name("yadif");
         avfilter_ctx = avfilter_graph_alloc_filter(fdata->avfilter_graph, deint, deint->name);
