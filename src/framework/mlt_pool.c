@@ -158,7 +158,8 @@ static void *pool_fetch(mlt_pool self)
             ptr = mlt_deque_pop_back(self->stack);
 
             // Assign the reference
-            ((mlt_release) ptr)->references = 1;
+            mlt_release release = (void *) ((char *) ptr - sizeof(struct mlt_release_s));
+            release->references = 1;
         } else {
             // We need to generate a release item
             mlt_release release = mlt_alloc(self->size);
