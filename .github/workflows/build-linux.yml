@@ -39,7 +39,7 @@ jobs:
           sudo apt-get -qq update
           sudo apt-get -yqq build-dep mlt
           sudo apt-get -yqq install qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
-          sudo apt-get -yqq install cmake ninja-build kwalify
+          sudo apt-get -yqq install cmake ninja-build kwalify libplacebo-dev
           cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build -G Ninja
           cmake --build build
           sudo cmake --install build
