@@ -168,16 +168,8 @@ MLT_REPOSITORY
         setenv("OCIO", "ocio://ocio://default", 1);
     }
 
-    char *dir,
-        *openfx_path = getenv("OFX_PLUGIN_PATH"),
-        *load_unsupported_plugins = getenv(
-            "MLT_OFX_LOAD_UNSUPPORTED_PLUGINS"); /* Load unsupported plugins for debugging purposes */
-
-    bool is_load_unsupported_plugins = false;
-    if (load_unsupported_plugins) {
-        is_load_unsupported_plugins = strcmp(load_unsupported_plugins, "true") == 0;
-    }
-
+    char *dir;
+    char *openfx_path = getenv("OFX_PLUGIN_PATH");
     size_t archstr_len = strlen(OFX_ARCHSTR);
 
     mltofx_context = mlt_properties_new();
@@ -216,6 +208,8 @@ MLT_REPOSITORY
 
                     ofx_get_plugin = dlsym(dlhandle, "OfxGetPlugin");
                     ofx_get_number_of_plugins = dlsym(dlhandle, "OfxGetNumberOfPlugins");
+                    if (!ofx_get_plugin || !ofx_get_number_of_plugins)
+                        goto parse_error;
                     NumberOfPlugins = ofx_get_number_of_plugins();
 
                     char dl_n[16] = {
@@ -257,16 +251,23 @@ MLT_REPOSITORY
 
                     for (int i = 0; i < NumberOfPlugins; ++i) {
                         OfxPlugin *plugin_ptr = ofx_get_plugin(i);
+                        if (!plugin_ptr)
+                            goto parse_error;
+
+                        int detected = mltofx_detect_plugin(plugin_ptr);
+
+                        if (!detected)
+                            continue;
 
                         char *s = NULL;
                         size_t pluginIdentifier_len = strlen(plugin_ptr->pluginIdentifier);
                         s = malloc(pluginIdentifier_len + 8);
                         sprintf(s, "openfx.%s", plugin_ptr->pluginIdentifier);
 
-                        /* if colon `:` exists in plugin identifier
-			   change it to accent sign `^` because `:`
-			   can cause issues with mlt if put in filter
-			   name */
+                        // if colon `:` exists in plugin identifier
+                        // change it to accent sign `^` because `:`
+                        // can cause issues with mlt if put in filter
+                        // name
                         char *str_ptr = strchr(s, ':');
                         while (str_ptr != NULL) {
                             *str_ptr++ = '^';
@@ -285,20 +286,12 @@ MLT_REPOSITORY
                         mlt_properties_set(p, "dli", dl_n);
                         mlt_properties_set_int(p, "index", i);
 
-                        /* Sometimes error codes other than kOfxStatErrMissingHostFeature
-			   returned from kOfxActionDescribe like kOfxStatErrMemory, kOfxStatFailed, kOfxStatErrFatal */
-                        bool plugin_supported = mltofx_is_plugin_supported(plugin_ptr)
-                                                == kOfxStatOK;
-                        /* WIP: this is only creating them as filter I should find a way to see howto detect producers
-			   if they exists in OpenFX plugins
-			*/
-                        if (plugin_supported || is_load_unsupported_plugins) {
-                            MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
-                            MLT_REGISTER_METADATA(mlt_service_filter_type,
-                                                  s,
-                                                  metadata,
-                                                  "filter_openfx.yml");
-                        }
+                        MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
+                        MLT_REGISTER_METADATA(mlt_service_filter_type,
+                                              s,
+                                              metadata,
+                                              "filter_openfx.yml");
+                        free(s);
                     }
 
                 parse_error:

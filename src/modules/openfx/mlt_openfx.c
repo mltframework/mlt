@@ -1510,30 +1510,16 @@ OfxHost MltOfxHost = {NULL, MltOfxfetchSuite};
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
 {
     propSetString(host_properties, kOfxPropName, 0, "MLT");
-    propSetString(host_properties, kOfxImageEffectPropContext, 0, kOfxImageEffectContextGeneral);
-    propSetString(host_properties,
-                  kOfxImageEffectPropSupportedPixelDepths,
-                  0,
-                  kOfxBitDepthByte); /* kOfxBitDepthByte is hardcoded */
+    propSetString(host_properties, kOfxImageEffectPropContext, 0, kOfxImageEffectContextFilter);
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 0, kOfxBitDepthByte);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 1, kOfxBitDepthShort);
-    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 2, kOfxBitDepthHalf);
-    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 3, kOfxBitDepthFloat);
 
     propSetString(host_properties,
                   kOfxImageEffectPropSupportedComponents,
                   0,
-                  kOfxImageComponentNone);
-    propSetString(host_properties,
-                  kOfxImageEffectPropSupportedComponents,
-                  1,
                   kOfxImageComponentRGBA);
-    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 2, kOfxImageComponentRGB);
-    propSetString(host_properties,
-                  kOfxImageEffectPropSupportedComponents,
-                  3,
-                  kOfxImageComponentAlpha);
-
-    propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 1);
+    propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGB);
+    propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 0);
 
     /* TODO: add support for OpenGL plugins */
     propSetString(host_properties, kOfxImageEffectPropOpenGLRenderSupported, 0, "false");
@@ -1783,7 +1769,7 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   (double) width / (double) height);
 }
 
-OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin)
+int mltofx_detect_plugin(OfxPlugin *plugin)
 {
     mlt_properties image_effect = mlt_properties_new();
     mlt_properties clips = mlt_properties_new();
@@ -1825,20 +1811,25 @@ OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin)
     propSetString((OfxPropertySetHandle) props,
                   kOfxImageEffectPropContext,
                   0,
-                  kOfxImageEffectContextGeneral);
+                  kOfxImageEffectContextFilter);
 
     plugin->setHost(&MltOfxHost);
 
     OfxStatus status_code = kOfxStatErrUnknown;
     status_code = plugin->mainEntry(kOfxActionLoad, NULL, NULL, NULL);
     mltofx_log_status_code(status_code, "kOfxActionLoad");
+
+    if (status_code != kOfxStatOK) {
+        return 0;
+    }
+
     status_code
         = plugin->mainEntry(kOfxActionDescribe, (OfxImageEffectHandle) image_effect, NULL, NULL);
     mltofx_log_status_code(status_code, "kOfxActionDescribe");
 
     if (status_code != kOfxStatOK) {
         plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
-        return status_code;
+        return 0;
     }
 
     /* test describe in context action because some plugins say they are unsupported at this stage */
@@ -1847,14 +1838,57 @@ OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin)
                                     (OfxPropertySetHandle) MltOfxHost.host,
                                     NULL);
 
+    int describe_in_context_valid = 0;
     mltofx_log_status_code(status_code, "kOfxImageEffectActionDescribeInContext");
     if (status_code != kOfxStatErrMissingHostFeature) {
         plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
-        return kOfxStatOK;
+        describe_in_context_valid = 1;
     }
 
+    int i = 0;
+    int count = 0;
+
+    propGetDimension((OfxPropertySetHandle) props, kOfxImageEffectPropSupportedContexts, &count);
+    for (i = 0; i < count; i++) {
+        char *context;
+        propGetString((OfxPropertySetHandle) props,
+                      kOfxImageEffectPropSupportedContexts,
+                      i,
+                      &context);
+        if (!strcmp(context, kOfxImageEffectContextFilter)) {
+            break;
+        }
+    }
+    if (i == count) {
+        mlt_log_debug(NULL, "[ofx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
+        /* since plugin is not filter then load fail so we must not unload it */
+        return 0;
+    }
+
+    count = 0;
+
+    propGetDimension((OfxPropertySetHandle) props, kOfxImageEffectPropSupportedPixelDepths, &count);
+    for (i = 0; i < count; i++) {
+        char *depth;
+        propGetString((OfxPropertySetHandle) props,
+                      kOfxImageEffectPropSupportedPixelDepths,
+                      i,
+                      &depth);
+        if (!strcmp(depth, kOfxBitDepthByte) || !strcmp(depth, kOfxBitDepthShort)) {
+            break;
+        }
+    }
+    if (i == count) {
+        mlt_log_debug(NULL, "[ofx] Plugin not byte/short: %s\n", plugin->pluginIdentifier);
+        /* since no pixel depth is supported by us then plugin is load fail so we must not unload it */
+        return 0;
+    }
+
+    if (describe_in_context_valid)
+        return 1;
+
     plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
-    return status_code;
+    return 0;
 }
 
 void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properties mlt_metadata)
@@ -1898,7 +1932,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
     propSetString((OfxPropertySetHandle) props,
                   kOfxImageEffectPropContext,
                   0,
-                  kOfxImageEffectContextGeneral);
+                  kOfxImageEffectContextFilter);
 
     plugin->setHost(&MltOfxHost);
     OfxStatus status_code = kOfxStatErrUnknown;
