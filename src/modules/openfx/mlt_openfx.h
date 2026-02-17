@@ -75,7 +75,7 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  int height,
                                  mlt_image_format format);
 
-OfxStatus mltofx_is_plugin_supported(OfxPlugin *plugin);
+int mltofx_detect_plugin(OfxPlugin *plugin);
 
 void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properties mlt_metadata);
 
