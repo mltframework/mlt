@@ -2,7 +2,7 @@
  * \file mlt_factory.c
  * \brief the factory method interfaces
  *
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -514,12 +514,8 @@ void mlt_factory_close()
     if (mlt_directory != NULL) {
         mlt_properties_close(event_object);
         event_object = NULL;
-#if !defined(_WIN32)
-        // XXX something in here is causing Shotcut/Win32 to not exit completely
-        // under certain conditions: e.g. play a playlist.
         mlt_properties_close(global_properties);
         global_properties = NULL;
-#endif
         if (repository) {
             mlt_repository_close(repository);
             repository = NULL;
