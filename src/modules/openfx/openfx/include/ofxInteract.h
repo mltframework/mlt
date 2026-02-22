@@ -6,6 +6,7 @@
 // Copyright OpenFX and contributors to the OpenFX project.
 // SPDX-License-Identifier: BSD-3-Clause
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,6 +16,7 @@ Contains the API for ofx plugin defined GUIs and interaction.
 */
 
 #define kOfxInteractSuite "OfxInteractSuite"
+
 
 /** @brief Blind declaration of an OFX interactive gui 
 */
@@ -53,6 +55,8 @@ The interact can be slaved to multiple parameters (setting index 0, then index 1
  */
 #define kOfxInteractPropPixelScale "OfxInteractPropPixelScale"
 
+
+
 /** @brief The background colour of the application behind an interact instance
 
     - Type - double X 3
@@ -84,7 +88,7 @@ If a host does not support such a colour, it should return kOfxStatReplyDefault
    - Type - double X 2
    - Property Set - read only in argument to the ::kOfxInteractActionPenMotion, ::kOfxInteractActionPenDown and ::kOfxInteractActionPenUp actions
 
-This value passes the postion of the pen into an interact. This is in the interact's canonical coordinates.
+This value passes the position of the pen into an interact. This is in the interact's canonical coordinates.
  */
 #define kOfxInteractPropPenPosition "OfxInteractPropPenPosition"
 
@@ -93,7 +97,7 @@ This value passes the postion of the pen into an interact. This is in the intera
    - Type - int X 2
    - Property Set - read only in argument to the ::kOfxInteractActionPenMotion, ::kOfxInteractActionPenDown and ::kOfxInteractActionPenUp actions
 
-This value passes the postion of the pen into an interact. This is in the interact's openGL viewport coordinates, with 0,0 being at the bottom left.
+This value passes the position of the pen into an interact. This is in the interact's openGL viewport coordinates, with 0,0 being at the bottom left.
  */
 #define kOfxInteractPropPenViewportPosition "OfxInteractPropPenViewportPosition"
 
@@ -164,6 +168,7 @@ These are the list of actions passed to an interact's entry point function. For 
  */
 #define kOfxActionDescribeInteract kOfxActionDescribe
 
+
 /** @brief
 
  This action is the first action passed to an interact instance after its creation.
@@ -224,7 +229,9 @@ These are the list of actions passed to an interact's entry point function. For 
  This action is issued to an interact whenever the host needs the plugin
  to redraw the given interact.
 
- The interact should either issue OpenGL calls to draw itself, or use DrawSuite calls.
+ The interact should either issue OpenGL calls (if the plugin is using
+ OverlayInteractV1) to draw itself, or use DrawSuite calls (if using
+ OverlayInteractV2).
 
  If this is called via kOfxImageEffectPluginPropOverlayInteractV2, drawing MUST use DrawSuite.
  
@@ -237,9 +244,9 @@ These are the list of actions passed to an interact's entry point function. For 
  @param  handle handle to an interact instance, cast to an \ref OfxInteractHandle
  @param  inArgs has the following properties on an image effect plugin
      - \ref kOfxPropEffectInstance a handle to the effect for which the interact has been,
-     - \ref kOfxInteractPropPixelScale the scale factor to convert cannonical pixels to screen pixels
+     - \ref kOfxInteractPropPixelScale the scale factor to convert canonical pixels to screen pixels
      - \ref kOfxInteractPropBackgroundColour the background colour of the application behind the current view
-     - \ref kOfxPropTime the effect time at which changed occured
+     - \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
 
  @param  outArgs is redundant and is set to NULL
@@ -247,7 +254,7 @@ These are the list of actions passed to an interact's entry point function. For 
 \pre
      - \ref kOfxActionCreateInstance has been called on the instance handle
      - the openGL context for this interact has been set
-     -  the projection matrix will correspond to the interact's cannonical view
+     -  the projection matrix will correspond to the interact's canonical view
 
  @returns
      - \ref kOfxStatOK the action was trapped and all was well
@@ -267,11 +274,11 @@ These are the list of actions passed to an interact's entry point function. For 
  @param  handle handle to an interact instance, cast to an \ref OfxInteractHandle
  @param  inArgs has the following properties on an image effect plugin
      - \ref kOfxPropEffectInstance a handle to the effect for which the interact has been,
-     - \ref kOfxInteractPropPixelScale the scale factor to convert cannonical pixels to screen pixels
+     - \ref kOfxInteractPropPixelScale the scale factor to convert canonical pixels to screen pixels
      - \ref kOfxInteractPropBackgroundColour the background colour of the application behind the current view
-     - \ref kOfxPropTime the effect time at which changed occured
+     - \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
-     - \ref kOfxInteractPropPenPosition postion of the pen in,
+     - \ref kOfxInteractPropPenPosition position of the pen in,
      - \ref kOfxInteractPropPenViewportPosition position of the pen in,
      - \ref kOfxInteractPropPenPressure the pressure of the pen,
 
@@ -304,9 +311,9 @@ These are the list of actions passed to an interact's entry point function. For 
  @param  handle handle to an interact instance, cast to an \ref OfxInteractHandle
  @param  inArgs has the following properties on an image effect plugin,
      - \ref kOfxPropEffectInstance a handle to the effect for which the interact has been,
-     - \ref kOfxInteractPropPixelScale the scale factor to convert cannonical pixels to screen pixels
+     - \ref kOfxInteractPropPixelScale the scale factor to convert canonical pixels to screen pixels
      - \ref kOfxInteractPropBackgroundColour the background colour of the application behind the current view
-     - \ref kOfxPropTime the effect time at which changed occured
+     - \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
      - \ref kOfxInteractPropPenPosition position of the pen in
      - \ref kOfxInteractPropPenViewportPosition position of the pen in
@@ -330,7 +337,7 @@ These are the list of actions passed to an interact's entry point function. For 
      -  \ref kOfxStatOK, the action was trapped and the host should not pass the event to other objects it may own
      -  \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionPenDown "OfxInteractActionPenDown"
+#define kOfxInteractActionPenDown   "OfxInteractActionPenDown"
 
 /**@brief
 
@@ -341,9 +348,9 @@ These are the list of actions passed to an interact's entry point function. For 
  @param  handle handle to an interact instance, cast to an \ref OfxInteractHandle
  @param  inArgs has the following properties on an image effect plugin,
  - \ref kOfxPropEffectInstance a handle to the effect for which the interact has been,
- - \ref kOfxInteractPropPixelScale the scale factor to convert cannonical pixels to screen pixels
+ - \ref kOfxInteractPropPixelScale the scale factor to convert canonical pixels to screen pixels
  - \ref kOfxInteractPropBackgroundColour the background colour of the application behind the current view
- - \ref kOfxPropTime the effect time at which changed occured
+ - \ref kOfxPropTime the effect time at which changed occurred
  - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
  - \ref kOfxInteractPropPenPosition position of the pen in
  - \ref kOfxInteractPropPenViewportPosition position of the pen in
@@ -366,7 +373,7 @@ These are the list of actions passed to an interact's entry point function. For 
      -  \ref kOfxStatOK, the action was trapped and the host should not pass the event to other objects it may own
      -  \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionPenUp "OfxInteractActionPenUp"
+#define kOfxInteractActionPenUp     "OfxInteractActionPenUp"
 
 /**@brief
 
@@ -380,7 +387,7 @@ These are the list of actions passed to an interact's entry point function. For 
      this may not have a UTF8 representation (eg: a return key)
      -  \ref kOfxPropKeyString UTF8 string representing a character key that was pressed, some
      keys have no UTF8 encoding, in which case this is ""
-     -  \ref kOfxPropTime the effect time at which changed occured
+     -  \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
 
  @param  outArgs is redundant and is set to NULL
@@ -400,7 +407,7 @@ These are the list of actions passed to an interact's entry point function. For 
      - \ref kOfxStatOK , the action was trapped and the host should not pass the event to other objects it may own
      - \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionKeyDown "OfxInteractActionKeyDown"
+#define kOfxInteractActionKeyDown   "OfxInteractActionKeyDown"
 
 /**@brief
  This action is issued when a key on the keyboard is released.
@@ -413,7 +420,7 @@ These are the list of actions passed to an interact's entry point function. For 
      this may not have a UTF8 representation (eg: a return key)
      -  \ref kOfxPropKeyString UTF8 string representing a character key that was pressed, some
      keys have no UTF8 encoding, in which case this is ""
-     -  \ref kOfxPropTime the effect time at which changed occured
+     -  \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
 
  @param  outArgs is redundant and is set to NULL
@@ -433,7 +440,7 @@ These are the list of actions passed to an interact's entry point function. For 
      - \ref kOfxStatOK , the action was trapped and the host should not pass the event to other objects it may own
      - \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionKeyUp "OfxInteractActionKeyUp"
+#define kOfxInteractActionKeyUp     "OfxInteractActionKeyUp"
 
 /**@brief
  This action is issued when a key on the keyboard is repeated.
@@ -446,7 +453,7 @@ These are the list of actions passed to an interact's entry point function. For 
      this may not have a UTF8 representation (eg: a return key)
      -  \ref kOfxPropKeyString UTF8 string representing a character key that was pressed, some
      keys have no UTF8 encoding, in which case this is ""
-     -  \ref kOfxPropTime the effect time at which changed occured
+     -  \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
 
  @param  outArgs is redundant and is set to NULL
@@ -466,7 +473,7 @@ These are the list of actions passed to an interact's entry point function. For 
      - \ref kOfxStatOK , the action was trapped and the host should not pass the event to other objects it may own
      - \ref kOfxStatReplyDefault , the action was not trapped and the host can deal with it if it wants
  */
-#define kOfxInteractActionKeyRepeat "OfxInteractActionKeyRepeat"
+#define kOfxInteractActionKeyRepeat     "OfxInteractActionKeyRepeat"
 
 /**@brief
  This action is issued when an interact gains input focus.
@@ -475,9 +482,9 @@ These are the list of actions passed to an interact's entry point function. For 
  @param handle handle to an interact instance, cast to an \ref OfxInteractHandle
  @param inArgs has the following properties on an image effect plugin
      - \ref kOfxPropEffectInstance a handle to the effect for which the interact is being used on,
-     - \ref kOfxInteractPropPixelScale the scale factor to convert cannonical pixels to screen pixels,
+     - \ref kOfxInteractPropPixelScale the scale factor to convert canonical pixels to screen pixels,
      - \ref kOfxInteractPropBackgroundColour the background colour of the application behind the current view
-     - \ref kOfxPropTime the effect time at which changed occured
+     - \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
 
  @param  outArgs is redundant and is set to NULL
@@ -500,9 +507,9 @@ These are the list of actions passed to an interact's entry point function. For 
  @param handle handle to an interact instance, cast to an \ref OfxInteractHandle
  @param inArgs has the following properties on an image effect plugin
      - \ref kOfxPropEffectInstance a handle to the effect for which the interact is being used on,
-     - \ref kOfxInteractPropPixelScale the scale factor to convert cannonical pixels to screen pixels,
+     - \ref kOfxInteractPropPixelScale the scale factor to convert canonical pixels to screen pixels,
      - \ref kOfxInteractPropBackgroundColour the background colour of the application behind the current view
-     - \ref kOfxPropTime the effect time at which changed occured
+     - \ref kOfxPropTime the effect time at which changed occurred
      - \ref kOfxImageEffectPropRenderScale the render scale applied to any image fetched
 
  @param  outArgs is redundant and is set to NULL
@@ -524,17 +531,16 @@ These are the list of actions passed to an interact's entry point function. For 
 /** @brief OFX suite that allows an effect to interact with an openGL window so as to provide custom interfaces.
 
 */
-typedef struct OfxInteractSuiteV1
-{
-    /** @brief Requests an openGL buffer swap on the interact instance */
-    OfxStatus (*interactSwapBuffers)(OfxInteractHandle interactInstance);
+typedef struct OfxInteractSuiteV1 {	
+  /** @brief Requests an openGL buffer swap on the interact instance */
+  OfxStatus (*interactSwapBuffers)(OfxInteractHandle interactInstance);
 
-    /** @brief Requests a redraw of the interact instance */
-    OfxStatus (*interactRedraw)(OfxInteractHandle interactInstance);
+  /** @brief Requests a redraw of the interact instance */
+  OfxStatus (*interactRedraw)(OfxInteractHandle interactInstance);
 
-    /** @brief Gets the property set handle for this interact handle */
-    OfxStatus (*interactGetPropertySet)(OfxInteractHandle interactInstance,
-                                        OfxPropertySetHandle *property);
+  /** @brief Gets the property set handle for this interact handle */
+  OfxStatus (*interactGetPropertySet)(OfxInteractHandle interactInstance,
+				      OfxPropertySetHandle *property);
 } OfxInteractSuiteV1;
 
 #ifdef __cplusplus

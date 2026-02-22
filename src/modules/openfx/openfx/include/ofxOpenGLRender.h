@@ -5,4 +5,4 @@
 // Copyright OpenFX and Contributors to the OpenFX project.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#endif // _ofxOpenGLRender_h_
+#endif  // _ofxOpenGLRender_h_

@@ -14,9 +14,8 @@
 
     This is an optional suite in the Image Effect API.
 */
-typedef struct OfxTimeLineSuiteV1
-{
-    /** @brief Get the time value of the timeline that is controlling to the indicated effect.
+typedef struct OfxTimeLineSuiteV1 {
+  /** @brief Get the time value of the timeline that is controlling to the indicated effect.
       
       \arg \c instance is the instance of the effect changing the timeline, cast to a void *
       \arg \c time pointer through which the timeline value should be returned
@@ -24,13 +23,13 @@ typedef struct OfxTimeLineSuiteV1
       This function returns the current time value of the timeline associated with the effect instance.
 
       @returns
-      - ::kOfxStatOK - the time enquiry was sucessful
+      - ::kOfxStatOK - the time enquiry was successful
       - ::kOfxStatFailed - the enquiry failed for some host specific reason
       - ::kOfxStatErrBadHandle - the effect handle was invalid
   */
-    OfxStatus (*getTime)(void *instance, double *time);
+  OfxStatus (*getTime)(void *instance, double *time);
 
-    /** @brief Move the timeline control to the indicated time.
+  /** @brief Move the timeline control to the indicated time.
       
       \arg \c instance is the instance of the effect changing the timeline, cast to a void *
       \arg \c time is the time to change the timeline to. This is in the temporal coordinate system of the effect.
@@ -40,14 +39,14 @@ typedef struct OfxTimeLineSuiteV1
       if the output of the effect is being viewed).
 
       @returns
-      - ::kOfxStatOK - the time was changed sucessfully, will all side effects if the change completed
+      - ::kOfxStatOK - the time was changed successfully, will all side effects if the change completed
       - ::kOfxStatFailed - the change failed for some host specific reason
       - ::kOfxStatErrBadHandle - the effect handle was invalid
       - ::kOfxStatErrValue - the time was an illegal value       
   */
-    OfxStatus (*gotoTime)(void *instance, double time);
+  OfxStatus (*gotoTime)(void *instance, double time);
 
-    /** @brief Get the current bounds on a timeline
+  /** @brief Get the current bounds on a timeline
       
       \arg \c instance is the instance of the effect changing the timeline, cast to a void *
       \arg \c firstTime is the first time on the timeline. This is in the temporal coordinate system of the effect.
@@ -56,11 +55,11 @@ typedef struct OfxTimeLineSuiteV1
       This function
 
       @returns
-      - ::kOfxStatOK - the time enquiry was sucessful
+      - ::kOfxStatOK - the time enquiry was successful
       - ::kOfxStatFailed - the enquiry failed for some host specific reason
       - ::kOfxStatErrBadHandle - the effect handle was invalid
   */
-    OfxStatus (*getTimeBounds)(void *instance, double *firstTime, double *lastTime);
+  OfxStatus (*getTimeBounds)(void *instance, double *firstTime, double *lastTime);
 } OfxTimeLineSuiteV1;
 
 #endif

@@ -21,9 +21,9 @@
 #ifndef MLT_OPENFX_H
 #define MLT_OPENFX_H
 
-#include "ofxCore.h"
 #include <dlfcn.h>
 #include <framework/mlt.h>
+#include <ofxCore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -19,19 +19,20 @@
  */
 
 #include "mlt_openfx.h"
+
 #include <float.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
 /* OpenFX Header files https://github.com/AcademySoftwareFoundation/openfx/tree/main/include */
-#include "ofxDrawSuite.h"
-#include "ofxGPURender.h"
-#include "ofxImageEffect.h"
-#include "ofxOpenGLRender.h"
-#include "ofxParametricParam.h"
-#include "ofxProgress.h"
-#include "ofxTimeLine.h"
+#include <ofxDrawSuite.h>
+#include <ofxGPURender.h>
+#include <ofxImageEffect.h>
+#include <ofxOpenGLRender.h>
+#include <ofxParametricParam.h>
+#include <ofxProgress.h>
+#include <ofxTimeLine.h>
 
 static OfxStatus getPropertySet(OfxImageEffectHandle imageEffect, OfxPropertySetHandle *propHandle)
 {

@@ -18,8 +18,9 @@
  */
 
 #include "mlt_openfx.h"
-#include "ofxImageEffect.h"
+
 #include <framework/mlt.h>
+#include <ofxImageEffect.h>
 #include <string.h>
 
 extern OfxHost MltOfxHost;
