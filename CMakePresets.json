@@ -21,7 +21,7 @@
                 "MOD_NDI": "OFF",
                 "MOD_NORMALIZE": "ON",
                 "MOD_OLDFILM": "ON",
-                "MOD_OPENCV": "OFF",
+                "MOD_OPENCV": "ON",
                 "MOD_MOVIT": "OFF",
                 "MOD_PLUS": "ON",
                 "MOD_PLUSGPL": "OFF",

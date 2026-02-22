@@ -17,6 +17,10 @@
     "rubberband",
     "libvorbis",
     "fftw3",
-    "libexif"
+    "libexif",
+    {
+      "name": "opencv",
+      "features": [ "contrib" ]
+    }
   ]
 }
