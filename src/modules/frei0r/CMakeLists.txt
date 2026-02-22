@@ -30,7 +30,9 @@ endif()
 
 target_link_libraries(mltfrei0r PRIVATE mlt ${CMAKE_DL_LIBS})
 
-if(NOT MSVC)
+if(MSVC)
+  target_link_libraries(mltfrei0r PRIVATE dirent)
+else()
   target_link_libraries(mltfrei0r PRIVATE m)
 endif()
 
