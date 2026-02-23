@@ -1956,7 +1956,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
 
     clip = NULL, clip_props = NULL;
     clipGetHandle((OfxImageEffectHandle) image_effect,
-                  "Source",
+                  "Output",
                   (OfxImageClipHandle *) &clip,
                   (OfxPropertySetHandle *) &clip_props);
 
