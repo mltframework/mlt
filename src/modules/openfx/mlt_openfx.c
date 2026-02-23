@@ -254,6 +254,7 @@ static OfxImageEffectSuiteV1 MltOfxImageEffectSuiteV1 = {getPropertySet,
             if (values == NULL) \
                 return kOfxStatErrMemory; \
             values[index] = value; \
+            /* TODO: the values array is never freed. */ \
             mlt_properties_set_data(p, "v", values, index + 1, NULL, NULL); \
         } else { \
             v[index] = value; \
