@@ -106,11 +106,10 @@ static int filter_get_image(mlt_frame frame,
                     } else if (strcmp(type, "string") == 0) {
                         int value
                             = mlt_properties_anim_get_int(properties, iprop_name, position, length);
-                        mltofx_param_set_value(
-                            image_effect_params,
-                            iprop_name,
-                            mltofx_prop_int, /* for handling option choice TODO: do something better */
-                            value);
+                        mltofx_param_set_value(image_effect_params,
+                                               iprop_name,
+                                               mltofx_prop_int, // for handling option choice
+                                               value);
                     } else if (strcmp(type, "boolean") == 0) {
                         int value
                             = mlt_properties_anim_get_int(properties, iprop_name, position, length);
@@ -134,10 +133,10 @@ static int filter_get_image(mlt_frame frame,
 
         mltofx_begin_sequence_render(plugin, image_effect);
 
-        /* According to OpenFX documentation: Note that hosts that
-	   have constant sized imagery need not call this action, only
-	   hosts that allow image sizes to vary need call this. */
-        /* mltofx_get_region_of_definition(plugin, image_effect); */
+        // According to OpenFX documentation: Note that hosts that
+        // have constant sized imagery need not call this action, only
+        // hosts that allow image sizes to vary need call this.
+        // mltofx_get_region_of_definition(plugin, image_effect);
 
         mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
         mltofx_get_clip_preferences(plugin, image_effect);
@@ -166,14 +165,8 @@ static int filter_get_image(mlt_frame frame,
     }
 
     if (*format != requested_format) {
-        /* int convert_error = frame->convert_image(frame, image, format, requested_format);
-           *format = requested_format;
-
-           /\* If conversion fail fallback to rgba which is widely supported *\/
-           if (convert_error) { */
         frame->convert_image(frame, image, format, mlt_image_rgba);
         *format = mlt_image_rgba;
-        /* } */
     }
 
     return error;
@@ -203,17 +196,6 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
         mlt_properties properties = MLT_FILTER_PROPERTIES(this);
         this->process = filter_process;
         this->close = filter_close;
-
-        /*
-	  WIP
-	  resource, _pluginid are properties set to the filter properties
-	  also the parameters are set in the filter properties so I need
-	  to make sure that no plugin will create property with the same
-	  name as 'resource', '_pluginid' and other default filter properties
-	  thats why modules like jackrack use to set parameters properties based
-	  on numbered labels such as 0,1,2,3,4,...etc because there is no default
-	  property like that.
-	*/
 
         mlt_properties_set(properties, "resource", arg);
         if (!strncmp(id, "openfx.", 7)) {

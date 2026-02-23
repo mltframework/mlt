@@ -143,7 +143,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     mlt_properties_set(result, "identifier", id);
     mlt_properties_set(result, "title", id);
 
-    /* parameters */
+    // parameters
     mlt_properties params = mlt_properties_new();
     mlt_properties_set_data(result,
                             "parameters",
@@ -197,7 +197,7 @@ MLT_REPOSITORY
                 if ((bni = strstr(name, ".ofx.bundle")) != NULL && bni[11] == '\0') {
                     char *barename = g_strndup(name, (int) (bni - name) + 4);
                     size_t name_len = (size_t) (bni - name) + 4 + 7;
-                    /* 12b sizeof `Contents` word, 1 sizeof null byte */
+                    // 12b sizeof `Contents` word, 1 sizeof null byte
                     char *binpath = malloc(dir_len + name_len + 12 + (name_len - 7) + archstr_len
                                            + 1);
                     sprintf(binpath, "%s/%s/Contents/%s/%s", dir, name, OFX_ARCHSTR, barename);

@@ -1,6 +1,5 @@
 /*
- * MLT OpenFX
- *
+ * mlt_openfx.h -- common mlt functions for OpenFX plugins
  * Copyright (C) 2025-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify

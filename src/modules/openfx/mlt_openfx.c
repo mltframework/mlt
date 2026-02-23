@@ -1,6 +1,5 @@
 /*
- * MLT OpenFX
- *
+ * mlt_openfx.c -- common mlt functions for OpenFX plugins
  * Copyright (C) 2025-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
@@ -142,7 +141,6 @@ static OfxStatus propGetInt(OfxPropertySetHandle properties,
                             int index,
                             int *value);
 
-/* TODO: allow user to pass a RoD via properties */
 static OfxStatus clipGetRegionOfDefinition(OfxImageClipHandle clip, OfxTime time, OfxRectD *bounds)
 {
     if (!bounds) {
@@ -202,13 +200,11 @@ static OfxStatus imageMemoryFree(OfxImageMemoryHandle memoryHandle)
     return kOfxStatOK;
 }
 
-/* TODO implement image memory locking */
 static OfxStatus imageMemoryLock(OfxImageMemoryHandle memoryHandle, void **returnedPtr)
 {
     return kOfxStatOK;
 }
 
-/* TODO implement image memory unlocking */
 static OfxStatus imageMemoryUnlock(OfxImageMemoryHandle memoryHandle)
 {
     return kOfxStatOK;
@@ -266,7 +262,6 @@ static OfxImageEffectSuiteV1 MltOfxImageEffectSuiteV1 = {getPropertySet,
     }
 
 MLTOFX_DEF_SETTER(Pointer, void *, void *, mltofx_prop_pointer);
-//MLTOFX_DEF_SETTER(String, const char *, char *, mltofx_prop_string);
 MLTOFX_DEF_SETTER(Double, double, double, mltofx_prop_double);
 MLTOFX_DEF_SETTER(Int, int, int, mltofx_prop_int);
 
@@ -290,13 +285,16 @@ static OfxStatus propSetString(OfxPropertySetHandle properties,
     }
     char **v = mlt_properties_get_data(p, "v", &length);
     if (length == 0 || length <= index) {
-        char **values = realloc(v, sizeof(char *) * (index + 1));
+        char **values
+            = realloc(v, sizeof(char *) * (index + 1)); // TODO: where is this allocation freed?
         if (values == NULL)
             return kOfxStatErrMemory;
-        values[index] = strdup(value); /* WIP take care of freeing mem */
+        values[index] = strdup(
+            value); // TODO: free old value if exists, and free values on property reset
         mlt_properties_set_data(p, "v", values, index + 1, NULL, NULL);
     } else {
-        v[index] = value;
+        // TODO: Shouldn't value be duplicated here? The caller might free it after setting the property, and the old value should be freed if exists.
+        v[index] = value; // TODO: Free the old value if exists, and free values on property reset
     }
     return kOfxStatOK;
 }
@@ -497,10 +495,10 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         || strcmp(kOfxParamTypeInteger3D, paramType) == 0
         || strcmp(kOfxParamTypeString, paramType) == 0
         || strcmp(kOfxParamTypeCustom, paramType) == 0 || strcmp(kOfxParamTypeBytes, paramType) == 0
-        || strcmp(kOfxParamTypeGroup, paramType) == 0 || strcmp(kOfxParamTypePage, paramType) == 0
-        || strcmp(kOfxParamTypePushButton, paramType)
-               == 0) { /* Currently page and push buttons are ignored but we need
-								 them so plugins keep feeding use with parameters */
+        || strcmp(kOfxParamTypeGroup, paramType) == 0
+        // Currently page and push buttons are ignored but we need them so plugins keep feeding use with parameters
+        || strcmp(kOfxParamTypePage, paramType) == 0
+        || strcmp(kOfxParamTypePushButton, paramType) == 0) {
         mlt_properties pt = mlt_properties_new();
         mlt_properties_set_string(pt, "t", paramType);
 
@@ -723,7 +721,6 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
     return kOfxStatOK;
 }
 
-/* TODO: add missing types */
 static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
 {
     if (paramHandle == NULL)
@@ -735,8 +732,6 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     mlt_properties param = (mlt_properties) paramHandle;
     char *param_type = mlt_properties_get(param, "t");
     mlt_properties param_props = mlt_properties_get_data(param, "p", NULL);
-
-    /* TODO make this use mlt_properties_anim_get_* functions */
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
         || strcmp(param_type, kOfxParamTypeBoolean) == 0
@@ -868,13 +863,11 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     return kOfxStatOK;
 }
 
-/* TODO: implement derivative parameter retrieval */
 static OfxStatus paramGetDerivative(OfxParamHandle paramHandle, OfxTime time, ...)
 {
     return kOfxStatOK;
 }
 
-/* TODO: implement Integral parameter retrieval */
 static OfxStatus paramGetIntegral(OfxParamHandle paramHandle, OfxTime time1, OfxTime time2, ...)
 {
     return kOfxStatOK;
@@ -942,14 +935,11 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
     return kOfxStatOK;
 }
 
-/* time in frames it seems */
 static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
 {
     mlt_log_debug(NULL, "<----paramSetValueAtTime---->\n");
     if (paramHandle == NULL)
         return kOfxStatErrBadHandle;
-
-    /* WIP: animation is not supported yet */
 
     va_list ap;
     va_start(ap, time);
@@ -1055,8 +1045,6 @@ static OfxParameterSuiteV1 MltOfxParameterSuiteV1 = {paramDefine,
 
 static OfxStatus memoryAlloc(void *handle, size_t nBytes, void **allocatedData)
 {
-    /* handle is ignored */
-
     void *temp = calloc(1, nBytes);
 
     if (temp == NULL)
@@ -1082,7 +1070,6 @@ static OfxStatus multiThread(OfxThreadFunctionV1 func, unsigned int nThreads, vo
         return kOfxStatFailed;
     }
 
-    /* just ignore multi Threading for now use one thread */
     func(0, 1, customArg);
 
     return kOfxStatOK;
@@ -1189,7 +1176,7 @@ static OfxStatus clearPersistentMessage(void *handle)
     return kOfxStatOK;
 }
 
-static OfxMessageSuiteV2 MltOfxMessageSuiteV2 = {message, /* Same as the V1 message suite call. */
+static OfxMessageSuiteV2 MltOfxMessageSuiteV2 = {message, // Same as the V1 message suite call.
                                                  setPersistentMessage,
                                                  clearPersistentMessage};
 
@@ -1213,53 +1200,54 @@ static OfxInteractSuiteV1 MltOfxInteractSuiteV1 = {interactSwapBuffers,
                                                    interactRedraw,
                                                    interactGetPropertySet};
 
-/* static OfxStatus getColour(OfxDrawContextHandle context,
-                              OfxStandardColour std_colour,
-                              OfxRGBAColourF *colour)
-   {
-       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-       return kOfxStatOK;
-   }
-   
-   static OfxStatus setColour(OfxDrawContextHandle context, const OfxRGBAColourF *colour)
-   {
-       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-       return kOfxStatOK;
-   }
-   
-   static OfxStatus setLineWidth(OfxDrawContextHandle context, float width)
-   {
-       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-       return kOfxStatOK;
-   }
-   
-   static OfxStatus setLineStipple(OfxDrawContextHandle context, OfxDrawLineStipplePattern pattern)
-   {
-       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-       return kOfxStatOK;
-   }
-   
-   static OfxStatus draw(OfxDrawContextHandle context,
-                         OfxDrawPrimitive primitive,
-                         const OfxPointD *points,
-                         int point_count)
-   {
-       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-       return kOfxStatOK;
-   }
-   
-   static OfxStatus drawText(OfxDrawContextHandle context,
-                             const char *text,
-                             const OfxPointD *pos,
-                             int alignment)
-   {
-       mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
-       return kOfxStatOK;
-   } */
+/*
+static OfxStatus getColour(OfxDrawContextHandle context,
+                            OfxStandardColour std_colour,
+                            OfxRGBAColourF *colour)
+{
+    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    return kOfxStatOK;
+}
 
-/* static OfxDrawSuiteV1 MltOfxDrawSuiteV1
-       = {getColour, setColour, setLineWidth, setLineStipple, draw, drawText}; */
+static OfxStatus setColour(OfxDrawContextHandle context, const OfxRGBAColourF *colour)
+{
+    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    return kOfxStatOK;
+}
 
+static OfxStatus setLineWidth(OfxDrawContextHandle context, float width)
+{
+    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    return kOfxStatOK;
+}
+
+static OfxStatus setLineStipple(OfxDrawContextHandle context, OfxDrawLineStipplePattern pattern)
+{
+    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    return kOfxStatOK;
+}
+
+static OfxStatus draw(OfxDrawContextHandle context,
+                        OfxDrawPrimitive primitive,
+                        const OfxPointD *points,
+                        int point_count)
+{
+    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    return kOfxStatOK;
+}
+
+static OfxStatus drawText(OfxDrawContextHandle context,
+                            const char *text,
+                            const OfxPointD *pos,
+                            int alignment)
+{
+    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    return kOfxStatOK;
+}
+
+static OfxDrawSuiteV1 MltOfxDrawSuiteV1
+    = {getColour, setColour, setLineWidth, setLineStipple, draw, drawText};
+*/
 static OfxStatus progressStartV1(void *effectInstance, const char *label)
 {
     return kOfxStatOK;
@@ -1374,29 +1362,31 @@ static OfxParametricParameterSuiteV1 MltOfxParametricParameterSuiteV1
        parametricParamDeleteControlPoint,
        parametricParamDeleteAllControlPoints};
 
-/* static OfxStatus clipLoadTexture(OfxImageClipHandle clip,
-   				 OfxTime time,
-   				 const char *format,
-   				 const OfxRectD *region,
-   				 OfxPropertySetHandle *textureHandle)
-   {
-       return kOfxStatOK;
-   }
-   
-   static OfxStatus clipFreeTexture(OfxPropertySetHandle textureHandle)
-   {
-       return kOfxStatOK;
-   }
-   
-   static OfxStatus flushResources()
-   {
-       return kOfxStatOK;
-   }
-   
-   static OfxImageEffectOpenGLRenderSuiteV1 MltOfxOpenGLRenderSuiteV1
-       = {clipLoadTexture,
-          clipFreeTexture,
-          flushResources}; */
+/*
+static OfxStatus clipLoadTexture(OfxImageClipHandle clip,
+                OfxTime time,
+                const char *format,
+                const OfxRectD *region,
+                OfxPropertySetHandle *textureHandle)
+{
+    return kOfxStatOK;
+}
+
+static OfxStatus clipFreeTexture(OfxPropertySetHandle textureHandle)
+{
+    return kOfxStatOK;
+}
+
+static OfxStatus flushResources()
+{
+    return kOfxStatOK;
+}
+
+static OfxImageEffectOpenGLRenderSuiteV1 MltOfxOpenGLRenderSuiteV1
+    = {clipLoadTexture,
+        clipFreeTexture,
+        flushResources};
+*/
 
 static void mltofx_log_status_code(OfxStatus code, char *msg)
 {
@@ -1487,7 +1477,7 @@ const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, i
     } else if (strcmp(suiteName, kOfxInteractSuite) == 0 && suiteVersion == 1) {
         return &MltOfxInteractSuiteV1;
     } else if (strcmp(suiteName, kOfxDrawSuite) == 0 && suiteVersion == 1) {
-        // WIP a dummy struct MltOfxDrawSuiteV1 exists
+        // return &MltOfxDrawSuiteV1
         return NULL;
     } else if (strcmp(suiteName, kOfxProgressSuite) == 0 && suiteVersion == 1) {
         return &MltOfxProgressSuiteV1;
@@ -1498,7 +1488,7 @@ const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, i
     } else if (strcmp(suiteName, kOfxParametricParameterSuite) == 0 && suiteVersion == 1) {
         return &MltOfxParametricParameterSuiteV1;
     } else if (strcmp(suiteName, kOfxOpenGLRenderSuite) == 0 && suiteVersion == 1) {
-        //WIP a dummy struct &MltOfxOpenGLRenderSuiteV1 exists
+        // return &MltOfxOpenGLRenderSuiteV1
         return NULL;
     }
 
@@ -1521,11 +1511,7 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
                   kOfxImageComponentRGBA);
     propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGB);
     propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 0);
-
-    /* TODO: add support for OpenGL plugins */
     propSetString(host_properties, kOfxImageEffectPropOpenGLRenderSupported, 0, "false");
-
-    /* TODO: add support to draw suite plugins */
     propSetInt(host_properties, kOfxImageEffectPropSupportsOverlays, 0, 0);
 }
 
@@ -1650,7 +1636,7 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                   "OfxImageEffectPropRenderQualityBest");
 
     char *tstr = calloc(1, strlen("Source") + 11);
-    sprintf(tstr, "%s%04d%04d", "Source", rand() % 9999, rand() % 9999); /* WIP: do something better */
+    sprintf(tstr, "%s%04d%04d", "Source", rand() % 9999, rand() % 9999);
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
     free(tstr);
 
@@ -1757,7 +1743,7 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   "OfxImageEffectPropRenderQualityBest");
 
     char *tstr = calloc(1, strlen("Output") + 11);
-    sprintf(tstr, "%s%04d%04d", "Output", rand() % 9999, rand() % 9999); /* WIP: do something better */
+    sprintf(tstr, "%s%04d%04d", "Output", rand() % 9999, rand() % 9999);
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
     free(tstr);
 
@@ -1833,7 +1819,6 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         return 0;
     }
 
-    /* test describe in context action because some plugins say they are unsupported at this stage */
     status_code = plugin->mainEntry(kOfxImageEffectActionDescribeInContext,
                                     (OfxImageEffectHandle) image_effect,
                                     (OfxPropertySetHandle) MltOfxHost.host,
@@ -1862,7 +1847,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
     }
     if (i == count) {
         mlt_log_debug(NULL, "[ofx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
-        /* since plugin is not filter then load fail so we must not unload it */
+        // since plugin is not filter then load fail so we must not unload it
         return 0;
     }
 
@@ -1881,7 +1866,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
     }
     if (i == count) {
         mlt_log_debug(NULL, "[ofx] Plugin not byte/short: %s\n", plugin->pluginIdentifier);
-        /* since no pixel depth is supported by us then plugin is load fail so we must not unload it */
+        // since no pixel depth is supported by us then plugin is load fail so we must not unload it
         return 0;
     }
 
@@ -1948,7 +1933,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                                     (OfxPropertySetHandle) MltOfxHost.host,
                                     NULL);
 
-    /* some plugins need to set some attributes at Source and Output before any other operation happen */
+    // some plugins need to set some attributes at Source and Output before any other operation happen
     mlt_properties clip = NULL, clip_props = NULL;
     clipGetHandle((OfxImageEffectHandle) image_effect,
                   "Source",
@@ -2001,7 +1986,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
 
     int iparams_length = mlt_properties_count(iparams);
 
-    /* starting with 1 to skip the plugin_props */
+    // starting with 1 to skip the plugin_props which is not a param but just a reference to the plugin properties
     for (int ipiter = 1; ipiter < iparams_length; ++ipiter) {
         char *name = mlt_properties_get_name(iparams, ipiter);
         mlt_properties pp = mlt_properties_get_data(iparams, name, NULL);
@@ -2026,7 +2011,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             mlt_properties_set(
                 p,
                 "type",
-                "string"); /* setting this to string let kdenlive and other MLT users render this as combobox dropdown list, WIP: do something better */
+                "string"); // setting this to string let kdenlive and other MLT users render this as combobox dropdown list
         } else if (strcmp(pt, kOfxParamTypeString) == 0) {
             mlt_properties_set(p, "type", "string");
         } else if (strcmp(pt, kOfxParamTypeBoolean) == 0) {
@@ -2041,7 +2026,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             mlt_properties_set(p, "type", "color");
             mlt_properties_set(p, "widget", "color");
         } else if (strcmp(pt, kOfxParamTypeDouble2D)
-                   == 0) { /* can be rendered as 2 double number input fields */
+                   == 0) { // can be rendered as 2 double number input fields
             mlt_properties_set(p, "type", "double");
 
             char *type = kOfxParamDoubleTypeXY;
@@ -2052,15 +2037,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                           0,
                           &coordinate_system);
 
-            if (strcmp(type, kOfxParamDoubleTypeXYAbsolute)
-                == 0) /* otherwise if double type is kOfxParamDoubleTypeXY then this is size not position according to openfx headers */
-            {
+            if (strcmp(type, kOfxParamDoubleTypeXYAbsolute) == 0) {
                 mlt_properties_set(p, "widget", "2dpoint");
             } else if (strcmp(type, kOfxParamDoubleTypeXY) == 0) {
-                mlt_properties_set(
-                    p,
-                    "widget",
-                    "2dsize"); /* Natron still render it as two number input boxes but with a button to make width = height */
+                mlt_properties_set(p, "widget", "2dsize");
             }
 
             if (strcmp(coordinate_system, kOfxParamCoordinatesCanonical) == 0) {
@@ -2072,12 +2052,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
         } else if (strcmp(pt, kOfxParamTypeInteger2D) == 0) {
         } else if (strcmp(pt, kOfxParamTypeDouble3D) == 0) {
         } else if (strcmp(pt, kOfxParamTypeInteger3D) == 0) {
-        } else if (strcmp(pt, kOfxParamTypeCustom) == 0) { /* need special handling */
-        } else if (strcmp(pt, kOfxParamTypeBytes)
-                   == 0) { /* From the documentation: String to identify a param as a Plug-in defined opaque data parameter. */
+        } else if (strcmp(pt, kOfxParamTypeCustom) == 0) {
+        } else if (strcmp(pt, kOfxParamTypeBytes) == 0) {
         } else if (strcmp(pt, kOfxParamTypePage) == 0) {
-        } else if (strcmp(pt, kOfxParamTypePushButton)
-                   == 0) { /* select field if selected shows options based on the selection */
+        } else if (strcmp(pt, kOfxParamTypePushButton) == 0) {
         }
 
         int animation = 1;
@@ -2106,7 +2084,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value1);
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &default_value2);
 
-                    /* for some reason with DBL_MIN DBL_MAX it segfault */
+                    // for some reason with DBL_MIN DBL_MAX it segfault
                     if (!isnormal(default_value1) || default_value1 <= FLT_MIN
                         || default_value1 >= FLT_MAX)
                         default_value1 = 0.0;
@@ -2239,8 +2217,6 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
     mlt_properties param = NULL;
     paramGetHandle((OfxParamSetHandle) params, key, (OfxParamHandle *) &param, NULL);
 
-    /* WIP: maybe it will be better idea to use paramSetValueAtTime */
-
     va_list ap;
     va_start(ap, type);
 
@@ -2306,14 +2282,6 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
                                               (OfxImageEffectHandle) image_effect,
                                               (OfxPropertySetHandle) get_rod_in_args,
                                               (OfxPropertySetHandle) get_rod_out_args);
-
-    /* double rod_x1 = 0.0, rod_y1 = 0.0, rod_x2 = 0.0, rod_y2 = 0.0;
-
-       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 0, &rod_x1);
-       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 1, &rod_y1);
-       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 2, &rod_x2);
-       propGetDouble((OfxPropertySetHandle) get_rod_out_args, kOfxImageEffectPropRegionOfDefinition, 3, &rod_y2);
-       printf ("get_rod_out_args          %f %f %f %f\n", rod_x1, rod_y1, rod_x2, rod_y2); */
 
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetRegionOfDefinition);
 }
