@@ -1,6 +1,6 @@
 /*
  * consumer_avformat.c -- an encoder based on avformat
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1322,6 +1322,9 @@ static int encode_audio(encode_ctx_t *ctx)
     // Get the audio samples
     if (samples > 0) {
         sample_fifo_fetch(ctx->fifo, ctx->audio_buf_1, samples * ctx->sample_bytes * ctx->channels);
+    } else if (samples == 0) {
+        // Return done
+        return 1;
     } else if (ctx->audio_codec_id == AV_CODEC_ID_VORBIS && ctx->terminated) {
         // This prevents an infinite loop when some versions of vorbis do not
         // increment pts when encoding silence.
