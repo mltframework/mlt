@@ -1,0 +1,89 @@
+schema_version: 7.0
+type: filter
+identifier: placebo.render
+title: GPU Render (libplacebo)
+version: 1
+copyright: Copyright (C) 2025 D-Ogi
+creator: D-Ogi
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  GPU-accelerated scaling, debanding, dithering and tonemapping via libplacebo.
+  Uses D3D11 on Windows, Vulkan elsewhere. Processes every frame through
+  pl_renderer with configurable quality presets and scaling algorithms.
+
+parameters:
+  - identifier: preset
+    title: Quality Preset
+    type: string
+    description: >
+      Overall quality preset. "fast" minimizes GPU work, "default" is balanced,
+      "high_quality" enables all enhancements.
+    default: default
+    mutable: yes
+    readonly: no
+    widget: combo
+
+  - identifier: upscaler
+    title: Upscaler
+    type: string
+    description: >
+      Scaling algorithm for upscaling. ewa_lanczos (default) gives the best
+      quality; bilinear is fastest.
+    default: ewa_lanczos
+    mutable: yes
+    readonly: no
+    widget: combo
+
+  - identifier: downscaler
+    title: Downscaler
+    type: string
+    description: >
+      Scaling algorithm for downscaling.
+    default: mitchell
+    mutable: yes
+    readonly: no
+    widget: combo
+
+  - identifier: deband
+    title: Debanding
+    type: integer
+    description: Enable debanding to reduce color banding artifacts.
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+    widget: checkbox
+
+  - identifier: deband_iterations
+    title: Deband Iterations
+    type: integer
+    description: Number of debanding iterations (1-4). Higher values are slower but more effective.
+    minimum: 1
+    maximum: 4
+    default: 1
+    mutable: yes
+
+  - identifier: dithering
+    title: Dithering
+    type: string
+    description: >
+      Dithering method. "blue" (default) looks best, "ordered_lut" is fastest,
+      "none" disables dithering.
+    default: blue
+    mutable: yes
+    readonly: no
+    widget: combo
+
+  - identifier: tonemapping
+    title: Tone Mapping
+    type: string
+    description: >
+      Tone mapping function for HDR-to-SDR conversion.
+      "auto" selects the best method automatically.
+    default: auto
+    mutable: yes
+    readonly: no
+    widget: combo
