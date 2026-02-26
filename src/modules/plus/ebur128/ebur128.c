@@ -398,12 +398,11 @@ void ebur128_get_version(int* major, int* minor, int* patch) {
   *patch = EBUR128_VERSION_PATCH;
 }
 
-#define VALIDATE_MAX_CHANNELS (64)
 #define VALIDATE_MAX_SAMPLERATE (2822400)
 
 #define VALIDATE_CHANNELS_AND_SAMPLERATE(err)                                  \
   do {                                                                         \
-    if (channels == 0 || channels > VALIDATE_MAX_CHANNELS) {                   \
+    if (channels == 0 || channels > MAX_CHANNELS) {                            \
       return (err);                                                            \
     }                                                                          \
                                                                                \

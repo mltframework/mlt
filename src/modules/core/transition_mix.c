@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CHANNELS (6)
 #define MAX_SAMPLES (192000)
 #define SAMPLE_BYTES(samples, channels) ((samples) * (channels) * sizeof(float))
 #define MAX_BYTES SAMPLE_BYTES(MAX_SAMPLES, MAX_CHANNELS)
