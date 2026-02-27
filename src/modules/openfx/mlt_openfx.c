@@ -394,6 +394,8 @@ static OfxStatus propGetString(OfxPropertySetHandle properties,
     mlt_properties p = fetch_mlt_properties(properties, index);
     if (!p)
         return kOfxStatErrBadIndex;
+    if (!mlt_properties_exists(p, property))
+        return kOfxStatErrUnknown;
     *value = mlt_properties_get(p, property);
     return kOfxStatOK;
 }
