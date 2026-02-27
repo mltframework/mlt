@@ -224,47 +224,45 @@ static OfxImageEffectSuiteV1 MltOfxImageEffectSuiteV1 = {getPropertySet,
                                                          imageMemoryLock,
                                                          imageMemoryUnlock};
 
-#define MLTOFX_DEF_SETTER(fn, fa, vt, ofxproptype) \
-    static OfxStatus propSet##fn(OfxPropertySetHandle properties, \
-                                 const char *property, \
-                                 int index, \
-                                 fa value) \
-    { \
-        if (properties == NULL) \
-            return kOfxStatErrBadHandle; \
-        if (index < 0) \
-            return kOfxStatErrBadIndex; \
-        mlt_properties props = (mlt_properties) properties; \
-        int length = 0; \
-        mlt_properties p = mlt_properties_get_data(props, property, &length); \
-        if (p == NULL) { \
-            mlt_properties pt = mlt_properties_new(); \
-            mlt_properties_set_data(props, \
-                                    property, \
-                                    pt, \
-                                    0, \
-                                    (mlt_destructor) mlt_properties_close, \
-                                    NULL); \
-            mlt_properties_set_int(pt, "t", ofxproptype); \
-            p = pt; \
-        } \
-        vt *v = mlt_properties_get_data(p, "v", &length); \
-        if (length == 0 || length <= index) { \
-            vt *values = realloc(v, sizeof(vt) * (index + 1)); \
-            if (values == NULL) \
-                return kOfxStatErrMemory; \
-            values[index] = value; \
-            /* TODO: the values array is never freed. */ \
-            mlt_properties_set_data(p, "v", values, index + 1, NULL, NULL); \
-        } else { \
-            v[index] = value; \
-        } \
-        return kOfxStatOK; \
-    }
+static mlt_properties fetch_mlt_properties(OfxPropertySetHandle properties, int index)
+{
+    if (index < 0)
+        return NULL;
+    mlt_properties props = (mlt_properties) properties;
+    char index_str[12] = {'\0'};
+    snprintf(index_str, sizeof(index_str), "%d", index);
+    mlt_properties p = mlt_properties_get_properties(props, index_str);
+    return p;
+}
 
-MLTOFX_DEF_SETTER(Pointer, void *, void *, mltofx_prop_pointer);
-MLTOFX_DEF_SETTER(Double, double, double, mltofx_prop_double);
-MLTOFX_DEF_SETTER(Int, int, int, mltofx_prop_int);
+static mlt_properties get_mlt_properties(OfxPropertySetHandle properties, int index)
+{
+    if (index < 0)
+        return NULL;
+    mlt_properties props = (mlt_properties) properties;
+    char index_str[12] = {'\0'};
+    snprintf(index_str, sizeof(index_str), "%d", index);
+    mlt_properties p = mlt_properties_get_properties(props, index_str);
+    if (!p) {
+        p = mlt_properties_new();
+        mlt_properties_set_properties(props, index_str, p);
+    }
+    return p;
+}
+
+static OfxStatus propSetPointer(OfxPropertySetHandle properties,
+                                const char *property,
+                                int index,
+                                void *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    mlt_properties p = get_mlt_properties(properties, index);
+    if (!p)
+        return kOfxStatErrBadIndex;
+    mlt_properties_set_data(p, property, value, 0, NULL, NULL);
+    return kOfxStatOK;
+}
 
 static OfxStatus propSetString(OfxPropertySetHandle properties,
                                const char *property,
@@ -273,162 +271,237 @@ static OfxStatus propSetString(OfxPropertySetHandle properties,
 {
     if (properties == NULL)
         return kOfxStatErrBadHandle;
-    if (index < 0)
+    mlt_properties p = get_mlt_properties(properties, index);
+    if (!p)
         return kOfxStatErrBadIndex;
-    mlt_properties props = (mlt_properties) properties;
-    int length = 0;
-    mlt_properties p = mlt_properties_get_data(props, property, &length);
-    if (p == NULL) {
-        mlt_properties pt = mlt_properties_new();
-        mlt_properties_set_data(props, property, pt, 0, (mlt_destructor) mlt_properties_close, NULL);
-        mlt_properties_set_int(pt, "t", mltofx_prop_string);
-        p = pt;
-    }
-    char **v = mlt_properties_get_data(p, "v", &length);
-    if (length == 0 || length <= index) {
-        char **values
-            = realloc(v, sizeof(char *) * (index + 1)); // TODO: where is this allocation freed?
-        if (values == NULL)
-            return kOfxStatErrMemory;
-        values[index] = strdup(
-            value); // TODO: free old value if exists, and free values on property reset
-        mlt_properties_set_data(p, "v", values, index + 1, NULL, NULL);
-    } else {
-        // TODO: Shouldn't value be duplicated here? The caller might free it after setting the property, and the old value should be freed if exists.
-        v[index] = value; // TODO: Free the old value if exists, and free values on property reset
+    mlt_properties_set(p, property, value);
+    return kOfxStatOK;
+}
+
+static OfxStatus propSetDouble(OfxPropertySetHandle properties,
+                               const char *property,
+                               int index,
+                               double value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    mlt_properties p = get_mlt_properties(properties, index);
+    if (!p)
+        return kOfxStatErrBadIndex;
+    mlt_properties_set_double(p, property, value);
+    return kOfxStatOK;
+}
+
+static OfxStatus propSetInt(OfxPropertySetHandle properties,
+                            const char *property,
+                            int index,
+                            int value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    mlt_properties p = get_mlt_properties(properties, index);
+    if (!p)
+        return kOfxStatErrBadIndex;
+    mlt_properties_set_int(p, property, value);
+    return kOfxStatOK;
+}
+
+static OfxStatus propSetPointerN(OfxPropertySetHandle properties,
+                                 const char *property,
+                                 int count,
+                                 void *const *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = get_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        mlt_properties_set_data(p, property, value[i], 0, NULL, NULL);
     }
     return kOfxStatOK;
 }
 
-#define MLTOFX_DEF_GETTER(fn, fa) \
-    static OfxStatus propGet##fn(OfxPropertySetHandle properties, \
-                                 const char *property, \
-                                 int index, \
-                                 fa *value) \
-    { \
-        if (properties == NULL) \
-            return kOfxStatErrBadHandle; \
-        mlt_properties props = (mlt_properties) properties; \
-        int length = 0; \
-        mlt_properties p = mlt_properties_get_data(props, property, &length); \
-        if (p != NULL) { \
-            fa *v = mlt_properties_get_data(p, "v", &length); \
-            if (index < 0 || index >= length) \
-                return kOfxStatErrBadIndex; \
-            *value = v[index]; \
-            return kOfxStatOK; \
-        } \
-        return kOfxStatErrUnknown; \
+static OfxStatus propSetStringN(OfxPropertySetHandle properties,
+                                const char *property,
+                                int count,
+                                const char *const *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = get_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        mlt_properties_set(p, property, value[i]);
     }
+    return kOfxStatOK;
+}
 
-MLTOFX_DEF_GETTER(Pointer, void *);
-MLTOFX_DEF_GETTER(String, char *);
-MLTOFX_DEF_GETTER(Double, double);
-MLTOFX_DEF_GETTER(Int, int);
-
-#define MLTOFX_DEF_SETTER_N(fn, fa, vt, ofxproptype) \
-    static OfxStatus propSet##fn##N(OfxPropertySetHandle properties, \
-                                    const char *property, \
-                                    int count, \
-                                    fa *value) \
-    { \
-        if (properties == NULL) \
-            return kOfxStatErrBadHandle; \
-        if (count < 0) \
-            return kOfxStatErrBadIndex; \
-        if (value == NULL) \
-            return kOfxStatErrValue; \
-        mlt_properties props = (mlt_properties) properties; \
-        int length = 0; \
-        mlt_properties p = mlt_properties_get_data(props, property, &length); \
-        if (p == NULL) { \
-            mlt_properties pt = mlt_properties_new(); \
-            mlt_properties_set_data(props, \
-                                    property, \
-                                    pt, \
-                                    0, \
-                                    (mlt_destructor) mlt_properties_close, \
-                                    NULL); \
-            mlt_properties_set_int(pt, "t", ofxproptype); \
-            p = pt; \
-        } \
-        vt *v = mlt_properties_get_data(p, "v", &length); \
-        vt *values = realloc(v, sizeof(vt) * (count)); \
-        if (values == NULL) \
-            return kOfxStatErrUnknown; \
-        memcpy(values, value, sizeof(vt) * (count)); \
-        mlt_properties_set_data(p, "v", values, count, free, NULL); \
-        return kOfxStatOK; \
+static OfxStatus propSetDoubleN(OfxPropertySetHandle properties,
+                                const char *property,
+                                int count,
+                                const double *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = get_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        mlt_properties_set_double(p, property, value[i]);
     }
+    return kOfxStatOK;
+}
 
-MLTOFX_DEF_SETTER_N(Pointer, void *const, void *, mltofx_prop_pointer);
-MLTOFX_DEF_SETTER_N(String, const char *const, char *, mltofx_prop_string);
-MLTOFX_DEF_SETTER_N(Double, const double, double, mltofx_prop_double);
-MLTOFX_DEF_SETTER_N(Int, const int, int, mltofx_prop_int);
-
-#define MLTOFX_DEF_GETTER_N(fn, fa) \
-    static OfxStatus propGet##fn##N(OfxPropertySetHandle properties, \
-                                    const char *property, \
-                                    int count, \
-                                    fa *value) \
-    { \
-        if (properties == NULL) \
-            return kOfxStatErrBadHandle; \
-        if (count < 0) \
-            return kOfxStatErrBadIndex; \
-        mlt_properties props = (mlt_properties) properties; \
-        int length = 0; \
-        mlt_properties p = mlt_properties_get_data(props, property, &length); \
-        if (p == NULL) \
-            return kOfxStatErrUnknown; \
-        fa *v = mlt_properties_get_data(p, "v", &length); \
-        if (count > length) \
-            return kOfxStatErrUnknown; \
-        memcpy(value, v, sizeof(fa) * (count)); \
-        return kOfxStatOK; \
+static OfxStatus propSetIntN(OfxPropertySetHandle properties,
+                             const char *property,
+                             int count,
+                             const int *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = get_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        mlt_properties_set_int(p, property, value[i]);
     }
+    return kOfxStatOK;
+}
 
-MLTOFX_DEF_GETTER_N(Pointer, void *);
-MLTOFX_DEF_GETTER_N(String, char *);
-MLTOFX_DEF_GETTER_N(Double, double);
-MLTOFX_DEF_GETTER_N(Int, int);
+static OfxStatus propGetPointer(OfxPropertySetHandle properties,
+                                const char *property,
+                                int index,
+                                void **value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    mlt_properties p = fetch_mlt_properties(properties, index);
+    if (!p)
+        return kOfxStatErrBadIndex;
+    *value = mlt_properties_get_data(p, property, NULL);
+    return kOfxStatOK;
+}
+
+static OfxStatus propGetString(OfxPropertySetHandle properties,
+                               const char *property,
+                               int index,
+                               char **value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    mlt_properties p = fetch_mlt_properties(properties, index);
+    if (!p)
+        return kOfxStatErrBadIndex;
+    *value = mlt_properties_get(p, property);
+    return kOfxStatOK;
+}
+
+static OfxStatus propGetDouble(OfxPropertySetHandle properties,
+                               const char *property,
+                               int index,
+                               double *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    mlt_properties p = fetch_mlt_properties(properties, index);
+    if (!p)
+        return kOfxStatErrBadIndex;
+    *value = mlt_properties_get_double(p, property);
+    return kOfxStatOK;
+}
+
+static OfxStatus propGetInt(OfxPropertySetHandle properties,
+                            const char *property,
+                            int index,
+                            int *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    mlt_properties p = fetch_mlt_properties(properties, index);
+    if (!p)
+        return kOfxStatErrBadIndex;
+    *value = mlt_properties_get_int(p, property);
+    return kOfxStatOK;
+}
+
+static OfxStatus propGetPointerN(OfxPropertySetHandle properties,
+                                 const char *property,
+                                 int count,
+                                 void **value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = fetch_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        value[i] = mlt_properties_get_data(p, property, NULL);
+    }
+    return kOfxStatOK;
+}
+
+static OfxStatus propGetStringN(OfxPropertySetHandle properties,
+                                const char *property,
+                                int count,
+                                char **value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = fetch_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        value[i] = mlt_properties_get(p, property);
+    }
+    return kOfxStatOK;
+}
+
+static OfxStatus propGetDoubleN(OfxPropertySetHandle properties,
+                                const char *property,
+                                int count,
+                                double *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = fetch_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        value[i] = mlt_properties_get_double(p, property);
+    }
+    return kOfxStatOK;
+}
+
+static OfxStatus propGetIntN(OfxPropertySetHandle properties,
+                             const char *property,
+                             int count,
+                             int *value)
+{
+    if (properties == NULL)
+        return kOfxStatErrBadHandle;
+    for (int i = 0; i < count; ++i) {
+        mlt_properties p = fetch_mlt_properties(properties, i);
+        if (!p)
+            return kOfxStatErrBadIndex;
+        value[i] = mlt_properties_get_int(p, property);
+    }
+    return kOfxStatOK;
+}
 
 static OfxStatus propReset(OfxPropertySetHandle properties, const char *property)
 {
     if (properties == NULL)
         return kOfxStatErrBadHandle;
-
-    mlt_properties props = (mlt_properties) properties;
-    int length = 0;
-    mlt_properties p = mlt_properties_get_data(props, property, &length);
-    if (p == NULL)
-        return kOfxStatErrUnknown;
-
-    mltofx_property_type prop_type = 0;
-    prop_type = mlt_properties_get_int(p, "t");
-    void *values = mlt_properties_get_data(p, "v", &length);
-
-    if (length == 0)
-        return kOfxStatErrUnknown;
-
-    switch (prop_type) {
-    case mltofx_prop_int:
-        memset(values, 0, sizeof(int) * length);
-        break;
-
-    case mltofx_prop_double:
-        memset(values, 0, sizeof(double) * length);
-        break;
-
-    case mltofx_prop_string:
-    case mltofx_prop_pointer:
-        memset(values, 0, sizeof(void *) * length);
-        break;
-
-    default:
-        break;
+    int i = 0;
+    while (true) {
+        mlt_properties p = fetch_mlt_properties(properties, i);
+        if (!p)
+            break;
+        mlt_properties_clear(p, property);
+        i++;
     }
-
     return kOfxStatOK;
 }
 
@@ -436,17 +509,17 @@ static OfxStatus propGetDimension(OfxPropertySetHandle properties, const char *p
 {
     if (properties == NULL)
         return kOfxStatErrBadHandle;
-    mlt_properties props = (mlt_properties) properties;
-    mlt_properties p = mlt_properties_get_data(props, property, count);
-
-    if (p == NULL) {
-        *count = 0;
-    } else {
-        int length = 0;
-        mlt_properties_get_data(p, "v", &length);
-        *count = length;
+    *count = 0;
+    while (true) {
+        mlt_properties p = fetch_mlt_properties(properties, *count);
+        if (!p)
+            break;
+        if (mlt_properties_exists(p, property)) {
+            (*count)++;
+        } else {
+            break;
+        }
     }
-
     return kOfxStatOK;
 }
 
