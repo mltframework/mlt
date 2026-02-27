@@ -135,6 +135,8 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     OfxGetPluginFn get_plugin = mlt_properties_get_data(mltofx_dl, dli, NULL);
     OfxPlugin *pt = get_plugin(index);
 
+mlt_properties_debug(pb, "plugin properties", stderr);
+
     dli[0] = 's';
     OfxSetHostFn set_host = mlt_properties_get_data(mltofx_dl, dli, NULL);
     if (set_host != NULL)
@@ -224,7 +226,7 @@ MLT_REPOSITORY
                                             dl_n,
                                             ofx_get_number_of_plugins,
                                             0,
-                                            (mlt_destructor) mlt_properties_close,
+                                            (mlt_destructor) dlclose,
                                             NULL);
                     dl_n[0] = '\0';
                     sprintf(dl_n, "s%d", dli);
@@ -232,7 +234,7 @@ MLT_REPOSITORY
                                             dl_n,
                                             ofx_set_host,
                                             0,
-                                            (mlt_destructor) mlt_properties_close,
+                                            (mlt_destructor) dlclose,
                                             NULL);
 
                     dl_n[0] = '\0';
@@ -241,7 +243,7 @@ MLT_REPOSITORY
                                             dl_n,
                                             ofx_get_plugin,
                                             0,
-                                            (mlt_destructor) mlt_properties_close,
+                                            (mlt_destructor) dlclose,
                                             NULL);
 
                     dli++;
