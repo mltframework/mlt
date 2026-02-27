@@ -20,11 +20,8 @@
 #include "mlt_openfx.h"
 #include <glib.h>
 #include <stdbool.h>
+
 extern OfxHost MltOfxHost;
-static OfxSetHostFn ofx_set_host;
-static OfxGetPluginFn ofx_get_plugin;
-static OfxGetNumberOfPluginsFn ofx_get_number_of_plugins;
-static int NumberOfPlugins;
 mlt_properties mltofx_context;
 mlt_properties mltofx_dl;
 
@@ -90,35 +87,23 @@ extern mlt_filter filter_openfx_init(mlt_profile profile,
 static void plugin_mgr_destroy(mlt_properties p)
 {
     int cN = mlt_properties_count(mltofx_context);
-
     for (int j = 0; j < cN; ++j) {
         char *id = mlt_properties_get_name(mltofx_context, j);
         mlt_properties pb = (mlt_properties) mlt_properties_get_data(mltofx_context, id, NULL);
-
         char *dli = mlt_properties_get(pb, "dli");
-        dli[0] = 'g';
         int index = mlt_properties_get_int(pb, "index");
+        void *dlhandle = mlt_properties_get_data(mltofx_dl, dli, NULL);
+        OfxGetPluginFn GetPluginFn = dlsym(dlhandle, "OfxGetPlugin");
 
-        OfxGetPluginFn get_plugin = mlt_properties_get_data(mltofx_dl, dli, NULL);
-
-        if (get_plugin != NULL) {
-            OfxPlugin *pt = get_plugin(index);
+        if (GetPluginFn != NULL) {
+            OfxPlugin *pt = GetPluginFn(index);
             if (pt == NULL)
                 continue;
             pt->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
         }
     }
-
-    int N = mlt_properties_get_int(p, "N");
-
-    for (int i = 0; i < N; ++i) {
-        char tstr[12] = {
-            '\0',
-        };
-        sprintf(tstr, "%d", i);
-        void *current_dlhandle = mlt_properties_get_data(mltofx_dl, tstr, NULL);
-        dlclose(current_dlhandle);
-    }
+    mlt_properties_close(mltofx_context);
+    mlt_properties_close(mltofx_dl);
 }
 
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
@@ -126,21 +111,21 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     char file[PATH_MAX];
     snprintf(file, PATH_MAX, "%s/openfx/%s", mlt_environment("MLT_DATA"), (char *) data);
     mlt_properties result = mlt_properties_parse_yaml(file);
+    if (result == NULL) {
+        mlt_log_error(NULL, "Failed to parse OpenFX plugin metadata file: %s\n", file);
+        return NULL;
+    }
 
     mlt_properties pb = (mlt_properties) mlt_properties_get_data(mltofx_context, id, NULL);
-
     char *dli = mlt_properties_get(pb, "dli");
     int index = mlt_properties_get_int(pb, "index");
-
-    OfxGetPluginFn get_plugin = mlt_properties_get_data(mltofx_dl, dli, NULL);
-    OfxPlugin *pt = get_plugin(index);
-
-mlt_properties_debug(pb, "plugin properties", stderr);
-
-    dli[0] = 's';
-    OfxSetHostFn set_host = mlt_properties_get_data(mltofx_dl, dli, NULL);
-    if (set_host != NULL)
-        set_host(&MltOfxHost);
+    void *dlhandle = mlt_properties_get_data(mltofx_dl, dli, NULL);
+    OfxGetPluginFn getPluginFn = dlsym(dlhandle, "OfxGetPlugin");
+    if (!getPluginFn) {
+        mlt_log_error(NULL, "Failed to get OfxGetPlugin function from plugin: %s\n", id);
+        return NULL;
+    }
+    OfxPlugin *pt = getPluginFn(index);
 
     mlt_properties_set(result, "identifier", id);
     mlt_properties_set(result, "title", id);
@@ -194,7 +179,6 @@ MLT_REPOSITORY
             struct dirent *de = readdir(d);
             while (de) {
                 char *name = de->d_name;
-
                 char *bni = NULL;
                 if ((bni = strstr(name, ".ofx.bundle")) != NULL && bni[11] == '\0') {
                     char *barename = g_strndup(name, (int) (bni - name) + 4);
@@ -203,58 +187,38 @@ MLT_REPOSITORY
                     char *binpath = malloc(dir_len + name_len + 12 + (name_len - 7) + archstr_len
                                            + 1);
                     sprintf(binpath, "%s/%s/Contents/%s/%s", dir, name, OFX_ARCHSTR, barename);
-
                     void *dlhandle = dlopen(binpath, RTLD_LOCAL | RTLD_LAZY);
+                    free(binpath);
+                    free(barename);
+                    if (!dlhandle) {
+                        de = readdir(d);
+                        continue;
+                    }
 
-                    ofx_set_host = dlsym(dlhandle, "OfxSetHost");
+                    OfxGetPluginFn ofx_get_plugin = dlsym(dlhandle, "OfxGetPlugin");
+                    OfxGetNumberOfPluginsFn ofx_get_number_of_plugins
+                        = dlsym(dlhandle, "OfxGetNumberOfPlugins");
+                    if (!ofx_get_plugin || !ofx_get_number_of_plugins) {
+                        dlclose(dlhandle);
+                        de = readdir(d);
+                        continue;
+                    }
 
-                    ofx_get_plugin = dlsym(dlhandle, "OfxGetPlugin");
-                    ofx_get_number_of_plugins = dlsym(dlhandle, "OfxGetNumberOfPlugins");
-                    if (!ofx_get_plugin || !ofx_get_number_of_plugins)
-                        goto parse_error;
-                    NumberOfPlugins = ofx_get_number_of_plugins();
-
-                    char dl_n[16] = {
-                        '\0',
-                    };
+                    char dl_n[16] = {'\0'};
                     sprintf(dl_n, "%d", dli);
-
-                    mlt_properties_set_data(mltofx_dl, dl_n, dlhandle, 0, NULL, NULL);
-                    dl_n[0] = '\0';
-                    sprintf(dl_n, "gn%d", dli);
                     mlt_properties_set_data(mltofx_dl,
                                             dl_n,
-                                            ofx_get_number_of_plugins,
+                                            dlhandle,
                                             0,
                                             (mlt_destructor) dlclose,
                                             NULL);
-                    dl_n[0] = '\0';
-                    sprintf(dl_n, "s%d", dli);
-                    mlt_properties_set_data(mltofx_dl,
-                                            dl_n,
-                                            ofx_set_host,
-                                            0,
-                                            (mlt_destructor) dlclose,
-                                            NULL);
-
-                    dl_n[0] = '\0';
-                    sprintf(dl_n, "g%d", dli);
-                    mlt_properties_set_data(mltofx_dl,
-                                            dl_n,
-                                            ofx_get_plugin,
-                                            0,
-                                            (mlt_destructor) dlclose,
-                                            NULL);
-
                     dli++;
 
-                    if (ofx_get_plugin == NULL)
-                        goto parse_error;
-
-                    for (int i = 0; i < NumberOfPlugins; ++i) {
+                    int plugin_count = ofx_get_number_of_plugins();
+                    for (int i = 0; i < plugin_count; ++i) {
                         OfxPlugin *plugin_ptr = ofx_get_plugin(i);
                         if (!plugin_ptr)
-                            goto parse_error;
+                            break;
 
                         int detected = mltofx_detect_plugin(plugin_ptr);
 
@@ -295,20 +259,13 @@ MLT_REPOSITORY
                                               "filter_openfx.yml");
                         free(s);
                     }
-
-                parse_error:
-
-                    free(binpath);
-                    free(barename);
                 }
-
                 de = readdir(d);
             }
 
             closedir(d);
         }
 
-        mlt_properties_set_int(mltofx_dl, "N", dli);
         mlt_factory_register_for_clean_up(mltofx_dl, (mlt_destructor) plugin_mgr_destroy);
     }
 }

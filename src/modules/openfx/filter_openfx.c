@@ -205,10 +205,8 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
 
             char *dli = mlt_properties_get(pb, "dli");
             int index = mlt_properties_get_int(pb, "index");
-
-            dli[0] = 'g';
-
-            OfxPlugin *(*GetPluginFn)(int nth) = mlt_properties_get_data(mltofx_dl, dli, NULL);
+            void *dlhandle = mlt_properties_get_data(mltofx_dl, dli, NULL);
+            OfxGetPluginFn GetPluginFn = dlsym(dlhandle, "OfxGetPlugin");
 
             if (GetPluginFn != NULL) {
                 OfxPlugin *pt = GetPluginFn(index);
