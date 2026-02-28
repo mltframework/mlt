@@ -89,7 +89,7 @@ static void plugin_mgr_destroy(mlt_properties p)
     int cN = mlt_properties_count(mltofx_context);
     for (int j = 0; j < cN; ++j) {
         char *id = mlt_properties_get_name(mltofx_context, j);
-        mlt_properties pb = (mlt_properties) mlt_properties_get_data(mltofx_context, id, NULL);
+        mlt_properties pb = mlt_properties_get_properties(mltofx_context, id);
         char *dli = mlt_properties_get(pb, "dli");
         int index = mlt_properties_get_int(pb, "index");
         void *dlhandle = mlt_properties_get_data(mltofx_dl, dli, NULL);
@@ -104,6 +104,7 @@ static void plugin_mgr_destroy(mlt_properties p)
     }
     mlt_properties_close(mltofx_context);
     mlt_properties_close(mltofx_dl);
+    mlt_properties_close((mlt_properties) MltOfxHost.host);
 }
 
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
@@ -116,7 +117,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
         return NULL;
     }
 
-    mlt_properties pb = (mlt_properties) mlt_properties_get_data(mltofx_context, id, NULL);
+    mlt_properties pb = mlt_properties_get_properties(mltofx_context, id);
     char *dli = mlt_properties_get(pb, "dli");
     int index = mlt_properties_get_int(pb, "index");
     void *dlhandle = mlt_properties_get_data(mltofx_dl, dli, NULL);
@@ -139,7 +140,8 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
                             (mlt_destructor) mlt_properties_close,
                             NULL);
 
-    mltofx_fetch_params(pt, params, result);
+    mlt_properties image_effect = mltofx_fetch_params(pt, params, result);
+    mlt_properties_close(image_effect);
     return result;
 }
 
@@ -242,16 +244,10 @@ MLT_REPOSITORY
 
                         mlt_properties p;
                         p = mlt_properties_new();
-                        mlt_properties_set_data(mltofx_context,
-                                                s,
-                                                p,
-                                                0,
-                                                (mlt_destructor) mlt_properties_close,
-                                                NULL);
-
+                        mlt_properties_set_properties(mltofx_context, s, p);
+                        mlt_properties_close(p);
                         mlt_properties_set(p, "dli", dl_n);
                         mlt_properties_set_int(p, "index", i);
-
                         MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
                         MLT_REGISTER_METADATA(mlt_service_filter_type,
                                               s,

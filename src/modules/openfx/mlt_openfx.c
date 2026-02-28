@@ -33,22 +33,30 @@
 #include <ofxProgress.h>
 #include <ofxTimeLine.h>
 
+static OfxStatus propGetInt(OfxPropertySetHandle properties,
+                            const char *property,
+                            int index,
+                            int *value);
+static OfxStatus propGetIntN(OfxPropertySetHandle properties,
+                             const char *property,
+                             int count,
+                             int *value);
+
 static OfxStatus getPropertySet(OfxImageEffectHandle imageEffect, OfxPropertySetHandle *propHandle)
 {
+    if (!imageEffect)
+        return kOfxStatErrBadHandle;
     mlt_properties image_effect = (mlt_properties) imageEffect;
-    *propHandle = mlt_properties_get_data(image_effect, "props", NULL);
-
+    *propHandle = (OfxPropertySetHandle) mlt_properties_get_properties(image_effect, "props");
     return kOfxStatOK;
 }
 
 static OfxStatus getParamSet(OfxImageEffectHandle imageEffect, OfxParamSetHandle *paramSet)
 {
-    if (imageEffect == NULL)
+    if (!imageEffect)
         return kOfxStatErrBadHandle;
-
-    mlt_properties image_effect = (mlt_properties) imageEffect;
-    *paramSet = mlt_properties_get_data(image_effect, "params", NULL);
-
+    *paramSet = (OfxParamSetHandle) mlt_properties_get_properties((mlt_properties) imageEffect,
+                                                                  "params");
     return kOfxStatOK;
 }
 
@@ -57,23 +65,17 @@ static OfxStatus clipDefine(OfxImageEffectHandle imageEffect,
                             OfxPropertySetHandle *propertySet)
 {
     mlt_log_debug(NULL, "clipDefine: `%s` ## %p\n", name, propertySet);
-
-    mlt_properties image_effect = (mlt_properties) imageEffect;
-    mlt_properties set = mlt_properties_get_data(image_effect, "clips", NULL);
-
+    if (!imageEffect)
+        return kOfxStatErrBadHandle;
+    mlt_properties set = mlt_properties_get_properties((mlt_properties) imageEffect, "clips");
     mlt_properties clip = mlt_properties_new();
     mlt_properties clip_props = mlt_properties_new();
-    if (clip == NULL)
+    if (!clip || !clip_props)
         return kOfxStatErrMemory;
-
-    mlt_properties_set_data(set, name, clip, 0, (mlt_destructor) mlt_properties_close, NULL);
-    mlt_properties_set_data(clip,
-                            "props",
-                            clip_props,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-
+    mlt_properties_set_properties(set, name, clip);
+    mlt_properties_close(clip);
+    mlt_properties_set_properties(clip, "props", clip_props);
+    mlt_properties_close(clip_props);
     *propertySet = (OfxPropertySetHandle) clip_props;
 
     return kOfxStatOK;
@@ -84,50 +86,43 @@ static OfxStatus clipGetHandle(OfxImageEffectHandle imageEffect,
                                OfxImageClipHandle *clip,
                                OfxPropertySetHandle *propertySet)
 {
-    mlt_properties image_effect = (mlt_properties) imageEffect;
-    mlt_properties set = mlt_properties_get_data(image_effect, "clips", NULL);
-
-    mlt_properties clip_temp = mlt_properties_get_data(set, name, NULL);
+    if (!imageEffect)
+        return kOfxStatErrBadHandle;
+    mlt_properties set = mlt_properties_get_properties((mlt_properties) imageEffect, "clips");
+    mlt_properties clip_temp = mlt_properties_get_properties(set, name);
     *clip = (OfxImageClipHandle) clip_temp;
-
     if (propertySet != NULL)
-        *propertySet = (OfxPropertySetHandle) mlt_properties_get_data(clip_temp, "props", NULL);
-
+        *propertySet = (OfxPropertySetHandle) mlt_properties_get_properties(clip_temp, "props");
     return kOfxStatOK;
 }
 
 static OfxStatus clipGetPropertySet(OfxImageClipHandle clip, OfxPropertySetHandle *propHandle)
 {
-    mlt_properties c = (mlt_properties) clip;
-    *propHandle = (OfxPropertySetHandle) mlt_properties_get_data(c, "props", NULL);
-
+    if (!clip)
+        return kOfxStatErrBadHandle;
+    *propHandle = (OfxPropertySetHandle) mlt_properties_get_properties((mlt_properties) clip,
+                                                                       "props");
     return kOfxStatOK;
 }
-
-static OfxStatus propGetIntN(OfxPropertySetHandle properties,
-                             const char *property,
-                             int count,
-                             int *value);
 
 static OfxStatus clipGetImage(OfxImageClipHandle clip,
                               OfxTime time,
                               const OfxRectD *region,
                               OfxPropertySetHandle *imageHandle)
 {
-    mlt_properties clip_temp = (mlt_properties) clip;
-    *imageHandle = (OfxPropertySetHandle) mlt_properties_get_data(clip_temp, "props", NULL);
-
+    if (!clip)
+        return kOfxStatErrBadHandle;
+    *imageHandle = (OfxPropertySetHandle) mlt_properties_get_properties((mlt_properties) clip,
+                                                                        "props");
     if (region != NULL) {
         const OfxRectI rect = {0, 0, 0, 0};
         propGetIntN((OfxPropertySetHandle) *imageHandle, kOfxImagePropBounds, 4, &rect.x1);
-
         OfxRectD *region2 = (OfxRectD *) region;
         region2->x1 = (double) rect.x1;
         region2->x2 = (double) rect.x2;
         region2->y1 = (double) rect.y1;
         region2->y2 = (double) rect.y2;
     }
-
     return kOfxStatOK;
 }
 
@@ -136,17 +131,11 @@ static OfxStatus clipReleaseImage(OfxPropertySetHandle imageHandle)
     return kOfxStatOK;
 }
 
-static OfxStatus propGetInt(OfxPropertySetHandle properties,
-                            const char *property,
-                            int index,
-                            int *value);
-
 static OfxStatus clipGetRegionOfDefinition(OfxImageClipHandle clip, OfxTime time, OfxRectD *bounds)
 {
-    if (!bounds) {
+    if (!clip || !bounds) {
         return kOfxStatErrBadHandle;
     }
-
     mlt_properties clip_prop;
     clipGetPropertySet(clip, (OfxPropertySetHandle *) &clip_prop);
 
@@ -155,7 +144,6 @@ static OfxStatus clipGetRegionOfDefinition(OfxImageClipHandle clip, OfxTime time
     propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, &y1);
     propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, &x2);
     propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, &y2);
-
     bounds->x1 = (double) x1;
     bounds->y1 = (double) y1;
     bounds->x2 = (double) x2;
@@ -246,6 +234,7 @@ static mlt_properties get_mlt_properties(OfxPropertySetHandle properties, int in
     if (!p) {
         p = mlt_properties_new();
         mlt_properties_set_properties(props, index_str, p);
+        mlt_properties_close(p);
     }
     return p;
 }
@@ -553,9 +542,7 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
     if (paramSet == NULL)
         return kOfxStatErrBadHandle;
     mlt_properties params = (mlt_properties) paramSet;
-
-    int length = 0;
-    mlt_properties p = mlt_properties_get_data(params, name, &length);
+    mlt_properties p = mlt_properties_get_properties(params, name);
 
     if (p != NULL)
         return kOfxStatErrExists;
@@ -579,8 +566,10 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         mlt_properties_set_string(pt, "t", paramType);
 
         mlt_properties param_props = mlt_properties_new();
-        mlt_properties_set_data(pt, "p", param_props, 0, (mlt_destructor) mlt_properties_close, NULL);
-        mlt_properties_set_data(params, name, pt, 0, (mlt_destructor) mlt_properties_close, NULL);
+        mlt_properties_set_properties(pt, "p", param_props);
+        mlt_properties_close(param_props);
+        mlt_properties_set_properties(params, name, pt);
+        mlt_properties_close(pt);
 
         propSetString((OfxPropertySetHandle) param_props, kOfxParamPropType, 0, paramType);
 
@@ -599,64 +588,45 @@ static OfxStatus paramGetHandle(OfxParamSetHandle paramSet,
                                 OfxParamHandle *param,
                                 OfxPropertySetHandle *propertySet)
 {
-    if (paramSet == NULL)
+    if (!paramSet)
         return kOfxStatErrBadHandle;
-
-    mlt_properties params = (mlt_properties) paramSet;
-    int length = 0;
-    mlt_properties p = mlt_properties_get_data(params, name, &length);
-
-    if (p == NULL)
+    mlt_properties p = mlt_properties_get_properties((mlt_properties) paramSet, name);
+    if (!p)
         return kOfxStatErrUnknown;
-
     *param = (OfxParamHandle) p;
-
-    mlt_properties param_props = mlt_properties_get_data(p, "p", &length);
-
+    mlt_properties param_props = mlt_properties_get_properties(p, "p");
     if (param_props != NULL && propertySet != NULL) {
         *propertySet = (OfxPropertySetHandle) param_props;
     }
-
     return kOfxStatOK;
 }
 
 static OfxStatus paramSetGetPropertySet(OfxParamSetHandle paramSet, OfxPropertySetHandle *propHandle)
 {
-    if (paramSet == NULL)
+    if (!paramSet)
         return kOfxStatErrBadHandle;
-
-    mlt_properties params = (mlt_properties) paramSet;
-
-    OfxPropertySetHandle plugin_props = mlt_properties_get_data(params, "plugin_props", NULL);
-
-    if (plugin_props == NULL)
+    mlt_properties plugin_props = mlt_properties_get_properties((mlt_properties) paramSet,
+                                                                "plugin_props");
+    if (!plugin_props)
         return kOfxStatErrUnknown;
-
-    *propHandle = plugin_props;
-
+    *propHandle = (OfxPropertySetHandle) plugin_props;
     return kOfxStatOK;
 }
 
 static OfxStatus paramGetPropertySet(OfxParamHandle param, OfxPropertySetHandle *propHandle)
 {
-    if (param == NULL)
+    if (!param)
         return kOfxStatErrBadHandle;
-
-    mlt_properties p = (mlt_properties) param;
-    int length = 0;
-    mlt_properties param_props = mlt_properties_get_data(p, "p", &length);
-
-    if (param_props == NULL)
+    mlt_properties param_props = mlt_properties_get_properties((mlt_properties) param, "p");
+    if (!param_props)
         return kOfxStatErrUnknown;
-
     *propHandle = (OfxPropertySetHandle) param_props;
-
     return kOfxStatOK;
 }
 
 static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
 {
-    if (paramHandle == NULL)
+    if (!paramHandle)
         return kOfxStatErrBadHandle;
 
     va_list ap;
@@ -664,7 +634,7 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
 
     mlt_properties param = (mlt_properties) paramHandle;
     char *param_type = mlt_properties_get(param, "t");
-    mlt_properties param_props = mlt_properties_get_data(param, "p", NULL);
+    mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
         || strcmp(param_type, kOfxParamTypeBoolean) == 0
@@ -739,7 +709,6 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
                 return kOfxStatErrUnknown;
             }
         }
-
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
         double *red = va_arg(ap, double *);
         double *green = va_arg(ap, double *);
@@ -799,15 +768,14 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
 
 static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
 {
-    if (paramHandle == NULL)
+    if (!paramHandle)
         return kOfxStatErrBadHandle;
-
     va_list ap;
     va_start(ap, time);
 
     mlt_properties param = (mlt_properties) paramHandle;
     char *param_type = mlt_properties_get(param, "t");
-    mlt_properties param_props = mlt_properties_get_data(param, "p", NULL);
+    mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
         || strcmp(param_type, kOfxParamTypeBoolean) == 0
@@ -882,7 +850,6 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
                 return kOfxStatErrUnknown;
             }
         }
-
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
         double *red = va_arg(ap, double *);
         double *green = va_arg(ap, double *);
@@ -907,7 +874,6 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
                 return kOfxStatErrUnknown;
             }
         }
-
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
         double *Y = va_arg(ap, double *);
         double *X = va_arg(ap, double *);
@@ -951,15 +917,14 @@ static OfxStatus paramGetIntegral(OfxParamHandle paramHandle, OfxTime time1, Ofx
 
 static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
 {
-    if (paramHandle == NULL)
+    if (!paramHandle)
         return kOfxStatErrBadHandle;
-
     va_list ap;
     va_start(ap, paramHandle);
 
     mlt_properties param = (mlt_properties) paramHandle;
     char *param_type = mlt_properties_get(param, "t");
-    mlt_properties param_props = mlt_properties_get_data(param, "p", NULL);
+    mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
         || strcmp(param_type, kOfxParamTypeChoice) == 0
@@ -1014,7 +979,7 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
 static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
 {
     mlt_log_debug(NULL, "<----paramSetValueAtTime---->\n");
-    if (paramHandle == NULL)
+    if (!paramHandle)
         return kOfxStatErrBadHandle;
 
     va_list ap;
@@ -1022,7 +987,7 @@ static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
 
     mlt_properties param = (mlt_properties) paramHandle;
     char *param_type = mlt_properties_get(param, "t");
-    mlt_properties param_props = mlt_properties_get_data(param, "p", NULL);
+    mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
         || strcmp(param_type, kOfxParamTypeChoice) == 0
@@ -1122,19 +1087,15 @@ static OfxParameterSuiteV1 MltOfxParameterSuiteV1 = {paramDefine,
 static OfxStatus memoryAlloc(void *handle, size_t nBytes, void **allocatedData)
 {
     void *temp = calloc(1, nBytes);
-
-    if (temp == NULL)
+    if (!temp)
         return kOfxStatErrMemory;
-
     *allocatedData = temp;
-
     return kOfxStatOK;
 }
 
 static OfxStatus memoryFree(void *allocatedData)
 {
     free(allocatedData);
-
     return kOfxStatOK;
 }
 
@@ -1142,23 +1103,17 @@ static OfxMemorySuiteV1 MltOfxMemorySuiteV1 = {memoryAlloc, memoryFree};
 
 static OfxStatus multiThread(OfxThreadFunctionV1 func, unsigned int nThreads, void *customArg)
 {
-    if (!func) {
+    if (!func)
         return kOfxStatFailed;
-    }
-
     func(0, 1, customArg);
-
     return kOfxStatOK;
 }
 
 static OfxStatus multiThreadNumCPUs(unsigned int *nCPUs)
 {
-    if (!nCPUs) {
+    if (!nCPUs)
         return kOfxStatFailed;
-    }
-
     *nCPUs = 1;
-
     return kOfxStatOK;
 }
 
@@ -1167,7 +1122,6 @@ static OfxStatus multiThreadIndex(unsigned int *threadIndex)
     if (!threadIndex)
         return kOfxStatFailed;
     *threadIndex = 0;
-
     return kOfxStatOK;
 }
 
@@ -1180,46 +1134,40 @@ static OfxStatus mutexCreate(OfxMutexHandle *mutex, int lockCount)
 {
     if (!mutex)
         return kOfxStatFailed;
-
     // do nothing single threaded
     *mutex = 0;
-
     return kOfxStatOK;
 }
 
 static OfxStatus mutexDestroy(const OfxMutexHandle mutex)
 {
-    if (mutex != 0)
+    if (!mutex)
         return kOfxStatErrBadHandle;
     // do nothing single threaded
-
     return kOfxStatOK;
 }
 
 static OfxStatus mutexLock(const OfxMutexHandle mutex)
 {
-    if (mutex != 0)
+    if (!mutex)
         return kOfxStatErrBadHandle;
     // do nothing single threaded
-
     return kOfxStatOK;
 }
 
 static OfxStatus mutexUnLock(const OfxMutexHandle mutex)
 {
-    if (mutex != 0)
+    if (!mutex)
         return kOfxStatErrBadHandle;
     // do nothing single threaded
-
     return kOfxStatOK;
 }
 
 static OfxStatus mutexTryLock(const OfxMutexHandle mutex)
 {
-    if (mutex != 0)
+    if (!mutex)
         return kOfxStatErrBadHandle;
     // do nothing single threaded
-
     return kOfxStatOK;
 }
 
@@ -1840,36 +1788,11 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
     mlt_properties iparams = mlt_properties_new();
     mlt_properties params = mlt_properties_new();
 
-    mlt_properties_set_data(image_effect,
-                            "clips",
-                            clips,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(image_effect,
-                            "props",
-                            props,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(image_effect,
-                            "params",
-                            iparams,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(iparams,
-                            "plugin_props",
-                            props,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(image_effect,
-                            "mltofx_params",
-                            params,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
+    mlt_properties_set_properties(image_effect, "clips", clips);
+    mlt_properties_set_properties(image_effect, "props", props);
+    mlt_properties_set_properties(image_effect, "params", iparams);
+    mlt_properties_set_properties(iparams, "plugin_props", props);
+    mlt_properties_set_properties(image_effect, "mltofx_params", params);
 
     propSetString((OfxPropertySetHandle) props,
                   kOfxImageEffectPropContext,
@@ -1950,6 +1873,11 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         return 1;
 
     plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+    mlt_properties_close(image_effect);
+    mlt_properties_close(clips);
+    mlt_properties_close(iparams);
+    mlt_properties_close(props);
+    mlt_properties_close(params);
     return 0;
 }
 
@@ -1960,36 +1888,11 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
     mlt_properties props = mlt_properties_new();
     mlt_properties iparams = mlt_properties_new();
 
-    mlt_properties_set_data(image_effect,
-                            "clips",
-                            clips,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(image_effect,
-                            "props",
-                            props,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(image_effect,
-                            "params",
-                            iparams,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(iparams,
-                            "plugin_props",
-                            props,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_properties_set_data(image_effect,
-                            "mltofx_params",
-                            params,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
+    mlt_properties_set_properties(image_effect, "clips", clips);
+    mlt_properties_set_properties(image_effect, "props", props);
+    mlt_properties_set_properties(image_effect, "params", iparams);
+    mlt_properties_set_properties(iparams, "plugin_props", props);
+    mlt_properties_set_properties(image_effect, "mltofx_params", params);
 
     propSetString((OfxPropertySetHandle) props,
                   kOfxImageEffectPropContext,
@@ -2065,9 +1968,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
     // starting with 1 to skip the plugin_props which is not a param but just a reference to the plugin properties
     for (int ipiter = 1; ipiter < iparams_length; ++ipiter) {
         char *name = mlt_properties_get_name(iparams, ipiter);
-        mlt_properties pp = mlt_properties_get_data(iparams, name, NULL);
+        mlt_properties pp = mlt_properties_get_properties(iparams, name);
         char *pt = mlt_properties_get(pp, "t");
-        mlt_properties ppp = mlt_properties_get_data(pp, "p", NULL);
+        mlt_properties ppp = mlt_properties_get_properties(pp, "p");
 
         int is_secret = -1;
         propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropSecret, 0, &is_secret);
@@ -2285,6 +2188,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
         }
     }
 
+    mlt_properties_close(clips);
+    mlt_properties_close(iparams);
+    mlt_properties_close(props);
     return image_effect;
 }
 
@@ -2331,9 +2237,8 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
 
 void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
 {
-    mlt_properties get_clippref_args = mlt_properties_get_data(image_effect,
-                                                               "get_clippref_args",
-                                                               NULL);
+    mlt_properties get_clippref_args = mlt_properties_get_properties(image_effect,
+                                                                     "get_clippref_args");
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetClipPreferences,
                                               (OfxImageEffectHandle) image_effect,
                                               NULL,
@@ -2343,16 +2248,15 @@ void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
 
 void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect)
 {
-    mlt_properties get_rod_in_args = mlt_properties_get_data(image_effect, "get_rod_in_args", NULL);
+    mlt_properties get_rod_in_args = mlt_properties_get_properties(image_effect, "get_rod_in_args");
 
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxPropTime, 0, 0.0);
 
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
 
-    mlt_properties get_rod_out_args = mlt_properties_get_data(image_effect,
-                                                              "get_rod_out_args",
-                                                              NULL);
+    mlt_properties get_rod_out_args = mlt_properties_get_properties(image_effect,
+                                                                    "get_rod_out_args");
 
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetRegionOfDefinition,
                                               (OfxImageEffectHandle) image_effect,
@@ -2367,10 +2271,9 @@ void mltofx_get_regions_of_interest(OfxPlugin *plugin,
                                     double width,
                                     double height)
 {
-    mlt_properties get_roi_in_args = mlt_properties_get_data(image_effect, "get_roi_in_args", NULL);
-    mlt_properties get_roi_out_args = mlt_properties_get_data(image_effect,
-                                                              "get_roi_out_args",
-                                                              NULL);
+    mlt_properties get_roi_in_args = mlt_properties_get_properties(image_effect, "get_roi_in_args");
+    mlt_properties get_roi_out_args = mlt_properties_get_properties(image_effect,
+                                                                    "get_roi_out_args");
 
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 0, 0.0);
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 1, 0.0);
@@ -2403,9 +2306,8 @@ void mltofx_get_regions_of_interest(OfxPlugin *plugin,
 
 void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
 {
-    mlt_properties begin_sequence_props = mlt_properties_get_data(image_effect,
-                                                                  "begin_sequence_props",
-                                                                  NULL);
+    mlt_properties begin_sequence_props = mlt_properties_get_properties(image_effect,
+                                                                        "begin_sequence_props");
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropFrameRange,
                   0,
@@ -2445,9 +2347,8 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
 
 void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
 {
-    mlt_properties end_sequence_props = mlt_properties_get_data(image_effect,
-                                                                "end_sequence_props",
-                                                                NULL);
+    mlt_properties end_sequence_props = mlt_properties_get_properties(image_effect,
+                                                                      "end_sequence_props");
     propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 0, 0.0);
 
     propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 1, 0.0);
@@ -2478,7 +2379,7 @@ void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
 
 void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height)
 {
-    mlt_properties render_in_args = mlt_properties_get_data(image_effect, "render_in_args", NULL);
+    mlt_properties render_in_args = mlt_properties_get_properties(image_effect, "render_in_args");
     propSetDouble((OfxPropertySetHandle) render_in_args, kOfxPropTime, 0, 0.0);
 
     propSetString((OfxPropertySetHandle) render_in_args,
@@ -2550,7 +2451,7 @@ mltofx_components_mask mltofx_plugin_supported_components(mlt_properties image_e
 {
     mltofx_components_mask mask = mltofx_components_none;
 
-    mlt_properties set = mlt_properties_get_data(image_effect, "clips", NULL);
+    mlt_properties set = mlt_properties_get_properties(image_effect, "clips");
     int clips_count = mlt_properties_count(set);
 
     for (int i = 0; i < clips_count; ++i) {

@@ -38,9 +38,9 @@ static int filter_get_image(mlt_frame frame,
 
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
-    mlt_properties image_effect = mlt_properties_get_data(properties, "ofx_image_effect", NULL);
-    mlt_properties params = mlt_properties_get_data(image_effect, "mltofx_params", NULL);
-    mlt_properties image_effect_params = mlt_properties_get_data(image_effect, "params", NULL);
+    mlt_properties image_effect = mlt_properties_get_properties(properties, "ofx_image_effect");
+    mlt_properties params = mlt_properties_get_properties(image_effect, "mltofx_params");
+    mlt_properties image_effect_params = mlt_properties_get_properties(image_effect, "params");
 
     mlt_image_format requested_format = *format;
     mltofx_depths_mask plugin_support_depths = mltofx_plugin_supported_depths(image_effect);
@@ -63,18 +63,12 @@ static int filter_get_image(mlt_frame frame,
         mlt_position position = mlt_filter_get_position(filter, frame);
         mlt_position length = mlt_filter_get_length2(filter, frame);
         int params_count = mlt_properties_count(params);
-
         for (int i = 0; i < params_count; ++i) {
             char *iprop_name = mlt_properties_get_name(params, i);
-
-            char *mlt_value = mlt_properties_get(properties, iprop_name);
-
-            if (mlt_value != NULL) {
-                mlt_properties param = mlt_properties_get_data_at(params, i, NULL);
-
+            mlt_properties param = mlt_properties_get_data(params, iprop_name, NULL);
+            if (param) {
                 char *type = mlt_properties_get(param, "type");
                 char *widget = mlt_properties_get(param, "widget");
-
                 if (type != NULL) {
                     if (widget != NULL
                         && (strcmp(widget, "2dpoint") == 0 || strcmp(widget, "2dsize") == 0)
@@ -182,111 +176,72 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 static void filter_close(mlt_filter filter)
 {
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
-
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
-    mlt_properties image_effect = mlt_properties_get_data(properties, "ofx_image_effect", NULL);
-
+    mlt_properties image_effect = mlt_properties_get_properties(properties, "ofx_image_effect");
     mltofx_destroy_instance(plugin, image_effect);
+    filter->child = NULL;
+    filter->close = NULL;
+    filter->parent.close = NULL;
+    mlt_service_close(&filter->parent);
 }
 
 mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg)
 {
-    mlt_filter this = mlt_filter_new();
-    if (this != NULL) {
-        mlt_properties properties = MLT_FILTER_PROPERTIES(this);
-        this->process = filter_process;
-        this->close = filter_close;
-
-        mlt_properties_set(properties, "resource", arg);
-        if (!strncmp(id, "openfx.", 7)) {
-            mlt_properties_set(properties, "_pluginid", id + 7);
-
-            mlt_properties pb = (mlt_properties) mlt_properties_get_data(mltofx_context, id, NULL);
-
-            char *dli = mlt_properties_get(pb, "dli");
-            int index = mlt_properties_get_int(pb, "index");
-            void *dlhandle = mlt_properties_get_data(mltofx_dl, dli, NULL);
-            OfxGetPluginFn GetPluginFn = dlsym(dlhandle, "OfxGetPlugin");
-
-            if (GetPluginFn != NULL) {
-                OfxPlugin *pt = GetPluginFn(index);
-                if (pt == NULL)
-                    return NULL;
-                mlt_properties params = mlt_properties_new();
-                mlt_properties image_effect = mltofx_fetch_params(pt, params, NULL);
-
-                mltofx_create_instance(pt, image_effect);
-
-                mlt_properties begin_sequence_props = mlt_properties_new();
-                mlt_properties end_sequence_props = mlt_properties_new();
-                mlt_properties_set_data(image_effect,
-                                        "begin_sequence_props",
-                                        begin_sequence_props,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-                mlt_properties_set_data(image_effect,
-                                        "end_sequence_props",
-                                        end_sequence_props,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-
-                mlt_properties get_rod_in_args = mlt_properties_new();
-                mlt_properties get_rod_out_args = mlt_properties_new();
-                mlt_properties_set_data(image_effect,
-                                        "get_rod_in_args",
-                                        get_rod_in_args,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-                mlt_properties_set_data(image_effect,
-                                        "get_rod_out_args",
-                                        get_rod_out_args,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-
-                mlt_properties get_roi_in_args = mlt_properties_new();
-                mlt_properties get_roi_out_args = mlt_properties_new();
-                mlt_properties_set_data(image_effect,
-                                        "get_roi_in_args",
-                                        get_roi_in_args,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-                mlt_properties_set_data(image_effect,
-                                        "get_roi_out_args",
-                                        get_roi_out_args,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-
-                mlt_properties get_clippref_args = mlt_properties_new();
-                mlt_properties_set_data(image_effect,
-                                        "get_clippref_args",
-                                        get_clippref_args,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-
-                mlt_properties render_in_args = mlt_properties_new();
-                mlt_properties_set_data(image_effect,
-                                        "render_in_args",
-                                        render_in_args,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-
-                mlt_properties_set_data(properties, "ofx_plugin", pt, 0, NULL, NULL);
-                mlt_properties_set_data(properties,
-                                        "ofx_image_effect",
-                                        image_effect,
-                                        0,
-                                        (mlt_destructor) mlt_properties_close,
-                                        NULL);
-            }
-        }
+    mlt_filter filter = mlt_filter_new();
+    if (!filter) {
+        mlt_log_error(filter, "Unable to create filter: %s\n", id);
+        return NULL;
     }
-    return this;
+    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
+    mlt_properties_set(properties, "resource", arg);
+    if (strncmp(id, "openfx.", 7)) {
+        mlt_log_error(filter, "Invalid ID: %s\n", id);
+        mlt_filter_close(filter);
+        return NULL;
+    }
+    mlt_properties_set(properties, "_pluginid", id + 7);
+
+    mlt_properties pb = mlt_properties_get_properties(mltofx_context, id);
+    char *dli = mlt_properties_get(pb, "dli");
+    int index = mlt_properties_get_int(pb, "index");
+    void *dlhandle = mlt_properties_get_data(mltofx_dl, dli, NULL);
+    OfxGetPluginFn GetPluginFn = dlsym(dlhandle, "OfxGetPlugin");
+    if (!GetPluginFn) {
+        mlt_log_error(filter, "Failed to get OfxGetPlugin function from plugin: %s\n", id);
+        mlt_filter_close(filter);
+        return NULL;
+    }
+    OfxPlugin *pt = GetPluginFn(index);
+    if (!pt) {
+        mlt_log_error(filter, "Failed to get plugin from OfxGetPlugin: %s\n", id);
+        mlt_filter_close(filter);
+        return NULL;
+    }
+    mlt_properties params = mlt_properties_new();
+    mlt_properties image_effect = mltofx_fetch_params(pt, params, NULL);
+    mltofx_create_instance(pt, image_effect);
+
+    mlt_properties_set_properties(image_effect, "begin_sequence_props", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_rod_in_args"));
+    mlt_properties_set_properties(image_effect, "end_sequence_props", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_rod_out_args"));
+    mlt_properties_set_properties(image_effect, "get_rod_in_args", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_in_args"));
+    mlt_properties_set_properties(image_effect, "get_rod_out_args", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_out_args"));
+    mlt_properties_set_properties(image_effect, "get_roi_in_args", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_in_args"));
+    mlt_properties_set_properties(image_effect, "get_roi_out_args", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_out_args"));
+    mlt_properties_set_properties(image_effect, "get_clippref_args", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_clippref_args"));
+    mlt_properties_set_properties(image_effect, "render_in_args", mlt_properties_new());
+    mlt_properties_close(mlt_properties_get_properties(image_effect, "render_in_args"));
+    mlt_properties_set_data(properties, "ofx_plugin", pt, 0, NULL, NULL);
+    mlt_properties_set_properties(properties, "ofx_image_effect", image_effect);
+    mlt_properties_close(image_effect);
+    mlt_properties_close(params);
+    filter->process = filter_process;
+    filter->close = filter_close;
+    return filter;
 }
