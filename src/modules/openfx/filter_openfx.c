@@ -64,9 +64,10 @@ static int filter_get_image(mlt_frame frame,
         mlt_position length = mlt_filter_get_length2(filter, frame);
         int params_count = mlt_properties_count(params);
         for (int i = 0; i < params_count; ++i) {
-            char *iprop_name = mlt_properties_get_name(params, i);
-            mlt_properties param = mlt_properties_get_data(params, iprop_name, NULL);
-            if (param) {
+            char *param_key = mlt_properties_get_name(params, i);
+            mlt_properties param = mlt_properties_get_data(params, param_key, NULL);
+            const char *param_name = mlt_properties_get(param, "identifier");
+            if (param && param_name) {
                 char *type = mlt_properties_get(param, "type");
                 char *widget = mlt_properties_get(param, "widget");
                 if (type != NULL) {
@@ -74,50 +75,50 @@ static int filter_get_image(mlt_frame frame,
                         && (strcmp(widget, "2dpoint") == 0 || strcmp(widget, "2dsize") == 0)
                         && strcmp(type, "double") == 0) {
                         mlt_rect value = mlt_properties_anim_get_rect(properties,
-                                                                      iprop_name,
+                                                                      param_name,
                                                                       position,
                                                                       length);
                         mltofx_param_set_value(image_effect_params,
-                                               iprop_name,
+                                               param_name,
                                                mltofx_prop_double2d,
                                                value);
                     } else if (strcmp(type, "double") == 0) {
                         double value = mlt_properties_anim_get_double(properties,
-                                                                      iprop_name,
+                                                                      param_name,
                                                                       position,
                                                                       length);
                         mltofx_param_set_value(image_effect_params,
-                                               iprop_name,
+                                               param_name,
                                                mltofx_prop_double,
                                                value);
                     } else if (strcmp(type, "integer") == 0) {
                         int value
-                            = mlt_properties_anim_get_int(properties, iprop_name, position, length);
+                            = mlt_properties_anim_get_int(properties, param_name, position, length);
                         mltofx_param_set_value(image_effect_params,
-                                               iprop_name,
+                                               param_name,
                                                mltofx_prop_int,
                                                value);
                     } else if (strcmp(type, "string") == 0) {
                         int value
-                            = mlt_properties_anim_get_int(properties, iprop_name, position, length);
+                            = mlt_properties_anim_get_int(properties, param_name, position, length);
                         mltofx_param_set_value(image_effect_params,
-                                               iprop_name,
+                                               param_name,
                                                mltofx_prop_int, // for handling option choice
                                                value);
                     } else if (strcmp(type, "boolean") == 0) {
                         int value
-                            = mlt_properties_anim_get_int(properties, iprop_name, position, length);
+                            = mlt_properties_anim_get_int(properties, param_name, position, length);
                         mltofx_param_set_value(image_effect_params,
-                                               iprop_name,
+                                               param_name,
                                                mltofx_prop_int,
                                                value);
                     } else if (strcmp(type, "color") == 0) {
                         mlt_color value = mlt_properties_anim_get_color(properties,
-                                                                        iprop_name,
+                                                                        param_name,
                                                                         position,
                                                                         length);
                         mltofx_param_set_value(image_effect_params,
-                                               iprop_name,
+                                               param_name,
                                                mltofx_prop_color,
                                                value);
                     }
