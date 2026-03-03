@@ -369,6 +369,9 @@ static OfxStatus propGetPointer(OfxPropertySetHandle properties,
     mlt_properties p = fetch_mlt_properties(properties, index);
     if (!p)
         return kOfxStatErrBadIndex;
+    if (!mlt_properties_exists(p, property)) {
+        return kOfxStatErrUnknown;
+    }
     *value = mlt_properties_get_data(p, property, NULL);
     return kOfxStatOK;
 }
@@ -383,8 +386,9 @@ static OfxStatus propGetString(OfxPropertySetHandle properties,
     mlt_properties p = fetch_mlt_properties(properties, index);
     if (!p)
         return kOfxStatErrBadIndex;
-    if (!mlt_properties_exists(p, property))
+    if (!mlt_properties_exists(p, property)) {
         return kOfxStatErrUnknown;
+    }
     *value = mlt_properties_get(p, property);
     return kOfxStatOK;
 }
@@ -399,6 +403,9 @@ static OfxStatus propGetDouble(OfxPropertySetHandle properties,
     mlt_properties p = fetch_mlt_properties(properties, index);
     if (!p)
         return kOfxStatErrBadIndex;
+    if (!mlt_properties_exists(p, property)) {
+        return kOfxStatErrUnknown;
+    }
     *value = mlt_properties_get_double(p, property);
     return kOfxStatOK;
 }
@@ -413,6 +420,9 @@ static OfxStatus propGetInt(OfxPropertySetHandle properties,
     mlt_properties p = fetch_mlt_properties(properties, index);
     if (!p)
         return kOfxStatErrBadIndex;
+    if (!mlt_properties_exists(p, property)) {
+        return kOfxStatErrUnknown;
+    }
     *value = mlt_properties_get_int(p, property);
     return kOfxStatOK;
 }
@@ -428,6 +438,9 @@ static OfxStatus propGetPointerN(OfxPropertySetHandle properties,
         mlt_properties p = fetch_mlt_properties(properties, i);
         if (!p)
             return kOfxStatErrBadIndex;
+        if (!mlt_properties_exists(p, property)) {
+            return kOfxStatErrUnknown;
+        }
         value[i] = mlt_properties_get_data(p, property, NULL);
     }
     return kOfxStatOK;
@@ -444,6 +457,9 @@ static OfxStatus propGetStringN(OfxPropertySetHandle properties,
         mlt_properties p = fetch_mlt_properties(properties, i);
         if (!p)
             return kOfxStatErrBadIndex;
+        if (!mlt_properties_exists(p, property)) {
+            return kOfxStatErrUnknown;
+        }
         value[i] = mlt_properties_get(p, property);
     }
     return kOfxStatOK;
@@ -460,6 +476,9 @@ static OfxStatus propGetDoubleN(OfxPropertySetHandle properties,
         mlt_properties p = fetch_mlt_properties(properties, i);
         if (!p)
             return kOfxStatErrBadIndex;
+        if (!mlt_properties_exists(p, property)) {
+            return kOfxStatErrUnknown;
+        }
         value[i] = mlt_properties_get_double(p, property);
     }
     return kOfxStatOK;
@@ -476,6 +495,9 @@ static OfxStatus propGetIntN(OfxPropertySetHandle properties,
         mlt_properties p = fetch_mlt_properties(properties, i);
         if (!p)
             return kOfxStatErrBadIndex;
+        if (!mlt_properties_exists(p, property)) {
+            return kOfxStatErrUnknown;
+        }
         value[i] = mlt_properties_get_int(p, property);
     }
     return kOfxStatOK;
@@ -543,7 +565,6 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         return kOfxStatErrBadHandle;
     mlt_properties params = (mlt_properties) paramSet;
     mlt_properties p = mlt_properties_get_properties(params, name);
-
     if (p != NULL)
         return kOfxStatErrExists;
 
@@ -2357,6 +2378,9 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
                kOfxImageEffectPropInteractiveRenderStatus,
                0,
                0);
+
+    propSetInt((OfxPropertySetHandle) begin_sequence_props, kOfxImageEffectPropOpenGLEnabled, 0, 0);
+
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionBeginSequenceRender,
                                               (OfxImageEffectHandle) image_effect,
                                               (OfxPropertySetHandle) begin_sequence_props,
@@ -2388,6 +2412,8 @@ void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
                kOfxImageEffectPropInteractiveRenderStatus,
                0,
                0);
+
+    propSetInt((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropOpenGLEnabled, 0, 0);
 
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionEndSequenceRender,
                                               (OfxImageEffectHandle) image_effect,
@@ -2430,6 +2456,8 @@ void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int wi
                   "OfxImageEffectPropRenderQuality",
                   0,
                   "OfxImageEffectPropRenderQualityBest");
+
+    propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropOpenGLEnabled, 0, 0);
 
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionRender,
                                               (OfxImageEffectHandle) image_effect,
