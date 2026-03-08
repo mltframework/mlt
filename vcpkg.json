@@ -4,23 +4,26 @@
   "dependencies": [
     "dirent",
     "dlfcn-win32",
-    "libiconv",
-    "pkgconf",
-    "pthreads",
-    "sdl2",
     "ffmpeg",
-    "qtbase",
-    "qtsvg",
-    "libxml2",
-    "libebur128",
-    "gdk-pixbuf",
-    "rubberband",
-    "libvorbis",
     "fftw3",
+    "gdk-pixbuf",
+    "libebur128",
     "libexif",
+    "libiconv",
+    "libvorbis",
+    "libxml2",
     {
       "name": "opencv",
-      "features": [ "contrib" ]
-    }
+      "features": [
+        "contrib"
+      ]
+    },
+    "pkgconf",
+    "pthreads",
+    "qtbase",
+    "qtsvg",
+    "rubberband",
+    "sdl2",
+    "frei0r"
   ]
 }
