@@ -12,7 +12,7 @@
                 "SWIG_PYTHON": "OFF",
                 "MOD_AVFORMAT": "ON",
                 "MOD_DECKLINK": "OFF",
-                "MOD_FREI0R": "OFF",
+                "MOD_FREI0R": "ON",
                 "MOD_GDK": "ON",
                 "MOD_JACKRACK": "OFF",
                 "USE_LV2": "OFF",
