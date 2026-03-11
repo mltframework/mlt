@@ -7,7 +7,6 @@ creator: Jean-Baptiste Mardelle <jb@kdenlive.org>
 version: 2
 license: LGPLv2.1
 language: en
-url:
 tags:
   - Video
 description: Track and follow an object in the video.
