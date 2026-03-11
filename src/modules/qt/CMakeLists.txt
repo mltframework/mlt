@@ -110,6 +110,7 @@ function(mlt_add_qt_module ARG_TARGET)
     install(TARGETS ${ARG_TARGET} LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
     install(FILES
+      consumer_qglsl.yml
       filter_audiolevelgraph.yml
       filter_audiospectrum.yml
       filter_audiowaveform.yml

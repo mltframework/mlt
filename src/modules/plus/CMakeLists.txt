@@ -97,6 +97,7 @@ install(FILES
   producer_blipflash.yml
   producer_count.yml
   producer_pgm.yml
+  producer_subtitle.yml
   transition_affine.yml
   DESTINATION ${MLT_INSTALL_DATA_DIR}/plus
 )

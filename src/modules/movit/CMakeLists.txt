@@ -55,6 +55,8 @@ set_target_properties(mltmovit PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE
 install(TARGETS mltmovit LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
+  consumer_xgl.yml
+  filter_glsl_manager.yml
   filter_movit_blur.yml
   filter_movit_convert.yml
   filter_movit_crop.yml
