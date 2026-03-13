@@ -1,6 +1,6 @@
 /*
  * producer_glaxnimate.cpp -- a Glaxnimate/Qt based producer for MLT
- * Copyright (C) 2022-2024 Meltytech, LLC
+ * Copyright (C) 2022-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,9 +94,8 @@ public:
     {
         int error = 0;
         auto pos = mlt_frame_original_position(frame);
-        if (mlt_properties_get(properties(), "eof")
-            && !::strcmp("loop", mlt_properties_get(properties(), "eof"))) {
-            pos %= duration() - 1;
+        if (!::qstrcmp("loop", mlt_properties_get(properties(), "eof"))) {
+            pos %= duration();
         }
         auto bg = mlt_properties_get_color(properties(), "background");
         auto background = QColor(bg.r, bg.g, bg.b, bg.a);
