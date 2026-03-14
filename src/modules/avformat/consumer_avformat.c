@@ -1667,8 +1667,15 @@ static AVStream *add_attached_pic_stream(mlt_consumer consumer,
 
     // Allocate packet and read image data into it
     ctx->attached_pic_pkt = av_packet_alloc();
-    if (!ctx->attached_pic_pkt || av_new_packet(ctx->attached_pic_pkt, (int) file_size) < 0) {
+    if (!ctx->attached_pic_pkt) {
         mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "attached_pic: could not allocate packet\n");
+        fclose(f);
+        return NULL;
+    }
+
+    if (av_new_packet(ctx->attached_pic_pkt, (int) file_size) < 0) {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "attached_pic: could not allocate packet\n");
+        av_packet_free(&ctx->attached_pic_pkt);
         fclose(f);
         return NULL;
     }
