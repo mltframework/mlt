@@ -1302,6 +1302,9 @@ typedef struct encode_ctx_desc
     AVStream *subtitle_st[MAX_SUBTITLE_STREAMS];
     AVCodecContext *sdec_ctx[MAX_AUDIO_STREAMS];
     AVCodecContext *senc_ctx[MAX_AUDIO_STREAMS];
+
+    AVStream *attached_pic_st;
+    AVPacket *attached_pic_pkt;
 } encode_ctx_t;
 
 static int encode_audio(encode_ctx_t *ctx)
@@ -1542,6 +1545,202 @@ static int flush_audio_encoders(encode_ctx_t *ctx)
         }
     }
     return 0;
+}
+
+static uint32_t read_be32(const uint8_t *p)
+{
+    return ((uint32_t) p[0] << 24) | ((uint32_t) p[1] << 16) | ((uint32_t) p[2] << 8)
+           | (uint32_t) p[3];
+}
+
+static enum AVCodecID detect_attached_pic_codec_id(const uint8_t *data, size_t size)
+{
+    if (!data || size < 4)
+        return AV_CODEC_ID_NONE;
+
+    if (size >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF)
+        return AV_CODEC_ID_MJPEG;
+
+    if (size >= 8 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47
+        && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A)
+        return AV_CODEC_ID_PNG;
+
+    return AV_CODEC_ID_NONE;
+}
+
+static int attached_pic_get_dimensions(
+    enum AVCodecID codec_id, const uint8_t *data, size_t size, int *width, int *height)
+{
+    if (!data || size < 4 || !width || !height)
+        return 0;
+
+    switch (codec_id) {
+    case AV_CODEC_ID_MJPEG:
+        if (data[0] != 0xFF || data[1] != 0xD8)
+            return 0;
+
+        size_t pos = 2;
+        while (pos + 3 < size) {
+            if (data[pos] != 0xFF) {
+                pos++;
+                continue;
+            }
+
+            while (pos < size && data[pos] == 0xFF)
+                pos++;
+            if (pos >= size)
+                break;
+
+            const uint8_t marker = data[pos++];
+
+            if (marker == 0xD8 || marker == 0xD9 || marker == 0x01
+                || (marker >= 0xD0 && marker <= 0xD7))
+                continue;
+
+            if (pos + 1 >= size)
+                break;
+
+            const int segment_len = (data[pos] << 8) | data[pos + 1];
+            pos += 2;
+
+            if (segment_len < 2 || pos + (size_t) (segment_len - 2) > size)
+                break;
+
+            if ((marker >= 0xC0 && marker <= 0xC3) || (marker >= 0xC5 && marker <= 0xC7)
+                || (marker >= 0xC9 && marker <= 0xCB) || (marker >= 0xCD && marker <= 0xCF)) {
+                if (segment_len < 7)
+                    return 0;
+                *height = (data[pos + 1] << 8) | data[pos + 2];
+                *width = (data[pos + 3] << 8) | data[pos + 4];
+                return *width > 0 && *height > 0;
+            }
+
+            pos += (size_t) (segment_len - 2);
+        }
+        return 0;
+
+    case AV_CODEC_ID_PNG:
+        if (size >= 24 && !memcmp(data, "\x89PNG\r\n\x1a\n", 8)) {
+            *width = (int) read_be32(data + 16);
+            *height = (int) read_be32(data + 20);
+            return *width > 0 && *height > 0;
+        }
+        return 0;
+
+    default:
+        return 0;
+    }
+}
+
+/** Add an attached picture (cover art) stream from an image file path.
+ */
+static AVStream *add_attached_pic_stream(mlt_consumer consumer,
+                                         encode_ctx_t *ctx,
+                                         const char *pic_path)
+{
+    if (!pic_path || !pic_path[0]) {
+        mlt_log_warning(MLT_CONSUMER_SERVICE(consumer), "attached_pic: path is empty\n");
+        return NULL;
+    }
+
+    // Open the image file
+    FILE *f = fopen(pic_path, "rb");
+    if (!f) {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                      "attached_pic: could not open '%s'\n",
+                      pic_path);
+        return NULL;
+    }
+
+    // Determine file size
+    fseek(f, 0, SEEK_END);
+    long file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    if (file_size <= 0) {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                      "attached_pic: invalid or empty file '%s'\n",
+                      pic_path);
+        fclose(f);
+        return NULL;
+    }
+
+    // Allocate packet and read image data into it
+    ctx->attached_pic_pkt = av_packet_alloc();
+    if (!ctx->attached_pic_pkt || av_new_packet(ctx->attached_pic_pkt, (int) file_size) < 0) {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "attached_pic: could not allocate packet\n");
+        fclose(f);
+        return NULL;
+    }
+
+    if (fread(ctx->attached_pic_pkt->data, 1, (size_t) file_size, f) != (size_t) file_size) {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                      "attached_pic: could not read file '%s'\n",
+                      pic_path);
+        av_packet_free(&ctx->attached_pic_pkt);
+        fclose(f);
+        return NULL;
+    }
+    fclose(f);
+
+    enum AVCodecID pic_codec_id = detect_attached_pic_codec_id(ctx->attached_pic_pkt->data,
+                                                               (size_t) ctx->attached_pic_pkt->size);
+    if (pic_codec_id != AV_CODEC_ID_MJPEG && pic_codec_id != AV_CODEC_ID_PNG) {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                      "attached_pic: only JPEG and PNG are supported for '%s'\n",
+                      pic_path);
+        av_packet_free(&ctx->attached_pic_pkt);
+        return NULL;
+    }
+
+    int width = 0;
+    int height = 0;
+    if (attached_pic_get_dimensions(pic_codec_id,
+                                    ctx->attached_pic_pkt->data,
+                                    (size_t) ctx->attached_pic_pkt->size,
+                                    &width,
+                                    &height)) {
+        mlt_log_info(MLT_CONSUMER_SERVICE(consumer),
+                     "attached_pic: detected dimensions %dx%d for '%s'\n",
+                     width,
+                     height,
+                     pic_path);
+    } else {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                      "attached_pic: failed to detect image dimensions in '%s'\n",
+                      pic_path);
+        av_packet_free(&ctx->attached_pic_pkt);
+        return NULL;
+    }
+
+    // Create new stream and mark it as an attached picture
+    AVStream *st = avformat_new_stream(ctx->oc, NULL);
+    if (!st) {
+        mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "attached_pic: could not allocate stream\n");
+        av_packet_free(&ctx->attached_pic_pkt);
+        return NULL;
+    }
+
+    st->disposition = AV_DISPOSITION_ATTACHED_PIC;
+    st->time_base = (AVRational){1, 90000};
+    st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+    st->codecpar->codec_id = pic_codec_id;
+    st->codecpar->width = width;
+    st->codecpar->height = height;
+    av_dict_set(&st->metadata, "title", "Cover", 0);
+    av_dict_set(&st->metadata, "comment", "Cover (front)", 0);
+
+    ctx->attached_pic_pkt->stream_index = st->index;
+    ctx->attached_pic_pkt->flags |= AV_PKT_FLAG_KEY;
+    ctx->attached_pic_pkt->pts = 0;
+    ctx->attached_pic_pkt->dts = 0;
+    ctx->attached_pic_pkt->duration = 0;
+    ctx->attached_pic_pkt->pos = -1;
+
+    mlt_log_info(MLT_CONSUMER_SERVICE(consumer),
+                 "attached_pic: added cover art from '%s'\n",
+                 pic_path);
+    return st;
 }
 
 static void open_subtitles(encode_ctx_t *ctx)
@@ -2362,6 +2561,12 @@ static void *consumer_thread(void *arg)
 
         open_subtitles(enc_ctx);
 
+        // Add cover art (attached picture) stream if requested
+        const char *attached_pic_path = mlt_properties_get(properties, "attached_pic");
+        if (attached_pic_path && attached_pic_path[0]) {
+            enc_ctx->attached_pic_st = add_attached_pic_stream(consumer, enc_ctx, attached_pic_path);
+        }
+
         // Setup custom I/O if redirecting
         if (mlt_properties_get_int(properties, "redirect")) {
             int buffer_size = 32768;
@@ -2472,6 +2677,14 @@ static void *consumer_thread(void *arg)
                                   filename);
                     mlt_events_fire(properties, "consumer-fatal-error", mlt_event_data_none());
                     goto on_fatal_error;
+                }
+
+                // Write the attached picture (cover art) immediately after the header
+                if (enc_ctx->attached_pic_st && enc_ctx->attached_pic_pkt) {
+                    if (av_interleaved_write_frame(enc_ctx->oc, enc_ctx->attached_pic_pkt) < 0)
+                        mlt_log_warning(MLT_CONSUMER_SERVICE(consumer),
+                                        "attached_pic: failed to write cover art packet\n");
+                    av_packet_free(&enc_ctx->attached_pic_pkt);
                 }
 
                 header_written = 1;
@@ -2702,6 +2915,10 @@ on_fatal_error:
         avcodec_free_context(&enc_ctx->sdec_ctx[i]);
         avcodec_free_context(&enc_ctx->senc_ctx[i]);
     }
+
+    // Free any unwritten attached picture packet
+    if (enc_ctx->attached_pic_pkt)
+        av_packet_free(&enc_ctx->attached_pic_pkt);
 
     // close each codec
     avcodec_free_context(&enc_ctx->vcodec_ctx);
