@@ -252,7 +252,18 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                     if (self->video_format)
                         avformat_close_input(&self->video_format);
                 }
+            } else if (!self->is_mutex_init) {
+                pthread_mutexattr_t attr;
+                pthread_mutexattr_init(&attr);
+                pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+                pthread_mutex_init(&self->audio_mutex, &attr);
+                pthread_mutex_init(&self->video_mutex, &attr);
+                pthread_mutex_init(&self->packets_mutex, &attr);
+                pthread_mutex_init(&self->open_mutex, &attr);
+                pthread_mutex_init(&self->close_mutex, &attr);
+                self->is_mutex_init = 1;
             }
+
             if (producer) {
                 // Default the user-selectable indices from the auto-detected indices
                 mlt_properties_set_int(properties, "audio_index", self->audio_index);
