@@ -160,7 +160,7 @@ static QRectF get_text_path(QPainterPath *qpath,
 {
     int outline = mlt_properties_get_int(filter_properties, "outline") * scale;
     char halign = mlt_properties_get(filter_properties, "halign")[0];
-    char style = mlt_properties_get(filter_properties, "style")[0];
+    const char *style = mlt_properties_get(filter_properties, "style");
     int pad = mlt_properties_get_int(filter_properties, "pad") * scale;
     int offset = pad + (outline / 2);
     int width = 0;
@@ -182,12 +182,18 @@ static QRectF get_text_path(QPainterPath *qpath,
 #else
     font.setWeight(QFont::Weight(mlt_properties_get_int(filter_properties, "weight")));
 #endif
-    switch (style) {
+    switch (style[0]) {
     case 'i':
     case 'I':
         font.setStyle(QFont::StyleItalic);
         break;
+    default:
+        font.setStyleName(style);
     }
+    mlt_log_debug(NULL,
+                  "[filter_qtext] family %s style %s\n",
+                  font.family().toUtf8().constData(),
+                  style);
     // Apply text decoration properties
     font.setUnderline(mlt_properties_get_int(filter_properties, "underline"));
     font.setStrikeOut(mlt_properties_get_int(filter_properties, "strikethrough"));

@@ -184,6 +184,9 @@ static void generate_qpath(mlt_properties producer_properties)
     case 'I':
         font.setStyle(QFont::StyleItalic);
         break;
+    default:
+        font.setStyleName(style);
+        break;
     }
     // Apply text decoration properties
     font.setUnderline(mlt_properties_get_int(producer_properties, "underline"));

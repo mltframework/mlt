@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.0
 type: producer
 identifier: qtext
 title: Qt Titler
-version: 3
+version: 4
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -150,10 +150,7 @@ parameters:
     title: Font style
     type: string
     description: >
-      The style of the font.
-    values:
-      - normal
-      - italic
+      The style of the font, for example, "italic" or "narrow" depending upon family
     default: normal
     readonly: no
     mutable: yes
