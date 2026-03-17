@@ -1728,21 +1728,51 @@ static AVStream *add_attached_pic_stream(mlt_consumer consumer,
         return NULL;
     }
 
-    st->disposition = AV_DISPOSITION_ATTACHED_PIC;
-    st->time_base = (AVRational){1, 90000};
-    st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codecpar->codec_id = pic_codec_id;
-    st->codecpar->width = width;
-    st->codecpar->height = height;
-    av_dict_set(&st->metadata, "title", "Cover", 0);
-    av_dict_set(&st->metadata, "comment", "Cover (front)", 0);
 
-    ctx->attached_pic_pkt->stream_index = st->index;
-    ctx->attached_pic_pkt->flags |= AV_PKT_FLAG_KEY;
-    ctx->attached_pic_pkt->pts = 0;
-    ctx->attached_pic_pkt->dts = 0;
-    ctx->attached_pic_pkt->duration = 0;
-    ctx->attached_pic_pkt->pos = -1;
+    // Matroska uses AVMEDIA_TYPE_ATTACHMENT with data in extradata and requires
+    // "filename" and "mimetype" metadata. Other formats (MP3, M4A, FLAC, OGG)
+    // use AVMEDIA_TYPE_VIDEO + AV_DISPOSITION_ATTACHED_PIC with a packet write.
+    if (!strcmp(ctx->oc->oformat->name, "matroska")) {
+        st->codecpar->codec_type = AVMEDIA_TYPE_ATTACHMENT;
+        st->codecpar->extradata = av_mallocz(ctx->attached_pic_pkt->size
+                                             + AV_INPUT_BUFFER_PADDING_SIZE);
+        if (!st->codecpar->extradata) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                          "attached_pic: could not allocate extradata\n");
+            av_packet_free(&ctx->attached_pic_pkt);
+            return NULL;
+        }
+        memcpy(st->codecpar->extradata, ctx->attached_pic_pkt->data, ctx->attached_pic_pkt->size);
+        st->codecpar->extradata_size = ctx->attached_pic_pkt->size;
+        av_dict_set(&st->metadata,
+                    "filename",
+                    (pic_codec_id == AV_CODEC_ID_PNG) ? "cover.png" : "cover.jpg",
+                    0);
+        av_dict_set(&st->metadata,
+                    "mimetype",
+                    (pic_codec_id == AV_CODEC_ID_PNG) ? "image/png" : "image/jpeg",
+                    0);
+        av_dict_set(&st->metadata, "title", "Cover", 0);
+        // The attachment is written by the muxer during avformat_write_header;
+        // no packet needs to be sent.
+        av_packet_free(&ctx->attached_pic_pkt);
+    } else {
+        st->disposition = AV_DISPOSITION_ATTACHED_PIC;
+        st->time_base = (AVRational){1, 90000};
+        st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+        st->codecpar->width = width;
+        st->codecpar->height = height;
+        av_dict_set(&st->metadata, "title", "Cover", 0);
+        av_dict_set(&st->metadata, "comment", "Cover (front)", 0);
+
+        ctx->attached_pic_pkt->stream_index = st->index;
+        ctx->attached_pic_pkt->flags |= AV_PKT_FLAG_KEY;
+        ctx->attached_pic_pkt->pts = 0;
+        ctx->attached_pic_pkt->dts = 0;
+        ctx->attached_pic_pkt->duration = 0;
+        ctx->attached_pic_pkt->pos = -1;
+    }
 
     mlt_log_info(MLT_CONSUMER_SERVICE(consumer),
                  "attached_pic: added cover art from '%s'\n",
