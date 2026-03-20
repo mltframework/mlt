@@ -1720,11 +1720,26 @@ static AVStream *add_attached_pic_stream(mlt_consumer consumer,
         return NULL;
     }
 
+    // For Matroska, pre-allocate the extradata buffer before creating the stream
+    // so that if this allocation fails we have not yet modified ctx->oc.
+    uint8_t *mkv_extradata = NULL;
+    if (!strcmp(ctx->oc->oformat->name, "matroska")) {
+        mkv_extradata = av_mallocz(ctx->attached_pic_pkt->size + AV_INPUT_BUFFER_PADDING_SIZE);
+        if (!mkv_extradata) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                          "attached_pic: could not allocate extradata\n");
+            av_packet_free(&ctx->attached_pic_pkt);
+            return NULL;
+        }
+        memcpy(mkv_extradata, ctx->attached_pic_pkt->data, ctx->attached_pic_pkt->size);
+    }
+
     // Create new stream and mark it as an attached picture
     AVStream *st = avformat_new_stream(ctx->oc, NULL);
     if (!st) {
         mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "attached_pic: could not allocate stream\n");
         av_packet_free(&ctx->attached_pic_pkt);
+        av_free(mkv_extradata);
         return NULL;
     }
 
@@ -1733,17 +1748,9 @@ static AVStream *add_attached_pic_stream(mlt_consumer consumer,
     // Matroska uses AVMEDIA_TYPE_ATTACHMENT with data in extradata and requires
     // "filename" and "mimetype" metadata. Other formats (MP3, M4A, FLAC, OGG)
     // use AVMEDIA_TYPE_VIDEO + AV_DISPOSITION_ATTACHED_PIC with a packet write.
-    if (!strcmp(ctx->oc->oformat->name, "matroska")) {
+    if (mkv_extradata) {
         st->codecpar->codec_type = AVMEDIA_TYPE_ATTACHMENT;
-        st->codecpar->extradata = av_mallocz(ctx->attached_pic_pkt->size
-                                             + AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!st->codecpar->extradata) {
-            mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
-                          "attached_pic: could not allocate extradata\n");
-            av_packet_free(&ctx->attached_pic_pkt);
-            return NULL;
-        }
-        memcpy(st->codecpar->extradata, ctx->attached_pic_pkt->data, ctx->attached_pic_pkt->size);
+        st->codecpar->extradata = mkv_extradata;
         st->codecpar->extradata_size = ctx->attached_pic_pkt->size;
         av_dict_set(&st->metadata,
                     "filename",
