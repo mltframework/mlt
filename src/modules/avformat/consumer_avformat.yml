@@ -2,7 +2,7 @@ schema_version: 0.3
 type: consumer
 identifier: avformat
 title: FFmpeg Output
-version: 5
+version: 6
 copyright: Copyright (C) 2003-2019 Meltytech, LLC
 license: LGPL
 language: en
@@ -61,6 +61,18 @@ parameters:
     maximum: 1
     default: 0
     widget: checkbox
+
+  - identifier: attached_pic
+    title: Cover Art
+    type: string
+    description: >
+      Path to an image file to embed as cover art (attached picture) in the
+      output file. The image type is detected from file content (magic bytes),
+      and only JPEG and PNG are supported. The image is added as an attached
+      picture stream with the AV_DISPOSITION_ATTACHED_PIC flag and is written
+      immediately after the container header. Most audio container formats
+      (e.g. MP3, M4A, OGG, FLAC) as well as Matroska support attached pictures.
+    widget: fileopen
 
 # These override the MLT profile
   - identifier: width
