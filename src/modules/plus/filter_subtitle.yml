@@ -2,7 +2,7 @@ schema_version: 7.0
 type: filter
 identifier: subtitle
 title: Subtitle
-version: 3
+version: 4
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -198,3 +198,105 @@ parameters:
     maximum: 1.0
     mutable: yes
     widget: slider
+
+  - identifier: typewriter
+    title: Typewriter Effect
+    type: boolean
+    description: >
+      Enable typewriter effect where text appears progressively over time.
+      Only supported when the qtext filter is available.
+    default: 0
+    minimum: 0
+    maximum: 1
+    readonly: no
+    mutable: yes
+    widget: checkbox
+
+  - identifier: typewriter.step_length
+    title: Typewriter Step Length
+    type: integer
+    description: >
+      Number of frames between each character, word, or line appearance.
+      Only supported when the qtext filter is available.
+    default: 25
+    minimum: 1
+    readonly: no
+    mutable: yes
+    widget: spinner
+
+  - identifier: typewriter.step_sigma
+    title: Typewriter Step Variation
+    type: integer
+    description: >
+      Random variation in timing (standard deviation in frames).
+      Only supported when the qtext filter is available.
+    default: 0
+    minimum: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
+
+  - identifier: typewriter.random_seed
+    title: Typewriter Random Seed
+    type: integer
+    description: >
+      Seed value for random number generation in timing variations.
+      Only supported when the qtext filter is available.
+    default: 0
+    minimum: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
+
+  - identifier: typewriter.macro_type
+    title: Typewriter Animation Mode
+    type: integer
+    description: >
+      Granularity of typewriter animation.
+      Only supported when the qtext filter is available.
+    values:
+      - 1 # Character by character
+      - 2 # Word by word
+      - 3 # Line by line
+    default: 1
+    readonly: no
+    mutable: yes
+    widget: combo
+
+  - identifier: typewriter.cursor
+    title: Typewriter Cursor
+    type: integer
+    description: >
+      Show blinking cursor during typewriter animation.
+      0 = no cursor, 1 = cursor while typing, 2 = cursor always visible.
+      Only supported when the qtext filter is available.
+    default: 1
+    minimum: 0
+    maximum: 2
+    readonly: no
+    mutable: yes
+    widget: combo
+
+  - identifier: typewriter.cursor_blink_rate
+    title: Cursor Blink Rate
+    type: integer
+    description: >
+      Number of frames for cursor blink cycle (on + off).
+      Only supported when the qtext filter is available.
+    default: 25
+    minimum: 0
+    readonly: no
+    mutable: yes
+    widget: spinner
+    unit: frames
+
+  - identifier: typewriter.cursor_char
+    title: Cursor Character
+    type: string
+    description: >
+      Character to use for the blinking cursor.
+      Only supported when the qtext filter is available.
+    default: "|"
+    readonly: no
+    mutable: yes
+    widget: text

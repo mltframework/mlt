@@ -44,8 +44,12 @@ struct TypewriterFilterData
     TypeWriter typewriter;
     std::string original_text;
     int macro_type;
+    mlt_position start_position;
 
-    TypewriterFilterData() {}
+    TypewriterFilterData()
+        : macro_type(0)
+        , start_position(0)
+    {}
 };
 
 static void close_typewriter_filter_data(void *data)
@@ -54,6 +58,7 @@ static void close_typewriter_filter_data(void *data)
 }
 
 static std::string get_typewriter_text_for_filter(mlt_properties filter_properties,
+                                                  mlt_properties state_props,
                                                   const char *original_text,
                                                   mlt_position position)
 {
@@ -62,11 +67,11 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
     }
 
     auto *tw_data = static_cast<TypewriterFilterData *>(
-        mlt_properties_get_data(filter_properties, "_typewriter_filter_data", NULL));
+        mlt_properties_get_data(state_props, "_typewriter_filter_data", NULL));
 
     if (!tw_data) {
         tw_data = new TypewriterFilterData();
-        mlt_properties_set_data(filter_properties,
+        mlt_properties_set_data(state_props,
                                 "_typewriter_filter_data",
                                 static_cast<void *>(tw_data),
                                 0,
@@ -85,6 +90,7 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
         || tw_data->typewriter.getStepSigma() != step_sigma
         || tw_data->typewriter.getStepSeed() != random_seed || tw_data->macro_type != macro_type) {
         tw_data->original_text = text_str;
+        tw_data->start_position = position;
         tw_data->typewriter.setPattern(text_str);
 
         if (step_length == 0)
@@ -122,7 +128,8 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
         tw_data->typewriter.parse();
     }
 
-    std::string rendered_text = tw_data->typewriter.render(position);
+    mlt_position relative_position = position - tw_data->start_position;
+    std::string rendered_text = tw_data->typewriter.render(relative_position);
 
     // Add blinking cursor if enabled
     auto cursor_enabled = mlt_properties_get_int(filter_properties, "typewriter.cursor");
@@ -133,7 +140,8 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
             cursor_blink_rate = 25; // Default to 25 frames (1 second at 25fps)
 
         // Check if we should show cursor (blink on/off)
-        bool show_cursor = (cursor_blink_rate == 0) || (position / cursor_blink_rate) % 2 == 0;
+        bool show_cursor = (cursor_blink_rate == 0)
+                           || (relative_position / cursor_blink_rate) % 2 == 0;
 
         // Only show cursor if text is still being typed or if we're at the end
         bool still_typing = !tw_data->typewriter.isEnd();
@@ -154,6 +162,7 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
 
 static QRectF get_text_path(QPainterPath *qpath,
                             mlt_properties filter_properties,
+                            mlt_properties state_props,
                             const char *text,
                             double scale,
                             mlt_position position = 0)
@@ -169,7 +178,8 @@ static QRectF get_text_path(QPainterPath *qpath,
     qpath->setFillRule(Qt::WindingFill);
 
     // Get the strings to display (with typewriter effect if enabled)
-    std::string processed_text = get_typewriter_text_for_filter(filter_properties, text, position);
+    std::string processed_text
+        = get_typewriter_text_for_filter(filter_properties, state_props, text, position);
     QString s = QString::fromUtf8(processed_text.c_str());
     QStringList lines = s.split("\n");
 
@@ -532,7 +542,13 @@ static int filter_get_image(mlt_frame frame,
                 doc->drawContents(&painter, drawRect);
             }
         } else {
-            path_rect = get_text_path(&text_path, filter_properties, argument, scale, position);
+            mlt_properties state_props = MLT_FILTER_PROPERTIES(filter);
+            path_rect = get_text_path(&text_path,
+                                      filter_properties,
+                                      state_props,
+                                      argument,
+                                      scale,
+                                      position);
             transform_painter(&painter, rect, path_rect, filter_properties, profile);
             paint_background(&painter,
                              path_rect,
