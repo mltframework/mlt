@@ -20,6 +20,7 @@
  */
 
 #include "kdenlivetitle_wrapper.h"
+#include "kdenlivegraphics.h"
 #include "typewriter.h"
 
 #include "common.h"
@@ -602,6 +603,8 @@ void loadFromXml(producer_ktitle self,
                 QRectF rect = stringToRect(rectProperties.namedItem("rect").nodeValue());
                 QString pen_str = rectProperties.namedItem("pencolor").nodeValue();
                 double penwidth = rectProperties.namedItem("penwidth").nodeValue().toDouble();
+                double cornerRadius
+                    = rectProperties.namedItem("cornerRadius").nodeValue().toDouble();
                 QBrush brush;
                 if (!rectProperties.namedItem("gradient").isNull()) {
                     // Calculate gradient
@@ -648,7 +651,9 @@ void loadFromXml(producer_ktitle self,
                     gitem = ellipse;
                 } else {
                     // QGraphicsRectItem
-                    QGraphicsRectItem *rec = scene->addRect(rect, pen, brush);
+                    KdenliveGraphicsRect *rec
+                        = new KdenliveGraphicsRect(rect, brush, pen, cornerRadius);
+                    scene->addItem(rec);
                     gitem = rec;
                 }
             } else if (nodeAttributes.namedItem("type").nodeValue() == "QGraphicsPixmapItem") {
