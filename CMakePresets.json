@@ -36,7 +36,8 @@
                 "MOD_VIDSTAB": "OFF",
                 "MOD_VORBIS": "ON",
                 "MOD_XINE": "OFF",
-                "MOD_XML": "ON"
+                "MOD_XML": "ON",
+                "MOD_OPENFX": "OFF"
             }
         },
         {
