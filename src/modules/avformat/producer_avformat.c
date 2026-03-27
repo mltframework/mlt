@@ -41,6 +41,8 @@
 // ffmpeg Header files
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/avstring.h>
+#include <libavutil/bprint.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/dict.h>
 #include <libavutil/hwcontext.h>
@@ -1353,6 +1355,8 @@ static int setup_filters(producer_avformat self)
     int error = 0;
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
     const char *filtergraph = mlt_properties_get(properties, "filtergraph");
+    const char *lut = mlt_properties_get(properties, "lut");
+    int use_lut = lut && *lut;
     double theta = 0.0;
 
     if (self->video_index != -1 && self->autorotate) {
@@ -1366,7 +1370,8 @@ static int setup_filters(producer_avformat self)
         }
     }
 
-    if (!self->vfilter_graph && (self->autorotate || filtergraph) && self->video_index != -1) {
+    if (!self->vfilter_graph && (self->autorotate || filtergraph || use_lut)
+        && self->video_index != -1) {
         AVFilterContext *last_filter = NULL;
         if (self->autorotate) {
             if (fabs(theta - 90) < 1.0) {
@@ -1390,9 +1395,31 @@ static int setup_filters(producer_avformat self)
                              < 0);
             }
         }
+        if (use_lut && !error) {
+            if (!self->vfilter_graph) {
+                error = (setup_video_filters(self) < 0);
+                last_filter = self->vfilter_out;
+            } else if (!last_filter) {
+                last_filter = self->vfilter_out;
+            }
+
+            AVBPrint buf;
+            av_bprint_init(&buf, 0, AV_BPRINT_SIZE_UNLIMITED);
+            av_bprintf(&buf, "file=");
+            av_bprint_escape(&buf, lut, "\\:',;[]", AV_ESCAPE_MODE_BACKSLASH, 0);
+            char *lut3d_args = NULL;
+            av_bprint_finalize(&buf, &lut3d_args);
+            if (!lut3d_args)
+                error = 1;
+            if (!error)
+                error = (insert_filter(self->vfilter_graph, &last_filter, "lut3d", lut3d_args) < 0);
+            av_free(lut3d_args);
+        }
         if (filtergraph && !error) {
             if (!self->vfilter_graph) {
                 error = (setup_video_filters(self) < 0);
+                last_filter = self->vfilter_out;
+            } else if (!last_filter) {
                 last_filter = self->vfilter_out;
             }
             AVFilterInOut *outputs = avfilter_inout_alloc();
@@ -2055,6 +2082,16 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
                 self->vfilter_in = NULL;
                 self->vfilter_out = NULL;
                 self->rotation = 0.0;
+                setup_filters(self);
+                self->reset_image_cache = 1;
+                mlt_service_unlock(MLT_PRODUCER_SERVICE(self->parent));
+            }
+        } else if (!strcmp("lut", name)) {
+            if (self->video_index != -1) {
+                mlt_service_lock(MLT_PRODUCER_SERVICE(self->parent));
+                avfilter_graph_free(&self->vfilter_graph);
+                self->vfilter_in = NULL;
+                self->vfilter_out = NULL;
                 setup_filters(self);
                 self->reset_image_cache = 1;
                 mlt_service_unlock(MLT_PRODUCER_SERVICE(self->parent));
@@ -3136,7 +3173,8 @@ static int producer_get_image(mlt_frame frame,
 #else
                 self->video_frame->top_field_first = self->top_field_first;
 #endif
-                if (self->autorotate || mlt_properties_exists(properties, "filtergraph")) {
+                if (self->autorotate || mlt_properties_exists(properties, "filtergraph")
+                    || mlt_properties_exists(properties, "lut")) {
                     if (!setup_filters(self) && self->vfilter_graph && self->vfilter_in
                         && self->vfilter_out) {
                         int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
