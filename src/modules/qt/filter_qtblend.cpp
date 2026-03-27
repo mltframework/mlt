@@ -160,8 +160,8 @@ static int filter_get_image(mlt_frame frame,
     transform.translate(rect.x, rect.y);
     opacity = rect.o;
     hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height
-               || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width < *width
-               || b_height < *height;
+               || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width != *width
+               || b_height != *height;
 
     if (mlt_properties_get(properties, "rotation")) {
         double angle = mlt_properties_anim_get_double(properties, "rotation", position, length);
