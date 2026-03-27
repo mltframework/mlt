@@ -221,7 +221,11 @@ static int filter_get_image(mlt_frame frame,
         if (rect.w != b_width || rect.h != b_height) {
             if (downscale) {
                 scaled = true;
-                scaledSource = sourceImage.scaled(rect.w, rect.h, Qt::IgnoreAspectRatio, hqPainting ? Qt::SmoothTransformation : Qt::FastTransformation);
+                scaledSource = sourceImage.scaled(rect.w,
+                                                  rect.h,
+                                                  Qt::IgnoreAspectRatio,
+                                                  hqPainting ? Qt::SmoothTransformation
+                                                             : Qt::FastTransformation);
             } else {
                 transform.scale(rect.w / b_width, rect.h / b_height);
             }
@@ -239,7 +243,10 @@ static int filter_get_image(mlt_frame frame,
         if (scale != 1.) {
             if (downscale) {
                 scaled = true;
-                scaledSource = sourceImage.scaled(sourceImage.size() * scale, Qt::IgnoreAspectRatio, hqPainting ? Qt::SmoothTransformation : Qt::FastTransformation);
+                scaledSource = sourceImage.scaled(sourceImage.size() * scale,
+                                                  Qt::IgnoreAspectRatio,
+                                                  hqPainting ? Qt::SmoothTransformation
+                                                             : Qt::FastTransformation);
             } else {
                 transform.scale(scale, scale);
             }
