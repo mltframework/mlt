@@ -206,9 +206,26 @@ static int filter_get_image(mlt_frame frame,
 
     int image_size = mlt_image_format_size(*format, *width, *height, NULL);
 
+    char *interps = mlt_properties_get(frame_properties, "consumer.rescale");
+    if (interps) {
+        interps = strdup(interps);
+    }
+    bool hqPainting = interps && strcmp(interps, "nearest") != 0;
+    free(interps);
+
     // resize to rect
+    bool scaled = false;
+    QImage scaledSource;
+    bool downscale = rect.w < b_width || rect.h < b_height;
     if (distort) {
-        transform.scale(rect.w / b_width, rect.h / b_height);
+        if (rect.w != b_width || rect.h != b_height) {
+            if (downscale) {
+                scaled = true;
+                scaledSource = sourceImage.scaled(rect.w, rect.h, Qt::IgnoreAspectRatio, hqPainting ? Qt::SmoothTransformation : Qt::FastTransformation);
+            } else {
+                transform.scale(rect.w / b_width, rect.h / b_height);
+            }
+        }
     } else {
         double scale;
         double resize_dar = rect.w * consumer_ar / rect.h;
@@ -219,7 +236,14 @@ static int filter_get_image(mlt_frame frame,
         }
         // Center image in rect
         transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
-        transform.scale(scale, scale);
+        if (scale != 1.) {
+            if (downscale) {
+                scaled = true;
+                scaledSource = sourceImage.scaled(sourceImage.size() * scale, Qt::IgnoreAspectRatio, hqPainting ? Qt::SmoothTransformation : Qt::FastTransformation);
+            } else {
+                transform.scale(scale, scale);
+            }
+        }
     }
 
     uint8_t *dest_image = NULL;
@@ -232,11 +256,15 @@ static int filter_get_image(mlt_frame frame,
     QPainter painter(&destImage);
     painter.setCompositionMode(
         (QPainter::CompositionMode) mlt_properties_get_int(properties, "compositing"));
-    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     painter.setTransform(transform);
     painter.setOpacity(opacity);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform, hqPainting);
     // Composite top frame
-    painter.drawImage(0, 0, sourceImage);
+    if (scaled) {
+        painter.drawImage(0, 0, scaledSource);
+    } else {
+        painter.drawImage(0, 0, sourceImage);
+    }
     // finish Qt drawing
     painter.end();
     convert_qimage_to_mlt(&destImage, dest_image, *width, *height);
