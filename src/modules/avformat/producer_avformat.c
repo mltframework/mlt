@@ -3173,8 +3173,9 @@ static int producer_get_image(mlt_frame frame,
 #else
                 self->video_frame->top_field_first = self->top_field_first;
 #endif
+                const char *lut = mlt_properties_get(properties, "lut");
                 if (self->autorotate || mlt_properties_exists(properties, "filtergraph")
-                    || mlt_properties_exists(properties, "lut")) {
+                    || (lut && *lut)) {
                     if (!setup_filters(self) && self->vfilter_graph && self->vfilter_in
                         && self->vfilter_out) {
                         int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
