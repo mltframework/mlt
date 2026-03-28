@@ -1583,7 +1583,8 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  uint8_t *image,
                                  int width,
                                  int height,
-                                 mlt_image_format format)
+                                 mlt_image_format format,
+                                 double pixel_aspect_ratio)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1662,7 +1663,7 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
     propSetDouble((OfxPropertySetHandle) clip_prop,
                   kOfxImagePropPixelAspectRatio,
                   0,
-                  (double) width / (double) height);
+                  pixel_aspect_ratio);
 
     propSetString((OfxPropertySetHandle) clip_prop,
                   kOfxImageEffectPropPreMultiplication,
@@ -1696,7 +1697,8 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  uint8_t *image,
                                  int width,
                                  int height,
-                                 mlt_image_format format)
+                                 mlt_image_format format,
+                                 double pixel_aspect_ratio)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1798,7 +1800,7 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
     propSetDouble((OfxPropertySetHandle) clip_prop,
                   kOfxImagePropPixelAspectRatio,
                   0,
-                  (double) width / (double) height);
+                  pixel_aspect_ratio);
 }
 
 int mltofx_detect_plugin(OfxPlugin *plugin)

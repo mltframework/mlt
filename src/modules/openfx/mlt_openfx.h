@@ -65,14 +65,16 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  uint8_t *image,
                                  int width,
                                  int height,
-                                 mlt_image_format format);
+                                 mlt_image_format format,
+                                 double pixel_aspect_ratio);
 
 void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  mlt_properties image_effect,
                                  uint8_t *image,
                                  int width,
                                  int height,
-                                 mlt_image_format format);
+                                 mlt_image_format format,
+                                 double pixel_aspect_ratio);
 
 int mltofx_detect_plugin(OfxPlugin *plugin);
 

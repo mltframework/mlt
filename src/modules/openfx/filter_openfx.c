@@ -60,6 +60,10 @@ static int filter_get_image(mlt_frame frame,
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
 
     if (error == 0) {
+        double pixel_aspect_ratio = mlt_frame_get_aspect_ratio(frame);
+        if (pixel_aspect_ratio <= 0.0)
+            pixel_aspect_ratio = 1.0;
+
         mlt_position position = mlt_filter_get_position(filter, frame);
         mlt_position length = mlt_filter_get_length2(filter, frame);
         int params_count = mlt_properties_count(params);
@@ -147,8 +151,20 @@ static int filter_get_image(mlt_frame frame,
         uint8_t *src_copy = src_img_copy.data;
 
         memcpy(src_copy, *image, mlt_image_calculate_size(&src_img));
-        mltofx_set_source_clip_data(plugin, image_effect, src_copy, *width, *height, *format);
-        mltofx_set_output_clip_data(plugin, image_effect, *image, *width, *height, *format);
+        mltofx_set_source_clip_data(plugin,
+                                    image_effect,
+                                    src_copy,
+                                    *width,
+                                    *height,
+                                    *format,
+                                    pixel_aspect_ratio);
+        mltofx_set_output_clip_data(plugin,
+                                    image_effect,
+                                    *image,
+                                    *width,
+                                    *height,
+                                    *format,
+                                    pixel_aspect_ratio);
 
         mlt_service_lock(MLT_FILTER_SERVICE(filter));
         mltofx_action_render(plugin, image_effect, *width, *height);
