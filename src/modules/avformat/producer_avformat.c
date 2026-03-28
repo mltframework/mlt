@@ -2087,7 +2087,7 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
                 mlt_service_unlock(MLT_PRODUCER_SERVICE(self->parent));
             }
         } else if (!strcmp("lut", name)) {
-            if (self->video_index != -1) {
+            if (self->video_index != -1 && self->video_format) {
                 mlt_service_lock(MLT_PRODUCER_SERVICE(self->parent));
                 avfilter_graph_free(&self->vfilter_graph);
                 self->vfilter_in = NULL;
