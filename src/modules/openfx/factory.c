@@ -271,8 +271,8 @@ MLT_REPOSITORY
     || defined(__MINGW64__)
     char common_files[MAX_PATH];
     if (SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES_COMMON, NULL, 0, common_files) == S_OK) {
-        char win_ofx[MAX_PATH];
-        snprintf(win_ofx, MAX_PATH, "%s\\OFX\\Plugins", common_files);
+        char win_ofx[MAX_PATH + 13]; // +13 for "\OFX\Plugins" + NUL
+        snprintf(win_ofx, sizeof(win_ofx), "%s\\OFX\\Plugins", common_files);
         scan_ofx_dir(repository, win_ofx, &dli, 0);
     }
 #endif
