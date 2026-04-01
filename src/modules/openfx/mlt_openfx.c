@@ -115,7 +115,7 @@ static OfxStatus clipGetImage(OfxImageClipHandle clip,
     *imageHandle = (OfxPropertySetHandle) mlt_properties_get_properties((mlt_properties) clip,
                                                                         "props");
     if (region != NULL) {
-        const OfxRectI rect = {0, 0, 0, 0};
+        OfxRectI rect = {0, 0, 0, 0};
         propGetIntN((OfxPropertySetHandle) *imageHandle, kOfxImagePropBounds, 4, &rect.x1);
         OfxRectD *region2 = (OfxRectD *) region;
         region2->x1 = (double) rect.x1;
@@ -1580,6 +1580,9 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetInt(host_properties, kOfxImageEffectHostPropIsBackground, 0, 1);
     propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 0);
     propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipPARs, 0, 0);
+    propSetInt(host_properties, kOfxImageEffectPropSupportsMultiResolution, 0, 0);
+    propSetInt(host_properties, kOfxImageEffectPropSupportsTiles, 0, 0);
+    propSetInt(host_properties, kOfxImageEffectPropTemporalClipAccess, 0, 0);
     propSetInt(host_properties, kOfxImageEffectPropSetableFrameRate, 0, 0);
     propSetInt(host_properties, kOfxImageEffectPropSetableFielding, 0, 0);
     propSetInt(host_properties, kOfxImageEffectInstancePropSequentialRender, 0, 0);
