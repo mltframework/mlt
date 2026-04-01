@@ -129,7 +129,6 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     OfxPlugin *pt = getPluginFn(index);
 
     mlt_properties_set(result, "identifier", id);
-    mlt_properties_set(result, "title", id);
 
     // parameters
     mlt_properties params = mlt_properties_new();
@@ -142,6 +141,10 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
 
     mlt_properties image_effect = mltofx_fetch_params(pt, params, result);
     mlt_properties_close(image_effect);
+
+    // Fall back to the plugin identifier if the plugin did not provide a label.
+    if (!mlt_properties_get(result, "title"))
+        mlt_properties_set(result, "title", id);
     return result;
 }
 

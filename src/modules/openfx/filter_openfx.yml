@@ -1,4 +1,4 @@
-schema_version: 7.0
+schema_version: 7.1
 type: filter
 identifier: openfx
 title: OpenFX

@@ -2047,6 +2047,32 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
         if (str_value[0] != '\0') {
             mlt_properties_set(mlt_metadata, "description", str_value);
         }
+        str_value = "";
+        propGetString((OfxPropertySetHandle) props, kOfxPropLongLabel, 0, &str_value);
+        if (str_value[0] == '\0')
+            propGetString((OfxPropertySetHandle) props, kOfxPropLabel, 0, &str_value);
+        if (str_value[0] != '\0') {
+            mlt_properties_set(mlt_metadata, "title", str_value);
+        }
+        str_value = "";
+        propGetString((OfxPropertySetHandle) props, kOfxPropVersionLabel, 0, &str_value);
+        if (str_value[0] != '\0') {
+            mlt_properties_set(mlt_metadata, "version", str_value);
+        } else {
+            // Build version string from the integer array (e.g. "1.2.3")
+            char version_str[64] = "";
+            int dim = 0;
+            propGetDimension((OfxPropertySetHandle) props, kOfxPropVersion, &dim);
+            for (int vi = 0; vi < dim; ++vi) {
+                int v = 0;
+                propGetInt((OfxPropertySetHandle) props, kOfxPropVersion, vi, &v);
+                char part[16];
+                snprintf(part, sizeof(part), vi == 0 ? "%d" : ".%d", v);
+                strncat(version_str, part, sizeof(version_str) - strlen(version_str) - 1);
+            }
+            if (version_str[0] != '\0')
+                mlt_properties_set(mlt_metadata, "version", version_str);
+        }
     }
 
     int iparams_length = mlt_properties_count(iparams);
@@ -2090,7 +2116,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
         if (strcmp(param_type, kOfxParamTypeInteger) == 0) {
             mlt_properties_set(p, "type", "integer");
         } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
-            mlt_properties_set(p, "type", "double");
+            mlt_properties_set(p, "type", "float");
         } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
             mlt_properties_set(
                 p,
@@ -2102,17 +2128,13 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             mlt_properties_set(p, "type", "boolean");
         } else if (strcmp(param_type, kOfxParamTypeGroup) == 0) {
             mlt_properties_set(p, "type", "group");
-            int opened = 0;
-            propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropGroupOpen, 0, &opened);
-            mlt_properties_set_int(p, "opened", opened);
-        } else if (strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
         } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0
                    || strcmp(param_type, kOfxParamTypeRGB) == 0) {
             mlt_properties_set(p, "type", "color");
             mlt_properties_set(p, "widget", "color");
         } else if (strcmp(param_type, kOfxParamTypeDouble2D)
                    == 0) { // can be rendered as 2 double number input fields
-            mlt_properties_set(p, "type", "double");
+            mlt_properties_set(p, "type", "float");
 
             char *type = kOfxParamDoubleTypeXY;
             char *coordinate_system = kOfxParamCoordinatesCanonical;
@@ -2123,21 +2145,25 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                           &coordinate_system);
 
             if (strcmp(type, kOfxParamDoubleTypeXYAbsolute) == 0) {
-                mlt_properties_set(p, "widget", "2dpoint");
+                mlt_properties_set(p, "widget", "point");
             } else if (strcmp(type, kOfxParamDoubleTypeXY) == 0) {
-                mlt_properties_set(p, "widget", "2dsize");
+                mlt_properties_set(p, "widget", "size");
             }
 
             if (strcmp(coordinate_system, kOfxParamCoordinatesCanonical) == 0) {
-                mlt_properties_set_int(p, "normalised", 0);
+                mlt_properties_set_int(p, "normalized_coordinates", 0);
             } else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0) {
-                mlt_properties_set_int(p, "normalised", 1);
+                mlt_properties_set_int(p, "normalized_coordinates", 1);
             }
         }
 
-        int animation = 1;
-        propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropAnimates, 0, &animation);
-        mlt_properties_set(p, "animation", animation ? "yes" : "no");
+        // TODO: un-commment when this uses the MLT property animation APIs
+        // if (strcmp(param_type, kOfxParamTypeGroup) != 0) {
+        //     int animation = 1;
+        //     propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropAnimates, 0, &animation);
+        //     mlt_properties_set(p, "animation", animation ? "yes" : "no");
+        // }
+        mlt_properties_set(p, "mutable", "yes");
 
         // Iterate through the properties of the first dimension to find all the params.
         mlt_properties dim1 = mlt_properties_get_properties(ppp, "0");
@@ -2189,10 +2215,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     char default_value[10] = "#000000FF";
                     sprintf(default_value,
                             "#%02X%02X%02X%02X",
+                            (unsigned char) (a * 255.0),
                             (unsigned char) (r * 255.0),
                             (unsigned char) (g * 255.0),
-                            (unsigned char) (b * 255.0),
-                            (unsigned char) (a * 255.0));
+                            (unsigned char) (b * 255.0));
 
                     mlt_properties_set(p, "default", default_value);
                 } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
