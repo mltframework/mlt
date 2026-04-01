@@ -43,6 +43,36 @@
             "name": "vcpkg-ninja",
             "inherits": "vcpkg",
             "generator": "Ninja"
-      }
+        },
+        {
+            "name": "cc-debug",
+            "displayName": "default system compiler (debug)",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "generator": "Ninja",
+            "environment": {
+                "QT_VERSION": "6.8.3",
+                "PKG_CONFIG_PATH": "$env{HOME}/.local/lib/pkgconfig:$env{HOME}/.local/lib64/pkgconfig:$env{HOME}/opt/lib/pkgconfig:$env{HOME}/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$penv{PKG_CONFIG_PATH}",
+                "PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos/bin:$env{HOME}/opt/bin:/usr/local/bin:/opt/local/bin:$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/opt",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_PREFIX_PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos;$env{HOME}/.local;$env{HOME}/opt;/usr/local;/opt/local",
+                "RELOCATABLE": "OFF",
+                "MOD_GDK": "OFF",
+                "MOD_SDL1": "OFF"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "clang-format_install",
+            "displayName": "clang-format, build, install",
+            "configurePreset": "cc-debug",
+            "targets": [
+                "clang-format",
+                "install"
+            ]
+        }
     ]
 }
