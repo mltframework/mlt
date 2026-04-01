@@ -9,4 +9,5 @@ url: https://openeffects.org/
 creator: mr.fantastic <mrfantastic@firemail.cc>
 tags:
   - Video
+  - experimental
 description: Process videos using OpenFX 1.5 plugins.
