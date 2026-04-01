@@ -145,6 +145,96 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     return result;
 }
 
+static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, int depth)
+{
+    size_t archstr_len = strlen(OFX_ARCHSTR);
+    size_t dir_len = strlen(dir);
+
+    DIR *d = opendir(dir);
+    if (!d)
+        return;
+
+    struct dirent *de = readdir(d);
+    while (de) {
+        char *name = de->d_name;
+        char *bni = NULL;
+        if ((bni = strstr(name, ".ofx.bundle")) != NULL && bni[11] == '\0') {
+            // bundle found at this level — load it
+            char *barename = g_strndup(name, (int) (bni - name) + 4);
+            size_t name_len = (size_t) (bni - name) + 4 + 7;
+            // 12b sizeof `Contents` word, 1 sizeof null byte
+            char *binpath = malloc(dir_len + name_len + 12 + (name_len - 7) + archstr_len + 1);
+            sprintf(binpath, "%s/%s/Contents/%s/%s", dir, name, OFX_ARCHSTR, barename);
+            void *dlhandle = dlopen(binpath, RTLD_LOCAL | RTLD_LAZY);
+            free(binpath);
+            free(barename);
+            if (!dlhandle) {
+                de = readdir(d);
+                continue;
+            }
+
+            OfxGetPluginFn ofx_get_plugin = dlsym(dlhandle, "OfxGetPlugin");
+            OfxGetNumberOfPluginsFn ofx_get_number_of_plugins = dlsym(dlhandle,
+                                                                      "OfxGetNumberOfPlugins");
+            if (!ofx_get_plugin || !ofx_get_number_of_plugins) {
+                dlclose(dlhandle);
+                de = readdir(d);
+                continue;
+            }
+
+            char dl_n[16] = {'\0'};
+            sprintf(dl_n, "%d", *dli);
+            mlt_properties_set_data(mltofx_dl, dl_n, dlhandle, 0, (mlt_destructor) dlclose, NULL);
+            (*dli)++;
+
+            int plugin_count = ofx_get_number_of_plugins();
+            for (int i = 0; i < plugin_count; ++i) {
+                OfxPlugin *plugin_ptr = ofx_get_plugin(i);
+                if (!plugin_ptr)
+                    break;
+
+                int detected = mltofx_detect_plugin(plugin_ptr);
+
+                if (!detected)
+                    continue;
+
+                char *s = NULL;
+                size_t pluginIdentifier_len = strlen(plugin_ptr->pluginIdentifier);
+                s = malloc(pluginIdentifier_len + 8);
+                sprintf(s, "openfx.%s", plugin_ptr->pluginIdentifier);
+
+                // if colon `:` exists in plugin identifier
+                // change it to accent sign `^` because `:`
+                // can cause issues with mlt if put in filter
+                // name
+                char *str_ptr = strchr(s, ':');
+                while (str_ptr != NULL) {
+                    *str_ptr++ = '^';
+                    str_ptr = strchr(str_ptr, ':');
+                }
+
+                mlt_properties p = mlt_properties_new();
+                mlt_properties_set_properties(mltofx_context, s, p);
+                mlt_properties_close(p);
+                mlt_properties_set(p, "dli", dl_n);
+                mlt_properties_set_int(p, "index", i);
+                MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
+                MLT_REGISTER_METADATA(mlt_service_filter_type, s, metadata, "filter_openfx.yml");
+                free(s);
+            }
+        } else if (depth == 0 && name[0] != '.') {
+            // Try one level of subdirectory (e.g. vendor subfolders inside an OFX plugins dir)
+            char *subdir = malloc(dir_len + strlen(name) + 2);
+            sprintf(subdir, "%s/%s", dir, name);
+            scan_ofx_dir(repository, subdir, dli, 1);
+            free(subdir);
+        }
+        de = readdir(d);
+    }
+
+    closedir(d);
+}
+
 MLT_REPOSITORY
 {
     MltOfxHost.host = (OfxPropertySetHandle) mlt_properties_new();
@@ -157,111 +247,46 @@ MLT_REPOSITORY
         setenv("OCIO", "ocio://ocio://default", 1);
     }
 
-    char *dir;
-    char *openfx_path = getenv("OFX_PLUGIN_PATH");
-    size_t archstr_len = strlen(OFX_ARCHSTR);
-
     mltofx_context = mlt_properties_new();
     mltofx_dl = mlt_properties_new();
 
-    if (openfx_path) {
-        int dli = 0;
-        char *saveptr;
+    int dli = 0;
 
-        for (char *strptr = openfx_path;; strptr = NULL) {
-            dir = strtok_r(strptr, MLT_DIRLIST_DELIMITER, &saveptr);
+    // Scan standard platform default paths per the OpenFX specification
+#if defined(__linux__) || defined(__FreeBSD__)
+    scan_ofx_dir(repository, "/usr/OFX/Plugins", &dli, 0);
+    scan_ofx_dir(repository, "/usr/local/OFX/Plugins", &dli, 0);
+#elif defined(__APPLE__)
+    scan_ofx_dir(repository, "/Library/OFX/Plugins", &dli, 0);
+    const char *home = getenv("HOME");
+    if (home) {
+        char user_ofx[PATH_MAX];
+        snprintf(user_ofx, PATH_MAX, "%s/Library/OFX/Plugins", home);
+        scan_ofx_dir(repository, user_ofx, &dli, 0);
+    }
+#elif defined(WINDOWS) || defined(WIN32) || defined(_WIN32) || defined(__MINGW32__) \
+    || defined(__MINGW64__)
+    char common_files[MAX_PATH];
+    if (SHGetFolderPathA(NULL, CSIDL_PROGRAM_FILES_COMMON, NULL, 0, common_files) == S_OK) {
+        char win_ofx[MAX_PATH];
+        snprintf(win_ofx, MAX_PATH, "%s\\OFX\\Plugins", common_files);
+        scan_ofx_dir(repository, win_ofx, &dli, 0);
+    }
+#endif
+
+    // Also scan OFX_PLUGIN_PATH if set (supplements default paths per OpenFX spec)
+    char *openfx_path = getenv("OFX_PLUGIN_PATH");
+    if (openfx_path) {
+        char *path_copy = strdup(openfx_path);
+        char *saveptr;
+        for (char *strptr = path_copy;; strptr = NULL) {
+            char *dir = strtok_r(strptr, MLT_DIRLIST_DELIMITER, &saveptr);
             if (dir == NULL)
                 break;
-            size_t dir_len = strlen(dir);
-
-            DIR *d = opendir(dir);
-            if (!d)
-                continue;
-
-            struct dirent *de = readdir(d);
-            while (de) {
-                char *name = de->d_name;
-                char *bni = NULL;
-                if ((bni = strstr(name, ".ofx.bundle")) != NULL && bni[11] == '\0') {
-                    char *barename = g_strndup(name, (int) (bni - name) + 4);
-                    size_t name_len = (size_t) (bni - name) + 4 + 7;
-                    // 12b sizeof `Contents` word, 1 sizeof null byte
-                    char *binpath = malloc(dir_len + name_len + 12 + (name_len - 7) + archstr_len
-                                           + 1);
-                    sprintf(binpath, "%s/%s/Contents/%s/%s", dir, name, OFX_ARCHSTR, barename);
-                    void *dlhandle = dlopen(binpath, RTLD_LOCAL | RTLD_LAZY);
-                    free(binpath);
-                    free(barename);
-                    if (!dlhandle) {
-                        de = readdir(d);
-                        continue;
-                    }
-
-                    OfxGetPluginFn ofx_get_plugin = dlsym(dlhandle, "OfxGetPlugin");
-                    OfxGetNumberOfPluginsFn ofx_get_number_of_plugins
-                        = dlsym(dlhandle, "OfxGetNumberOfPlugins");
-                    if (!ofx_get_plugin || !ofx_get_number_of_plugins) {
-                        dlclose(dlhandle);
-                        de = readdir(d);
-                        continue;
-                    }
-
-                    char dl_n[16] = {'\0'};
-                    sprintf(dl_n, "%d", dli);
-                    mlt_properties_set_data(mltofx_dl,
-                                            dl_n,
-                                            dlhandle,
-                                            0,
-                                            (mlt_destructor) dlclose,
-                                            NULL);
-                    dli++;
-
-                    int plugin_count = ofx_get_number_of_plugins();
-                    for (int i = 0; i < plugin_count; ++i) {
-                        OfxPlugin *plugin_ptr = ofx_get_plugin(i);
-                        if (!plugin_ptr)
-                            break;
-
-                        int detected = mltofx_detect_plugin(plugin_ptr);
-
-                        if (!detected)
-                            continue;
-
-                        char *s = NULL;
-                        size_t pluginIdentifier_len = strlen(plugin_ptr->pluginIdentifier);
-                        s = malloc(pluginIdentifier_len + 8);
-                        sprintf(s, "openfx.%s", plugin_ptr->pluginIdentifier);
-
-                        // if colon `:` exists in plugin identifier
-                        // change it to accent sign `^` because `:`
-                        // can cause issues with mlt if put in filter
-                        // name
-                        char *str_ptr = strchr(s, ':');
-                        while (str_ptr != NULL) {
-                            *str_ptr++ = '^';
-                            str_ptr = strchr(str_ptr, ':');
-                        }
-
-                        mlt_properties p;
-                        p = mlt_properties_new();
-                        mlt_properties_set_properties(mltofx_context, s, p);
-                        mlt_properties_close(p);
-                        mlt_properties_set(p, "dli", dl_n);
-                        mlt_properties_set_int(p, "index", i);
-                        MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
-                        MLT_REGISTER_METADATA(mlt_service_filter_type,
-                                              s,
-                                              metadata,
-                                              "filter_openfx.yml");
-                        free(s);
-                    }
-                }
-                de = readdir(d);
-            }
-
-            closedir(d);
+            scan_ofx_dir(repository, dir, &dli, 0);
         }
-
-        mlt_factory_register_for_clean_up(mltofx_dl, (mlt_destructor) plugin_mgr_destroy);
+        free(path_copy);
     }
+
+    mlt_factory_register_for_clean_up(mltofx_dl, (mlt_destructor) plugin_mgr_destroy);
 }
