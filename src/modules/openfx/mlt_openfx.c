@@ -370,6 +370,7 @@ static OfxStatus propGetPointer(OfxPropertySetHandle properties,
     if (!p)
         return kOfxStatErrBadIndex;
     if (!mlt_properties_exists(p, property)) {
+        mlt_log_debug(NULL, "[openfx] propGetPointer: '%s'[%d] not found\n", property, index);
         return kOfxStatErrUnknown;
     }
     *value = mlt_properties_get_data(p, property, NULL);
@@ -387,6 +388,7 @@ static OfxStatus propGetString(OfxPropertySetHandle properties,
     if (!p)
         return kOfxStatErrBadIndex;
     if (!mlt_properties_exists(p, property)) {
+        mlt_log_debug(NULL, "[openfx] propGetString: '%s'[%d] not found\n", property, index);
         return kOfxStatErrUnknown;
     }
     *value = mlt_properties_get(p, property);
@@ -404,6 +406,7 @@ static OfxStatus propGetDouble(OfxPropertySetHandle properties,
     if (!p)
         return kOfxStatErrBadIndex;
     if (!mlt_properties_exists(p, property)) {
+        mlt_log_debug(NULL, "[openfx] propGetDouble: '%s'[%d] not found\n", property, index);
         return kOfxStatErrUnknown;
     }
     *value = mlt_properties_get_double(p, property);
@@ -421,6 +424,7 @@ static OfxStatus propGetInt(OfxPropertySetHandle properties,
     if (!p)
         return kOfxStatErrBadIndex;
     if (!mlt_properties_exists(p, property)) {
+        mlt_log_debug(NULL, "[openfx] propGetInt: '%s'[%d] not found\n", property, index);
         return kOfxStatErrUnknown;
     }
     *value = mlt_properties_get_int(p, property);
@@ -439,6 +443,7 @@ static OfxStatus propGetPointerN(OfxPropertySetHandle properties,
         if (!p)
             return kOfxStatErrBadIndex;
         if (!mlt_properties_exists(p, property)) {
+            mlt_log_debug(NULL, "[openfx] propGetPointerN: '%s'[%d] not found\n", property, i);
             return kOfxStatErrUnknown;
         }
         value[i] = mlt_properties_get_data(p, property, NULL);
@@ -458,6 +463,7 @@ static OfxStatus propGetStringN(OfxPropertySetHandle properties,
         if (!p)
             return kOfxStatErrBadIndex;
         if (!mlt_properties_exists(p, property)) {
+            mlt_log_debug(NULL, "[openfx] propGetStringN: '%s'[%d] not found\n", property, i);
             return kOfxStatErrUnknown;
         }
         value[i] = mlt_properties_get(p, property);
@@ -477,6 +483,7 @@ static OfxStatus propGetDoubleN(OfxPropertySetHandle properties,
         if (!p)
             return kOfxStatErrBadIndex;
         if (!mlt_properties_exists(p, property)) {
+            mlt_log_debug(NULL, "[openfx] propGetDoubleN: '%s'[%d] not found\n", property, i);
             return kOfxStatErrUnknown;
         }
         value[i] = mlt_properties_get_double(p, property);
@@ -496,6 +503,7 @@ static OfxStatus propGetIntN(OfxPropertySetHandle properties,
         if (!p)
             return kOfxStatErrBadIndex;
         if (!mlt_properties_exists(p, property)) {
+            mlt_log_debug(NULL, "[openfx] propGetIntN: '%s'[%d] not found\n", property, i);
             return kOfxStatErrUnknown;
         }
         value[i] = mlt_properties_get_int(p, property);
@@ -915,6 +923,7 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+    } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeCustom) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeBytes) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeGroup) == 0) {
@@ -1505,6 +1514,7 @@ static void mltofx_log_status_code(OfxStatus code, char *msg)
 
 const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
 {
+    mlt_log_debug(NULL, "fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
     if (strcmp(suiteName, kOfxImageEffectSuite) == 0 && suiteVersion == 1) {
         return &MltOfxImageEffectSuiteV1;
     } else if (strcmp(suiteName, kOfxParameterSuite) == 0 && suiteVersion == 1) {
@@ -1545,19 +1555,62 @@ OfxHost MltOfxHost = {NULL, MltOfxfetchSuite};
 
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
 {
+    mlt_log_debug(NULL, "Initializing OpenFX host properties\n");
+    // Core host identity and API version
     propSetString(host_properties, kOfxPropName, 0, "MLT");
+    propSetString(host_properties, kOfxPropLabel, 0, "MLT");
+    propSetString(host_properties, kOfxPropVersionLabel, 0, LIBMLT_VERSION);
+    propSetInt(host_properties, kOfxPropVersion, 0, LIBMLT_VERSION_MAJOR);
+    propSetInt(host_properties, kOfxPropVersion, 1, LIBMLT_VERSION_MINOR);
+    propSetInt(host_properties, kOfxPropVersion, 2, LIBMLT_VERSION_REVISION);
+    propSetInt(host_properties, kOfxPropAPIVersion, 0, 1);
+    propSetInt(host_properties, kOfxPropAPIVersion, 1, 5);
+
+    // Image effect context and supported pixel formats
     propSetString(host_properties, kOfxImageEffectPropContext, 0, kOfxImageEffectContextFilter);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 0, kOfxBitDepthByte);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 1, kOfxBitDepthShort);
-
     propSetString(host_properties,
                   kOfxImageEffectPropSupportedComponents,
                   0,
                   kOfxImageComponentRGBA);
     propSetString(host_properties, kOfxImageEffectPropSupportedComponents, 1, kOfxImageComponentRGB);
+
+    // Image effect host capabilities
+    propSetInt(host_properties, kOfxImageEffectHostPropIsBackground, 0, 1);
     propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipDepths, 0, 0);
-    propSetString(host_properties, kOfxImageEffectPropOpenGLRenderSupported, 0, "false");
+    propSetInt(host_properties, kOfxImageEffectPropSupportsMultipleClipPARs, 0, 0);
+    propSetInt(host_properties, kOfxImageEffectPropSetableFrameRate, 0, 0);
+    propSetInt(host_properties, kOfxImageEffectPropSetableFielding, 0, 0);
+    propSetInt(host_properties, kOfxImageEffectInstancePropSequentialRender, 0, 0);
     propSetInt(host_properties, kOfxImageEffectPropSupportsOverlays, 0, 0);
+    propSetString(host_properties,
+                  kOfxImageEffectHostPropNativeOrigin,
+                  0,
+                  kOfxHostNativeOriginBottomLeft);
+
+    // GPU/accelerated rendering — not supported; CPU rendering is supported
+    propSetString(host_properties, kOfxImageEffectPropCPURenderSupported, 0, "true");
+    propSetString(host_properties, kOfxImageEffectPropOpenGLRenderSupported, 0, "false");
+    propSetString(host_properties, kOfxImageEffectPropCudaRenderSupported, 0, "false");
+    propSetString(host_properties, kOfxImageEffectPropCudaStreamSupported, 0, "false");
+    propSetString(host_properties, kOfxImageEffectPropMetalRenderSupported, 0, "false");
+    propSetString(host_properties, kOfxImageEffectPropOpenCLRenderSupported, 0, "false");
+    propSetString(host_properties, kOfxImageEffectPropOpenCLSupported, 0, "false");
+
+    // Parameter host capabilities
+    propSetInt(host_properties, kOfxParamHostPropSupportsCustomAnimation, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropSupportsStringAnimation, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropSupportsBooleanAnimation, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropSupportsChoiceAnimation, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropSupportsStrChoiceAnimation, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropSupportsStrChoice, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropSupportsCustomInteract, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropMaxParameters, 0, -1);
+    propSetInt(host_properties, kOfxParamHostPropMaxPages, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropPageRowColumnCount, 0, 0);
+    propSetInt(host_properties, kOfxParamHostPropPageRowColumnCount, 1, 0);
+    propSetInt(host_properties, kOfxParamHostPropSupportsParametricAnimation, 0, 0);
 }
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect)
@@ -1868,7 +1921,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         }
     }
     if (i == count) {
-        mlt_log_debug(NULL, "[ofx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
+        mlt_log_verbose(NULL, "[openfx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
         // since plugin is not filter then load fail so we must not unload it
         return 0;
     }
@@ -1887,7 +1940,9 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         }
     }
     if (i == count) {
-        mlt_log_debug(NULL, "[ofx] Plugin not byte/short: %s\n", plugin->pluginIdentifier);
+        mlt_log_verbose(NULL,
+                        "[openfx] Plugin does not support byte or short pixels: %s\n",
+                        plugin->pluginIdentifier);
         // since no pixel depth is supported by us then plugin is load fail so we must not unload it
         return 0;
     }
