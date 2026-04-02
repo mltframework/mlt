@@ -15,7 +15,7 @@ parameters:
     type: color
     title: Key Color
     description: The color to keep. All others are desaturated.
-    default: #c00000
+    default: "#c00000"
     mutable: yes
     animation: yes
 

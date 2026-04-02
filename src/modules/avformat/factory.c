@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -238,6 +238,18 @@ static void add_parameters(mlt_properties params,
             mlt_properties_set(p, "type", "string");
             break;
         }
+
+        // Fix up minimum/maximum if serialized as scientific notation (invalid YAML number)
+        const char *props[] = {"minimum", "maximum", NULL};
+        for (int pi = 0; props[pi]; pi++) {
+            const char *v = mlt_properties_get(p, props[pi]);
+            if (v && (strchr(v, 'e') || strchr(v, 'E'))) {
+                char strbuf[32];
+                snprintf(strbuf, sizeof(strbuf), "%f", mlt_properties_get_double(p, props[pi]));
+                mlt_properties_set(p, props[pi], strbuf);
+            }
+        }
+
         // If the option belongs to a group (unit) and is not a constant (keyword value)
         if (opt->unit && opt->type != AV_OPT_TYPE_CONST) {
             // Create a 'values' sequence.

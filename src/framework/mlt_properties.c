@@ -3,7 +3,7 @@
  * \brief Properties class definition
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -2019,8 +2019,10 @@ mlt_properties mlt_properties_parse_yaml(const char *filename)
                 if (strncmp(ptemp, "...", 3) == 0)
                     break;
 
-                // Chomp the string
-                temp[strlen(temp) - 1] = '\0';
+                // Chomp the newline, but only if present (last line may lack one)
+                int len = strlen(temp);
+                if (len > 0 && (temp[len - 1] == '\n' || temp[len - 1] == '\r'))
+                    temp[len - 1] = '\0';
 
                 // Skip blank lines, comment lines, and document separator
                 if (strcmp(ptemp, "") && ptemp[0] != '#' && strncmp(ptemp, "---", 3)
@@ -2149,8 +2151,22 @@ static void strbuf_escape(strbuf output, const char *value, char c)
 
 static inline int has_reserved_char(const char *string)
 {
-    return strchr(string, ':') || strchr(string, '[') || strchr(string, '\'')
-           || strchr(string, '#');
+    return strchr(string, ':') || strchr(string, '[') || strchr(string, ']') || strchr(string, '{')
+           || strchr(string, '}') || strchr(string, '\'') || strchr(string, '#');
+}
+
+static inline int is_numeric_string(const char *s)
+{
+    if (*s == '-' || *s == '+')
+        s++;
+    if (!*s)
+        return 0;
+    while (*s) {
+        if (!isdigit((unsigned char) *s) && *s != '.' && *s != 'e' && *s != 'E')
+            return 0;
+        s++;
+    }
+    return 1;
 }
 
 /** Convert a line string into a YAML block literal.
@@ -2216,7 +2232,8 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                         output_yaml_block_literal(output,
                                                   value,
                                                   indent + strlen(name) + strlen("|"));
-                    } else if (has_reserved_char(value)) {
+                    } else if (has_reserved_char(value)
+                               || (!strcmp(name, "identifier") && is_numeric_string(value))) {
                         strbuf_printf(output, "\"");
                         strbuf_escape(output, value, '"');
                         strbuf_printf(output, "\"\n", value);
@@ -2254,7 +2271,8 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                 if (strchr(value, '\n')) {
                     strbuf_printf(output, "|\n");
                     output_yaml_block_literal(output, value, indent + strlen(name) + strlen(": "));
-                } else if (has_reserved_char(value)) {
+                } else if (has_reserved_char(value)
+                           || (!strcmp(name, "identifier") && is_numeric_string(value))) {
                     strbuf_printf(output, "\"");
                     strbuf_escape(output, value, '"');
                     strbuf_printf(output, "\"\n");

@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,7 +149,7 @@ static void add_port_to_metadata(mlt_properties p, plugin_desc_t *desc, int j)
         mlt_properties_set_double(p, "maximum", upper);
     }
     if (LADSPA_IS_HINT_LOGARITHMIC(hint_descriptor))
-        mlt_properties_set(p, "scale", "log");
+        mlt_properties_set(p, "description", "logarithmic scale recommended");
     mlt_properties_set(p, "mutable", "yes");
     mlt_properties_set(p, "animation", "yes");
 }
