@@ -2160,12 +2160,11 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             }
         }
 
-        // TODO: un-commment when this uses the MLT property animation APIs
-        // if (strcmp(param_type, kOfxParamTypeGroup) != 0) {
-        //     int animation = 1;
-        //     propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropAnimates, 0, &animation);
-        //     mlt_properties_set(p, "animation", animation ? "yes" : "no");
-        // }
+        if (strcmp(param_type, kOfxParamTypeGroup) != 0) {
+            int animation = 1;
+            propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropAnimates, 0, &animation);
+            mlt_properties_set(p, "animation", animation ? "yes" : "no");
+        }
         mlt_properties_set(p, "mutable", "yes");
 
         // Iterate through the properties of the first dimension to find all the params.
