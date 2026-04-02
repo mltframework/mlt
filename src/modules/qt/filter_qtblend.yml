@@ -65,7 +65,6 @@ parameters:
       Default is center (0.5, 0.5). Takes precedence over rotate_center when set.
     mutable: yes
     animation: yes
-    default: "0.5 0.5 0 0 0"
 
   - identifier: background_color
     title: Background color
