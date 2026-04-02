@@ -338,6 +338,7 @@ static mlt_properties avfilter_metadata(mlt_service_type type, const char *id, v
     mlt_properties_set(metadata, "version", LIBAVFILTER_IDENT);
     mlt_properties_set(metadata, "identifier", id);
     mlt_properties_set(metadata, "description", f->description);
+    mlt_properties_set(metadata, "language", "en");
     mlt_properties_set(
         metadata,
         "notes",
