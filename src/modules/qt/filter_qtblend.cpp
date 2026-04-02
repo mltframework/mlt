@@ -279,10 +279,6 @@ mlt_filter filter_qtblend_init(mlt_profile profile, mlt_service_type type, const
         filter->process = filter_process;
         mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
         mlt_properties_set_int(properties, "rotate_center", 0);
-
-        // Initialize rotate_anchor property with center position (0.5, 0.5)
-        mlt_rect default_anchor = {0.5, 0.5, 0.0, 0.0, 0.0};
-        mlt_properties_set_rect(properties, "rotate_anchor", default_anchor);
     } else {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Filter qtblend failed\n");
 
