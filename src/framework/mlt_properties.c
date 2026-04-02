@@ -2169,6 +2169,11 @@ static inline int is_numeric_string(const char *s)
     return 1;
 }
 
+static inline int is_yaml_keyword(const char *s)
+{
+    return !strcmp(s, "null") || !strcmp(s, "~");
+}
+
 /** Convert a line string into a YAML block literal.
  *
  * \private \memberof strbuf_s
@@ -2232,7 +2237,7 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                         output_yaml_block_literal(output,
                                                   value,
                                                   indent + strlen(name) + strlen("|"));
-                    } else if (has_reserved_char(value)
+                    } else if (has_reserved_char(value) || is_yaml_keyword(value)
                                || (!strcmp(name, "identifier") && is_numeric_string(value))) {
                         strbuf_printf(output, "\"");
                         strbuf_escape(output, value, '"');
@@ -2271,7 +2276,7 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                 if (strchr(value, '\n')) {
                     strbuf_printf(output, "|\n");
                     output_yaml_block_literal(output, value, indent + strlen(name) + strlen(": "));
-                } else if (has_reserved_char(value)
+                } else if (has_reserved_char(value) || is_yaml_keyword(value)
                            || (!strcmp(name, "identifier") && is_numeric_string(value))) {
                     strbuf_printf(output, "\"");
                     strbuf_escape(output, value, '"');
