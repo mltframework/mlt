@@ -47,7 +47,7 @@
         {
             "name": "cc-debug",
             "displayName": "default system compiler (debug)",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "generator": "Ninja",
             "environment": {
                 "QT_VERSION": "6.8.3",
@@ -57,10 +57,11 @@
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "$env{HOME}/opt",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_PREFIX_PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos;$env{HOME}/.local;$env{HOME}/opt;/usr/local;/opt/local",
+                "CMAKE_PREFIX_PATH": "$env{HOME}/Qt/$env{QT_VERSION}/gcc_64;$env{HOME}/Qt/$env{QT_VERSION}/macos;$env{HOME}/.local;$env{HOME}/opt;/usr/local;/opt/local",
                 "RELOCATABLE": "OFF",
                 "MOD_GDK": "OFF",
-                "MOD_SDL1": "OFF"
+                "MOD_SDL1": "OFF",
+                "BUILD_TESTING": "ON"
             }
         }
     ],
