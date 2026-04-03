@@ -41,13 +41,8 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
     target_link_libraries(${ARG_TARGET} PRIVATE
       mlt++
       mlt
-      m
-      Threads::Threads
       Qt${ARG_QT_VERSION}::Core
-      Qt${ARG_QT_VERSION}::Gui
-      Qt${ARG_QT_VERSION}::Network
       Qt${ARG_QT_VERSION}::Widgets
-      Qt${ARG_QT_VERSION}::Xml
       Glaxnimate::Core
     )
     target_include_directories(${ARG_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

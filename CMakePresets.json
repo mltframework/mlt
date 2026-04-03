@@ -27,7 +27,7 @@
                 "MOD_PLUSGPL": "OFF",
                 "MOD_QT6": "ON",
                 "MOD_SOX": "OFF",
-                "MOD_GLAXNIMATE_QT6": "OFF",
+                "MOD_GLAXNIMATE_QT6": "ON",
                 "MOD_RESAMPLE": "OFF",
                 "MOD_RTAUDIO": "OFF",
                 "MOD_RUBBERBAND": "ON",
