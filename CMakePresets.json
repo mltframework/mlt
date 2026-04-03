@@ -45,31 +45,67 @@
             "generator": "Ninja"
         },
         {
-            "name": "cc-debug",
-            "displayName": "default system compiler (debug)",
-            "binaryDir": "${sourceDir}/build/${presetName}",
+            "name": "_cc-debug-base",
+            "hidden": true,
             "generator": "Ninja",
             "environment": {
                 "QT_VERSION": "6.8.3",
-                "PKG_CONFIG_PATH": "$env{HOME}/.local/lib/pkgconfig:$env{HOME}/.local/lib64/pkgconfig:$env{HOME}/opt/lib/pkgconfig:$env{HOME}/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$penv{PKG_CONFIG_PATH}",
-                "PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos/bin:$env{HOME}/opt/bin:/usr/local/bin:/opt/local/bin:$penv{PATH}"
+                "PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos/bin:$env{HOME}/opt/bin:/usr/local/bin:/opt/local/bin:$penv{PATH}",
+                "PKG_CONFIG_PATH": "$env{HOME}/.local/lib/pkgconfig:$env{HOME}/.local/lib64/pkgconfig:$env{HOME}/opt/lib/pkgconfig:$env{HOME}/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$penv{PKG_CONFIG_PATH}"
             },
             "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "$env{HOME}/opt",
                 "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_FLAGS": "-I/usr/local/include",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/opt",
                 "CMAKE_PREFIX_PATH": "$env{HOME}/Qt/$env{QT_VERSION}/gcc_64;$env{HOME}/Qt/$env{QT_VERSION}/macos;$env{HOME}/.local;$env{HOME}/opt;/usr/local;/opt/local",
-                "RELOCATABLE": "OFF",
-                "MOD_GDK": "OFF",
                 "MOD_SDL1": "OFF",
+                "RELOCATABLE": "OFF"
+            }
+        },
+        {
+            "name": "cc-debug-linux",
+            "displayName": "default system compiler (debug)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "_cc-debug-base",
+            "condition": {
+                "type": "notEquals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "cacheVariables": {
                 "BUILD_TESTING": "ON"
+            }
+        },
+        {
+            "name": "cc-debug-macos",
+            "displayName": "default system compiler (debug)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "_cc-debug-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "cacheVariables": {
+                "BUILD_TESTING": "OFF",
+                "MOD_GDK": "OFF"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "clang-format_install",
+            "name": "clang-format_install-linux",
             "displayName": "clang-format, build, install",
-            "configurePreset": "cc-debug",
+            "configurePreset": "cc-debug-linux",
+            "targets": [
+                "clang-format",
+                "install"
+            ]
+        },
+        {
+            "name": "clang-format_install-macos",
+            "displayName": "clang-format, build, install",
+            "configurePreset": "cc-debug-macos",
             "targets": [
                 "clang-format",
                 "install"
