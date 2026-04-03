@@ -190,6 +190,8 @@ static OfxStatus imageMemoryFree(OfxImageMemoryHandle memoryHandle)
 
 static OfxStatus imageMemoryLock(OfxImageMemoryHandle memoryHandle, void **returnedPtr)
 {
+    if (returnedPtr)
+        *returnedPtr = memoryHandle;
     return kOfxStatOK;
 }
 
@@ -653,14 +655,8 @@ static OfxStatus paramGetPropertySet(OfxParamHandle param, OfxPropertySetHandle 
     return kOfxStatOK;
 }
 
-static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
+static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 {
-    if (!paramHandle)
-        return kOfxStatErrBadHandle;
-
-    va_list ap;
-    va_start(ap, paramHandle);
-
     mlt_properties param = (mlt_properties) paramHandle;
     char *param_type = mlt_properties_get(param, "t");
     mlt_properties param_props = mlt_properties_get_properties(param, "p");
@@ -673,25 +669,20 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
             = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
         if (status != kOfxStatOK) {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
-            if (status != kOfxStatOK) {
-                va_end(ap);
+            if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
-            }
         }
     } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
         double *value = va_arg(ap, double *);
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
-
         if (status != kOfxStatOK) {
             status = propGetDouble((OfxPropertySetHandle) param_props,
                                    "OfxParamPropDefault",
                                    0,
                                    value);
-            if (status != kOfxStatOK) {
-                va_end(ap);
+            if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
-            }
         }
     } else if (strcmp(param_type, kOfxParamTypeString) == 0
                || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
@@ -703,10 +694,8 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
                                    "OfxParamPropDefault",
                                    0,
                                    value);
-            if (status != kOfxStatOK) {
-                va_end(ap);
+            if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
-            }
         }
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
         double *red = va_arg(ap, double *);
@@ -733,10 +722,8 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
                                    "OfxParamPropDefault",
                                    3,
                                    alpha);
-            if (status != kOfxStatOK) {
-                va_end(ap);
+            if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
-            }
         }
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
         double *red = va_arg(ap, double *);
@@ -757,12 +744,9 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
                                    green);
             status
                 = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
-            if (status != kOfxStatOK) {
-                va_end(ap);
+            if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
-            }
         }
-
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
         double *Y = va_arg(ap, double *);
         double *X = va_arg(ap, double *);
@@ -774,25 +758,23 @@ static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
         if (status != kOfxStatOK) {
             status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
             status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
-
-            if (status != kOfxStatOK) {
-                va_end(ap);
+            if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
-            }
         }
-
-    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeCustom) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeBytes) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeGroup) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePage) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePushButton) == 0) {
     }
 
-    va_end(ap);
     return kOfxStatOK;
+}
+
+static OfxStatus paramGetValue(OfxParamHandle paramHandle, ...)
+{
+    if (!paramHandle)
+        return kOfxStatErrBadHandle;
+    va_list ap;
+    va_start(ap, paramHandle);
+    OfxStatus status = paramGetValueImpl(paramHandle, ap);
+    va_end(ap);
+    return status;
 }
 
 static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
@@ -801,157 +783,23 @@ static OfxStatus paramGetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
         return kOfxStatErrBadHandle;
     va_list ap;
     va_start(ap, time);
-
-    mlt_properties param = (mlt_properties) paramHandle;
-    char *param_type = mlt_properties_get(param, "t");
-    mlt_properties param_props = mlt_properties_get_properties(param, "p");
-
-    if (strcmp(param_type, kOfxParamTypeInteger) == 0
-        || strcmp(param_type, kOfxParamTypeBoolean) == 0
-        || strcmp(param_type, kOfxParamTypeChoice) == 0) {
-        int *value = va_arg(ap, int *);
-        OfxStatus status
-            = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
-        if (status != kOfxStatOK) {
-            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
-            if (status != kOfxStatOK) {
-                va_end(ap);
-                return kOfxStatErrUnknown;
-            }
-        }
-    } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
-        double *value = va_arg(ap, double *);
-        OfxStatus status
-            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
-
-        if (status != kOfxStatOK) {
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   0,
-                                   value);
-            if (status != kOfxStatOK) {
-                va_end(ap);
-                return kOfxStatErrUnknown;
-            }
-        }
-    } else if (strcmp(param_type, kOfxParamTypeString) == 0
-               || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
-        char **value = va_arg(ap, char **);
-        OfxStatus status
-            = propGetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
-        if (status != kOfxStatOK) {
-            status = propGetString((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   0,
-                                   value);
-            if (status != kOfxStatOK) {
-                va_end(ap);
-                return kOfxStatErrUnknown;
-            }
-        }
-    } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
-        double *red = va_arg(ap, double *);
-        double *green = va_arg(ap, double *);
-        double *blue = va_arg(ap, double *);
-        double *alpha = va_arg(ap, double *);
-
-        OfxStatus status
-            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
-
-        if (status != kOfxStatOK) {
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   1,
-                                   green);
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   3,
-                                   alpha);
-            if (status != kOfxStatOK) {
-                va_end(ap);
-                return kOfxStatErrUnknown;
-            }
-        }
-    } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
-        double *red = va_arg(ap, double *);
-        double *green = va_arg(ap, double *);
-        double *blue = va_arg(ap, double *);
-
-        OfxStatus status
-            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-
-        if (status != kOfxStatOK) {
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   1,
-                                   green);
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
-            if (status != kOfxStatOK) {
-                va_end(ap);
-                return kOfxStatErrUnknown;
-            }
-        }
-    } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-        double *Y = va_arg(ap, double *);
-        double *X = va_arg(ap, double *);
-
-        OfxStatus status
-            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
-
-        if (status != kOfxStatOK) {
-            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
-            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
-
-            if (status != kOfxStatOK) {
-                va_end(ap);
-                return kOfxStatErrUnknown;
-            }
-        }
-    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeCustom) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeBytes) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeGroup) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePage) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePushButton) == 0) {
-    }
-
+    OfxStatus status = paramGetValueImpl(paramHandle, ap);
     va_end(ap);
-    return kOfxStatOK;
+    return status;
 }
 
 static OfxStatus paramGetDerivative(OfxParamHandle paramHandle, OfxTime time, ...)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
 static OfxStatus paramGetIntegral(OfxParamHandle paramHandle, OfxTime time1, OfxTime time2, ...)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
-static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
+static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
 {
-    if (!paramHandle)
-        return kOfxStatErrBadHandle;
-    va_list ap;
-    va_start(ap, paramHandle);
-
     mlt_properties param = (mlt_properties) paramHandle;
     char *param_type = mlt_properties_get(param, "t");
     mlt_properties param_props = mlt_properties_get_properties(param, "p");
@@ -964,7 +812,6 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
     } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
         double value = va_arg(ap, double);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
-    } else if (strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
         mlt_color value = va_arg(ap, mlt_color);
 
@@ -984,26 +831,27 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
         double green = (double) value.g / 255.0;
         double blue = (double) value.b / 255.0;
 
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, red);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, green);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, blue);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
         mlt_rect value = va_arg(ap, mlt_rect);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
-    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeCustom) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeBytes) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeGroup) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePage) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePushButton) == 0) {
     }
 
-    va_end(ap);
     return kOfxStatOK;
+}
+
+static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
+{
+    if (!paramHandle)
+        return kOfxStatErrBadHandle;
+    va_list ap;
+    va_start(ap, paramHandle);
+    OfxStatus status = paramSetValueImpl(paramHandle, ap);
+    va_end(ap);
+    return status;
 }
 
 static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
@@ -1011,52 +859,23 @@ static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, .
     mlt_log_debug(NULL, "<----paramSetValueAtTime---->\n");
     if (!paramHandle)
         return kOfxStatErrBadHandle;
-
     va_list ap;
     va_start(ap, time);
-
-    mlt_properties param = (mlt_properties) paramHandle;
-    char *param_type = mlt_properties_get(param, "t");
-    mlt_properties param_props = mlt_properties_get_properties(param, "p");
-
-    if (strcmp(param_type, kOfxParamTypeInteger) == 0
-        || strcmp(param_type, kOfxParamTypeChoice) == 0
-        || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
-        int value = va_arg(ap, int);
-        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
-    } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
-        double value = va_arg(ap, double);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
-    } else if (strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-        mlt_rect value = va_arg(ap, mlt_rect);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
-    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeCustom) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeBytes) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypeGroup) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePage) == 0) {
-    } else if (strcmp(param_type, kOfxParamTypePushButton) == 0) {
-    }
-
+    OfxStatus status = paramSetValueImpl(paramHandle, ap);
     va_end(ap);
-    return kOfxStatOK;
+    return status;
 }
 
 static OfxStatus paramGetNumKeys(OfxParamHandle paramHandle, unsigned int *numberOfKeys)
 {
+    if (numberOfKeys)
+        *numberOfKeys = 0;
     return kOfxStatOK;
 }
 
 static OfxStatus paramGetKeyTime(OfxParamHandle paramHandle, unsigned int nthKey, OfxTime *time)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
 static OfxStatus paramGetKeyIndex(OfxParamHandle paramHandle,
@@ -1064,7 +883,7 @@ static OfxStatus paramGetKeyIndex(OfxParamHandle paramHandle,
                                   int direction,
                                   int *index)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
 static OfxStatus paramDeleteKey(OfxParamHandle paramHandle, OfxTime time)
@@ -1247,7 +1066,7 @@ static OfxStatus interactRedraw(OfxInteractHandle interactInstance)
 static OfxStatus interactGetPropertySet(OfxInteractHandle interactInstance,
                                         OfxPropertySetHandle *property)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
 static OfxInteractSuiteV1 MltOfxInteractSuiteV1 = {interactSwapBuffers,
@@ -1338,7 +1157,7 @@ static OfxProgressSuiteV2 MltOfxProgressSuiteV2 = {progressStartV2, progressUpda
 
 static OfxStatus getTime(void *instance, double *time)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
 static OfxStatus gotoTime(void *instance, double time)
@@ -1348,7 +1167,7 @@ static OfxStatus gotoTime(void *instance, double time)
 
 static OfxStatus getTimeBounds(void *instance, double *firstTime, double *lastTime)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
 static OfxTimeLineSuiteV1 MltOfxTimeLineSuiteV1 = {getTime, gotoTime, getTimeBounds};
@@ -1359,6 +1178,8 @@ static OfxStatus parametricParamGetValue(OfxParamHandle param,
                                          double parametricPosition,
                                          double *returnValue)
 {
+    if (returnValue)
+        *returnValue = 0.0;
     return kOfxStatOK;
 }
 
@@ -1367,13 +1188,15 @@ static OfxStatus parametricParamGetNControlPoints(OfxParamHandle param,
                                                   double time,
                                                   int *returnValue)
 {
+    if (returnValue)
+        *returnValue = 0;
     return kOfxStatOK;
 }
 
 static OfxStatus parametricParamGetNthControlPoint(
     OfxParamHandle param, int curveIndex, double time, int nthCtl, double *key, double *value)
 {
-    return kOfxStatOK;
+    return kOfxStatErrUnsupported;
 }
 
 static OfxStatus parametricParamSetNthControlPoint(OfxParamHandle param,
