@@ -66,6 +66,7 @@ static int filter_get_image(mlt_frame frame,
 
         mlt_position position = mlt_filter_get_position(filter, frame);
         mlt_position length = mlt_filter_get_length2(filter, frame);
+        mlt_service_lock(MLT_FILTER_SERVICE(filter));
         int params_count = mlt_properties_count(params);
         for (int i = 0; i < params_count; ++i) {
             char *param_key = mlt_properties_get_name(params, i);
@@ -166,13 +167,12 @@ static int filter_get_image(mlt_frame frame,
                                     *format,
                                     pixel_aspect_ratio);
 
-        mlt_service_lock(MLT_FILTER_SERVICE(filter));
         mltofx_action_render(plugin, image_effect, *width, *height);
-        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
         mlt_image_close(&src_img_copy);
 
         mltofx_end_sequence_render(plugin, image_effect);
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
     }
 
     if (*format != requested_format) {
