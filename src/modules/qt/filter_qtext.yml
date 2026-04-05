@@ -245,7 +245,7 @@ parameters:
     
   - identifier: typewriter
     title: Typewriter Effect
-    type: integer
+    type: boolean
     description: >
       Enable typewriter effect where text appears progressively over time.
     default: 0

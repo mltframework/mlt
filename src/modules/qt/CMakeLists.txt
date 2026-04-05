@@ -32,6 +32,7 @@ function(mlt_add_qt_module ARG_TARGET)
       gps_drawing.cpp
       gps_parser.cpp gps_parser.h
       graph.cpp graph.h
+      kdenlivegraphics.cpp
       kdenlivetitle_wrapper.cpp
       producer_kdenlivetitle.c
       producer_qimage.c

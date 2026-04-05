@@ -82,7 +82,6 @@ parameters:
   - identifier: deinterlace
     description: Force the supplied file to be be deinterlaced if it is interlaced.
     type: integer
-    description:
     minimum: 0
     maximum: 1
     mutable: yes

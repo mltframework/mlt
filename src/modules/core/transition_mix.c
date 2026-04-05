@@ -1,6 +1,6 @@
 /*
  * transition_mix.c -- mix two audio streams
- * Copyright (C) 2003-2020 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,8 @@ static void mix_audio(double weight_start,
                       int channels_a,
                       int channels_b,
                       int channels_out,
-                      int samples)
+                      int samples,
+                      int power)
 {
     int i, j;
     double a, b, v;
@@ -59,10 +60,12 @@ static void mix_audio(double weight_start,
     double mix_step = (weight_end - weight_start) / samples;
 
     for (i = 0; i < samples; i++) {
+        double gain_b = power ? sin(mix * M_PI_2) : mix;
+        double gain_a = power ? cos(mix * M_PI_2) : 1.0 - mix;
         for (j = 0; j < channels_out; j++) {
             a = (double) buffer_a[i * channels_a + j];
             b = (double) buffer_b[i * channels_b + j];
-            v = mix * b + (1.0 - mix) * a;
+            v = gain_b * b + gain_a * a;
             buffer_a[i * channels_a + j] = v;
         }
         mix += mix_step;
@@ -280,7 +283,17 @@ static int transition_get_audio(mlt_frame frame_a,
             mix_start = 1.0 - mix_start;
             mix_end = 1.0 - mix_end;
         }
-        mix_audio(mix_start, mix_end, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples);
+        int power = mlt_properties_get_double(MLT_TRANSITION_PROPERTIES(transition), "start")
+                    < -1.0;
+        mix_audio(mix_start,
+                  mix_end,
+                  buffer_a,
+                  buffer_b,
+                  channels_a,
+                  channels_b,
+                  *channels,
+                  *samples,
+                  power);
     }
 
     // Copy the audio from the dest buffer into the frame.

@@ -1,0 +1,23 @@
+f=webm
+
+acodec=libopus
+ar=48000
+ab=128k
+
+vcodec=libvpx-vp9
+vprofile=2
+pix_fmt=yuv420p10le
+vb=0
+crf=16
+rc_lookahead=16
+quality=good
+speed=2
+slices=4
+tile-columns=6
+frame-parallel=1
+auto-alt-ref=1
+lag-in-frames=25
+row-mt=1
+
+meta.preset.name=ten_bit/10-bit VP9 WebM (Opus)
+meta.preset.extension=webm

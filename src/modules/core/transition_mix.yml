@@ -1,8 +1,8 @@
-schema_version: 0.2
+schema_version: 7.0
 type: transition
 identifier: mix
 title: Mix
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -19,8 +19,9 @@ parameters:
     type: float
     mutable: yes
     description: >
-      The mix level to apply to the second frame. Any negative value causes an
-      automatic crossfade from 0 to 1.
+      The mix level to apply to the second frame. -1 causes an automatic
+      linear crossfade from 0 to 1. -2 causes an automatic constant-power
+      (equal-power) crossfade from 0 to 1.
 
   - identifier: end
     title: End

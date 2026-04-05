@@ -15,7 +15,7 @@ parameters:
     type: color
     argument: yes
     mutable: yes
-    default: #0000ff
+    default: "#0000ff"
     animation: yes
 
   - identifier: variance
