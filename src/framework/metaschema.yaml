@@ -1,5 +1,5 @@
 --- # A metadata schema in Kwalify: http://www.kuwata-lab.com/kwalify/
-# Version: 7.0
+# Version: 7.1
 type: map
 mapping:
   "schema_version": # This should match the version comment above
@@ -70,14 +70,15 @@ mapping:
             type: str
             enum:
               - boolean # 0 or 1; not 'true', 'false', 'yes', or 'no' strings at this time
+              - color # 0xrrggbbaa | #rrggbb | #aarrggbb
               - float
               - geometry
+              - group # for grouping parameters in a UI, this is not an mlt_property_type
               - integer
               - properties # for passing options to encapsulated services
+              - rect  # "X Y W H" or "X/Y:WxH"
               - string
               - time # time string values (clock, SMPTE) can be accepted in addition to frames
-              - rect  # "X Y W H" or "X/Y:WxH"
-              - color # 0xrrggbbaa | #rrggbb | #aarrggbb
           "service-name": # for type: properties, a reference to another service
             type: str     # format: type.service, e.g. transition.composite
           "title": # A UI can use this for a field label
@@ -114,8 +115,10 @@ mapping:
               - knob
               - listbox
               - dropdown # aka HTML select or GtkOptionMenu
+              - point
               - radio
               - rectangle # for use with type: geometry
+              - size
               - slider
               - spinner
               - text
@@ -138,4 +141,9 @@ mapping:
                       # widget: combo or if "other" is in this sequence
             sequence:
               - type: scalar
- 
+          "group": # A UI can use this to group parameters together
+            type: str
+          "normalized_coordinates": # For types that represent coordinates, whether values are normalized to 0..1
+            type: bool
+            default: no
+
