@@ -23,19 +23,18 @@
 #include <cstring>
 #include <framework/mlt.h>
 #include <QApplication>
+#include <QPainter>
 
-#include "io/io_registry.hpp"
-#include "model/assets/assets.hpp"
-#include "model/assets/composition.hpp"
-#include "model/document.hpp"
+#include "glaxnimate/io/io_registry.hpp"
+#include "glaxnimate/model/assets/assets.hpp"
+#include "glaxnimate/model/assets/composition.hpp"
+#include "glaxnimate/model/document.hpp"
+#include "glaxnimate/module/module.hpp"
+#include "glaxnimate/renderer/renderer.hpp"
+
 #if defined(mltglaxnimate_qt6_EXPORTS)
 #include "mltglaxnimate_qt6_export.h"
 #define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_QT6_EXPORT
-#elif defined(mltglaxnimate_EXPORTS)
-#include "mltglaxnimate_export.h"
-#define MLT_GLAXNIMATE_MODULE_EXPORT MLTGLAXNIMATE_EXPORT
-#else
-#define MLT_GLAXNIMATE_MODULE_EXPORT
 #endif
 
 using namespace glaxnimate;
@@ -47,6 +46,12 @@ private:
     std::unique_ptr<model::Document> m_document;
 
 public:
+    Glaxnimate()
+    {
+        // Initialize default format loaders and Qt meta types
+        glaxnimate::module::initialize();
+    }
+
     mlt_profile m_profile = nullptr;
 
     void setProducer(mlt_producer producer) { m_producer = producer; }
@@ -59,10 +64,15 @@ public:
 
     glaxnimate::model::Composition *composition() const
     {
-        return m_document->assets()->compositions->values[0];
+        auto comps = m_document->assets()->compositions.get();
+        if (comps->values.empty()) {
+            mlt_log_error(service(), "No compositions in Glaxnimate document\n");
+        }
+
+        return comps->values[0];
     }
 
-    QSize size() const { return composition()->size(); }
+    QSizeF size() const { return composition()->size(); }
 
     int duration() const
     {
@@ -97,14 +107,27 @@ public:
         if (!::qstrcmp("loop", mlt_properties_get(properties(), "eof"))) {
             pos %= duration();
         }
-        auto bg = mlt_properties_get_color(properties(), "background");
-        auto background = QColor(bg.r, bg.g, bg.b, bg.a);
         pos += toMltFps(composition()->animation->first_frame.get());
-        auto image = composition()->render_image(toGlaxnimateFps(pos),
-                                                 {*width, *height},
-                                                 background);
+
+        QImage image(*width, *height, QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+
+        auto renderer = renderer::RendererRegistry::instance().default_renderer(10);
+        renderer->set_image_surface(&image);
+        renderer->render_start();
+        composition()->paint(renderer.get(), toGlaxnimateFps(pos), model::VisualNode::Render);
+        renderer->render_end();
+
+        auto bg = mlt_properties_get_color(properties(), "background");
+        if (bg.r || bg.g || bg.b) {
+            auto background = QColor(bg.r, bg.g, bg.b, bg.a);
+            QPainter painter(&image);
+            painter.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+            painter.fillRect(image.rect(), background);
+        }
 
         *format = mlt_image_rgba;
+        image = image.convertToFormat(QImage::Format_RGBA8888);
         int size = mlt_image_format_size(*format, *width, *height, NULL);
         *buffer = static_cast<uint8_t *>(mlt_pool_alloc(size));
         memcpy(*buffer, image.constBits(), size);
@@ -117,21 +140,21 @@ public:
     {
         auto filename = QString::fromUtf8(fileName);
         auto importer = io::IoRegistry::instance().from_filename(filename, io::ImportExport::Import);
-        if (!importer || !importer->can_open()) {
-            mlt_log_error(service(), "Unknown importer\n");
+
+        if (!importer) {
+            mlt_log_error(service(), "No suitable importer for %s\n", fileName);
             return false;
         }
 
         QFile file(filename);
         if (!file.open(QIODevice::ReadOnly)) {
-            mlt_log_error(service(), "Could not open input file for reading\n");
+            mlt_log_error(service(), "Could not open input file %s for reading\n", fileName);
             return false;
         }
 
         m_document.reset(new model::Document(filename));
-        QVariantMap settings;
-        if (!importer->open(file, filename, m_document.get(), settings)) {
-            mlt_log_error(service(), "Error loading input file\n");
+        if (!importer->load(m_document.get(), file.readAll(), {}, filename)) {
+            mlt_log_error(service(), "Error loading input file %s\n", fileName);
             return false;
         }
 
@@ -279,11 +302,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     }
     snprintf(file,
              PATH_MAX,
-#if QT_VERSION_MAJOR < 6
-             "%s/glaxnimate/%s_%s.yml",
-#else
              "%s/glaxnimate-qt6/%s_%s.yml",
-#endif
              mlt_environment("MLT_DATA"),
              service_type,
              id);
