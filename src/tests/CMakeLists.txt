@@ -68,4 +68,69 @@ if(Kwalify_FOUND)
       add_test(NAME "kwalify:${KWALIFY_TEST_NAME}" COMMAND ${Kwalify_EXECUTABLE} -f "${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml" ${YML_FILE})
     endif()
   endforeach()
+
+  add_test(
+    NAME "kwalify:runtime:filters"
+    COMMAND
+      ${CMAKE_COMMAND}
+      -DMLT_EXECUTABLE=$<TARGET_FILE:melt>
+      -DKWALIFY_EXECUTABLE=${Kwalify_EXECUTABLE}
+      -DMETASCHEMA_FILE=${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml
+      -DLIST_QUERY=filters
+      -DQUERY_PREFIX=filter=
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/kwalify_runtime_query.cmake
+  )
+  set_tests_properties("kwalify:runtime:filters" PROPERTIES TIMEOUT 300)
+
+  add_test(
+    NAME "kwalify:runtime:transitions"
+    COMMAND
+      ${CMAKE_COMMAND}
+      -DMLT_EXECUTABLE=$<TARGET_FILE:melt>
+      -DKWALIFY_EXECUTABLE=${Kwalify_EXECUTABLE}
+      -DMETASCHEMA_FILE=${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml
+      -DLIST_QUERY=transitions
+      -DQUERY_PREFIX=transition=
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/kwalify_runtime_query.cmake
+  )
+  set_tests_properties("kwalify:runtime:transitions" PROPERTIES TIMEOUT 300)
+
+  add_test(
+    NAME "kwalify:runtime:producers"
+    COMMAND
+      ${CMAKE_COMMAND}
+      -DMLT_EXECUTABLE=$<TARGET_FILE:melt>
+      -DKWALIFY_EXECUTABLE=${Kwalify_EXECUTABLE}
+      -DMETASCHEMA_FILE=${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml
+      -DLIST_QUERY=producers
+      -DQUERY_PREFIX=producer=
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/kwalify_runtime_query.cmake
+  )
+  set_tests_properties("kwalify:runtime:producers" PROPERTIES TIMEOUT 300)
+
+  add_test(
+    NAME "kwalify:runtime:links"
+    COMMAND
+      ${CMAKE_COMMAND}
+      -DMLT_EXECUTABLE=$<TARGET_FILE:melt>
+      -DKWALIFY_EXECUTABLE=${Kwalify_EXECUTABLE}
+      -DMETASCHEMA_FILE=${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml
+      -DLIST_QUERY=links
+      -DQUERY_PREFIX=link=
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/kwalify_runtime_query.cmake
+  )
+  set_tests_properties("kwalify:runtime:links" PROPERTIES TIMEOUT 300)
+
+  add_test(
+    NAME "kwalify:runtime:consumers"
+    COMMAND
+      ${CMAKE_COMMAND}
+      -DMLT_EXECUTABLE=$<TARGET_FILE:melt>
+      -DKWALIFY_EXECUTABLE=${Kwalify_EXECUTABLE}
+      -DMETASCHEMA_FILE=${CMAKE_SOURCE_DIR}/src/framework/metaschema.yaml
+      -DLIST_QUERY=consumers
+      -DQUERY_PREFIX=consumer=
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/kwalify_runtime_query.cmake
+  )
+  set_tests_properties("kwalify:runtime:consumers" PROPERTIES TIMEOUT 300)
 endif()
