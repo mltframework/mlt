@@ -27,6 +27,67 @@ extern OfxHost MltOfxHost;
 extern mlt_properties mltofx_context;
 extern mlt_properties mltofx_dl;
 
+static mlt_image_format select_image_format(mlt_image_format incoming,
+                                            mltofx_depths_mask plugin_support_depths,
+                                            int plugin_handles_16bit,
+                                            int plugin_wants_rgba,
+                                            int plugin_wants_rgb)
+{
+    // Honour the incoming bit-depth: stay at 8-bit when the plugin handles byte,
+    // only escalate to 16-bit when it cannot.
+    if (incoming == mlt_image_rgb || incoming == mlt_image_rgba || incoming == mlt_image_yuv422
+        || incoming == mlt_image_yuv420p) {
+        if (plugin_support_depths & mltofx_depth_byte)
+            return plugin_wants_rgba ? mlt_image_rgba : mlt_image_rgb;
+        else if (plugin_handles_16bit && (plugin_wants_rgba || plugin_wants_rgb))
+            return mlt_image_rgba64;
+        else
+            return mlt_image_rgb;
+    } else {
+        // 10-bit or higher — prefer 16-bit OFX path when available
+        if (plugin_handles_16bit && (plugin_wants_rgba || plugin_wants_rgb))
+            return mlt_image_rgba64;
+        else
+            return plugin_wants_rgba ? mlt_image_rgba : mlt_image_rgb;
+    }
+}
+
+static void update_plugin_params(mlt_properties properties,
+                                 mlt_properties image_effect_params,
+                                 mlt_properties params,
+                                 mlt_position position,
+                                 mlt_position length)
+{
+    int params_count = mlt_properties_count(params);
+    for (int i = 0; i < params_count; ++i) {
+        char *param_key = mlt_properties_get_name(params, i);
+        mlt_properties param = mlt_properties_get_data(params, param_key, NULL);
+        char *param_name = mlt_properties_get(param, "identifier");
+        if (!param || !param_name)
+            continue;
+        char *type = mlt_properties_get(param, "type");
+        char *widget = mlt_properties_get(param, "widget");
+        if (!type)
+            continue;
+        if (widget && (strcmp(widget, "point") == 0 || strcmp(widget, "size") == 0)
+            && strcmp(type, "float") == 0) {
+            mlt_rect value = mlt_properties_anim_get_rect(properties, param_name, position, length);
+            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double2d, value);
+        } else if (strcmp(type, "float") == 0) {
+            double value = mlt_properties_anim_get_double(properties, param_name, position, length);
+            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double, value);
+        } else if (strcmp(type, "integer") == 0 || strcmp(type, "string") == 0
+                   || strcmp(type, "boolean") == 0) {
+            int value = mlt_properties_anim_get_int(properties, param_name, position, length);
+            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_int, value);
+        } else if (strcmp(type, "color") == 0) {
+            mlt_color value
+                = mlt_properties_anim_get_color(properties, param_name, position, length);
+            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_color, value);
+        }
+    }
+}
+
 static int filter_get_image(mlt_frame frame,
                             uint8_t **image,
                             mlt_image_format *format,
@@ -35,7 +96,6 @@ static int filter_get_image(mlt_frame frame,
                             int writable)
 {
     mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
-
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
     mlt_properties image_effect = mlt_properties_get_properties(properties, "ofx_image_effect");
@@ -47,225 +107,140 @@ static int filter_get_image(mlt_frame frame,
     mltofx_components_mask plugin_support_components = mltofx_plugin_supported_components(
         image_effect);
 
-    int plugin_handles_16bit = plugin_support_depths
-                               & (mltofx_depth_short | mltofx_depth_half | mltofx_depth_float);
-    int plugin_wants_rgba = plugin_support_components & mltofx_components_rgba;
-    int plugin_wants_rgb = plugin_support_components & mltofx_components_rgb;
+    // Format negotiation
+    const int plugin_handles_16bit = plugin_support_depths
+                                     & (mltofx_depth_short | mltofx_depth_half | mltofx_depth_float);
+    const int plugin_wants_rgba = plugin_support_components & mltofx_components_rgba;
+    const int plugin_wants_rgb = plugin_support_components & mltofx_components_rgb;
+    *format = select_image_format(*format,
+                                  plugin_support_depths,
+                                  plugin_handles_16bit,
+                                  plugin_wants_rgba,
+                                  plugin_wants_rgb);
 
-    if (*format == mlt_image_rgb || *format == mlt_image_rgba || *format == mlt_image_yuv422
-        || *format == mlt_image_yuv420p) {
-        // Keep 8-bit only when the plugin can handle byte
-        if (plugin_support_depths & mltofx_depth_byte) {
-            *format = plugin_wants_rgba ? mlt_image_rgba : mlt_image_rgb;
-        } else if (plugin_handles_16bit && (plugin_wants_rgba || plugin_wants_rgb)) {
-            *format = mlt_image_rgba64;
-        } else {
-            *format = mlt_image_rgb;
-        }
-    } else {
-        // 10-bit or higher
-        if (plugin_handles_16bit && (plugin_wants_rgba || plugin_wants_rgb)) {
-            *format = mlt_image_rgba64;
-        } else {
-            *format = plugin_wants_rgba ? mlt_image_rgba : mlt_image_rgb;
-        }
-    }
+    const int error = mlt_frame_get_image(frame, image, format, width, height, 1);
+    if (error)
+        return error;
 
-    int error = mlt_frame_get_image(frame, image, format, width, height, 1);
+    double pixel_aspect_ratio = mlt_frame_get_aspect_ratio(frame);
+    if (pixel_aspect_ratio <= 0.0)
+        pixel_aspect_ratio = 1.0;
 
-    if (error == 0) {
-        double pixel_aspect_ratio = mlt_frame_get_aspect_ratio(frame);
-        if (pixel_aspect_ratio <= 0.0)
-            pixel_aspect_ratio = 1.0;
+    mlt_position position = mlt_filter_get_position(filter, frame);
+    mlt_position length = mlt_filter_get_length2(filter, frame);
 
-        mlt_position position = mlt_filter_get_position(filter, frame);
-        mlt_position length = mlt_filter_get_length2(filter, frame);
-        mlt_service_lock(MLT_FILTER_SERVICE(filter));
-        int params_count = mlt_properties_count(params);
-        for (int i = 0; i < params_count; ++i) {
-            char *param_key = mlt_properties_get_name(params, i);
-            mlt_properties param = mlt_properties_get_data(params, param_key, NULL);
-            const char *param_name = mlt_properties_get(param, "identifier");
-            if (param && param_name) {
-                char *type = mlt_properties_get(param, "type");
-                char *widget = mlt_properties_get(param, "widget");
-                if (type != NULL) {
-                    if (widget != NULL
-                        && (strcmp(widget, "point") == 0 || strcmp(widget, "size") == 0)
-                        && strcmp(type, "float") == 0) {
-                        mlt_rect value = mlt_properties_anim_get_rect(properties,
-                                                                      param_name,
-                                                                      position,
-                                                                      length);
-                        mltofx_param_set_value(image_effect_params,
-                                               param_name,
-                                               mltofx_prop_double2d,
-                                               value);
-                    } else if (strcmp(type, "float") == 0) {
-                        double value = mlt_properties_anim_get_double(properties,
-                                                                      param_name,
-                                                                      position,
-                                                                      length);
-                        mltofx_param_set_value(image_effect_params,
-                                               param_name,
-                                               mltofx_prop_double,
-                                               value);
-                    } else if (strcmp(type, "integer") == 0) {
-                        int value
-                            = mlt_properties_anim_get_int(properties, param_name, position, length);
-                        mltofx_param_set_value(image_effect_params,
-                                               param_name,
-                                               mltofx_prop_int,
-                                               value);
-                    } else if (strcmp(type, "string") == 0) {
-                        int value
-                            = mlt_properties_anim_get_int(properties, param_name, position, length);
-                        mltofx_param_set_value(image_effect_params,
-                                               param_name,
-                                               mltofx_prop_int, // for handling option choice
-                                               value);
-                    } else if (strcmp(type, "boolean") == 0) {
-                        int value
-                            = mlt_properties_anim_get_int(properties, param_name, position, length);
-                        mltofx_param_set_value(image_effect_params,
-                                               param_name,
-                                               mltofx_prop_int,
-                                               value);
-                    } else if (strcmp(type, "color") == 0) {
-                        mlt_color value = mlt_properties_anim_get_color(properties,
-                                                                        param_name,
-                                                                        position,
-                                                                        length);
-                        mltofx_param_set_value(image_effect_params,
-                                               param_name,
-                                               mltofx_prop_color,
-                                               value);
-                    }
-                }
-            }
-        }
+    mlt_service_lock(MLT_FILTER_SERVICE(filter));
 
-        struct mlt_image_s src_img;
-        mlt_image_set_values(&src_img, *image, *format, *width, *height);
+    update_plugin_params(properties, image_effect_params, params, position, length);
 
-        struct mlt_image_s src_img_copy;
-        mlt_image_set_values(&src_img_copy, NULL, *format, *width, *height);
+    // Determine depth conversion needed for the 16-bit path (short > half > float).
+    int use_half = (*format == mlt_image_rgba64) && !(plugin_support_depths & mltofx_depth_short)
+                   && (plugin_support_depths & mltofx_depth_half);
+    int use_float = (*format == mlt_image_rgba64) && !(plugin_support_depths & mltofx_depth_short)
+                    && !(plugin_support_depths & mltofx_depth_half)
+                    && (plugin_support_depths & mltofx_depth_float);
+    const char *ofx_depth = use_half ? kOfxBitDepthHalf : use_float ? kOfxBitDepthFloat : NULL;
 
-        mlt_image_alloc_data(&src_img_copy);
+    // Prime both clips with correct metadata before pre-render actions.
+    // Some plugins (e.g. spatial transforms) read clip depth/bounds during
+    // GetClipPreferences / GetRegionsOfInterest to set up their pipeline.
+    mltofx_set_source_clip_data(plugin,
+                                image_effect,
+                                *image,
+                                *width,
+                                *height,
+                                *format,
+                                pixel_aspect_ratio,
+                                ofx_depth);
+    mltofx_set_output_clip_data(plugin,
+                                image_effect,
+                                *image,
+                                *width,
+                                *height,
+                                *format,
+                                pixel_aspect_ratio,
+                                ofx_depth);
 
-        uint8_t *src_copy = src_img_copy.data;
+    // OFX pre-render action order: GetClipPreferences → GetRegionsOfInterest → BeginSequenceRender
+    mltofx_get_clip_preferences(plugin, image_effect);
+    mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
+    mltofx_begin_sequence_render(plugin, image_effect);
 
-        // Determine depth conversion path early so clip metadata can be set before
-        // the pre-render OFX actions (GetClipPreferences, GetRegionsOfInterest).
-        // Some plugins read clip depth/bounds during those actions
-        // to set up their transformation pipeline and fail if the clips have no metadata.
-        int use_half = (*format == mlt_image_rgba64)
-                       && !(plugin_support_depths & mltofx_depth_short)
-                       && (plugin_support_depths & mltofx_depth_half);
-        int use_float = (*format == mlt_image_rgba64)
-                        && !(plugin_support_depths & mltofx_depth_short)
-                        && !(plugin_support_depths & mltofx_depth_half)
-                        && (plugin_support_depths & mltofx_depth_float);
-        const char *ofx_depth = use_half ? kOfxBitDepthHalf : use_float ? kOfxBitDepthFloat : NULL;
+    // Convert source to the plugin's expected format and allocate output buffer.
+    uint16_t *half_src = NULL, *half_out = NULL;
+    float *float_src = NULL, *float_out = NULL;
+    uint8_t *src_copy = NULL;
+    struct mlt_image_s src_img_copy;
 
-        // Prime both clips with correct metadata (depth, bounds, PAR, rowbytes) before
-        // calling any pre-render actions. Use *image as a temporary data pointer — the
-        // plugin must not access pixel data outside of Render via clipGetImage.
-        mltofx_set_source_clip_data(plugin,
-                                    image_effect,
-                                    *image,
-                                    *width,
-                                    *height,
-                                    *format,
-                                    pixel_aspect_ratio,
-                                    ofx_depth);
-        mltofx_set_output_clip_data(plugin,
-                                    image_effect,
-                                    *image,
-                                    *width,
-                                    *height,
-                                    *format,
-                                    pixel_aspect_ratio,
-                                    ofx_depth);
-
-        // Correct OFX pre-render action order: GetClipPreferences → GetRegionsOfInterest
-        // → BeginSequenceRender.
-        mltofx_get_clip_preferences(plugin, image_effect);
-
-        // According to OpenFX documentation: Note that hosts that
-        // have constant sized imagery need not call this action, only
-        // hosts that allow image sizes to vary need call this.
-        // mltofx_get_region_of_definition(plugin, image_effect);
-
-        mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
-        mltofx_begin_sequence_render(plugin, image_effect);
-
-        uint16_t *half_src = NULL;
-        uint16_t *half_out = NULL;
-        float *float_src = NULL;
-        float *float_out = NULL;
-        if (use_half) {
-            int n_pixels = *width * *height;
-            half_src = mltofx_rgba64_to_half((const uint16_t *) *image, n_pixels);
-            half_out = malloc((size_t) n_pixels * 4 * sizeof(uint16_t));
-            if (!half_src || !half_out) {
-                free(half_src);
-                free(half_out);
-                use_half = 0;
-            }
-        } else if (use_float) {
-            int n_pixels = *width * *height;
-            float_src = mltofx_rgba64_to_float((const uint16_t *) *image, n_pixels);
-            float_out = malloc((size_t) n_pixels * 4 * sizeof(float));
-            if (!float_src || !float_out) {
-                free(float_src);
-                free(float_out);
-                use_float = 0;
-            }
-        } else {
-            // Short/byte path: need a separate read-only copy since src and dst are different
-            memcpy(src_copy, *image, mlt_image_calculate_size(&src_img));
-        }
-
-        // Update clip data pointers to the actual (possibly converted) buffers before render.
-        mltofx_set_source_clip_data(plugin,
-                                    image_effect,
-                                    use_half    ? (uint8_t *) half_src
-                                    : use_float ? (uint8_t *) float_src
-                                                : src_copy,
-                                    *width,
-                                    *height,
-                                    *format,
-                                    pixel_aspect_ratio,
-                                    ofx_depth);
-        mltofx_set_output_clip_data(plugin,
-                                    image_effect,
-                                    use_half    ? (uint8_t *) half_out
-                                    : use_float ? (uint8_t *) float_out
-                                                : *image,
-                                    *width,
-                                    *height,
-                                    *format,
-                                    pixel_aspect_ratio,
-                                    ofx_depth);
-
-        mltofx_action_render(plugin, image_effect, *width, *height);
-
-        if (use_half) {
-            mltofx_half_to_rgba64(half_out, (uint16_t *) *image, *width * *height);
+    if (use_half) {
+        int n = *width * *height;
+        half_src = mltofx_rgba64_to_half((const uint16_t *) *image, n);
+        half_out = malloc((size_t) n * 4 * sizeof(uint16_t));
+        if (!half_src || !half_out) {
             free(half_src);
             free(half_out);
-        } else if (use_float) {
-            mltofx_float_to_rgba64(float_out, (uint16_t *) *image, *width * *height);
+            use_half = 0;
+        }
+    } else if (use_float) {
+        int n = *width * *height;
+        float_src = mltofx_rgba64_to_float((const uint16_t *) *image, n);
+        float_out = malloc((size_t) n * 4 * sizeof(float));
+        if (!float_src || !float_out) {
             free(float_src);
             free(float_out);
+            use_float = 0;
         }
-
-        mlt_image_close(&src_img_copy);
-
-        mltofx_end_sequence_render(plugin, image_effect);
-        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+    } else {
+        // Short/byte path: keep a read-only source copy separate from the output buffer.
+        struct mlt_image_s src_img;
+        mlt_image_set_values(&src_img, *image, *format, *width, *height);
+        mlt_image_set_values(&src_img_copy, NULL, *format, *width, *height);
+        mlt_image_alloc_data(&src_img_copy);
+        src_copy = src_img_copy.data;
+        memcpy(src_copy, *image, mlt_image_calculate_size(&src_img));
     }
+
+    // Point clips at the actual render buffers before calling Render.
+    uint8_t *render_src = use_half    ? (uint8_t *) half_src
+                          : use_float ? (uint8_t *) float_src
+                                      : src_copy;
+    uint8_t *render_dst = use_half    ? (uint8_t *) half_out
+                          : use_float ? (uint8_t *) float_out
+                                      : *image;
+    mltofx_set_source_clip_data(plugin,
+                                image_effect,
+                                render_src,
+                                *width,
+                                *height,
+                                *format,
+                                pixel_aspect_ratio,
+                                ofx_depth);
+    mltofx_set_output_clip_data(plugin,
+                                image_effect,
+                                render_dst,
+                                *width,
+                                *height,
+                                *format,
+                                pixel_aspect_ratio,
+                                ofx_depth);
+
+    mltofx_action_render(plugin, image_effect, *width, *height);
+
+    // Convert output back to rgba64 in-place.
+    if (use_half) {
+        mltofx_half_to_rgba64(half_out, (uint16_t *) *image, *width * *height);
+        free(half_src);
+        free(half_out);
+    } else if (use_float) {
+        mltofx_float_to_rgba64(float_out, (uint16_t *) *image, *width * *height);
+        free(float_src);
+        free(float_out);
+    } else {
+        mlt_image_close(&src_img_copy);
+    }
+
+    mltofx_end_sequence_render(plugin, image_effect);
+    mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
     if (*format != requested_format) {
         frame->convert_image(frame, image, format, mlt_image_rgba);
