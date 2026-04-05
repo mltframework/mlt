@@ -154,7 +154,7 @@ static OfxStatus clipDefine(OfxImageEffectHandle imageEffect,
                             const char *name,
                             OfxPropertySetHandle *propertySet)
 {
-    mlt_log_debug(NULL, "clipDefine: `%s` ## %p\n", name, propertySet);
+    mlt_log_debug(NULL, "[openfx] clipDefine: `%s` ## %p\n", name, propertySet);
     if (!imageEffect)
         return kOfxStatErrBadHandle;
     mlt_properties set = mlt_properties_get_properties((mlt_properties) imageEffect, "clips");
@@ -660,7 +660,7 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
                              const char *name,
                              OfxPropertySetHandle *propertySet)
 {
-    mlt_log_debug(NULL, "`%s`:`%s`\n", name, paramType);
+    mlt_log_debug(NULL, "[openfx] paramDefine: `%s`:`%s`\n", name, paramType);
     if (paramSet == NULL)
         return kOfxStatErrBadHandle;
     mlt_properties params = (mlt_properties) paramSet;
@@ -946,7 +946,7 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
 
 static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
 {
-    mlt_log_debug(NULL, "<----paramSetValueAtTime---->\n");
+    mlt_log_debug(NULL, "[openfx] paramSetValueAtTime\n");
     if (!paramHandle)
         return kOfxStatErrBadHandle;
     va_list ap;
@@ -1168,25 +1168,25 @@ static OfxStatus getColour(OfxDrawContextHandle context,
                             OfxStandardColour std_colour,
                             OfxRGBAColourF *colour)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
 static OfxStatus setColour(OfxDrawContextHandle context, const OfxRGBAColourF *colour)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
 static OfxStatus setLineWidth(OfxDrawContextHandle context, float width)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
 static OfxStatus setLineStipple(OfxDrawContextHandle context, OfxDrawLineStipplePattern pattern)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
@@ -1195,7 +1195,7 @@ static OfxStatus draw(OfxDrawContextHandle context,
                         const OfxPointD *points,
                         int point_count)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
@@ -1204,7 +1204,7 @@ static OfxStatus drawText(OfxDrawContextHandle context,
                             const OfxPointD *pos,
                             int alignment)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
@@ -1357,7 +1357,7 @@ static OfxImageEffectOpenGLRenderSuiteV1 MltOfxOpenGLRenderSuiteV1
 
 static void mltofx_log_status_code(OfxStatus code, char *msg)
 {
-    mlt_log_debug(NULL, "output of `%s` is ", msg);
+    mlt_log_debug(NULL, "[openfx] output of `%s` is ", msg);
     switch (code) {
     case kOfxStatOK:
         mlt_log_debug(NULL, "kOfxStatOK\n");
@@ -1427,7 +1427,7 @@ static void mltofx_log_status_code(OfxStatus code, char *msg)
 
 const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
 {
-    mlt_log_debug(NULL, "fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
+    mlt_log_debug(NULL, "[openfx] fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
     if (strcmp(suiteName, kOfxImageEffectSuite) == 0 && suiteVersion == 1) {
         return &MltOfxImageEffectSuiteV1;
     } else if (strcmp(suiteName, kOfxParameterSuite) == 0 && suiteVersion == 1) {
@@ -1460,7 +1460,7 @@ const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, i
         return NULL;
     }
 
-    mlt_log_debug(NULL, "%s v%d is not supported\n", suiteName, suiteVersion);
+    mlt_log_debug(NULL, "[openfx] %s v%d is not supported\n", suiteName, suiteVersion);
     return NULL;
 }
 
@@ -1468,7 +1468,7 @@ OfxHost MltOfxHost = {NULL, MltOfxfetchSuite};
 
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
 {
-    mlt_log_debug(NULL, "Initializing OpenFX host properties\n");
+    mlt_log_debug(NULL, "[openfx] Initializing OpenFX host properties\n");
     // Core host identity and API version
     propSetString(host_properties, kOfxPropName, 0, "MLT");
     propSetString(host_properties, kOfxPropLabel, 0, "MLT");
@@ -1587,11 +1587,11 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
     mlt_log_debug(NULL,
                   "[openfx] %s: format=%s, depth=%s\n",
                   __FUNCTION__,
-        format == mlt_image_rgba64
-            ? "rgba64"
+                  format == mlt_image_rgba64
+                      ? "rgba64"
                       : (format == mlt_image_rgba ? "rgba"
                                                   : (format == mlt_image_rgb ? "rgb" : "Unknown")),
-        depth_format);
+                  depth_format);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, width * depth_byte_size);
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropPixelDepth, 0, depth_format);
