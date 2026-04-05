@@ -23,6 +23,7 @@
 #include <cstring>
 #include <framework/mlt.h>
 #include <QApplication>
+#include <QPainter>
 
 #include "glaxnimate/io/io_registry.hpp"
 #include "glaxnimate/model/assets/assets.hpp"
@@ -106,8 +107,6 @@ public:
         if (!::qstrcmp("loop", mlt_properties_get(properties(), "eof"))) {
             pos %= duration();
         }
-        auto bg = mlt_properties_get_color(properties(), "background");
-        auto background = QColor(bg.r, bg.g, bg.b, bg.a);
         pos += toMltFps(composition()->animation->first_frame.get());
 
         QImage image(*width, *height, QImage::Format_ARGB32);
@@ -118,6 +117,14 @@ public:
         renderer->render_start();
         composition()->paint(renderer.get(), toGlaxnimateFps(pos), model::VisualNode::Render);
         renderer->render_end();
+
+        auto bg = mlt_properties_get_color(properties(), "background");
+        if (bg.a > 0) {
+            auto background = QColor(bg.r, bg.g, bg.b, bg.a);
+            QPainter painter(&image);
+            painter.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+            painter.fillRect(image.rect(), background);
+        }
 
         *format = mlt_image_rgba;
         image = image.convertToFormat(QImage::Format_RGBA8888);
