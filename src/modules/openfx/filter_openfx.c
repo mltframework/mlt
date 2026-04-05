@@ -178,7 +178,9 @@ static int filter_get_image(mlt_frame frame,
         half_out = malloc((size_t) n * 4 * sizeof(uint16_t));
         if (!half_src || !half_out) {
             free(half_src);
+            half_src = NULL;
             free(half_out);
+            half_out = NULL;
             use_half = 0;
         }
     } else if (use_float) {
@@ -187,7 +189,9 @@ static int filter_get_image(mlt_frame frame,
         float_out = malloc((size_t) n * 4 * sizeof(float));
         if (!float_src || !float_out) {
             free(float_src);
+            float_src = NULL;
             free(float_out);
+            float_out = NULL;
             use_float = 0;
         }
     } else {
